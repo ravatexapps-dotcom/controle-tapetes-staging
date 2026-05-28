@@ -225,3 +225,14 @@ test('totalEntregueCimaPorItem ignora linhas sem op_item_id', () => {
 test('totalEntregueCimaPorItem vazio retorna objeto vazio', () => {
   assert.deepStrictEqual(totalEntregueCimaPorItem([]), {});
 });
+
+test('totalEntregueCimaPorItem ignora metros nao-numericos', () => {
+  const r = totalEntregueCimaPorItem([
+    { op_item_id: 10, metros_entregues: 50, defeito: false },
+    { op_item_id: 10, metros_entregues: '', defeito: false },
+    { op_item_id: 10, metros_entregues: undefined, defeito: false },
+    { op_item_id: 11, metros_entregues: 'abc', defeito: false },
+  ]);
+  assert.strictEqual(r[10], 50);
+  assert.strictEqual(r[11], undefined);
+});

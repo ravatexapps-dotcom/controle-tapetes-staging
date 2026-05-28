@@ -135,7 +135,9 @@ function totalEntregueCimaPorItem(itens) {
   for (const i of itens) {
     if (i.defeito) continue;
     if (i.op_item_id == null) continue;
-    acc[i.op_item_id] = (acc[i.op_item_id] || 0) + Number(i.metros_entregues);
+    const metros = Number(i.metros_entregues);
+    if (!Number.isFinite(metros)) continue;
+    acc[i.op_item_id] = (acc[i.op_item_id] || 0) + metros;
   }
   for (const k of Object.keys(acc)) acc[k] = round2(acc[k]);
   return acc;
