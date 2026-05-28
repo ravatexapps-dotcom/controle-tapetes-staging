@@ -101,6 +101,30 @@ function recalcularOP(itens, ordens) {
   return { fator, itens: itensOut, sobras };
 }
 
+// Calcula o consumo de fio por ordem dado um conjunto livre de metros por item.
+// Usado pela proposta manual (sliders): permite reaproveitar `calcularFiosOP`
+// passando os metros escolhidos pelo admin e mapear o consumo para cada ordem.
+// itens:  [{ op_item_id, modelo_id, metros }]
+// ordens: [{ id, tipo, cor_id, cor_poliester, kg_recebido }]
+// Retorna: [{ ordem_id, kg_recebido, kg_consumido, sobra }] — sobra pode ser negativa (excesso).
+function consumoPorOrdem(itens, ordens, modelosById, parametrosByLargura) {
+  const round3 = (n) => Math.round(n * 1000) / 1000;
+  const itensFmt = itens.map((i) => ({ modeloId: i.modelo_id, metros: i.metros }));
+  const calc = calcularFiosOP(itensFmt, modelosById, parametrosByLargura);
+  return ordens.map((o) => {
+    const consumido = o.tipo === 'algodao'
+      ? (calc.algodaoPorCor[o.cor_id]?.kg || 0)
+      : (calc.poliester[o.cor_poliester] || 0);
+    const kgRec = Number(o.kg_recebido);
+    return {
+      ordem_id: o.id,
+      kg_recebido: kgRec,
+      kg_consumido: round3(consumido),
+      sobra: round3(kgRec - consumido),
+    };
+  });
+}
+
 if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { larguraKey, calcularFiosOP, montarOrdensCompraFio, recalcularOP };
+  module.exports = { larguraKey, calcularFiosOP, montarOrdensCompraFio, recalcularOP, consumoPorOrdem };
 }

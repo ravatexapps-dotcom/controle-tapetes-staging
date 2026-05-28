@@ -1,6 +1,6 @@
 const { test } = require('node:test');
 const assert = require('node:assert');
-const { calcularFiosOP, larguraKey, montarOrdensCompraFio, recalcularOP } = require('../js/calculo-op.js');
+const { calcularFiosOP, larguraKey, montarOrdensCompraFio, recalcularOP, consumoPorOrdem } = require('../js/calculo-op.js');
 
 // Parâmetros do seed (db/04_seed.sql)
 const PARAMS = {
@@ -147,4 +147,38 @@ test('recalcularOP ignora ordem com kg_pedido 0 ao calcular o fator', () => {
   const r = recalcularOP(itens, ordens);
   assert.strictEqual(r.fator, 0.8);
   assert.strictEqual(r.itens[0].metros_ajustados, 80);
+});
+
+test('consumoPorOrdem mapeia consumo e sobra por ordem dado metros livres', () => {
+  // 100m modelo 1 (largura 1.40): algodão por cor = 0.035 kg; poliéster = 0.042 kg
+  const itens = [{ op_item_id: 10, modelo_id: 1, metros: 100 }];
+  const ordens = [
+    { id: 1, tipo: 'algodao', cor_id: 1, cor_poliester: null, kg_recebido: 0.04 },
+    { id: 2, tipo: 'algodao', cor_id: 2, cor_poliester: null, kg_recebido: 0.03 },     // gargalo: faltam 0.005
+    { id: 3, tipo: 'poliester', cor_id: null, cor_poliester: 'PRETO',  kg_recebido: 0.05 },
+    { id: 4, tipo: 'poliester', cor_id: null, cor_poliester: 'BRANCO', kg_recebido: 0.045 },
+  ];
+  const r = consumoPorOrdem(itens, ordens, MODELOS, PARAMS);
+  assert.strictEqual(r.length, 4);
+  assert.strictEqual(r[0].kg_consumido, 0.035);
+  assert.strictEqual(r[0].sobra, 0.005);
+  assert.strictEqual(r[1].kg_consumido, 0.035);
+  assert.strictEqual(r[1].sobra, -0.005);  // excesso (sobra negativa)
+  assert.strictEqual(r[2].kg_consumido, 0.042);
+  assert.strictEqual(r[2].sobra, 0.008);
+  assert.strictEqual(r[3].kg_consumido, 0.042);
+  assert.strictEqual(r[3].sobra, 0.003);
+});
+
+test('consumoPorOrdem com metros 0 zera consumo (mantém sobra = recebido)', () => {
+  const itens = [{ op_item_id: 10, modelo_id: 1, metros: 0 }];
+  const ordens = [
+    { id: 1, tipo: 'algodao', cor_id: 1, cor_poliester: null, kg_recebido: 0.04 },
+    { id: 2, tipo: 'poliester', cor_id: null, cor_poliester: 'PRETO', kg_recebido: 0.05 },
+  ];
+  const r = consumoPorOrdem(itens, ordens, MODELOS, PARAMS);
+  assert.strictEqual(r[0].kg_consumido, 0);
+  assert.strictEqual(r[0].sobra, 0.04);
+  assert.strictEqual(r[1].kg_consumido, 0);
+  assert.strictEqual(r[1].sobra, 0.05);
 });

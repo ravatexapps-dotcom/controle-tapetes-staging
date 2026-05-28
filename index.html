@@ -910,45 +910,163 @@ async function screenNovaOP(opId) {
     return box;
   }
 
+  // Limite individual de metros de um item assumindo os demais em zero
+  // (cada cor consumida pelo item × kg_recebido daquela cor). Usado pra capar o slider.
+  function maxMetrosItem(item) {
+    const modelo = modelosById[item.modelo_id];
+    const p = parametrosByLargura[larguraKey(modelo.largura)];
+    const rAlg = p.algodao_por_ml * p.valor_x;
+    const rPol = p.poliester_por_ml * p.valor_x;
+    let cap = Infinity;
+    for (const cor of [modelo.cor_1, modelo.cor_2]) {
+      const ord = ordens.find(o => o.tipo === 'algodao' && o.cor_id === cor.id);
+      if (ord && rAlg > 0) cap = Math.min(cap, Number(ord.kg_recebido) / rAlg);
+    }
+    for (const corP of ['PRETO', 'BRANCO']) {
+      const ord = ordens.find(o => o.tipo === 'poliester' && o.cor_poliester === corP);
+      if (ord && rPol > 0) cap = Math.min(cap, Number(ord.kg_recebido) / rPol);
+    }
+    return Number.isFinite(cap) ? Math.floor(cap) : 0;
+  }
+
   function buildProposta() {
     const itensCalc = opItensRaw.map(i => ({ op_item_id: i.id, modelo_id: i.modelo_id, metros_pedidos: Number(i.metros_pedidos) }));
     const resultado = recalcularOP(itensCalc, ordens);
+
+    // Estado editável: metros escolhidos pelo admin por op_item_id.
+    // Default = proposta proporcional do fator-gargalo.
+    const metrosOverride = {};
+    for (const it of resultado.itens) metrosOverride[it.op_item_id] = it.metros_ajustados;
+
     const wrap = el('div', { class: 'mt-4' });
 
     const semFio = ordens.some(o => Number(o.kg_recebido) <= 0);
     if (semFio) wrap.appendChild(el('p', { class: 'text-sm text-red-600 mb-2' }, 'Atenção: alguma ordem foi recebida com 0 kg.'));
 
     wrap.appendChild(el('p', { class: 'text-sm text-gray-700 mb-2' },
-      'Fator de produção (cor mais escassa): ', el('b', {}, resultado.fator.toFixed(2).replace('.', ','))));
+      'Fator proporcional (cor mais escassa): ', el('b', {}, resultado.fator.toFixed(2).replace('.', ','))));
+    wrap.appendChild(el('p', { class: 'text-xs text-gray-500 mb-3' },
+      'Arraste os sliders abaixo para redistribuir os metros entre os modelos. O consumo de fio é recalculado ao vivo; o botão "Aceitar" trava se alguma cor exceder o recebido.'));
 
-    wrap.appendChild(dataTable({
-      columns: [
-        { key: 'modelo', label: 'Modelo', render: (it) => modelosById[itensCalc.find(c => c.op_item_id === it.op_item_id)?.modelo_id]?.nome || '?' },
-        { key: 'metros_pedidos', label: 'Pedido', render: (it) => fmtMetros(it.metros_pedidos) },
-        { key: 'metros_ajustados', label: 'Proposto', render: (it) => fmtMetros(it.metros_ajustados) },
-      ],
-      rows: resultado.itens,
-    }));
+    // Sliders por item ----------------------------------------------------
+    const sliders = el('div', { class: 'space-y-3 mb-4' });
+    const itemRowState = {};  // { [op_item_id]: { slider, valorLabel } }
 
-    if (resultado.sobras.length) {
-      wrap.appendChild(el('div', { class: 'text-xs uppercase text-gray-500 mt-3 mb-1' }, 'Sobra de fio (vira saldo)'));
-      for (const s of resultado.sobras) {
-        const nome = s.tipo === 'algodao'
-          ? 'Algodão — ' + (ordens.find(o => o.id === s.ordem_id)?.cores?.nome || '?')
-          : 'Poliéster — ' + s.cor_poliester;
-        wrap.appendChild(el('p', { class: 'text-sm mb-1' }, `${nome}: `, el('b', {}, fmtKg(s.kg_sobra))));
-      }
+    for (const c of itensCalc) {
+      const max = Math.max(maxMetrosItem(c), c.metros_pedidos);
+      const slider = el('input', {
+        type: 'range', min: '0', max: String(max), step: '1',
+        class: 'w-full',
+      });
+      slider.value = String(Math.round(metrosOverride[c.op_item_id]));
+      const valorLabel = el('span', { class: 'text-sm font-semibold text-gray-800 w-20 text-right' }, fmtMetros(Number(slider.value)));
+      slider.addEventListener('input', () => {
+        metrosOverride[c.op_item_id] = Number(slider.value);
+        valorLabel.textContent = fmtMetros(Number(slider.value));
+        recompute();
+      });
+
+      const modelo = modelosById[c.modelo_id];
+      const linha = el('div', { class: 'border rounded-lg p-3' },
+        el('div', { class: 'flex items-center justify-between mb-1' },
+          el('div', { class: 'text-sm font-medium text-gray-800' }, (modelo?.nome || '?') + ' (pedido ' + fmtMetros(c.metros_pedidos) + ')'),
+          valorLabel,
+        ),
+        slider,
+        el('div', { class: 'flex justify-between text-xs text-gray-400 mt-1' },
+          el('span', {}, '0 m'),
+          el('span', {}, 'máx individual: ' + fmtMetros(max)),
+        ),
+      );
+      sliders.appendChild(linha);
+      itemRowState[c.op_item_id] = { slider, valorLabel };
     }
+    wrap.appendChild(sliders);
+
+    // Painel de consumo de fio (recomputa a cada movimento) ---------------
+    const consumoBox = el('div', { class: 'bg-gray-50 rounded-lg p-3 mb-3' });
+    wrap.appendChild(consumoBox);
+
+    const btnReset = el('button', {
+      class: 'text-sm text-blue-700 hover:underline mb-3',
+      onclick: () => {
+        for (const it of resultado.itens) {
+          const v = Math.round(it.metros_ajustados);
+          metrosOverride[it.op_item_id] = v;
+          const row = itemRowState[it.op_item_id];
+          if (row) { row.slider.value = String(v); row.valorLabel.textContent = fmtMetros(v); }
+        }
+        recompute();
+      },
+    }, '↺ Voltar à proposta proporcional');
+    wrap.appendChild(btnReset);
 
     const btnAceitar = el('button', {
-      class: 'bg-blue-700 hover:bg-blue-800 text-white font-semibold rounded-lg px-4 py-2 mt-4 mr-2',
-      onclick: () => aplicarRecalculo(resultado, 'aceitar'),
+      class: 'font-semibold rounded-lg px-4 py-2 mt-4 mr-2',
+      onclick: () => onAceitar(),
     }, 'Aceitar proposta');
     const btnManter = el('button', {
       class: 'bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold rounded-lg px-4 py-2 mt-4',
       onclick: () => aplicarRecalculo(resultado, 'manter'),
     }, 'Manter pedido');
     wrap.appendChild(el('div', {}, btnAceitar, btnManter));
+
+    function itensComMetrosAtuais() {
+      return itensCalc.map(c => ({ op_item_id: c.op_item_id, modelo_id: c.modelo_id, metros: metrosOverride[c.op_item_id] || 0 }));
+    }
+
+    function recompute() {
+      const consumos = consumoPorOrdem(itensComMetrosAtuais(), ordens, modelosById, parametrosByLargura);
+      const algumExcede = consumos.some(c => c.sobra < 0);
+
+      const linhas = [el('div', { class: 'text-xs uppercase text-gray-500 mb-2' }, 'Consumo de fio')];
+      for (const c of consumos) {
+        const o = ordens.find(x => x.id === c.ordem_id);
+        const nome = o.tipo === 'algodao'
+          ? 'Algodão — ' + (o.cores?.nome || '?')
+          : 'Poliéster — ' + o.cor_poliester;
+        const sobraTxt = c.sobra >= 0
+          ? `sobra ${fmtKg(c.sobra)}`
+          : `EXCEDE em ${fmtKg(-c.sobra)}`;
+        linhas.push(el('div', { class: 'flex justify-between text-sm py-1 ' + (c.sobra < 0 ? 'text-red-600' : 'text-gray-700') },
+          el('span', {}, nome + ': ' + fmtKg(c.kg_consumido) + ' / ' + fmtKg(c.kg_recebido)),
+          el('span', { class: 'font-medium' }, sobraTxt),
+        ));
+      }
+      consumoBox.replaceChildren(...linhas);
+
+      if (algumExcede) {
+        btnAceitar.disabled = true;
+        btnAceitar.className = 'font-semibold rounded-lg px-4 py-2 mt-4 mr-2 bg-blue-300 text-white cursor-not-allowed';
+      } else {
+        btnAceitar.disabled = false;
+        btnAceitar.className = 'font-semibold rounded-lg px-4 py-2 mt-4 mr-2 bg-blue-700 hover:bg-blue-800 text-white';
+      }
+    }
+
+    function onAceitar() {
+      const round3 = (n) => Math.round(n * 1000) / 1000;
+      const consumos = consumoPorOrdem(itensComMetrosAtuais(), ordens, modelosById, parametrosByLargura);
+      if (consumos.some(c => c.sobra < 0)) { toast('Algum fio está excedido — ajuste os sliders', 'error'); return; }
+      const itensFinais = itensCalc.map(c => ({
+        op_item_id: c.op_item_id,
+        metros_pedidos: c.metros_pedidos,
+        metros_ajustados: Math.round((metrosOverride[c.op_item_id] || 0) * 100) / 100,
+      }));
+      const sobrasFinais = consumos
+        .filter(c => c.sobra > 0)
+        .map(c => {
+          const o = ordens.find(x => x.id === c.ordem_id);
+          return {
+            ordem_id: o.id, tipo: o.tipo,
+            cor_id: o.cor_id ?? null, cor_poliester: o.cor_poliester ?? null,
+            kg_sobra: round3(c.sobra),
+          };
+        });
+      aplicarRecalculo({ fator: resultado.fator, itens: itensFinais, sobras: sobrasFinais }, 'aceitar');
+    }
+
+    recompute();
     return wrap;
   }
 
