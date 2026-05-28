@@ -917,13 +917,13 @@ async function screenNovaOP(opId) {
         const insOp = await supa.from('saldo_fios_op').insert({
           op_id: op.id, cor_id: s.cor_id, cor_poliester: s.cor_poliester, tipo: s.tipo, kg_sobra: s.kg_sobra,
         });
-        if (insOp.error) { toast('Erro ao gravar saldo da OP', 'error'); console.error(insOp.error); return; }
+        if (insOp.error) { toast('Erro ao gravar saldo da OP — verifique no Supabase', 'error'); console.error(insOp.error); navigate('#/ops'); return; }
 
         // totalizador saldo_fios: lê (filtrando por cor/tipo), soma e grava
         let sel = supa.from('saldo_fios').select('kg_total').eq('tipo', s.tipo);
         sel = s.cor_id != null ? sel.eq('cor_id', s.cor_id) : sel.is('cor_id', null).eq('cor_poliester', s.cor_poliester);
         const cur = await sel.maybeSingle();
-        if (cur.error) { toast('Erro ao ler saldo total', 'error'); console.error(cur.error); return; }
+        if (cur.error) { toast('Erro ao ler saldo total — verifique no Supabase', 'error'); console.error(cur.error); navigate('#/ops'); return; }
         const novoTotal = round3((cur.data ? Number(cur.data.kg_total) : 0) + s.kg_sobra);
 
         let saveTotal;
@@ -936,12 +936,12 @@ async function screenNovaOP(opId) {
             cor_id: s.cor_id, cor_poliester: s.cor_poliester, tipo: s.tipo, kg_total: novoTotal,
           });
         }
-        if (saveTotal.error) { toast('Erro ao gravar saldo total', 'error'); console.error(saveTotal.error); return; }
+        if (saveTotal.error) { toast('Erro ao gravar saldo total — verifique no Supabase', 'error'); console.error(saveTotal.error); navigate('#/ops'); return; }
       }
 
       // 4) libera a produção
       const st = await supa.from('ops').update({ status: 'em_producao' }).eq('id', op.id);
-      if (st.error) { toast('Erro ao atualizar status da OP', 'error'); console.error(st.error); return; }
+      if (st.error) { toast('Erro ao mudar status — saldo já gravado, verifique no Supabase', 'error'); console.error(st.error); navigate('#/ops'); return; }
 
       toast(modo === 'aceitar' ? 'Proposta aceita — produção liberada' : 'Pedido mantido — produção liberada', 'success');
       navigate('#/ops');
