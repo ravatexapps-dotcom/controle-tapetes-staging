@@ -125,6 +125,22 @@ function consumoPorOrdem(itens, ordens, modelosById, parametrosByLargura) {
   });
 }
 
+// Soma metros entregues sem defeito por op_item_id (Fase 5a — tecelagem).
+// Defeitos ficam gravados no banco mas não somam aqui.
+// itens: [{ op_item_id, metros_entregues, defeito }]
+// Retorna: { [op_item_id]: total_metros }  (arredondado a 2 casas)
+function totalEntregueCimaPorItem(itens) {
+  const round2 = (n) => Math.round(n * 100) / 100;
+  const acc = {};
+  for (const i of itens) {
+    if (i.defeito) continue;
+    if (i.op_item_id == null) continue;
+    acc[i.op_item_id] = (acc[i.op_item_id] || 0) + Number(i.metros_entregues);
+  }
+  for (const k of Object.keys(acc)) acc[k] = round2(acc[k]);
+  return acc;
+}
+
 if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { larguraKey, calcularFiosOP, montarOrdensCompraFio, recalcularOP, consumoPorOrdem };
+  module.exports = { larguraKey, calcularFiosOP, montarOrdensCompraFio, recalcularOP, consumoPorOrdem, totalEntregueCimaPorItem };
 }

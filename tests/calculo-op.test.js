@@ -1,6 +1,6 @@
 const { test } = require('node:test');
 const assert = require('node:assert');
-const { calcularFiosOP, larguraKey, montarOrdensCompraFio, recalcularOP, consumoPorOrdem } = require('../js/calculo-op.js');
+const { calcularFiosOP, larguraKey, montarOrdensCompraFio, recalcularOP, consumoPorOrdem, totalEntregueCimaPorItem } = require('../js/calculo-op.js');
 
 // Parâmetros do seed (db/04_seed.sql)
 const PARAMS = {
@@ -181,4 +181,47 @@ test('consumoPorOrdem com metros 0 zera consumo (mantém sobra = recebido)', () 
   assert.strictEqual(r[0].sobra, 0.04);
   assert.strictEqual(r[1].kg_consumido, 0);
   assert.strictEqual(r[1].sobra, 0.05);
+});
+
+test('totalEntregueCimaPorItem soma metros sem defeito por op_item', () => {
+  const r = totalEntregueCimaPorItem([
+    { op_item_id: 10, metros_entregues: 50, defeito: false },
+    { op_item_id: 10, metros_entregues: 30, defeito: false },
+    { op_item_id: 11, metros_entregues: 20, defeito: false },
+  ]);
+  assert.strictEqual(r[10], 80);
+  assert.strictEqual(r[11], 20);
+});
+
+test('totalEntregueCimaPorItem ignora linhas com defeito', () => {
+  const r = totalEntregueCimaPorItem([
+    { op_item_id: 10, metros_entregues: 50, defeito: false },
+    { op_item_id: 10, metros_entregues: 20, defeito: true },   // ignorada
+    { op_item_id: 11, metros_entregues: 15, defeito: true },   // ignorada totalmente
+  ]);
+  assert.strictEqual(r[10], 50);
+  assert.strictEqual(r[11], undefined);  // nenhuma soma sem defeito
+});
+
+test('totalEntregueCimaPorItem arredonda total a 2 casas', () => {
+  const r = totalEntregueCimaPorItem([
+    { op_item_id: 10, metros_entregues: 10.333, defeito: false },
+    { op_item_id: 10, metros_entregues: 10.333, defeito: false },
+    { op_item_id: 10, metros_entregues: 10.334, defeito: false },
+  ]);
+  assert.strictEqual(r[10], 31);  // 30.999... → arredonda para 31.00
+});
+
+test('totalEntregueCimaPorItem ignora linhas sem op_item_id', () => {
+  const r = totalEntregueCimaPorItem([
+    { op_item_id: 10, metros_entregues: 50, defeito: false },
+    { op_item_id: null, modelo_id: 1, metros_entregues: 25, defeito: false },
+    { metros_entregues: 30, defeito: false },
+  ]);
+  assert.strictEqual(r[10], 50);
+  assert.strictEqual(Object.keys(r).length, 1);
+});
+
+test('totalEntregueCimaPorItem vazio retorna objeto vazio', () => {
+  assert.deepStrictEqual(totalEntregueCimaPorItem([]), {});
 });
