@@ -1,8 +1,8 @@
 # Status do projeto
 
-## Fase atual: 5 — Tecelagem e látex
+## Fase atual: 5a — Tecelagem (parte de cima)
 
-Fase 4 concluída (QA 15/15 em 2026-05-28). Próxima: telas das terceirizadas (tecelagem e látex) com entregas parciais e suporte a múltiplos destinos de látex por OP (ver [[project_regra_latex]]).
+Fase 5a implementada em 2026-05-28, aguardando QA do Vinícius. Próxima: Fase 5b — Látex (com múltiplos destinos por OP, ver [[project_regra_latex]]).
 
 ## Fases concluídas
 
@@ -61,6 +61,7 @@ QA rodado em 2026-05-19: **9/9 cenários** do `docs/qa/fase2-checklist.md` passa
 ## Próximas fases
 
 - **Fase 4 — Fornecedor de fios + recálculo automático** ✅
-- **Fase 5 — Tecelagem e látex** (entregas parciais, defeitos, múltiplos destinos de látex) ← próxima
+- **Fase 5a — Tecelagem (parte de cima)** ⏳ implementada (aguardando QA)
+- **Fase 5b — Látex** (com múltiplos destinos por OP) ← próxima
 - Fase 6 — Fechamento de OP, painel inicial, estoque
 - Fase 7 — Polimento visual (após screenshots do Max Home)
