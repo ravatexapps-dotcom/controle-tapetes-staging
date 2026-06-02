@@ -551,6 +551,39 @@ async function atualizarEntregaCima({ entregaId, opId, payload }) {
   return true;
 }
 
+// Persistência dos recebimentos de látex (Fase 5b). Espelha as de tecelagem,
+// mas etapa='latex', sem destino e sem gerar OP (a OP de látex já existe).
+async function salvarEntregaLatex({ fornecedorId, opId, payload }) {
+  if (payload.linhas.length === 0) { toast('Adicione ao menos 1 item com metros recebidos', 'error'); return false; }
+  const ins = await supa.from('entregas').insert({
+    fornecedor_id: fornecedorId, etapa: 'latex', data: payload.data, observacao: payload.observacao,
+  }).select().single();
+  if (ins.error) { toast('Erro ao gravar recebimento', 'error'); console.error(ins.error); return false; }
+  const entregaId = ins.data.id;
+  const itens = payload.linhas.map(l => ({ entrega_id: entregaId, op_id: opId, ...l }));
+  const insItens = await supa.from('entrega_itens').insert(itens);
+  if (insItens.error) {
+    await supa.from('entregas').delete().eq('id', entregaId);
+    toast('Erro ao gravar itens do recebimento', 'error'); console.error(insItens.error); return false;
+  }
+  toast('Recebimento registrado', 'success');
+  return true;
+}
+
+async function atualizarEntregaLatex({ entregaId, opId, payload }) {
+  if (payload.linhas.length === 0) { toast('Adicione ao menos 1 item com metros recebidos', 'error'); return false; }
+  const upd = await supa.from('entregas').update({
+    data: payload.data, observacao: payload.observacao,
+  }).eq('id', entregaId);
+  if (upd.error) { toast('Erro ao atualizar recebimento', 'error'); console.error(upd.error); return false; }
+  await supa.from('entrega_itens').delete().eq('entrega_id', entregaId);
+  const itens = payload.linhas.map(l => ({ entrega_id: entregaId, op_id: opId, ...l }));
+  const insItens = await supa.from('entrega_itens').insert(itens);
+  if (insItens.error) { toast('Erro ao regravar itens do recebimento', 'error'); console.error(insItens.error); return false; }
+  toast('Recebimento atualizado', 'success');
+  return true;
+}
+
 // Excluir entrega: usa o padrao de callback do confirmDialog (que so dispara
 // onConfirm em caso afirmativo). onSuccess() roda apos delete bem-sucedido.
 function excluirEntrega(entregaId, onSuccess) {
