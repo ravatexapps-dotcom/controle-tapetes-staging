@@ -845,6 +845,12 @@ const OP_STATUS_LABEL = {
   simulada: 'Simulada', aberta: 'Aberta', em_producao: 'Em produção', finalizada: 'Finalizada',
 };
 
+const OP_TIPO_LABEL = { tecelagem: 'Tecelagem', latex: 'Látex' };
+const OP_TIPO_BADGE = { tecelagem: 'bg-indigo-100 text-indigo-700', latex: 'bg-amber-100 text-amber-700' };
+function badgeTipo(tipo) {
+  return el('span', { class: 'px-2 py-1 rounded text-xs font-semibold ' + (OP_TIPO_BADGE[tipo] || 'bg-gray-100 text-gray-700') },
+    OP_TIPO_LABEL[tipo] || tipo);
+}
 function badgeStatus(status) {
   return el('span', { class: 'px-2 py-1 rounded text-xs font-semibold ' + (OP_STATUS_BADGE[status] || 'bg-gray-100 text-gray-700') },
     OP_STATUS_LABEL[status] || status);
@@ -855,30 +861,39 @@ async function screenListaOPs() {
 
   async function reload() {
     const { data, error } = await supa.from('ops')
-      .select('id, numero, ano, status, criado_em, op_itens(id)')
+      .select('id, numero, ano, status, tipo, criado_em, op_itens(id)')
       .order('ano', { ascending: false })
       .order('numero', { ascending: false });
     if (error) { toast('Erro ao carregar OPs', 'error'); console.error(error); return; }
     render(data || []);
   }
 
+  let filtroTipo = 'todas';
   function render(rows) {
     const header = pageHeader('Ordens de Produção', [{ label: '+ Nova OP', onclick: () => navigate('#/ops/nova') }]);
-    const body = rows.length === 0
-      ? el('div', { class: 'bg-white rounded-xl shadow p-8 text-center text-gray-500' }, 'Nenhuma OP ainda. Crie a primeira.')
+    const filtro = el('div', { class: 'flex gap-2 mb-3' },
+      ...[['todas', 'Todas'], ['tecelagem', 'Tecelagem'], ['latex', 'Látex']].map(([val, lbl]) =>
+        el('button', {
+          class: 'px-3 py-1 rounded-lg text-sm font-semibold ' + (filtroTipo === val ? 'bg-blue-700 text-white' : 'bg-gray-200 text-gray-700'),
+          onclick: () => { filtroTipo = val; render(rows); },
+        }, lbl)));
+    const visiveis = filtroTipo === 'todas' ? rows : rows.filter(r => (r.tipo || 'tecelagem') === filtroTipo);
+    const body = visiveis.length === 0
+      ? el('div', { class: 'bg-white rounded-xl shadow p-8 text-center text-gray-500' }, 'Nenhuma OP para este filtro.')
       : dataTable({
           columns: [
             { key: 'lote', label: 'Lote', render: (r) => `Nº ${r.numero}/${r.ano}` },
+            { key: 'tipo', label: 'Tipo', render: (r) => badgeTipo(r.tipo || 'tecelagem') },
             { key: 'status', label: 'Status', render: (r) => badgeStatus(r.status) },
             { key: 'itens', label: 'Itens', render: (r) => String((r.op_itens || []).length) },
             { key: 'criado_em', label: 'Criada em', render: (r) => new Date(r.criado_em).toLocaleDateString('pt-BR') },
           ],
-          rows,
+          rows: visiveis,
           actions: [
             { label: (r) => r.status === 'simulada' ? 'Editar' : 'Ver', onclick: (r) => navigate('#/ops/' + r.id) },
           ]
         });
-    container.replaceChildren(header, body);
+    container.replaceChildren(header, filtro, body);
   }
 
   await reload();
