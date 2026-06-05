@@ -276,6 +276,7 @@ const routes = {
   '#/cadastros/modelos': { render: screenCadastrosModelos, roles: ['admin'] },
   '#/cadastros/parametros': { render: screenCadastrosParametros, roles: ['admin'] },
   '#/cadastros/fornecedores': { render: screenCadastrosFornecedores, roles: ['admin'] },
+  '#/cadastros/clientes':    { render: screenCadastrosClientes,    roles: ['admin'] },
   '#/cadastros/precos': { render: screenCadastrosPrecos, roles: ['admin'] },
   '#/cadastros/usuarios': { render: screenCadastrosUsuarios, roles: ['admin'] },
   '#/fornecedor/home': { render: screenFornecedorHome, roles: ['fornecedor'] },
@@ -401,6 +402,7 @@ const ADMIN_MENU = [
   { href: '#/cadastros/modelos',       label: 'Modelos' },
   { href: '#/cadastros/parametros',    label: 'Parâmetros' },
   { href: '#/cadastros/fornecedores',  label: 'Fornecedores' },
+  { href: '#/cadastros/clientes',      label: 'Clientes' },
   { href: '#/cadastros/precos',        label: 'Preços' },
   { href: '#/cadastros/usuarios',      label: 'Usuários' },
 ];
@@ -2100,6 +2102,71 @@ async function screenCadastrosCores() {
         const { error } = await supa.from('cores').delete().eq('id', cor.id);
         if (error) { toast('Cor está em uso (não dá pra excluir)', 'error'); console.error(error); return; }
         toast('Cor excluída', 'success');
+        reload();
+      }
+    });
+  }
+
+  await reload();
+  return shellLayout(ADMIN_MENU, container);
+}
+
+async function screenCadastrosClientes() {
+  const container = el('div', {});
+
+  async function reload() {
+    const { data, error } = await supa.from('clientes').select('*').order('nome');
+    if (error) { toast('Erro ao carregar clientes', 'error'); console.error(error); return; }
+    render(data || []);
+  }
+
+  function render(rows) {
+    container.replaceChildren(
+      pageHeader('Clientes', [{ label: '+ Novo cliente', onclick: () => openModal(null) }]),
+      dataTable({
+        columns: [
+          { key: 'id', label: 'ID' },
+          { key: 'nome', label: 'Nome' },
+        ],
+        rows,
+        actions: [
+          { label: 'Editar', onclick: (r) => openModal(r) },
+          { label: 'Excluir', class: 'text-red-600 hover:underline', onclick: (r) => confirmExcluir(r) },
+        ]
+      })
+    );
+  }
+
+  function openModal(cli) {
+    const isEdit = !!cli;
+    const nomeInput = textInput({ value: cli?.nome || '', placeholder: 'Ex: LOJA CENTRAL', required: true });
+    const body = el('div', {}, formField({ label: 'Nome', input: nomeInput }));
+    modal({
+      title: isEdit ? 'Editar cliente' : 'Novo cliente',
+      body,
+      onSave: async () => {
+        const nome = nomeInput.value.trim();
+        if (!nome) { toast('Nome é obrigatório', 'error'); return false; }
+        const payload = { nome };
+        const { error } = isEdit
+          ? await supa.from('clientes').update(payload).eq('id', cli.id)
+          : await supa.from('clientes').insert(payload);
+        if (error) { toast(error.message.includes('duplicate') ? 'Cliente já cadastrado' : 'Erro ao salvar', 'error'); console.error(error); return false; }
+        toast(isEdit ? 'Cliente atualizado' : 'Cliente criado', 'success');
+        reload();
+      }
+    });
+  }
+
+  function confirmExcluir(cli) {
+    confirmDialog({
+      title: 'Excluir cliente',
+      message: `Excluir "${cli.nome}"? Se algum lote usar esse cliente, a exclusão vai falhar.`,
+      confirmLabel: 'Excluir',
+      onConfirm: async () => {
+        const { error } = await supa.from('clientes').delete().eq('id', cli.id);
+        if (error) { toast('Cliente está em uso (não dá pra excluir)', 'error'); console.error(error); return; }
+        toast('Cliente excluído', 'success');
         reload();
       }
     });
