@@ -9,6 +9,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="js/calculo-op.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" integrity="sha512-qZvrmS2ekKPF2mSznTQsxqPgnpkI4DNTlrdUmTzrDgektczlKNRRhy5X5AAOnx5S09ydFYWWNSfcEqDTTHgtNA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
   <style>
     body { font-family: 'Inter', sans-serif; }
     .toast { animation: slidein .25s ease-out; }
@@ -276,6 +277,7 @@ const routes = {
   '#/cadastros/modelos': { render: screenCadastrosModelos, roles: ['admin'] },
   '#/cadastros/parametros': { render: screenCadastrosParametros, roles: ['admin'] },
   '#/cadastros/fornecedores': { render: screenCadastrosFornecedores, roles: ['admin'] },
+  '#/cadastros/clientes':    { render: screenCadastrosClientes,    roles: ['admin'] },
   '#/cadastros/precos': { render: screenCadastrosPrecos, roles: ['admin'] },
   '#/cadastros/usuarios': { render: screenCadastrosUsuarios, roles: ['admin'] },
   '#/fornecedor/home': { render: screenFornecedorHome, roles: ['fornecedor'] },
@@ -401,6 +403,7 @@ const ADMIN_MENU = [
   { href: '#/cadastros/modelos',       label: 'Modelos' },
   { href: '#/cadastros/parametros',    label: 'Parâmetros' },
   { href: '#/cadastros/fornecedores',  label: 'Fornecedores' },
+  { href: '#/cadastros/clientes',      label: 'Clientes' },
   { href: '#/cadastros/precos',        label: 'Preços' },
   { href: '#/cadastros/usuarios',      label: 'Usuários' },
 ];
@@ -1070,14 +1073,26 @@ async function screenListaOPs() {
 
   async function reload() {
     const { data, error } = await supa.from('ops')
-      .select('id, numero, ano, status, tipo, criado_em, op_itens(id)')
+      .select('id, numero, ano, status, tipo, criado_em, lote:lote_id(numero, cliente:cliente_id(nome)), op_itens(id, metros_pedidos, metros_ajustados)')
       .order('ano', { ascending: false })
       .order('numero', { ascending: false });
     if (error) { toast('Erro ao carregar OPs', 'error'); console.error(error); return; }
+    const eiRes = await supa.from('entrega_itens').select('op_id, metros_entregues, defeito');
+    if (eiRes.error) { toast('Erro ao carregar progresso', 'error'); console.error(eiRes.error); return; }
+    itensPorOpId = {};
+    for (const ei of (eiRes.data || [])) (itensPorOpId[ei.op_id] = itensPorOpId[ei.op_id] || []).push(ei);
     render(data || []);
   }
 
   let filtroTipo = 'todas';
+  let itensPorOpId = {};
+  function barraProgresso(pct) {
+    return el('div', { class: 'w-32' },
+      el('div', { class: 'h-2 bg-gray-200 rounded-full overflow-hidden' },
+        el('div', { class: 'h-2 bg-blue-600 rounded-full', style: `width:${pct}%` })),
+      el('div', { class: 'text-xs text-gray-500 mt-0.5' }, pct + '%'),
+    );
+  }
   function render(rows) {
     const header = pageHeader('Ordens de Produção', [{ label: '+ Nova OP', onclick: () => navigate('#/ops/nova') }]);
     const filtro = el('div', { class: 'flex gap-2 mb-3' },
@@ -1091,10 +1106,12 @@ async function screenListaOPs() {
       ? el('div', { class: 'bg-white rounded-xl shadow p-8 text-center text-gray-500' }, 'Nenhuma OP para este filtro.')
       : dataTable({
           columns: [
-            { key: 'lote', label: 'Lote', render: (r) => `Nº ${r.numero}/${r.ano}` },
+            { key: 'lote_op', label: 'OP', render: (r) => `Nº ${r.numero}/${r.ano}` },
             { key: 'tipo', label: 'Tipo', render: (r) => badgeTipo(r.tipo || 'tecelagem') },
+            { key: 'lote', label: 'Lote', render: (r) => r.lote ? `Nº ${r.lote.numero}` : '—' },
+            { key: 'cliente', label: 'Cliente', render: (r) => r.lote?.cliente?.nome || '—' },
             { key: 'status', label: 'Status', render: (r) => badgeStatus(r.status) },
-            { key: 'itens', label: 'Itens', render: (r) => String((r.op_itens || []).length) },
+            { key: 'progresso', label: 'Entregue', render: (r) => barraProgresso(percentualEntregueOP(r.op_itens || [], itensPorOpId[r.id] || [])) },
             { key: 'criado_em', label: 'Criada em', render: (r) => new Date(r.criado_em).toLocaleDateString('pt-BR') },
           ],
           rows: visiveis,
@@ -1112,16 +1129,18 @@ async function screenNovaOP(opId) {
   const container = el('div', {});
 
   // 1) Carrega dados de apoio
-  const [modelosRes, paramsRes, fornsRes] = await Promise.all([
+  const [modelosRes, paramsRes, fornsRes, clientesRes] = await Promise.all([
     supa.from('modelos').select('id, nome, largura, cor_1:cor_1_id(id,nome), cor_2:cor_2_id(id,nome)').order('nome'),
     supa.from('parametros_largura').select('*'),
     supa.from('fornecedores').select('id, nome, tipo').order('nome'),
+    supa.from('clientes').select('id, nome').order('nome'),
   ]);
-  if (modelosRes.error || paramsRes.error || fornsRes.error) {
+  if (modelosRes.error || paramsRes.error || fornsRes.error || clientesRes.error) {
     toast('Erro ao carregar dados da OP', 'error');
-    console.error(modelosRes.error || paramsRes.error || fornsRes.error);
+    console.error(modelosRes.error || paramsRes.error || fornsRes.error || clientesRes.error);
     return shellLayout(ADMIN_MENU, container);
   }
+  const clientesOptions = (clientesRes.data || []).map(c => ({ value: c.id, label: c.nome }));
   const modelos = modelosRes.data || [];
   const modelosById = Object.fromEntries(modelos.map(m => [m.id, m]));
   const parametrosByLargura = Object.fromEntries((paramsRes.data || []).map(p => [larguraKey(p.largura), p]));
@@ -1132,11 +1151,13 @@ async function screenNovaOP(opId) {
   let op = null;                 // OP existente (modo edição/leitura)
   let itens = [];                // [{ modeloId, metros }]
   let fornSel = { fio_algodao: '', fio_poliester: '', cima: '' };
+  let clienteSel = '';
   let opItensRaw = [];
   let ordens = [];
   let entregasCima = [];
   let latexOpPorEntrega = {};
   let cimaFornecedorId = null;
+  let fioFornSel = { fio_algodao: '', fio_poliester: '' };
   let latexOptions = [];
   let numero = '', ano = new Date().getFullYear();
   let readOnly = false;
@@ -1144,7 +1165,7 @@ async function screenNovaOP(opId) {
 
   if (opId) {
     const { data, error } = await supa.from('ops')
-      .select('id, numero, ano, status, tipo, observacao, origem_op_id, op_itens(id, modelo_id, metros_pedidos, metros_ajustados), op_fornecedores(fornecedor_id, etapa)')
+      .select('id, numero, ano, status, tipo, observacao, origem_op_id, lote_id, lote:lote_id(id, numero, cliente:cliente_id(id, nome)), op_itens(id, modelo_id, metros_pedidos, metros_ajustados), op_fornecedores(fornecedor_id, etapa)')
       .eq('id', opId).single();
     if (error || !data) {
       toast('OP não encontrada', 'error'); console.error(error);
@@ -1152,10 +1173,13 @@ async function screenNovaOP(opId) {
       return shellLayout(ADMIN_MENU, container);
     }
     op = data;
+    clienteSel = op.lote?.cliente?.id || '';
     if (op.tipo === 'latex') return await renderOPLatexAdmin(op.id);
     numero = data.numero; ano = data.ano;
     itens = (data.op_itens || []).map(i => ({ modeloId: i.modelo_id, metros: i.metros_pedidos }));
     for (const f of (data.op_fornecedores || [])) fornSel[f.etapa] = f.fornecedor_id;
+    fioFornSel.fio_algodao = (data.op_fornecedores || []).find(f => f.etapa === 'fio_algodao')?.fornecedor_id || '';
+    fioFornSel.fio_poliester = (data.op_fornecedores || []).find(f => f.etapa === 'fio_poliester')?.fornecedor_id || '';
     readOnly = data.status !== 'simulada';
     opItensRaw = data.op_itens || [];
     if (op.status !== 'simulada') {
@@ -1195,15 +1219,15 @@ async function screenNovaOP(opId) {
   async function persistir(status) {
     const numeroInt = parseInt(numero, 10), anoInt = parseInt(ano, 10);
     if (!numeroInt || !anoInt) { toast('Número e ano são obrigatórios', 'error'); return null; }
+    if (!clienteSel) { toast('Escolha o cliente', 'error'); return null; }
     const validos = itensValidos();
     if (validos.length === 0) { toast('Adicione ao menos 1 item com metros', 'error'); return null; }
 
-    if (status === 'aberta') {
-      const faltam = ['fio_algodao', 'fio_poliester', 'cima'].filter(e => !fornSel[e]);
-      if (faltam.length) { toast('Escolha os 3 fornecedores antes de abrir a OP', 'error'); return null; }
+    if (status === 'aberta' && !fornSel.cima) {
+      toast('Escolha o fornecedor de tecelagem antes de abrir a OP', 'error'); return null;
     }
 
-    // 1) upsert ops
+    // 1) upsert ops PRIMEIRO — evita lote órfão se o número da OP duplicar.
     let opRow;
     if (op) {
       const r = await supa.from('ops').update({ numero: numeroInt, ano: anoInt, status }).eq('id', op.id).select().single();
@@ -1216,6 +1240,26 @@ async function screenNovaOP(opId) {
     }
     const opIdSalvo = opRow.id;
 
+    // 2) lote: cria no 1º salvamento (OP nova ou legada sem lote); senão atualiza o
+    //    cliente. Liga em ops.lote_id. Numeração depende do UNIQUE(numero) de lotes.
+    let loteId = op?.lote_id || null;
+    if (loteId) {
+      const lu = await supa.from('lotes').update({ cliente_id: clienteSel }).eq('id', loteId);
+      if (lu.error) { toast('Erro ao atualizar lote', 'error'); console.error(lu.error); return null; }
+    } else {
+      const proxRes = await supa.from('lotes').select('numero').order('numero', { ascending: false }).limit(1);
+      if (proxRes.error) { toast('Erro ao ler lotes', 'error'); console.error(proxRes.error); return null; }
+      const prox = (proxRes.data && proxRes.data[0]) ? Number(proxRes.data[0].numero) + 1 : 1;
+      const li = await supa.from('lotes').insert({ numero: prox, cliente_id: clienteSel }).select().single();
+      if (li.error) {
+        if (!op) await supa.from('ops').delete().eq('id', opIdSalvo);  // limpa OP recém-criada
+        toast('Erro ao criar lote', 'error'); console.error(li.error); return null;
+      }
+      loteId = li.data.id;
+      const ou = await supa.from('ops').update({ lote_id: loteId }).eq('id', opIdSalvo);
+      if (ou.error) { toast('Erro ao vincular lote à OP', 'error'); console.error(ou.error); return null; }
+    }
+
     // 2) substitui op_itens
     await supa.from('op_itens').delete().eq('op_id', opIdSalvo);
     const itensPayload = validos.map(i => ({ op_id: opIdSalvo, modelo_id: i.modeloId, metros_pedidos: Number(i.metros) }));
@@ -1225,25 +1269,22 @@ async function screenNovaOP(opId) {
       toast('Erro ao salvar itens', 'error'); console.error(itensRes.error); return null;
     }
 
-    // 3) substitui op_fornecedores (apenas etapas escolhidas)
+    // 3) substitui op_fornecedores — só tecelagem na criação (fios são atribuídos depois)
     await supa.from('op_fornecedores').delete().eq('op_id', opIdSalvo);
-    const fornPayload = ['fio_algodao', 'fio_poliester', 'cima']
-      .filter(e => fornSel[e])
-      .map(e => ({ op_id: opIdSalvo, fornecedor_id: fornSel[e], etapa: e }));
-    if (fornPayload.length) {
-      const fornRes = await supa.from('op_fornecedores').insert(fornPayload);
+    if (fornSel.cima) {
+      const fornRes = await supa.from('op_fornecedores').insert([{ op_id: opIdSalvo, fornecedor_id: fornSel.cima, etapa: 'cima' }]);
       if (fornRes.error) {
         if (status === 'aberta') await supa.from('ops').update({ status: 'simulada' }).eq('id', opIdSalvo);
-        toast('Erro ao salvar fornecedores', 'error'); console.error(fornRes.error); return null;
+        toast('Erro ao salvar fornecedor de tecelagem', 'error'); console.error(fornRes.error); return null;
       }
     }
 
-    // 4) se abrir: gera ordens_compra_fio (com rollback de status em caso de falha)
+    // 4) se abrir: gera ordens_compra_fio SEM fornecedor (atribuído depois)
     if (status === 'aberta') {
       const calc = calcularFiosOP(validos, modelosById, parametrosByLargura);
       const ordens = montarOrdensCompraFio(calc).map(o => ({
         op_id: opIdSalvo,
-        fornecedor_id: o.tipo === 'algodao' ? fornSel.fio_algodao : fornSel.fio_poliester,
+        fornecedor_id: null,
         tipo: o.tipo, cor_id: o.cor_id, cor_poliester: o.cor_poliester,
         kg_pedido: o.kg_pedido, status: 'pendente',
       }));
@@ -1289,7 +1330,8 @@ async function screenNovaOP(opId) {
   }
 
   function buildScreen() {
-    const titulo = op ? `OP Nº ${op.numero}/${op.ano}` + (readOnly ? ' (leitura)' : ' (editar)') : 'Nova OP';
+    const loteTxt = op && op.lote ? ` · Lote Nº ${op.lote.numero} · ${op.lote.cliente?.nome || '—'}` : '';
+    const titulo = op ? `OP Nº ${op.numero}/${op.ano}${loteTxt}` + (readOnly ? ' (leitura)' : ' (editar)') : 'Nova OP';
     const wrap = el('div', {});
     wrap.appendChild(pageHeader(titulo, [{ label: '← Voltar', onclick: () => navigate('#/ops') }]));
 
@@ -1333,9 +1375,12 @@ async function screenNovaOP(opId) {
       }, '+ adicionar item'));
     }
 
-    left.appendChild(el('div', { class: 'font-semibold text-gray-700 mt-5 mb-2' }, 'Fornecedores'));
-    left.appendChild(buildFornField('Algodão', 'fio_algodao'));
-    left.appendChild(buildFornField('Poliéster', 'fio_poliester'));
+    left.appendChild(el('div', { class: 'font-semibold text-gray-700 mt-5 mb-2' }, 'Cliente'));
+    const clienteSelEl = disabledAttr(selectInput({ options: clientesOptions, value: clienteSel, placeholder: 'Selecione o cliente...' }));
+    clienteSelEl.addEventListener('change', () => { clienteSel = clienteSelEl.value ? Number(clienteSelEl.value) : ''; renderRight(); });
+    left.appendChild(formField({ label: 'Cliente', input: clienteSelEl }));
+
+    left.appendChild(el('div', { class: 'font-semibold text-gray-700 mt-5 mb-2' }, 'Fornecedor de tecelagem'));
     left.appendChild(buildFornField('Tecelagem (parte de cima)', 'cima'));
 
     return left;
@@ -1372,6 +1417,22 @@ async function screenNovaOP(opId) {
   function rotuloModelo(modelo) {
     if (!modelo) return '?';
     return `${modelo.nome} ${larguraKey(modelo.largura)}m · ${modelo.cor_1?.nome || '?'}/${modelo.cor_2?.nome || '?'}`;
+  }
+
+  async function atribuirFornecedorFio(etapa, tipo, fornecedorId) {
+    // etapa: 'fio_algodao'|'fio_poliester'; tipo: 'algodao'|'poliester'
+    if (!fornecedorId) { toast('Escolha um fornecedor', 'error'); return; }
+    const u = await supa.from('ordens_compra_fio')
+      .update({ fornecedor_id: fornecedorId })
+      .eq('op_id', op.id).eq('tipo', tipo);
+    if (u.error) { toast('Erro ao atribuir fornecedor às ordens', 'error'); console.error(u.error); return; }
+    const del = await supa.from('op_fornecedores').delete().eq('op_id', op.id).eq('etapa', etapa);
+    if (del.error) { toast('Erro ao remover vínculo anterior do fornecedor', 'error'); console.error(del.error); return; }
+    const ins = await supa.from('op_fornecedores').insert([{ op_id: op.id, fornecedor_id: fornecedorId, etapa }]);
+    if (ins.error) { toast('Erro ao vincular fornecedor', 'error'); console.error(ins.error); return; }
+    fioFornSel[etapa] = fornecedorId;
+    toast('Fornecedor atribuído', 'success');
+    await reloadOrdens();
   }
 
   async function reloadOrdens() {
@@ -1415,11 +1476,67 @@ async function screenNovaOP(opId) {
     );
   }
 
+  function gerarPdfCompraFios() {
+    const jsPDFCtor = window.jspdf && window.jspdf.jsPDF;
+    if (!jsPDFCtor) { toast('Biblioteca de PDF não carregou', 'error'); return; }
+    const g = agruparOrdensCompraFio(ordens);
+    const doc = new jsPDFCtor();
+    const loteTxt = op.lote ? `Lote Nº ${op.lote.numero} · ${op.lote.cliente?.nome || '—'}` : 'Lote —';
+    let y = 15;
+    doc.setFontSize(14); doc.text('Compra de fios', 14, y); y += 8;
+    doc.setFontSize(10);
+    doc.text(`${loteTxt}`, 14, y); y += 6;
+    doc.text(`OP Nº ${op.numero}/${op.ano} · ${new Date().toLocaleDateString('pt-BR')}`, 14, y); y += 10;
+
+    const secao = (titulo, lista, total) => {
+      doc.setFontSize(12); doc.text(titulo, 14, y); y += 6;
+      doc.setFontSize(10);
+      if (lista.length === 0) { doc.text('—', 18, y); y += 6; }
+      for (const it of lista) {
+        doc.text(`${it.rotulo}`, 18, y);
+        doc.text(`${it.kg.toFixed(3).replace('.', ',')} kg`, 120, y);
+        y += 6;
+      }
+      doc.setFont(undefined, 'bold');
+      doc.text(`Total ${titulo}: ${total.toFixed(3).replace('.', ',')} kg`, 18, y);
+      doc.setFont(undefined, 'normal');
+      y += 10;
+    };
+    secao('Algodão', g.algodao, g.totalAlgodao);
+    secao('Poliéster', g.poliester, g.totalPoliester);
+
+    doc.save(`compra-fios-OP-${op.numero}-${op.ano}.pdf`);
+  }
+
   function buildBlocoFios() {
     const box = el('div', { class: 'bg-white rounded-xl shadow p-5 mt-6' });
     box.appendChild(el('div', { class: 'font-semibold text-gray-700 mb-3' }, 'Recebimento de fios'));
 
+    if (ordens.length) {
+      box.appendChild(el('button', {
+        class: 'mb-3 text-sm text-blue-700 hover:underline',
+        onclick: () => gerarPdfCompraFios(),
+      }, '📄 PDF de compra de fios'));
+    }
+
     if (op.status === 'aberta') {
+      const temAlgodao = ordens.some(o => o.tipo === 'algodao');
+      const temPoliester = ordens.some(o => o.tipo === 'poliester');
+      const atribRow = el('div', { class: 'flex flex-wrap gap-4 mb-4' });
+      const buildAtrib = (label, etapa, tipo, temTipo) => {
+        if (!temTipo) return null;
+        const sel = selectInput({ options: fornsPorTipo(tipo), value: fioFornSel[etapa], placeholder: 'Selecione...' });
+        const btn = el('button', { class: 'bg-blue-700 hover:bg-blue-800 text-white text-sm font-semibold rounded-lg px-3 py-2',
+          onclick: () => atribuirFornecedorFio(etapa, tipo, sel.value ? Number(sel.value) : '') }, 'Atribuir');
+        return el('div', { class: 'flex items-end gap-2' },
+          el('div', { class: 'w-48' }, formField({ label, input: sel })), btn);
+      };
+      const a = buildAtrib('Fornecedor de algodão', 'fio_algodao', 'algodao', temAlgodao);
+      const p = buildAtrib('Fornecedor de poliéster', 'fio_poliester', 'poliester', temPoliester);
+      if (a) atribRow.appendChild(a);
+      if (p) atribRow.appendChild(p);
+      if (a || p) box.appendChild(atribRow);
+
       const pendentes = ordens.filter(o => o.status === 'pendente');
       const recebidas = ordens.filter(o => o.status !== 'pendente');
 
@@ -1839,7 +1956,9 @@ async function screenNovaOP(opId) {
     children.push(el('p', { class: 'text-sm mb-1' }, 'BRANCO: ', el('b', {}, fmt(calc.poliester.BRANCO))));
 
     if (!readOnly) {
-      const faltamForn = ['fio_algodao', 'fio_poliester', 'cima'].filter(e => !fornSel[e]);
+      const faltamForn = [];
+      if (!clienteSel) faltamForn.push('cliente');
+      if (!fornSel.cima) faltamForn.push('tecelagem');
       const btnSim = el('button', {
         class: 'w-full mt-5 mb-2 bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold rounded-lg py-2',
         onclick: salvarSimulacao,
@@ -1852,7 +1971,7 @@ async function screenNovaOP(opId) {
       }, 'Abrir OP');
       if (faltamForn.length) btnAbrir.setAttribute('disabled', 'disabled');
       children.push(btnSim, btnAbrir);
-      if (faltamForn.length) children.push(el('p', { class: 'text-xs text-gray-500 mt-1' }, 'Escolha os 3 fornecedores para abrir.'));
+      if (faltamForn.length) children.push(el('p', { class: 'text-xs text-gray-500 mt-1' }, 'Escolha cliente e fornecedor de tecelagem para abrir.'));
     }
 
     rightNode.replaceChildren(...children);
@@ -1869,7 +1988,7 @@ async function renderOPLatexAdmin(opId) {
 
   async function reload() {
     const opRes = await supa.from('ops')
-      .select('id, numero, ano, status, tipo, observacao, origem_op_id, op_itens(id, modelo_id, metros_pedidos), op_fornecedores(fornecedor_id, etapa, fornecedores:fornecedor_id(nome))')
+      .select('id, numero, ano, status, tipo, observacao, origem_op_id, lote:lote_id(numero, cliente:cliente_id(nome)), op_itens(id, modelo_id, metros_pedidos), op_fornecedores(fornecedor_id, etapa, fornecedores:fornecedor_id(nome))')
       .eq('id', opId).single();
     if (opRes.error) { toast('Erro ao carregar OP de látex', 'error'); console.error(opRes.error); return; }
     const op = opRes.data;
@@ -1905,6 +2024,7 @@ async function renderOPLatexAdmin(opId) {
 
     const info = el('div', { class: 'bg-white rounded-xl shadow p-5 mb-4' },
       el('div', { class: 'flex items-center gap-3 mb-2' }, badgeTipo('latex'), badgeStatus(op.status)),
+      op.lote ? el('div', { class: 'text-sm text-gray-700 mb-1' }, `Lote Nº ${op.lote.numero} · ${op.lote.cliente?.nome || '—'}`) : el('span', {}),
       op.observacao ? el('div', { class: 'text-sm text-gray-600' }, op.observacao) : el('span', {}),
     );
 
@@ -2100,6 +2220,71 @@ async function screenCadastrosCores() {
         const { error } = await supa.from('cores').delete().eq('id', cor.id);
         if (error) { toast('Cor está em uso (não dá pra excluir)', 'error'); console.error(error); return; }
         toast('Cor excluída', 'success');
+        reload();
+      }
+    });
+  }
+
+  await reload();
+  return shellLayout(ADMIN_MENU, container);
+}
+
+async function screenCadastrosClientes() {
+  const container = el('div', {});
+
+  async function reload() {
+    const { data, error } = await supa.from('clientes').select('*').order('nome');
+    if (error) { toast('Erro ao carregar clientes', 'error'); console.error(error); return; }
+    render(data || []);
+  }
+
+  function render(rows) {
+    container.replaceChildren(
+      pageHeader('Clientes', [{ label: '+ Novo cliente', onclick: () => openModal(null) }]),
+      dataTable({
+        columns: [
+          { key: 'id', label: 'ID' },
+          { key: 'nome', label: 'Nome' },
+        ],
+        rows,
+        actions: [
+          { label: 'Editar', onclick: (r) => openModal(r) },
+          { label: 'Excluir', class: 'text-red-600 hover:underline', onclick: (r) => confirmExcluir(r) },
+        ]
+      })
+    );
+  }
+
+  function openModal(cli) {
+    const isEdit = !!cli;
+    const nomeInput = textInput({ value: cli?.nome || '', placeholder: 'Ex: LOJA CENTRAL', required: true });
+    const body = el('div', {}, formField({ label: 'Nome', input: nomeInput }));
+    modal({
+      title: isEdit ? 'Editar cliente' : 'Novo cliente',
+      body,
+      onSave: async () => {
+        const nome = nomeInput.value.trim();
+        if (!nome) { toast('Nome é obrigatório', 'error'); return false; }
+        const payload = { nome };
+        const { error } = isEdit
+          ? await supa.from('clientes').update(payload).eq('id', cli.id)
+          : await supa.from('clientes').insert(payload);
+        if (error) { toast(error.message.includes('duplicate') ? 'Cliente já cadastrado' : 'Erro ao salvar', 'error'); console.error(error); return false; }
+        toast(isEdit ? 'Cliente atualizado' : 'Cliente criado', 'success');
+        reload();
+      }
+    });
+  }
+
+  function confirmExcluir(cli) {
+    confirmDialog({
+      title: 'Excluir cliente',
+      message: `Excluir "${cli.nome}"? Se algum lote usar esse cliente, a exclusão vai falhar.`,
+      confirmLabel: 'Excluir',
+      onConfirm: async () => {
+        const { error } = await supa.from('clientes').delete().eq('id', cli.id);
+        if (error) { toast('Cliente está em uso (não dá pra excluir)', 'error'); console.error(error); return; }
+        toast('Cliente excluído', 'success');
         reload();
       }
     });
