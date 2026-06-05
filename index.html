@@ -1142,6 +1142,7 @@ async function screenNovaOP(opId) {
   let entregasCima = [];
   let latexOpPorEntrega = {};
   let cimaFornecedorId = null;
+  let fioFornSel = { fio_algodao: '', fio_poliester: '' };
   let latexOptions = [];
   let numero = '', ano = new Date().getFullYear();
   let readOnly = false;
@@ -1162,6 +1163,8 @@ async function screenNovaOP(opId) {
     numero = data.numero; ano = data.ano;
     itens = (data.op_itens || []).map(i => ({ modeloId: i.modelo_id, metros: i.metros_pedidos }));
     for (const f of (data.op_fornecedores || [])) fornSel[f.etapa] = f.fornecedor_id;
+    fioFornSel.fio_algodao = (data.op_fornecedores || []).find(f => f.etapa === 'fio_algodao')?.fornecedor_id || '';
+    fioFornSel.fio_poliester = (data.op_fornecedores || []).find(f => f.etapa === 'fio_poliester')?.fornecedor_id || '';
     readOnly = data.status !== 'simulada';
     opItensRaw = data.op_itens || [];
     if (op.status !== 'simulada') {
@@ -1400,6 +1403,21 @@ async function screenNovaOP(opId) {
     return `${modelo.nome} ${larguraKey(modelo.largura)}m · ${modelo.cor_1?.nome || '?'}/${modelo.cor_2?.nome || '?'}`;
   }
 
+  async function atribuirFornecedorFio(etapa, tipo, fornecedorId) {
+    // etapa: 'fio_algodao'|'fio_poliester'; tipo: 'algodao'|'poliester'
+    if (!fornecedorId) { toast('Escolha um fornecedor', 'error'); return; }
+    const u = await supa.from('ordens_compra_fio')
+      .update({ fornecedor_id: fornecedorId })
+      .eq('op_id', op.id).eq('tipo', tipo);
+    if (u.error) { toast('Erro ao atribuir fornecedor às ordens', 'error'); console.error(u.error); return; }
+    await supa.from('op_fornecedores').delete().eq('op_id', op.id).eq('etapa', etapa);
+    const ins = await supa.from('op_fornecedores').insert([{ op_id: op.id, fornecedor_id: fornecedorId, etapa }]);
+    if (ins.error) { toast('Erro ao vincular fornecedor', 'error'); console.error(ins.error); return; }
+    fioFornSel[etapa] = fornecedorId;
+    toast('Fornecedor atribuído', 'success');
+    reloadOrdens();
+  }
+
   async function reloadOrdens() {
     if (!op || op.status === 'simulada') return;
     const r = await supa.from('ordens_compra_fio')
@@ -1446,6 +1464,23 @@ async function screenNovaOP(opId) {
     box.appendChild(el('div', { class: 'font-semibold text-gray-700 mb-3' }, 'Recebimento de fios'));
 
     if (op.status === 'aberta') {
+      const temAlgodao = ordens.some(o => o.tipo === 'algodao');
+      const temPoliester = ordens.some(o => o.tipo === 'poliester');
+      const atribRow = el('div', { class: 'flex flex-wrap gap-4 mb-4' });
+      const buildAtrib = (label, etapa, tipo, temTipo) => {
+        if (!temTipo) return null;
+        const sel = selectInput({ options: fornsPorTipo(tipo), value: fioFornSel[etapa], placeholder: 'Selecione...' });
+        const btn = el('button', { class: 'bg-blue-700 hover:bg-blue-800 text-white text-sm font-semibold rounded-lg px-3 py-2',
+          onclick: () => atribuirFornecedorFio(etapa, tipo, sel.value ? Number(sel.value) : '') }, 'Atribuir');
+        return el('div', { class: 'flex items-end gap-2' },
+          el('div', { class: 'w-48' }, formField({ label, input: sel })), btn);
+      };
+      const a = buildAtrib('Fornecedor de algodão', 'fio_algodao', 'algodao', temAlgodao);
+      const p = buildAtrib('Fornecedor de poliéster', 'fio_poliester', 'poliester', temPoliester);
+      if (a) atribRow.appendChild(a);
+      if (p) atribRow.appendChild(p);
+      if (a || p) box.appendChild(atribRow);
+
       const pendentes = ordens.filter(o => o.status === 'pendente');
       const recebidas = ordens.filter(o => o.status !== 'pendente');
 
