@@ -157,21 +157,22 @@ test('http.server responde em :8765 e index.html contém o esperado', async () =
   const { body } = await fetchIndexHtml();
   assert.equal(typeof body, 'string');
   assert.ok(body.length > 1000, 'index.html muito curto');
-  // A partir da SUPABASE-CLIENT-MODULE-A, a config vive em js/config.js
-  // e o client+write-guard vivem em js/supabase-client.js. O script
-  // inline começa agora no bloco ENV-BANNER.
+  // A partir da ENV-BANNER-MODULE-A, todo o bootstrap (config, client,
+  // write-guard, env-banner) vive em js/*.js. O script inline começa
+  // agora no bloco AUTH.
   assert.match(body, /js\/config\.js/);
   assert.match(body, /js\/supabase-client\.js/);
-  assert.match(body, /=== ENV-BANNER/);
+  assert.match(body, /js\/environment-banner\.js/);
   assert.match(body, /=== AUTH/);
 });
 
-test('script inline NÃO contém mais o client Supabase nem o write-guard', async () => {
+test('script inline NÃO contém mais o client Supabase nem o write-guard nem o env-banner', async () => {
   const { body } = await fetchIndexHtml();
   const inlineMatch = /<script(?![^>]*\bsrc=)[^>]*>([\s\S]*?)<\/script>/g.exec(body);
   const inline = inlineMatch[1];
   // O client e o write-guard foram extraídos para js/supabase-client.js.
-  // O script inline agora começa no bloco ENV-BANNER (banner laranja).
+  // O env-banner foi extraído para js/environment-banner.js.
+  // O script inline agora começa em === AUTH ===.
   assert.equal(/supabase\.createClient\s*\(/.test(inline), false,
     'script inline ainda chama supabase.createClient — client não foi extraído');
   assert.equal(/\b_supaRaw\b/.test(inline), false,
@@ -190,9 +191,13 @@ test('script inline NÃO contém mais o client Supabase nem o write-guard', asyn
     'script inline ainda define _wrapQueryBuilder — write-guard não foi extraído');
   assert.equal(/\bconst\s+supa\s*=/.test(inline), false,
     'script inline ainda define const supa — Proxy não foi extraído');
-  // O env-banner laranja permanece no inline (próxima fase: ENV-BANNER).
-  assert.match(inline, /=== ENV-BANNER/);
-  assert.match(inline, /_envBanner/);
+  // Env-banner (laranja) também não está mais no inline.
+  assert.equal(/=== ENV-BANNER/.test(inline), false,
+    'script inline ainda tem marcador === ENV-BANNER — env-banner não foi extraído');
+  assert.equal(/_envBanner/.test(inline), false,
+    'script inline ainda referencia _envBanner — env-banner não foi extraído');
+  // O inline deve começar com AUTH.
+  assert.match(inline, /=== AUTH/);
 });
 
 test('hostname grupoterrabranca.github.io → production (ref bhgifjrfagkzubpyqpew)', async () => {
@@ -335,38 +340,50 @@ test('index.html: nenhum password/senha em texto puro (password literal)', async
 });
 
 // ============================================================
-// Banner staging posicionado no RODAPÉ (fase STAGING-BANNER-BOTTOM-A)
+// Banner staging posicionado no RODAPÉ (fase STAGING-BANNER-BOTTOM-A).
+// A partir da ENV-BANNER-MODULE-A, o banner laranja vive em
+// js/environment-banner.js, não mais no script inline.
 // ============================================================
 
-test('STAGING-BANNER-BOTTOM: env-banner existe e tem o texto esperado', async () => {
-  const { body } = await fetchIndexHtml();
-  // Extrai o bloco que cria o env-banner
-  const match = body.match(/const _envBanner[\s\S]*?_envBanner\.textContent\s*=\s*'([^']+)'/);
-  assert.ok(match, 'bloco de criação do env-banner não encontrado');
-  const text = match[1];
-  assert.equal(text, 'AMBIENTE STAGING — DADOS DE TESTE. Não usar para operações reais.',
-    `texto do banner divergente: ${text}`);
+test('STAGING-BANNER-BOTTOM: env-banner existe em js/environment-banner.js com texto esperado', async () => {
+  const envBannerSrc = fs.readFileSync(path.join(ROOT, 'js', 'environment-banner.js'), 'utf8');
+  // Extrai o textContent do env-banner
+  const match = envBannerSrc.match(/_envBanner\.textContent\s*=\s*([^;]+);/);
+  assert.ok(match, 'textContent do env-banner não encontrado em js/environment-banner.js');
+  const expr = match[1].trim();
+  // O textContent agora é uma constante (ENV_BANNER_TEXT), não mais um literal.
+  // Validamos que a constante tem o texto correto.
+  assert.match(envBannerSrc, /ENV_BANNER_TEXT\s*=\s*\n?\s*'AMBIENTE STAGING — DADOS DE TESTE\. Não usar para operações reais\.'/);
 });
 
 test('STAGING-BANNER-BOTTOM: env-banner usa bottom:0 (não top:0)', async () => {
-  const { body } = await fetchIndexHtml();
+  const envBannerSrc = fs.readFileSync(path.join(ROOT, 'js', 'environment-banner.js'), 'utf8');
   // Extrai o style.cssText do env-banner
-  const match = body.match(/_envBanner\.style\.cssText\s*=\s*'([^']+)'/);
-  assert.ok(match, 'cssText do env-banner não encontrado');
+  const match = envBannerSrc.match(/_envBanner\.style\.cssText\s*=\s*'([^']+)'/);
+  assert.ok(match, 'cssText do env-banner não encontrado em js/environment-banner.js');
   const css = match[1];
   // Deve ter bottom:0
   assert.match(css, /bottom:0/, 'env-banner não tem bottom:0');
-  // NÃO deve ter top:0 (exceto o comentário que mencionava "topo" no passado)
-  // O style em si não deve usar top:0
+  // NÃO deve ter top:0 no cssText
   assert.equal(/\btop\s*:\s*0\b/.test(css), false, 'env-banner ainda tem top:0 no cssText');
 });
 
-test('STAGING-BANNER-BOTTOM: env-banner mantém z-index alto', async () => {
-  const { body } = await fetchIndexHtml();
-  const match = body.match(/_envBanner\.style\.cssText\s*=\s*'([^']+)'/);
-  assert.ok(match, 'cssText do env-banner não encontrado');
+test('STAGING-BANNER-BOTTOM: env-banner mantém z-index 99998', async () => {
+  const envBannerSrc = fs.readFileSync(path.join(ROOT, 'js', 'environment-banner.js'), 'utf8');
+  const match = envBannerSrc.match(/_envBanner\.style\.cssText\s*=\s*'([^']+)'/);
+  assert.ok(match, 'cssText do env-banner não encontrado em js/environment-banner.js');
   const css = match[1];
   assert.match(css, /z-index\s*:\s*99998/, 'env-banner perdeu o z-index 99998');
+});
+
+test('STAGING-BANNER-BOTTOM: env-banner preserva posição relativa ao write-guard banner', async () => {
+  const envBannerSrc = fs.readFileSync(path.join(ROOT, 'js', 'environment-banner.js'), 'utf8');
+  // Deve continuar verificando a presença do write-guard-banner e
+  // inserindo logo após ele (preservando empilhamento).
+  assert.match(envBannerSrc, /getElementById\(['"]write-guard-banner['"]\)/,
+    'env-banner não consulta write-guard-banner');
+  assert.match(envBannerSrc, /insertBefore\(_envBanner,\s*_wg\.nextSibling\)/,
+    'env-banner não insere relativo ao write-guard banner');
 });
 
 test('STAGING-BANNER-BOTTOM: write-guard banner continua no topo (agora em js/supabase-client.js)', async () => {

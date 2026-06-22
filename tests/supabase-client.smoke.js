@@ -69,10 +69,12 @@ function firstInlineScriptIndex(html) {
 }
 
 function stripComments(src) {
+  // IMPORTANTE: usar [^\n]* em vez de .*$ — em JS, $ em modo m ancora
+  // ao fim do string, não da linha. [^\n]* garante consumo até o \n.
   return src
     .replace(/\/\*[\s\S]*?\*\//g, '')
-    .replace(/^\s*\/\/.*$/gm, '')
-    .replace(/\s+\/\/.*$/gm, '');
+    .replace(/^[ \t]*\/\/[^\n]*/gm, '')
+    .replace(/[ \t]+\/\/[^\n]*/g, '');
 }
 
 // -----------------------------------------------------------------------------
@@ -211,12 +213,19 @@ test('script inline NÃO contém mais createClient, _supaRaw, _GUARD_BLOCK_WRITE
     'script inline ainda define const supa (Proxy)');
 });
 
-test('script inline mantém o env-banner laranja (próxima fase: ENV-BANNER)', () => {
+test('script inline NÃO contém mais o env-banner laranja (extraído para js/environment-banner.js)', () => {
   const inline = extractInlineScript(indexSrc);
-  assert.match(inline, /=== ENV-BANNER/);
-  assert.match(inline, /_envBanner/);
-  assert.match(inline, /AMBIENTE STAGING — DADOS DE TESTE/);
-  assert.match(inline, /bottom:0/);
+  // A partir da ENV-BANNER-MODULE-A, o banner laranja vive em
+  // js/environment-banner.js. O script inline agora começa em === AUTH ===.
+  assert.equal(/=== ENV-BANNER/.test(inline), false,
+    'script inline ainda tem marcador === ENV-BANNER — env-banner não foi extraído');
+  assert.equal(/_envBanner/.test(inline), false,
+    'script inline ainda referencia _envBanner — env-banner não foi extraído');
+  assert.equal(/AMBIENTE STAGING — DADOS DE TESTE/.test(inline), false,
+    'script inline ainda tem texto do env-banner — env-banner não foi extraído');
+  // O inline deve começar com AUTH (config/client/write-guard/banner
+  // foram todos extraídos).
+  assert.match(inline, /=== AUTH/);
 });
 
 test('js/supabase-client.js: produção ref aparece em production config (via config.js)', () => {

@@ -63,13 +63,23 @@ function setupSandbox() {
     setAttribute(k,v){ if(k==='class') this.className=v; }
     addEventListener(){} removeEventListener(){}
     replaceChildren(...ns){ this.children=[]; for(const n of ns.flat()){ if(n==null||n===false) continue; this.children.push(typeof n==='string'?{textContent:n,appendChild:()=>n,setAttribute:()=>{}}:n);} }
+    remove(){ this._removed = true; }
     get textContent(){ if(this._text!=null) return this._text; return this.children.map(c=>c.textContent||'').join(''); }
     set textContent(v){ this._text=v; }
   }
+  // `querySelector('#toasts')` é usado por `toast()` em js/ui.js.
+  // Antes da extração do env-banner, o erro síncrono de Supabase undefined
+  // abortava o main() antes de chegar no catch() que faz o appendChild.
+  // Agora o main() chega ao catch() assíncrono com mais frequência, e
+  // toast() precisa de #toasts. Retornar um FakeNode vazio aqui evita
+  // o unhandledRejection (o sandbox não tem DOM real, então a tolerância
+  // é a melhor opção).
+  const toastsNode = new FakeNode('div');
   const document = {
     createElement: (t) => new FakeNode(t),
     createTextNode: (t) => ({ textContent: t, appendChild(){}, setAttribute(){} }),
-    querySelector: () => null, querySelectorAll: () => [],
+    querySelector: (sel) => (sel === '#toasts' || sel === '#toasts, #toasts') ? toastsNode : new FakeNode('div'),
+    querySelectorAll: () => [],
     addEventListener: () => {}, removeEventListener: () => {},
     body: new FakeNode('body'),
   };

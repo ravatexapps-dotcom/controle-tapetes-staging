@@ -13,6 +13,7 @@
   <script src="js/badges.js"></script>
   <script src="js/config.js"></script>
   <script src="js/supabase-client.js"></script>
+  <script src="js/environment-banner.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" integrity="sha512-qZvrmS2ekKPF2mSznTQsxqPgnpkI4DNTlrdUmTzrDgektczlKNRRhy5X5AAOnx5S09ydFYWWNSfcEqDTTHgtNA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
   <style>
     body { font-family: 'Inter', sans-serif; }
@@ -26,47 +27,6 @@
 <div id="toasts" class="fixed bottom-4 right-4 space-y-2 z-50"></div>
 
 <script>
-// =====================================================================
-// === ENV-BANNER =====================================================
-// Banner visual para ambientes que NÃO são produção.
-// Laranja/amarelo, fixo no RODAPÉ da janela, não impede login.
-// (Movido para a fase ENV-BANNER-MODULE-A em outra iteração.
-//  Por ora, ainda vive aqui no script inline.)
-// O banner vermelho do write-guard vive em js/supabase-client.js;
-// o client Supabase, o write-guard e o Proxy `supa` também.
-// =====================================================================
-// Banner visual para ambientes que NÃO são produção.
-// Laranja/amarelo, fixo no RODAPÉ da janela, não impede login.
-if (APP_ENV !== 'production') {
-  console.info(
-    '%c[APP-ENV] ' + APP_CONFIG.label + ' — host: ' + (typeof location !== 'undefined' ? location.hostname : '(no location)'),
-    'background:#f59e0b;color:#000;padding:2px 6px;border-radius:3px;font-weight:bold;'
-  );
-  try {
-    if (typeof document !== 'undefined' && document.body) {
-      const _envBanner = document.createElement('div');
-      _envBanner.id = 'env-banner';
-      _envBanner.setAttribute('role', 'status');
-      _envBanner.style.cssText = 'position:fixed;bottom:0;left:0;right:0;z-index:99998;' +
-        'background:#f59e0b;color:#000;text-align:center;padding:6px 12px;' +
-        'font-family:Inter,system-ui,sans-serif;font-size:13px;font-weight:600;' +
-        'box-shadow:0 -1px 4px rgba(0,0,0,.2);';
-      _envBanner.textContent =
-        'AMBIENTE STAGING — DADOS DE TESTE. Não usar para operações reais.';
-      // Banner é independente do write-guard banner (que fica no topo e
-      // é criado por js/supabase-client.js). Insere no body (append) —
-      // fica no final do DOM, mas com position:fixed o ponto de inserção
-      // não afeta o posicionamento visual.
-      const _wg = document.getElementById('write-guard-banner');
-      if (_wg && _wg.parentNode) {
-        _wg.parentNode.insertBefore(_envBanner, _wg.nextSibling);
-      } else {
-        document.body.appendChild(_envBanner);
-      }
-    }
-  } catch (_) { /* DOM pode não estar pronto; banner é best-effort */ }
-}
-
 // =====================================================================
 // === AUTH ============================================================
 // =====================================================================
