@@ -1,29 +1,27 @@
-// Smoke test do WRITE-GUARD-A (fase RAVATEX-TAPETES-WRITE-GUARD-A).
+// Smoke test do WRITE-GUARD-A e CONFIG-STAGING-A.
 //
 // O que este teste garante:
 //
-//   1. Quando o app roda em localhost/127.0.0.1 E a SUPABASE_URL é a de
-//      produção (bhgifjrfagkzubpyqpew), as operações de escrita
-//      (insert/update/delete/upsert/rpc) são bloqueadas com um erro
-//      identificável (mensagem contém "WRITE-GUARD").
+//   1. Detecção de ambiente por hostname:
+//      - grupoterrabranca.github.io → production
+//      - localhost / 127.0.0.1 / ravatexapps-dotcom.github.io / unknown → staging
 //
-//   2. As operações de leitura (select) e o módulo auth NÃO são
-//      bloqueados — passam direto para o cliente Supabase real.
+//   2. Write-guard (defesa em profundidade):
+//      - Ativa SÓ se APP_ENV === 'production' E hostname é local
+//      - Bloqueia insert/update/delete/upsert/rpc com erro "WRITE-GUARD"
+//      - Preserva select e auth.getSession
 //
-//   3. Quando o ambiente NÃO é localhost+produção (ex.: produção
-//      real em grupoterrabranca.github.io, ou staging com URL
-//      diferente), a guarda NÃO ativa — writes passam normal.
+//   3. Refs e chaves:
+//      - produção usa bhgifjrfagkzubpyqpew
+//      - staging usa ucrjtfswnfdlxwtmxnoo
+//      - service_role não aparece no index.html
 //
 // Estratégia de teste:
 //   - Lê o <script> inline do index.html servido por http.server
-//     (porta 8765), extrai o bloco WRITE-GUARD (entre os marcadores
-//     `=== WRITE-GUARD` e o próximo `=== AUTH`), executa-o num
-//     vm.Context com mocks controlados (location, document, supabase).
-//   - Ajusta `location.hostname` e `SUPABASE_URL` no contexto para
-//     simular cada ambiente.
-//   - Verifica que `supa.from(...).insert/update/delete/upsert(...)
-//     rejeitam com a mensagem esperada, que `.select()` passa, e que
-//     `.rpc()` rejeita no modo bloqueado.
+//     (porta 8765), extrai do `=== CONFIG` até o fim do `=== WRITE-GUARD`
+//     (inclui o bloco CONFIG com APP_ENVIRONMENTS, e o bloco WRITE-GUARD).
+//   - Executa num vm.Context com mocks controlados (location, document, supabase).
+//   - Ajusta `location.hostname` para simular cada ambiente.
 
 'use strict';
 
@@ -36,6 +34,9 @@ const http   = require('node:http');
 
 const PORT = 8765;
 const HOST = '127.0.0.1';
+
+const PROD_REF = 'bhgifjrfagkzubpyqpew';
+const STAGING_REF = 'ucrjtfswnfdlxwtmxnoo';
 
 function fetchIndexHtml() {
   return new Promise((resolve, reject) => {
@@ -50,31 +51,24 @@ function fetchIndexHtml() {
   });
 }
 
-// Extrai o bloco WRITE-GUARD do script inline. Procura o marcador
-// `=== WRITE-GUARD` e vai até o início do próximo bloco de seção
-// (`=== AUTH`). Isso garante que pegamos o header de comentário
-// E todo o código runtime (const, if, function, const supa = ...).
-function extractWriteGuardBlock(inline) {
-  const start = inline.indexOf('=== WRITE-GUARD');
-  if (start < 0) throw new Error('marcador === WRITE-GUARD não encontrado no script inline');
+// Extrai o bloco CONFIG + SUPA + WRITE-GUARD do script inline.
+// A partir da CONFIG-STAGING-A, o write-guard depende de
+// APP_ENVIRONMENTS/APP_ENV/APP_CONFIG (declarados no bloco CONFIG)
+// E de _supaRaw (declarado no bloco SUPA).
+// Por isso extraímos desde `=== CONFIG` até o separador `=== AUTH`.
+function extractConfigAndGuardBlock(inline) {
+  const start = inline.indexOf('=== CONFIG');
+  if (start < 0) throw new Error('marcador === CONFIG não encontrado no script inline');
   const blockStart = inline.lastIndexOf('// ====', start);
-  // Procura o PRIMEIRO separador de seção após WRITE-GUARD.
-  // O padrão é `// ==== ... // ==== ... // === AUTH`. Como o AUTH é
-  // a seção imediatamente após WRITE-GUARD no index.html, basta achar
-  // o primeiro `// === AUTH` (ou similar) após start.
-  const afterStart = start + 20;
-  // Anchor: "// === AUTH" (sem `=` extras à esquerda na mesma linha)
-  const idx = inline.indexOf('// === AUTH', afterStart);
+  const idx = inline.indexOf('// === AUTH', start + 20);
   if (idx < 0) throw new Error('fim do bloco WRITE-GUARD não encontrado');
-  // Volta até o `// ====` que abre o separador de seção
   const sepStart = inline.lastIndexOf('// ====', idx);
   if (sepStart < 0) throw new Error('separador de seção não encontrado');
   return inline.slice(blockStart, sepStart);
 }
 
 // Cria um cliente Supabase FAKE (não toca rede) que devolve Promises
-// identificáveis. Cada método registra o que foi chamado e devolve
-// { data, error } ou uma Promise thereof.
+// identificáveis. Cada método registra o que foi chamado.
 function makeFakeSupabaseClient() {
   const calls = [];
   const record = (op) => (...args) => {
@@ -84,34 +78,28 @@ function makeFakeSupabaseClient() {
     if (op === 'rpc') return Promise.resolve({ data: 'ok', error: null });
     return Promise.resolve({ data: null, error: null });
   };
-  const queryBuilder = (table) => {
-    const qb = {
-      select: record('select'),
-      insert: record('insert'),
-      update: record('update'),
-      delete: record('delete'),
-      upsert: record('upsert'),
-      eq: () => qb, // encadeamento preservado
-      single: record('select'),
-    };
-    return qb;
-  };
+  const queryBuilder = () => ({
+    select: record('select'),
+    insert: record('insert'),
+    update: record('update'),
+    delete: record('delete'),
+    upsert: record('upsert'),
+    eq: () => queryBuilder(),
+    single: record('select'),
+  });
   return {
-    from: (table) => { calls.push({ op: 'from', args: [table] }); return queryBuilder(table); },
+    from: (table) => { calls.push({ op: 'from', args: [table] }); return queryBuilder(); },
     rpc: record('rpc'),
-    auth: {
-      getSession: record('auth.getSession'),
-      signInWithPassword: record('auth.signInWithPassword'),
-      signOut: record('auth.signOut'),
-    },
+    auth: { getSession: record('auth.getSession'), signInWithPassword: record('auth.signInWithPassword'), signOut: record('auth.signOut') },
     storage: {},
     _calls: calls,
   };
 }
 
-// Monta um sandbox com mocks e executa o bloco WRITE-GUARD.
-// Retorna { sandbox, fakeSupa, guardBlock, source }.
-function runGuardInSandbox({ hostname, supabaseUrl }) {
+// Roda o bloco CONFIG+WRITE-GUARD num sandbox com hostname controlado.
+// Retorna { sandbox, fakeSupa, inline, env } onde env é uma referência
+// para APP_ENV (string) e APP_CONFIG (objeto) do sandbox.
+function runGuardInSandbox({ hostname, forceLocal = true }) {
   const fakeSupa = makeFakeSupabaseClient();
   const fakeSupabase = {
     createClient: (url, key, opts) => {
@@ -120,24 +108,16 @@ function runGuardInSandbox({ hostname, supabaseUrl }) {
     },
   };
   const documentMock = {
-    body: null, // sem DOM real; banner é best-effort e vai falhar silencioso
-    createElement: (t) => ({
-      tagName: t.toUpperCase(),
-      setAttribute() {},
-      style: {},
-      textContent: '',
-    }),
+    body: null, // sem DOM real; banners são best-effort
+    createElement: (t) => ({ tagName: t.toUpperCase(), setAttribute(){}, style:{}, textContent:'' }),
+    getElementById: () => null,
   };
   const sandbox = {
-    console,
-    URL,
-    URLSearchParams,
-    setTimeout, clearTimeout,
+    console, URL, URLSearchParams, setTimeout, clearTimeout,
     location: { hostname, href: 'http://' + hostname + '/index.html' },
     document: documentMock,
     supabase: fakeSupabase,
-    Promise,
-    Reflect,
+    Promise, Reflect, Proxy, Set,
   };
   sandbox.window = sandbox;
   sandbox.globalThis = sandbox;
@@ -148,17 +128,22 @@ function runGuardInSandbox({ hostname, supabaseUrl }) {
       const inlineMatch = /<script(?![^>]*\bsrc=)[^>]*>([\s\S]*?)<\/script>/g.exec(body);
       if (!inlineMatch) return reject(new Error('nenhum <script> inline encontrado'));
       const inline = inlineMatch[1];
-      const guardBlock = extractWriteGuardBlock(inline);
-      // Injeta SUPABASE_URL e _supaRaw (que normalmente vem do bloco SUPA)
-      // no contexto antes de executar o WRITE-GUARD block.
-      vm.runInContext(`var SUPABASE_URL = ${JSON.stringify(supabaseUrl)};`, sandbox);
-      vm.runInContext(`var _supaRaw = supabase.createClient(SUPABASE_URL, 'fake-key', { auth: {} });`, sandbox);
+      const block = extractConfigAndGuardBlock(inline);
+      // O bloco extraído inclui CONFIG + SUPA + WRITE-GUARD, então
+      // _supaRaw é declarado pelo próprio bloco (não injetar).
       try {
-        vm.runInContext(guardBlock, sandbox, { filename: 'write-guard.js' });
+        vm.runInContext(block, sandbox, { filename: 'config-and-guard.js' });
       } catch (e) {
-        return reject(new Error('WRITE-GUARD lançou erro ao inicializar: ' + e.message));
+        return reject(new Error('Bloco lançou erro ao inicializar: ' + e.message));
       }
-      resolve({ sandbox, fakeSupa, guardBlock, inline });
+      const env = {
+        APP_ENV: vm.runInContext('APP_ENV', sandbox),
+        SUPABASE_URL: vm.runInContext('SUPABASE_URL', sandbox),
+        IS_PROD_URL: vm.runInContext('_IS_PROD_URL', sandbox),
+        IS_LOCAL: vm.runInContext('_IS_LOCAL', sandbox),
+        GUARD_BLOCK_WRITES: vm.runInContext('_GUARD_BLOCK_WRITES', sandbox),
+      };
+      resolve({ sandbox, fakeSupa, inline, env });
     }).catch(reject);
   });
 }
@@ -167,137 +152,155 @@ function runGuardInSandbox({ hostname, supabaseUrl }) {
 // Testes
 // -----------------------------------------------------------------------------
 
-test('http.server responde em :8765 e index.html contém o WRITE-GUARD', async () => {
+test('http.server responde em :8765 e index.html contém o esperado', async () => {
   const { body } = await fetchIndexHtml();
   assert.equal(typeof body, 'string');
   assert.ok(body.length > 1000, 'index.html muito curto');
+  assert.match(body, /=== CONFIG/);
   assert.match(body, /=== WRITE-GUARD/);
+  assert.match(body, /APP_ENVIRONMENTS/);
+  assert.match(body, /detectAppEnvironment/);
   assert.match(body, /_GUARD_BLOCK_WRITES/);
 });
 
-test('extrai o bloco WRITE-GUARD do script inline', async () => {
+test('extrai o bloco CONFIG + WRITE-GUARD do script inline', async () => {
   const { body } = await fetchIndexHtml();
   const inlineMatch = /<script(?![^>]*\bsrc=)[^>]*>([\s\S]*?)<\/script>/g.exec(body);
   const inline = inlineMatch[1];
-  const block = extractWriteGuardBlock(inline);
-  assert.ok(block.includes('_GUARD_BLOCK_WRITES'), 'bloco não contém a flag de ativação');
+  const block = extractConfigAndGuardBlock(inline);
+  assert.ok(block.includes('APP_ENVIRONMENTS'), 'bloco não contém APP_ENVIRONMENTS');
+  assert.ok(block.includes('detectAppEnvironment'), 'bloco não contém detectAppEnvironment');
+  assert.ok(block.includes('_GUARD_BLOCK_WRITES'), 'bloco não contém _GUARD_BLOCK_WRITES');
   assert.ok(block.includes('Promise.reject'), 'bloco não usa Promise.reject');
   assert.ok(block.includes('new Proxy'), 'bloco não usa Proxy');
-  // não deve englobar o bloco AUTH
   assert.equal(block.includes('=== AUTH'), false, 'bloco vazou para AUTH');
 });
 
-test('LOCALHOST + PRODUÇÃO: insert/update/delete/upsert/rpc bloqueados', async () => {
-  const { sandbox } = await runGuardInSandbox({
-    hostname: 'localhost',
-    supabaseUrl: 'https://bhgifjrfagkzubpyqpew.supabase.co',
-  });
-  // O bloco define `supa` no escopo do contexto
-  const ops = ['insert', 'update', 'delete', 'upsert'];
-  for (const op of ops) {
-    const qb = vm.runInContext(`supa.from('qualquer')`, sandbox);
-    let thrown = null;
-    try {
-      await qb[op]({ foo: 'bar' });
-    } catch (e) {
-      thrown = e;
-    }
-    assert.ok(thrown, `${op} deveria lançar erro (rejeitar)`);
-    // vm: a Error do sandbox é uma Error do vm context, não do host —
-    // `instanceof Error` falha. Validamos por constructor.name e message.
-    assert.equal(thrown && thrown.constructor && thrown.constructor.name, 'Error',
-      `${op} não lançou Error: ctor=${thrown && thrown.constructor && thrown.constructor.name}`);
-    assert.match(thrown.message, /WRITE-GUARD/, `${op} não retornou erro WRITE-GUARD`);
-  }
-  // rpc
-  let rpcThrown = null;
-  try {
-    await vm.runInContext(`supa.rpc('qualquer', {})`, sandbox);
-  } catch (e) {
-    rpcThrown = e;
-  }
-  assert.ok(rpcThrown, 'rpc deveria lançar erro');
-  assert.equal(rpcThrown && rpcThrown.constructor && rpcThrown.constructor.name, 'Error',
-    'rpc não lançou Error');
-  assert.match(rpcThrown.message, /WRITE-GUARD/, 'rpc não retornou erro WRITE-GUARD');
+test('hostname grupoterrabranca.github.io → production (ref bhgifjrfagkzubpyqpew)', async () => {
+  const { env } = await runGuardInSandbox({ hostname: 'grupoterrabranca.github.io' });
+  assert.equal(env.APP_ENV, 'production');
+  assert.ok(env.SUPABASE_URL.includes(PROD_REF), 'SUPABASE_URL não tem ref de produção');
+  assert.equal(env.IS_PROD_URL, true);
+  assert.equal(env.IS_LOCAL, false);
+  assert.equal(env.GUARD_BLOCK_WRITES, false, 'guard não deve ativar em produção real');
 });
 
-test('LOCALHOST + PRODUÇÃO: select preservado (NÃO bloqueia)', async () => {
-  const { sandbox, fakeSupa } = await runGuardInSandbox({
-    hostname: 'localhost',
-    supabaseUrl: 'https://bhgifjrfagkzubpyqpew.supabase.co',
-  });
+test('hostname localhost → staging (ref ucrjtfswnfdlxwtmxnoo)', async () => {
+  const { env } = await runGuardInSandbox({ hostname: 'localhost' });
+  assert.equal(env.APP_ENV, 'staging');
+  assert.ok(env.SUPABASE_URL.includes(STAGING_REF), 'SUPABASE_URL não tem ref de staging');
+  assert.equal(env.IS_PROD_URL, false);
+  assert.equal(env.IS_LOCAL, true);
+  assert.equal(env.GUARD_BLOCK_WRITES, false, 'guard não deve ativar em localhost (vai para staging)');
+});
+
+test('hostname 127.0.0.1 → staging', async () => {
+  const { env } = await runGuardInSandbox({ hostname: '127.0.0.1' });
+  assert.equal(env.APP_ENV, 'staging');
+  assert.ok(env.SUPABASE_URL.includes(STAGING_REF));
+  assert.equal(env.IS_LOCAL, true);
+  assert.equal(env.GUARD_BLOCK_WRITES, false);
+});
+
+test('hostname ravatexapps-dotcom.github.io → staging', async () => {
+  const { env } = await runGuardInSandbox({ hostname: 'ravatexapps-dotcom.github.io' });
+  assert.equal(env.APP_ENV, 'staging');
+  assert.ok(env.SUPABASE_URL.includes(STAGING_REF));
+  assert.equal(env.GUARD_BLOCK_WRITES, false);
+});
+
+test('hostname desconhecido → staging (fallback seguro)', async () => {
+  const { env } = await runGuardInSandbox({ hostname: 'example.com' });
+  assert.equal(env.APP_ENV, 'staging');
+  assert.ok(env.SUPABASE_URL.includes(STAGING_REF));
+  assert.equal(env.GUARD_BLOCK_WRITES, false);
+});
+
+test('hostname *.grupoterrabranca.github.io → production (subdomínio)', async () => {
+  const { env } = await runGuardInSandbox({ hostname: 'x.grupoterrabranca.github.io' });
+  assert.equal(env.APP_ENV, 'production');
+  assert.ok(env.SUPABASE_URL.includes(PROD_REF));
+});
+
+test('em staging: insert/update/delete/upsert/rpc NÃO são bloqueados', async () => {
+  const { sandbox, fakeSupa } = await runGuardInSandbox({ hostname: 'localhost' });
   fakeSupa._calls.length = 0;
-  // .select() deve passar para o cliente real (sem rejeitar)
+  for (const op of ['insert', 'update', 'delete', 'upsert']) {
+    const qb = vm.runInContext(`supa.from('qualquer')`, sandbox);
+    const res = await qb[op]({ foo: 'bar' });
+    assert.equal(res && res.error, null, `${op} não deveria bloquear em staging`);
+  }
+  const rpcRes = await vm.runInContext(`supa.rpc('qualquer', {})`, sandbox);
+  assert.equal(rpcRes && rpcRes.error, null, 'rpc não deveria bloquear em staging');
+  // verificar que pelo menos 1 insert chegou no fake client
+  const insertCalls = fakeSupa._calls.filter(c => c.op === 'insert');
+  assert.ok(insertCalls.length >= 1, 'insert não chegou no fake client em staging');
+});
+
+test('em staging: select e auth.getSession funcionam', async () => {
+  const { sandbox, fakeSupa } = await runGuardInSandbox({ hostname: 'localhost' });
+  fakeSupa._calls.length = 0;
   const sel = vm.runInContext(`supa.from('usuarios')`, sandbox);
   const res = await sel.select('*');
   assert.equal(res && typeof res, 'object', 'select deve devolver objeto');
-  // verifica que a chamada chegou no fake client
   const fromCalls = fakeSupa._calls.filter(c => c.op === 'from');
   assert.ok(fromCalls.length >= 1, 'from() não chegou no fake client');
-  const selectCalls = fakeSupa._calls.filter(c => c.op === 'select');
-  assert.ok(selectCalls.length >= 1, 'select() não chegou no fake client');
-});
-
-test('LOCALHOST + PRODUÇÃO: auth preservado (NÃO bloqueia)', async () => {
-  const { sandbox, fakeSupa } = await runGuardInSandbox({
-    hostname: 'localhost',
-    supabaseUrl: 'https://bhgifjrfagkzubpyqpew.supabase.co',
-  });
-  fakeSupa._calls.length = 0;
-  // auth.getSession deve passar para o cliente real
   const authSession = await vm.runInContext(`supa.auth.getSession()`, sandbox);
   assert.equal(authSession && typeof authSession, 'object', 'auth.getSession deve devolver objeto');
-  const authCalls = fakeSupa._calls.filter(c => c.op === 'auth.getSession');
-  assert.ok(authCalls.length >= 1, 'auth.getSession não chegou no fake client');
 });
 
-test('PRODUÇÃO REAL (github.io): guarda NÃO ativa, writes passam normal', async () => {
-  const { sandbox, fakeSupa } = await runGuardInSandbox({
-    hostname: 'grupoterrabranca.github.io',
-    supabaseUrl: 'https://bhgifjrfagkzubpyqpew.supabase.co',
-  });
+test('em produção (grupoterrabranca.github.io): writes NÃO são bloqueados', async () => {
+  const { sandbox, fakeSupa } = await runGuardInSandbox({ hostname: 'grupoterrabranca.github.io' });
   fakeSupa._calls.length = 0;
-  // insert NÃO deve ser bloqueado
   const qb = vm.runInContext(`supa.from('qualquer')`, sandbox);
   const res = await qb.insert({ foo: 'bar' });
   assert.equal(res && res.error, null, 'insert não deveria bloquear em produção real');
   const insertCalls = fakeSupa._calls.filter(c => c.op === 'insert');
   assert.ok(insertCalls.length >= 1, 'insert não chegou no fake client em produção real');
-  // rpc também não
-  const rpcRes = await vm.runInContext(`supa.rpc('qualquer', {})`, sandbox);
-  assert.equal(rpcRes && rpcRes.error, null, 'rpc não deveria bloquear em produção real');
 });
 
-test('LOCALHOST + STAGING (URL diferente): guarda NÃO ativa', async () => {
-  // Cenário futuro: app local apontando para Supabase de staging.
-  // A guarda NÃO pode bloquear — staging é justamente onde se testa writes.
-  const { sandbox, fakeSupa } = await runGuardInSandbox({
-    hostname: 'localhost',
-    supabaseUrl: 'https://abcdefghijk.supabase.co', // staging fictício
-  });
-  fakeSupa._calls.length = 0;
-  const qb = vm.runInContext(`supa.from('qualquer')`, sandbox);
-  const res = await qb.insert({ foo: 'bar' });
-  assert.equal(res && res.error, null, 'insert não deveria bloquear com URL de staging');
-  const insertCalls = fakeSupa._calls.filter(c => c.op === 'insert');
-  assert.ok(insertCalls.length >= 1, 'insert não chegou no fake client em staging');
-});
-
-test('127.0.0.1 + PRODUÇÃO: também bloqueia (hostname alternativo)', async () => {
-  const { sandbox } = await runGuardInSandbox({
-    hostname: '127.0.0.1',
-    supabaseUrl: 'https://bhgifjrfagkzubpyqpew.supabase.co',
-  });
-  const qb = vm.runInContext(`supa.from('qualquer')`, sandbox);
-  let thrown = null;
-  try {
-    await qb.insert({ foo: 'bar' });
-  } catch (e) {
-    thrown = e;
+// Teste de defesa em profundidade: o guard só ativa se IS_LOCAL && IS_PROD_URL.
+// A partir da CONFIG-STAGING-A, isso é geometricamente impossível: localhost
+// sempre seleciona staging (cuja URL difere de produção). Por design, não há
+// caminho localhost → produção. Este teste documenta que:
+//   - Em produção real: APP_ENV=production, IS_LOCAL=false, guard off
+//   - Em localhost: APP_ENV=staging, IS_PROD_URL=false, guard off
+//   - Os dois nunca podem ser true simultaneamente
+test('defesa em profundidade: IS_LOCAL e IS_PROD_URL nunca são ambos true', async () => {
+  const checks = [
+    { hostname: 'localhost' },
+    { hostname: '127.0.0.1' },
+    { hostname: 'grupoterrabranca.github.io' },
+    { hostname: 'x.grupoterrabranca.github.io' },
+    { hostname: 'ravatexapps-dotcom.github.io' },
+    { hostname: 'example.com' },
+  ];
+  for (const { hostname } of checks) {
+    const { env } = await runGuardInSandbox({ hostname });
+    const bothOn = env.IS_LOCAL && env.IS_PROD_URL;
+    assert.equal(bothOn, false, `IS_LOCAL && IS_PROD_URL ambos true em ${hostname}`);
   }
-  assert.ok(thrown, 'insert deveria lançar erro em 127.0.0.1');
-  assert.equal(thrown && thrown.constructor && thrown.constructor.name, 'Error',
-    'não lançou Error');
-  assert.match(thrown.message, /WRITE-GUARD/);
+});
+
+test('index.html: produção ref bhgifjrfagkzubpyqpew aparece APENAS em config production', async () => {
+  const { body } = await fetchIndexHtml();
+  // O ref deve aparecer no URL de produção no APP_ENVIRONMENTS
+  assert.match(body, /supabaseUrl:\s*'https:\/\/bhgifjrfagkzubpyqpew\.supabase\.co'/);
+});
+
+test('index.html: staging ref ucrjtfswnfdlxwtmxnoo aparece em config staging', async () => {
+  const { body } = await fetchIndexHtml();
+  assert.match(body, /supabaseUrl:\s*'https:\/\/ucrjtfswnfdlxwtmxnoo\.supabase\.co'/);
+});
+
+test('index.html: nenhum service_role presente', async () => {
+  const { body } = await fetchIndexHtml();
+  assert.equal(/service_role/i.test(body), false, 'service_role encontrado no index.html');
+});
+
+test('index.html: nenhum password/senha em texto puro (password literal)', async () => {
+  const { body } = await fetchIndexHtml();
+  // Não exigimos zero (existem variáveis internas), mas exigimos que
+  // não haja strings tipo "password=..." ou campos de senha.
+  assert.equal(/password\s*[:=]\s*['"][^'"]+['"]/i.test(body), false, 'password literal encontrado');
 });

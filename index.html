@@ -26,9 +26,42 @@
 <script>
 // =====================================================================
 // === CONFIG ==========================================================
+// Ambientes suportados. Produção só é escolhida por hostname explícito
+// (grupoterrabranca.github.io). Qualquer outro host (localhost, 127.0.0.1,
+// ravatexapps-dotcom.github.io, ou host desconhecido) cai em staging.
 // =====================================================================
-const SUPABASE_URL = 'https://bhgifjrfagkzubpyqpew.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJoZ2lmanJmYWdrenVicHlxcGV3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkxMTcxMjYsImV4cCI6MjA5NDY5MzEyNn0.5Y94S2QdYNE7Nt5WcvjzkXes1pa3tZgxe3eaWkasya8';
+const APP_ENVIRONMENTS = {
+  production: {
+    name: 'production',
+    label: 'PRODUÇÃO',
+    supabaseUrl: 'https://bhgifjrfagkzubpyqpew.supabase.co',
+    supabaseAnonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJoZ2lmanJmYWdrenVicHlxcGV3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkxMTcxMjYsImV4cCI6MjA5NDY5MzEyNn0.5Y94S2QdYNE7Nt5WcvjzkXes1pa3tZgxe3eaWkasya8',
+    isProduction: true,
+  },
+  staging: {
+    name: 'staging',
+    label: 'STAGING',
+    supabaseUrl: 'https://ucrjtfswnfdlxwtmxnoo.supabase.co',
+    supabaseAnonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVjcmp0ZnN3bmZkbHh3dG14bm9vIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIwNzQ5OTMsImV4cCI6MjA5NzY1MDk5M30.4y41y8w8l4VElfQUQ_QpIp4zOW1n5za-1_ekyv_v6aw',
+    isProduction: false,
+  },
+};
+
+function detectAppEnvironment(hostname) {
+  const host = String(hostname || '').toLowerCase();
+  if (host === 'grupoterrabranca.github.io' || host.endsWith('.grupoterrabranca.github.io')) {
+    return 'production';
+  }
+  return 'staging';
+}
+
+const APP_ENV = detectAppEnvironment(
+  (typeof window !== 'undefined' && window.location) ? window.location.hostname : ''
+);
+const APP_CONFIG = APP_ENVIRONMENTS[APP_ENV];
+
+const SUPABASE_URL = APP_CONFIG.supabaseUrl;
+const SUPABASE_ANON_KEY = APP_CONFIG.supabaseAnonKey;
 
 // =====================================================================
 // === SUPA ============================================================
@@ -40,13 +73,14 @@ const _supaRaw = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
 // =====================================================================
 // === WRITE-GUARD ====================================================
 // Bloqueia insert/update/delete/upsert/rpc quando o app roda em
-// localhost/127.0.0.1 e a URL do Supabase é a de produção
-// (bhgifjrfagkzubpyqpew). Preserva select, auth, navegação e leitura.
+// localhost/127.0.0.1 e a URL do Supabase selecionada é a de produção.
+// Preserva select, auth, navegação e leitura.
 // Em produção real (grupoterrabranca.github.io) a guarda NÃO ativa.
+// Em staging a guarda também NÃO ativa (staging é para testar writes).
 // =====================================================================
-const _IS_LOCAL = (typeof location !== 'undefined')
-  && (location.hostname === 'localhost' || location.hostname === '127.0.0.1');
-const _IS_PROD_URL = SUPABASE_URL.includes('bhgifjrfagkzubpyqpew');
+const _LOCAL_HOSTS = new Set(['localhost', '127.0.0.1']);
+const _IS_LOCAL = (typeof location !== 'undefined') && _LOCAL_HOSTS.has(location.hostname);
+const _IS_PROD_URL = SUPABASE_URL === APP_ENVIRONMENTS.production.supabaseUrl;
 const _GUARD_BLOCK_WRITES = _IS_LOCAL && _IS_PROD_URL;
 
 const _WG_ERROR = () => new Error(
@@ -73,6 +107,35 @@ if (_GUARD_BLOCK_WRITES) {
         'LOCAL APONTANDO PARA PRODUÇÃO — WRITES BLOQUEADOS (insert/update/delete/upsert/rpc). ' +
         'Reads e login funcionam normalmente.';
       document.body.prepend(_banner);
+    }
+  } catch (_) { /* DOM pode não estar pronto; banner é best-effort */ }
+}
+
+// Banner visual para ambientes que NÃO são produção.
+// Laranja/amarelo, fixo no topo, não impede login.
+if (APP_ENV !== 'production') {
+  console.info(
+    '%c[APP-ENV] ' + APP_CONFIG.label + ' — host: ' + (typeof location !== 'undefined' ? location.hostname : '(no location)'),
+    'background:#f59e0b;color:#000;padding:2px 6px;border-radius:3px;font-weight:bold;'
+  );
+  try {
+    if (typeof document !== 'undefined' && document.body) {
+      const _envBanner = document.createElement('div');
+      _envBanner.id = 'env-banner';
+      _envBanner.setAttribute('role', 'status');
+      _envBanner.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:99998;' +
+        'background:#f59e0b;color:#000;text-align:center;padding:6px 12px;' +
+        'font-family:Inter,system-ui,sans-serif;font-size:13px;font-weight:600;' +
+        'box-shadow:0 1px 4px rgba(0,0,0,.2);';
+      _envBanner.textContent =
+        'AMBIENTE STAGING — DADOS DE TESTE. Não usar para operações reais.';
+      // Insere DEPOIS do write-guard banner se existir, ou no topo se não existir
+      const _wg = document.getElementById('write-guard-banner');
+      if (_wg && _wg.parentNode) {
+        _wg.parentNode.insertBefore(_envBanner, _wg.nextSibling);
+      } else {
+        document.body.prepend(_envBanner);
+      }
     }
   } catch (_) { /* DOM pode não estar pronto; banner é best-effort */ }
 }
