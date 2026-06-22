@@ -167,3 +167,55 @@ Ideias mencionadas, **ainda não iniciadas** (sem decisão fechada):
 - **Design e planos:** `docs/superpowers/specs/` e `docs/superpowers/plans/`
 - **Checklists de QA:** `docs/qa/`
 - **Schema do banco:** `db/01_schema.sql` (ou `setup_completo.sql` pra montar do zero)
+
+## 12. Sandbox/Staging (resumo)
+
+A partir de 2026-06-22 o projeto tem **sandbox + staging** prontos para uso
+em feature work e QA. **Produção intocada desde 4ae6bb7** (WRITE-GUARD-A).
+
+### Refs canônicos
+
+- **Produção Supabase:** `bhgifjrfagkzubpyqpew`
+- **Staging Supabase:** `ucrjtfswnfdlxwtmxnoo`
+- **Repo oficial:** `https://github.com/grupoterrabranca/controle-tapetes.git`
+- **Repo sandbox:** `https://github.com/ravatexapps-dotcom/controle-tapetes-staging.git`
+
+> ⚠️ O ref de produção foi digitado errado em alguns logs de fase
+> (`bhgifjrfagkezubpyqpew`). **Não é ref válido.** O correto é
+> `bhgifjrfagkzubpyqpew`.
+
+### Como rodar local contra staging
+
+```bash
+# 1. Servir o app
+cd "D:\OneDrive\Programação\Ravatex\controle-tapetes"
+python -m http.server 8765
+
+# 2. Abrir no navegador
+# http://localhost:8765/index.html
+# O banner laranja de staging aparece automaticamente.
+# O login usa staging (não produção).
+```
+
+### Regra de ambiente
+
+- `localhost` / `127.0.0.1` → **staging**
+- `grupoterrabranca.github.io` → **produção**
+- Qualquer outro host → **staging** (fallback seguro)
+
+### Proibição de writes em produção
+
+> **Writes em produção só devem acontecer via deploy do app oficial em
+> `grupoterrabranca.github.io`.** Writes locais em localhost **vão para
+> staging** (nunca produção). Writes via psql com URL de produção estão
+> proibidos em qualquer fase que não seja um incidente documentado.
+
+### Writes permitidos em staging
+
+Insert/select/delete em tabelas de cadastro (`cores`, `modelos`, `clientes`)
+são permitidos em staging como parte de smoke/feature work, com cleanup
+automático (marker `RAVATEX_STAGING_SMOKE_*` para rastreabilidade).
+
+### Detalhes completos
+
+Ver [`docs/STAGING_BASELINE.md`](STAGING_BASELINE.md).

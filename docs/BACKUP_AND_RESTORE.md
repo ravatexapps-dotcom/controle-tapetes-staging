@@ -98,3 +98,28 @@ Migrações na ordem: `01_schema` → `02_functions` → `03_policies` → `04_s
 
 > ⚠️ Não foi possível confirmar se o schema do banco real bate 100% com `db/*.sql` (sem acesso ao
 > banco). A primeira restauração de validação (camada 2) serve também para detectar drift.
+
+---
+
+## Restore em Staging (referência)
+
+Em 2026-06-22 o backup `2026-06-21_2054_prod/` foi restaurado no Supabase
+staging `ucrjtfswnfdlxwtmxnoo` (ref canônico) para uso em feature work.
+Detalhes completos em [`docs/STAGING_BASELINE.md`](STAGING_BASELINE.md).
+
+Resumo do procedimento de restore em staging (referência):
+
+```powershell
+$env:Path = "C:\Program Files\PostgreSQL\17\bin;$env:Path"
+$stagingRef = "ucrjtfswnfdlxwtmxnoo"
+$dbConnStaging = "host=db.$stagingRef.supabase.co port=5432 dbname=postgres user=postgres sslmode=require"
+
+# Sanitizar dumps (remover \restrict/\unrestrict; remover CREATE SCHEMA public;)
+# Restaurar: psql $dbConnStaging -f schema_public.staging.sql
+# Restaurar: psql $dbConnStaging -f auth_users.staging.sql
+# Restaurar: psql $dbConnStaging -f data_public.staging.sql
+```
+
+> **Senha nunca em URL.** Use `$env:PGPASSWORD` antes de `psql`.
+> **Sempre safety-check** contra o ref de produção (`bhgifjrfagkzubpyqpew`)
+> antes de qualquer restore.
