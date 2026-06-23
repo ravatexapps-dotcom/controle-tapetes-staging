@@ -5,20 +5,45 @@
 > Convenção: **tudo em português brasileiro**.
 
 ## Estado atual aceito
-- **Estado atual aceito:** `work/app-next @ 4c18fe7`.
-- **staging/main:** `4c18fe7` (sincronizado).
+- **Estado atual aceito:** `work/app-next @ 7f3c6da`.
+- **staging/main:** `7f3c6da01013d372bbef19b4e03db5076251c564`
+  (sincronizado).
 - **Working tree esperado:** **limpo**.
-- **origin/main oficial:** **intocado** durante todo o refactor.
-- **PR #2:** **intocado** durante todo o refactor.
+- **origin/main oficial:** `1047181eba888242c6428de366cbd9fda2f1c72c`
+  — **intocado** durante todo o ciclo de refactor/hardening.
+- **PR #2:** **intocado** durante todo o ciclo.
 - **Produção (grupoterrabranca.github.io):** **preservada** — não
-  recebeu nenhum push de refactor.
+  recebeu nenhum push de refactor/hardening.
 - **Supabase real:** **não acessado** em nenhuma fase de refactor
   (todos os testes rodam com `vm.runInContext` + `fakeSupa` mockado).
+  A única leitura real foi uma contagem `select count(*) from
+  public.ops` manual em staging (4 OPs).
 
 ## Estado operacional atual
-- `index.html` está declarativo e sem script inline final.
-- `js/boot.js` é o entrypoint oficial do app.
-- `js/router.js` é engine genérica e não foi alterado na fase de boot.
+- `index.html` está declarativo, sem script inline final, com
+  cache-busting `?v=20260623-asset1` em 23 assets locais.
+- `js/boot.js` é o entrypoint oficial; respeita DOM ready
+  (`startApp` aguarda `DOMContentLoaded` se
+  `document.readyState === 'loading'`).
+- `js/router.js` é engine genérica e não foi alterado no ciclo.
+- `js/ui.js` faz lookup lazy do root `#app` via `getAppRoot()` —
+  `replaceChildren null` foi eliminado após cache limpo.
+- `js/screens/op-pdf.js` foi extraído de `op-nova.js` em
+  `7f3c6da` (`RAVATEX-TAPETES-OP-NOVA-PDF-MODULE-A`).
+- `run-local.bat` é o tooling local para servir o app em
+  `http://localhost:8765/`.
+
+## Decisão arquitetural vigente
+**REFATORAÇÃO ARQUITETURAL CONGELADA.**
+
+Próxima fase esperada é **homologação / release**, **não** nova
+extração em `op-nova.js`. Em particular, **NÃO iniciar** novas fases
+como `RAVATEX-TAPETES-OP-BLOCO-FIOS-DIAG-A`,
+`RAVATEX-TAPETES-OP-PROPOSTA-DIAG-A` ou
+`RAVATEX-TAPETES-TRANSACTION-RISK-DIAG-A` sem nova instrução
+explícita do dono do projeto: o refactor está fechado e essas
+sugestões são **opcionais** (vide `docs/refactor/ARCHITECTURE_REFACTOR_LEDGER.md`
+seção 9).
 
 ## Comandos de verificação (rodar antes de qualquer patch)
 
@@ -30,13 +55,16 @@ git branch --show-current
 git rev-parse --short HEAD
 git remote -v
 git ls-remote --heads staging main
+git ls-remote --heads origin main
 ```
 
 Abortar e revisar o escopo se:
 - branch != `work/app-next`;
-- HEAD != `4c18fe7`;
+- HEAD != `7f3c6da`;
 - working tree não estiver limpo;
-- `staging/main` != `4c18fe7`.
+- `staging/main` != `7f3c6da01013d372bbef19b4e03db5076251c564`;
+- `origin/main` != `1047181eba888242c6428de366cbd9fda2f1c72c`
+  (qualquer mudança em `origin/main` é regressão grave).
 
 ## Regras (NÃO renegocia)
 
@@ -56,12 +84,15 @@ Abortar e revisar o escopo se:
 8. **Não mexer** em `aplicarRecalculoOP` ou `persistirOP` sem
    nova fase explícita.
 9. **Não fazer docs + código na mesma fase.**
+10. **Não iniciar nova extração em `op-nova.js`** (refactor
+    congelado). Próxima ação é homologação/release, não refactor.
 
 ## Módulos principais e responsabilidades
 
-### `boot.js` (RAVATEX-TAPETES-ROUTES-BOOT-MODULE-A)
+### `boot.js` (RAVATEX-TAPETES-ROUTES-BOOT-MODULE-A + 87d4559)
 - Registra rotas via `window.RAVATEX_ROUTER.setRoutes` (15 rotas).
-- Executa `main()`.
+- Executa `main()` via `startApp()` (que aguarda `DOMContentLoaded`
+  se `document.readyState === 'loading'`).
 - Registra `hashchange` listener.
 - Carrega usuário atual via `window.loadCurrentUser`.
 - Direciona para `navigate('#/login')`, `handleRoute()` ou
@@ -71,12 +102,24 @@ Abortar e revisar o escopo se:
 ### `op-nova.js` (RAVATEX-TAPETES-SCREENNOVAOP-MODULE-A)
 - `screenNovaOP` (closure inteira com `~20` subfunções aninhadas).
 - UI/estado da Nova OP.
-- Proposta, blocos de fios, tecelagem, PDF, wrappers de
+- Proposta, blocos de fios, tecelagem, wrappers de
   persistência/recálculo.
+- Call-site de PDF: `window.gerarPdfCompraFios({ op, ordens })`.
+- **NÃO** contém mais a função `gerarPdfCompraFios` (extraída em
+  `7f3c6da`).
 - Mantém read-only em Supabase (apenas `.select()`).
 - Writes delegados: `window.persistirOP`, `window.aplicarRecalculoOP`,
   `window.registrarRecebimentoOrdemFio`,
   `window.atribuirFornecedorFioOp`, `window.renderOPLatexAdmin`.
+
+### `op-pdf.js` (RAVATEX-TAPETES-OP-NOVA-PDF-MODULE-A)
+- `gerarPdfCompraFios({ op, ordens })` — helper puro, sem closure.
+- Usa `window.jspdf.jsPDF` (CDN) e `window.agruparOrdensCompraFio`
+  (de `calculo-op.js`).
+- Fallback `toast` quando jsPDF ausente.
+- Exports: `window.gerarPdfCompraFios` e
+  `window.RAVATEX_SCREENS.opPdf.gerarPdfCompraFios`.
+- Não toca Supabase, não muta DOM.
 
 ### `op-persistir.js` (RAVATEX-TAPETES-OP-PERSISTIR-MODULE-A)
 - Helpers puros de persistência: `itensValidosOP`,
@@ -93,27 +136,34 @@ Abortar e revisar o escopo se:
   select/update/insert, `ops.update status='em_producao'`).
   Retorna envelope `{ error, step, partial }`.
 
+### `ui.js` (87d4559 + e0dbfcd)
+- `el`, `toast`, `pageHeader`, `textInput`, `selectInput`,
+  `formField`, `dataTable`, `modal`, `confirmDialog`, `shellLayout`,
+  `ADMIN_MENU`.
+- `getAppRoot()` — lookup lazy do root `#app`.
+
 ## Próxima recomendação operacional
 
 **Não iniciar novo refactor funcional imediatamente.**
-**Próxima fase recomendada: revisão/validação final ou decisão de
-publicação/homologação em staging.**
+**Próxima fase recomendada: homologação / decisão de release.**
 
-O refactor arquitetural principal está concluído. Antes de iniciar
-qualquer novo trabalho:
+O ciclo de refactor arquitetural + hardening + extração final do
+`op-pdf.js` está **congelado**. Antes de iniciar qualquer novo
+trabalho:
 - Validar a tela Nova OP em homologação staging.
 - Confirmar que todos os fluxos de admin e fornecedor continuam
   funcionais.
-- Decidir se a próxima publicação vai para `origin/main` (produção) ou
-  se há ajustes pendentes.
+- Decidir se a próxima publicação vai para `origin/main` (produção)
+  ou se há ajustes pendentes.
+- Tratar pendências Supabase / cadastro de usuário em fase própria,
+  não dentro do refactor.
 
 ## Possíveis fases futuras opcionais (NÃO obrigatórias)
 
 Estas fases **não** fazem parte do fechamento do refactor. São
-apenas sugestões para trabalho futuro, se houver benefício prático:
+apenas sugestões para trabalho futuro, se houver benefício prático
+**e** autorização explícita do dono do projeto:
 
-- **`RAVATEX-TAPETES-OP-PDF-MODULE-A`** — extrair `gerarPdfCompraFios`
-  para `js/screens/op-pdf.js`. Benefício: isola a dependência de jsPDF.
 - **`RAVATEX-TAPETES-OP-BLOCO-FIOS-DIAG-A`** — diagnosticar
   `buildBlocoFios` (montagem do bloco de recebimento de fios).
 - **`RAVATEX-TAPETES-OP-PROPOSTA-DIAG-A`** — diagnosticar
@@ -122,6 +172,9 @@ apenas sugestões para trabalho futuro, se houver benefício prático:
 - **`RAVATEX-TAPETES-TRANSACTION-RISK-DIAG-A`** — avaliar uso de
   RPC/transações Supabase para `persistirOP` e `aplicarRecalculoOP`
   (risco de produto/dados, não de refactor).
+
+> **Nota:** `RAVATEX-TAPETES-OP-PDF-MODULE-A` foi **executada** em
+> `7f3c6da`; não está mais em backlog.
 
 ## Proibições operacionais
 
@@ -132,8 +185,14 @@ apenas sugestões para trabalho futuro, se houver benefício prático:
 - **Não fazer docs + código na mesma fase.**
 - **Não tratar cortes opcionais como obrigatórios** (sugestões acima
   são apenas para futuro).
+- **Não iniciar nova extração em `op-nova.js`** (refactor
+  congelado em `7f3c6da`).
+- **Não remover o cache-busting `?v=20260623-asset1`** de `index.html`
+  (proteção contra navegador servindo JS antigo).
+- **Não remover `getAppRoot()`** de `js/ui.js` (proteção contra
+  `replaceChildren null` no boot).
 
-## Resumo do refactor (20 módulos extraídos)
+## Resumo do refactor (21 módulos extraídos)
 
 | # | Módulo | Commit | Fase |
 |---|---|---|---|
@@ -157,23 +216,26 @@ apenas sugestões para trabalho futuro, se houver benefício prático:
 | 18 | `js/screens/op-persistir.js` | `8fd4dd2` (+ `cac20f9`) | OP-PERSISTIR-HELPERS-MODULE-A (+ OP-PERSISTIR-WRITES-MODULE-A) |
 | 19 | `js/screens/op-nova.js` | `ce3dd14` | SCREENNOVAOP-MODULE-A |
 | 20 | `js/boot.js` | `4c18fe7` | ROUTES-BOOT-MODULE-A |
+| 21 | `js/screens/op-pdf.js` | `7f3c6da` | RAVATEX-TAPETES-OP-NOVA-PDF-MODULE-A |
 
 ## Testes recentes (focados passando)
-- `painel-screen.smoke.js` — 16/16
+- `op-pdf.smoke.js` — 20/20
+- `op-nova.smoke.js` — 30/30
 - `op-recalculo.smoke.js` — 59/59
 - `op-persistir.smoke.js` — 65/65
 - `op-writes.smoke.js` — 49/49
 - `op-latex-admin.smoke.js` — 30/30
 - `op-form-helpers.smoke.js` — 36/36
-- `op-nova.smoke.js` — 30/30
-- `boot.smoke.js` — 20/20
+- `boot.smoke.js` — 54/54
 - `router.smoke.js` — 34/34
-- `fornecedor-screens.smoke.js` — 29/29
-- **Total:** 368/368
+- `painel-screen.smoke.js` — 16/16
+- `fornecedor-screens.smoke.js` — 35/35
+- **Total:** 388/388
 
 Pré-existentes dependentes de `http.server :8765`: 6 falhas em
 `tests/index-inline.smoke.js` e 17 em `tests/write-guard.smoke.js`
-— não relacionadas ao refactor; exigem servidor local.
+— não relacionadas ao refactor; exigem servidor local
+(`.\run-local.bat` ou `python -m http.server 8765`).
 
 ## Comandos seguros por fase
 
@@ -186,6 +248,7 @@ node --test tests/<X>.smoke.js
 node --test tests/boot.smoke.js \
               tests/router.smoke.js \
               tests/op-nova.smoke.js \
+              tests/op-pdf.smoke.js \
               tests/op-persistir.smoke.js \
               tests/op-recalculo.smoke.js \
               tests/op-writes.smoke.js \
@@ -208,7 +271,11 @@ node --test tests/boot.smoke.js \
 - Tentar mover `renderOPLatexAdmin` para outro módulo (já está
   isolada em `op-latex-admin.js`).
 - Tentar mover `screenPainel` (já está isolada em `painel.js`).
+- Tentar mover `gerarPdfCompraFios` (já está isolada em `op-pdf.js`).
 - Rodar `git add .` (sempre stage seletivo por arquivo).
 - Mexer no PR #2.
-- Tratar fases opcionais (PDF, bloco fios, proposta, transaction
-  risk) como obrigatórias.
+- Tratar fases opcionais (bloco fios, proposta, transaction risk)
+  como obrigatórias.
+- Iniciar nova extração em `op-nova.js` (refactor congelado).
+- Remover cache-busting `?v=20260623-asset1` de `index.html`.
+- Remover `getAppRoot()` de `js/ui.js`.

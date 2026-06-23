@@ -2,8 +2,10 @@
 
 > Ledger de fases do refactor arquitetural de
 > `D:\OneDrive\Programação\Ravatex\controle-tapetes`.
-> Última atualização: 2026-06-23 (HEAD `4c18fe7`,
-> fase `RAVATEX-TAPETES-REFACTOR-FINAL-DOCS-A`).
+> Última atualização: 2026-06-23 (HEAD `7f3c6da`,
+> fase `RAVATEX-TAPETES-REFACTOR-FINAL-DOCS-B` — fechamento
+> consolidado do ciclo de refactor + hardening + diagnóstico +
+> extração final do `op-pdf.js`).
 
 ## 1. Premissas corrigidas
 - **App estático**, não Next/Vercel.
@@ -78,7 +80,14 @@
 | REFACTOR-STATE-DOCS-C | `78cd93d` | `PROJECT_STATE.md`, `AGENT_HANDOFF.md`, `docs/refactor/ARCHITECTURE_REFACTOR_LEDGER.md` | docs-only | aceito |
 | SCREENNOVAOP-MODULE-A | `ce3dd14` | `js/screens/op-nova.js` | 314/314 | aceito |
 | ROUTES-BOOT-MODULE-A | `4c18fe7` | `js/boot.js` | 368/368 | aceito |
-| REFACTOR-FINAL-DOCS-A | (a criar) | `PROJECT_STATE.md`, `AGENT_HANDOFF.md`, `docs/refactor/ARCHITECTURE_REFACTOR_LEDGER.md` | docs-only | esta fase |
+| REFACTOR-FINAL-DOCS-A | (após `4c18fe7`) | `PROJECT_STATE.md`, `AGENT_HANDOFF.md`, `docs/refactor/ARCHITECTURE_REFACTOR_LEDGER.md` | docs-only | aceito |
+| ADD-LOCAL-RUN-SCRIPT | `d5db6c7` | `run-local.bat` (tooling) | n/a | aceito |
+| DELAY-APP-BOOT-DOM-READY | `87d4559` | `js/boot.js` (startApp + DOMContentLoaded) | 368/368 | aceito |
+| RESOLVE-APP-ROOT-LOOKUP | `e0dbfcd` | `js/ui.js` (getAppRoot) | 368/368 | aceito |
+| CACHE-BUSTING-LOCAL-ASSETS | `5d5b395` | `index.html` (?v=20260623-asset1) + smokes | 368/368 | aceito |
+| OP-NOVA-SEAMS-DIAG-A | (read-only) | `js/screens/op-nova.js` (análise) | n/a | aceito |
+| OP-NOVA-PDF-MODULE-A | `7f3c6da` | `js/screens/op-pdf.js` | 388/388 | aceito |
+| REFACTOR-FINAL-DOCS-B | (a criar) | `PROJECT_STATE.md`, `AGENT_HANDOFF.md`, `docs/refactor/ARCHITECTURE_REFACTOR_LEDGER.md` | docs-only | esta fase |
 
 ## 5. Ressalvas processuais aceitas em `FORNECEDOR-SCREENS-MODULE-A` (commit `4b9ca12`)
 
@@ -170,6 +179,76 @@
   boot chain com `screenPainel` carregado). 368/368 testes focados
   passaram.
 
+## 5c. Ressalvas processuais aceitas no ciclo de hardening + extração final (pós-`4c18fe7`)
+
+- **`ADD-LOCAL-RUN-SCRIPT` (commit `d5db6c7`)**: adicionou
+  `run-local.bat` para servir o app via
+  `python -m http.server 8765` (com fallback `py -3`). Tooling
+  opcional; sem alteração funcional no app. Pré-condição para
+  validar a UI localmente após mudanças de boot.
+- **`DELAY-APP-BOOT-DOM-READY` (commit `87d4559`)**: corrigiu o bug
+  em que `main()` era executado no top-level de `js/boot.js` antes
+  de `DOMContentLoaded`, gerando `replaceChildren` em `null` quando
+  `setApp` ainda não havia resolvido o root. Mudança: `main()` foi
+  movido para `startApp()`, que checa
+  `document.readyState === 'loading'` e adiciona um listener
+  `DOMContentLoaded` se necessário. staging/main recebeu o patch;
+  origin/main intocado.
+- **`RESOLVE-APP-ROOT-LOOKUP` (commit `e0dbfcd`)**: `setApp` em
+  `js/ui.js` foi refatorado para fazer lookup lazy do root `#app`
+  via `getAppRoot()`. Após o cache limpo do navegador (Disable cache
+  + Ctrl+F5), o erro `replaceChildren null` desapareceu. origin/main
+  intocado.
+- **`CACHE-BUSTING-LOCAL-ASSETS` (commit `5d5b395`)**: `index.html`
+  passou a versionar 23 assets locais com `?v=20260623-asset1`.
+  CDNs externos (Tailwind, Google Fonts, Supabase, jspdf) foram
+  preservados **sem** `?v=`. Os smoke tests `boot.smoke.js` e
+  `router.smoke.js` foram adaptados para aceitar a query string.
+  staging/main recebeu o patch; origin/main intocado.
+- **`OP-NOVA-SEAMS-DIAG-A` (read-only)**: diagnóstico das seams
+  de `js/screens/op-nova.js`. Achados:
+  - 831 linhas; sem writes Supabase diretos.
+  - Writes já estavam em `op-persistir`, `op-recalculo`,
+    `op-writes`.
+  - `gerarPdfCompraFios` foi a **única** extração de baixo risco
+    identificada.
+  - `buildBlocoFios`, `buildBlocoTecelagem` e `buildProposta`
+    foram classificadas como acoplamento médio-alto/alto à
+    closure, **não recomendadas** para extração neste ciclo.
+  - Recomendação: extrair apenas o PDF e congelar o refactor.
+- **`OP-NOVA-PDF-MODULE-A` (commit `7f3c6da`)**: criou
+  `js/screens/op-pdf.js` com `gerarPdfCompraFios({ op, ordens })`,
+  sem dependência da closure de `op-nova.js`. Exports:
+  `window.gerarPdfCompraFios` e
+  `window.RAVATEX_SCREENS.opPdf.gerarPdfCompraFios`. O call-site em
+  `buildBlocoFios` foi atualizado para
+  `window.gerarPdfCompraFios({ op, ordens })`. `index.html` carrega
+  `op-pdf.js` antes de `op-nova.js` (e depois de
+  `op-persistir.js`). 8 smoke tests foram corrigidos para aceitar
+  o cache-busting `?v=`. 388/388 testes focados passaram. staging
+  recebeu o patch; origin/main intocado.
+
+## 5d. Decisão arquitetural — congelamento do refactor
+
+A partir de `7f3c6da`, o ciclo de refactor + hardening + extração
+final está **CONGELADO**.
+
+Justificativa:
+- `index.html` está declarativo, com cache-busting local.
+- `js/boot.js` é o entrypoint e respeita DOM ready.
+- `js/router.js` é engine genérica.
+- `js/ui.js` tem root lookup seguro (`getAppRoot`).
+- Telas e writes críticos estão modularizados.
+- `op-pdf.js` foi extraído.
+- `op-nova.js` ainda é grande (~800 linhas), mas **sem writes
+  Supabase diretos** e com closure aceitável.
+- Extrair `buildBlocoFios`, `buildBlocoTecelagem` ou
+  `buildProposta` agora **deslocaria complexidade** para a fronteira
+  da closure sem ganho proporcional, e **aumentaria risco**.
+
+Próxima fase esperada: **homologação / release**, não nova
+extração.
+
 ## 6. Módulos extraídos (lista canônica)
 
 | Módulo | Commit de extração | Fase |
@@ -194,11 +273,15 @@
 | `js/screens/op-persistir.js` | `8fd4dd2` (+ `cac20f9`) | OP-PERSISTIR-HELPERS-MODULE-A (+ OP-PERSISTIR-WRITES-MODULE-A) |
 | `js/screens/op-nova.js` | `ce3dd14` | SCREENNOVAOP-MODULE-A |
 | `js/boot.js` | `4c18fe7` | ROUTES-BOOT-MODULE-A |
+| `js/screens/op-pdf.js` | `7f3c6da` | RAVATEX-TAPETES-OP-NOVA-PDF-MODULE-A |
 
-## 7. Inline remanescente em `index.html` (após `4c18fe7`)
+## 7. Inline remanescente em `index.html` (após `7f3c6da`)
 
 **NENHUM.** `index.html` agora é puramente declarativo: HTML +
-ordem de scripts. Não há `<script>` inline final.
+ordem de scripts. Não há `<script>` inline final. Todos os 23 assets
+locais carregam com `?v=20260623-asset1` (cache-busting); CDNs
+externos (Tailwind, Google Fonts, Supabase, jspdf) permanecem sem
+`?v=`.
 
 `screenPainel` foi extraída para `js/screens/painel.js`.
 `renderOPLatexAdmin` foi extraída para `js/screens/op-latex-admin.js`.
@@ -207,31 +290,50 @@ ordem de scripts. Não há `<script>` inline final.
 writes agora são executados por `aplicarRecalculoOP` e `persistirOP`
 respectivamente.
 `setRoutes` e `main` foram extraídos para `js/boot.js`.
+`gerarPdfCompraFios` foi extraída para `js/screens/op-pdf.js`.
 
-## 8. Fechamento do refactor arquitetural
+Ordem de scripts (relevante): `op-persistir.js` → `op-pdf.js` →
+`op-nova.js` → `jspdf CDN` → `boot.js`.
+
+## 8. Fechamento do ciclo de refactor + hardening + extração final
 
 ### Marcos
-- **Marco:** `index.html` sem inline final (47 linhas declarativas).
+- **Marco:** `index.html` sem inline final (declarativo) e com
+  cache-busting `?v=20260623-asset1` em 23 assets locais.
+- **Marco:** `js/boot.js` é o entrypoint e respeita DOM ready
+  (`startApp` aguarda `DOMContentLoaded` se
+  `document.readyState === 'loading'`).
+- **Marco:** `js/router.js` é engine genérica, intocado no ciclo.
+- **Marco:** `js/ui.js` tem root lookup seguro (`getAppRoot`).
 - **Marco:** rotas e bootstrap extraídos para `js/boot.js`.
 - **Marco:** `tests/router.smoke.js` corrigido para nova arquitetura,
   34/34 pass.
+- **Marco:** `op-pdf.js` extraído de `op-nova.js` (única extração
+  recomendada pelo `OP-NOVA-SEAMS-DIAG-A`).
 - **Marco:** app estático agora tem separação clara entre HTML, boot,
   router, screens, writes e cálculo.
+- **Marco:** refactor + hardening + extração final **CONGELADO**
+  em `7f3c6da` (vide seção 5d).
 
 ### Estrutura final
-- **`index.html`** — HTML declarativo + ordem de scripts.
-- **`js/boot.js`** — setRoutes + main + main().catch (entrypoint).
+- **`index.html`** — HTML declarativo + ordem de scripts + cache-busting
+  local.
+- **`js/boot.js`** — setRoutes + main + startApp + main().catch
+  (entrypoint, respeita DOM ready).
 - **`js/router.js`** — engine genérica de roteamento.
+- **`js/ui.js`** — helpers de UI com `getAppRoot` (lookup lazy).
 - **`js/screens/`** — telas e writes auxiliares.
 - **`js/calculo-op.js`** — cálculo de domínio.
 - **`js/auth.js`, `js/config.js`, `js/supabase-client.js`,
-  `js/environment-banner.js`, `js/ui.js`, `js/badges.js`** —
-  infraestrutura de suporte.
+  `js/environment-banner.js`, `js/badges.js`** — infraestrutura de
+  suporte.
 
 ### Ressalvas
-- `op-nova.js` permanece grande (`~831` linhas) e com closure
-  complexa, mas agora isolado em módulo próprio. Continua
-  funcional.
+- `op-nova.js` permanece grande (`~800` linhas) e com closure
+  complexa, mas agora isolado em módulo próprio e **sem writes
+  Supabase diretos**. Continua funcional. **Extração adicional de
+  fios/tecelagem/proposta não está recomendada neste ciclo**
+  (vide seção 5d).
 - `persistirOP` e `aplicarRecalculoOP` continuam sem transação
   cross-table. A ausência de transação é **risco de
   produto/dados**, **não** regressão do refactor.
@@ -245,25 +347,37 @@ respectivamente.
   anteriores.
 - O backdoor `*@tapetes.test` (ver histórico de D1) ainda depende
   de ação do dono para remoção.
+- Staging mostra log `relation
+  "supabase_migrations.schema_migrations" does not exist` (ruído do
+  dashboard, não do app).
+- Tailwind CDN ainda gera warning de produção (não bloqueante).
 
 ## 9. Próximos passos recomendados
 
 1. **Validação/homologação staging** — validar a tela Nova OP e
-   fluxos críticos em homologação.
-2. **Docs/closeout final de publicação** — se necessário, preparar
-   commit de merge para `origin/main` (produção) com aprovação
-   explícita.
-3. **Futuro opcional:** `RAVATEX-TAPETES-OP-PDF-MODULE-A` — extrair
-   `gerarPdfCompraFios` para `js/screens/op-pdf.js`.
-4. **Futuro opcional:** `RAVATEX-TAPETES-OP-BLOCO-FIOS-DIAG-A` —
-   diagnosticar `buildBlocoFios`.
-5. **Futuro opcional:** `RAVATEX-TAPETES-TRANSACTION-RISK-DIAG-A` —
+   fluxos críticos em homologação. Confirmar que
+   `replaceChildren null` não voltou.
+2. **Decisão sobre publicar/habilitar staging via GitHub Pages** —
+   se necessário para homologação pública, em fase própria.
+3. **Merge/release para `origin/main`** — somente com aprovação
+   explícita do dono do projeto. Em fase própria, **não** automática.
+4. **Pendências Supabase / cadastro usuário** — em fase própria,
+   **não** dentro do ciclo de refactor.
+5. **Futuro opcional:** `RAVATEX-TAPETES-OP-BLOCO-FIOS-DIAG-A` —
+   diagnosticar `buildBlocoFios` (somente se houver benefício
+   prático e autorização explícita).
+6. **Futuro opcional:** `RAVATEX-TAPETES-OP-PROPOSTA-DIAG-A` —
+   diagnosticar `buildProposta` / `recompute` / `onAceitar`
+   (idem).
+7. **Futuro opcional:** `RAVATEX-TAPETES-TRANSACTION-RISK-DIAG-A` —
    avaliar RPC/transações Supabase para `persistirOP` e
-   `aplicarRecalculoOP`.
+   `aplicarRecalculoOP` (idem).
 
-**Nota:** os itens 3-5 são **opcionais** e **não** devem ser tratados
-como continuação obrigatória do refactor. O fechamento arquitetural
-principal está concluído em `4c18fe7`.
+**Nota:** os itens 5-7 são **opcionais** e **não** devem ser tratados
+como continuação obrigatória do refactor. O ciclo de refactor +
+hardening + extração final está **congelado** em `7f3c6da`
+(vide seção 5d). O item `RAVATEX-TAPETES-OP-PDF-MODULE-A` foi
+**executado** em `7f3c6da`; não está mais em backlog.
 
 ## 10. Política de updates deste ledger
 
