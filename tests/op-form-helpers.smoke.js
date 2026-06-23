@@ -215,7 +215,7 @@ test('9. script inline NÃO contém mais function disabledAttr', () => {
     'inline ainda declara function disabledAttr');
 });
 
-test('10. script inline AINDA contém screenNovaOP, persistir, aplicarRecalculo, buildOrdemPendenteRow (renderOPLatexAdmin extraído para op-latex-admin.js)', () => {
+test('10. script inline AINDA contém screenNovaOP, aplicarRecalculo, buildOrdemPendenteRow (renderOPLatexAdmin, persistir extraídos)', () => {
   const inline = extractInlineScript(indexSrc);
   for (const fn of [
     'screenNovaOP',
@@ -225,8 +225,10 @@ test('10. script inline AINDA contém screenNovaOP, persistir, aplicarRecalculo,
   }
   assert.equal(/function\s+renderOPLatexAdmin\s*\(/.test(inline), false,
     'inline não deve mais declarar renderOPLatexAdmin (extraído para op-latex-admin.js)');
+  assert.equal(/function\s+persistir\s*\(/.test(inline), false,
+    'inline não deve mais declarar persistir (extraído para op-persistir.js)');
   for (const fn of [
-    'persistir', 'aplicarRecalculo', 'buildOrdemPendenteRow',
+    'aplicarRecalculo', 'buildOrdemPendenteRow',
   ]) {
     assert.match(inline, new RegExp(`(async\\s+)?function\\s+${fn}\\s*\\(`),
       `inline perdeu a função ${fn}`);
@@ -257,12 +259,18 @@ test('13. inline usa window.fmtKg e window.fmtMetros e disabledAttr(readOnly, ..
     'inline não referencia disabledAttr(readOnly, ...');
 });
 
-test('14. ordens_compra_fio persistente com update inline permanece no inline', () => {
+test('14. ordens_compra_fio read inline permanece (writes foram extraídos para op-persistir.js)', () => {
   const inline = extractInlineScript(indexSrc);
+  // Reads de ordens_compra_fio (em screenNovaOP, reloadOrdens, buildBlocoFios) permanecem inline
   assert.match(inline, /supa\.from\(['"`]ordens_compra_fio['"`]\)/,
-    'inline perdeu supa.from("ordens_compra_fio")');
-  assert.match(inline, /\.update\(/,
-    'inline perdeu .update() — buildOrdemPendenteRow deveria ter update inline');
+    'inline perdeu supa.from("ordens_compra_fio") — reads deveriam continuar inline');
+  // Writes (.update/.insert/.delete) de ordens_compra_fio foram extraídos para op-persistir.js
+  assert.equal(/from\s*\(\s*['"]ordens_compra_fio['"]\s*\)\s*\.\s*update\s*\(/.test(inline), false,
+    'inline ainda tem from("ordens_compra_fio").update — write deveria ter sido extraído');
+  assert.equal(/from\s*\(\s*['"]ordens_compra_fio['"]\s*\)\s*\.\s*insert\s*\(/.test(inline), false,
+    'inline ainda tem from("ordens_compra_fio").insert — write deveria ter sido extraído');
+  assert.equal(/from\s*\(\s*['"]ordens_compra_fio['"]\s*\)\s*\.\s*delete\s*\(/.test(inline), false,
+    'inline ainda tem from("ordens_compra_fio").delete — write deveria ter sido extraído');
 });
 
 // -----------------------------------------------------------------------------

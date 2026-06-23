@@ -1004,10 +1004,10 @@ test('54. bloco inline de aplicarRecalculo NÃO contém mais ops.update status e
 
 // ---- 29-32: outras funções continuam inline -------------------------
 
-test('55. persistir continua inline', () => {
+test('55. persistir NÃO está mais inline (extraído para op-persistir.js)', () => {
   const inline = extractInlineScript(indexSrc);
-  assert.match(inline, /async\s+function\s+persistir\s*\(/,
-    'persistir não está mais inline');
+  assert.equal(/async\s+function\s+persistir\s*\(/.test(inline), false,
+    'inline ainda tem persistir - função deveria ter sido extraída');
 });
 
 test('56. buildProposta/recompute/onAceitar continuam inline', () => {

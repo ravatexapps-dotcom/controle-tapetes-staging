@@ -193,93 +193,9 @@ async function screenNovaOP(opId) {
   // 3) Validação e persistência
   // itensValidos extraído para js/screens/op-persistir.js como
   // window.itensValidosOP(itens).
-
-  // Persiste ops + filhos. status: 'simulada' | 'aberta'. Retorna id da OP ou null.
-  async function persistir(status) {
-    const numeroInt = parseInt(numero, 10), anoInt = parseInt(ano, 10);
-    if (!numeroInt || !anoInt) { toast('Número e ano são obrigatórios', 'error'); return null; }
-    if (!clienteSel) { toast('Escolha o cliente', 'error'); return null; }
-    const validos = window.itensValidosOP(itens);
-    if (validos.length === 0) { toast('Adicione ao menos 1 item com metros', 'error'); return null; }
-
-    if (status === 'aberta' && !fornSel.cima) {
-      toast('Escolha o fornecedor de tecelagem antes de abrir a OP', 'error'); return null;
-    }
-
-    // 1) upsert ops PRIMEIRO — evita lote órfão se o número da OP duplicar.
-    let opRow;
-    if (op) {
-      const r = await supa.from('ops').update({ numero: numeroInt, ano: anoInt, status }).eq('id', op.id).select().single();
-      if (r.error) { erroSalvar(r.error); return null; }
-      opRow = r.data;
-    } else {
-      const r = await supa.from('ops').insert({ numero: numeroInt, ano: anoInt, status }).select().single();
-      if (r.error) { erroSalvar(r.error); return null; }
-      opRow = r.data;
-    }
-    const opIdSalvo = opRow.id;
-
-    // 2) lote: cria no 1º salvamento (OP nova ou legada sem lote); senão atualiza o
-    //    cliente. Liga em ops.lote_id. Numeração depende do UNIQUE(numero) de lotes.
-    let loteId = op?.lote_id || null;
-    if (loteId) {
-      const lu = await supa.from('lotes').update({ cliente_id: clienteSel }).eq('id', loteId);
-      if (lu.error) { toast('Erro ao atualizar lote', 'error'); console.error(lu.error); return null; }
-    } else {
-      const proxRes = await supa.from('lotes').select('numero').order('numero', { ascending: false }).limit(1);
-      if (proxRes.error) { toast('Erro ao ler lotes', 'error'); console.error(proxRes.error); return null; }
-      const prox = (proxRes.data && proxRes.data[0]) ? Number(proxRes.data[0].numero) + 1 : 1;
-      const li = await supa.from('lotes').insert({ numero: prox, cliente_id: clienteSel }).select().single();
-      if (li.error) {
-        if (!op) await supa.from('ops').delete().eq('id', opIdSalvo);  // limpa OP recém-criada
-        toast('Erro ao criar lote', 'error'); console.error(li.error); return null;
-      }
-      loteId = li.data.id;
-      const ou = await supa.from('ops').update({ lote_id: loteId }).eq('id', opIdSalvo);
-      if (ou.error) { toast('Erro ao vincular lote à OP', 'error'); console.error(ou.error); return null; }
-    }
-
-    // 2) substitui op_itens
-    await supa.from('op_itens').delete().eq('op_id', opIdSalvo);
-    const itensPayload = window.montarPayloadItensOP(validos, opIdSalvo);
-    const itensRes = await supa.from('op_itens').insert(itensPayload);
-    if (itensRes.error) {
-      if (status === 'aberta') await supa.from('ops').update({ status: 'simulada' }).eq('id', opIdSalvo);
-      toast('Erro ao salvar itens', 'error'); console.error(itensRes.error); return null;
-    }
-
-    // 3) substitui op_fornecedores — só tecelagem na criação (fios são atribuídos depois)
-    await supa.from('op_fornecedores').delete().eq('op_id', opIdSalvo);
-    if (fornSel.cima) {
-      const fornecedoresPayload = window.montarPayloadFornecedoresOP(fornSel, opIdSalvo);
-      const fornRes = await supa.from('op_fornecedores').insert(fornecedoresPayload);
-      if (fornRes.error) {
-        if (status === 'aberta') await supa.from('ops').update({ status: 'simulada' }).eq('id', opIdSalvo);
-        toast('Erro ao salvar fornecedor de tecelagem', 'error'); console.error(fornRes.error); return null;
-      }
-    }
-
-    // 4) se abrir: gera ordens_compra_fio SEM fornecedor (atribuído depois)
-    if (status === 'aberta') {
-      const calc = calcularFiosOP(validos, modelosById, parametrosByLargura);
-      const ordens = montarOrdensCompraFio(calc).map(o => ({
-        op_id: opIdSalvo,
-        fornecedor_id: null,
-        tipo: o.tipo, cor_id: o.cor_id, cor_poliester: o.cor_poliester,
-        kg_pedido: o.kg_pedido, status: 'pendente',
-      }));
-      await supa.from('ordens_compra_fio').delete().eq('op_id', opIdSalvo);
-      const ordRes = await supa.from('ordens_compra_fio').insert(ordens);
-      if (ordRes.error) {
-        await supa.from('ops').update({ status: 'simulada' }).eq('id', opIdSalvo);
-        toast('Falha ao gerar ordens de compra — OP mantida como simulada', 'error');
-        console.error(ordRes.error);
-        return null;
-      }
-    }
-
-    return opIdSalvo;
-  }
+  // persistir (writes) extraído para js/screens/op-persistir.js como
+  // window.persistirOP(...). O saving + toast + navigate ficam
+  // nos callers (salvarSimulacao, abrirOP) abaixo.
 
   function erroSalvar(error) {
     if (error.code === '23505' || (error.message && error.message.includes('duplicate'))) toast(`Já existe OP nº ${numero} em ${ano}`, 'error');
@@ -291,16 +207,68 @@ async function screenNovaOP(opId) {
     if (saving) return;
     saving = true;
     try {
-      const id = await persistir('simulada');
-      if (id) { toast('Simulação salva', 'success'); navigate('#/ops'); }
+      const numeroInt = parseInt(numero, 10), anoInt = parseInt(ano, 10);
+      if (!numeroInt || !anoInt) { toast('Número e ano são obrigatórios', 'error'); return; }
+      if (!clienteSel) { toast('Escolha o cliente', 'error'); return; }
+      const validos = window.itensValidosOP(itens);
+      if (validos.length === 0) { toast('Adicione ao menos 1 item com metros', 'error'); return; }
+
+      const result = await window.persistirOP({
+        status: 'simulada',
+        op,
+        numero, ano, clienteSel, itens, fornSel, modelosById, parametrosByLargura,
+      });
+
+      if (result.error) {
+        if (result.step === 'ops_insert' || result.step === 'ops_update') {
+          erroSalvar(result.error);
+        } else {
+          toast('Erro ao salvar OP', 'error');
+          console.error(result.error);
+        }
+        return;
+      }
+      toast('Simulação salva', 'success');
+      navigate('#/ops');
     } finally { saving = false; }
   }
   async function abrirOP() {
     if (saving) return;
     saving = true;
     try {
-      const id = await persistir('aberta');
-      if (id) { toast('OP aberta — ordens de compra geradas', 'success'); navigate('#/ops'); }
+      const numeroInt = parseInt(numero, 10), anoInt = parseInt(ano, 10);
+      if (!numeroInt || !anoInt) { toast('Número e ano são obrigatórios', 'error'); return; }
+      if (!clienteSel) { toast('Escolha o cliente', 'error'); return; }
+      const validos = window.itensValidosOP(itens);
+      if (validos.length === 0) { toast('Adicione ao menos 1 item com metros', 'error'); return; }
+      if (!fornSel.cima) { toast('Escolha o fornecedor de tecelagem antes de abrir a OP', 'error'); return; }
+
+      const result = await window.persistirOP({
+        status: 'aberta',
+        op,
+        numero, ano, clienteSel, itens, fornSel, modelosById, parametrosByLargura,
+      });
+
+      if (result.error) {
+        const mensagens = {
+          ops_insert: 'Erro ao salvar OP',
+          ops_update: 'Erro ao salvar OP',
+          lotes_insert: 'Erro ao criar lote',
+          lotes_update: 'Erro ao atualizar lote',
+          lotes_vincular: 'Erro ao vincular lote à OP',
+          op_itens_delete: 'Erro ao salvar itens',
+          op_itens_insert: 'Erro ao salvar itens',
+          op_fornecedores_delete: 'Erro ao salvar fornecedor de tecelagem',
+          op_fornecedores_insert: 'Erro ao salvar fornecedor de tecelagem',
+          ordens_compra_fio_delete: 'Falha ao gerar ordens de compra — OP mantida como simulada',
+          ordens_compra_fio_insert: 'Falha ao gerar ordens de compra — OP mantida como simulada',
+        };
+        toast(mensagens[result.step] || 'Erro ao abrir OP', 'error');
+        console.error(result.error);
+        return;
+      }
+      toast('OP aberta — ordens de compra geradas', 'success');
+      navigate('#/ops');
     } finally { saving = false; }
   }
 

@@ -239,10 +239,10 @@ test('9. inline NÃO contém mais function atribuirFornecedorFio (extraído para
     'inline não referencia window.atribuirFornecedorFioOp — call-site não atualizado');
 });
 
-test('10. inline AINDA contém persistir (NÃO extraído nesta fase)', () => {
+test('10. inline NÃO contém mais persistir (extraído para op-persistir.js)', () => {
   const inline = extractInlineScript(indexSrc);
-  assert.match(inline, /function\s+persistir\s*\(/,
-    'inline perdeu persistir — função deveria continuar inline');
+  assert.equal(/function\s+persistir\s*\(/.test(inline), false,
+    'inline ainda tem persistir - função deveria ter sido extraída');
 });
 
 test('11. inline AINDA contém aplicarRecalculo (NÃO extraído nesta fase)', () => {
@@ -906,9 +906,10 @@ test('44. screenNovaOP continua inline após extração', () => {
   assert.match(inline, /function\s+screenNovaOP\s*\(/);
 });
 
-test('45. persistir continua inline', () => {
+test('45. persistir NÃO está mais inline (extraído para op-persistir.js)', () => {
   const inline = extractInlineScript(indexSrc);
-  assert.match(inline, /function\s+persistir\s*\(/);
+  assert.equal(/function\s+persistir\s*\(/.test(inline), false,
+    'inline ainda tem persistir - função deveria ter sido extraída');
 });
 
 test('46. aplicarRecalculo continua inline', () => {

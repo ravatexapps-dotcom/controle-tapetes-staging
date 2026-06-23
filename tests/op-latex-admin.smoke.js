@@ -212,10 +212,10 @@ test('7. inline AINDA contém async function screenNovaOP', () => {
     'inline perdeu screenNovaOP — função deveria continuar inline');
 });
 
-test('8. inline AINDA contém persistir', () => {
+test('8. inline NÃO contém mais persistir (extraído para op-persistir.js)', () => {
   const inline = extractInlineScript(indexSrc);
-  assert.match(inline, /function\s+persistir\s*\(/,
-    'inline perdeu persistir — função deveria continuar inline');
+  assert.equal(/function\s+persistir\s*\(/.test(inline), false,
+    'inline ainda tem persistir - função deveria ter sido extraída');
 });
 
 test('9. inline AINDA contém aplicarRecalculo', () => {
