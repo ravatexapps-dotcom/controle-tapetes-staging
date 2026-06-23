@@ -6,8 +6,8 @@
 
 ## Estado atual aceito
 - **Branch:** `work/app-next`.
-- **HEAD:** `4b9ca12` — "Extract fornecedor screens module".
-- **staging/main:** `4b9ca12` (sincronizado).
+- **HEAD:** `69c0036` — "Extract OP latex admin screen module".
+- **staging/main:** `69c0036` (sincronizado).
 - **Working tree esperado:** **limpo**.
 - **origin/main oficial:** **intocado** durante todo o refactor.
 - **PR #2:** **intocado** durante todo o refactor.
@@ -15,6 +15,15 @@
   recebeu nenhum push de refactor.
 - **Supabase real:** **não acessado** em nenhuma fase de refactor
   (todos os testes rodam com `vm.runInContext` + `fakeSupa` mockado).
+
+### Últimos commits técnicos aceitos
+
+| Commit | Mensagem |
+|---|---|
+| `c480324` | Extract OP form pure helpers |
+| `ab79f1c` | Extract ordem fio recebimento write helper |
+| `1429950` | Extract fornecedor fio write helper |
+| `69c0036` | Extract OP latex admin screen module |
 
 ## Comandos de verificação (rodar antes de qualquer patch)
 
@@ -30,9 +39,9 @@ git ls-remote --heads staging main
 
 Abortar e revisar o escopo se:
 - branch != `work/app-next`;
-- HEAD != `4b9ca12`;
+- HEAD != `69c0036`;
 - working tree não estiver limpo;
-- `staging/main` != `4b9ca12`.
+- `staging/main` != `69c0036`.
 
 ## Regras (NÃO renegocia)
 
@@ -53,7 +62,7 @@ Abortar e revisar o escopo se:
    diagnóstico específico prévio (acoplamento mútuo, 12+ tabelas
    Supabase, 13+ writes).
 
-## Resumo do refactor (12 módulos extraídos)
+## Resumo do refactor (15 módulos extraídos)
 
 | # | Módulo | Commit | Fase |
 |---|---|---|---|
@@ -69,27 +78,56 @@ Abortar e revisar o escopo se:
 | 10 | `js/screens/entrega-form.js` | `958f244` | ENTREGA-FORM-HELPER-MODULE-A |
 | 11 | `js/screens/entrega-writes.js` | `7ec1721` | ENTREGA-WRITES-MODULE-A |
 | 12 | `js/screens/fornecedor.js` | `4b9ca12` | FORNECEDOR-SCREENS-MODULE-A |
+| 13 | `js/screens/op-form-helpers.js` | `c480324` | OP-FORM-HELPERS-MODULE-A |
+| 14 | `js/screens/op-writes.js` | `ab79f1c` | OP-ORDER-WRITE-MODULE-A (+ `1429950` OP-FORNECEDOR-WRITE-MODULE-A) |
+| 15 | `js/screens/op-latex-admin.js` | `69c0036` | OP-LATEX-ADMIN-MODULE-A |
 
 ## Inline remanescente em `index.html`
 
-`screenPainel`, `screenNovaOP` (854 linhas), `renderOPLatexAdmin`
-(180 linhas), `setRoutes`, `main`, `rotuloFioOrdem` (clone local),
-`rotuloModelo` (helper de `screenNovaOP`).
+`screenPainel` (placeholder), `screenNovaOP` (854 linhas),
+`setRoutes` (registro de rotas), `main` (boot).
+
+`renderOPLatexAdmin` foi extraída para `js/screens/op-latex-admin.js`
+e é acessada via `window.renderOPLatexAdmin` no call-site de
+`screenNovaOP`.
+
+`rotuloFioOrdem` (clone local) foi unificado com `rotuloFio` em
+`OP-FORM-HELPERS-MODULE-A`. `rotuloModelo` foi movido para
+`js/screens/op-form-helpers.js` como `window.rotuloModelo`.
+
+`screenNovaOP` ainda concentra as funções pesadas de write:
+`persistir`, `atribuirFornecedorFio` (que chama
+`window.atribuirFornecedorFioOp`), `buildOrdemPendenteRow` (que
+chama `window.registrarRecebimentoOrdemFio`), `aplicarRecalculo`,
+mais helpers de render.
 
 ## Próximo fluxo recomendado
 
 1. **Fechar esta fase docs-only** (commit + push para `staging`).
-2. **Depois**, diagnosticar `OP-form` / `renderOPLatexAdmin` antes
-   de qualquer extração (`OP-FORM-DIAG-A` ou `OP-LATEX-ADMIN-DIAG-A`).
-3. **Não iniciar** extração de `screenNovaOP` sem diagnóstico
-   específico (acoplamento `screenNovaOP` ↔ `renderOPLatexAdmin` via
-   `await renderOPLatexAdmin(op.id)` em `screenNovaOP:161`).
+2. **Depois**, escolher entre:
+   - **`RAVATEX-TAPETES-SCREENPAINEL-MODULE-A`** se o objetivo for
+     fechar o inline trivial — corte pequeno e de risco baixo.
+   - **`RAVATEX-TAPETES-OP-RECALCULO-DIAG-B`** se o objetivo for
+     reduzir risco de negócio dos writes não transacionais de
+     `aplicarRecalculo` (e opcionalmente `persistir`) antes de
+     qualquer extração.
+3. **Não iniciar** extração direta de `persistir` ou
+   `aplicarRecalculo` sem diagnóstico específico — os writes tocam
+   múltiplas tabelas e exigem plano de rollback/compensação antes
+   de qualquer movimentação.
+4. `screenNovaOP` é o último grande corte do refactor arquitetural
+   e deve ficar para depois de qualquer diagnóstico específico.
 
 ## Testes
 
-- **Focados passando:** 290/290 (`entrega-writes`, `entrega-form`,
-  `ops-list-screen`, `cadastros-screens`, `screens-common`,
-  `system-screens`, `router`, `auth`, `fornecedor-screens`).
+- **Focados passando (HEAD `69c0036`):**
+  - `op-writes.smoke.js` — 49/49
+  - `op-form-helpers.smoke.js` — 36/36
+  - `entrega-form.smoke.js` — 33/33
+  - `entrega-writes.smoke.js` — 58/58
+  - `fornecedor-screens.smoke.js` — 36/36
+  - `op-latex-admin.smoke.js` — 30/30
+  - **Total focados:** 242/242
 - **Pré-existentes dependentes de `http.server :8765`:** 6 falhas em
   `tests/index-inline.smoke.js` e 17 em `tests/write-guard.smoke.js`
   — não relacionadas ao refactor; exigem servidor local.
@@ -107,15 +145,12 @@ node "C:\Users\klebe\AppData\Local\Temp\opencode\extract-inline.js" \
      "C:\Users\klebe\AppData\Local\Temp\opencode\index-inline-check.js"
 
 # Validação focada em boot completo:
-node --test tests/entrega-writes.smoke.js \
+node --test tests/op-writes.smoke.js \
+              tests/op-form-helpers.smoke.js \
               tests/entrega-form.smoke.js \
-              tests/ops-list-screen.smoke.js \
-              tests/cadastros-screens.smoke.js \
-              tests/screens-common.smoke.js \
-              tests/system-screens.smoke.js \
-              tests/router.smoke.js \
-              tests/auth.smoke.js \
-              tests/fornecedor-screens.smoke.js
+              tests/entrega-writes.smoke.js \
+              tests/fornecedor-screens.smoke.js \
+              tests/op-latex-admin.smoke.js
 ```
 
 ## O que um agente NÃO deve fazer
@@ -126,7 +161,9 @@ node --test tests/entrega-writes.smoke.js \
 - Acessar Supabase real em testes/refactors.
 - Registrar `service_role`, senha, `JWT secret`, connection string
   com senha ou anon key completa em qualquer doc/relatório.
-- Extrair `screenNovaOP` ou `renderOPLatexAdmin` sem diagnóstico
-  específico.
+- Extrair `screenNovaOP`, `persistir` ou `aplicarRecalculo` sem
+  diagnóstico específico prévio.
+- Tentar mover `renderOPLatexAdmin` para outro módulo
+  (`renderOPLatexAdmin` já está isolada em `op-latex-admin.js`).
 - Rodar `git add .` (sempre stage seletivo por arquivo).
 - Mexer no PR #2.
