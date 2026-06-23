@@ -258,11 +258,12 @@ test('5. script inline NÃO contém mais function rotuloFio, const OCF_STATUS_LA
 
 test('6. script inline AINDA contém writes, telas, helpers, setRoutes, main e rotuloFioOrdem', () => {
   const inline = extractInlineScript(indexSrc);
-  // writes (excluirEntrega foi extraído para js/screens/entrega-writes.js
-  // na Fase 2.1 do DIAG)
+  // Writes remanescentes: apenas Cima (Fase 2.3 do DIAG).
+  // excluirEntrega, salvarEntregaLatex e atualizarEntregaLatex
+  // foram extraídos para js/screens/entrega-writes.js (Fases 2.1
+  // e 2.2).
   for (const fn of [
     'salvarEntregaCima', 'atualizarEntregaCima',
-    'salvarEntregaLatex', 'atualizarEntregaLatex',
   ]) {
     assert.match(inline, new RegExp(`(async\\s+)?function\\s+${fn}\\s*\\(`),
       `inline perdeu a função ${fn}`);

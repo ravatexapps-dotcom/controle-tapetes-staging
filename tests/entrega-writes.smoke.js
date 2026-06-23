@@ -1,12 +1,10 @@
 // Smoke test do módulo js/screens/entrega-writes.js
-// (ENTREGA-WRITES-MODULE-A — Fase 2.1: excluirEntrega).
+// (ENTREGA-WRITES-MODULE-A — Fases 2.1 e 2.2 do DIAG).
 //
-// Garante que a extração do helper de write `excluirEntrega` do
-// <script> inline de index.html para js/screens/entrega-writes.js
-// preservou o comportamento exato: confirmDialog → delete na
-// tabela `entregas` com `.eq('id', entregaId)` → toast + onSuccess
-// em caso de sucesso, ou toast de erro + return sem onSuccess
-// em caso de falha.
+// Garante que a extração dos helpers de write
+// `excluirEntrega`, `salvarEntregaLatex` e `atualizarEntregaLatex`
+// do <script> inline de index.html para js/screens/entrega-writes.js
+// preservou o comportamento exato.
 //
 // Estáticos:
 //   1. js/screens/entrega-writes.js existe e é script clássico;
@@ -14,20 +12,22 @@
 //   3. index.html carrega js/screens/entrega-writes.js EXATAMENTE
 //      UMA VEZ;
 //   4. ordem entrega-form → entrega-writes → jspdf → inline;
-//   5. inline NÃO contém mais: function excluirEntrega;
+//   5. inline NÃO contém mais: function excluirEntrega,
+//      function salvarEntregaLatex, function
+//      atualizarEntregaLatex;
 //   6. inline AINDA contém: salvarEntregaCima,
-//      atualizarEntregaCima, salvarEntregaLatex,
-//      atualizarEntregaLatex, screenFornecedorEntregas,
+//      atualizarEntregaCima, screenFornecedorEntregas,
 //      screenFornecedorLatex, screenFornecedorOrdens,
 //      screenNovaOP, renderOPLatexAdmin, rotuloFioOrdem
 //      (clone local em screenNovaOP), setRoutes, main;
-//   7. js/screens/entrega-writes.js contém excluirEntrega;
-//   8. js/screens/entrega-writes.js NÃO contém:
-//      salvarEntregaCima, atualizarEntregaCima,
+//   7. js/screens/entrega-writes.js contém excluirEntrega,
 //      salvarEntregaLatex, atualizarEntregaLatex;
-//   9. js/screens/entrega-writes.js NÃO contém .insert( / .update(
-//      / .rpc( (read/delete only);
-//  10. js/screens/entrega-writes.js contém .delete( (uma vez);
+//   8. js/screens/entrega-writes.js NÃO contém:
+//      salvarEntregaCima, atualizarEntregaCima;
+//   9. js/screens/entrega-writes.js NÃO contém `gerar_op_latex`
+//      nem `.rpc(` (Latex writes não usam rpc; é o Cima que usa);
+//  10. js/screens/entrega-writes.js contém .delete( (uma vez para
+//      excluirEntrega, e mais usos para salvar/atualizar Latex);
 //  11. js/screens/entrega-writes.js NÃO contém service_role nem
 //      password literal longo;
 //  12. index.html NÃO contém service_role nem password literal
@@ -298,10 +298,11 @@ test('5. script inline NÃO contém mais function excluirEntrega', () => {
 
 test('6. script inline AINDA contém os demais writes, telas, helpers, setRoutes, main, rotuloFioOrdem', () => {
   const inline = extractInlineScript(indexSrc);
-  // Demais writes
+  // Writes remanescentes: apenas Cima (Fase 2.3 do DIAG).
+  // excluirEntrega, salvarEntregaLatex e atualizarEntregaLatex foram
+  // extraídos para js/screens/entrega-writes.js (Fases 2.1 e 2.2).
   for (const fn of [
     'salvarEntregaCima', 'atualizarEntregaCima',
-    'salvarEntregaLatex', 'atualizarEntregaLatex',
   ]) {
     assert.match(inline, new RegExp(`(async\\s+)?function\\s+${fn}\\s*\\(`),
       `inline perdeu a função ${fn}`);
@@ -326,20 +327,26 @@ test('7. js/screens/entrega-writes.js contém excluirEntrega', () => {
   assert.match(ewSrc, /function\s+excluirEntrega\s*\(/);
 });
 
-test('8. entrega-writes.js NÃO contém os outros 4 writes', () => {
+test('8. entrega-writes.js NÃO contém os writes de Cima (continuam inline)', () => {
   for (const fn of [
     'salvarEntregaCima', 'atualizarEntregaCima',
-    'salvarEntregaLatex', 'atualizarEntregaLatex',
   ]) {
     assert.equal(new RegExp(`function\\s+${fn}\\s*\\(`).test(ewSrc), false,
-      `entrega-writes.js não deve declarar ${fn}`);
+      `entrega-writes.js não deve declarar ${fn} (Fase 2.3 do DIAG)`);
   }
 });
 
-test('9. entrega-writes.js NÃO contém .insert( / .update( / .rpc(', () => {
-  assert.equal(/\.insert\s*\(/.test(ewSrc), false, 'entrega-writes.js tem .insert(');
-  assert.equal(/\.update\s*\(/.test(ewSrc), false, 'entrega-writes.js tem .update(');
-  assert.equal(/\.rpc\s*\(/.test(ewSrc), false, 'entrega-writes.js tem .rpc(');
+test('9. entrega-writes.js NÃO contém .rpc( (Latex writes não usam rpc; é o Cima que usa)', () => {
+  // salvarEntregaLatex e atualizarEntregaLatex (Fase 2.2) usam
+  // .insert( e .update( normalmente — o que NÃO pode ter é .rpc(
+  // (gerar_op_latex é exclusivo do salvarEntregaCima, que continua
+  // inline na Fase 2.3 do DIAG).
+  // O docstring do módulo menciona "gerar_op_latex" em
+  // comentário, mas nenhuma chamada real a .rpc( é feita.
+  assert.equal(/\.rpc\s*\(/.test(ewSrc), false, 'entrega-writes.js tem .rpc( — só Cima usa rpc');
+  // Nenhuma chamada real a gerar_op_latex (apenas comentário)
+  const rpcCalls = (ewSrc.match(/supa\.rpc\(/g) || []).length;
+  assert.equal(rpcCalls, 0, 'entrega-writes.js faz ' + rpcCalls + ' chamada(s) a supa.rpc() — esperado 0');
 });
 
 test('10. entrega-writes.js contém .delete(', () => {
@@ -495,6 +502,391 @@ test('23. runtime: sem onSuccess passado — callback roda sem erro (onSuccess �
   await new Promise(r => setTimeout(r, 5));
   const successToasts = getToasts().filter(t => t.type === 'success');
   assert.equal(successToasts.length, 1, 'toast de success deveria aparecer mesmo sem onSuccess');
+});
+
+// -----------------------------------------------------------------------------
+// 2.5. Runtime — salvarEntregaLatex
+// -----------------------------------------------------------------------------
+
+// Helper para o sandbox com controle programático do resultado de
+// cada operação (insert entregas, insert itens, delete, etc).
+// Diferente de excluirEntrega (que sempre deleta), os Latex writes
+// fazem insert+insert+delete-rollback OU update+delete+insert.
+//
+// O mock é uma chain fluente: insert/update/delete devolvem a
+// própria chain, e o "terminal" (eq ou single) resolve com o
+// resultado configurado. Para o caso `insert().select().single()`
+// (usado por salvarEntregaLatex), a chain tem um `single()` que
+// resolve com o resultado de entregasInsertResult.
+
+function makeEWLatexSandbox({
+  entregasInsertResult = { data: { id: 999 }, error: null },
+  entregasItensInsertResult = { data: null, error: null },
+  entregasUpdateResult = { data: null, error: null },
+  entregasItensDeleteResult = { data: null, error: null },
+} = {}) {
+  const document = {
+    createElement: (t) => new FakeNode(t),
+    createTextNode: (t) => ({ textContent: t, appendChild() {}, setAttribute() {} }),
+    querySelector: () => new FakeNode('div'),
+    querySelectorAll: () => [],
+    addEventListener: () => {}, removeEventListener: () => {},
+    body: new FakeNode('body'),
+  };
+  const calls = [];
+
+  const fakeSupa = {
+    from: (table) => {
+      calls.push({ op: 'from', table });
+      let pendingResult = null;
+      const chain = {
+        _table: table,
+        _result: null,
+        select() {
+          calls.push({ op: 'select', table });
+          return chain;
+        },
+        insert(payload) {
+          calls.push({ op: 'insert', table, args: [payload] });
+          if (table === 'entregas') {
+            pendingResult = entregasInsertResult;
+          } else if (table === 'entrega_itens') {
+            pendingResult = entregasItensInsertResult;
+          } else {
+            pendingResult = { data: null, error: null };
+          }
+          return chain;
+        },
+        update(payload) {
+          calls.push({ op: 'update', table, args: [payload] });
+          if (table === 'entregas') {
+            pendingResult = entregasUpdateResult;
+          } else {
+            pendingResult = { data: null, error: null };
+          }
+          return chain;
+        },
+        delete() {
+          calls.push({ op: 'delete', table });
+          // delete() chainado: o resultado final vem do terminal
+          // (eq). Para entregas, o delete() sem eq também resolve
+          // (atualizarEntregaCima tem delete sem eq, mas o eq é
+          // chamado em cima — em Latex, é sempre via eq).
+          // Para simplificar, delete sem eq devolve success.
+          if (table === 'entregas') {
+            pendingResult = { data: null, error: null };
+          } else {
+            pendingResult = entregasItensDeleteResult;
+          }
+          return chain;
+        },
+        eq(col, val) {
+          calls.push({ op: 'eq', col, val });
+          if (table === 'entrega_itens' && col === 'entrega_id') {
+            // atualizarEntregaLatex delete().eq() encadeado
+            return Promise.resolve(entregasItensDeleteResult);
+          }
+          // Para entregas.eq('id', ...) resolve com o
+          // pendingResult (que foi setado por update/insert).
+          if (table === 'entregas' && col === 'id') {
+            return Promise.resolve(pendingResult);
+          }
+          return Promise.resolve(pendingResult);
+        },
+        single() {
+          calls.push({ op: 'single', table });
+          // Resolve com o pendingResult acumulado.
+          return Promise.resolve(pendingResult);
+        },
+        order() { return chain; },
+        in() { return chain; },
+        then(resolveThen, rejectThen) {
+          return Promise.resolve(pendingResult || { data: null, error: null }).then(resolveThen, rejectThen);
+        },
+      };
+      return chain;
+    },
+    rpc: () => { calls.push({ op: 'rpc' }); return Promise.resolve({ data: null, error: null }); },
+    auth: {
+      getSession: () => Promise.resolve({ data: { session: null }, error: null }),
+      signInWithPassword: () => Promise.resolve({ data: { user: null }, error: null }),
+      signOut: () => Promise.resolve({ error: null }),
+    },
+    storage: {},
+    _calls: calls,
+  };
+  const toasts = [];
+  const sandbox = {
+    document, console, setTimeout, clearTimeout, URL, URLSearchParams,
+    Node: FakeNode, supa: fakeSupa,
+  };
+  sandbox.window = sandbox;
+  sandbox.globalThis = sandbox;
+  vm.createContext(sandbox);
+
+  vm.runInContext(uiSrc,     sandbox, { filename: 'js/ui.js' });
+  vm.runInContext(calcSrc,   sandbox, { filename: 'js/calculo-op.js' });
+  vm.runInContext(commonSrc, sandbox, { filename: 'js/screens/common.js' });
+  sandbox.CURRENT_USER = { nome: 'Tester', tipo: 'admin' };
+  sandbox.logout = () => {};
+  vm.runInContext(efSrc,     sandbox, { filename: 'js/screens/entrega-form.js' });
+  vm.runInContext(ewSrc,     sandbox, { filename: 'js/screens/entrega-writes.js' });
+
+  // Wrap toast para registrar mensagens
+  const origToast = sandbox.toast;
+  sandbox.toast = (msg, type) => {
+    toasts.push({ msg, type });
+    return origToast(msg, type);
+  };
+  // confirmDialog stub (não usado pelos Latex writes, mas presente)
+  sandbox.confirmDialog = (opts) => {
+    return Promise.resolve().then(() => opts.onConfirm && opts.onConfirm());
+  };
+
+  return { sandbox, fakeSupa, getToasts: () => toasts.slice(), clearToasts: () => { toasts.length = 0; } };
+}
+
+// Payload válido padrão (1 item com 10m entregues)
+const VALID_PAYLOAD = {
+  data: '2026-06-01',
+  observacao: 'teste',
+  destino_fornecedor_id: null,  // Latex não usa destino
+  linhas: [
+    { op_item_id: 1, metros_entregues: 10, defeito: false, observacao: null },
+  ],
+};
+
+test('24. runtime: window.RAVATEX_ENTREGA_WRITES.salvarEntregaLatex é função', () => {
+  const { sandbox } = makeEWLatexSandbox();
+  const fn = vm.runInContext('window.RAVATEX_ENTREGA_WRITES.salvarEntregaLatex', sandbox);
+  assert.equal(typeof fn, 'function', 'salvarEntregaLatex não é função');
+});
+
+test('25. runtime: window.salvarEntregaLatex (global legado) é função', () => {
+  const { sandbox } = makeEWLatexSandbox();
+  assert.equal(typeof vm.runInContext('window.salvarEntregaLatex', sandbox), 'function',
+    'window.salvarEntregaLatex não é função');
+});
+
+test('26. runtime: window.RAVATEX_ENTREGA_WRITES.atualizarEntregaLatex é função', () => {
+  const { sandbox } = makeEWLatexSandbox();
+  const fn = vm.runInContext('window.RAVATEX_ENTREGA_WRITES.atualizarEntregaLatex', sandbox);
+  assert.equal(typeof fn, 'function', 'atualizarEntregaLatex não é função');
+});
+
+test('27. runtime: window.atualizarEntregaLatex (global legado) é função', () => {
+  const { sandbox } = makeEWLatexSandbox();
+  assert.equal(typeof vm.runInContext('window.atualizarEntregaLatex', sandbox), 'function',
+    'window.atualizarEntregaLatex não é função');
+});
+
+test('28. runtime: salvarEntregaLatex com payload vazio → toast + return false', async () => {
+  const { sandbox, getToasts } = makeEWLatexSandbox();
+  const result = await vm.runInContext(
+    "window.salvarEntregaLatex({ fornecedorId: 1, opId: 1, payload: { data: '2026-06-01', observacao: null, destino_fornecedor_id: null, linhas: [] } })",
+    sandbox);
+  assert.equal(result, false, 'salvarEntregaLatex deveria retornar false com payload vazio');
+  const toasts = getToasts();
+  assert.equal(toasts.length, 1, 'esperado 1 toast');
+  assert.equal(toasts[0].type, 'error');
+  assert.match(toasts[0].msg, /metros recebidos/);
+});
+
+test('29. runtime: salvarEntregaLatex happy path — 1 insert entregas + 1 insert itens + 0 rpc + toast success', async () => {
+  const { sandbox, fakeSupa, getToasts } = makeEWLatexSandbox();
+  const result = await vm.runInContext(
+    'window.salvarEntregaLatex({ fornecedorId: 5, opId: 10, payload: ' + JSON.stringify(VALID_PAYLOAD) + ' })',
+    sandbox);
+  assert.equal(result, true, 'salvarEntregaLatex deveria retornar true em sucesso');
+  const insertEntregas = fakeSupa._calls.filter(c => c.op === 'insert' && c.table === 'entregas');
+  const insertItens    = fakeSupa._calls.filter(c => c.op === 'insert' && c.table === 'entrega_itens');
+  const rpcCalls       = fakeSupa._calls.filter(c => c.op === 'rpc');
+  assert.equal(insertEntregas.length, 1, 'esperado 1 insert em entregas');
+  assert.equal(insertItens.length, 1, 'esperado 1 insert em entrega_itens');
+  assert.equal(rpcCalls.length, 0, 'Latex writes NÃO devem chamar rpc');
+  // Conteúdo do insert em entregas
+  const entInsert = insertEntregas[0].args[0];
+  assert.equal(entInsert.etapa, 'latex', 'etapa deve ser latex');
+  assert.equal(entInsert.fornecedor_id, 5);
+  assert.equal(entInsert.data, '2026-06-01');
+  assert.equal(entInsert.observacao, 'teste');
+  assert.equal(entInsert.destino_fornecedor_id, undefined,
+    'salvarEntregaLatex não seta destino_fornecedor_id no insert entregas');
+  // Conteúdo do insert em entrega_itens
+  const itemInsert = insertItens[0].args[0];
+  assert.equal(Array.isArray(itemInsert), true, 'insert itens é array');
+  assert.equal(itemInsert.length, 1, 'esperado 1 item');
+  assert.equal(itemInsert[0].entrega_id, 999, 'entrega_id do insert mockado');
+  assert.equal(itemInsert[0].op_id, 10);
+  assert.equal(itemInsert[0].metros_entregues, 10);
+  // Toast de success
+  const toasts = getToasts();
+  const successToasts = toasts.filter(t => t.type === 'success');
+  assert.equal(successToasts.length, 1, 'esperado 1 toast de success');
+  assert.equal(successToasts[0].msg, 'Recebimento registrado');
+});
+
+test('30. runtime: salvarEntregaLatex rollback — insert entregas OK, insert itens falha → delete entregas', async () => {
+  const { sandbox, fakeSupa, getToasts } = makeEWLatexSandbox({
+    entregasItensInsertResult: { data: null, error: { message: 'fk fail' } },
+  });
+  const result = await vm.runInContext(
+    'window.salvarEntregaLatex({ fornecedorId: 5, opId: 10, payload: ' + JSON.stringify(VALID_PAYLOAD) + ' })',
+    sandbox);
+  assert.equal(result, false, 'salvarEntregaLatex deveria retornar false em rollback');
+  // Espera-se: 1 from('entregas') + 1 insert('entregas') + 1 from('entrega_itens')
+  // + 1 insert('entrega_itens') (falha) + 1 delete('entregas').eq() (rollback)
+  const fromEntregas = fakeSupa._calls.filter(c => c.op === 'from' && c.table === 'entregas');
+  const insertEntregas = fakeSupa._calls.filter(c => c.op === 'insert' && c.table === 'entregas');
+  const insertItens    = fakeSupa._calls.filter(c => c.op === 'insert' && c.table === 'entrega_itens');
+  const deleteEq       = fakeSupa._calls.filter(c => c.op === 'eq');
+  assert.equal(insertEntregas.length, 1, 'esperado 1 insert entregas');
+  assert.equal(insertItens.length, 1, 'esperado 1 insert itens');
+  assert.equal(deleteEq.length, 1, 'esperado 1 eq (rollback)');
+  assert.equal(deleteEq[0].col, 'id', 'rollback deve ser por id');
+  assert.equal(deleteEq[0].val, 999, 'rollback deve usar o id do insert mockado');
+  // Toasts: 1 de erro (insert itens) + 0 de success
+  const toasts = getToasts();
+  const errorToasts = toasts.filter(t => t.type === 'error');
+  const successToasts = getToasts().filter(t => t.type === 'success');
+  assert.equal(errorToasts.length, 1, 'esperado 1 toast de error');
+  assert.match(errorToasts[0].msg, /itens do recebimento/);
+  assert.equal(successToasts.length, 0, 'NÃO deve haver toast de success');
+});
+
+test('31. runtime: salvarEntregaLatex insert entregas falha → toast error + return false (sem rollback)', async () => {
+  const { sandbox, fakeSupa, getToasts } = makeEWLatexSandbox({
+    entregasInsertResult: { data: null, error: { message: 'fk fail' } },
+  });
+  const result = await vm.runInContext(
+    'window.salvarEntregaLatex({ fornecedorId: 5, opId: 10, payload: ' + JSON.stringify(VALID_PAYLOAD) + ' })',
+    sandbox);
+  assert.equal(result, false);
+  const insertItens = fakeSupa._calls.filter(c => c.op === 'insert' && c.table === 'entrega_itens');
+  assert.equal(insertItens.length, 0, 'NÃO deve tentar insert itens se insert entregas falhou');
+  const toasts = getToasts();
+  const errorToasts = toasts.filter(t => t.type === 'error');
+  assert.equal(errorToasts.length, 1);
+  assert.match(errorToasts[0].msg, /gravar recebimento/);
+});
+
+test('32. runtime: atualizarEntregaLatex com payload vazio → toast + return false', async () => {
+  const { sandbox, getToasts } = makeEWLatexSandbox();
+  const result = await vm.runInContext(
+    "window.atualizarEntregaLatex({ entregaId: 1, opId: 1, payload: { data: '2026-06-01', observacao: null, destino_fornecedor_id: null, linhas: [] } })",
+    sandbox);
+  assert.equal(result, false);
+  const toasts = getToasts();
+  assert.equal(toasts.length, 1);
+  assert.equal(toasts[0].type, 'error');
+  assert.match(toasts[0].msg, /metros recebidos/);
+});
+
+test('33. runtime: atualizarEntregaLatex happy path — update + delete + insert', async () => {
+  const { sandbox, fakeSupa, getToasts } = makeEWLatexSandbox();
+  const result = await vm.runInContext(
+    'window.atualizarEntregaLatex({ entregaId: 7, opId: 10, payload: ' + JSON.stringify(VALID_PAYLOAD) + ' })',
+    sandbox);
+  assert.equal(result, true);
+  const fromEntregas = fakeSupa._calls.filter(c => c.op === 'from' && c.table === 'entregas');
+  const updateEntregas = fakeSupa._calls.filter(c => c.op === 'update' && c.table === 'entregas');
+  const deleteEntregaItens = fakeSupa._calls.filter(c => c.op === 'delete' && c.table === 'entrega_itens');
+  const insertItens = fakeSupa._calls.filter(c => c.op === 'insert' && c.table === 'entrega_itens');
+  const eqEntregaId = fakeSupa._calls.filter(c => c.op === 'eq' && c.col === 'entrega_id');
+  assert.equal(fromEntregas.length, 1, '1 from entregas');
+  assert.equal(updateEntregas.length, 1, '1 update entregas');
+  assert.equal(deleteEntregaItens.length, 1, '1 delete entrega_itens');
+  assert.equal(insertItens.length, 1, '1 insert entrega_itens');
+  assert.equal(eqEntregaId.length, 1, '1 eq em entrega_id');
+  assert.equal(eqEntregaId[0].val, 7, 'eq deve usar entregaId=7');
+  // Conteúdo do update em entregas: NÃO seta destino_fornecedor_id
+  const updPayload = updateEntregas[0].args[0];
+  assert.equal(updPayload.data, '2026-06-01');
+  assert.equal(updPayload.observacao, 'teste');
+  assert.equal(updPayload.destino_fornecedor_id, undefined,
+    'atualizarEntregaLatex não seta destino_fornecedor_id no update');
+  // Conteúdo do insert em entrega_itens
+  const itemInsert = insertItens[0].args[0];
+  assert.equal(itemInsert[0].entrega_id, 7);
+  assert.equal(itemInsert[0].op_id, 10);
+  // Toast
+  const toasts = getToasts();
+  const successToasts = toasts.filter(t => t.type === 'success');
+  assert.equal(successToasts.length, 1);
+  assert.equal(successToasts[0].msg, 'Recebimento atualizado');
+});
+
+test('34. runtime: atualizarEntregaLatex update falha → toast + return false (sem delete/insert)', async () => {
+  const { sandbox, fakeSupa, getToasts } = makeEWLatexSandbox({
+    entregasUpdateResult: { data: null, error: { message: 'fk fail' } },
+  });
+  const result = await vm.runInContext(
+    'window.atualizarEntregaLatex({ entregaId: 7, opId: 10, payload: ' + JSON.stringify(VALID_PAYLOAD) + ' })',
+    sandbox);
+  assert.equal(result, false);
+  // Se update falhou, NÃO deve haver delete nem insert de itens
+  const deleteEntregaItens = fakeSupa._calls.filter(c => c.op === 'delete' && c.table === 'entrega_itens');
+  const insertItens = fakeSupa._calls.filter(c => c.op === 'insert' && c.table === 'entrega_itens');
+  assert.equal(deleteEntregaItens.length, 0, 'NÃO deve fazer delete se update falhou');
+  assert.equal(insertItens.length, 0, 'NÃO deve fazer insert se update falhou');
+  const toasts = getToasts();
+  const errorToasts = toasts.filter(t => t.type === 'error');
+  assert.equal(errorToasts.length, 1);
+  assert.match(errorToasts[0].msg, /atualizar recebimento/);
+});
+
+test('35. runtime: atualizarEntregaLatex insert itens falha → toast + return false (sem rollback, estado inconsistente aceito)', async () => {
+  const { sandbox, fakeSupa, getToasts } = makeEWLatexSandbox({
+    entregasItensInsertResult: { data: null, error: { message: 'fk fail' } },
+  });
+  const result = await vm.runInContext(
+    'window.atualizarEntregaLatex({ entregaId: 7, opId: 10, payload: ' + JSON.stringify(VALID_PAYLOAD) + ' })',
+    sandbox);
+  assert.equal(result, false);
+  // A entrega fica sem itens (delete OK, insert falhou). Comentário
+  // inline aceita essa inconsistência por design.
+  const deleteEntregaItens = fakeSupa._calls.filter(c => c.op === 'delete' && c.table === 'entrega_itens');
+  const insertItens = fakeSupa._calls.filter(c => c.op === 'insert' && c.table === 'entrega_itens');
+  assert.equal(deleteEntregaItens.length, 1, 'delete acontece antes do insert');
+  assert.equal(insertItens.length, 1, 'insert é tentado (e falha)');
+  const toasts = getToasts();
+  const errorToasts = toasts.filter(t => t.type === 'error');
+  assert.equal(errorToasts.length, 1);
+  assert.match(errorToasts[0].msg, /regravar itens do recebimento/);
+});
+
+test('36. runtime: nenhum helper Latex chama .rpc()', async () => {
+  // Verifica tanto salvarEntregaLatex quanto atualizarEntregaLatex.
+  const tests = [
+    { fn: 'salvarEntregaLatex', args: { fornecedorId: 5, opId: 10, payload: VALID_PAYLOAD } },
+    { fn: 'atualizarEntregaLatex', args: { entregaId: 7, opId: 10, payload: VALID_PAYLOAD } },
+  ];
+  for (const t of tests) {
+    const { sandbox, fakeSupa } = makeEWLatexSandbox();
+    await vm.runInContext(
+      `window.${t.fn}(${JSON.stringify(t.args)})`, sandbox);
+    const rpcCalls = fakeSupa._calls.filter(c => c.op === 'rpc');
+    assert.equal(rpcCalls.length, 0, `${t.fn} NÃO deve chamar rpc (chamadas: ${rpcCalls.length})`);
+  }
+});
+
+test('37. runtime: consumidor inline mockado consegue chamar salvarEntregaLatex via global bare', async () => {
+  const { sandbox, fakeSupa } = makeEWLatexSandbox();
+  // Bare reference (sem "window.") deve resolver para window.salvarEntregaLatex
+  await vm.runInContext(
+    'salvarEntregaLatex({ fornecedorId: 5, opId: 10, payload: ' + JSON.stringify(VALID_PAYLOAD) + ' })',
+    sandbox);
+  const insertEntregas = fakeSupa._calls.filter(c => c.op === 'insert' && c.table === 'entregas');
+  assert.equal(insertEntregas.length, 1, 'consumidor bare não conseguiu chamar salvarEntregaLatex');
+});
+
+test('38. runtime: consumidor inline mockado consegue chamar atualizarEntregaLatex via global bare', async () => {
+  const { sandbox, fakeSupa } = makeEWLatexSandbox();
+  await vm.runInContext(
+    'atualizarEntregaLatex({ entregaId: 7, opId: 10, payload: ' + JSON.stringify(VALID_PAYLOAD) + ' })',
+    sandbox);
+  const updateEntregas = fakeSupa._calls.filter(c => c.op === 'update' && c.table === 'entregas');
+  assert.equal(updateEntregas.length, 1, 'consumidor bare não conseguiu chamar atualizarEntregaLatex');
 });
 
 // -----------------------------------------------------------------------------

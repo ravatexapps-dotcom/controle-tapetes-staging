@@ -325,9 +325,11 @@ test('6. script inline AINDA contém telas não-cadastro, helpers e setRoutes/ma
     assert.match(inline, new RegExp(`(async\\s+)?function\\s+${fn}\\s*\\(`),
       `inline perdeu a função ${fn}`);
   }
-  // Helpers de write continuam inline (excluirEntrega foi extraído
-  // para js/screens/entrega-writes.js na Fase 2.1)
-  for (const fn of ['salvarEntregaCima', 'atualizarEntregaCima', 'salvarEntregaLatex', 'atualizarEntregaLatex']) {
+  // Writes remanescentes: apenas Cima (Fase 2.3 do DIAG).
+  // excluirEntrega, salvarEntregaLatex e atualizarEntregaLatex
+  // foram extraídos para js/screens/entrega-writes.js (Fases 2.1
+  // e 2.2).
+  for (const fn of ['salvarEntregaCima', 'atualizarEntregaCima']) {
     assert.match(inline, new RegExp(`(async\\s+)?function\\s+${fn}\\s*\\(`),
       `inline perdeu helper ${fn}`);
   }
