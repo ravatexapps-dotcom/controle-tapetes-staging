@@ -222,10 +222,13 @@ test('12. inline AINDA contém saldo_fios_op.insert', () => {
     'inline perdeu saldo_fios_op — write deveria continuar inline');
 });
 
-test('13. inline AINDA contém saldo_fios select/update/insert', () => {
+test('13. inline NÃO contém mais from("saldo_fios") como Supabase call', () => {
   const inline = extractInlineScript(indexSrc);
-  assert.match(inline, /saldo_fios\b/,
-    'inline perdeu referência a saldo_fios');
+  // Após a extração, o inline NÃO deve ter from('saldo_fios') como
+  // chamada Supabase. Pode ter 'saldo_fios_select' etc. como string
+  // de mensagens, mas não como tabela.
+  assert.equal(/from\s*\(\s*['"]saldo_fios['"]\s*\)/.test(inline), false,
+    'inline ainda tem from("saldo_fios") como chamada Supabase — write deveria ter sido extraído');
 });
 
 test('14. inline AINDA contém ops.update status em_producao', () => {
@@ -490,4 +493,564 @@ test('26. setRoutes e main continuam inline', () => {
     'setRoutes não está mais inline');
   assert.match(inline, /async\s+function\s+main\s*\(/,
     'main não está mais inline');
+});
+
+// -------------------------------------------------------------------------
+// 6. aplicarRecalculoOP — extraído do inline (Seam B)
+// -------------------------------------------------------------------------
+
+function makeRecalculoSandbox({
+  opItensFailOnCall = null,
+  opItensFailAlways = null,
+  saldoFiosOpFailAlways = null,
+  saldoFiosSelectError = null,
+  saldoFiosExistingData = { kg_total: 10 },
+  saldoFiosUpdateError = null,
+  saldoFiosInsertError = null,
+  opsStatusError = null,
+} = {}) {
+  const toastsNode = new FakeNode('div');
+  const document = {
+    createElement: (t) => new FakeNode(t),
+    createTextNode: (t) => ({ textContent: t, appendChild() {}, setAttribute() {} }),
+    querySelector: (sel) => (sel === '#toasts') ? toastsNode : new FakeNode('div'),
+    querySelectorAll: () => [],
+    addEventListener: () => {}, removeEventListener: () => {},
+    body: new FakeNode('body'),
+  };
+
+  const calls = [];
+  let opItensCallCount = 0;
+
+  const fakeSupa = {
+    from: (table) => {
+      calls.push({ op: 'from', table });
+      const chain = {
+        _table: table,
+        _lastMutation: null,
+        _payload: null,
+        _isFilter: {},
+        _eqFilter: {},
+        select() { chain._lastMutation = 'select'; return chain; },
+        update(payload) { chain._lastMutation = 'update'; chain._payload = payload; return chain; },
+        insert(payload) { chain._lastMutation = 'insert'; chain._payload = payload; return chain; },
+        delete() { chain._lastMutation = 'delete'; return chain; },
+        eq(col, val) {
+          calls.push({ op: 'eq', table, col, val });
+          chain._eqFilter[col] = val;
+          return chain;
+        },
+        is(col, val) {
+          calls.push({ op: 'is', table, col, val });
+          chain._isFilter[col] = val;
+          return chain;
+        },
+        order() { return chain; },
+        in() { return chain; },
+        maybeSingle() {
+          if (chain._table === 'saldo_fios') {
+            return Promise.resolve({ data: saldoFiosExistingData, error: saldoFiosSelectError });
+          }
+          return Promise.resolve({ data: null, error: null });
+        },
+        single() { return Promise.resolve({ data: null, error: null }); },
+        then(resolve, reject) {
+          if (chain._table === 'op_itens' && chain._lastMutation === 'update') {
+            opItensCallCount++;
+            calls.push({ op: 'op_itens_update', call: opItensCallCount });
+            if (opItensFailAlways) {
+              return Promise.resolve({ data: null, error: new Error('mock op_itens') }).then(resolve, reject);
+            }
+            if (opItensFailOnCall != null && opItensCallCount === opItensFailOnCall) {
+              return Promise.resolve({ data: null, error: new Error('mock op_itens on call ' + opItensFailOnCall) }).then(resolve, reject);
+            }
+            return Promise.resolve({ data: null, error: null }).then(resolve, reject);
+          }
+          if (chain._table === 'saldo_fios_op' && chain._lastMutation === 'insert') {
+            calls.push({ op: 'saldo_fios_op_insert', payload: chain._payload });
+            if (saldoFiosOpFailAlways) {
+              return Promise.resolve({ data: null, error: new Error('mock saldo_fios_op') }).then(resolve, reject);
+            }
+            return Promise.resolve({ data: null, error: null }).then(resolve, reject);
+          }
+          if (chain._table === 'saldo_fios' && chain._lastMutation === 'update') {
+            calls.push({ op: 'saldo_fios_update', eq: chain._eqFilter, is: chain._isFilter, payload: chain._payload });
+            if (saldoFiosUpdateError) {
+              return Promise.resolve({ data: null, error: new Error('mock saldo_fios_update') }).then(resolve, reject);
+            }
+            return Promise.resolve({ data: null, error: null }).then(resolve, reject);
+          }
+          if (chain._table === 'saldo_fios' && chain._lastMutation === 'insert') {
+            calls.push({ op: 'saldo_fios_insert', payload: chain._payload });
+            if (saldoFiosInsertError) {
+              return Promise.resolve({ data: null, error: new Error('mock saldo_fios_insert') }).then(resolve, reject);
+            }
+            return Promise.resolve({ data: null, error: null }).then(resolve, reject);
+          }
+          if (chain._table === 'ops' && chain._lastMutation === 'update') {
+            calls.push({ op: 'ops_update_status', payload: chain._payload });
+            if (opsStatusError) {
+              return Promise.resolve({ data: null, error: new Error('mock ops') }).then(resolve, reject);
+            }
+            return Promise.resolve({ data: null, error: null }).then(resolve, reject);
+          }
+          return Promise.resolve({ data: null, error: null }).then(resolve, reject);
+        },
+      };
+      return chain;
+    },
+    rpc: () => Promise.resolve({ data: null, error: null }),
+    auth: {
+      getSession: () => Promise.resolve({ data: { session: null }, error: null }),
+      signInWithPassword: () => Promise.resolve({ data: { user: null }, error: null }),
+      signOut: () => Promise.resolve({ error: null }),
+    },
+    storage: {},
+    _calls: calls,
+  };
+
+  const sandbox = {
+    document, setTimeout, clearTimeout, console, URL, URLSearchParams,
+    location: { hash: '' }, supa: fakeSupa,
+  };
+  sandbox.window = sandbox;
+  sandbox.globalThis = sandbox;
+  vm.createContext(sandbox);
+
+  vm.runInContext(uiSrc,     sandbox, { filename: 'js/ui.js' });
+  vm.runInContext(badgesSrc, sandbox, { filename: 'js/badges.js' });
+  vm.runInContext(calcSrc,   sandbox, { filename: 'js/calculo-op.js' });
+  vm.runInContext(routerSrc, sandbox, { filename: 'js/router.js' });
+  vm.runInContext(sysSrc,    sandbox, { filename: 'js/screens/system-screens.js' });
+  vm.runInContext(commonSrc, sandbox, { filename: 'js/screens/common.js' });
+  vm.runInContext(cadSrc,    sandbox, { filename: 'js/screens/cadastros.js' });
+  vm.runInContext(opsSrc,    sandbox, { filename: 'js/screens/ops-list.js' });
+  vm.runInContext(efSrc,     sandbox, { filename: 'js/screens/entrega-form.js' });
+  vm.runInContext(ewSrc,     sandbox, { filename: 'js/screens/entrega-writes.js' });
+  vm.runInContext(fornSrc,   sandbox, { filename: 'js/screens/fornecedor.js' });
+  vm.runInContext(ofhSrc,    sandbox, { filename: 'js/screens/op-form-helpers.js' });
+  vm.runInContext(opwSrc,    sandbox, { filename: 'js/screens/op-writes.js' });
+  vm.runInContext(olaSrc,    sandbox, { filename: 'js/screens/op-latex-admin.js' });
+  vm.runInContext(painelSrc, sandbox, { filename: 'js/screens/painel.js' });
+  vm.runInContext(oprSrc,    sandbox, { filename: 'js/screens/op-recalculo.js' });
+
+  sandbox.CURRENT_USER = { nome: 'Tester', tipo: 'admin' };
+  sandbox.logout = () => {};
+
+  return { sandbox, fakeSupa, calls };
+}
+
+function resultadoAceitar(overrides = {}) {
+  return {
+    fator: 0.8,
+    itens: [
+      { op_item_id: 100, modelo_id: 1, metros_pedidos: 50, metros_ajustados: 40 },
+      { op_item_id: 101, modelo_id: 2, metros_pedidos: 60, metros_ajustados: 48 },
+    ],
+    sobras: [
+      { ordem_id: 1, tipo: 'algodao', cor_id: 10, cor_poliester: null, kg_sobra: 5 },
+      { ordem_id: 3, tipo: 'poliester', cor_id: null, cor_poliester: 'PRETO', kg_sobra: 3 },
+    ],
+    ...overrides,
+  };
+}
+
+function ordensManter(extras = []) {
+  return [
+    { id: 1, tipo: 'algodao', cor_id: 10, cor_poliester: null, kg_pedido: 30, kg_recebido: 35 },
+    { id: 3, tipo: 'poliester', cor_id: null, cor_poliester: 'PRETO', kg_pedido: 20, kg_recebido: 23 },
+    ...extras,
+  ];
+}
+
+// ---- 1-2: Exports -----------------------------------------------------
+
+test('27. window.aplicarRecalculoOP existe', () => {
+  const { sandbox } = makeRecalculoSandbox();
+  assert.equal(typeof vm.runInContext('window.aplicarRecalculoOP', sandbox), 'function',
+    'window.aplicarRecalculoOP não é função');
+});
+
+test('28. window.RAVATEX_SCREENS.opRecalculo.aplicarRecalculoOP existe', () => {
+  const { sandbox } = makeRecalculoSandbox();
+  assert.ok(vm.runInContext('window.RAVATEX_SCREENS.opRecalculo.aplicarRecalculoOP', sandbox),
+    'window.RAVATEX_SCREENS.opRecalculo.aplicarRecalculoOP não existe');
+});
+
+// ---- 3-7: op_itens.update ---------------------------------------------
+
+test('29. sucesso completo modo="aceitar" retorna { error:null, step:"ok", partial:false }', async () => {
+  const { sandbox } = makeRecalculoSandbox();
+  sandbox.resultado = resultadoAceitar();
+  sandbox.ordens = ordensManter();
+  const result = await vm.runInContext(
+    'window.aplicarRecalculoOP({ opId: 42, resultado: resultado, modo: "aceitar", ordens: ordens })',
+    sandbox
+  );
+  assert.equal(result.error, null, 'error deveria ser null');
+  assert.equal(result.step, 'ok', 'step deveria ser "ok"');
+  assert.equal(result.partial, false, 'partial deveria ser false');
+});
+
+test('30. sucesso completo modo="manter" retorna sucesso', async () => {
+  const { sandbox } = makeRecalculoSandbox();
+  sandbox.resultado = { fator: 1, itens: resultadoAceitar().itens, sobras: [] };
+  sandbox.ordens = ordensManter();
+  const result = await vm.runInContext(
+    'window.aplicarRecalculoOP({ opId: 42, resultado: resultado, modo: "manter", ordens: ordens })',
+    sandbox
+  );
+  assert.equal(result.error, null);
+  assert.equal(result.step, 'ok');
+});
+
+test('31. modo="manter" calcula sobras localmente a partir de ordens (kg_recebido - kg_pedido)', async () => {
+  const { sandbox, calls } = makeRecalculoSandbox();
+  sandbox.resultado = { fator: 1, itens: [], sobras: [] };
+  sandbox.ordens = ordensManter();
+  await vm.runInContext(
+    'window.aplicarRecalculoOP({ opId: 42, resultado: resultado, modo: "manter", ordens: ordens })',
+    sandbox
+  );
+  const insertCalls = calls.filter((c) => c.op === 'saldo_fios_op_insert');
+  assert.ok(insertCalls.length >= 2,
+    `esperado >=2 inserts em saldo_fios_op, encontrado ${insertCalls.length}`);
+  // ordem 1 (algodao): 35-30 = 5; ordem 3 (poliester PRETO): 23-20 = 3
+  const algInsert = insertCalls.find((c) => c.payload && c.payload.tipo === 'algodao');
+  const polInsert = insertCalls.find((c) => c.payload && c.payload.tipo === 'poliester');
+  assert.ok(algInsert, 'devia ter insert tipo algodao');
+  assert.ok(polInsert, 'devia ter insert tipo poliester');
+  assert.equal(algInsert.payload.kg_sobra, 5);
+  assert.equal(polInsert.payload.kg_sobra, 3);
+});
+
+test('32. falha em op_itens.update retorna step "op_itens_update" e partial=true', async () => {
+  const { sandbox } = makeRecalculoSandbox({ opItensFailAlways: true });
+  sandbox.resultado = resultadoAceitar();
+  sandbox.ordens = ordensManter();
+  const result = await vm.runInContext(
+    'window.aplicarRecalculoOP({ opId: 42, resultado: resultado, modo: "aceitar", ordens: ordens })',
+    sandbox
+  );
+  assert.ok(result.error, 'error deveria estar setado');
+  assert.equal(result.step, 'op_itens_update');
+  assert.equal(result.partial, true);
+});
+
+test('33. falha em op_itens.update no 2º item retorna step "op_itens_update"', async () => {
+  const { sandbox, calls } = makeRecalculoSandbox({ opItensFailOnCall: 2 });
+  sandbox.resultado = resultadoAceitar();
+  sandbox.ordens = ordensManter();
+  const result = await vm.runInContext(
+    'window.aplicarRecalculoOP({ opId: 42, resultado: resultado, modo: "aceitar", ordens: ordens })',
+    sandbox
+  );
+  const opItensCalls = calls.filter((c) => c.op === 'op_itens_update');
+  assert.equal(opItensCalls.length, 2, 'devia ter 2 chamadas op_itens_update');
+  assert.equal(result.step, 'op_itens_update');
+  // saldo_fios_op.insert NÃO deve ter sido chamado
+  const saldoCalls = calls.filter((c) => c.op === 'saldo_fios_op_insert');
+  assert.equal(saldoCalls.length, 0, 'saldo_fios_op_insert não devia ter sido chamado');
+});
+
+// ---- 8-13: saldo_fios_op.insert + saldo_fios -------------------------
+
+test('34. falha em saldo_fios_op.insert retorna step "saldo_fios_op_insert"', async () => {
+  const { sandbox } = makeRecalculoSandbox({ saldoFiosOpFailAlways: true });
+  sandbox.resultado = resultadoAceitar();
+  sandbox.ordens = ordensManter();
+  const result = await vm.runInContext(
+    'window.aplicarRecalculoOP({ opId: 42, resultado: resultado, modo: "aceitar", ordens: ordens })',
+    sandbox
+  );
+  assert.equal(result.step, 'saldo_fios_op_insert');
+  assert.equal(result.partial, true);
+});
+
+test('35. falha em saldo_fios.select retorna step "saldo_fios_select"', async () => {
+  const { sandbox } = makeRecalculoSandbox({ saldoFiosSelectError: true });
+  sandbox.resultado = resultadoAceitar();
+  sandbox.ordens = ordensManter();
+  const result = await vm.runInContext(
+    'window.aplicarRecalculoOP({ opId: 42, resultado: resultado, modo: "aceitar", ordens: ordens })',
+    sandbox
+  );
+  assert.equal(result.step, 'saldo_fios_select');
+  assert.equal(result.partial, true);
+});
+
+test('36. saldo existente chama saldo_fios.update (NÃO insert)', async () => {
+  const { sandbox, calls } = makeRecalculoSandbox({
+    saldoFiosExistingData: { kg_total: 100 },
+  });
+  sandbox.resultado = resultadoAceitar();
+  sandbox.ordens = ordensManter();
+  await vm.runInContext(
+    'window.aplicarRecalculoOP({ opId: 42, resultado: resultado, modo: "aceitar", ordens: ordens })',
+    sandbox
+  );
+  const updateCalls = calls.filter((c) => c.op === 'saldo_fios_update');
+  const insertCalls = calls.filter((c) => c.op === 'saldo_fios_insert');
+  assert.ok(updateCalls.length >= 1, 'devia ter >=1 update em saldo_fios');
+  assert.equal(insertCalls.length, 0, 'NÃO devia ter insert em saldo_fios');
+});
+
+test('37. falha em saldo_fios.update retorna step "saldo_fios_update"', async () => {
+  const { sandbox } = makeRecalculoSandbox({
+    saldoFiosExistingData: { kg_total: 100 },
+    saldoFiosUpdateError: true,
+  });
+  sandbox.resultado = resultadoAceitar();
+  sandbox.ordens = ordensManter();
+  const result = await vm.runInContext(
+    'window.aplicarRecalculoOP({ opId: 42, resultado: resultado, modo: "aceitar", ordens: ordens })',
+    sandbox
+  );
+  assert.equal(result.step, 'saldo_fios_update');
+  assert.equal(result.partial, true);
+});
+
+test('38. saldo inexistente chama saldo_fios.insert (NÃO update)', async () => {
+  const { sandbox, calls } = makeRecalculoSandbox({
+    saldoFiosExistingData: null,
+  });
+  sandbox.resultado = resultadoAceitar();
+  sandbox.ordens = ordensManter();
+  await vm.runInContext(
+    'window.aplicarRecalculoOP({ opId: 42, resultado: resultado, modo: "aceitar", ordens: ordens })',
+    sandbox
+  );
+  const updateCalls = calls.filter((c) => c.op === 'saldo_fios_update');
+  const insertCalls = calls.filter((c) => c.op === 'saldo_fios_insert');
+  assert.equal(updateCalls.length, 0, 'NÃO devia ter update em saldo_fios');
+  assert.ok(insertCalls.length >= 1, 'devia ter >=1 insert em saldo_fios');
+});
+
+test('39. falha em saldo_fios.insert retorna step "saldo_fios_insert"', async () => {
+  const { sandbox } = makeRecalculoSandbox({
+    saldoFiosExistingData: null,
+    saldoFiosInsertError: true,
+  });
+  sandbox.resultado = resultadoAceitar();
+  sandbox.ordens = ordensManter();
+  const result = await vm.runInContext(
+    'window.aplicarRecalculoOP({ opId: 42, resultado: resultado, modo: "aceitar", ordens: ordens })',
+    sandbox
+  );
+  assert.equal(result.step, 'saldo_fios_insert');
+  assert.equal(result.partial, true);
+});
+
+// ---- 14: ops.update status -------------------------------------------
+
+test('40. falha em ops.update status retorna step "ops_update_status"', async () => {
+  const { sandbox } = makeRecalculoSandbox({ opsStatusError: true });
+  sandbox.resultado = resultadoAceitar();
+  sandbox.ordens = ordensManter();
+  const result = await vm.runInContext(
+    'window.aplicarRecalculoOP({ opId: 42, resultado: resultado, modo: "aceitar", ordens: ordens })',
+    sandbox
+  );
+  assert.equal(result.step, 'ops_update_status');
+  assert.equal(result.partial, true);
+});
+
+// ---- 15-16: algodão vs poliéster ------------------------------------
+
+test('41. saldo de algodão usa filtro por cor_id (eq)', async () => {
+  const { sandbox, calls } = makeRecalculoSandbox();
+  // Apenas algodao para isolar o teste
+  sandbox.resultado = {
+    fator: 0.8,
+    itens: [{ op_item_id: 100, modelo_id: 1, metros_pedidos: 50, metros_ajustados: 40 }],
+    sobras: [{ ordem_id: 1, tipo: 'algodao', cor_id: 10, cor_poliester: null, kg_sobra: 5 }],
+  };
+  sandbox.ordens = ordensManter();
+  await vm.runInContext(
+    'window.aplicarRecalculoOP({ opId: 42, resultado: resultado, modo: "aceitar", ordens: ordens })',
+    sandbox
+  );
+  const saldoFiosEqCalls = calls.filter((c) => c.op === 'eq' && c.table === 'saldo_fios');
+  const corIdCall = saldoFiosEqCalls.find((c) => c.col === 'cor_id' && c.val === 10);
+  assert.ok(corIdCall, 'devia ter eq(cor_id, 10) para saldo_fios de algodao');
+  const isNullCall = calls.filter((c) => c.op === 'is' && c.table === 'saldo_fios' && c.col === 'cor_id');
+  assert.equal(isNullCall.length, 0, 'algodão NÃO devia usar is(cor_id, null)');
+});
+
+test('42. saldo de poliéster usa is("cor_id", null) + eq("cor_poliester", ...)', async () => {
+  const { sandbox, calls } = makeRecalculoSandbox();
+  // Apenas poliester para isolar o teste
+  sandbox.resultado = {
+    fator: 0.8,
+    itens: [{ op_item_id: 100, modelo_id: 1, metros_pedidos: 50, metros_ajustados: 40 }],
+    sobras: [{ ordem_id: 3, tipo: 'poliester', cor_id: null, cor_poliester: 'PRETO', kg_sobra: 3 }],
+  };
+  sandbox.ordens = ordensManter();
+  await vm.runInContext(
+    'window.aplicarRecalculoOP({ opId: 42, resultado: resultado, modo: "aceitar", ordens: ordens })',
+    sandbox
+  );
+  const isNullCall = calls.filter((c) => c.op === 'is' && c.table === 'saldo_fios' && c.col === 'cor_id' && c.val === null);
+  assert.ok(isNullCall.length >= 1, 'devia ter is(cor_id, null) para poliéster');
+  const corPolEq = calls.filter((c) => c.op === 'eq' && c.table === 'saldo_fios' && c.col === 'cor_poliester' && c.val === 'PRETO');
+  assert.ok(corPolEq.length >= 1, 'devia ter eq(cor_poliester, PRETO)');
+});
+
+// ---- 17-20: helper usa normalizarChaveSaldo + não chama toast/navigate/DOM
+
+test('43. helper usa normalizarChaveSaldo (chamada presente na source)', () => {
+  assert.match(oprSrc, /normalizarChaveSaldo\s*\(/,
+    'op-recalculo.js deve chamar normalizarChaveSaldo dentro de aplicarRecalculoOP');
+});
+
+test('44. helper não chama toast()', () => {
+  assert.equal(/toast\s*\(/.test(oprSrc), false,
+    'aplicarRecalculoOP não deve chamar toast()');
+});
+
+test('45. helper não chama navigate()', () => {
+  assert.equal(/navigate\s*\(/.test(oprSrc), false,
+    'aplicarRecalculoOP não deve chamar navigate()');
+});
+
+test('46. helper não acessa document.* (DOM)', () => {
+  assert.equal(/document\./.test(oprSrc), false,
+    'aplicarRecalculoOP não deve acessar document');
+});
+
+// ---- 21-28: inline aplicarRecalculo (estrutura preservada) -----------
+
+// Extrai o corpo de aplicarRecalculo do inline script via balanced-brace walk
+function extractAplicarRecalculoBlock(inline) {
+  const start = inline.search(/async\s+function\s+aplicarRecalculo\s*\(/);
+  if (start < 0) return null;
+  // Encontra a primeira `{` (corpo da função)
+  let i = inline.indexOf('{', start);
+  if (i < 0) return null;
+  let depth = 1;
+  i++;
+  while (i < inline.length && depth > 0) {
+    const c = inline[i];
+    if (c === '{') depth++;
+    else if (c === '}') depth--;
+    i++;
+  }
+  return inline.slice(start, i);
+}
+
+test('47. inline AINDA contém async function aplicarRecalculo', () => {
+  const inline = extractInlineScript(indexSrc);
+  assert.match(inline, /async\s+function\s+aplicarRecalculo\s*\(/,
+    'aplicarRecalculo não está mais inline');
+});
+
+test('48. bloco inline de aplicarRecalculo chama window.aplicarRecalculoOP', () => {
+  const inline = extractInlineScript(indexSrc);
+  const block = extractAplicarRecalculoBlock(inline);
+  assert.ok(block, 'bloco de aplicarRecalculo não encontrado');
+  assert.match(block, /window\.aplicarRecalculoOP\s*\(/,
+    'bloco de aplicarRecalculo não chama window.aplicarRecalculoOP');
+});
+
+test('49. bloco inline de aplicarRecalculo mantém saving', () => {
+  const inline = extractInlineScript(indexSrc);
+  const block = extractAplicarRecalculoBlock(inline);
+  assert.ok(block, 'bloco de aplicarRecalculo não encontrado');
+  assert.match(block, /if\s*\(\s*saving\s*\)\s*return/, 'saving check não encontrado');
+  assert.match(block, /saving\s*=\s*true/, 'saving = true não encontrado');
+  assert.match(block, /saving\s*=\s*false/, 'saving = false (no finally) não encontrado');
+});
+
+test('50. bloco inline de aplicarRecalculo mantém toast', () => {
+  const inline = extractInlineScript(indexSrc);
+  const block = extractAplicarRecalculoBlock(inline);
+  assert.ok(block, 'bloco de aplicarRecalculo não encontrado');
+  assert.match(block, /toast\s*\(/, 'chamada toast não encontrada no bloco');
+});
+
+test('51. bloco inline de aplicarRecalculo mantém navigate("#/ops")', () => {
+  const inline = extractInlineScript(indexSrc);
+  const block = extractAplicarRecalculoBlock(inline);
+  assert.ok(block, 'bloco de aplicarRecalculo não encontrado');
+  assert.match(block, /navigate\s*\(\s*['"]#\/ops['"]\s*\)/,
+    'navigate("#/ops") não encontrado no bloco');
+});
+
+test('52. bloco inline de aplicarRecalculo NÃO contém mais saldo_fios_op.insert', () => {
+  const inline = extractInlineScript(indexSrc);
+  const block = extractAplicarRecalculoBlock(inline);
+  assert.ok(block, 'bloco de aplicarRecalculo não encontrado');
+  assert.equal(/from\s*\(\s*['"]saldo_fios_op['"]\s*\)/.test(block), false,
+    'bloco de aplicarRecalculo ainda tem from("saldo_fios_op")');
+});
+
+test('53. bloco inline de aplicarRecalculo NÃO contém mais saldo_fios select/update/insert', () => {
+  const inline = extractInlineScript(indexSrc);
+  const block = extractAplicarRecalculoBlock(inline);
+  assert.ok(block, 'bloco de aplicarRecalculo não encontrado');
+  assert.equal(/from\s*\(\s*['"]saldo_fios['"]\s*\)/.test(block), false,
+    'bloco de aplicarRecalculo ainda tem from("saldo_fios")');
+});
+
+test('54. bloco inline de aplicarRecalculo NÃO contém mais ops.update status em_producao', () => {
+  const inline = extractInlineScript(indexSrc);
+  const block = extractAplicarRecalculoBlock(inline);
+  assert.ok(block, 'bloco de aplicarRecalculo não encontrado');
+  // Procura from('ops') seguido de update com status em_producao
+  const re = /from\s*\(\s*['"]ops['"]\s*\)[\s\S]*?update\s*\(\s*\{[\s\S]*?status\s*:\s*['"]em_producao['"]/;
+  assert.equal(re.test(block), false,
+    'bloco de aplicarRecalculo ainda tem update em ops com em_producao');
+});
+
+// ---- 29-32: outras funções continuam inline -------------------------
+
+test('55. persistir continua inline', () => {
+  const inline = extractInlineScript(indexSrc);
+  assert.match(inline, /async\s+function\s+persistir\s*\(/,
+    'persistir não está mais inline');
+});
+
+test('56. buildProposta/recompute/onAceitar continuam inline', () => {
+  const inline = extractInlineScript(indexSrc);
+  assert.match(inline, /function\s+buildProposta\s*\(/);
+  assert.match(inline, /function\s+recompute\s*\(/);
+  assert.match(inline, /function\s+onAceitar\s*\(/);
+});
+
+test('57. screenNovaOP continua inline', () => {
+  const inline = extractInlineScript(indexSrc);
+  assert.match(inline, /async\s+function\s+screenNovaOP\s*\(/,
+    'screenNovaOP não está mais inline');
+});
+
+test('58. setRoutes e main continuam inline', () => {
+  const inline = extractInlineScript(indexSrc);
+  assert.match(inline, /window\.RAVATEX_ROUTER\.setRoutes\(/);
+  assert.match(inline, /async\s+function\s+main\s*\(/);
+});
+
+// ---- 33: boot chain sem SyntaxError ---------------------------------
+
+test('59. boot chain: ui + router + system-screens + common + cadastros + ops-list + entrega-form + entrega-writes + fornecedor + op-form-helpers + op-writes + op-latex-admin + painel + op-recalculo + inline coexiste sem SyntaxError', () => {
+  const inline = extractInlineScript(indexSrc);
+  const { sandbox } = makeRecalculoSandbox();
+
+  let threwSyntax = false;
+  let otherErr = null;
+  try {
+    vm.runInContext(inline, sandbox, { filename: 'index-inline.js' });
+  } catch (e) {
+    if (e instanceof SyntaxError && /already been declared|Identifier .* has already/.test(e.message)) {
+      threwSyntax = true;
+    } else {
+      otherErr = e;
+    }
+  }
+  assert.equal(threwSyntax, false,
+    'boot com op-recalculo + inline lançou SyntaxError de duplicate identifier');
+
+  if (otherErr) {
+    console.log('(esperado) inline falhou em runtime fora do duplicate-identifier:',
+      String(otherErr.message).slice(0, 120));
+  }
 });
