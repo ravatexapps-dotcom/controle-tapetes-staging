@@ -1,5 +1,32 @@
 # Handoff — Controle de Produção de Tapetes
 
+> ⚠️ **Banner — documento histórico/parcialmente legado.**
+>
+> Este HANDOFF é um documento de passagem do projeto. Foi
+> escrito em um contexto anterior ao refactor/hardening e à
+> separação `staging`/`origin`. Mistura:
+>
+> - Referências ao app como "SPA de um arquivo só" e ao
+>   `index.html` monolítico (a arquitetura foi
+>   **modularizada** — ver `PROJECT_STATE.md`).
+> - Procedimentos de deploy que assumem `main` = produção sem
+>   staging (hoje há staging; `origin/main` é protegido).
+> - Credenciais de teste que foram removidas de outros docs
+>   (ver `AGENT_HANDOFF.md`).
+>
+> Para **retomada atual**, usar:
+>
+> - `AGENT_HANDOFF.md` (raiz) — estado aceito, regras,
+>   proibições, comandos de verificação.
+> - `PROJECT_STATE.md` (raiz) — snapshot canônico.
+> - `Guide-and-governance-rules.stxt` (raiz) — governança para
+>   futuras sessões de ChatGPT.
+> - `docs/DOCUMENTATION_INDEX.md` — hierarquia de fontes
+>   canônicas vs. legadas.
+>
+> Ver `docs/DOCUMENTATION_INDEX.md` para a hierarquia completa
+> de fontes canônicas vs. docs legadas.
+
 Documento de passagem do projeto. Se você acabou de assumir, **comece por aqui** e
 depois leia [`docs/superpowers/STATUS.md`](superpowers/STATUS.md) (a fonte da verdade
 sobre o que já foi feito em cada fase).

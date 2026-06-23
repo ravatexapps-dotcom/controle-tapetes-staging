@@ -1,24 +1,37 @@
 # QA — Fase 1 (Fundação)
 
+> ⚠️ **Banner — documento histórico.**
+>
+> Senhas de teste foram **anonimizadas** em
+> `RAVATEX-TAPETES-DOCS-SANITIZE-A`. Os e-mails de teste
+> abaixo foram preservados como referência histórica, mas as
+> senhas **NÃO** estão mais neste documento. As contas
+> `*@tapetes.test` continuam existindo no Supabase Auth como
+> backdoor histórico; trate como pendência de segurança a ser
+> resolvida em fase própria (ver `PROJECT_STATE.md`).
+>
+> Ver `docs/qa/README.md` e `docs/DOCUMENTATION_INDEX.md`
+> para contexto e prevalência.
+
 ## Cenário 1: Login como admin
-- [ ] Entrar com `admin@tapetes.test` / `Admin123!`
+- [ ] Entrar com `admin@tapetes.test` / `[REDACTED_TEST_PASSWORD]`
 - [ ] Tela redireciona pra `#/painel`
 - [ ] Mostra "Bem-vindo, Murilo (Admin)"
 - [ ] Botão "Sair" no canto superior direito
 - [ ] Clicar em "Sair" leva de volta pra `#/login`
 
 ## Cenário 2: Login como fornecedor de fios
-- [ ] Entrar com `algodao@tapetes.test` / `Fornec123!`
+- [ ] Entrar com `algodao@tapetes.test` / `[REDACTED_TEST_PASSWORD]`
 - [ ] Tela redireciona pra `#/fornecedor/home`
 - [ ] Mostra "Olá, Fios Sul"
 
 ## Cenário 3: Login como tecelagem
-- [ ] Entrar com `tecelagem@tapetes.test` / `Fornec123!`
+- [ ] Entrar com `tecelagem@tapetes.test` / `[REDACTED_TEST_PASSWORD]`
 - [ ] Redireciona pra `#/fornecedor/home`
 - [ ] Mostra "Olá, Aurora"
 
 ## Cenário 4: Login como látex
-- [ ] Entrar com `latex@tapetes.test` / `Fornec123!`
+- [ ] Entrar com `latex@tapetes.test` / `[REDACTED_TEST_PASSWORD]`
 - [ ] Redireciona pra `#/fornecedor/home`
 - [ ] Mostra "Olá, Premier"
 

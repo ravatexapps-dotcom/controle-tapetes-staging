@@ -1,5 +1,27 @@
 # BACKUP_AND_RESTORE.md — Controle de Tapetes
 
+> ⚠️ **Banner — documento precisa ser lido com ressalva.**
+>
+> O runbook em si permanece **tecnicamente correto** (estratégia
+> em 3 camadas, comandos `pg_dump`, checklist de restore), mas o
+> **status de backup pode estar desatualizado** em relação ao
+> estado real do projeto.
+>
+> - Este documento foi escrito em 2026-06-21 (fase D1A),
+>   quando "não existia backup conhecido".
+> - Desde então, houve backup e restore em staging (ver
+>   `docs/STAGING_BASELINE.md`).
+> - O estado vigente (refs Supabase, ambiente, row counts
+>   atuais) está em `docs/STAGING_BASELINE.md` e
+>   `PROJECT_STATE.md`.
+>
+> **Antes de qualquer operação que dependa de backup** (restore,
+> reset, incidente), confirme o estado mais recente em
+> `PROJECT_STATE.md` e `docs/STAGING_BASELINE.md`.
+>
+> Ver `docs/DOCUMENTATION_INDEX.md` para a hierarquia completa
+> de fontes canônicas vs. docs legadas.
+
 > Runbook de backup e recuperação. Pré-requisito **obrigatório** antes do primeiro patch
 > funcional. Criado em 2026-06-21 (fase D1A). Banco de produção: Supabase `bhgifjrfagkzubpyqpew`.
 

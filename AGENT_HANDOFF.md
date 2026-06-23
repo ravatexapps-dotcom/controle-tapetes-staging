@@ -3,6 +3,8 @@
 > Para uma nova sessão de IA continuar com segurança. Leia junto:
 > `PROJECT_STATE.md` e `docs/refactor/ARCHITECTURE_REFACTOR_LEDGER.md`.
 > Regras vinculantes em `docs/architecture/CODE_HEALTH_RULES.md`.
+> Índice de fontes canônicas vs. legadas em
+> `docs/DOCUMENTATION_INDEX.md`.
 > Convenção: **tudo em português brasileiro**.
 
 ## Estado atual aceito
@@ -80,9 +82,10 @@ Abortar e revisar o escopo se:
 6. **Testes focados** por fase (`node --test <arquivo>.smoke.js`).
    Não rodar suíte completa por padrão.
 7. **Fase docs-only**: só `PROJECT_STATE.md`, `AGENT_HANDOFF.md`,
-   `docs/refactor/ARCHITECTURE_REFACTOR_LEDGER.md` e
-   `docs/architecture/CODE_HEALTH_RULES.md` podem ser alterados.
-   Qualquer diff fora desses 4 arquivos reprova.
+   `docs/refactor/ARCHITECTURE_REFACTOR_LEDGER.md`,
+   `docs/architecture/CODE_HEALTH_RULES.md` e
+   `docs/DOCUMENTATION_INDEX.md` podem ser alterados. Qualquer
+   diff fora desses 5 arquivos reprova.
 8. **Não mexer** em `aplicarRecalculoOP` ou `persistirOP` sem
    nova fase explícita.
 9. **Não fazer docs + código na mesma fase.**
@@ -281,3 +284,9 @@ node --test tests/boot.smoke.js \
 - Iniciar nova extração em `op-nova.js` (refactor congelado).
 - Remover cache-busting `?v=20260623-asset1` de `index.html`.
 - Remover `getAppRoot()` de `js/ui.js`.
+- Tratar `docs/superpowers/plans/*.md` como playbook executável
+  (esses planos foram escritos para o monólito pré-refactor e
+  instruem a modificar `index.html` diretamente; devem ser
+  adaptados à arquitetura atual antes de qualquer uso).
+- Tratar `docs/qa/*.md` como especificação técnica atual
+  (checklists históricos; ver `docs/qa/README.md`).

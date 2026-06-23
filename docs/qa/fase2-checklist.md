@@ -2,7 +2,20 @@
 
 **Resultado:** ✅ 9/9 cenários passaram em 2026-05-19. 1 bug não bloqueante adiado — ver `docs/qa/fase2-bugs-pendentes.md`.
 
-Pré-condição: logado como admin (`admin@tapetes.test` / `Admin123!`)
+> ⚠️ **Banner — documento histórico.**
+>
+> Senhas de teste foram **anonimizadas** em
+> `RAVATEX-TAPETES-DOCS-SANITIZE-A`. O e-mail de teste abaixo
+> foi preservado como referência histórica, mas a senha
+> **NÃO** está mais neste documento. As contas
+> `*@tapetes.test` continuam existindo no Supabase Auth como
+> backdoor histórico; trate como pendência de segurança a ser
+> resolvida em fase própria (ver `PROJECT_STATE.md`).
+>
+> Ver `docs/qa/README.md` e `docs/DOCUMENTATION_INDEX.md`
+> para contexto e prevalência.
+
+Pré-condição: logado como admin (`admin@tapetes.test` / `[REDACTED_TEST_PASSWORD]`)
 
 ## Cenário 1 — Menu lateral ✅
 - [x] Menu mostra 7 itens: Painel, Cores, Modelos, Parâmetros, Fornecedores, Preços, Usuários

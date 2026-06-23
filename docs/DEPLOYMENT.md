@@ -1,5 +1,32 @@
 # DEPLOYMENT.md — Controle de Tapetes
 
+> ⚠️ **Banner — documento legado/parcialmente obsoleto.**
+>
+> Este documento foi escrito **antes da separação
+> `staging`/`origin`**. Naquele contexto, `main` (= `origin/main`)
+> era o único ambiente e o push ia direto para produção.
+>
+> Hoje a regra é diferente:
+>
+> - Existe remote **`staging`** (`controle-tapetes-staging`) que é
+>   o destino padrão de push de desenvolvimento em
+>   `work/app-next`.
+> - Remote **`origin`** (`grupoterrabranca/controle-tapetes`)
+>   corresponde à produção e está **intocado** desde a fase de
+>   refactor.
+> - Push em `origin/main` só com **autorização explícita**.
+> - Existe ref Supabase staging
+>   (`ucrjtfswnfdlxwtmxnoo`) e produção
+>   (`bhgifjrfagkzubpyqpew`).
+>
+> Para a **regra vigente**, consultar `PROJECT_STATE.md`,
+> `AGENT_HANDOFF.md` e `docs/architecture/CODE_HEALTH_RULES.md`
+> §15. Este arquivo é preservado apenas como contexto histórico
+> da fase D1A.
+>
+> Ver `docs/DOCUMENTATION_INDEX.md` para a hierarquia completa
+> de fontes canônicas vs. docs legadas.
+
 > Como o app é publicado. Não é Vercel — é **GitHub Pages**. Criado em 2026-06-21 (D1A).
 
 ## Plataforma

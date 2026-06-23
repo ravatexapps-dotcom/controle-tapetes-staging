@@ -1,5 +1,32 @@
 # AI_AGENT_RULES.md — Controle de Tapetes
 
+> ⚠️ **Banner — documento parcialmente legado.**
+>
+> Algumas regras deste arquivo **continuam úteis** (política
+> Supabase, política de testes, política de arquivos grandes,
+> proibição de `service_role` no frontend, etc.), mas o
+> **contexto D1/D1A/D2 descrito aqui não é a fase vigente**.
+>
+> Hoje:
+>
+> - O ciclo de refactor/hardening foi **congelado** em
+>   `7f3c6da` (`RAVATEX-TAPETES-OP-NOVA-PDF-MODULE-A`).
+> - Existe remote `staging` separado de `origin/main`; push
+>   normal vai para `staging` apenas.
+> - `index.html` é declarativo e modular (`js/boot.js`,
+>   `js/router.js`, `js/ui.js`, `js/screens/*`,
+>   `js/calculo-op.js`).
+> - O backdoor `*@tapetes.test` ainda não foi removido do
+>   Supabase Auth (ver `PROJECT_STATE.md`).
+>
+> As **regras atuais vinculantes** estão em
+> `docs/architecture/CODE_HEALTH_RULES.md` (18 regras
+> arquiteturais) e em `Guide-and-governance-rules.stxt`
+> (governança para futuras sessões de ChatGPT).
+>
+> Ver `docs/DOCUMENTATION_INDEX.md` para a hierarquia completa
+> de fontes canônicas vs. docs legadas.
+
 > Regras para qualquer agente de IA (ou pessoa) que trabalhe neste projeto. Criado 2026-06-21 (D1A).
 > Contexto crítico: **produção em `main` sem staging**, **Supabase único = produção**, app é um
 > **monólito `index.html`** de ~2.750 linhas. Errar aqui é incidente operacional real.

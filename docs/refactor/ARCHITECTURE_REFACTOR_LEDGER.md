@@ -2,9 +2,11 @@
 
 > Ledger de fases do refactor arquitetural de
 > `D:\OneDrive\Programação\Ravatex\controle-tapetes`.
-> Última atualização: 2026-06-23 (HEAD `7f3c6da`,
-> fase `RAVATEX-TAPETES-CODE-HEALTH-RULES` — criação do documento
-> de regras de saúde arquitetural).
+> Última atualização: 2026-06-23 (HEAD `0d5ef7b`,
+> fase `RAVATEX-TAPETES-DOCS-SANITIZE-A` — saneamento documental:
+> `docs/DOCUMENTATION_INDEX.md`, READMEs e banners em docs legados,
+> anonimização de credenciais em `docs/qa/fase1-checklist.md` e
+> `fase2-checklist.md`).
 
 ## 1. Premissas corrigidas
 - **App estático**, não Next/Vercel.
@@ -272,6 +274,38 @@ Regras cobrem:
 
 Documentos principais atualizados para referenciar `CODE_HEALTH_RULES.md`:
 `PROJECT_STATE.md`, `AGENT_HANDOFF.md` e este LEDGER.
+
+## 5f. Saneamento documental (`DOCS-SANITIZE-A`)
+
+Fase docs-only para saneamento da documentação legada, evitando que
+IAexec/ChatGPT use `docs/superpowers`, `docs/qa` ou docs antigos da
+raiz de `docs/` como fonte da verdade após o refactor/hardening.
+
+Ações:
+
+- Criado `docs/DOCUMENTATION_INDEX.md` (índice de fontes canônicas
+  vs. legadas, com regra explícita de prevalência).
+- Criado `docs/superpowers/README.md` (banner de conteúdo
+  legado/histórico; `plans/` marcados como **PERIGOSO PARA IA**).
+- Criado `docs/qa/README.md` (banner de checklist histórico; aviso
+  de credenciais).
+- Senhas de teste em `docs/qa/fase1-checklist.md` e
+  `fase2-checklist.md` foram **substituídas** por
+  `[REDACTED_TEST_PASSWORD]` (e-mails preservados para histórico).
+- Banners adicionados em `docs/DEPLOYMENT.md`,
+  `docs/AI_AGENT_RULES.md`, `docs/BACKUP_AND_RESTORE.md`,
+  `docs/HANDOFF.md` e `docs/superpowers/STATUS.md`.
+- `PROJECT_STATE.md`, `AGENT_HANDOFF.md` e este LEDGER foram
+  atualizados para registrar a fase, apontar para
+  `DOCUMENTATION_INDEX.md` e listar as ações de saneamento.
+
+A regra de prevalência é: em caso de divergência,
+`PROJECT_STATE.md`, `AGENT_HANDOFF.md`,
+`docs/architecture/CODE_HEALTH_RULES.md`,
+`docs/refactor/ARCHITECTURE_REFACTOR_LEDGER.md` e
+`Guide-and-governance-rules.stxt` prevalecem sobre
+`docs/superpowers/`, `docs/qa/` e docs legados na raiz de
+`docs/`.
 
 ## 6. Módulos extraídos (lista canônica)
 

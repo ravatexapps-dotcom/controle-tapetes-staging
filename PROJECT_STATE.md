@@ -3,11 +3,13 @@
 > Snapshot de estado canônico curto. Atualizado em **2026-06-23** (fase
 > `RAVATEX-TAPETES-REFACTOR-FINAL-DOCS-B` — fechamento consolidado do
 > ciclo de refactor + hardening + diagnóstico + extração final do
-> `op-pdf.js`).
+> `op-pdf.js`; atualizado em `RAVATEX-TAPETES-DOCS-SANITIZE-A` para
+> registrar saneamento documental e prevalência de fontes).
 > Fonte da verdade operacional. Detalhe por fase em
 > `docs/refactor/ARCHITECTURE_REFACTOR_LEDGER.md`.
 > Regras de saúde arquitetural em
 > `docs/architecture/CODE_HEALTH_RULES.md`.
+> Índice de documentação em `docs/DOCUMENTATION_INDEX.md`.
 
 ## Produto
 SPA web para controlar a produção de tapetes, do pedido de fio até o
@@ -361,6 +363,26 @@ A próxima etapa é **homologação / release**, não nova extração.
 - Servir local: `.\run-local.bat` (ou
   `python -m http.server 8765`) para `index-inline.smoke.js` e
   parte de `write-guard.smoke.js`.
+
+## Documentação e prevalência
+
+A hierarquia de fontes canônicas está em
+`docs/DOCUMENTATION_INDEX.md`. Resumo:
+
+- **Fontes canônicas (prevalecem):** `PROJECT_STATE.md`,
+  `AGENT_HANDOFF.md`, `docs/architecture/CODE_HEALTH_RULES.md`,
+  `docs/refactor/ARCHITECTURE_REFACTOR_LEDGER.md`,
+  `Guide-and-governance-rules.stxt`.
+- **Docs legadas (NÃO prevalecem):** `docs/superpowers/`,
+  `docs/qa/`, `docs/DEPLOYMENT.md`, `docs/AI_AGENT_RULES.md`,
+  `docs/BACKUP_AND_RESTORE.md`, `docs/HANDOFF.md` (todas
+  carregam banner de aviso após `RAVATEX-TAPETES-DOCS-SANITIZE-A`).
+- Em caso de divergência, as fontes canônicas prevalecem.
+
+Senhas de teste antigas em `docs/qa/fase1-checklist.md` e
+`docs/qa/fase2-checklist.md` foram anonimizadas em
+`RAVATEX-TAPETES-DOCS-SANITIZE-A` (substituídas por
+`[REDACTED_TEST_PASSWORD]`).
 
 ## Ações PROIBIDAS sem autorização explícita
 - `db/10_reset_producao.sql` e `db/11_reset_producao.sql` (DELETE em

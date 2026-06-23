@@ -1,5 +1,28 @@
 # Status do projeto
 
+> ⚠️ **Banner — documento histórico.**
+>
+> Este `STATUS.md` documenta as fases 1–6 e o status da
+> arquitetura **pré-refactor** (quando o app era um monólito
+> `index.html`).
+>
+> **Não usar como estado canônico atual.** Para o estado
+> vigente (HEAD, arquitetura modular, remotes, refactor
+> congelado), usar:
+>
+> - `PROJECT_STATE.md` (raiz)
+> - `docs/refactor/ARCHITECTURE_REFACTOR_LEDGER.md`
+> - `AGENT_HANDOFF.md` (raiz)
+>
+> O ciclo de refactor/hardening foi **congelado** em
+> `7f3c6da` (`RAVATEX-TAPETES-OP-NOVA-PDF-MODULE-A`).
+> A Fase 7 ("Corrigir/Desfazer recebimento de fio")
+> mencionada no final deste arquivo **não foi implementada**
+> após o refactor.
+>
+> Ver `docs/superpowers/README.md` e
+> `docs/DOCUMENTATION_INDEX.md` para contexto e prevalência.
+
 ## Fase atual: 6 — Cliente, Lote, fios sob demanda, % e PDF ✅ concluída e publicada (2026-06-05)
 
 Fase 6 implementada, mergeada em `main` e publicada em 2026-06-05 (commit `12f881c`); testes 31/31. **SQL `db/09_fase6_cliente_lote.sql` já rodado no Supabase.** Aguarda QA manual do Vinícius — roteiro guiado em `docs/qa/roteiro-teste-fase6.md` (checklist resumido em `docs/qa/fase6-checklist.md`). Sessão pausada com repo limpo; o Vinícius testa na próxima sessão.
