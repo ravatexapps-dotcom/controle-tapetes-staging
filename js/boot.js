@@ -80,8 +80,16 @@
     }
   }
 
-  main().catch((err) => {
-    console.error(err);
-    window.toast('Erro ao iniciar o app', 'error');
-  });
+  function startApp() {
+    main().catch((err) => {
+      console.error(err);
+      window.toast('Erro ao iniciar o app', 'error');
+    });
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', startApp, { once: true });
+  } else {
+    startApp();
+  }
 })(window);
