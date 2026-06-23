@@ -28,6 +28,7 @@
   <script src="js/screens/op-latex-admin.js"></script>
   <script src="js/screens/painel.js"></script>
   <script src="js/screens/op-recalculo.js"></script>
+  <script src="js/screens/op-persistir.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" integrity="sha512-qZvrmS2ekKPF2mSznTQsxqPgnpkI4DNTlrdUmTzrDgektczlKNRRhy5X5AAOnx5S09ydFYWWNSfcEqDTTHgtNA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
   <style>
     body { font-family: 'Inter', sans-serif; }
@@ -190,16 +191,15 @@ async function screenNovaOP(opId) {
   }
 
   // 3) Validação e persistência
-  function itensValidos() {
-    return itens.filter(i => i.modeloId && Number(i.metros) > 0);
-  }
+  // itensValidos extraído para js/screens/op-persistir.js como
+  // window.itensValidosOP(itens).
 
   // Persiste ops + filhos. status: 'simulada' | 'aberta'. Retorna id da OP ou null.
   async function persistir(status) {
     const numeroInt = parseInt(numero, 10), anoInt = parseInt(ano, 10);
     if (!numeroInt || !anoInt) { toast('Número e ano são obrigatórios', 'error'); return null; }
     if (!clienteSel) { toast('Escolha o cliente', 'error'); return null; }
-    const validos = itensValidos();
+    const validos = window.itensValidosOP(itens);
     if (validos.length === 0) { toast('Adicione ao menos 1 item com metros', 'error'); return null; }
 
     if (status === 'aberta' && !fornSel.cima) {
@@ -241,7 +241,7 @@ async function screenNovaOP(opId) {
 
     // 2) substitui op_itens
     await supa.from('op_itens').delete().eq('op_id', opIdSalvo);
-    const itensPayload = validos.map(i => ({ op_id: opIdSalvo, modelo_id: i.modeloId, metros_pedidos: Number(i.metros) }));
+    const itensPayload = window.montarPayloadItensOP(validos, opIdSalvo);
     const itensRes = await supa.from('op_itens').insert(itensPayload);
     if (itensRes.error) {
       if (status === 'aberta') await supa.from('ops').update({ status: 'simulada' }).eq('id', opIdSalvo);
@@ -251,7 +251,8 @@ async function screenNovaOP(opId) {
     // 3) substitui op_fornecedores — só tecelagem na criação (fios são atribuídos depois)
     await supa.from('op_fornecedores').delete().eq('op_id', opIdSalvo);
     if (fornSel.cima) {
-      const fornRes = await supa.from('op_fornecedores').insert([{ op_id: opIdSalvo, fornecedor_id: fornSel.cima, etapa: 'cima' }]);
+      const fornecedoresPayload = window.montarPayloadFornecedoresOP(fornSel, opIdSalvo);
+      const fornRes = await supa.from('op_fornecedores').insert(fornecedoresPayload);
       if (fornRes.error) {
         if (status === 'aberta') await supa.from('ops').update({ status: 'simulada' }).eq('id', opIdSalvo);
         toast('Erro ao salvar fornecedor de tecelagem', 'error'); console.error(fornRes.error); return null;
