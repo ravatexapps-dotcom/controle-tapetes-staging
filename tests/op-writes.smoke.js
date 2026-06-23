@@ -1,12 +1,10 @@
 // Smoke test do módulo js/screens/op-writes.js
-// (OP-ORDER-WRITE-MODULE-A).
+// (OP-ORDER-WRITE-MODULE-A + OP-FORNECEDOR-WRITE-MODULE-A).
 //
-// Garante que a extração do helper de write
-// `registrarRecebimentoOrdemFio` (write inline em
-// buildOrdemPendenteRow de screenNovaOP) do <script> inline de
-// index.html para js/screens/op-writes.js preservou o
-// comportamento exato. O write é um único update atômico em
-// ordens_compra_fio (kg_recebido, data_recebimento, status).
+// Garante que a extração dos helpers de write
+// `registrarRecebimentoOrdemFio` e `atribuirFornecedorFioOp`
+// do <script> inline de index.html para js/screens/op-writes.js
+// preservou o comportamento exato.
 //
 // Estáticos:
 //   1. js/screens/op-writes.js existe e é script clássico;
@@ -19,9 +17,8 @@
 //   7. inline AINDA contém cálculo de status parcial/total;
 //   8. inline NÃO contém mais o write inline específico de
 //      recebimento em buildOrdemPendenteRow;
-//   9. inline AINDA contém atribuirFornecedorFio (que continua
-//      com seu próprio supa.from('ordens_compra_fio').update
-//      para atribuir fornecedor — NÃO extraído nesta fase);
+//   9. inline NÃO contém mais function atribuirFornecedorFio
+//      (extraído para op-writes.js como atribuirFornecedorFioOp);
 //  10. inline AINDA contém persistir;
 //  11. inline AINDA contém aplicarRecalculo;
 //  12. inline AINDA contém screenNovaOP e renderOPLatexAdmin;
@@ -231,16 +228,13 @@ test('8. inline NÃO contém mais o write inline específico de recebimento', ()
     'inline não usa window.registrarRecebimentoOrdemFio — call-site não foi atualizado');
 });
 
-test('9. inline AINDA contém atribuirFornecedorFio com supa.from("ordens_compra_fio").update (NÃO extraído nesta fase)', () => {
+test('9. inline NÃO contém mais function atribuirFornecedorFio (extraído para op-writes.js)', () => {
   const inline = extractInlineScript(indexSrc);
-  assert.match(inline, /function\s+atribuirFornecedorFio\s*\(/,
-    'inline perdeu atribuirFornecedorFio — função deveria continuar inline');
-  // Esse write NÃO foi extraído: ele continua com o write inline
-  // para o caso de atribuição de fornecedor.
-  // Padrão típico:
-  //   supa.from('ordens_compra_fio').update({ fornecedor_id: fornecedorId }).eq('op_id', op.id).eq('tipo', tipo)
-  assert.match(inline, /fornecedor_id\s*:\s*fornecedorId/,
-    'inline perdeu o write de atribuição de fornecedor (que NÃO deveria ter sido extraído)');
+  assert.equal(/function\s+atribuirFornecedorFio\s*\(/.test(inline), false,
+    'inline ainda declara atribuirFornecedorFio — função deveria ter sido extraída');
+  // O novo helper window.atribuirFornecedorFioOp deve ser referenciado
+  assert.match(inline, /window\.atribuirFornecedorFioOp\(/,
+    'inline não referencia window.atribuirFornecedorFioOp — call-site não atualizado');
 });
 
 test('10. inline AINDA contém persistir (NÃO extraído nesta fase)', () => {
@@ -566,4 +560,380 @@ test('24. screenPainel (inline) ainda renderiza via shellLayout com 9 itens do A
   const links = aside && aside.children.filter((c) => c.tagName === 'A');
   assert.ok(links && links.length === 9,
     `screenPainel não renderizou 9 itens do ADMIN_MENU (renderizou ${links ? links.length : 0})`);
+});
+
+// -----------------------------------------------------------------------------
+// 4. Atribuir fornecedor fio (OP-FORNECEDOR-WRITE-MODULE-A)
+// -----------------------------------------------------------------------------
+
+// This sandbox loads ALL modules (ui + calculo-op + entrega-form +
+// entrega-writes + fornecedor + op-form-helpers + op-writes + inline)
+// to verify that window.atribuirFornecedorFioOp is available at boot.
+function makeFullBootSandbox() {
+  const toastsNode = new FakeNode('div');
+  const document = {
+    createElement: (t) => new FakeNode(t),
+    createTextNode: (t) => ({ textContent: t, appendChild() {}, setAttribute() {} }),
+    querySelector: (sel) => (sel === '#toasts') ? toastsNode : new FakeNode('div'),
+    querySelectorAll: () => [],
+    addEventListener: () => {}, removeEventListener: () => {},
+    body: new FakeNode('body'),
+  };
+  const fakeSupa = {
+    from: () => ({
+      select() { return this; },
+      order() { return this; },
+      eq() { return this; },
+      then(r) { return Promise.resolve({ data: [], error: null }).then(r); },
+    }),
+  };
+  const sandbox = {
+    document, setTimeout, clearTimeout, console, URL, URLSearchParams,
+    location: { hash: '' }, supa: fakeSupa,
+  };
+  sandbox.window = sandbox;
+  sandbox.globalThis = sandbox;
+  vm.createContext(sandbox);
+  vm.runInContext(uiSrc,     sandbox, { filename: 'js/ui.js' });
+  vm.runInContext(badgesSrc, sandbox, { filename: 'js/badges.js' });
+  vm.runInContext(calcSrc,   sandbox, { filename: 'js/calculo-op.js' });
+  vm.runInContext(routerSrc, sandbox, { filename: 'js/router.js' });
+  vm.runInContext(sysSrc,    sandbox, { filename: 'js/screens/system-screens.js' });
+  vm.runInContext(commonSrc, sandbox, { filename: 'js/screens/common.js' });
+  vm.runInContext(cadSrc,    sandbox, { filename: 'js/screens/cadastros.js' });
+  vm.runInContext(opsSrc,    sandbox, { filename: 'js/screens/ops-list.js' });
+  vm.runInContext(efSrc,     sandbox, { filename: 'js/screens/entrega-form.js' });
+  vm.runInContext(ewSrc,     sandbox, { filename: 'js/screens/entrega-writes.js' });
+  vm.runInContext(fornSrc,   sandbox, { filename: 'js/screens/fornecedor.js' });
+  vm.runInContext(ofhSrc,    sandbox, { filename: 'js/screens/op-form-helpers.js' });
+  vm.runInContext(opwSrc,    sandbox, { filename: 'js/screens/op-writes.js' });
+  sandbox.CURRENT_USER = { nome: 'Tester', tipo: 'admin' };
+  sandbox.logout = () => {};
+  return sandbox;
+}
+
+// Sandbox específico para testes unitários de atribuirFornecedorFioOp
+// (carrega apenas ui + calculo-op + op-writes, sem o boot completo).
+function makeAtribuirFornSandbox({
+  ordensUpdateResult = { data: null, error: null },
+  opFornecedoresDeleteResult = { data: null, error: null },
+  opFornecedoresInsertResult = { data: null, error: null },
+} = {}) {
+  const document = {
+    createElement: (t) => new FakeNode(t),
+    createTextNode: (t) => ({ textContent: t, appendChild() {}, setAttribute() {} }),
+    querySelector: () => new FakeNode('div'),
+    querySelectorAll: () => [],
+    addEventListener: () => {}, removeEventListener: () => {},
+    body: new FakeNode('body'),
+  };
+  const calls = [];
+  let updateResult = ordensUpdateResult;
+  let deleteResult = opFornecedoresDeleteResult;
+  let insertResult = opFornecedoresInsertResult;
+  const fakeSupa = {
+    from: (table) => {
+      calls.push({ op: 'from', table });
+      let lastMutation = null; // 'update' | 'delete' | 'insert'
+      const chain = {
+        _table: table,
+        _lastUpdate: null,
+        update(payload) {
+          calls.push({ op: 'update', table, args: [payload] });
+          chain._lastUpdate = payload;
+          lastMutation = 'update';
+          return chain;
+        },
+        delete() {
+          calls.push({ op: 'delete', table });
+          lastMutation = 'delete';
+          return chain;
+        },
+        insert(payload) {
+          calls.push({ op: 'insert', table, args: [payload] });
+          lastMutation = 'insert';
+          return chain;
+        },
+        eq(col, val) {
+          calls.push({ op: 'eq', col, val });
+          // eq() returns chain for further chaining; resolution happens
+          // via then() which uses the last mutation's result.
+          return chain;
+        },
+        select() { calls.push({ op: 'select', table }); return chain; },
+        order() { return chain; },
+        in() { return chain; },
+        single() { return this; },
+        then(resolveThen, rejectThen) {
+          // Resolve with the result of the last mutation called.
+          if (lastMutation === 'update') {
+            return Promise.resolve(updateResult).then(resolveThen, rejectThen);
+          }
+          if (lastMutation === 'delete') {
+            return Promise.resolve(deleteResult).then(resolveThen, rejectThen);
+          }
+          if (lastMutation === 'insert') {
+            return Promise.resolve(insertResult).then(resolveThen, rejectThen);
+          }
+          return Promise.resolve({ data: null, error: null }).then(resolveThen, rejectThen);
+        },
+      };
+      return chain;
+    },
+    rpc: () => { calls.push({ op: 'rpc' }); return Promise.resolve({ data: null, error: null }); },
+    auth: {
+      getSession: () => Promise.resolve({ data: { session: null }, error: null }),
+      signInWithPassword: () => Promise.resolve({ data: { user: null }, error: null }),
+      signOut: () => Promise.resolve({ error: null }),
+    },
+    storage: {},
+    _calls: calls,
+  };
+  const sandbox = {
+    document, console, setTimeout, clearTimeout, URL, URLSearchParams,
+    Node: FakeNode, supa: fakeSupa,
+  };
+  sandbox.window = sandbox;
+  sandbox.globalThis = sandbox;
+  vm.createContext(sandbox);
+  vm.runInContext(uiSrc,  sandbox, { filename: 'js/ui.js' });
+  vm.runInContext(calcSrc, sandbox, { filename: 'js/calculo-op.js' });
+  vm.runInContext(opwSrc, sandbox, { filename: 'js/screens/op-writes.js' });
+  return { sandbox, fakeSupa };
+}
+
+test('25. op-writes.js ainda expõe registrarRecebimentoOrdemFio', () => {
+  const sandbox = makeFullBootSandbox();
+  assert.equal(typeof vm.runInContext('window.registrarRecebimentoOrdemFio', sandbox), 'function',
+    'registrarRecebimentoOrdemFio não é função após boot completo');
+});
+
+test('26. op-writes.js expõe atribuirFornecedorFioOp', () => {
+  const sandbox = makeFullBootSandbox();
+  assert.equal(typeof vm.runInContext('window.atribuirFornecedorFioOp', sandbox), 'function',
+    'atribuirFornecedorFioOp não é função após boot completo');
+});
+
+test('27. window.RAVATEX_SCREENS.opWrites.atribuirFornecedorFioOp existe', () => {
+  const { sandbox } = makeAtribuirFornSandbox();
+  const fn = vm.runInContext('window.RAVATEX_SCREENS.opWrites.atribuirFornecedorFioOp', sandbox);
+  assert.equal(typeof fn, 'function', 'opWrites.atribuirFornecedorFioOp não é função');
+});
+
+test('28. window.atribuirFornecedorFioOp é função', () => {
+  const { sandbox } = makeAtribuirFornSandbox();
+  assert.equal(typeof vm.runInContext('window.atribuirFornecedorFioOp', sandbox), 'function');
+});
+
+test('29. atribuirFornecedorFioOp rejeita opId ausente sem chamar supa', async () => {
+  const { sandbox, fakeSupa } = makeAtribuirFornSandbox();
+  const result = await vm.runInContext(
+    'window.atribuirFornecedorFioOp({ etapa: "fio_algodao", tipo: "algodao", fornecedorId: 1 })',
+    sandbox);
+  assert.ok(result.error, 'deveria retornar error');
+  assert.equal(result.step, 0);
+  assert.equal(fakeSupa._calls.length, 0, 'não deve chamar supa');
+});
+
+test('30. atribuirFornecedorFioOp rejeita etapa ausente', async () => {
+  const { sandbox, fakeSupa } = makeAtribuirFornSandbox();
+  const result = await vm.runInContext(
+    'window.atribuirFornecedorFioOp({ opId: 10, tipo: "algodao", fornecedorId: 1 })',
+    sandbox);
+  assert.ok(result.error);
+  assert.equal(result.step, 0);
+  assert.equal(fakeSupa._calls.length, 0);
+});
+
+test('31. atribuirFornecedorFioOp rejeita tipo ausente', async () => {
+  const { sandbox, fakeSupa } = makeAtribuirFornSandbox();
+  const result = await vm.runInContext(
+    'window.atribuirFornecedorFioOp({ opId: 10, etapa: "fio_algodao", fornecedorId: 1 })',
+    sandbox);
+  assert.ok(result.error);
+  assert.equal(result.step, 0);
+  assert.equal(fakeSupa._calls.length, 0);
+});
+
+test('32. atribuirFornecedorFioOp rejeita fornecedorId ausente', async () => {
+  const { sandbox, fakeSupa } = makeAtribuirFornSandbox();
+  const result = await vm.runInContext(
+    'window.atribuirFornecedorFioOp({ opId: 10, etapa: "fio_algodao", tipo: "algodao" })',
+    sandbox);
+  assert.ok(result.error);
+  assert.equal(result.step, 0);
+  assert.equal(fakeSupa._calls.length, 0);
+});
+
+test('33. sucesso: chama ordens_compra_fio.update({ fornecedor_id })', async () => {
+  const { sandbox, fakeSupa } = makeAtribuirFornSandbox();
+  await vm.runInContext(
+    'window.atribuirFornecedorFioOp({ opId: 10, etapa: "fio_algodao", tipo: "algodao", fornecedorId: 5 })',
+    sandbox);
+  const updateCalls = fakeSupa._calls.filter(c => c.op === 'update' && c.table === 'ordens_compra_fio');
+  assert.equal(updateCalls.length, 1, 'esperado 1 update em ordens_compra_fio');
+  assert.equal(updateCalls[0].args[0].fornecedor_id, 5, 'payload deve ter fornecedor_id=5');
+});
+
+test('34. sucesso: filtra ordens_compra_fio por .eq("op_id", opId)', async () => {
+  const { sandbox, fakeSupa } = makeAtribuirFornSandbox();
+  await vm.runInContext(
+    'window.atribuirFornecedorFioOp({ opId: 10, etapa: "fio_algodao", tipo: "algodao", fornecedorId: 5 })',
+    sandbox);
+  const eqCalls = fakeSupa._calls.filter(c => c.op === 'eq');
+  // First eqs are for the update (op_id + tipo)
+  const opIdEq = eqCalls.find(c => c.col === 'op_id' && c.val === 10);
+  assert.ok(opIdEq, 'update deve filtrar por op_id=10');
+});
+
+test('35. sucesso: filtra ordens_compra_fio por .eq("tipo", tipo)', async () => {
+  const { sandbox, fakeSupa } = makeAtribuirFornSandbox();
+  await vm.runInContext(
+    'window.atribuirFornecedorFioOp({ opId: 10, etapa: "fio_algodao", tipo: "algodao", fornecedorId: 5 })',
+    sandbox);
+  const eqCalls = fakeSupa._calls.filter(c => c.op === 'eq');
+  const tipoEq = eqCalls.find(c => c.col === 'tipo' && c.val === 'algodao');
+  assert.ok(tipoEq, 'update deve filtrar por tipo="algodao"');
+});
+
+test('36. sucesso: chama op_fornecedores.delete()', async () => {
+  const { sandbox, fakeSupa } = makeAtribuirFornSandbox();
+  await vm.runInContext(
+    'window.atribuirFornecedorFioOp({ opId: 10, etapa: "fio_algodao", tipo: "algodao", fornecedorId: 5 })',
+    sandbox);
+  const deleteCalls = fakeSupa._calls.filter(c => c.op === 'delete' && c.table === 'op_fornecedores');
+  assert.equal(deleteCalls.length, 1, 'esperado 1 delete em op_fornecedores');
+});
+
+test('37. sucesso: filtra delete por .eq("op_id", opId)', async () => {
+  const { sandbox, fakeSupa } = makeAtribuirFornSandbox();
+  await vm.runInContext(
+    'window.atribuirFornecedorFioOp({ opId: 10, etapa: "fio_algodao", tipo: "algodao", fornecedorId: 5 })',
+    sandbox);
+  const eqCalls = fakeSupa._calls.filter(c => c.op === 'eq');
+  const deleteOpIdEq = eqCalls.filter(c => c.col === 'op_id' && c.val === 10);
+  // Pelo menos 2 calls eq com op_id=10: uma do update e uma do delete
+  assert.ok(deleteOpIdEq.length >= 2, `esperado >= 2 eq op_id=10, encontrado ${deleteOpIdEq.length}`);
+});
+
+test('38. sucesso: filtra delete por .eq("etapa", etapa)', async () => {
+  const { sandbox, fakeSupa } = makeAtribuirFornSandbox();
+  await vm.runInContext(
+    'window.atribuirFornecedorFioOp({ opId: 10, etapa: "fio_algodao", tipo: "algodao", fornecedorId: 5 })',
+    sandbox);
+  const eqCalls = fakeSupa._calls.filter(c => c.op === 'eq');
+  const etapaEq = eqCalls.find(c => c.col === 'etapa' && c.val === 'fio_algodao');
+  assert.ok(etapaEq, 'delete deve filtrar por etapa="fio_algodao"');
+});
+
+test('39. sucesso: chama op_fornecedores.insert([{ op_id, fornecedor_id, etapa }])', async () => {
+  const { sandbox, fakeSupa } = makeAtribuirFornSandbox();
+  await vm.runInContext(
+    'window.atribuirFornecedorFioOp({ opId: 10, etapa: "fio_algodao", tipo: "algodao", fornecedorId: 5 })',
+    sandbox);
+  const insertCalls = fakeSupa._calls.filter(c => c.op === 'insert' && c.table === 'op_fornecedores');
+  assert.equal(insertCalls.length, 1, 'esperado 1 insert em op_fornecedores');
+  const payload = insertCalls[0].args[0];
+  assert.ok(Array.isArray(payload), 'insert em op_fornecedores deve ser array');
+  assert.equal(payload.length, 1);
+  assert.equal(payload[0].op_id, 10);
+  assert.equal(payload[0].fornecedor_id, 5);
+  assert.equal(payload[0].etapa, 'fio_algodao');
+});
+
+test('40. falha no step 1 retorna { error, step: 1 } e não executa steps 2/3', async () => {
+  const { sandbox, fakeSupa } = makeAtribuirFornSandbox({
+    ordensUpdateResult: { data: null, error: { message: 'fake fail' } },
+  });
+  const result = await vm.runInContext(
+    'window.atribuirFornecedorFioOp({ opId: 10, etapa: "fio_algodao", tipo: "algodao", fornecedorId: 5 })',
+    sandbox);
+  assert.ok(result.error, 'deveria retornar error');
+  assert.equal(result.step, 1);
+  assert.equal(result.error.message, 'fake fail');
+  const deleteCalls = fakeSupa._calls.filter(c => c.op === 'delete');
+  const insertCalls = fakeSupa._calls.filter(c => c.op === 'insert');
+  assert.equal(deleteCalls.length, 0, 'não deve chamar delete se step 1 falhou');
+  assert.equal(insertCalls.length, 0, 'não deve chamar insert se step 1 falhou');
+});
+
+test('41. falha no step 2 retorna { error, step: 2 } e não executa step 3', async () => {
+  const { sandbox, fakeSupa } = makeAtribuirFornSandbox({
+    opFornecedoresDeleteResult: { data: null, error: { message: 'delete fail' } },
+  });
+  const result = await vm.runInContext(
+    'window.atribuirFornecedorFioOp({ opId: 10, etapa: "fio_algodao", tipo: "algodao", fornecedorId: 5 })',
+    sandbox);
+  assert.ok(result.error, 'deveria retornar error');
+  assert.equal(result.step, 2);
+  const updateCalls = fakeSupa._calls.filter(c => c.op === 'update');
+  const insertCalls = fakeSupa._calls.filter(c => c.op === 'insert');
+  assert.equal(updateCalls.length, 1, 'step 1 update deve ter sido chamado');
+  assert.equal(insertCalls.length, 0, 'não deve chamar insert se step 2 falhou');
+});
+
+test('42. falha no step 3 retorna { error, step: 3 }', async () => {
+  const { sandbox, fakeSupa } = makeAtribuirFornSandbox({
+    opFornecedoresInsertResult: { data: null, error: { message: 'insert fail' } },
+  });
+  const result = await vm.runInContext(
+    'window.atribuirFornecedorFioOp({ opId: 10, etapa: "fio_algodao", tipo: "algodao", fornecedorId: 5 })',
+    sandbox);
+  assert.ok(result.error, 'deveria retornar error');
+  assert.equal(result.step, 3);
+  const updateCalls = fakeSupa._calls.filter(c => c.op === 'update');
+  const deleteCalls = fakeSupa._calls.filter(c => c.op === 'delete');
+  assert.equal(updateCalls.length, 1, 'step 1 update deve ter sido chamado');
+  assert.equal(deleteCalls.length, 1, 'step 2 delete deve ter sido chamado');
+});
+
+test('43. sucesso retorna { error: null, step: 0 }', async () => {
+  const { sandbox } = makeAtribuirFornSandbox();
+  const result = await vm.runInContext(
+    'window.atribuirFornecedorFioOp({ opId: 10, etapa: "fio_algodao", tipo: "algodao", fornecedorId: 5 })',
+    sandbox);
+  assert.equal(result.error, null);
+  assert.equal(result.step, 0);
+});
+
+test('44. screenNovaOP continua inline após extração', () => {
+  const inline = extractInlineScript(indexSrc);
+  assert.match(inline, /function\s+screenNovaOP\s*\(/);
+});
+
+test('45. persistir continua inline', () => {
+  const inline = extractInlineScript(indexSrc);
+  assert.match(inline, /function\s+persistir\s*\(/);
+});
+
+test('46. aplicarRecalculo continua inline', () => {
+  const inline = extractInlineScript(indexSrc);
+  assert.match(inline, /function\s+aplicarRecalculo\s*\(/);
+});
+
+test('47. buildOrdemPendenteRow continua inline', () => {
+  const inline = extractInlineScript(indexSrc);
+  assert.match(inline, /function\s+buildOrdemPendenteRow\s*\(/);
+});
+
+test('48. renderOPLatexAdmin continua inline', () => {
+  const inline = extractInlineScript(indexSrc);
+  assert.match(inline, /function\s+renderOPLatexAdmin\s*\(/);
+});
+
+test('49. boot chain com todos os helpers não lança SyntaxError', () => {
+  const sandbox = makeFullBootSandbox();
+  const inline = extractInlineScript(indexSrc);
+  let threw = false;
+  try {
+    vm.runInContext(inline, sandbox, { filename: 'index-inline.js' });
+  } catch (e) {
+    if (e instanceof SyntaxError && /already been declared|Identifier .* has already/.test(e.message)) {
+      threw = true;
+    }
+  }
+  assert.equal(threw, false, 'boot lançou SyntaxError de duplicate identifier com atribuirFornecedorFioOp');
+  // Valida que ambas as funções estão disponíveis como globais
+  assert.equal(typeof vm.runInContext('window.registrarRecebimentoOrdemFio', sandbox), 'function');
+  assert.equal(typeof vm.runInContext('window.atribuirFornecedorFioOp', sandbox), 'function');
 });

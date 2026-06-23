@@ -399,22 +399,6 @@ async function screenNovaOP(opId) {
 
 
 
-  async function atribuirFornecedorFio(etapa, tipo, fornecedorId) {
-    // etapa: 'fio_algodao'|'fio_poliester'; tipo: 'algodao'|'poliester'
-    if (!fornecedorId) { toast('Escolha um fornecedor', 'error'); return; }
-    const u = await supa.from('ordens_compra_fio')
-      .update({ fornecedor_id: fornecedorId })
-      .eq('op_id', op.id).eq('tipo', tipo);
-    if (u.error) { toast('Erro ao atribuir fornecedor às ordens', 'error'); console.error(u.error); return; }
-    const del = await supa.from('op_fornecedores').delete().eq('op_id', op.id).eq('etapa', etapa);
-    if (del.error) { toast('Erro ao remover vínculo anterior do fornecedor', 'error'); console.error(del.error); return; }
-    const ins = await supa.from('op_fornecedores').insert([{ op_id: op.id, fornecedor_id: fornecedorId, etapa }]);
-    if (ins.error) { toast('Erro ao vincular fornecedor', 'error'); console.error(ins.error); return; }
-    fioFornSel[etapa] = fornecedorId;
-    toast('Fornecedor atribuído', 'success');
-    await reloadOrdens();
-  }
-
   async function reloadOrdens() {
     if (!op || op.status === 'simulada') return;
     const r = await supa.from('ordens_compra_fio')
@@ -510,7 +494,20 @@ async function screenNovaOP(opId) {
         if (!temTipo) return null;
         const sel = selectInput({ options: fornsPorTipo(tipo), value: fioFornSel[etapa], placeholder: 'Selecione...' });
         const btn = el('button', { class: 'bg-blue-700 hover:bg-blue-800 text-white text-sm font-semibold rounded-lg px-3 py-2',
-          onclick: () => atribuirFornecedorFio(etapa, tipo, sel.value ? Number(sel.value) : '') }, 'Atribuir');
+          onclick: async () => {
+            const fornecedorId = sel.value ? Number(sel.value) : '';
+            if (!fornecedorId) { toast('Selecione um fornecedor.', 'error'); return; }
+            const { error } = await window.atribuirFornecedorFioOp({
+              opId: op.id,
+              etapa,
+              tipo,
+              fornecedorId,
+            });
+            if (error) { toast('Erro ao atribuir fornecedor.', 'error'); console.error(error); return; }
+            fioFornSel[etapa] = fornecedorId;
+            toast('Fornecedor atribuído.', 'success');
+            await reloadOrdens();
+          } }, 'Atribuir');
         return el('div', { class: 'flex items-end gap-2' },
           el('div', { class: 'w-48' }, formField({ label, input: sel })), btn);
       };
