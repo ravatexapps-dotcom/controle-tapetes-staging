@@ -24,6 +24,7 @@
   <script src="js/screens/entrega-writes.js"></script>
   <script src="js/screens/fornecedor.js"></script>
   <script src="js/screens/op-form-helpers.js"></script>
+  <script src="js/screens/op-writes.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" integrity="sha512-qZvrmS2ekKPF2mSznTQsxqPgnpkI4DNTlrdUmTzrDgektczlKNRRhy5X5AAOnx5S09ydFYWWNSfcEqDTTHgtNA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
   <style>
     body { font-family: 'Inter', sans-serif; }
@@ -435,9 +436,12 @@ async function screenNovaOP(opId) {
         const dataRec = dataInput.value || new Date().toISOString().slice(0, 10);
         const status = kg < Number(ordem.kg_pedido) ? 'recebido_parcial' : 'recebido_total';
         btn.disabled = true;
-        const { error } = await supa.from('ordens_compra_fio')
-          .update({ kg_recebido: kg, data_recebimento: dataRec, status })
-          .eq('id', ordem.id);
+        const { error } = await window.registrarRecebimentoOrdemFio({
+          ordemId: ordem.id,
+          kgRecebido: kg,
+          dataRecebimento: dataRec,
+          status,
+        });
         if (error) { toast('Erro ao registrar recebimento', 'error'); console.error(error); btn.disabled = false; return; }
         toast('Recebimento registrado', 'success');
         reloadOrdens();
