@@ -72,6 +72,7 @@ const cp     = require('node:child_process');
 const ROOT   = path.resolve(__dirname, '..');
 const INDEX  = path.join(ROOT, 'index.html');
 const CAD    = path.join(ROOT, 'js', 'screens', 'cadastros.js');
+const OPS    = path.join(ROOT, 'js', 'screens', 'ops-list.js');
 const UI     = path.join(ROOT, 'js', 'ui.js');
 const BADGES = path.join(ROOT, 'js', 'badges.js');
 const ROUTER = path.join(ROOT, 'js', 'router.js');
@@ -80,6 +81,7 @@ const COMMON = path.join(ROOT, 'js', 'screens', 'common.js');
 
 const indexSrc  = fs.readFileSync(INDEX,  'utf8');
 const cadSrc    = fs.readFileSync(CAD,    'utf8');
+const opsSrc    = fs.readFileSync(OPS,    'utf8');
 const uiSrc     = fs.readFileSync(UI,     'utf8');
 const badgesSrc = fs.readFileSync(BADGES, 'utf8');
 const routerSrc = fs.readFileSync(ROUTER, 'utf8');
@@ -241,6 +243,7 @@ function makeCadastrosSandbox({ tableData = {} } = {}) {
   sandbox.CURRENT_USER = { nome: 'Tester', tipo: 'admin' };
   sandbox.logout = () => {};
   vm.runInContext(cadSrc, sandbox, { filename: 'js/screens/cadastros.js' });
+  vm.runInContext(opsSrc, sandbox, { filename: 'js/screens/ops-list.js' });
   // supa injetado DEPOIS do load do cadastros.js (o módulo só usa em
   // tempo de chamada, não no load).
   sandbox.supa = fakeSupa;
@@ -307,7 +310,7 @@ test('6. script inline AINDA contém telas não-cadastro, helpers e setRoutes/ma
   // Telas não relacionadas
   for (const fn of [
     'screenPainel', 'screenFornecedorHome', 'screenFornecedorEntregas',
-    'screenFornecedorLatex', 'screenFornecedorOrdens', 'screenListaOPs',
+    'screenFornecedorLatex', 'screenFornecedorOrdens',
     'screenNovaOP', 'renderOPLatexAdmin',
   ]) {
     assert.match(inline, new RegExp(`(async\\s+)?function\\s+${fn}\\s*\\(`),
@@ -586,6 +589,7 @@ test('22. boot: ui + badges + router + system-screens + common + cadastros + inl
   vm.runInContext(sysSrc,    sandbox, { filename: 'js/screens/system-screens.js' });
   vm.runInContext(commonSrc, sandbox, { filename: 'js/screens/common.js' });
   vm.runInContext(cadSrc,    sandbox, { filename: 'js/screens/cadastros.js' });
+  vm.runInContext(opsSrc,    sandbox, { filename: 'js/screens/ops-list.js' });
 
   // Stubs necessários para o inline carregar
   sandbox.CURRENT_USER = { nome: 'Tester', tipo: 'admin' };
@@ -654,6 +658,7 @@ test('23. setRoutes: as globais legadas resolvem (não há ReferenceError em run
   vm.runInContext(sysSrc,    sandbox, { filename: 'js/screens/system-screens.js' });
   vm.runInContext(commonSrc, sandbox, { filename: 'js/screens/common.js' });
   vm.runInContext(cadSrc,    sandbox, { filename: 'js/screens/cadastros.js' });
+  vm.runInContext(opsSrc,    sandbox, { filename: 'js/screens/ops-list.js' });
   sandbox.CURRENT_USER = { nome: 'Tester', tipo: 'admin' };
   sandbox.logout = () => {};
   vm.runInContext(inline, sandbox, { filename: 'index-inline.js' });
@@ -701,6 +706,7 @@ test('24. screenPainel (inline) ainda renderiza via shellLayout com 9 itens do A
   vm.runInContext(sysSrc,    sandbox, { filename: 'js/screens/system-screens.js' });
   vm.runInContext(commonSrc, sandbox, { filename: 'js/screens/common.js' });
   vm.runInContext(cadSrc,    sandbox, { filename: 'js/screens/cadastros.js' });
+  vm.runInContext(opsSrc,    sandbox, { filename: 'js/screens/ops-list.js' });
   sandbox.CURRENT_USER = { nome: 'Tester', tipo: 'admin' };
   sandbox.logout = () => {};
 

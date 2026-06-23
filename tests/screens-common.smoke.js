@@ -66,6 +66,7 @@ const ROOT    = path.resolve(__dirname, '..');
 const INDEX   = path.join(ROOT, 'index.html');
 const COMMON  = path.join(ROOT, 'js', 'screens', 'common.js');
 const CAD     = path.join(ROOT, 'js', 'screens', 'cadastros.js');
+const OPS     = path.join(ROOT, 'js', 'screens', 'ops-list.js');
 const UI      = path.join(ROOT, 'js', 'ui.js');
 const BADGES  = path.join(ROOT, 'js', 'badges.js');
 const ROUTER  = path.join(ROOT, 'js', 'router.js');
@@ -74,6 +75,7 @@ const SYSTEM_SCREENS = path.join(ROOT, 'js', 'screens', 'system-screens.js');
 const indexSrc   = fs.readFileSync(INDEX,  'utf8');
 const commonSrc  = fs.readFileSync(COMMON, 'utf8');
 const cadSrc     = fs.readFileSync(CAD,    'utf8');
+const opsSrc     = fs.readFileSync(OPS,    'utf8');
 const uiSrc      = fs.readFileSync(UI,     'utf8');
 const badgesSrc  = fs.readFileSync(BADGES, 'utf8');
 const routerSrc  = fs.readFileSync(ROUTER, 'utf8');
@@ -418,6 +420,7 @@ test('28. integração: screenPainel() (inline) ainda renderiza via shellLayout 
   vm.runInContext(sysSrc,    sandbox, { filename: 'js/screens/system-screens.js' });
   vm.runInContext(commonSrc, sandbox, { filename: 'js/screens/common.js' });
   vm.runInContext(cadSrc,    sandbox, { filename: 'js/screens/cadastros.js' });
+  vm.runInContext(opsSrc,    sandbox, { filename: 'js/screens/ops-list.js' });
 
   // Stubs necessários para o inline carregar (CURRENT_USER/logout vêm de auth.js no boot real).
   sandbox.CURRENT_USER = { nome: 'Eva', tipo: 'admin' };
@@ -467,6 +470,7 @@ test('30. boot: ui.js + badges.js + router.js + system-screens.js + common.js + 
   vm.runInContext(sysSrc,    sandbox, { filename: 'js/screens/system-screens.js' });
   vm.runInContext(commonSrc, sandbox, { filename: 'js/screens/common.js' });
   vm.runInContext(cadSrc,    sandbox, { filename: 'js/screens/cadastros.js' });
+  vm.runInContext(opsSrc,    sandbox, { filename: 'js/screens/ops-list.js' });
 
   let threwSyntax = false;
   let otherErr = null;
