@@ -258,13 +258,13 @@ test('5. script inline NÃO contém mais function rotuloFio, const OCF_STATUS_LA
 test('6. script inline AINDA contém telas, helpers, setRoutes, main e rotuloFioOrdem', () => {
   const inline = extractInlineScript(indexSrc);
   // Todos os writes foram extraídos para js/screens/entrega-writes.js
-  // (Fases 2.1, 2.2 e 2.3 do DIAG): excluirEntrega,
-  // salvarEntregaLatex, atualizarEntregaLatex, salvarEntregaCima,
-  // atualizarEntregaCima.
+  // (Fases 2.1, 2.2 e 2.3 do DIAG). As 4 telas de fornecedor foram
+  // extraídas para js/screens/fornecedor.js
+  // (FORNECEDOR-SCREENS-MODULE-A). O inline mantém: screenPainel,
+  // screenNovaOP, renderOPLatexAdmin.
   // telas
   for (const fn of [
-    'screenPainel', 'screenFornecedorHome', 'screenFornecedorEntregas',
-    'screenFornecedorLatex', 'screenFornecedorOrdens', 'screenNovaOP',
+    'screenPainel', 'screenNovaOP',
     'renderOPLatexAdmin',
   ]) {
     assert.match(inline, new RegExp(`(async\\s+)?function\\s+${fn}\\s*\\(`),

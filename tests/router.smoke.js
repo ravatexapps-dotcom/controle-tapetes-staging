@@ -52,6 +52,7 @@ const CAD    = path.join(ROOT, 'js', 'screens', 'cadastros.js');
 const OPS    = path.join(ROOT, 'js', 'screens', 'ops-list.js');
 const EF     = path.join(ROOT, 'js', 'screens', 'entrega-form.js');
 const EW     = path.join(ROOT, 'js', 'screens', 'entrega-writes.js');
+const FORN   = path.join(ROOT, 'js', 'screens', 'fornecedor.js');
 
 const routerSrc  = fs.readFileSync(ROUTER, 'utf8');
 const indexSrc   = fs.readFileSync(INDEX,  'utf8');
@@ -64,6 +65,7 @@ const cadSrc     = fs.readFileSync(CAD,    'utf8');
 const opsSrc     = fs.readFileSync(OPS,    'utf8');
 const efSrc      = fs.readFileSync(EF,     'utf8');
 const ewSrc      = fs.readFileSync(EW,     'utf8');
+const fornSrc    = fs.readFileSync(FORN,   'utf8');
 
 // -----------------------------------------------------------------------------
 // Helpers de validação estática
@@ -491,6 +493,7 @@ test('boot: ui.js + badges.js + router.js + inline coexistem sem SyntaxError de 
   vm.runInContext(opsSrc,    sandbox, { filename: 'js/screens/ops-list.js' });
   vm.runInContext(efSrc,     sandbox, { filename: 'js/screens/entrega-form.js' });
   vm.runInContext(ewSrc,     sandbox, { filename: 'js/screens/entrega-writes.js' });
+  vm.runInContext(fornSrc,   sandbox, { filename: 'js/screens/fornecedor.js' });
 
   let threwSyntax = false;
   let otherErr = null;

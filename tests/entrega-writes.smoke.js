@@ -145,6 +145,7 @@ const SYSTEM_SCREENS = path.join(ROOT, 'js', 'screens', 'system-screens.js');
 const COMMON = path.join(ROOT, 'js', 'screens', 'common.js');
 const CAD    = path.join(ROOT, 'js', 'screens', 'cadastros.js');
 const OPS    = path.join(ROOT, 'js', 'screens', 'ops-list.js');
+const FORN   = path.join(ROOT, 'js', 'screens', 'fornecedor.js');
 
 const indexSrc  = fs.readFileSync(INDEX,  'utf8');
 const ewSrc     = fs.readFileSync(EW,     'utf8');
@@ -156,6 +157,7 @@ const calcSrc   = fs.readFileSync(CALC,   'utf8');
 const sysSrc    = fs.readFileSync(SYSTEM_SCREENS, 'utf8');
 const commonSrc = fs.readFileSync(COMMON, 'utf8');
 const cadSrc    = fs.readFileSync(CAD,    'utf8');
+const fornSrc   = fs.readFileSync(FORN,   'utf8');
 const opsSrc    = fs.readFileSync(OPS,    'utf8');
 
 // -----------------------------------------------------------------------------
@@ -359,11 +361,11 @@ test('6. script inline AINDA contém as telas, helpers, setRoutes, main, rotuloF
   // (Fases 2.1, 2.2 e 2.3 do DIAG). O inline NÃO deve mais
   // declarar: excluirEntrega, salvarEntregaLatex,
   // atualizarEntregaLatex, salvarEntregaCima, atualizarEntregaCima.
-  // Telas
+  // As 4 telas de fornecedor foram extraídas para
+  // js/screens/fornecedor.js (FORNECEDOR-SCREENS-MODULE-A).
+  // Telas que permanecem inline
   for (const fn of [
-    'screenPainel', 'screenFornecedorHome', 'screenFornecedorEntregas',
-    'screenFornecedorLatex', 'screenFornecedorOrdens', 'screenNovaOP',
-    'renderOPLatexAdmin',
+    'screenPainel', 'screenNovaOP', 'renderOPLatexAdmin',
   ]) {
     assert.match(inline, new RegExp(`(async\\s+)?function\\s+${fn}\\s*\\(`),
       `inline perdeu a função ${fn}`);
@@ -1384,6 +1386,7 @@ test('55. boot: ui + router + system-screens + common + cadastros + ops-list + e
   vm.runInContext(opsSrc,    sandbox, { filename: 'js/screens/ops-list.js' });
   vm.runInContext(efSrc,     sandbox, { filename: 'js/screens/entrega-form.js' });
   vm.runInContext(ewSrc,     sandbox, { filename: 'js/screens/entrega-writes.js' });
+  vm.runInContext(fornSrc,   sandbox, { filename: 'js/screens/fornecedor.js' });
 
   sandbox.CURRENT_USER = { nome: 'Tester', tipo: 'admin' };
   sandbox.logout = () => {};
@@ -1452,6 +1455,7 @@ test('56. screenPainel (inline) ainda renderiza via shellLayout com 9 itens do A
   vm.runInContext(opsSrc,    sandbox, { filename: 'js/screens/ops-list.js' });
   vm.runInContext(efSrc,     sandbox, { filename: 'js/screens/entrega-form.js' });
   vm.runInContext(ewSrc,     sandbox, { filename: 'js/screens/entrega-writes.js' });
+  vm.runInContext(fornSrc,   sandbox, { filename: 'js/screens/fornecedor.js' });
   sandbox.CURRENT_USER = { nome: 'Tester', tipo: 'admin' };
   sandbox.logout = () => {};
 
@@ -1504,6 +1508,7 @@ test('57. screenCadastrosCores (cadastros) ainda renderiza (regressão cadastros
   vm.runInContext(opsSrc,    sandbox, { filename: 'js/screens/ops-list.js' });
   vm.runInContext(efSrc,     sandbox, { filename: 'js/screens/entrega-form.js' });
   vm.runInContext(ewSrc,     sandbox, { filename: 'js/screens/entrega-writes.js' });
+  vm.runInContext(fornSrc,   sandbox, { filename: 'js/screens/fornecedor.js' });
   sandbox.CURRENT_USER = { nome: 'Tester', tipo: 'admin' };
   sandbox.logout = () => {};
 
@@ -1544,6 +1549,7 @@ test('58. screenListaOPs (ops-list) ainda renderiza (regressão ops-list)', asyn
   vm.runInContext(opsSrc,    sandbox, { filename: 'js/screens/ops-list.js' });
   vm.runInContext(efSrc,     sandbox, { filename: 'js/screens/entrega-form.js' });
   vm.runInContext(ewSrc,     sandbox, { filename: 'js/screens/entrega-writes.js' });
+  vm.runInContext(fornSrc,   sandbox, { filename: 'js/screens/fornecedor.js' });
   sandbox.CURRENT_USER = { nome: 'Tester', tipo: 'admin' };
   sandbox.logout = () => {};
   sandbox.navigate = (h) => { sandbox._lastNavigate = h; };

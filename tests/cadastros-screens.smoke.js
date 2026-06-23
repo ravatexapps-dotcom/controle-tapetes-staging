@@ -75,6 +75,7 @@ const CAD    = path.join(ROOT, 'js', 'screens', 'cadastros.js');
 const OPS    = path.join(ROOT, 'js', 'screens', 'ops-list.js');
 const EF     = path.join(ROOT, 'js', 'screens', 'entrega-form.js');
 const EW     = path.join(ROOT, 'js', 'screens', 'entrega-writes.js');
+const FORN   = path.join(ROOT, 'js', 'screens', 'fornecedor.js');
 const UI     = path.join(ROOT, 'js', 'ui.js');
 const BADGES = path.join(ROOT, 'js', 'badges.js');
 const ROUTER = path.join(ROOT, 'js', 'router.js');
@@ -86,6 +87,7 @@ const cadSrc    = fs.readFileSync(CAD,    'utf8');
 const opsSrc    = fs.readFileSync(OPS,    'utf8');
 const efSrc     = fs.readFileSync(EF,     'utf8');
 const ewSrc     = fs.readFileSync(EW,     'utf8');
+const fornSrc   = fs.readFileSync(FORN,   'utf8');
 const uiSrc     = fs.readFileSync(UI,     'utf8');
 const badgesSrc = fs.readFileSync(BADGES, 'utf8');
 const routerSrc = fs.readFileSync(ROUTER, 'utf8');
@@ -318,17 +320,17 @@ test('6. script inline AINDA contém telas não-cadastro, helpers e setRoutes/ma
   const inline = extractInlineScript(indexSrc);
   // Telas não relacionadas
   for (const fn of [
-    'screenPainel', 'screenFornecedorHome', 'screenFornecedorEntregas',
-    'screenFornecedorLatex', 'screenFornecedorOrdens',
+    'screenPainel',
     'screenNovaOP', 'renderOPLatexAdmin',
   ]) {
     assert.match(inline, new RegExp(`(async\\s+)?function\\s+${fn}\\s*\\(`),
       `inline perdeu a função ${fn}`);
   }
   // Todos os writes foram extraídos para js/screens/entrega-writes.js
-  // (Fases 2.1, 2.2 e 2.3 do DIAG): excluirEntrega,
-  // salvarEntregaLatex, atualizarEntregaLatex, salvarEntregaCima,
-  // atualizarEntregaCima. O inline não deve mais declará-los.
+  // (Fases 2.1, 2.2 e 2.3 do DIAG). As 4 telas de fornecedor foram
+  // extraídas para js/screens/fornecedor.js
+  // (FORNECEDOR-SCREENS-MODULE-A). O inline não deve mais
+  // declará-las.
   // setRoutes + main
   assert.match(inline, /window\.RAVATEX_ROUTER\.setRoutes\(/);
   assert.match(inline, /async\s+function\s+main\s*\(/);
@@ -596,6 +598,9 @@ test('22. boot: ui + badges + router + system-screens + common + cadastros + inl
   vm.runInContext(commonSrc, sandbox, { filename: 'js/screens/common.js' });
   vm.runInContext(cadSrc,    sandbox, { filename: 'js/screens/cadastros.js' });
   vm.runInContext(opsSrc,    sandbox, { filename: 'js/screens/ops-list.js' });
+  vm.runInContext(efSrc,     sandbox, { filename: 'js/screens/entrega-form.js' });
+  vm.runInContext(ewSrc,     sandbox, { filename: 'js/screens/entrega-writes.js' });
+  vm.runInContext(fornSrc,   sandbox, { filename: 'js/screens/fornecedor.js' });
 
   // Stubs necessários para o inline carregar
   sandbox.CURRENT_USER = { nome: 'Tester', tipo: 'admin' };
@@ -665,6 +670,9 @@ test('23. setRoutes: as globais legadas resolvem (não há ReferenceError em run
   vm.runInContext(commonSrc, sandbox, { filename: 'js/screens/common.js' });
   vm.runInContext(cadSrc,    sandbox, { filename: 'js/screens/cadastros.js' });
   vm.runInContext(opsSrc,    sandbox, { filename: 'js/screens/ops-list.js' });
+  vm.runInContext(efSrc,     sandbox, { filename: 'js/screens/entrega-form.js' });
+  vm.runInContext(ewSrc,     sandbox, { filename: 'js/screens/entrega-writes.js' });
+  vm.runInContext(fornSrc,   sandbox, { filename: 'js/screens/fornecedor.js' });
   sandbox.CURRENT_USER = { nome: 'Tester', tipo: 'admin' };
   sandbox.logout = () => {};
   vm.runInContext(inline, sandbox, { filename: 'index-inline.js' });
