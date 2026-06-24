@@ -120,21 +120,17 @@ isso é registrado explicitamente no header do arquivo e em
 > `FORBIDDEN`/`SELF_DISABLE_FORBIDDEN`/`LAST_ADMIN_FORBIDDEN`/
 > `NOT_FOUND`/`AUTH_BAN_FAILED`/`COMPENSATION_FAILED`/
 > `VALIDATION_ERROR`/`UNAUTHORIZED` para mensagens PT-BR;
-> guarda de UX para self/inativos). Um **runner de browser
-> automatizado** para validar a UI real foi criado em
-> `scripts/staging/admin-disable-user-ui-browser-e2e.mjs` (fase
-> `...-UI-BROWSER-E2E-A`); usa `import('playwright')` dinâmico;
-> reusa `.ravatex-local/admin-disable-user-e2e.config.json`;
-> default `http://localhost:8765/`; aborta se URL não for
-> `ucrjtfswnfdlxwtmxnoo` ou se for `bhgifjrfagkzubpyqpew`;
-> sem secrets versionados; sem SQL manual; sem `.delete()`;
-> sem `auth.admin`. **E2E real de browser não foi
-> executado nesta fase** (Playwright não instalado
-> localmente; app em :8765 está rodando). Runner fica
-> pronto para `node ... run` quando Playwright estiver
-> disponível em diretório externo. Próxima fase:
-> `...-UI-BROWSER-E2E-RUN-A` (rodar o `run` real de browser
-> com Playwright instalado, após autorização do HMNlead).
+> guarda de UX para self/inativos). **Validação manual da UI
+> de desativação em staging registrada** na fase
+> `RAVATEX-TAPETES-AUTH-DISABLE-USER-UI-VALIDATION-CLOSEOUT-A`
+> (HMNlead, app/staging `ucrjtfswnfdlxwtmxnoo`): tela
+> `#/cadastros/usuarios`, botão `Desativar`, guarda de
+> usuário já inativo, criação de fornecedor descartável
+> ativo e desativação via UI — fluxo real passou. Detalhes
+> em `PROJECT_STATE.md`. **Produção `bhgifjrfagkzubpyqpew` e
+> `origin/main` intocados.** Próxima etapa: decisão de
+> release para `origin/main`/produção, somente com
+> autorização explícita do HMNlead (em fase separada).
 
 ## 4. Docs legadas (NÃO GUIAM EXECUÇÃO)
 

@@ -8,12 +8,21 @@
 > Convenção: **tudo em português brasileiro**.
 
 ## Estado atual aceito
-- **Estado atual aceito:** `work/app-next @ 83344f5` — "Enable auth
-  user disable UI" (fase
-  `RAVATEX-TAPETES-AUTH-DISABLE-USER-UI-A`, integração da tela
-  `#/cadastros/usuarios` com a Edge Function `admin-disable-user`).
-- **staging/main:** `83344f54dcbe82a56e1559ef6d34d07714334d69`
-  (sincronizado com `work/app-next`).
+- **Estado atual aceito:** `work/app-next` na ponta da fase
+  `RAVATEX-TAPETES-AUTH-DISABLE-USER-UI-VALIDATION-CLOSEOUT-A`
+  (docs-only). **UI Auth Disable validada manualmente em
+  staging** pelo HMNlead. **Não há necessidade de continuar
+  Playwright/browser runner agora**; o runner
+  `scripts/staging/admin-disable-user-ui-browser-e2e.mjs`
+  permanece no repo, mas a validação operacional da UI foi
+  concluída via inspeção manual.
+- **HEAD aceito atual:** commit desta fase — "Record auth
+  disable UI validation" (docs-only). Antes desta fase:
+  `2d750a5` (fase
+  `RAVATEX-TAPETES-AUTH-DISABLE-USER-UI-BROWSER-E2E-A`).
+- **staging/main:** a ser atualizado após push desta fase.
+  Antes desta fase:
+  `2d750a5960236d5c28ff750126a69b3bba48a983`.
 - **Working tree esperado:** **limpo**.
 - **origin/main oficial:** `1047181eba888242c6428de366cbd9fda2f1c72c`
   — **intocado** durante todo o ciclo de refactor/hardening.
@@ -29,8 +38,8 @@
   rodam com `vm.runInContext` + `fakeSupa` mockado. A única
   leitura real feita pelo HMNlead fora do apply foi uma contagem
   `select count(*) from public.ops` manual em staging (4 OPs).
-- **E2E real do runner em staging** (não-IAexec, manual após
-  autorização do HMNlead) executado após o fix da fase
+- **E2E real do runner backend em staging** (não-IAexec, manual
+  após autorização do HMNlead) executado após o fix da fase
   `E2E-RUNNER-FIX-A` e passou com **`result: PASS`** em staging
   (`ucrjtfswnfdlxwtmxnoo`). Evidência sanitizada: descartável
   `disable-edge-e2e-20260624-115027@tapetes.test` /
@@ -42,10 +51,30 @@
   `11c48a08-a8a6-48fb-8ddb-a6af1dba1667` em run interrompido
   em `login_blocked` — fica apenas como referência histórica;
   **nenhum** dos dois IDs é admin real. Ver LEDGER §5k.
-- **UI `#/cadastros/usuarios` agora integrada** com
+- **Validação manual da UI em staging** (HMNlead, esta fase
+  closeout): tela `#/cadastros/usuarios`, botão `Desativar`,
+  guarda de usuário já inativo (mensagem `"Usuário já está
+  inativo."`), criação de fornecedor descartável ativo e
+  desativação via botão `Desativar` — **fluxo real passou**.
+  Console sem erros críticos. Warnings não bloqueantes
+  continuam: Tailwind CDN, `favicon.ico` 404. Detalhes em
+  `PROJECT_STATE.md` §"Evidência da validação manual da UI
+  em staging".
+- **Próxima fase é release decision, não nova implementação.**
+  Decisão de merge/release para `origin/main`/produção
+  depende de autorização explícita do HMNlead, em fase
+  separada.
+- **Não mexer no ledger de refactor para fases operacionais.**
+  O ledger
+  (`docs/refactor/ARCHITECTURE_REFACTOR_LEDGER.md`) é apenas
+  para refactor/modularização/decisões arquiteturais reais;
+  runners operacionais (browser, E2E backend) e validação
+  manual de UI não pertencem a ele. Validação operacional é
+  registrada em `PROJECT_STATE.md` e neste `AGENT_HANDOFF.md`.
+- **UI `#/cadastros/usuarios` integrada** com
   `admin-disable-user` (fase
-  `RAVATEX-TAPETES-AUTH-DISABLE-USER-UI-A`, esta). Botão
-  `Desativar` substitui placeholder `Em breve`; modal de
+  `RAVATEX-TAPETES-AUTH-DISABLE-USER-UI-A`, commit `83344f5`).
+  Botão `Desativar` substitui placeholder `Em breve`; modal de
   confirmação com motivo opcional (≤ 500 chars); mapeia 8
   códigos de erro para mensagens PT-BR; guarda de UX para
   self/inativos (proteção visual, server-side é a barreira
@@ -92,12 +121,14 @@ git ls-remote --heads origin main
 
 Abortar e revisar o escopo se:
 - branch != `work/app-next`;
-- HEAD != `83344f5` (ou, no meio da fase UI-BROWSER-E2E-A,
-  antes do push, o hash do commit que será gerado);
+- HEAD não estiver em um commit da fase
+  `RAVATEX-TAPETES-AUTH-DISABLE-USER-UI-VALIDATION-CLOSEOUT-A`
+  (commit "Record auth disable UI validation" no topo, ou
+  commit imediatamente posterior a `2d750a5`);
 - working tree não estiver limpo;
-- `staging/main` != `83344f54dcbe82a56e1559ef6d34d07714334d69`
-  (antes do push da fase UI-BROWSER-E2E-A) ou um commit
-  `UI-BROWSER-E2E-A` que ainda não foi propagado;
+- `staging/main` não tiver sido atualizado para o commit
+  desta fase closeout (antes do push era
+  `2d750a5960236d5c28ff750126a69b3bba48a983`);
 - `origin/main` != `1047181eba888242c6428de366cbd9fda2f1c72c`
   (qualquer mudança em `origin/main` é regressão grave).
 
@@ -288,39 +319,25 @@ Camada HTTP crua em `postSupabaseLogin(...)` (sem
 `self_disable_blocked`. Smoke 32/32; regressão
 `admin-disable-user.smoke.js` 39/39. **E2E real não foi
 rerodado nesta fase** — só após autorização do HMNlead.
-**Runner de browser para UI criado** (fase
-`RAVATEX-TAPETES-AUTH-DISABLE-USER-UI-BROWSER-E2E-A`, fase
-atual): `scripts/staging/admin-disable-user-ui-browser-e2e.mjs`
-(ESM; `import('playwright')` dinâmico; sem dependências
-versionadas no repo). Reusa
-`.ravatex-local/admin-disable-user-e2e.config.json`. App
-default `http://localhost:8765/` (override via
-`--app-url`). Fluxo: login admin via `findInPage`/`clickByText`/
-`fillByLabel` → navega para `#/cadastros/usuarios` → confirma
-`+ Novo usuário` e `Desativar` → cria descartável pela UI
-(email `disable-ui-browser-e2e-<ts>@tapetes.test`, senha em
-memória, tipo=fornecedor, fornecedor_id da config/autodetect) →
-clica `Desativar` no descartável → confirma modal (motivo:
-`Teste automatizado UI browser E2E staging`) → espera toast de
-sucesso e status `Inativo` (ou remoção da lista) → logout →
-tenta login com descartável (espera bloqueado). Resumo:
-`admin_login / usuarios_screen / create_user_ui / disable_button
-/ disable_success / status_inactive_or_removed / login_blocked /
-result: PASS`. Guards: aborta se URL != `ucrjtfswnfdlxwtmxnoo`
-ou se for `bhgifjrfagkzubpyqpew`; config obrigatório em
-`.ravatex-local/admin-disable-user-e2e.config.json`; nunca
-imprime password/anon key/JWT/refresh token/access
-token/cookie/service_role. Smoke estático
-`tests/admin-disable-user-ui-browser-e2e.smoke.js` 28/28
-verde; regressões focais
-`tests/cadastros-usuarios-auth-ui.smoke.js` 23/23,
-`tests/cadastros-screens.smoke.js` 32/32,
-`tests/admin-disable-user-e2e-runner.smoke.js` 32/32 — todas
-verdes. **E2E real de browser não foi executado nesta fase**
-(Playwright não instalado localmente; app local em :8765 está
-rodando). Runner fica pronto para `node ... run` quando
-Playwright estiver disponível em diretório externo +
-`NODE_PATH` apontando para `node_modules`.
+**Validação manual da UI em staging registrada** (fase
+`RAVATEX-TAPETES-AUTH-DISABLE-USER-UI-VALIDATION-CLOSEOUT-A`,
+esta fase, docs-only). HMNlead validou manualmente no
+app/staging `ucrjtfswnfdlxwtmxnoo`: tela
+`#/cadastros/usuarios`, botão `Desativar`, guarda de
+usuário já inativo (mensagem `"Usuário já está inativo."`),
+criação de fornecedor descartável ativo e desativação via
+botão `Desativar` — **fluxo real passou**. Console sem erros
+críticos. Warnings não bloqueantes continuam: Tailwind CDN,
+`favicon.ico` 404. **Produção `bhgifjrfagkzubpyqpew` e
+`origin/main` intocados.** Detalhes em `PROJECT_STATE.md`
+§"Evidência da validação manual da UI em staging". Runner
+de browser
+`scripts/staging/admin-disable-user-ui-browser-e2e.mjs` (fase
+anterior) permanece no repo, mas a validação operacional da
+UI foi concluída via inspeção manual. **Não há
+necessidade de continuar Playwright/browser runner
+agora.** Próxima fase: **decisão de release**, não nova
+implementação; produção ainda não recebeu essas mudanças.
 
 O ciclo de refactor arquitetural + hardening + extração final do
 `op-pdf.js` está **congelado**. Antes de iniciar qualquer novo
