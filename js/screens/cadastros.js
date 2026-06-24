@@ -520,6 +520,9 @@
 
   async function screenCadastrosUsuarios() {
     const container = window.el('div', {});
+    let mostrarInativos = false;
+    let allUsers = [];
+    let allForns = [];
 
     async function reload() {
       const [usersRes, fornsRes] = await Promise.all([
@@ -530,31 +533,55 @@
         window.supa.from('fornecedores').select('id, nome, tipo').order('nome')
       ]);
       if (usersRes.error || fornsRes.error) { window.toast('Erro ao carregar', 'error'); console.error(usersRes.error || fornsRes.error); return; }
-      render(usersRes.data || [], fornsRes.data || []);
+      allUsers = usersRes.data || [];
+      allForns = fornsRes.data || [];
+      render();
     }
 
-    function render(users, forns) {
+    function render() {
       const meId = (window.CURRENT_USER && window.CURRENT_USER.id) || null;
+      const visibleUsers = mostrarInativos
+        ? allUsers
+        : allUsers.filter((u) => u.ativo !== false);
+
+      const toggle = window.el('label', { class: 'inline-flex items-center gap-2 text-sm text-gray-700 select-none cursor-pointer' },
+        window.el('input', {
+          type: 'checkbox',
+          class: 'form-checkbox h-4 w-4 text-blue-600',
+          onchange: (ev) => { mostrarInativos = !!ev.target.checked; render(); },
+        }),
+        'Mostrar inativos'
+      );
+      if (allUsers.some((u) => u.ativo === false)) toggle.classList.add('font-medium');
+
+      const emptyMsg = window.el('p', { class: 'text-gray-500 italic' },
+        mostrarInativos ? 'Nenhum usuário cadastrado.' : 'Nenhum usuário ativo encontrado.');
+
+      const tableNode = visibleUsers.length === 0
+        ? emptyMsg
+        : window.dataTable({
+            columns: [
+              { key: 'email', label: 'E-mail' },
+              { key: 'nome', label: 'Nome' },
+              { key: 'tipo', label: 'Tipo' },
+              { key: 'fornecedor', label: 'Fornecedor', render: (r) => r.fornecedor?.nome || '—' },
+              { key: 'status', label: 'Status', render: (r) => r.ativo === false ? 'Inativo' : 'Ativo' },
+            ],
+            rows: visibleUsers,
+            actions: [
+              { label: 'Editar', onclick: (r) => openModal(r, allForns) },
+              {
+                label: (r) => (r && r.ativo === false) ? 'Inativo' : 'Desativar',
+                class: 'text-red-600 hover:underline',
+                onclick: (r) => handleDesativarClick(r, meId),
+              },
+            ],
+          });
+
       container.replaceChildren(
-        window.pageHeader('Usuários', [{ label: '+ Novo usuário', onclick: () => openModal(null, forns) }]),
-        window.dataTable({
-          columns: [
-            { key: 'email', label: 'E-mail' },
-            { key: 'nome', label: 'Nome' },
-            { key: 'tipo', label: 'Tipo' },
-            { key: 'fornecedor', label: 'Fornecedor', render: (r) => r.fornecedor?.nome || '—' },
-            { key: 'status', label: 'Status', render: (r) => r.ativo === false ? 'Inativo' : 'Ativo' },
-          ],
-          rows: users,
-          actions: [
-            { label: 'Editar', onclick: (r) => openModal(r, forns) },
-            {
-              label: 'Desativar',
-              class: 'text-red-600 hover:underline',
-              onclick: (r) => handleDesativarClick(r, meId),
-            },
-          ]
-        })
+        window.pageHeader('Usuários', [{ label: '+ Novo usuário', onclick: () => openModal(null, allForns) }]),
+        window.el('div', { class: 'mb-3' }, toggle),
+        tableNode
       );
     }
 

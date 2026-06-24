@@ -1,17 +1,13 @@
 # PROJECT_STATE.md — Controle de Tapetes (Grupo Terra Branca)
 
 > Snapshot de estado canônico curto. Atualizado em **2026-06-24** (fase
-> `RAVATEX-TAPETES-PARALLEL-ENV-RECONCILIATION-A` —
-> reconciliação de taxonomia de ambientes).
-> **Docs-only.** Sem SQL, sem deploy, sem push origin, sem alteração
-> de código. **Taxonomia corrigida:** `bhgifjrfagkzubpyqpew` é o
-> app original online / Legacy (não tocar). `ucrjtfswnfdlxwtmxnoo`
-> é o ambiente paralelo de trabalho (backend pronto).
-> Documento de reconciliação em
-> `docs/operations/PARALLEL_ENVIRONMENT_RECONCILIATION.md`.
-> Próxima etapa: `RAVATEX-TAPETES-PARALLEL-FRONTEND-PUBLISH-PLAN-A`
-> (planejar publicação do frontend paralelo), **somente com
-> autorização explícita** do HMNlead.
+> `RAVATEX-TAPETES-USERS-INACTIVE-LIST-UX-A` — ajuste de UX
+> da listagem de usuários inativos em `#/cadastros/usuarios`).
+> **Frontend + smokes.** Sem SQL, sem deploy, sem push origin, sem
+> alteração de Edge Functions ou schema. Inativos agora ficam
+> ocultos por padrão com toggle `Mostrar inativos`; quando
+> visíveis, exibem label `Inativo` em vez de botão `Desativar`.
+> Hard delete continua fora do escopo.
 > Fonte da verdade operacional. Detalhe por fase em
 > `docs/refactor/ARCHITECTURE_REFACTOR_LEDGER.md`.
 > Regras de saúde arquitetural em

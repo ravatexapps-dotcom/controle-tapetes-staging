@@ -288,6 +288,84 @@ test("cadastros.js: listagem carrega coluna ativo (Status Ativo/Inativo)", () =>
   );
 });
 
+// ---------------------------------------------------------------------
+// RAVATEX-TAPETES-USERS-INACTIVE-LIST-UX-A — esconder inativos
+// por padrão + toggle "Mostrar inativos" + botão Inativo
+// (não aciona admin-disable-user para usuários com ativo === false)
+// ---------------------------------------------------------------------
+
+test("cadastros.js: estado local de filtro manter/mostrar inativos existe", () => {
+  const idx = src.indexOf("function screenCadastrosUsuarios()");
+  assert.ok(idx > 0, "screenCadastrosUsuarios não encontrada");
+  const nextFn = src.indexOf("async function screenCadastros", idx + 1);
+  const bloco = src.slice(idx, nextFn > 0 ? nextFn : src.length);
+  assert.match(
+    bloco,
+    /let\s+mostrarInativos\s*=\s*false/,
+    "deve declarar estado local `let mostrarInativos = false`",
+  );
+});
+
+test("cadastros.js: filtro de listagem exclui inativos por padrão", () => {
+  const idx = src.indexOf("function screenCadastrosUsuarios()");
+  assert.ok(idx > 0);
+  const nextFn = src.indexOf("async function screenCadastros", idx + 1);
+  const bloco = src.slice(idx, nextFn > 0 ? nextFn : src.length);
+  assert.match(
+    bloco,
+    /\(\s*u\s*\)\s*=>\s*u\.ativo\s*!==\s*false/,
+    "deve filtrar usuarios por u.ativo !== false quando mostrarInativos === false",
+  );
+});
+
+test("cadastros.js: exibe toggle/checkbox 'Mostrar inativos' na tela", () => {
+  const idx = src.indexOf("function screenCadastrosUsuarios()");
+  assert.ok(idx > 0);
+  const bloco = src.slice(idx);
+  assert.match(
+    bloco,
+    /Mostrar inativos/,
+    "label 'Mostrar inativos' deve aparecer na tela",
+  );
+  assert.match(
+    bloco,
+    /type\s*:\s*['"]checkbox['"]/,
+    "deve usar um <input type='checkbox'> para o toggle (formato attrs obj)",
+  );
+});
+
+test("cadastros.js: mensagem amigável quando não há usuários ativos", () => {
+  const idx = src.indexOf("function screenCadastrosUsuarios()");
+  assert.ok(idx > 0);
+  const nextFn = src.indexOf("async function screenCadastros", idx + 1);
+  const bloco = src.slice(idx, nextFn > 0 ? nextFn : src.length);
+  assert.match(
+    bloco,
+    /Nenhum usu[áa]rio ativo encontrado/,
+    "deve exibir 'Nenhum usuário ativo encontrado' quando filtro está fechado",
+  );
+});
+
+test("cadastros.js: para inativos, ação é label 'Inativo' (não aciona admin-disable-user)", () => {
+  const idx = src.indexOf("function screenCadastrosUsuarios()");
+  assert.ok(idx > 0);
+  const nextFn = src.indexOf("async function screenCadastros", idx + 1);
+  const bloco = src.slice(idx, nextFn > 0 ? nextFn : src.length);
+  // Deve existir um label dinâmico (função) que retorna 'Inativo'
+  // quando r.ativo === false.
+  assert.match(
+    bloco,
+    /label:\s*\(\s*r\s*\)\s*=>\s*\(\s*r\s*&&\s*r\.ativo\s*===\s*false\s*\)\s*\?\s*['"]Inativo['"]/,
+    "deve usar label dinâmico que retorna 'Inativo' para r.ativo === false",
+  );
+  // O onclick deve passar por handleDesativarClick (que tem guarda para inativo).
+  assert.match(
+    bloco,
+    /onclick:\s*\(\s*r\s*\)\s*=>\s*handleDesativarClick\s*\(\s*r\s*,\s*meId\s*\)/,
+    "onclick deve chamar handleDesativarClick (que tem guarda para inativo)",
+  );
+});
+
 test("cadastros.js: preserva botão '+ Novo usuário' e chamada admin-create-user", () => {
   assert.match(src, /\+ Novo usu[áa]rio/);
   assert.match(src, /functions\.invoke\(\s*['"]admin-create-user['"]/);

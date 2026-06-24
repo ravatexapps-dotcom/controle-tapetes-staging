@@ -9,26 +9,26 @@
 
 ## Estado atual aceito
 - **Estado atual aceito:** `work/app-next` na ponta da fase
-  `RAVATEX-TAPETES-PARALLEL-ENV-RECONCILIATION-A`
-  (docs-only). **Taxonomia de ambientes reconciliada.**
-  `bhgifjrfagkzubpyqpew` = Legacy / app original online (NÃO TOCAR).
-  `ucrjtfswnfdlxwtmxnoo` = Ambiente paralelo de trabalho (backend pronto).
-- **HEAD aceito atual:** `0be1745`
-- **staging/main:** `0be1745`
-- **Working tree:** limpo
+  `RAVATEX-TAPETES-USERS-INACTIVE-LIST-UX-A` (implementação
+  pequena: UX de listagem de usuários). Inativos ocultos por
+  padrão; toggle `Mostrar inativos`; botão `Desativar`
+  substituído por label `Inativo` para usuários desativados.
+  Hard delete continua fora do escopo.
+- **HEAD aceito atual:** commit desta fase
+  (`RAVATEX-TAPETES-USERS-INACTIVE-LIST-UX-A`,
+  "Improve inactive users list UX").
+- **staging/main:** atualizado após push desta fase.
+- **Working tree:** limpo.
 - **origin/main:** `1047181eba888242c6428de366cbd9fda2f1c72c` — intocado
 - **PR #2:** intocado
 - **⚠️ NÃO CHAMAR `ucrjtfswnfdlxwtmxnoo` DE "PRODUÇÃO ORIGINAL".**
   É o ambiente paralelo. O app original online está em
   `bhgifjrfagkzubpyqpew` + Vercel e **não deve ser tocado**.
-- **⚠️ NÃO TOCAR `bhgifjrfagkzubpyqpew`.** Qualquer ação lá requer
-  fase separada com autorização especial.
+- **⚠️ NÃO TOCAR `bhgifjrfagkzubpyqpew`.**
 - **⚠️ NÃO TOCAR Vercel original.**
 - **Ambiente paralelo (`ucrjtfswnfdlxwtmxnoo`):** schema aplicado,
   Edge Functions deployadas e validadas, secrets configurados,
   UI manual validada, smokes 163/163, E2E PASS.
-- **App original (`bhgifjrfagkzubpyqpew`):** intocado. Apenas
-  1 query read-only com anon key pública. Nenhuma mutação.
 
 ## Estado operacional atual
 - `index.html` está declarativo, sem script inline final, com
@@ -164,9 +164,9 @@ Abortar e revisar o escopo se:
 ## Próxima recomendação operacional
 
 **Refactor arquitetural continua congelado.**
-**Taxonomia reconciliada:** `ucrjtfswnfdlxwtmxnoo` é o ambiente
-paralelo (backend pronto). `bhgifjrfagkzubpyqpew` é o app original
-online e **não deve ser tocado**.
+**UX ajustada:** inativos ocultos por padrão; toggle
+`Mostrar inativos`; label `Inativo` em vez de `Desativar`
+para inativos. Hard delete continua fora do escopo.
 **Próxima fase:** `RAVATEX-TAPETES-PARALLEL-FRONTEND-PUBLISH-PLAN-A`
 (planejar onde publicar o frontend paralelo), **somente com
 autorização explícita** do HMNlead.
