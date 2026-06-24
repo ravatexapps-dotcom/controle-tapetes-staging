@@ -32,6 +32,7 @@ fontes canônicas prevalecem.
 |---|---|
 | `docs/operations/AUTH_USER_PROVISIONING_RUNBOOK.md` | Procedimento operacional padrão para criação de usuários (admin/fornecedor) via Edge Function `admin-create-user` + UI `#/cadastros/usuarios`. Substitui o fluxo manual de criar Auth user no Studio e copiar UID. |
 | `docs/operations/AUTH_DISABLE_USER_PROD_RELEASE_PLAN.md` | Plano operacional de release para levar a cadeia Auth do staging para produção. Ordem obrigatória, critérios GO/NO-GO, rollback, validações read-only. |
+| `docs/operations/PARALLEL_ENVIRONMENT_RECONCILIATION.md` | Taxonomia oficial dos ambientes: `bhgifjrfagkzubpyqpew` = Legacy (não tocar), `ucrjtfswnfdlxwtmxnoo` = paralelo de trabalho. Estado de cada ambiente, decisão arquitetural, próximas etapas. |
 
 > **Em caso de divergência entre qualquer doc e estas 5 fontes,
 > as 5 fontes prevalecem.** Isso inclui este índice.
@@ -63,6 +64,7 @@ um runbook e uma fonte canônica, as fontes canônicas prevalecem.
 |---|---|---|
 | `AUTH_USER_PROVISIONING_RUNBOOK.md` | Criação de usuários (admin/fornecedor) via Edge Function `admin-create-user` + UI `#/cadastros/usuarios`. Substitui o fluxo manual de criar Auth user no Studio e copiar UID. | `RAVATEX-TAPETES-AUTH-PROVISIONING-DOCS-A` |
 | `AUTH_DISABLE_USER_PROD_RELEASE_PLAN.md` | Plano de release produção — schema, secrets, Edge Functions, frontend. Ordem obrigatória, rollback, GO/NO-GO. | `RAVATEX-TAPETES-AUTH-DISABLE-USER-PROD-RELEASE-PLAN-A` |
+| `PARALLEL_ENVIRONMENT_RECONCILIATION.md` | Taxonomia oficial de ambientes. Legacy vs paralelo, estado de cada, bloqueios. | `RAVATEX-TAPETES-PARALLEL-ENV-RECONCILIATION-A` |
 
 Convenção: estes runbooks são **docs-only** e **operacionais**.
 Atualizações devem ser feitas em fases docs-only dedicadas.

@@ -1,17 +1,17 @@
 # PROJECT_STATE.md — Controle de Tapetes (Grupo Terra Branca)
 
 > Snapshot de estado canônico curto. Atualizado em **2026-06-24** (fase
-> `RAVATEX-TAPETES-AUTH-DISABLE-USER-PROD-RELEASE-PLAN-A` —
-> auditoria de release e plano operacional de produção).
-> **Docs-only/planejamento.** Sem execução em produção, sem SQL,
-> sem deploy, sem push origin, sem alteração de código.
-> **Decisão: NO-GO para release imediato.** Produção
-> (`bhgifjrfagkzubpyqpew`) não possui schema `db/12_*`, Edge
-> Functions nem secrets necessários. Plano de release criado em
-> `docs/operations/AUTH_DISABLE_USER_PROD_RELEASE_PLAN.md`.
-> Próxima etapa: `RAVATEX-TAPETES-AUTH-DISABLE-USER-PROD-BACKEND-RELEASE-A`
-> (backend produção), **somente com autorização explícita** do
-> HMNlead.
+> `RAVATEX-TAPETES-PARALLEL-ENV-RECONCILIATION-A` —
+> reconciliação de taxonomia de ambientes).
+> **Docs-only.** Sem SQL, sem deploy, sem push origin, sem alteração
+> de código. **Taxonomia corrigida:** `bhgifjrfagkzubpyqpew` é o
+> app original online / Legacy (não tocar). `ucrjtfswnfdlxwtmxnoo`
+> é o ambiente paralelo de trabalho (backend pronto).
+> Documento de reconciliação em
+> `docs/operations/PARALLEL_ENVIRONMENT_RECONCILIATION.md`.
+> Próxima etapa: `RAVATEX-TAPETES-PARALLEL-FRONTEND-PUBLISH-PLAN-A`
+> (planejar publicação do frontend paralelo), **somente com
+> autorização explícita** do HMNlead.
 > Fonte da verdade operacional. Detalhe por fase em
 > `docs/refactor/ARCHITECTURE_REFACTOR_LEDGER.md`.
 > Regras de saúde arquitetural em
@@ -33,9 +33,14 @@ recebimento do látex. Perfis: **admin** (operação) e **fornecedor**
 
 ## Arquitetura
 - **App estático `index.html` + JS clássico + Supabase.**
-- **Staging separado de produção**: 2 repos, 2 refs Supabase.
-  - `staging` → `controle-tapetes-staging` + ref `ucrjtfswnfdlxwtmxnoo`.
-  - `origin` → `grupoterrabranca/controle-tapetes` + ref `bhgifjrfagkzubpyqpew`.
+- **2 ambientes Supabase, 2 repos:**
+  - **Legacy / original online** (`bhgifjrfagkzubpyqpew`) — app no Vercel com usuários externos. **Não tocar.**
+  - **Paralelo de trabalho** (`ucrjtfswnfdlxwtmxnoo`) — backend novo, usado pelo frontend local `work/app-next`.
+- **2 repos:**
+  - `origin` → `grupoterrabranca/controle-tapetes` (oficial, intocado, `origin/main`).
+  - `staging` → `controle-tapetes-staging` (paralelo, `staging/main`).
+- **Taxonomia oficial:** ver `docs/operations/PARALLEL_ENVIRONMENT_RECONCILIATION.md`.
+- **`bhgifjrfagkzubpyqpew` NÃO é alvo desta frente.** Nenhuma ação deve mirá-lo.
 
 ## Estado atual do refactor
 - **Branch operacional:** `work/app-next`.
@@ -46,24 +51,17 @@ recebimento do látex. Perfis: **admin** (operação) e **fornecedor**
   limpeza de documentação operacional no refactor ledger).
   Antes desta fase: `2d750a5` (fase
   `RAVATEX-TAPETES-AUTH-DISABLE-USER-UI-BROWSER-E2E-A`).
-- **staging/main atual:** a ser atualizado após push desta
-  fase. Antes desta fase: `2d750a5960236d5c28ff750126a69b3bba48a983`.
-- **origin/main oficial:** `1047181eba888242c6428de366cbd9fda2f1c72c`
-  — **intocado** durante todo o ciclo de refactor/hardening.
-- **PR #2:** **intocado** durante todo o ciclo.
-- **Working tree esperado:** **limpo**.
-- **Produção (grupoterrabranca.github.io):** **preservada** — não
-  recebeu nenhum push de refactor/hardening.
-- **Supabase real:** **não acessado** por IAexec em nenhuma fase de
-  refactor (todos os testes rodam com `vm.runInContext` + `fakeSupa`
-  mockado). A única execução de SQL real no Supabase staging foi
-  feita manualmente pelo HMNlead no SQL Editor do Dashboard na
-  fase `RAVATEX-TAPETES-AUTH-DISABLE-USER-SCHEMA-APPLY-EVIDENCE-A`:
-  aplicação de `db/12_auth_user_disable_schema.sql` em
-  `ucrjtfswnfdlxwtmxnoo`, validada pós-aplicação pelo HMNlead. A
-  contagem `select count(*) from public.ops` foi feita manualmente em
-  homologação contra `ucrjtfswnfdlxwtmxnoo` (staging) e confirmou 4
-  OPs.
+- **staging/main:** `0be1745` (atualizado nesta fase).
+- **origin/main:** `1047181eba888242c6428de366cbd9fda2f1c72c` — **intocado.**
+- **PR #2:** **intocado.**
+- **Working tree:** **limpo.**
+- **Ambiente paralelo (`ucrjtfswnfdlxwtmxnoo`):** backend completo:
+  schema `db/12_*` aplicado (HMNlead, 2026-06-24), Edge Functions
+  `admin-create-user` e `admin-disable-user` deployadas e validadas,
+  secrets configurados, UI validada manualmente, smokes 163/163,
+  E2E PASS.
+- **App original (`bhgifjrfagkzubpyqpew`):** **intocado.** Apenas
+  1 query read-only com anon key pública nesta frente, sem mutação.
 
 ### Marco fechado
 **Marco fechada: ciclo de refactor arquitetural + hardening + extração

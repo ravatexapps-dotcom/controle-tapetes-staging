@@ -9,38 +9,26 @@
 
 ## Estado atual aceito
 - **Estado atual aceito:** `work/app-next` na ponta da fase
-  `RAVATEX-TAPETES-AUTH-DISABLE-USER-PROD-RELEASE-PLAN-A`
-  (docs-only/planejamento). **Auditoria de release concluída:
-  decisão NO-GO para release imediato.** Produção
-  (`bhgifjrfagkzubpyqpew`) não possui schema `db/12_*`,
-  Edge Functions nem secrets necessários. **Plano de release
-  criado** em `docs/operations/AUTH_DISABLE_USER_PROD_RELEASE_PLAN.md`.
-  Próxima etapa: `RAVATEX-TAPETES-AUTH-DISABLE-USER-PROD-BACKEND-RELEASE-A`
-  (backend produção), **somente com autorização explícita** do
-  HMNlead. **Não iniciar execução sem autorização.**
-- **HEAD aceito atual:** `b02a524` — "Record auth disable UI
-  validation".
-- **staging/main:** `b02a524b451986a7b952209878e797af5f8352f8`
-  (atualizado após push desta fase).
-- **Working tree esperado:** **limpo**.
-- **origin/main oficial:** `1047181eba888242c6428de366cbd9fda2f1c72c`
-  — **intocado** durante todo o ciclo de refactor/hardening.
-- **PR #2:** **intocado** durante todo o ciclo.
-- **Produção (grupoterrabranca.github.io):** **preservada** — não
-  recebeu nenhum push de refactor/hardening.
-- **Produção Supabase (`bhgifjrfagkzubpyqpew`):** **intocada**
-  pela cadeia Auth. Schema `db/12_*` não aplicado, Edge Functions
-  não deployadas, secrets não configurados.
-- **Staging Supabase (`ucrjtfswnfdlxwtmxnoo`):** continua no
-  estado validado: schema aplicado, Edge Functions deployadas e
-  validadas, UI manual validada pelo HMNlead. E2E real passou
-  com `result: PASS`.
-- **Não mexer no ledger de refactor para fases operacionais.**
-  O ledger
-  (`docs/refactor/ARCHITECTURE_REFACTOR_LEDGER.md`) é apenas
-  para refactor/modularização/decisões arquiteturais reais;
-  o plano de release é operacional e está em
-  `docs/operations/AUTH_DISABLE_USER_PROD_RELEASE_PLAN.md`.
+  `RAVATEX-TAPETES-PARALLEL-ENV-RECONCILIATION-A`
+  (docs-only). **Taxonomia de ambientes reconciliada.**
+  `bhgifjrfagkzubpyqpew` = Legacy / app original online (NÃO TOCAR).
+  `ucrjtfswnfdlxwtmxnoo` = Ambiente paralelo de trabalho (backend pronto).
+- **HEAD aceito atual:** `0be1745`
+- **staging/main:** `0be1745`
+- **Working tree:** limpo
+- **origin/main:** `1047181eba888242c6428de366cbd9fda2f1c72c` — intocado
+- **PR #2:** intocado
+- **⚠️ NÃO CHAMAR `ucrjtfswnfdlxwtmxnoo` DE "PRODUÇÃO ORIGINAL".**
+  É o ambiente paralelo. O app original online está em
+  `bhgifjrfagkzubpyqpew` + Vercel e **não deve ser tocado**.
+- **⚠️ NÃO TOCAR `bhgifjrfagkzubpyqpew`.** Qualquer ação lá requer
+  fase separada com autorização especial.
+- **⚠️ NÃO TOCAR Vercel original.**
+- **Ambiente paralelo (`ucrjtfswnfdlxwtmxnoo`):** schema aplicado,
+  Edge Functions deployadas e validadas, secrets configurados,
+  UI manual validada, smokes 163/163, E2E PASS.
+- **App original (`bhgifjrfagkzubpyqpew`):** intocado. Apenas
+  1 query read-only com anon key pública. Nenhuma mutação.
 
 ## Estado operacional atual
 - `index.html` está declarativo, sem script inline final, com
@@ -176,16 +164,14 @@ Abortar e revisar o escopo se:
 ## Próxima recomendação operacional
 
 **Refactor arquitetural continua congelado.**
-**Release imediato bloqueado.** Decisão de release foi **NO-GO**
-após auditoria: produção `bhgifjrfagkzubpyqpew` não possui
-schema, Edge Functions nem secrets necessários. Plano de release
-criado em `docs/operations/AUTH_DISABLE_USER_PROD_RELEASE_PLAN.md`.
-**Próxima fase:** `RAVATEX-TAPETES-AUTH-DISABLE-USER-PROD-BACKEND-RELEASE-A`
-(backend produção: schema + secrets + Edge Functions), **somente
-com autorização explícita** do HMNlead.
-**Não iniciar execução do release sem autorização explícita.**
-**O ledger de refactor** (`docs/refactor/ARCHITECTURE_REFACTOR_LEDGER.md`)
-não deve ser alterado para fases operacionais de release.
+**Taxonomia reconciliada:** `ucrjtfswnfdlxwtmxnoo` é o ambiente
+paralelo (backend pronto). `bhgifjrfagkzubpyqpew` é o app original
+online e **não deve ser tocado**.
+**Próxima fase:** `RAVATEX-TAPETES-PARALLEL-FRONTEND-PUBLISH-PLAN-A`
+(planejar onde publicar o frontend paralelo), **somente com
+autorização explícita** do HMNlead.
+**Não iniciar execução sem autorização explícita.**
+**NÃO tocar `bhgifjrfagkzubpyqpew`, Vercel original, ou `origin/main`.**
 
 O ciclo de refactor arquitetural + hardening + extração final do
 `op-pdf.js` está **congelado**. Antes de iniciar qualquer novo
