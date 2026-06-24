@@ -8,8 +8,8 @@
 > Convenção: **tudo em português brasileiro**.
 
 ## Estado atual aceito
-- **Estado atual aceito:** `work/app-next @ d99bcda`.
-- **staging/main:** `d99bcda7bc53e34d576140ce3bd212408c7e1f7d`
+- **Estado atual aceito:** `work/app-next @ 77bcc6b`.
+- **staging/main:** `77bcc6b7406d5f089e88a84169e2b8d842d9c422`
   (sincronizado).
 - **Working tree esperado:** **limpo**.
 - **origin/main oficial:** `1047181eba888242c6428de366cbd9fda2f1c72c`
@@ -63,9 +63,9 @@ git ls-remote --heads origin main
 
 Abortar e revisar o escopo se:
 - branch != `work/app-next`;
-- HEAD != `d99bcda`;
+- HEAD != `77bcc6b`;
 - working tree não estiver limpo;
-- `staging/main` != `d99bcda7bc53e34d576140ce3bd212408c7e1f7d`;
+- `staging/main` != `77bcc6b7406d5f089e88a84169e2b8d842d9c422`;
 - `origin/main` != `1047181eba888242c6428de366cbd9fda2f1c72c`
   (qualquer mudança em `origin/main` é regressão grave).
 
@@ -171,13 +171,17 @@ implementado.
 **Schema de desativação:** `RAVATEX-TAPETES-AUTH-DISABLE-USER-SCHEMA-A`
 concluída. `db/12_auth_user_disable_schema.sql` foi versionado e
 validado por `tests/auth-disable-user-schema.smoke.js` (20/20).
-**NÃO foi aplicado** no Supabase staging/produção nesta fase. Próxima
-fase recomendada: aplicar a migration em staging (com backup e
-plano de rollback) OU implementar a Edge Function
-`admin-disable-user` que usa o schema preparado.
-**Próxima fase recomendada:** `RAVATEX-TAPETES-AUTH-DISABLE-USER-SCHEMA-APPLY-A`
-(rodar `db/12_auth_user_disable_schema.sql` em staging e validar)
-→ `RAVATEX-TAPETES-AUTH-DISABLE-USER-EDGE-A` (Edge Function
+**NÃO foi aplicado** no Supabase staging/produção nesta fase.
+**Apply staging (orientado):** `RAVATEX-TAPETES-AUTH-DISABLE-USER-SCHEMA-APPLY-A`
+em andamento. Validações locais (smoke 20/20 + regressões 65/65)
+passaram; o arquivo SQL foi checado contra `DELETE`/`DROP TABLE`/
+`TRUNCATE`/`service_role`/`password`/JWT hardcoded (todos ausentes).
+**A execução do SQL no Supabase staging (`ucrjtfswnfdlxwtmxnoo`) é
+de responsabilidade do HMNlead no Dashboard** — IAexec não tem
+acesso ao Supabase. Passos, queries de baseline e validação
+pós-aplicação estão listados no relatório desta fase.
+**Próxima fase recomendada após apply confirmado:**
+`RAVATEX-TAPETES-AUTH-DISABLE-USER-EDGE-A` (Edge Function
 `admin-disable-user`) → `RAVATEX-TAPETES-AUTH-DISABLE-USER-UI-A`
 (restaurar botão "Desativar" na UI).
 
@@ -221,11 +225,15 @@ Fases, em ordem:
    `db/12_auth_user_disable_schema.sql`; testes 20/20 em
    `tests/auth-disable-user-schema.smoke.js`. **NÃO aplicada** no
    Supabase.
-8. **`RAVATEX-TAPETES-AUTH-DISABLE-USER-SCHEMA-APPLY-A`** *(futura)* —
-   aplicar a migration em staging com backup e validação. Pode incluir
-   adaptar `loadCurrentUser` para tratar `ativo = false`.
-9. **`RAVATEX-TAPETES-AUTH-DISABLE-USER-EDGE-A`** *(futura)* — Edge
-   Function `admin-disable-user` (soft delete no perfil + ban Auth).
+8. **`RAVATEX-TAPETES-AUTH-DISABLE-USER-SCHEMA-APPLY-A`** — aplicar
+   a migration em staging. **Em andamento (orientado por IAexec;**
+   **aplicação real depende de HMNlead no Dashboard).** Smoke 20/20
+   e regressões 65/65 verdes; SQL limpo (sem DELETE/DROP/TRUNCATE/
+   secrets). Passos e queries de validação estão no relatório da
+   fase.
+9. **`RAVATEX-TAPETES-AUTH-DISABLE-USER-EDGE-A`** *(futura, após*
+   *apply confirmado)* — Edge Function `admin-disable-user`
+   (soft delete no perfil + ban Auth).
 10. **`RAVATEX-TAPETES-AUTH-DISABLE-USER-UI-A`** *(futura)* — restaurar
     botão "Desativar" na UI quando Edge Function estiver disponível.
 
