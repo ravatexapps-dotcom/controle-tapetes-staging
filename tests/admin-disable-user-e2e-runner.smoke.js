@@ -265,13 +265,60 @@ test("runner: testa fornecedor bloqueado (espera FORBIDDEN)", () => {
   );
 });
 
-test("runner: testa login bloqueado após desativação", () => {
+test("runner: testa login bloqueado após desativação (esperado)", () => {
   const idx = src.indexOf("login_blocked");
   assert.ok(idx > 0, "bloco login_blocked deve existir");
+  // Helper loginExpectFailure deve existir e ser usado para o
+  // passo de login do usuário desativado.
   assert.match(
     src,
-    /Login do usu[áa]rio desativado n[ãa]o foi bloqueado/,
-    "deve falhar o teste se login não for bloqueado",
+    /function\s+loginExpectFailure\s*\(/,
+    "deve existir helper loginExpectFailure para falha esperada",
+  );
+  // Aceita "User is banned" como sucesso esperado do teste.
+  assert.match(
+    src,
+    /"User is banned"/,
+    "deve aceitar literal \"User is banned\" como falha esperada",
+  );
+  // Aceita variações case-insensitive.
+  assert.match(
+    src,
+    /"banned"/i,
+    "deve aceitar substring \"banned\" (case-insensitive)",
+  );
+  // Helper loginExpectSuccess deve existir e ser usado para os
+  // logins que DEVEM dar certo (admin, test user, re-login).
+  assert.match(
+    src,
+    /function\s+loginExpectSuccess\s*\(/,
+    "deve existir helper loginExpectSuccess para login que deve dar certo",
+  );
+  // Rótulo "login_blocked" deve aparecer.
+  assert.match(
+    src,
+    /"login_blocked"/,
+    "rótulo \"login_blocked\" deve aparecer como argumento de loginExpectFailure",
+  );
+  // summary.steps.login_blocked deve ser setado.
+  assert.match(
+    src,
+    /summary\.steps\.login_blocked\s*=\s*"OK"/,
+    "summary.steps.login_blocked deve receber \"OK\" em sucesso esperado",
+  );
+  // O log final deve exibir o rótulo login_blocked.
+  assert.match(
+    src,
+    /log\(["']login_blocked:\s*["']/,
+    "linha de log final deve incluir \"login_blocked:\"",
+  );
+  // Não pode mais usar a mensagem hardcoded "Login admin falhou" —
+  // ela era incorreta quando o login sendo testado era do usuário
+  // descartável desativado. Hoje o rótulo é parametrizado.
+  assert.doesNotMatch(
+    src,
+    /Login admin falhou/,
+    "mensagem hardcoded \"Login admin falhou\" foi removida (rótulo agora é parametrizado)",
   );
 });
 
@@ -282,6 +329,78 @@ test("runner: testa idempotência (already_disabled=true)", () => {
     src,
     /already_disabled\s*!==\s*true/,
     "deve conferir already_disabled === true na re-desativação",
+  );
+});
+
+test("runner: fluxo continua para idempotency e self_disable_blocked após login_blocked", () => {
+  // Garante que o passo login_blocked NÃO chama die()/process.exit
+  // prematuramente: o run deve alcançar idempotency e
+  // self_disable_blocked.
+  const idxLoginBlocked = src.indexOf("loginExpectFailure");
+  const idxIdempotency = src.indexOf("idempotency");
+  const idxSelfDisable = src.indexOf("self_disable_blocked");
+  const idxResultPass = src.indexOf('result = "PASS"');
+  assert.ok(idxLoginBlocked > 0, "loginExpectFailure deve ser chamado");
+  assert.ok(idxIdempotency > 0, "bloco idempotency deve existir");
+  assert.ok(idxSelfDisable > 0, "bloco self_disable_blocked deve existir");
+  assert.ok(idxResultPass > 0, "result=PASS deve ser setado ao final");
+  assert.ok(
+    idxLoginBlocked < idxIdempotency,
+    "loginExpectFailure deve vir antes de idempotency",
+  );
+  assert.ok(
+    idxIdempotency < idxSelfDisable,
+    "idempotency deve vir antes de self_disable_blocked",
+  );
+  assert.ok(
+    idxSelfDisable < idxResultPass,
+    "self_disable_blocked deve vir antes de result=PASS",
+  );
+});
+
+test("runner: loginExpectSuccess é usado em admin_login, test_user_login, admin_relogin", () => {
+  // O runner deve usar loginExpectSuccess (fatal em falha) em
+  // todos os logins que DEVEM dar certo.
+  const adminLogin = src.match(/loginExpectSuccess\([^)]*,\s*["']admin_login["']/);
+  const testUserLogin = src.match(/loginExpectSuccess\([^)]*,\s*["']test_user_login["']/);
+  const adminRelogin = src.match(/loginExpectSuccess\([^)]*,\s*["']admin_relogin["']/);
+  assert.ok(adminLogin, "loginExpectSuccess deve ser usado com label admin_login");
+  assert.ok(testUserLogin, "loginExpectSuccess deve ser usado com label test_user_login");
+  assert.ok(adminRelogin, "loginExpectSuccess deve ser usado com label admin_relogin");
+});
+
+test("runner: loginExpectFailure aceita múltiplas variações de 'banned'", () => {
+  // A lista de substrings esperadas deve incluir variações
+  // case-insensitive que cobrem respostas comuns do Supabase
+  // Auth para usuário banido.
+  const m = src.match(/loginExpectFailure\([\s\S]*?login_blocked[\s\S]*?\)/);
+  assert.ok(m, "bloco loginExpectFailure com label login_blocked deve existir");
+  const block = m[0];
+  assert.match(block, /User is banned/);
+  assert.match(block, /banned/i);
+});
+
+test("runner: loginExpectFailure retorna controle ao caller (sem process.exit)", () => {
+  // loginExpectFailure é declarado `async` e seu corpo termina
+  // com `return { ... }` (não com `process.exit(...)` nem com
+  // `die(` em chamada). Verificamos o padrão estrutural.
+  const fnStart = src.indexOf("async function loginExpectFailure");
+  assert.ok(fnStart > 0, "função loginExpectFailure deve existir");
+  const nextFnIdx = src.indexOf("\nasync function restSelect", fnStart);
+  assert.ok(nextFnIdx > 0, "próxima função top-level deve ser restSelect");
+  const block = src.slice(fnStart, nextFnIdx);
+  // Bloco deve terminar com `return { ... };` seguido de `}` da função.
+  assert.match(
+    block,
+    /return\s*\{[\s\S]*?ok:\s*false,\s*unexpected:\s*true[\s\S]*?\}\s*;?\s*\n\s*\}/,
+    "loginExpectFailure deve terminar com return { ok: false, unexpected: true, ... }",
+  );
+  // Não pode haver `process.exit(` no corpo (além de comentários).
+  // Usa lookbehind para evitar match em comentários.
+  assert.doesNotMatch(
+    block.replace(/\/\/[^\n]*/g, ""),
+    /\bprocess\.exit\s*\(/,
+    "loginExpectFailure NÃO deve chamar process.exit — caller decide",
   );
 });
 

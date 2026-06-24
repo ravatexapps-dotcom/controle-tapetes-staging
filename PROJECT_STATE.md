@@ -1,15 +1,19 @@
 # PROJECT_STATE.md — Controle de Tapetes (Grupo Terra Branca)
 
 > Snapshot de estado canônico curto. Atualizado em **2026-06-24** (fase
-> `RAVATEX-TAPETES-AUTH-DISABLE-USER-E2E-AUTO-RUNNER-A` — runner
-> local automatizado para E2E de `admin-disable-user` em staging
-> `ucrjtfswnfdlxwtmxnoo`. **Sem deploy, sem Supabase real, sem
-> SQL, sem UI, sem produção, sem origin/main** nesta fase.
-> Runner criado em
-> `scripts/staging/admin-disable-user-e2e.mjs` com smoke estático
-> `tests/admin-disable-user-e2e-runner.smoke.js` 28/28 verde;
-> `.gitignore` passou a ignorar `.ravatex-local/`. E2E real ainda
-> não foi executado nesta fase — fica para a próxima).
+> `RAVATEX-TAPETES-AUTH-DISABLE-USER-E2E-RUNNER-FIX-A` — correções
+> pontuais no runner `scripts/staging/admin-disable-user-e2e.mjs`
+> para tratar o login bloqueado do usuário desativado como SUCESSO
+> esperado do teste, separando os helpers `loginExpectSuccess` /
+> `loginExpectFailure`. **Sem deploy, sem Supabase real, sem SQL,
+> sem UI, sem produção, sem origin/main** nesta fase.
+> Execução real do runner (após revisão do HMNlead) avançou até
+> `profile_inactive` em staging e falhou em `login_blocked` com
+> `HTTP 400 User is banned` tratado como erro fatal — classificado
+> como bug do runner, corrigido nesta fase. Smoke estático
+> `tests/admin-disable-user-e2e-runner.smoke.js` 32/32 verde;
+> regressão `admin-disable-user.smoke.js` 39/39 verde. E2E real
+> não foi rerodado nesta fase — fica para a próxima).
 > Fonte da verdade operacional. Detalhe por fase em
 > `docs/refactor/ARCHITECTURE_REFACTOR_LEDGER.md`.
 > Regras de saúde arquitetural em
@@ -37,11 +41,14 @@ recebimento do látex. Perfis: **admin** (operação) e **fornecedor**
 
 ## Estado atual do refactor
 - **Branch operacional:** `work/app-next`.
-- **HEAD atual aceito:** `eb5d2e0` — "Add auth user disable edge
-  function" (fase `RAVATEX-TAPETES-AUTH-DISABLE-USER-EDGE-A`,
-  Edge Function `admin-disable-user` criada localmente).
-- **staging/main atual:** `eb5d2e05680a05fb41a52a3c0af3112eaf294ee5`
-  (sincronizado com `work/app-next`).
+- **HEAD atual aceito:** `476cc70` — "Add auth disable staging e2e
+  runner" (fase `RAVATEX-TAPETES-AUTH-DISABLE-USER-E2E-AUTO-RUNNER-A`,
+  runner local automatizado de E2E staging). Commit adicional
+  da fase `RAVATEX-TAPETES-AUTH-DISABLE-USER-E2E-RUNNER-FIX-A`
+  pendente de push em staging.
+- **staging/main atual:** `476cc7064d3b330e23410a9d48afbece2a89f2cb`
+  (sincronizado com `work/app-next` antes do commit da fase
+  `E2E-RUNNER-FIX-A`).
 - **origin/main oficial:** `1047181eba888242c6428de366cbd9fda2f1c72c`
   — **intocado** durante todo o ciclo de refactor/hardening.
 - **PR #2:** **intocado** durante todo o ciclo.
@@ -307,11 +314,37 @@ pelo HMNlead no Supabase Dashboard.)*
   falha), re-desativa (espera `already_disabled=true`), tenta
   self-disable (espera `SELF_DISABLE_FORBIDDEN`), imprime
   resumo sanitizado. Smoke estático
-  `tests/admin-disable-user-e2e-runner.smoke.js` 28/28 verde;
-  regressões focais preservadas (`admin-create-user` 17/17,
-  `admin-disable-user` 39/39). **E2E real ainda não foi
-  executado** nesta fase — fica para a próxima
-  (`RAVATEX-TAPETES-AUTH-DISABLE-USER-E2E-A` ou similar).
+  `tests/admin-disable-user-e2e-runner.smoke.js` 32/32 verde
+  (após `E2E-RUNNER-FIX-A`); regressões focais preservadas
+  (`admin-create-user` 17/17, `admin-disable-user` 39/39).
+  **E2E real ainda não foi rerodado** após o fix — fica para
+  a próxima (`RAVATEX-TAPETES-AUTH-DISABLE-USER-E2E-A` ou
+  similar).
+- 🟡 **Bug do runner no login bloqueado corrigido.** Fase
+  `RAVATEX-TAPETES-AUTH-DISABLE-USER-E2E-RUNNER-FIX-A`
+  (esta fase). Quando o runner real foi executado em staging
+  avançou até `profile_inactive` e falhou com
+  `HTTP 400 User is banned` no passo `login_blocked`. A falha
+  era o **resultado esperado** do teste, mas foi tratada como
+  erro fatal porque `supabaseLogin` chamava `die()`/
+  `process.exit` em qualquer HTTP 4xx e usava a mensagem
+  hardcoded "Login admin falhou" (rótulo incorreto para o
+  usuário descartável desativado). Correção: runner agora
+  separa os helpers `loginExpectSuccess(...)` (fatal, com
+  rótulo parametrizado como `admin_login failed`) e
+  `loginExpectFailure(...)` (não-fatal, retorna
+  `{ ok, unexpected, status, detail }`; aceita HTTP 4xx com
+  `User is banned`/`banned`/`Banned user`/`User is already
+  registered` como falha esperada). Passo `login_blocked`
+  agora imprime `login_blocked: OK` e continua para
+  `idempotency` e `self_disable_blocked`. Smoke estático
+  `tests/admin-disable-user-e2e-runner.smoke.js` expandido
+  para 32/32 verde (4 testes novos: login bloqueado esperado,
+  fluxo continua, loginExpectSuccess em 3 logins,
+  loginExpectFailure com substrings banned, loginExpectFailure
+  retorna controle). `admin-disable-user.smoke.js` 39/39
+  verde. **E2E real não foi rerodado nesta fase** — só após
+  autorização do HMNlead.
 - 🟡 Staging mostra log `relation "supabase_migrations.schema_migrations"
   does not exist` (ruído do dashboard, não do app).
 - 🟡 Tailwind CDN ainda gera warning de produção (não bloqueante;
@@ -376,12 +409,28 @@ pelo HMNlead no Supabase Dashboard.)*
    variáveis de ambiente manuais; sem secrets versionados;
    aborta se URL não for `ucrjtfswnfdlxwtmxnoo` ou se for
    `bhgifjrfagkzubpyqpew`. Smoke estático
-   `tests/admin-disable-user-e2e-runner.smoke.js` 28/28 verde.
-   **E2E real ainda não foi executado nesta fase.**
-7. **Não avançar para produção** (`bhgifjrfagkzubpyqpew`) sem
+   `tests/admin-disable-user-e2e-runner.smoke.js` 32/32 verde
+   (após `E2E-RUNNER-FIX-A`). **E2E real não foi rerodado
+   após o fix** — fica para a próxima
+   (`RAVATEX-TAPETES-AUTH-DISABLE-USER-E2E-A` ou similar).
+7. **Bug do runner no login bloqueado corrigido** (fase
+   `RAVATEX-TAPETES-AUTH-DISABLE-USER-E2E-RUNNER-FIX-A`,
+   esta). Execução real do runner em staging avançou até
+   `profile_inactive` e falhou em `login_blocked` com
+   `HTTP 400 User is banned` tratado como erro fatal.
+   Causa: `supabaseLogin` chamava `die()`/`process.exit` em
+   qualquer HTTP 4xx e usava mensagem hardcoded "Login admin
+   falhou" (rótulo incorreto para usuário descartável).
+   Correção: helpers `loginExpectSuccess` (fatal, rótulo
+   parametrizado) e `loginExpectFailure` (não-fatal, aceita
+   `User is banned`/`banned`/`Banned user`/`User is already
+   registered`). Fluxo continua para `idempotency` e
+   `self_disable_blocked`. Smoke 32/32; regressão
+   `admin-disable-user.smoke.js` 39/39.
+8. **Não avançar para produção** (`bhgifjrfagkzubpyqpew`) sem
    autorização explícita do HMNlead. Decisão de merge/release
    para `origin/main` é fase separada.
-8. Pendências técnicas remanescentes: log de migrations do dashboard
+9. Pendências técnicas remanescentes: log de migrations do dashboard
    staging, warning de Tailwind CDN, favicon 404 — não bloqueantes.
 
 ## Estrutura final de responsabilidades

@@ -14,16 +14,34 @@
 //
 //   node scripts/staging/admin-disable-user-e2e.mjs run
 //     Carrega o config e executa o E2E completo em staging:
-//       1) login admin
+//       1) login admin (loginExpectSuccess — fatal se falhar)
 //       2) confirma admin ativo em public.usuarios
 //       3) escolhe fornecedor_id (config ou autodetect)
 //       4) cria fornecedor descartável via admin-create-user
 //       5) tenta desativar admin (espera FORBIDDEN)
 //       6) desativa o fornecedor descartável (espera sucesso)
-//       7) tenta login do desativado (espera falha)
+//       7) tenta login do desativado
+//          (loginExpectFailure — aceita HTTP 400 "User is banned"
+//          como SUCESSO esperado do teste; falha inesperada aborta)
 //       8) re-desativa (espera idempotente: already_disabled=true)
 //       9) tenta self-disable (espera SELF_DISABLE_FORBIDDEN)
 //      10) imprime resumo sanitizado
+//
+// Helpers de login separados:
+//
+//   loginExpectSuccess(url, key, email, pwd, label)
+//     Login que DEVE dar certo. Falha é fatal com
+//     "<label> failed: HTTP ...". Rótulos usados:
+//     "admin_login", "test_user_login", "admin_relogin".
+//
+//   loginExpectFailure(url, key, email, pwd, expected[], label)
+//     Login que DEVE falhar. Aceita HTTP 4xx/5xx cujo corpo
+//     (error_description, msg, message, error) case-insensitive
+//     contenha qualquer um dos `expected` (ex.: "User is banned",
+//     "banned", "Banned user"). Retorna
+//     { ok: true, status, detail } em falha esperada, ou
+//     { ok: false, unexpected: true, status, detail } caso
+//     contrário. NUNCA chama die()/process.exit — caller decide.
 //
 // Garantias:
 //   - Bloqueia execução se a URL for produção `bhgifjrfagkzubpyqpew`.
@@ -128,7 +146,13 @@ function maskSecret(s) {
 // HTTP helpers (sem dependência de @supabase/supabase-js)
 // ---------------------------------------------------------------------
 
-async function supabaseLogin(supabaseUrl, anonKey, email, password) {
+async function postSupabaseLogin(supabaseUrl, anonKey, email, password) {
+  // Camada HTTP crua: NUNCA chama die()/process.exit. Retorna
+  // { status, body } para que o caller (loginExpectSuccess ou
+  // loginExpectFailure) decida se a resposta é esperada.
+  // Esta separação é essencial: o passo `login_blocked` precisa
+  // aceitar HTTP 400 com mensagem "User is banned" como SUCESSO
+  // esperado do teste, sem encerrar o processo.
   const url = supabaseUrl.replace(/\/+$/, "") + "/auth/v1/token?grant_type=password";
   const res = await fetch(url, {
     method: "POST",
@@ -140,20 +164,82 @@ async function supabaseLogin(supabaseUrl, anonKey, email, password) {
   });
   let body = null;
   try { body = await res.json(); } catch { body = null; }
-  if (!res.ok) {
+  return { status: res.status, body };
+}
+
+function extractLoginErrorText(body, fallback) {
+  if (body && typeof body === "object") {
+    return (
+      body.error_description ||
+      body.msg ||
+      body.message ||
+      body.error ||
+      fallback ||
+      ""
+    );
+  }
+  return fallback || "";
+}
+
+async function loginExpectSuccess(supabaseUrl, anonKey, email, password, label) {
+  // Login que DEVE dar certo. Falha é fatal com rótulo específico
+  // (ex.: "admin_login failed", "test_user_login failed",
+  // "admin_relogin failed"). Nunca imprime password, token, JWT.
+  const labelStr = label || "login";
+  const { status, body } = await postSupabaseLogin(supabaseUrl, anonKey, email, password);
+  if (status < 200 || status >= 300) {
     die(
-      "Login admin falhou: HTTP " + res.status + " " +
-        sanitize((body && (body.error_description || body.msg || body.message)) || res.statusText),
+      labelStr + " failed: HTTP " + status + " " +
+        sanitize(extractLoginErrorText(body, "(sem corpo)")),
     );
   }
   if (!body || !body.access_token || !body.user || !body.user.id) {
-    die("Resposta de login inesperada (sem access_token/user.id).");
+    die("Resposta de login inesperada (sem access_token/user.id) em " + labelStr + ".");
   }
   return {
     accessToken: body.access_token,
     refreshToken: body.refresh_token,
     userId: body.user.id,
     email: body.user.email,
+  };
+}
+
+async function loginExpectFailure(supabaseUrl, anonKey, email, password, expectedSubstrings, label) {
+  // Login que DEVE falhar. Aceita HTTP 4xx/5xx cujo corpo
+  // (error_description, msg, message, error) contenha qualquer um
+  // dos `expectedSubstrings` (case-insensitive). Retorna
+  // { ok: true, status, detail } em caso de falha esperada.
+  // Em caso de:
+  //   - sucesso inesperado (HTTP 2xx), ou
+  //   - erro com mensagem não-esperada,
+  // retorna { ok: false, unexpected: true, status, detail, body }.
+  // NUNCA chama die()/process.exit: o caller decide se a falha
+  // inesperada do teste é fatal ou não.
+  const labelStr = label || "login";
+  const { status, body } = await postSupabaseLogin(supabaseUrl, anonKey, email, password);
+  const raw = String(extractLoginErrorText(body, "") || "");
+  const lower = raw.toLowerCase();
+  if (status >= 200 && status < 300) {
+    return {
+      ok: false,
+      unexpected: true,
+      status,
+      detail: labelStr + ": login succeeded unexpectedly (HTTP " + status + ")",
+      body,
+    };
+  }
+  const expected = Array.isArray(expectedSubstrings) ? expectedSubstrings : [];
+  for (const e of expected) {
+    if (typeof e === "string" && lower.includes(e.toLowerCase())) {
+      return { ok: true, status, detail: raw, body };
+    }
+  }
+  return {
+    ok: false,
+    unexpected: true,
+    status,
+    detail: labelStr + ": erro nao corresponde ao esperado. recebido=" + sanitize(raw),
+    body,
   };
 }
 
@@ -400,7 +486,9 @@ async function cmdRun() {
   // 1. Login admin
   let admin;
   try {
-    admin = await supabaseLogin(cfg.supabaseUrl, cfg.anonKey, cfg.adminEmail, cfg.adminPassword);
+    admin = await loginExpectSuccess(
+      cfg.supabaseUrl, cfg.anonKey, cfg.adminEmail, cfg.adminPassword, "admin_login",
+    );
     summary.steps.admin_login = "OK";
     log("[OK] admin_login: " + cfg.adminEmail);
   } catch (e) {
@@ -487,7 +575,9 @@ async function cmdRun() {
   // 6. Login como fornecedor descartável
   let testUserAccess;
   try {
-    testUserAccess = await supabaseLogin(cfg.supabaseUrl, cfg.anonKey, testEmail, testPassword);
+    testUserAccess = await loginExpectSuccess(
+      cfg.supabaseUrl, cfg.anonKey, testEmail, testPassword, "test_user_login",
+    );
     log("[OK] test_user_login: confirmado (será usado para tentar self-bloqueio)");
   } catch (e) {
     die("Falha no login do usuário de teste: " + sanitize(e.message));
@@ -525,7 +615,9 @@ async function cmdRun() {
 
   // 9. Re-login admin (segurança)
   try {
-    admin = await supabaseLogin(cfg.supabaseUrl, cfg.anonKey, cfg.adminEmail, cfg.adminPassword);
+    admin = await loginExpectSuccess(
+      cfg.supabaseUrl, cfg.anonKey, cfg.adminEmail, cfg.adminPassword, "admin_relogin",
+    );
     log("[OK] admin_relogin");
   } catch (e) {
     die("Falha no re-login admin: " + sanitize(e.message));
@@ -577,19 +669,31 @@ async function cmdRun() {
     die("Falha ao validar perfil desativado: " + sanitize(e.message));
   }
 
-  // 12. Tenta login como usuário desativado (espera falha)
+  // 12. Tenta login como usuário desativado (espera FALHA).
+  // Esta é a única parte do runner em que login falhar é o
+  // resultado ESPERADO. Usamos loginExpectFailure para não chamar
+  // die()/process.exit em uma falha esperada, e aceitamos HTTP 4xx
+  // com mensagens equivalentes a "User is banned" (PT/EN, com
+  // variações de casing). Se a Auth retornar 2xx (login passou)
+  // ou erro com mensagem diferente das esperadas, isso é falha
+  // inesperada do teste e abortamos o run.
   try {
-    let loginFailed = false;
-    try {
-      await supabaseLogin(cfg.supabaseUrl, cfg.anonKey, testEmail, testPassword);
-    } catch (_) {
-      loginFailed = true;
-    }
-    if (!loginFailed) {
-      die("Login do usuário desativado não foi bloqueado (Auth ban falhou?).");
+    const failRes = await loginExpectFailure(
+      cfg.supabaseUrl, cfg.anonKey, testEmail, testPassword,
+      [
+        "User is banned",
+        "banned",
+        "Banned",
+        "Banned user",
+        "User is already registered",
+      ],
+      "login_blocked",
+    );
+    if (failRes.unexpected) {
+      die("login_blocked: " + failRes.detail);
     }
     summary.steps.login_blocked = "OK";
-    log("[OK] login_blocked");
+    log("[OK] login_blocked: HTTP " + failRes.status + " (falha esperada apos desativacao)");
   } catch (e) {
     die("Falha no teste de login bloqueado: " + sanitize(e.message));
   }

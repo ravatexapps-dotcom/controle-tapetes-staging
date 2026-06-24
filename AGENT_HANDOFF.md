@@ -8,13 +8,18 @@
 > Convenção: **tudo em português brasileiro**.
 
 ## Estado atual aceito
-- **Estado atual aceito:** `work/app-next @ eb5d2e0` — "Add auth user
-  disable edge function" (fase
-  `RAVATEX-TAPETES-AUTH-DISABLE-USER-EDGE-A`, Edge Function
-  `admin-disable-user` criada localmente, **sem deploy**).
-- **staging/main:** `eb5d2e05680a05fb41a52a3c0af3112eaf294ee5`
-  (sincronizado com `work/app-next`).
-- **Working tree esperado:** **limpo**.
+- **Estado atual aceito:** `work/app-next @ 476cc70` — "Add auth
+  disable staging e2e runner" (fase
+  `RAVATEX-TAPETES-AUTH-DISABLE-USER-E2E-AUTO-RUNNER-A`, runner
+  local automatizado de E2E staging). Commit da fase
+  `RAVATEX-TAPETES-AUTH-DISABLE-USER-E2E-RUNNER-FIX-A` (correção
+  do tratamento do login bloqueado esperado) pendente de push em
+  staging.
+- **staging/main:** `476cc7064d3b330e23410a9d48afbece2a89f2cb`
+  (sincronizado com `work/app-next` antes do commit da fase
+  `E2E-RUNNER-FIX-A`).
+- **Working tree esperado:** **limpo** (após commit da fase
+  `E2E-RUNNER-FIX-A`).
 - **origin/main oficial:** `1047181eba888242c6428de366cbd9fda2f1c72c`
   — **intocado** durante todo o ciclo de refactor/hardening.
 - **PR #2:** **intocado** durante todo o ciclo.
@@ -29,6 +34,11 @@
   rodam com `vm.runInContext` + `fakeSupa` mockado. A única
   leitura real feita pelo HMNlead fora do apply foi uma contagem
   `select count(*) from public.ops` manual em staging (4 OPs).
+- **Execução real do runner E2E em staging** (não-IAexec, manual
+  após autorização do HMNlead) avançou até `profile_inactive` na
+  fase `E2E-AUTO-RUNNER-A` e falhou em `login_blocked` com
+  `HTTP 400 User is banned` tratado como erro fatal. Classificado
+  como bug do runner e corrigido na fase `E2E-RUNNER-FIX-A`.
 
 ## Estado operacional atual
 - `index.html` está declarativo, sem script inline final, com
@@ -71,12 +81,12 @@ git ls-remote --heads origin main
 
 Abortar e revisar o escopo se:
 - branch != `work/app-next`;
-- HEAD != `eb5d2e0` (ou, no meio da fase E2E-AUTO-RUNNER-A, antes
+- HEAD != `476cc70` (ou, no meio da fase E2E-RUNNER-FIX-A, antes
   do push, o hash do commit que será gerado);
 - working tree não estiver limpo;
-- `staging/main` != `eb5d2e05680a05fb41a52a3c0af3112eaf294ee5`
-  (antes do push da fase E2E-AUTO-RUNNER-A) ou um commit
-  `E2E-AUTO-RUNNER-A` que ainda não foi propagado;
+- `staging/main` != `476cc7064d3b330e23410a9d48afbece2a89f2cb`
+  (antes do push da fase E2E-RUNNER-FIX-A) ou um commit
+  `E2E-RUNNER-FIX-A` que ainda não foi propagado;
 - `origin/main` != `1047181eba888242c6428de366cbd9fda2f1c72c`
   (qualquer mudança em `origin/main` é regressão grave).
 
@@ -243,8 +253,30 @@ login do desativado esperando falha, re-desativa esperando
 `SELF_DISABLE_FORBIDDEN`, imprime resumo sanitizado). Sem
 variáveis de ambiente manuais; sem secrets versionados.
 Smoke estático
-`tests/admin-disable-user-e2e-runner.smoke.js` 28/28 verde.
-**E2E real ainda não foi executado nesta fase.**
+`tests/admin-disable-user-e2e-runner.smoke.js` 32/32 verde
+(após `E2E-RUNNER-FIX-A`). **E2E real não foi rerodado após
+o fix.**
+**Bug do runner no login bloqueado corrigido** (fase
+`RAVATEX-TAPETES-AUTH-DISABLE-USER-E2E-RUNNER-FIX-A`, esta).
+Execução real do runner em staging avançou até
+`profile_inactive` e falhou em `login_blocked` com
+`HTTP 400 User is banned` tratado como erro fatal.
+Causa: `supabaseLogin` chamava `die()`/`process.exit` em
+qualquer HTTP 4xx e usava mensagem hardcoded "Login admin
+falhou" (rótulo incorreto para usuário descartável).
+Correção: helpers separados `loginExpectSuccess(...)` (fatal,
+rótulo parametrizado: `admin_login failed`,
+`test_user_login failed`, `admin_relogin failed`) e
+`loginExpectFailure(...)` (não-fatal; aceita HTTP 4xx com
+`User is banned`/`banned`/`Banned user`/`User is already
+registered` como falha esperada; retorna
+`{ ok, unexpected, status, detail }` para o caller decidir).
+Camada HTTP crua em `postSupabaseLogin(...)` (sem
+`die()`). Passo `login_blocked` agora imprime
+`login_blocked: OK` e continua para `idempotency` e
+`self_disable_blocked`. Smoke 32/32; regressão
+`admin-disable-user.smoke.js` 39/39. **E2E real não foi
+rerodado nesta fase** — só após autorização do HMNlead.
 
 O ciclo de refactor arquitetural + hardening + extração final do
 `op-pdf.js` está **congelado**. Antes de iniciar qualquer novo
@@ -340,28 +372,57 @@ Fases, em ordem:
     `admin-disable-user` em staging e validação manual. A fase
     E2E-AUTO-RUNNER-A abaixo já cria o runner que automatiza a
     validação E2E.
-11. **`RAVATEX-TAPETES-AUTH-DISABLE-USER-E2E-AUTO-RUNNER-A`**
-    *(em andamento, fase atual, repo-only)* — runner local
-    automatizado em `scripts/staging/admin-disable-user-e2e.mjs`
-    com comandos `setup` (coleta admin_email/admin_password uma
-    única vez; detecta staging de `js/config.js`; salva em
-    `.ravatex-local/admin-disable-user-e2e.config.json`,
-    gitignored) e `run` (carrega config; aborta se URL não for
-    `ucrjtfswnfdlxwtmxnoo` ou se for `bhgifjrfagkzubpyqpew`;
-    login admin; valida `tipo=admin AND ativo=true`; resolve
-    `fornecedor_id` config/autodetect; cria fornecedor descartável
-    via `admin-create-user`; tenta desativar admin como fornecedor
-    esperando `FORBIDDEN`; revalida admin; desativa descartável
-    esperando `auth_banned=true`; valida `desativado_em`/
-    `desativado_por`/`motivo_desativacao`; tenta login do
-    desativado esperando falha; re-desativa esperando
-    `already_disabled=true`; tenta self-disable esperando
-    `SELF_DISABLE_FORBIDDEN`; imprime resumo sanitizado).
-    Smoke estático
-    `tests/admin-disable-user-e2e-runner.smoke.js` 28/28 verde.
-    `.gitignore` agora ignora `.ravatex-local/`. **E2E real
-    ainda não foi executado nesta fase** — fica para a próxima
-    (`RAVATEX-TAPETES-AUTH-DISABLE-USER-E2E-A` ou similar).
+ 11. **`RAVATEX-TAPETES-AUTH-DISABLE-USER-E2E-AUTO-RUNNER-A`**
+     *(em andamento, fase atual, repo-only)* — runner local
+     automatizado em `scripts/staging/admin-disable-user-e2e.mjs`
+     com comandos `setup` (coleta admin_email/admin_password uma
+     única vez; detecta staging de `js/config.js`; salva em
+     `.ravatex-local/admin-disable-user-e2e.config.json`,
+     gitignored) e `run` (carrega config; aborta se URL não for
+     `ucrjtfswnfdlxwtmxnoo` ou se for `bhgifjrfagkzubpyqpew`;
+     login admin; valida `tipo=admin AND ativo=true`; resolve
+     `fornecedor_id` config/autodetect; cria fornecedor descartável
+     via `admin-create-user`; tenta desativar admin como fornecedor
+     esperando `FORBIDDEN`; revalida admin; desativa descartável
+     esperando `auth_banned=true`; valida `desativado_em`/
+     `desativado_por`/`motivo_desativacao`; tenta login do
+     desativado esperando falha; re-desativa esperando
+     `already_disabled=true`; tenta self-disable esperando
+     `SELF_DISABLE_FORBIDDEN`; imprime resumo sanitizado).
+     Smoke estático
+     `tests/admin-disable-user-e2e-runner.smoke.js` 32/32 verde
+     (após `E2E-RUNNER-FIX-A`).
+     `.gitignore` agora ignora `.ravatex-local/`. **E2E real
+     não foi rerodado após o fix** — fica para a próxima
+     (`RAVATEX-TAPETES-AUTH-DISABLE-USER-E2E-A` ou similar).
+11b. **`RAVATEX-TAPETES-AUTH-DISABLE-USER-E2E-RUNNER-FIX-A`**
+     *(esta fase, repo-only)* — correção do bug do runner no
+     passo `login_blocked`. Execução real do runner em staging
+     avançou até `profile_inactive` e falhou com
+     `HTTP 400 User is banned` tratado como erro fatal, porque
+     `supabaseLogin` chamava `die()`/`process.exit` em qualquer
+     HTTP 4xx e usava mensagem hardcoded "Login admin falhou"
+     (rótulo incorreto para o usuário descartável desativado).
+     Correção: helpers separados `loginExpectSuccess(...)` (fatal,
+     rótulo parametrizado: `admin_login failed`,
+     `test_user_login failed`, `admin_relogin failed`) e
+     `loginExpectFailure(...)` (não-fatal; aceita HTTP 4xx com
+     `User is banned`/`banned`/`Banned user`/`User is already
+     registered` como falha esperada; retorna
+     `{ ok, unexpected, status, detail }` para o caller decidir).
+     Camada HTTP crua em `postSupabaseLogin(...)` (sem `die()`).
+     Passo `login_blocked` agora imprime `login_blocked: OK` e
+     continua para `idempotency` e `self_disable_blocked`. Smoke
+     estático
+     `tests/admin-disable-user-e2e-runner.smoke.js` 32/32 verde
+     (4 testes novos: login bloqueado esperado, fluxo continua,
+     loginExpectSuccess nos 3 logins, loginExpectFailure com
+     substrings banned, loginExpectFailure retorna controle).
+     Regressão `admin-disable-user.smoke.js` 39/39. **E2E real
+     não foi rerodado nesta fase** — só após autorização do
+     HMNlead. **Sem deploy, sem Supabase real, sem SQL, sem
+     alteração de UI, sem produção, sem origin/main, sem PR
+     #2.**
 12. **`RAVATEX-TAPETES-AUTH-DISABLE-USER-UI-A`** *(futura)* — restaurar
     botão "Desativar" na UI quando Edge Function estiver
     deployada e validada em staging.
