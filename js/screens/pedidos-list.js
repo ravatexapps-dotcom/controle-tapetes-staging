@@ -81,7 +81,7 @@
       const header = window.pageHeader('Pedidos', [
         {
           label: '+ Novo pedido',
-          onclick: () => window.toast('Formulário será implementado na próxima fase.', 'info'),
+          onclick: () => window.navigate('#/pedidos/novo'),
         },
       ]);
 

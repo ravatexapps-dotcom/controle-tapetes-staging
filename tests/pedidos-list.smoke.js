@@ -253,12 +253,13 @@ test('pedidos-list.js: tem placeholder "Novo pedido" e "Visualizar"', () => {
   );
 });
 
-test('pedidos-list.js: NÃO chama navigate para rota de formulário', () => {
-  // Garantir que não navega para rota inexistente de formulário.
-  assert.doesNotMatch(
+test('pedidos-list.js: navega para #/pedidos/novo no botão Novo (após C2)', () => {
+  // Após C2, o botão "+ Novo pedido" navega para o formulário
+  // (não exibe mais toast placeholder).
+  assert.match(
     screen,
-    /navigate\(\s*['"]#\/pedidos\/(?:novo|new|\d+)['"]/,
-    "não deve navegar para rota de formulário (não implementado nesta fase)"
+    /navigate\(\s*['"]#\/pedidos\/novo['"]/,
+    "deve navegar para '#/pedidos/novo' no botão Novo"
   );
 });
 

@@ -50,6 +50,7 @@
     '#/ops':      { render: window.screenListaOPs, roles: ['admin'] },
     '#/ops/nova': { render: () => window.screenNovaOP(null), roles: ['admin'] },
     '#/pedidos':  { render: window.screenPedidosLista, roles: ['admin'] },
+    '#/pedidos/novo': { render: window.screenPedidoNovo, roles: ['admin'] },
 
     '#/cadastros/cores':       { render: window.screenCadastrosCores,       roles: ['admin'] },
     '#/cadastros/modelos':     { render: window.screenCadastrosModelos,     roles: ['admin'] },

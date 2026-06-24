@@ -1,14 +1,15 @@
 # PROJECT_STATE.md — Controle de Tapetes (Grupo Terra Branca)
 
 > Snapshot de estado canônico curto. Atualizado em **2026-06-24** (fase
-> `RAVATEX-TAPETES-PEDIDOS-UI-ADMIN-C1` — UI admin mínima de
-> listagem de Pedidos).
-> **Frontend modular.** Novos arquivos `js/pedido-ui.js` (helper
-> status/cor/preview) e `js/screens/pedidos-list.js` (listagem admin
-> read-only). Rota `#/pedidos` registrada em `boot.js` com role
-> admin. Entrada "Pedidos" adicionada ao `ADMIN_MENU`. Sem CRUD,
-> sem geração de OP, sem cliente público, sem token. Schema
-> `db/13_*` permanece aplicado em `ucrjtfswnfdlxwtmxnoo`.
+> `RAVATEX-TAPETES-PEDIDOS-UI-ADMIN-C2` — formulário admin de
+> criação de Pedido).
+> **Frontend modular.** Novo arquivo `js/screens/pedido-form.js`
+> com formulário admin em `#/pedidos/novo`. Cria pedido como
+> `rascunho` + itens em `pedido_itens`, com compensação se itens
+> falharem. Sem geração de OP, sem lote, sem cliente público, sem
+> token, sem Edge Function. Sem RPC/transação atômica
+> (limitação documentada no código). Schema `db/13_*` permanece
+> aplicado em `ucrjtfswnfdlxwtmxnoo`.
 > Fonte da verdade operacional. Detalhe por fase em
 > `docs/refactor/ARCHITECTURE_REFACTOR_LEDGER.md`.
 > Regras de saúde arquitetural em
