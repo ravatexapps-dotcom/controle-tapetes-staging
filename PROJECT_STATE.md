@@ -1,24 +1,25 @@
 # PROJECT_STATE.md — Controle de Tapetes (Grupo Terra Branca)
 
 > Snapshot de estado canônico curto. Atualizado em **2026-06-24** (fase
-> `RAVATEX-TAPETES-PEDIDOS-UI-ADMIN-C3C2C2` — remover item existente
-> do Pedido pela tela de edição de itens).
-> **Frontend remover item.** Tela `#/pedidos/<uuid>/itens` agora
-> também permite REMOVER itens existentes do Pedido (além de
-> editar itens existentes da C3C2B e adicionar novos itens da
-> C3C2C1). Itens existentes têm botão "Remover item" (visível
-> apenas para status editáveis) que abre `window.confirmDialog`
-> com confirmação visual; após confirmar, o item é marcado
-> localmente com `markedForDeletion: true` (visual distinto:
-> borda tracejada vermelha, opacidade, label "Será removido ao
-> salvar") e tem botão "Desfazer remoção" para reverter. Mínimo
-> de 1 item no Pedido é garantido: `marcarParaRemocao` bloqueia
-> se a remoção deixaria 0 itens. A remoção é aplicada APENAS no
-> `salvar()` via DELETE em `pedido_itens` com
-> `.eq('id', dbId).eq('pedido_id', pedidoId)` (dupla condição).
-> Sem reordenar manualmente, sem editar `largura`/`cor_1_id`/
-> `cor_2_id` (overrides opcionais ficam para C3C2D). Schema
-> `db/13_*` permanece aplicado em `ucrjtfswnfdlxwtmxnoo`.
+> `RAVATEX-TAPETES-PEDIDOS-UI-ADMIN-C3C2C3` — normalização
+> automática de `ordem` no `salvar()` da tela de edição de
+> itens do Pedido).
+> **Frontend normalizar ordem.** Tela `#/pedidos/<uuid>/itens`
+> agora normaliza automaticamente `ordem` dos itens finais no
+> `salvar()` (além de editar da C3C2B, adicionar da C3C2C1 e
+> remover da C3C2C2). Para cada item ativo
+> (`activeItems = state.itens.filter(!markedForDeletion)`),
+> `ordem` é recalculada pela posição final no array
+> (0, 1, 2, ...). Lacunas após add/remove são eliminadas.
+> `salvar()` aplica update com 4 chaves
+> (`modelo_id`/`metros`/`observacao`/`ordem` — `ordem` é nova
+> no payload de update para aplicar a normalização) e insert
+> com 5 chaves (com `ordem = it.ordem`, posição final em
+> `activeItems`). Sem drag-and-drop, sem setas de subir/descer,
+> sem reordenação manual (fica para C3C2C4+), sem editar
+> `largura`/`cor_1_id`/`cor_2_id` (overrides opcionais ficam
+> para C3C2D). Schema `db/13_*` permanece aplicado em
+> `ucrjtfswnfdlxwtmxnoo`.
 > Fonte da verdade operacional. Detalhe por fase em
 > `docs/refactor/ARCHITECTURE_REFACTOR_LEDGER.md`.
 > Regras de saúde arquitetural em
@@ -51,11 +52,11 @@ recebimento do látex. Perfis: **admin** (operação) e **fornecedor**
 
 ## Estado atual do refactor
 - **Branch operacional:** `work/app-next`.
-- **HEAD atual aceito:** commit desta fase — "Add pedido admin
-  item removal" (fase `RAVATEX-TAPETES-PEDIDOS-UI-ADMIN-C3C2C2`).
-  Antes desta fase: `fd1a9a3` (fase
-  `RAVATEX-TAPETES-PEDIDOS-UI-ADMIN-C3C2C1`).
-- **staging/main:** `fd1a9a3` (será atualizado com o push desta fase).
+- **HEAD atual aceito:** commit desta fase — "Normalize pedido
+  item order on save" (fase `RAVATEX-TAPETES-PEDIDOS-UI-ADMIN-C3C2C3`).
+  Antes desta fase: `bd3aedc` (fase
+  `RAVATEX-TAPETES-PEDIDOS-UI-ADMIN-C3C2C2`).
+- **staging/main:** `bd3aedc` (será atualizado com o push desta fase).
 - **origin/main:** `1047181eba888242c6428de366cbd9fda2f1c72c` — **intocado.**
 - **PR #2:** **intocado.**
 - **Working tree:** **limpo.**
@@ -677,6 +678,68 @@ staging `ucrjtfswnfdlxwtmxnoo`.)*
    recomendada: `RAVATEX-TAPETES-PEDIDOS-UI-ADMIN-C3C2C3`
    (reordenação manual de itens com drag-and-drop / setas),
    **somente com autorização explícita** do HMNlead.
+ - 🟢 **Normalização automática de `ordem` no `salvar()`**
+   (fase `RAVATEX-TAPETES-PEDIDOS-UI-ADMIN-C3C2C3`, esta).
+   `js/screens/pedido-itens-edit.js` (já existente) foi estendido
+   para normalizar automaticamente `ordem` dos itens finais no
+   `salvar()` (além de editar da C3C2B, adicionar da C3C2C1 e
+   remover da C3C2C2). Comportamento: no `salvar()`, antes de
+   qualquer operação de banco, há um loop
+   `for (let i = 0; i < activeItems.length; i++) {
+   activeItems[i].ordem = i; }` que recalcula `ordem` por
+   posição final no array `activeItems = state.itens.filter(
+   !markedForDeletion)`. Isso elimina lacunas após add/remove:
+   itens `[0,1,2,3]` com item 1 removido → `[0,2,3]` normalizado
+   para `[0,1,2]`. Sequência final garantida: `0, 1, 2, ...` sem
+   sobreposição e sem gaps. Itens marcados para remoção são
+   EXCLUÍDOS do cálculo (não entram na sequência final). Sem
+   UI de reordenação manual (sem drag-and-drop, sem setas de
+   subir/descer, sem botões moveUp/moveDown, sem reordenar).
+   `salvar()` foi atualizado: update agora tem payload com 4
+   chaves (`modelo_id`/`metros`/`observacao`/`ordem` — `ordem`
+   é nova no payload de update, para aplicar a normalização
+   nos itens remanescentes após remoção); insert continua com
+   5 chaves mas `ordem: it.ordem` (vindo da normalização, não
+   mais `existingItems.length + i`); delete continua com
+   `.eq('id', dbId).eq('pedido_id', pedidoId)` em `pedido_itens`.
+   Sequência: 1) separar `activeItems` (filter !markedForDeletion)
+   e `removedItems` (filter markedForDeletion && !isNew), 2)
+   validar `activeItems.length >= 1` e cada item (modeloId,
+   metros > 0), 3) **normalizar** `activeItems[i].ordem = i` por
+   posição, 4) separar `existingItems`/`newItems`, 5) UPDATE
+   sequencial com `.eq('id', it.dbId).eq('pedido_id', pedidoId)`,
+   6) INSERT em batch, 7) DELETE sequencial. Toast de sucesso
+   continua contando inserts/removes. Limitação documentada
+   (sem transação/RPC, sem compensação automática) preservada
+   da C3C2C2. Sem drag-and-drop, sem setas, sem reordenação
+   manual, sem editar `largura`/`cor_1_id`/`cor_2_id` (C3C2D),
+   sem update em `pedidos`, sem `pedido_eventos`/`lotes`, sem
+   OP, sem Edge Function, sem RPC, sem schema, sem token
+   público, sem `service_role`, sem rota pública, sem
+   `functions.invoke`. `tests/pedido-itens-edit.smoke.js`
+   atualizado (64/64 verde) — 5 testes novos
+   (normalização `activeItems[i].ordem = i` por posição; loop
+   usa `for` (não forEach) para acessar índice; normalização
+   ANTES de separar existing/new; `activeItems` é base do
+   cálculo; update de item existente INCLUI `ordem` com valor
+   `it.ordem`; insert usa `it.ordem` (não mais
+   `existingItems.length + i`); payload NÃO contém
+   `largura`/`cor_1_id`/`cor_2_id`) + 2 testes invertidos
+   (payload de update EXATAMENTE 4 chaves em vez de 3; NÃO
+   atualiza campos proibidos exceto `ordem` que agora é
+   permitida) + 1 teste atualizado (NÃO tem drag/setas/
+   subir/descer; mantém reordenar como proibido). Regressões
+   focadas todas verdes: `pedido-detail` 43/43, `pedido-edit`
+   35/35, `pedido-form` 35/35, `pedido-ui` 18/18,
+   `pedidos-list` 29/29, `pedidos-schema` 41/41, `boot` 28/28,
+   `router` 41/41. **Total: 334/334 verdes** (focados).
+   **Sem deploy, sem Supabase real, sem SQL, sem produção,
+   sem origin/main, sem PR #2 nesta fase.** Próxima fase
+   recomendada: `RAVATEX-TAPETES-PEDIDOS-UI-ADMIN-C3C2D`
+   (overrides opcionais de `largura`/`cor_1_id`/`cor_2_id` por
+   item) ou `RAVATEX-TAPETES-PEDIDOS-UI-ADMIN-C3C2C4`
+   (reordenação manual com drag-and-drop / setas), **somente
+   com autorização explícita** do HMNlead.
 
 ## Próximo passo recomendado
 1. **Auth provisioning fechado em staging:** Edge Function
@@ -1020,14 +1083,23 @@ staging `ucrjtfswnfdlxwtmxnoo`.)*
     permite ADICIONAR novos itens com flag `isNew: true`,
     insert em batch com 5 chaves `pedido_id`/`modelo_id`/
     `metros`/`observacao`/`ordem`; sem delete/upsert, sem
-    remover existente, sem drag-and-drop + commit desta fase
+    remover existente, sem drag-and-drop + commit `bd3aedc`
     C3C2C2: também permite REMOVER itens existentes com
     `markedForDeletion: true` (local) e `window.confirmDialog`
     para confirmação visual, DELETE em `pedido_itens` com
     dupla `.eq('id')` + `.eq('pedido_id')` aplicado apenas
     no `salvar()`, mínimo de 1 item, botão "Desfazer remoção"
     para reverter; sem drag-and-drop, sem reordenar
-    manualmente, sem editar `largura`/`cor_1_id`/`cor_2_id`).
+    manualmente, sem editar `largura`/`cor_1_id`/`cor_2_id`
+    + commit desta fase C3C2C3: também normaliza
+    automaticamente `ordem` no `salvar()` (loop
+    `activeItems[i].ordem = i` por posição final em
+    `activeItems`, ANTES de separar existing/new); update
+    agora com 4 chaves (`modelo_id`/`metros`/`observacao`/
+    `ordem`) e insert com `ordem: it.ordem` (vindo da
+    normalização, não mais `existingItems.length + i`); sem
+    drag-and-drop / setas / reordenar manualmente; sem
+    editar `largura`/`cor_1_id`/`cor_2_id`).
 
 ## Estado dos módulos críticos (após `7f3c6da`)
 

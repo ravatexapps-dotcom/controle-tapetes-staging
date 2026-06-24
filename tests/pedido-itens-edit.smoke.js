@@ -3,11 +3,14 @@
 // Smoke estático para a tela admin de edição de itens do Pedido
 // `js/screens/pedido-itens-edit.js` (`screenPedidoItensEditar`).
 //
-// Fase: RAVATEX-TAPETES-PEDIDOS-UI-ADMIN-C3C2C2
+// Fase: RAVATEX-TAPETES-PEDIDOS-UI-ADMIN-C3C2C3
 // Escopo: edição de `modelo_id`, `metros`, `observacao` em
 //   itens JÁ EXISTENTES (C3C2B) + ADICIONAR novos itens
-//   (C3C2C1) + REMOVER itens existentes (C3C2C2).
-//   SEM reordenar manualmente, SEM editar `largura`/`cor_1_id`/
+//   (C3C2C1) + REMOVER itens existentes (C3C2C2) +
+//   NORMALIZAR automaticamente `ordem` no `salvar()`
+//   (C3C2C3, sem UI de reordenação manual).
+//   SEM drag-and-drop, SEM setas de subir/descer, SEM
+//   reordenação manual, SEM editar `largura`/`cor_1_id`/
 //   `cor_2_id` (overrides opcionais ficam para C3C2D).
 //   Garante:
 //   - arquivo existe e sintaxe JS válida;
@@ -21,16 +24,20 @@
 //   - faz `update` em `pedido_itens` (apenas itens existentes
 //     NÃO marcados para remoção) com
 //     `.eq('id', item.dbId).eq('pedido_id', pedidoId)`;
-//   - payload de update contém EXATAMENTE 3 chaves:
-//     `modelo_id`, `metros`, `observacao`;
+//   - payload de update contém EXATAMENTE 4 chaves
+//     (C3C2C3: inclui `ordem` para normalização):
+//     `modelo_id`, `metros`, `observacao`, `ordem`;
 //   - faz `insert` em `pedido_itens` (apenas itens novos) com
 //     5 chaves: `pedido_id`, `modelo_id`, `metros`, `observacao`,
-//     `ordem`;
+//     `ordem` (ordem vem da posição final em `activeItems`);
 //   - faz `delete` em `pedido_itens` (apenas itens existentes
 //     marcados para remoção) com
 //     `.eq('id', dbId).eq('pedido_id', pedidoId)`;
-//   - NÃO atualiza `id`, `pedido_id`, `ordem`, `largura`,
-//     `cor_1_id`, `cor_2_id`, `criado_em` em updates;
+//   - normalização de `ordem` no `salvar()`: para cada item
+//     ativo, atribui `ordem = i` por posição final em
+//     `activeItems` (sem lacunas, sem sobreposição);
+//   - NÃO atualiza `id`, `pedido_id`, `largura`, `cor_1_id`,
+//     `cor_2_id`, `criado_em` em updates (ordem é permitida);
 //   - NÃO seta `id`, `largura`, `cor_1_id`, `cor_2_id`,
 //     `criado_em` em inserts;
 //   - NÃO faz upsert em `pedido_itens`;
@@ -55,7 +62,9 @@
 //     `pedido_itens` com dupla condição `.eq('id')` +
 //     `.eq('pedido_id')`);
 //   - valida mínimo de 1 item (não marca o último);
-//   - SEM drag-and-drop / reordenação manual (C3C2C2+);
+//   - SEM drag-and-drop / setas de subir/descer / reordenação
+//     manual (C3C2C3: normalização é automática no `salvar()`,
+//     sem UI de controle de ordem);
 //   - rota dinâmica `#/pedidos/<uuid>/itens` é admin-only.
 //
 // Não executa o app nem acessa Supabase real.
@@ -245,13 +254,15 @@ test('pedido-itens-edit.js: faz .update() em pedido_itens com .eq("id", item.dbI
   assert.ok(m, 'deve fazer .update(payload).eq("id", it.dbId).eq("pedido_id", pedidoId)');
 });
 
-test('pedido-itens-edit.js: payload de update contém EXATAMENTE 3 chaves (modelo_id, metros, observacao)', () => {
-  // O objeto `payload` deve ter APENAS essas 3 chaves.
+test('pedido-itens-edit.js: payload de update contém EXATAMENTE 4 chaves (modelo_id, metros, observacao, ordem) — C3C2C3', () => {
+  // C3C2C3: payload de update agora inclui `ordem` para aplicar
+  // a normalização automática. As 4 chaves permitidas são:
+  // `modelo_id`, `metros`, `observacao`, `ordem`.
   const m = screen.match(/const\s+payload\s*=\s*\{([\s\S]*?)\}/);
   assert.ok(m, 'objeto payload deve existir');
   const chaves = m[1].split(',').map(s => s.trim()).filter(Boolean);
-  assert.equal(chaves.length, 3,
-    'payload deve ter EXATAMENTE 3 chaves (modelo_id, metros, observacao)');
+  assert.equal(chaves.length, 4,
+    'payload deve ter EXATAMENTE 4 chaves (modelo_id, metros, observacao, ordem) — C3C2C3');
   const chavesStr = chaves.join(' ');
   assert.match(chavesStr, /modelo_id\s*:/,
     'payload deve incluir modelo_id');
@@ -259,15 +270,19 @@ test('pedido-itens-edit.js: payload de update contém EXATAMENTE 3 chaves (model
     'payload deve incluir metros');
   assert.match(chavesStr, /observacao\s*:/,
     'payload deve incluir observacao');
+  assert.match(chavesStr, /ordem\s*:/,
+    'payload deve incluir ordem (C3C2C3)');
 });
 
-test('pedido-itens-edit.js: NÃO atualiza campos proibidos (id, pedido_id, ordem, largura, cor_1_id, cor_2_id, criado_em)', () => {
+test('pedido-itens-edit.js: NÃO atualiza campos proibidos (id, pedido_id, largura, cor_1_id, cor_2_id, criado_em) — C3C2C3', () => {
+  // C3C2C3: `ordem` agora é permitida (normalização). Demais
+  // campos continuam proibidos.
   const m = screen.match(/const\s+payload\s*=\s*\{([\s\S]*?)\}/);
   assert.ok(m, 'objeto payload deve existir');
   const chavesStr = m[1];
-  for (const proibido of ['id', 'pedido_id', 'ordem', 'largura', 'cor_1_id', 'cor_2_id', 'criado_em']) {
+  for (const proibido of ['id', 'pedido_id', 'largura', 'cor_1_id', 'cor_2_id', 'criado_em']) {
     assert.doesNotMatch(chavesStr, new RegExp('\\b' + proibido + '\\s*:'),
-      'payload NÃO deve conter campo "' + proibido + '" (C3C2C1 restrito a modelo_id/metros/observacao)');
+      'payload NÃO deve conter campo "' + proibido + '" (C3C2C3 mantém restrição)');
   }
 });
 
@@ -476,13 +491,20 @@ test('pedido-itens-edit.js: TEM botão "Remover item" para item existente (C3C2C
     'item novo continua usando "Descartar novo item" (C3C2C1)');
 });
 
-test('pedido-itens-edit.js: NÃO tem drag-and-drop / reordenação manual (C3C2C2)', () => {
-  // Reordenação manual é escopo de C3C2C2.
+test('pedido-itens-edit.js: NÃO tem drag-and-drop / setas / reordenação manual (C3C2C3)', () => {
+  // C3C2C3: normalização de `ordem` é 100% automática no
+  // `salvar()`. NÃO há drag-and-drop, setas de subir/descer,
+  // botões moveUp/moveDown, nem qualquer UI de reordenação
+  // manual. Reordenação manual fica para fase futura.
   const co = codeOnly(screen);
   assert.doesNotMatch(co, /drag/i,
-    'pedido-itens-edit.js NÃO deve ter drag-and-drop (C3C2C2)');
-  assert.doesNotMatch(co, /reordenar|reorder|moveUp|moveDown/i,
-    'pedido-itens-edit.js NÃO deve ter reordenação manual (C3C2C2)');
+    'pedido-itens-edit.js NÃO deve ter drag-and-drop (C3C2C3)');
+  assert.doesNotMatch(co, /reordenar|reorder/i,
+    'pedido-itens-edit.js NÃO deve ter reordenação manual (C3C2C3)');
+  assert.doesNotMatch(co, /moveUp|moveDown/i,
+    'pedido-itens-edit.js NÃO deve ter setas/botões de mover (C3C2C3)');
+  assert.doesNotMatch(co, /subir|descer/i,
+    'pedido-itens-edit.js NÃO deve ter labels de subir/descer (C3C2C3)');
 });
 
 // ---------------------------------------------------------------------
@@ -512,13 +534,21 @@ test('pedido-itens-edit.js: insert de novos itens NÃO contém campos proibidos 
   }
 });
 
-test('pedido-itens-edit.js: ordem de novos itens é calculada automaticamente (C3C2C1)', () => {
-  // Para novos itens, ordem = existingItems.length + i.
+test('pedido-itens-edit.js: ordem de novos itens vem da posição final em activeItems (C3C2C3)', () => {
+  // C3C2C3: `ordem` do insert vem da posição final do item em
+  // `activeItems` (não mais `existingItems.length + i`).
+  // A normalização atribui `activeItems[i].ordem = i` antes
+  // de separar existing/new; o insert usa `it.ordem` direto.
   const m = screen.match(/insertPayload\s*=\s*newItems\.map[\s\S]*?return\s*\{([\s\S]*?)\}/);
   assert.ok(m, 'insertPayload deve existir');
-  // A expressão de ordem deve usar existingItems.length.
-  assert.match(m[1], /ordem\s*:\s*existingItems\.length\s*\+\s*i/,
-    'ordem deve ser calculada como existingItems.length + i');
+  // A expressão de ordem deve usar `it.ordem` (vinda da
+  // normalização por posição em activeItems), não mais
+  // `existingItems.length + i`.
+  assert.match(m[1], /ordem\s*:\s*it\.ordem/,
+    'ordem deve ser atribuída via it.ordem (posição em activeItems normalizada) — C3C2C3');
+  // Defesa: não pode mais usar a fórmula antiga.
+  assert.doesNotMatch(m[1], /ordem\s*:\s*existingItems\.length\s*\+\s*i/,
+    'ordem NÃO deve mais usar existingItems.length + i (C3C2C3)');
 });
 
 test('pedido-itens-edit.js: tem botão "Descartar novo item" para itens com isNew', () => {
@@ -716,29 +746,103 @@ test('pedido-itens-edit.js: delete em pedido_itens NÃO toca outras tabelas (C3C
   }
 });
 
-test('pedido-itens-edit.js: payload de update pode incluir "ordem" como normalização (C3C2C2)', () => {
-  // C3C2C2 documenta que o payload de update pode incluir `ordem`
-  // para normalização automática quando há remoções. Mas, nesta
-  // implementação, mantemos a regra do C3C2C1: payload continua
-  // com EXATAMENTE 3 chaves (modelo_id, metros, observacao) para
-  // updates de itens remanescentes — não normalizamos `ordem` para
-  // evitar complexidade extra. Verificamos a consistência com C3C2C1.
-  const m = screen.match(/const\s+payload\s*=\s*\{([\s\S]*?)\}/);
-  assert.ok(m, 'objeto payload deve existir');
-  const chaves = m[1].split(',').map(s => s.trim()).filter(Boolean);
-  assert.equal(chaves.length, 3,
-    'payload de update continua com EXATAMENTE 3 chaves (modelo_id, metros, observacao) — sem normalização de ordem nesta fase');
-});
-
-test('pedido-itens-edit.js: NÃO atualiza campos proibidos incluindo "ordem" (C3C2C2)', () => {
-  // Defesa: payload NÃO contém `ordem` (não normalizamos na
-  // implementação atual) e NÃO contém outros campos proibidos.
+test('pedido-itens-edit.js: payload de update INCLUI "ordem" para normalização (C3C2C3)', () => {
+  // C3C2C3: payload de update inclui `ordem` (4 chaves no total)
+  // para aplicar a normalização automática no `salvar()`.
+  // Sem essa chave, a ordem dos itens remanescentes não seria
+  // corrigida após add/remove.
   const m = screen.match(/const\s+payload\s*=\s*\{([\s\S]*?)\}/);
   assert.ok(m, 'objeto payload deve existir');
   const chavesStr = m[1];
-  for (const proibido of ['id', 'pedido_id', 'ordem', 'largura', 'cor_1_id', 'cor_2_id', 'criado_em']) {
+  assert.match(chavesStr, /\bordem\s*:/,
+    'payload DEVE incluir campo "ordem" (C3C2C3) — sem ele, normalização não é aplicada');
+  // O valor de `ordem` no payload deve vir de `it.ordem`
+  // (calculado pela normalização), não hardcoded.
+  assert.match(chavesStr, /ordem\s*:\s*it\.ordem/,
+    'valor de `ordem` no payload deve vir de it.ordem (normalizado) — C3C2C3');
+});
+
+// ---------------------------------------------------------------------
+// 15d. C3C2C3: normalização automática de `ordem` no `salvar()`
+// ---------------------------------------------------------------------
+
+test('pedido-itens-edit.js: normalização de ordem atribui `it.ordem = i` por posição em activeItems (C3C2C3)', () => {
+  // C3C2C3: no `salvar()`, antes de separar existing/new, há um
+  // loop que atribui `activeItems[i].ordem = i`. Isso elimina
+  // lacunas e garante sequência 0, 1, 2, ... por posição final
+  // no array.
+  const co = codeOnly(screen);
+  // Deve haver um loop sobre `activeItems` com atribuição de
+  // `ordem = i`.
+  assert.match(co,
+    /activeItems\[i\]\.ordem\s*=\s*i/,
+    'salvar() deve atribuir activeItems[i].ordem = i (normalização) — C3C2C3');
+  // Defesa: deve ser um `for` (não forEach) para usar o índice.
+  assert.match(co,
+    /for\s*\(\s*let\s+i\s*=\s*0;\s*i\s*<\s*activeItems\.length[\s\S]{0,100}?activeItems\[i\]\.ordem\s*=\s*i/,
+    'normalização deve usar `for` (não forEach) para acessar o índice i — C3C2C3');
+});
+
+test('pedido-itens-edit.js: normalização acontece ANTES de separar existing/new (C3C2C3)', () => {
+  // C3C2C3: a normalização (loop sobre activeItems) deve estar
+  // ANTES do split `existingItems` / `newItems`. Caso contrário,
+  // a ordem seria calculada sobre os filtros e não sobre a
+  // posição final.
+  const co = codeOnly(screen);
+  const idxNormalize = co.indexOf('activeItems[i].ordem = i');
+  const idxSplit = co.indexOf('existingItems = activeItems.filter');
+  assert.ok(idxNormalize > 0, 'normalização deve existir (activeItems[i].ordem = i)');
+  assert.ok(idxSplit > 0, 'split existingItems/newItems deve existir');
+  assert.ok(idxNormalize < idxSplit,
+    'normalização (activeItems[i].ordem = i) deve vir ANTES do split existingItems/newItems — C3C2C3');
+});
+
+test('pedido-itens-edit.js: `activeItems` é a base do cálculo de ordem (C3C2C3)', () => {
+  // C3C2C3: itens marcados para remoção (markedForDeletion=true)
+  // são EXCLUÍDOS do cálculo de ordem (não entram na sequência
+  // final). A normalização é aplicada sobre `activeItems`, que
+  // é `state.itens.filter(!markedForDeletion)`.
+  const co = codeOnly(screen);
+  // Verifica que `activeItems` é usado como base do loop de
+  // normalização.
+  assert.match(co,
+    /for\s*\([\s\S]{0,100}?i\s*<\s*activeItems\.length[\s\S]{0,100}?activeItems\[i\]\.ordem\s*=\s*i/,
+    'normalização deve iterar sobre `activeItems` (não state.itens) — C3C2C3');
+});
+
+test('pedido-itens-edit.js: `ordem` do insert usa `it.ordem` (já normalizado) (C3C2C3)', () => {
+  // C3C2C3: o `ordem` do insert de novos itens vem de
+  // `it.ordem` (atribuído pela normalização acima), não mais de
+  // `existingItems.length + i` (regra antiga do C3C2C1/C3C2C2).
+  const m = screen.match(/insertPayload\s*=\s*newItems\.map[\s\S]*?return\s*\{([\s\S]*?)\}/);
+  assert.ok(m, 'insertPayload deve existir');
+  assert.match(m[1], /ordem\s*:\s*it\.ordem/,
+    'insert deve usar `ordem: it.ordem` (vindo da normalização) — C3C2C3');
+  // Defesa: a fórmula antiga NÃO pode mais estar presente.
+  assert.doesNotMatch(m[1], /ordem\s*:\s*existingItems\.length\s*\+\s*i/,
+    'insert NÃO deve mais usar `existingItems.length + i` (regra antiga) — C3C2C3');
+});
+
+test('pedido-itens-edit.js: `ordem` do update usa `it.ordem` (já normalizado) (C3C2C3)', () => {
+  // C3C2C3: o `ordem` do update de itens existentes vem de
+  // `it.ordem` (atribuído pela normalização). Sem isso, itens
+  // remanescentes após remoção manteriam `ordem` com lacunas.
+  const m = screen.match(/const\s+payload\s*=\s*\{([\s\S]*?)\}/);
+  assert.ok(m, 'objeto payload deve existir');
+  assert.match(m[1], /ordem\s*:\s*it\.ordem/,
+    'update deve usar `ordem: it.ordem` (vindo da normalização) — C3C2C3');
+});
+
+test('pedido-itens-edit.js: payload de update NÃO contém campos de override (largura, cor_1_id, cor_2_id) (C3C2C3)', () => {
+  // C3C2C3: overrides de largura/cor continuam PROIBIDOS no
+  // payload de update (ficam para C3C2D). Apenas `ordem` foi
+  // adicionada.
+  const m = screen.match(/const\s+payload\s*=\s*\{([\s\S]*?)\}/);
+  assert.ok(m, 'objeto payload deve existir');
+  const chavesStr = m[1];
+  for (const proibido of ['largura', 'cor_1_id', 'cor_2_id']) {
     assert.doesNotMatch(chavesStr, new RegExp('\\b' + proibido + '\\s*:'),
-      'payload NÃO deve conter campo "' + proibido + '" (C3C2C2 mantém restrição do C3C2C1)');
+      'payload NÃO deve conter campo "' + proibido + '" (C3C2D)');
   }
 });
 

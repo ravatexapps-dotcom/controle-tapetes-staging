@@ -1,33 +1,44 @@
 // =====================================================================
 // === SCREENS: PEDIDO ITENS EDIT ======================================
 // Tela admin de edição dos itens de um Pedido
-// (C3C2B + C3C2C1 + C3C2C2).
+// (C3C2B + C3C2C1 + C3C2C2 + C3C2C3).
 // Rota: `#/pedidos/<uuid>/itens` (parseada por js/router.js via
 // matchRoute dinâmico). Botão "Editar itens" da tela de detalhe
 // `#/pedidos/<uuid>` (C3A/C3B/C3C1) navega para esta tela quando
 // o status é editável.
 //
-// Fase: RAVATEX-TAPETES-PEDIDOS-UI-ADMIN-C3C2C2
+// Fase: RAVATEX-TAPETES-PEDIDOS-UI-ADMIN-C3C2C3
 // Escopo: edição de `modelo_id`, `metros`, `observacao` em
 //   itens JÁ EXISTENTES (C3C2B) + ADICIONAR novos itens
-//   (C3C2C1) + REMOVER itens existentes (C3C2C2).
-//   SEM reordenar manualmente, SEM editar `largura`/`cor_1_id`/
-//   `cor_2_id` (overrides opcionais ficam para C3C2D), SEM
-//   alterar status (fica para C3B já entregue), SEM mexer em
-//   dados gerais (fica para C3C1 já entregue), SEM geração de
-//   OP, SEM lote, SEM cliente público, SEM token, SEM Edge
-//   Function, SEM RPC, SEM schema.
+//   (C3C2C1) + REMOVER itens existentes (C3C2C2) +
+//   NORMALIZAR automaticamente `ordem` no `salvar()`
+//   (C3C2C3, sem UI de reordenação manual).
+//   SEM drag-and-drop, SEM setas de subir/descer, SEM
+//   reordenação manual (fica para C3C2C4+), SEM editar
+//   `largura`/`cor_1_id`/`cor_2_id` (overrides opcionais
+//   ficam para C3C2D), SEM alterar status (fica para C3B
+//   já entregue), SEM mexer em dados gerais (fica para C3C1
+//   já entregue), SEM geração de OP, SEM lote, SEM cliente
+//   público, SEM token, SEM Edge Function, SEM RPC, SEM schema.
 //
 //   Itens novos: criados no estado local com flag `isNew: true`,
 //   botão "Descartar novo item" (apenas local, antes de salvar).
 //
 //   Itens existentes removidos: clique em "Remover item" abre
-//   `window.confirmDialog`; após confirmar, item é removido do
-//   `state.itens` e seu `dbId` vai para `state.deletedDbIds`
-//   (remoção aplicada apenas no `salvar()` via DELETE em
-//   `pedido_itens` com `.eq('id', dbId).eq('pedido_id', pedidoId)`).
-//   Mínimo de 1 item no Pedido é garantido: `marcarParaRemocao`
+//   `window.confirmDialog`; após confirmar, item é marcado com
+//   `markedForDeletion: true` (visual "riscado" + botão
+//   "Desfazer remoção"); remoção aplicada apenas no `salvar()`
+//   via DELETE em `pedido_itens` com `.eq('id', dbId).eq('pedido_id',
+//   pedidoId)`. Mínimo de 1 item é garantido: `marcarParaRemocao`
 //   bloqueia se a remoção deixaria 0 itens.
+//
+//   Normalização de `ordem` (C3C2C3): no `salvar()`, antes de
+//   qualquer operação de banco, os itens ativos
+//   (`activeItems = state.itens.filter(!markedForDeletion)`)
+//   têm `ordem` recalculada pela posição final no array
+//   (0, 1, 2, 3, ...). Lacunas são eliminadas. Sem UI
+//   para o usuário controlar a ordem — a normalização é
+//   totalmente automática.
 //
 // Regras de edição por status (via window.isPedidoEditavel):
 //   - rascunho:  editável
@@ -54,10 +65,12 @@
 //
 // Writes permitidos nesta fase:
 //   - `update` em `pedido_itens` (campos `modelo_id`, `metros`,
-//     `observacao`) para itens existentes NÃO marcados para
-//     remoção.
+//     `observacao`, `ordem`) para itens existentes NÃO marcados
+//     para remoção. `ordem` é incluída para aplicar a
+//     normalização de C3C2C3.
 //   - `insert` em `pedido_itens` (campos `pedido_id`, `modelo_id`,
-//     `metros`, `observacao`, `ordem`) para itens novos.
+//     `metros`, `observacao`, `ordem`) para itens novos. `ordem`
+//     vem da posição final do item em `activeItems`.
 //   - `delete` em `pedido_itens` (`.eq('id', dbId).eq('pedido_id',
 //     pedidoId)`) para itens marcados para remoção.
 //   Sem update em `pedidos`, sem `pedido_eventos`, sem mexer em
@@ -591,20 +604,23 @@
           { class: 'text-sm text-gray-500 ml-auto' },
           'Edição permitida neste status. Você pode alterar modelo, '
             + 'metros e observação dos itens existentes, adicionar '
-            + 'novos itens e remover itens existentes.'
+            + 'novos itens, remover itens existentes e a ordem é '
+            + 'normalizada automaticamente ao salvar.'
         ));
       }
       return banner;
     }
 
     function buildItensAviso() {
-      // Aviso simples: escopo desta fase (C3C2C2).
+      // Aviso simples: escopo desta fase (C3C2C3).
       return window.el('div',
         { class: 'bg-white rounded-xl shadow p-4 mb-4 text-sm text-gray-600' },
-        'Nesta fase (C3C2C2) você pode editar modelo, metros e '
-          + 'observação dos itens existentes, adicionar novos itens '
-          + 'e remover itens existentes. Reordenação manual e '
-          + 'overrides de largura/cor ficam para fases seguintes.'
+        'Nesta fase (C3C2C3) você pode editar modelo, metros e '
+          + 'observação dos itens existentes, adicionar novos itens, '
+          + 'remover itens existentes, e a ordem dos itens é '
+          + 'normalizada automaticamente ao salvar. Reordenação '
+          + 'manual e overrides de largura/cor ficam para fases '
+          + 'seguintes.'
       );
     }
 
@@ -615,24 +631,34 @@
     }
 
     // -----------------------------------------------------------------
-    // salvar: valida + aplica writes em `pedido_itens`.
+    // salvar: valida + normaliza + aplica writes em `pedido_itens`.
     //   - Bloqueado se status não for editável.
     //   - Bloqueado se não houver itens ativos (não marcados para
     //     remoção) — mínimo 1 (defesa; `marcarParaRemocao` também
     //     pré-checa).
     //   - Para cada item ativo, valida modelo_id e metros > 0.
+    //   - Normalização de `ordem` (C3C2C3): antes de qualquer
+    //     operação de banco, atribui `it.ordem = i` para cada item
+    //     em `activeItems` (posição final no array). Isso elimina
+    //     lacunas após add/remove e garante sequência 0, 1, 2, ...
+    //     sem que o usuário tenha controle sobre a ordem (sem UI
+    //     de reordenação manual nesta fase).
     //   - Separa:
     //     * existingItems: itens com isNew=false (atualizar no banco)
     //     * newItems:      itens com isNew=true (inserir no banco)
     //     * removedItems:  itens com markedForDeletion=true (deletar
     //                       do banco; existem no banco, isNew=false)
     //   - Sequência:
-    //     1) UPDATE de `existingItems` (sequencial, mesmo padrão C3C2B):
-    //        `.update({ modelo_id, metros, observacao })
+    //     1) UPDATE de `existingItems` (sequencial):
+    //        `.update({ modelo_id, metros, observacao, ordem })
     //         .eq('id', dbId).eq('pedido_id', pedidoId)`.
+    //        O `ordem` é incluído para aplicar a normalização
+    //        de C3C2C3 (pode mudar se houve remoção de item
+    //        anterior ou se itens foram reordenados no estado).
     //     2) INSERT em batch de `newItems` com 5 chaves
     //        (pedido_id, modelo_id, metros, observacao, ordem).
-    //        Ordem atribuída como `existingItems.length + i`.
+    //        `ordem` vem da posição final do item em
+    //        `activeItems` (já normalizada acima).
     //     3) DELETE de `removedItems` (sequencial) com
     //        `.delete().eq('id', dbId).eq('pedido_id', pedidoId)`.
     //   - Sem update em `pedidos`, sem insert em `pedido_eventos`,
@@ -683,6 +709,16 @@
         }
       }
 
+      // Normalização de `ordem` (C3C2C3): para cada item ativo,
+      // atribui `ordem = i` onde `i` é a posição final no array
+      // `activeItems`. Isso elimina lacunas após add/remove
+      // (ex: itens [0,1,2,3] com item 1 removido → [0,2,3]
+      // normalizado para [0,1,2]). Sequência final garantida:
+      // 0, 1, 2, 3, ... sem sobreposição e sem gaps.
+      for (let i = 0; i < activeItems.length; i++) {
+        activeItems[i].ordem = i;
+      }
+
       // Separa ativos em existentes (atualizar) e novos (inserir).
       const existingItems = activeItems.filter(function (it) { return !it.isNew; });
       const newItems = activeItems.filter(function (it) { return it.isNew; });
@@ -694,13 +730,15 @@
       let algumFalhou = false;
       let failedStep = null;
 
-      // 1) Updates de itens existentes (sequencial, mesmo padrão C3C2B).
+      // 1) Updates de itens existentes (sequencial, mesmo padrão C3C2B
+      // + C3C2C3: payload inclui `ordem` para aplicar normalização).
       for (let i = 0; i < existingItems.length; i++) {
         const it = existingItems[i];
         const payload = {
           modelo_id: Number(it.modeloId),
           metros: Number(it.metros),
           observacao: it.observacao ? it.observacao : null,
+          ordem: it.ordem,
         };
         try {
           const r = await window.supa
@@ -727,17 +765,18 @@
         }
       }
 
-      // 2) Insert em batch dos itens novos. Ordem é atribuída
-      // como: existingItems.length + i (novos vão para o fim).
-      // Só tenta se updates não falharam.
+      // 2) Insert em batch dos itens novos. `ordem` vem da posição
+      // final do item em `activeItems` (já normalizada acima com
+      // `it.ordem = i` por posição). Só tenta se updates não
+      // falharam.
       if (!algumFalhou && newItems.length > 0) {
-        const insertPayload = newItems.map(function (it, i) {
+        const insertPayload = newItems.map(function (it) {
           return {
             pedido_id: pedidoId,
             modelo_id: Number(it.modeloId),
             metros: Number(it.metros),
             observacao: it.observacao ? it.observacao : null,
-            ordem: existingItems.length + i,
+            ordem: it.ordem,
           };
         });
         try {
