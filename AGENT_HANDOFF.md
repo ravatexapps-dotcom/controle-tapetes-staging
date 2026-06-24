@@ -150,13 +150,17 @@ Abortar e revisar o escopo se:
 ## Próxima recomendação operacional
 
 **Refactor arquitetural continua congelado.**
-**Estado Auth:** design concluído; Edge Function `admin-create-user`
-publicada e validada em staging (`ucrjtfswnfdlxwtmxnoo`); UI
-`#/cadastros/usuarios` adaptada em `js/screens/cadastros.js` para
-chamar a função via `supabase.functions.invoke` (fase
-`RAVATEX-TAPETES-AUTH-ADMIN-UI-A`).
-**Próxima frente recomendada:** validação manual E2E da UI em
-staging (criar usuário descartável, confirmar toast, limpar).
+**Estado Auth:** design, Edge Function `admin-create-user`, UI
+`#/cadastros/usuarios` e runbook operacional
+(`docs/operations/AUTH_USER_PROVISIONING_RUNBOOK.md`) concluídos e
+validados em staging (`ucrjtfswnfdlxwtmxnoo`). Bloqueio de
+fornecedor (403) confirmado.
+**Não voltar ao fluxo manual de UID** — o procedimento atual é o do
+runbook.
+**Próxima frente recomendada:** `RAVATEX-TAPETES-AUTH-DELETE-USER-DESIGN-A`
+(desenho de exclusão/desativação de usuários pelo app) ou decisão
+de release/merge para `origin/main` (somente com autorização
+explícita).
 
 O ciclo de refactor arquitetural + hardening + extração final do
 `op-pdf.js` está **congelado**. Antes de iniciar qualquer novo
@@ -182,7 +186,9 @@ Fases, em ordem:
 3. **`RAVATEX-TAPETES-AUTH-ADMIN-UI-A`** — adaptar
    `screenCadastrosUsuarios` para chamar a Edge Function. **Concluída.**
 4. **`RAVATEX-TAPETES-AUTH-PROVISIONING-DOCS-A`** — documentar operação
-   final.
+   final (runbook). **Concluída.**
+5. **`RAVATEX-TAPETES-AUTH-DELETE-USER-DESIGN-A`** *(futura)* —
+   decidir exclusão/desativação de usuários pelo app.
 
 ## Possíveis fases futuras opcionais (NÃO obrigatórias)
 

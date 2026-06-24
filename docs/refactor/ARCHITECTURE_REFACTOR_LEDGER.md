@@ -2,11 +2,11 @@
 
 > Ledger de fases do refactor arquitetural de
 > `D:\OneDrive\Programação\Ravatex\controle-tapetes`.
-> Última atualização: 2026-06-23 (HEAD `c365020`,
-> fase `RAVATEX-TAPETES-AUTH-ADMIN-UI-A` — UI
-> `screenCadastrosUsuarios` adaptada para chamar a Edge Function
-> `admin-create-user` via `supabase.functions.invoke`; remoção do
-> fluxo manual de cópia de UID; sem alteração de schema/RLS/DB).
+> Última atualização: 2026-06-24 (HEAD `d9d08be`,
+> fase `RAVATEX-TAPETES-AUTH-PROVISIONING-DOCS-A` — runbook
+> operacional de criação de usuários publicado em
+> `docs/operations/AUTH_USER_PROVISIONING_RUNBOOK.md`;
+> índice documental atualizado; docs canônicos sincronizados).
 
 ## 1. Premissas corrigidas
 - **App estático**, não Next/Vercel.
@@ -93,6 +93,7 @@
 | AUTH-EDGE-DESIGN-A | `88aa4fb` | `docs/architecture/AUTH_PROVISIONING_EDGE_DESIGN.md`, `PROJECT_STATE.md`, `AGENT_HANDOFF.md`, `docs/refactor/ARCHITECTURE_REFACTOR_LEDGER.md` | docs-only | aceito |
 | AUTH-EDGE-FUNCTION-A | `f6ac19b` | `supabase/functions/admin-create-user/index.ts`, `supabase/functions/admin-create-user/README.md`, `supabase/functions/_shared/cors.ts`, `supabase/functions/_shared/response.ts`, `supabase/README.md`, `tests/admin-create-user.smoke.js` | 17/17 smoke | aceito (sem deploy) |
 | AUTH-ADMIN-UI-A | (a criar) | `js/screens/cadastros.js`, `tests/cadastros-usuarios-auth-ui.smoke.js`, `tests/cadastros-screens.smoke.js` (assert de banner) | 12/12 + 17/17 | aceito |
+| AUTH-PROVISIONING-DOCS-A | (a criar) | `docs/operations/AUTH_USER_PROVISIONING_RUNBOOK.md`, `docs/DOCUMENTATION_INDEX.md`, `PROJECT_STATE.md`, `AGENT_HANDOFF.md` | docs-only | aceito |
 
 ## 5. Ressalvas processuais aceitas em `FORNECEDOR-SCREENS-MODULE-A` (commit `4b9ca12`)
 
@@ -448,11 +449,12 @@ hardening + extração final está **congelado** em `7f3c6da`
 
 **Auth:** `RAVATEX-TAPETES-AUTH-EDGE-DESIGN-A`,
 `RAVATEX-TAPETES-AUTH-EDGE-FUNCTION-A`,
-`RAVATEX-TAPETES-AUTH-EDGE-STAGING-DEPLOY-A` e
-`RAVATEX-TAPETES-AUTH-ADMIN-UI-A` estão **concluídos**. Teste
-fornecedor 403 permanece pendente por falta de credencial de
-fornecedor. Próxima fase: `RAVATEX-TAPETES-AUTH-PROVISIONING-DOCS-A`
-(documentação operacional) e validação manual E2E da UI em staging.
+`RAVATEX-TAPETES-AUTH-EDGE-STAGING-DEPLOY-A`,
+`RAVATEX-TAPETES-AUTH-ADMIN-UI-A` e
+`RAVATEX-TAPETES-AUTH-PROVISIONING-DOCS-A` (runbook) estão
+**concluídos**. Teste fornecedor 403 confirmado em staging.
+Próxima fase: `RAVATEX-TAPETES-AUTH-DELETE-USER-DESIGN-A` ou
+decisão de release.
 
 ## 10. Política de updates deste ledger
 

@@ -21,6 +21,16 @@ arquiteturais e de governança:
 | `docs/refactor/ARCHITECTURE_REFACTOR_LEDGER.md` | Histórico cronológico de fases do refactor. Lista de módulos extraídos, ressalvas, decisão de congelamento. |
 | `Guide-and-governance-rules.stxt` (raiz) | Governança geral do projeto para futuras sessões de ChatGPT. |
 
+### Runbooks operacionais atuais (complementam as fontes canônicas)
+
+Runbooks descrevem **como executar** procedimentos aprovados.
+Não substituem as fontes canônicas; quando houver divergência, as
+fontes canônicas prevalecem.
+
+| Documento | Propósito |
+|---|---|
+| `docs/operations/AUTH_USER_PROVISIONING_RUNBOOK.md` | Procedimento operacional padrão para criação de usuários (admin/fornecedor) via Edge Function `admin-create-user` + UI `#/cadastros/usuarios`. Substitui o fluxo manual de criar Auth user no Studio e copiar UID. |
+
 > **Em caso de divergência entre qualquer doc e estas 5 fontes,
 > as 5 fontes prevalecem.** Isso inclui este índice.
 
@@ -39,7 +49,20 @@ a seguinte ordem de autoridade:
 8. Docs legadas (`docs/superpowers`, `docs/qa`, docs antigos na raiz
    de `docs/`) — **NÃO** devem guiar execução.
 
-## 3. Docs legadas (NÃO GUIAM EXECUÇÃO)
+## 3. Runbooks operacionais atuais
+
+Pasta `docs/operations/`. Documentam **como executar** procedimentos
+aprovados pelas fontes canônicas. Quando houver divergência entre
+um runbook e uma fonte canônica, as fontes canônicas prevalecem.
+
+| Arquivo | Procedimento | Fase |
+|---|---|---|
+| `AUTH_USER_PROVISIONING_RUNBOOK.md` | Criação de usuários (admin/fornecedor) via Edge Function `admin-create-user` + UI `#/cadastros/usuarios`. Substitui o fluxo manual de criar Auth user no Studio e copiar UID. | `RAVATEX-TAPETES-AUTH-PROVISIONING-DOCS-A` |
+
+Convenção: estes runbooks são **docs-only** e **operacionais**.
+Atualizações devem ser feitas em fases docs-only dedicadas.
+
+## 4. Docs legadas (NÃO GUIAM EXECUÇÃO)
 
 Preservadas para contexto histórico. Cada pasta ou arquivo carrega
 banner próprio. Em caso de uso, **adaptar à arquitetura atual** e
@@ -85,7 +108,7 @@ Checklists e roteiros de QA das fases 1–6 + roteiro da Fase 6.
 | `HANDOFF.md` | Histórico/parcialmente legado | Mistura arquitetura antiga com práticas pós-staging. Ver banner no topo. |
 | `STAGING_BASELINE.md` | **Atual** | Checkpoint de staging bem detalhado. Refs e regra de ambiente ainda valem. |
 
-## 4. Avisos críticos
+## 5. Avisos críticos
 
 ### Plans em `docs/superpowers/plans/`
 
@@ -120,10 +143,11 @@ Ambos os docs foram escritos em um contexto anterior ao
 A regra vigente está em `AGENT_HANDOFF.md` (regras 1, 2, 3, 15) e em
 `docs/architecture/CODE_HEALTH_RULES.md` §15.
 
-## 5. Política de atualização deste índice
+## 6. Política de atualização deste índice
 
 - Atualizar este índice quando houver novo documento canônico
-  (entrar em §1) ou nova categoria de docs legadas (entrar em §3).
+  (entrar em §1), novo runbook (entrar em §3) ou nova categoria de
+  docs legadas (entrar em §4).
 - Manter as 5 fontes canônicas como âncora; este índice é referência
   cruzada, não fonte primária.
 - Fase: docs-only. Sem alteração funcional.
