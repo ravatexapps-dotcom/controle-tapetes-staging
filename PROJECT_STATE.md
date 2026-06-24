@@ -1,28 +1,19 @@
 # PROJECT_STATE.md — Controle de Tapetes (Grupo Terra Branca)
 
 > Snapshot de estado canônico curto. Atualizado em **2026-06-24** (fase
-> `RAVATEX-TAPETES-AUTH-DISABLE-USER-UI-A` — integração da tela
-> `#/cadastros/usuarios` com a Edge Function `admin-disable-user`
-> (já deployada em staging `ucrjtfswnfdlxwtmxnoo`). Botão
-> `Desativar` substitui o placeholder `Em breve`; chama
-> `window.supa.functions.invoke('admin-disable-user', { body:
-> { user_id, reason } })`; mapeia códigos de erro
-> (`FORBIDDEN`/`SELF_DISABLE_FORBIDDEN`/`LAST_ADMIN_FORBIDDEN`/
-> `NOT_FOUND`/`AUTH_BAN_FAILED`/`COMPENSATION_FAILED`/
-> `VALIDATION_ERROR`/`UNAUTHORIZED`) para mensagens PT-BR; guarda
-> de UX para o próprio usuário logado e inativos (proteção
-> visual, não substitui server-side). **Sem deploy, sem
+> `RAVATEX-TAPETES-AUTH-DISABLE-USER-UI-BROWSER-E2E-A` — runner de
+> browser automatizado para validar a UI real de desativação de
+> usuário em staging `ucrjtfswnfdlxwtmxnoo`). **Sem deploy, sem
 > Supabase real, sem SQL, sem produção, sem origin/main, sem
-> PR #2, sem E2E real nesta fase**. Smoke estático
-> `tests/cadastros-usuarios-auth-ui.smoke.js` 23/23 verde;
-> regressões focais `tests/cadastros-screens.smoke.js` 32/32,
-> `tests/admin-disable-user.smoke.js` 39/39,
-> `tests/admin-create-user.smoke.js` 17/17,
-> `tests/admin-disable-user-e2e-runner.smoke.js` 32/32 — todas
-> verdes. E2E real do runner já havia passado em
-> `result: PASS` em staging (antes desta fase; ver
-> evidência em LEDGER §5k). Próxima fase recomendada:
-> validação manual/automatizada da UI em staging.
+> PR #2**. Runner criado em
+> `scripts/staging/admin-disable-user-ui-browser-e2e.mjs`; smoke
+> estático `tests/admin-disable-user-ui-browser-e2e.smoke.js`
+> 28/28 verde; regressões focais preservadas. **E2E real de
+> browser não foi executado nesta fase** (Playwright não
+> instalado localmente; app local em :8765 está rodando). Runner
+> fica pronto para `node ... run` quando Playwright estiver
+> disponível em diretório externo + `NODE_PATH` apontando para
+> `node_modules`.
 > Fonte da verdade operacional. Detalhe por fase em
 > `docs/refactor/ARCHITECTURE_REFACTOR_LEDGER.md`.
 > Regras de saúde arquitetural em
@@ -50,14 +41,11 @@ recebimento do látex. Perfis: **admin** (operação) e **fornecedor**
 
 ## Estado atual do refactor
 - **Branch operacional:** `work/app-next`.
-- **HEAD atual aceito:** `b25b67e` — "Fix auth disable e2e banned
-  login handling" (fase `RAVATEX-TAPETES-AUTH-DISABLE-USER-E2E-RUNNER-FIX-A`).
-  Commit adicional da fase
-  `RAVATEX-TAPETES-AUTH-DISABLE-USER-UI-A` pendente de push em
-  staging.
-- **staging/main atual:** `b25b67eef6f5463b5e4378134a968574479e8fcf`
-  (sincronizado com `work/app-next` antes do commit da fase
-  `UI-A`).
+- **HEAD atual aceito:** `83344f5` — "Enable auth user disable UI"
+  (fase `RAVATEX-TAPETES-AUTH-DISABLE-USER-UI-A`, integração
+  `cadastros.js` ↔ `admin-disable-user`).
+- **staging/main atual:** `83344f54dcbe82a56e1559ef6d34d07714334d69`
+  (sincronizado com `work/app-next`).
 - **origin/main oficial:** `1047181eba888242c6428de366cbd9fda2f1c72c`
   — **intocado** durante todo o ciclo de refactor/hardening.
 - **PR #2:** **intocado** durante todo o ciclo.
@@ -355,7 +343,7 @@ pelo HMNlead no Supabase Dashboard.)*
   verde. **E2E real não foi rerodado nesta fase** — só após
   autorização do HMNlead.
 - 🟡 **UI `#/cadastros/usuarios` integrada com `admin-disable-user`.**
-  Fase `RAVATEX-TAPETES-AUTH-DISABLE-USER-UI-A` (esta fase). Botão
+  Fase `RAVATEX-TAPETES-AUTH-DISABLE-USER-UI-A`. Botão
   `Desativar` substitui o placeholder `Em breve`; chama
   `window.supa.functions.invoke('admin-disable-user', { body: {
   user_id, reason } })`; modal de confirmação com campo de
@@ -365,30 +353,51 @@ pelo HMNlead no Supabase Dashboard.)*
   `VALIDATION_ERROR`/`UNAUTHORIZED`) para mensagens PT-BR; guarda
   de UX para o próprio usuário logado e para usuários já
   inativos (proteção visual, não substitui server-side); coluna
-  `Status` na listagem mostra `Ativo`/`Inativo`. **E2E real do
-  runner já havia passado em `result: PASS` em staging
-  (`ucrjtfswnfdlxwtmxnoo`) ANTES desta fase — ver LEDGER §5k
-  para evidência sanitizada (descartável
-  `disable-edge-e2e-20260624-115027@tapetes.test` / user_id
-  `d12b005e-d455-4f78-b401-59ebd9f971c5` desativado, login
-  bloqueado confirmado; execução parcial anterior
-  `11c48a08-a8a6-48fb-8ddb-a6af1dba1667` desativado em run
-  anterior sem bloquear esta fase).** Smoke estático
-  `tests/cadastros-usuarios-auth-ui.smoke.js` 23/23 verde (era
-  16/16; +7 testes novos para a fase UI-A: botão `Desativar`
-  substitui `Em breve`, chamada `admin-disable-user` com payload
-  `user_id`+`reason`, leitura de `error.context.json`,
-  tratamento dos 8 códigos, guarda de UX para self e inativo,
-  coluna Status preservando `+ Novo usuário` e
-  `admin-create-user`); regressões focais
+  `Status` na listagem mostra `Ativo`/`Inativo`. E2E real do
+  runner backend já havia passado em `result: PASS` em staging
+  (`ucrjtfswnfdlxwtmxnoo`) — ver LEDGER §5k para evidência
+  sanitizada. Smoke estático
+  `tests/cadastros-usuarios-auth-ui.smoke.js` 23/23 verde;
+  regressões focais todas verdes.
+- 🟡 **Runner de browser para UI criado (sem E2E real de
+  browser).** Fase
+  `RAVATEX-TAPETES-AUTH-DISABLE-USER-UI-BROWSER-E2E-A`
+  (fase atual). Implementação em
+  `scripts/staging/admin-disable-user-ui-browser-e2e.mjs` (ESM,
+  usa `import('playwright')` dinâmico; sem dependências
+  versionadas no repo). Reusa o config do runner backend em
+  `.ravatex-local/admin-disable-user-e2e.config.json`. App
+  default `http://localhost:8765/` (override via
+  `--app-url <url>`). Fluxo: abre app → login admin via
+  `findInPage`/`clickByText`/`fillByLabel` → navega para
+  `#/cadastros/usuarios` → confirma `+ Novo usuário` e
+  `Desativar` → cria descartável pela UI (email
+  `disable-ui-browser-e2e-<ts>@tapetes.test`, senha em memória,
+  tipo=fornecedor, fornecedor_id da config/autodetect) →
+  clica `Desativar` no descartável → confirma modal (motivo:
+  `Teste automatizado UI browser E2E staging`) → espera toast
+  de sucesso e status `Inativo` (ou remoção da lista) →
+  logout → tenta login com descartável (espera `bloqueado`).
+  Resumo: `admin_login / usuarios_screen / create_user_ui /
+  disable_button / disable_success / status_inactive_or_removed
+  / login_blocked / result: PASS`. Guards: aborta se URL !=
+  `ucrjtfswnfdlxwtmxnoo` ou se for `bhgifjrfagkzubpyqpew`;
+  config obrigatório em
+  `.ravatex-local/admin-disable-user-e2e.config.json`; nunca
+  imprime password/anon key/JWT/refresh token/access
+  token/cookie/service_role. Smoke estático
+  `tests/admin-disable-user-ui-browser-e2e.smoke.js` 28/28
+  verde; regressões focais
+  `tests/cadastros-usuarios-auth-ui.smoke.js` 23/23,
   `tests/cadastros-screens.smoke.js` 32/32,
-  `tests/admin-disable-user.smoke.js` 39/39,
-  `tests/admin-create-user.smoke.js` 17/17,
   `tests/admin-disable-user-e2e-runner.smoke.js` 32/32 — todas
-  verdes. **Sem deploy, sem Supabase real, sem SQL, sem
-  produção, sem origin/main, sem PR #2 nesta fase.**
-  Próxima fase: validação manual/automatizada da UI em
-  staging.
+  verdes. **E2E real de browser não foi executado nesta
+  fase** (Playwright não instalado localmente; app local
+  em :8765 está rodando). Runner fica pronto para
+  `node ... run` quando Playwright estiver disponível em
+  diretório externo + `NODE_PATH` apontando para
+  `node_modules`. **Sem deploy, sem Supabase real, sem SQL,
+  sem produção, sem origin/main, sem PR #2 nesta fase.**
 - 🟡 Staging mostra log `relation "supabase_migrations.schema_migrations"
   does not exist` (ruído do dashboard, não do app).
 - 🟡 Tailwind CDN ainda gera warning de produção (não bloqueante;

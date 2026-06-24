@@ -2,19 +2,18 @@
 
 > Ledger de fases do refactor arquitetural de
 > `D:\OneDrive\Programação\Ravatex\controle-tapetes`.
-> Última atualização: 2026-06-24 (HEAD `b25b67e`,
-> fase `RAVATEX-TAPETES-AUTH-DISABLE-USER-E2E-RUNNER-FIX-A` —
-> correção do tratamento do login bloqueado esperado
-> `User is banned` no runner; `js/**`, `index.html`, `db/**` e
-> Edge Functions intocados nesta fase; **sem deploy, sem
-> Supabase real, sem SQL, sem produção, sem origin/main**).
-> Fase `RAVATEX-TAPETES-AUTH-DISABLE-USER-UI-A` (commit
-> pendente de push) integrou a tela `#/cadastros/usuarios` com
-> a Edge Function `admin-disable-user` (botão `Desativar`
-> substitui o placeholder `Em breve`). E2E real do runner já
-> havia passado em `result: PASS` em staging ANTES desta
-> fase (ver §5k). UI ainda não foi exercitada manualmente em
-> staging nesta fase.
+> Última atualização: 2026-06-24 (HEAD `83344f5`,
+> fase `RAVATEX-TAPETES-AUTH-DISABLE-USER-UI-BROWSER-E2E-A` —
+> runner de browser automatizado para validar a UI real de
+> desativação de usuário em staging `ucrjtfswnfdlxwtmxnoo`).
+> **Sem deploy, sem Supabase real, sem SQL, sem UI, sem
+> produção, sem origin/main** nesta fase; `js/**`, `index.html`,
+> `db/**` e Edge Functions intocados.
+> E2E real de browser não foi executado (Playwright não
+> instalado localmente; app local em :8765 está rodando). Runner
+> fica pronto para `node ... run` quando Playwright estiver
+> disponível em diretório externo + `NODE_PATH` apontando para
+> `node_modules`.
 
 ## 1. Premissas corrigidas
 - **App estático**, não Next/Vercel.
@@ -110,8 +109,9 @@
 | AUTH-DISABLE-USER-EDGE-A | `eb5d2e0` | `supabase/functions/admin-disable-user/index.ts` (criado), `supabase/functions/admin-disable-user/README.md` (criado), `tests/admin-disable-user.smoke.js` (criado), `PROJECT_STATE.md`, `AGENT_HANDOFF.md`, `docs/refactor/ARCHITECTURE_REFACTOR_LEDGER.md`, `docs/DOCUMENTATION_INDEX.md` (Edge Function `admin-disable-user` — soft delete no perfil + ban Auth; **sem deploy**; sem Supabase real; sem alteração de UI; `js/**`, `index.html`, `db/**` e `admin-create-user` intocados) | 39/39 smoke + 17/17 + 20/20 + 16/16 + 32/32 (regressões focais) | aceito (local-only; deploy/validação staging em `...-EDGE-STAGING-DEPLOY-A`) |
 | AUTH-DISABLE-USER-E2E-AUTO-RUNNER-A | (HEAD da fase) | `scripts/staging/admin-disable-user-e2e.mjs` (criado), `tests/admin-disable-user-e2e-runner.smoke.js` (criado), `.gitignore` (atualizado: `.ravatex-local/`), `PROJECT_STATE.md`, `AGENT_HANDOFF.md`, `docs/refactor/ARCHITECTURE_REFACTOR_LEDGER.md`, `docs/DOCUMENTATION_INDEX.md` (runner local automatizado para E2E staging; **sem Supabase real, sem SQL, sem deploy, sem UI, sem produção, sem origin/main**; `admin-disable-user` intocado; **E2E real ainda não executado**) | 28/28 smoke + 39/39 + 17/17 (regressões focais) | aceito (local-only; E2E real em fase futura) |
 | AUTH-DISABLE-USER-EDGE-STAGING-DEPLOY-A | (realizado antes da fase UI-A) | Deploy controlado de `admin-disable-user` em staging `ucrjtfswnfdlxwtmxnoo` via `supabase functions deploy`; status **ACTIVE**; validação manual via Edge Function URL confirmada. O E2E real do runner (fase `...-E2E-RUNNER-FIX-A` aplicada em staging) passou com `result: PASS` em staging (ver §5k). Não versionado em commit desta fase; a entrada de fase foi inserida retroativamente para refletir o estado real pós-deploy. | — | aceito (deploy ACTIVE em staging) |
-| AUTH-DISABLE-USER-E2E-RUNNER-FIX-A | (pendente push) | `scripts/staging/admin-disable-user-e2e.mjs` (helpers `loginExpectSuccess`/`loginExpectFailure`/`postSupabaseLogin`; mensagem hardcoded "Login admin falhou" removida), `tests/admin-disable-user-e2e-runner.smoke.js` (4 testes novos: login bloqueado esperado, fluxo continua, loginExpectSuccess nos 3 logins, loginExpectFailure aceita variações de banned, loginExpectFailure retorna controle), `PROJECT_STATE.md`, `AGENT_HANDOFF.md`, `docs/refactor/ARCHITECTURE_REFACTOR_LEDGER.md` (correção do bug do runner no passo `login_blocked`: `HTTP 400 User is banned` agora tratado como SUCESSO esperado do teste via `loginExpectFailure`; runner continua para `idempotency` e `self_disable_blocked`; **sem Supabase real, sem SQL, sem deploy, sem UI, sem produção, sem origin/main, sem PR #2**; **E2E real não rerodado nesta fase**) | 32/32 smoke + 39/39 regressão | aceito (local-only; E2E real rerun em fase futura) |
-| AUTH-DISABLE-USER-UI-A | (pendente push) | `js/screens/cadastros.js` (botão `Desativar` substitui placeholder `Em breve`; modal com motivo opcional; chamada `window.supa.functions.invoke('admin-disable-user', { body: { user_id, reason } })`; helper `friendlyDisableMessage`; guarda de UX para self/inativos; coluna `Status` na listagem), `tests/cadastros-usuarios-auth-ui.smoke.js` (7 testes novos para a fase), `tests/cadastros-screens.smoke.js` (test 20a atualizado: `Desativar` em vez de `Em breve`), `tests/admin-disable-user.smoke.js` (test 37 atualizado: UI agora chama `admin-disable-user`), `PROJECT_STATE.md`, `AGENT_HANDOFF.md`, `docs/refactor/ARCHITECTURE_REFACTOR_LEDGER.md`, `docs/DOCUMENTATION_INDEX.md` (integração da tela `#/cadastros/usuarios` com a Edge Function `admin-disable-user` deployada em staging `ucrjtfswnfdlxwtmxnoo`; **sem Supabase real, sem SQL, sem deploy, sem produção, sem origin/main, sem PR #2, sem E2E real nesta fase**; E2E real do runner já havia passado em `result: PASS` em staging ANTES desta fase — ver §5k para evidência sanitizada) | 23/23 + 32/32 + 39/39 + 17/17 (regressões focais) | aceito (local-only; validação manual/automatizada da UI em staging em fase futura) |
+| AUTH-DISABLE-USER-E2E-RUNNER-FIX-A | `b25b67e` | `scripts/staging/admin-disable-user-e2e.mjs` (helpers `loginExpectSuccess`/`loginExpectFailure`/`postSupabaseLogin`; mensagem hardcoded "Login admin falhou" removida), `tests/admin-disable-user-e2e-runner.smoke.js` (4 testes novos: login bloqueado esperado, fluxo continua, loginExpectSuccess nos 3 logins, loginExpectFailure aceita variações de banned, loginExpectFailure retorna controle), `PROJECT_STATE.md`, `AGENT_HANDOFF.md`, `docs/refactor/ARCHITECTURE_REFACTOR_LEDGER.md` (correção do bug do runner no passo `login_blocked`: `HTTP 400 User is banned` agora tratado como SUCESSO esperado do teste via `loginExpectFailure`; runner continua para `idempotency` e `self_disable_blocked`; **sem Supabase real, sem SQL, sem deploy, sem UI, sem produção, sem origin/main, sem PR #2**; **E2E real não rerodado nesta fase**) | 32/32 smoke + 39/39 regressão | aceito (local-only; E2E real rerun em fase futura) |
+| AUTH-DISABLE-USER-UI-A | `83344f5` | `js/screens/cadastros.js` (botão `Desativar` substitui placeholder `Em breve`; modal com motivo opcional; chamada `window.supa.functions.invoke('admin-disable-user', { body: { user_id, reason } })`; helper `friendlyDisableMessage`; guarda de UX para self/inativos; coluna `Status` na listagem), `tests/cadastros-usuarios-auth-ui.smoke.js` (7 testes novos para a fase), `tests/cadastros-screens.smoke.js` (test 20a atualizado: `Desativar` em vez de `Em breve`), `tests/admin-disable-user.smoke.js` (test 37 atualizado: UI agora chama `admin-disable-user`), `PROJECT_STATE.md`, `AGENT_HANDOFF.md`, `docs/refactor/ARCHITECTURE_REFACTOR_LEDGER.md`, `docs/DOCUMENTATION_INDEX.md` (integração da tela `#/cadastros/usuarios` com a Edge Function `admin-disable-user` deployada em staging `ucrjtfswnfdlxwtmxnoo`; **sem Supabase real, sem SQL, sem deploy, sem produção, sem origin/main, sem PR #2, sem E2E real nesta fase**; E2E real do runner já havia passado em `result: PASS` em staging ANTES desta fase — ver §5k para evidência sanitizada) | 23/23 + 32/32 + 39/39 + 17/17 (regressões focais) | aceito (local-only; validação manual/automatizada da UI em staging em fase futura) |
+| AUTH-DISABLE-USER-UI-BROWSER-E2E-A | (HEAD da fase) | `scripts/staging/admin-disable-user-ui-browser-e2e.mjs` (criado; ESM; `import('playwright')` dinâmico; sem dependências versionadas no repo), `tests/admin-disable-user-ui-browser-e2e.smoke.js` (criado), `PROJECT_STATE.md`, `AGENT_HANDOFF.md`, `docs/refactor/ARCHITECTURE_REFACTOR_LEDGER.md`, `docs/DOCUMENTATION_INDEX.md` (runner de browser para validar UI real de desativação; **sem deploy, sem Supabase real, sem SQL, sem UI, sem produção, sem origin/main, sem PR #2, sem E2E real de browser nesta fase**; `js/**`, `index.html`, `db/**` e Edge Functions intocados; E2E real de browser não executado — Playwright não instalado localmente) | 28/28 + 23/23 + 32/32 + 32/32 (regressões focais) | aceito (local-only; E2E real de browser em fase futura com Playwright instalado) |
 
 ## 5. Ressalvas processuais aceitas em `FORNECEDOR-SCREENS-MODULE-A` (commit `4b9ca12`)
 
@@ -844,6 +844,116 @@ if (error) {
   pronta para produção (em fase separada, com autorização
   explícita do HMNlead).
 
+## 5l. Ressalva processual — `AUTH-DISABLE-USER-UI-BROWSER-E2E-A`
+
+A fase `RAVATEX-TAPETES-AUTH-DISABLE-USER-UI-BROWSER-E2E-A` (esta
+fase) criou **localmente no repo** um runner de browser
+automatizado para validar a UI real de desativação de usuário
+em staging `ucrjtfswnfdlxwtmxnoo`. **Sem deploy, sem Supabase
+real, sem SQL, sem alteração de UI, sem produção.**
+
+Arquivos criados:
+
+* `scripts/staging/admin-disable-user-ui-browser-e2e.mjs` (ESM,
+  sem dependências versionadas no repo; usa
+  `import('playwright')` dinâmico).
+* `tests/admin-disable-user-ui-browser-e2e.smoke.js` (smoke
+  estático 28/28 verde).
+
+Arquivos docs-only atualizados: `PROJECT_STATE.md`,
+`AGENT_HANDOFF.md`, este LEDGER.
+
+Comando:
+
+* `node scripts/staging/admin-disable-user-ui-browser-e2e.mjs run
+  [--app-url http://localhost:8765/]`
+
+Pré-requisitos:
+
+* App rodando localmente em `http://localhost:8765/` (ou
+  override). `.\run-local.bat` (Python serve em :8765).
+* Edge Function `admin-disable-user` deployada em staging
+  `ucrjtfswnfdlxwtmxnoo` + `admin-create-user` também.
+* Config local em
+  `.ravatex-local/admin-disable-user-e2e.config.json` (criada por
+  `node scripts/staging/admin-disable-user-e2e.mjs setup`).
+* Playwright instalado em diretório fora do repo. Forma
+  recomendada: criar `C:\Users\klebe\AppData\Local\Temp\ravatex-pw`,
+  rodar `npm init -y && npm install playwright && npx playwright
+  install chromium` lá. Em seguida, executar com
+  `NODE_PATH=C:\Users\klebe\AppData\Local\Temp\ravatex-pw\node_modules`.
+
+Fluxo do runner:
+
+1. Carrega `.ravatex-local/admin-disable-user-e2e.config.json`.
+2. Aborta se URL != `ucrjtfswnfdlxwtmxnoo` ou se for
+   `bhgifjrfagkzubpyqpew`.
+3. Carrega Playwright dinamicamente. Se não disponível, instrui
+   como instalar (em diretório fora do repo).
+4. Abre `appUrl` (default `http://localhost:8765/`) em
+   `chromium.launch({ headless: true })`.
+5. Login admin via `findInPage`/`clickByText`/`fillByLabel`.
+6. Navega para `#/cadastros/usuarios`; confirma `+ Novo
+   usuário` e `Desativar`.
+7. Cria descartável pela UI (email
+   `disable-ui-browser-e2e-<ts>@tapetes.test`, senha em memória,
+   tipo=fornecedor, fornecedor_id da config/autodetect).
+8. Clica `Desativar` no descartável; preenche motivo no modal;
+   confirma.
+9. Espera toast de sucesso e status `Inativo` (ou remoção da
+   lista).
+10. Logout.
+11. Tenta login com descartável; espera bloqueado.
+12. Imprime resumo sanitizado:
+    `admin_login / usuarios_screen / create_user_ui /
+    disable_button / disable_success /
+    status_inactive_or_removed / login_blocked / result: PASS`.
+
+Garantias:
+
+* **Anti-produção:** guard explícito aborta se URL contiver
+  `bhgifjrfagkzubpyqpew`. URL deve conter `ucrjtfswnfdlxwtmxnoo`
+  senão aborta.
+* **Anti-secret:** nunca imprime password, anon key, JWT,
+  refresh token, access token, cookie ou `service_role`. Helper
+  `sanitize()` mascara tokens/JWTs/passwords em mensagens.
+  Senha de teste só existe em memória.
+* **Sem SQL manual:** runner usa apenas o DOM do app
+  (`findInPage`/`clickByText`/`fillByLabel`); smoke valida
+  ausência de `SELECT`/`DELETE FROM` SQL.
+* **Sem `.delete()`:** runner não chama
+  `.from('usuarios').delete()` nem `auth.admin.deleteUser`.
+* **Sem `auth.admin`:** runner não referencia `auth.admin`
+  client-side.
+* **Sem `.env`:** runner não cria nem lê `.env`; usa diretório
+  gitignored `.ravatex-local/`.
+* **Sem hardcoded secrets:** smoke valida ausência de JWT
+  hardcoded, `service_role` hardcoded, e logs de
+  `adminPassword` passam por `sanitize()`/`maskSecret()`.
+
+Validação estática: `node --test
+tests/admin-disable-user-ui-browser-e2e.smoke.js` 28/28 verde.
+Regressões focais preservadas: `cadastros-usuarios-auth-ui.smoke.js`
+23/23, `cadastros-screens.smoke.js` 32/32,
+`admin-disable-user-e2e-runner.smoke.js` 32/32.
+
+Limitação: Playwright não está disponível localmente; o E2E real
+de browser **não foi executado** nesta fase (app local em
+:8765 está rodando, mas Playwright não foi instalado). O runner
+fica pronto para `node ... run` em fase futura com Playwright
+disponível em diretório fora do repo. O runner instrui a
+instalação e aborta com mensagem clara se Playwright não for
+encontrado — sem improvisar instalação dentro do repo.
+
+Regra de continuidade: **não rodar** o E2E real de browser sem
+revisão e autorização; **não versionar** o arquivo
+`.ravatex-local/admin-disable-user-e2e.config.json`; **não
+avançar** para produção `bhgifjrfagkzubpyqpew` sem autorização
+explícita do HMNlead. Próxima fase:
+`RAVATEX-TAPETES-AUTH-DISABLE-USER-UI-BROWSER-E2E-RUN-A`
+(executar o `run` real com Playwright instalado, após
+revisão do runner e autorização do HMNlead).
+
 ## 6. Módulos extraídos (lista canônica)
 
 | Módulo | Commit de extração | Fase |
@@ -994,26 +1104,33 @@ versionado), `RAVATEX-TAPETES-AUTH-DISABLE-USER-SCHEMA-APPLY-A`
 (registro da aplicação real, commit `1a35e1d`),
 `RAVATEX-TAPETES-AUTH-DISABLE-USER-EDGE-A` (Edge Function
 `admin-disable-user` criada localmente, **sem deploy**, commit
-`eb5d2e0`) e
+`eb5d2e0`),
 `RAVATEX-TAPETES-AUTH-DISABLE-USER-E2E-AUTO-RUNNER-A` (runner
-local de E2E, **sem E2E real ainda**) estão **concluídos (local)**.
-Teste fornecedor 403 confirmado em staging. UI guard removeu
-`.from('usuarios').delete()` do front-end; schema de desativação
-**aplicado e validado em staging** (fase `EVIDENCE-A`): 4 colunas
-novas em `public.usuarios`; funções `is_admin`/`meu_fornecedor_id`
-e policies `usuarios_select`/`usuarios_admin_all`/
-`usuarios_self_update` recriadas com checagem de `ativo`; todos os
-3 perfis existentes ficaram `ativo = true`; nenhum usuário foi
-criado, excluído ou desativado durante a aplicação; produção
-`bhgifjrfagkzubpyqpew` não foi tocada. Edge Function
+local de E2E, **E2E real PASS em staging**), e
+`RAVATEX-TAPETES-AUTH-DISABLE-USER-UI-BROWSER-E2E-A` (runner
+de browser para UI, **sem E2E real de browser ainda**) estão
+**concluídos (local)**. Teste fornecedor 403 confirmado em
+staging. UI guard removeu `.from('usuarios').delete()` do
+front-end; schema de desativação **aplicado e validado em
+staging** (fase `EVIDENCE-A`): 4 colunas novas em
+`public.usuarios`; funções `is_admin`/`meu_fornecedor_id` e
+policies `usuarios_select`/`usuarios_admin_all`/
+`usuarios_self_update` recriadas com checagem de `ativo`; todos
+os 3 perfis existentes ficaram `ativo = true`; nenhum usuário
+foi criado, excluído ou desativado durante a aplicação;
+produção `bhgifjrfagkzubpyqpew` não foi tocada. Edge Function
 `admin-disable-user` (fase `EDGE-A`) criada em
 `supabase/functions/admin-disable-user/index.ts` + `README.md` +
-`tests/admin-disable-user.smoke.js` (39/39 verde); valida admin
-ativo server-side; bloqueia auto-desativação e último admin;
-soft delete + ban Auth via `auth.admin.updateUserById(target_id,
-{ ban_duration: '876000h' })`; compensa (reativa perfil) se ban
-falhar; **sem `auth.admin.deleteUser` e sem `.delete()`**; UI
-continua com placeholder `Em breve`. Runner local de E2E (fase
+`tests/admin-disable-user.smoke.js` (39/39 verde); valida
+admin ativo server-side; bloqueia auto-desativação e último
+admin; soft delete + ban Auth via
+`auth.admin.updateUserById(target_id, { ban_duration:
+'876000h' })`; compensa (reativa perfil) se ban falhar; **sem
+`auth.admin.deleteUser` e sem `.delete()`**. Fase `UI-A`
+(commit `83344f5`) integrou a tela `#/cadastros/usuarios` com
+`admin-disable-user` (botão `Desativar`, modal com motivo
+opcional, mapeamento de 8 códigos de erro, guarda de UX para
+self/inativos, coluna Status). Runner local de E2E (fase
 `E2E-AUTO-RUNNER-A`) em `scripts/staging/admin-disable-user-e2e.mjs`
 + `tests/admin-disable-user-e2e-runner.smoke.js` (32/32 verde
 após `E2E-RUNNER-FIX-A`); detecta staging de `js/config.js`;
@@ -1021,27 +1138,22 @@ aborta se URL não for `ucrjtfswnfdlxwtmxnoo` ou se for
 `bhgifjrfagkzubpyqpew`; sem variáveis de ambiente manuais; sem
 secrets versionados; config em
 `.ravatex-local/admin-disable-user-e2e.config.json` (gitignored).
-**Bug do runner no login bloqueado corrigido** (fase
-`E2E-RUNNER-FIX-A`, esta): ex-real-run em staging avançou até
-`profile_inactive` e falhou em `login_blocked` com `HTTP 400
-User is banned` tratado como erro fatal. Helpers reescritos:
-`postSupabaseLogin` (HTTP cru, sem `die()`),
-`loginExpectSuccess` (fatal, rótulo parametrizado:
-`admin_login failed`/`test_user_login failed`/
-`admin_relogin failed`) e `loginExpectFailure` (não-fatal;
-aceita `User is banned`/`banned`/`Banned user`/`User is
-already registered` como falha esperada; retorna
-`{ ok, unexpected, status, detail }`). Mensagem hardcoded
-"Login admin falhou" removida. Fluxo continua para
-`idempotency` e `self_disable_blocked`. Smoke 32/32;
-regressão `admin-disable-user.smoke.js` 39/39. **E2E real
-não foi rerodado nesta fase.** Runner real executado em
-staging após o fix passou com `result: PASS` (ver §5k).
-Fase `UI-A` (esta) integrou a tela `#/cadastros/usuarios`
-com `admin-disable-user` (botão `Desativar`, modal com
-motivo opcional, mapeamento de 8 códigos de erro, guarda
-de UX para self/inativos, coluna Status). Próximas fases:
-validação manual/automatizada da UI em staging (com
+**E2E real do runner backend em staging passou com
+`result: PASS`** (ver §5k). Runner de browser (fase
+`UI-BROWSER-E2E-A`) em
+`scripts/staging/admin-disable-user-ui-browser-e2e.mjs` +
+`tests/admin-disable-user-ui-browser-e2e.smoke.js` (28/28
+verde); usa `import('playwright')` dinâmico; reusa o config
+do runner backend; default `http://localhost:8765/`; aborta se
+URL não for `ucrjtfswnfdlxwtmxnoo` ou se for
+`bhgifjrfagkzubpyqpew`; sem secrets versionados; sem SQL
+manual; sem `.delete()`; sem `auth.admin`. **E2E real de
+browser não foi executado nesta fase** (Playwright não
+instalado localmente; app em :8765 está rodando). Runner
+fica pronto para `node ... run` quando Playwright estiver
+disponível em diretório externo. Próximas fases:
+`RAVATEX-TAPETES-AUTH-DISABLE-USER-UI-BROWSER-E2E-RUN-A`
+(rodar o `run` real de browser, com Playwright instalado, após
 autorização do HMNlead) → decisão de produção em fase
 separada. **Não avançar** para produção
 `bhgifjrfagkzubpyqpew` sem autorização explícita.
