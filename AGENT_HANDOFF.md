@@ -9,11 +9,11 @@
 
 ## Estado atual aceito
 - **Estado atual aceito:** `work/app-next` na ponta da fase
-  `RAVATEX-TAPETES-PEDIDOS-CLIENTE-PROV-A` (provisionamento de
-  usuário cliente — Edge Function + UI admin de usuários).
-- **HEAD aceito atual:** `aeeb998` (antes do push desta fase).
-  Após o push de PROV-A, o HEAD passa a ser o commit desta fase —
-  "Add cliente user provisioning".
+  `RAVATEX-TAPETES-PEDIDOS-CLIENTE-UI-A` (UI cliente read-only:
+  shell, roteamento, listagem e detalhe de pedidos próprios).
+- **HEAD aceito atual:** `e03241e` (antes do commit desta fase).
+  Após o commit de UI-A, o HEAD passa a ser o commit desta fase —
+  "Add cliente pedidos read-only UI".
 - **Working tree:** limpo após commit.
 - **origin/main:** `1047181eba888242c6428de366cbd9fda2f1c72c` — intocado
 - **PR #2:** intocado
@@ -37,59 +37,21 @@
   Cliente + select de cliente. `loadCurrentUser()` carrega
   `cliente_id` e `cliente_nome`. `isCliente()` disponível.
   **Não** deployado em staging ainda.
-- **Frontend Pedidos entregue (C1 + C2 + C2-R1 + C3A + C3B +
-  C3C1 + C3C2B + C3C2C1 + C3C2C2 + C3C2C3):** listagem
-  `#/pedidos`, formulário `#/pedidos/novo` (cria pedido + itens
-  como `rascunho`), correção de bug do preview de cor (slot
-  fixo + `updatePreview()`), detalhe read-only `#/pedidos/<uuid>`,
-  ações reais RESTRITAS de status (C3B), **edição admin
-  RESTRITA dos dados gerais** (C3C1, `#/pedidos/<uuid>/editar`),
-  **edição admin RESTRITA de itens existentes** (C3C2B,
-  `#/pedidos/<uuid>/itens`, update de `modelo_id`/`metros`/
-  `observacao` em itens existentes), **adição de novos
-  itens** (C3C2C1, mesmo rota `#/pedidos/<uuid>/itens`, insert
-  de `pedido_id`/`modelo_id`/`metros`/`observacao`/`ordem`),
-  **remoção de itens existentes** (C3C2C2, mesma rota, delete
-  de `pedido_itens` com `.eq('id', dbId).eq('pedido_id', pedidoId)`
-  aplicado APENAS no `salvar()`, com flag local
-  `markedForDeletion: true`, confirmação visual via
-  `window.confirmDialog`, botão "Desfazer remoção" para
-  reverter, mínimo de 1 item no Pedido) e **normalização
-  automática de `ordem` no `salvar()`** (C3C2C3, mesmo rota,
-  loop `activeItems[i].ordem = i` por posição final em
-  `activeItems = state.itens.filter(!markedForDeletion)`,
-  aplicado ANTES de separar existing/new; update de item
-  existente agora com 4 chaves incluindo `ordem`;
-  insert com `ordem: it.ordem` vinda da normalização; lacunas
-  após add/remove eliminadas; sem drag-and-drop, sem setas de
-  subir/descer, sem reordenação manual, sem UI de controle
-  de ordem). Helper `pedido-ui.js` com status, badges,
-  preview de cor, e `isPedidoEditavel()`
-  (`PEDIDO_STATUS_EDITAVEL = ['rascunho', 'recebido']`). Na
-  C3B, o detalhe aceita APENAS as transições: `rascunho→recebido`,
-  `recebido→confirmado`, `rascunho/recebido/confirmado→cancelado`
-  (este último via `window.confirmDialog`). Na C3C1, o botão
-  "Editar dados" do detalhe é funcional APENAS para status
-  editáveis e navega para a tela de edição de dados gerais.
-  Na C3C2B/C3C2C1/C3C2C2/C3C2C3, o botão "Editar itens" do
-  detalhe é funcional APENAS para status editáveis e navega
-  para a tela de edição de itens; a tela permite editar
-  itens existentes (C3C2B), adicionar novos (C3C2C1, com
-  flag `isNew: true` e botão "Descartar novo item" para
-  descarte local), remover existentes (C3C2C2, com flag
-  `markedForDeletion: true`, `window.confirmDialog` na
-  marcação, e botão "Desfazer remoção" para reverter;
-  delete só no `salvar()`) e normalizar `ordem`
-  automaticamente no `salvar()` (C3C2C3). Update/insert/delete
-  APENAS em `pedido_itens` (C3C2B: update 3 chaves;
-  C3C2C1: update 3 chaves + insert 5 chaves; C3C2C2:
-  update 3 chaves + insert 5 chaves + delete com dupla
-  `.eq` de defesa; C3C2C3: update 4 chaves incluindo
-  `ordem` + insert 5 chaves com `ordem: it.ordem` + delete
-  inalterado). Sem insert/update/delete em `pedido_eventos`,
-  sem `functions.invoke`, sem `token_acesso`, sem
-  `service_role`, sem rota pública, sem schema, sem OP, sem
-  Edge Function, sem fornecedor.
+- **Frontend Pedidos cliente entregue (UI-A):** shell mínimo
+  (`js/screens/cliente-common.js` com `CLIENTE_MENU`: "Meus
+  pedidos" apenas), listagem read-only
+  (`js/screens/cliente-pedidos-list.js`,
+  `#/cliente/pedidos`, `screenClientePedidosLista`, confia na
+  RLS), detalhe sanitizado (`js/screens/cliente-pedido-detail.js`,
+  `#/cliente/pedidos/<uuid>`, `screenClientePedidoDetalhe`,
+  sem editar/cancelar/criar, sem expor OP/lote/fornecedor/
+  token/eventos). Roteamento: `routeAfterLogin` direciona
+  cliente para `#/cliente/pedidos`, `matchRoute` resolve
+  `#/cliente/pedidos/<uuid>` com `roles: ['cliente']`,
+  `boot.js` registra `#/cliente/pedidos`. **Sem** criar/editar
+  /cancelar pedido nesta fase. **Sem** schema, SQL, Edge Function.
+- **Admin Pedidos completo (C1-C3C3):** listagem, formulário,
+  detalhe, ações de status, edição de dados gerais e itens.
 
 ## Estado operacional atual
 - `index.html` está declarativo, sem script inline final, com
@@ -224,100 +186,18 @@ Abortar e revisar o escopo se:
 ## Próxima recomendação operacional
 
 **Refactor arquitetural continua congelado.**
-**Pedidos C1 + C2 + C2-R1 + C3A + C3B + C3C1 + C3C2B +
-C3C2C1 + C3C2C2 + C3C2C3 entregues:** listagem `#/pedidos`,
-formulário `#/pedidos/novo` (cria pedido + itens como
-`rascunho`), correção de bug no preview de cor do item
-(slot fixo + `updatePreview()` com `replaceChildren`),
-**detalhe read-only** `#/pedidos/<uuid>` (`pedido-detail.js`
-com `screenPedidoDetalhe`, `js/router.js` estendido com match
-dinâmico `^#/pedidos/<uuid>$` admin-only, botão "Visualizar"
-da listagem navegando para o detalhe), **ações reais
-RESTRITAS de status** (C3B: `rascunho→recebido`,
-`recebido→confirmado`, `rascunho/recebido/confirmado→cancelado`
-via `window.confirmDialog`; demais status terminais),
-**edição admin RESTRITA dos dados gerais** (C3C1, nova
-tela `#pedidos/<uuid>/editar` com `pedido-edit.js`;
-restringe `cliente_id`/`prazo_entrega`/`observacao`; status
-editáveis apenas `rascunho` e `recebido` via
-`isPedidoEditavel`; demais status desabilitam campos +
-Salvar), **edição admin RESTRITA de itens existentes**
-(C3C2B, nova tela `#/pedidos/<uuid>/itens` com
-`pedido-itens-edit.js`; restringe `modelo_id`/`metros`/
-`observacao` de itens JÁ EXISTENTES; sem add/remove/reordenar,
-sem overrides de largura/cor; demais status desabilitam
-campos + Salvar), **adição de novos itens** (C3C2C1,
-mesma tela `#/pedidos/<uuid>/itens`; flag `isNew: true`
-no estado local; insert em `pedido_itens` com 5 chaves
-`pedido_id`/`modelo_id`/`metros`/`observacao`/`ordem`;
-ordem calculada como `existingItems.length + i`; botão
-"Descartar novo item" para descarte local; sem remover
-existente, sem overrides), **remoção de itens
-existentes** (C3C2C2, mesma tela `#/pedidos/<uuid>/itens`;
-flag `markedForDeletion: true` no estado local; cada item
-existente tem botão "Remover item" que abre
-`window.confirmDialog` para confirmação visual; após
-confirmar, item ganha visual "riscado" (borda vermelha,
-opacidade 70, label "Será removido ao salvar") e botão
-"Desfazer remoção" para reverter; remoção é aplicada
-APENAS no `salvar()` via DELETE em `pedido_itens` com
-dupla `.eq('id', dbId).eq('pedido_id', pedidoId)`; mínimo
-de 1 item no Pedido é garantido: `marcarParaRemocao` bloqueia
-se a remoção deixaria 0 itens; sequência `salvar()`:
-1) UPDATE existentes, 2) INSERT novos, 3) DELETE removidos;
-sem compensação automática entre etapas — limitação
-documentada) e **normalização automática de `ordem` no
-`salvar()`** (C3C2C3, mesma tela `#/pedidos/<uuid>/itens`;
-no `salvar()`, antes de qualquer operação de banco, há
-loop `activeItems[i].ordem = i` por posição final em
-`activeItems = state.itens.filter(!markedForDeletion)`;
-update de item existente agora com 4 chaves incluindo
-`ordem` (`modelo_id`/`metros`/`observacao`/`ordem`);
-insert com `ordem: it.ordem` vinda da normalização;
-lacunas após add/remove eliminadas; sem drag-and-drop,
-sem setas de subir/descer, sem reordenação manual, sem
-UI de controle de ordem — a normalização é 100%
-automática). Update/insert/delete APENAS em `pedido_itens`
-(C3C2B: update 3 chaves; C3C2C1: update 3 chaves + insert
-5 chaves; C3C2C2: update 3 chaves + insert 5 chaves +
-delete com dupla `.eq` de defesa; C3C2C3: update 4 chaves
-incluindo `ordem` + insert 5 chaves com `ordem: it.ordem` +
-delete inalterado), admin-only via RLS. Sem
-delete/upsert em `pedido_itens` fora do escopo da remoção
-marcada, sem insert em `pedido_eventos` (best-effort fica
-para fase futura), sem `functions.invoke`, sem
-`token_acesso`, sem `service_role`, sem rota pública, sem
-mutação em `lotes`/`pedido_eventos`, sem schema, sem OP, sem
-Edge Function, sem fornecedor. Limitação conhecida do
-formulário: sem RPC/transação atômica (compensação manual
-documentada no código). Overrides de largura/cor e
-reordenação manual de itens ficam para fases seguintes.
-**Perfil cliente schema/RLS aplicado em staging** (fases
-`RAVATEX-TAPETES-PEDIDOS-CLIENTE-SCHEMA-RLS-B1` + `B2` +
-`B2-RECORD-A`, esta docs-only): `db/14_cliente_perfil_schema.sql`
-aplicado em `ucrjtfswnfdlxwtmxnoo` via Management API (status 201).
-Role `cliente`, `usuarios.cliente_id`, `meu_cliente_id()` e 5
-policies cliente SELECT/INSERT operacionais. 23/23 validações
-pós-aplicação verdes. **NÃO** há UPDATE/DELETE de cliente.
-**NÃO** há token público. `pedido_eventos` admin-only.
-**Próxima lacuna:** `admin-create-user` e UI aceitam apenas
-`admin`/`fornecedor` — provisionamento de usuário cliente pendente.
-**Próxima fase:** `RAVATEX-TAPETES-PEDIDOS-CLIENTE-PROV-A`
-(provisionamento de usuário cliente: Edge Function + UI),
-**somente com autorização explícita** do HMNlead.
+**Cliente UI-A entregue:** shell mínimo, listagem e detalhe
+read-only. Cliente autenticado roteado para `#/cliente/pedidos`,
+vê apenas seus pedidos via RLS, sem exposição de dados internos.
+**Sem** criar/editar/cancelar pedido nesta fase. **Sem** schema,
+SQL, ou Edge Function.
+
+**Próxima fase:** homologação do fluxo cliente em staging
+(`ucrjtfswnfdlxwtmxnoo`) ou criação de pedido pelo cliente
+(`RAVATEX-TAPETES-PEDIDOS-CLIENTE-CREATE-A`), **somente com
+autorização explícita** do HMNlead.
 **Não iniciar execução sem autorização explícita.**
 **NÃO tocar `bhgifjrfagkzubpyqpew`, Vercel original, ou `origin/main`.**
-
-O ciclo de refactor arquitetural + hardening + extração final do
-`op-pdf.js` está **congelado**. Antes de iniciar qualquer novo
-trabalho:
-- Validar a tela Nova OP em homologação staging.
-- Confirmar que todos os fluxos de admin e fornecedor continuam
-  funcionais.
-- Decidir se a próxima publicação vai para `origin/main` (produção)
-  ou se há ajustes pendentes.
-- Tratar pendências Supabase / cadastro de usuário em fase própria,
-  não dentro do refactor.
 
 ## Fases de implementação do design Auth (aprovadas para execução)
 

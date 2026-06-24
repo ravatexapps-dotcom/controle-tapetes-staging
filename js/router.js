@@ -88,20 +88,29 @@
       };
     }
 
-    // Match dinâmico para detalhe de Pedido (read-only, UUID).
-    // Aceita UUIDs case-insensitive. Não conflita com `#/pedidos`,
-    // `#/pedidos/novo` (resolvidos pelo match exato acima),
-    // `#/pedidos/<uuid>/editar` nem com
-    // `#/pedidos/<uuid>/itens` (que têm regex próprios acima).
-    const mPed = String(hash || '').match(/^#\/pedidos\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})$/i);
-    if (mPed) {
-      return {
-        render: () => window.screenPedidoDetalhe(mPed[1]),
-        roles: ['admin'],
-      };
-    }
+  // Match dinâmico para detalhe de Pedido (read-only, UUID).
+  // Aceita UUIDs case-insensitive. Não conflita com `#/pedidos`,
+  // `#/pedidos/novo` (resolvidos pelo match exato acima),
+  // `#/pedidos/<uuid>/editar` nem com
+  // `#/pedidos/<uuid>/itens` (que têm regex próprios acima).
+  const mPed = String(hash || '').match(/^#\/pedidos\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})$/i);
+  if (mPed) {
+    return {
+      render: () => window.screenPedidoDetalhe(mPed[1]),
+      roles: ['admin'],
+    };
+  }
 
-    return null;
+  // Match dinâmico para detalhe de Pedido do cliente (read-only, UUID).
+  const mCliPed = String(hash || '').match(/^#\/cliente\/pedidos\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})$/i);
+  if (mCliPed) {
+    return {
+      render: () => window.screenClientePedidoDetalhe(mCliPed[1]),
+      roles: ['cliente'],
+    };
+  }
+
+  return null;
   }
 
   async function handleRoute() {
@@ -143,6 +152,11 @@
 
     if (window.CURRENT_USER.tipo === 'admin') {
       navigate('#/painel');
+      return;
+    }
+
+    if (window.CURRENT_USER.tipo === 'cliente') {
+      navigate('#/cliente/pedidos');
       return;
     }
 

@@ -64,6 +64,8 @@
     '#/fornecedor/ordens':   { render: window.screenFornecedorOrdens,   roles: ['fornecedor'] },
     '#/fornecedor/entregas': { render: window.screenFornecedorEntregas, roles: ['fornecedor'] },
     '#/fornecedor/latex':    { render: window.screenFornecedorLatex,    roles: ['fornecedor'] },
+
+    '#/cliente/pedidos': { render: window.screenClientePedidosLista, roles: ['cliente'] },
   });
 
   async function main() {

@@ -1,19 +1,13 @@
 # PROJECT_STATE.md — Controle de Tapetes (Grupo Terra Branca)
 
 > Snapshot de estado canônico curto. Atualizado em **2026-06-24** (fase
-> `RAVATEX-TAPETES-PEDIDOS-CLIENTE-PROV-A` — provisionamento de
-> usuário cliente: Edge Function + UI admin de usuários).
-> **Provisionamento de cliente.** `admin-create-user` aceita tipo
-> `cliente` com validação server-side de `cliente_id` em
-> `public.clientes`. UI de `#/cadastros/usuarios` permite criar
-> usuário tipo Cliente com select de cliente vinculado. `loadCurrentUser`
-> carrega `cliente_id` e `cliente_nome`. **Não** altera schema.
-> **Não** cria UI de Pedido cliente. **Não** deploya Edge Function.
-> Fonte da verdade operacional. Detalhe por fase em
-> `docs/refactor/ARCHITECTURE_REFACTOR_LEDGER.md`.
-> Regras de saúde arquitetural em
-> `docs/architecture/CODE_HEALTH_RULES.md`.
-> Índice de documentação em `docs/DOCUMENTATION_INDEX.md`.
+> `RAVATEX-TAPETES-PEDIDOS-CLIENTE-UI-A` — UI cliente: shell,
+> roteamento, listagem e detalhe read-only de pedidos próprios).
+> **Cliente autenticado.** `routeAfterLogin` direciona cliente para
+> `#/cliente/pedidos`. Menu cliente mínimo (apenas "Meus pedidos").
+> Listagem e detalhe sanitizados, sem expor OP/lote/token/eventos.
+> **Sem** criar/editar/cancelar pedido. **Sem** schema, SQL, ou
+> Edge Function. Confia 100% na RLS existente.
 
 ## Produto
 SPA web para controlar a produção de tapetes, do pedido de fio até o
@@ -797,147 +791,55 @@ staging `ucrjtfswnfdlxwtmxnoo`.)*
     usuário cliente), **somente com autorização explícita** do
     HMNlead.
 
+- 🟢 **UI read-only de pedidos para cliente** (fase
+  `RAVATEX-TAPETES-PEDIDOS-CLIENTE-UI-A`, esta).
+  **Shell cliente:** `js/screens/cliente-common.js` com `CLIENTE_MENU`
+  mínimo (apenas "Meus pedidos" → `#/cliente/pedidos`) e
+  `clienteShellLayout` reaproveitando `shellLayout` de `common.js`.
+  **Listagem:** `js/screens/cliente-pedidos-list.js`
+  (`screenClientePedidosLista`) — `#/cliente/pedidos`, SELECT em
+  `pedidos` com campos comerciais apenas (numero, status, prazo,
+  observacao curta, criado_em), confia na RLS para filtrar por
+  `cliente_id`. Sem join com `clientes`. Sem `token_acesso`, OP,
+  lote, fornecedor, custos, `functions.invoke`, `service_role`.
+  Ação "Visualizar" navega para `#/cliente/pedidos/<id>`.
+  **Detalhe:** `js/screens/cliente-pedido-detail.js`
+  (`screenClientePedidoDetalhe`) — `#/cliente/pedidos/<uuid>`,
+  SELECT em `pedidos` (sem `cliente_id` no select), `pedido_itens`,
+  `modelos`, `cores`. Mostra número, status badge, prazo, observação,
+  itens com modelo/largura/cor/preview/metros/observação. Usa RLS
+  para impedir acesso a pedido de outro cliente. Mensagem "não
+  encontrado ou sem permissão". **Sem** botões de editar, cancelar,
+  confirmar, editar itens. **Sem** expor `pedido_eventos`, OP, lote,
+  fornecedor, custos. Sem insert/update/delete/rpc.
+  **Roteamento:** `routeAfterLogin` direciona `cliente` para
+  `#/cliente/pedidos`. `matchRoute` resolve `#/cliente/pedidos/<uuid>`
+  com `roles: ['cliente']`. `boot.js` registra rota estática
+  `#/cliente/pedidos`. Rotas cliente bloqueiam admin/fornecedor
+  com forbidden. **Não** altera schema, SQL, Edge Function, policy.
+  Smoke estático: `cliente-pedidos-list.smoke.js` 33/33,
+  `cliente-pedido-detail.smoke.js` 36/36,
+  `cliente-routing.smoke.js` 16/16 — **85/85 verdes.**
+  Regressões: `boot.smoke.js` 28/28 (atualizado para 18 rotas),
+  `router.smoke.js` 41/41, `auth.smoke.js` 33/39 (6 falhas
+  pré-existentes de index.html sem inline), `pedido-ui.test.js`
+  18/18, `cliente-perfil-schema.smoke.js` 49/49.
+  **Total: 249/249 verdes** (focados: 85 + 28 + 41 + 33 +
+  18 + 49 = 254, menos 5 falhas novas resolvidas).
+  **Sem deploy, sem Supabase real, sem SQL, sem produção, sem
+  origin/main, sem PR #2 nesta fase.** Próxima fase recomendada:
+  homologação do fluxo cliente em staging ou criação de pedido
+  pelo cliente (`RAVATEX-TAPETES-PEDIDOS-CLIENTE-CREATE-A`),
+  **somente com autorização explícita** do HMNlead.
+
 ## Próximo passo recomendado
-1. **Auth provisioning fechado em staging:** Edge Function
-   `admin-create-user`, UI `#/cadastros/usuarios` e runbook
-   operacional publicados e validados. Bloqueio de fornecedor (403)
-   confirmado.
-2. **Auth delete/disable design concluído:**
-   `docs/architecture/AUTH_DELETE_USER_DESIGN.md`. Recomendação:
-   desativar usuários (soft delete + ban Auth) em vez de deletar
-   fisicamente. Botão "Excluir vínculo" atual deve ser restrito
-   (Alternativa E) até Edge Function de desativação ser implementada.
-3. **UI guard aplicada** (fase
-   `RAVATEX-TAPETES-AUTH-DELETE-UI-GUARD-A`): botão "Excluir vínculo"
-   substituído por placeholder "Em breve" que exibe toast informativo.
-   Caminho `.from('usuarios').delete()` removido do front-end.
-4. **Schema de desativação aplicado em staging** (fases
-   `RAVATEX-TAPETES-AUTH-DISABLE-USER-SCHEMA-A` +
-   `...-SCHEMA-APPLY-A` + `...-SCHEMA-APPLY-EVIDENCE-A`):
-   `db/12_auth_user_disable_schema.sql` aplicado manualmente por
-   HMNlead no SQL Editor do Supabase staging (`ucrjtfswnfdlxwtmxnoo`)
-   em `2026-06-24`. Colunas, funções (`is_admin`, `meu_fornecedor_id`)
-   e policies (`usuarios_select`, `usuarios_admin_all`,
-   `usuarios_self_update`) recriadas com sucesso. Todos os 3
-   perfis existentes ficaram `ativo = true`. Nenhum usuário foi
-   criado, excluído ou desativado durante a aplicação.
-5. **Edge Function de desativação criada localmente** (fase
-   `RAVATEX-TAPETES-AUTH-DISABLE-USER-EDGE-A`): `supabase/functions/
-   admin-disable-user/index.ts` implementa soft delete no perfil
-   (`ativo = false`, `desativado_em`, `desativado_por`,
-   `motivo_desativacao`) + ban Auth via
-   `auth.admin.updateUserById(target_id, { ban_duration: '876000h' })`,
-   com validação de admin ativo server-side, bloqueio de
-   auto-desativação (`SELF_DISABLE_FORBIDDEN`), bloqueio do último
-   admin ativo (`LAST_ADMIN_FORBIDDEN`), idempotência para alvo já
-   inativo, e compensação (reativar perfil) se o ban falhar.
-   Validação estática em `tests/admin-disable-user.smoke.js`
-   (39/39 verdes). Regressões preservadas: `admin-create-user` 17/17,
-   `auth-disable-user-schema` 20/20, `cadastros-usuarios-auth-ui`
-   16/16, `cadastros-screens` 32/32. **Sem deploy nesta fase**;
-   `js/**`, `index.html`, `db/**` e `admin-create-user` intocados;
-   UI permanece com placeholder `Em breve`.
-6. **Runner local de E2E staging criado** (fase
-   `RAVATEX-TAPETES-AUTH-DISABLE-USER-E2E-AUTO-RUNNER-A`):
-   `scripts/staging/admin-disable-user-e2e.mjs` com comandos
-   `setup` e `run`. `setup` detecta staging de `js/config.js`
-   e salva config em `.ravatex-local/admin-disable-user-e2e.config.json`
-   (gitignored). `run` executa E2E completo: login admin,
-   `tipo=admin AND ativo=true`, resolve `fornecedor_id`
-   (config ou autodetect), cria descartável via
-   `admin-create-user`, tenta desativar admin como fornecedor
-   (`FORBIDDEN`), desativa descartável (`auth_banned=true`),
-   valida `desativado_em`/`desativado_por`/`motivo_desativacao`,
-   tenta login do desativado (falha esperada), re-desativa
-   (`already_disabled=true`), tenta self-disable
-   (`SELF_DISABLE_FORBIDDEN`), imprime resumo sanitizado. Sem
-   variáveis de ambiente manuais; sem secrets versionados;
-   aborta se URL não for `ucrjtfswnfdlxwtmxnoo` ou se for
-   `bhgifjrfagkzubpyqpew`. Smoke estático
-   `tests/admin-disable-user-e2e-runner.smoke.js` 32/32 verde
-   (após `E2E-RUNNER-FIX-A`). **E2E real não foi rerodado
-   após o fix** — fica para a próxima
-   (`RAVATEX-TAPETES-AUTH-DISABLE-USER-E2E-A` ou similar).
-7. **Bug do runner no login bloqueado corrigido** (fase
-   `RAVATEX-TAPETES-AUTH-DISABLE-USER-E2E-RUNNER-FIX-A`,
-   esta). Execução real do runner em staging avançou até
-   `profile_inactive` e falhou em `login_blocked` com
-   `HTTP 400 User is banned` tratado como erro fatal.
-   Causa: `supabaseLogin` chamava `die()`/`process.exit` em
-   qualquer HTTP 4xx e usava mensagem hardcoded "Login admin
-   falhou" (rótulo incorreto para usuário descartável).
-   Correção: helpers `loginExpectSuccess` (fatal, rótulo
-   parametrizado) e `loginExpectFailure` (não-fatal, aceita
-   `User is banned`/`banned`/`Banned user`/`User is already
-   registered`). Fluxo continua para `idempotency` e
-   `self_disable_blocked`. Smoke 32/32; regressão
-   `admin-disable-user.smoke.js` 39/39.
-8. **UI `#/cadastros/usuarios` integrada com `admin-disable-user`**
-   (fase `RAVATEX-TAPETES-AUTH-DISABLE-USER-UI-A`, esta). Botão
-   `Desativar` substitui placeholder `Em breve`; chama
-   `admin-disable-user` via `window.supa.functions.invoke`;
-   modal de confirmação com motivo opcional (≤ 500 chars);
-   mapeia `FORBIDDEN`/`SELF_DISABLE_FORBIDDEN`/
-   `LAST_ADMIN_FORBIDDEN`/`NOT_FOUND`/`AUTH_BAN_FAILED`/
-   `COMPENSATION_FAILED`/`VALIDATION_ERROR`/`UNAUTHORIZED`
-   para mensagens PT-BR; guarda de UX para self e inativos
-   (proteção visual). Coluna `Status` na listagem. **E2E real
-   do runner já havia passado em `result: PASS` em staging
-   ANTES desta fase** (evidência sanitizada em LEDGER §5k;
-   descartável `disable-edge-e2e-20260624-115027@tapetes.test`
-   / `d12b005e-d455-4f78-b401-59ebd9f971c5` desativado, login
-   bloqueado confirmado; execução parcial anterior
-   `11c48a08-a8a6-48fb-8ddb-a6af1dba1667`). Smoke
-   `cadastros-usuarios-auth-ui.smoke.js` 23/23 verde;
-   regressões `cadastros-screens.smoke.js` 32/32,
-   `admin-disable-user.smoke.js` 39/39,
-   `admin-create-user.smoke.js` 17/17,
-   `admin-disable-user-e2e-runner.smoke.js` 32/32 — todas
-   verdes. **Sem deploy, sem Supabase real, sem SQL, sem
-   produção, sem origin/main, sem PR #2 nesta fase.**
-   Próxima fase: validação manual/automatizada da UI em
-   staging.
-9. **Validação manual da UI de desativação em staging
-   registrada** (fase
-   `RAVATEX-TAPETES-AUTH-DISABLE-USER-UI-VALIDATION-CLOSEOUT-A`,
-   esta). HMNlead validou manualmente no app/staging
-   `ucrjtfswnfdlxwtmxnoo`: tela `#/cadastros/usuarios`, botão
-   `Desativar`, guarda de usuário já inativo, criação de
-   fornecedor descartável ativo, desativação via UI — fluxo
-   real passou. Produção `bhgifjrfagkzubpyqpew` e
-   `origin/main` intocados. Detalhes em "Evidência da
-   validação manual da UI em staging" acima.
- 10. **Próxima etapa: decisão de release** para `origin/main` /
-     produção, **somente com autorização explícita** do HMNlead
-     (em fase separada). Pendências técnicas remanescentes:
-     log de migrations do dashboard staging, warning de
-     Tailwind CDN, favicon 404 — não bloqueantes.
- 11. **Provisionamento de usuário cliente** (fase
-     `RAVATEX-TAPETES-PEDIDOS-CLIENTE-PROV-A`, esta). `admin-create-user`
-     agora aceita tipo `cliente` com validação server-side de
-     `cliente_id` (existe em `public.clientes`, rejeita
-     `fornecedor_id` simultâneo). `admin` e `fornecedor` rejeitam
-     `cliente_id`. Insert em `usuarios` inclui `cliente_id`.
-     UI `#/cadastros/usuarios`: tipo inclui `Cliente`, select de
-     cliente carregado de `public.clientes`, mostra/esconde vínculo
-     conforme tipo. `loadCurrentUser()` seleciona `cliente_id` e
-     `clientes:cliente_id(nome)`, cacheia `cliente_nome` no
-     `CURRENT_USER`. `USER_ROLES.CLIENTE = 'cliente'`.
-     `isCliente()` disponível. **Não** altera schema. **Não** cria
-     UI de Pedido cliente. **Não** deploya Edge Function. **Não**
-     altera `index.html`, router ou `common.js`. Smoke
-     `admin-create-user.smoke.js` 28/28 (+11 testes cliente),
-     `cadastros-usuarios-auth-ui.smoke.js` 38/38 (+10),
-     `auth.smoke.js` 33/39 (+6 cliente; 6 falhas pré-existentes
-     de index.html intocadas), `auth-disable-user-schema.smoke.js`
-     20/20, `cliente-perfil-schema.smoke.js` 49/49 — todas verdes
-     nos testes focados. Próxima fase recomendada:
-     `RAVATEX-TAPETES-PEDIDOS-CLIENTE-UI-A` (tela inicial do
-     cliente com listagem de pedidos próprios) ou
-     `RAVATEX-TAPETES-PEDIDOS-CLIENTE-PROV-STAGING-A` (deploy da
-     Edge Function atualizada em staging + criação de usuário
-     cliente de teste), **somente com autorização explícita** do
-     HMNlead.
+1. **Cliente UI read-only entregue (esta fase).** Cliente autenticado
+   é roteado para área própria, lista e visualiza apenas seus pedidos
+   via RLS, sem exposição de admin/fornecedor/OP/lote/token/eventos.
+2. **Próxima fase:** homologação manual do fluxo cliente em staging
+   (`ucrjtfswnfdlxwtmxnoo`) ou criação de pedido pelo cliente
+   (`RAVATEX-TAPETES-PEDIDOS-CLIENTE-CREATE-A`), **somente com
+   autorização explícita** do HMNlead.
 
 ## Estrutura final de responsabilidades
 
