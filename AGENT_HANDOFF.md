@@ -9,13 +9,11 @@
 
 ## Estado atual aceito
 - **Estado atual aceito:** `work/app-next` na ponta da fase
-  `RAVATEX-TAPETES-PEDIDOS-SCHEMA-RLS-A` (schema/RLS de Pedidos).
-  **Backend/database only.** Sem frontend, sem rotas JS, sem Edge
-  Function.
-- **HEAD aceito atual:** commit desta fase
-  (`RAVATEX-TAPETES-PEDIDOS-SCHEMA-RLS-A`,
-  "Add pedidos schema and RLS").
-- **staging/main:** atualizado após push desta fase.
+  `RAVATEX-TAPETES-PEDIDOS-SCHEMA-APPLY-RECORD-A` (registro de
+  aplicação). Schema `db/13_pedidos_schema.sql` já aplicado em
+  `ucrjtfswnfdlxwtmxnoo`. Frontend não implementado (próxima fase).
+- **HEAD aceito atual:** `555db7c` ("Add pedidos schema and RLS").
+- **staging/main:** `555db7c`
 - **Working tree:** limpo.
 - **origin/main:** `1047181eba888242c6428de366cbd9fda2f1c72c` — intocado
 - **PR #2:** intocado

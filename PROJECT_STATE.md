@@ -1,14 +1,13 @@
 # PROJECT_STATE.md — Controle de Tapetes (Grupo Terra Branca)
 
 > Snapshot de estado canônico curto. Atualizado em **2026-06-24** (fase
-> `RAVATEX-TAPETES-PEDIDOS-SCHEMA-RLS-A` — schema/RLS de Pedidos).
-> **Backend/database only.** Sem frontend, sem rotas JS, sem Edge
-> Function, sem alteração de fluxo de OP. Nova migration
-> `db/13_pedidos_schema.sql` versionada com tabelas `pedidos`,
-> `pedido_itens`, `pedido_eventos` e vínculo `lotes.pedido_id`
-> (nullable). RLS admin-only em todas as 3 novas tabelas. Sem
-> policy pública. Não cria `pedidos.op_id`. Não toca `db/01-12`,
-> `js/`, `supabase/functions/`.
+> `RAVATEX-TAPETES-PEDIDOS-SCHEMA-APPLY-RECORD-A` — registro de
+> aplicação de schema de Pedidos em ucr).
+> **Docs-only.** Schema `db/13_pedidos_schema.sql` aplicado em
+> `ucrjtfswnfdlxwtmxnoo` via Management API. Validações pós-aplicação
+> confirmam: `pedidos`, `pedido_itens`, `pedido_eventos` criadas;
+> `lotes.pedido_id` adicionado; RLS admin-only; sem policy pública;
+> sem `pedidos.op_id`. Frontend ainda não implementado.
 > Fonte da verdade operacional. Detalhe por fase em
 > `docs/refactor/ARCHITECTURE_REFACTOR_LEDGER.md`.
 > Regras de saúde arquitetural em
