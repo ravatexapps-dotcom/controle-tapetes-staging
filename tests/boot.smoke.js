@@ -434,3 +434,57 @@ test('22. matchRoute dinâmico #/pedidos/<uuid> rejeita IDs não-UUID', () => {
   const novo = vm.runInContext(`window.matchRoute('#/pedidos/novo')`, sandbox);
   assert.ok(novo, '#/pedidos/novo deve continuar resolvendo pela rota estática');
 });
+
+// -------------------------------------------------------------------------
+// 7. Rota dinâmica #/pedidos/<uuid>/editar (RAVATEX-TAPETES-PEDIDOS-UI-ADMIN-C3C1)
+// -------------------------------------------------------------------------
+
+test('23. matchRoute dinâmico #/pedidos/<uuid>/editar resolve para screenPedidoEditar (admin-only)', () => {
+  const { sandbox } = makeBootChainSandbox();
+  // mocka screenPedidoEditar no sandbox (a chain não carrega o módulo)
+  vm.runInContext('window.screenPedidoEditar = function(id) { return Promise.resolve(id); };', sandbox);
+  const uuid = '11111111-2222-3333-4444-555555555555';
+  const match = vm.runInContext(`window.matchRoute('#/pedidos/${uuid}/editar')`, sandbox);
+  assert.ok(match, 'matchRoute não resolveu rota dinâmica #/pedidos/<uuid>/editar');
+  assert.equal(typeof match.render, 'function', 'render de #/pedidos/<uuid>/editar não é função');
+  // roles admin-only via JSON.
+  const rolesJson = vm.runInContext(`JSON.stringify(window.matchRoute('#/pedidos/${uuid}/editar').roles)`, sandbox);
+  assert.equal(rolesJson, '["admin"]', 'roles de #/pedidos/<uuid>/editar deve ser ["admin"]');
+  // Executa o render e verifica que screenPedidoEditar foi chamado com o UUID.
+  const returned = vm.runInContext(`window.matchRoute('#/pedidos/${uuid}/editar').render()`, sandbox);
+  return returned.then((val) => {
+    assert.equal(val, uuid, 'render de #/pedidos/<uuid>/editar deve chamar screenPedidoEditar com o UUID');
+  });
+});
+
+test('24. matchRoute #/pedidos/<uuid>/editar rejeita IDs não-UUID', () => {
+  const { sandbox } = makeBootChainSandbox();
+  vm.runInContext('window.screenPedidoEditar = function() {};', sandbox);
+  // IDs não-UUID não devem casar o match dinâmico de edição.
+  for (const badId of ['42', 'abc', '12345', 'not-a-uuid', '11111111-2222-3333-4444']) {
+    const m = vm.runInContext(`window.matchRoute('#/pedidos/${badId}/editar')`, sandbox);
+    assert.equal(m, null, `#/pedidos/${badId}/editar não deve casar rota dinâmica`);
+  }
+  // `/editar` sem UUID (ex.: `#/pedidos//editar`) não casa.
+  const empty = vm.runInContext("window.matchRoute('#/pedidos//editar')", sandbox);
+  assert.equal(empty, null, '#/pedidos//editar não deve casar');
+});
+
+test('25. matchRoute distingue #/pedidos/<uuid> vs #/pedidos/<uuid>/editar', () => {
+  const { sandbox } = makeBootChainSandbox();
+  let detalheCall = null;
+  let editarCall = null;
+  vm.runInContext(`
+    window.screenPedidoDetalhe = function(id) { window.__detalhe = id; return Promise.resolve(id); };
+    window.screenPedidoEditar = function(id) { window.__editar = id; return Promise.resolve(id); };
+  `, sandbox);
+  const uuid = '11111111-2222-3333-4444-555555555555';
+  // Render detalhe
+  vm.runInContext(`window.matchRoute('#/pedidos/${uuid}').render();`, sandbox);
+  // Render edição
+  vm.runInContext(`window.matchRoute('#/pedidos/${uuid}/editar').render();`, sandbox);
+  detalheCall = vm.runInContext('window.__detalhe', sandbox);
+  editarCall = vm.runInContext('window.__editar', sandbox);
+  assert.equal(detalheCall, uuid, 'render de #/pedidos/<uuid> deve chamar screenPedidoDetalhe');
+  assert.equal(editarCall, uuid, 'render de #/pedidos/<uuid>/editar deve chamar screenPedidoEditar');
+});

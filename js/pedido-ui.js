@@ -104,6 +104,19 @@
   }
 
   // -------------------------------------------------------------------
+  // Status editáveis (C3C1) — dados gerais do Pedido.
+  // Apenas `rascunho` e `recebido` aceitam edição de
+  //   cliente, data de prazo e observação.
+  // Para os demais status a edição fica bloqueada.
+  // -------------------------------------------------------------------
+  const PEDIDO_STATUS_EDITAVEL = Object.freeze(['rascunho', 'recebido']);
+
+  function isPedidoEditavel(status) {
+    if (!status) return false;
+    return PEDIDO_STATUS_EDITAVEL.indexOf(status) !== -1;
+  }
+
+  // -------------------------------------------------------------------
   // Formatação simples de data
   // -------------------------------------------------------------------
   function fmtDataCurta(iso) {
@@ -133,6 +146,7 @@
     PEDIDO_STATUS,
     PEDIDO_STATUS_LABEL,
     PEDIDO_STATUS_BADGE,
+    PEDIDO_STATUS_EDITAVEL,
     normalizarCorNome,
     corPreviewHex,
     corPreviewElement,
@@ -140,6 +154,7 @@
     pedidoStatusBadgeClass,
     pedidoStatusBadge,
     pedidoStatusTodos,
+    isPedidoEditavel,
     fmtDataCurta,
   };
 
@@ -154,6 +169,7 @@
     pedidoStatusBadgeClass,
     pedidoStatusBadge,
     pedidoStatusTodos,
+    isPedidoEditavel,
     fmtDataCurta,
   });
 })(window);

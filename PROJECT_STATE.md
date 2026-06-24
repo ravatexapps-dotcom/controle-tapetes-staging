@@ -1,19 +1,17 @@
 # PROJECT_STATE.md — Controle de Tapetes (Grupo Terra Branca)
 
 > Snapshot de estado canônico curto. Atualizado em **2026-06-24** (fase
-> `RAVATEX-TAPETES-PEDIDOS-UI-ADMIN-C3B` — ações reais de status
-> no detalhe admin do Pedido).
-> **Frontend ações de status.** Tela `#/pedidos/<uuid>` agora
-> oferece ações reais RESTRITAS de status: `rascunho→recebido`,
-> `recebido→confirmado`, `rascunho/recebido/confirmado→cancelado`.
-> Cancelar exige confirmação visual (`window.confirmDialog`).
-> Update é APENAS em `pedidos.status` (RLS admin-only); sem
-> insert/update/delete em `pedido_itens`, sem insert em
-> `pedido_eventos` (fica para fase futura), sem mexer em
-> `lotes`/`pedido_eventos`, sem OP, sem Edge Function, sem
-> schema, sem token público. Botão Editar continua placeholder
-> (C3C). Schema `db/13_*` permanece aplicado em
-> `ucrjtfswnfdlxwtmxnoo`.
+> `RAVATEX-TAPETES-PEDIDOS-UI-ADMIN-C3C1` — edição admin dos dados
+> gerais do Pedido).
+> **Frontend edição restrita.** Tela `#/pedidos/<uuid>/editar` permite
+> editar apenas `cliente_id`, `prazo_entrega` e `observacao` do Pedido
+> para status editáveis (`rascunho` / `recebido`). Para os demais
+> status, o botão Editar do detalhe fica desabilitado e a tela de
+> edição exibe aviso + bloqueia salvamento. Update APENAS em
+> `pedidos` (3 chaves no payload), sem `status`/`numero`, sem
+> `pedido_itens`/`pedido_eventos`/`lotes`, sem OP, sem Edge
+> Function, sem RPC, sem schema, sem token público. Schema
+> `db/13_*` permanece aplicado em `ucrjtfswnfdlxwtmxnoo`.
 > Fonte da verdade operacional. Detalhe por fase em
 > `docs/refactor/ARCHITECTURE_REFACTOR_LEDGER.md`.
 > Regras de saúde arquitetural em
@@ -46,11 +44,11 @@ recebimento do látex. Perfis: **admin** (operação) e **fornecedor**
 
 ## Estado atual do refactor
 - **Branch operacional:** `work/app-next`.
-- **HEAD atual aceito:** commit desta fase — "Add pedido admin status
-  actions" (fase `RAVATEX-TAPETES-PEDIDOS-UI-ADMIN-C3B`).
-  Antes desta fase: `7184388` (fase
-  `RAVATEX-TAPETES-PEDIDOS-UI-ADMIN-C3A`).
-- **staging/main:** `7184388` (será atualizado com o push desta fase).
+- **HEAD atual aceito:** commit desta fase — "Add pedido admin
+  general edit" (fase `RAVATEX-TAPETES-PEDIDOS-UI-ADMIN-C3C1`).
+  Antes desta fase: `d2b5a6a` (fase
+  `RAVATEX-TAPETES-PEDIDOS-UI-ADMIN-C3B`).
+- **staging/main:** `d2b5a6a` (será atualizado com o push desta fase).
 - **origin/main:** `1047181eba888242c6428de366cbd9fda2f1c72c` — **intocado.**
 - **PR #2:** **intocado.**
 - **Working tree:** **limpo.**
@@ -68,7 +66,7 @@ final do `op-pdf.js` está CONGELADO.**
 
 Componentes estáveis:
 - `index.html` declarativo, sem script inline final, com cache-busting
-  `?v=20260623-asset1` em todos os 24 assets locais; CDNs externos
+  `?v=20260623-asset1` em todos os 25 assets locais; CDNs externos
   permanecem sem `?v=`.
 - `js/boot.js` é o entrypoint oficial e respeita `DOM ready`
   (aguarda `DOMContentLoaded` quando `document.readyState === 'loading'`,
@@ -94,7 +92,7 @@ Componentes estáveis:
 3. `e0dbfcd` — Resolve app root lookup after DOM ready
    (`js/ui.js` introduz `getAppRoot()` para lookup lazy do `#app`).
 4. `5d5b395` — Add cache busting to local app assets
-   (`index.html` com `?v=20260623-asset1` em 24 assets locais;
+   (`index.html` com `?v=20260623-asset1` em 25 assets locais;
    CDNs externos preservados sem `?v=`).
 5. `RAVATEX-TAPETES-OP-NOVA-SEAMS-DIAG-A` (read-only, sem commit) —
    diagnóstico das seams de `op-nova.js`. Concluiu que
@@ -477,6 +475,44 @@ staging `ucrjtfswnfdlxwtmxnoo`.)*
   `RAVATEX-TAPETES-PEDIDOS-UI-ADMIN-C3C` (edição de campos
   editáveis do Pedido + itens), **somente com autorização
   explícita** do HMNlead.
+- 🟢 **Edição admin RESTRITA dos dados gerais do Pedido** (fase
+  `RAVATEX-TAPETES-PEDIDOS-UI-ADMIN-C3C1`, esta). Nova tela
+  `js/screens/pedido-edit.js` com `screenPedidoEditar(pedidoId)`;
+  resolve via match dinâmico estendido em `js/router.js`
+  (`^#/pedidos/<uuid>/editar$`, admin-only, sem `public: true`).
+  Carregado em `index.html` após `pedido-detail.js` e antes de
+  `boot.js`. Botão "Editar" de `js/screens/pedido-detail.js`
+  navega para `#/pedidos/<id>/editar` APENAS para status
+  editáveis (`rascunho` / `recebido`); para os demais status,
+  fica como placeholder desabilitado com `title` explicativo.
+  Helper `isPedidoEditavel(status)` adicionado em
+  `js/pedido-ui.js` (`PEDIDO_STATUS_EDITAVEL = ['rascunho',
+  'recebido']`). Conteúdo da tela: cabeçalho com número do
+  pedido, banner de status com nota de editabilidade, form
+  com `cliente_id` (select obrigatório), `prazo_entrega`
+  (date opcional), `observacao` (textarea opcional); botão
+  Cancelar volta para o detalhe; botão Salvar aplica update.
+  Em status não editável, campos e Salvar ficam desabilitados
+  e o banner mostra o motivo. Write APENAS em `pedidos` com
+  payload restrito a 3 chaves (`cliente_id`, `prazo_entrega`,
+  `observacao`); sem update em `status`/`numero`, sem
+  update/insert/delete em `pedido_itens`, sem insert em
+  `pedido_eventos`, sem mexer em `lotes`, sem OP, sem Edge
+  Function, sem RPC, sem schema, sem token público, sem
+  service_role. Após sucesso, navega de volta para o detalhe.
+  Smoke estático `tests/pedido-edit.smoke.js` 35/35 verde.
+  `tests/pedido-detail.smoke.js` atualizado (42/42) — botão
+  Editar é controlado por `isPedidoEditavel` (funcional para
+  rascunho/recebido, placeholder para os demais); C3B status
+  actions preservadas. `tests/boot.smoke.js` 25/25 (3 testes
+  novos: rota de edição admin-only, rejeita IDs não-UUID,
+  distingue detalhe vs edição). `tests/router.smoke.js` 38/38
+  (4 testes novos para a nova rota dinâmica). **Total:
+  263/263 verdes** (focados). **Sem deploy, sem Supabase real,
+  sem SQL, sem produção, sem origin/main, sem PR #2 nesta
+  fase.** Próxima fase recomendada:
+  `RAVATEX-TAPETES-PEDIDOS-UI-ADMIN-C3C2` (edição de itens
+  do Pedido), **somente com autorização explícita** do HMNlead.
 
 ## Próximo passo recomendado
 1. **Auth provisioning fechado em staging:** Edge Function
@@ -712,14 +748,38 @@ staging `ucrjtfswnfdlxwtmxnoo`.)*
   (apenas campo `status`, com `.eq('id', pedidoId)`), atualiza
   `state.pedido.status` e chama `render()`. Cancelar usa
   `window.confirmDialog`. Para status terminais, exibe mensagem
-  informativa. Editar continua como placeholder — fica para C3C.
-- **Write mínimo:** APENAS `update` em `pedidos.status` (admin-only
-  via RLS). Sem insert/update/delete em `pedido_itens`, sem
-  insert em `pedido_eventos` (decisão C3B: best-effort fica para
-  fase futura), sem mutação em `lotes`/`pedido_eventos`, sem
-  `functions.invoke`, sem `token_acesso`, sem `service_role`,
-  sem rota pública, sem schema, sem OP, sem Edge Function, sem
-  fornecedor, sem RPC.
+  informativa.
+- **Botão Editar (C3C1):** navega para `#/pedidos/<id>/editar`
+  APENAS para status editáveis (rascunho / recebido, via
+  `window.isPedidoEditavel`). Para os demais status, fica
+  desabilitado (placeholder) com `title` explicativo.
+- **Write mínimo (C3B):** APENAS `update` em `pedidos.status`
+  (admin-only via RLS). Sem insert/update/delete em
+  `pedido_itens`, sem insert em `pedido_eventos` (decisão C3B:
+  best-effort fica para fase futura), sem mutação em
+  `lotes`/`pedido_eventos`, sem `functions.invoke`, sem
+  `token_acesso`, sem `service_role`, sem rota pública, sem
+  schema, sem OP, sem Edge Function, sem fornecedor, sem RPC.
+
+### `js/screens/pedido-edit.js` — edição admin dos dados gerais do Pedido
+- `screenPedidoEditar(pedidoId)` (C3C1).
+- Resolve via match dinâmico em `js/router.js`:
+  `^#/pedidos/<uuid>/editar$, admin-only, sem public: true`.
+- Carrega `pedidos` (campos editáveis) e `clientes` (para o
+  select). Valida status editável via `window.isPedidoEditavel`
+  (rascunho / recebido). Se não editável, exibe banner
+  informativo, desabilita campos e botão Salvar.
+- Form: `cliente_id` (select obrigatório), `prazo_entrega`
+  (date opcional), `observacao` (textarea opcional).
+- Após salvar (com sucesso), navega de volta para
+  `#/pedidos/<id>`.
+- **Write mínimo:** APENAS `update` em `pedidos` com payload
+  restrito a 3 chaves (`cliente_id`, `prazo_entrega`,
+  `observacao`). Sem update em `status`/`numero`, sem
+  update/insert/delete em `pedido_itens`, sem insert em
+  `pedido_eventos`, sem mexer em `lotes`, sem `functions.invoke`,
+  sem `token_acesso`, sem `service_role`, sem rota pública, sem
+  schema, sem OP, sem Edge Function, sem fornecedor, sem RPC.
 
 ### `js/screens/system-screens.js` — telas sistêmicas/login
 - `screenLogin`, `screenNotFound`, `screenForbidden`.
@@ -781,9 +841,15 @@ staging `ucrjtfswnfdlxwtmxnoo`.)*
     RAVATEX-TAPETES-PEDIDOS-UI-ADMIN-C2; corrigido em `2de595c`
     RAVATEX-TAPETES-PEDIDOS-UI-ADMIN-C2-R1).
 24. `js/screens/pedido-detail.js` (`7184388` RAVATEX-TAPETES-PEDIDOS-UI-ADMIN-C3A
-    + commit desta fase RAVATEX-TAPETES-PEDIDOS-UI-ADMIN-C3B com
+    + `d2b5a6a` RAVATEX-TAPETES-PEDIDOS-UI-ADMIN-C3B com
     `TRANSITIONS`, `ACTION_LABEL`, `canTransition`/`nextActionsForStatus`
-    e função interna `alterarStatus`).
+    e função interna `alterarStatus` + commit desta fase
+    RAVATEX-TAPETES-PEDIDOS-UI-ADMIN-C3C1 com botão Editar
+    controlado por `isPedidoEditavel`).
+25. `js/screens/pedido-edit.js` (commit desta fase,
+    RAVATEX-TAPETES-PEDIDOS-UI-ADMIN-C3C1: edição admin dos
+    dados gerais do Pedido com `screenPedidoEditar`,
+    `isPedidoEditavel`, payload restrito a 3 chaves).
 
 ## Estado dos módulos críticos (após `7f3c6da`)
 
@@ -883,6 +949,31 @@ staging `ucrjtfswnfdlxwtmxnoo`.)*
   pedido"/"Cancelar pedido", placeholder Editar via
   `placeholderButton(...)`, remoção do placeholder "Confirmar /
   Receber", re-render via `render()` após sucesso.
+- **RAVATEX-TAPETES-PEDIDOS-UI-ADMIN-C3C1 (commit desta fase):**
+  263/263 pass nos testes focados (`pedido-edit` 35/35,
+  `pedido-detail` 42/42, `pedido-form` 35/35, `pedido-ui` 18/18,
+  `pedidos-list` 29/29, `pedidos-schema` 41/41, `boot` 25/25,
+  `router` 38/38). 35 testes novos no `pedido-edit.smoke.js`
+  cobrem: existência/sintaxe/namespace, ordem de scripts,
+  match dinâmico admin-only `#/pedidos/<uuid>/editar` no
+  router, SELECT em `pedidos`+`clientes`, UPDATE restrito a
+  `pedidos` com payload de 3 chaves (`cliente_id`,
+  `prazo_entrega`, `observacao`), ausência de update em
+  `status`/`numero`, ausência de toque em
+  `pedido_itens`/`pedido_eventos`/`lotes`, ausência de
+  `functions.invoke`/Edge Function/token_acesso/service_role,
+  validação de status editável via `isPedidoEditavel`,
+  navegação de volta para o detalhe após sucesso, e
+  atualização de `pedido-detail.js` para Editar funcional por
+  status. 4 testes novos no `router.smoke.js` validam o
+  match dinâmico da nova rota (admin-only, distinção vs
+  detalhe, rejeição de IDs não-UUID, mock `screenPedidoEditar`).
+  3 testes novos no `boot.smoke.js` validam a nova rota no
+  boot chain. `pedidos-list.smoke.js` exigiu reescrita do
+  teste `pedido-ui.js: não referencia OP` (não-strip-comments)
+  após mudança em `pedido-ui.js`. Falhas pré-existentes em
+  `tests/ops-list-screen.smoke.js` (10/30) continuam **fora
+  do escopo**.
 
 ## Comandos seguros
 - `node --test tests/<arquivo>.smoke.js` — testes focados por fase.

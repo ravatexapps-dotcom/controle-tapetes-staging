@@ -5,9 +5,12 @@
 // js/router.js via matchRoute dinâmico). Botão "Visualizar" da
 // listagem `#/pedidos` navega para esta tela.
 //
-// Fase: RAVATEX-TAPETES-PEDIDOS-UI-ADMIN-C3B
-// Escopo: leitura + ações reais restritas de status no Pedido.
-//   Transições permitidas nesta fase:
+// Fase: RAVATEX-TAPETES-PEDIDOS-UI-ADMIN-C3B + C3C1
+// Escopo: leitura + ações reais restritas de status no Pedido +
+//   botão "Editar" FUNCIONAL para status editáveis (rascunho /
+//   recebido), navegando para `#/pedidos/<uuid>/editar`.
+//
+//   Transições de status permitidas nesta fase:
 //     - rascunho   → recebido
 //     - recebido   → confirmado
 //     - rascunho   → cancelado
@@ -19,7 +22,9 @@
 //     - cancelado → qualquer outro  (terminal nesta fase)
 //     - confirmado → recebido
 //     - recebido → rascunho
-//   Edição de campos/itens fica para C3C. Sem geração de OP, sem lote,
+//
+//   Edição de dados gerais fica para C3C1 (`#pedidos/<uuid>/editar`).
+//   Edição de itens fica para C3C2. Sem geração de OP, sem lote,
 //   sem cliente público, sem token, sem Edge Function, sem RPC.
 //
 // Carregar via <script src="js/screens/pedido-detail.js?v=...></script>
@@ -453,18 +458,37 @@
       return wrap;
     }
 
-    function placeholderButton(label) {
+    function placeholderButton(label, title) {
       return window.el('button', {
         type: 'button',
         class: 'px-4 py-2 rounded-lg border bg-gray-50 text-gray-400 cursor-not-allowed',
         disabled: 'disabled',
-        title: 'Em breve',
+        title: title || 'Em breve',
       }, label);
     }
 
+    // Botão Editar (C3C1):
+    //   - Funcional (navega para `#/pedidos/<uuid>/editar`) quando o
+    //     status é editável (rascunho / recebido).
+    //   - Desabilitado (placeholder) para os demais status.
+    function buildEditButton() {
+      const statusAtual = state.pedido ? state.pedido.status : null;
+      const editavel = window.isPedidoEditavel
+        ? window.isPedidoEditavel(statusAtual)
+        : (statusAtual === 'rascunho' || statusAtual === 'recebido');
+      if (editavel) {
+        return window.el('button', {
+          type: 'button',
+          class: 'px-4 py-2 rounded-lg border border-blue-300 text-blue-700 hover:bg-blue-50 font-semibold',
+          onclick: function () { window.navigate('#/pedidos/' + pedidoId + '/editar'); },
+        }, 'Editar');
+      }
+      const motivo = 'Edição permitida apenas em status "Rascunho" ou "Recebido"';
+      return placeholderButton('Editar', motivo);
+    }
+
     function buildActions() {
-      // Status terminal ou bloqueado nesta fase: sem ações reais.
-      // Mantém apenas Editar como placeholder (C3C).
+      // Status terminal ou bloqueado nesta fase: sem ações reais de status.
       const statusAtual = state.pedido ? state.pedido.status : null;
       const proximas = nextActionsForStatus(statusAtual);
 
@@ -501,8 +525,9 @@
         }
       }
 
-      // Editar continua como placeholder — fica para C3C.
-      actions.appendChild(placeholderButton('Editar'));
+      // Editar: funcional para rascunho/recebido (C3C1); placeholder
+      // para os demais status. Edição de itens fica para C3C2.
+      actions.appendChild(buildEditButton());
       return actions;
     }
 

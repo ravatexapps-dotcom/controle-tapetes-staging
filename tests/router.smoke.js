@@ -122,7 +122,8 @@ function firstInlineScriptIndex(html) {
 function makeRouterSandbox({ hash = '' } = {}) {
   const calls = {
     setApp: [], screenNotFound: 0, screenForbidden: 0,
-    screenNovaOP: [], loadCurrentUser: 0,
+    screenNovaOP: [], screenPedidoDetalhe: [], screenPedidoEditar: [],
+    loadCurrentUser: 0,
   };
   const sandbox = {
     console, setTimeout, clearTimeout, URL, URLSearchParams,
@@ -137,6 +138,8 @@ function makeRouterSandbox({ hash = '' } = {}) {
   sandbox.screenNotFound = () => { calls.screenNotFound++; return { __screen: 'notFound' }; };
   sandbox.screenForbidden = () => { calls.screenForbidden++; return { __screen: 'forbidden' }; };
   sandbox.screenNovaOP = (id) => { calls.screenNovaOP.push(id); return { __screen: 'novaOP', id }; };
+  sandbox.screenPedidoDetalhe = (id) => { calls.screenPedidoDetalhe.push(id); return { __screen: 'pedidoDetalhe', id }; };
+  sandbox.screenPedidoEditar = (id) => { calls.screenPedidoEditar.push(id); return { __screen: 'pedidoEditar', id }; };
   sandbox.CURRENT_USER = null;
   sandbox.loadCurrentUser = async () => { calls.loadCurrentUser++; return sandbox.CURRENT_USER; };
 
@@ -585,4 +588,76 @@ test('boot: todos os módulos + boot.js coexistem sem SyntaxError de duplicate i
   if (otherErr) {
     console.log('(esperado) boot.js falhou em runtime fora do duplicate-identifier:', String(otherErr.message).slice(0, 120));
   }
+});
+
+// -----------------------------------------------------------------------------
+// Match dinâmico #/pedidos/<uuid> e #/pedidos/<uuid>/editar (C3A / C3C1)
+// -----------------------------------------------------------------------------
+
+test('runtime: matchRoute parseia #/pedidos/<uuid> e route.render() chama window.screenPedidoDetalhe(uuid)', () => {
+  const { sandbox, calls } = makeRouterSandbox();
+  vm.runInContext("window.RAVATEX_ROUTER.setRoutes({});", sandbox);
+  const uuid = '11111111-2222-3333-4444-555555555555';
+  const match = vm.runInContext(`window.matchRoute('#/pedidos/${uuid}')`, sandbox);
+  assert.ok(match, 'matchRoute não resolveu #/pedidos/<uuid>');
+  assert.equal(typeof match.render, 'function', 'render de #/pedidos/<uuid> não é função');
+  // Compara roles via JSON (cruza vm context boundary).
+  assert.equal(vm.runInContext(`JSON.stringify(window.matchRoute('#/pedidos/${uuid}').roles)`, sandbox), '["admin"]',
+    'roles de #/pedidos/<uuid> deve ser ["admin"]');
+  // Executa render e verifica que screenPedidoDetalhe foi chamado.
+  vm.runInContext(`window.matchRoute('#/pedidos/${uuid}').render();`, sandbox);
+  assert.deepEqual(calls.screenPedidoDetalhe, [uuid],
+    'render de #/pedidos/<uuid> deve chamar screenPedidoDetalhe com o UUID');
+  // E NÃO deve chamar screenPedidoEditar.
+  assert.equal(calls.screenPedidoEditar.length, 0,
+    'render de #/pedidos/<uuid> NÃO deve chamar screenPedidoEditar');
+});
+
+test('runtime: matchRoute parseia #/pedidos/<uuid>/editar e route.render() chama window.screenPedidoEditar(uuid) (admin-only, C3C1)', () => {
+  const { sandbox, calls } = makeRouterSandbox();
+  vm.runInContext("window.RAVATEX_ROUTER.setRoutes({});", sandbox);
+  const uuid = '11111111-2222-3333-4444-555555555555';
+  const match = vm.runInContext(`window.matchRoute('#/pedidos/${uuid}/editar')`, sandbox);
+  assert.ok(match, 'matchRoute não resolveu #/pedidos/<uuid>/editar');
+  assert.equal(typeof match.render, 'function', 'render de #/pedidos/<uuid>/editar não é função');
+  // roles admin-only via JSON.
+  assert.equal(vm.runInContext(`JSON.stringify(window.matchRoute('#/pedidos/${uuid}/editar').roles)`, sandbox), '["admin"]',
+    'roles de #/pedidos/<uuid>/editar deve ser ["admin"]');
+  // Executa render e verifica que screenPedidoEditar foi chamado.
+  vm.runInContext(`window.matchRoute('#/pedidos/${uuid}/editar').render();`, sandbox);
+  assert.deepEqual(calls.screenPedidoEditar, [uuid],
+    'render de #/pedidos/<uuid>/editar deve chamar screenPedidoEditar com o UUID');
+  // E NÃO deve chamar screenPedidoDetalhe (rotas distintas).
+  assert.equal(calls.screenPedidoDetalhe.length, 0,
+    'render de #/pedidos/<uuid>/editar NÃO deve chamar screenPedidoDetalhe');
+});
+
+test('runtime: matchRoute rejeita IDs não-UUID para #/pedidos/<uuid>/editar', () => {
+  const { sandbox } = makeRouterSandbox();
+  // Registra rotas estáticas para o teste (limpa antes e re-popula).
+  vm.runInContext(`
+    window.RAVATEX_ROUTER.setRoutes({
+      '#/pedidos/novo': { render: () => ({}), roles: ['admin'] }
+    });
+  `, sandbox);
+  // IDs não-UUID não devem casar o match dinâmico de edição.
+  for (const badId of ['42', 'abc', '12345', 'not-a-uuid', '11111111-2222-3333-4444']) {
+    const m = vm.runInContext(`window.matchRoute('#/pedidos/${badId}/editar')`, sandbox);
+    assert.equal(m, null, `#/pedidos/${badId}/editar não deve casar rota dinâmica`);
+  }
+  // A rota estática `#/pedidos/novo` continua resolvendo exato.
+  const novo = vm.runInContext("window.matchRoute('#/pedidos/novo')", sandbox);
+  assert.ok(novo, '#/pedidos/novo deve continuar resolvendo pela rota estática');
+});
+
+test('runtime: matchRoute distingue #/pedidos/<uuid> vs #/pedidos/<uuid>/editar', () => {
+  const { sandbox, calls } = makeRouterSandbox();
+  vm.runInContext("window.RAVATEX_ROUTER.setRoutes({});", sandbox);
+  const uuid = '11111111-2222-3333-4444-555555555555';
+  // Hash de detalhe
+  vm.runInContext(`window.matchRoute('#/pedidos/${uuid}').render();`, sandbox);
+  // Hash de edição
+  vm.runInContext(`window.matchRoute('#/pedidos/${uuid}/editar').render();`, sandbox);
+  assert.deepEqual(calls.screenPedidoDetalhe, [uuid]);
+  assert.deepEqual(calls.screenPedidoEditar, [uuid]);
 });

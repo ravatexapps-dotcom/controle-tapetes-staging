@@ -9,11 +9,11 @@
 
 ## Estado atual aceito
 - **Estado atual aceito:** `work/app-next` na ponta da fase
-  `RAVATEX-TAPETES-PEDIDOS-UI-ADMIN-C3B` (ações reais de status
-  no detalhe admin do Pedido entregues).
-- **HEAD aceito atual:** `7184388` (após push desta fase, o HEAD
-  da fase C3B — "Add pedido admin status actions").
-- **staging/main:** `7184388` (será atualizado com o push desta fase).
+  `RAVATEX-TAPETES-PEDIDOS-UI-ADMIN-C3C1` (edição admin dos
+  dados gerais do Pedido entregue).
+- **HEAD aceito atual:** `d2b5a6a` (após push desta fase, o HEAD
+  da fase C3C1 — "Add pedido admin general edit").
+- **staging/main:** `d2b5a6a` (será atualizado com o push desta fase).
 - **Working tree:** limpo após commit.
 - **origin/main:** `1047181eba888242c6428de366cbd9fda2f1c72c` — intocado
 - **PR #2:** intocado
@@ -26,27 +26,33 @@
   `ucrjtfswnfdlxwtmxnoo`: tabelas `pedidos`, `pedido_itens`,
   `pedido_eventos` e `lotes.pedido_id` (nullable). RLS admin-only.
   Sem policy pública. Sem `pedidos.op_id`.
-- **Frontend Pedidos entregue (C1 + C2 + C2-R1 + C3A + C3B):**
-  listagem `#/pedidos`, formulário `#/pedidos/novo` (cria pedido
-  + itens como `rascunho`), correção de bug do preview de cor
-  (slot fixo + `updatePreview()`), **detalhe read-only**
-  `#/pedidos/<uuid>` e **ações reais RESTRITAS de status**
-  (C3B). Helper `pedido-ui.js` com status, badges e preview
-  de cor. Sem geração de OP, sem lote, sem token público. Na
-  C3B, o detalhe passou a aceitar APENAS as transições:
-  `rascunho→recebido`, `recebido→confirmado`, `rascunho/
-  recebido/confirmado→cancelado` (este último via
-  `window.confirmDialog`). Produzindo/entregue/cancelado são
-  terminais nesta fase. Update é APENAS em `pedidos.status`
-  (admin-only via RLS). Sem insert/update/delete em
-  `pedido_itens`, sem insert em `pedido_eventos` (best-effort
-  fica para fase futura), sem `functions.invoke`, sem
-  `token_acesso`, sem `service_role`, sem rota pública, sem
-  schema, sem OP, sem Edge Function, sem fornecedor.
+- **Frontend Pedidos entregue (C1 + C2 + C2-R1 + C3A + C3B +
+  C3C1):** listagem `#/pedidos`, formulário `#/pedidos/novo`
+  (cria pedido + itens como `rascunho`), correção de bug
+  do preview de cor (slot fixo + `updatePreview()`), detalhe
+  read-only `#/pedidos/<uuid>`, ações reais RESTRITAS de
+  status (C3B) e **edição admin RESTRITA dos dados gerais**
+  (C3C1, `#/pedidos/<uuid>/editar`). Helper `pedido-ui.js`
+  com status, badges, preview de cor, e novo
+  `isPedidoEditavel()` (`PEDIDO_STATUS_EDITAVEL = ['rascunho',
+  'recebido']`). Na C3B, o detalhe aceita APENAS as
+  transições: `rascunho→recebido`, `recebido→confirmado`,
+  `rascunho/recebido/confirmado→cancelado` (este último via
+  `window.confirmDialog`). Na C3C1, o botão Editar do
+  detalhe é funcional APENAS para status editáveis e
+  navega para a tela de edição; a tela de edição atualiza
+  APENAS `cliente_id`, `prazo_entrega` e `observacao`;
+  demais status desabilitam campos + Salvar. Update é
+  APENAS em `pedidos` (admin-only via RLS). Sem
+  insert/update/delete em `pedido_itens`, sem insert em
+  `pedido_eventos` (best-effort fica para fase futura), sem
+  `functions.invoke`, sem `token_acesso`, sem
+  `service_role`, sem rota pública, sem schema, sem OP, sem
+  Edge Function, sem fornecedor.
 
 ## Estado operacional atual
 - `index.html` está declarativo, sem script inline final, com
-  cache-busting `?v=20260623-asset1` em 24 assets locais
+  cache-busting `?v=20260623-asset1` em 25 assets locais
   (23 originais + `js/screens/pedido-detail.js` adicionado em C3A).
 - `js/boot.js` é o entrypoint oficial; respeita DOM ready
   (`startApp` aguarda `DOMContentLoaded` se
@@ -179,29 +185,34 @@ Abortar e revisar o escopo se:
 ## Próxima recomendação operacional
 
 **Refactor arquitetural continua congelado.**
-**Pedidos C1 + C2 + C2-R1 + C3A + C3B entregues:** listagem
-`#/pedidos`, formulário `#/pedidos/novo` (cria pedido + itens
-como `rascunho`), correção de bug no preview de cor do item
-(slot fixo + `updatePreview()` com `replaceChildren`),
-**detalhe read-only** `#/pedidos/<uuid>` (`pedido-detail.js`
-com `screenPedidoDetalhe`, `js/router.js` estendido com
-match dinâmico `^#/pedidos/<uuid>$` admin-only, botão
-"Visualizar" da listagem navegando para o detalhe) e
+**Pedidos C1 + C2 + C2-R1 + C3A + C3B + C3C1 entregues:**
+listagem `#/pedidos`, formulário `#/pedidos/novo` (cria
+pedido + itens como `rascunho`), correção de bug no preview
+de cor do item (slot fixo + `updatePreview()` com
+`replaceChildren`), **detalhe read-only** `#/pedidos/<uuid>`
+(`pedido-detail.js` com `screenPedidoDetalhe`, `js/router.js`
+estendido com match dinâmico `^#/pedidos/<uuid>$` admin-only,
+botão "Visualizar" da listagem navegando para o detalhe),
 **ações reais RESTRITAS de status** (C3B: `rascunho→recebido`,
 `recebido→confirmado`, `rascunho/recebido/confirmado→cancelado`
-via `window.confirmDialog`; produzindo/entregue/cancelado
-terminais). Update é APENAS em `pedidos.status` (admin-only
-via RLS). Sem insert/update/delete em `pedido_itens`, sem
-insert em `pedido_eventos` (best-effort fica para fase
-futura), sem `functions.invoke`, sem `token_acesso`, sem
-`service_role`, sem rota pública, sem mutação em
-`lotes`/`pedido_eventos`, sem schema, sem OP, sem Edge
-Function, sem fornecedor. Limitação conhecida do formulário:
-sem RPC/transação atômica (compensação manual documentada
-no código). **Editar** continua como placeholder (C3C).
-**Próxima fase:** `RAVATEX-TAPETES-PEDIDOS-UI-ADMIN-C3C`
-(edição de campos editáveis do Pedido + itens), **somente
-com autorização explícita** do HMNlead.
+via `window.confirmDialog`; demais status terminais) e
+**edição admin RESTRITA dos dados gerais** (C3C1, nova tela
+`#pedidos/<uuid>/editar` com `pedido-edit.js`; restringe
+`cliente_id`/`prazo_entrega`/`observacao`; status editáveis
+apenas `rascunho` e `recebido` via `isPedidoEditavel`; demais
+status desabilitam campos + Salvar). Update é APENAS em
+`pedidos` (admin-only via RLS). Sem insert/update/delete em
+`pedido_itens`, sem insert em `pedido_eventos` (best-effort
+fica para fase futura), sem `functions.invoke`, sem
+`token_acesso`, sem `service_role`, sem rota pública, sem
+mutação em `lotes`/`pedido_eventos`, sem schema, sem OP, sem
+Edge Function, sem fornecedor. Limitação conhecida do
+formulário: sem RPC/transação atômica (compensação manual
+documentada no código). Edição de itens fica para
+`RAVATEX-TAPETES-PEDIDOS-UI-ADMIN-C3C2`.
+**Próxima fase:** `RAVATEX-TAPETES-PEDIDOS-UI-ADMIN-C3C2`
+(edição de itens do Pedido), **somente com autorização
+explícita** do HMNlead.
 **Não iniciar execução sem autorização explícita.**
 **NÃO tocar `bhgifjrfagkzubpyqpew`, Vercel original, ou `origin/main`.**
 
@@ -452,17 +463,19 @@ projeto:
 | 21 | `js/screens/op-pdf.js` | `7f3c6da` | RAVATEX-TAPETES-OP-NOVA-PDF-MODULE-A |
 | 22 | `js/screens/pedidos-list.js` | `bf960f8` | RAVATEX-TAPETES-PEDIDOS-UI-ADMIN-C1 |
 | 23 | `js/screens/pedido-form.js` | `62a9f9a` (+ `2de595c`) | RAVATEX-TAPETES-PEDIDOS-UI-ADMIN-C2 (+ C2-R1) |
-| 24 | `js/screens/pedido-detail.js` | `7184388` + (commit desta fase) | RAVATEX-TAPETES-PEDIDOS-UI-ADMIN-C3A (+ C3B: ações reais de status) |
+| 24 | `js/screens/pedido-detail.js` | `7184388` + `d2b5a6a` + (commit desta fase) | RAVATEX-TAPETES-PEDIDOS-UI-ADMIN-C3A (+ C3B: ações reais de status + C3C1: Editar funcional por status) |
+| 25 | `js/screens/pedido-edit.js` | (commit desta fase) | RAVATEX-TAPETES-PEDIDOS-UI-ADMIN-C3C1: edição admin dos dados gerais do Pedido |
 
 ## Testes recentes (focados passando)
+- `pedido-edit.smoke.js` — 35/35
 - `pedido-detail.smoke.js` — 42/42
 - `pedido-form.smoke.js` — 35/35
 - `pedido-ui.test.js` — 18/18
 - `pedidos-list.smoke.js` — 29/29
 - `pedidos-schema.smoke.js` — 41/41
-- `boot.smoke.js` — 22/22
-- `router.smoke.js` — 34/34
-- **Total Pedidos (C1+C2+C2-R1+C3A+C3B): 221/221** (todos os focados
+- `boot.smoke.js` — 25/25
+- `router.smoke.js` — 38/38
+- **Total Pedidos (C1+C2+C2-R1+C3A+C3B+C3C1): 263/263** (todos os focados
   passam).
 
 Focados do refactor (mantidos verdes):

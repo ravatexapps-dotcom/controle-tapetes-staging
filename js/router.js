@@ -46,8 +46,8 @@
     else handleRoute();
   }
 
-  // Resolve rota: primeiro match exato, depois dinâmica #/ops/:id (id numérico)
-  // e #/pedidos/:id (UUID).
+  // Resolve rota: primeiro match exato, depois dinâmica #/ops/:id (id numérico),
+  // #/pedidos/:id (UUID) e #/pedidos/:id/editar (UUID + /editar).
   function matchRoute(hash) {
     if (_routes[hash]) return _routes[hash];
 
@@ -59,9 +59,24 @@
       };
     }
 
+    // Match dinâmico para EDIÇÃO de Pedido (C3C1). Mais específico que
+    // o match de detalhe (terminado em /editar) — vem antes do match
+    // de detalhe para clareza, embora o regex do detalhe (ancorado em
+    // $) já exclua o caso.
+    const mPedEdit = String(hash || '').match(
+      /^#\/pedidos\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\/editar$/i
+    );
+    if (mPedEdit) {
+      return {
+        render: () => window.screenPedidoEditar(mPedEdit[1]),
+        roles: ['admin'],
+      };
+    }
+
     // Match dinâmico para detalhe de Pedido (read-only, UUID).
-    // Aceita UUIDs case-insensitive. Não conflita com `#/pedidos` ou
-    // `#/pedidos/novo` (que já são resolvidos pelo match exato acima).
+    // Aceita UUIDs case-insensitive. Não conflita com `#/pedidos`,
+    // `#/pedidos/novo` (resolvidos pelo match exato acima) nem com
+    // `#/pedidos/<uuid>/editar` (que tem regex próprio acima).
     const mPed = String(hash || '').match(/^#\/pedidos\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})$/i);
     if (mPed) {
       return {

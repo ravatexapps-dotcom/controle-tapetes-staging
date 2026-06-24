@@ -147,13 +147,20 @@ test('router.js: tem match dinâmico para #/pedidos/<uuid> chamando screenPedido
     'router.js deve validar formato UUID do id do pedido');
   assert.match(router, /screenPedidoDetalhe/,
     'router.js deve chamar screenPedidoDetalhe no matchRoute');
-  const idxRegex = router.indexOf('[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}');
+  // O regex de UUID do detalhe aparece duas vezes (uma para o match
+  // de detalhe, outra para o match de edição). Pega a primeira
+  // ocorrência (do match de edição) e a segunda (do match de detalhe).
+  const idxRegex1 = router.indexOf('[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}');
+  const idxRegex2 = router.indexOf('[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}', idxRegex1 + 1);
   const idxRender = router.indexOf('screenPedidoDetalhe');
-  assert.ok(idxRegex > 0, 'regex de UUID deve existir em router.js');
+  assert.ok(idxRegex1 > 0, 'regex de UUID deve existir em router.js (1ª ocorrência)');
+  assert.ok(idxRegex2 > 0, 'regex de UUID deve existir em router.js (2ª ocorrência — detalhe)');
   assert.ok(idxRender > 0, 'chamada screenPedidoDetalhe deve existir em router.js');
-  const distancia = Math.abs(idxRender - idxRegex);
+  // Distância entre a SEGUNDA ocorrência (do match de detalhe) e a
+  // chamada screenPedidoDetalhe.
+  const distancia = Math.abs(idxRender - idxRegex2);
   assert.ok(distancia <= 400,
-    'regex de UUID e screenPedidoDetalhe devem estar próximos (distância ' + distancia + ' > 400)');
+    'regex de UUID (match de detalhe) e screenPedidoDetalhe devem estar próximos (distância ' + distancia + ' > 400)');
 });
 
 test('router.js: rota dinâmica #/pedidos/<uuid> é admin-only', () => {
@@ -450,16 +457,21 @@ test('pedido-detail.js: tem labels "Marcar como recebido", "Confirmar pedido", "
     'label "Cancelar pedido" deve existir (ação real)');
 });
 
-test('pedido-detail.js: botão Editar continua como placeholder desabilitado (C3C)', () => {
-  // Editar fica para C3C: deve estar como placeholder (disabled).
-  // O label "Editar" deve aparecer e a função `placeholderButton`
-  // deve ser usada para criá-lo (placeholderButton gera `disabled`).
+test('pedido-detail.js: botão Editar é controlado por status editável (C3C1)', () => {
+  // C3C1: o botão Editar é FUNCIONAL para status editáveis
+  // (rascunho / recebido) e PLACEHOLDER para os demais.
   assert.match(screen, /Editar/,
     'botão Editar deve existir como label');
-  assert.match(screen, /placeholderButton\s*\(\s*['"]Editar['"]\s*\)/,
-    'botão Editar deve ser criado via placeholderButton(...) (gera disabled)');
-  // placeholderButton deve definir `disabled: 'disabled'` em seu
-  // retorno (helper gera botão desabilitado).
+  // Helper isPedidoEditavel (ou checagem equivalente) deve ser usado
+  // para decidir entre botão funcional e placeholder.
+  const usaEditavel = /window\.isPedidoEditavel|isPedidoEditavel\s*\(/.test(screen);
+  assert.ok(usaEditavel,
+    'botão Editar deve usar isPedidoEditavel() para decidir entre funcional e placeholder');
+  // Para status editáveis, deve navegar para a rota de edição.
+  assert.match(screen, /navigate\(\s*['"]#\/pedidos\/['"]?\s*\+\s*pedidoId\s*\+\s*['"]\/editar['"]/,
+    'botão Editar funcional deve navegar para "#/pedidos/<id>/editar"');
+  // placeholderButton continua disponível para o caminho placeholder
+  // (status não editáveis) e deve gerar `disabled`.
   assert.match(screen, /function\s+placeholderButton[\s\S]{0,400}?disabled\s*:\s*['"]disabled['"]/,
     'placeholderButton deve criar botão com disabled="disabled"');
 });
