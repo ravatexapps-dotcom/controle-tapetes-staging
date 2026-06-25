@@ -236,6 +236,25 @@ test('cliente-pedido-detail: usa window.clienteShellLayout', () => {
 });
 
 // ---------------------------------------------------------------------
+// 10b. Tracking (RAVATEX-TAPETES-PEDIDOS-CLIENTE-TRACKING-UI-A)
+// ---------------------------------------------------------------------
+
+test('cliente-pedido-detail: chama window.buildClientePedidoTrackingCard', () => {
+  assert.match(screen, /window\.buildClientePedidoTrackingCard/);
+});
+
+test('cliente-pedido-detail: renderiza o card de acompanhamento antes do resumo', () => {
+  const matches = [...screen.matchAll(/container\.replaceChildren\(([^;]*)\);/g)];
+  const principal = matches.find((m) => m[1].includes('buildResumo()'));
+  assert.ok(principal, 'replaceChildren principal (com buildResumo()) não encontrado');
+  const args = principal[1];
+  const idxTracking = args.indexOf('buildTracking()');
+  const idxResumo = args.indexOf('buildResumo()');
+  assert.ok(idxTracking !== -1, 'buildTracking() não está em replaceChildren');
+  assert.ok(idxTracking < idxResumo, 'buildTracking() deve vir antes de buildResumo()');
+});
+
+// ---------------------------------------------------------------------
 // 11. Itens — mostra modelo, metros, largura/cor, observação
 // ---------------------------------------------------------------------
 

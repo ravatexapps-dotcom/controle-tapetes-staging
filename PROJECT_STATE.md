@@ -1,17 +1,17 @@
 # PROJECT_STATE.md — Controle de Tapetes (Grupo Terra Branca)
 
-> Snapshot de estado canônico curto. Atualizado em **2026-06-24** (fase
-> `RAVATEX-TAPETES-PEDIDOS-CLIENTE-HOMOLOG-RECORD-A` — registro
-> docs-only da homologação manual do fluxo cliente em staging).
-> **Fluxo cliente homologado manualmente em staging.** HMNlead
-> validou: login cliente, perfil carrega, menu "Meus pedidos",
-> criação de pedido, listagem e detalhe. Pedido entra com
-> status `recebido` e admin consegue visualizar. Segurança/RLS
-> considerada funcional no fluxo testado. **Ressalva visual
-> conhecida:** há incongruências no layout-base; NÃO serão
-> corrigidas pontualmente porque o HMNlead pretende redesenhar
-> a UI em fase futura. Funcional fica homologado e pendente de
-> decisão do HMNlead para próximas etapas funcionais.
+> Snapshot de estado canônico curto. Atualizado em **2026-06-25** (fase
+> `RAVATEX-TAPETES-PEDIDOS-CLIENTE-TRACKING-UI-A` — sketch funcional do
+> acompanhamento visual do pedido no detalhe cliente).
+> **Card de acompanhamento (stepper + situação atual) adicionado ao
+> topo do detalhe cliente (`#/cliente/pedidos/<uuid>`).** Etapa exibida
+> é DERIVADA de `pedido.status` nesta fase (sem `status_cliente_visual`,
+> sem dropdown admin, sem schema/SQL/Edge Function). **Ressalva visual
+> conhecida (herdada):** há incongruências no layout-base (sidebar/shell
+> compartilhado de `js/screens/common.js`); NÃO foram corrigidas nesta
+> fase porque o HMNlead pretende redesenhar a UI em fase futura — o
+> shell cliente (`js/screens/cliente-common.js`) continua reaproveitando
+> `window.shellLayout` sem estilo próprio.
 
 ## Produto
 SPA web para controlar a produção de tapetes, do pedido de fio até o
@@ -930,6 +930,52 @@ staging `ucrjtfswnfdlxwtmxnoo`.)*
     regressões estão preservadas da fase CREATE-A: 296/296
     focados).
 
+- 🟢 **Sketch visual de acompanhamento do pedido no detalhe cliente**
+  (fase `RAVATEX-TAPETES-PEDIDOS-CLIENTE-TRACKING-UI-A`, esta).
+  Novo módulo `js/screens/cliente-pedido-tracking.js` com
+  `buildClientePedidoTrackingCard(pedido)` — componente puro de
+  apresentação (sem Supabase, sem writes, sem rota própria) que
+  renderiza um stepper de 6 etapas (Recebido, Confirmado, Em
+  produção, Em acabamento, Pronto para entrega, Entregue) + banner
+  com a frase da etapa atual. `js/screens/cliente-pedido-detail.js`
+  passou a chamar `window.buildClientePedidoTrackingCard(state.pedido)`
+  no topo do detalhe (antes do resumo), via novo `buildTracking()`.
+  **Mapeamento temporário** `statusParaEtapaCliente(status)`: `rascunho`
+  e `recebido` → etapa "Recebido"; `confirmado` → etapa "Confirmado";
+  qualquer outro status (`produzindo`, `entregue`, futuros) cai em
+  `null` (nenhuma etapa marcada como atual/concluída — fica neutro)
+  porque ainda não há transição alcançável pela tela admin para esses
+  status nesta fase, e não há correspondência 1:1 clara com um único
+  nó do stepper de 6 etapas. **Cancelado tem tratamento próprio:**
+  quando `pedido.status === 'cancelado'`, o card substitui o stepper
+  por um aviso calmo em vez de forçar progresso. **Sem**
+  `status_cliente_visual` ou tabela de eventos (ficam para fase
+  futura, quando houver automação real). **Sem** dropdown admin. **Sem**
+  dados internos (sem referência a OP, lote, fornecedor, custo, token,
+  `service_role`, `functions.invoke`). Script carregado em
+  `index.html` entre `cliente-pedidos-list.js` e
+  `cliente-pedido-detail.js`. Smoke novo
+  `tests/cliente-pedido-tracking.smoke.js` (estático + renderização
+  dinâmica via `vm` com stub de `window.el`, sem DOM real). Atualizado
+  `tests/cliente-pedido-detail.smoke.js` (chamada ao novo componente
+  e ordem antes do resumo) e `tests/boot.smoke.js` (novo módulo
+  adicionado à cadeia simulada de boot, mesma ordem do `index.html`).
+  **140/140 testes focados verdes** (`cliente-pedido-tracking` +
+  `cliente-pedido-detail` + `cliente-pedidos-list` +
+  `cliente-routing` + `boot`). **Sem deploy, sem Supabase real, sem
+  SQL, sem produção, sem origin/main, sem PR #2 nesta fase.** **Não**
+  alterou `js/screens/cliente-pedido-form.js`, `pedido-form.js`,
+  `pedido-edit.js`, `pedido-itens-edit.js`, `db/**`,
+  `supabase/functions/**`, RLS ou schema. **Pendência observada (fora
+  do escopo desta fase):** o sidebar/shell compartilhado
+  (`window.shellLayout` em `js/screens/common.js`, reaproveitado por
+  `clienteShellLayout`) continua com o estilo genérico admin/cliente —
+  o redesign visual mais amplo do shell cliente (cores, tipografia e
+  hierarquia inspiradas no sketch B2B) fica para uma fase própria,
+  **somente com autorização explícita** do HMNlead, dado o risco de
+  afetar também as telas admin/fornecedor que compartilham o mesmo
+  `shellLayout`.
+
 ## Próximo passo recomendado
 1. **Cliente UI read-only e criação entregues (fases UI-A e
    CREATE-A).** Cliente autenticado é roteado para área própria,
@@ -947,6 +993,19 @@ staging `ucrjtfswnfdlxwtmxnoo`.)*
    o HMNlead pretende redesenhar a UI em fase futura
    (`RAVATEX-TAPETES-UI-REDESIGN-A`). Próxima fase funcional
    fica pendente de decisão do HMNlead.
+3. **Sketch de acompanhamento visual entregue** (fase
+   `RAVATEX-TAPETES-PEDIDOS-CLIENTE-TRACKING-UI-A`, esta). O
+   detalhe cliente agora mostra um card de acompanhamento
+   (stepper de 6 etapas + situação atual) derivado de
+   `pedido.status`, sem schema novo, sem dropdown admin, sem
+   dados internos. Próximas fases candidatas (**somente com
+   autorização explícita** do HMNlead): (a) redesign do
+   sidebar/shell compartilhado (`window.shellLayout`) com o
+   estilo do sketch B2B — avaliar se isso fica isolado a um
+   shell cliente próprio ou se afeta admin/fornecedor também;
+   (b) campo `status_cliente_visual` + dropdown admin (fase 2 do
+   handoff original) para desacoplar a etapa visível do status
+   operacional.
 
 ## Estrutura final de responsabilidades
 

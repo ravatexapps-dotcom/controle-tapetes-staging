@@ -3,18 +3,24 @@
 // Tela cliente do detalhe sanitizado de um Pedido próprio.
 // Rota: `#/cliente/pedidos/<uuid>` (parseada por js/router.js).
 //
-// Fase: RAVATEX-TAPETES-PEDIDOS-CLIENTE-UI-A
+// Fase: RAVATEX-TAPETES-PEDIDOS-CLIENTE-UI-A +
+//   RAVATEX-TAPETES-PEDIDOS-CLIENTE-TRACKING-UI-A
 // Escopo: leitura apenas. Sem modificar, cancelar ou criar pedido.
 //   Confia na RLS para bloquear acesso a pedidos de outros clientes.
 //   Não expõe dados internos, de produção ou administrativos.
+//   Exibe no topo o card de acompanhamento visual (stepper + situação
+//   atual), delegado a cliente-pedido-tracking.js.
 //
 // Carregar via <script src="js/screens/cliente-pedido-detail.js"></script>
-// no <head>, DEPOIS de cliente-common.js, pedido-ui.js e ui.js.
+// no <head>, DEPOIS de cliente-common.js, cliente-pedido-tracking.js,
+// pedido-ui.js e ui.js.
 //
 // Dependências resolvidas em tempo de chamada:
 //   - window.el / window.toast / window.pageHeader / window.dataTable
 //     (js/ui.js)
 //   - window.clienteShellLayout (js/screens/cliente-common.js)
+//   - window.buildClientePedidoTrackingCard
+//     (js/screens/cliente-pedido-tracking.js)
 //   - window.pedidoStatusBadge / window.pedidoStatusLabel
 //     / window.corPreviewElement / window.corPreviewHex
 //     / window.fmtDataCurta (js/pedido-ui.js)
@@ -214,6 +220,11 @@
       ]);
     }
 
+    function buildTracking() {
+      if (!state.pedido) return window.el('div', {});
+      return window.buildClientePedidoTrackingCard(state.pedido);
+    }
+
     function buildResumo() {
       if (!state.pedido) return window.el('div', {});
       var p = state.pedido;
@@ -311,7 +322,7 @@
             'Erro ao carregar dados do pedido. Tente recarregar a página.'));
         return;
       }
-      container.replaceChildren(header, buildResumo(), buildDadosGerais(), buildItens());
+      container.replaceChildren(header, buildTracking(), buildResumo(), buildDadosGerais(), buildItens());
     }
 
     await carregar();

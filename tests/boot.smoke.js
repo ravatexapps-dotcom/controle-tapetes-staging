@@ -69,6 +69,7 @@ const EW    = path.join(ROOT, 'js', 'screens', 'entrega-writes.js');
 const FORN  = path.join(ROOT, 'js', 'screens', 'fornecedor.js');
 const CLI_COMMON = path.join(ROOT, 'js', 'screens', 'cliente-common.js');
 const CLI_LIST  = path.join(ROOT, 'js', 'screens', 'cliente-pedidos-list.js');
+const CLI_TRACKING = path.join(ROOT, 'js', 'screens', 'cliente-pedido-tracking.js');
 const CLI_DETAIL = path.join(ROOT, 'js', 'screens', 'cliente-pedido-detail.js');
 const CLI_FORM  = path.join(ROOT, 'js', 'screens', 'cliente-pedido-form.js');
 
@@ -94,6 +95,7 @@ const ewSrc      = fs.readFileSync(EW,     'utf8');
 const fornSrc    = fs.readFileSync(FORN,   'utf8');
 const cliCommonSrc = fs.readFileSync(CLI_COMMON, 'utf8');
 const cliListSrc  = fs.readFileSync(CLI_LIST,  'utf8');
+const cliTrackingSrc = fs.readFileSync(CLI_TRACKING, 'utf8');
 const cliDetailSrc = fs.readFileSync(CLI_DETAIL, 'utf8');
 const cliFormSrc  = fs.readFileSync(CLI_FORM,  'utf8');
 
@@ -350,6 +352,7 @@ function makeBootChainSandbox() {
   vm.runInContext(opnSrc,    sandbox, { filename: 'js/screens/op-nova.js' });
   vm.runInContext(cliCommonSrc, sandbox, { filename: 'js/screens/cliente-common.js' });
   vm.runInContext(cliListSrc,   sandbox, { filename: 'js/screens/cliente-pedidos-list.js' });
+  vm.runInContext(cliTrackingSrc, sandbox, { filename: 'js/screens/cliente-pedido-tracking.js' });
   vm.runInContext(cliDetailSrc, sandbox, { filename: 'js/screens/cliente-pedido-detail.js' });
   vm.runInContext(cliFormSrc,   sandbox, { filename: 'js/screens/cliente-pedido-form.js' });
   vm.runInContext(authSrc,   sandbox, { filename: 'js/auth.js' });

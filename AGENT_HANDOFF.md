@@ -9,13 +9,12 @@
 
 ## Estado atual aceito
 - **Estado atual aceito:** `work/app-next` na ponta da fase
-  `RAVATEX-TAPETES-PEDIDOS-CLIENTE-HOMOLOG-RECORD-A`
-  (registro docs-only da homologação manual do fluxo cliente
-  em staging).
-- **HEAD aceito atual:** `b71ae22` (antes do commit desta
-  fase). Após o commit de HOMOLOG-RECORD-A, o HEAD passa a
-  ser o commit desta fase — "Record cliente flow
-  homologation".
+  `RAVATEX-TAPETES-PEDIDOS-CLIENTE-TRACKING-UI-A` (sketch
+  funcional do acompanhamento visual do pedido no detalhe
+  cliente).
+- **HEAD aceito atual:** `7a8d10e` (antes do commit desta
+  fase). Após o commit de TRACKING-UI-A, o HEAD passa a ser o
+  commit desta fase — "Add cliente pedido tracking visual".
 - **Working tree:** limpo após commit.
 - **origin/main:** `1047181eba888242c6428de366cbd9fda2f1c72c` — intocado
 - **PR #2:** intocado
@@ -61,6 +60,25 @@
   functions.invoke.
 - **Admin Pedidos completo (C1-C3C3):** listagem, formulário,
   detalhe, ações de status, edição de dados gerais e itens.
+- **Sketch de acompanhamento visual no detalhe cliente
+  (fase TRACKING-UI-A, esta):** novo módulo
+  `js/screens/cliente-pedido-tracking.js`
+  (`buildClientePedidoTrackingCard(pedido)`) — componente puro
+  de apresentação (sem Supabase, sem writes), com stepper de 6
+  etapas (Recebido/Confirmado/Em produção/Em acabamento/Pronto
+  para entrega/Entregue) + banner de situação atual.
+  `cliente-pedido-detail.js` chama o componente no topo do
+  detalhe via `buildTracking()`. Etapa é DERIVADA de
+  `pedido.status` (`statusParaEtapaCliente`): `rascunho`/
+  `recebido` → "Recebido", `confirmado` → "Confirmado", demais
+  status (`produzindo`, `entregue`) ficam neutros (sem etapa
+  marcada) por não terem transição alcançável nesta fase nem
+  correspondência 1:1 com um único nó do stepper. `cancelado`
+  substitui o stepper por um aviso calmo. **Sem** campo
+  `status_cliente_visual`, **sem** tabela de eventos, **sem**
+  dropdown admin, **sem** schema/SQL/Edge Function, **sem**
+  dados internos sensíveis. Script carregado em `index.html`
+  entre `cliente-pedidos-list.js` e `cliente-pedido-detail.js`.
 
 ## Estado operacional atual
 - `index.html` está declarativo, sem script inline final, com
@@ -193,6 +211,20 @@ Abortar e revisar o escopo se:
 - `getAppRoot()` — lookup lazy do root `#app`.
 
 ## Próxima recomendação operacional
+
+**Sketch de acompanhamento entregue (fase TRACKING-UI-A, esta).**
+O detalhe cliente mostra o card de acompanhamento (stepper + situação
+atual) derivado de `pedido.status`. **Pendência observada, fora do
+escopo desta fase:** o sidebar/shell compartilhado (`shellLayout` em
+`js/screens/common.js`, reaproveitado por `clienteShellLayout`)
+continua com o estilo genérico — não foi redesenhado com a estética do
+sketch B2B (top bar/sidebar brancos, pílula azul ativa) porque
+`shellLayout` é compartilhado com admin/fornecedor e uma mudança ali
+teria blast radius maior que o escopo desta fase. Se o HMNlead quiser
+avançar nisso, recomenda-se uma fase própria que decida entre (a) um
+shell visual só para cliente (sem tocar `common.js`) ou (b) atualizar
+o `shellLayout` compartilhado com validação visual das telas
+admin/fornecedor também.
 
 **Refactor arquitetural continua congelado.**
 **Cliente UI-A e CREATE-A entregues:** shell mínimo, listagem
@@ -459,6 +491,8 @@ projeto:
 | 26 | `js/screens/pedido-itens-edit.js` | `acc96c3` C3C2B: edição admin de itens existentes (update 3 chaves) + `fd1a9a3` C3C2C1: também ADICIONAR novos itens (insert 5 chaves, `isNew`, `Descartar novo item`) + `bd3aedc` C3C2C2: também REMOVER itens existentes (delete em `pedido_itens` com `.eq('id').eq('pedido_id')`, `markedForDeletion`, `window.confirmDialog`, "Desfazer remoção", mínimo 1) + (commit desta fase) C3C2C3: também NORMALIZAR `ordem` automaticamente no `salvar()` (loop `activeItems[i].ordem = i` por posição final; update com 4 chaves incluindo `ordem`; insert com `ordem: it.ordem`; sem drag/setas/reordenar) |
 
 ## Testes recentes (focados passando)
+- `cliente-pedido-tracking.smoke.js` — novo (fase TRACKING-UI-A).
+- `cliente-pedido-detail.smoke.js` — atualizado (fase TRACKING-UI-A).
 - `cliente-perfil-schema.smoke.js` — 49/49
 - `pedido-itens-edit.smoke.js` — 64/64
 - `pedido-edit.smoke.js` — 35/35
