@@ -34,17 +34,23 @@
   e 5 policies cliente SELECT/INSERT operacionais. Sem UPDATE/DELETE
   cliente. Sem token público. `pedido_eventos` admin-only.
 - **Schema Tracking Visual** `db/15_status_cliente_visual.sql`
-  **versionado no repo, mas AINDA NÃO aplicado**. Adiciona em
-  `public.pedidos`: `status_cliente_visual`,
-  `status_cliente_excecao`, `status_cliente_mensagem`,
-  `status_cliente_atualizado_em`, `referencia_cliente`,
-  `prazo_desejado`, `tipo_recebimento`; cria a tabela
-  `public.pedido_cliente_eventos`; cria RLS admin-only nessa
-  tabela; cria trigger guard de INSERT para zerar campos visuais
-  quando o autor não for admin; cria trigger de touch para
-  `status_cliente_atualizado_em` em UPDATE visual. Validado por
-  `tests/cliente-tracking-schema.smoke.js`. **Sem apply SQL nesta
-  fase.** **Sem frontend.** **Sem dropdown admin.**
+  **aplicado e validado em staging** `ucrjtfswnfdlxwtmxnoo` em
+  `2026-06-26`, sem tocar o projeto original/producao
+  `bhgifjrfagkzubpyqpew`. Adiciona em `public.pedidos`:
+  `status_cliente_visual`, `status_cliente_excecao`,
+  `status_cliente_mensagem`, `status_cliente_atualizado_em`,
+  `referencia_cliente`, `prazo_desejado`, `tipo_recebimento`; cria a
+  tabela `public.pedido_cliente_eventos`; aplica RLS admin-only nessa
+  tabela via policy `pedido_cliente_eventos_admin_all`; cria trigger
+  guard de INSERT para zerar campos visuais quando o autor nao for
+  admin; e cria trigger de touch para
+  `status_cliente_atualizado_em` em UPDATE visual. Validacoes
+  estruturais concluidas: 7 colunas em `pedidos`, 10 colunas em
+  `pedido_cliente_eventos`, 4 constraints esperadas, 2 triggers,
+  2 funcoes, 1 indice `(pedido_id, criado_em DESC)` e
+  `pedido_cliente_eventos = 0`. Validado tambem por
+  `tests/cliente-tracking-schema.smoke.js`. **Sem frontend.**
+  **Sem dropdown admin.** **Sem policy cliente na nova tabela.**
 - **Provisionamento cliente** (fase PROV-A, esta): `admin-create-user`
   aceita `cliente` (valida `cliente_id` em `public.clientes`, rejeita
   `fornecedor_id` simultâneo). UI `#/cadastros/usuarios` com tipo
@@ -240,18 +246,18 @@ Antes de retomar o schema de tracking do cliente, o projeto agora tem
 um documento curto e vinculante de limites arquiteturais em
 `docs/architecture/PORTAL_B2B_ARCHITECTURE_RULES.md`.
 
-**Schema visual do cliente já versionado (fase atual).**
-`db/15_status_cliente_visual.sql` registra a base futura do tracking
+**Schema visual do cliente ja aplicado em staging (fase atual).**
+`db/15_status_cliente_visual.sql` ja criou a base futura do tracking
 visual sem reaproveitar `pedido_eventos` e sem depender de
-`pedidos.status` como fonte definitiva da comunicação externa.
+`pedidos.status` como fonte definitiva da comunicacao externa.
 
-**Próxima fase recomendada:** aplicar `db/15_status_cliente_visual.sql`
-em staging, em fase separada e controlada.
+**Proxima fase recomendada:** criar o controle admin para publicar a
+situacao visual do cliente usando o schema ja aplicado.
 
-**Sequência recomendada depois do apply:** validação da migration em
-staging, dropdown admin, cliente lendo `status_cliente_visual` real,
-histórico visível, dashboard cliente, redesign de shell/componentes
-comuns e só depois fornecedor/automação.
+**Sequencia recomendada depois desta fase:** dropdown admin; cliente
+lendo `status_cliente_visual` real; historico visivel;
+dashboard cliente; redesign de shell/componentes comuns; e so depois
+fornecedor/automacao.
 
 **Não iniciar execução sem autorização explícita.**
 **NÃO tocar `bhgifjrfagkzubpyqpew`, Vercel original, ou `origin/main`.**

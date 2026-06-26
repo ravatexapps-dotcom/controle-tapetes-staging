@@ -1,15 +1,14 @@
 # PROJECT_STATE.md — Controle de Tapetes (Grupo Terra Branca)
 
-> Snapshot de estado canônico curto. Atualizado em **2026-06-26** (fase
-> `RAVATEX-TAPETES-PEDIDOS-CLIENTE-TRACKING-SCHEMA-A` — schema
-> versionado do tracking visual do cliente B2B).
-> **O schema de tracking visual agora existe no repositório, mas ainda
-> NÃO foi aplicado no Supabase.** A fase criou
-> `db/15_status_cliente_visual.sql` e
-> `tests/cliente-tracking-schema.smoke.js`, mantendo separação entre
-> `pedidos.status` (operacional) e `status_cliente_visual`
-> (comunicação externa). **Sem frontend. Sem dropdown admin. Sem
-> automação. Sem aplicação SQL. Sem alteração funcional nesta fase.**
+> Snapshot de estado canonico curto. Atualizado em **2026-06-26** (fase
+> `RAVATEX-TAPETES-PEDIDOS-CLIENTE-TRACKING-SCHEMA-B` — aplicacao
+> controlada do tracking visual do cliente B2B em staging).
+> **O schema de tracking visual foi aplicado e validado no projeto
+> Supabase paralelo/staging `ucrjtfswnfdlxwtmxnoo`.** A fase aplicou
+> exatamente `db/15_status_cliente_visual.sql`, mantendo a separacao
+> entre `pedidos.status` (operacional) e `status_cliente_visual`
+> (comunicacao externa). **Sem frontend. Sem dropdown admin. Sem
+> automacao. Sem alteracao em producao/original.**
 
 ## Produto
 SPA web para controlar a produção de tapetes, do pedido de fio até o
@@ -992,39 +991,43 @@ staging `ucrjtfswnfdlxwtmxnoo`.)*
   foi alterado nesta fase.** **Não** houve schema, SQL, frontend,
   Supabase, Edge Function ou testes funcionais.
 
-- 🟢 **Schema versionado do tracking visual do cliente registrado**
-  (fase `RAVATEX-TAPETES-PEDIDOS-CLIENTE-TRACKING-SCHEMA-A`, esta).
-  Novos arquivos: `db/15_status_cliente_visual.sql` e
-  `tests/cliente-tracking-schema.smoke.js`. A migration adiciona em
-  `public.pedidos` os campos `status_cliente_visual`,
-  `status_cliente_excecao`, `status_cliente_mensagem`,
-  `status_cliente_atualizado_em`, `referencia_cliente`,
-  `prazo_desejado` e `tipo_recebimento`; cria checks versionados para
-  taxonomia visual, exceções e tipo de recebimento; cria a tabela
-  `public.pedido_cliente_eventos` como histórico visual futuro separado
-  de `pedido_eventos`; habilita RLS admin-only nessa nova tabela;
-  cria `public.normalizar_pedido_cliente_visual_insert()` +
-  trigger `pedidos_cliente_visual_insert_guard` para impedir que o
-  cliente manipule campos visuais no INSERT; e cria
-  `public.touch_pedido_cliente_visual_update()` +
-  trigger `pedidos_cliente_visual_touch` para atualizar
-  `status_cliente_atualizado_em` quando os campos visuais mudarem.
-  **Ainda não aplicado em staging.** **Tracking atual continua
-  derivado de `pedido.status`** no frontend cliente até fase posterior.
-  **Sem** dropdown admin. **Sem** leitura cliente de
-  `pedido_cliente_eventos`. **Sem** Supabase real.
+- 🟢 **Schema de tracking visual do cliente aplicado e validado em
+  staging** (fase
+  `RAVATEX-TAPETES-PEDIDOS-CLIENTE-TRACKING-SCHEMA-B`, esta).
+  `db/15_status_cliente_visual.sql` foi aplicado exatamente como
+  versionado no projeto Supabase paralelo/staging
+  `ucrjtfswnfdlxwtmxnoo`, sem tocar o projeto original/producao
+  `bhgifjrfagkzubpyqpew`. O schema adicionou em `public.pedidos` os
+  campos `status_cliente_visual`, `status_cliente_excecao`,
+  `status_cliente_mensagem`, `status_cliente_atualizado_em`,
+  `referencia_cliente`, `prazo_desejado` e `tipo_recebimento`; criou a
+  tabela `public.pedido_cliente_eventos`; aplicou checks versionados
+  para taxonomia visual, excecoes, tipo de recebimento e origem;
+  habilitou RLS admin-only com a policy
+  `pedido_cliente_eventos_admin_all`; e confirmou os triggers
+  `pedidos_cliente_visual_insert_guard` e
+  `pedidos_cliente_visual_touch` com as funcoes
+  `normalizar_pedido_cliente_visual_insert()` e
+  `touch_pedido_cliente_visual_update()`. Validacao estrutural em
+  staging: 7/7 colunas novas em `public.pedidos`, 10 colunas esperadas
+  em `public.pedido_cliente_eventos`, indice
+  `idx_pedido_cliente_eventos_pedido_criado`, e contagem inicial de
+  `pedido_cliente_eventos = 0`. **O cliente ainda nao le
+  `pedido_cliente_eventos`.** **O frontend ainda nao usa
+  `status_cliente_visual` real.** **Sem** dropdown admin nesta fase.
 
 ## Próximo passo recomendado
-1. **Aplicar `db/15_status_cliente_visual.sql` em staging, em fase
-   separada e controlada.** Esta é a próxima etapa recomendada.
-2. **Depois da aplicação do SQL, validar a base visual nova sem mexer
-   ainda no frontend.** Confirmar colunas, constraints, tabela
-   `pedido_cliente_eventos`, RLS admin-only e triggers em staging.
-3. **Só depois seguir para UI/admin/cliente em fases pequenas.**
-   Sequência recomendada: dropdown admin; cliente lendo
-   `status_cliente_visual` real; histórico visível;
+1. **Criar o controle admin para publicar a situacao visual do
+   cliente.** Proxima fase recomendada, usando o schema ja aplicado em
+   staging.
+2. **Manter o cliente ainda sem leitura direta de
+   `pedido_cliente_eventos` ate a fase de UI controlada.** O tracking
+   visual continua separado do fluxo operacional interno.
+3. **Depois seguir em fases pequenas para consumo no portal do
+   cliente.** Sequencia recomendada: dropdown/admin publish; cliente
+   lendo `status_cliente_visual` real; historico visivel;
    dashboard cliente; redesign do shell/componentes comuns; e
-   fornecedor/automação apenas depois.
+   fornecedor/automacao apenas depois.
 
 ## Estrutura final de responsabilidades
 
