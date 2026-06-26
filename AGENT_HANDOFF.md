@@ -10,12 +10,13 @@
 
 ## Estado atual aceito
 - **Estado atual aceito:** `work/app-next` na ponta da fase
-  `RAVATEX-TAPETES-PEDIDOS-CLIENTE-TRACKING-SCHEMA-A`
-  (schema versionado do tracking visual do cliente, ainda não
-  aplicado no Supabase).
-- **HEAD aceito de entrada desta fase schema-only:** `b2675a7`
-  (governança Portal B2B já registrada; schema visual criado
-  nesta fase sobre essa base).
+  `RAVATEX-TAPETES-PEDIDOS-CLIENTE-TRACKING-STEPS-A`
+  (camada compartilhada de taxonomia visual criada apos o apply do
+  schema em staging, ainda sem publish admin e sem leitura real no
+  cliente).
+- **HEAD aceito de entrada desta fase:** `aa228bd`
+  (schema visual ja aplicado em staging e documentado; base pronta
+  para a camada compartilhada desta fase).
 - **Working tree:** limpo após commit.
 - **origin/main:** `1047181eba888242c6428de366cbd9fda2f1c72c` — intocado
 - **PR #2:** intocado
@@ -110,6 +111,26 @@
   schema/SQL/Edge Function na fase TRACKING-UI-A, **sem**
   dados internos sensíveis. Script carregado em `index.html`
   entre `cliente-pedidos-list.js` e `cliente-pedido-detail.js`.
+- **Taxonomia compartilhada de tracking visual** (fase
+  `RAVATEX-TAPETES-PEDIDOS-CLIENTE-TRACKING-STEPS-A`, esta):
+  novo modulo `js/pedido-tracking-ui.js`, carregado em `index.html`
+  logo apos `js/pedido-ui.js`. Exposicoes:
+  `window.RavatexPedidoTracking` e
+  `window.RAVATEX_PEDIDO_UI.CLIENTE_TRACKING`. Conteudo:
+  8 etapas principais (`recebido`, `confirmado`, `insumos`,
+  `tecelagem`, `acabamento`, `expedicao`, `transporte`,
+  `concluido`), 4 excecoes (`aguardando_definicao`,
+  `aguardando_insumo`, `pausado`, `cancelado`) e helpers puros
+  `getClienteTrackingStep`, `getClienteTrackingException`,
+  `getClienteTrackingStatusLabel`, `getClienteTrackingMensagem`,
+  `getClienteTrackingProgress`. Regras fixadas: excecao prioriza
+  label/mensagem; `status_cliente_mensagem` sobrescreve a frase
+  padrao; `cancelado` e terminal fora da etapa principal;
+  `insumos` e `transporte` sao pulaveis; fallback para
+  `status_cliente_visual` nulo/desconhecido = `recebido`.
+  **Importante:** a camada foi criada sem acoplar admin/cliente/
+  fornecedor, sem writes, sem Supabase, e sem substituir ainda o
+  tracking funcional atual do cliente.
 
 ## Estado operacional atual
 - `index.html` está declarativo, sem script inline final, com
@@ -250,6 +271,11 @@ um documento curto e vinculante de limites arquiteturais em
 `db/15_status_cliente_visual.sql` ja criou a base futura do tracking
 visual sem reaproveitar `pedido_eventos` e sem depender de
 `pedidos.status` como fonte definitiva da comunicacao externa.
+
+**Camada compartilhada da taxonomia visual ja criada.**
+`js/pedido-tracking-ui.js` centraliza etapas, excecoes e helpers
+puros para admin/cliente/dashboard futuros, sem integrar ainda as
+telas ao `status_cliente_visual` real.
 
 **Proxima fase recomendada:** criar o controle admin para publicar a
 situacao visual do cliente usando o schema ja aplicado.

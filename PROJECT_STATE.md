@@ -1,14 +1,17 @@
 # PROJECT_STATE.md — Controle de Tapetes (Grupo Terra Branca)
 
 > Snapshot de estado canonico curto. Atualizado em **2026-06-26** (fase
-> `RAVATEX-TAPETES-PEDIDOS-CLIENTE-TRACKING-SCHEMA-B` — aplicacao
-> controlada do tracking visual do cliente B2B em staging).
+> `RAVATEX-TAPETES-PEDIDOS-CLIENTE-TRACKING-STEPS-A` — camada
+> compartilhada de taxonomia visual do cliente B2B).
 > **O schema de tracking visual foi aplicado e validado no projeto
 > Supabase paralelo/staging `ucrjtfswnfdlxwtmxnoo`.** A fase aplicou
 > exatamente `db/15_status_cliente_visual.sql`, mantendo a separacao
 > entre `pedidos.status` (operacional) e `status_cliente_visual`
-> (comunicacao externa). **Sem frontend. Sem dropdown admin. Sem
-> automacao. Sem alteracao em producao/original.**
+> (comunicacao externa). **Nesta fase atual**, foi criada a camada
+> compartilhada `js/pedido-tracking-ui.js` com taxonomia e helpers
+> puros para o tracking visual, **sem** trocar o comportamento atual
+> das telas cliente. **Sem dropdown admin. Sem writes. Sem automacao.
+> Sem alteracao em producao/original.**
 
 ## Produto
 SPA web para controlar a produção de tapetes, do pedido de fio até o
@@ -1015,6 +1018,24 @@ staging `ucrjtfswnfdlxwtmxnoo`.)*
   `pedido_cliente_eventos = 0`. **O cliente ainda nao le
   `pedido_cliente_eventos`.** **O frontend ainda nao usa
   `status_cliente_visual` real.** **Sem** dropdown admin nesta fase.
+
+- 🟢 **Camada compartilhada de taxonomia visual criada**
+  (fase `RAVATEX-TAPETES-PEDIDOS-CLIENTE-TRACKING-STEPS-A`, esta).
+  Novo modulo `js/pedido-tracking-ui.js` exposto como
+  `window.RavatexPedidoTracking` e
+  `window.RAVATEX_PEDIDO_UI.CLIENTE_TRACKING`, com 8 etapas principais
+  (`recebido`, `confirmado`, `insumos`, `tecelagem`, `acabamento`,
+  `expedicao`, `transporte`, `concluido`), 4 excecoes
+  (`aguardando_definicao`, `aguardando_insumo`, `pausado`,
+  `cancelado`) e helpers puros para label, mensagem e progresso.
+  `insumos` e `transporte` ficaram marcados como pulaveis; `cancelado`
+  permanece excecao terminal fora da trilha principal. O fallback
+  padrao dos helpers para `status_cliente_visual` nulo/desconhecido foi
+  fixado como `recebido`, documentado em
+  `tests/cliente-tracking-steps.smoke.js`. **Nao** houve integracao
+  funcional do cliente com `status_cliente_visual` real nesta fase.
+  O tracking atual continua sem substituicao, ainda baseado na logica
+  anterior do componente cliente.
 
 ## Próximo passo recomendado
 1. **Criar o controle admin para publicar a situacao visual do
