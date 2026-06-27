@@ -4,12 +4,16 @@
 // pedidos próprios em cards/KPIs, lista os pedidos recentes e mostra
 // as últimas atualizações visíveis. Rota: `#/cliente/dashboard`.
 //
-// Fase: RAVATEX-TAPETES-CLIENTE-DASHBOARD-A
+// Fase: RAVATEX-TAPETES-CLIENTE-DASHBOARD-A +
+//   RAVATEX-TAPETES-CLIENTE-PORTAL-VISUAL-POLISH-A
 // Escopo: leitura apenas. Nenhuma ação de escrita. Sem
 //   insert/update/delete/rpc, sem Edge Function, sem credencial de
 //   serviço. Confia na RLS para filtrar por `cliente_id` e na policy
 //   `pedido_cliente_eventos_cliente_select` para os eventos visíveis.
 //   Não expõe dados internos, de produção ou administrativos.
+//   A fase de polish visual reorganizou cards/badges/timeline em
+//   duas colunas e adicionou tom de cor por exceção, sem alterar
+//   campos selecionados nem comportamento de leitura.
 //
 // Carregar via <script src="js/screens/cliente-dashboard.js"></script>
 // no <head>, DEPOIS de cliente-common.js, pedido-tracking-ui.js,
@@ -19,7 +23,8 @@
 //   - window.el / window.pageHeader (js/ui.js)
 //   - window.clienteShellLayout (js/screens/cliente-common.js)
 //   - window.RavatexPedidoTracking (js/pedido-tracking-ui.js) — usado
-//     para rotular o status visual com a taxonomia compartilhada.
+//     para rotular o status visual e o tom (cor) do badge com a
+//     taxonomia compartilhada.
 //   - window.fmtDataCurta (js/pedido-ui.js) — formatação de datas.
 //   - window.navigate (js/router.js)
 //   - window.supa (js/supabase-client.js)
@@ -95,6 +100,27 @@
     var excecao = api.getClienteTrackingException ? api.getClienteTrackingException(status) : null;
     if (excecao) return excecao.label;
     return null;
+  }
+
+  // Tom visual (cor) do badge/ponto — mesma paleta de tom usada no
+  // banner do stepper, derivada apenas da excecao publicada pelo
+  // admin. Puramente decorativo: nao deriva novo dado, so cor.
+  function toneFromExcecaoKey(excecaoKey) {
+    var api = getTrackingApi();
+    var excecao = api && api.getClienteTrackingException ? api.getClienteTrackingException(excecaoKey) : null;
+    var tom = excecao ? excecao.tom : null;
+    if (tom === 'danger') return { badge: 'bg-red-50 text-red-700', dot: 'bg-red-500' };
+    if (tom === 'warning') return { badge: 'bg-amber-50 text-amber-700', dot: 'bg-amber-500' };
+    if (tom === 'neutral') return { badge: 'bg-gray-100 text-gray-700', dot: 'bg-gray-400' };
+    return { badge: 'bg-blue-50 text-blue-700', dot: 'bg-blue-500' };
+  }
+
+  function pedidoBadgeTone(pedido) {
+    return toneFromExcecaoKey(pedido && pedido.status_cliente_excecao);
+  }
+
+  function eventoBadgeTone(evento) {
+    return toneFromExcecaoKey(evento && evento.status);
   }
 
   function fmtData(v) {
@@ -173,20 +199,20 @@
       }
     }
 
-    function buildKpiCard(label, valor, tone) {
-      return window.el('div', { class: 'bg-white rounded-xl shadow p-5 border border-gray-100' },
-        window.el('div', { class: 'text-3xl font-bold ' + tone }, String(valor)),
+    function buildKpiCard(label, valor, accentClass) {
+      return window.el('div', { class: 'bg-white rounded-xl shadow p-5 border-l-4 ' + accentClass },
+        window.el('div', { class: 'text-3xl font-bold text-gray-900' }, String(valor)),
         window.el('div', { class: 'text-sm text-gray-500 mt-1' }, label)
       );
     }
 
     function buildKpis() {
       var kpis = computeKpis(state.pedidos, state.eventos.length);
-      return window.el('div', { class: 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6' },
-        buildKpiCard('Pedidos em aberto', kpis.aberto, 'text-blue-700'),
-        buildKpiCard('Em andamento', kpis.andamento, 'text-amber-600'),
-        buildKpiCard('Prontos / concluídos', kpis.pronto, 'text-green-600'),
-        buildKpiCard('Atualizações recentes', kpis.atualizacoes, 'text-gray-700')
+      return window.el('div', { class: 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4' },
+        buildKpiCard('Pedidos em aberto', kpis.aberto, 'border-blue-600'),
+        buildKpiCard('Em andamento', kpis.andamento, 'border-amber-500'),
+        buildKpiCard('Prontos / concluídos', kpis.pronto, 'border-green-600'),
+        buildKpiCard('Atualizações recentes', kpis.atualizacoes, 'border-gray-400')
       );
     }
 
@@ -195,12 +221,12 @@
       var atualizado = fmtData(pedido.status_cliente_atualizado_em) || fmtData(pedido.atualizado_em);
 
       return window.el('div', {
-        class: 'flex flex-wrap items-center justify-between gap-3 border-b border-gray-100 last:border-0 py-3',
+        class: 'flex flex-wrap items-center justify-between gap-3 py-3',
       },
         window.el('div', { class: 'min-w-0' },
           window.el('div', { class: 'flex items-center gap-2' },
             window.el('span', { class: 'text-sm font-semibold text-gray-900' }, fmtNumero(pedido.numero)),
-            window.el('span', { class: 'text-xs px-2 py-0.5 rounded-full bg-blue-50 text-blue-700' },
+            window.el('span', { class: 'text-xs px-2 py-0.5 rounded-full font-medium ' + pedidoBadgeTone(pedido).badge },
               pedidoLabelVisual(pedido))
           ),
           window.el('div', { class: 'text-xs text-gray-400 mt-1' },
@@ -216,8 +242,8 @@
     }
 
     function buildPedidosRecentes() {
-      var card = window.el('div', { class: 'bg-white rounded-xl shadow p-6 mb-6' });
-      card.appendChild(window.el('div', { class: 'flex items-center justify-between mb-2' },
+      var card = window.el('div', { class: 'bg-white rounded-xl shadow p-6' });
+      card.appendChild(window.el('div', { class: 'flex items-center justify-between mb-1' },
         window.el('h2', { class: 'text-sm font-semibold text-gray-700' }, 'Pedidos recentes'),
         window.el('button', {
           type: 'button',
@@ -227,76 +253,89 @@
       ));
 
       if (state.pedidosError) {
-        card.appendChild(window.el('p', { class: 'text-sm text-red-700' },
+        card.appendChild(window.el('p', { class: 'text-sm text-red-700 py-3' },
           'Não foi possível carregar seus pedidos agora. Tente recarregar a página.'));
         return card;
       }
 
       if (state.pedidos.length === 0) {
-        card.appendChild(window.el('p', { class: 'text-sm text-gray-500' },
+        card.appendChild(window.el('p', { class: 'text-sm text-gray-500 py-6 text-center' },
           'Você ainda não tem pedidos.'));
         return card;
       }
 
+      var lista = window.el('div', { class: 'divide-y divide-gray-100' });
       state.pedidos.slice(0, RECENTES_LIMIT).forEach(function (pedido) {
-        card.appendChild(buildPedidoRow(pedido));
+        lista.appendChild(buildPedidoRow(pedido));
       });
+      card.appendChild(lista);
       return card;
     }
 
     function buildEventoItem(evento) {
       var badge = eventoStatusLabel(evento.status);
       var data = fmtData(evento.criado_em);
-      return window.el('div', { class: 'border-b border-gray-100 last:border-0 py-3' },
-        window.el('div', { class: 'flex flex-wrap items-center gap-2 mb-1' },
-          window.el('span', { class: 'text-sm font-semibold text-gray-900' },
-            evento.titulo ? String(evento.titulo) : 'Atualização'),
-          badge
-            ? window.el('span', { class: 'text-xs px-2 py-0.5 rounded-full bg-blue-50 text-blue-700' }, badge)
-            : null
-        ),
-        evento.mensagem
-          ? window.el('p', { class: 'text-sm text-gray-700 mb-1' }, String(evento.mensagem))
-          : null,
-        window.el('div', { class: 'flex items-center justify-between gap-2' },
-          window.el('span', { class: 'text-xs text-gray-400' }, data || '—'),
-          evento.pedido_id
-            ? window.el('button', {
-                type: 'button',
-                class: 'text-xs text-blue-700 hover:underline',
-                onclick: function () { window.navigate('#/cliente/pedidos/' + evento.pedido_id); },
-              }, 'Ver pedido')
-            : null
+      return window.el('div', { class: 'flex gap-3 py-3' },
+        window.el('div', { class: 'mt-1.5 w-2 h-2 rounded-full shrink-0 ' + eventoBadgeTone(evento).dot }),
+        window.el('div', { class: 'min-w-0 flex-1' },
+          window.el('div', { class: 'flex flex-wrap items-center gap-2 mb-1' },
+            window.el('span', { class: 'text-sm font-semibold text-gray-900' },
+              evento.titulo ? String(evento.titulo) : 'Atualização'),
+            badge
+              ? window.el('span', { class: 'text-xs px-2 py-0.5 rounded-full font-medium ' + eventoBadgeTone(evento).badge }, badge)
+              : null
+          ),
+          evento.mensagem
+            ? window.el('p', { class: 'text-sm text-gray-700 mb-1' }, String(evento.mensagem))
+            : null,
+          window.el('div', { class: 'flex items-center justify-between gap-2' },
+            window.el('span', { class: 'text-xs text-gray-400' }, data || '—'),
+            evento.pedido_id
+              ? window.el('button', {
+                  type: 'button',
+                  class: 'text-xs text-blue-700 hover:underline',
+                  onclick: function () { window.navigate('#/cliente/pedidos/' + evento.pedido_id); },
+                }, 'Ver pedido')
+              : null
+          )
         )
       );
     }
 
     function buildEventos() {
-      var card = window.el('div', { class: 'bg-white rounded-xl shadow p-6 mb-6' });
-      card.appendChild(window.el('h2', { class: 'text-sm font-semibold text-gray-700 mb-2' },
+      var card = window.el('div', { class: 'bg-white rounded-xl shadow p-6' });
+      card.appendChild(window.el('h2', { class: 'text-sm font-semibold text-gray-700 mb-1' },
         'Últimas atualizações'));
 
       if (state.eventosError) {
-        card.appendChild(window.el('p', { class: 'text-sm text-amber-600' },
+        card.appendChild(window.el('p', { class: 'text-sm text-amber-600 py-3' },
           'Não foi possível carregar as atualizações agora.'));
         return card;
       }
 
       if (state.eventos.length === 0) {
-        card.appendChild(window.el('p', { class: 'text-sm text-gray-500' },
+        card.appendChild(window.el('p', { class: 'text-sm text-gray-500 py-6 text-center' },
           'Suas atualizações aparecerão aqui.'));
         return card;
       }
 
+      var lista = window.el('div', { class: 'divide-y divide-gray-100' });
       state.eventos.forEach(function (evento) {
-        card.appendChild(buildEventoItem(evento));
+        lista.appendChild(buildEventoItem(evento));
       });
+      card.appendChild(lista);
       return card;
     }
 
     function render() {
       var header = window.pageHeader('Início');
-      container.replaceChildren(header, buildKpis(), buildPedidosRecentes(), buildEventos());
+      var resumoGrid = window.el('div', { class: 'grid grid-cols-1 lg:grid-cols-2 gap-6' },
+        buildPedidosRecentes(),
+        buildEventos()
+      );
+      container.replaceChildren(
+        window.el('div', { class: 'space-y-6' }, header, buildKpis(), resumoGrid)
+      );
     }
 
     await carregar();

@@ -3,7 +3,10 @@
 // Tela cliente `#/cliente/pedidos` — listagem read-only dos próprios
 // pedidos. Confia na RLS para filtrar por `cliente_id`.
 //
-// Fase: RAVATEX-TAPETES-PEDIDOS-CLIENTE-UI-A
+// Fase: RAVATEX-TAPETES-PEDIDOS-CLIENTE-UI-A +
+//   RAVATEX-TAPETES-CLIENTE-PORTAL-VISUAL-POLISH-A (legibilidade da
+//   lista — contagem, rolagem horizontal e rotulo "Ver pedido" — sem
+//   alterar o select de pedidos)
 // Escopo: listagem cliente. Sem criar/editar/cancelar pedido.
 //   Sem expor dados internos, de produção ou administrativos.
 //
@@ -68,10 +71,10 @@
         var active = filtroStatus === s;
         statusFiltro.appendChild(
           window.el('button', {
-            class: 'px-3 py-1 rounded-lg text-xs font-semibold '
+            class: 'px-3 py-1 rounded-full text-xs font-semibold transition-colors '
               + (active
                 ? 'bg-blue-700 text-white'
-                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'),
+                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'),
             onclick: (function (st) {
               return function () { filtroStatus = st; render(); };
             })(s),
@@ -83,11 +86,14 @@
         ? allRows
         : allRows.filter(function (r) { return r.status === filtroStatus; });
 
+      var contagem = window.el('div', { class: 'text-xs text-gray-500 mb-2' },
+        visiveis.length + (visiveis.length === 1 ? ' pedido encontrado' : ' pedidos encontrados'));
+
       var body = visiveis.length === 0
         ? window.el('div', {
             class: 'bg-white rounded-xl shadow p-8 text-center text-gray-500',
           }, 'Nenhum pedido encontrado.')
-        : window.dataTable({
+        : window.el('div', { class: 'overflow-x-auto' }, window.dataTable({
             columns: [
               {
                 key: 'numero',
@@ -122,13 +128,13 @@
             rows: visiveis,
             actions: [
               {
-                label: 'Visualizar',
+                label: 'Ver pedido',
                 onclick: function (row) { window.navigate('#/cliente/pedidos/' + row.id); },
               },
             ],
-          });
+          }));
 
-      container.replaceChildren(header, statusFiltro, body);
+      container.replaceChildren(header, statusFiltro, contagem, body);
     }
 
     await reload();

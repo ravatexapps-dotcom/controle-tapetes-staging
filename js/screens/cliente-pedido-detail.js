@@ -5,7 +5,9 @@
 //
 // Fase: RAVATEX-TAPETES-PEDIDOS-CLIENTE-UI-A +
 //   RAVATEX-TAPETES-PEDIDOS-CLIENTE-TRACKING-UI-A +
-//   RAVATEX-TAPETES-PEDIDOS-CLIENTE-TRACKING-CLIENTE-EVENTS-A
+//   RAVATEX-TAPETES-PEDIDOS-CLIENTE-TRACKING-CLIENTE-EVENTS-A +
+//   RAVATEX-TAPETES-CLIENTE-PORTAL-VISUAL-POLISH-A (resumo em grade,
+//   timeline com indicador visual, sem novas colunas selecionadas)
 // Escopo: leitura apenas. Sem modificar, cancelar ou criar pedido.
 //   Confia na RLS para bloquear acesso a pedidos de outros clientes.
 //   Não expõe dados internos, de produção ou administrativos.
@@ -273,11 +275,11 @@
       if (!state.pedido) return window.el('div', {});
       var p = state.pedido;
       return window.el('div', { class: 'bg-white rounded-xl shadow p-6 mb-4' },
-        window.el('div', { class: 'flex flex-wrap items-center gap-3' },
-          window.el('div', { class: 'text-2xl font-bold' }, fmtNumero(p.numero)),
+        window.el('div', { class: 'flex flex-wrap items-center gap-3 mb-4' },
+          window.el('div', { class: 'text-2xl font-bold text-gray-900' }, fmtNumero(p.numero)),
           window.pedidoStatusBadge(p.status),
         ),
-        window.el('dl', { class: 'grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-2 mt-4 text-sm' },
+        window.el('div', { class: 'grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm border-t border-gray-100 pt-4' },
           kv('Prazo de entrega', p.prazo_entrega ? window.fmtDataCurta(p.prazo_entrega) : '—'),
           kv('Criado em', p.criado_em ? window.fmtDataCurta(p.criado_em) : '—'),
           kv('Atualizado em', p.atualizado_em ? window.fmtDataCurta(p.atualizado_em) : '—'),
@@ -286,9 +288,9 @@
     }
 
     function kv(label, value) {
-      return window.el('div', { class: 'flex gap-2' },
-        window.el('dt', { class: 'text-gray-500 min-w-32' }, label),
-        window.el('dd', { class: 'text-gray-800 font-medium' }, value)
+      return window.el('div', {},
+        window.el('div', { class: 'text-xs text-gray-500 mb-0.5' }, label),
+        window.el('div', { class: 'text-gray-800 font-medium' }, value)
       );
     }
 
@@ -306,7 +308,7 @@
     function buildItens() {
       var itens = state.itens;
       if (itens.length === 0) {
-        return window.el('div', { class: 'bg-white rounded-xl shadow p-6 text-gray-500' },
+        return window.el('div', { class: 'bg-white rounded-xl shadow p-6 text-gray-500 mb-4' },
           'Este pedido não possui itens.');
       }
       var body = window.dataTable({
@@ -345,16 +347,18 @@
         rows: itens,
         actions: [],
       });
-      var wrap = window.el('div', {});
+      var wrap = window.el('div', { class: 'mb-4' });
       wrap.appendChild(window.el('h2', { class: 'text-sm font-semibold text-gray-700 mb-2' },
         'Itens (' + itens.length + ')'));
-      wrap.appendChild(body);
+      wrap.appendChild(window.el('div', { class: 'overflow-x-auto' }, body));
       return wrap;
     }
 
-    function buildEventoItem(evento) {
+    function buildEventoItem(evento, isLast) {
       var badge = eventoStatusLabel(evento.status);
-      return window.el('div', { class: 'border-b border-gray-100 last:border-0 py-3' },
+      return window.el('div', { class: 'relative pl-5' + (isLast ? ' pb-0' : ' pb-4') },
+        window.el('div', { class: 'absolute left-0 top-1.5 w-2 h-2 rounded-full bg-blue-500' }),
+        isLast ? null : window.el('div', { class: 'absolute left-[3px] top-3 bottom-0 w-px bg-gray-200' }),
         window.el('div', { class: 'flex flex-wrap items-center gap-2 mb-1' },
           window.el('span', { class: 'text-sm font-semibold text-gray-900' },
             fmtTextoOuEmpty(evento.titulo, 'Atualização')),
@@ -372,7 +376,7 @@
     function buildEventos() {
       if (!state.pedido) return window.el('div', {});
       var card = window.el('div', { class: 'bg-white rounded-xl shadow p-6 mb-4' });
-      card.appendChild(window.el('h2', { class: 'text-sm font-semibold text-gray-700 mb-2' },
+      card.appendChild(window.el('h2', { class: 'text-sm font-semibold text-gray-700 mb-3' },
         'Atualizações do pedido'));
 
       if (state.eventosError) {
@@ -387,8 +391,8 @@
         return card;
       }
 
-      state.eventos.forEach(function (evento) {
-        card.appendChild(buildEventoItem(evento));
+      state.eventos.forEach(function (evento, idx) {
+        card.appendChild(buildEventoItem(evento, idx === state.eventos.length - 1));
       });
       return card;
     }

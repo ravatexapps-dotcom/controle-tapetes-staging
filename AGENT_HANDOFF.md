@@ -10,10 +10,43 @@
 
 ## Estado atual aceito
 - **Estado atual aceito:** `work/app-next` na ponta da fase
-  `RAVATEX-TAPETES-CLIENTE-PROVISIONING-STAGING-VERIFY-A` (verificação
-  operacional + docs-only — confirmou deploy do fluxo `cliente` em
-  `admin-create-user` no staging). HEAD de entrada: `cb27a17`; HEAD
-  homologado do dashboard: `54fabfa`.
+  `RAVATEX-TAPETES-CLIENTE-PORTAL-VISUAL-POLISH-A` (frontend cliente,
+  refino visual — sem schema/SQL/Supabase). HEAD de entrada desta
+  fase: `3835dba`.
+- **Polish visual do portal cliente** (fase
+  `RAVATEX-TAPETES-CLIENTE-PORTAL-VISUAL-POLISH-A`, esta): refinada a
+  camada de apresentação das 5 telas do portal cliente sem alterar
+  nenhum comportamento homologado. `cliente-dashboard.js` ganhou
+  cards/KPIs com borda de cor, grade de 2 colunas (desktop) entre
+  "Pedidos recentes" e "Últimas atualizações", e badges com tom de
+  cor derivado da exceção (mesma paleta do stepper, antes fixo em
+  azul). `cliente-pedidos-list.js` ganhou contador de resultados,
+  rolagem horizontal na tabela e renomeou a ação "Visualizar" para
+  "Ver pedido" (consistência com o Dashboard) — **select de pedidos
+  inalterado**. `cliente-pedido-detail.js` reorganizou o resumo em
+  grade de 3 colunas e deu à timeline "Atualizações do pedido" um
+  indicador visual de linha do tempo (ponto + conector) — **selects
+  de pedidos/pedido_itens/pedido_cliente_eventos inalterados**.
+  `cliente-pedido-tracking.js` recebeu apenas ajustes de classe
+  (cantos, sombra, tamanho de círculo); taxonomia, exceções,
+  "cancelado" como exceção terminal e mensagem personalizada
+  permanecem intactos; continua sem consultar Supabase.
+  `cliente-common.js` **não foi alterado** (menu "Início"/"Meus
+  pedidos" já atendia ao padrão). Novo teste cruzado
+  `tests/cliente-portal-visual.smoke.js` (49 casos) garante, num só
+  lugar, que nenhuma das 5 telas ganhou exposição de
+  metadata/criado_por/origem/`pedido_eventos`/OP/lote/fornecedor/NF/
+  romaneio/custo/margem/token_acesso nem ação de escrita, e que os
+  SELECTs de dados permanecem **literalmente idênticos** aos de antes
+  da fase (guarda anti-regressão por comparação de string exata).
+  Verificação visual manual feita em app local conectado ao staging
+  `ucrjtfswnfdlxwtmxnoo` (usuário `cliente@teste.com`): Dashboard,
+  Detalhe e Meus pedidos renderizam sem erro de console, com o tom de
+  cor e o layout em 2 colunas funcionando como esperado. **Admin e
+  fornecedor não foram tocados. Sem schema/SQL/Supabase nesta fase.**
+  Testes: lista obrigatória da fase + `cliente-pedidos-list` +
+  `cliente-portal-visual` (novo, com 49 casos) = 265 testes, todos
+  passando.
 - **Homologação Dashboard Cliente APROVADA** (fase
   `RAVATEX-TAPETES-CLIENTE-DASHBOARD-HOMOLOG-RECORD-A`, esta,
   docs-only). Validação manual/controlada feita em **app local

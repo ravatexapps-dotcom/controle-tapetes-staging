@@ -5,7 +5,10 @@
 // publicado pelo admin em `pedidos.status_cliente_*`.
 //
 // Fase: RAVATEX-TAPETES-PEDIDOS-CLIENTE-TRACKING-UI-A +
-//   RAVATEX-TAPETES-PEDIDOS-CLIENTE-TRACKING-CLIENTE-A
+//   RAVATEX-TAPETES-PEDIDOS-CLIENTE-TRACKING-CLIENTE-A +
+//   RAVATEX-TAPETES-CLIENTE-PORTAL-VISUAL-POLISH-A (refino de classes
+//   visuais — cantos, sombra e espacamento — sem alterar nenhum texto
+//   ou a ordem dos nodes renderizados)
 // Escopo: componente puro de apresentacao, sem rota propria. Recebe
 //   `pedido` (ja carregado por cliente-pedido-detail.js) e devolve um
 //   node DOM. Nao consulta o Supabase, nao insere/atualiza/deleta
@@ -93,7 +96,7 @@
       }));
     }
 
-    var circuloClasse = 'w-8 h-8 rounded-full flex items-center justify-center relative z-10 '
+    var circuloClasse = 'w-9 h-9 rounded-full flex items-center justify-center relative z-10 '
       + 'text-sm font-bold ring-4 ring-white ';
     var circuloConteudo;
     if (estado === 'concluido') {
@@ -136,7 +139,7 @@
       : null;
 
     return window.el('div', {
-      class: 'rounded-lg border px-4 py-3 mt-6 ' + toneClass,
+      class: 'rounded-xl border px-4 py-3 mt-6 shadow-sm ' + toneClass,
     },
     window.el('div', { class: 'flex flex-wrap items-center gap-2 mb-2' },
       window.el('span', { class: 'text-sm font-semibold' }, label),
@@ -156,7 +159,7 @@
   }
 
   function buildCanceladoCard(api, pedido, progress) {
-    return window.el('div', { class: 'bg-white rounded-xl shadow p-6 mb-4 border border-red-100' },
+    return window.el('div', { class: 'bg-white rounded-2xl shadow-sm p-6 mb-4 border border-red-100' },
       window.el('div', { class: 'text-base font-bold text-gray-900 mb-3' }, 'Acompanhamento do pedido'),
       window.el('div', { class: 'flex items-center gap-3 bg-red-50 border border-red-100 rounded-lg px-4 py-3' },
         window.el('span', { class: 'text-red-700 text-sm font-medium' },
@@ -190,11 +193,11 @@
       return buildCanceladoCard(api, trackingPedido, progress);
     }
 
-    var card = window.el('div', { class: 'bg-white rounded-xl shadow p-6 mb-4' });
+    var card = window.el('div', { class: 'bg-white rounded-2xl shadow-sm p-6 mb-4 border border-gray-100' });
     card.appendChild(window.el('div', { class: 'text-base font-bold text-gray-900 mb-6' },
       'Acompanhamento do pedido'));
 
-    var stepperRow = window.el('div', { class: 'flex flex-wrap items-start gap-y-6' });
+    var stepperRow = window.el('div', { class: 'flex flex-wrap items-start gap-y-6 gap-x-1' });
     for (var i = 0; i < api.CLIENTE_TRACKING_STEPS.length; i++) {
       stepperRow.appendChild(buildStepNode(api.CLIENTE_TRACKING_STEPS[i], i, progress));
     }

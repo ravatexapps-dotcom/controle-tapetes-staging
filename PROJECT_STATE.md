@@ -1,6 +1,66 @@
 # PROJECT_STATE.md — Controle de Tapetes (Grupo Terra Branca)
 
 > **Atualizacao 2026-06-27 — fase
+> `RAVATEX-TAPETES-CLIENTE-PORTAL-VISUAL-POLISH-A` (frontend, refino
+> visual).** Refinada a apresentacao do portal cliente B2B nas 5
+> telas (Dashboard, Meus pedidos, Detalhe, Stepper/Acompanhamento,
+> Timeline de atualizacoes), **sem alterar nenhum comportamento
+> homologado, nenhum campo selecionado e nenhuma regra de status**.
+> - **Dashboard** (`js/screens/cliente-dashboard.js`): cards/KPIs com
+>   borda de cor por tipo, layout em duas colunas (Pedidos recentes |
+>   Ultimas atualizacoes) em telas largas, badges de pedido/evento
+>   agora com tom de cor derivado da excecao publicada pelo admin
+>   (mesma paleta do stepper) em vez de azul fixo.
+> - **Meus pedidos** (`js/screens/cliente-pedidos-list.js`): contador
+>   "N pedidos encontrados", tabela com rolagem horizontal
+>   (`overflow-x-auto`), filtros de status em pill arredondado, acao
+>   da tabela renomeada de "Visualizar" para "Ver pedido" (consistente
+>   com o Dashboard). **Select de pedidos inalterado.**
+> - **Detalhe do pedido** (`js/screens/cliente-pedido-detail.js`):
+>   resumo do pedido reorganizado em grade de 3 colunas (Prazo de
+>   entrega / Criado em / Atualizado em), tabela de itens com rolagem
+>   horizontal, timeline "Atualizacoes do pedido" com indicador visual
+>   de linha do tempo (ponto + conector). **Selects de pedidos,
+>   pedido_itens e pedido_cliente_eventos inalterados.**
+> - **Stepper/Acompanhamento** (`js/screens/cliente-pedido-tracking.js`):
+>   apenas classes visuais (cantos, sombra, espacamento, tamanho dos
+>   circulos) — taxonomia, exceções, "cancelado" como exceção
+>   terminal e mensagem personalizada permanecem 100% intactos. Nao
+>   consulta Supabase (component puro de apresentacao, como antes).
+> - **Menu cliente e shell** (`js/screens/cliente-common.js`): **sem
+>   alteracao** — "Início" e "Meus pedidos" ja atendiam ao padrao
+>   visual; nao havia necessidade de mudanca.
+> - **Seguranca de dados:** confirmado por teste automatizado dedicado
+>   (`tests/cliente-portal-visual.smoke.js`, novo) que nenhuma das 5
+>   telas passou a expor metadata/criado_por/origem,
+>   `pedido_eventos` (tabela interna), OP/lote/fornecedor/NF/
+>   romaneio/custo/margem/token_acesso, nem ganhou acao de escrita
+>   (insert/update/delete/rpc/functions.invoke, ou botao "Cancelar
+>   pedido"/"Confirmar pedido"/"Editar"). Os SELECTs de `pedidos`,
+>   `pedido_itens` e `pedido_cliente_eventos` foram comparados
+>   literalmente (string exata) contra o estado anterior a fase —
+>   nenhum campo novo foi selecionado.
+> - **Admin e fornecedor:** **não alterados.** Nenhum arquivo de
+>   `db/**`, `supabase/functions/**` ou tela admin/fornecedor foi
+>   tocado. **Sem schema, sem SQL, sem Supabase migration.**
+> - **Verificacao visual manual** (app local conectado ao Supabase
+>   staging `ucrjtfswnfdlxwtmxnoo`, usuario `cliente@teste.com`):
+>   Dashboard com KPIs coloridos e grade de 2 colunas em desktop,
+>   badges com tom (ambar para "Aguardando insumo", azul para
+>   "Acabamento"); Detalhe com resumo em 3 colunas e timeline com
+>   pontos; Meus pedidos com contador e acao "Ver pedido" —
+>   confirmados sem erro de console.
+> - Testes focados: lista obrigatoria da fase (`cliente-dashboard`,
+>   `cliente-pedido-detail`, `cliente-pedido-events`,
+>   `cliente-pedido-tracking`, `cliente-tracking-steps`,
+>   `cliente-routing`, `boot`) + `cliente-pedidos-list` +
+>   `cliente-portal-visual` (novo, com 49 casos) = **265 testes,
+>   todos passaram**.
+> Proxima fase recomendada: homologacao visual manual completa em
+> staging pelo dono do produto, ou nova rodada de refinamento se
+> houver feedback visual.
+
+> **Atualizacao 2026-06-27 — fase
 > `RAVATEX-TAPETES-CLIENTE-PROVISIONING-STAGING-VERIFY-A` (verificacao
 > operacional controlada + docs-only).** **CONFIRMADO: a Edge Function
 > `admin-create-user` deployada no Supabase staging
