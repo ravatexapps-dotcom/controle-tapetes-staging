@@ -10,12 +10,13 @@
 
 ## Estado atual aceito
 - **Estado atual aceito:** `work/app-next` na ponta da fase
-  `RAVATEX-TAPETES-PEDIDOS-CLIENTE-TRACKING-EVENTS-RLS-A`
-  (policy cliente SELECT de `pedido_cliente_eventos` versionada no repo,
-  ainda nao aplicada em staging; frontend cliente segue sem timeline).
-- **HEAD aceito de entrada desta fase:** `2e37658`
-  (fase TRACKING-ADMIN-A tecnicamente aceita; base pronta para a
-  policy cliente SELECT desta fase).
+  `RAVATEX-TAPETES-PEDIDOS-CLIENTE-TRACKING-EVENTS-RLS-B`
+  (policy cliente SELECT de `pedido_cliente_eventos` aplicada e
+  validada em staging `ucrjtfswnfdlxwtmxnoo`; frontend cliente segue
+  sem timeline).
+- **HEAD aceito de entrada desta fase:** `ff1d2c5`
+  (fase EVENTS-RLS-A tecnicamente aceita, policy versionada no repo;
+  esta fase aplicou exatamente esse SQL em staging).
 - **Working tree:** limpo após commit.
 - **origin/main:** `1047181eba888242c6428de366cbd9fda2f1c72c` — intocado
 - **PR #2:** intocado
@@ -52,16 +53,23 @@
   `tests/cliente-tracking-schema.smoke.js`. **Sem frontend.**
   **Sem dropdown admin.** **Sem policy cliente na nova tabela.**
 - **Policy Cliente Eventos** `db/16_pedido_cliente_eventos_cliente_select.sql`
-  **versionada apenas no repo** em `2026-06-26`, sem aplicacao no
-  Supabase nesta fase. Cria de forma idempotente a policy
+  **aplicada e validada em staging** `ucrjtfswnfdlxwtmxnoo` em
+  `2026-06-27` (fase EVENTS-RLS-B), aplicada manualmente por HMNlead no
+  Dashboard SQL Editor, exatamente como versionado, sem tocar
+  `bhgifjrfagkzubpyqpew`. Cria de forma idempotente a policy
   `pedido_cliente_eventos_cliente_select` em
   `public.pedido_cliente_eventos`, limitada a `FOR SELECT`, exigindo
   `visivel_cliente = true` e ownership via `public.pedidos`
   (`p.id = pedido_cliente_eventos.pedido_id` e
   `p.cliente_id = public.meu_cliente_id()`). Preserva
   `pedido_cliente_eventos_admin_all`, nao cria INSERT/UPDATE/DELETE de
-  cliente, nao altera frontend e nao libera timeline ainda. Validado
-  por `tests/cliente-events-rls-schema.smoke.js`.
+  cliente, nao altera frontend e nao libera timeline ainda. Validacao
+  pos-aplicacao: 2 policies na tabela (`admin_all` cmd `ALL`,
+  `cliente_select` cmd `SELECT`); `qual` da policy cliente confirma
+  `visivel_cliente = true` + `EXISTS` + `pedidos` + `meu_cliente_id()`;
+  RLS habilitada (`relrowsecurity = true`); 10 colunas preservadas;
+  `count(*) = 0`. Validado por `tests/cliente-events-rls-schema.smoke.js`
+  (13/13).
 - **Provisionamento cliente** (fase PROV-A, esta): `admin-create-user`
   aceita `cliente` (valida `cliente_id` em `public.clientes`, rejeita
   `fornecedor_id` simultâneo). UI `#/cadastros/usuarios` com tipo
@@ -331,14 +339,15 @@ visual sem reaproveitar `pedido_eventos` e sem depender de
 puros para admin/cliente/dashboard futuros, sem integrar ainda as
 telas ao `status_cliente_visual` real.
 
-**Proxima fase recomendada:** aplicar
-`db/16_pedido_cliente_eventos_cliente_select.sql` no Supabase staging.
+**Aplicado:** `db/16_pedido_cliente_eventos_cliente_select.sql` ja foi
+aplicado e validado no Supabase staging `ucrjtfswnfdlxwtmxnoo`
+(fase EVENTS-RLS-B).
 
 **Atualizacao:** o detalhe cliente ja passou a ler
 `status_cliente_visual` real nesta fase.
 
-**Fase seguinte depois do apply:** cliente ler
-`pedido_cliente_eventos` em uma timeline read-only propria.
+**Proxima fase recomendada:** cliente ler `pedido_cliente_eventos` em
+uma timeline read-only propria no frontend.
 
 **Sequencia recomendada depois desta fase:** historico visivel;
 dashboard cliente; redesign de shell/componentes comuns; e so depois

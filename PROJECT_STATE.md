@@ -1,26 +1,28 @@
 # PROJECT_STATE.md — Controle de Tapetes (Grupo Terra Branca)
 
-> Snapshot de estado canonico curto. Atualizado em **2026-06-26** (fase
-> `RAVATEX-TAPETES-PEDIDOS-CLIENTE-TRACKING-STEPS-A` — camada
-> compartilhada de taxonomia visual do cliente B2B).
-> **O schema de tracking visual foi aplicado e validado no projeto
-> Supabase paralelo/staging `ucrjtfswnfdlxwtmxnoo`.** A fase aplicou
-> exatamente `db/15_status_cliente_visual.sql`, mantendo a separacao
-> entre `pedidos.status` (operacional) e `status_cliente_visual`
-> (comunicacao externa). **Nesta fase atual**, foi criada a camada
-> compartilhada `js/pedido-tracking-ui.js` com taxonomia e helpers
-> puros para o tracking visual, **sem** trocar o comportamento atual
-> das telas cliente. **Sem dropdown admin. Sem writes. Sem automacao.
-> Sem alteracao em producao/original.**
+> Snapshot de estado canonico curto. Atualizado em **2026-06-27** (fase
+> `RAVATEX-TAPETES-PEDIDOS-CLIENTE-TRACKING-EVENTS-RLS-B` — aplicacao em
+> staging da policy cliente SELECT de `pedido_cliente_eventos`).
+> **A policy `pedido_cliente_eventos_cliente_select` foi aplicada e
+> validada no projeto Supabase paralelo/staging `ucrjtfswnfdlxwtmxnoo`,
+> sem tocar o projeto original/producao `bhgifjrfagkzubpyqpew`.** A fase
+> aplicou exatamente `db/16_pedido_cliente_eventos_cliente_select.sql`,
+> liberando apenas SELECT do cliente para eventos com
+> `visivel_cliente = true` de pedidos proprios (ownership via
+> `public.pedidos` e `meu_cliente_id()`). A policy admin
+> `pedido_cliente_eventos_admin_all` foi preservada. **Sem
+> INSERT/UPDATE/DELETE de cliente. Sem frontend. Sem timeline cliente
+> ainda. Sem alteracao em producao/original.**
 
 ## Produto
-> Atualizacao da fase `RAVATEX-TAPETES-PEDIDOS-CLIENTE-TRACKING-EVENTS-RLS-A`:
-> `db/16_pedido_cliente_eventos_cliente_select.sql` e
-> `tests/cliente-events-rls-schema.smoke.js` foram versionados no repo
-> para liberar futuramente apenas SELECT cliente de eventos visiveis de
-> pedidos proprios em `public.pedido_cliente_eventos`, **mas o SQL ainda
-> nao foi aplicado em staging**. **Nao houve alteracao de frontend nesta
-> fase.**
+> Atualizacao da fase `RAVATEX-TAPETES-PEDIDOS-CLIENTE-TRACKING-EVENTS-RLS-B`:
+> `db/16_pedido_cliente_eventos_cliente_select.sql` foi aplicado
+> manualmente (HMNlead, via Dashboard SQL Editor) no Supabase
+> staging/paralelo `ucrjtfswnfdlxwtmxnoo`, exatamente como versionado no
+> repo. O cliente agora pode ler, via RLS, apenas eventos visiveis
+> (`visivel_cliente = true`) de pedidos proprios em
+> `public.pedido_cliente_eventos`. **Nao houve alteracao de frontend
+> nesta fase.** Cliente ainda nao tem timeline no frontend.
 SPA web para controlar a produção de tapetes, do pedido de fio até o
 recebimento do látex. Perfis: **admin** (operação), **fornecedor**
 (fio / tecelagem / látex) e **cliente** (pedidos próprios — schema
@@ -1093,12 +1095,43 @@ staging `ucrjtfswnfdlxwtmxnoo`.)*
   fase.** **Dashboard cliente ainda nao existe.** **Status operacional
   segue separado do status visual.**
 
+- 🟢 **Policy cliente SELECT de `pedido_cliente_eventos` aplicada e
+  validada em staging** (fase
+  `RAVATEX-TAPETES-PEDIDOS-CLIENTE-TRACKING-EVENTS-RLS-B`, esta).
+  `db/16_pedido_cliente_eventos_cliente_select.sql` foi aplicado
+  exatamente como versionado, manualmente (HMNlead, via Dashboard SQL
+  Editor) no projeto Supabase paralelo/staging `ucrjtfswnfdlxwtmxnoo`,
+  sem tocar o projeto original/producao `bhgifjrfagkzubpyqpew`. A
+  policy `pedido_cliente_eventos_cliente_select` (`FOR SELECT`) exige
+  `visivel_cliente = true` e ownership via `EXISTS` em
+  `public.pedidos` (`p.id = pedido_cliente_eventos.pedido_id AND
+  p.cliente_id = public.meu_cliente_id()`). Validacao pos-aplicacao:
+  exatamente 2 policies na tabela
+  (`pedido_cliente_eventos_admin_all` cmd `ALL`,
+  `pedido_cliente_eventos_cliente_select` cmd `SELECT`); `qual` da
+  policy cliente confirma `visivel_cliente = true`, `EXISTS`,
+  referencia a `pedidos` e uso de `meu_cliente_id()`; RLS habilitada
+  (`relrowsecurity = true`); as mesmas 10 colunas da fase SCHEMA-B
+  preservadas; `count(*) = 0` em `pedido_cliente_eventos` (nenhuma
+  mutacao de dados). **Nota de validacao:** o filtro
+  `policyname ILIKE '%cliente%'` tambem retorna
+  `pedido_cliente_eventos_admin_all` porque o substring "cliente" faz
+  parte do proprio nome da tabela (`pedido_cliente_eventos`) — isso
+  nao indica policy de escrita para o papel cliente; a `ALL` continua
+  restrita a `is_admin()`. **Nenhuma policy de escrita foi criada para
+  o cliente.** **Sem frontend.** **Sem timeline cliente ainda.**
+  Testes locais focados (116/116):
+  `cliente-events-rls-schema.smoke.js` 13/13,
+  `cliente-tracking-schema.smoke.js` 39/39,
+  `cliente-pedido-detail.smoke.js` 42/42,
+  `cliente-pedido-tracking.smoke.js` 22/22.
+
 ## Próximo passo recomendado
-1. **Aplicar `db/16_pedido_cliente_eventos_cliente_select.sql` no
-   Supabase staging** `ucrjtfswnfdlxwtmxnoo`. Esta e agora a proxima
-   fase recomendada.
-2. **Depois fazer o cliente passar a ler `pedido_cliente_eventos` em
-   uma timeline read-only propria.**
+1. **Aplicado nesta fase:** `db/16_pedido_cliente_eventos_cliente_select.sql`
+   no Supabase staging `ucrjtfswnfdlxwtmxnoo`.
+2. **Proxima fase recomendada:** fazer o cliente passar a ler
+   `pedido_cliente_eventos` em uma timeline read-only propria
+   (frontend), usando a policy ja aplicada.
 3. **Manter `pedido_cliente_eventos` separado do fluxo operacional
    interno.** O historico visual deve continuar desacoplado de
    `pedido_eventos`.
@@ -1108,14 +1141,12 @@ staging `ucrjtfswnfdlxwtmxnoo`.)*
    fornecedor/automacao apenas depois.
 
 > Atualizacao desta fase: a policy cliente SELECT para
-> `pedido_cliente_eventos` foi apenas versionada. A timeline do cliente
-> continua indisponivel e nenhum frontend foi alterado.
+> `pedido_cliente_eventos` foi aplicada e validada em staging. A
+> timeline do cliente continua indisponivel no frontend; nenhum
+> frontend foi alterado.
 >
-> Proxima fase recomendada:
-> 1. Aplicar `db/16_pedido_cliente_eventos_cliente_select.sql` no
->    Supabase staging `ucrjtfswnfdlxwtmxnoo`.
-> 2. Depois ligar a timeline read-only do cliente usando
->    `pedido_cliente_eventos`.
+> Proxima fase recomendada: ligar a timeline read-only do cliente
+> usando `pedido_cliente_eventos`.
 
 ## Estrutura final de responsabilidades
 
