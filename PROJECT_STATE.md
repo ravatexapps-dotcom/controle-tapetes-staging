@@ -1,6 +1,41 @@
 # PROJECT_STATE.md — Controle de Tapetes (Grupo Terra Branca)
 
 > **Atualizacao 2026-06-27 — fase
+> `RAVATEX-TAPETES-CLIENTE-PROVISIONING-STAGING-VERIFY-A` (verificacao
+> operacional controlada + docs-only).** **CONFIRMADO: a Edge Function
+> `admin-create-user` deployada no Supabase staging
+> `ucrjtfswnfdlxwtmxnoo` aceita o fluxo de provisionamento de usuario
+> `tipo=cliente`.** A lacuna documental registrada apos a homologacao
+> do Dashboard Cliente esta **resolvida**.
+> - **Evidencia de codigo versionado:**
+>   `supabase/functions/admin-create-user/index.ts` tem
+>   `ALLOWED_TIPOS = {admin, fornecedor, cliente}` e ramo
+>   `tipo === "cliente"` que rejeita `fornecedor_id`, exige `cliente_id`,
+>   valida existencia em `public.clientes` e grava `usuarios.cliente_id`;
+>   a UI `js/screens/cadastros.js` oferece tipo "Cliente" e invoca
+>   `admin-create-user` com `cliente_id`.
+> - **Metodo de validacao do deploy (nao destrutivo):** login admin
+>   (`admin@tapetes.test`) no app local conectado ao staging; invocacao
+>   `window.supa.functions.invoke('admin-create-user', { body: { tipo:
+>   'cliente', cliente_id: 999999 (inexistente), ... } })`.
+> - **Resultado observado:** HTTP **400**, `code: VALIDATION_ERROR`,
+>   message **"cliente_id não existe em public.clientes."** — mensagem
+>   que so existe no ramo `cliente` (index.ts). A versao antiga teria
+>   barrado antes, no gate de `tipo`, com mensagem de tipo invalido.
+>   Logo, `tipo=cliente` e **aceito** pela versao deployada.
+> - **Nenhum usuario real criado:** a validacao de `cliente_id` ocorre
+>   **antes** de `auth.admin.createUser`; com `cliente_id` inexistente a
+>   chamada falhou na validacao, sem criar Auth user nem perfil. Nenhum
+>   usuario foi criado, alterado ou excluido.
+> - **Produção/original `bhgifjrfagkzubpyqpew` NAO foi tocada.** Apenas
+>   staging. **Senha e token NAO foram registrados** (login feito no
+>   navegador; token nunca saiu da pagina). **Sem** codigo/schema/SQL/
+>   Supabase mutation/frontend nesta fase.
+> Proxima fase recomendada: provisionar de fato um usuario cliente real
+> via UI `#/cadastros/usuarios` em staging (somente com autorizacao
+> explicita), ou seguir para refinamento visual do portal cliente.
+
+> **Atualizacao 2026-06-27 — fase
 > `RAVATEX-TAPETES-CLIENTE-DASHBOARD-HOMOLOG-RECORD-A` (docs-only,
 > registro de homologacao).** A **homologacao manual/controlada do
 > Dashboard Cliente read-only foi APROVADA**, no HEAD homologado
@@ -92,9 +127,9 @@ recebimento do látex. Perfis: **admin** (operação), **fornecedor**
 (fio / tecelagem / látex) e **cliente** (pedidos próprios — schema
 aplicado; **cliente de teste funcional em staging**, login validado na
 homologacao do dashboard 2026-06-27. Provisionamento self-service via
-Edge Function `admin-create-user` aceitando `cliente` permanece em
-codigo, mas **deploy em staging ainda nao confirmado**; o usuario de
-teste pode ter sido criado manualmente).
+Edge Function `admin-create-user` aceitando `cliente` **confirmado
+deployado em staging** em 2026-06-27 — ver bloco
+`...-PROVISIONING-STAGING-VERIFY-A` no topo).
 
 ## Stack real (confirmada)
 - Frontend: `index.html` único + `js/**` (JS clássico, sem build) +

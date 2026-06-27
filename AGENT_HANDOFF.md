@@ -10,9 +10,10 @@
 
 ## Estado atual aceito
 - **Estado atual aceito:** `work/app-next` na ponta da fase
-  `RAVATEX-TAPETES-CLIENTE-DASHBOARD-HOMOLOG-RECORD-A` (docs-only —
-  registro da homologação aprovada do Dashboard Cliente read-only).
-  HEAD homologado e aceito: `54fabfa`.
+  `RAVATEX-TAPETES-CLIENTE-PROVISIONING-STAGING-VERIFY-A` (verificação
+  operacional + docs-only — confirmou deploy do fluxo `cliente` em
+  `admin-create-user` no staging). HEAD de entrada: `cb27a17`; HEAD
+  homologado do dashboard: `54fabfa`.
 - **Homologação Dashboard Cliente APROVADA** (fase
   `RAVATEX-TAPETES-CLIENTE-DASHBOARD-HOMOLOG-RECORD-A`, esta,
   docs-only). Validação manual/controlada feita em **app local
@@ -168,14 +169,20 @@
   `cliente_id` e `cliente_nome`. `isCliente()` disponível.
   **Correção 2026-06-27 (HOMOLOG-RECORD-A):** já **existe um cliente
   de teste funcional em staging** (`cliente@teste.com`, `cliente_id=3`,
-  nome "Teste"), com login validado e dashboard homologado — portanto
-  a nota anterior de "provisionamento cliente pendente / não há cliente
-  em staging" **não vale mais para fins de homologação**. Ressalva
-  fiel: o **deploy da versão de `admin-create-user` que aceita
-  `cliente` em staging ainda NÃO foi confirmado** nesta frente; o
-  usuário de teste pode ter sido criado manualmente. Ou seja: cliente
-  de teste = disponível; provisionamento self-service via Edge Function
-  em staging = ainda a confirmar.
+  nome "Teste"), com login validado e dashboard homologado.
+  **CONFIRMADO 2026-06-27 (PROVISIONING-STAGING-VERIFY-A):** o **deploy
+  da versão de `admin-create-user` que aceita `tipo=cliente` está ATIVO
+  em staging** `ucrjtfswnfdlxwtmxnoo`. Verificado por probe não
+  destrutivo: admin (`admin@tapetes.test`) invocou
+  `functions.invoke('admin-create-user', { body: { tipo: 'cliente',
+  cliente_id: 999999, ... } })` e recebeu HTTP 400 `VALIDATION_ERROR
+  "cliente_id não existe em public.clientes."` — mensagem exclusiva do
+  ramo `cliente` da função; a versão antiga teria barrado antes no gate
+  de `tipo`. **Nenhum usuário real foi criado** (a validação de
+  `cliente_id` ocorre antes de `createUser`). Senha/token **não
+  registrados**; produção `bhgifjrfagkzubpyqpew` **não tocada**. A
+  lacuna "provisionamento self-service via Edge Function em staging =
+  a confirmar" está **resolvida**.
 - **Frontend Pedidos cliente entregue (UI-A + CREATE-A):**
   shell mínimo (`js/screens/cliente-common.js` com `CLIENTE_MENU`:
   "Meus pedidos" apenas), listagem read-only com botão
