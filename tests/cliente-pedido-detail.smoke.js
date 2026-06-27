@@ -92,8 +92,8 @@ test('cliente-pedido-detail: nao expoe pedido_eventos', () => {
   assert.equal(/pedido_eventos/.test(screen), false);
 });
 
-test('cliente-pedido-detail: nao expoe pedido_cliente_eventos', () => {
-  assert.equal(/pedido_cliente_eventos/.test(screen), false);
+test('cliente-pedido-detail: consulta pedido_cliente_eventos para a timeline read-only', () => {
+  assert.match(screen, /from\(['"]pedido_cliente_eventos['"]\)/);
 });
 
 test('cliente-pedido-detail: nao referencia OP', () => {
@@ -210,4 +210,29 @@ test('cliente-pedido-detail: mostra colunas de itens (modelo, cor, largura, prev
 
 test('cliente-pedido-detail: nao tem botoes de acao nos itens', () => {
   assert.match(screen, /actions:\s*\[\]/);
+});
+
+test('cliente-pedido-detail: renderiza a timeline de eventos depois dos itens', () => {
+  const matches = [...screen.matchAll(/container\.replaceChildren\(([^;]*)\);/g)];
+  const principal = matches.find((m) => m[1].includes('buildResumo()'));
+  assert.ok(principal);
+  const args = principal[1];
+  const idxItens = args.indexOf('buildItens()');
+  const idxEventos = args.indexOf('buildEventos()');
+  assert.ok(idxItens !== -1);
+  assert.ok(idxEventos !== -1);
+  assert.ok(idxItens < idxEventos);
+});
+
+test('cliente-pedido-detail: titulo da secao "Atualizacoes do pedido" presente', () => {
+  assert.match(screen, /Atualiza[cç][oõ]es do pedido/i);
+});
+
+test('cliente-pedido-detail: possui empty state para timeline sem eventos', () => {
+  assert.match(screen, /Assim que houver novas atualiza[cç][oõ]es, elas aparecer[aã]o aqui\./);
+});
+
+test('cliente-pedido-detail: erro na timeline nao quebra o restante do detalhe (sem loadingError = eventos)', () => {
+  assert.equal(/loadingError\s*=\s*['"]eventos['"]/.test(screen), false);
+  assert.match(screen, /eventosError/);
 });

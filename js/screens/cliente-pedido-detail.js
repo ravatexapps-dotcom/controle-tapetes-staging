@@ -4,12 +4,16 @@
 // Rota: `#/cliente/pedidos/<uuid>` (parseada por js/router.js).
 //
 // Fase: RAVATEX-TAPETES-PEDIDOS-CLIENTE-UI-A +
-//   RAVATEX-TAPETES-PEDIDOS-CLIENTE-TRACKING-UI-A
+//   RAVATEX-TAPETES-PEDIDOS-CLIENTE-TRACKING-UI-A +
+//   RAVATEX-TAPETES-PEDIDOS-CLIENTE-TRACKING-CLIENTE-EVENTS-A
 // Escopo: leitura apenas. Sem modificar, cancelar ou criar pedido.
 //   Confia na RLS para bloquear acesso a pedidos de outros clientes.
 //   Não expõe dados internos, de produção ou administrativos.
 //   Exibe no topo o card de acompanhamento visual (stepper + situação
-//   atual), delegado a cliente-pedido-tracking.js.
+//   atual), delegado a cliente-pedido-tracking.js. Exibe, após os
+//   itens, a timeline read-only "Atualizações do pedido" com os
+//   eventos visíveis de `pedido_cliente_eventos` do próprio pedido
+//   (confia na policy `pedido_cliente_eventos_cliente_select`).
 //
 // Carregar via <script src="js/screens/cliente-pedido-detail.js"></script>
 // no <head>, DEPOIS de cliente-common.js, cliente-pedido-tracking.js,
@@ -21,14 +25,21 @@
 //   - window.clienteShellLayout (js/screens/cliente-common.js)
 //   - window.buildClientePedidoTrackingCard
 //     (js/screens/cliente-pedido-tracking.js)
+//   - window.RavatexPedidoTracking (js/pedido-tracking-ui.js), usado
+//     apenas para rotular o `status` do evento (mesma taxonomia do
+//     stepper); opcional, sem quebrar a tela se ausente.
 //   - window.pedidoStatusBadge / window.pedidoStatusLabel
 //     / window.corPreviewElement / window.corPreviewHex
 //     / window.fmtDataCurta (js/pedido-ui.js)
 //   - window.navigate (js/router.js)
 //   - window.supa (js/supabase-client.js)
 //
-// SELECT-only em `pedidos`, `pedido_itens`, `modelos`, `cores`.
-// Sem insert/update/delete/rpc.
+// SELECT-only em `pedidos`, `pedido_itens`, `modelos`, `cores`,
+// `pedido_cliente_eventos`. Sem insert/update/delete/rpc.
+// Em `pedido_cliente_eventos`, o SELECT é restrito a
+// `id, pedido_id, status, titulo, mensagem, criado_em` — sem
+// `metadata`, `criado_por` ou `origem`. Falha nessa consulta não
+// quebra o restante do detalhe (erro isolado em `state.eventosError`).
 //
 // Compatibilidade: window.screenClientePedidoDetalhe fica disponível
 // para o matchRoute.
@@ -65,6 +76,22 @@
     return t;
   }
 
+  function fmtEventoData(v) {
+    if (!v) return '—';
+    return window.fmtDataCurta ? window.fmtDataCurta(v) : String(v);
+  }
+
+  function eventoStatusLabel(status) {
+    var api = window.RavatexPedidoTracking
+      || (window.RAVATEX_PEDIDO_UI && window.RAVATEX_PEDIDO_UI.CLIENTE_TRACKING);
+    if (!api) return null;
+    var step = api.getClienteTrackingStep ? api.getClienteTrackingStep(status) : null;
+    if (step) return step.label;
+    var excecao = api.getClienteTrackingException ? api.getClienteTrackingException(status) : null;
+    if (excecao) return excecao.label;
+    return null;
+  }
+
   async function screenClientePedidoDetalhe(pedidoId) {
     if (!UUID_RE.test(String(pedidoId || ''))) {
       window.toast('Identificador de pedido inválido.', 'error');
@@ -92,6 +119,8 @@
       itens: [],
       modelosById: {},
       coresById: {},
+      eventos: [],
+      eventosError: false,
     };
 
     function modelLabel(item) {
@@ -153,6 +182,21 @@
       }
 
       state.pedido = pedidoRes.data;
+
+      var eventosRes = await window.supa
+        .from('pedido_cliente_eventos')
+        .select('id, pedido_id, status, titulo, mensagem, criado_em')
+        .eq('pedido_id', pedidoId)
+        .order('criado_em', { ascending: false });
+
+      if (eventosRes.error) {
+        state.eventosError = true;
+        state.eventos = [];
+        console.error('cliente-pedido-detail: erro ao carregar eventos do pedido', eventosRes.error);
+      } else {
+        state.eventosError = false;
+        state.eventos = eventosRes.data || [];
+      }
 
       var itensRes = await window.supa
         .from('pedido_itens')
@@ -308,6 +352,47 @@
       return wrap;
     }
 
+    function buildEventoItem(evento) {
+      var badge = eventoStatusLabel(evento.status);
+      return window.el('div', { class: 'border-b border-gray-100 last:border-0 py-3' },
+        window.el('div', { class: 'flex flex-wrap items-center gap-2 mb-1' },
+          window.el('span', { class: 'text-sm font-semibold text-gray-900' },
+            fmtTextoOuEmpty(evento.titulo, 'Atualização')),
+          badge
+            ? window.el('span', { class: 'text-xs px-2 py-0.5 rounded-full bg-blue-50 text-blue-700' }, badge)
+            : null
+        ),
+        evento.mensagem
+          ? window.el('p', { class: 'text-sm text-gray-700 mb-1' }, evento.mensagem)
+          : null,
+        window.el('p', { class: 'text-xs text-gray-400' }, fmtEventoData(evento.criado_em))
+      );
+    }
+
+    function buildEventos() {
+      if (!state.pedido) return window.el('div', {});
+      var card = window.el('div', { class: 'bg-white rounded-xl shadow p-6 mb-4' });
+      card.appendChild(window.el('h2', { class: 'text-sm font-semibold text-gray-700 mb-2' },
+        'Atualizações do pedido'));
+
+      if (state.eventosError) {
+        card.appendChild(window.el('p', { class: 'text-sm text-amber-600' },
+          'Não foi possível carregar as atualizações agora.'));
+        return card;
+      }
+
+      if (state.eventos.length === 0) {
+        card.appendChild(window.el('p', { class: 'text-sm text-gray-500' },
+          'Assim que houver novas atualizações, elas aparecerão aqui.'));
+        return card;
+      }
+
+      state.eventos.forEach(function (evento) {
+        card.appendChild(buildEventoItem(evento));
+      });
+      return card;
+    }
+
     function render() {
       var header = buildHeader();
       if (loadingError === 'pedido') {
@@ -322,7 +407,7 @@
             'Erro ao carregar dados do pedido. Tente recarregar a página.'));
         return;
       }
-      container.replaceChildren(header, buildTracking(), buildResumo(), buildDadosGerais(), buildItens());
+      container.replaceChildren(header, buildTracking(), buildResumo(), buildDadosGerais(), buildItens(), buildEventos());
     }
 
     await carregar();

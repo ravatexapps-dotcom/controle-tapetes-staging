@@ -10,13 +10,13 @@
 
 ## Estado atual aceito
 - **Estado atual aceito:** `work/app-next` na ponta da fase
-  `RAVATEX-TAPETES-PEDIDOS-CLIENTE-TRACKING-EVENTS-RLS-B`
-  (policy cliente SELECT de `pedido_cliente_eventos` aplicada e
-  validada em staging `ucrjtfswnfdlxwtmxnoo`; frontend cliente segue
-  sem timeline).
-- **HEAD aceito de entrada desta fase:** `ff1d2c5`
-  (fase EVENTS-RLS-A tecnicamente aceita, policy versionada no repo;
-  esta fase aplicou exatamente esse SQL em staging).
+  `RAVATEX-TAPETES-PEDIDOS-CLIENTE-TRACKING-CLIENTE-EVENTS-A`
+  (timeline read-only de `pedido_cliente_eventos` no detalhe cliente,
+  usando a policy cliente SELECT ja aplicada em staging
+  `ucrjtfswnfdlxwtmxnoo`).
+- **HEAD aceito de entrada desta fase:** `f7b90d9`
+  (fase EVENTS-RLS-B tecnicamente aceita, policy aplicada e validada em
+  staging; esta fase ligou o frontend cliente a essa policy).
 - **Working tree:** limpo após commit.
 - **origin/main:** `1047181eba888242c6428de366cbd9fda2f1c72c` — intocado
 - **PR #2:** intocado
@@ -70,6 +70,24 @@
   RLS habilitada (`relrowsecurity = true`); 10 colunas preservadas;
   `count(*) = 0`. Validado por `tests/cliente-events-rls-schema.smoke.js`
   (13/13).
+- **Timeline cliente de eventos** (fase
+  `RAVATEX-TAPETES-PEDIDOS-CLIENTE-TRACKING-CLIENTE-EVENTS-A`, esta):
+  `js/screens/cliente-pedido-detail.js` consulta
+  `public.pedido_cliente_eventos` com SELECT explicito
+  (`id, pedido_id, status, titulo, mensagem, criado_em`), filtro
+  `.eq('pedido_id', pedidoId)` e `.order('criado_em', { ascending:
+  false })`, usando a policy `pedido_cliente_eventos_cliente_select`.
+  Renderiza secao "Atualizacoes do pedido" apos os itens (card branco
+  no padrao visual existente). Empty state: "Assim que houver novas
+  atualizacoes, elas aparecerao aqui." Erro de leitura isolado em
+  `state.eventosError`, sem afetar `loadingError` nem o resto do
+  detalhe. **Sem** `metadata`/`criado_por`/`origem` no SELECT, sem
+  `select('*')`, sem `pedido_eventos`, sem writes/rpc/
+  `functions.invoke`/`service_role`/`token_acesso`. **Sem** schema/SQL
+  nesta fase. Admin continua o unico publicador (via
+  `pedido-tracking-admin.js`, fase anterior). Fornecedor nao participa.
+  Testes: `tests/cliente-pedido-events.smoke.js` novo (19/19);
+  `tests/cliente-pedido-detail.smoke.js` atualizado (46/46).
 - **Provisionamento cliente** (fase PROV-A, esta): `admin-create-user`
   aceita `cliente` (valida `cliente_id` em `public.clientes`, rejeita
   `fornecedor_id` simultâneo). UI `#/cadastros/usuarios` com tipo
@@ -346,8 +364,16 @@ aplicado e validado no Supabase staging `ucrjtfswnfdlxwtmxnoo`
 **Atualizacao:** o detalhe cliente ja passou a ler
 `status_cliente_visual` real nesta fase.
 
-**Proxima fase recomendada:** cliente ler `pedido_cliente_eventos` em
-uma timeline read-only propria no frontend.
+**Entregue (fase TRACKING-CLIENTE-EVENTS-A, esta):** o cliente ja le
+`pedido_cliente_eventos` em uma timeline read-only no detalhe do
+proprio pedido. Admin continua o unico publicador de eventos.
+Fornecedor, dashboard cliente e automacao continuam fora do escopo.
+
+**Proxima fase recomendada:** validar manualmente o fluxo completo
+admin → cliente em staging (admin publica via
+`pedido-tracking-admin.js`, cliente confere o evento na nova
+timeline), ou avancar para dashboard cliente, conforme decisao do
+dono do projeto.
 
 **Sequencia recomendada depois desta fase:** historico visivel;
 dashboard cliente; redesign de shell/componentes comuns; e so depois

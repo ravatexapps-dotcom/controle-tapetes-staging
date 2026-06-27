@@ -1,28 +1,28 @@
 # PROJECT_STATE.md — Controle de Tapetes (Grupo Terra Branca)
 
 > Snapshot de estado canonico curto. Atualizado em **2026-06-27** (fase
-> `RAVATEX-TAPETES-PEDIDOS-CLIENTE-TRACKING-EVENTS-RLS-B` — aplicacao em
-> staging da policy cliente SELECT de `pedido_cliente_eventos`).
-> **A policy `pedido_cliente_eventos_cliente_select` foi aplicada e
-> validada no projeto Supabase paralelo/staging `ucrjtfswnfdlxwtmxnoo`,
-> sem tocar o projeto original/producao `bhgifjrfagkzubpyqpew`.** A fase
-> aplicou exatamente `db/16_pedido_cliente_eventos_cliente_select.sql`,
-> liberando apenas SELECT do cliente para eventos com
-> `visivel_cliente = true` de pedidos proprios (ownership via
-> `public.pedidos` e `meu_cliente_id()`). A policy admin
-> `pedido_cliente_eventos_admin_all` foi preservada. **Sem
-> INSERT/UPDATE/DELETE de cliente. Sem frontend. Sem timeline cliente
-> ainda. Sem alteracao em producao/original.**
+> `RAVATEX-TAPETES-PEDIDOS-CLIENTE-TRACKING-CLIENTE-EVENTS-A` — timeline
+> read-only de eventos no detalhe cliente).
+> **O detalhe cliente do pedido (`#/cliente/pedidos/<uuid>`) agora exibe
+> uma secao "Atualizacoes do pedido"** com os eventos visiveis do
+> proprio pedido, lidos de `public.pedido_cliente_eventos` usando a
+> policy `pedido_cliente_eventos_cliente_select` ja aplicada em
+> staging. SELECT explicito e sanitizado
+> (`id, pedido_id, status, titulo, mensagem, criado_em`), sem
+> `metadata`, `criado_por` ou `origem`. **Sem schema, SQL, RLS, Edge
+> Function, admin, fornecedor, dashboard ou automacao nesta fase. Sem
+> writes.**
 
 ## Produto
-> Atualizacao da fase `RAVATEX-TAPETES-PEDIDOS-CLIENTE-TRACKING-EVENTS-RLS-B`:
-> `db/16_pedido_cliente_eventos_cliente_select.sql` foi aplicado
-> manualmente (HMNlead, via Dashboard SQL Editor) no Supabase
-> staging/paralelo `ucrjtfswnfdlxwtmxnoo`, exatamente como versionado no
-> repo. O cliente agora pode ler, via RLS, apenas eventos visiveis
-> (`visivel_cliente = true`) de pedidos proprios em
-> `public.pedido_cliente_eventos`. **Nao houve alteracao de frontend
-> nesta fase.** Cliente ainda nao tem timeline no frontend.
+> Atualizacao da fase `RAVATEX-TAPETES-PEDIDOS-CLIENTE-TRACKING-CLIENTE-EVENTS-A`:
+> `js/screens/cliente-pedido-detail.js` passou a consultar
+> `public.pedido_cliente_eventos` (SELECT explicito, ordenado por
+> `criado_em desc`, filtrado por `pedido_id`) e a renderizar uma
+> timeline read-only no detalhe do pedido do cliente, com empty state
+> quando nao ha eventos e tratamento de erro isolado (nao quebra o
+> resto da tela). O admin continua sendo o unico publicador de eventos
+> (via `js/screens/pedido-tracking-admin.js`, fase anterior). Fornecedor
+> nao participa. Dashboard cliente e automacao ainda nao existem.
 SPA web para controlar a produção de tapetes, do pedido de fio até o
 recebimento do látex. Perfis: **admin** (operação), **fornecedor**
 (fio / tecelagem / látex) e **cliente** (pedidos próprios — schema
@@ -1126,27 +1126,70 @@ staging `ucrjtfswnfdlxwtmxnoo`.)*
   `cliente-pedido-detail.smoke.js` 42/42,
   `cliente-pedido-tracking.smoke.js` 22/22.
 
+- 🟢 **Timeline read-only de eventos no detalhe cliente** (fase
+  `RAVATEX-TAPETES-PEDIDOS-CLIENTE-TRACKING-CLIENTE-EVENTS-A`, esta).
+  `js/screens/cliente-pedido-detail.js` passou a consultar
+  `public.pedido_cliente_eventos` com SELECT explicito
+  (`id, pedido_id, status, titulo, mensagem, criado_em`), filtrado por
+  `.eq('pedido_id', pedidoId)` e ordenado por
+  `.order('criado_em', { ascending: false })`. Renderiza a nova secao
+  "Atualizacoes do pedido" apos os itens, listando titulo, mensagem
+  (quando houver), data formatada (`window.fmtDataCurta`) e um badge
+  opcional com o label da etapa/excecao (via
+  `window.RavatexPedidoTracking`, mesma taxonomia do stepper). **Empty
+  state:** "Assim que houver novas atualizacoes, elas aparecerao
+  aqui." quando nao ha eventos. **Erro isolado:** falha na consulta
+  fica em `state.eventosError` (aviso discreto no card), sem afetar
+  `loadingError` nem o restante do detalhe (header, tracking, resumo,
+  itens continuam funcionais). **Sem** `metadata`, `criado_por` ou
+  `origem` no SELECT. **Sem** `select('*')`. **Sem** consulta a
+  `pedido_eventos` (tabela interna). **Sem** insert/update/delete/rpc/
+  `functions.invoke`/`service_role`/`token_acesso`. **Sem** referencia
+  a OP/lote/fornecedor/NF/romaneio/custo/margem. **Nao** altera admin
+  (`pedido-tracking-admin.js` continua sendo o unico publicador),
+  fornecedor, lista de pedidos, criacao de pedido ou o tracking visual
+  (stepper) ja existente. **Sem** schema/SQL/RLS/Edge Function/
+  `index.html` nesta fase. Visual segue o padrao de card branco +
+  bordas suaves + tipografia ja usado nos demais blocos do detalhe
+  cliente (`bg-white rounded-xl shadow p-6 mb-4`), sem novo shell.
+  Testes: novo `tests/cliente-pedido-events.smoke.js` (19/19);
+  `tests/cliente-pedido-detail.smoke.js` atualizado (46/46 — inclui
+  inversao do teste antigo que assumia ausencia de
+  `pedido_cliente_eventos`, mais 4 testes novos de integracao:
+  ordem timeline-apos-itens, titulo da secao, empty state, erro
+  isolado em `eventosError`). Regressao:
+  `tests/cliente-pedido-tracking.smoke.js` 22/22,
+  `tests/cliente-tracking-steps.smoke.js` 16/16,
+  `tests/cliente-events-rls-schema.smoke.js` 13/13,
+  `tests/boot.smoke.js` + `tests/router.smoke.js` +
+  `tests/cliente-routing.smoke.js` + `tests/cliente-pedidos-list.smoke.js`
+  122/122. **Total: 138/138** (focados desta fase, sem contar
+  regressao de boot/router/routing/list).
+
 ## Próximo passo recomendado
-1. **Aplicado nesta fase:** `db/16_pedido_cliente_eventos_cliente_select.sql`
+1. **Aplicado em fase anterior:** `db/16_pedido_cliente_eventos_cliente_select.sql`
    no Supabase staging `ucrjtfswnfdlxwtmxnoo`.
-2. **Proxima fase recomendada:** fazer o cliente passar a ler
-   `pedido_cliente_eventos` em uma timeline read-only propria
-   (frontend), usando a policy ja aplicada.
-3. **Manter `pedido_cliente_eventos` separado do fluxo operacional
+2. **Entregue nesta fase:** cliente agora le `pedido_cliente_eventos`
+   em uma timeline read-only no detalhe do pedido (frontend).
+3. **Proxima fase recomendada:** validar manualmente o fluxo completo
+   admin → cliente em staging (admin publica situacao visual em
+   `pedido-tracking-admin.js`, cliente confere o evento na nova
+   timeline) ou avancar para dashboard cliente, conforme decisao do
+   dono do projeto.
+4. **Manter `pedido_cliente_eventos` separado do fluxo operacional
    interno.** O historico visual deve continuar desacoplado de
    `pedido_eventos`.
-4. **Depois seguir em fases pequenas para consumo no portal do
-   cliente.** Sequencia recomendada: historico visivel;
-   dashboard cliente; redesign do shell/componentes comuns; e
-   fornecedor/automacao apenas depois.
+5. **Depois seguir em fases pequenas para consumo no portal do
+   cliente.** Sequencia recomendada: dashboard cliente; redesign do
+   shell/componentes comuns; e fornecedor/automacao apenas depois.
 
-> Atualizacao desta fase: a policy cliente SELECT para
-> `pedido_cliente_eventos` foi aplicada e validada em staging. A
-> timeline do cliente continua indisponivel no frontend; nenhum
-> frontend foi alterado.
+> Atualizacao desta fase: a timeline read-only de
+> `pedido_cliente_eventos` ja esta disponivel no detalhe cliente. O
+> admin continua sendo o unico publicador de eventos.
 >
-> Proxima fase recomendada: ligar a timeline read-only do cliente
-> usando `pedido_cliente_eventos`.
+> Proxima fase recomendada: validar o fluxo manual admin → cliente em
+> staging, ou avancar para dashboard cliente, conforme decisao do dono
+> do projeto.
 
 ## Estrutura final de responsabilidades
 
