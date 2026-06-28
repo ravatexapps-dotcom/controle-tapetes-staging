@@ -1,6 +1,35 @@
 # PROJECT_STATE.md — Controle de Tapetes (Grupo Terra Branca)
 
 > **Atualizacao 2026-06-28 — fase
+> `RAVATEX-TAPETES-CLIENTE-PORTAL-STAGING-CLOSEOUT-A` (docs-only,
+> closeout do marco funcional do portal cliente em staging).** O
+> **Portal Cliente B2B esta FUNCIONALMENTE HOMOLOGADO em staging**,
+> HEAD fechado `23286ae`, `staging/main` em `23286ae`, Supabase
+> staging `ucrjtfswnfdlxwtmxnoo`. **Produção/original
+> `bhgifjrfagkzubpyqpew` NAO foi tocada; `origin/main` permanece
+> intocado.** Cobertura funcional validada: perfil cliente; login
+> cliente; criacao/lista/detalhe de pedido cliente; dashboard cliente
+> read-only; status visual publicado pelo admin; stepper/
+> acompanhamento; timeline read-only; policy cliente para eventos
+> visiveis; provisionamento cliente em staging via `admin-create-user`
+> validado; ausencia de exposicao de dados internos; portal 100%
+> read-only para o cliente (exceto criacao de pedido); polimento
+> visual inicial. **Esta fase NAO declara a UI como final.** O dono do
+> projeto registrou que a UI atual ainda NAO esta como os HTMLs/
+> mockups pedidos — houve melhoria real, mas ainda ha divergencias
+> visuais e havera ajustes para particularidades operacionais antes
+> de qualquer decisao de producao. **Producao permanece BLOQUEADA**
+> para este bloco: nao ha autorizacao para merge ou deploy em
+> `origin/main` nesta fase nem em fases anteriores. **Esta fase e
+> docs-only: sem codigo, sem schema, sem SQL, sem Supabase, sem
+> Edge Function, sem frontend, sem testes (apenas verificacao Git).**
+> Senha, token e qualquer credencial **nao foram registrados**.
+> Proxima fase recomendada: inventario de gaps de UI, comparando os
+> mockups/HTMLs pedidos pelo dono do projeto contra a implementacao
+> atual das 5 telas do portal cliente, antes de qualquer nova
+> implementacao ou decisao de promocao para producao.
+
+> **Atualizacao 2026-06-28 — fase
 > `RAVATEX-TAPETES-CLIENTE-PORTAL-VISUAL-HOMOLOG-RECORD-A` (docs-only,
 > registro de homologacao).** A **homologacao visual manual do portal
 > cliente B2B, apos o refinamento visual da fase

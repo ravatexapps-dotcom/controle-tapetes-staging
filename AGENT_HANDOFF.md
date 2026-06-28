@@ -10,6 +10,32 @@
 
 ## Estado atual aceito
 - **Estado atual aceito:** `work/app-next` na ponta da fase
+  `RAVATEX-TAPETES-CLIENTE-PORTAL-STAGING-CLOSEOUT-A` (docs-only,
+  closeout do marco funcional do portal cliente em staging — sem
+  schema/SQL/Supabase). HEAD fechado: `23286ae`. `staging/main`:
+  `23286ae`. Supabase staging: `ucrjtfswnfdlxwtmxnoo`. Produção/
+  original `bhgifjrfagkzubpyqpew` e `origin/main` **intocados**.
+- **Closeout funcional de staging do Portal Cliente B2B** (fase
+  `RAVATEX-TAPETES-CLIENTE-PORTAL-STAGING-CLOSEOUT-A`, esta,
+  docs-only). O portal cliente esta **funcionalmente homologado em
+  staging**: perfil cliente, login cliente, criacao/lista/detalhe de
+  pedido cliente, dashboard cliente read-only, status visual publicado
+  pelo admin, stepper/acompanhamento, timeline read-only, policy
+  cliente para eventos visiveis, provisionamento cliente em staging
+  via `admin-create-user` validado, ausencia de exposicao de dados
+  internos, portal 100% read-only para o cliente (exceto criacao de
+  pedido) e polimento visual inicial. **A UI NAO esta marcada como
+  final** — o dono do projeto confirmou que a apresentacao atual ainda
+  diverge dos HTMLs/mockups pedidos e que havera nova rodada de
+  refinamento visual e ajustes para particularidades operacionais.
+  **Producao permanece bloqueada**: nenhuma autorizacao de merge ou
+  deploy para `origin/main` foi dada nesta fase. Sem codigo, sem
+  schema, sem SQL, sem Supabase, sem Edge Function, sem frontend, sem
+  testes (apenas verificacao Git). Senha, token e credencial **nao
+  foram registrados**. Proxima fase recomendada: inventario de gaps de
+  UI (mockups/HTMLs vs. implementacao atual) antes de qualquer nova
+  implementacao ou decisao de promocao para producao.
+- **Estado anterior:** fase
   `RAVATEX-TAPETES-CLIENTE-PORTAL-VISUAL-HOMOLOG-RECORD-A` (docs-only,
   registro de homologacao visual aprovada — sem schema/SQL/Supabase).
   HEAD homologado: `3b0f8e4`.
