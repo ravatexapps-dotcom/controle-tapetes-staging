@@ -1093,3 +1093,37 @@ node --test tests/boot.smoke.js \
 - **Proxima fase recomendada:** homologacao tecnica do fluxo admin
   criando parciais reais em staging, ou leitura read-only de parciais
   no detalhe cliente depois de haver dados controlados suficientes.
+
+## Registro documental de homologacao admin de parciais
+
+- **Estado atual aceito:** `work/app-next` na ponta da fase
+  `RAVATEX-TAPETES-CLIENTE-PARCIAIS-ADMIN-HOMOLOG-RECORD-A`
+  (docs-only). Homologacao tecnica controlada da UI admin de
+  parciais aprovada no HEAD `e2b8723`.
+- **Ambiente homologado:** app local conectado ao Supabase staging
+  `ucrjtfswnfdlxwtmxnoo`, sem tocar producao/original
+  `bhgifjrfagkzubpyqpew`.
+- **Pedido e parcial homologados:** pedido `#2`
+  (`ee62b4aa-aa97-46b9-a44f-3b7d992dcdcb`) recebeu parcial real criada
+  via UI admin, sem SQL manual, com id
+  `3966fb1f-c333-4024-92f9-7fabdaa4e532`, `sequencia = 1`,
+  `situacao = em_acabamento`, `metros = 2500`,
+  `data_referencia = 2026-06-29`, titulo `Parcial em acabamento`,
+  mensagem cliente `Parte do pedido esta em etapa de acabamento.`,
+  `visivel_cliente = true`, `origem = manual`, `metadata = {}` e
+  `criado_por` preenchido (valor nao registrado).
+- **Validacao read-only registrada:** `pedido_parciais` gravou o
+  registro corretamente; `pedidos` sincronizou
+  `parcial_habilitado = true`,
+  `parcial_atualizado_em = 2026-06-29T12:39:43.739178+00:00` e
+  `metros_total = 10000.00`; `status` permaneceu `recebido`;
+  `status_cliente_visual` permaneceu `acabamento`;
+  `status_cliente_excecao` permaneceu `null`.
+- **Escopo preservado:** `pedido_parcial_itens` continua fora do MVP e
+  nao foi usado; cliente ainda nao le `pedido_parciais`; nenhuma tela
+  cliente foi alterada; nenhum dado interno foi exposto ao cliente.
+- **Restricoes preservadas:** sem schema, sem SQL, sem Supabase
+  mutation adicional, sem alteracao de codigo, sem commit de frontend
+  novo nesta fase docs-only.
+- **Proxima fase recomendada:** leitura read-only de parciais no
+  detalhe cliente.

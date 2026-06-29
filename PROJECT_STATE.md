@@ -2065,3 +2065,31 @@ Senhas de teste antigas em `docs/qa/fase1-checklist.md` e
 > homologacao tecnica do fluxo admin criando parciais reais em staging,
 > ou leitura read-only de parciais no detalhe cliente depois de haver
 > dado controlado suficiente.
+
+> **Atualizacao 2026-06-29 — fase
+> `RAVATEX-TAPETES-CLIENTE-PARCIAIS-ADMIN-HOMOLOG-RECORD-A`
+> (docs-only, registro da homologacao tecnica controlada em staging).**
+> Fica registrada como **APROVADA** a homologacao tecnica da UI admin
+> de parciais no HEAD `e2b8723`, em app local conectado ao Supabase
+> staging `ucrjtfswnfdlxwtmxnoo`, sem tocar producao/original
+> `bhgifjrfagkzubpyqpew`. Pedido homologado: `#2`
+> (`ee62b4aa-aa97-46b9-a44f-3b7d992dcdcb`). Parcial real criada via UI
+> admin, sem SQL manual: id
+> `3966fb1f-c333-4024-92f9-7fabdaa4e532`, `sequencia = 1`,
+> `situacao = em_acabamento`, `metros = 2500`,
+> `data_referencia = 2026-06-29`, titulo `Parcial em acabamento`,
+> mensagem cliente `Parte do pedido esta em etapa de acabamento.`,
+> `visivel_cliente = true`, `origem = manual`, `metadata = {}` e
+> `criado_por` preenchido (valor nao registrado). Validacao read-only:
+> `pedido_parciais` recebeu o registro corretamente; `pedidos`
+> sincronizou `parcial_habilitado = true`,
+> `parcial_atualizado_em = 2026-06-29T12:39:43.739178+00:00`,
+> `metros_total = 10000.00`; `status` permaneceu `recebido`,
+> `status_cliente_visual` permaneceu `acabamento` e
+> `status_cliente_excecao` permaneceu `null`. `pedido_parcial_itens`
+> continuou vazio e fora do MVP. Cliente ainda nao le
+> `pedido_parciais`; nenhuma tela cliente foi alterada; nenhum dado
+> interno foi exposto ao cliente. Nenhum schema, SQL, Supabase mutation
+> adicional ou alteracao de frontend/repo foi realizado nesta fase.
+> Proxima fase recomendada: leitura read-only de parciais no detalhe
+> cliente.
