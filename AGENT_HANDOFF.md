@@ -10,6 +10,49 @@
 
 ## Estado atual aceito
 - **Estado atual aceito:** `work/app-next` na ponta da fase
+  `RAVATEX-TAPETES-CLIENTE-PORTAL-UI-GAP-INVENTORY-A` (docs-only,
+  inventário de gaps de UI, read-only/diagnóstico — sem código, sem
+  schema, sem SQL, sem Supabase). HEAD: ver `git log -1` (commit desta
+  fase, mensagem `"Inventory cliente portal UI gaps"`). Supabase
+  staging: `ucrjtfswnfdlxwtmxnoo` (não acessado nesta fase — só
+  leitura de arquivos locais). Produção/original
+  `bhgifjrfagkzubpyqpew` e `origin/main` **intocados**.
+- **Inventário de gaps de UI do Portal Cliente B2B** (fase
+  `RAVATEX-TAPETES-CLIENTE-PORTAL-UI-GAP-INVENTORY-A`, esta, docs-only).
+  Produzido `docs/ui/CLIENTE_PORTAL_UI_GAP_INVENTORY.md`, comparando os
+  5 mockups aprovados (localizados fora do repo em
+  `D:\OneDrive\Ravatex\Inttex\Mockups - nova interface\`: Dashboard
+  Cliente, Novo Pedido, Modal Adicionar Item, Detalhe do Pedido,
+  Admin-Cliente-Acompanhamento B2B) contra as 6 telas/áreas do portal
+  cliente atual (Dashboard, Novo Pedido, Modal Adicionar Item, Detalhe
+  do Pedido, Acompanhamento/Stepper/Timeline, Shell/Menu). Gaps
+  principais: KPIs do dashboard com semântica diferente do mockup;
+  fluxo de novo pedido em 1 etapa/itens inline em vez de tabela+modal+
+  checkout em 2 etapas; campos já existentes no schema
+  (`referencia_cliente`, `tipo_recebimento`, `cor_1_id`/`cor_2_id`/
+  `largura` por item) não capturados na criação; exibição simultânea
+  do status operacional (`pedidoStatusBadge`) e do status visual no
+  detalhe; stepper sem datas por etapa; shell/menu cliente com 2 itens
+  (faltam "Novo pedido" e "Suporte") e sem identidade visual própria,
+  usando `shellLayout` **compartilhado com admin/fornecedor** (risco
+  alto para qualquer correção futura). Particularidades operacionais
+  registradas como **TBD explícito** (sem inventar regra): obrigação
+  ou não de "tipo de recebimento"; checkout em 1 ou 2 etapas; manter
+  ou não o status operacional visível ao cliente; campos obrigatórios
+  do formulário; regras futuras de edição/cancelamento pelo cliente.
+  Proposta de 6 fases futuras no documento (`UI-GAP-FIX-DASHBOARD-A`,
+  `UI-GAP-FIX-NOVO-PEDIDO-A`, `UI-GAP-FIX-MODAL-ITEM-A`,
+  `UI-GAP-FIX-DETALHE-A`, `UI-GAP-FIX-SHELL-A`,
+  `UI-OPERATIONS-RULES-A`), com `UI-OPERATIONS-RULES-A` recomendada
+  como **primeira** (resolve os TBDs antes do código) e
+  `UI-GAP-FIX-SHELL-A` como **última** (maior risco, cross-role).
+  **A UI permanece funcional, NÃO final.** **Produção permanece
+  bloqueada.** Sem código, sem schema, sem SQL, sem Supabase, sem Edge
+  Function, sem frontend, sem testes de app (apenas verificação Git).
+  Senha, token e credencial **não foram registrados**.
+  `docs/ui/CLIENTE_PORTAL_UI_GAP_INVENTORY.md` é diagnóstico/não-
+  canônico, indexado em `docs/DOCUMENTATION_INDEX.md` §1b.
+- **Estado anterior:** fase
   `RAVATEX-TAPETES-CLIENTE-PORTAL-STAGING-CLOSEOUT-A` (docs-only,
   closeout do marco funcional do portal cliente em staging — sem
   schema/SQL/Supabase). HEAD fechado: `23286ae`. `staging/main`:

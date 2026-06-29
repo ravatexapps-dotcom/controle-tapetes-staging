@@ -1,6 +1,48 @@
 # PROJECT_STATE.md — Controle de Tapetes (Grupo Terra Branca)
 
 > **Atualizacao 2026-06-28 — fase
+> `RAVATEX-TAPETES-CLIENTE-PORTAL-UI-GAP-INVENTORY-A` (docs-only,
+> inventario de gaps de UI, read-only/diagnostico).** Concluido o
+> **inventario de divergencias entre os mockups aprovados pelo dono do
+> projeto e a implementacao atual do Portal Cliente B2B**, registrado
+> em `docs/ui/CLIENTE_PORTAL_UI_GAP_INVENTORY.md`. Mockups usados (5,
+> localizados em `D:\OneDrive\Ravatex\Inttex\Mockups - nova interface\`,
+> fora do repo): Dashboard Cliente, Novo Pedido, Modal Adicionar Item,
+> Detalhe do Pedido, Admin-Cliente-Acompanhamento B2B (cobre
+> stepper/timeline cliente + taxonomia). Nenhum mockup ausente.
+> Comparadas as 6 unidades pedidas: Dashboard Cliente; Novo Pedido;
+> Modal Adicionar Item; Detalhe do Pedido; Acompanhamento/Stepper/
+> Timeline; Shell/Menu cliente. **A UI permanece FUNCIONAL, porem NAO
+> final** — o inventario documenta gaps reais (KPIs do dashboard com
+> semantica diferente; fluxo de novo pedido em 1 etapa inline em vez
+> de tabela+modal+checkout em 2 etapas; ausencia de campos
+> referencia_cliente/tipo_recebimento/Cor1/Cor2/Largura na criacao
+> apesar de ja existirem no schema (`db/15_status_cliente_visual.sql`);
+> exibicao simultanea do status operacional e do status visual no
+> detalhe; ausencia de datas por etapa no stepper; shell/menu cliente
+> com 2 itens em vez de 4 e sem identidade visual propria, usando
+> `shellLayout` compartilhado com admin/fornecedor — risco alto para
+> qualquer correcao futura). **Pendencias operacionais explicitamente
+> registradas como TBD** (sem inventar regra): tipo de retirada/
+> entrega obrigatorio ou nao; fluxo de revisao/checkout antes de
+> finalizar pedido; manter ou nao o status operacional visivel ao
+> cliente no detalhe; campos obrigatorios do formulario; regras
+> futuras de edicao/cancelamento pelo cliente. Proxima fase
+> recomendada: priorizar `UI-OPERATIONS-RULES-A` (docs-only, decidir os
+> TBDs com o dono do projeto) antes de qualquer uma das fases
+> `UI-GAP-FIX-DASHBOARD-A` / `UI-GAP-FIX-NOVO-PEDIDO-A` /
+> `UI-GAP-FIX-MODAL-ITEM-A` / `UI-GAP-FIX-DETALHE-A` propostas no
+> documento; `UI-GAP-FIX-SHELL-A` fica para o final, dado o risco
+> cross-role do `shellLayout` compartilhado. **Producao permanece
+> BLOQUEADA**; `origin/main` e `bhgifjrfagkzubpyqpew` **intocados**.
+> **Esta fase e docs-only/read-only: sem codigo, sem schema, sem SQL,
+> sem Supabase, sem Edge Function, sem frontend, sem testes de app
+> (apenas verificacao Git).** Senha, token e qualquer credencial **nao
+> foram registrados**. `docs/ui/CLIENTE_PORTAL_UI_GAP_INVENTORY.md` e
+> diagnostico/nao-canonico, indexado em `docs/DOCUMENTATION_INDEX.md`
+> §1b — nao substitui nenhuma das 7 fontes canonicas.
+
+> **Atualizacao 2026-06-28 — fase
 > `RAVATEX-TAPETES-CLIENTE-PORTAL-STAGING-CLOSEOUT-A` (docs-only,
 > closeout do marco funcional do portal cliente em staging).** O
 > **Portal Cliente B2B esta FUNCIONALMENTE HOMOLOGADO em staging**,

@@ -38,6 +38,17 @@ fontes canônicas prevalecem.
 > **Em caso de divergência entre qualquer doc e estas 7 fontes,
 > as 7 fontes prevalecem.** Isso inclui este índice.
 
+## 1b. Documentos de diagnóstico de UI (não normativos, não executáveis)
+
+Documentos desta seção **comparam** mockups aprovados contra a
+implementação atual, para escopar fases futuras de ajuste visual.
+**Não são fonte canônica**, não autorizam implementação por si só e
+não substituem nenhuma das 7 fontes de §1.
+
+| Documento | Propósito | Fase |
+|---|---|---|
+| `docs/ui/CLIENTE_PORTAL_UI_GAP_INVENTORY.md` | Inventário read-only de divergências entre os 5 mockups do Portal Cliente B2B (Dashboard, Novo Pedido, Modal Adicionar Item, Detalhe do Pedido, Acompanhamento) e as telas `js/screens/cliente-*.js` atuais. Matriz por tela, gaps detalhados, particularidades operacionais ainda em TBD e proposta de fases futuras (`UI-GAP-FIX-*`, `UI-OPERATIONS-RULES-A`). Não implementa nem corrige nada. | `RAVATEX-TAPETES-CLIENTE-PORTAL-UI-GAP-INVENTORY-A` |
+
 ## 2. Regra de prevalência
 
 Toda decisão operacional, arquitetural ou de governança deve seguir
