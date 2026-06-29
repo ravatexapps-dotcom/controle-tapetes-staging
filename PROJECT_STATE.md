@@ -1931,3 +1931,24 @@ Senhas de teste antigas em `docs/qa/fase1-checklist.md` e
 - O backdoor `*@tapetes.test` (ver histórico de D1) já foi removido?
 - Há link/projeto Vercel real? (premissa atual: não — app é estático
   no GitHub Pages.)
+
+## Registro documental de schema versionado
+
+> **Atualizacao 2026-06-29 — fase
+> `RAVATEX-TAPETES-CLIENTE-PARCIAIS-SCHEMA-DOCS-R1` (docs-only,
+> fechamento documental de schema ja commitado).** Fica aceita com
+> **ressalva documental** a fase
+> `RAVATEX-TAPETES-CLIENTE-PARCIAIS-SCHEMA-A-R1`, correspondente ao
+> commit publicado `0a02f6a — Add pedido parciais schema`. Arquivos
+> publicados nesse commit: `db/17_pedido_parciais_schema.sql` e
+> `tests/pedido-parciais-schema.smoke.js`. O smoke estatico passou
+> **16/16**. O SQL permaneceu **nao aplicado** em Supabase; nenhum
+> banco remoto foi tocado; producao/original permaneceram intocados.
+> O commit ficou restrito a schema versionado + validacao estatica,
+> sem frontend, sem helper/read-model de parciais, sem lista/status
+> visual do cliente. Residuos locais fora de escopo foram preservados
+> para fases futuras. Proxima sequencia recomendada:
+> 1. helper/read-model de parciais;
+> 2. lista cliente/status visual;
+> 3. apply controlado de `db/17_pedido_parciais_schema.sql` em
+> staging, somente quando houver autorizacao explicita.

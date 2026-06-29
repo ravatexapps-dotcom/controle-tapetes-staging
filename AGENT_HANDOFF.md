@@ -960,3 +960,25 @@ node --test tests/boot.smoke.js \
   adaptados à arquitetura atual antes de qualquer uso).
 - Tratar `docs/qa/*.md` como especificação técnica atual
   (checklists históricos; ver `docs/qa/README.md`).
+## Registro documental de schema versionado
+
+- **Estado atual aceito:** `work/app-next` na ponta da fase
+  `RAVATEX-TAPETES-CLIENTE-PARCIAIS-SCHEMA-DOCS-R1` (docs-only,
+  fechamento documental). A fase
+  `RAVATEX-TAPETES-CLIENTE-PARCIAIS-SCHEMA-A-R1` fica aceita com
+  **ressalva documental** por registrar, apos o fato, o commit
+  publicado `0a02f6a — Add pedido parciais schema`.
+- **Escopo publicado no commit `0a02f6a`:**
+  `db/17_pedido_parciais_schema.sql` +
+  `tests/pedido-parciais-schema.smoke.js`.
+- **Validacao registrada:** smoke estatico `16/16`; SQL **nao
+  aplicado** em Supabase; producao/original **intocados**; nenhum
+  frontend/helper/read-model/lista entrou no commit.
+- **Residuos locais preservados para fases futuras:** helper/read-model
+  de parciais, lista cliente/status visual e seus testes dedicados
+  permaneceram fora deste fechamento documental.
+- **Proxima sequencia recomendada:**
+  1. helper/read-model de parciais;
+  2. lista cliente/status visual;
+  3. apply controlado de `db/17_pedido_parciais_schema.sql` em
+     staging, somente quando houver autorizacao explicita.
