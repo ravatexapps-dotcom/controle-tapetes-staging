@@ -1163,3 +1163,36 @@ node --test tests/boot.smoke.js \
   `tests/cliente-dashboard.smoke.js`.
 - **Proxima fase recomendada:** homologacao E2E admin -> cliente das
   parciais em staging, antes de qualquer resumo em lista/dashboard.
+
+## Registro documental da homologacao cliente de parciais com ressalva visual
+
+- **Estado atual aceito:** `work/app-next` na ponta da fase
+  `RAVATEX-TAPETES-CLIENTE-PARCIAIS-HOMOLOG-RECORD-A`
+  (docs-only). A decisao de entrada
+  `RAVATEX-TAPETES-CLIENTE-PARCIAIS-E2E-HOMOLOG-R1` fica aceita como
+  **APROVADA COM RESSALVA VISUAL** no HEAD `91f7159`.
+- **Ambiente homologado:** app local conectado ao Supabase staging
+  `ucrjtfswnfdlxwtmxnoo`, sem tocar producao/original
+  `bhgifjrfagkzubpyqpew`.
+- **Fluxo funcional minimo homologado:** o cliente dono do pedido `#2`
+  (`ee62b4aa-aa97-46b9-a44f-3b7d992dcdcb`) visualizou no detalhe do
+  proprio pedido a secao `Parciais do pedido`, com a parcial visivel
+  ja homologada (`sequencia = 1`, situacao amigavel
+  `Em acabamento`, `metros = 2500`, `data_referencia = 2026-06-29`,
+  titulo `Parcial em acabamento`, mensagem
+  `Parte do pedido esta em etapa de acabamento.`). Tracking, resumo,
+  itens e timeline permaneceram operacionais no fluxo validado.
+- **Seguranca funcional preservada:** a leitura cliente permaneceu
+  read-only e sem exposicao de `metadata`, `criado_por`, `origem`,
+  `observacao_admin`, `OP`, `lote`, `fornecedor`, `NF`, `romaneio`,
+  `custo`, `margem`, `token_acesso` ou `service_role`.
+- **Escopo preservado:** lista e dashboard cliente continuam sem
+  resumo/bloco de parciais nesta entrega funcional minima; nenhum
+  codigo, schema, SQL, Supabase mutation ou alteracao visual foi
+  realizado nesta fase documental.
+- **Ressalva registrada:** o acabamento visual do detalhe cliente
+  ainda esta distante do HTML de referencia. Essa lacuna nao bloqueia
+  a aprovacao funcional minima da leitura de parciais, mas deve seguir
+  como frente separada de polish visual.
+- **Proxima fase recomendada:** abrir frente dedicada de acabamento
+  visual do detalhe cliente, separada da funcionalidade de parciais.

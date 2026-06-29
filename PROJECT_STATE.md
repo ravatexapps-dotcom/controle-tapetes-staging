@@ -2121,3 +2121,31 @@ Senhas de teste antigas em `docs/qa/fase1-checklist.md` e
 > `tests/cliente-pedidos-list.smoke.js` e
 > `tests/cliente-dashboard.smoke.js`. Proxima fase recomendada:
 > homologacao E2E admin -> cliente das parciais em staging.
+
+> **Atualizacao 2026-06-29 — fase
+> `RAVATEX-TAPETES-CLIENTE-PARCIAIS-HOMOLOG-RECORD-A`
+> (docs-only, fechamento documental da homologacao E2E com ressalva
+> visual).** Fica registrada como **APROVADA COM RESSALVA VISUAL** a
+> decisao de entrada `RAVATEX-TAPETES-CLIENTE-PARCIAIS-E2E-HOMOLOG-R1`
+> no HEAD `91f7159`, em app local conectado ao Supabase staging
+> `ucrjtfswnfdlxwtmxnoo`, sem tocar producao/original
+> `bhgifjrfagkzubpyqpew`. O cliente validou em staging a leitura
+> read-only de parciais no detalhe do proprio pedido `#2`
+> (`ee62b4aa-aa97-46b9-a44f-3b7d992dcdcb`), exibindo a secao
+> `Parciais do pedido` com a parcial visivel ja homologada
+> (`sequencia = 1`, situacao amigavel `Em acabamento`,
+> `metros = 2500`, `data_referencia = 2026-06-29`, titulo
+> `Parcial em acabamento`, mensagem
+> `Parte do pedido esta em etapa de acabamento.`), mantendo tracking,
+> resumo, itens e timeline operacionais e sem expor `metadata`,
+> `criado_por`, `origem`, `observacao_admin`, `OP`, `lote`,
+> `fornecedor`, `NF`, `romaneio`, `custo`, `margem`, `token_acesso`
+> ou `service_role`. Lista e dashboard cliente continuam sem resumo de
+> parciais nesta trilha funcional minima. Ressalva registrada: o
+> acabamento visual do detalhe cliente ainda esta distante do HTML de
+> referencia e deve seguir em frente separada, sem bloquear a
+> aprovacao funcional minima desta leitura cliente. Nenhum codigo,
+> schema, SQL, Supabase mutation ou alteracao visual foi realizado
+> nesta fase docs-only. Proxima fase recomendada: frente dedicada de
+> polish visual do detalhe cliente, separada da funcionalidade de
+> parciais.
