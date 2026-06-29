@@ -224,7 +224,7 @@ test('cliente-pedido-detail: chama window.buildClientePedidoTrackingCard', () =>
   assert.match(screen, /window\.buildClientePedidoTrackingCard/);
 });
 
-test('cliente-pedido-detail: renderiza o card de acompanhamento antes do resumo', () => {
+test('cliente-pedido-detail: renderiza o card de acompanhamento depois do resumo', () => {
   const matches = [...screen.matchAll(/container\.replaceChildren\(([^;]*)\);/g)];
   const principal = matches.find((m) => m[1].includes('buildResumo()'));
   assert.ok(principal);
@@ -232,20 +232,39 @@ test('cliente-pedido-detail: renderiza o card de acompanhamento antes do resumo'
   const idxTracking = args.indexOf('buildTracking()');
   const idxResumo = args.indexOf('buildResumo()');
   assert.ok(idxTracking !== -1);
-  assert.ok(idxTracking < idxResumo);
+  assert.ok(idxResumo < idxTracking);
 });
 
-test('cliente-pedido-detail: mostra colunas de itens (modelo, cor, largura, preview, metros, observacao)', () => {
-  assert.match(screen, /label:\s*['"]Modelo['"]/);
-  assert.match(screen, /label:\s*['"]Cor 1 \/ Cor 2['"]/);
-  assert.match(screen, /label:\s*['"]Largura['"]/);
-  assert.match(screen, /label:\s*['"]Preview['"]/);
-  assert.match(screen, /label:\s*['"]Metros['"]/);
-  assert.match(screen, /label:\s*['"]Observa/);
+function extractFunctionBody(source, fnName) {
+  const start = source.indexOf('function ' + fnName + '(');
+  assert.ok(start !== -1, 'function ' + fnName + ' nao encontrada');
+  const next = source.indexOf('\n    function ', start + 1);
+  return next === -1 ? source.slice(start) : source.slice(start, next);
+}
+
+test('cliente-pedido-detail: itens do pedido usa layout local compacto (sem window.dataTable)', () => {
+  const body = extractFunctionBody(screen, 'buildItens');
+  assert.equal(/window\.dataTable\(/.test(body), false);
+  assert.match(body, /Itens do pedido/);
+  const rowBody = extractFunctionBody(screen, 'buildItemRow');
+  assert.match(rowBody, /modelLabel\(/);
+  assert.match(rowBody, /itemCoresLabel\(/);
+  assert.match(rowBody, /itemPreviewEl\(/);
+  assert.match(rowBody, /fmtMetros\(/);
 });
 
-test('cliente-pedido-detail: nao tem botoes de acao nos itens', () => {
-  assert.match(screen, /actions:\s*\[\]/);
+test('cliente-pedido-detail: itens do pedido nao renderiza botoes de acao', () => {
+  const body = extractFunctionBody(screen, 'buildItens') + extractFunctionBody(screen, 'buildItemRow');
+  assert.equal(/<button/i.test(body), false);
+  assert.equal(/'button'/.test(body), false);
+});
+
+test('cliente-pedido-detail: secao "Distribuicao atual" presente e usa buildPedidoAcompanhamentoParcial', () => {
+  assert.match(screen, /Distribui[cç][aã]o atual/i);
+  const body = extractFunctionBody(screen, 'buildDistribuicaoAtual');
+  assert.match(body, /buildPedidoAcompanhamentoParcial/);
+  assert.match(body, /acompanhamento\.distribuicao/);
+  assert.equal(/window\.supa/.test(body), false);
 });
 
 test('cliente-pedido-detail: renderiza a timeline de eventos depois dos itens', () => {
@@ -260,8 +279,8 @@ test('cliente-pedido-detail: renderiza a timeline de eventos depois dos itens', 
   assert.ok(idxItens < idxEventos);
 });
 
-test('cliente-pedido-detail: titulo da secao "Atualizacoes do pedido" presente', () => {
-  assert.match(screen, /Atualiza[cç][oõ]es do pedido/i);
+test('cliente-pedido-detail: titulo da secao "Historico" presente', () => {
+  assert.match(screen, /Hist[oó]rico/i);
 });
 
 test('cliente-pedido-detail: possui empty state para timeline sem eventos', () => {
@@ -286,17 +305,37 @@ test('cliente-pedido-detail: erro nas parciais nao quebra o restante do detalhe'
   assert.match(screen, /parciaisError/);
 });
 
-test('cliente-pedido-detail: renderiza parciais antes dos itens e preserva timeline depois', () => {
+test('cliente-pedido-detail: parciais em layout tabular com colunas Parcial/Situacao/Metragem/Atualizado em', () => {
+  const body = extractFunctionBody(screen, 'buildParciaisHeaderRow');
+  assert.match(body, /['"]Parcial['"]/);
+  assert.match(body, /Situa[cç][aã]o/);
+  assert.match(body, /Metragem/);
+  assert.match(body, /Atualizado em/);
+});
+
+test('cliente-pedido-detail: parciais nao usa campos alem do DTO existente (codigo, label, metros, dataReferencia, titulo, mensagemCliente)', () => {
+  const body = extractFunctionBody(screen, 'buildParcialRow');
+  assert.match(body, /parcial\.codigo/);
+  assert.match(body, /parcial\.label/);
+  assert.match(body, /parcial\.metros/);
+  assert.match(body, /parcial\.dataReferencia/);
+  assert.equal(/parcial\.atualizadoEm/.test(body), false);
+});
+
+test('cliente-pedido-detail: renderiza itens e distribuicao antes das parciais e preserva timeline depois', () => {
   const matches = [...screen.matchAll(/container\.replaceChildren\(([\s\S]*?)\);/g)];
   const principal = matches.find((m) => m[1].includes('buildResumo()'));
   assert.ok(principal);
   const args = principal[1];
   const idxParciais = args.indexOf('buildParciais()');
   const idxItens = args.indexOf('buildItens()');
+  const idxDistribuicao = args.indexOf('buildDistribuicaoAtual()');
   const idxEventos = args.indexOf('buildEventos()');
   assert.ok(idxParciais !== -1);
   assert.ok(idxItens !== -1);
+  assert.ok(idxDistribuicao !== -1);
   assert.ok(idxEventos !== -1);
-  assert.ok(idxParciais < idxItens);
-  assert.ok(idxItens < idxEventos);
+  assert.ok(idxItens < idxParciais);
+  assert.ok(idxDistribuicao < idxParciais);
+  assert.ok(idxParciais < idxEventos);
 });

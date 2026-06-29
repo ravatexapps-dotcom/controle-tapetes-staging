@@ -6,30 +6,35 @@
 // Fase: RAVATEX-TAPETES-PEDIDOS-CLIENTE-UI-A +
 //   RAVATEX-TAPETES-PEDIDOS-CLIENTE-TRACKING-UI-A +
 //   RAVATEX-TAPETES-PEDIDOS-CLIENTE-TRACKING-CLIENTE-EVENTS-A +
-//   RAVATEX-TAPETES-CLIENTE-PORTAL-VISUAL-POLISH-A (resumo em grade,
-//   timeline com indicador visual, sem novas colunas selecionadas)
+//   RAVATEX-TAPETES-CLIENTE-PORTAL-VISUAL-POLISH-A +
+//   RAVATEX-TAPETES-CLIENTE-DETAIL-REFERENCE-ALIGN-B1 +
+//   RAVATEX-TAPETES-CLIENTE-DETAIL-MATCH-STANDALONE-CLAUDE
+//   (redesign visual completo para igualar ao HTML standalone de
+//   referencia: breadcrumb + titulo inline, meta card 3 colunas,
+//   itens em grade 4 colunas com dots de cor, distribuicao com
+//   barras coloridas por situacao, parciais com badge inline-style,
+//   historico com timeline vertical flat — sem alterar contrato de
+//   dados, RLS, selects ou funcionalidades ja homologadas)
 // Escopo: leitura apenas. Sem modificar, cancelar ou criar pedido.
 //   Confia na RLS para bloquear acesso a pedidos de outros clientes.
 //   Não expõe dados internos, de produção ou administrativos.
-//   Exibe no topo o card de acompanhamento visual (stepper + situação
-//   atual), delegado a cliente-pedido-tracking.js. Exibe, após os
-//   itens, a timeline read-only "Atualizações do pedido" com os
-//   eventos visíveis de `pedido_cliente_eventos` do próprio pedido
-//   (confia na policy `pedido_cliente_eventos_cliente_select`).
+//   Ordem de renderização: header/titulo →
+//   resumo (meta card) → observação geral →
+//   acompanhamento (stepper, delegado a cliente-pedido-tracking.js) →
+//   itens + distribuição atual (2 colunas) → parciais do pedido →
+//   histórico read-only com os eventos visíveis de
+//   `pedido_cliente_eventos` do próprio pedido.
 //
 // Carregar via <script src="js/screens/cliente-pedido-detail.js"></script>
 // no <head>, DEPOIS de cliente-common.js, cliente-pedido-tracking.js,
 // pedido-ui.js e ui.js.
 //
 // Dependências resolvidas em tempo de chamada:
-//   - window.el / window.toast / window.pageHeader / window.dataTable
-//     (js/ui.js)
+//   - window.el / window.toast / window.pageHeader (js/ui.js)
 //   - window.clienteShellLayout (js/screens/cliente-common.js)
 //   - window.buildClientePedidoTrackingCard
 //     (js/screens/cliente-pedido-tracking.js)
-//   - window.RavatexPedidoTracking (js/pedido-tracking-ui.js), usado
-//     apenas para rotular o `status` do evento (mesma taxonomia do
-//     stepper); opcional, sem quebrar a tela se ausente.
+//   - window.RavatexPedidoTracking (js/pedido-tracking-ui.js)
 //   - window.pedidoStatusBadge / window.pedidoStatusLabel
 //     / window.corPreviewElement / window.corPreviewHex
 //     / window.fmtDataCurta (js/pedido-ui.js)
@@ -38,20 +43,6 @@
 //
 // SELECT-only em `pedidos`, `pedido_parciais`, `pedido_itens`,
 // `modelos`, `cores`, `pedido_cliente_eventos`.
-// Sem insert/update/delete/rpc.
-// Em `pedido_cliente_eventos`, o SELECT é restrito a
-// `id, pedido_id, status, titulo, mensagem, criado_em` — sem
-// `metadata`, `criado_por` ou `origem`. Falha nessa consulta não
-// quebra o restante do detalhe (erro isolado em `state.eventosError`).
-// Em `pedido_parciais`, o SELECT é explícito e sanitizado para cliente:
-// `id, pedido_id, sequencia, situacao, metros, data_referencia, titulo,
-// mensagem_cliente, criado_em, atualizado_em`. A RLS cliente limita
-// a leitura às parciais visíveis do próprio pedido; a tela não faz
-// writes, não consulta `pedido_parcial_itens` e não expõe campos
-// internos/administrativos.
-//
-// Compatibilidade: window.screenClientePedidoDetalhe fica disponível
-// para o matchRoute.
 // =====================================================================
 
 (function (window) {
@@ -71,13 +62,6 @@
     return n.toFixed(2).replace('.', ',') + ' m';
   }
 
-  function fmtLargura(v) {
-    if (v == null) return '—';
-    var n = Number(v);
-    if (!Number.isFinite(n)) return String(v);
-    return n.toFixed(2).replace('.', ',') + ' m';
-  }
-
   function fmtTextoOuEmpty(s, fallback) {
     if (s == null) return fallback || '—';
     var t = String(s).trim();
@@ -90,27 +74,23 @@
     return window.fmtDataCurta ? window.fmtDataCurta(v) : String(v);
   }
 
-  function eventoStatusLabel(status) {
-    var api = window.RavatexPedidoTracking
-      || (window.RAVATEX_PEDIDO_UI && window.RAVATEX_PEDIDO_UI.CLIENTE_TRACKING);
-    if (!api) return null;
-    var step = api.getClienteTrackingStep ? api.getClienteTrackingStep(status) : null;
-    if (step) return step.label;
-    var excecao = api.getClienteTrackingException ? api.getClienteTrackingException(status) : null;
-    if (excecao) return excecao.label;
-    return null;
+  // Cria elemento SVG via innerHTML para suporte a namespace.
+  function svgEl(markup) {
+    var tmp = document.createElement('div');
+    tmp.innerHTML = markup;
+    return tmp.firstChild;
   }
 
   async function screenClientePedidoDetalhe(pedidoId) {
     if (!UUID_RE.test(String(pedidoId || ''))) {
       window.toast('Identificador de pedido inválido.', 'error');
       var errWrap = window.el('div', {},
-        window.el('div', { class: 'bg-white rounded-xl shadow p-6 text-red-700' },
+        window.el('div', { class: 'bg-white rounded border border-gray-200 p-6 text-red-700' },
           'Pedido inválido. Volte para a listagem e tente novamente.'),
         window.el('div', { class: 'mt-4' },
           window.el('button', {
             type: 'button',
-            class: 'px-4 py-2 rounded-lg border hover:bg-gray-50',
+            class: 'px-4 py-2 rounded border border-gray-200 hover:bg-gray-50',
             onclick: function () { window.navigate('#/cliente/pedidos'); },
           }, '← Voltar para lista')
         )
@@ -161,20 +141,54 @@
       return c1 + ' / ' + c2;
     }
 
-    function itemLargura(item) {
-      if (item.largura != null) return fmtLargura(item.largura);
-      var m = state.modelosById[item.modelo_id];
-      if (m && m.largura != null) return fmtLargura(m.largura);
-      return '—';
-    }
-
     function itemPreviewEl(item) {
       var c1Id = item.cor_1_id != null
         ? item.cor_1_id
         : (state.modelosById[item.modelo_id] && state.modelosById[item.modelo_id].cor_1_id);
       var c1Nome = corNomeById(c1Id);
-      if (c1Nome && window.corPreviewElement) return window.corPreviewElement(c1Nome);
-      return window.el('span', { class: 'text-gray-400 text-xs' }, '—');
+      if (c1Nome && window.corPreviewElement) {
+        var thumb = window.corPreviewElement(c1Nome);
+        if (thumb) {
+          // Ajusta tamanho sem sobrescrever background-image (textura do tapete).
+          thumb.style.width = '32px';
+          thumb.style.height = '32px';
+          thumb.style.borderRadius = '4px';
+          thumb.style.border = '1px solid rgba(0,0,0,0.08)';
+          thumb.style.flexShrink = '0';
+          return thumb;
+        }
+      }
+      return window.el('div', {
+        style: 'width:32px;height:32px;border-radius:4px;border:1px solid #eceef1;background:#f3f4f6;flex-shrink:0;',
+      });
+    }
+
+    // Estilos do badge de situacao da parcial (inline, exatos do standalone).
+    function parcialSituacaoStyle(situacao) {
+      var map = {
+        em_tecelagem:   { bg: '#eef3ff', color: '#3b5bdb', dot: '#5b9df0' },
+        em_acabamento:  { bg: '#fff4e6', color: '#c05c1a', dot: '#e07b39' },
+        pronto_retirada:{ bg: '#eaf1fd', color: '#2563eb', dot: '#2563eb' },
+        pronto_envio:   { bg: '#eaf1fd', color: '#2563eb', dot: '#2563eb' },
+        em_transporte:  { bg: '#f3e8ff', color: '#7c3aed', dot: '#8b5cf6' },
+        entregue:       { bg: '#e6f4ec', color: '#18794a', dot: '#18794a' },
+        cancelado:      { bg: '#fee2e2', color: '#b91c1c', dot: '#ef4444' },
+      };
+      return map[situacao] || { bg: '#f3f4f6', color: '#4b5563', dot: '#9ca3af' };
+    }
+
+    // Cor da barra na secao Distribuicao atual por situacao da parcial.
+    function distribuicaoBarColor(situacao) {
+      var map = {
+        em_tecelagem:    '#5b9df0',
+        em_acabamento:   '#e07b39',
+        pronto_retirada: '#2563eb',
+        pronto_envio:    '#2563eb',
+        em_transporte:   '#8b5cf6',
+        entregue:        '#18794a',
+        concluido:       '#18794a',
+      };
+      return map[situacao] || '#5b9df0';
     }
 
     async function carregar() {
@@ -282,41 +296,140 @@
       }
     }
 
+    // Breadcrumb + titulo + badge de status + data de atualizacao.
+    // Substitui window.pageHeader para igualar ao standalone.
     function buildHeader() {
-      return window.pageHeader('Pedido', [
-        {
-          label: '← Voltar para lista',
-          onclick: function () { window.navigate('#/cliente/pedidos'); },
+      var p = state.pedido;
+      var numero = p ? fmtNumero(p.numero) : 'Pedido';
+
+      var backBtn = window.el('button', {
+        type: 'button',
+        style: 'display:flex;align-items:center;gap:8px;border:1px solid #d8dce2;background:#fff;'
+          + 'color:#3f4757;border-radius:4px;padding:8px 14px;font-size:13.5px;font-weight:600;'
+          + 'cursor:pointer;font-family:inherit;',
+        onclick: function () { window.navigate('#/cliente/pedidos'); },
+      },
+        svgEl('<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"'
+          + ' stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">'
+          + '<line x1="19" y1="12" x2="5" y2="12"></line>'
+          + '<polyline points="12 19 5 12 12 5"></polyline>'
+          + '</svg>'),
+        'Voltar para pedidos'
+      );
+
+      var breadcrumb = window.el('div', {
+        style: 'display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;',
+      },
+        window.el('div', { style: 'font-size:14px;color:#9aa2af;' },
+          'Meus pedidos ',
+          window.el('span', { style: 'margin:0 4px;color:#d0d5dc;' }, '/'),
+          window.el('span', { style: 'color:#5b6472;font-weight:600;' }, ' ' + numero)
+        ),
+        backBtn
+      );
+
+      if (!p) return breadcrumb;
+
+      // Badge de status: usa tracking visual quando disponivel; fallback para pedidoStatusBadge.
+      var trackingApi = window.RavatexPedidoTracking
+        || (window.RAVATEX_PEDIDO_UI && window.RAVATEX_PEDIDO_UI.CLIENTE_TRACKING);
+      var statusBadge;
+      if (p.status_cliente_visual && trackingApi) {
+        var trackingStep = trackingApi.getClienteTrackingStep
+          ? trackingApi.getClienteTrackingStep(p.status_cliente_visual) : null;
+        var trackingLabel = trackingStep ? trackingStep.label : p.status_cliente_visual;
+        var hasParciais = state.parciais && state.parciais.length > 0;
+        var badgeText = trackingLabel + (hasParciais ? ' · parcial' : '');
+        statusBadge = window.el('span', {
+          style: 'display:inline-flex;align-items:center;gap:7px;background:#eaf1fd;color:#2563eb;'
+            + 'border-radius:4px;padding:5px 12px;font-size:13px;font-weight:700;',
         },
-      ]);
+          window.el('span', {
+            style: 'width:7px;height:7px;border-radius:50%;background:#2563eb;flex-shrink:0;display:inline-block;',
+          }),
+          badgeText
+        );
+      } else {
+        statusBadge = window.pedidoStatusBadge(p.status);
+      }
+
+      var updatedAt = p.status_cliente_atualizado_em || p.atualizado_em;
+      var titleRow = window.el('div', { style: 'margin-bottom:14px;' },
+        window.el('div', {
+          style: 'display:flex;align-items:center;gap:12px;flex-wrap:wrap;',
+        },
+          window.el('h1', {
+            style: 'margin:0;font-size:23px;font-weight:800;color:#16203a;letter-spacing:-.01em;line-height:1.1;',
+          }, numero),
+          statusBadge
+        ),
+        updatedAt
+          ? window.el('div', {
+              style: 'font-size:13px;color:#9aa2af;margin-top:5px;',
+            }, 'Atualizado em ' + window.fmtDataCurta(updatedAt))
+          : null
+      );
+
+      return window.el('div', {}, breadcrumb, titleRow);
     }
 
     function buildTracking() {
       if (!state.pedido) return window.el('div', {});
-      return window.buildClientePedidoTrackingCard(state.pedido);
+      return window.buildClientePedidoTrackingCard(state.pedido, state.itens, state.parciais);
     }
 
+    // Meta card com 3 colunas: Atualizado em | Prazo previsto | Recebimento.
     function buildResumo() {
       if (!state.pedido) return window.el('div', {});
       var p = state.pedido;
-      return window.el('div', { class: 'bg-white rounded-xl shadow p-6 mb-4' },
-        window.el('div', { class: 'flex flex-wrap items-center gap-3 mb-4' },
-          window.el('div', { class: 'text-2xl font-bold text-gray-900' }, fmtNumero(p.numero)),
-          window.pedidoStatusBadge(p.status),
-        ),
-        window.el('div', { class: 'grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm border-t border-gray-100 pt-4' },
-          kv('Prazo de entrega', p.prazo_entrega ? window.fmtDataCurta(p.prazo_entrega) : '—'),
-          kv('Criado em', p.criado_em ? window.fmtDataCurta(p.criado_em) : '—'),
-          kv('Atualizado em', p.atualizado_em ? window.fmtDataCurta(p.atualizado_em) : '—'),
-        )
-      );
-    }
 
-    function kv(label, value) {
-      return window.el('div', {},
-        window.el('div', { class: 'text-xs text-gray-500 mb-0.5' }, label),
-        window.el('div', { class: 'text-gray-800 font-medium' }, value)
-      );
+      function metaCol(iconMarkup, labelText, valueText) {
+        return window.el('div', {
+          style: 'flex:1;display:flex;align-items:center;gap:14px;padding:12px 18px;',
+        },
+          svgEl(iconMarkup),
+          window.el('div', {},
+            window.el('div', { style: 'font-size:12px;color:#9aa2af;' }, labelText),
+            window.el('div', {
+              style: 'font-size:14.5px;font-weight:700;color:#16203a;',
+            }, valueText)
+          )
+        );
+      }
+
+      var updatedAt = p.status_cliente_atualizado_em || p.atualizado_em;
+      var updatedStr = updatedAt ? window.fmtDataCurta(updatedAt) : '—';
+      var prazoStr = p.prazo_entrega ? window.fmtDataCurta(p.prazo_entrega) : '—';
+      var recebimentoStr = p.tipo_entrega === 'envio' ? 'Envio' : 'Retirada';
+
+      var iconClock = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none"'
+        + ' stroke="#c2c8d0" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">'
+        + '<circle cx="12" cy="12" r="9"></circle>'
+        + '<polyline points="12 7 12 12 15 14"></polyline>'
+        + '</svg>';
+      var iconCalendar = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none"'
+        + ' stroke="#c2c8d0" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">'
+        + '<rect x="3" y="5" width="18" height="16" rx="2"></rect>'
+        + '<line x1="3" y1="9" x2="21" y2="9"></line>'
+        + '<line x1="8" y1="3" x2="8" y2="6"></line>'
+        + '<line x1="16" y1="3" x2="16" y2="6"></line>'
+        + '</svg>';
+      var iconBox = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none"'
+        + ' stroke="#c2c8d0" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">'
+        + '<path d="M21 8l-9-5-9 5v8l9 5 9-5z"></path>'
+        + '<path d="M3 8l9 5 9-5"></path>'
+        + '<line x1="12" y1="13" x2="12" y2="21"></line>'
+        + '</svg>';
+
+      var col1 = metaCol(iconClock, 'Atualizado em', updatedStr);
+      var col2 = metaCol(iconCalendar, 'Prazo previsto', prazoStr);
+      var col3 = metaCol(iconBox, 'Recebimento', recebimentoStr);
+      col2.style.borderLeft = '1px solid #eceef1';
+      col3.style.borderLeft = '1px solid #eceef1';
+
+      return window.el('div', {
+        style: 'background:#fff;border:1px solid #eceef1;border-radius:4px;display:flex;margin-bottom:14px;overflow:hidden;',
+      }, col1, col2, col3);
     }
 
     function buildDadosGerais() {
@@ -324,21 +437,82 @@
       var p = state.pedido;
       var obs = fmtTextoOuEmpty(p.observacao, '');
       if (!obs || obs === '—') return window.el('div', {});
-      return window.el('div', { class: 'bg-white rounded-xl shadow p-6 mb-4' },
-        window.el('h2', { class: 'text-sm font-semibold text-gray-700 mb-2' }, 'Observação geral'),
-        window.el('p', { class: 'text-gray-800 whitespace-pre-line' }, obs),
+      return window.el('div', {
+        style: 'background:#fff;border:1px solid #eceef1;border-radius:4px;padding:16px 20px;margin-bottom:14px;',
+      },
+        window.el('div', {
+          style: 'font-size:15px;font-weight:700;color:#16203a;margin-bottom:10px;',
+        }, 'Observação geral'),
+        window.el('p', { style: 'font-size:14px;color:#3f4757;white-space:pre-line;' }, obs),
+      );
+    }
+
+    function buildParciaisHeaderRow() {
+      return window.el('div', {
+        style: 'display:grid;grid-template-columns:.8fr 1.6fr .9fr .8fr;gap:12px;'
+          + 'padding:10px 20px;background:#f8f9fb;border-bottom:1px solid #eceef1;',
+      },
+        window.el('div', { style: 'font-size:11.5px;font-weight:600;color:#9aa2af;' }, 'Parcial'),
+        window.el('div', { style: 'font-size:11.5px;font-weight:600;color:#9aa2af;' }, 'Situação'),
+        window.el('div', {
+          style: 'font-size:11.5px;font-weight:600;color:#9aa2af;text-align:right;',
+        }, 'Metragem'),
+        window.el('div', {
+          style: 'font-size:11.5px;font-weight:600;color:#9aa2af;text-align:right;',
+        }, 'Atualizado em')
+      );
+    }
+
+    function buildParcialRow(parcial, isLast) {
+      var tone = parcialSituacaoStyle(parcial.situacao);
+      var badgeStyle = 'display:inline-flex;align-items:center;gap:6px;background:' + tone.bg
+        + ';color:' + tone.color + ';border-radius:4px;padding:3px 9px;font-size:12.5px;font-weight:600;';
+      var dotStyle = 'width:6px;height:6px;border-radius:50%;background:' + tone.dot
+        + ';flex-shrink:0;display:inline-block;';
+
+      return window.el('div', {
+        style: 'display:grid;grid-template-columns:.8fr 1.6fr .9fr .8fr;gap:12px;'
+          + 'padding:11px 20px;align-items:center;'
+          + (isLast ? '' : 'border-bottom:1px solid #f1f3f6;'),
+      },
+        window.el('div', {
+          style: 'font-size:14px;font-weight:600;color:#16203a;',
+        }, parcial.codigo || 'Parcial'),
+        window.el('div', {},
+          parcial.label
+            ? window.el('span', { style: badgeStyle },
+                window.el('span', { style: dotStyle }),
+                parcial.label)
+            : window.el('span', { style: 'font-size:12px;color:#9aa2af;' }, '—'),
+          parcial.titulo
+            ? window.el('div', {
+                style: 'font-size:11.5px;color:#9aa2af;margin-top:3px;',
+              }, parcial.titulo)
+            : null
+        ),
+        window.el('div', {
+          style: 'text-align:right;font-size:14px;font-weight:600;color:#16203a;',
+        }, fmtMetros(parcial.metros)),
+        window.el('div', {
+          style: 'text-align:right;font-size:13px;color:#9aa2af;',
+        }, parcial.dataReferencia ? fmtEventoData(parcial.dataReferencia) : '—')
       );
     }
 
     function buildParciais() {
       if (!state.pedido) return window.el('div', {});
-      var card = window.el('div', { class: 'bg-white rounded-xl shadow p-6 mb-4' });
-      card.appendChild(window.el('h2', { class: 'text-sm font-semibold text-gray-700 mb-3' },
-        'Parciais do pedido'));
+
+      var card = window.el('div', {
+        style: 'background:#fff;border:1px solid #eceef1;border-radius:4px;overflow:hidden;margin-bottom:14px;',
+      });
+      card.appendChild(window.el('div', {
+        style: 'padding:14px 20px 12px;font-size:15px;font-weight:700;color:#16203a;border-bottom:1px solid #eceef1;',
+      }, 'Parciais do pedido'));
 
       if (state.parciaisError) {
-        card.appendChild(window.el('p', { class: 'text-sm text-amber-600' },
-          'Nao foi possivel carregar as parciais agora.'));
+        card.appendChild(window.el('p', {
+          style: 'padding:14px 20px;font-size:14px;color:#b45309;',
+        }, 'Nao foi possivel carregar as parciais agora.'));
         return card;
       }
 
@@ -351,155 +525,252 @@
         : [];
 
       if (parciais.length === 0) {
-        card.appendChild(window.el('p', { class: 'text-sm text-gray-500' },
-          'Este pedido ainda nao possui parciais publicadas.'));
+        card.appendChild(window.el('p', {
+          style: 'padding:14px 20px;font-size:14px;color:#9aa2af;',
+        }, 'Este pedido ainda nao possui parciais publicadas.'));
         return card;
       }
 
-      var list = window.el('div', { class: 'space-y-3' });
-      parciais.forEach(function (parcial) {
-        var header = window.el('div', { class: 'flex flex-wrap items-center gap-2 mb-2' },
-          window.el('span', { class: 'text-sm font-semibold text-gray-900' },
-            parcial.codigo || 'Parcial'),
-          parcial.label
-            ? window.el('span', { class: 'text-xs px-2 py-0.5 rounded-full bg-blue-50 text-blue-700' }, parcial.label)
-            : null
-        );
-
-        var meta = window.el('div', { class: 'grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm mb-2' },
-          kv('Metros', fmtMetros(parcial.metros)),
-          kv('Data de referencia', parcial.dataReferencia ? fmtEventoData(parcial.dataReferencia) : '—')
-        );
-
-        var item = window.el('div', { class: 'border border-gray-200 rounded-xl p-4' },
-          header,
-          meta,
-          parcial.titulo
-            ? window.el('p', { class: 'text-sm font-medium text-gray-800 mb-1' }, parcial.titulo)
-            : null,
-          parcial.mensagemCliente
-            ? window.el('p', { class: 'text-sm text-gray-700 whitespace-pre-line' }, parcial.mensagemCliente)
-            : null
-        );
-        list.appendChild(item);
+      card.appendChild(buildParciaisHeaderRow());
+      parciais.forEach(function (parcial, idx) {
+        card.appendChild(buildParcialRow(parcial, idx === parciais.length - 1));
       });
-      card.appendChild(list);
       return card;
+    }
+
+    // Grade 4 colunas: thumb (40px) | modelo | cores | metragem
+    function buildItemRow(item, isLast) {
+      var c1Id = item.cor_1_id != null
+        ? item.cor_1_id
+        : (state.modelosById[item.modelo_id] && state.modelosById[item.modelo_id].cor_1_id);
+      var c2Id = item.cor_2_id != null
+        ? item.cor_2_id
+        : (state.modelosById[item.modelo_id] && state.modelosById[item.modelo_id].cor_2_id);
+      var c1Nome = corNomeById(c1Id);
+      var c2Nome = corNomeById(c2Id);
+      var c1Hex = c1Nome && window.corPreviewHex ? window.corPreviewHex(c1Nome) : '#e5e7eb';
+      var c2Hex = c2Nome && window.corPreviewHex ? window.corPreviewHex(c2Nome) : '#e5e7eb';
+
+      return window.el('div', {
+        style: 'display:grid;grid-template-columns:40px 1fr 1fr 1fr;gap:10px;'
+          + 'padding:11px 0;align-items:center;'
+          + (isLast ? '' : 'border-bottom:1px solid #f1f3f6;'),
+      },
+        itemPreviewEl(item),
+        window.el('div', {
+          style: 'font-size:13.5px;font-weight:600;color:#16203a;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;',
+        }, modelLabel(item)),
+        window.el('div', {},
+          window.el('div', { style: 'display:flex;gap:5px;align-items:center;' },
+            window.el('span', {
+              style: 'width:14px;height:14px;border-radius:50%;background:' + c1Hex
+                + ';border:1px solid rgba(0,0,0,0.08);display:inline-block;flex-shrink:0;',
+            }),
+            c2Nome
+              ? window.el('span', {
+                  style: 'width:14px;height:14px;border-radius:50%;background:' + c2Hex
+                    + ';border:1px solid rgba(0,0,0,0.12);display:inline-block;flex-shrink:0;',
+                })
+              : null
+          ),
+          window.el('div', {
+            style: 'font-size:11px;color:#9aa2af;margin-top:4px;',
+          }, itemCoresLabel(item))
+        ),
+        window.el('div', {
+          style: 'text-align:right;font-size:13.5px;font-weight:600;color:#16203a;',
+        }, fmtMetros(item.metros))
+      );
     }
 
     function buildItens() {
       var itens = state.itens;
-      if (itens.length === 0) {
-        return window.el('div', { class: 'bg-white rounded-xl shadow p-6 text-gray-500 mb-4' },
-          'Este pedido não possui itens.');
-      }
-      var body = window.dataTable({
-        columns: [
-          {
-            key: 'modelo',
-            label: 'Modelo',
-            render: function (r) { return modelLabel(r); },
-          },
-          {
-            key: 'cor',
-            label: 'Cor 1 / Cor 2',
-            render: function (r) { return itemCoresLabel(r); },
-          },
-          {
-            key: 'largura',
-            label: 'Largura',
-            render: function (r) { return itemLargura(r); },
-          },
-          {
-            key: 'preview',
-            label: 'Preview',
-            render: function (r) { return itemPreviewEl(r); },
-          },
-          {
-            key: 'metros',
-            label: 'Metros',
-            render: function (r) { return fmtMetros(r.metros); },
-          },
-          {
-            key: 'observacao',
-            label: 'Observação',
-            render: function (r) { return fmtTextoOuEmpty(r.observacao, ''); },
-          },
-        ],
-        rows: itens,
-        actions: [],
+      var card = window.el('div', {
+        style: 'background:#fff;border:1px solid #eceef1;border-radius:4px;padding:16px 20px;',
       });
-      var wrap = window.el('div', { class: 'mb-4' });
-      wrap.appendChild(window.el('h2', { class: 'text-sm font-semibold text-gray-700 mb-2' },
-        'Itens (' + itens.length + ')'));
-      wrap.appendChild(window.el('div', { class: 'overflow-x-auto' }, body));
-      return wrap;
+      card.appendChild(window.el('div', {
+        style: 'font-size:15px;font-weight:700;color:#16203a;margin-bottom:14px;',
+      }, 'Itens do pedido'));
+
+      if (itens.length === 0) {
+        card.appendChild(window.el('p', { style: 'font-size:14px;color:#9aa2af;' },
+          'Este pedido não possui itens.'));
+        return card;
+      }
+
+      // Cabecalho da grade
+      card.appendChild(window.el('div', {
+        style: 'display:grid;grid-template-columns:40px 1fr 1fr 1fr;gap:10px;'
+          + 'padding:8px 0;border-bottom:1px solid #eceef1;',
+      },
+        window.el('div', {}),
+        window.el('div', { style: 'font-size:11.5px;font-weight:600;color:#9aa2af;' }, 'Modelo'),
+        window.el('div', { style: 'font-size:11.5px;font-weight:600;color:#9aa2af;' }, 'Cores'),
+        window.el('div', {
+          style: 'font-size:11.5px;font-weight:600;color:#9aa2af;text-align:right;',
+        }, 'Metragem')
+      ));
+
+      itens.forEach(function (item, idx) {
+        card.appendChild(buildItemRow(item, idx === itens.length - 1));
+      });
+      return card;
     }
 
-    function buildEventoItem(evento, isLast) {
-      var badge = eventoStatusLabel(evento.status);
-      return window.el('div', { class: 'relative pl-5' + (isLast ? ' pb-0' : ' pb-4') },
-        window.el('div', { class: 'absolute left-0 top-1.5 w-2 h-2 rounded-full bg-blue-500' }),
-        isLast ? null : window.el('div', { class: 'absolute left-[3px] top-3 bottom-0 w-px bg-gray-200' }),
-        window.el('div', { class: 'flex flex-wrap items-center gap-2 mb-1' },
-          window.el('span', { class: 'text-sm font-semibold text-gray-900' },
-            fmtTextoOuEmpty(evento.titulo, 'Atualização')),
-          badge
-            ? window.el('span', { class: 'text-xs px-2 py-0.5 rounded-full bg-blue-50 text-blue-700' }, badge)
-            : null
+    function buildDistribuicaoAtual() {
+      if (!state.pedido) return window.el('div', {});
+      var card = window.el('div', {
+        style: 'background:#fff;border:1px solid #eceef1;border-radius:4px;padding:16px 20px;',
+      });
+      card.appendChild(window.el('div', {
+        style: 'font-size:15px;font-weight:700;color:#16203a;margin-bottom:14px;',
+      }, 'Distribuição atual'));
+
+      var trackingApi = window.RavatexPedidoTracking;
+      var acompanhamento = trackingApi && trackingApi.buildPedidoAcompanhamentoParcial
+        ? trackingApi.buildPedidoAcompanhamentoParcial(state.pedido, state.itens, state.parciais, { forCliente: true })
+        : null;
+      var distribuicao = acompanhamento && Array.isArray(acompanhamento.distribuicao)
+        ? acompanhamento.distribuicao
+        : [];
+
+      if (distribuicao.length === 0) {
+        card.appendChild(window.el('p', { style: 'font-size:14px;color:#9aa2af;' },
+          'Sem distribuição parcial publicada para este pedido.'));
+        return card;
+      }
+
+      var barsWrap = window.el('div', { style: 'display:flex;flex-direction:column;gap:12px;' });
+      distribuicao.forEach(function (item) {
+        var largura = Math.min(Math.max(Number(item.percentual) || 0, 0), 100);
+        var barColor = distribuicaoBarColor(item.situacao);
+        barsWrap.appendChild(window.el('div', { style: 'display:flex;align-items:center;gap:12px;' },
+          window.el('div', {
+            style: 'width:120px;font-size:13.5px;color:#3f4757;flex-shrink:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;',
+          }, item.label),
+          window.el('div', {
+            style: 'flex:1;height:6px;border-radius:99px;background:#eef1f5;overflow:hidden;',
+          },
+            window.el('div', {
+              style: 'width:' + largura + '%;height:100%;background:' + barColor + ';border-radius:99px;',
+            })
+          ),
+          window.el('div', {
+            style: 'width:90px;text-align:right;font-size:13.5px;font-weight:600;color:#16203a;flex-shrink:0;',
+          }, fmtMetros(item.metros))
+        ));
+      });
+      card.appendChild(barsWrap);
+
+      card.appendChild(window.el('div', {
+        style: 'height:1px;background:#eceef1;margin:14px 0 12px;',
+      }));
+      card.appendChild(window.el('div', {
+        style: 'display:flex;justify-content:space-between;align-items:center;',
+      },
+        window.el('span', {
+          style: 'font-size:13.5px;font-weight:700;color:#16203a;',
+        }, 'Total do pedido'),
+        window.el('span', {
+          style: 'font-size:14px;font-weight:800;color:#16203a;',
+        }, fmtMetros(acompanhamento.totais.pedido))
+      ));
+      return card;
+    }
+
+    // Item do historico: ponto + linha vertical + conteudo.
+    function buildEventoItem(evento, isLast, isFirst) {
+      var dotColor = isFirst ? '#2563eb' : '#cfd5de';
+      return window.el('div', {
+        style: 'display:flex;gap:14px;',
+      },
+        window.el('div', {
+          style: 'display:flex;flex-direction:column;align-items:center;',
+        },
+          window.el('div', {
+            style: 'width:11px;height:11px;border-radius:50%;background:' + dotColor
+              + ';margin-top:4px;flex-shrink:0;',
+          }),
+          isLast ? null : window.el('div', {
+            style: 'width:2px;flex:1;background:#eceef1;margin-top:4px;',
+          })
         ),
-        evento.mensagem
-          ? window.el('p', { class: 'text-sm text-gray-700 mb-1' }, evento.mensagem)
-          : null,
-        window.el('p', { class: 'text-xs text-gray-400' }, fmtEventoData(evento.criado_em))
+        window.el('div', { style: 'padding-bottom:' + (isLast ? '0' : '14px') + ';' },
+          window.el('div', {
+            style: 'font-size:12px;color:#9aa2af;',
+          }, fmtEventoData(evento.criado_em)),
+          window.el('div', {
+            style: 'font-size:14px;font-weight:' + (isFirst ? '700' : '600') + ';color:'
+              + (isFirst ? '#16203a' : '#475065') + ';margin-top:2px;',
+          }, fmtTextoOuEmpty(evento.titulo, 'Atualização')),
+          evento.mensagem
+            ? window.el('div', {
+                style: 'font-size:13px;color:#7b8494;margin-top:1px;',
+              }, evento.mensagem)
+            : null
+        )
       );
     }
 
+    // Seção Histórico: titulo fora do card + card com timeline vertical.
     function buildEventos() {
       if (!state.pedido) return window.el('div', {});
-      var card = window.el('div', { class: 'bg-white rounded-xl shadow p-6 mb-4' });
-      card.appendChild(window.el('h2', { class: 'text-sm font-semibold text-gray-700 mb-3' },
-        'Atualizações do pedido'));
+
+      var wrap = window.el('div', {});
+
+      wrap.appendChild(window.el('div', {
+        style: 'font-size:15px;font-weight:700;color:#16203a;margin-bottom:10px;',
+      }, 'Histórico'));
+
+      var card = window.el('div', {
+        style: 'background:#fff;border:1px solid #eceef1;border-radius:4px;padding:16px 20px;',
+      });
 
       if (state.eventosError) {
-        card.appendChild(window.el('p', { class: 'text-sm text-amber-600' },
+        card.appendChild(window.el('p', { style: 'font-size:14px;color:#b45309;' },
           'Não foi possível carregar as atualizações agora.'));
-        return card;
+        wrap.appendChild(card);
+        return wrap;
       }
 
       if (state.eventos.length === 0) {
-        card.appendChild(window.el('p', { class: 'text-sm text-gray-500' },
+        card.appendChild(window.el('p', { style: 'font-size:14px;color:#9aa2af;' },
           'Assim que houver novas atualizações, elas aparecerão aqui.'));
-        return card;
+        wrap.appendChild(card);
+        return wrap;
       }
 
       state.eventos.forEach(function (evento, idx) {
-        card.appendChild(buildEventoItem(evento, idx === state.eventos.length - 1));
+        card.appendChild(
+          buildEventoItem(evento, idx === state.eventos.length - 1, idx === 0)
+        );
       });
-      return card;
+
+      wrap.appendChild(card);
+      return wrap;
     }
 
     function render() {
       var header = buildHeader();
       if (loadingError === 'pedido') {
         container.replaceChildren(header,
-          window.el('div', { class: 'bg-white rounded-xl shadow p-6 text-red-700' },
+          window.el('div', { class: 'bg-white rounded border border-gray-200 p-6 text-red-700' },
             'Pedido não encontrado ou sem permissão. Ele pode ter sido removido.'));
         return;
       }
       if (loadingError) {
         container.replaceChildren(header,
-          window.el('div', { class: 'bg-white rounded-xl shadow p-6 text-red-700' },
+          window.el('div', { class: 'bg-white rounded border border-gray-200 p-6 text-red-700' },
             'Erro ao carregar dados do pedido. Tente recarregar a página.'));
         return;
       }
       container.replaceChildren(
         header,
-        buildTracking(),
         buildResumo(),
-        buildParciais(),
         buildDadosGerais(),
-        buildItens(),
+        buildTracking(),
+        window.el('div', { class: 'grid grid-cols-2 gap-3 mb-3' }, buildItens(), buildDistribuicaoAtual()),
+        buildParciais(),
         buildEventos()
       );
     }
