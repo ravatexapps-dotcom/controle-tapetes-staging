@@ -1992,3 +1992,40 @@ Senhas de teste antigas em `docs/qa/fase1-checklist.md` e
 > cliente/status visual permanece residual fora de escopo. Proxima
 > fase recomendada: lista cliente/status visual ou apply controlado do
 > `db/17`, conforme decisao do projeto.
+
+> **Atualizacao 2026-06-29 — fase
+> `RAVATEX-TAPETES-CLIENTE-PARCIAIS-SCHEMA-APPLY-STAGING-A`
+> (aplicacao controlada de SQL em staging + validacao estrutural).**
+> Aplicado em staging/paralelo `ucrjtfswnfdlxwtmxnoo` o arquivo
+> versionado exato `db/17_pedido_parciais_schema.sql`, via Supabase
+> CLI/Management API, **sem tocar producao/original
+> `bhgifjrfagkzubpyqpew`** e sem SQL adicional fora do script.
+> Validacoes pos-aplicacao concluídas: colunas
+> `parcial_habilitado`, `parcial_atualizado_em`, `metros_total`
+> presentes em `public.pedidos`; tabelas `public.pedido_parciais` e
+> `public.pedido_parcial_itens` presentes; RLS habilitada nas duas;
+> policies encontradas: `pedido_parciais_admin_all`,
+> `pedido_parciais_cliente_select`,
+> `pedido_parcial_itens_admin_all`,
+> `pedido_parcial_itens_cliente_select`; funcoes encontradas:
+> `recalcular_pedido_metros_total`,
+> `sincronizar_pedido_parciais_resumo`,
+> `touch_pedido_parciais_updated_at`,
+> `pedido_parciais_after_change`,
+> `pedido_itens_sync_parciais_after_change`; triggers instalados:
+> `pedido_parciais_touch_updated_at`,
+> `pedido_parciais_after_change_trigger` em `pedido_parciais` e
+> `pedido_itens_sync_parciais_after_change_trigger` em `pedido_itens`;
+> constraints validadas nas tabelas novas, incluindo PKs, FKs,
+> checks de `situacao`/`origem`/`sequencia`/`metros` e UNIQUE
+> `pedido_parcial_itens_parcial_item_key`. Contagens atuais:
+> `pedido_parciais = 0`, `pedido_parcial_itens = 0`. Nenhum dado de
+> negocio foi inserido ou alterado para teste. Frontend permaneceu
+> intocado nesta fase e as parciais ainda nao foram ligadas a tela
+> consumidora real. Testes locais verdes:
+> `tests/pedido-parciais-schema.smoke.js`,
+> `tests/pedido-acompanhamento-parcial.smoke.js`,
+> `tests/cliente-pedidos-list.smoke.js`,
+> `tests/cliente-portal-visual.smoke.js`. Proxima fase recomendada:
+> decidir entre ativacao controlada da leitura parcial em detalhe/lista
+> ou homologacao tecnica dos dados de parciais.

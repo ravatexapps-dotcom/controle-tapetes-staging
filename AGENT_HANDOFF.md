@@ -1024,3 +1024,37 @@ node --test tests/boot.smoke.js \
   cliente/status visual, ou fazer apply controlado de
   `db/17_pedido_parciais_schema.sql` em staging quando houver
   autorizacao explicita.
+
+- **Estado atual aceito:** `work/app-next` na ponta da fase
+  `RAVATEX-TAPETES-CLIENTE-PARCIAIS-SCHEMA-APPLY-STAGING-A`
+  (aplicacao controlada em staging). O arquivo versionado
+  `db/17_pedido_parciais_schema.sql` foi aplicado exatamente como
+  publicado no projeto Supabase paralelo/staging
+  `ucrjtfswnfdlxwtmxnoo`, via Supabase CLI/Management API, sem tocar
+  producao/original `bhgifjrfagkzubpyqpew`.
+- **Validacao estrutural registrada:** colunas
+  `parcial_habilitado`, `parcial_atualizado_em`, `metros_total` em
+  `public.pedidos`; tabelas `pedido_parciais` e
+  `pedido_parcial_itens`; RLS habilitada nas duas; policies admin +
+  cliente SELECT; funcoes
+  `recalcular_pedido_metros_total`,
+  `sincronizar_pedido_parciais_resumo`,
+  `touch_pedido_parciais_updated_at`,
+  `pedido_parciais_after_change`,
+  `pedido_itens_sync_parciais_after_change`; triggers
+  `pedido_parciais_touch_updated_at`,
+  `pedido_parciais_after_change_trigger`,
+  `pedido_itens_sync_parciais_after_change_trigger`; constraints
+  esperadas presentes, incluindo UNIQUE
+  `pedido_parcial_itens_parcial_item_key`.
+- **Dados e escopo preservados:** contagens `pedido_parciais = 0` e
+  `pedido_parcial_itens = 0`; nenhum dado de negocio foi inserido;
+  nenhum frontend foi alterado; parciais ainda nao foram ligadas a
+  tela consumidora real nesta fase.
+- **Testes locais registrados:** `tests/pedido-parciais-schema.smoke.js`,
+  `tests/pedido-acompanhamento-parcial.smoke.js`,
+  `tests/cliente-pedidos-list.smoke.js` e
+  `tests/cliente-portal-visual.smoke.js` passaram.
+- **Proxima decisao recomendada:** escolher entre ativacao controlada
+  da leitura parcial em detalhe/lista ou homologacao tecnica dos
+  dados reais de parciais.
