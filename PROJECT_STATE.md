@@ -2093,3 +2093,31 @@ Senhas de teste antigas em `docs/qa/fase1-checklist.md` e
 > adicional ou alteracao de frontend/repo foi realizado nesta fase.
 > Proxima fase recomendada: leitura read-only de parciais no detalhe
 > cliente.
+
+> **Atualizacao 2026-06-29 — fase
+> `RAVATEX-TAPETES-CLIENTE-PARCIAIS-CLIENTE-DETAIL-A`
+> (frontend cliente read-only no detalhe + smoke focado).**
+> Publicada leitura read-only de `pedido_parciais` apenas em
+> `js/screens/cliente-pedido-detail.js`, sem alterar lista cliente,
+> dashboard, admin, fornecedor, schema ou Supabase. O detalhe cliente
+> agora consulta `public.pedido_parciais` com SELECT explicito e
+> sanitizado (`id`, `pedido_id`, `sequencia`, `situacao`, `metros`,
+> `data_referencia`, `titulo`, `mensagem_cliente`, `criado_em`,
+> `atualizado_em`), filtrando por `pedido_id` e ordenando por
+> `sequencia asc`, `criado_em asc`, confiando na RLS staging ja
+> aplicada para limitar a leitura a parciais visiveis do proprio
+> pedido. A renderizacao reaproveita o helper compartilhado
+> `window.RavatexPedidoTracking.buildPedidoAcompanhamentoParcial` para
+> rotulos e taxonomia, mostra a secao `Parciais do pedido`, empty
+> state `Este pedido ainda nao possui parciais publicadas.` e erro
+> discreto sem quebrar tracking, resumo, itens ou timeline. Nenhum
+> campo interno foi exposto: sem `metadata`, `criado_por`, `origem`,
+> `observacao_admin`, `visivel_cliente`, `pedido_parcial_itens`,
+> `OP`, `lote`, `fornecedor`, `NF`, `romaneio`, `custo`, `margem` ou
+> `token_acesso`. Validacao focada verde:
+> `tests/cliente-pedido-detail.smoke.js`,
+> `tests/pedido-acompanhamento-parcial.smoke.js`,
+> `tests/pedido-parciais-admin-control.smoke.js`,
+> `tests/cliente-pedidos-list.smoke.js` e
+> `tests/cliente-dashboard.smoke.js`. Proxima fase recomendada:
+> homologacao E2E admin -> cliente das parciais em staging.

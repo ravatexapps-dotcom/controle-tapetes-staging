@@ -36,12 +36,19 @@
 //   - window.navigate (js/router.js)
 //   - window.supa (js/supabase-client.js)
 //
-// SELECT-only em `pedidos`, `pedido_itens`, `modelos`, `cores`,
-// `pedido_cliente_eventos`. Sem insert/update/delete/rpc.
+// SELECT-only em `pedidos`, `pedido_parciais`, `pedido_itens`,
+// `modelos`, `cores`, `pedido_cliente_eventos`.
+// Sem insert/update/delete/rpc.
 // Em `pedido_cliente_eventos`, o SELECT é restrito a
 // `id, pedido_id, status, titulo, mensagem, criado_em` — sem
 // `metadata`, `criado_por` ou `origem`. Falha nessa consulta não
 // quebra o restante do detalhe (erro isolado em `state.eventosError`).
+// Em `pedido_parciais`, o SELECT é explícito e sanitizado para cliente:
+// `id, pedido_id, sequencia, situacao, metros, data_referencia, titulo,
+// mensagem_cliente, criado_em, atualizado_em`. A RLS cliente limita
+// a leitura às parciais visíveis do próprio pedido; a tela não faz
+// writes, não consulta `pedido_parcial_itens` e não expõe campos
+// internos/administrativos.
 //
 // Compatibilidade: window.screenClientePedidoDetalhe fica disponível
 // para o matchRoute.
@@ -118,6 +125,8 @@
 
     var state = {
       pedido: null,
+      parciais: [],
+      parciaisError: false,
       itens: [],
       modelosById: {},
       coresById: {},
@@ -184,6 +193,22 @@
       }
 
       state.pedido = pedidoRes.data;
+
+      var parciaisRes = await window.supa
+        .from('pedido_parciais')
+        .select('id, pedido_id, sequencia, situacao, metros, data_referencia, titulo, mensagem_cliente, criado_em, atualizado_em')
+        .eq('pedido_id', pedidoId)
+        .order('sequencia', { ascending: true })
+        .order('criado_em', { ascending: true });
+
+      if (parciaisRes.error) {
+        state.parciaisError = true;
+        state.parciais = [];
+        console.error('cliente-pedido-detail: erro ao carregar parciais do pedido', parciaisRes.error);
+      } else {
+        state.parciaisError = false;
+        state.parciais = parciaisRes.data || [];
+      }
 
       var eventosRes = await window.supa
         .from('pedido_cliente_eventos')
@@ -305,6 +330,63 @@
       );
     }
 
+    function buildParciais() {
+      if (!state.pedido) return window.el('div', {});
+      var card = window.el('div', { class: 'bg-white rounded-xl shadow p-6 mb-4' });
+      card.appendChild(window.el('h2', { class: 'text-sm font-semibold text-gray-700 mb-3' },
+        'Parciais do pedido'));
+
+      if (state.parciaisError) {
+        card.appendChild(window.el('p', { class: 'text-sm text-amber-600' },
+          'Nao foi possivel carregar as parciais agora.'));
+        return card;
+      }
+
+      var trackingApi = window.RavatexPedidoTracking;
+      var acompanhamento = trackingApi && trackingApi.buildPedidoAcompanhamentoParcial
+        ? trackingApi.buildPedidoAcompanhamentoParcial(state.pedido, state.itens, state.parciais, { forCliente: true })
+        : null;
+      var parciais = acompanhamento && Array.isArray(acompanhamento.parciais)
+        ? acompanhamento.parciais
+        : [];
+
+      if (parciais.length === 0) {
+        card.appendChild(window.el('p', { class: 'text-sm text-gray-500' },
+          'Este pedido ainda nao possui parciais publicadas.'));
+        return card;
+      }
+
+      var list = window.el('div', { class: 'space-y-3' });
+      parciais.forEach(function (parcial) {
+        var header = window.el('div', { class: 'flex flex-wrap items-center gap-2 mb-2' },
+          window.el('span', { class: 'text-sm font-semibold text-gray-900' },
+            parcial.codigo || 'Parcial'),
+          parcial.label
+            ? window.el('span', { class: 'text-xs px-2 py-0.5 rounded-full bg-blue-50 text-blue-700' }, parcial.label)
+            : null
+        );
+
+        var meta = window.el('div', { class: 'grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm mb-2' },
+          kv('Metros', fmtMetros(parcial.metros)),
+          kv('Data de referencia', parcial.dataReferencia ? fmtEventoData(parcial.dataReferencia) : '—')
+        );
+
+        var item = window.el('div', { class: 'border border-gray-200 rounded-xl p-4' },
+          header,
+          meta,
+          parcial.titulo
+            ? window.el('p', { class: 'text-sm font-medium text-gray-800 mb-1' }, parcial.titulo)
+            : null,
+          parcial.mensagemCliente
+            ? window.el('p', { class: 'text-sm text-gray-700 whitespace-pre-line' }, parcial.mensagemCliente)
+            : null
+        );
+        list.appendChild(item);
+      });
+      card.appendChild(list);
+      return card;
+    }
+
     function buildItens() {
       var itens = state.itens;
       if (itens.length === 0) {
@@ -411,7 +493,15 @@
             'Erro ao carregar dados do pedido. Tente recarregar a página.'));
         return;
       }
-      container.replaceChildren(header, buildTracking(), buildResumo(), buildDadosGerais(), buildItens(), buildEventos());
+      container.replaceChildren(
+        header,
+        buildTracking(),
+        buildResumo(),
+        buildParciais(),
+        buildDadosGerais(),
+        buildItens(),
+        buildEventos()
+      );
     }
 
     await carregar();

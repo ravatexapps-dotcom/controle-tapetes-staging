@@ -51,6 +51,10 @@ test('cliente-pedido-detail: usa from(\'pedidos\')', () => {
   assert.match(screen, /from\(['"]pedidos['"]\)/);
 });
 
+test('cliente-pedido-detail: usa from(\'pedido_parciais\')', () => {
+  assert.match(screen, /from\(['"]pedido_parciais['"]\)/);
+});
+
 test('cliente-pedido-detail: usa from(\'pedido_itens\')', () => {
   assert.match(screen, /from\(['"]pedido_itens['"]\)/);
 });
@@ -94,6 +98,38 @@ test('cliente-pedido-detail: nao expoe pedido_eventos', () => {
 
 test('cliente-pedido-detail: consulta pedido_cliente_eventos para a timeline read-only', () => {
   assert.match(screen, /from\(['"]pedido_cliente_eventos['"]\)/);
+});
+
+test('cliente-pedido-detail: select de pedido_parciais usa apenas colunas seguras', () => {
+  const match = screen.match(/from\(['"]pedido_parciais['"]\)\s*\.select\('([^']*)'\)/);
+  assert.ok(match, 'select de pedido_parciais nao encontrado');
+  const select = match[1];
+  assert.equal(select, 'id, pedido_id, sequencia, situacao, metros, data_referencia, titulo, mensagem_cliente, criado_em, atualizado_em');
+});
+
+test('cliente-pedido-detail: pedido_parciais nao seleciona metadata, criado_por, origem, observacao_admin ou visivel_cliente', () => {
+  const match = screen.match(/from\(['"]pedido_parciais['"]\)\s*\.select\('([^']*)'\)/);
+  assert.ok(match, 'select de pedido_parciais nao encontrado');
+  const select = match[1];
+  assert.equal(select.includes('metadata'), false);
+  assert.equal(select.includes('criado_por'), false);
+  assert.equal(select.includes('origem'), false);
+  assert.equal(select.includes('observacao_admin'), false);
+  assert.equal(select.includes('visivel_cliente'), false);
+});
+
+test('cliente-pedido-detail: pedido_parciais filtra por pedido_id e ordena por sequencia e criado_em', () => {
+  assert.match(screen, /from\(['"]pedido_parciais['"]\)[\s\S]*?\.eq\(['"]pedido_id['"],\s*pedidoId\)/);
+  assert.match(screen, /from\(['"]pedido_parciais['"]\)[\s\S]*?\.order\(['"]sequencia['"],\s*\{\s*ascending:\s*true\s*\}\)/);
+  assert.match(screen, /from\(['"]pedido_parciais['"]\)[\s\S]*?\.order\(['"]criado_em['"],\s*\{\s*ascending:\s*true\s*\}\)/);
+});
+
+test('cliente-pedido-detail: usa helper compartilhado buildPedidoAcompanhamentoParcial', () => {
+  assert.match(screen, /buildPedidoAcompanhamentoParcial/);
+});
+
+test('cliente-pedido-detail: nao consulta pedido_parcial_itens', () => {
+  assert.equal(/from\(['"]pedido_parcial_itens['"]\)/.test(screen), false);
 });
 
 test('cliente-pedido-detail: nao referencia OP', () => {
@@ -235,4 +271,32 @@ test('cliente-pedido-detail: possui empty state para timeline sem eventos', () =
 test('cliente-pedido-detail: erro na timeline nao quebra o restante do detalhe (sem loadingError = eventos)', () => {
   assert.equal(/loadingError\s*=\s*['"]eventos['"]/.test(screen), false);
   assert.match(screen, /eventosError/);
+});
+
+test('cliente-pedido-detail: titulo da secao "Parciais do pedido" presente', () => {
+  assert.match(screen, /Parciais do pedido/i);
+});
+
+test('cliente-pedido-detail: possui empty state para parciais sem registros', () => {
+  assert.match(screen, /Este pedido ainda n[aÃ£]o possui parciais publicadas\./);
+});
+
+test('cliente-pedido-detail: erro nas parciais nao quebra o restante do detalhe', () => {
+  assert.equal(/loadingError\s*=\s*['"]parciais['"]/.test(screen), false);
+  assert.match(screen, /parciaisError/);
+});
+
+test('cliente-pedido-detail: renderiza parciais antes dos itens e preserva timeline depois', () => {
+  const matches = [...screen.matchAll(/container\.replaceChildren\(([\s\S]*?)\);/g)];
+  const principal = matches.find((m) => m[1].includes('buildResumo()'));
+  assert.ok(principal);
+  const args = principal[1];
+  const idxParciais = args.indexOf('buildParciais()');
+  const idxItens = args.indexOf('buildItens()');
+  const idxEventos = args.indexOf('buildEventos()');
+  assert.ok(idxParciais !== -1);
+  assert.ok(idxItens !== -1);
+  assert.ok(idxEventos !== -1);
+  assert.ok(idxParciais < idxItens);
+  assert.ok(idxItens < idxEventos);
 });

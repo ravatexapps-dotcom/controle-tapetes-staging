@@ -145,8 +145,8 @@ test('pedido-parciais-admin nao contem termos internos proibidos no contexto cli
   assert.doesNotMatch(adminSrc, /margem/i);
 });
 
-test('telas cliente nao consultam pedido_parciais nesta fase', () => {
-  assert.doesNotMatch(clientDetailSrc, /pedido_parciais/);
+test('somente o detalhe cliente consulta pedido_parciais; lista, dashboard e tracking permanecem sem leitura parcial', () => {
+  assert.match(clientDetailSrc, /pedido_parciais/);
   assert.doesNotMatch(clientListSrc, /pedido_parciais/);
   assert.doesNotMatch(clientDashboardSrc, /pedido_parciais/);
   assert.doesNotMatch(clientTrackingSrc, /pedido_parciais/);

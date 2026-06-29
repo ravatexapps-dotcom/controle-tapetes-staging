@@ -1127,3 +1127,39 @@ node --test tests/boot.smoke.js \
   novo nesta fase docs-only.
 - **Proxima fase recomendada:** leitura read-only de parciais no
   detalhe cliente.
+
+## Registro de leitura cliente de parciais no detalhe
+
+- **Estado atual aceito:** `work/app-next` na ponta da fase
+  `RAVATEX-TAPETES-CLIENTE-PARCIAIS-CLIENTE-DETAIL-A`
+  (frontend cliente read-only apenas no detalhe do pedido).
+- **Escopo publicado:** `js/screens/cliente-pedido-detail.js` passou a
+  ler `public.pedido_parciais` com SELECT explicito e sanitizado
+  (`id`, `pedido_id`, `sequencia`, `situacao`, `metros`,
+  `data_referencia`, `titulo`, `mensagem_cliente`, `criado_em`,
+  `atualizado_em`), filtro por `pedido_id` e ordenacao por
+  `sequencia asc`, `criado_em asc`. O render do detalhe cliente agora
+  exibe a secao `Parciais do pedido`, reaproveitando
+  `window.RavatexPedidoTracking.buildPedidoAcompanhamentoParcial` para
+  taxonomia e labels compartilhados.
+- **Escopo preservado:** leitura estritamente read-only; sem
+  insert/update/delete/rpc/functions/service role; sem
+  `pedido_parcial_itens`; sem alteracao em
+  `js/screens/cliente-pedidos-list.js`,
+  `js/screens/cliente-dashboard.js`,
+  `js/screens/pedido-detail.js`,
+  `js/screens/pedido-parciais-admin.js`, fornecedor, schema ou
+  Supabase. Tracking, resumo, itens e timeline continuam funcionando
+  mesmo se a consulta de parciais falhar, com aviso discreto.
+- **Seguranca preservada:** nenhum campo interno/administrativo foi
+  exposto ao cliente; fora do SELECT ficaram `metadata`, `criado_por`,
+  `origem`, `observacao_admin`, `visivel_cliente`, alem de dados como
+  `OP`, `lote`, `fornecedor`, `NF`, `romaneio`, `custo`, `margem` e
+  `token_acesso`.
+- **Validacao focada registrada:** `tests/cliente-pedido-detail.smoke.js`,
+  `tests/pedido-acompanhamento-parcial.smoke.js`,
+  `tests/pedido-parciais-admin-control.smoke.js`,
+  `tests/cliente-pedidos-list.smoke.js` e
+  `tests/cliente-dashboard.smoke.js`.
+- **Proxima fase recomendada:** homologacao E2E admin -> cliente das
+  parciais em staging, antes de qualquer resumo em lista/dashboard.
