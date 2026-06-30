@@ -10,6 +10,35 @@
 
 ## Estado atual aceito
 - **Estado atual aceito:** `work/app-next`, ponta da fase
+  `RAVATEX-TAPETES-ADMIN-PEDIDOS-LIST-MATCH-STANDALONE-CLOSEOUT`.
+  O miolo da tela Admin → Lista de pedidos (`#/pedidos`) foi alinhado
+  visualmente ao HTML standalone de referencia (`Admin - Lista de
+  Pedidos - standalone.html`). **Aceite visual explicito do dono do
+  projeto em 2026-06-30.** Arquivo funcional alterado:
+  `js/screens/pedidos-list.js` (unico). Elementos homologados:
+  header com botao "Novo pedido"; 5 KPIs (Abertos / Em producao /
+  Parciais / Atrasados / Prontos); busca com icone inline; tabs com
+  contagem; linha de filtros; tabela 9 colunas (Pedido / Cliente /
+  Sit. interna / Visivel ao cliente / Parcial / Prazo / Recebimento /
+  Atualizado / Acoes); badges; acao real `Visualizar`; paginacao.
+  Shell/sidebar/topbar globais preservados; rota `#/pedidos`,
+  acoes e permissoes admin preservadas. Coluna `Parcial` ligada a
+  dados reais seguros via leitura read-only de `pedido_itens` e
+  `pedido_parciais`, reaproveitando
+  `buildPedidoAcompanhamentoParcial(..., { forCliente: false })`.
+  O menu de "mais acoes" permanece apenas visual/disabled porque a
+  unica acao real existente segue sendo `Visualizar`. Pushed para
+  `staging/main`. Producao e `origin/main` nao tocados.
+- **Contrato preservado:** tela continua read-only; somente SELECTs em
+  `pedidos`, `clientes`, `pedido_itens` e `pedido_parciais`; sem
+  insert/update/delete/rpc/functions; sem schema, SQL ou mutation
+  Supabase; sem alteracao em `js/screens/common.js` ou `index.html`.
+- **Diferencas residuais conhecidas:** KPIs/contagens/linhas sao
+  dinamicos conforme dados reais; `tipo_recebimento` fica em fallback
+  seguro "—" quando ausente; "Visivel ao cliente" usa a taxonomia
+  publicada em `status_cliente_visual` / `status_cliente_excecao`,
+  podendo divergir do texto decorativo estatico do mockup.
+- **Estado atual aceito:** `work/app-next`, ponta da fase
   `RAVATEX-TAPETES-CLIENTE-PEDIDOS-LIST-MATCH-STANDALONE-CLAUDE-R1`. O
   miolo da tela "Meus pedidos" do Cliente (`#/cliente/pedidos`) foi
   alinhado visualmente ao HTML standalone de referência (`Cliente -

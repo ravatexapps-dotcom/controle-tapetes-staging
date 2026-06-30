@@ -1,6 +1,45 @@
 # PROJECT_STATE.md — Controle de Tapetes (Grupo Terra Branca)
 
 > **Atualizacao 2026-06-30 — fase
+> `RAVATEX-TAPETES-ADMIN-PEDIDOS-LIST-MATCH-STANDALONE-CLOSEOUT`
+> (frontend admin + registro de homologacao visual).** O miolo da
+> tela **Admin → Lista de pedidos** (`#/pedidos`) foi **alinhado
+> visualmente ao HTML standalone de referencia** (`Admin - Lista de
+> Pedidos - standalone.html`, em
+> `D:\OneDrive\Ravatex\Inttex\Mockups - nova interface\Admin\`) pelo
+> agente IAexec (Codex), e o aceite visual foi **APROVADO
+> EXPLICITAMENTE PELO DONO DO PROJETO em 2026-06-30**. Branch:
+> `work/app-next`. HEAD base da fase: `2da8b1c`. `origin/main` e a
+> producao `bhgifjrfagkzubpyqpew` permaneceram intocados. Arquivo
+> funcional alterado: `js/screens/pedidos-list.js` (unico). Elementos
+> entregues e homologados: header com titulo "Pedidos" + subtitulo +
+> botao "Novo pedido"; 5 KPI cards (Abertos / Em producao / Parciais /
+> Atrasados / Prontos); busca com icone inline; tabs com badge de
+> contagem (Todos / Rascunho / Recebido / Confirmado / Producao /
+> Parcial / Pronto / Entregue / Cancelado); linha de filtros; tabela
+> de 9 colunas (Pedido / Cliente / Sit. interna / Visivel ao cliente /
+> Parcial / Prazo / Recebimento / Atualizado / Acoes) com badges,
+> acao real "Visualizar" e paginacao. Shell/sidebar/topbar globais
+> preservados (`js/screens/common.js` e `index.html` intocados); rota
+> `#/pedidos`, acoes e permissoes admin preservadas. Coluna `Parcial`
+> ligada a dados reais seguros via leitura read-only de `pedido_itens`
+> e `pedido_parciais`, reaproveitando
+> `buildPedidoAcompanhamentoParcial(..., { forCliente: false })` para
+> taxonomia/contagem sem inventar regra nova. O menu de "mais acoes"
+> foi mantido apenas visual/disabled porque a unica acao real
+> existente segue sendo `Visualizar`. Diferencas residuais
+> documentadas: contagens/KPIs/linhas sao dinamicos conforme dados
+> reais (nao os literais fixos do mockup); `tipo_recebimento` segue em
+> fallback seguro "—" quando ausente; "Visivel ao cliente" usa a
+> taxonomia compartilhada publicada em `status_cliente_visual` /
+> `status_cliente_excecao`, por isso pode divergir do texto decorativo
+> do standalone. Checks executados e verdes:
+> `node --check js/screens/pedidos-list.js`,
+> `node --test tests/pedidos-list.smoke.js`,
+> `git diff --check`. Nenhum schema, SQL, mutation Supabase ou fluxo
+> de producao foi tocado.
+
+> **Atualizacao 2026-06-30 — fase
 > `RAVATEX-TAPETES-CLIENTE-PEDIDOS-LIST-MATCH-STANDALONE-CLAUDE-R1`
 > (frontend cliente + registro de homologacao visual).** O miolo da
 > tela "Meus pedidos" do Cliente (`#/cliente/pedidos`) foi **alinhado
