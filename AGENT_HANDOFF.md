@@ -1355,3 +1355,48 @@ node --test tests/boot.smoke.js \
   como frente separada de polish visual.
 - **Proxima fase recomendada:** abrir frente dedicada de acabamento
   visual do detalhe cliente, separada da funcionalidade de parciais.
+
+## Homologacao visual da tela Admin Nova OP
+
+- **Estado atual aceito:** `work/app-next` no HEAD `9495918`, fase
+  `RAVATEX-TAPETES-ADMIN-NOVA-OP-MATCH-STANDALONE-CLOSEOUT`. Fica
+  aceita como **APROVADA** a homologacao visual da tela Admin →
+  Nova OP, com aceite visual explicito do dono do projeto em app
+  local (`run-local.bat`).
+- **Escopo publicado:** `js/screens/op-nova.js` (rota `#/ops/nova` e
+  edicao `#/ops/:id`) foi redesenhado para igualar ao HTML standalone
+  `Admin - Nova OP - standalone.html` — header com subtitulo e botao
+  Voltar, card "1. Dados da OP", card "2. Itens da OP", card
+  "3. Recebimento de fios" (pendentes, recebidas, proposta por
+  sliders), card "4. Entregas tecelagem", coluna lateral "Resumo da
+  OP" e barra inferior informativa. Unico arquivo funcional alterado.
+- **Shell preservado:** `js/screens/common.js`, `index.html`,
+  sidebar e topbar nao foram tocados (shell ja homologado em
+  `1afdce8`).
+- **Acoes/validacoes/writes preservados:** rota, validacoes de
+  numero/ano/cliente/itens/fornecedor, toasts e os call-sites de
+  `window.persistirOP`, `window.aplicarRecalculoOP`,
+  `window.registrarRecebimentoOrdemFio`,
+  `window.atribuirFornecedorFioOp`, `window.renderOPLatexAdmin`
+  permanecem identicos; nenhum payload, RPC ou query foi alterado.
+- **Diferenca residual deferida:** as colunas Quantidade e
+  Observacao por item, presentes no standalone, nao existem em
+  `op_itens` (`db/01_schema.sql` so tem `modelo_id` e
+  `metros_pedidos`) e exigiriam schema/logica nova — a tabela real
+  usa apenas Modelo/Metros/Acoes; decisao de adicionar esses campos
+  fica para fase futura.
+- **Seguranca/escopo preservados:** nenhum schema, SQL, Supabase
+  mutation, producao ou `origin/main` foi tocado nesta fase.
+- **Validacao focada registrada:** `node --check js/screens/op-nova.js`,
+  `tests/op-nova.smoke.js` (30/30) e `git diff --check` verdes.
+  Suite opcional de nao-regressao do fluxo OP
+  (`tests/op-persistir.smoke.js`, `tests/op-recalculo.smoke.js`,
+  `tests/op-writes.smoke.js`, `tests/op-form-helpers.smoke.js`,
+  `tests/op-pdf.smoke.js`, `tests/op-latex-admin.smoke.js`) tambem
+  executada: 2 falhas pre-existentes e nao relacionadas
+  (`screenPainel ... 9 itens do ADMIN_MENU`, ja presentes no HEAD
+  `9495918` antes desta fase, confirmadas via `git stash`) — nao
+  corrigidas por estarem fora do escopo desta fase.
+- **Proxima fase recomendada:** avaliar, em frente separada, se vale
+  criar campos de quantidade/observacao por item de OP (exige
+  schema).

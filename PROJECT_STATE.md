@@ -2381,3 +2381,39 @@ Senhas de teste antigas em `docs/qa/fase1-checklist.md` e
 > nesta fase docs-only. Proxima fase recomendada: frente dedicada de
 > polish visual do detalhe cliente, separada da funcionalidade de
 > parciais.
+
+> **Atualizacao 2026-06-30 — fase
+> `RAVATEX-TAPETES-ADMIN-NOVA-OP-MATCH-STANDALONE-CLOSEOUT`
+> (homologacao do redesenho visual da tela Admin Nova OP).** Fica
+> registrada como **APROVADA** a homologacao visual da tela Admin →
+> Nova OP (rota `#/ops/nova` e edicao `#/ops/:id`) no HEAD `9495918`,
+> com aceite visual explicito do dono do projeto em staging local
+> (`run-local.bat`). O miolo de `js/screens/op-nova.js` foi
+> redesenhado para igualar ao HTML standalone
+> `Admin - Nova OP - standalone.html` (header com subtitulo e botao
+> Voltar; card "1. Dados da OP"; card "2. Itens da OP"; card
+> "3. Recebimento de fios" com pendentes/recebidas/proposta por
+> sliders; card "4. Entregas tecelagem"; coluna lateral "Resumo da OP";
+> barra inferior informativa), preservando integralmente shell/sidebar/
+> topbar globais (`js/screens/common.js` e `index.html` intocados),
+> rota, acoes, validacoes e writes existentes (`window.persistirOP`,
+> `window.aplicarRecalculoOP`, `window.registrarRecebimentoOrdemFio`,
+> `window.atribuirFornecedorFioOp`). Diferenca residual deferida: as
+> colunas Quantidade e Observacao por item do standalone nao existem
+> em `op_itens` (ver `db/01_schema.sql`) e exigiriam alteracao de
+> schema/logica fora do escopo desta fase — a tabela real usa apenas
+> Modelo/Metros/Acoes. Nenhum schema, SQL, Supabase mutation ou
+> alteracao de producao/`origin/main` foi realizada. Validacao focada
+> verde: `node --check js/screens/op-nova.js`,
+> `tests/op-nova.smoke.js` (30/30) e `git diff --check`; suite
+> opcional de nao-regressao do fluxo OP (`tests/op-persistir.smoke.js`,
+> `tests/op-recalculo.smoke.js`, `tests/op-writes.smoke.js`,
+> `tests/op-form-helpers.smoke.js`, `tests/op-pdf.smoke.js`,
+> `tests/op-latex-admin.smoke.js`) tambem executada, com 2 falhas
+> pre-existentes e nao relacionadas (`screenPainel ... 9 itens do
+> ADMIN_MENU`, ja presentes no HEAD `9495918` antes desta fase,
+> confirmadas via `git stash`) — nao corrigidas nesta fase por estarem
+> fora do escopo. Unico arquivo funcional alterado:
+> `js/screens/op-nova.js`. Proxima fase recomendada: avaliar, em
+> frente separada, se vale criar campos de quantidade/observacao por
+> item de OP (exige schema).
