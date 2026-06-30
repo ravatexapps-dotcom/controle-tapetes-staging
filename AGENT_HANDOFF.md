@@ -9,6 +9,30 @@
 > ConvenÃ§Ã£o: **tudo em portuguÃªs brasileiro**.
 
 ## Estado atual aceito
+- **Estado atual aceito:** `work/app-next`, ponta da fase
+  `RAVATEX-TAPETES-ADMIN-CORES-MATCH-STANDALONE-CLOSEOUT`.
+  O miolo da tela Admin -> Cores (`#/cadastros/cores`) foi alinhado
+  visualmente ao HTML standalone de referencia (`Admin - Cores -
+  standalone.html`). **Aceite visual explicito do dono do projeto em
+  2026-06-30.** Arquivo funcional alterado:
+  `js/screens/cadastros.js` (unico). Elementos homologados: botao
+  `Nova cor`, busca, tabela/card, swatches, acoes e footer alinhados
+  ao standalone; icones corrigidos com `SquarePen` para editar e
+  lixeira para excluir; label `AÇÕES` centralizado; footer acoplado ao
+  card da tabela no padrao do mockup. Shell/sidebar/topbar globais
+  preservados; rota, acoes, validacoes e permissoes admin preservadas.
+  Preview temporario `.codex-cores-visual-check.html` removido antes
+  do fechamento e nao commitado. Pushed para `staging/main`. Producao
+  e `origin/main` nao tocados.
+- **Contrato preservado:** tela continua usando os dados reais de
+  `cores`; leituras em `select('*').order('nome')`, edicao por
+  `update(...).eq('id', ...)`, criacao por `insert(...)` e exclusao
+  por `delete().eq('id', ...)`; sem schema, SQL, mutation Supabase
+  nova, RPC nova ou alteracao de payload.
+- **Teste focado conhecido:** `tests/cadastros-screens.smoke.js`
+  continua verde para `screenCadastrosCores`; a unica falha
+  remanescente fica fora do escopo desta fase, em `screenPainel`, por
+  contagem esperada de itens do `ADMIN_MENU`.
 -- **Estado atual aceito:** `work/app-next`, ponta da fase
   `RAVATEX-TAPETES-ADMIN-PARAMETROS-CALCULO-MATCH-STANDALONE-CLOSEOUT`.
   O miolo da tela Admin -> Parametros de calculo

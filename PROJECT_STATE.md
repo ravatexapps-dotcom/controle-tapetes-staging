@@ -1,4 +1,35 @@
 > **Atualizacao 2026-06-30 - fase
+> `RAVATEX-TAPETES-ADMIN-CORES-MATCH-STANDALONE-CLOSEOUT`
+> (frontend admin + registro de homologacao visual).** O miolo da
+> tela **Admin -> Cores** (`#/cadastros/cores`) foi **alinhado
+> visualmente ao HTML standalone de referencia** (`Admin - Cores -
+> standalone.html`, em `D:\OneDrive\Ravatex\Inttex\Mockups - nova
+> interface\Admin\`) pelo agente IAexec (Codex), e o aceite visual foi
+> **APROVADO EXPLICITAMENTE PELO DONO DO PROJETO em 2026-06-30**.
+> Branch: `work/app-next`. HEAD base da fase: `2ed6776`.
+> `origin/main` e a producao `bhgifjrfagkzubpyqpew` permaneceram
+> intocados. Arquivo funcional alterado: `js/screens/cadastros.js`
+> (unico). Elementos entregues e homologados: botao `Nova cor`, busca,
+> tabela/card, swatches, acoes e footer alinhados ao standalone;
+> icones corrigidos com `SquarePen` para editar e lixeira para
+> excluir; label `AÇÕES` centralizado; contagem no rodape acoplada ao
+> card da tabela no padrao do mockup. Shell/sidebar/topbar globais
+> preservados; rota `#/cadastros/cores`, acoes, validacoes e
+> permissoes admin preservadas. O carregamento e as acoes reais
+> continuam vindo de `cores` via `select('*').order('nome')`,
+> `update(...).eq('id', ...)`, `insert(...)` e `delete().eq('id',
+> ...)`, sem alterar contrato, payload ou regra de negocio. O preview
+> temporario `.codex-cores-visual-check.html` foi removido antes do
+> fechamento e **nao foi commitado**. Checks executados:
+> `node --check js/screens/cadastros.js`,
+> `node --test tests/cadastros-screens.smoke.js`,
+> `git diff --check`. O teste focado de cadastros permaneceu verde na
+> parte da tela de cores; a unica falha remanescente fica fora do
+> escopo desta fase, em `screenPainel`, por contagem esperada de itens
+> do `ADMIN_MENU`. Nenhum schema, SQL, mutation Supabase ou fluxo de
+> producao foi tocado.
+
+> **Atualizacao 2026-06-30 - fase
 > `RAVATEX-TAPETES-ADMIN-PARAMETROS-CALCULO-MATCH-STANDALONE-CLOSEOUT`
 > (frontend admin + registro de homologacao visual).** O miolo da
 > tela **Admin -> Parametros de calculo** (`#/cadastros/parametros`)
