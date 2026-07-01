@@ -1,0 +1,204 @@
+# Plano Persistente — Pedido ↔ OP ↔ Movimentação ↔ Documentos
+
+> **Fase:** `RAVATEX-TAPETES-PEDIDO-OP-MOVEMENT-PLAN-A` (docs-only)
+> **Tipo:** Docs/architecture/state, sem patch funcional.
+> **HEAD base:** `3e8e78f` — `work/app-next`
+> **Data:** 2026-07-01
+
+---
+
+## 1. Estado de entrada
+
+| Item | Valor |
+|---|---|
+| **Branch** | `work/app-next` |
+| **HEAD base** | `3e8e78f` |
+| **Fase anterior fechada** | `RAVATEX-TAPETES-ADMIN-NOVO-PEDIDO-MATCH-CLIENTE-NOVA-VIEW-A-R1` |
+| **Commit anterior** | `3e8e78f` — "Record admin novo pedido visual alignment" |
+| **Residual conhecido** | `M js/screens/pedidos-list.js` — dirty diff preexistente da lista Admin `#/pedidos`, fora do escopo |
+| **Residual permitido** | `?? supabase/.temp/` — residual permitido, origem externa |
+
+A fase **Admin → Novo Pedido** foi fechada e aprovada: o miolo visual de `#/pedidos/novo` está alinhado à base homologada de Cliente → Novo Pedido, sem transformar o fluxo em fluxo exclusivo do cliente. Comportamento admin preservado: seleção de cliente, status inicial `rascunho`, payload real `pedidos` + `pedido_itens`, validações, compensação, toast e navegação.
+
+Antes de mexer em schema, RPC, telas, OPs, pedidos, movimentação, documentos ou integrações externas, este plano registra a arquitetura de destino e as decisões que guiarão toda a evolução desta frente.
+
+---
+
+## 2. Decisões arquiteturais já tomadas
+
+Estas decisões foram consolidadas durante a análise do modelo de negócio e homologadas para esta frente. Qualquer implementação futura deve respeitá-las. Se houver necessidade de revisão, o plano deve ser atualizado antes.
+
+### 2.1. Hierarquia de domínio
+
+1. **Pedido é origem comercial.** O cliente solicita; o admin recebe, confirma e converte em produção.
+2. **OP é execução produtiva.** Cada OP representa uma etapa de fabricação (tecelagem, látex/acabamento).
+3. **Movimentação produtiva pertence à OP.** Lançamentos de produção (entradas, saídas, entregas parciais) são feitos dentro da tela de OP.
+4. **Pedido consolida a produção** e pode ter preview/atalhos para visualização rápida.
+5. **Cliente vê evolução simplificada** — nunca dados operacionais internos (OP, lote, fornecedor, NF, romaneio, custo, margem).
+
+### 2.2. Estrutura de OPs
+
+6. **OPs podem existir por etapa.** Exemplos: OP de tecelagem, OP de látex/acabamento.
+7. **OPs por etapa devem ser encadeadas.** A conclusão de uma etapa alimenta a próxima.
+8. **A cadeia de OPs deve ser atrelada ao Pedido.** Todo lote vinculado ao pedido (`lotes.pedido_id`) permite rastrear OPs → pedido.
+9. **O Pedido deve visualizar suas OPs vinculadas.** A tela de detalhe do Pedido Admin deve listar as OPs associadas.
+
+### 2.3. Stepper / preview produtivo
+
+10. **Pedido pode ter stepper/preview** com etapas: `INSUMOS > TECELAGEM > ACABAMENTO > EXPEDIÇÃO > ENTREGA`.
+11. **Botões de atalho no Pedido devem chamar a mesma operação canônica da OP.** Ex.: "Lançar produção" no Pedido invoca a mesma função/RPC de movimentação da tela de OP.
+12. **Não pode haver dupla digitação.** Lançar na OP e relançar manualmente no Pedido é proibido. A fonte de verdade da movimentação produtiva é a OP.
+
+### 2.4. Parciais
+
+13. **`pedido_parciais` é camada comercial/cliente**, não fonte produtiva.
+14. Parciais servem para informar o cliente sobre o avanço (ex.: "Tecelagem: 300m de 500m concluídos"). Não substituem nem duplicam a movimentação real da OP.
+
+### 2.5. Documentos
+
+15. **Documentos fiscais/romaneios devem ser vinculáveis** a movimentos, OPs e ao Pedido.
+16. **Arquivos pesados devem ficar fora do banco**, preferencialmente Google Drive ou OneDrive.
+17. **Banco deve guardar metadados e ponteiros externos** (URL, nome, tipo, tamanho, hash, data de upload).
+18. **Anexo documental começa como pendência não bloqueante.** A movimentação produtiva não deve ser travada pela ausência de documento.
+19. **Futuramente, e-mails recebidos em `eddiravazio@gmail.com`** poderão alimentar automação de leitura/classificação de PDF/XML/romaneio, com revisão humana inicial.
+
+---
+
+## 3. Modelo alvo
+
+```
+Pedido
+  ├── pedido_itens           (itens solicitados pelo cliente)
+  ├── lote/pedido_id         (lotes vinculados ao pedido)
+  ├── ops                    (OPs vinculadas via lote)
+  │     └── op_itens/pedido_item_id    (rastreabilidade item↔OP)
+  ├── entregas/movimentos    (movimentações produtivas das OPs)
+  ├── documentos_operacionais (metadados de arquivos fiscais/romaneios)
+  ├── resumo do pedido       (visão consolidada admin)
+  └── evolução cliente       (visão simplificada, read-only)
+```
+
+### 3.1. Vínculos chave a estabelecer
+
+| Vínculo | Origem | Destino | Status atual |
+|---|---|---|---|
+| Lote → Pedido | `lotes.pedido_id` | `pedidos.id` | Coluna existe (nullable), preenchimento pendente |
+| OP Item → Pedido Item | `op_itens.pedido_item_id` | `pedido_itens.id` | A avaliar/criar se necessário |
+| Documento → Movimento | `documentos_operacionais.movimento_id` | tabela de movimentos | A criar |
+| Documento → OP | `documentos_operacionais.op_id` | `ops.id` | A criar |
+| Documento → Pedido | `documentos_operacionais.pedido_id` | `pedidos.id` | A criar |
+
+---
+
+## 4. Papel das telas
+
+### 4.1. Tela de OP
+- **Bancada operacional** de movimentação produtiva.
+- Aqui se lança produção real: entradas, saídas, entregas parciais.
+- É a **fonte de verdade** da movimentação. Nenhuma outra tela duplica essa função.
+
+### 4.2. Tela de Pedido Admin
+- **Visão consolidada** do pedido.
+- Lista OPs vinculadas com status e progresso.
+- **Preview/stepper** com atalhos para operações canônicas (que delegam à OP).
+- **Documentos consolidados:** índice central de todos os documentos vinculados ao pedido, suas OPs e movimentos.
+
+### 4.3. Tela Cliente
+- **Evolução simplificada** (stepper, parciais, timeline).
+- **Nunca** vê OP, lote, fornecedor, NF, romaneio, custo ou margem.
+- Documentos visíveis apenas se o admin publicar (ex.: romaneio de entrega).
+
+### 4.4. Documentos
+
+| Contexto | Regra |
+|---|---|
+| Documentos comerciais gerais (ex.: pedido de compra, contrato) | Podem ser anexados diretamente ao **Pedido**. |
+| Documentos operacionais (ex.: NF de remessa, romaneio de entrega) | Devem preferencialmente ser vinculados ao **movimento/OP** e aparecer consolidados no **Pedido**. |
+| O Pedido é o **índice central** de documentos. | A tela de Pedido Admin deve exibir todos os documentos, independentemente do nível de vínculo. |
+
+---
+
+## 5. Fases futuras sugeridas
+
+> Ordem recomendada. Cada fase é atômica e rastreável.
+
+| Fase | Descrição | Dependência |
+|---|---|---|
+| **B** | Contrato arquitetura/schema detalhado: validar colunas existentes, desenhar novas (`documentos_operacionais`, FK `op_itens.pedido_item_id`), validar índices e constraints. | Plano A (este doc) |
+| **C** | Vínculo Pedido → OP: preencher `lotes.pedido_id` na criação/edição de lote; avaliar/adicionar `op_itens.pedido_item_id`. | B |
+| **D** | OPs vinculadas no detalhe do Pedido Admin: listar OPs do pedido com status, progresso e link para a tela de OP. | C |
+| **E** | Stepper/preview produtivo no Pedido Admin: visão gráfica das etapas com progresso real derivado das OPs. | D |
+| **F** | Operação canônica de movimentação: módulo/função reaproveitada pela tela de OP e pelos atalhos do Pedido. | D |
+| **G** | Pendência documental por movimento: tabela `documentos_operacionais`, upload de metadados, vínculo com movimento/OP/Pedido. Sem upload de arquivo ainda. | B |
+| **H** | Integração Drive/OneDrive: upload real de arquivos, storage externo, ponteiros no banco. | G |
+| **I** | Automação futura por e-mail/PDF/XML: leitura de `eddiravazio@gmail.com`, classificação, anexo automático com revisão humana. | H |
+| **J** | Saldo inteligente por etapa e bloqueio transacional: evitar que uma etapa consuma mais do que a anterior produziu. | F |
+
+---
+
+## 6. Obrigação permanente
+
+> **REGRA VINCULANTE PARA TODA EVOLUÇÃO DESTA FRENTE.**
+
+Sempre que houver evolução, decisão, bloqueio, conclusão parcial ou fechamento de etapa na frente **Pedido ↔ OP ↔ Movimentação ↔ Documentos**, o executor (humano ou IA) deve:
+
+1. **Consultar este plano** antes de iniciar qualquer ação.
+2. **Atualizar este plano** ao final da etapa, registrando:
+   - Decisões novas tomadas.
+   - Fases concluídas (marcar `[x]`).
+   - Pendências identificadas.
+   - Riscos novos ou mitigados.
+   - Próximo passo recomendado.
+3. **Atualizar `PROJECT_STATE.md`** com o registro da fase concluída.
+4. **Atualizar `AGENT_HANDOFF.md`** com o resumo para a próxima sessão.
+5. **Expor no handoff** que o próximo chat deve consultar este plano antes de qualquer ação.
+6. **Nunca** implementar sem antes consultar este plano.
+7. **Nunca** fechar uma etapa sem atualizar este plano.
+
+---
+
+## 7. Riscos
+
+| Risco | Severidade | Mitigação |
+|---|---|---|
+| Duplicar movimentação em Pedido e OP | **Alta** | Operação canônica única (Fase F); Pedido apenas consome/atalha. |
+| Tratar `pedido_parciais` como fonte produtiva | **Alta** | Parciais = camada comercial; fonte produtiva = OP. |
+| Anexar documentos sem classificação | **Média** | Tabela `documentos_operacionais` com tipo, origem e vínculo obrigatórios. |
+| Armazenar arquivos pesados no banco | **Alta** | Metadados no banco; arquivos no Drive/OneDrive (Fase H). |
+| Criar integração Drive/Gmail/OneDrive antes do contrato | **Média** | Fase H só após contrato de schema (Fase B) e pendência documental (Fase G). |
+| Popular Pedido→OP errado (lote sem pedido_id) | **Alta** | Validar `lotes.pedido_id` na criação/edição de lote e OP. |
+| Criar bloqueio de saldo só no frontend | **Alta** | Bloqueio transacional deve ser no backend (RPC/trigger). |
+| Implementar RPC sem etapas canônicas | **Média** | Toda RPC de movimentação deve ser única e reutilizável. |
+| Ignorar dirty diff existente em `js/screens/pedidos-list.js` | **Baixa** | Residual conhecido; não incluir em commits desta frente. |
+
+---
+
+## 8. Evidência obrigatória por fase
+
+Toda fase desta frente deve registrar ao fechar:
+
+- Branch utilizada.
+- HEAD inicial e final.
+- `git status --short` inicial e final.
+- `git diff --stat` (se houver alterações).
+- Arquivos lidos.
+- Arquivos alterados/criados.
+- Decisões registradas.
+- Este plano atualizado.
+- `PROJECT_STATE.md` atualizado.
+- `AGENT_HANDOFF.md` atualizado.
+- Próximos passos recomendados.
+
+---
+
+## 9. Próximo passo
+
+**Fase B — Contrato arquitetura/schema detalhado.**
+
+Validar o schema existente (`lotes.pedido_id`, `op_itens`, `pedido_itens`, tabelas de entrega) contra o modelo alvo (§3), desenhar a tabela `documentos_operacionais`, avaliar a necessidade de `op_itens.pedido_item_id` e propor índices, constraints e FKs. Somente após esse contrato, iniciar implementação.
+
+---
+
+> **Este plano é fonte canônica para a frente Pedido ↔ OP ↔ Movimentação ↔ Documentos.**
+> Deve ser consultado antes de qualquer ação e atualizado ao final de cada etapa.
+> Indexado em `docs/DOCUMENTATION_INDEX.md` §1.

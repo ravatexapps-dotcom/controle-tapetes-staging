@@ -19,6 +19,7 @@ arquiteturais e de governança:
 | `AGENT_HANDOFF.md` (raiz) | Resumo para próxima sessão de IA. Estado aceito, comandos de verificação, regras, proibições. |
 | `docs/architecture/CODE_HEALTH_RULES.md` | 18 regras vinculantes de saúde arquitetural. Toda nova fase deve respeitar. |
 | `docs/architecture/PORTAL_B2B_ARCHITECTURE_RULES.md` | Regras arquiteturais específicas da frente Portal B2B/Pedidos. Separa cliente/admin/fornecedor, status operacional vs. status visual, componentes comuns, decomposição de fases e limites de segurança para as próximas etapas. Fase `RAVATEX-TAPETES-PORTAL-B2B-GOVERNANCE-A`. |
+| `docs/architecture/PEDIDO_OP_MOVIMENTACAO_DOCUMENTOS_PLANO.md` | Plano persistente da frente Pedido ↔ OP ↔ Movimentação ↔ Documentos. Registra estado de entrada, decisões arquiteturais já tomadas, modelo alvo, papéis das telas, 9 fases futuras (B a J), obrigação permanente de consulta/atualização, riscos e template de evidência por fase. Fase `RAVATEX-TAPETES-PEDIDO-OP-MOVEMENT-PLAN-A`. |
 | `docs/architecture/AUTH_DELETE_USER_DESIGN.md` | Design de semântica de exclusão/desativação de usuários. Recomendação: desativar (soft delete + ban Auth) em vez de deletar fisicamente. Fase `RAVATEX-TAPETES-AUTH-DELETE-USER-DESIGN-A`. |
 | `docs/refactor/ARCHITECTURE_REFACTOR_LEDGER.md` | Histórico cronológico de fases do refactor. Lista de módulos extraídos, ressalvas, decisão de congelamento. |
 | `Guide-and-governance-rules.stxt` (raiz) | Governança geral do projeto para futuras sessões de ChatGPT. |

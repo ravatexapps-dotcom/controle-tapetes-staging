@@ -8,6 +8,23 @@
 > `docs/DOCUMENTATION_INDEX.md`.
 > ConvenÃ§Ã£o: **tudo em portuguÃªs brasileiro**.
 
+## Plano persistente Pedido -> OP -> Movimentacao -> Documentos
+
+- **Plano de arquitetura persistente registrado** em
+  `docs/architecture/PEDIDO_OP_MOVIMENTACAO_DOCUMENTOS_PLANO.md`
+  na fase `RAVATEX-TAPETES-PEDIDO-OP-MOVEMENT-PLAN-A` (docs-only),
+  sobre o HEAD `3e8e78f`. **O proximo chat DEVE consultar este plano**
+  antes de qualquer acao na frente Pedido -> OP -> Movimentacao ->
+  Documentos. O plano fixa: hierarquia de dominio, estrutura de OPs
+  por etapa, stepper/preview produtivo, operacao canonica de
+  movimentacao, parciais como camada comercial, documentos como
+  pendencia nao bloqueante, modelo alvo, papeis das telas, 9 fases
+  futuras (B a J), obrigacao permanente de consulta/atualizacao,
+  riscos mapeados e template de evidencia por fase. Proximo passo:
+  Fase B (contrato arquitetura/schema detalhado). Nenhum arquivo
+  funcional alterado. `js/screens/pedidos-list.js` e
+  `supabase/.temp/` preservados.
+
 ## Homologacao visual Admin Novo Pedido
 
 - **Estado atual aceito:** `work/app-next` na fase

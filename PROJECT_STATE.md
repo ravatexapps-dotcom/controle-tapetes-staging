@@ -1,4 +1,26 @@
 > **Atualizacao 2026-07-01 - fase
+> `RAVATEX-TAPETES-PEDIDO-OP-MOVEMENT-PLAN-A`
+> (docs-only, plano persistente Pedido -> OP -> Movimentacao ->
+> Documentos).** Criado o plano de arquitetura persistente em
+> `docs/architecture/PEDIDO_OP_MOVIMENTACAO_DOCUMENTOS_PLANO.md`
+> sobre o HEAD `3e8e78f`, branch `work/app-next`, com working
+> tree contendo apenas os residuais esperados (`M js/screens/
+> pedidos-list.js` e `?? supabase/.temp/`). O plano registra:
+> estado de entrada; decisoes arquiteturais ja tomadas (Pedido
+> como origem comercial, OP como execucao produtiva, movimentacao
+> pertence a OP, parciais como camada comercial, documentos como
+> pendencia nao bloqueante com arquivos fora do banco); modelo
+> alvo (Pedido -> pedido_itens -> lote -> ops -> op_itens ->
+> entregas/movimentos -> documentos_operacionais -> resumo ->
+> evolucao cliente); papeis das telas; 9 fases futuras (B a J);
+> obrigacao permanente de consulta/atualizacao; riscos mapeados;
+> e template de evidencia por fase. **Nenhum** arquivo funcional,
+> schema, SQL, Supabase, tela, OP ou integracao externa foi
+> alterado. Proximo passo recomendado: Fase B (contrato
+> arquitetura/schema detalhado). `js/screens/pedidos-list.js`
+> e `supabase/.temp/` permanecem intocados.
+
+> **Atualizacao 2026-07-01 - fase
 > `RAVATEX-TAPETES-ADMIN-NOVO-PEDIDO-MATCH-CLIENTE-NOVA-VIEW-A-R1`
 > (homologacao visual/funcional da tela Admin -> Novo Pedido).** Fica
 > registrada como **APROVADA** a homologacao da tela
