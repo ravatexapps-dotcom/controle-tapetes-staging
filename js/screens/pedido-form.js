@@ -1,65 +1,119 @@
 // =====================================================================
 // === SCREENS: PEDIDO FORM ============================================
-// Tela admin `#/pedidos/novo` — formulário de criação de Pedido.
+// Tela admin `#/pedidos/novo` - formulario de criacao de Pedido.
 //
-// Fase: RAVATEX-TAPETES-PEDIDOS-UI-ADMIN-C2
-// Escopo: criação admin de Pedido (rascunho). Sem edição, sem
-//   detalhe, sem geração de OP, sem lote, sem cliente público, sem
-//   token, sem Edge Function.
+// Fase: RAVATEX-TAPETES-PEDIDOS-UI-ADMIN-C2 +
+//   RAVATEX-TAPETES-ADMIN-NOVO-PEDIDO-MATCH-CLIENTE-NOVA-VIEW-A
+// Escopo: criacao admin de Pedido (rascunho), reaproveitando a base
+//   visual homologada de Cliente -> Novo Pedido sem alterar o payload,
+//   permissoes, fluxo de salvamento ou navegacao administrativa.
 //
 // Carregar via <script src="js/screens/pedido-form.js?v=...></script>
 // no <head>, DEPOIS de js/screens/pedidos-list.js, js/pedido-ui.js e
 // js/ui.js, e ANTES do <script> inline principal (compatibilidade com
 // o setRoutes registrado em js/boot.js).
 //
-// Dependências resolvidas em tempo de chamada:
-//   - window.el / window.toast / window.pageHeader / window.selectInput
-//     / window.textInput / window.formField / window.shellLayout
-//     / window.ADMIN_MENU                       (js/ui.js, common.js)
-//   - window.RAVATEX_PEDIDO_UI / window.corPreviewElement
-//     / window.pedidoStatusBadge                (js/pedido-ui.js)
-//   - window.navigate                           (js/router.js)
-//   - window.supa                              (js/supabase-client.js)
-//
-// Limitações conhecidas (documentadas no plano de release):
-//   - Sem RPC/transação atômica: a gravação faz 1 INSERT em `pedidos`
-//     e N INSERTs em `pedido_itens`. Se algum item falhar, o pedido
-//     criado fica "órfão" e é compensado por um DELETE manual do
-//     próprio pedido. Não usar service_role. Não usar Edge Function.
+// Limitacao conhecida:
+//   - Sem RPC/transacao atomica: grava 1 INSERT em `pedidos` e depois
+//     N INSERTs em `pedido_itens`. Se a segunda etapa falhar, compensa
+//     com DELETE do pedido criado.
 // =====================================================================
 
 (function (window) {
   'use strict';
 
+  function novoUid() {
+    return 'i_' + Math.random().toString(36).slice(2, 10);
+  }
+
+  function svgEl(markup) {
+    var tmp = document.createElement('div');
+    tmp.innerHTML = markup;
+    return tmp.firstElementChild;
+  }
+
+  var SVG_BACK = '<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#3f4757" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>';
+  var SVG_PLUS = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>';
+  var SVG_EDIT = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"></path></svg>';
+  var SVG_TRASH = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#d6403a" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path><path d="M10 11v6M14 11v6"></path><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"></path></svg>';
+  var SVG_CALENDAR = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#9aa2af" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="8" y1="3" x2="8" y2="6"></line><line x1="16" y1="3" x2="16" y2="6"></line></svg>';
+  var SVG_CHEVRON = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#9aa2af" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>';
+  var SVG_CLOSE = '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>';
+
   async function screenPedidoNovo() {
-    const container = window.el('div', {});
+    var container = window.el('div', {});
 
-    let clientes = [];
-    let modelos = [];
-    let loadingError = null;
+    var clientes = [];
+    var modelos = [];
+    var loadingError = null;
+    var isLoading = true;
 
-    // Estado do formulário
-    const state = {
+    var state = {
       clienteId: '',
       prazoEntrega: '',
       observacao: '',
       itens: [
-        { uid: novoUid(), modeloId: '', metros: '', observacao: '' },
-      ],
+        { uid: novoUid(), modeloId: '', metros: '', observacao: '' }
+      ]
     };
 
-    function novoUid() {
-      return 'i_' + Math.random().toString(36).slice(2, 10);
+    function modeloById(id) {
+      for (var i = 0; i < modelos.length; i++) {
+        if (String(modelos[i].id) === String(id)) return modelos[i];
+      }
+      return null;
+    }
+
+    function larguraStr(modelo) {
+      if (!modelo) return '-';
+      return typeof modelo.largura === 'number'
+        ? modelo.largura.toFixed(2).replace('.', ',') + ' m'
+        : String(modelo.largura || '-');
+    }
+
+    function corNome(cor) {
+      return cor && cor.nome ? cor.nome : '-';
+    }
+
+    function corResumo(modelo) {
+      if (!modelo) return '-';
+      return corNome(modelo.cor_1) + ' / ' + corNome(modelo.cor_2);
+    }
+
+    function totalMetros() {
+      var total = 0;
+      for (var i = 0; i < state.itens.length; i++) {
+        var value = parseFloat(state.itens[i].metros);
+        if (Number.isFinite(value) && value > 0) total += value;
+      }
+      return total;
+    }
+
+    function totalMetrosStr() {
+      var total = totalMetros();
+      return total > 0
+        ? total.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' m'
+        : '0,00 m';
+    }
+
+    function swatchColor(modeloId) {
+      var palette = ['#cfc6b4', '#8f8a80', '#c8a87a', '#7a8fa6', '#b0a898', '#a8b8c8', '#c4b8a0'];
+      var idx = Math.abs(parseInt(String(modeloId), 10) || 0) % palette.length;
+      return palette[idx];
     }
 
     async function carregarDados() {
-      const [cliRes, modRes] = await Promise.all([
+      var results = await Promise.all([
         window.supa.from('clientes').select('id, nome').order('nome'),
         window.supa
           .from('modelos')
           .select('id, nome, largura, cor_1:cor_1_id(id, nome), cor_2:cor_2_id(id, nome)')
-          .order('nome'),
+          .order('nome')
       ]);
+
+      var cliRes = results[0];
+      var modRes = results[1];
+
       if (cliRes.error) {
         loadingError = 'clientes';
         window.toast('Erro ao carregar clientes', 'error');
@@ -67,6 +121,7 @@
       } else {
         clientes = cliRes.data || [];
       }
+
       if (modRes.error) {
         loadingError = loadingError || 'modelos';
         window.toast('Erro ao carregar modelos', 'error');
@@ -76,183 +131,481 @@
       }
     }
 
-    function modeloById(id) {
-      return modelos.find(m => String(m.id) === String(id)) || null;
+    function buildHeader() {
+      return window.el('div', {
+        style: 'display:flex; align-items:flex-start; justify-content:space-between; gap:16px; margin-bottom:16px; flex-wrap:wrap;'
+      },
+      window.el('div', { style: 'display:flex; align-items:flex-start; gap:16px;' },
+        window.el('div', {
+          style: 'width:36px; height:36px; border:1px solid #e2e5ea; border-radius:4px; display:flex; align-items:center; justify-content:center; flex-shrink:0; cursor:pointer;',
+          onclick: function () { window.navigate('#/pedidos'); }
+        }, svgEl(SVG_BACK)),
+        window.el('div', {},
+          window.el('h1', {
+            style: 'margin:0; font-size:23px; font-weight:800; color:#16203a; letter-spacing:-.01em;'
+          }, 'Novo pedido'),
+          window.el('div', {
+            style: 'font-size:13.5px; color:#8a93a3; margin-top:4px; max-width:760px;'
+          }, 'Preencha os itens do pedido. Após o salvamento, ele ficará como Rascunho.')
+        )
+      ),
+      window.el('button', {
+        type: 'button',
+        style: 'background:#fff; color:#3f4757; border:1px solid #d8dce2; border-radius:4px; padding:8px 18px; font-weight:600; font-size:14px; cursor:pointer; white-space:nowrap;',
+        onclick: function () { window.navigate('#/pedidos'); }
+      }, 'Cancelar'));
     }
 
-    function corResumo(modelo) {
-      if (!modelo) return '';
-      const c1 = modelo.cor_1 && modelo.cor_1.nome ? modelo.cor_1.nome : '—';
-      const c2 = modelo.cor_2 && modelo.cor_2.nome ? modelo.cor_2.nome : '—';
-      return `${c1}/${c2}`;
+    function buildFieldLabel(text, required) {
+      var children = [text];
+      if (required) {
+        children.push(' ');
+        children.push(window.el('span', { style: 'color:#d6403a;' }, '*'));
+      }
+      return window.el('label', {
+        style: 'display:block; font-size:13px; color:#5b6472; margin-bottom:6px;'
+      }, children);
     }
 
-    function modeloLabel(modelo) {
-      if (!modelo) return '';
-      const w = (typeof modelo.largura === 'number')
-        ? modelo.largura.toFixed(2).replace('.', ',') + 'm'
-        : String(modelo.largura);
-      return `${modelo.nome} · ${corResumo(modelo)} · ${w}`;
+    function buildSelectBox(selectEl) {
+      return window.el('div', {
+        style: 'display:flex; align-items:center; gap:8px; border:1px solid #d8dce2; border-radius:4px; padding:9px 12px; background:#fff;'
+      }, selectEl, svgEl(SVG_CHEVRON));
+    }
+
+    function buildDadosGeraisCard() {
+      var clienteSelect = window.el('select', {
+        style: 'flex:1; border:none; outline:none; font-size:14px; color:#16203a; background:transparent; font-family:inherit; cursor:pointer; -webkit-appearance:none; appearance:none; min-width:0;'
+      }, window.el('option', { value: '' }, 'Selecione o cliente...'));
+      for (var i = 0; i < clientes.length; i++) {
+        var option = window.el('option', { value: clientes[i].id }, clientes[i].nome);
+        if (String(clientes[i].id) === String(state.clienteId)) option.selected = true;
+        clienteSelect.appendChild(option);
+      }
+      clienteSelect.addEventListener('change', function () {
+        state.clienteId = clienteSelect.value;
+      });
+
+      var prazoInput = window.el('input', {
+        type: 'date',
+        value: state.prazoEntrega,
+        style: 'flex:1; border:none; outline:none; font-size:14px; color:#16203a; background:transparent; font-family:inherit; min-width:0;'
+      });
+      prazoInput.addEventListener('change', function () {
+        state.prazoEntrega = prazoInput.value;
+      });
+      var prazoWrap = window.el('div', {
+        style: 'display:flex; align-items:center; gap:8px; border:1px solid #d8dce2; border-radius:4px; padding:9px 12px; background:#fff;'
+      }, prazoInput, svgEl(SVG_CALENDAR));
+
+      var statusSelect = window.el('select', {
+        disabled: 'disabled',
+        style: 'flex:1; border:none; outline:none; font-size:14px; color:#16203a; background:transparent; font-family:inherit; cursor:default; -webkit-appearance:none; appearance:none; min-width:0; opacity:1;'
+      }, window.el('option', { value: 'rascunho', selected: 'selected' }, 'Rascunho'));
+
+      return window.el('div', {
+        style: 'background:#fff; border:1px solid #eceef1; border-radius:4px; box-shadow:0 1px 2px rgba(20,30,45,.04); padding:16px 20px; margin-bottom:14px;'
+      },
+      window.el('div', { style: 'font-size:16px; font-weight:700; color:#16203a; margin-bottom:12px;' }, 'Dados gerais'),
+      window.el('div', {
+        style: 'display:grid; grid-template-columns:1fr 1fr 1fr; gap:20px;'
+      },
+      window.el('div', { style: 'min-width:0;' },
+        buildFieldLabel('Cliente', true),
+        buildSelectBox(clienteSelect)
+      ),
+      window.el('div', { style: 'min-width:0;' },
+        buildFieldLabel('Prazo desejado'),
+        prazoWrap
+      ),
+      window.el('div', { style: 'min-width:0;' },
+        buildFieldLabel('Status inicial'),
+        buildSelectBox(statusSelect)
+      )));
     }
 
     function buildItemRow(item) {
-      const row = window.el('div', {
-        class: 'flex flex-wrap items-end gap-2 mb-3 p-3 bg-gray-50 rounded-lg',
-        'data-uid': item.uid,
+      var modelo = modeloById(item.modeloId);
+      var row = window.el('div', {
+        style: 'display:grid; grid-template-columns:60px 1.1fr 1.1fr .8fr 1.1fr 1.2fr 84px; align-items:center; gap:12px; padding:9px 18px; border-bottom:1px solid #f1f3f6; min-width:920px;',
+        'data-uid': item.uid
       });
 
-      // Select de modelo (com preview ao lado)
-      const modeloSel = window.selectInput({
-        options: modelos.map(m => ({ value: m.id, label: modeloLabel(m) })),
-        value: item.modeloId,
-        placeholder: 'Modelo...',
+      var previewSlot = window.el('div', {
+        'data-preview-slot': '1',
+        style: 'width:36px; height:36px; border-radius:4px; overflow:hidden; border:1px solid rgba(0,0,0,.08); background:#f5f2ea; flex-shrink:0; display:flex; align-items:center; justify-content:center;'
       });
-      modeloSel.classList.add('flex-1', 'min-w-64');
 
-      // Slot fixo de preview (filho direto de row) — não é removido
-      // nem reinserido em posição variável. Atualizado via updatePreview().
-      const previewSlot = window.el('div', { 'data-preview-slot': '1' });
       function updatePreview() {
         previewSlot.replaceChildren();
-        const m = modeloById(item.modeloId);
-        if (m && m.cor_1 && window.corPreviewElement) {
-          previewSlot.appendChild(window.corPreviewElement(m.cor_1.nome));
+        var selectedModel = modeloById(item.modeloId);
+        if (selectedModel && selectedModel.cor_1 && window.corPreviewElement) {
+          var previewNode = window.corPreviewElement(selectedModel.cor_1.nome);
+          if (previewNode) {
+            previewNode.style.width = '100%';
+            previewNode.style.height = '100%';
+            previewNode.style.borderRadius = '0';
+            previewNode.style.border = 'none';
+            previewSlot.appendChild(previewNode);
+            return;
+          }
         }
+        previewSlot.appendChild(window.el('div', {
+          style: 'width:100%; height:100%; background:' + (selectedModel ? swatchColor(item.modeloId) : '#d8d0c0') + ';'
+        }));
       }
 
-      modeloSel.addEventListener('change', () => {
-        item.modeloId = modeloSel.value;
+      var selectEl = window.el('select', {
+        style: 'width:100%; border:1px solid #d8dce2; border-radius:4px; padding:6px 8px; font-size:13.5px; color:#16203a; background:#fff; font-family:inherit; cursor:pointer; outline:none;'
+      }, window.el('option', { value: '' }, 'Modelo...'));
+      for (var i = 0; i < modelos.length; i++) {
+        var opt = window.el('option', { value: modelos[i].id }, modelos[i].nome);
+        if (String(modelos[i].id) === String(item.modeloId)) opt.selected = true;
+        selectEl.appendChild(opt);
+      }
+
+      var coresCell = window.el('div', {
+        style: 'font-size:13.5px; color:' + (modelo ? '#3f4757' : '#aab2bf') + ';'
+      }, modelo ? corResumo(modelo) : '-');
+      var larguraCell = window.el('div', {
+        style: 'font-size:13.5px; color:' + (modelo ? '#3f4757' : '#aab2bf') + ';'
+      }, modelo ? larguraStr(modelo) : '-');
+
+      selectEl.addEventListener('change', function () {
+        item.modeloId = selectEl.value;
+        var selectedModel = modeloById(item.modeloId);
         updatePreview();
+        coresCell.textContent = selectedModel ? corResumo(selectedModel) : '-';
+        coresCell.style.color = selectedModel ? '#3f4757' : '#aab2bf';
+        larguraCell.textContent = selectedModel ? larguraStr(selectedModel) : '-';
+        larguraCell.style.color = selectedModel ? '#3f4757' : '#aab2bf';
       });
-      row.appendChild(window.el('div', { class: 'flex-1 min-w-64' }, modeloSel));
 
-      // Inicializa preview com o modelo atual (se houver)
-      updatePreview();
-      row.appendChild(previewSlot);
-
-      // Input de metros
-      const metrosInput = window.textInput({
+      var metrosInput = window.el('input', {
         type: 'number',
         value: item.metros,
-        placeholder: '0',
+        placeholder: '0,00',
         step: '0.01',
+        min: '0.01',
+        style: 'width:100%; border:1px solid #d8dce2; border-radius:4px; padding:6px 8px; font-size:13.5px; font-weight:600; color:#16203a; background:#fff; font-family:inherit; outline:none;'
       });
-      metrosInput.classList.add('w-32');
-      metrosInput.addEventListener('input', () => {
+      metrosInput.addEventListener('input', function () {
         item.metros = metrosInput.value;
+        render();
       });
-      row.appendChild(window.el('div', {},
-        window.el('label', { class: 'block text-xs text-gray-500 mb-1' }, 'Metros'),
-        metrosInput));
 
-      // Observação do item (opcional)
-      const obsInput = window.textInput({
+      var obsInput = window.el('input', {
+        type: 'text',
         value: item.observacao,
-        placeholder: 'Observação do item (opcional)',
+        placeholder: '-',
+        style: 'width:100%; border:1px solid #d8dce2; border-radius:4px; padding:6px 8px; font-size:13.5px; color:#3f4757; background:#fff; font-family:inherit; outline:none;'
       });
-      obsInput.addEventListener('input', () => {
+      obsInput.addEventListener('input', function () {
         item.observacao = obsInput.value;
       });
-      row.appendChild(window.el('div', { class: 'flex-1 min-w-48' },
-        window.el('label', { class: 'block text-xs text-gray-500 mb-1' }, 'Observação'),
-        obsInput));
 
-      // Botão remover (só se houver mais de 1 item)
-      if (state.itens.length > 1) {
-        const removeBtn = window.el('button', {
-          type: 'button',
-          class: 'text-red-600 hover:underline text-sm px-2 py-1',
-          onclick: () => {
-            state.itens = state.itens.filter(i => i.uid !== item.uid);
-            render();
-          },
-        }, 'Remover');
-        row.appendChild(removeBtn);
-      }
+      var editBtn = window.el('span', {
+        style: 'cursor:default; opacity:.5;',
+        title: 'Edicao via modal (em breve)'
+      }, svgEl(SVG_EDIT));
+
+      var removeBtn = window.el('span', {
+        style: 'cursor:pointer;',
+        onclick: function () {
+          state.itens = state.itens.filter(function (current) { return current.uid !== item.uid; });
+          render();
+        }
+      }, svgEl(SVG_TRASH));
+
+      updatePreview();
+      row.appendChild(previewSlot);
+      row.appendChild(selectEl);
+      row.appendChild(coresCell);
+      row.appendChild(larguraCell);
+      row.appendChild(metrosInput);
+      row.appendChild(obsInput);
+      row.appendChild(window.el('div', { style: 'display:flex; align-items:center; gap:16px;' }, editBtn, removeBtn));
       return row;
     }
 
-    function buildItensSection() {
-      const wrap = window.el('div', { class: 'mb-4' });
-      wrap.appendChild(window.el('label',
-        { class: 'block text-sm font-semibold text-gray-700 mb-2' },
-        'Itens do pedido'));
-      for (const item of state.itens) {
-        wrap.appendChild(buildItemRow(item));
-      }
-      const addBtn = window.el('button', {
-        type: 'button',
-        class: 'text-blue-700 hover:underline text-sm font-semibold',
-        onclick: () => {
-          state.itens.push({ uid: novoUid(), modeloId: '', metros: '', observacao: '' });
-          render();
-        },
-      }, '+ Adicionar item');
-      wrap.appendChild(addBtn);
-      return wrap;
-    }
+    function openAddItemModal() {
+      var draft = { modeloId: '', metros: '', observacao: '' };
 
-    function buildHeader() {
-      return window.pageHeader('Novo Pedido', [
-        {
-          label: '← Voltar para lista',
-          onclick: () => window.navigate('#/pedidos'),
-        },
-      ]);
-    }
-
-    function buildForm() {
-      const cliSel = window.selectInput({
-        options: clientes.map(c => ({ value: c.id, label: c.nome })),
-        value: state.clienteId,
-        placeholder: 'Selecione o cliente...',
+      var overlay = window.el('div', {
+        style: 'position:fixed; inset:0; background:rgba(22,32,58,.45); display:flex; align-items:center; justify-content:center; padding:40px; z-index:1000;'
       });
-      cliSel.addEventListener('change', () => { state.clienteId = cliSel.value; });
+      overlay.addEventListener('click', function (event) {
+        if (event.target === overlay) close();
+      });
 
-      const prazoInput = window.textInput({ type: 'date', value: state.prazoEntrega });
-      prazoInput.addEventListener('change', () => { state.prazoEntrega = prazoInput.value; });
+      function close() {
+        overlay.remove();
+        document.removeEventListener('keydown', onKeydown);
+      }
 
-      const obsTextarea = window.el('textarea', {
-        rows: 2,
-        class: 'w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500',
-        placeholder: 'Observação geral do pedido (opcional)',
+      function onKeydown(event) {
+        if (event.key === 'Escape') close();
+      }
+
+      function requiredLabel(text) {
+        return window.el('label', {
+          style: 'display:block; font-size:13px; font-weight:600; color:#3f4757; margin-bottom:6px;'
+        }, text + ' ', window.el('span', { style: 'color:#d6403a;' }, '*'));
+      }
+
+      function plainLabel(text) {
+        return window.el('div', {
+          style: 'font-size:13px; font-weight:600; color:#3f4757; margin-bottom:6px;'
+        }, text);
+      }
+
+      function staticBox(content) {
+        return window.el('div', {
+          style: 'display:flex; align-items:center; justify-content:space-between; border:1px solid #d8dce2; border-radius:4px; padding:9px 12px; font-size:14px; color:#16203a; background:#fff;'
+        }, content, svgEl(SVG_CHEVRON));
+      }
+
+      document.addEventListener('keydown', onKeydown);
+
+      var closeBtn = window.el('button', {
+        type: 'button',
+        style: 'background:none; border:none; cursor:pointer; padding:4px; color:#9aa2af;',
+        onclick: close
+      }, svgEl(SVG_CLOSE));
+
+      var header = window.el('div', {
+        style: 'display:flex; align-items:flex-start; justify-content:space-between; padding:18px 20px 12px;'
+      },
+      window.el('div', {},
+        window.el('div', { style: 'font-size:16px; font-weight:700; color:#16203a;' }, 'Adicionar item'),
+        window.el('div', {
+          style: 'font-size:13px; color:#8a93a3; margin-top:3px;'
+        }, 'Informe os dados do item que sera incluido neste pedido administrativo.')
+      ),
+      closeBtn);
+
+      var modeloSelect = window.el('select', {
+        style: 'flex:1; border:none; outline:none; font-size:14px; color:#16203a; background:transparent; font-family:inherit; cursor:pointer; -webkit-appearance:none; appearance:none; min-width:0;'
+      }, window.el('option', { value: '' }, 'Modelo...'));
+      for (var i = 0; i < modelos.length; i++) {
+        modeloSelect.appendChild(window.el('option', { value: modelos[i].id }, modelos[i].nome));
+      }
+      var modeloWrap = window.el('div', {
+        style: 'display:flex; align-items:center; justify-content:space-between; border:1px solid #d8dce2; border-radius:4px; padding:9px 12px; background:#fff;'
+      }, modeloSelect, svgEl(SVG_CHEVRON));
+
+      var cor1Span = window.el('span', {}, '-');
+      var cor2Span = window.el('span', {}, '-');
+      var larguraSpan = window.el('span', {}, '-');
+
+      modeloSelect.addEventListener('change', function () {
+        draft.modeloId = modeloSelect.value;
+        var selectedModel = modeloById(draft.modeloId);
+        cor1Span.textContent = selectedModel ? corNome(selectedModel.cor_1) : '-';
+        cor2Span.textContent = selectedModel ? corNome(selectedModel.cor_2) : '-';
+        larguraSpan.textContent = selectedModel ? larguraStr(selectedModel) : '-';
+      });
+
+      var metragemInput = window.el('input', {
+        type: 'number',
+        step: '0.01',
+        min: '0.01',
+        placeholder: '0,00',
+        style: 'flex:1; border:none; outline:none; padding:9px 12px; font-size:14px; font-family:inherit; color:#16203a; background:transparent; min-width:0;'
+      });
+      metragemInput.addEventListener('input', function () {
+        draft.metros = metragemInput.value;
+      });
+      var metragemWrap = window.el('div', {
+        style: 'display:flex; align-items:center; border:1px solid #d8dce2; border-radius:4px; overflow:hidden; background:#fff;'
+      }, metragemInput, window.el('span', { style: 'padding:9px 12px 9px 0; color:#9aa2af; font-size:14px;' }, 'm'));
+
+      var obsTextarea = window.el('textarea', {
+        placeholder: 'Ex.: prioridade, conferencia especial, observacao operacional...',
+        maxlength: '200',
+        style: 'width:100%; border:1px solid #d8dce2; border-radius:4px; padding:9px 12px 24px; font-size:14px; font-family:inherit; color:#16203a; background:#fff; resize:none; outline:none; min-height:80px; line-height:1.5; box-sizing:border-box;'
+      });
+      var counterSpan = window.el('span', {
+        style: 'position:absolute; right:12px; bottom:10px; font-size:12px; color:#c2c8d0;'
+      }, '0/200');
+      obsTextarea.addEventListener('input', function () {
+        draft.observacao = obsTextarea.value;
+        counterSpan.textContent = obsTextarea.value.length + '/200';
+      });
+
+      var body = window.el('div', {
+        style: 'padding:0 20px; display:flex; flex-direction:column; gap:14px; overflow-y:auto; flex:1; min-height:0;'
+      },
+      window.el('div', {}, requiredLabel('Modelo'), modeloWrap),
+      window.el('div', {},
+        requiredLabel('Cores'),
+        window.el('div', { style: 'display:grid; grid-template-columns:1fr 1fr; gap:12px;' },
+          window.el('div', {},
+            window.el('div', { style: 'font-size:12.5px; color:#9aa2af; margin-bottom:6px;' }, 'Cor 1'),
+            staticBox(cor1Span)
+          ),
+          window.el('div', {},
+            window.el('div', { style: 'font-size:12.5px; color:#9aa2af; margin-bottom:6px;' }, 'Cor 2'),
+            staticBox(cor2Span)
+          )
+        )
+      ),
+      window.el('div', { style: 'display:grid; grid-template-columns:1fr 1fr; gap:12px;' },
+        window.el('div', {}, requiredLabel('Largura'), staticBox(larguraSpan)),
+        window.el('div', {}, requiredLabel('Metragem'), metragemWrap)
+      ),
+      window.el('div', {},
+        plainLabel('Referencia visual'),
+        window.el('div', { style: 'height:120px; border-radius:4px; overflow:hidden; background:#d4c9a8; position:relative;' },
+          window.el('div', { style: 'position:absolute; inset:0; background:repeating-linear-gradient(0deg, transparent, transparent 18px, rgba(180,155,100,.25) 18px, rgba(180,155,100,.25) 19px),repeating-linear-gradient(90deg, transparent, transparent 18px, rgba(180,155,100,.25) 18px, rgba(180,155,100,.25) 19px),repeating-linear-gradient(45deg, rgba(160,130,80,.15) 0 4px, transparent 4px 14px),linear-gradient(135deg, #c9b98a 0%, #d9caa0 30%, #c8b680 50%, #ddd0a8 70%, #c4b47c 100%);' }),
+          window.el('div', { style: 'position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); width:72px; height:72px; border-radius:50%; border:3px solid rgba(100,75,30,.28); background:radial-gradient(circle, rgba(140,110,55,.3) 0%, transparent 70%);' }),
+          window.el('div', { style: 'position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); width:40px; height:40px; border-radius:50%; border:2px solid rgba(100,75,30,.35); background:rgba(150,120,60,.2);' }),
+          window.el('div', { style: 'position:absolute; inset:6px; border:1.5px solid rgba(100,75,30,.2); border-radius:2px;' }),
+          window.el('div', { style: 'position:absolute; inset:10px; border:1px dashed rgba(100,75,30,.14); border-radius:2px;' })
+        )
+      ),
+      window.el('div', {},
+        plainLabel('Observacao do item'),
+        window.el('div', { style: 'position:relative;' }, obsTextarea, counterSpan)
+      ));
+
+      var cancelBtn = window.el('button', {
+        type: 'button',
+        style: 'background:#fff; color:#3f4757; border:1px solid #d8dce2; border-radius:4px; padding:9px 18px; font-weight:600; font-size:14px; font-family:inherit; cursor:pointer;',
+        onclick: close
+      }, 'Cancelar');
+
+      var confirmBtn = window.el('button', {
+        type: 'button',
+        style: 'background:#2563eb; color:#fff; border:none; border-radius:4px; padding:9px 20px; font-weight:700; font-size:14px; font-family:inherit; cursor:pointer;',
+        onclick: function () {
+          if (!draft.modeloId) {
+            window.toast('Selecione um modelo.', 'error');
+            return;
+          }
+          var meters = Number(draft.metros);
+          if (!Number.isFinite(meters) || meters <= 0) {
+            window.toast('Metragem deve ser maior que zero.', 'error');
+            return;
+          }
+          state.itens.push({
+            uid: novoUid(),
+            modeloId: draft.modeloId,
+            metros: draft.metros,
+            observacao: draft.observacao
+          });
+          close();
+          render();
+        }
+      }, 'Adicionar item');
+
+      var footer = window.el('div', {
+        style: 'display:flex; align-items:center; justify-content:flex-end; gap:12px; padding:14px 20px; border-top:1px solid #eceef1; margin-top:14px;'
+      }, cancelBtn, confirmBtn);
+
+      var card = window.el('div', {
+        style: 'background:#fff; border-radius:4px; width:460px; max-width:100%; max-height:90vh; box-shadow:0 24px 60px rgba(20,30,45,.14); overflow:hidden; display:flex; flex-direction:column;'
+      }, header, body, footer);
+
+      overlay.appendChild(card);
+      document.body.appendChild(overlay);
+    }
+
+    function buildItensCard() {
+      var cols = '60px 1.1fr 1.1fr .8fr 1.1fr 1.2fr 84px';
+      var rowsWrap = window.el('div', {});
+      for (var i = 0; i < state.itens.length; i++) {
+        rowsWrap.appendChild(buildItemRow(state.itens[i]));
+      }
+
+      var addBtn = window.el('button', {
+        type: 'button',
+        style: 'display:inline-flex; align-items:center; gap:8px; background:#fff; color:#2563eb; border:1px solid #2563eb; border-radius:4px; padding:7px 13px; font-weight:600; font-size:13.5px; font-family:inherit; cursor:pointer; white-space:nowrap;',
+        onclick: function () { openAddItemModal(); }
+      }, svgEl(SVG_PLUS), 'Adicionar item');
+
+      var table = window.el('div', {
+        style: 'border:1px solid #eceef1; border-radius:4px; overflow:hidden;'
+      },
+      window.el('div', { style: 'overflow-x:auto;' },
+        window.el('div', {
+          style: 'display:grid; grid-template-columns:' + cols + '; align-items:center; gap:12px; padding:10px 18px; background:#f8f9fb; border-bottom:1px solid #eceef1; min-width:920px;'
+        },
+        window.el('div', { style: 'font-size:13px; font-weight:600; color:#5b6472;' }, 'Img'),
+        window.el('div', { style: 'font-size:13px; font-weight:600; color:#5b6472;' }, 'Modelo'),
+        window.el('div', { style: 'font-size:13px; font-weight:600; color:#5b6472;' }, 'Cores'),
+        window.el('div', { style: 'font-size:13px; font-weight:600; color:#5b6472;' }, 'Largura'),
+        window.el('div', { style: 'font-size:13px; font-weight:600; color:#5b6472;' }, 'Metragem (m)'),
+        window.el('div', { style: 'font-size:13px; font-weight:600; color:#5b6472;' }, 'Observacao'),
+        window.el('div', { style: 'font-size:13px; font-weight:600; color:#5b6472;' }, 'Acoes')
+        ),
+        rowsWrap
+      ),
+      window.el('div', {
+        style: 'display:flex; align-items:center; justify-content:space-between; gap:16px; padding:10px 18px; background:#f8f9fb; flex-wrap:wrap;'
+      },
+      window.el('span', { style: 'font-size:13.5px; color:#5b6472;' },
+        'Total de itens: ',
+        window.el('strong', { style: 'color:#16203a; font-weight:700;' }, String(state.itens.length))
+      ),
+      window.el('span', { style: 'font-size:13.5px; color:#5b6472;' },
+        'Metragem total: ',
+        window.el('strong', { style: 'color:#16203a; font-weight:700;' }, totalMetrosStr())
+      )));
+
+      return window.el('div', {
+        style: 'background:#fff; border:1px solid #eceef1; border-radius:4px; box-shadow:0 1px 2px rgba(20,30,45,.04); padding:16px 20px; margin-bottom:14px;'
+      },
+      window.el('div', {
+        style: 'display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:12px; flex-wrap:wrap;'
+      },
+      window.el('div', { style: 'font-size:16px; font-weight:700; color:#16203a;' }, 'Itens do pedido'),
+      addBtn),
+      table);
+    }
+
+    function buildBottomSection(saveBtn) {
+      function syncTextareaHeight(textarea) {
+        textarea.style.height = 'auto';
+        textarea.style.height = Math.max(textarea.scrollHeight, 40) + 'px';
+      }
+
+      var obsTextarea = window.el('textarea', {
+        rows: 1,
+        placeholder: 'Informações adicionais sobre conferência, prazo ou observações internas...',
+        style: 'width:100%; min-height:40px; border:1px solid #d8dce2; border-radius:4px; padding:9px 12px; font-size:14px; color:#16203a; background:#fff; font-family:inherit; outline:none; resize:none; line-height:1.5; box-sizing:border-box; overflow-y:hidden;'
       });
       obsTextarea.value = state.observacao;
-      obsTextarea.addEventListener('input', () => { state.observacao = obsTextarea.value; });
+      obsTextarea.addEventListener('input', function () {
+        state.observacao = obsTextarea.value;
+        syncTextareaHeight(obsTextarea);
+      });
 
-      const saveBtn = window.el('button', {
-        type: 'button',
-        class: 'bg-blue-700 hover:bg-blue-800 text-white font-semibold px-6 py-2 rounded-lg',
-        onclick: () => salvar(saveBtn, 'rascunho'),
-      }, 'Salvar rascunho');
+      var instrCard = window.el('div', {
+        style: 'background:#fff; border:1px solid #eceef1; border-radius:4px; box-shadow:0 1px 2px rgba(20,30,45,.04); padding:16px 20px;'
+      },
+      window.el('div', { style: 'font-size:16px; font-weight:700; color:#16203a; margin-bottom:10px;' }, 'Instruções gerais'),
+      obsTextarea);
 
-      const form = window.el('div', { class: 'bg-white rounded-xl shadow p-6 max-w-3xl' },
-        window.formField({ label: 'Cliente', input: cliSel }),
-        window.formField({
-          label: 'Prazo de entrega',
-          input: prazoInput,
-          hint: 'Data opcional. Pode ser ajustada depois.',
-        }),
-        window.formField({
-          label: 'Observação geral',
-          input: obsTextarea,
-          hint: 'Texto livre para o pedido como um todo.',
-        }),
-        buildItensSection(),
-        window.el('div', { class: 'flex justify-end gap-2 pt-4 border-t mt-4' },
-          window.el('button', {
-            type: 'button',
-            class: 'px-4 py-2 rounded-lg border hover:bg-gray-50',
-            onclick: () => window.navigate('#/pedidos'),
-          }, 'Cancelar'),
-          saveBtn,
-        ),
-      );
-      return form;
+      window.requestAnimationFrame(function () {
+        syncTextareaHeight(obsTextarea);
+      });
+
+      var checkoutCard = window.el('div', {
+        style: 'background:#fff; border:1px solid #eceef1; border-radius:4px; box-shadow:0 1px 2px rgba(20,30,45,.04); padding:16px 20px; display:flex; flex-direction:column; justify-content:center;'
+      },
+      window.el('div', { style: 'font-size:16px; font-weight:700; color:#16203a;' }, 'Salvar rascunho'),
+      window.el('div', { style: 'font-size:13px; color:#8a93a3; line-height:1.5; margin-top:10px; margin-bottom:14px;' },
+        'Resumo: ' + String(state.itens.length) + ' item(ns) | ' + totalMetrosStr()
+      ),
+      saveBtn);
+
+      return window.el('div', {
+        style: 'display:grid; grid-template-columns:3fr 1fr; gap:14px; align-items:stretch;'
+      }, instrCard, checkoutCard);
     }
 
     async function salvar(btn, status) {
-      // Validação cliente-side
       if (!state.clienteId) {
         window.toast('Selecione um cliente.', 'error');
         return;
@@ -261,32 +614,32 @@
         window.toast('Adicione ao menos um item.', 'error');
         return;
       }
-      for (const [i, item] of state.itens.entries()) {
+      for (var i = 0; i < state.itens.length; i++) {
+        var item = state.itens[i];
         if (!item.modeloId) {
           window.toast('Item ' + (i + 1) + ': selecione um modelo.', 'error');
           return;
         }
-        const m = Number(item.metros);
-        if (!Number.isFinite(m) || m <= 0) {
+        var meters = Number(item.metros);
+        if (!Number.isFinite(meters) || meters <= 0) {
           window.toast('Item ' + (i + 1) + ': metros deve ser > 0.', 'error');
           return;
         }
       }
 
       btn.disabled = true;
-      const oldLabel = btn.textContent;
+      var oldLabel = btn.textContent;
       btn.textContent = 'Salvando...';
 
       try {
-        // 1. Inserir pedido
-        const pedidoPayload = {
+        var pedidoPayload = {
           cliente_id: Number(state.clienteId),
-          status: status,
+          status: status
         };
         if (state.prazoEntrega) pedidoPayload.prazo_entrega = state.prazoEntrega;
         if (state.observacao) pedidoPayload.observacao = state.observacao;
 
-        const pedidoRes = await window.supa
+        var pedidoRes = await window.supa
           .from('pedidos')
           .insert(pedidoPayload)
           .select('id, numero, status')
@@ -294,42 +647,43 @@
 
         if (pedidoRes.error || !pedidoRes.data) {
           window.toast('Erro ao criar pedido: ' + (pedidoRes.error && pedidoRes.error.message
-            ? pedidoRes.error.message : 'desconhecido'), 'error');
+            ? pedidoRes.error.message
+            : 'desconhecido'), 'error');
           console.error(pedidoRes.error);
           return;
         }
-        const pedidoId = pedidoRes.data.id;
 
-        // 2. Inserir itens
-        const itensPayload = state.itens.map((item, idx) => ({
-          pedido_id: pedidoId,
-          modelo_id: Number(item.modeloId),
-          metros: Number(item.metros),
-          ordem: idx,
-          observacao: item.observacao || null,
-        }));
-        const itensRes = await window.supa
+        var pedidoId = pedidoRes.data.id;
+        var itensPayload = state.itens.map(function (item, index) {
+          return {
+            pedido_id: pedidoId,
+            modelo_id: Number(item.modeloId),
+            metros: Number(item.metros),
+            ordem: index,
+            observacao: item.observacao || null
+          };
+        });
+
+        var itensRes = await window.supa
           .from('pedido_itens')
           .insert(itensPayload)
           .select('id');
 
         if (itensRes.error) {
-          // Compensar: remover o pedido órfão
           console.error('Erro ao inserir itens, compensando:', itensRes.error);
-          const delRes = await window.supa.from('pedidos').delete().eq('id', pedidoId);
+          var delRes = await window.supa.from('pedidos').delete().eq('id', pedidoId);
           if (delRes.error) {
             window.toast(
-              'Erro grave: pedido #' + pedidoRes.data.numero + ' criado sem itens e não compensado. Contate suporte.',
+              'Erro grave: pedido #' + pedidoRes.data.numero + ' criado sem itens e nao compensado. Contate suporte.',
               'error'
             );
-            console.error('Compensação falhou:', delRes.error);
+            console.error('Compensacao falhou:', delRes.error);
           } else {
             window.toast('Erro ao inserir itens. Pedido cancelado. Tente novamente.', 'error');
           }
           return;
         }
 
-        // Sucesso
         window.toast('Pedido #' + pedidoRes.data.numero + ' salvo como ' + status + '.', 'success');
         window.navigate('#/pedidos');
       } finally {
@@ -338,31 +692,61 @@
       }
     }
 
-    function render() {
-      const header = buildHeader();
-      if (loadingError) {
-        container.replaceChildren(header,
-          window.el('div', { class: 'bg-white rounded-xl shadow p-6 text-red-700' },
-            'Erro ao carregar dados de ' + loadingError + '. Tente recarregar a página.'));
-        return;
-      }
-      const form = buildForm();
-      container.replaceChildren(header, form);
+    function buildLoadingCard() {
+      return window.el('div', {
+        style: 'background:#fff; border:1px solid #eceef1; border-radius:4px; box-shadow:0 1px 2px rgba(20,30,45,.04); padding:24px; color:#5b6472;'
+      }, 'Carregando dados do formulario...');
     }
 
-    await carregarDados();
+    function buildErrorCard() {
+      return window.el('div', {
+        style: 'background:#fff; border:1px solid #eceef1; border-radius:4px; box-shadow:0 1px 2px rgba(20,30,45,.04); padding:24px; color:#d6403a;'
+      }, 'Erro ao carregar dados de ' + loadingError + '. Tente recarregar a pagina.');
+    }
+
+    function render() {
+      var saveBtn = window.el('button', {
+        type: 'button',
+        style: 'background:#2563eb; color:#fff; border:none; border-radius:4px; padding:10px 0; width:100%; font-weight:700; font-size:14px; font-family:inherit; cursor:pointer;',
+        onclick: function () { salvar(saveBtn, 'rascunho'); }
+      }, 'Salvar rascunho');
+
+      if (isLoading) {
+        container.replaceChildren(buildHeader(), buildLoadingCard());
+        return;
+      }
+
+      if (loadingError) {
+        container.replaceChildren(buildHeader(), buildErrorCard());
+        return;
+      }
+
+      container.replaceChildren(
+        buildHeader(),
+        buildDadosGeraisCard(),
+        buildItensCard(),
+        buildBottomSection(saveBtn)
+      );
+    }
+
     render();
+    carregarDados()
+      .catch(function (error) {
+        loadingError = loadingError || 'dados';
+        console.error('pedido-form: erro inesperado ao carregar dados', error);
+      })
+      .finally(function () {
+        isLoading = false;
+        render();
+      });
+
     return window.shellLayout(window.ADMIN_MENU, container);
   }
 
-  // -------------------------------------------------------------------
-  // Namespace principal
-  // -------------------------------------------------------------------
   window.RAVATEX_SCREENS = window.RAVATEX_SCREENS || {};
   window.RAVATEX_SCREENS.pedidoForm = {
-    screenPedidoNovo,
+    screenPedidoNovo: screenPedidoNovo
   };
 
-  // Compatibilidade com setRoutes em boot.js
   window.screenPedidoNovo = screenPedidoNovo;
 })(window);

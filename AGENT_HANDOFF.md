@@ -8,6 +8,49 @@
 > `docs/DOCUMENTATION_INDEX.md`.
 > ConvenÃ§Ã£o: **tudo em portuguÃªs brasileiro**.
 
+## Homologacao visual Admin Novo Pedido
+
+- **Estado atual aceito:** `work/app-next` na fase
+  `RAVATEX-TAPETES-ADMIN-NOVO-PEDIDO-MATCH-CLIENTE-NOVA-VIEW-A-R1`,
+  com aceite visual explicito do dono para `#/pedidos/novo`.
+- **HEAD de base da fase:** `4989727`.
+- **Arquivo funcional alterado:** `js/screens/pedido-form.js`.
+- **Referencia visual usada:** `js/screens/cliente-pedido-form.js`,
+  mantendo Admin -> Novo Pedido na mesma base visual homologada de
+  Cliente -> Novo Pedido.
+- **Admin homologado:** header, cards, dados gerais, area de itens,
+  modal/adicao de item, resumo e CTA final foram alinhados ao padrao do
+  cliente, sem perder o fluxo administrativo.
+- **Comportamento admin preservado:** selecao de cliente, status inicial
+  em `rascunho`, payload real `pedidos` + `pedido_itens`, validacoes,
+  compensacao em falha de itens, toast e navegacao final para
+  `#/pedidos`.
+- **Cliente intacto:** `js/screens/cliente-pedido-form.js` nao foi
+  alterado nesta fase.
+- **Correcao R1 registrada:** bloco `Instruções gerais` com titulo
+  correto, `textarea` com `min-height: 40px` e recalculo de altura apos
+  entrada no DOM para eliminar o corte visual.
+- **Validacao real aceita:** pedido admin `#7` salvo no staging/local e
+  exibido em `#/pedidos` como `Rascunho` para o cliente `Teste`.
+- **Checks executados:** `node --check js/screens/pedido-form.js` OK;
+  `git diff --check` OK com warnings LF/CRLF;
+  `node --test tests/cliente-routing.smoke.js` OK `19/19`;
+  `node --test tests/pedidos-list.smoke.js` OK;
+  `node --test tests/pedido-form.smoke.js` com `34/35`.
+- **Falha residual conhecida:** a unica falha restante em
+  `tests/pedido-form.smoke.js` e externa/preexistente, causada pelo
+  dirty diff de `js/screens/pedidos-list.js`, fora do escopo de
+  `pedido-form.js`.
+- **Residuos preservados fora do commit funcional da fase:**
+  `M js/screens/pedidos-list.js` permanece fora do escopo e
+  `?? supabase/.temp/` permanece como residual permitido.
+- **Escopo preservado:** nenhum schema, SQL, Supabase estrutural,
+  OP/Pedido/parciais estruturais, `common.js`, `index.html`, producao
+  ou `origin/main` foi tocado.
+- **Proximo passo recomendado:** abrir somente apos este closeout a fase
+  `RAVATEX-TAPETES-PEDIDO-OP-MOVEMENT-PLAN-A`, para criar/registrar o
+  plano persistente **Pedido ↔ OP ↔ Movimentacao ↔ Documentos**.
+
 ## Estado atual aceito
 - **Estado atual aceito:** `work/app-next`, ponta da fase
   `RAVATEX-TAPETES-ADMIN-CORES-MATCH-STANDALONE-CLOSEOUT`.

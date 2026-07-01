@@ -1,3 +1,40 @@
+> **Atualizacao 2026-07-01 - fase
+> `RAVATEX-TAPETES-ADMIN-NOVO-PEDIDO-MATCH-CLIENTE-NOVA-VIEW-A-R1`
+> (homologacao visual/funcional da tela Admin -> Novo Pedido).** Fica
+> registrada como **APROVADA** a homologacao da tela
+> **Admin -> Novo Pedido** (`#/pedidos/novo`) na branch `work/app-next`,
+> sobre o HEAD inicial `4989727`, alinhando o miolo visual a mesma base
+> homologada de **Cliente -> Novo Pedido** sem transformar o fluxo em
+> fluxo exclusivo do cliente. O unico arquivo funcional alterado foi
+> `js/screens/pedido-form.js`; o diff preexistente em
+> `js/screens/pedidos-list.js` foi classificado como fora do escopo
+> desta fase e permaneceu preservado/intocado, assim como o residual
+> permitido `supabase/.temp/`. O comportamento administrativo foi
+> preservado: selecao de cliente, status inicial em `rascunho`, payload
+> real via `pedidos` + `pedido_itens`, validacoes, compensacao por
+> `DELETE` em falha de itens, toast de sucesso/erro e navegacao final
+> para `#/pedidos`. Tambem fica registrado que **Cliente -> Novo Pedido
+> permaneceu intacto**, sem alteracoes no arquivo
+> `js/screens/cliente-pedido-form.js`. A correcao R1 aplicada apos o
+> aceite parcial ajustou especificamente o bloco **"Instruções gerais"**
+> em `js/screens/pedido-form.js`: titulo corrigido, `textarea` com
+> `min-height: 40px` e recálculo de altura apos entrada no DOM para
+> eliminar o corte visual. Validacao real aceita em staging/local:
+> pedido admin **#7** salvo com sucesso para o cliente **Teste** e
+> exibido em `#/pedidos` como **Rascunho**. Checks executados:
+> `node --check js/screens/pedido-form.js` OK; `git diff --check` OK com
+> warnings de LF/CRLF; `node --test tests/cliente-routing.smoke.js`
+> OK `19/19`; `node --test tests/pedidos-list.smoke.js` OK; e
+> `node --test tests/pedido-form.smoke.js` com resultado `34/35`, tendo
+> a unica falha residual **externa/preexistente** ligada ao dirty diff
+> de `js/screens/pedidos-list.js`, nao causada por `pedido-form.js`.
+> Nenhum schema, SQL, Supabase estrutural, OP/Pedido/parciais
+> estruturais, `common.js`, `index.html`, producao ou `origin/main`
+> foi tocado nesta fase. Proximo passo recomendado: abrir a fase
+> `RAVATEX-TAPETES-PEDIDO-OP-MOVEMENT-PLAN-A` somente apos este
+> closeout, para criar/registrar o plano persistente
+> **Pedido ↔ OP ↔ Movimentacao ↔ Documentos**.
+
 > **Atualizacao 2026-06-30 - fase
 > `RAVATEX-TAPETES-ADMIN-CORES-MATCH-STANDALONE-CLOSEOUT`
 > (frontend admin + registro de homologacao visual).** O miolo da
