@@ -8,6 +8,10 @@
 > `docs/DOCUMENTATION_INDEX.md`.
 > ConvenÃ§Ã£o: **tudo em portuguÃªs brasileiro**.
 
+- **Migration 20 aplicada em staging** (`ucrjtfswnfdlxwtmxnoo`):
+  `op_itens.pedido_item_id` (uuid, nullable, FK -> pedido_itens,
+  indice) confirmado. Producao `bhgifjrfagkzubpyqpew` intocada.
+
 ## Vinculo Pedido -> OP implementado (com R1)
 
 - **Fase C concluida** (`RAVATEX-TAPETES-PEDIDO-OP-LINK-C-R1`):

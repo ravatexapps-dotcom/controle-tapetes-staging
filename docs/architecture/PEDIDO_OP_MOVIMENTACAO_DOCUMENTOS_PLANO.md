@@ -125,7 +125,7 @@ Pedido
 | Fase | Descrição | Dependência |
 |---|---|---|
 | **B** | Contrato arquitetura/schema detalhado: validar colunas existentes, desenhar novas (`documentos_operacionais`, FK `op_itens.pedido_item_id`), validar índices e constraints. | Plano A (este doc) | **[x] Concluída** (`docs/architecture/PEDIDO_OP_SCHEMA_CONTRACT.md`) |
-| **C** | Vínculo Pedido → OP: preencher `lotes.pedido_id` na criação/edição de lote; avaliar/adicionar `op_itens.pedido_item_id`. | B | **[x] Concluída** (migration `db/20_*` + `op-persistir.js` + `op-nova.js` + `boot.js`; R1: correção de vínculo por pedidoItemId explícito, sem map por modelo_id) |
+| **C** | Vínculo Pedido → OP: preencher `lotes.pedido_id` na criação/edição de lote; migration `op_itens.pedido_item_id`. | B | **[x] Concluída** (`bbc57b2`; migration `db/20_*` aplicada em staging `ucrjtfswnfdlxwtmxnoo`) |
 | **D** | OPs vinculadas no detalhe do Pedido Admin: listar OPs do pedido com status, progresso e link para a tela de OP. | C |
 | **E** | Stepper/preview produtivo no Pedido Admin: visão gráfica das etapas com progresso real derivado das OPs. | D |
 | **F** | Operação canônica de movimentação: módulo/função reaproveitada pela tela de OP e pelos atalhos do Pedido. | D |

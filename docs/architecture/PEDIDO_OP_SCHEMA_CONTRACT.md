@@ -67,7 +67,7 @@
 | `modelo_id` | BIGINT | NOT NULL | → `modelos.id` ON DELETE RESTRICT | |
 | `metros_pedidos` | NUMERIC(10,2) | NOT NULL | | |
 | `metros_ajustados` | NUMERIC(10,2) | NULLABLE | | Preenchido após recálculo |
-| `pedido_item_id` | UUID | **NULLABLE** | → `pedido_itens.id` ON DELETE SET NULL | Migration `db/20_op_itens_pedido_item_link.sql` (Fase C) |
+| `pedido_item_id` | UUID | **NULLABLE** | → `pedido_itens.id` ON DELETE SET NULL | Migration `db/20_op_itens_pedido_item_link.sql` (Fase C). **Aplicado em staging** `ucrjtfswnfdlxwtmxnoo`. |
 
 #### `entrega_itens` (db/01)
 

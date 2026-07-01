@@ -1,4 +1,17 @@
 > **Atualizacao 2026-07-01 - fase
+> `RAVATEX-TAPETES-PEDIDO-OP-LINK-C-STAGING-SQL-CLOSEOUT`
+> (registro de aplicacao da migration 20 no staging).**
+> A migration `db/20_op_itens_pedido_item_link.sql` foi
+> **aplicada no Supabase staging** `ucrjtfswnfdlxwtmxnoo`.
+> Confirmado: `public.op_itens.pedido_item_id` existe
+> (uuid, nullable YES, FK -> pedido_itens ON DELETE SET NULL);
+> indice `op_itens_pedido_item_idx` existe; PostgREST
+> notificado via `NOTIFY pgrst`. Producao
+> `bhgifjrfagkzubpyqpew` intocada. Esta fase e docs-only.
+> Proximo passo: Fase D (OPs vinculadas no detalhe do
+> Pedido Admin).
+
+> **Atualizacao 2026-07-01 - fase
 > `RAVATEX-TAPETES-PEDIDO-OP-LINK-C-R1`
 > (correcao de vinculo pedido_item_id).** O patch C original
 > usava `itemPedidoMap` por `modelo_id` para vincular
