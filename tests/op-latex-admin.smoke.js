@@ -149,21 +149,45 @@ class FakeNode {
     this.disabled = false;
     this.value = '';
     this._attrs = {};
+    this.style = {};
+    this.firstElementChild = null;
+    this._innerHTML = '';
   }
-  appendChild(n) { this.children.push(n); return n; }
+  appendChild(n) {
+    if (n && typeof n === 'object') n.parentNode = this;
+    this.children.push(n);
+    if (!this.firstElementChild && n && n.tagName) this.firstElementChild = n;
+    return n;
+  }
   setAttribute(k, v) { this._attrs[k] = v; if (k === 'disabled') this.disabled = v; }
+  getAttribute(k) { return this._attrs[k]; }
   addEventListener(type, fn) { this._listeners[type] = fn; }
   removeEventListener(type) { delete this._listeners[type]; }
   replaceChildren(...ns) {
     this.children = [];
+    this.firstElementChild = null;
     for (const n of ns.flat()) {
       if (n == null || n === false) continue;
-      this.children.push(typeof n === 'string' ? { textContent: n, appendChild(){}, setAttribute(){} } : n);
+      const child = typeof n === 'string' ? { textContent: n, appendChild(){}, setAttribute(){} } : n;
+      if (!this.firstElementChild && child && child.tagName) this.firstElementChild = child;
+      this.children.push(child);
     }
   }
   remove() { this._removed = true; }
-  get textContent() { return this._text != null ? this._text : ''; }
+  get textContent() {
+    if (this._text != null) return this._text;
+    return this.children.map((n) => n && typeof n.textContent === 'string' ? n.textContent : '').join('');
+  }
   set textContent(v) { this._text = v; }
+  get innerHTML() { return this._innerHTML; }
+  set innerHTML(v) {
+    this._innerHTML = String(v);
+    this.children = [];
+    const svg = new FakeNode('svg');
+    svg._raw = String(v);
+    this.firstElementChild = svg;
+    this.children.push(svg);
+  }
 }
 
 // -----------------------------------------------------------------------------
@@ -308,11 +332,14 @@ function makeFullBootSandbox({
   },
   entData = [],
   modelosData = [],
+  origemOpData = null,
 } = {}) {
   const toastsNode = new FakeNode('div');
+  const appNode = new FakeNode('div');
   const document = {
     createElement: (t) => new FakeNode(t),
     createTextNode: (t) => ({ textContent: t, appendChild() {}, setAttribute() {} }),
+    getElementById: (id) => id === 'app' ? appNode : new FakeNode('div'),
     querySelector: (sel) => (sel === '#toasts') ? toastsNode : new FakeNode('div'),
     querySelectorAll: () => [],
     addEventListener: () => {}, removeEventListener: () => {},
@@ -323,6 +350,7 @@ function makeFullBootSandbox({
   function makeChain(table) {
     const opDataMap = { ops: opData, entregas: entData, modelos: modelosData };
     const defaultData = opDataMap[table] !== undefined ? opDataMap[table] : [];
+    const state = { filters: [] };
     return {
       _table: table,
       _lastUpdate: null,
@@ -336,17 +364,30 @@ function makeFullBootSandbox({
       delete() { calls.push({ op: 'delete', table }); return this; },
       eq(col, val) {
         calls.push({ op: 'eq', table, col, val });
+        state.filters.push({ col, val });
         return this;
       },
       order() { return this; },
       in() { return this; },
       single() {
         if (table === 'ops') {
+          const idFilter = state.filters.find((f) => f.col === 'id');
+          if (idFilter && origemOpData && idFilter.val === origemOpData.id) {
+            return Promise.resolve({ data: origemOpData, error: null });
+          }
           return Promise.resolve({ data: defaultData, error: null });
         }
         return Promise.resolve({ data: defaultData, error: null });
       },
-      maybeSingle() { return Promise.resolve({ data: null, error: null }); },
+      maybeSingle() {
+        if (table === 'ops') {
+          const idFilter = state.filters.find((f) => f.col === 'id');
+          if (idFilter && origemOpData && idFilter.val === origemOpData.id) {
+            return Promise.resolve({ data: origemOpData, error: null });
+          }
+        }
+        return Promise.resolve({ data: null, error: null });
+      },
       then(resolveThen, rejectThen) {
         if (this._lastUpdate) {
           return Promise.resolve({ data: null, error: null }).then(resolveThen, rejectThen);
@@ -377,8 +418,14 @@ function makeFullBootSandbox({
     location: { hash: '' },
     supa: fakeSupa,
   };
+  sandbox.addEventListener = () => {};
+  sandbox.removeEventListener = () => {};
   sandbox.window = sandbox;
   sandbox.globalThis = sandbox;
+  sandbox.CURRENT_USER = { nome: 'Tester', tipo: 'admin' };
+  sandbox.logout = () => {};
+  sandbox.loadCurrentUser = async () => sandbox.CURRENT_USER;
+  sandbox.handleRoute = () => {};
   vm.createContext(sandbox);
 
   vm.runInContext(uiSrc,     sandbox, { filename: 'js/ui.js' });
@@ -399,6 +446,8 @@ function makeFullBootSandbox({
 
   sandbox.CURRENT_USER = { nome: 'Tester', tipo: 'admin' };
   sandbox.logout = () => {};
+  sandbox.loadCurrentUser = async () => sandbox.CURRENT_USER;
+  sandbox.handleRoute = () => {};
 
   return { sandbox, fakeSupa, calls };
 }
@@ -479,8 +528,8 @@ test('25. runtime: editarEnviado chama supa.from("op_itens").update com { metros
   assert.match(olaSrc, /from\(\s*['"]op_itens['"]\s*\)\s*\.update\s*\(\s*\{\s*metros_pedidos/,
     'editarEnviado não escreve em op_itens.update({ metros_pedidos })');
   // Confirma que o source faz write via .eq('id', l.id)
-  assert.match(olaSrc, /\.eq\(\s*['"]id['"]\s*,\s*l\.id\s*\)/,
-    'editarEnviado não filtra op_itens por eq("id", l.id)');
+  assert.match(olaSrc, /\.eq\(\s*['"]id['"]\s*,\s*(?:l|row)\.id\s*\)/,
+    'editarEnviado não filtra op_itens por eq("id", row.id)');
 });
 
 test('26. runtime: excluirOpLatex chama supa.from("ops").delete()', async () => {
@@ -531,6 +580,12 @@ test('27. boot chain: ui + router + system-screens + common + cadastros + ops-li
     document, setTimeout, clearTimeout, console, URL, URLSearchParams,
     location: { hash: '' }, supa: fakeSupa,
   };
+  sandbox.addEventListener = () => {};
+  sandbox.removeEventListener = () => {};
+  sandbox.CURRENT_USER = { nome: 'Tester', tipo: 'admin' };
+  sandbox.logout = () => {};
+  sandbox.loadCurrentUser = async () => sandbox.CURRENT_USER;
+  sandbox.handleRoute = () => {};
   sandbox.window = sandbox;
   sandbox.globalThis = sandbox;
   vm.createContext(sandbox);
@@ -552,9 +607,6 @@ test('27. boot chain: ui + router + system-screens + common + cadastros + ops-li
   vm.runInContext(painelSrc, sandbox, { filename: 'js/screens/painel.js' });
   vm.runInContext(opnSrc,    sandbox, { filename: 'js/screens/op-nova.js' });
   vm.runInContext(bootSrc,   sandbox, { filename: 'js/boot.js' });
-
-  sandbox.CURRENT_USER = { nome: 'Tester', tipo: 'admin' };
-  sandbox.logout = () => {};
 
   let threwSyntax = false;
   let otherErr = null;
@@ -603,4 +655,154 @@ test('30. op-writes.js continua expondo atribuirFornecedorFioOp', () => {
   const { sandbox } = makeFullBootSandbox();
   assert.equal(typeof vm.runInContext('window.atribuirFornecedorFioOp', sandbox), 'function',
     'window.atribuirFornecedorFioOp não é função após o boot completo');
+});
+
+function collectNodeText(node) {
+  if (!node) return '';
+  const parts = [];
+  if (typeof node.textContent === 'string' && node.textContent) parts.push(node.textContent);
+  if (node.tagName === 'INPUT' && node.value != null && node.value !== '') parts.push(String(node.value));
+  for (const child of (node.children || [])) parts.push(collectNodeText(child));
+  return parts.join(' ');
+}
+
+async function renderLatexAdminForTest(opts = {}) {
+  const { sandbox } = makeFullBootSandbox(opts);
+  const view = await vm.runInContext('window.renderOPLatexAdmin(42)', sandbox);
+  return {
+    sandbox,
+    view,
+    text: collectNodeText(view),
+  };
+}
+
+test('31. op-latex-admin.js usa o bloco "Material recebido da tecelagem"', () => {
+  assert.match(olaSrc, /3\.\s*Material recebido da tecelagem/,
+    'layout novo deve incluir o card "3. Material recebido da tecelagem"');
+});
+
+test('32. OP aberta de acabamento mostra linguagem de preparacao e fornecedor de acabamento', async () => {
+  const rendered = await renderLatexAdminForTest({
+    opData: {
+      id: 42,
+      numero: 8,
+      ano: 2026,
+      status: 'aberta',
+      tipo: 'latex',
+      observacao: '',
+      origem_op_id: 12,
+      lote: { id: 91, numero: 22, cliente: { id: 3, nome: 'Cliente Atlas' } },
+      op_itens: [{ id: 100, modelo_id: 1, metros_pedidos: 125 }],
+      op_fornecedores: [{ fornecedor_id: 7, etapa: 'latex', fornecedores: { nome: 'Acabamento Sul' } }],
+    },
+    modelosData: [{ id: 1, nome: 'Roma', largura: 1.5, cor_1: { id: 1, nome: 'CINZA' }, cor_2: { id: 2, nome: 'GELO' } }],
+    origemOpData: { id: 12, numero: 2, ano: 2026, tipo: 'tecelagem' },
+  });
+  assert.match(rendered.text, /OP Aberta de Acabamento/i);
+  assert.match(rendered.text, /Preparacao da OP/i);
+  assert.match(rendered.text, /Fornecedor de acabamento/i);
+  assert.match(rendered.text, /Acabamento Sul/);
+});
+
+test('33. OP aberta de acabamento mostra origem e CTA de colocar em producao', async () => {
+  const rendered = await renderLatexAdminForTest({
+    opData: {
+      id: 42,
+      numero: 8,
+      ano: 2026,
+      status: 'aberta',
+      tipo: 'latex',
+      observacao: '',
+      origem_op_id: 12,
+      lote: { id: 91, numero: 22, cliente: { id: 3, nome: 'Cliente Atlas' } },
+      op_itens: [{ id: 100, modelo_id: 1, metros_pedidos: 125 }],
+      op_fornecedores: [{ fornecedor_id: 7, etapa: 'latex', fornecedores: { nome: 'Acabamento Sul' } }],
+    },
+    modelosData: [{ id: 1, nome: 'Roma', largura: 1.5, cor_1: { id: 1, nome: 'CINZA' }, cor_2: { id: 2, nome: 'GELO' } }],
+    origemOpData: { id: 12, numero: 2, ano: 2026, tipo: 'tecelagem' },
+  });
+  assert.match(rendered.text, /OP origem/i);
+  assert.match(rendered.text, /OP 2\/2026 · Tecelagem/i);
+  assert.match(rendered.text, /Colocar em producao/i);
+});
+
+test('34. OP de acabamento nao mostra "4. Entregas tecelagem"', async () => {
+  const rendered = await renderLatexAdminForTest({
+    opData: {
+      id: 42,
+      numero: 8,
+      ano: 2026,
+      status: 'aberta',
+      tipo: 'latex',
+      observacao: '',
+      origem_op_id: 12,
+      lote: { id: 91, numero: 22, cliente: { id: 3, nome: 'Cliente Atlas' } },
+      op_itens: [{ id: 100, modelo_id: 1, metros_pedidos: 125 }],
+      op_fornecedores: [{ fornecedor_id: 7, etapa: 'latex', fornecedores: { nome: 'Acabamento Sul' } }],
+    },
+    modelosData: [{ id: 1, nome: 'Roma', largura: 1.5, cor_1: { id: 1, nome: 'CINZA' }, cor_2: { id: 2, nome: 'GELO' } }],
+    origemOpData: { id: 12, numero: 2, ano: 2026, tipo: 'tecelagem' },
+  });
+  assert.doesNotMatch(rendered.text, /4\.\s*Entregas tecelagem/i);
+});
+
+test('35. OP em producao de acabamento preserva o fluxo legado de recebimentos', async () => {
+  const rendered = await renderLatexAdminForTest({
+    opData: {
+      id: 42,
+      numero: 8,
+      ano: 2026,
+      status: 'em_producao',
+      tipo: 'latex',
+      observacao: '',
+      origem_op_id: 12,
+      lote: { id: 91, numero: 22, cliente: { id: 3, nome: 'Cliente Atlas' } },
+      op_itens: [{ id: 100, modelo_id: 1, metros_pedidos: 125 }],
+      op_fornecedores: [{ fornecedor_id: 7, etapa: 'latex', fornecedores: { nome: 'Acabamento Sul' } }],
+    },
+    entData: [{
+      id: 501,
+      fornecedor_id: 7,
+      data: '2026-07-01',
+      observacao: 'Primeiro lote',
+      entrega_itens: [{ id: 601, op_id: 42, op_item_id: 100, metros_entregues: 50, defeito: false, observacao: '' }],
+    }],
+    modelosData: [{ id: 1, nome: 'Roma', largura: 1.5, cor_1: { id: 1, nome: 'CINZA' }, cor_2: { id: 2, nome: 'GELO' } }],
+    origemOpData: { id: 12, numero: 2, ano: 2026, tipo: 'tecelagem' },
+  });
+  assert.match(rendered.text, /Recebimentos/i);
+  assert.match(rendered.text, /Novo recebimento/i);
+  assert.match(rendered.text, /Finalizar OP de l[áa]tex/i);
+});
+
+test('36. OP aberta de acabamento informa que a producao permanece fora de escopo', async () => {
+  const rendered = await renderLatexAdminForTest({
+    opData: {
+      id: 42,
+      numero: 8,
+      ano: 2026,
+      status: 'aberta',
+      tipo: 'latex',
+      observacao: '',
+      origem_op_id: 12,
+      lote: { id: 91, numero: 22, cliente: { id: 3, nome: 'Cliente Atlas' } },
+      op_itens: [{ id: 100, modelo_id: 1, metros_pedidos: 125 }],
+      op_fornecedores: [{ fornecedor_id: 7, etapa: 'latex', fornecedores: { nome: 'Acabamento Sul' } }],
+    },
+    modelosData: [{ id: 1, nome: 'Roma', largura: 1.5, cor_1: { id: 1, nome: 'CINZA' }, cor_2: { id: 2, nome: 'GELO' } }],
+    origemOpData: { id: 12, numero: 2, ano: 2026, tipo: 'tecelagem' },
+  });
+  assert.match(rendered.text, /Transicao para producao sera implementada em fase propria/i);
+});
+
+test('37. op-latex-admin.js nao chama alterar_status_op nem colocarEmProducao', () => {
+  assert.doesNotMatch(olaSrc, /alterar_status_op/,
+    'op-latex-admin.js nao pode chamar alterar_status_op nesta fase');
+  assert.doesNotMatch(olaSrc, /function\s+colocarEmProducao\s*\(/,
+    'op-latex-admin.js nao pode manter funcao colocarEmProducao funcional nesta fase');
+});
+
+test('38. op-latex-admin.js nao faz update de status para em_producao', () => {
+  assert.doesNotMatch(olaSrc, /update\s*\(\s*\{\s*status\s*:\s*['"]em_producao['"]/,
+    'op-latex-admin.js nao pode fazer update de status para em_producao nesta fase');
 });

@@ -1,4 +1,27 @@
 > **Atualizacao 2026-07-01 - fase
+> `RAVATEX-TAPETES-OP-NOVA-ACABAMENTO-STANDALONE-B-R1`
+> (correcao cirurgica de escopo na Nova OP Acabamento standalone).**
+> O bloqueio da fase anterior foi corrigido sem reverter o redesign visual.
+> Em `js/screens/op-latex-admin.js`, a tela aberta de Acabamento
+> permanece com a linguagem visual alinhada a Tecelagem, com os cards
+> `1. Preparacao da OP`, `2. Itens da OP` e
+> `3. Material recebido da tecelagem`; o item/card
+> `4. Entregas tecelagem` segue fora da preparacao.
+> A transicao funcional indevida foi removida:
+> nao existe mais `colocarEmProducao`, nem `ops.update({ status:
+> 'em_producao' })`; a acao `Colocar em producao` ficou apenas como
+> placeholder desabilitado com aviso de fase propria.
+> OP Em Producao foi preservada no fluxo legado, sem redesign novo,
+> mantendo recebimento, edicao de enviado e finalizacao existentes.
+> Sem SQL, sem Supabase, sem producao e sem alteracao de lifecycle.
+> Checks executados:
+> `node --check js/screens/op-latex-admin.js` OK;
+> `node --check tests/op-latex-admin.smoke.js` OK;
+> `node --test tests/op-latex-admin.smoke.js` OK (38/38);
+> `node --test tests/op-nova.smoke.js tests/op-latex-admin.smoke.js`
+> OK (77/77).
+
+> **Atualizacao 2026-07-01 - fase
 > `RAVATEX-TAPETES-OP-NOVA-TECELAGEM-STANDALONE-B-R1-BOOT-SMOKE`
 > (correcao focada do teste de boot e fechamento da fase B).**
 > Nenhuma mudanca funcional na implementacao visual da OP.
