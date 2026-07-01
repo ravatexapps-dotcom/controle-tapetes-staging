@@ -1515,3 +1515,39 @@ node --test tests/boot.smoke.js \
 - **Proxima fase recomendada:** avaliar, em frente separada, se vale
   criar campos de quantidade/observacao por item de OP (exige
   schema).
+
+## Homologacao visual Admin Fornecedores + campos opcionais de contato
+
+- **Estado atual aceito:** `work/app-next` na fase
+  `RAVATEX-TAPETES-ADMIN-FORNECEDORES-MATCH-STANDALONE-AND-CONTACT-FIELDS-CLOSEOUT`,
+  com aceite visual/funcional explicito do dono no HEAD `1fdc54b`.
+- **Arquivo funcional alterado:** `js/screens/cadastros.js`.
+- **Escopo homologado em Fornecedores:** a tela Admin ->
+  `#/cadastros/fornecedores` ficou alinhada visualmente ao standalone
+  em header, busca, tabela/card, coluna `EMAIL (opcional)`, acoes,
+  modal e footer, preservando o CRUD real e as permissoes admin.
+- **Campos opcionais homologados:** a migration
+  `db/18_fornecedores_clientes_optional_contact_fields.sql` foi
+  versionada para registrar a ampliacao de schema ja aplicada somente
+  no Supabase staging `ucrjtfswnfdlxwtmxnoo`, sem tocar producao nem
+  `origin/main`.
+- **Campos adicionados por tabela:** `fornecedores.email`,
+  `fornecedores.telefone`, `clientes.contato`,
+  `clientes.telefone`.
+- **Validacao funcional em staging:** Fornecedores carregou lista,
+  exibiu `EMAIL (opcional)`, permitiu criar sem email/telefone,
+  permitiu editar com email/telefone e manteve registros antigos sem
+  quebra. Clientes carregou lista, exibiu `Contato` e `Telefone` no
+  modal, permitiu criar/editar com os novos campos e manteve registros
+  antigos funcionando. Registros temporarios de validacao foram
+  removidos ao final.
+- **Shell preservado:** sidebar, topbar e shell global permaneceram
+  intactos; nao houve alteracoes em `common.js`, `index.html` ou em
+  outras telas fora de `cadastros`.
+- **Checks executados:** `node --check js/screens/cadastros.js`,
+  `tests/cadastros-screens.smoke.js` e `git diff --check`. O smoke de
+  cadastros permanece em 31/32 por uma unica falha conhecida e fora do
+  escopo: `screenPainel` espera 9 itens de `ADMIN_MENU` e renderiza
+  10.
+- **Escopo preservado:** producao e `origin/main` nao foram tocados;
+  `supabase/.temp/` permanece fora do stage/commit.

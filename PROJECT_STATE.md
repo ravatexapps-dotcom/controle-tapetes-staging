@@ -2565,3 +2565,29 @@ Senhas de teste antigas em `docs/qa/fase1-checklist.md` e
 > `js/screens/op-nova.js`. Proxima fase recomendada: avaliar, em
 > frente separada, se vale criar campos de quantidade/observacao por
 > item de OP (exige schema).
+
+> **Atualizacao 2026-06-30 - fase
+> `RAVATEX-TAPETES-ADMIN-FORNECEDORES-MATCH-STANDALONE-AND-CONTACT-FIELDS-CLOSEOUT`
+> (homologacao visual de Fornecedores + versionamento dos campos
+> opcionais de contato em Fornecedores/Clientes).** Fica registrada
+> como **APROVADA** a homologacao visual/funcional da tela Admin ->
+> Fornecedores contra o standalone, com aceite explicito do dono no
+> HEAD `1fdc54b` sobre a branch `work/app-next`. O arquivo funcional
+> alterado foi `js/screens/cadastros.js`, preservando shell, sidebar e
+> topbar globais, rota, acoes, validacoes e permissoes admin. A tela
+> de Fornecedores ficou alinhada ao mockup em header, busca, tabela,
+> footer, acoes e modal, mantendo CRUD real. Tambem fica versionada a
+> migration `db/18_fornecedores_clientes_optional_contact_fields.sql`,
+> aplicada somente no Supabase staging `ucrjtfswnfdlxwtmxnoo`, sem
+> tocar producao nem `origin/main`, adicionando os campos opcionais
+> `fornecedores.email`, `fornecedores.telefone`, `clientes.contato` e
+> `clientes.telefone`. O CRUD real foi validado em staging para
+> Fornecedores e Clientes, incluindo criacao/edicao com e sem os novos
+> campos e remocao dos registros temporarios ao final. Checks
+> executados: `node --check js/screens/cadastros.js`,
+> `tests/cadastros-screens.smoke.js` com resultado 31/32 e unica falha
+> conhecida pre-existente fora do escopo (`screenPainel` espera 9 itens
+> de `ADMIN_MENU` e renderiza 10), alem de `git diff --check` verde.
+> Nenhum schema/SQL em producao, mutation Supabase de producao ou
+> alteracao fora de `cadastros` foi realizada. `supabase/.temp/`
+> permanece fora do commit.

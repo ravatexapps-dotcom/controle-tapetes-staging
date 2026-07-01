@@ -56,6 +56,22 @@
     return FORNECEDOR_TIPOS.find(t => t.value === tipo)?.label || tipo;
   }
 
+  const OPTIONAL_COLUMN_SUPPORT = {
+    fornecedores: null,
+    clientes: null,
+  };
+
+  async function detectOptionalColumns(table, columns) {
+    if (OPTIONAL_COLUMN_SUPPORT[table]) return OPTIONAL_COLUMN_SUPPORT[table];
+    const support = {};
+    await Promise.all(columns.map(async (column) => {
+      const { error } = await window.supa.from(table).select(column);
+      support[column] = !error;
+    }));
+    OPTIONAL_COLUMN_SUPPORT[table] = support;
+    return support;
+  }
+
   // Mapeia códigos de erro da Edge Function `admin-disable-user` para
   // mensagens amigáveis em PT-BR usadas pelo toast da UI. Mantém
   // fallback para a mensagem original ou um genérico.
@@ -383,9 +399,15 @@
 
   async function screenCadastrosClientes() {
     const container = window.el('div', {});
+    let columnSupport = { contato: false, telefone: false };
 
     async function reload() {
-      const { data, error } = await window.supa.from('clientes').select('*').order('nome');
+      const [support, result] = await Promise.all([
+        detectOptionalColumns('clientes', ['contato', 'telefone']),
+        window.supa.from('clientes').select('*').order('nome')
+      ]);
+      columnSupport = support;
+      const { data, error } = result;
       if (error) { window.toast('Erro ao carregar clientes', 'error'); console.error(error); return; }
       render(data || []);
     }
@@ -411,6 +433,16 @@
       const isEdit = !!cli;
       const nomeInput = window.textInput({ value: cli?.nome || '', placeholder: 'Ex: LOJA CENTRAL', required: true });
       const body = window.el('div', {}, window.formField({ label: 'Nome', input: nomeInput }));
+      let contatoInput = null;
+      let telefoneInput = null;
+      if (columnSupport.contato) {
+        contatoInput = window.textInput({ value: cli?.contato || '', placeholder: 'Ex: Maria Silva' });
+        body.appendChild(window.formField({ label: 'Contato', input: contatoInput, hint: 'Opcional' }));
+      }
+      if (columnSupport.telefone) {
+        telefoneInput = window.textInput({ value: cli?.telefone || '', placeholder: 'Ex: (11) 99999-9999' });
+        body.appendChild(window.formField({ label: 'Telefone', input: telefoneInput, hint: 'Opcional' }));
+      }
       window.modal({
         title: isEdit ? 'Editar cliente' : 'Novo cliente',
         body,
@@ -418,6 +450,8 @@
           const nome = nomeInput.value.trim();
           if (!nome) { window.toast('Nome é obrigatório', 'error'); return false; }
           const payload = { nome };
+          if (columnSupport.contato) payload.contato = contatoInput.value.trim() || null;
+          if (columnSupport.telefone) payload.telefone = telefoneInput.value.trim() || null;
           const { error } = isEdit
             ? await window.supa.from('clientes').update(payload).eq('id', cli.id)
             : await window.supa.from('clientes').insert(payload);
@@ -853,39 +887,230 @@
   }
   async function screenCadastrosFornecedores() {
     const container = window.el('div', {});
+    let allRows = [];
+    let busca = '';
+    let columnSupport = { email: false, telefone: false };
 
     async function reload() {
-      const { data, error } = await window.supa.from('fornecedores').select('*').order('tipo').order('nome');
+      const [support, result] = await Promise.all([
+        detectOptionalColumns('fornecedores', ['email', 'telefone']),
+        window.supa.from('fornecedores').select('*').order('tipo').order('nome')
+      ]);
+      columnSupport = support;
+      const { data, error } = result;
       if (error) { window.toast('Erro ao carregar fornecedores', 'error'); console.error(error); return; }
-      render(data || []);
+      allRows = data || [];
+      render();
     }
 
-    function render(rows) {
-      container.replaceChildren(
-        window.pageHeader('Fornecedores', [{ label: '+ Novo fornecedor', onclick: () => openModal(null) }]),
-        window.dataTable({
-          columns: [
-            { key: 'id', label: 'ID' },
-            { key: 'nome', label: 'Nome' },
-            { key: 'tipo', label: 'Tipo', render: (r) => labelFornecedorTipo(r.tipo) },
-          ],
-          rows,
-          actions: [
-            { label: 'Editar', onclick: (r) => openModal(r) },
-            { label: 'Excluir', class: 'text-red-600 hover:underline', onclick: (r) => confirmExcluir(r) },
-          ]
-        })
+    function svgIcon(markup) {
+      var tmp = document.createElement('div');
+      tmp.innerHTML = markup.trim();
+      return tmp.firstChild;
+    }
+
+    var ICON_PLUS = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>';
+    var ICON_SEARCH = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#9aa2af" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>';
+    var ICON_SQUARE_PEN = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4z"></path></svg>';
+    var ICON_TRASH = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path><path d="M10 11v6M14 11v6"></path><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"></path></svg>';
+
+    function makePrimaryButton(label, onClick) {
+      const button = window.el('button', {
+        type: 'button',
+        onclick: onClick,
+        style: 'display:inline-flex; align-items:center; gap:7px; background:#2563eb; color:#fff; border:none; border-radius:4px; padding:9px 16px; font-weight:600; font-size:14px; font-family:inherit; cursor:pointer;'
+      });
+      button.appendChild(svgIcon(ICON_PLUS));
+      button.appendChild(window.el('span', {}, label));
+      return button;
+    }
+
+    function makeIconButton(title, icon, onClick, danger) {
+      const button = window.el('button', {
+        type: 'button',
+        title,
+        'aria-label': title,
+        onclick: onClick,
+        style: [
+          'width:30px',
+          'height:30px',
+          'display:inline-flex',
+          'align-items:center',
+          'justify-content:center',
+          'border:1px solid #eceef1',
+          'border-radius:4px',
+          'background:#fff',
+          `color:${danger ? '#d6403a' : '#8a93a3'}`,
+          'cursor:pointer',
+          'transition:border-color .18s ease, color .18s ease, background .18s ease'
+        ].join(';'),
+        onmouseenter: () => {
+          if (danger) {
+            button.style.borderColor = '#fca5a5';
+            button.style.background = '#fff5f5';
+            button.style.color = '#d6403a';
+          } else {
+            button.style.borderColor = '#d0d5de';
+            button.style.color = '#3f4757';
+          }
+        },
+        onmouseleave: () => {
+          button.style.borderColor = '#eceef1';
+          button.style.background = '#fff';
+          button.style.color = danger ? '#d6403a' : '#8a93a3';
+        }
+      });
+      button.appendChild(icon);
+      return button;
+    }
+
+    function formatEmail(value) {
+      const email = String(value || '').trim();
+      return email || '—';
+    }
+
+    function pillTheme(tipo) {
+      switch (tipo) {
+        case 'fio_algodao':
+          return { bg: '#e6f4ec', color: '#18794a' };
+        case 'fio_poliester':
+          return { bg: '#eaf1fd', color: '#2563eb' };
+        case 'tecelagem':
+          return { bg: '#f3effe', color: '#7c3aed' };
+        case 'latex':
+          return { bg: '#fef9ec', color: '#b45309' };
+        default:
+          return { bg: '#f3f4f6', color: '#5b6472' };
+      }
+    }
+
+    function filteredRows() {
+      const term = busca.trim().toUpperCase();
+      if (!term) return allRows;
+      return allRows.filter((row) => String(row.nome || '').toUpperCase().includes(term));
+    }
+
+    function render() {
+      const rows = filteredRows();
+      const page = window.el('div', { style: 'display:flex; flex-direction:column;' });
+
+      const header = window.el('div', {
+        style: 'display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap; margin-bottom:20px;'
+      });
+      const headerText = window.el('div', {},
+        window.el('div', {
+          style: 'font-size:22px; font-weight:800; color:#16203a; letter-spacing:-.01em;'
+        }, 'Fornecedores'),
+        window.el('div', {
+          style: 'font-size:13px; color:#8a93a3; margin-top:3px;'
+        }, 'Gerencie os fornecedores da operação.')
       );
+      header.appendChild(headerText);
+      header.appendChild(makePrimaryButton('Novo fornecedor', () => openModal(null)));
+
+      const searchWrap = window.el('div', {
+        style: 'display:flex; align-items:center; gap:8px; background:#fff; border:1px solid #d8dce2; border-radius:4px; padding:8px 13px; margin-bottom:14px; max-width:360px;'
+      });
+      const searchInput = window.el('input', {
+        type: 'search',
+        value: busca,
+        placeholder: 'Buscar por nome...',
+        oninput: (e) => {
+          busca = e.target.value || '';
+          render();
+        },
+        style: 'width:100%; border:0; outline:none; background:transparent; font-size:13px; color:#16203a; padding:0; font-family:inherit;'
+      });
+      searchInput.setAttribute('aria-label', 'Buscar por nome');
+      searchWrap.appendChild(svgIcon(ICON_SEARCH));
+      searchWrap.appendChild(searchInput);
+
+      const tableWrap = window.el('div', { style: 'display:flex; flex-direction:column;' });
+      const card = window.el('div', {
+        style: 'background:#fff; border:1px solid #eceef1; border-radius:6px 6px 0 0; overflow:hidden;'
+      });
+      const headRow = window.el('div', {
+        style: 'display:grid; grid-template-columns:1fr 1fr 1fr 80px 66px; align-items:center; gap:16px; padding:10px 18px; background:#f8f9fb; border-bottom:1px solid #eceef1;'
+      });
+      headRow.appendChild(window.el('div', { style: 'font-size:11px; font-weight:700; color:#8a93a3; letter-spacing:.04em; white-space:nowrap;' }, 'NOME'));
+      const emailHead = window.el('div', { style: 'font-size:11px; font-weight:700; color:#8a93a3; letter-spacing:.04em; white-space:nowrap;' }, 'EMAIL ');
+      emailHead.appendChild(window.el('span', {
+        style: 'font-size:10px; font-weight:500; color:#b6bdc8; letter-spacing:0;'
+      }, '(opcional)'));
+      headRow.appendChild(emailHead);
+      headRow.appendChild(window.el('div', { style: 'font-size:11px; font-weight:700; color:#8a93a3; letter-spacing:.04em; white-space:nowrap;' }, 'TIPO'));
+      headRow.appendChild(window.el('div', { style: 'font-size:11px; font-weight:700; color:#8a93a3; letter-spacing:.04em; white-space:nowrap;' }, 'ID'));
+      headRow.appendChild(window.el('div', { style: 'font-size:11px; font-weight:700; color:#8a93a3; letter-spacing:.04em; text-align:center; white-space:nowrap;' }, 'AÇÕES'));
+      card.appendChild(headRow);
+
+      rows.forEach((row, index) => {
+        const line = window.el('div', {
+          style: `display:grid; grid-template-columns:1fr 1fr 1fr 80px 66px; align-items:center; gap:16px; padding:13px 18px; border-bottom:${index === rows.length - 1 ? '0' : '1px solid #f1f3f6'};`
+        });
+        line.appendChild(window.el('div', {
+          style: 'font-size:14px; font-weight:500; color:#16203a;'
+        }, row.nome || ''));
+        const emailText = formatEmail(row.email);
+        line.appendChild(window.el('div', {
+          style: `font-size:13.5px; color:${emailText === '—' ? '#aab2bf' : '#3f4757'};`
+        }, emailText));
+        const theme = pillTheme(row.tipo);
+        line.appendChild(window.el('div', {},
+          window.el('span', {
+            style: `display:inline-flex; align-items:center; border-radius:4px; padding:3px 9px; font-size:12px; font-weight:600; white-space:nowrap; background:${theme.bg}; color:${theme.color};`
+          }, labelFornecedorTipo(row.tipo))
+        ));
+        line.appendChild(window.el('div', {
+          style: 'font-size:13px; color:#9aa2af; font-weight:500;'
+        }, String(row.id ?? '')));
+        const actions = window.el('div', {
+          style: 'display:flex; align-items:center; justify-content:center; gap:6px;'
+        });
+        actions.appendChild(makeIconButton('Editar fornecedor', svgIcon(ICON_SQUARE_PEN), () => openModal(row), false));
+        actions.appendChild(makeIconButton('Excluir fornecedor', svgIcon(ICON_TRASH), () => confirmExcluir(row), true));
+        line.appendChild(actions);
+        card.appendChild(line);
+      });
+
+      if (!rows.length) {
+        card.appendChild(window.el('div', {
+          style: 'padding:20px 18px; font-size:14px; color:#6b7280; text-align:center;'
+        }, busca ? 'Nenhum fornecedor encontrado.' : 'Nenhum fornecedor cadastrado.'));
+      }
+
+      const footer = window.el('div', {
+        style: 'padding:11px 18px; background:#fff; border:1px solid #eceef1; border-top:none; border-radius:0 0 6px 6px;'
+      });
+      footer.appendChild(window.el('span', {
+        style: 'font-size:13px; color:#9aa2af;'
+      }, `${rows.length} ${rows.length === 1 ? 'fornecedor cadastrado' : 'fornecedores cadastrados'}`));
+
+      tableWrap.appendChild(card);
+      tableWrap.appendChild(footer);
+      page.appendChild(header);
+      page.appendChild(searchWrap);
+      page.appendChild(tableWrap);
+      container.replaceChildren(page);
     }
 
     function openModal(forn) {
       const isEdit = !!forn;
       const nomeInput = window.textInput({ value: forn?.nome || '', placeholder: 'Ex: Tecelagem Fulano', required: true });
       const tipoSel = window.selectInput({ options: FORNECEDOR_TIPOS, value: forn?.tipo });
+      let emailInput = null;
+      let telefoneInput = null;
       const body = window.el('div', {},
         window.formField({ label: 'Nome', input: nomeInput }),
         window.formField({ label: 'Tipo', input: tipoSel })
       );
+      if (columnSupport.email) {
+        emailInput = window.textInput({ type: 'email', value: forn?.email || '', placeholder: 'contato@fornecedor.com' });
+        body.appendChild(window.formField({ label: 'E-mail', input: emailInput, hint: 'Opcional' }));
+      }
+      if (columnSupport.telefone) {
+        telefoneInput = window.textInput({ value: forn?.telefone || '', placeholder: 'Ex: (11) 99999-9999' });
+        body.appendChild(window.formField({ label: 'Telefone', input: telefoneInput, hint: 'Opcional' }));
+      }
       window.modal({
         title: isEdit ? 'Editar fornecedor' : 'Novo fornecedor',
         body,
@@ -894,6 +1119,8 @@
           const tipo = tipoSel.value;
           if (!nome || !tipo) { window.toast('Preencha nome e tipo', 'error'); return false; }
           const payload = { nome, tipo };
+          if (columnSupport.email) payload.email = emailInput.value.trim() || null;
+          if (columnSupport.telefone) payload.telefone = telefoneInput.value.trim() || null;
           const { error } = isEdit
             ? await window.supa.from('fornecedores').update(payload).eq('id', forn.id)
             : await window.supa.from('fornecedores').insert(payload);
