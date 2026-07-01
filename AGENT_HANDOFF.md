@@ -8,6 +8,32 @@
 > `docs/DOCUMENTATION_INDEX.md`.
 > ConvenÃ§Ã£o: **tudo em portuguÃªs brasileiro**.
 
+## Vinculo Pedido -> OP implementado (com R1)
+
+- **Fase C concluida** (`RAVATEX-TAPETES-PEDIDO-OP-LINK-C-R1`):
+  migration `db/20_op_itens_pedido_item_link.sql` criada;
+  `persistirOP` preenche `lotes.pedido_id` e `op_itens.pedido_item_id`
+  (via `item.pedidoItemId` explicito, sem map por modelo_id);
+  `screenNovaOP(opId, pedidoId)` aceita pedido_id e pre-preenche
+  itens; `#/ops/nova` suporta `?pedido_id=`. R1 removeu
+  `itemPedidoMap` por modeloId (inseguro — modelo nao e chave
+  unica no pedido). Teste 68/68 incluindo duplicidade de
+  modelo_id. Proximo passo: **Fase D** — OPs vinculadas no
+  detalhe do Pedido Admin.
+
+## Vinculo Pedido -> OP implementado
+
+- **Fase C concluida** (`RAVATEX-TAPETES-PEDIDO-OP-LINK-C`):
+  migration `db/20_op_itens_pedido_item_link.sql` criada
+  (`op_itens.pedido_item_id` UUID FK -> pedido_itens);
+  `persistirOP` agora preenche `lotes.pedido_id` e
+  `op_itens.pedido_item_id` quando contexto de pedido
+  disponivel; `screenNovaOP(opId, pedidoId)` aceita
+  pedido_id opcional e pre-preenche itens; `#/ops/nova`
+  suporta `?pedido_id=` via query param. OP avulsa
+  preservada. Proximo passo: **Fase D** — OPs vinculadas
+  no detalhe do Pedido Admin.
+
 ## Contrato schema Pedido -> OP -> Movimentacao -> Documentos
 
 - **Contrato tecnico registrado** em

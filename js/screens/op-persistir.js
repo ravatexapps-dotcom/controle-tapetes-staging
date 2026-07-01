@@ -10,7 +10,8 @@
 //   - montarPayloadOP({ numero, ano, status })
 //   - montarPayloadLote({ numero, clienteSel })
 //   - persistirOP({ status, op, numero, ano, clienteSel, itens,
-//                   fornSel, modelosById, parametrosByLargura })
+//                   fornSel, modelosById, parametrosByLargura,
+//                   pedidoId })
 //
 // Carregar via <script src="js/screens/op-persistir.js"></script>
 // no <head>, DEPOIS de js/screens/op-recalculo.js e ANTES de jspdf +
@@ -38,11 +39,17 @@
   }
 
   function montarPayloadItensOP(itensValidos, opId) {
-    return itensValidos.map((item) => ({
-      op_id: opId,
-      modelo_id: item.modeloId,
-      metros_pedidos: Number(item.metros),
-    }));
+    return itensValidos.map((item) => {
+      var payload = {
+        op_id: opId,
+        modelo_id: item.modeloId,
+        metros_pedidos: Number(item.metros),
+      };
+      if (item.pedidoItemId) {
+        payload.pedido_item_id = item.pedidoItemId;
+      }
+      return payload;
+    });
   }
 
   function montarPayloadFornecedoresOP(fornSel, opId) {
@@ -92,6 +99,7 @@
     fornSel,
     modelosById,
     parametrosByLargura,
+    pedidoId,
   }) {
     const supa = window.supa;
     const numeroInt = parseInt(numero, 10);
@@ -122,7 +130,9 @@
     //    cliente. Liga em ops.lote_id. Numeração depende do UNIQUE(numero) de lotes.
     let loteId = op?.lote_id || null;
     if (loteId) {
-      const lu = await supa.from('lotes').update({ cliente_id: clienteSel }).eq('id', loteId);
+      const updatePayload = { cliente_id: clienteSel };
+      if (pedidoId !== undefined) updatePayload.pedido_id = pedidoId || null;
+      const lu = await supa.from('lotes').update(updatePayload).eq('id', loteId);
       if (lu.error) {
         return { error: lu.error, step: 'lotes_update', partial: true, opId: opIdSalvo };
       }
@@ -132,7 +142,9 @@
         return { error: proxRes.error, step: 'lotes_insert', partial: true, opId: opIdSalvo };
       }
       const prox = (proxRes.data && proxRes.data[0]) ? Number(proxRes.data[0].numero) + 1 : 1;
-      const li = await supa.from('lotes').insert({ numero: prox, cliente_id: clienteSel }).select().single();
+      const lotePayload = { numero: prox, cliente_id: clienteSel };
+      if (pedidoId) lotePayload.pedido_id = pedidoId;
+      const li = await supa.from('lotes').insert(lotePayload).select().single();
       if (li.error) {
         if (isNova) {
           // limpa OP recém-criada

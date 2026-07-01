@@ -1,4 +1,42 @@
 > **Atualizacao 2026-07-01 - fase
+> `RAVATEX-TAPETES-PEDIDO-OP-LINK-C-R1`
+> (correcao de vinculo pedido_item_id).** O patch C original
+> usava `itemPedidoMap` por `modelo_id` para vincular
+> `op_itens.pedido_item_id`, o que colapsava quando um pedido
+> tinha dois itens com o mesmo modelo. R1 corrige: cada item
+> da OP agora carrega `pedidoItemId` explicitamente, sem
+> inferencia por `modelo_id`. `montarPayloadItensOP` le
+> `item.pedidoItemId` diretamente do item. Teste adicionado
+> (testes 66-68 em `op-persistir.smoke.js`) cobre itens com
+> mesmo `modelo_id` e `pedidoItemId` diferentes, provando
+> que nao ha colapso. Smoke 68/68. Fase C permanece pendente
+> de aceite final.
+
+> **Atualizacao 2026-07-01 - fase
+> `RAVATEX-TAPETES-PEDIDO-OP-LINK-C`
+> (vinculo funcional Pedido -> OP).** Implementado o vinculo
+> minimo real entre Pedido e cadeia de OPs, conforme contrato
+> `PEDIDO_OP_SCHEMA_CONTRACT.md` §2. Criada a migration
+> `db/20_op_itens_pedido_item_link.sql` adicionando
+> `op_itens.pedido_item_id` (UUID nullable, FK -> pedido_itens,
+> ON DELETE SET NULL, indice). Atualizado `js/screens/
+> op-persistir.js` para aceitar `pedidoId` e `itemPedidoMap`
+> opcionais: ao criar/editar lote, popula `lotes.pedido_id`
+> quando `pedidoId` informado; ao inserir `op_itens`, preenche
+> `pedido_item_id` via `itemPedidoMap` quando disponivel.
+> Atualizado `js/screens/op-nova.js`: `screenNovaOP(opId,
+> pedidoId)` aceita segundo parametro opcional; quando
+> `pedidoId` presente, carrega pedido e itens, pre-preenche
+> OP itens e constroi `itemPedidoMap` por `modelo_id`.
+> Atualizado `js/boot.js`: rota `#/ops/nova` extrai
+> `?pedido_id=` do hash via `URLSearchParams`. OP avulsa
+> (sem pedido) preservada. Nao implementado: botao no Pedido
+> Detail (Fase D), stepper (Fase E), documentos, saldo.
+> Smoke test `op-persistir.smoke.js` 65/65. `js/screens/
+> pedidos-list.js` e `supabase/.temp/` preservados. Proximo
+> passo: Fase D (OPs vinculadas no detalhe do Pedido Admin).
+
+> **Atualizacao 2026-07-01 - fase
 > `RAVATEX-TAPETES-PEDIDO-OP-SCHEMA-CONTRACT-B`
 > (docs-only, contrato tecnico schema Pedido -> OP ->
 > Movimentacao -> Documentos).** Criado o contrato tecnico

@@ -1148,3 +1148,49 @@ test('65. boot chain com todos os módulos + op-persistir + inline não lança S
       String(otherErr.message).slice(0, 120));
   }
 });
+
+// ---- 36: Fase C R1 — pedido_item_id explícito por item, sem map por modelo_id
+
+test('66. montarPayloadItensOP inclui pedido_item_id quando item tem pedidoItemId', () => {
+  const sandbox = makeUnitSandbox();
+  sandbox.validos = [{ modeloId: 1, metros: 50, pedidoItemId: 'aaa-bbb' }];
+  sandbox.opId = 42;
+  const result = vm.runInContext('window.montarPayloadItensOP(validos, opId)', sandbox);
+  assert.equal(result.length, 1);
+  assert.equal(result[0].op_id, 42);
+  assert.equal(result[0].modelo_id, 1);
+  assert.equal(result[0].metros_pedidos, 50);
+  assert.equal(result[0].pedido_item_id, 'aaa-bbb',
+    'deve incluir pedido_item_id quando presente no item');
+});
+
+test('67. montarPayloadItensOP — itens com mesmo modelo_id mas pedidoItemId diferentes nao colapsam', () => {
+  const sandbox = makeUnitSandbox();
+  sandbox.validos = [
+    { modeloId: 7, metros: 100, pedidoItemId: 'item-a' },
+    { modeloId: 7, metros: 200, pedidoItemId: 'item-b' },
+  ];
+  sandbox.opId = 99;
+  const result = vm.runInContext('window.montarPayloadItensOP(validos, opId)', sandbox);
+  assert.equal(result.length, 2);
+  assert.equal(result[0].modelo_id, 7);
+  assert.equal(result[0].metros_pedidos, 100);
+  assert.equal(result[0].pedido_item_id, 'item-a',
+    'item 0 deve receber pedido_item_id item-a, nao item-b');
+  assert.equal(result[1].modelo_id, 7);
+  assert.equal(result[1].metros_pedidos, 200);
+  assert.equal(result[1].pedido_item_id, 'item-b',
+    'item 1 deve receber pedido_item_id item-b, nao item-a');
+});
+
+test('68. montarPayloadItensOP omite pedido_item_id quando item nao tem pedidoItemId', () => {
+  const sandbox = makeUnitSandbox();
+  sandbox.validos = [{ modeloId: 3, metros: 30 }, { modeloId: 4, metros: 40 }];
+  sandbox.opId = 8;
+  const result = vm.runInContext('window.montarPayloadItensOP(validos, opId)', sandbox);
+  assert.equal(result.length, 2);
+  assert.equal('pedido_item_id' in result[0], false,
+    'payload sem pedidoItemId nao deve ter chave pedido_item_id');
+  assert.equal('pedido_item_id' in result[1], false,
+    'payload sem pedidoItemId nao deve ter chave pedido_item_id');
+});

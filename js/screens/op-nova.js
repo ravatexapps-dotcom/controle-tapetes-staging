@@ -142,7 +142,7 @@
     return el('div', { style: 'display:grid;grid-template-columns:' + colsTemplate + ';gap:10px;padding:12px 24px;border-bottom:1px solid #f1f3f6;align-items:center;' }, cells);
   }
 
-  async function screenNovaOP(opId) {
+  async function screenNovaOP(opId, pedidoId) {
   const container = el('div', {});
   // 1) Carrega dados de apoio
   const [modelosRes, paramsRes, fornsRes, clientesRes] = await Promise.all([
@@ -178,6 +178,34 @@
   let numero = '', ano = new Date().getFullYear();
   let readOnly = false;
   let saving = false;
+  let pedidoIdState = null;
+
+  if (pedidoId) {
+    const pedRes = await supa.from('pedidos').select('id, numero, cliente_id').eq('id', pedidoId).maybeSingle();
+    if (pedRes.error || !pedRes.data) {
+      toast('Pedido nao encontrado', 'error');
+      container.replaceChildren(el('div', { style: 'display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:22px;' },
+        el('div', { style: 'font-size:22px;font-weight:800;color:#16203a;letter-spacing:-.01em;' }, 'Pedido nao encontrado'),
+        el('button', { type: 'button', style: BTN_BACK, onclick: () => navigate('#/pedidos') }, svgEl(SVG_BACK), 'Voltar')));
+      return shellLayout(ADMIN_MENU, container);
+    }
+    var pedido = pedRes.data;
+    pedidoIdState = pedido.id;
+    if (pedido.cliente_id) clienteSel = pedido.cliente_id;
+
+    var pitensRes = await supa.from('pedido_itens')
+      .select('id, modelo_id, metros, observacao')
+      .eq('pedido_id', pedidoId)
+      .order('ordem', { ascending: true });
+    if (!pitensRes.error && pitensRes.data && pitensRes.data.length > 0) {
+      for (var pi = 0; pi < pitensRes.data.length; pi++) {
+        var pitem = pitensRes.data[pi];
+        if (pitem.modelo_id && pitem.metros > 0) {
+          itens.push({ modeloId: pitem.modelo_id, metros: pitem.metros, pedidoItemId: pitem.id });
+        }
+      }
+    }
+  }
 
   if (opId) {
     const { data, error } = await supa.from('ops')
@@ -255,6 +283,7 @@
         status: 'simulada',
         op,
         numero, ano, clienteSel, itens, fornSel, modelosById, parametrosByLargura,
+        pedidoId: pedidoIdState,
       });
 
       if (result.error) {
@@ -285,6 +314,7 @@
         status: 'aberta',
         op,
         numero, ano, clienteSel, itens, fornSel, modelosById, parametrosByLargura,
+        pedidoId: pedidoIdState,
       });
 
       if (result.error) {

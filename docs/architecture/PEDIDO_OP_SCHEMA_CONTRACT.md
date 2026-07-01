@@ -67,7 +67,7 @@
 | `modelo_id` | BIGINT | NOT NULL | → `modelos.id` ON DELETE RESTRICT | |
 | `metros_pedidos` | NUMERIC(10,2) | NOT NULL | | |
 | `metros_ajustados` | NUMERIC(10,2) | NULLABLE | | Preenchido após recálculo |
-| `pedido_item_id` | — | — | — | **NÃO EXISTE** |
+| `pedido_item_id` | UUID | **NULLABLE** | → `pedido_itens.id` ON DELETE SET NULL | Migration `db/20_op_itens_pedido_item_link.sql` (Fase C) |
 
 #### `entrega_itens` (db/01)
 
@@ -462,7 +462,7 @@ WHERE l.pedido_id = :pedido_id;
 |---|---|---|
 | **A** | Plano persistente Pedido ↔ OP ↔ Movimentação ↔ Documentos | **[x] Concluída** (`04613ee`) |
 | **B** | Contrato arquitetura/schema detalhado (este documento) | **[x] Concluída** (esta fase) |
-| **C** | Vínculo Pedido → OP: popular `lotes.pedido_id`; criar `op_itens.pedido_item_id` | Pendente |
+| **C** | Vínculo Pedido → OP: popular `lotes.pedido_id`; criar `op_itens.pedido_item_id` | **[x] Concluída** (Fase C: migration `db/20_*` + `op-persistir.js` + `op-nova.js` + `boot.js`) |
 | **D** | OPs vinculadas no detalhe do Pedido Admin | Pendente |
 | **E** | Stepper/preview produtivo no Pedido Admin | Pendente |
 | **F** | Operação canônica de movimentação | Pendente |
@@ -473,7 +473,9 @@ WHERE l.pedido_id = :pedido_id;
 
 ---
 
-## 10. Decisões registradas nesta fase
+## 10. Decisões registradas nesta frente
+
+### Fase B
 
 | # | Decisão | Fundamentação |
 |---|---|---|
@@ -485,6 +487,17 @@ WHERE l.pedido_id = :pedido_id;
 | D-B06 | Stepper com 5 etapas: INSUMOS → TECELAGEM → ACABAMENTO → EXPEDIÇÃO → ENTREGA. | Alinhado ao plano Fase A. |
 | D-B07 | Saldo por etapa exige RPC/trigger no backend. Nunca só frontend. | Regra de segurança. Fase J. |
 | D-B08 | `pedido_parciais` permanece camada comercial. Não usar como fonte de movimentação produtiva. | Já decidido na Fase A; reforçado aqui. |
+
+### Fase C
+
+| # | Decisão | Fundamentação |
+|---|---|---|
+| D-C01 | `itemPedidoMap` removido (R1). `pedidoItemId` é armazenado explicitamente em cada item da OP, sem inferência por `modelo_id`. `montarPayloadItensOP` lê `item.pedidoItemId` diretamente. | `modelo_id` não é chave única dentro de um pedido; dois itens com mesmo modelo colapsariam. R1 corrige. |
+| D-C01-R1 | Vínculo `pedido_item_id` é por-item, não por-modelo. `itens.push({ modeloId, metros, pedidoItemId: pitem.id })`. Sem map intermediário. | Seguro para pedidos com múltiplos itens do mesmo modelo. Teste 67 prova. |
+| D-C02 | `pedido_id` na rota via query param (`?pedido_id=UUID`) no hash, extraído com `URLSearchParams`. | Semântica REST-like; não conflita com rota existente `#/ops/nova`; compatível com urlFragment atual. |
+| D-C03 | `lotes.pedido_id` é populado ao criar novo lote e ao atualizar lote existente, quando `pedidoId` informado. | Cobre os dois cenários: OP nova e vinculo retroativo. |
+| D-C04 | `op_itens` criados a partir de pedido herdam `pedido_item_id` quando há correspondência no `itemPedidoMap`. | Cumpre o contrato §2.4 do schema contract. |
+| D-C05 | Nenhum botão UI novo nesta fase. O vínculo Pedido → OP está pronto no backend/frontend; a UI (Fase D) usará o link `#/ops/nova?pedido_id=UUID`. | Separação de responsabilidades entre fases. |
 
 ---
 
