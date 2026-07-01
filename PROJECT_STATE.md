@@ -2892,3 +2892,21 @@ Senhas de teste antigas em `docs/qa/fase1-checklist.md` e
 > `tests/cadastros-screens.smoke.js` com resultado 31/32 e unica falha
 > conhecida pre-existente fora do escopo (`screenPainel` espera 9 itens
 > de `ADMIN_MENU` e renderiza 10), alem de `git diff --check` verde.
+> **Atualizacao 2026-07-01 - fase
+> `RAVATEX-TAPETES-PEDIDO-DETAIL-UI-B1-R1`
+> (closeout documental da refatoracao modular do Detalhe do Pedido).**
+> Fica registrado como **OK** o fechamento da fase na branch
+> `work/app-next`, sobre o HEAD base
+> `c12fcb5af5b8f436efc3e3119985ccf529bd09d5`. O Detalhe do Pedido
+> admin foi refatorado sem alterar o comportamento visual/funcional
+> homologado do standalone, quebrando o antigo monolito em modulos
+> coesos: `js/screens/pedido-detail.js` (orquestracao),
+> `js/screens/pedido-detail-data.js` (carregamento/normalizacao),
+> `js/screens/pedido-detail-render.js` (layout/render),
+> `js/screens/pedido-detail-progress.js` (progresso/stepper) e
+> `js/screens/pedido-detail-events.js` (handlers/acoes). `index.html`
+> foi ajustado apenas para carregar os novos scripts, e os testes
+> focados fecharam em **177/177 passing**. Residual preservado fora
+> do commit R1: `M js/screens/pedidos-list.js` e `?? supabase/.temp/`.
+> Push nao realizado. Producao nao tocada.
+>

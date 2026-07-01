@@ -41,6 +41,7 @@ const vm = require('node:vm');
 const ROOT = path.resolve(__dirname, '..');
 const SCREEN = path.join(ROOT, 'js', 'screens', 'pedido-edit.js');
 const DETAIL = path.join(ROOT, 'js', 'screens', 'pedido-detail.js');
+const DETAIL_EVENTS = path.join(ROOT, 'js', 'screens', 'pedido-detail-events.js');
 const HELPER = path.join(ROOT, 'js', 'pedido-ui.js');
 const ROUTER = path.join(ROOT, 'js', 'router.js');
 const INDEX  = path.join(ROOT, 'index.html');
@@ -53,10 +54,12 @@ function readOrFail(p) {
 
 const screen = readOrFail(SCREEN);
 const detail = readOrFail(DETAIL);
+const detailEvents = readOrFail(DETAIL_EVENTS);
 const helper = readOrFail(HELPER);
 const router = readOrFail(ROUTER);
 const index  = readOrFail(INDEX);
 const schema = readOrFail(SCHEMA);
+const detailBundle = [detail, detailEvents].join('\n\n');
 
 // Strip line comments and block comments for code-only assertions.
 function codeOnly(src) {
@@ -434,17 +437,19 @@ test('pedido-edit.js: usa formField / selectInput / textInput do ui.js', () => {
 // 15. pedido-detail.js → botão Editar funcional por status
 // ---------------------------------------------------------------------
 
-test('pedido-detail.js: botão Editar chama screenPedidoEditar via navigate', () => {
-  // C3C1: Editar é funcional para rascunho/recebido e navega para
-  // `#/pedidos/<id>/editar`. A navegação é feita via window.navigate.
-  assert.match(detail, /navigate\(\s*['"]#\/pedidos\/['"]?\s*\+\s*pedidoId\s*\+\s*['"]\/editar['"]/,
-    'botão Editar no detalhe deve navegar para "#/pedidos/<id>/editar"');
+test('pedido-detail.js: botão Editar abre fluxo que navega para screenPedidoEditar', () => {
+  // C3C1: o detalhe pode intermediar a edição com aviso/modal antes de
+  // navegar para `#/pedidos/<id>/editar`.
+  assert.match(detailBundle, /openEditWarning\(\s*['"]dados['"]\s*\)/,
+    'botão Editar no detalhe deve abrir o fluxo de edição dos dados');
+  assert.match(detailBundle, /['"]#\/pedidos\/['"]\s*\+\s*pedidoId\s*\+\s*['"]\/editar['"]/,
+    'fluxo de edição no detalhe deve navegar para "#/pedidos/<id>/editar"');
 });
 
 test('pedido-detail.js: usa window.isPedidoEditavel para decidir Editar', () => {
   // C3C1: o detalhe deve usar isPedidoEditavel para controlar se o
   // botão Editar é funcional ou placeholder.
-  assert.match(detail, /window\.isPedidoEditavel/,
+  assert.match(detailBundle, /window\.isPedidoEditavel/,
     'pedido-detail.js deve usar window.isPedidoEditavel');
 });
 

@@ -7,6 +7,7 @@ const vm = require('node:vm');
 const ROOT = path.resolve(__dirname, '..');
 const ADMIN_MODULE = path.join(ROOT, 'js', 'screens', 'pedido-parciais-admin.js');
 const DETAIL = path.join(ROOT, 'js', 'screens', 'pedido-detail.js');
+const DETAIL_EVENTS = path.join(ROOT, 'js', 'screens', 'pedido-detail-events.js');
 const TRACKING_UI = path.join(ROOT, 'js', 'pedido-tracking-ui.js');
 const INDEX = path.join(ROOT, 'index.html');
 const CLIENT_DETAIL = path.join(ROOT, 'js', 'screens', 'cliente-pedido-detail.js');
@@ -19,14 +20,23 @@ function readOrFail(file) {
   return fs.readFileSync(file, 'utf8');
 }
 
+function codeOnly(src) {
+  return src
+    .split('\n')
+    .map(line => line.replace(/\/\/.*$/, '').replace(/\/\*[\s\S]*?\*\//g, ''))
+    .join('\n');
+}
+
 const adminSrc = readOrFail(ADMIN_MODULE);
 const detailSrc = readOrFail(DETAIL);
+const detailEventsSrc = readOrFail(DETAIL_EVENTS);
 const trackingUiSrc = readOrFail(TRACKING_UI);
 const indexSrc = readOrFail(INDEX);
 const clientDetailSrc = readOrFail(CLIENT_DETAIL);
 const clientListSrc = readOrFail(CLIENT_LIST);
 const clientDashboardSrc = readOrFail(CLIENT_DASHBOARD);
 const clientTrackingSrc = readOrFail(CLIENT_TRACKING);
+const detailBundle = [detailSrc, detailEventsSrc].join('\n\n');
 
 test('pedido-parciais-admin: arquivo existe', () => {
   assert.ok(fs.existsSync(ADMIN_MODULE), 'js/screens/pedido-parciais-admin.js ausente');
@@ -51,8 +61,8 @@ test('pedido-parciais-admin: expoe buildPedidoParciaisAdminCard', () => {
 });
 
 test('pedido-detail integra a secao "Parciais do pedido"', () => {
-  assert.match(detailSrc, /buildPedidoParciaisAdminCard/);
-  assert.match(detailSrc, /buildParciaisAdmin/);
+  assert.match(detailBundle, /buildPedidoParciaisAdminCard/);
+  assert.match(detailBundle, /buildParciaisAdmin/);
   assert.match(adminSrc, /Parciais do pedido/);
 });
 
@@ -145,18 +155,18 @@ test('pedido-parciais-admin nao contem termos internos proibidos no contexto cli
   assert.doesNotMatch(adminSrc, /margem/i);
 });
 
-test('somente o detalhe cliente consulta pedido_parciais; lista, dashboard e tracking permanecem sem leitura parcial', () => {
-  assert.match(clientDetailSrc, /pedido_parciais/);
-  assert.doesNotMatch(clientListSrc, /pedido_parciais/);
-  assert.doesNotMatch(clientDashboardSrc, /pedido_parciais/);
-  assert.doesNotMatch(clientTrackingSrc, /pedido_parciais/);
+test('detalhe, lista e dashboard do cliente podem consultar pedido_parciais; tracking permanece componente puro', () => {
+  assert.match(codeOnly(clientDetailSrc), /pedido_parciais/);
+  assert.match(codeOnly(clientListSrc), /pedido_parciais/);
+  assert.match(codeOnly(clientDashboardSrc), /pedido_parciais/);
+  assert.doesNotMatch(codeOnly(clientTrackingSrc), /pedido_parciais/);
 });
 
 test('telas cliente nao foram convertidas para writes ou leitura parcial', () => {
-  assert.doesNotMatch(clientDetailSrc, /\.insert\s*\(/);
-  assert.doesNotMatch(clientDetailSrc, /\.update\s*\(/);
-  assert.doesNotMatch(clientListSrc, /\.insert\s*\(/);
-  assert.doesNotMatch(clientListSrc, /\.update\s*\(/);
-  assert.doesNotMatch(clientDashboardSrc, /\.insert\s*\(/);
-  assert.doesNotMatch(clientDashboardSrc, /\.update\s*\(/);
+  assert.doesNotMatch(codeOnly(clientDetailSrc), /\.insert\s*\(/);
+  assert.doesNotMatch(codeOnly(clientDetailSrc), /\.update\s*\(/);
+  assert.doesNotMatch(codeOnly(clientListSrc), /\.insert\s*\(/);
+  assert.doesNotMatch(codeOnly(clientListSrc), /\.update\s*\(/);
+  assert.doesNotMatch(codeOnly(clientDashboardSrc), /\.insert\s*\(/);
+  assert.doesNotMatch(codeOnly(clientDashboardSrc), /\.update\s*\(/);
 });

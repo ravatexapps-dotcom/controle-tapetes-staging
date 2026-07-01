@@ -79,6 +79,7 @@ const vm = require('node:vm');
 const ROOT = path.resolve(__dirname, '..');
 const SCREEN = path.join(ROOT, 'js', 'screens', 'pedido-itens-edit.js');
 const DETAIL = path.join(ROOT, 'js', 'screens', 'pedido-detail.js');
+const DETAIL_EVENTS = path.join(ROOT, 'js', 'screens', 'pedido-detail-events.js');
 const HELPER = path.join(ROOT, 'js', 'pedido-ui.js');
 const ROUTER = path.join(ROOT, 'js', 'router.js');
 const INDEX  = path.join(ROOT, 'index.html');
@@ -91,10 +92,12 @@ function readOrFail(p) {
 
 const screen = readOrFail(SCREEN);
 const detail = readOrFail(DETAIL);
+const detailEvents = readOrFail(DETAIL_EVENTS);
 const helper = readOrFail(HELPER);
 const router = readOrFail(ROUTER);
 const index  = readOrFail(INDEX);
 const schema = readOrFail(SCHEMA);
+const detailBundle = [detail, detailEvents].join('\n\n');
 
 // Strip line comments and block comments for code-only assertions.
 function codeOnly(src) {
@@ -869,21 +872,21 @@ test('pedido-itens-edit.js: NÃO permite salvar quando não há itens', () => {
 test('pedido-detail.js: tem botão "Editar itens" para status editáveis (C3C2B)', () => {
   // C3C2B: o botão "Editar itens" é FUNCIONAL para status
   // editáveis (rascunho / recebido) e PLACEHOLDER para os demais.
-  assert.match(detail, /Editar itens/,
+  assert.match(detailBundle, /Editar itens/,
     'botão "Editar itens" deve existir como label');
   // O botão Editar itens funcional deve navegar para /itens.
-  assert.match(detail, /navigate\(\s*['"]#\/pedidos\/['"]?\s*\+\s*pedidoId\s*\+\s*['"]\/itens['"]/,
+  assert.match(detailBundle, /navigate\(\s*['"]#\/pedidos\/['"]?\s*\+\s*pedidoId\s*\+\s*['"]\/itens['"]/,
     'botão Editar itens funcional deve navegar para "#/pedidos/<id>/itens"');
   // O botão Editar itens é criado em buildEditItensButton()
   // (helper separado, mesmo padrão de buildEditButton).
-  assert.match(detail, /function\s+buildEditItensButton/,
+  assert.match(detailBundle, /function\s+buildEditItensButton/,
     'deve existir função buildEditItensButton()');
 });
 
 test('pedido-detail.js: buildEditItensButton usa isPedidoEditavel', () => {
   // Defesa: buildEditItensButton deve checar isPedidoEditavel
   // antes de criar o botão funcional.
-  const co = codeOnly(detail);
+  const co = codeOnly(detailBundle);
   assert.match(co, /function\s+buildEditItensButton[\s\S]{0,300}?isPedidoEditavel/,
     'buildEditItensButton deve usar isPedidoEditavel');
 });

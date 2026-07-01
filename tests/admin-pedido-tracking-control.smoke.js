@@ -7,6 +7,7 @@ const vm = require('node:vm');
 const ROOT = path.resolve(__dirname, '..');
 const ADMIN_MODULE = path.join(ROOT, 'js', 'screens', 'pedido-tracking-admin.js');
 const DETAIL = path.join(ROOT, 'js', 'screens', 'pedido-detail.js');
+const DETAIL_EVENTS = path.join(ROOT, 'js', 'screens', 'pedido-detail-events.js');
 const TRACKING_UI = path.join(ROOT, 'js', 'pedido-tracking-ui.js');
 const INDEX = path.join(ROOT, 'index.html');
 const CLIENT_DETAIL = path.join(ROOT, 'js', 'screens', 'cliente-pedido-detail.js');
@@ -18,13 +19,22 @@ function readOrFail(file) {
   return fs.readFileSync(file, 'utf8');
 }
 
+function codeOnly(src) {
+  return src
+    .split('\n')
+    .map(line => line.replace(/\/\/.*$/, '').replace(/\/\*[\s\S]*?\*\//g, ''))
+    .join('\n');
+}
+
 const adminSrc = readOrFail(ADMIN_MODULE);
 const detailSrc = readOrFail(DETAIL);
+const detailEventsSrc = readOrFail(DETAIL_EVENTS);
 const trackingUiSrc = readOrFail(TRACKING_UI);
 const indexSrc = readOrFail(INDEX);
 const clientDetailSrc = readOrFail(CLIENT_DETAIL);
 const clientTrackingSrc = readOrFail(CLIENT_TRACKING);
 const clientFormSrc = readOrFail(CLIENT_FORM);
+const detailBundle = [detailSrc, detailEventsSrc].join('\n\n');
 
 test('pedido-tracking-admin: arquivo existe', () => {
   assert.ok(fs.existsSync(ADMIN_MODULE), 'js/screens/pedido-tracking-admin.js ausente');
@@ -49,11 +59,11 @@ test('pedido-tracking-admin: expoe buildPedidoTrackingAdminCard', () => {
 });
 
 test('pedido-detail.js integra a secao admin de tracking', () => {
-  assert.match(detailSrc, /buildPedidoTrackingAdminCard/);
-  assert.match(detailSrc, /buildTrackingAdmin/);
-  assert.match(detailSrc, /status_cliente_visual/);
-  assert.match(detailSrc, /status_cliente_excecao/);
-  assert.match(detailSrc, /status_cliente_mensagem/);
+  assert.match(detailBundle, /buildPedidoTrackingAdminCard/);
+  assert.match(detailBundle, /buildTrackingAdmin/);
+  assert.match(detailBundle, /status_cliente_visual/);
+  assert.match(detailBundle, /status_cliente_excecao/);
+  assert.match(detailBundle, /status_cliente_mensagem/);
 });
 
 test('index.html carrega pedido-tracking-admin.js exatamente uma vez antes de pedido-detail.js', () => {
@@ -126,13 +136,12 @@ test('pedido-tracking-admin nao contem service_role, SQL ou automacao', () => {
 
 test('pedido-tracking-admin nao mexe em fornecedor nem em telas cliente', () => {
   assert.doesNotMatch(adminSrc, /fornecedor/i);
-  assert.doesNotMatch(clientDetailSrc, /pedido_cliente_eventos/);
-  assert.doesNotMatch(clientTrackingSrc, /pedido_cliente_eventos/);
-  assert.doesNotMatch(clientFormSrc, /pedido_cliente_eventos/);
-  assert.doesNotMatch(clientDetailSrc, /\.update\s*\(/);
-  assert.doesNotMatch(clientTrackingSrc, /\.update\s*\(/);
-  assert.doesNotMatch(clientDetailSrc, /\.insert\s*\(/);
-  assert.doesNotMatch(clientTrackingSrc, /\.insert\s*\(/);
+  assert.doesNotMatch(codeOnly(clientTrackingSrc), /pedido_cliente_eventos/);
+  assert.doesNotMatch(codeOnly(clientFormSrc), /pedido_cliente_eventos/);
+  assert.doesNotMatch(codeOnly(clientDetailSrc), /\.update\s*\(/);
+  assert.doesNotMatch(codeOnly(clientTrackingSrc), /\.update\s*\(/);
+  assert.doesNotMatch(codeOnly(clientDetailSrc), /\.insert\s*\(/);
+  assert.doesNotMatch(codeOnly(clientTrackingSrc), /\.insert\s*\(/);
 });
 
 test('pedido-tracking-admin nao contem termos internos proibidos no contexto visual', () => {

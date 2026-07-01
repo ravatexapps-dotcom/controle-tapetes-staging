@@ -3,7 +3,8 @@
 // Smoke estático para a tela admin js/screens/pedido-detail.js
 // (`screenPedidoDetalhe`).
 //
-// Fase: RAVATEX-TAPETES-PEDIDOS-UI-ADMIN-C3B
+// Fase: RAVATEX-TAPETES-PEDIDOS-UI-ADMIN-C3B +
+//   RAVATEX-TAPETES-PEDIDO-DETAIL-UI-B1
 // Escopo: valida que a UI é read-only no conteúdo do pedido, mas com
 // ações reais RESTRITAS de status nesta fase. Garante:
 //   - arquivo existe e sintaxe JS válida;
@@ -11,7 +12,8 @@
 //   - index.html carrega pedido-detail.js EXATAMENTE UMA VEZ;
 //   - ordem de scripts: pedido-ui → pedido-form → pedido-detail → boot;
 //   - faz SELECT em `pedidos` (com join `cliente:cliente_id(...)`),
-//     `pedido_itens`, `modelos` e `cores`;
+//     `pedido_itens`, `modelos`, `cores`, `lotes`, `ops`,
+//     `entrega_itens`, `entregas`, `ordens_compra_fio`;
 //   - faz APENAS `update` em `pedidos` (campo `status` apenas),
 //     com `.eq('id', pedidoId)`;
 //   - NÃO faz insert/update/delete em `pedido_itens`;
@@ -43,6 +45,10 @@ const vm = require('node:vm');
 
 const ROOT = path.resolve(__dirname, '..');
 const SCREEN = path.join(ROOT, 'js', 'screens', 'pedido-detail.js');
+const DETAIL_DATA = path.join(ROOT, 'js', 'screens', 'pedido-detail-data.js');
+const DETAIL_PROGRESS = path.join(ROOT, 'js', 'screens', 'pedido-detail-progress.js');
+const DETAIL_EVENTS = path.join(ROOT, 'js', 'screens', 'pedido-detail-events.js');
+const DETAIL_RENDER = path.join(ROOT, 'js', 'screens', 'pedido-detail-render.js');
 const LIST   = path.join(ROOT, 'js', 'screens', 'pedidos-list.js');
 const FORM   = path.join(ROOT, 'js', 'screens', 'pedido-form.js');
 const HELPER = path.join(ROOT, 'js', 'pedido-ui.js');
@@ -57,12 +63,23 @@ function readOrFail(p) {
 }
 
 const screen = readOrFail(SCREEN);
+const detailData = readOrFail(DETAIL_DATA);
+const detailProgress = readOrFail(DETAIL_PROGRESS);
+const detailEvents = readOrFail(DETAIL_EVENTS);
+const detailRender = readOrFail(DETAIL_RENDER);
 const list   = readOrFail(LIST);
 const helper = readOrFail(HELPER);
 const router = readOrFail(ROUTER);
 const boot   = readOrFail(BOOT);
 const index  = readOrFail(INDEX);
 const schema = readOrFail(SCHEMA);
+const detailBundle = [
+  screen,
+  detailData,
+  detailProgress,
+  detailEvents,
+  detailRender,
+].join('\n\n');
 
 // Strip line comments and block comments for code-only assertions.
 function codeOnly(src) {
@@ -78,6 +95,10 @@ function codeOnly(src) {
 
 test('pedido-detail: arquivos esperados existem', () => {
   assert.ok(fs.existsSync(SCREEN), 'js/screens/pedido-detail.js ausente');
+  assert.ok(fs.existsSync(DETAIL_DATA), 'js/screens/pedido-detail-data.js ausente');
+  assert.ok(fs.existsSync(DETAIL_PROGRESS), 'js/screens/pedido-detail-progress.js ausente');
+  assert.ok(fs.existsSync(DETAIL_EVENTS), 'js/screens/pedido-detail-events.js ausente');
+  assert.ok(fs.existsSync(DETAIL_RENDER), 'js/screens/pedido-detail-render.js ausente');
   assert.ok(fs.existsSync(HELPER), 'js/pedido-ui.js ausente');
   assert.ok(fs.existsSync(SCHEMA), 'db/13_pedidos_schema.sql ausente');
 });
@@ -87,15 +108,17 @@ test('pedido-detail: arquivos esperados existem', () => {
 // ---------------------------------------------------------------------
 
 test('pedido-detail: sintaxe JS válida (node --check)', () => {
-  require('node:child_process').execFileSync(
-    process.execPath, ['--check', SCREEN], { stdio: 'pipe' }
-  );
+  [SCREEN, DETAIL_DATA, DETAIL_PROGRESS, DETAIL_EVENTS, DETAIL_RENDER].forEach((file) => {
+    require('node:child_process').execFileSync(
+      process.execPath, ['--check', file], { stdio: 'pipe' }
+    );
+  });
 });
 
 test('pedido-detail: expõe screenPedidoDetalhe no namespace', () => {
   const sandbox = { window: {}, console };
   vm.createContext(sandbox);
-  vm.runInContext(screen, sandbox);
+  vm.runInContext(detailBundle, sandbox);
   assert.equal(typeof sandbox.window.screenPedidoDetalhe, 'function',
     'window.screenPedidoDetalhe deve estar exposto como função');
   assert.ok(sandbox.window.RAVATEX_SCREENS, 'RAVATEX_SCREENS ausente');
@@ -245,7 +268,7 @@ test('pedido-detail.js: expõe canTransition (helper de validação)', () => {
   // que valida a transição antes de aplicar.
   const sandbox = { window: {}, console };
   vm.createContext(sandbox);
-  vm.runInContext(screen, sandbox);
+  vm.runInContext(detailBundle, sandbox);
   // O módulo é IIFE; canTransition não é exposto como global, mas é
   // usado internamente. Validamos indiretamente: o módulo expõe
   // screenPedidoDetalhe e ao avaliá-lo, não deve quebrar.
@@ -254,10 +277,10 @@ test('pedido-detail.js: expõe canTransition (helper de validação)', () => {
 
 test('pedido-detail.js: tem função alterarStatus (helper interno de update)', () => {
   // A função alterarStatus deve existir e ser usada.
-  assert.match(screen, /function\s+alterarStatus\s*\(/,
+  assert.match(detailBundle, /function\s+alterarStatus\s*\(/,
     'pedido-detail.js deve definir function alterarStatus');
   // Deve referenciar alterarStatus em algum onclick de botão.
-  assert.match(screen, /alterarStatus\s*\(/,
+  assert.match(detailBundle, /alterarStatus\s*\(/,
     'alterarStatus deve ser referenciado em algum lugar do código');
 });
 
@@ -267,14 +290,14 @@ test('pedido-detail.js: tem função alterarStatus (helper interno de update)', 
 
 test('pedido-detail.js: faz .update() em pedidos com .eq("id", pedidoId)', () => {
   // Permitido nesta fase: update apenas em pedidos, filtrado por id.
-  assert.match(screen, /\.from\(\s*['"]pedidos['"][\s\S]{0,300}?\.update\s*\(\s*\{\s*status\s*:\s*novoStatus\s*\}\s*\)[\s\S]{0,200}?\.eq\s*\(\s*['"]id['"]\s*,\s*pedidoId\s*\)/,
+  assert.match(detailBundle, /\.from\(\s*['"]pedidos['"][\s\S]{0,300}?\.update\s*\(\s*\{\s*status\s*:\s*novoStatus\s*\}\s*\)[\s\S]{0,200}?\.eq\s*\(\s*['"]id['"]\s*,\s*pedidoId\s*\)/,
     'deve fazer .update({ status }).eq("id", pedidoId) na tela de detalhe');
 });
 
 test('pedido-detail.js: NÃO faz .update() em outros campos de pedidos', () => {
   // Defesa: o payload de update deve ser EXATAMENTE { status }.
   // Não pode atualizar prazo_entrega, observacao, cliente_id, numero, etc.
-  const co = codeOnly(screen);
+  const co = codeOnly(detailBundle);
   // Procura o bloco `.update({ ... })` aplicado a pedidos e checa que
   // a única chave dentro do objeto é `status`.
   const m = co.match(/\.from\(\s*['"]pedidos['"][\s\S]{0,300}?\.update\s*\(\s*\{([^}]*)\}\s*\)/);
@@ -287,34 +310,34 @@ test('pedido-detail.js: NÃO faz .update() em outros campos de pedidos', () => {
 
 test('pedido-detail.js: NÃO faz .insert() / .delete() / .upsert() em pedidos', () => {
   // Ainda não permitimos insert/delete/upsert no detalhe.
-  assert.doesNotMatch(screen, /\.from\(\s*['"]pedidos['"][\s\S]{0,200}\.insert\s*\(/);
-  assert.doesNotMatch(screen, /\.from\(\s*['"]pedidos['"][\s\S]{0,200}\.delete\s*\(/);
-  assert.doesNotMatch(screen, /\.from\(\s*['"]pedidos['"][\s\S]{0,200}\.upsert\s*\(/);
+  assert.doesNotMatch(detailBundle, /\.from\(\s*['"]pedidos['"][\s\S]{0,200}\.insert\s*\(/);
+  assert.doesNotMatch(detailBundle, /\.from\(\s*['"]pedidos['"][\s\S]{0,200}\.delete\s*\(/);
+  assert.doesNotMatch(detailBundle, /\.from\(\s*['"]pedidos['"][\s\S]{0,200}\.upsert\s*\(/);
 });
 
 test('pedido-detail.js: NÃO faz .insert() / .update() / .delete() / .upsert() em pedido_itens', () => {
-  assert.doesNotMatch(screen, /\.from\(\s*['"]pedido_itens['"][\s\S]{0,200}\.insert\s*\(/);
-  assert.doesNotMatch(screen, /\.from\(\s*['"]pedido_itens['"][\s\S]{0,200}\.update\s*\(/);
-  assert.doesNotMatch(screen, /\.from\(\s*['"]pedido_itens['"][\s\S]{0,200}\.delete\s*\(/);
-  assert.doesNotMatch(screen, /\.from\(\s*['"]pedido_itens['"][\s\S]{0,200}\.upsert\s*\(/);
+  assert.doesNotMatch(detailBundle, /\.from\(\s*['"]pedido_itens['"][\s\S]{0,200}\.insert\s*\(/);
+  assert.doesNotMatch(detailBundle, /\.from\(\s*['"]pedido_itens['"][\s\S]{0,200}\.update\s*\(/);
+  assert.doesNotMatch(detailBundle, /\.from\(\s*['"]pedido_itens['"][\s\S]{0,200}\.delete\s*\(/);
+  assert.doesNotMatch(detailBundle, /\.from\(\s*['"]pedido_itens['"][\s\S]{0,200}\.upsert\s*\(/);
 });
 
 test('pedido-detail.js: NÃO faz .insert() em pedido_eventos (best-effort fica para fase futura)', () => {
   // Decisão C3B: pedido_eventos fica para fase futura (best-effort).
   // Nenhuma referência a pedido_eventos no detalhe.
-  assert.doesNotMatch(screen, /\.from\(\s*['"]pedido_eventos['"][\s\S]{0,200}\.insert\s*\(/);
-  assert.doesNotMatch(screen, /\.from\(\s*['"]pedido_eventos['"]/,
+  assert.doesNotMatch(detailBundle, /\.from\(\s*['"]pedido_eventos['"][\s\S]{0,200}\.insert\s*\(/);
+  assert.doesNotMatch(detailBundle, /\.from\(\s*['"]pedido_eventos['"]/,
     'pedido-detail.js não deve referenciar pedido_eventos nesta fase');
 });
 
 test('pedido-detail.js: usa apenas .select() em pedidos/pedido_itens/clientes/modelos/cores', () => {
-  assert.match(screen, /\.from\(\s*['"]pedidos['"][\s\S]{0,500}\.select\s*\(/);
-  assert.match(screen, /\.from\(\s*['"]pedido_itens['"][\s\S]{0,500}\.select\s*\(/);
+  assert.match(detailBundle, /\.from\(\s*['"]pedidos['"][\s\S]{0,500}\.select\s*\(/);
+  assert.match(detailBundle, /\.from\(\s*['"]pedido_itens['"][\s\S]{0,500}\.select\s*\(/);
   // Join aninhado com cliente:cliente_id(id, nome)
-  assert.match(screen, /cliente\s*:\s*cliente_id\s*\(/,
+  assert.match(detailBundle, /cliente\s*:\s*cliente_id\s*\(/,
     'deve usar join aninhado cliente:cliente_id(...) em pedidos');
-  assert.match(screen, /\.from\(\s*['"]modelos['"][\s\S]{0,500}\.select\s*\(/);
-  assert.match(screen, /\.from\(\s*['"]cores['"][\s\S]{0,500}\.select\s*\(/);
+  assert.match(detailBundle, /\.from\(\s*['"]modelos['"][\s\S]{0,500}\.select\s*\(/);
+  assert.match(detailBundle, /\.from\(\s*['"]cores['"][\s\S]{0,500}\.select\s*\(/);
 });
 
 // ---------------------------------------------------------------------
@@ -323,12 +346,12 @@ test('pedido-detail.js: usa apenas .select() em pedidos/pedido_itens/clientes/mo
 
 test('pedido-detail.js: cancelar pedido usa window.confirmDialog (confirmação visual)', () => {
   // Antes de aplicar update para "cancelado", deve abrir confirmDialog.
-  assert.match(screen, /window\.confirmDialog\s*\(/,
+  assert.match(detailBundle, /window\.confirmDialog\s*\(/,
     'cancelar pedido deve chamar window.confirmDialog');
   // O fluxo de cancelamento deve estar próximo do update de status.
   // Garante que confirmDialog é chamado no caminho de cancelamento
   // (case-insensitive para aceitar "Cancelar pedido" e "Cancelado").
-  const co = codeOnly(screen);
+  const co = codeOnly(detailBundle);
   assert.match(co, /confirmDialog[\s\S]{0,800}?(?:cancelar|cancelado|cancelad)/i,
     'confirmDialog deve ser usado no caminho de cancelamento');
 });
@@ -337,7 +360,7 @@ test('pedido-detail.js: NÃO chama confirmDialog para recebido/confirmado (trans
   // As transições para recebido/confirmado NÃO devem pedir confirmação
   // visual (são ações simples de fluxo).
   // Defesa: confirmDialog só é usado quando novoStatus === 'cancelado'.
-  assert.match(screen, /novoStatus\s*===\s*['"]cancelado['"][\s\S]{0,300}?confirmDialog/,
+  assert.match(detailBundle, /novoStatus\s*===\s*['"]cancelado['"][\s\S]{0,300}?confirmDialog/,
     'confirmDialog só deve ser invocado quando novoStatus === "cancelado"');
 });
 
@@ -346,62 +369,68 @@ test('pedido-detail.js: NÃO chama confirmDialog para recebido/confirmado (trans
 // ---------------------------------------------------------------------
 
 test('pedido-detail.js: NÃO chama functions.invoke / Edge Function', () => {
-  assert.doesNotMatch(screen, /functions\.invoke\s*\(/);
-  assert.doesNotMatch(screen, /supabase\.functions\./);
-  assert.doesNotMatch(screen, /supabase\/functions/);
-  assert.doesNotMatch(screen, /admin-create-user/);
-  assert.doesNotMatch(screen, /admin-disable-user/);
-  assert.doesNotMatch(screen, /admin-delete-user/);
+  assert.doesNotMatch(detailBundle, /functions\.invoke\s*\(/);
+  assert.doesNotMatch(detailBundle, /supabase\.functions\./);
+  assert.doesNotMatch(detailBundle, /supabase\/functions/);
+  assert.doesNotMatch(detailBundle, /admin-create-user/);
+  assert.doesNotMatch(detailBundle, /admin-disable-user/);
+  assert.doesNotMatch(detailBundle, /admin-delete-user/);
 });
 
 // ---------------------------------------------------------------------
 // 9. pedido-detail.js não referencia OP/lote/entrega para escrita
 // ---------------------------------------------------------------------
 
-test('pedido-detail.js: NÃO referencia tabelas de OP/lote/entrega', () => {
-  assert.doesNotMatch(screen, /\.from\(\s*['"](?:ops|op_itens|op_fornecedores|ordens_compra_fio|entregas|entrega_itens)['"]/);
-  assert.doesNotMatch(screen, /gerar_op_latex/);
-  assert.doesNotMatch(screen, /gerar_op_pedido/);
-  assert.doesNotMatch(screen, /criar_lote/);
-  assert.doesNotMatch(screen, /persistirOP/);
-  assert.doesNotMatch(screen, /aplicarRecalculoOP/);
-  // Não mexe em `lotes.pedido_id` para escrita.
-  assert.doesNotMatch(screen, /\.from\(\s*['"]lotes['"]/);
+test('pedido-detail.js: consolida leitura de lote/OP/entregas sem writes operacionais', () => {
+  assert.match(detailBundle, /\.from\(\s*['"]lotes['"][\s\S]{0,500}\.select\s*\(/);
+  assert.match(detailBundle, /\.from\(\s*['"]ops['"][\s\S]{0,500}\.select\s*\(/);
+  assert.match(detailBundle, /op_itens\s*\(/,
+    'select de ops deve incluir op_itens aninhados');
+  assert.match(detailBundle, /\.from\(\s*['"]entrega_itens['"][\s\S]{0,500}\.select\s*\(/);
+  assert.match(detailBundle, /\.from\(\s*['"]entregas['"][\s\S]{0,500}\.select\s*\(/);
+  assert.match(detailBundle, /\.from\(\s*['"]ordens_compra_fio['"][\s\S]{0,500}\.select\s*\(/);
+
+  assert.doesNotMatch(detailBundle, /\.from\(\s*['"](?:ops|op_itens|op_fornecedores|ordens_compra_fio|entregas|entrega_itens|lotes)['"][\s\S]{0,220}\.(?:insert|update|delete|upsert)\s*\(/);
+  assert.doesNotMatch(detailBundle, /gerar_op_latex/);
+  assert.doesNotMatch(detailBundle, /gerar_op_pedido/);
+  assert.doesNotMatch(detailBundle, /criar_lote/);
+  assert.doesNotMatch(detailBundle, /persistirOP/);
+  assert.doesNotMatch(detailBundle, /aplicarRecalculoOP/);
 });
 
 test('pedido-detail.js: NÃO referencia arquivos críticos de OP', () => {
-  assert.doesNotMatch(screen, /op-nova\.js/);
-  assert.doesNotMatch(screen, /op-persistir\.js/);
-  assert.doesNotMatch(screen, /op-latex-admin\.js/);
-  assert.doesNotMatch(screen, /op-recalculo\.js/);
-  assert.doesNotMatch(screen, /op-writes\.js/);
-  assert.doesNotMatch(screen, /entrega-writes\.js/);
-  assert.doesNotMatch(screen, /entrega-form\.js/);
-  assert.doesNotMatch(screen, /fornecedor\.js/);
-  assert.doesNotMatch(screen, /screenNovaOP/);
-  assert.doesNotMatch(screen, /window\.screenNovaOP/);
-  assert.doesNotMatch(screen, /renderOPLatexAdmin/);
-  assert.doesNotMatch(screen, /screenFornecedor/);
+  assert.doesNotMatch(detailBundle, /op-nova\.js/);
+  assert.doesNotMatch(detailBundle, /op-persistir\.js/);
+  assert.doesNotMatch(detailBundle, /op-latex-admin\.js/);
+  assert.doesNotMatch(detailBundle, /op-recalculo\.js/);
+  assert.doesNotMatch(detailBundle, /op-writes\.js/);
+  assert.doesNotMatch(detailBundle, /entrega-writes\.js/);
+  assert.doesNotMatch(detailBundle, /entrega-form\.js/);
+  assert.doesNotMatch(detailBundle, /fornecedor\.js/);
+  assert.doesNotMatch(detailBundle, /screenNovaOP/);
+  assert.doesNotMatch(detailBundle, /window\.screenNovaOP/);
+  assert.doesNotMatch(detailBundle, /renderOPLatexAdmin/);
+  assert.doesNotMatch(detailBundle, /screenFornecedor/);
 });
 
 // ---------------------------------------------------------------------
 // 10. pedido-detail.js usa helper pedido-ui.js
 // ---------------------------------------------------------------------
 
-test('pedido-detail.js: usa window.pedidoStatusBadge para badge de status', () => {
-  assert.match(screen, /window\.pedidoStatusBadge/);
+test('pedido-detail.js: usa helper de status do pedido no badge customizado do header', () => {
+  assert.match(detailBundle, /window\.pedidoStatusLabel/);
 });
 
 test('pedido-detail.js: usa window.corPreviewElement para preview 48x48', () => {
-  assert.match(screen, /window\.corPreviewElement/);
+  assert.match(detailBundle, /window\.corPreviewElement/);
 });
 
 test('pedido-detail.js: usa window.fmtDataCurta para datas', () => {
-  assert.match(screen, /window\.fmtDataCurta/);
+  assert.match(detailBundle, /window\.fmtDataCurta/);
 });
 
 test('pedido-detail.js: usa window.pedidoStatusLabel ou namespace RAVATEX_PEDIDO_UI', () => {
-  const usaHelper = /window\.pedidoStatusLabel|window\.RAVATEX_PEDIDO_UI|window\.corPreviewHex|window\.pedidoStatusBadge|window\.corPreviewElement|window\.fmtDataCurta|window\.pedidoStatusTodos/.test(screen);
+  const usaHelper = /window\.pedidoStatusLabel|window\.RAVATEX_PEDIDO_UI|window\.corPreviewHex|window\.pedidoStatusBadge|window\.corPreviewElement|window\.fmtDataCurta|window\.pedidoStatusTodos/.test(detailBundle);
   assert.ok(usaHelper, 'detalhe deve consumir helpers de js/pedido-ui.js');
 });
 
@@ -410,9 +439,9 @@ test('pedido-detail.js: usa window.pedidoStatusLabel ou namespace RAVATEX_PEDIDO
 // ---------------------------------------------------------------------
 
 test('pedido-detail.js: NÃO cria policy / RLS / GRANT', () => {
-  assert.doesNotMatch(screen, /CREATE\s+POLICY/i);
-  assert.doesNotMatch(screen, /ENABLE\s+ROW\s+LEVEL/i);
-  assert.doesNotMatch(screen, /GRANT\s+/i);
+  assert.doesNotMatch(detailBundle, /CREATE\s+POLICY/i);
+  assert.doesNotMatch(detailBundle, /ENABLE\s+ROW\s+LEVEL/i);
+  assert.doesNotMatch(detailBundle, /GRANT\s+/i);
 });
 
 // ---------------------------------------------------------------------
@@ -420,13 +449,13 @@ test('pedido-detail.js: NÃO cria policy / RLS / GRANT', () => {
 // ---------------------------------------------------------------------
 
 test('pedido-detail.js: NÃO usa token_acesso (sem consulta pública nesta fase)', () => {
-  const co = codeOnly(screen);
+  const co = codeOnly(detailBundle);
   assert.doesNotMatch(co, /token_acesso/,
     'token_acesso não pode aparecer em código (comentários OK)');
 });
 
 test('pedido-detail.js: NÃO contém service_role / SUPERUSER', () => {
-  const co = codeOnly(screen);
+  const co = codeOnly(detailBundle);
   assert.doesNotMatch(co, /service_role/i,
     'service_role não pode aparecer em código (comentários OK)');
   assert.doesNotMatch(co, /SUPABASE_SERVICE_ROLE_KEY/);
@@ -437,15 +466,15 @@ test('pedido-detail.js: NÃO contém service_role / SUPERUSER', () => {
 // ---------------------------------------------------------------------
 
 test('pedido-detail.js: NÃO cria rota pública de cliente (sem public: true)', () => {
-  assert.doesNotMatch(screen, /public\s*:\s*true/);
-  assert.doesNotMatch(screen, /['"]#\/cliente/);
-  assert.doesNotMatch(screen, /['"]#\/pedido\/[^'"]+['"]\s*:\s*\{\s*public\s*:\s*true/);
+  assert.doesNotMatch(detailBundle, /public\s*:\s*true/);
+  assert.doesNotMatch(detailBundle, /['"]#\/cliente/);
+  assert.doesNotMatch(detailBundle, /['"]#\/pedido\/[^'"]+['"]\s*:\s*\{\s*public\s*:\s*true/);
 });
 
 test('pedido-detail.js: NÃO usa hash para acesso público', () => {
   // O arquivo de tela não deve registrar rotas por conta própria.
-  assert.doesNotMatch(screen, /setRoutes/);
-  assert.doesNotMatch(screen, /window\.RAVATEX_ROUTER\.setRoutes/);
+  assert.doesNotMatch(detailBundle, /setRoutes/);
+  assert.doesNotMatch(detailBundle, /window\.RAVATEX_ROUTER\.setRoutes/);
 });
 
 // ---------------------------------------------------------------------
@@ -453,30 +482,33 @@ test('pedido-detail.js: NÃO usa hash para acesso público', () => {
 // ---------------------------------------------------------------------
 
 test('pedido-detail.js: tem labels "Marcar como recebido", "Confirmar pedido", "Cancelar pedido"', () => {
-  assert.match(screen, /Marcar como recebido/,
+  assert.match(detailBundle, /Marcar como recebido/,
     'label "Marcar como recebido" deve existir (ação real)');
-  assert.match(screen, /Confirmar pedido/,
+  assert.match(detailBundle, /Confirmar pedido/,
     'label "Confirmar pedido" deve existir (ação real)');
-  assert.match(screen, /Cancelar pedido/,
+  assert.match(detailBundle, /Cancelar pedido/,
     'label "Cancelar pedido" deve existir (ação real)');
 });
 
 test('pedido-detail.js: botão Editar é controlado por status editável (C3C1)', () => {
   // C3C1: o botão Editar é FUNCIONAL para status editáveis
   // (rascunho / recebido) e PLACEHOLDER para os demais.
-  assert.match(screen, /Editar/,
+  assert.match(detailBundle, /Editar/,
     'botão Editar deve existir como label');
   // Helper isPedidoEditavel (ou checagem equivalente) deve ser usado
   // para decidir entre botão funcional e placeholder.
-  const usaEditavel = /window\.isPedidoEditavel|isPedidoEditavel\s*\(/.test(screen);
+  const usaEditavel = /window\.isPedidoEditavel|isPedidoEditavel\s*\(/.test(detailBundle);
   assert.ok(usaEditavel,
     'botão Editar deve usar isPedidoEditavel() para decidir entre funcional e placeholder');
-  // Para status editáveis, deve navegar para a rota de edição.
-  assert.match(screen, /navigate\(\s*['"]#\/pedidos\/['"]?\s*\+\s*pedidoId\s*\+\s*['"]\/editar['"]/,
-    'botão Editar funcional deve navegar para "#/pedidos/<id>/editar"');
+  // Para status editáveis, o fluxo pode navegar direto ou abrir o
+  // warning modal antes da navegação final.
+  const usaEditFlow = /openEditWarning/.test(detailBundle)
+    || /(?:window\.)?navigate\(\s*['"]#\/pedidos\/['"]?\s*\+\s*pedidoId\s*\+\s*['"]\/editar['"]/.test(detailBundle);
+  assert.ok(usaEditFlow,
+    'botão Editar funcional deve abrir o fluxo de edição do pedido');
   // placeholderButton continua disponível para o caminho placeholder
   // (status não editáveis) e deve gerar `disabled`.
-  assert.match(screen, /function\s+placeholderButton[\s\S]{0,400}?disabled\s*:\s*['"]disabled['"]/,
+  assert.match(detailBundle, /function\s+placeholderButton[\s\S]{0,400}?disabled\s*:\s*['"]disabled['"]/,
     'placeholderButton deve criar botão com disabled="disabled"');
 });
 
@@ -484,27 +516,27 @@ test('pedido-detail.js: botão Editar itens é controlado por status editável (
   // C3C2B: o botão "Editar itens" é FUNCIONAL para status
   // editáveis (rascunho / recebido) e PLACEHOLDER para os demais.
   // Deve navegar para "#/pedidos/<id>/itens".
-  assert.match(screen, /Editar itens/,
+  assert.match(detailBundle, /Editar itens/,
     'botão "Editar itens" deve existir como label');
   // O botão Editar itens funcional deve navegar para /itens.
-  assert.match(screen, /navigate\(\s*['"]#\/pedidos\/['"]?\s*\+\s*pedidoId\s*\+\s*['"]\/itens['"]/,
+  assert.match(detailBundle, /navigate\(\s*['"]#\/pedidos\/['"]?\s*\+\s*pedidoId\s*\+\s*['"]\/itens['"]/,
     'botão Editar itens funcional deve navegar para "#/pedidos/<id>/itens"');
   // O botão Editar itens é criado em buildEditItensButton()
   // (helper separado, mesmo padrão de buildEditButton).
-  assert.match(screen, /function\s+buildEditItensButton/,
+  assert.match(detailBundle, /function\s+buildEditItensButton/,
     'deve existir função buildEditItensButton()');
 });
 
 test('pedido-detail.js: NÃO usa mais "Confirmar / Receber" como placeholder (substituído)', () => {
   // O placeholder antigo "Confirmar / Receber" foi substituído por
   // "Marcar como recebido" + "Confirmar pedido" como ações reais.
-  assert.doesNotMatch(screen, /Confirmar\s*\/\s*Receber/,
+  assert.doesNotMatch(detailBundle, /Confirmar\s*\/\s*Receber/,
     'placeholder "Confirmar / Receber" não deve mais existir (substituído)');
 });
 
-test('pedido-detail.js: botão Voltar (← Voltar para lista) é funcional', () => {
-  assert.match(screen, /window\.navigate\(\s*['"]#\/pedidos['"]/);
-  assert.match(screen, /←\s*Voltar para lista|Voltar para lista/);
+test('pedido-detail.js: botão Voltar é funcional', () => {
+  assert.match(detailBundle, /window\.navigate\(\s*['"]#\/pedidos['"]/);
+  assert.match(detailBundle, /Voltar(?: para pedidos)?/);
 });
 
 // ---------------------------------------------------------------------
@@ -514,10 +546,10 @@ test('pedido-detail.js: botão Voltar (← Voltar para lista) é funcional', () 
 test('pedido-detail.js: chama render() após sucesso no update de status', () => {
   // Após o update bem-sucedido, deve chamar render() para refletir
   // o novo status (e reabilitar/desabilitar botões).
-  assert.match(screen, /state\.pedido\.status\s*=\s*novoStatus/,
+  assert.match(detailBundle, /state\.pedido\.status\s*=\s*novoStatus/,
     'deve atualizar state.pedido.status após update');
   // render() deve ser chamado no caminho de sucesso.
-  const co = codeOnly(screen);
+  const co = codeOnly(detailBundle);
   assert.match(co, /state\.pedido\.status\s*=\s*novoStatus[\s\S]{0,400}?render\s*\(\s*\)/,
     'render() deve ser chamado após atualizar state.pedido.status');
 });
@@ -537,6 +569,6 @@ test('schema 13_*: não foi alterado pela fase C3B', () => {
 // ---------------------------------------------------------------------
 
 test('pedido-detail.js: NÃO referencia cadastros.js (escopo separado)', () => {
-  assert.doesNotMatch(screen, /cadastros\.js/);
+  assert.doesNotMatch(detailBundle, /cadastros\.js/);
   assert.doesNotMatch(screen, /screenCadastros/);
 });

@@ -1835,3 +1835,24 @@ node --test tests/boot.smoke.js \
 - **Escopo preservado:** nenhum schema, SQL, Supabase, producao ou
   `origin/main` foi tocado nesta fase; `supabase/.temp/` permanece
   fora do stage/commit.
+## Fechamento R1 do Detalhe do Pedido
+
+- **Estado atual pos-R1:** branch `work/app-next`, sobre o HEAD base
+  `c12fcb5af5b8f436efc3e3119985ccf529bd09d5`, com a fase
+  `RAVATEX-TAPETES-PEDIDO-DETAIL-UI-B1-R1` fechada como OK e sem push.
+- **Refatoracao modular concluida:** o antigo monolito de
+  `js/screens/pedido-detail.js` foi extraido para
+  `js/screens/pedido-detail.js`,
+  `js/screens/pedido-detail-data.js`,
+  `js/screens/pedido-detail-render.js`,
+  `js/screens/pedido-detail-progress.js` e
+  `js/screens/pedido-detail-events.js`, preservando o visual/fluxo do
+  standalone e mantendo `index.html` apenas como loader dos modulos.
+- **Validacao registrada:** testes focados do pacote fecharam em
+  `177/177 passing` com `git diff --check --cached` limpo.
+- **Regra importante:** `js/screens/pedidos-list.js` continua como
+  residual separado, fora do commit R1, e nao deve ser staged junto
+  sem autorizacao explicita. `supabase/.temp/` tambem segue fora.
+- **Proximo passo recomendado:** decidir/inspecionar o residual de
+  `js/screens/pedidos-list.js` ou avancar para Modal Movimentar
+  Producao somente depois de fechar o estado Git.
