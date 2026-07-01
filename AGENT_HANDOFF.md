@@ -1584,6 +1584,45 @@ node --test tests/boot.smoke.js \
   `origin/main` foi tocado nesta fase; `supabase/.temp/` permanece
   fora do stage/commit.
 
+## Homologacao visual Admin Cadastros Modais
+
+- **Estado atual aceito:** `work/app-next` na fase
+  `RAVATEX-TAPETES-ADMIN-CADASTROS-MODALS-VISUAL-FINALIZE-A`, com
+  aceite visual explicito do dono para os modais de Cadastros Admin.
+- **Arquivo funcional alterado:** `js/screens/cadastros.js`.
+- **Escopo homologado:** modais novo/editar de `Cores`, `Clientes`,
+  `Modelos`, `Fornecedores`, `Precos` e `Usuarios` foram alinhados ao
+  mesmo padrao visual homologado de Cadastros, com header, overlay,
+  campos, footer, botoes, radius e espacamento consistentes.
+- **Helpers preservados e limpos:** os helpers visuais de modal
+  permaneceram no arquivo e a fase removeu duplicacoes, funcoes mortas
+  e blocos intermediarios, deixando uma unica implementacao final de
+  `openModal` por tela.
+- **Observacoes mantido:** o ultimo campo visual `Observações` foi
+  mantido nos modais ajustados, sem alterar payloads persistidos nesta
+  fase.
+- **Modelos preservado:** a area de imagem/preview visual de
+  `Modelos` foi mantida no modal, junto com o layout ajustado para os
+  campos de cor e largura.
+- **Precos limpo:** a sobra intermediaria do modal de `Precos` foi
+  removida e ficou apenas uma construcao final legivel do body, no
+  layout homologado de duas linhas.
+- **Funcionalidade preservada:** CRUD anterior, payloads existentes,
+  validacoes e permissoes admin dos campos ja persistidos permaneceram
+  intactos; nao houve alteracao de schema, SQL, Supabase nem regras de
+  negocio.
+- **Shell preservado:** sidebar, topbar e shell global permaneceram
+  intactos; nao houve alteracoes em `common.js`, `index.html` ou em
+  telas fora de `cadastros`.
+- **Checks executados:** `node --check js/screens/cadastros.js`,
+  `tests/cadastros-screens.smoke.js` e `git diff --check`. O smoke de
+  cadastros permaneceu em 31/32 pela unica falha conhecida e fora do
+  escopo: `screenPainel` espera 9 itens de `ADMIN_MENU` e renderiza
+  10.
+- **Escopo preservado:** nenhum schema, SQL, Supabase, producao ou
+  `origin/main` foi tocado nesta fase; `supabase/.temp/` permanece
+  fora do stage/commit.
+
 ## Homologacao visual Admin Modelos
 
 - **Estado atual aceito:** `work/app-next` na fase

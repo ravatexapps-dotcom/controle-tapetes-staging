@@ -2589,6 +2589,32 @@ Senhas de teste antigas em `docs/qa/fase1-checklist.md` e
 > conhecida pre-existente fora do escopo (`screenPainel` espera 9 itens
 > de `ADMIN_MENU` e renderiza 10), alem de `git diff --check` verde.
 
+> **Atualizacao 2026-07-01 - fase
+> `RAVATEX-TAPETES-ADMIN-CADASTROS-MODALS-VISUAL-FINALIZE-A`
+> (homologacao visual dos modais de Cadastros Admin).** Fica
+> registrada como **APROVADA** a homologacao visual dos modais de
+> `#/cadastros/cores`, `#/cadastros/clientes`,
+> `#/cadastros/modelos`, `#/cadastros/fornecedores`,
+> `#/cadastros/precos` e `#/cadastros/usuarios`, com aceite visual
+> explicito do dono na branch `work/app-next`, sobre o HEAD inicial
+> desta fase `6827369`. O unico arquivo funcional alterado permaneceu
+> `js/screens/cadastros.js`, sem mudanca em schema, SQL, Supabase,
+> payloads persistidos, regras de negocio, `common.js`, `index.html`
+> ou shell global. Os helpers visuais dos modais foram preservados e
+> consolidados numa unica implementacao por tela, com padrao comum de
+> header, overlay, campos, footer, botoes, radius e espacamento.
+> Tambem fica registrado que o campo visual `Observações` foi mantido
+> nos modais ajustados, a area de imagem/preview de `Modelos` foi
+> preservada e a sobra intermediaria do modal de `Precos` foi removida,
+> deixando uma unica construcao final legivel do body. O CRUD anterior
+> dos campos ja persistidos permaneceu preservado. Checks executados:
+> `node --check js/screens/cadastros.js`,
+> `node --test tests/cadastros-screens.smoke.js` com resultado 31/32 e
+> unica falha conhecida pre-existente fora do escopo (`screenPainel`
+> espera 9 itens de `ADMIN_MENU` e renderiza 10), alem de
+> `git diff --check` verde. `supabase/.temp/` permaneceu fora do
+> commit.
+
 > **Atualizacao 2026-06-30 - fase
 > `RAVATEX-TAPETES-ADMIN-MODELOS-MATCH-STANDALONE-CLOSEOUT`
 > (homologacao visual da tela Admin -> Modelos).** Fica registrada

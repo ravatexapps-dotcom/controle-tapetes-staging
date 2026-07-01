@@ -128,6 +128,252 @@
     }
   }
 
+  function applyCadastrosModalControlStyle(control) {
+    if (!control) return control;
+
+    control.style.width = '100%';
+    control.style.minHeight = '44px';
+    control.style.padding = control.tagName === 'SELECT' ? '10px 38px 10px 13px' : '10px 13px';
+    control.style.border = '1px solid #d8dce2';
+    control.style.borderRadius = '4px';
+    control.style.background = control.disabled ? '#f4f6f8' : '#fff';
+    control.style.boxShadow = 'none';
+    control.style.outline = 'none';
+    control.style.fontSize = '14px';
+    control.style.fontFamily = 'inherit';
+    control.style.lineHeight = '1.45';
+    control.style.color = control.disabled ? '#97a0af' : '#2f3642';
+    control.style.transition = 'border-color .18s ease, box-shadow .18s ease, background .18s ease';
+
+    if (control.tagName === 'SELECT') {
+      control.style.appearance = 'none';
+      control.style.backgroundImage = 'url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%2714%27 height=%2714%27 viewBox=%270 0 24 24%27 fill=%27none%27 stroke=%27%239aa2af%27 stroke-width=%272%27 stroke-linecap=%27round%27 stroke-linejoin=%27round%27%3E%3Cpolyline points=%276 9 12 15 18 9%27/%3E%3C/svg%3E")';
+      control.style.backgroundRepeat = 'no-repeat';
+      control.style.backgroundPosition = 'right 13px center';
+      control.style.backgroundSize = '14px 14px';
+    }
+
+    if (!control.disabled) {
+      control.addEventListener('focus', function () {
+        control.style.borderColor = '#2563eb';
+        control.style.boxShadow = '0 0 0 3px rgba(37, 99, 235, 0.12)';
+      });
+      control.addEventListener('blur', function () {
+        control.style.borderColor = '#d8dce2';
+        control.style.boxShadow = 'none';
+      });
+    }
+
+    return control;
+  }
+
+  function cadastrosModalField(options) {
+    var label = options.label;
+    var input = options.input;
+    var hint = options.hint;
+    var fullWidth = !!options.fullWidth;
+    var wrap = window.el('div', {
+      style: 'display:flex; flex-direction:column; gap:7px; min-width:0;'
+    });
+
+    if (fullWidth) wrap.style.gridColumn = '1 / -1';
+
+    wrap.appendChild(window.el('label', {
+      style: 'font-size:12px; line-height:1.2; font-weight:700; letter-spacing:.04em; text-transform:uppercase; color:#5b6472;'
+    }, label));
+    wrap.appendChild(applyCadastrosModalControlStyle(input));
+
+    if (hint) {
+      wrap.appendChild(window.el('p', {
+        style: 'margin:0; font-size:12px; line-height:1.45; color:#8a93a3;'
+      }, hint));
+    }
+
+    return wrap;
+  }
+
+  function cadastrosModalGrid(fields, minWidth) {
+    return window.el('div', {
+      style: `display:grid; grid-template-columns:repeat(auto-fit, minmax(${minWidth || 220}px, 1fr)); gap:16px 18px;`
+    }, ...fields);
+  }
+
+  function cadastrosModalRow(fields, columns, breakpoint) {
+    var useSingleColumn = window.innerWidth < (breakpoint || 720);
+    return window.el('div', {
+      style: `display:grid; grid-template-columns:${useSingleColumn ? '1fr' : `repeat(${columns || 2}, minmax(0, 1fr))`}; gap:16px 18px;`
+    }, ...fields);
+  }
+
+  function cadastrosModalStack(children) {
+    return window.el('div', {
+      style: 'display:flex; flex-direction:column; gap:16px;'
+    }, ...children);
+  }
+
+  function setCadastrosModalFieldVisibility(field, visible) {
+    field.style.display = visible ? 'flex' : 'none';
+  }
+
+  function cadastrosModalPanel(options) {
+    var title = options.title;
+    var hint = options.hint;
+    var content = options.content;
+    var wrap = window.el('div', {
+      style: 'display:flex; flex-direction:column; gap:12px; padding:14px; border:1px solid #eceef1; border-radius:4px; background:#fbfcfd;'
+    });
+    wrap.appendChild(window.el('div', {
+      style: 'font-size:12px; line-height:1.2; font-weight:700; letter-spacing:.04em; text-transform:uppercase; color:#5b6472;'
+    }, title));
+    if (hint) {
+      wrap.appendChild(window.el('p', {
+        style: 'margin:0; font-size:12px; line-height:1.45; color:#8a93a3;'
+      }, hint));
+    }
+    wrap.appendChild(content);
+    return wrap;
+  }
+
+  function cadastrosTextarea(options) {
+    var textarea = window.el('textarea', {
+      rows: String(options.rows || 4),
+      placeholder: options.placeholder || ''
+    });
+    textarea.value = options.value || '';
+    applyCadastrosModalControlStyle(textarea);
+    textarea.style.minHeight = options.minHeight || '104px';
+    textarea.style.resize = 'vertical';
+    return textarea;
+  }
+
+  function cadastrosObservacoesField() {
+    var input = cadastrosTextarea({
+      value: '',
+      placeholder: 'Observacoes internas (opcional)'
+    });
+    return cadastrosModalField({
+      label: 'Observações',
+      input: input,
+      hint: 'Visual nesta fase; sem persistencia no cadastro.',
+      fullWidth: true
+    });
+  }
+
+  function openCadastrosFormModal(options) {
+    var title = options.title;
+    var body = options.body;
+    var onSave = options.onSave;
+    var saveLabel = options.saveLabel || 'Salvar';
+    var onClose = options.onClose;
+    var maxWidth = options.maxWidth || 680;
+    var overlay = window.el('div', {
+      style: 'position:fixed; inset:0; z-index:40; display:flex; align-items:center; justify-content:center; padding:24px 18px; background:rgba(15, 23, 42, 0.42); backdrop-filter:blur(2px);',
+      onclick: function (e) {
+        if (e.target === overlay) close();
+      }
+    });
+
+    function close() {
+      overlay.remove();
+      document.removeEventListener('keydown', escListener);
+      if (onClose) onClose();
+    }
+
+    function escListener(e) {
+      if (e.key === 'Escape') close();
+    }
+
+    document.addEventListener('keydown', escListener);
+
+    var card = window.el('div', {
+      style: `width:min(100%, ${maxWidth}px); max-height:min(92vh, 860px); display:flex; flex-direction:column; background:#fff; border:1px solid #eceef1; border-radius:6px; box-shadow:0 20px 54px rgba(15, 23, 42, 0.18); overflow:hidden;`
+    });
+    var titleWrap = window.el('div', {
+      style: 'display:flex; flex-direction:column; gap:4px; min-width:0;'
+    });
+    titleWrap.appendChild(window.el('h2', {
+      style: 'margin:0; font-size:20px; line-height:1.2; font-weight:700; color:#1f2937;'
+    }, title));
+
+    var closeButton = window.el('button', {
+      type: 'button',
+      'aria-label': 'Fechar',
+      onclick: close,
+      style: 'width:32px; height:32px; flex:0 0 auto; display:inline-flex; align-items:center; justify-content:center; border:1px solid #e5e7eb; border-radius:4px; background:#fff; color:#8a93a3; font-size:20px; line-height:1; cursor:pointer;'
+    }, '×');
+    closeButton.addEventListener('mouseenter', function () {
+      closeButton.style.borderColor = '#d0d5de';
+      closeButton.style.color = '#475569';
+      closeButton.style.background = '#f8fafc';
+    });
+    closeButton.addEventListener('mouseleave', function () {
+      closeButton.style.borderColor = '#e5e7eb';
+      closeButton.style.color = '#8a93a3';
+      closeButton.style.background = '#fff';
+    });
+
+    var header = window.el('div', {
+      style: 'display:flex; align-items:flex-start; justify-content:space-between; gap:18px; padding:18px 20px 16px; border-bottom:1px solid #edf1f5;'
+    }, titleWrap, closeButton);
+    var content = window.el('div', {
+      style: 'padding:18px 20px 20px; overflow-y:auto;'
+    }, body);
+
+    var btnCancel = window.el('button', {
+      type: 'button',
+      onclick: close,
+      style: 'height:40px; min-width:110px; padding:0 16px; border:1px solid #d8dce2; border-radius:4px; background:#fff; color:#5b6472; font-size:14px; font-weight:600; font-family:inherit; cursor:pointer; box-shadow:none;'
+    }, 'Cancelar');
+    btnCancel.addEventListener('mouseenter', function () {
+      btnCancel.style.borderColor = '#c8d0db';
+      btnCancel.style.background = '#f8fafc';
+    });
+    btnCancel.addEventListener('mouseleave', function () {
+      btnCancel.style.borderColor = '#d8dce2';
+      btnCancel.style.background = '#fff';
+    });
+
+    var btnSave = window.el('button', {
+      type: 'button',
+      style: 'height:40px; min-width:110px; padding:0 16px; border:none; border-radius:4px; background:#2563eb; color:#fff; font-size:14px; font-weight:600; font-family:inherit; cursor:pointer; box-shadow:none; transition:background .18s ease, opacity .18s ease;',
+      onclick: async function () {
+        btnSave.disabled = true;
+        btnSave.style.opacity = '0.78';
+        btnSave.style.cursor = 'default';
+        btnSave.textContent = 'Salvando...';
+        try {
+          var result = await onSave();
+          if (result !== false) close();
+        } finally {
+          btnSave.disabled = false;
+          btnSave.style.opacity = '1';
+          btnSave.style.cursor = 'pointer';
+          btnSave.textContent = saveLabel;
+        }
+      }
+    }, saveLabel);
+    btnSave.addEventListener('mouseenter', function () {
+      if (btnSave.disabled) return;
+      btnSave.style.background = '#1d4ed8';
+    });
+    btnSave.addEventListener('mouseleave', function () {
+      if (btnSave.disabled) return;
+      btnSave.style.background = '#2563eb';
+    });
+
+    var footer = window.el('div', {
+      style: 'display:flex; align-items:center; justify-content:flex-end; gap:10px; padding:14px 20px; border-top:1px solid #edf1f5; background:#fff;'
+    }, btnCancel, btnSave);
+
+    card.appendChild(header);
+    card.appendChild(content);
+    card.appendChild(footer);
+    overlay.appendChild(card);
+    document.body.appendChild(overlay);
+
+    return { close: close };
+  }
+
   // -------------------------------------------------------------------
   // Telas
   // -------------------------------------------------------------------
@@ -361,9 +607,13 @@
     function openModal(cor) {
       const isEdit = !!cor;
       const nomeInput = window.textInput({ value: cor?.nome || '', placeholder: 'Ex: VERMELHO', required: true });
-      const body = window.el('div', {}, window.formField({ label: 'Nome', input: nomeInput, hint: 'Use letras maiúsculas pra padronizar' }));
-      window.modal({
+      const body = cadastrosModalStack([
+        cadastrosModalField({ label: 'Nome', input: nomeInput, hint: 'Use letras maiúsculas para padronizar.', fullWidth: true }),
+        cadastrosObservacoesField()
+      ]);
+      openCadastrosFormModal({
         title: isEdit ? 'Editar cor' : 'Nova cor',
+        maxWidth: 560,
         body,
         onSave: async () => {
           const nome = nomeInput.value.trim().toUpperCase();
@@ -599,19 +849,25 @@
     function openModal(cli) {
       const isEdit = !!cli;
       const nomeInput = window.textInput({ value: cli?.nome || '', placeholder: 'Ex: LOJA CENTRAL', required: true });
-      const body = window.el('div', {}, window.formField({ label: 'Nome', input: nomeInput }));
+      const bodyRows = [cadastrosModalField({ label: 'Nome', input: nomeInput, fullWidth: true })];
+      const optionalFields = [];
       let contatoInput = null;
       let telefoneInput = null;
       if (columnSupport.contato) {
         contatoInput = window.textInput({ value: cli?.contato || '', placeholder: 'Ex: Maria Silva' });
-        body.appendChild(window.formField({ label: 'Contato', input: contatoInput, hint: 'Opcional' }));
+        optionalFields.push(cadastrosModalField({ label: 'Contato', input: contatoInput, hint: 'Opcional' }));
       }
       if (columnSupport.telefone) {
         telefoneInput = window.textInput({ value: cli?.telefone || '', placeholder: 'Ex: (11) 99999-9999' });
-        body.appendChild(window.formField({ label: 'Telefone', input: telefoneInput, hint: 'Opcional' }));
+        optionalFields.push(cadastrosModalField({ label: 'Telefone', input: telefoneInput, hint: 'Opcional' }));
       }
-      window.modal({
+      if (optionalFields.length > 1) bodyRows.push(cadastrosModalRow(optionalFields, 2, 720));
+      else if (optionalFields.length === 1) bodyRows.push(optionalFields[0]);
+      bodyRows.push(cadastrosObservacoesField());
+      const body = cadastrosModalStack(bodyRows);
+      openCadastrosFormModal({
         title: isEdit ? 'Editar cliente' : 'Novo cliente',
+        maxWidth: 640,
         body,
         onSave: async () => {
           const nome = nomeInput.value.trim();
@@ -921,7 +1177,7 @@
 
     function openModal(modelo, cores) {
       const isEdit = !!modelo;
-      const corOptions = cores.map(c => ({ value: c.id, label: c.nome }));
+      const corOptions = cores.map(function (c) { return { value: c.id, label: c.nome }; });
       const nomeInput = window.textInput({ value: modelo?.nome || '', placeholder: 'Ex: Conforto', required: true });
       const cor1Sel = window.selectInput({ options: corOptions, value: modelo?.cor_1?.id });
       const cor2Sel = window.selectInput({ options: corOptions, value: modelo?.cor_2?.id });
@@ -929,14 +1185,56 @@
         options: [{ value: '1.40', label: '1,40 m' }, { value: '2.10', label: '2,10 m' }],
         value: modelo?.largura
       });
-      const body = window.el('div', {},
-        window.formField({ label: 'Nome do modelo', input: nomeInput }),
-        window.formField({ label: 'Cor 1 (predominante)', input: cor1Sel, hint: 'A ordem importa: "BRANCO/PRETO" é diferente de "PRETO/BRANCO".' }),
-        window.formField({ label: 'Cor 2', input: cor2Sel }),
-        window.formField({ label: 'Largura', input: largSel })
-      );
-      window.modal({
+      const imageInput = window.el('input', {
+        type: 'file',
+        accept: 'image/*',
+        style: 'display:block; width:100%; font-size:13px; color:#5b6472;'
+      });
+      const previewEmpty = window.el('div', {
+        style: 'display:flex; align-items:center; justify-content:center; width:100%; min-height:180px; border:1px dashed #d8dce2; border-radius:4px; background:#fff; font-size:13px; color:#9aa2af; text-align:center; padding:18px;'
+      }, 'Anexe uma imagem para visualizar o preview do modelo.');
+      const previewImage = window.el('img', {
+        alt: 'Preview do modelo',
+        style: 'display:none; width:100%; max-height:240px; object-fit:contain; border:1px solid #eceef1; border-radius:4px; background:#fff;'
+      });
+      const previewWrap = window.el('div', {
+        style: 'display:flex; flex-direction:column; gap:10px;'
+      }, previewEmpty, previewImage);
+      imageInput.addEventListener('change', function () {
+        var file = imageInput.files && imageInput.files[0];
+        if (!file) {
+          previewImage.removeAttribute('src');
+          previewImage.style.display = 'none';
+          previewEmpty.style.display = 'flex';
+          return;
+        }
+        var reader = new FileReader();
+        reader.onload = function () {
+          previewImage.src = String(reader.result || '');
+          previewImage.style.display = 'block';
+          previewEmpty.style.display = 'none';
+        };
+        reader.readAsDataURL(file);
+      });
+      const body = cadastrosModalStack([
+        cadastrosModalField({ label: 'Nome do modelo', input: nomeInput, fullWidth: true }),
+        cadastrosModalRow([
+          cadastrosModalField({ label: 'Cor 1 (predominante)', input: cor1Sel, hint: 'A ordem importa: "BRANCO/PRETO" é diferente de "PRETO/BRANCO".' }),
+          cadastrosModalField({ label: 'Cor 2', input: cor2Sel })
+        ], 2, 720),
+        cadastrosModalField({ label: 'Largura', input: largSel, fullWidth: true }),
+        cadastrosModalPanel({
+          title: 'Imagem do modelo',
+          hint: 'Selecione uma imagem para conferir o preview abaixo.',
+          content: window.el('div', {
+            style: 'display:flex; flex-direction:column; gap:12px;'
+          }, imageInput, previewWrap)
+        }),
+        cadastrosObservacoesField()
+      ]);
+      openCadastrosFormModal({
         title: isEdit ? 'Editar modelo' : 'Novo modelo',
+        maxWidth: 620,
         body,
         onSave: async () => {
           const nome = nomeInput.value.trim();
@@ -1506,20 +1804,27 @@
       const tipoSel = window.selectInput({ options: FORNECEDOR_TIPOS, value: forn?.tipo });
       let emailInput = null;
       let telefoneInput = null;
-      const body = window.el('div', {},
-        window.formField({ label: 'Nome', input: nomeInput }),
-        window.formField({ label: 'Tipo', input: tipoSel })
-      );
+      const nomeField = cadastrosModalField({ label: 'Nome', input: nomeInput, fullWidth: true });
+      const tipoField = cadastrosModalField({ label: 'Tipo', input: tipoSel, fullWidth: true });
+      let emailField = null;
+      let telefoneField = null;
       if (columnSupport.email) {
         emailInput = window.textInput({ type: 'email', value: forn?.email || '', placeholder: 'contato@fornecedor.com' });
-        body.appendChild(window.formField({ label: 'E-mail', input: emailInput, hint: 'Opcional' }));
+        emailField = cadastrosModalField({ label: 'E-mail', input: emailInput, hint: 'Opcional' });
       }
       if (columnSupport.telefone) {
         telefoneInput = window.textInput({ value: forn?.telefone || '', placeholder: 'Ex: (11) 99999-9999' });
-        body.appendChild(window.formField({ label: 'Telefone', input: telefoneInput, hint: 'Opcional' }));
+        telefoneField = cadastrosModalField({ label: 'Telefone', input: telefoneInput, hint: 'Opcional' });
       }
-      window.modal({
+      const bodyRows = [nomeField, tipoField];
+      if (emailField || telefoneField) {
+        bodyRows.push(cadastrosModalRow([emailField, telefoneField].filter(Boolean), 2, 720));
+      }
+      bodyRows.push(cadastrosObservacoesField());
+      const body = cadastrosModalStack(bodyRows);
+      openCadastrosFormModal({
         title: isEdit ? 'Editar fornecedor' : 'Novo fornecedor',
+        maxWidth: 680,
         body,
         onSave: async () => {
           const nome = nomeInput.value.trim();
@@ -1698,24 +2003,27 @@
 
     function openModal(preco, forns) {
       const isEdit = !!preco;
-      const fornOptions = forns.map(f => ({ value: f.id, label: `${f.nome} (${f.tipo === 'tecelagem' ? 'tecelagem' : 'látex'})` }));
-      const etapaOptions = [{ value: 'cima', label: 'Parte de cima' }, { value: 'latex', label: 'Látex' }];
+      const fornOptions = forns.map(function (f) { return { value: f.id, label: `${f.nome} (${f.tipo === 'tecelagem' ? 'tecelagem' : 'latex'})` }; });
+      const etapaOptions = [{ value: 'cima', label: 'Parte de cima' }, { value: 'latex', label: 'Latex' }];
       const largOptions = [{ value: '1.40', label: '1,40 m' }, { value: '2.10', label: '2,10 m' }];
-
       const fornSel = window.selectInput({ options: fornOptions, value: preco?.fornecedor?.id });
       const etapaSel = window.selectInput({ options: etapaOptions, value: preco?.etapa });
       const largSel = window.selectInput({ options: largOptions, value: preco?.largura });
       const precoInput = window.textInput({ type: 'number', step: '0.01', value: preco?.preco_por_metro || '', placeholder: '0,00' });
-
-      const body = window.el('div', {},
-        window.formField({ label: 'Fornecedor', input: fornSel }),
-        window.formField({ label: 'Etapa', input: etapaSel }),
-        window.formField({ label: 'Largura', input: largSel }),
-        window.formField({ label: 'Preço por metro (R$)', input: precoInput })
-      );
-
-      window.modal({
+      const body = cadastrosModalStack([
+        cadastrosModalRow([
+          cadastrosModalField({ label: 'Fornecedor', input: fornSel }),
+          cadastrosModalField({ label: 'Etapa', input: etapaSel })
+        ], 2, 720),
+        cadastrosModalRow([
+          cadastrosModalField({ label: 'Largura', input: largSel }),
+          cadastrosModalField({ label: 'Preço por metro (R$)', input: precoInput })
+        ], 2, 720),
+        cadastrosObservacoesField()
+      ]);
+      openCadastrosFormModal({
         title: isEdit ? 'Editar preço' : 'Novo preço',
+        maxWidth: 660,
         body,
         onSave: async () => {
           const fornecedor_id = fornSel.value;
@@ -2069,67 +2377,64 @@
 
     function openModal(usr, forns, clients) {
       const isEdit = !!usr;
-      const fornOptions = forns.map(f => ({ value: f.id, label: `${f.nome} (${labelFornecedorTipo(f.tipo)})` }));
+      const fornOptions = forns.map(function (f) { return { value: f.id, label: `${f.nome} (${labelFornecedorTipo(f.tipo)})` }; });
       const tipoOptions = [{ value: 'admin', label: 'Admin' }, { value: 'fornecedor', label: 'Fornecedor' }, { value: 'cliente', label: 'Cliente' }];
-
       const emailInput = window.textInput({ type: 'email', value: usr?.email || '', placeholder: 'usuario@exemplo.com' });
       const nomeInput = window.textInput({ value: usr?.nome || '', placeholder: 'Ex: Fornecedor X' });
       const tipoSel = window.selectInput({ options: tipoOptions, value: usr?.tipo });
-      const clienteOptions = clients.map(function(c) { return { value: c.id, label: c.nome }; });
+      const clienteOptions = clients.map(function (c) { return { value: c.id, label: c.nome }; });
       const fornSel = window.selectInput({ options: fornOptions, value: usr?.fornecedor?.id, placeholder: '(nenhum)' });
       const clienteSel = window.selectInput({ options: clienteOptions, value: usr?.cliente?.id, placeholder: '(nenhum)' });
-
       const fields = [];
-
       if (isEdit) {
         const idInput = window.textInput({ value: usr?.id || '', placeholder: 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx' });
         idInput.disabled = true;
         idInput.classList.add('bg-gray-100');
-        fields.push(window.formField({ label: 'UID do Auth', input: idInput, hint: 'Não pode ser alterado' }));
+        fields.push(cadastrosModalField({ label: 'UID do Auth', input: idInput, hint: 'Não pode ser alterado', fullWidth: true }));
       }
-
-      fields.push(window.formField({
+      fields.push(cadastrosModalField({
         label: 'E-mail',
         input: emailInput,
         hint: isEdit ? '' : 'Será usado para login no Supabase Auth',
+        fullWidth: true
       }));
-      fields.push(window.formField({ label: 'Nome', input: nomeInput }));
-      fields.push(window.formField({ label: 'Tipo', input: tipoSel }));
-
-      const wrapperForn = window.el('div', {}, window.formField({
+      fields.push(cadastrosModalField({ label: 'Nome', input: nomeInput, fullWidth: true }));
+      fields.push(cadastrosModalField({ label: 'Tipo', input: tipoSel, fullWidth: true }));
+      const wrapperForn = cadastrosModalField({
         label: 'Fornecedor vinculado',
         input: fornSel,
         hint: 'Obrigatório se tipo = Fornecedor',
-      }));
-      const wrapperCli = window.el('div', {}, window.formField({
+        fullWidth: true
+      });
+      const wrapperCli = cadastrosModalField({
         label: 'Cliente vinculado',
         input: clienteSel,
         hint: 'Obrigatório se tipo = Cliente',
-      }));
+        fullWidth: true
+      });
       fields.push(wrapperForn, wrapperCli);
-
       function updateVinculoVisibility() {
         var t = tipoSel.value;
-        wrapperForn.style.display = (t === 'fornecedor') ? '' : 'none';
-        wrapperCli.style.display = (t === 'cliente') ? '' : 'none';
+        setCadastrosModalFieldVisibility(wrapperForn, t === 'fornecedor');
+        setCadastrosModalFieldVisibility(wrapperCli, t === 'cliente');
       }
       tipoSel.addEventListener('change', updateVinculoVisibility);
       updateVinculoVisibility();
-
       let passwordInput = null;
       if (!isEdit) {
         passwordInput = window.textInput({ type: 'password', value: '', placeholder: 'Mínimo 6 caracteres' });
-        fields.push(window.formField({
+        fields.push(cadastrosModalField({
           label: 'Senha temporária',
           input: passwordInput,
           hint: 'Defina uma senha inicial e oriente a troca depois.',
+          fullWidth: true
         }));
       }
-
-      const body = window.el('div', {}, ...fields);
-
-      window.modal({
+      fields.push(cadastrosObservacoesField());
+      const body = cadastrosModalStack(fields);
+      openCadastrosFormModal({
         title: isEdit ? 'Editar usuário' : 'Novo usuário',
+        maxWidth: 560,
         body,
         onSave: async () => {
           const email = emailInput.value.trim();
@@ -2137,7 +2442,6 @@
           const tipo = tipoSel.value;
           const fornecedor_id_raw = fornSel.value || null;
           const cliente_id_raw = clienteSel.value || null;
-
           if (!email || !nome || !tipo) {
             window.toast('Preencha e-mail, nome e tipo', 'error');
             return false;
@@ -2166,7 +2470,6 @@
             window.toast('Usuário admin não pode ter cliente vinculado', 'error');
             return false;
           }
-
           if (isEdit) {
             const { error } = await window.supa
               .from('usuarios')
@@ -2183,8 +2486,6 @@
             reload();
             return;
           }
-
-          // Criação via Edge Function admin-create-user
           const password = passwordInput ? passwordInput.value : '';
           if (!password || password.length < 6) {
             window.toast('Senha temporária deve ter no mínimo 6 caracteres', 'error');
@@ -2192,20 +2493,18 @@
           }
           const fornecedor_id = fornecedor_id_raw ? Number(fornecedor_id_raw) : null;
           const cliente_id = cliente_id_raw ? Number(cliente_id_raw) : null;
-
           const { error } = await window.supa.functions.invoke('admin-create-user', {
             body: { email, password, nome, tipo, fornecedor_id, cliente_id },
           });
-
           if (error) {
             let code = null;
             let msg = (error && error.message) ? error.message : 'Erro ao criar usuário';
             try {
               if (error && error.context && typeof error.context.json === 'function') {
-                const body = await error.context.json();
-                if (body && body.error) {
-                  code = body.error.code || null;
-                  if (body.error.message) msg = body.error.message;
+                const body2 = await error.context.json();
+                if (body2 && body2.error) {
+                  code = body2.error.code || null;
+                  if (body2.error.message) msg = body2.error.message;
                 }
               }
             } catch (_) { /* ignore body parse errors */ }
@@ -2216,7 +2515,6 @@
             console.error('admin-create-user error', code, error);
             return false;
           }
-
           window.toast('Usuário criado', 'success');
           reload();
         },
