@@ -59,6 +59,10 @@
   const OPTIONAL_COLUMN_SUPPORT = {
     fornecedores: null,
     clientes: null,
+    cores: null,
+    modelos: null,
+    precos_terceirizada: null,
+    usuarios: null,
   };
 
   async function detectOptionalColumns(table, columns) {
@@ -246,17 +250,18 @@
     return textarea;
   }
 
-  function cadastrosObservacoesField() {
+  function cadastrosObservacoesField(value) {
     var input = cadastrosTextarea({
-      value: '',
+      value: value || '',
       placeholder: 'Observacoes internas (opcional)'
     });
-    return cadastrosModalField({
+    var field = cadastrosModalField({
       label: 'Observações',
       input: input,
-      hint: 'Visual nesta fase; sem persistencia no cadastro.',
+      hint: 'Opcional. Fica salvo junto do cadastro.',
       fullWidth: true
     });
+    return { field: field, input: input };
   }
 
   function openCadastrosFormModal(options) {
@@ -382,9 +387,15 @@
     const container = window.el('div', {});
     let allRows = [];
     let busca = '';
+    let columnSupport = { observacoes: false };
 
     async function reload() {
-      const { data, error } = await window.supa.from('cores').select('*').order('nome');
+      const [support, result] = await Promise.all([
+        detectOptionalColumns('cores', ['observacoes']),
+        window.supa.from('cores').select('*').order('nome')
+      ]);
+      columnSupport = support;
+      const { data, error } = result;
       if (error) { window.toast('Erro ao carregar cores', 'error'); console.error(error); return; }
       allRows = data || [];
       render();
@@ -607,10 +618,15 @@
     function openModal(cor) {
       const isEdit = !!cor;
       const nomeInput = window.textInput({ value: cor?.nome || '', placeholder: 'Ex: VERMELHO', required: true });
-      const body = cadastrosModalStack([
-        cadastrosModalField({ label: 'Nome', input: nomeInput, hint: 'Use letras maiúsculas para padronizar.', fullWidth: true }),
-        cadastrosObservacoesField()
-      ]);
+      const bodyFields = [
+        cadastrosModalField({ label: 'Nome', input: nomeInput, hint: 'Use letras maiúsculas para padronizar.', fullWidth: true })
+      ];
+      let observacoesField = null;
+      if (columnSupport.observacoes) {
+        observacoesField = cadastrosObservacoesField(cor?.observacoes);
+        bodyFields.push(observacoesField.field);
+      }
+      const body = cadastrosModalStack(bodyFields);
       openCadastrosFormModal({
         title: isEdit ? 'Editar cor' : 'Nova cor',
         maxWidth: 560,
@@ -619,6 +635,7 @@
           const nome = nomeInput.value.trim().toUpperCase();
           if (!nome) { window.toast('Nome é obrigatório', 'error'); return false; }
           const payload = { nome };
+          if (columnSupport.observacoes) payload.observacoes = observacoesField.input.value.trim() || null;
           const { error } = isEdit
             ? await window.supa.from('cores').update(payload).eq('id', cor.id)
             : await window.supa.from('cores').insert(payload);
@@ -649,7 +666,7 @@
 
   async function screenCadastrosClientes() {
     const container = window.el('div', {});
-    let columnSupport = { contato: false, telefone: false };
+    let columnSupport = { contato: false, telefone: false, observacoes: false };
     let allRows = [];
     let busca = '';
 
@@ -715,7 +732,7 @@
 
     async function reload() {
       const [support, result] = await Promise.all([
-        detectOptionalColumns('clientes', ['contato', 'telefone']),
+        detectOptionalColumns('clientes', ['contato', 'telefone', 'observacoes']),
         window.supa.from('clientes').select('*').order('nome')
       ]);
       columnSupport = support;
@@ -863,7 +880,11 @@
       }
       if (optionalFields.length > 1) bodyRows.push(cadastrosModalRow(optionalFields, 2, 720));
       else if (optionalFields.length === 1) bodyRows.push(optionalFields[0]);
-      bodyRows.push(cadastrosObservacoesField());
+      let observacoesField = null;
+      if (columnSupport.observacoes) {
+        observacoesField = cadastrosObservacoesField(cli?.observacoes);
+        bodyRows.push(observacoesField.field);
+      }
       const body = cadastrosModalStack(bodyRows);
       openCadastrosFormModal({
         title: isEdit ? 'Editar cliente' : 'Novo cliente',
@@ -875,6 +896,7 @@
           const payload = { nome };
           if (columnSupport.contato) payload.contato = contatoInput.value.trim() || null;
           if (columnSupport.telefone) payload.telefone = telefoneInput.value.trim() || null;
+          if (columnSupport.observacoes) payload.observacoes = observacoesField.input.value.trim() || null;
           const { error } = isEdit
             ? await window.supa.from('clientes').update(payload).eq('id', cli.id)
             : await window.supa.from('clientes').insert(payload);
@@ -908,6 +930,7 @@
     let allRows = [];
     let allCores = [];
     let busca = '';
+    let columnSupport = { observacoes: false };
 
     function svgIcon(markup) {
       const wrap = window.el('span', {
@@ -1046,8 +1069,11 @@
     }
 
     async function reload() {
+      columnSupport = await detectOptionalColumns('modelos', ['observacoes']);
+      const modelosSelect = 'id, nome, largura, cor_1:cor_1_id(id, nome), cor_2:cor_2_id(id, nome)'
+        + (columnSupport.observacoes ? ', observacoes' : '');
       const [modelosRes, coresRes] = await Promise.all([
-        window.supa.from('modelos').select('id, nome, largura, cor_1:cor_1_id(id, nome), cor_2:cor_2_id(id, nome)').order('nome'),
+        window.supa.from('modelos').select(modelosSelect).order('nome'),
         window.supa.from('cores').select('id, nome').order('nome')
       ]);
       if (modelosRes.error || coresRes.error) { window.toast('Erro ao carregar', 'error'); console.error(modelosRes.error || coresRes.error); return; }
@@ -1216,7 +1242,7 @@
         };
         reader.readAsDataURL(file);
       });
-      const body = cadastrosModalStack([
+      const bodyFields = [
         cadastrosModalField({ label: 'Nome do modelo', input: nomeInput, fullWidth: true }),
         cadastrosModalRow([
           cadastrosModalField({ label: 'Cor 1 (predominante)', input: cor1Sel, hint: 'A ordem importa: "BRANCO/PRETO" é diferente de "PRETO/BRANCO".' }),
@@ -1229,9 +1255,14 @@
           content: window.el('div', {
             style: 'display:flex; flex-direction:column; gap:12px;'
           }, imageInput, previewWrap)
-        }),
-        cadastrosObservacoesField()
-      ]);
+        })
+      ];
+      let observacoesField = null;
+      if (columnSupport.observacoes) {
+        observacoesField = cadastrosObservacoesField(modelo?.observacoes);
+        bodyFields.push(observacoesField.field);
+      }
+      const body = cadastrosModalStack(bodyFields);
       openCadastrosFormModal({
         title: isEdit ? 'Editar modelo' : 'Novo modelo',
         maxWidth: 620,
@@ -1243,6 +1274,7 @@
           const largura = largSel.value;
           if (!nome || !cor_1_id || !cor_2_id || !largura) { window.toast('Preencha todos os campos', 'error'); return false; }
           const payload = { nome, cor_1_id, cor_2_id, largura };
+          if (columnSupport.observacoes) payload.observacoes = observacoesField.input.value.trim() || null;
           const { error } = isEdit
             ? await window.supa.from('modelos').update(payload).eq('id', modelo.id)
             : await window.supa.from('modelos').insert(payload);
@@ -1594,11 +1626,11 @@
     const container = window.el('div', {});
     let allRows = [];
     let busca = '';
-    let columnSupport = { email: false, telefone: false };
+    let columnSupport = { email: false, telefone: false, observacoes: false };
 
     async function reload() {
       const [support, result] = await Promise.all([
-        detectOptionalColumns('fornecedores', ['email', 'telefone']),
+        detectOptionalColumns('fornecedores', ['email', 'telefone', 'observacoes']),
         window.supa.from('fornecedores').select('*').order('tipo').order('nome')
       ]);
       columnSupport = support;
@@ -1820,7 +1852,11 @@
       if (emailField || telefoneField) {
         bodyRows.push(cadastrosModalRow([emailField, telefoneField].filter(Boolean), 2, 720));
       }
-      bodyRows.push(cadastrosObservacoesField());
+      let observacoesField = null;
+      if (columnSupport.observacoes) {
+        observacoesField = cadastrosObservacoesField(forn?.observacoes);
+        bodyRows.push(observacoesField.field);
+      }
       const body = cadastrosModalStack(bodyRows);
       openCadastrosFormModal({
         title: isEdit ? 'Editar fornecedor' : 'Novo fornecedor',
@@ -1833,6 +1869,7 @@
           const payload = { nome, tipo };
           if (columnSupport.email) payload.email = emailInput.value.trim() || null;
           if (columnSupport.telefone) payload.telefone = telefoneInput.value.trim() || null;
+          if (columnSupport.observacoes) payload.observacoes = observacoesField.input.value.trim() || null;
           const { error } = isEdit
             ? await window.supa.from('fornecedores').update(payload).eq('id', forn.id)
             : await window.supa.from('fornecedores').insert(payload);
@@ -1866,6 +1903,7 @@
     let allRows = [];
     let allForns = [];
     let busca = '';
+    let columnSupport = { observacoes: false };
 
     function svgIcon(markup) {
       var tmp = document.createElement('div');
@@ -1879,8 +1917,11 @@
     var ICON_TRASH = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path><path d="M10 11v6M14 11v6"></path><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"></path></svg>';
 
     async function reload() {
+      columnSupport = await detectOptionalColumns('precos_terceirizada', ['observacoes']);
+      const precosSelect = 'id, etapa, largura, preco_por_metro, fornecedor:fornecedor_id(id, nome, tipo)'
+        + (columnSupport.observacoes ? ', observacoes' : '');
       const [precosRes, fornsRes] = await Promise.all([
-        window.supa.from('precos_terceirizada').select('id, etapa, largura, preco_por_metro, fornecedor:fornecedor_id(id, nome, tipo)').order('etapa').order('largura'),
+        window.supa.from('precos_terceirizada').select(precosSelect).order('etapa').order('largura'),
         window.supa.from('fornecedores').select('id, nome, tipo').in('tipo', ['tecelagem', 'latex']).order('nome')
       ]);
       if (precosRes.error || fornsRes.error) { window.toast('Erro ao carregar', 'error'); console.error(precosRes.error || fornsRes.error); return; }
@@ -2010,7 +2051,7 @@
       const etapaSel = window.selectInput({ options: etapaOptions, value: preco?.etapa });
       const largSel = window.selectInput({ options: largOptions, value: preco?.largura });
       const precoInput = window.textInput({ type: 'number', step: '0.01', value: preco?.preco_por_metro || '', placeholder: '0,00' });
-      const body = cadastrosModalStack([
+      const bodyFields = [
         cadastrosModalRow([
           cadastrosModalField({ label: 'Fornecedor', input: fornSel }),
           cadastrosModalField({ label: 'Etapa', input: etapaSel })
@@ -2018,9 +2059,14 @@
         cadastrosModalRow([
           cadastrosModalField({ label: 'Largura', input: largSel }),
           cadastrosModalField({ label: 'Preço por metro (R$)', input: precoInput })
-        ], 2, 720),
-        cadastrosObservacoesField()
-      ]);
+        ], 2, 720)
+      ];
+      let observacoesField = null;
+      if (columnSupport.observacoes) {
+        observacoesField = cadastrosObservacoesField(preco?.observacoes);
+        bodyFields.push(observacoesField.field);
+      }
+      const body = cadastrosModalStack(bodyFields);
       openCadastrosFormModal({
         title: isEdit ? 'Editar preço' : 'Novo preço',
         maxWidth: 660,
@@ -2034,6 +2080,7 @@
             window.toast('Preencha todos os campos com valores válidos', 'error'); return false;
           }
           const payload = { fornecedor_id, etapa, largura, preco_por_metro, atualizado_em: new Date().toISOString() };
+          if (columnSupport.observacoes) payload.observacoes = observacoesField.input.value.trim() || null;
           const { error } = isEdit
             ? await window.supa.from('precos_terceirizada').update(payload).eq('id', preco.id)
             : await window.supa.from('precos_terceirizada').insert(payload);
@@ -2069,6 +2116,7 @@
     let allForns = [];
     let allClients = [];
     let busca = '';
+    let columnSupport = { observacoes: false };
 
     function svgIcon(markup) {
       var tmp = document.createElement('div');
@@ -2083,10 +2131,13 @@
     var ICON_TRASH = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path><path d="M10 11v6M14 11v6"></path><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"></path></svg>';
 
     async function reload() {
+      columnSupport = await detectOptionalColumns('usuarios', ['observacoes']);
+      const usuariosSelect = 'id, email, nome, tipo, ativo, desativado_em, fornecedor:fornecedor_id(id, nome, tipo), cliente:cliente_id(id, nome)'
+        + (columnSupport.observacoes ? ', observacoes' : '');
       const [usersRes, fornsRes, clientsRes] = await Promise.all([
         window.supa
           .from('usuarios')
-          .select('id, email, nome, tipo, ativo, desativado_em, fornecedor:fornecedor_id(id, nome, tipo), cliente:cliente_id(id, nome)')
+          .select(usuariosSelect)
           .order('email'),
         window.supa.from('fornecedores').select('id, nome, tipo').order('nome'),
         window.supa.from('clientes').select('id, nome').order('nome')
@@ -2430,7 +2481,11 @@
           fullWidth: true
         }));
       }
-      fields.push(cadastrosObservacoesField());
+      let observacoesField = null;
+      if (columnSupport.observacoes) {
+        observacoesField = cadastrosObservacoesField(usr?.observacoes);
+        fields.push(observacoesField.field);
+      }
       const body = cadastrosModalStack(fields);
       openCadastrosFormModal({
         title: isEdit ? 'Editar usuário' : 'Novo usuário',
@@ -2471,9 +2526,11 @@
             return false;
           }
           if (isEdit) {
+            const updatePayload = { email, nome, tipo, fornecedor_id: fornecedor_id_raw, cliente_id: cliente_id_raw };
+            if (columnSupport.observacoes) updatePayload.observacoes = observacoesField.input.value.trim() || null;
             const { error } = await window.supa
               .from('usuarios')
-              .update({ email, nome, tipo, fornecedor_id: fornecedor_id_raw, cliente_id: cliente_id_raw })
+              .update(updatePayload)
               .eq('id', usr.id);
             if (error) {
               let msg = 'Erro ao salvar';
@@ -2493,7 +2550,7 @@
           }
           const fornecedor_id = fornecedor_id_raw ? Number(fornecedor_id_raw) : null;
           const cliente_id = cliente_id_raw ? Number(cliente_id_raw) : null;
-          const { error } = await window.supa.functions.invoke('admin-create-user', {
+          const { data: createData, error } = await window.supa.functions.invoke('admin-create-user', {
             body: { email, password, nome, tipo, fornecedor_id, cliente_id },
           });
           if (error) {
@@ -2514,6 +2571,22 @@
             window.toast(msg, 'error');
             console.error('admin-create-user error', code, error);
             return false;
+          }
+          const observacoesValue = columnSupport.observacoes && observacoesField
+            ? (observacoesField.input.value.trim() || null)
+            : null;
+          const newUserId = createData && createData.user_id;
+          if (observacoesValue && newUserId) {
+            const { error: obsError } = await window.supa
+              .from('usuarios')
+              .update({ observacoes: observacoesValue })
+              .eq('id', newUserId);
+            if (obsError) {
+              console.error('Falha ao salvar observações do novo usuário', obsError);
+              window.toast('Usuário criado, mas falha ao salvar observações', 'error');
+              reload();
+              return;
+            }
           }
           window.toast('Usuário criado', 'success');
           reload();

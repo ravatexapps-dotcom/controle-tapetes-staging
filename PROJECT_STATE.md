@@ -2643,6 +2643,40 @@ Senhas de teste antigas em `docs/qa/fase1-checklist.md` e
 > alteracao fora de `cadastros` foi realizada. `supabase/.temp/`
 > permanece fora do commit.
 
+> **Atualizacao 2026-07-01 - fase
+> `RAVATEX-TAPETES-ADMIN-CADASTROS-MODALS-SCHEMA-PERSISTENCE-CLOSEOUT`
+> (persistencia real de `observacoes` nos Cadastros Admin).** Fica
+> registrada como **APROVADA** a persistencia real opcional do campo
+> `observacoes` em `cores`, `clientes`, `modelos`, `fornecedores`,
+> `precos_terceirizada` e `usuarios`, na branch `work/app-next`, sobre
+> o HEAD inicial `70cf4fb`. O arquivo funcional alterado foi
+> `js/screens/cadastros.js` e a migration versionada foi
+> `db/19_cadastros_observacoes.sql`, aplicada manualmente apenas no
+> Supabase staging `ucrjtfswnfdlxwtmxnoo`, sem tocar producao
+> `bhgifjrfagkzubpyqpew` nem `origin/main`. As colunas confirmadas em
+> staging foram `cores.observacoes`, `clientes.observacoes`,
+> `modelos.observacoes`, `fornecedores.observacoes`,
+> `precos_terceirizada.observacoes` e `usuarios.observacoes`, todas
+> `text` nullable. O uso de `detectOptionalColumns` foi preservado para
+> compatibilidade com ambientes sem a migration. Tambem fica registrado
+> que a criacao de usuario preserva a Edge Function
+> `admin-create-user`, com update posterior de `observacoes` quando
+> necessario. A decisao de nao persistir imagem em `Modelos` permanece:
+> nao ha infraestrutura atual de Supabase Storage, bucket, upload ou
+> `imagem_url` no repo; a UI local/visual de preview segue homologada e
+> a persistencia real de imagem fica deferida para uma fase propria de
+> Storage, sem uso de base64 em tabela. Validacao funcional aceita:
+> `Cores`, `Clientes`, `Modelos` e `Fornecedores` com criar/reload/
+> reabrir/editar/reconfirmar persistencia e remocao dos registros
+> temporarios; `Precos` e `Usuarios` validados manualmente pelo dono;
+> checagem final sem registros residuais `RAVATEX_TEST%` nas 6
+> tabelas. Checks executados: `node --check js/screens/cadastros.js`,
+> `node --test tests/cadastros-screens.smoke.js` com resultado 31/32 e
+> unica falha conhecida pre-existente fora do escopo (`screenPainel`
+> espera 9 itens de `ADMIN_MENU` e renderiza 10), alem de
+> `git diff --check` verde. `supabase/.temp/` permaneceu fora do
+> commit.
+
 > **Atualizacao 2026-06-30 - fase
 > `RAVATEX-TAPETES-ADMIN-CADASTROS-CLIENTES-PRECOS-USUARIOS-CLOSEOUT`
 > (homologacao visual do pacote Clientes + Precos + Usuarios).**

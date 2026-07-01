@@ -1584,6 +1584,49 @@ node --test tests/boot.smoke.js \
   `origin/main` foi tocado nesta fase; `supabase/.temp/` permanece
   fora do stage/commit.
 
+## Persistencia real de Observacoes nos Cadastros Admin
+
+- **Estado atual aceito:** `work/app-next` na fase
+  `RAVATEX-TAPETES-ADMIN-CADASTROS-MODALS-SCHEMA-PERSISTENCE-CLOSEOUT`,
+  com aceite funcional do pacote de persistencia de `observacoes`.
+- **Arquivo funcional alterado:** `js/screens/cadastros.js`.
+- **Migration versionada:** `db/19_cadastros_observacoes.sql`.
+- **Migration aplicada apenas em staging:** projeto Supabase
+  `ucrjtfswnfdlxwtmxnoo`, sem tocar producao
+  `bhgifjrfagkzubpyqpew`.
+- **Colunas confirmadas em staging:** `cores.observacoes`,
+  `clientes.observacoes`, `modelos.observacoes`,
+  `fornecedores.observacoes`, `precos_terceirizada.observacoes` e
+  `usuarios.observacoes`, todas `text` nullable.
+- **Persistencia homologada:** `Observações` agora persiste de verdade
+  nos 6 cadastros admin, preservando compatibilidade por
+  `detectOptionalColumns` em ambientes sem a migration.
+- **CRUD/payloads preservados:** os fluxos existentes foram mantidos,
+  com acrescimo opcional de `observacoes`; em `Usuarios`, a criacao
+  segue pela Edge Function `admin-create-user` e recebe update
+  posterior de `observacoes` quando aplicavel.
+- **Validacao funcional aceita:** `Cores`, `Clientes`, `Modelos` e
+  `Fornecedores` passaram por criar/reload/reabrir/editar/reconfirmar
+  persistencia, com remocao dos registros temporarios; `Precos` e
+  `Usuarios` foram aceitos como validados manualmente pelo dono; nao
+  restaram marcadores `RAVATEX_TEST%` nas 6 tabelas.
+- **Decisao sobre imagem de Modelos:** nenhuma persistencia real de
+  imagem foi implementada. Nao ha infraestrutura atual de Supabase
+  Storage, bucket, policy, upload helper ou `imagem_url` no repo; a UI
+  de preview local segue homologada e a persistencia real de imagem
+  fica deferida para uma fase propria de Storage. Nao foi salvo base64
+  em tabela.
+- **Shell preservado:** sidebar, topbar e shell global permaneceram
+  intactos; nao houve alteracoes em `common.js`, `index.html` ou em
+  outras telas fora de `cadastros`.
+- **Checks executados:** `node --check js/screens/cadastros.js`,
+  `tests/cadastros-screens.smoke.js` e `git diff --check`. O smoke de
+  cadastros permaneceu em 31/32 pela unica falha conhecida e fora do
+  escopo: `screenPainel` espera 9 itens de `ADMIN_MENU` e renderiza
+  10.
+- **Escopo preservado:** producao e `origin/main` permaneceram
+  intocados; `supabase/.temp/` segue fora do stage/commit.
+
 ## Homologacao visual Admin Cadastros Modais
 
 - **Estado atual aceito:** `work/app-next` na fase
