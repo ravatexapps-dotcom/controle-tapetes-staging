@@ -1,4 +1,24 @@
 > **Atualizacao 2026-07-01 - fase
+> `RAVATEX-TAPETES-PEDIDOS-LIST-ADMIN-VISUAL-CLEANUP-B`
+> (patch proprio de residual da lista admin).**
+> Commit HEAD atual.
+> Base: `e88b218` (Refactor pedido detail screen modules).
+> Alteracao exclusiva em `js/screens/pedidos-list.js`
+> (149 insercoes, 110 remocoes).
+> Resumo: extracao de constantes (CLIENT_TONE, CLIENT_PRONTO_KEYS,
+> CLIENT_PRODUCAO_KEYS, TR_COLS), refatoracao de resolveVisibleTone/
+> resolveVisibleState/visibleBucket com logica simplificada e
+> constantes centralizadas, ajustes visuais (padding, gap, font-size,
+> cores, hover em eyeBtn, extracao de buildVisibleCell) e
+> alinhamento do subtitulo do header a visao admin.
+> Risco registrado: possivel divergencia futura se CLIENT_TONE e
+> constantes afins nao forem unificadas com a tela cliente.
+> Producao intocada.
+> `supabase/.temp/` preservado como residual.
+> Proximo passo: Modal Movimentar Producao, somente com worktree
+> limpo exceto residual supabase/.temp/.
+
+> **Atualizacao 2026-07-01 - fase
 > `RAVATEX-TAPETES-OP-LIFECYCLE-BACKEND-B-STAGING-SQL-CLOSEOUT`
 > (registro de aplicacao da migration 21 no staging).**
 > A migration `db/21_op_lifecycle_status_eventos.sql` foi
