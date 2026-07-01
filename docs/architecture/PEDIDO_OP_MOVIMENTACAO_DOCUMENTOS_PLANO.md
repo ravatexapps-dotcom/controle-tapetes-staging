@@ -133,6 +133,7 @@ Pedido
 | **H** | Integração Drive/OneDrive: upload real de arquivos, storage externo, ponteiros no banco. | G |
 | **I** | Automação futura por e-mail/PDF/XML: leitura de `eddiravazio@gmail.com`, classificação, anexo automático com revisão humana. | H |
 | **J** | Saldo inteligente por etapa e bloqueio transacional: evitar que uma etapa consuma mais do que a anterior produziu. | F |
+| **L** | Lifecycle de OP backend: status expandido (`pausada`/`concluida`/`cancelada`), tabela `op_eventos`, trigger de eventos, RPC `alterar_status_op` (admin-only, R1). Migration `db/21_op_lifecycle_status_eventos.sql`. | — | **[x] Concluída** (Fase B, backend-only, sem UI; R1 hardening aplicado) |
 
 ---
 
@@ -154,6 +155,20 @@ Sempre que houver evolução, decisão, bloqueio, conclusão parcial ou fechamen
 5. **Expor no handoff** que o próximo chat deve consultar este plano antes de qualquer ação.
 6. **Nunca** implementar sem antes consultar este plano.
 7. **Nunca** fechar uma etapa sem atualizar este plano.
+
+### 6.1. Decisões da Fase L — Lifecycle de OP (backend)
+
+| # | Decisão | Fundamentação |
+|---|---|---|
+| D-L01 | `ops.status` expandido para aceitar `pausada`, `concluida`, `cancelada`. `finalizada` mantido como legado. | Não quebrar OP de látex existente; `concluida` é o novo canônico. |
+| D-L02 | Tabela `op_eventos` criada para histórico de eventos da OP. | Necessário para auditoria e timeline futura da OP. |
+| D-L03 | Trigger `trg_op_evento` registra automaticamente toda mudança de status. | Fonte única de verdade; evita duplicação com RPC. |
+| D-L04 | RPC `alterar_status_op` valida transições e aplica mudança. | Transições inválidas são rejeitadas no backend. |
+| D-L05 | `concluida` preenche `finalizada_em` se null. `cancelada` não preenche. | Semântica correta de conclusão vs cancelamento. |
+| D-L06 | `gerar_op_latex` não alterado nesta fase. OP de látex continua nascendo `em_producao`. | Preserva compatibilidade; transição para concluida virá depois via RPC. |
+| D-L07 | RLS de `op_eventos` segue padrão `ops`: admin ALL, fornecedor SELECT vinculado. | Consistência com o restante do projeto. |
+| D-L08-R1 | `alterar_status_op` é **admin-only** nesta fase (`is_admin()`). Fornecedor não tem WRITE em `ops` e não pode transitar status. | Hardening R1: guard de caller explícito, no padrão de `gerar_op_latex` (db/08/09). Não prometer permissão de fornecedor. |
+| D-L09-R1 | `p_observacao` da RPC é vinculada ao evento `status_alterado` correspondente a `status_novo` (filtro `status_novo = p_novo_status` + ordenação `criado_em DESC, id DESC`). Trigger segue como fonte única do evento (não há segundo `INSERT`). | Hardening R1: reduzir risco de observação cair em evento errado sob concorrência. `SET LOCAL/current_setting` fica para fase futura. |
 
 ---
 

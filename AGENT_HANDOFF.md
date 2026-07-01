@@ -8,6 +8,23 @@
 > `docs/DOCUMENTATION_INDEX.md`.
 > ConvenÃ§Ã£o: **tudo em portuguÃªs brasileiro**.
 
+- **Lifecycle de OP backend** (Fase L,
+  `db/21_op_lifecycle_status_eventos.sql`, migration versionada,
+  **NAO aplicada em staging**): `ops.status` CHECK expandido
+  (`pausada`/`concluida`/`cancelada` + legado `finalizada`);
+  `op_eventos` + trigger `trg_op_evento` + RPC
+  `alterar_status_op`. `gerar_op_latex` e `op-latex-admin.js`
+  intocados. Nenhum JS alterado. Proximo: aplicar migration
+  em staging; UI de transicao de status na tela de OP.
+- **R1 hardening** sobre a Fase L (mesmo arquivo db/21, ainda
+  nao aplicada): (1) `alterar_status_op` agora **admin-only**
+  (`is_admin()` no inicio, padrao `gerar_op_latex`) —
+  fornecedor nao transita status nesta fase; (2) observacao
+  vinculada determinicamente ao evento `status_alterado` de
+  `status_novo = p_novo_status` (`criado_em DESC, id DESC`),
+  sem segundo evento e sem `SET LOCAL` nesta fase. Docs
+  atualizados (D-L03-R1 / D-L08-R1 / D-L09-R1).
+
 - **Migration 20 aplicada em staging** (`ucrjtfswnfdlxwtmxnoo`):
   `op_itens.pedido_item_id` (uuid, nullable, FK -> pedido_itens,
   indice) confirmado. Producao `bhgifjrfagkzubpyqpew` intocada.

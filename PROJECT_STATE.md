@@ -1,6 +1,47 @@
 > **Atualizacao 2026-07-01 - fase
-> `RAVATEX-TAPETES-PEDIDO-OP-LINK-C-STAGING-SQL-CLOSEOUT`
-> (registro de aplicacao da migration 20 no staging).**
+> `RAVATEX-TAPETES-OP-LIFECYCLE-BACKEND-B-R1`
+> (R1 hardening sobre lifecycle de OP).**
+> Patch R1 sobre `db/21_op_lifecycle_status_eventos.sql`
+> (ainda nao aplicada em staging/producao): (1) RPC
+> `alterar_status_op` agora **admin-only** via guard
+> `is_admin()` no inicio (padrao `gerar_op_latex`);
+> fornecedor nao pode transitar status nesta fase. (2)
+> vinculacao da `p_observacao` ao evento `status_alterado`
+> tornada deterministica: filtro por `status_novo =
+> p_novo_status` + ordenacao `criado_em DESC, id DESC`,
+> reduzindo risco de observacao cair em evento errado sob
+> concorrencia. Trigger segue como fonte unica do evento
+> (sem segundo INSERT, sem `SET LOCAL` nesta fase). Docs
+> (`SCHEMA_CONTRACT`, `PLANO`) atualizados com D-L03-R1 /
+> D-L08-R1 / D-L09-R1. Sem mudancas de escopo, sem JS.
+> Proximo passo: aplicar migration 21 em staging; UI de
+> transicao de status na tela de OP; Fase D.
+>
+> > **Atualizacao 2026-07-01 - fase
+> > `RAVATEX-TAPETES-OP-LIFECYCLE-BACKEND-B`
+> > (lifecycle de OP: status expandido + eventos + RPC).**
+> Migration `db/21_op_lifecycle_status_eventos.sql` criada
+> (backup-only, nao aplicada em staging nem producao):
+> `ops.status` CHECK expandido para aceitar `pausada`,
+> `concluida` (canonico) e `cancelada`, mantendo `finalizada`
+> como legado compativel; tabela nova `public.op_eventos`
+> (historico de eventos de OP) com indices; trigger
+> `trg_op_evento` registra automaticamente toda mudanca de
+> `ops.status`; RPC `alterar_status_op(BIGINT, TEXT, TEXT)`
+> valida transicoes (simulada->aberta|cancelada,
+> aberta->em_producao|cancelada, em_producao->pausada|
+> concluida|cancelada, pausada->em_producao|cancelada),
+> estados finais sao terminais, `concluida` preenche
+> `finalizada_em`; RLS `op_eventos` segue padrao `ops`
+> (admin ALL, fornecedor SELECT vinculado). Nenhum JS
+> alterado. `gerar_op_latex` intocado. `op-latex-admin.js`
+> e compatibilidade com `finalizada` preservadas. Proximo
+> passo: aplicar migration em staging; UI de transicao de
+> status na tela de OP; Fase D (OPs no detalhe do Pedido).
+>
+> > **Atualizacao 2026-07-01 - fase
+> > `RAVATEX-TAPETES-PEDIDO-OP-LINK-C-STAGING-SQL-CLOSEOUT`
+> > (registro de aplicacao da migration 20 no staging).**
 > A migration `db/20_op_itens_pedido_item_link.sql` foi
 > **aplicada no Supabase staging** `ucrjtfswnfdlxwtmxnoo`.
 > Confirmado: `public.op_itens.pedido_item_id` existe

@@ -26,6 +26,7 @@
 | `pedido_cliente_eventos` | `db/15_status_cliente_visual.sql` | Aplicado |
 | `pedido_parciais` | `db/17_pedido_parciais_schema.sql` | Aplicado |
 | `pedido_parcial_itens` | `db/17_pedido_parciais_schema.sql` | Aplicado |
+| `op_eventos` | `db/21_op_lifecycle_status_eventos.sql` | **Não aplicado** — migration versionada |
 | `documentos_operacionais` | — | **Não existe** |
 
 ### 1.2. Colunas-chave validadas
@@ -49,7 +50,7 @@
 | `id` | BIGSERIAL PK | | | |
 | `numero` | INTEGER | NOT NULL | | Numeração por (ano, tipo) |
 | `ano` | INTEGER | NOT NULL | | |
-| `status` | TEXT | NOT NULL | simulada/aberta/em_producao/finalizada | |
+| `status` | TEXT | NOT NULL | simulada/aberta/em_producao/pausada/concluida/cancelada/finalizada | Expandido em db/21. `finalizada` = legado látex. `concluida` = canônico. |
 | `tipo` | TEXT | NOT NULL | tecelagem/latex | Adicionado em db/08 |
 | `lote_id` | BIGINT | NULLABLE | → `lotes.id` ON DELETE SET NULL | Adicionado em db/09 |
 | `origem_op_id` | BIGINT | NULLABLE | → `ops.id` ON DELETE SET NULL | OP de tecelagem que originou esta OP de látex (db/08) |
@@ -130,6 +131,7 @@
 | Função | Descrição | Relevante para esta frente |
 |---|---|---|
 | `gerar_op_latex(BIGINT)` | Cria OP de látex a partir de entrega de tecelagem. Herda `lote_id` da OP origem. | Sim — herda lote mas não popula `lotes.pedido_id` |
+| `alterar_status_op(BIGINT, TEXT, TEXT)` | Transiciona status da OP com validação. **Admin-only** (`is_admin()`). `SECURITY DEFINER`. `p_observacao` é vinculada ao evento `status_alterado` correspondente ao novo status. Retorna JSON. | Sim — db/21 (R1: guard admin + vínculo determinístico da observação) |
 | `sincronizar_pedido_parciais_resumo(UUID, BOOLEAN)` | Atualiza campos de resumo de parciais em `pedidos`. | Sim — camada comercial |
 | `is_admin()` | Verifica se usuário é admin. | Sim — RLS |
 | `meu_fornecedor_id()` | Retorna fornecedor_id do usuário logado. | Sim — RLS |
@@ -143,8 +145,25 @@
 | `pedidos_cliente_visual_touch` | `pedidos` | BEFORE UPDATE | Atualiza timestamp visual (db/15) |
 | `pedido_parciais_touch_updated_at` | `pedido_parciais` | BEFORE UPDATE | Atualiza `atualizado_em` (db/17) |
 | `pedido_parciais_after_change_trigger` | `pedido_parciais` | AFTER INSERT/UPDATE/DELETE | Sincroniza resumo (db/17) |
+| `trg_op_evento` | `ops` | AFTER UPDATE OF status | Registra evento `status_alterado` em `op_eventos` (db/21). A `p_observacao` da RPC `alterar_status_op` é vinculada ao evento deste trigger correspondente a `status_novo` (R1) |
 
-### 1.5. RLS relevante
+### 1.5. Tabela `op_eventos` (db/21)
+
+| Coluna | Tipo | Nullable | Descrição |
+|---|---|---|---|
+| `id` | BIGSERIAL PK | | |
+| `op_id` | BIGINT | NOT NULL | → `ops.id` ON DELETE CASCADE |
+| `tipo_evento` | TEXT | NOT NULL | `status_alterado` ou futuro |
+| `status_anterior` | TEXT | NULL | Status antes da transição |
+| `status_novo` | TEXT | NULL | Status após a transição |
+| `observacao` | TEXT | NULL | Observação opcional |
+| `payload` | JSONB | NOT NULL DEFAULT `{}` | Metadados complementares |
+| `criado_por` | UUID | NULL | → `auth.users.id` ON DELETE SET NULL |
+| `criado_em` | TIMESTAMPTZ | NOT NULL DEFAULT `now()` | |
+
+Índices: `op_eventos_op_id_idx (op_id)`, `op_eventos_criado_em_idx (op_id, criado_em DESC)`.
+
+### 1.6. RLS relevante
 
 | Tabela | Policies | Acesso |
 |---|---|---|
@@ -156,8 +175,9 @@
 | `lotes` | `lotes_admin` | Admin ALL |
 | `pedido_parciais` | `pedido_parciais_admin_all`, `pedido_parciais_cliente_select` | Admin ALL; cliente SELECT se visível e dono |
 | `pedido_cliente_eventos` | `pedido_cliente_eventos_admin_all`, `pedido_cliente_eventos_cliente_select` | Admin ALL; cliente SELECT se visível e dono |
+| `op_eventos` | `op_eventos_admin`, `op_eventos_fornecedor_read` | Admin ALL; fornecedor SELECT se vinculado via `op_fornecedores` (db/21) |
 
-### 1.6. Lacunas confirmadas
+### 1.7. Lacunas confirmadas
 
 | Lacuna | Severidade | Detalhe |
 |---|---|---|
@@ -470,6 +490,7 @@ WHERE l.pedido_id = :pedido_id;
 | **H** | Integração Drive/OneDrive | Pendente |
 | **I** | Automação por e-mail/PDF/XML | Pendente |
 | **J** | Saldo inteligente por etapa e bloqueio transacional | Pendente |
+| **L** | Lifecycle de OP backend (status expandido, `op_eventos`, trigger, RPC `alterar_status_op` admin-only) | **[x] Concluída** (db/21, backend-only; R1 hardening) |
 
 ---
 
@@ -488,16 +509,21 @@ WHERE l.pedido_id = :pedido_id;
 | D-B07 | Saldo por etapa exige RPC/trigger no backend. Nunca só frontend. | Regra de segurança. Fase J. |
 | D-B08 | `pedido_parciais` permanece camada comercial. Não usar como fonte de movimentação produtiva. | Já decidido na Fase A; reforçado aqui. |
 
-### Fase C
+### Fase L
 
 | # | Decisão | Fundamentação |
 |---|---|---|
-| D-C01 | `itemPedidoMap` removido (R1). `pedidoItemId` é armazenado explicitamente em cada item da OP, sem inferência por `modelo_id`. `montarPayloadItensOP` lê `item.pedidoItemId` diretamente. | `modelo_id` não é chave única dentro de um pedido; dois itens com mesmo modelo colapsariam. R1 corrige. |
-| D-C01-R1 | Vínculo `pedido_item_id` é por-item, não por-modelo. `itens.push({ modeloId, metros, pedidoItemId: pitem.id })`. Sem map intermediário. | Seguro para pedidos com múltiplos itens do mesmo modelo. Teste 67 prova. |
-| D-C02 | `pedido_id` na rota via query param (`?pedido_id=UUID`) no hash, extraído com `URLSearchParams`. | Semântica REST-like; não conflita com rota existente `#/ops/nova`; compatível com urlFragment atual. |
-| D-C03 | `lotes.pedido_id` é populado ao criar novo lote e ao atualizar lote existente, quando `pedidoId` informado. | Cobre os dois cenários: OP nova e vinculo retroativo. |
-| D-C04 | `op_itens` criados a partir de pedido herdam `pedido_item_id` quando há correspondência no `itemPedidoMap`. | Cumpre o contrato §2.4 do schema contract. |
-| D-C05 | Nenhum botão UI novo nesta fase. O vínculo Pedido → OP está pronto no backend/frontend; a UI (Fase D) usará o link `#/ops/nova?pedido_id=UUID`. | Separação de responsabilidades entre fases. |
+| D-L01 | `ops.status` CHECK expandido: `simulada\|aberta\|em_producao\|pausada\|concluida\|cancelada\|finalizada`. `concluida` = canônico, `finalizada` = legado. | Preserva OP de látex existente sem quebrar `op-latex-admin.js`. |
+| D-L02 | Tabela `op_eventos` criada para histórico de eventos da OP. Trigger `trg_op_evento` registra automaticamente toda mudança de `ops.status`. | Auditoria da OP. Fonte única de verdade. |
+| D-L03 | RPC `alterar_status_op` valida transições de status no backend. Estados finais (`concluida`, `cancelada`, `finalizada`) são terminais. | Bloqueio real no backend, não só no frontend. |
+| D-L03-R1 | `alterar_status_op` é **admin-only** nesta fase (`is_admin()`); fornecedor não tem WRITE em `ops` e não pode transitar status. | Hardening R1: alinhar ao padrão `gerar_op_latex` (db/08/09) e corrigir a imprecisão de D-L03, que não declarava o guard de caller. |
+| D-L03-R1b | `p_observacao` é vinculada ao evento `status_alterado` correspondente a `status_novo` (filtro por `status_novo = p_novo_status`, ordenação `criado_em DESC, id DESC`). | Hardening R1: reduzir risco de observação cair em evento errado sob concorrência. Não cria segundo evento; não implementa `SET LOCAL` nesta fase. |
+| D-L04 | `concluida` preenche `finalizada_em` se null. `cancelada` não preenche. | Semântica correta de conclusão vs cancelamento. |
+| D-L05 | `gerar_op_latex()` não foi alterado. OP de látex continua nascendo `em_producao`. | Compatibilidade; transição para `concluida` via RPC no frontend futuro. |
+| D-L06 | RLS de `op_eventos` segue padrão `ops`: admin ALL, fornecedor SELECT se vinculado via `op_fornecedores`. | Consistência com políticas existentes. |
+| D-L07 | Nenhum arquivo JS alterado nesta fase. UI virá em fase posterior. | Separação backend/UI. |
+
+###
 
 ---
 
