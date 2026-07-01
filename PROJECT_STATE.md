@@ -1,4 +1,30 @@
 > **Atualizacao 2026-07-01 - fase
+> `RAVATEX-TAPETES-PEDIDO-OP-SCHEMA-CONTRACT-B`
+> (docs-only, contrato tecnico schema Pedido -> OP ->
+> Movimentacao -> Documentos).** Criado o contrato tecnico
+> detalhado em `docs/architecture/PEDIDO_OP_SCHEMA_CONTRACT.md`
+> sobre o HEAD `04613ee`, branch `work/app-next`. O contrato
+> valida todas as tabelas, colunas, FKs, constraints, RPCs,
+> triggers e RLS existentes; confirma 6 lacunas (incluindo
+> `lotes.pedido_id` nunca populado e `op_itens.pedido_item_id`
+> inexistente); estabelece contrato de vinculo Pedido -> OP
+> via `lotes.pedido_id`; propoe criacao de
+> `op_itens.pedido_item_id` (NULLABLE, FK -> pedido_itens,
+> ON DELETE SET NULL); desenha a tabela futura
+> `documentos_operacionais` com 25 colunas, 10 tipos de
+> documento e 4 status; recomenda Opcao A (reforcar
+> `entregas`/`entrega_itens`) como fonte canonica de
+> movimentacao para o MVP; define 5 etapas do stepper
+> (INSUMOS -> TECELAGEM -> ACABAMENTO -> EXPEDICAO -> ENTREGA);
+> registra 8 decisoes tecnicas (D-B01 a D-B08); e lista 4
+> lacunas que ainda exigem decisao do dono do projeto.
+> **Nenhum** arquivo funcional, schema, SQL, Supabase, tela
+> ou integracao externa foi alterado. Proximo passo: Fase C
+> (vinculo Pedido -> OP: popular `lotes.pedido_id`, criar
+> `op_itens.pedido_item_id`). `js/screens/pedidos-list.js`
+> e `supabase/.temp/` permanecem intocados.
+
+> **Atualizacao 2026-07-01 - fase
 > `RAVATEX-TAPETES-PEDIDO-OP-MOVEMENT-PLAN-A`
 > (docs-only, plano persistente Pedido -> OP -> Movimentacao ->
 > Documentos).** Criado o plano de arquitetura persistente em

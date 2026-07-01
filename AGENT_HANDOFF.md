@@ -8,6 +8,24 @@
 > `docs/DOCUMENTATION_INDEX.md`.
 > ConvenÃ§Ã£o: **tudo em portuguÃªs brasileiro**.
 
+## Contrato schema Pedido -> OP -> Movimentacao -> Documentos
+
+- **Contrato tecnico registrado** em
+  `docs/architecture/PEDIDO_OP_SCHEMA_CONTRACT.md`
+  na fase `RAVATEX-TAPETES-PEDIDO-OP-SCHEMA-CONTRACT-B` (docs-only),
+  sobre o HEAD `04613ee`. O contrato valida 13 tabelas, 5 RPCs,
+  4 triggers e RLS completa; confirma que `lotes.pedido_id` existe
+  mas nunca e populado e que `op_itens.pedido_item_id` nao existe;
+  estabelece contrato para Fase C (popular `lotes.pedido_id` +
+  criar `op_itens.pedido_item_id`); desenha tabela
+  `documentos_operacionais`; recomenda manter `entregas`/
+  `entrega_itens` como fonte canonica de movimentacao; define
+  5 etapas do stepper; e registra 8 decisoes tecnicas
+  (D-B01 a D-B08). Proximo passo: Fase C. **O proximo chat DEVE
+  consultar `docs/architecture/PEDIDO_OP_MOVIMENTACAO_DOCUMENTOS_PLANO.md`
+  e `docs/architecture/PEDIDO_OP_SCHEMA_CONTRACT.md`** antes de
+  qualquer acao de implementacao.
+
 ## Plano persistente Pedido -> OP -> Movimentacao -> Documentos
 
 - **Plano de arquitetura persistente registrado** em

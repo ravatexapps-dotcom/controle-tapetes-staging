@@ -124,7 +124,7 @@ Pedido
 
 | Fase | Descrição | Dependência |
 |---|---|---|
-| **B** | Contrato arquitetura/schema detalhado: validar colunas existentes, desenhar novas (`documentos_operacionais`, FK `op_itens.pedido_item_id`), validar índices e constraints. | Plano A (este doc) |
+| **B** | Contrato arquitetura/schema detalhado: validar colunas existentes, desenhar novas (`documentos_operacionais`, FK `op_itens.pedido_item_id`), validar índices e constraints. | Plano A (este doc) | **[x] Concluída** (`docs/architecture/PEDIDO_OP_SCHEMA_CONTRACT.md`) |
 | **C** | Vínculo Pedido → OP: preencher `lotes.pedido_id` na criação/edição de lote; avaliar/adicionar `op_itens.pedido_item_id`. | B |
 | **D** | OPs vinculadas no detalhe do Pedido Admin: listar OPs do pedido com status, progresso e link para a tela de OP. | C |
 | **E** | Stepper/preview produtivo no Pedido Admin: visão gráfica das etapas com progresso real derivado das OPs. | D |
