@@ -1,4 +1,60 @@
 > **Atualizacao 2026-07-01 - fase
+> `RAVATEX-TAPETES-OP-EM-PRODUCAO-TECELAGEM-STANDALONE-R1-VISUAL-PARITY`
+> (correcao de bugs reais de layout, encontrados via preview em
+> navegador — nao apenas asserts de texto).**
+> As rodadas anteriores validaram a tela só via extração de texto
+> (jsdom-style), o que não detecta problemas de layout/CSS. Um servidor
+> estático local + harness isolado (mock de `window.supa`, mesmos
+> módulos reais) foi usado para renderizar a tela de verdade num
+> navegador e inspecionar `getBoundingClientRect`/estilo computado em
+> larguras realistas (800px e 1280px). Bugs reais confirmados e
+> corrigidos em `js/screens/op-nova.js`:
+> (1) Card "1. Dados da OP" usava grid de 3 colunas — em ~800px de
+> largura (a coluna soma espaço com a lateral de 320px "Resumo desta
+> OP"), rótulos longos ("Fornecedor de tecelagem", "Item do pedido
+> vinculado") quebravam em várias linhas e se sobrepunham visualmente
+> uns aos outros. Corrigido para 2 colunas, mesmo padrão já usado em
+> `js/screens/op-latex-admin.js` `buildCardDados` para um card ao lado
+> da mesma coluna lateral.
+> (2) Card "Entregas tecelagem" usa colunas em largura fixa em px (não
+> `fr`) — sem um wrapper de scroll, a coluna FALTA ficava cortada/
+> escondida atrás da borda da página em larguras estreitas. Adicionado
+> wrapper `overflow-x:auto` + `min-width`, mesmo padrão de segurança já
+> usado pelas tabelas do standalone de referência.
+> (3) Bloco "5. Movimentação" usava grid rígido de 3 colunas para as
+> estatísticas (Disponível/Já enviado/Total ajustado) — como este bloco
+> divide a largura com a coluna "6. Documentos da OP" (320px), 3
+> colunas rígidas espremiam rótulo+valor de cada estatística. Trocado
+> para `grid-template-columns:repeat(auto-fit,minmax(120px,1fr))`, que
+> reduz para 2 ou 1 coluna por linha conforme o espaço disponível.
+> (4) Subtítulo do header não mostrava "Aberta em DATA" (faltava
+> selecionar `ops.criado_em` na query principal da OP) — adicionado à
+> query e ao subtítulo, junto de Pedido/Cliente/Lote.
+> Confirmado por inspeção real (não só relato): breadcrumb "OPs / OP
+> X/ANO" + Voltar, cadeia produtiva (lineage strip), "Abrir Pedido" e
+> "Pedido vinculado" já renderizavam corretamente nas rodadas
+> anteriores — a ausência aparente era um artefato de colagem de texto
+> parcial, não um bug real.
+> Pendências reconhecidas como de menor prioridade (o próprio arquiteto
+> classificou como "aceitável"/"não necessariamente bug"): título/rodapé
+> do Card 3 não é 1:1 com o standalone (usa o texto já existente de
+> `buildBlocoFios`, reaproveitado sem alteração); histórico de entregas
+> em "5. Movimentação" não enriquece com número da OP de
+> Acabamento/romaneio — ambos ficam como possível polimento futuro, não
+> corrigidos nesta rodada.
+> 4 testes novos travando os 4 bugs de layout corrigidos (inspecionando
+> o atributo `style` real da árvore renderizada, não só texto).
+> Testes executados: `node --check js/screens/op-nova.js` OK;
+> `node --test tests/op-nova.smoke.js` OK (59/59);
+> `node --test tests/op-nova.smoke.js tests/op-latex-admin.smoke.js
+> tests/op-persistir.smoke.js tests/boot.smoke.js
+> tests/pedido-detail.smoke.js tests/op-recalculo.smoke.js` OK
+> (298/298).
+> Harness de preview (`_visual_check_prod_op.html`, `.claude/launch.json`)
+> foi usado só localmente para inspeção visual e removido antes do
+> commit — não faz parte do repositório.
+
+> **Atualizacao 2026-07-01 - fase
 > `RAVATEX-TAPETES-OP-EM-PRODUCAO-TECELAGEM-STANDALONE-B` (ajuste fino
 > visual / paridade estrutural com o standalone PROD-OP-TECELAGEM,
 > sem backend novo).**

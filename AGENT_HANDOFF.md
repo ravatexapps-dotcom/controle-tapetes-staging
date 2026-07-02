@@ -1,4 +1,56 @@
-﻿# Estado pos-fase - OP Em Producao Tecelagem Standalone B (ajuste fino visual)
+﻿# Estado pos-fase - OP Em Producao Tecelagem R1 Visual Parity (bugs de layout reais)
+
+- Fase concluida no codigo: `RAVATEX-TAPETES-OP-EM-PRODUCAO-TECELAGEM-STANDALONE-R1-VISUAL-PARITY`.
+- Contexto: as rodadas anteriores validaram a tela só via extracao de
+  texto (estilo jsdom), o que nao detecta layout/CSS quebrado. Isso foi
+  apontado como falha de processo — corrigido nesta rodada usando um
+  servidor estatico local + harness isolado (mock de `window.supa`, os
+  mesmos modulos JS reais) para renderizar a tela de verdade num
+  navegador via preview e inspecionar `getBoundingClientRect`/estilo
+  computado em larguras realistas (800px e 1280px).
+- Escopo fechado: `js/screens/op-nova.js`, `tests/op-nova.smoke.js`,
+  `PROJECT_STATE.md`, `AGENT_HANDOFF.md`. Nenhum outro arquivo.
+- Bugs de layout reais confirmados e corrigidos:
+  (1) Card "1. Dados da OP" em grid de 3 colunas quebrava rotulos
+  longos ("Fornecedor de tecelagem", "Item do pedido vinculado") uns
+  sobre os outros em ~800px de largura (a coluna divide espaco com a
+  lateral "Resumo desta OP" de 320px) — corrigido para 2 colunas, mesmo
+  padrao ja usado em `op-latex-admin.js` `buildCardDados`;
+  (2) Card "Entregas tecelagem" (colunas em px fixo) nao tinha wrapper
+  de scroll — a coluna FALTA ficava cortada/escondida atras da borda da
+  pagina em larguras estreitas — adicionado `overflow-x:auto` +
+  `min-width`;
+  (3) Bloco "5. Movimentacao" usava grid rigido de 3 colunas para as
+  estatisticas, que dividem espaco com a coluna "6. Documentos da OP"
+  (320px) — trocado para `repeat(auto-fit,minmax(120px,1fr))`;
+  (4) Subtitulo do header nao mostrava "Aberta em DATA" (faltava
+  `ops.criado_em` na query principal) — adicionado.
+- Confirmado por inspecao real (nao so relato): breadcrumb, cadeia
+  produtiva, "Abrir Pedido" e "Pedido vinculado" ja renderizavam
+  corretamente nas rodadas anteriores — a duvida do arquiteto era um
+  artefato de colagem de texto parcial, nao um bug.
+- Pendencias reconhecidas como menor prioridade (o proprio arquiteto
+  classificou como aceitavel/nao necessariamente bug): titulo/rodape do
+  Card 3 nao e 1:1 com o standalone; historico de entregas em "5.
+  Movimentacao" nao enriquece com numero da OP de Acabamento/romaneio.
+  Ambos ficam como possivel polimento futuro.
+- Testes: 4 novos (56-59) travam os 4 bugs de layout inspecionando o
+  atributo `style` real da arvore renderizada (nao so texto) — helper
+  `collectStyles` novo em `tests/op-nova.smoke.js`.
+  `node --check js/screens/op-nova.js` OK;
+  `node --test tests/op-nova.smoke.js` OK (59/59);
+  `node --test tests/op-nova.smoke.js tests/op-latex-admin.smoke.js
+  tests/op-persistir.smoke.js tests/boot.smoke.js
+  tests/pedido-detail.smoke.js tests/op-recalculo.smoke.js` OK
+  (298/298).
+- Harness de preview (`_visual_check_prod_op.html`, `.claude/launch.json`)
+  usado só localmente e removido antes do commit — não faz parte do
+  repositorio.
+- Proxima recomendacao: se aceito, aplicar o mesmo habito de verificar
+  em preview real (nao so texto) em toda fase visual futura, incluindo
+  a proxima fase de OP Em Producao Acabamento/Latex standalone.
+
+# Estado pos-fase - OP Em Producao Tecelagem Standalone B (ajuste fino visual)
 
 - Fase concluida no codigo (continuacao/ajuste fino da mesma fase
   `RAVATEX-TAPETES-OP-EM-PRODUCAO-TECELAGEM-STANDALONE-B`, sem transformar

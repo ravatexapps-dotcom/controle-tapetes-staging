@@ -272,7 +272,7 @@
 
   if (opId) {
     const { data, error } = await supa.from('ops')
-      .select('id, numero, ano, status, tipo, observacao, origem_op_id, lote_id, lote:lote_id(id, numero, pedido_id, cliente:cliente_id(id, nome)), op_itens(id, modelo_id, metros_pedidos, metros_ajustados, pedido_item_id), op_fornecedores(fornecedor_id, etapa)')
+      .select('id, numero, ano, status, tipo, observacao, origem_op_id, lote_id, criado_em, lote:lote_id(id, numero, pedido_id, cliente:cliente_id(id, nome)), op_itens(id, modelo_id, metros_pedidos, metros_ajustados, pedido_item_id), op_fornecedores(fornecedor_id, etapa)')
       .eq('id', opId).single();
     if (error || !data) {
       toast('OP não encontrada', 'error'); console.error(error);
@@ -784,7 +784,13 @@
     const todosItens = entregasCima.flatMap(e => (e.entrega_itens || []).filter(ei => ei.op_id === op.id));
     const totalPorItem = totalEntregueCimaPorItem(todosItens);
 
-    box.appendChild(thRow('1fr 120px 120px 120px 120px', ['MODELO', 'PEDIDO', 'AJUSTADO', 'ENTREGUE', 'FALTA']));
+    // Colunas em px fixo (120px × 4) não encolhem — em larguras de janela
+    // estreitas a tabela pode ficar mais larga que o card. overflow-x:auto
+    // + min-width evita que a coluna FALTA fique cortada/escondida atrás
+    // da borda da página.
+    const tabela = el('div', { style: 'overflow-x:auto;' });
+    const tabelaInner = el('div', { style: 'min-width:600px;' });
+    tabelaInner.appendChild(thRow('1fr 120px 120px 120px 120px', ['MODELO', 'PEDIDO', 'AJUSTADO', 'ENTREGUE', 'FALTA']));
     for (const i of opItensRaw) {
       const ajustado = i.metros_ajustados == null ? Number(i.metros_pedidos) : Number(i.metros_ajustados);
       const falta = Math.round((ajustado - (totalPorItem[i.id] || 0)) * 100) / 100;
@@ -795,7 +801,7 @@
       if (falta > 0) { faltaCor = '#d6403a'; faltaTxt = window.fmtMetros(falta); }
       else if (falta === 0) { faltaCor = '#18794a'; faltaTxt = '✅ completo'; }
       else { faltaCor = '#c2610c'; faltaTxt = 'excedente ' + window.fmtMetros(-falta); }
-      box.appendChild(gridRow('1fr 120px 120px 120px 120px', [
+      tabelaInner.appendChild(gridRow('1fr 120px 120px 120px 120px', [
         el('div', { style: 'font-size:13.5px;font-weight:500;color:#16203a;' }, window.rotuloModelo(modelosById[i.modelo_id])),
         el('div', { style: 'font-size:13.5px;color:#3f4757;' }, window.fmtMetros(i.metros_pedidos)),
         el('div', { style: 'font-size:13.5px;color:#3f4757;' }, i.metros_ajustados == null ? window.fmtMetros(i.metros_pedidos) : window.fmtMetros(i.metros_ajustados)),
@@ -803,6 +809,8 @@
         el('span', { style: 'font-size:13.5px;font-weight:600;color:' + faltaCor + ';' }, faltaTxt),
       ]));
     }
+    tabela.appendChild(tabelaInner);
+    box.appendChild(tabela);
 
     if (op.status === 'em_producao') {
       const formHolder = el('div', { style: 'padding:0 24px;' });
@@ -973,6 +981,7 @@
     if (hasLinkedPedido()) metaParts.push(`Pedido Nº ${pedidoCtx.numero}`);
     metaParts.push(resolveClienteNome());
     if (op.lote) metaParts.push(`Lote Nº ${op.lote.numero}`);
+    if (op.criado_em) metaParts.push(`Aberta em ${fmtDateLabel(op.criado_em)}`);
     const metaLine = el('div', { style: 'font-size:13px;color:#8a93a3;margin-top:6px;' }, metaParts.join(' · '));
 
     const headerLeft = el('div', {}, titleRow, metaLine);
@@ -1018,9 +1027,16 @@
     if (hasLinkedPedido()) campos.push(campoProducao('Pedido vinculado', `Pedido Nº ${pedidoCtx.numero}`));
     campos.push(campoProducao('Item do pedido vinculado', itemVinculadoLabel));
 
+    // 2 colunas, não 3: este card divide a largura com a coluna lateral de
+    // 320px (Resumo desta OP). Em 3 colunas, rótulos longos ("Fornecedor
+    // de tecelagem", "Item do pedido vinculado") quebravam em várias
+    // linhas e se sobrepunham visualmente em larguras de janela comuns
+    // (~800px) — confirmado visualmente via preview. Mesmo padrão de
+    // js/screens/op-latex-admin.js buildCardDados (grid-template-columns
+    // 1fr 1fr) para um card ao lado da mesma coluna lateral.
     return el('div', { style: CARD + 'padding:16px 20px;' },
       el('div', { style: 'font-size:15.5px;font-weight:700;color:#16203a;margin-bottom:14px;' }, '1. Dados da OP'),
-      el('div', { style: 'display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;' }, campos));
+      el('div', { style: 'display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;' }, campos));
   }
 
   function buildResumoLateralProducao(totais) {
@@ -1132,7 +1148,12 @@
       el('div', { style: 'display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px;' },
         el('div', { style: 'font-size:15.5px;font-weight:700;color:#16203a;' }, '5. Movimentação — enviar para acabamento'),
         el('a', { href: '#entregas-tecelagem-op', style: BTN_SOLID_SM + 'text-decoration:none;' }, 'Transferir')),
-      el('div', { style: 'display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin-bottom:14px;' },
+      // auto-fit + minmax (não repeat(3,...) fixo): este card divide a
+      // largura com a coluna de Documentos (320px) — em janelas estreitas,
+      // 3 colunas rígidas espremiam rótulo+valor de cada estatística a
+      // ponto de quebrar em várias linhas ilegíveis. Com auto-fit, as
+      // estatísticas reduzem para 2 ou 1 por linha conforme o espaço.
+      el('div', { style: 'display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:14px;margin-bottom:14px;' },
         el('div', {}, el('div', { style: 'font-size:11.5px;color:#9aa2af;margin-bottom:4px;' }, 'Disponível'), el('div', { style: 'font-size:16px;font-weight:800;color:' + disponivelCor + ';' }, window.fmtMetros(totais.saldo) + (totais.excedente ? ' (excedente)' : ''))),
         el('div', {}, el('div', { style: 'font-size:11.5px;color:#9aa2af;margin-bottom:4px;' }, 'Já enviado'), el('div', { style: 'font-size:16px;font-weight:800;color:#18794a;' }, window.fmtMetros(totais.totalEntregue))),
         el('div', {}, el('div', { style: 'font-size:11.5px;color:#9aa2af;margin-bottom:4px;' }, 'Total ajustado da OP'), el('div', { style: 'font-size:16px;font-weight:800;color:#16203a;' }, window.fmtMetros(totais.totalAjustado))),

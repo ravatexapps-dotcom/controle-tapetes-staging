@@ -98,6 +98,21 @@
 //      entrada/Nota fiscal de saída), ainda placeholder/controlado.
 //  55. Saldo negativo/excedente (entregue > ajustado) tem tratamento
 //      visual próprio — não fica escondido atrás de "✅ completo".
+//
+// RAVATEX-TAPETES-OP-EM-PRODUCAO-TECELAGEM-STANDALONE-R1-VISUAL-PARITY
+// (correção de layout real encontrada via preview em navegador — texto
+// sozinho não detecta colunas desproporcionais, 56-59):
+//  56. Subtítulo do header mostra "Aberta em DATA" quando op.criado_em
+//      existir.
+//  57. Card 1 "Dados da OP" usa grid de 2 colunas (não 3) — 3 colunas
+//      quebravam rótulos longos ("Fornecedor de tecelagem", "Item do
+//      pedido vinculado") uns sobre os outros em larguras ~800px.
+//  58. Card "Entregas tecelagem" (colunas fixas em px) tem wrapper
+//      overflow-x:auto — sem isso a coluna FALTA ficava cortada/
+//      escondida atrás da borda da página em larguras estreitas.
+//  59. Bloco "5. Movimentação" usa grid-template-columns auto-fit (não
+//      repeat(3,...) fixo) — 3 colunas rígidas espremiam rótulo+valor de
+//      cada estatística ao dividir a largura com a coluna de Documentos.
 
 'use strict';
 
@@ -721,6 +736,17 @@ function collectInputValues(node, out = []) {
   return out;
 }
 
+// Coleta o atributo style (string bruta) de cada nó da árvore — usado
+// para travar regressões de layout (ex.: grid-template-columns) que
+// asserções de texto puro não conseguem detectar.
+function collectStyles(node, out = []) {
+  if (!node) return out;
+  const style = typeof node.getAttribute === 'function' ? node.getAttribute('style') : null;
+  if (style) out.push(style);
+  for (const child of (node.children || [])) collectStyles(child, out);
+  return out;
+}
+
 async function renderNovaOpForTest({ opId = null, pedidoId = null, db } = {}) {
   const sandbox = makeRenderSandbox(db || buildOpNovaFixture());
   sandbox.__args = { opId, pedidoId };
@@ -730,6 +756,7 @@ async function renderNovaOpForTest({ opId = null, pedidoId = null, db } = {}) {
     view,
     text: collectNodeText(view),
     inputs: collectInputValues(view),
+    styles: collectStyles(view),
   };
 }
 
@@ -846,6 +873,7 @@ function buildOpEmProducaoTecelagemFixture(overrides = {}) {
         observacao: '',
         origem_op_id: null,
         lote_id: 303,
+        criado_em: '2026-06-15T11:00:00Z',
         lote: { id: 303, numero: 16, pedido_id: 'ped-1', cliente: { id: 501, nome: 'Cliente Atlas' } },
         op_itens: [
           { id: 3, modelo_id: 1, metros_pedidos: 120, metros_ajustados: 100, pedido_item_id: 'pi-1' },
@@ -1098,4 +1126,33 @@ test('55. Saldo negativo/excedente (entregue > ajustado) tem tratamento visual p
   assert.match(rendered.text, /excedente/i);
   assert.match(rendered.text, /acima do total ajustado/i);
   assert.doesNotMatch(rendered.text, /✅ completo/);
+});
+
+test('56. Subtítulo do header mostra "Aberta em DATA" quando op.criado_em existir', async () => {
+  const db = buildOpEmProducaoTecelagemFixture();
+  const rendered = await renderNovaOpForTest({ opId: 93, db });
+  assert.match(rendered.text, /Aberta em \d{2}\/\d{2}\/\d{4}/);
+});
+
+test('57. Card "1. Dados da OP" usa grid de 2 colunas (não 3) — evita rótulos longos se sobrepondo em janelas estreitas', async () => {
+  const db = buildOpEmProducaoTecelagemFixture();
+  const rendered = await renderNovaOpForTest({ opId: 93, db });
+  const dadosGrid = rendered.styles.find((s) => /grid-template-columns/.test(s) && /repeat\(\s*[23]\s*,\s*minmax\(0(?:px)?,\s*1fr\)\s*\)/.test(s));
+  assert.ok(dadosGrid, 'esperado encontrar o grid de campos do Card 1');
+  assert.match(dadosGrid, /repeat\(\s*2\s*,/, 'Card 1 deve usar 2 colunas, não 3 — 3 colunas quebra rótulos longos em janelas estreitas (~800px)');
+});
+
+test('58. Card "Entregas tecelagem" tem wrapper overflow-x:auto (colunas em px fixo não encolhem)', async () => {
+  const db = buildOpEmProducaoTecelagemFixture();
+  const rendered = await renderNovaOpForTest({ opId: 93, db });
+  const temOverflowWrapper = rendered.styles.some((s) => /overflow-x\s*:\s*auto/.test(s));
+  assert.ok(temOverflowWrapper, 'esperado um wrapper overflow-x:auto ao redor da tabela de colunas fixas em px (evita coluna FALTA cortada em janelas estreitas)');
+});
+
+test('59. Bloco "5. Movimentação" usa grid auto-fit para as estatísticas (não repeat(3,...) fixo)', async () => {
+  const db = buildOpEmProducaoTecelagemFixture();
+  const rendered = await renderNovaOpForTest({ opId: 93, db });
+  const statGrid = rendered.styles.find((s) => /grid-template-columns/.test(s) && /minmax\(120px/.test(s));
+  assert.ok(statGrid, 'esperado encontrar o grid de estatísticas do bloco Movimentação');
+  assert.match(statGrid, /auto-fit/, 'estatísticas devem usar auto-fit — 3 colunas rígidas espremem rótulo+valor ao dividir espaço com a coluna de Documentos (320px)');
 });
