@@ -113,6 +113,22 @@
 //  59. Bloco "5. Movimentação" usa grid-template-columns auto-fit (não
 //      repeat(3,...) fixo) — 3 colunas rígidas espremiam rótulo+valor de
 //      cada estatística ao dividir a largura com a coluna de Documentos.
+//
+// RAVATEX-TAPETES-OP-EM-PRODUCAO-TECELAGEM-STANDALONE-R1-VISUAL-PARITY
+// (2ª correção — inconsistência de ícones vs. o standalone, 60-63):
+// nenhum dos 7 blocos do standalone PROD-OP-TECELAGEM usa ícone no
+// título (confirmado card a card no markup de referência) — mas os
+// cards 3 ("Recebimento de fios") e "Entregas tecelagem" (funções
+// reaproveitadas sem alteração das fases anteriores) ainda carregavam
+// o ícone herdado do template Nova OP/OP Aberta.
+//  60. Tela Em Produção Tecelagem não tem nenhum ícone de seção (Card 3
+//      e Entregas tecelagem alinhados aos demais 5 blocos).
+//  61. Card 3 usa o texto do standalone ("3. Insumos — recebimento de
+//      fios") na tela Em Produção.
+//  62. Card 3 mostra "Todos os fios desta OP já foram recebidos." na
+//      tela Em Produção quando não há ordens pendentes.
+//  63. OP Aberta continua com o ícone do Card 3 (regressão: o ajuste é
+//      condicional por status, não deve afetar a tela de preparação).
 
 'use strict';
 
@@ -1155,4 +1171,43 @@ test('59. Bloco "5. Movimentação" usa grid auto-fit para as estatísticas (nã
   const statGrid = rendered.styles.find((s) => /grid-template-columns/.test(s) && /minmax\(120px/.test(s));
   assert.ok(statGrid, 'esperado encontrar o grid de estatísticas do bloco Movimentação');
   assert.match(statGrid, /auto-fit/, 'estatísticas devem usar auto-fit — 3 colunas rígidas espremem rótulo+valor ao dividir espaço com a coluna de Documentos (320px)');
+});
+
+test('60. OP Em Produção Tecelagem não tem nenhum ícone de seção (padrão do standalone: título só em texto)', async () => {
+  const db = buildOpEmProducaoTecelagemFixture();
+  const rendered = await renderNovaOpForTest({ opId: 93, db });
+  const temIconeSecao = rendered.styles.some((s) => /width:34px;height:34px;border-radius:6px;background:#eaf1fd/.test(s));
+  assert.equal(temIconeSecao, false, 'nenhum dos 7 blocos do standalone PROD-OP-TECELAGEM usa ícone no título — Card 3 e Entregas tecelagem não podem ter herdado o ícone do template Nova OP/OP Aberta');
+});
+
+test('61. Card 3 usa o texto do standalone ("3. Insumos — recebimento de fios") na OP Em Produção', async () => {
+  const db = buildOpEmProducaoTecelagemFixture();
+  const rendered = await renderNovaOpForTest({ opId: 93, db });
+  assert.match(rendered.text, /3\.\s*Insumos\s*—\s*recebimento de fios/i);
+  assert.doesNotMatch(rendered.text, /3\.\s*Recebimento de fios/i);
+});
+
+test('62. Card 3 mostra confirmação "Todos os fios desta OP já foram recebidos." na OP Em Produção', async () => {
+  const db = buildOpEmProducaoTecelagemFixture();
+  const rendered = await renderNovaOpForTest({ opId: 93, db });
+  assert.match(rendered.text, /Todos os fios desta OP já foram recebidos\./i);
+});
+
+test('63. OP Aberta Tecelagem continua com o ícone do Card 3 (ajuste é condicional por status, não afeta a preparação)', async () => {
+  const db = buildOpNovaFixture({
+    ops: [
+      {
+        id: 92, numero: 8, ano: 2026, status: 'aberta', tipo: 'tecelagem',
+        observacao: '', origem_op_id: null, lote_id: 302,
+        lote: { id: 302, numero: 15, pedido_id: 'ped-1', cliente: { id: 501, nome: 'Cliente Atlas' } },
+        op_itens: [{ id: 2, modelo_id: 2, metros_pedidos: 80, metros_ajustados: null, pedido_item_id: 'pi-2' }],
+        op_fornecedores: [{ fornecedor_id: 701, etapa: 'cima' }],
+      },
+    ],
+    ordens_compra_fio: [],
+  });
+  const rendered = await renderNovaOpForTest({ opId: 92, db });
+  const temIconeSecao = rendered.styles.some((s) => /width:34px;height:34px;border-radius:6px;background:#eaf1fd/.test(s));
+  assert.equal(temIconeSecao, true, 'OP Aberta deve manter o ícone do Card 3 — o ajuste do standalone PROD-OP é condicional só para em_producao');
+  assert.match(rendered.text, /3\.\s*Recebimento de fios/i);
 });

@@ -1,5 +1,43 @@
 > **Atualizacao 2026-07-01 - fase
 > `RAVATEX-TAPETES-OP-EM-PRODUCAO-TECELAGEM-STANDALONE-R1-VISUAL-PARITY`
+> (2a rodada — inconsistencia de icones vs. o standalone).**
+> Confirmado card a card no markup de referencia do standalone
+> `Admin - PROD-OP-TECELAGEM- standalone.html`: nenhum dos 7 blocos
+> (Dados da OP, Itens da OP, Insumos, Capacidade e ajuste, Movimentacao,
+> Documentos, Historico) usa icone no titulo — sao todos texto puro.
+> Os cards 3 ("Recebimento de fios", `buildBlocoFios`) e "Entregas
+> tecelagem" (`buildBlocoTecelagem`) sao funcoes reaproveitadas sem
+> alteracao das fases anteriores e ainda carregavam o icone herdado do
+> template Nova OP/OP Aberta, quebrando a consistencia visual dos
+> outros 5 blocos ja alinhados ao standalone.
+> Corrigido em `js/screens/op-nova.js`:
+> `buildBlocoTecelagem` (so usada pela tela Em Producao) perdeu o icone
+> incondicionalmente; `buildBlocoFios` (compartilhada entre OP Aberta e
+> OP Em Producao) ficou condicional por `op.status` — mantem icone +
+> titulo "3. Recebimento de fios" para `aberta` (preservando a tela de
+> preparacao, testada e aceita em fase anterior), e usa texto sem icone
+> "3. Insumos — recebimento de fios" para `em_producao`, igual ao
+> standalone. Tambem adicionada a confirmacao "Todos os fios desta OP
+> ja foram recebidos." no branch `em_producao` de `buildBlocoFios`
+> quando nao ha ordens pendentes — presente no standalone e antes
+> ausente no app real.
+> Verificado visualmente via preview em navegador (nao so texto): OP
+> Em Producao sem nenhum icone de secao; OP Aberta com o icone do Card
+> 3 preservado (regressao confirmada como não afetada).
+> 4 testes novos (60-63) travam: ausencia total de icone de secao em
+> Em Producao; texto "3. Insumos — recebimento de fios"; confirmacao de
+> fios recebidos; icone do Card 3 preservado em OP Aberta.
+> Testes executados: `node --check js/screens/op-nova.js` OK;
+> `node --test tests/op-nova.smoke.js` OK (63/63);
+> `node --test tests/op-nova.smoke.js tests/op-latex-admin.smoke.js
+> tests/op-persistir.smoke.js tests/boot.smoke.js
+> tests/pedido-detail.smoke.js tests/op-recalculo.smoke.js` OK
+> (302/302).
+> Harness de preview usado so localmente e removido antes do commit —
+> nao faz parte do repositorio.
+
+> **Atualizacao 2026-07-01 - fase
+> `RAVATEX-TAPETES-OP-EM-PRODUCAO-TECELAGEM-STANDALONE-R1-VISUAL-PARITY`
 > (correcao de bugs reais de layout, encontrados via preview em
 > navegador — nao apenas asserts de texto).**
 > As rodadas anteriores validaram a tela só via extração de texto

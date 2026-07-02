@@ -1,4 +1,45 @@
-﻿# Estado pos-fase - OP Em Producao Tecelagem R1 Visual Parity (bugs de layout reais)
+﻿# Estado pos-fase - OP Em Producao Tecelagem R1 Visual Parity (icones vs. standalone)
+
+- Fase concluida no codigo: `RAVATEX-TAPETES-OP-EM-PRODUCAO-TECELAGEM-STANDALONE-R1-VISUAL-PARITY`
+  (2a rodada, apos a rodada de bugs de layout).
+- Escopo fechado: `js/screens/op-nova.js`, `tests/op-nova.smoke.js`,
+  `PROJECT_STATE.md`, `AGENT_HANDOFF.md`. Nenhum outro arquivo.
+- Achado: nenhum dos 7 blocos do standalone `Admin - PROD-OP-TECELAGEM-
+  standalone.html` usa icone no titulo (confirmado card a card no
+  markup de referencia) — titulos sao texto puro em todos. Os cards 3
+  ("Recebimento de fios") e "Entregas tecelagem" sao funcoes
+  reaproveitadas sem alteracao das fases anteriores e ainda carregavam
+  o icone herdado do template Nova OP/OP Aberta, quebrando a
+  consistencia visual com os outros 5 blocos ja redesenhados.
+- Corrigido:
+  `buildBlocoTecelagem` (so usada pela tela Em Producao) perdeu o
+  icone incondicionalmente;
+  `buildBlocoFios` (compartilhada com OP Aberta) ficou condicional por
+  `op.status` — `aberta` mantem icone + "3. Recebimento de fios"
+  (tela de preparacao, ja testada/aceita); `em_producao` usa "3.
+  Insumos — recebimento de fios" sem icone, igual ao standalone;
+  adicionada a confirmacao "Todos os fios desta OP ja foram
+  recebidos." no branch `em_producao`, presente no standalone e antes
+  ausente.
+- Verificado visualmente via preview em navegador: OP Em Producao sem
+  nenhum icone de secao; OP Aberta com o icone do Card 3 preservado.
+- Testes: 4 novos (60-63) travam ausencia de icone em Em Producao,
+  texto do Card 3, confirmacao de fios recebidos, e preservacao do
+  icone em OP Aberta.
+  `node --check js/screens/op-nova.js` OK;
+  `node --test tests/op-nova.smoke.js` OK (63/63);
+  `node --test tests/op-nova.smoke.js tests/op-latex-admin.smoke.js
+  tests/op-persistir.smoke.js tests/boot.smoke.js
+  tests/pedido-detail.smoke.js tests/op-recalculo.smoke.js` OK
+  (302/302).
+- Harness de preview usado so localmente e removido antes do commit.
+- Licao para fases futuras: ao reaproveitar funcoes de telas antigas
+  ("preservar conteudo existente"), checar tambem se o estilo visual
+  delas (icones, cores, espacamento) ainda bate com o NOVO standalone
+  de referencia — reaproveitar logica/writes nao deveria significar
+  reaproveitar decisões visuais do template antigo sem checar.
+
+# Estado pos-fase - OP Em Producao Tecelagem R1 Visual Parity (bugs de layout reais)
 
 - Fase concluida no codigo: `RAVATEX-TAPETES-OP-EM-PRODUCAO-TECELAGEM-STANDALONE-R1-VISUAL-PARITY`.
 - Contexto: as rodadas anteriores validaram a tela só via extracao de

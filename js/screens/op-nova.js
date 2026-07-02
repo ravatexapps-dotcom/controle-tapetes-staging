@@ -83,6 +83,7 @@
   var SVG_EMPTY_BOX = '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#aab2bf" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"></rect><path d="M16 7V5a2 2 0 0 0-4 0v2"></path><path d="M8 7V5a2 2 0 0 1 4 0"></path></svg>';
   var SVG_PDF = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>';
   var SVG_WARNING = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#e07b39" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><circle cx="12" cy="12" r="9"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>';
+  var SVG_CHECK_SM = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#18794a" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><polyline points="20 6 9 17 4 12"></polyline></svg>';
   var SVG_INFO = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;margin-top:1px;"><circle cx="12" cy="12" r="9"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>';
   var SVG_INFO_BAR = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><circle cx="12" cy="12" r="9"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>';
   var SVG_UNDO = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 4v6h6M23 20v-6h-6"></path><path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15"></path></svg>';
@@ -668,8 +669,16 @@
 
   function buildBlocoFios() {
     const box = el('div', { style: CARD + 'padding:0;' });
-    box.appendChild(el('div', { style: 'display:flex;align-items:center;gap:10px;padding:20px 24px 16px;' },
-      sectionIcon(SVG_ICON_LINES), el('span', { style: 'font-size:16px;font-weight:700;color:#16203a;' }, '3. Recebimento de fios')));
+    // Título/ícone dependem do contexto: OP Aberta usa a linguagem de
+    // preparação (com ícone, como os demais cards dessa tela); OP Em
+    // Produção usa o texto do standalone PROD-OP-TECELAGEM ("3. Insumos
+    // — recebimento de fios"), que não usa ícones em nenhum dos 7
+    // blocos — confirmado card a card no markup de referência.
+    const headerTitulo = op.status === 'aberta' ? '3. Recebimento de fios' : '3. Insumos — recebimento de fios';
+    const headerKids = op.status === 'aberta'
+      ? [sectionIcon(SVG_ICON_LINES), el('span', { style: 'font-size:16px;font-weight:700;color:#16203a;' }, headerTitulo)]
+      : [el('span', { style: 'font-size:16px;font-weight:700;color:#16203a;' }, headerTitulo)];
+    box.appendChild(el('div', { style: 'display:flex;align-items:center;gap:10px;padding:20px 24px 16px;' }, headerKids));
 
     if (ordens.length) {
       box.appendChild(el('div', { style: 'padding:0 24px 16px;' },
@@ -761,6 +770,12 @@
         ]));
       }
 
+      if (ordens.length > 0 && ordens.every(o => o.status !== 'pendente')) {
+        box.appendChild(el('div', { style: 'display:flex;align-items:center;gap:8px;padding:11px 24px;border-top:1px solid #eceef1;background:#fafbfc;' },
+          svgEl(SVG_CHECK_SM),
+          el('span', { style: 'font-size:12px;color:#5b6472;' }, 'Todos os fios desta OP já foram recebidos.')));
+      }
+
       box.appendChild(el('div', { style: 'padding:16px 24px 0;' },
         el('div', { style: 'font-size:13px;font-weight:700;color:#16203a;margin-bottom:4px;' }, 'Metros de produção')));
       box.appendChild(thRow('1fr 140px 140px', ['MODELO', 'PEDIDO', 'PRODUÇÃO']));
@@ -777,9 +792,11 @@
   }
 
   function buildBlocoTecelagem() {
+    // Sem ícone: só usada pela tela Em Produção (buildScreenProducaoTecelagem),
+    // cujo template PROD-OP-TECELAGEM não usa ícone em nenhum dos 7 blocos.
     const box = el('div', { style: CARD + 'padding:0;' });
     box.appendChild(el('div', { style: 'display:flex;align-items:center;gap:10px;padding:20px 24px 16px;' },
-      sectionIcon(SVG_ICON_ARROW), el('span', { style: 'font-size:16px;font-weight:700;color:#16203a;' }, 'Entregas tecelagem')));
+      el('span', { style: 'font-size:16px;font-weight:700;color:#16203a;' }, 'Entregas tecelagem')));
 
     const todosItens = entregasCima.flatMap(e => (e.entrega_itens || []).filter(ei => ei.op_id === op.id));
     const totalPorItem = totalEntregueCimaPorItem(todosItens);
