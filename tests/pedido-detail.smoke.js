@@ -183,6 +183,66 @@ test('pedido-chain-state: pedido sem OP preserva abertura de tecelagem', () => {
   assert.equal(result.actions.transferInsumosToTecelagem.mode, 'disabled');
 });
 
+test('pedido-detail: conectores do progresso usam labels visuais curtos', () => {
+  const connectorSlice = (detailRender.match(
+    /function buildTransferButton\s*\(stage,\s*handlers\)\s*\{[\s\S]*?\n  \}\n\n  function buildStepper/
+  ) || [''])[0];
+  assert.ok(connectorSlice, 'trecho buildTransferButton nao encontrado');
+  assert.match(detailRender, /function buildConnectorVisual/);
+  assert.match(detailRender, /label:\s*['"]Concluido['"]/);
+  assert.match(detailRender, /label:\s*['"]Transferir['"]/);
+  assert.match(detailRender, /label:\s*['"]Aguardar['"]/);
+  assert.match(detailRender, /rawLabel\.indexOf\(['"]editar['"]\)[\s\S]{0,80}['"]Editar['"][\s\S]{0,80}['"]Ver['"]/);
+  assert.doesNotMatch(connectorSlice, /var\s+label\s*=\s*action\.label/);
+  assert.doesNotMatch(connectorSlice, /action\.label\s*\|\|/);
+});
+
+test('pedido-detail: pipeline nao renderiza textos longos da matriz nos conectores', () => {
+  const connectorSlice = (detailRender.match(
+    /function buildTransferButton\s*\(stage,\s*handlers\)\s*\{[\s\S]*?\n  \}\n\n  function buildStepper/
+  ) || [''])[0];
+  assert.ok(connectorSlice, 'trecho buildTransferButton nao encontrado');
+  assert.doesNotMatch(connectorSlice, /Insumos conclu[ií]dos/i);
+  assert.doesNotMatch(connectorSlice, /Aguardando acabamento/i);
+  assert.match(connectorSlice, /buildPassiveConnector\(visual,\s*title\)/,
+    'concluido/aguardando devem renderizar como conector passivo');
+  assert.match(connectorSlice, /handlers\.openMovementModal\(stage\.transfer\)/,
+    'Transferir pelo Pedido continua abrindo a operacao canonica quando permitido');
+});
+
+test('pedido-chain-state: matriz preserva labels contextuais e gates funcionais', () => {
+  assert.match(chainState, /transferInsumosToTecelagem:[\s\S]{0,260}action\(['"]view['"],\s*['"]Insumos concluidos['"]/);
+  assert.match(chainState, /releaseExpedicao:[\s\S]{0,260}action\(['"]disabled['"],\s*['"]Aguardando acabamento['"]/);
+
+  const sandbox = { window: {}, console };
+  vm.createContext(sandbox);
+  vm.runInContext(chainState, sandbox, { filename: 'js/screens/pedido-chain-state.js' });
+  const derive = sandbox.window.RAVATEX_SCREENS.pedidoChainState.derivePedidoChainState;
+  const result = derive({
+    pedido: { id: 'p1', status: 'rascunho', metros_total: 100 },
+    ops: [{
+      id: 'op1',
+      numero: 1,
+      ano: 2026,
+      status: 'em_producao',
+      tipo: 'tecelagem',
+      op_itens: [{ id: 'i1', metros_pedidos: 100 }],
+    }],
+    ordensFio: [{ op_id: 'op1', kg_pedido: 10, kg_recebido: 10 }],
+    entregaItens: [],
+    entregasById: {},
+    expedicoes: [],
+    expedicaoItens: [],
+  });
+
+  assert.equal(result.actions.transferInsumosToTecelagem.mode, 'view');
+  assert.equal(result.actions.transferInsumosToTecelagem.label, 'Insumos concluidos');
+  assert.equal(result.actions.transferTecelagemToAcabamento.mode, 'enabled');
+  assert.equal(result.actions.transferTecelagemToAcabamento.label, 'Transferir');
+  assert.equal(result.actions.releaseExpedicao.mode, 'disabled');
+  assert.equal(result.actions.releaseExpedicao.label, 'Aguardando acabamento');
+});
+
 // ---------------------------------------------------------------------
 // 3. index.html carrega exatamente uma vez e na ordem correta
 // ---------------------------------------------------------------------

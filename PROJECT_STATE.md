@@ -1,4 +1,28 @@
 > **Atualizacao 2026-07-03 - fase
+> `RAVATEX-TAPETES-PEDIDO-PROGRESS-CONNECTORS-R1`.**
+> Patch visual/UX local, sem SQL/Supabase/producao e sem push: os
+> conectores do bloco `Progresso produtivo` no Pedido Admin deixaram de
+> renderizar labels contextuais longos vindos da matriz de acoes (ex.:
+> `Insumos concluidos`, `Aguardando acabamento`) como texto visivel do
+> conector. A matriz/gates de `derivePedidoChainState` foi preservada.
+> O render agora traduz a acao para labels curtos: `Concluido`,
+> `Transferir`, `Aguardar`, `Ver` ou `Editar`.
+>
+> Visualmente, concluido e aguardando viraram conectores passivos com
+> linha/badge discreto; o caso ativo manteve acao azul curta
+> `Transferir`; view/edit usa label curto e continua abrindo o mesmo
+> modal de contexto quando permitido. `Transferir` pelo Pedido continua
+> apontando para a operacao canonica existente via `openMovementModal`,
+> sem writes/lifecycle novos.
+>
+> Testes: `node --check js/screens/pedido-detail-render.js` OK;
+> `node --check tests/pedido-detail.smoke.js` OK;
+> `node --test tests/pedido-detail.smoke.js` OK (54/54);
+> `node --test tests/boot.smoke.js` OK (29/29);
+> `node --test tests/router.smoke.js` OK (43/43, com o aviso conhecido
+> de sandbox sobre `window.addEventListener`, exit code 0).
+
+> **Atualizacao 2026-07-03 - fase
 > `RAVATEX-TAPETES-TECELAGEM-PRODUCAO-MOVIMENTACAO-CARD-R1`.**
 > Patch visual/estrutural local, sem SQL/Supabase/producao e sem push:
 > o bloco solto `Entregas tecelagem` deixou de ser anexado entre os

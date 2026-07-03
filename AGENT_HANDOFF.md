@@ -2557,3 +2557,34 @@ node --test tests/boot.smoke.js \
   nenhum lifecycle de OP, nenhuma alteracao de `gerar_op_latex`,
   expedicao, auth/login ou push. Residual permitido preservado:
   `?? supabase/.temp/`.
+# Estado pos-fase - Pedido Progress Connectors R1
+
+- Fase concluida no codigo: `RAVATEX-TAPETES-PEDIDO-PROGRESS-CONNECTORS-R1`.
+- Escopo fechado: `js/screens/pedido-detail-render.js`,
+  `tests/pedido-detail.smoke.js`, `PROJECT_STATE.md`,
+  `AGENT_HANDOFF.md`.
+- Diagnostico: os conectores do bloco `Progresso produtivo` eram
+  renderizados por `buildTransferButton` em
+  `js/screens/pedido-detail-render.js`. Os labels longos vinham de
+  `stage.transfer.action.label`, derivados da matriz
+  `derivePedidoChainState` em `js/screens/pedido-chain-state.js`
+  (`Insumos concluidos`, `Aguardando acabamento`, etc.). O conector
+  usava CSS inline no proprio render, incluindo o `clip-path` de
+  chevron.
+- Correcao: a matriz/gates nao foi alterada. O render passou a mapear
+  visualmente as acoes para labels curtos: `Concluido`, `Transferir`,
+  `Aguardar`, `Ver` ou `Editar`. Concluido/aguardando renderizam como
+  linha/badge passivo; ativo mantem botao/chevron azul `Transferir`;
+  view/edit usam label curto e continuam abrindo o modal de contexto
+  quando permitido.
+- Garantias preservadas: sem SQL, Supabase, producao, lifecycle ou
+  writes novos; sem alteracao de operacao canonica; `Transferir` pelo
+  Pedido continua disponivel quando o gate permite.
+- Testes:
+  `node --check js/screens/pedido-detail-render.js` OK;
+  `node --check tests/pedido-detail.smoke.js` OK;
+  `node --test tests/pedido-detail.smoke.js` OK (54/54);
+  `node --test tests/boot.smoke.js` OK (29/29);
+  `node --test tests/router.smoke.js` OK (43/43; imprime o aviso
+  conhecido de sandbox sobre `window.addEventListener`, mas termina com
+  exit code 0 e todos os subtestes passam).

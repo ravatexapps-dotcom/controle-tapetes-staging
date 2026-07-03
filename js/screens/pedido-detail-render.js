@@ -288,6 +288,53 @@
     );
   }
 
+  function isConnectorDoneAction(action) {
+    var label = String(action && action.label ? action.label : '').toLowerCase();
+    return label.indexOf('conclu') >= 0;
+  }
+
+  function buildConnectorVisual(action, disabled) {
+    var mode = action && action.mode ? action.mode : 'enabled';
+    var rawLabel = String(action && action.label ? action.label : '').toLowerCase();
+    if (isConnectorDoneAction(action)) {
+      return { state: 'done', label: 'Concluido' };
+    }
+    if (disabled || mode === 'disabled') {
+      return { state: 'waiting', label: 'Aguardar' };
+    }
+    if (mode === 'view') {
+      return { state: 'view', label: rawLabel.indexOf('editar') >= 0 ? 'Editar' : 'Ver' };
+    }
+    return { state: 'active', label: 'Transferir' };
+  }
+
+  function buildPassiveConnector(visual, title) {
+    var done = visual.state === 'done';
+    var lineColor = done ? '#d7e6d1' : '#e1e5eb';
+    var badgeStyle = done
+      ? 'border:1px solid #c9dfc0;background:#f6fbf3;color:#4f7f37;'
+      : 'border:1px solid #dde2e8;background:#f6f7f9;color:#8a93a3;';
+    return window.el('div', {
+      style: 'display:flex;align-items:center;justify-content:center;width:100%;gap:6px;',
+      title: title,
+      'aria-label': title,
+    },
+      window.el('span', {
+        style: 'height:1px;background:' + lineColor + ';flex:1;min-width:10px;',
+      }),
+      window.el('span', {
+        style: 'display:inline-flex;align-items:center;justify-content:center;min-width:58px;height:22px;padding:0 8px;border-radius:999px;font-size:10.5px;font-weight:700;line-height:1;white-space:nowrap;' + badgeStyle,
+      }, visual.label),
+      window.el('span', {
+        style: 'height:1px;background:' + lineColor + ';flex:1;min-width:10px;',
+      })
+    );
+  }
+
+  function buildConnectorTitle(stage, action, visual) {
+    return (stage.transfer && stage.transfer.title) || (action && action.label) || visual.label;
+  }
+
   function buildTransferButton(stage, handlers) {
     if (!stage.transfer) {
       return window.el('div', { style: 'display:flex;align-items:center;justify-content:center;height:42px;' });
@@ -298,24 +345,32 @@
     }
     var mode = action.mode || 'enabled';
     var disabled = mode === 'disabled' || (!stage.transfer.op && (stage.transfer.title !== 'Registrar saida para entrega'));
-    var isView = mode === 'view';
-    var label = action.label || (isView ? 'Visualizar' : 'Transferir');
-    var bg = disabled ? '#eef1f5' : (isView ? '#fff' : '#2563eb');
-    var color = disabled ? '#9aa2af' : (isView ? '#2563eb' : '#fff');
+    var visual = buildConnectorVisual(action, disabled);
+    var isView = visual.state === 'view';
+    var title = buildConnectorTitle(stage, action, visual);
+    if (visual.state === 'done' || visual.state === 'waiting') {
+      return window.el('div', {
+        style: 'display:flex;align-items:center;justify-content:center;height:42px;',
+      }, buildPassiveConnector(visual, title));
+    }
+    var bg = isView ? '#fff' : '#2563eb';
+    var color = isView ? '#2563eb' : '#fff';
     var border = isView ? 'border:1px solid #2563eb;' : 'border:none;';
+    var shape = isView
+      ? 'border-radius:4px;'
+      : 'clip-path:polygon(0% 0%, 80% 0%, 100% 50%, 80% 100%, 0% 100%, 15% 50%);';
     return window.el('div', {
       style: 'display:flex;align-items:center;justify-content:center;height:42px;',
     },
       window.el('button', {
         type: 'button',
-        disabled: disabled ? 'disabled' : null,
-        title: action.mode === 'disabled' ? label : stage.transfer.title,
-        style: 'height:28px;padding:0 12px 0 17px;background:' + bg + ';color:' + color + ';' + border + 'font-size:11px;font-weight:700;font-family:inherit;cursor:' + (disabled ? 'not-allowed' : 'pointer') + ';clip-path:polygon(0% 0%, 80% 0%, 100% 50%, 80% 100%, 0% 100%, 15% 50%);white-space:nowrap;',
+        title: title,
+        'aria-label': title,
+        style: 'height:28px;padding:0 12px 0 17px;background:' + bg + ';color:' + color + ';' + border + 'font-size:11px;font-weight:700;font-family:inherit;cursor:pointer;' + shape + 'white-space:nowrap;',
         onclick: function () {
-          if (disabled) return;
           handlers.openMovementModal(stage.transfer);
         },
-      }, label)
+      }, visual.label)
     );
   }
 
