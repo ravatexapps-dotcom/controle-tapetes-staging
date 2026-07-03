@@ -217,6 +217,21 @@
       );
     }
 
+    var MOVEMENT_MODAL_RADIUS = '6px';
+    var MOVEMENT_SURFACE_RADIUS = '4px';
+    var MOVEMENT_MODAL_SHADOW = '0 18px 44px rgba(20,30,45,.16)';
+    var MOVEMENT_CONTROL_HEIGHT = '36px';
+
+    function normalizeMovementModalControls(root) {
+      if (!root || typeof root.querySelectorAll !== 'function') return;
+      root.querySelectorAll('input, select, textarea').forEach(function (control) {
+        control.classList.remove('rounded-lg', 'rounded-xl', 'rounded-2xl', 'rounded-full');
+        control.style.borderRadius = MOVEMENT_SURFACE_RADIUS;
+        control.style.minHeight = MOVEMENT_CONTROL_HEIGHT;
+        control.style.boxShadow = 'none';
+      });
+    }
+
     function resolveUniquePedidoItemByModelo() {
       var countByModelo = {};
       var map = {};
@@ -761,12 +776,13 @@
       var mode = action.mode === 'enabled' ? 'transfer' : 'history';
       var historyEntries = buildTransitionHistoryEntries(ctxMovement);
       var transferForm = mode === 'transfer' ? buildTransferForm(ctxMovement) : null;
+      if (transferForm && transferForm.node) normalizeMovementModalControls(transferForm.node);
       var body = window.el('div', {},
         window.el('div', {
           style: 'display:flex;align-items:flex-start;gap:12px;margin-bottom:14px;',
         },
           window.el('div', {
-            style: 'width:36px;height:36px;border-radius:50%;background:#eef3ff;display:flex;align-items:center;justify-content:center;flex-shrink:0;',
+            style: 'width:36px;height:36px;border-radius:' + MOVEMENT_SURFACE_RADIUS + ';background:#eef3ff;display:flex;align-items:center;justify-content:center;flex-shrink:0;',
           }, ns.svgEl(ns.SVG_INFO)),
           window.el('div', {},
             window.el('div', {
@@ -863,7 +879,7 @@
                 }, doc)
               ),
               window.el('span', {
-                style: 'display:inline-flex;align-items:center;border:1px solid #fbe8c6;background:#fff9ee;color:#8a5a15;border-radius:999px;padding:4px 9px;font-size:11px;font-weight:700;white-space:nowrap;',
+                style: 'display:inline-flex;align-items:center;border:1px solid #fbe8c6;background:#fff9ee;color:#8a5a15;border-radius:' + MOVEMENT_SURFACE_RADIUS + ';padding:4px 9px;font-size:11px;font-weight:700;white-space:nowrap;',
               }, 'Esperado')
             );
           })
@@ -899,7 +915,7 @@
       document.addEventListener('keydown', escListener);
 
       var card = window.el('div', {
-        style: 'position:relative;background:#fff;border-radius:4px;width:520px;max-height:calc(100vh - 48px);overflow-y:auto;box-shadow:0 24px 60px rgba(20,30,45,.2);',
+        style: 'position:relative;background:#fff;border:1px solid #eceef1;border-radius:' + MOVEMENT_MODAL_RADIUS + ';width:520px;max-height:calc(100vh - 48px);overflow-y:auto;box-shadow:' + MOVEMENT_MODAL_SHADOW + ';',
       });
       var closeBtn = window.el('button', {
         type: 'button',

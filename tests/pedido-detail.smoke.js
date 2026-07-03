@@ -651,6 +651,17 @@ test('pedido-detail.js: modal usa resumo proprio para insumos e expedicao', () =
   assert.match(detailEvents, /key === ['"]Expedicao>Entrega['"][\s\S]{0,500}totalLabel:\s*ns\.fmtMetros\(expedicao\.liberado\)/);
 });
 
+test('pedido-detail.js: modal de transicao usa contrato visual discreto', () => {
+  assert.match(detailEvents, /MOVEMENT_MODAL_RADIUS\s*=\s*['"]6px['"]/);
+  assert.match(detailEvents, /MOVEMENT_SURFACE_RADIUS\s*=\s*['"]4px['"]/);
+  assert.match(detailEvents, /function normalizeMovementModalControls/);
+  assert.match(movementModalSlice, /border:1px solid #eceef1;border-radius:' \+ MOVEMENT_MODAL_RADIUS/);
+  assert.match(movementModalSlice, /box-shadow:' \+ MOVEMENT_MODAL_SHADOW/);
+  assert.match(movementModalSlice, /border-radius:' \+ MOVEMENT_SURFACE_RADIUS/);
+  assert.doesNotMatch(movementModalSlice, /border-radius:999px/);
+  assert.doesNotMatch(movementModalSlice, /rounded-(?:lg|xl|2xl|full)/);
+});
+
 test('pedido-detail.js: openMovementModal usa operacoes canonicas para movimentar pelo Pedido', () => {
   assert.ok(movementModalSlice, 'trecho de openMovementModal nao encontrado');
   assert.match(detailEvents, /window\.registrarRecebimentoOrdemFio/,
