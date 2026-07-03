@@ -3543,3 +3543,26 @@ Senhas de teste antigas em `docs/qa/fase1-checklist.md` e
 > `node --test tests/boot.smoke.js` OK (29/29);
 > `node --test tests/router.smoke.js` OK (43/43, com aviso conhecido
 > de sandbox sobre `window.addEventListener`, exit code 0).
+> **Atualizacao 2026-07-03 - fase
+> `RAVATEX-TAPETES-PEDIDO-PROGRESS-CONNECTORS-R3-FIX-MISSING-LAST-CONNECTOR`.**
+> Correcao visual obrigatoria local, sem SQL/Supabase/producao e sem
+> push: o conector `EXPEDICAO -> ENTREGA` nao pode sumir quando a acao
+> canonica `registerDelivery` vem como `hidden`. O render agora mapeia
+> `hidden` para a seta estatica `Aguardar`, mantendo o gate bloqueado e
+> sem handler. O pipeline produtivo permanece com 5 etapas fixas e 4
+> conectores: Insumos->Tecelagem, Tecelagem->Acabamento,
+> Acabamento->Expedicao, Expedicao->Entrega.
+>
+> A ultima transicao segue a regra final: `hidden/disabled` renderiza
+> `Aguardar`; `enabled` renderiza o botao `Transferir` chamando a
+> operacao canonica existente; `view`/concluido renderiza `Concluido`
+> estatico. Nenhum conector usa `Entregar`, `Ver`, `Editar` ou frases
+> longas. `derivePedidoChainState`, matriz de gates, lifecycle e writes
+> ficaram intocados.
+>
+> Testes: `node --check js/screens/pedido-detail-render.js` OK;
+> `node --check tests/pedido-detail.smoke.js` OK;
+> `node --test tests/pedido-detail.smoke.js` OK (58/58);
+> `node --test tests/boot.smoke.js` OK (29/29);
+> `node --test tests/router.smoke.js` OK (43/43, com aviso conhecido
+> de sandbox sobre `window.addEventListener`, exit code 0).

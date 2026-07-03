@@ -298,7 +298,7 @@
     if (isConnectorDoneAction(action) || mode === 'view') {
       return { state: 'done', label: 'Concluído' };
     }
-    if (disabled || mode === 'disabled') {
+    if (disabled || mode === 'disabled' || mode === 'hidden') {
       return { state: 'waiting', label: 'Aguardar' };
     }
     return { state: 'active', label: 'Transferir' };
@@ -331,9 +331,6 @@
       return window.el('div', { style: 'display:flex;align-items:center;justify-content:center;height:42px;' });
     }
     var action = stage.transfer.action || {};
-    if (action.mode === 'hidden') {
-      return window.el('div', { style: 'display:flex;align-items:center;justify-content:center;height:42px;' });
-    }
     var mode = action.mode || 'enabled';
     var disabled = mode === 'disabled' || (!stage.transfer.op && (stage.transfer.title !== 'Registrar saida para entrega'));
     var visual = buildConnectorVisual(action, disabled);

@@ -2557,6 +2557,28 @@ node --test tests/boot.smoke.js \
   nenhum lifecycle de OP, nenhuma alteracao de `gerar_op_latex`,
   expedicao, auth/login ou push. Residual permitido preservado:
   `?? supabase/.temp/`.
+- Fase R3 concluida no codigo:
+  `RAVATEX-TAPETES-PEDIDO-PROGRESS-CONNECTORS-R3-FIX-MISSING-LAST-CONNECTOR`.
+- Diagnostico: a ultima transicao `EXPEDICAO -> ENTREGA` tinha
+  `stage.transfer`, mas sua action `registerDelivery` vem como
+  `hidden` quando a entrega/coleta ainda nao esta liberada. O render
+  antigo retornava uma celula vazia para `action.mode === 'hidden'`,
+  apagando visualmente o quarto conector.
+- Correcao: `hidden` agora entra no mapeamento visual como
+  `Aguardar`, estatico e sem handler. Assim o pipeline de 5 etapas
+  sempre renderiza 4 conectores. Quando `registerDelivery` vier
+  `enabled`, a seta final vira `Transferir` e chama
+  `openMovementModal(stage.transfer)`; quando vier `view`/concluido,
+  vira `Concluido` estatico.
+- Garantias: nenhum label `Entregar`, `Ver` ou `Editar` em conectores;
+  matriz/gates/`derivePedidoChainState` preservados; sem SQL,
+  Supabase, producao, lifecycle ou writes.
+- Testes: `node --check` nos dois arquivos OK;
+  `node --test tests/pedido-detail.smoke.js` OK (58/58);
+  `node --test tests/boot.smoke.js` OK (29/29);
+  `node --test tests/router.smoke.js` OK (43/43; aviso conhecido de
+  sandbox sobre `window.addEventListener`, exit code 0).
+
 - Complemento R2 final alinhado a
   `Setas de transicao - referencia.html`: conectores do
   `Progresso produtivo` aceitam somente `Concluido`, `Transferir` e

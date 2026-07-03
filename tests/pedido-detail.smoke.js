@@ -237,16 +237,61 @@ test('pedido-detail: conectores continuam como setas integradas, nao badges solt
 });
 
 test('pedido-detail: somente Transferir cria botao e handler no conector', () => {
+  const connectorRegion = (detailRender.match(
+    /function isConnectorDoneAction\s*\(action\)\s*\{[\s\S]*?\n  function buildStepper/
+  ) || [''])[0];
   const connectorSlice = (detailRender.match(
     /function buildTransferButton\s*\(stage,\s*handlers\)\s*\{[\s\S]*?\n  \}\n\n  function buildStepper/
   ) || [''])[0];
+  assert.ok(connectorRegion, 'trecho dos helpers de conector nao encontrado');
   assert.ok(connectorSlice, 'trecho buildTransferButton nao encontrado');
+  assert.match(connectorRegion, /mode === ['"]hidden['"][\s\S]*?state:\s*['"]waiting['"][\s\S]*?label:\s*['"]Aguardar['"]/,
+    'action hidden deve renderizar Aguardar, nao sumir');
   assert.match(connectorSlice, /visual\.state === ['"]done['"] \|\| visual\.state === ['"]waiting['"]/);
   assert.match(connectorSlice, /window\.el\(['"]div['"][\s\S]*?buildConnectorStyle\(visual,\s*false\)/,
     'Concluido/Aguardar devem ser elementos estaticos sem handler');
   assert.match(connectorSlice, /window\.el\(['"]button['"][\s\S]*?handlers\.openMovementModal\(stage\.transfer\)/,
     'Transferir deve continuar abrindo a operacao canonica existente');
   assert.doesNotMatch(connectorSlice, /visual\.state === ['"]view['"]/);
+  assert.doesNotMatch(connectorSlice, /action\.mode === ['"]hidden['"][\s\S]*?return window\.el\(['"]div['"],\s*\{\s*style:\s*['"]display:flex;align-items:center;justify-content:center;height:42px;['"]\s*\}\)/);
+});
+
+test('pedido-detail: stepper produtivo tem 5 etapas e 4 conectores fixos', () => {
+  const stepperSlice = (detailProgress.match(/var stepper = \[[\s\S]*?\n    \];/) || [''])[0];
+  assert.ok(stepperSlice, 'array stepper nao encontrado em pedido-detail-progress.js');
+  const keys = Array.from(stepperSlice.matchAll(/key:\s*['"]([^'"]+)['"]/g)).map(match => match[1]);
+  assert.deepEqual(keys, ['insumos', 'tecelagem', 'acabamento', 'expedicao', 'entrega']);
+  assert.equal((stepperSlice.match(/transfer:\s*\{/g) || []).length, 4,
+    '5 etapas exigem 4 conectores visuais');
+  assert.match(stepperSlice, /key:\s*['"]expedicao['"][\s\S]*?transfer:\s*\{[\s\S]*?origem:\s*['"]Expedicao['"][\s\S]*?destino:\s*['"]Entrega['"][\s\S]*?registerDelivery/,
+    'deve existir conector EXPEDICAO -> ENTREGA');
+  assert.match(stepperSlice, /key:\s*['"]entrega['"][\s\S]*?transfer:\s*null/,
+    'ENTREGA e a ultima etapa e nao cria conector extra');
+});
+
+test('pedido-chain-state: ultima transicao preserva gates hidden/enabled/view', () => {
+  const sandbox = { window: {}, console };
+  vm.createContext(sandbox);
+  vm.runInContext(chainState, sandbox, { filename: 'js/screens/pedido-chain-state.js' });
+  const derive = sandbox.window.RAVATEX_SCREENS.pedidoChainState.derivePedidoChainState;
+
+  const blocked = derive({ pedido: { id: 'p1', status: 'rascunho', metros_total: 100 } });
+  assert.equal(blocked.actions.registerDelivery.mode, 'hidden');
+
+  const enabled = derive({
+    pedido: { id: 'p1', status: 'rascunho', metros_total: 100 },
+    expedicoes: [{ id: 'ex1' }],
+    expedicaoItens: [{ expedicao_id: 'ex1', metros_liberados: 100, metros_entregues: 0 }],
+  });
+  assert.equal(enabled.actions.registerDelivery.mode, 'enabled');
+  assert.equal(enabled.actions.registerDelivery.label, 'Registrar entrega');
+
+  const done = derive({
+    pedido: { id: 'p1', status: 'rascunho', metros_total: 100 },
+    expedicoes: [{ id: 'ex1' }],
+    expedicaoItens: [{ expedicao_id: 'ex1', metros_liberados: 100, metros_entregues: 100 }],
+  });
+  assert.equal(done.actions.registerDelivery.mode, 'view');
 });
 
 test('pedido-chain-state: matriz preserva labels contextuais e gates funcionais', () => {
