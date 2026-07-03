@@ -46,6 +46,7 @@ const vm = require('node:vm');
 const ROOT = path.resolve(__dirname, '..');
 const SCREEN = path.join(ROOT, 'js', 'screens', 'pedido-detail.js');
 const DETAIL_DATA = path.join(ROOT, 'js', 'screens', 'pedido-detail-data.js');
+const CHAIN_STATE = path.join(ROOT, 'js', 'screens', 'pedido-chain-state.js');
 const DETAIL_PROGRESS = path.join(ROOT, 'js', 'screens', 'pedido-detail-progress.js');
 const DETAIL_EVENTS = path.join(ROOT, 'js', 'screens', 'pedido-detail-events.js');
 const DETAIL_RENDER = path.join(ROOT, 'js', 'screens', 'pedido-detail-render.js');
@@ -64,6 +65,7 @@ function readOrFail(p) {
 
 const screen = readOrFail(SCREEN);
 const detailData = readOrFail(DETAIL_DATA);
+const chainState = readOrFail(CHAIN_STATE);
 const detailProgress = readOrFail(DETAIL_PROGRESS);
 const detailEvents = readOrFail(DETAIL_EVENTS);
 const detailRender = readOrFail(DETAIL_RENDER);
@@ -74,6 +76,7 @@ const boot   = readOrFail(BOOT);
 const index  = readOrFail(INDEX);
 const schema = readOrFail(SCHEMA);
 const detailBundle = [
+  chainState,
   screen,
   detailData,
   detailProgress,
@@ -99,6 +102,7 @@ function codeOnly(src) {
 test('pedido-detail: arquivos esperados existem', () => {
   assert.ok(fs.existsSync(SCREEN), 'js/screens/pedido-detail.js ausente');
   assert.ok(fs.existsSync(DETAIL_DATA), 'js/screens/pedido-detail-data.js ausente');
+  assert.ok(fs.existsSync(CHAIN_STATE), 'js/screens/pedido-chain-state.js ausente');
   assert.ok(fs.existsSync(DETAIL_PROGRESS), 'js/screens/pedido-detail-progress.js ausente');
   assert.ok(fs.existsSync(DETAIL_EVENTS), 'js/screens/pedido-detail-events.js ausente');
   assert.ok(fs.existsSync(DETAIL_RENDER), 'js/screens/pedido-detail-render.js ausente');
@@ -111,7 +115,7 @@ test('pedido-detail: arquivos esperados existem', () => {
 // ---------------------------------------------------------------------
 
 test('pedido-detail: sintaxe JS válida (node --check)', () => {
-  [SCREEN, DETAIL_DATA, DETAIL_PROGRESS, DETAIL_EVENTS, DETAIL_RENDER].forEach((file) => {
+  [SCREEN, DETAIL_DATA, CHAIN_STATE, DETAIL_PROGRESS, DETAIL_EVENTS, DETAIL_RENDER].forEach((file) => {
     require('node:child_process').execFileSync(
       process.execPath, ['--check', file], { stdio: 'pipe' }
     );
@@ -129,6 +133,54 @@ test('pedido-detail: expõe screenPedidoDetalhe no namespace', () => {
     'window.RAVATEX_SCREENS.pedidoDetail deve ser objeto');
   assert.equal(typeof sandbox.window.RAVATEX_SCREENS.pedidoDetail.screenPedidoDetalhe, 'function',
     'window.RAVATEX_SCREENS.pedidoDetail.screenPedidoDetalhe deve ser função');
+});
+
+test('pedido-chain-state: OP tecelagem em producao vira estado operacional e gates corretos', () => {
+  const sandbox = { window: {}, console };
+  vm.createContext(sandbox);
+  vm.runInContext(chainState, sandbox, { filename: 'js/screens/pedido-chain-state.js' });
+  const derive = sandbox.window.RAVATEX_SCREENS.pedidoChainState.derivePedidoChainState;
+  const result = derive({
+    pedido: { id: 'p1', status: 'rascunho', metros_total: 100 },
+    ops: [{
+      id: 'op1',
+      numero: 1,
+      ano: 2026,
+      status: 'em_producao',
+      tipo: 'tecelagem',
+      op_itens: [{ id: 'i1', metros_pedidos: 100 }],
+    }],
+    ordensFio: [{ op_id: 'op1', kg_pedido: 10, kg_recebido: 10 }],
+    entregaItens: [],
+    entregasById: {},
+    expedicoes: [],
+    expedicaoItens: [],
+  });
+
+  assert.equal(result.stage, 'tecelagem');
+  assert.equal(result.displayStatus, 'Tecelagem em andamento');
+  assert.equal(result.adminBadge, 'Em producao');
+  assert.equal(result.adminStepper.insumos, 'done');
+  assert.equal(result.adminStepper.tecelagem, 'current');
+  assert.equal(result.actions.transferInsumosToTecelagem.mode, 'view');
+  assert.equal(result.actions.transferTecelagemToAcabamento.mode, 'enabled');
+  assert.equal(result.clientSteps[0].state, 'concluido');
+  assert.equal(result.clientSteps[1].state, 'concluido');
+  assert.equal(result.clientSteps[2].state, 'concluido');
+  assert.equal(result.clientSteps[3].state, 'atual');
+});
+
+test('pedido-chain-state: pedido sem OP preserva abertura de tecelagem', () => {
+  const sandbox = { window: {}, console };
+  vm.createContext(sandbox);
+  vm.runInContext(chainState, sandbox, { filename: 'js/screens/pedido-chain-state.js' });
+  const derive = sandbox.window.RAVATEX_SCREENS.pedidoChainState.derivePedidoChainState;
+  const result = derive({ pedido: { id: 'p1', status: 'rascunho', metros_total: 100 } });
+
+  assert.equal(result.stage, 'comercial');
+  assert.equal(result.displayStatus, 'Rascunho');
+  assert.equal(result.actions.openTecelagemOp.mode, 'enabled');
+  assert.equal(result.actions.transferInsumosToTecelagem.mode, 'disabled');
 });
 
 // ---------------------------------------------------------------------

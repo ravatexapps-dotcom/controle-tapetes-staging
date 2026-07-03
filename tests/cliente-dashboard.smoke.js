@@ -63,6 +63,14 @@ function eventosSelect() {
   return m[1].split(',').map((s) => s.trim()).filter(Boolean);
 }
 
+function codeOnly(src) {
+  return src
+    .replace(/\/\*[\s\S]*?\*\//g, '')
+    .split('\n')
+    .map((line) => line.replace(/\/\/.*$/, ''))
+    .join('\n');
+}
+
 // ---------------------------------------------------------------------
 // Arquivo / módulo
 // ---------------------------------------------------------------------
@@ -203,14 +211,15 @@ test('cliente-dashboard: usa window.clienteShellLayout (sem ADMIN_MENU)', () => 
 });
 
 test('cliente-dashboard: renderiza cards/KPIs', () => {
-  assert.match(screen, /Pedidos em aberto/);
-  assert.match(screen, /Em andamento/);
-  assert.match(screen, /Prontos/);
-  assert.match(screen, /Atualizações recentes/);
+  assert.match(screen, /Meus pedidos/);
+  assert.match(screen, /Em produção/);
+  assert.match(screen, /Concluído/);
+  assert.match(screen, /Atrasado/);
+  assert.match(screen, /Últimas atualizações/);
 });
 
 test('cliente-dashboard: renderiza pedidos recentes com "Ver pedido"', () => {
-  assert.match(screen, /Pedidos recentes/);
+  assert.match(screen, /Pedidos em destaque/);
   assert.match(screen, /Ver pedido/);
 });
 
@@ -240,13 +249,14 @@ test('cliente-dashboard: nao referencia service_role nem token_acesso', () => {
 });
 
 test('cliente-dashboard: nao expoe OP/lote/fornecedor/NF/romaneio/custo/margem', () => {
-  assert.equal(/\bop\b/i.test(screen), false);
-  assert.equal(/\blote\b/i.test(screen), false);
-  assert.equal(/fornecedor/i.test(screen), false);
-  assert.equal(/\bNF\b/.test(screen), false);
-  assert.equal(/romaneio/i.test(screen), false);
-  assert.equal(/custo/i.test(screen), false);
-  assert.equal(/margem/i.test(screen), false);
+  const co = codeOnly(screen);
+  assert.equal(/\bop\b/i.test(co), false);
+  assert.equal(/\blote\b/i.test(co), false);
+  assert.equal(/fornecedor/i.test(co), false);
+  assert.equal(/\bNF\b/.test(co), false);
+  assert.equal(/romaneio/i.test(co), false);
+  assert.equal(/custo/i.test(co), false);
+  assert.equal(/margem/i.test(co), false);
 });
 
 test('cliente-dashboard: nao altera admin (sem UI admin de tracking)', () => {

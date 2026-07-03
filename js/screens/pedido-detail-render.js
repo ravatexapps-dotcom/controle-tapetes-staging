@@ -87,6 +87,19 @@
     );
   }
 
+  function buildOperationalPill(chainState) {
+    var label = chainState && chainState.displayStatus ? chainState.displayStatus : 'Pedido';
+    return window.el('span', {
+      style: 'display:inline-flex;align-items:center;gap:7px;background:#fff4e6;color:#c2610c;border-radius:4px;padding:5px 12px;font-size:13px;font-weight:700;',
+      title: 'Status operacional derivado das OPs vinculadas',
+    },
+      window.el('span', {
+        style: 'width:7px;height:7px;border-radius:50%;background:#e07b39;display:inline-block;flex-shrink:0;',
+      }),
+      label
+    );
+  }
+
   function buildSummaryMetric(title, value, color) {
     return window.el('div', {
       style: 'background:#fff;border:1px solid #eceef1;border-radius:4px;padding:13px 15px;',
@@ -100,7 +113,7 @@
     );
   }
 
-  function buildHeader(state, handlers) {
+  function buildHeader(state, view, handlers) {
     var pedido = state.pedido;
     if (!pedido) {
       return window.el('div', {
@@ -121,6 +134,8 @@
     var updatedAt = ns.fmtDataHora(pedido.atualizado_em);
     var prazo = ns.fmtData(pedido.prazo_desejado || pedido.prazo_entrega);
     var editBtn = handlers.buildEditButton();
+    var chainState = view && view.chainState ? view.chainState : null;
+    var showOperationalStatus = !!(chainState && chainState.isOperationalOverride);
 
     var breadcrumb = window.el('div', {
       style: 'display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;',
@@ -150,7 +165,10 @@
             window.el('h1', {
               style: 'margin:0;font-size:23px;font-weight:800;color:#16203a;letter-spacing:-.01em;line-height:1.1;',
             }, 'Pedido ' + numero),
-            buildStatusPill(pedido.status, handlers),
+            showOperationalStatus ? buildOperationalPill(chainState) : buildStatusPill(pedido.status, handlers),
+            showOperationalStatus ? window.el('span', {
+              style: 'display:inline-flex;align-items:center;gap:6px;background:#f1f3f6;color:#5b6472;border-radius:4px;padding:4px 11px;font-size:12px;font-weight:600;',
+            }, 'Comercial: ' + (window.pedidoStatusLabel ? window.pedidoStatusLabel(pedido.status) : ns.fmtTextoOuEmpty(pedido.status, 'Status'))) : null,
             window.el('span', {
               style: 'display:inline-flex;align-items:center;gap:6px;background:#f1f3f6;color:#8a93a3;border-radius:4px;padding:4px 11px;font-size:12px;font-weight:600;',
             }, 'Origem: Cliente')
@@ -274,15 +292,30 @@
     if (!stage.transfer) {
       return window.el('div', { style: 'display:flex;align-items:center;justify-content:center;height:42px;' });
     }
-    var disabled = !stage.transfer.op && (stage.transfer.title !== 'Registrar saida para entrega');
+    var action = stage.transfer.action || {};
+    if (action.mode === 'hidden') {
+      return window.el('div', { style: 'display:flex;align-items:center;justify-content:center;height:42px;' });
+    }
+    var mode = action.mode || 'enabled';
+    var disabled = mode === 'disabled' || (!stage.transfer.op && (stage.transfer.title !== 'Registrar saida para entrega'));
+    var isView = mode === 'view';
+    var label = action.label || (isView ? 'Visualizar' : 'Transferir');
+    var bg = disabled ? '#eef1f5' : (isView ? '#fff' : '#2563eb');
+    var color = disabled ? '#9aa2af' : (isView ? '#2563eb' : '#fff');
+    var border = isView ? 'border:1px solid #2563eb;' : 'border:none;';
     return window.el('div', {
       style: 'display:flex;align-items:center;justify-content:center;height:42px;',
     },
       window.el('button', {
         type: 'button',
-        style: 'height:28px;padding:0 12px 0 17px;background:' + (disabled ? '#b9c7df' : '#2563eb') + ';color:#fff;border:none;font-size:11px;font-weight:700;font-family:inherit;cursor:' + (disabled ? 'default' : 'pointer') + ';clip-path:polygon(0% 0%, 80% 0%, 100% 50%, 80% 100%, 0% 100%, 15% 50%);white-space:nowrap;',
-        onclick: function () { handlers.openMovementModal(stage.transfer); },
-      }, 'Transferir')
+        disabled: disabled ? 'disabled' : null,
+        title: action.mode === 'disabled' ? label : stage.transfer.title,
+        style: 'height:28px;padding:0 12px 0 17px;background:' + bg + ';color:' + color + ';' + border + 'font-size:11px;font-weight:700;font-family:inherit;cursor:' + (disabled ? 'not-allowed' : 'pointer') + ';clip-path:polygon(0% 0%, 80% 0%, 100% 50%, 80% 100%, 0% 100%, 15% 50%);white-space:nowrap;',
+        onclick: function () {
+          if (disabled) return;
+          handlers.openMovementModal(stage.transfer);
+        },
+      }, label)
     );
   }
 
@@ -423,11 +456,12 @@
     );
   }
 
-  function buildFooterAction(label, onclick, primary) {
+  function buildFooterAction(label, onclick, primary, disabled) {
     return window.el('button', {
       type: 'button',
-      style: 'flex:1;background:' + (primary ? '#2563eb' : '#fff') + ';color:' + (primary ? '#fff' : '#3f4757') + ';border:' + (primary ? 'none' : '1px solid #d8dce2') + ';border-radius:4px;padding:8px 0;font-size:12.5px;font-weight:' + (primary ? '700' : '600') + ';font-family:inherit;cursor:pointer;',
-      onclick: onclick,
+      disabled: disabled ? 'disabled' : null,
+      style: 'flex:1;background:' + (disabled ? '#f1f3f6' : (primary ? '#2563eb' : '#fff')) + ';color:' + (disabled ? '#9aa2af' : (primary ? '#fff' : '#3f4757')) + ';border:' + (primary && !disabled ? 'none' : '1px solid #d8dce2') + ';border-radius:4px;padding:8px 0;font-size:12.5px;font-weight:' + (primary ? '700' : '600') + ';font-family:inherit;cursor:' + (disabled ? 'not-allowed' : 'pointer') + ';',
+      onclick: disabled ? null : onclick,
     }, label);
   }
 
@@ -488,6 +522,11 @@
       );
     }
 
+    var movementAction = summary.chainAction || { mode: 'enabled', label: 'Movimentar' };
+    var movementDisabled = movementAction.mode === 'disabled' || movementAction.mode === 'hidden';
+    var movementView = movementAction.mode === 'view';
+    var movementLabel = movementAction.label || (movementView ? 'Visualizar' : 'Movimentar');
+
     return window.el('div', {
       style: 'background:#fff;border:1px solid #eceef1;border-radius:4px;overflow:hidden;',
     },
@@ -509,7 +548,7 @@
         style: 'display:flex;gap:8px;padding:12px 18px;border-top:1px solid #f1f3f6;',
       },
         buildFooterAction('Abrir OP', function () { handlers.navigateToOp(summary.id); }, false),
-        buildFooterAction('Movimentar', function () {
+        buildFooterAction(movementLabel, function () {
           handlers.openMovementModal({
             title: summary.stageKey === 'tecelagem' ? 'Movimentar Tecelagem -> Acabamento' : 'Movimentar Acabamento -> Expedicao',
             origem: summary.stageLabel + ' - ' + summary.label,
@@ -517,8 +556,9 @@
             detalhe: 'A movimentacao continua sendo registrada na OP vinculada.',
             op: summary.op,
             docs: summary.stageKey === 'tecelagem' ? 'Romaneio e NF' : 'NF de expedicao',
+            action: movementAction,
           });
-        }, true),
+        }, movementAction.mode === 'enabled', movementDisabled),
         buildFooterAction('Documentos', function () { handlers.scrollToSection('documentos'); }, false)
       )
     );
@@ -857,7 +897,7 @@
     var state = ctx.state;
     var handlers = ctx.handlers || {};
     var loadingError = ctx.loadingError;
-    var header = buildHeader(state, handlers);
+    var header = buildHeader(state, ctx.view, handlers);
 
     if (loadingError === 'pedido') {
       container.replaceChildren(header,

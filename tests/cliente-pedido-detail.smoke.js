@@ -132,12 +132,24 @@ test('cliente-pedido-detail: nao consulta pedido_parcial_itens', () => {
   assert.equal(/from\(['"]pedido_parcial_itens['"]\)/.test(screen), false);
 });
 
-test('cliente-pedido-detail: nao referencia OP', () => {
-  assert.equal(/\bop\b/i.test(screen), false);
+test('cliente-pedido-detail: consulta cadeia minima em modo leitura para o stepper', () => {
+  assert.match(screen, /from\(['"]lotes['"]\)/);
+  assert.match(screen, /from\(['"]ops['"]\)/);
+  assert.match(screen, /from\(['"]entrega_itens['"]\)/);
+  assert.match(screen, /from\(['"]entregas['"]\)/);
+  assert.match(screen, /from\(['"]ordens_compra_fio['"]\)/);
+  assert.match(screen, /from\(['"]expedicoes['"]\)/);
+  assert.match(screen, /from\(['"]expedicao_itens['"]\)/);
+  assert.match(screen, /derivePedidoChainState/);
 });
 
-test('cliente-pedido-detail: nao referencia lote', () => {
-  assert.equal(/\blote\b/i.test(screen), false);
+test('cliente-pedido-detail: cadeia minima nao cria escrita operacional', () => {
+  const body = extractFunctionBody(screen, 'carregarCadeiaCliente');
+  assert.equal(/\.insert\s*\(/.test(body), false);
+  assert.equal(/\.update\s*\(/.test(body), false);
+  assert.equal(/\.delete\s*\(/.test(body), false);
+  assert.equal(/\.upsert\s*\(/.test(body), false);
+  assert.equal(/\.rpc\s*\(/.test(body), false);
 });
 
 test('cliente-pedido-detail: nao referencia fornecedor', () => {

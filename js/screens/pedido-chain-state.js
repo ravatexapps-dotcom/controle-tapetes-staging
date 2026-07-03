@@ -1,0 +1,297 @@
+// =====================================================================
+// === SCREENS: PEDIDO CHAIN STATE =====================================
+// Matriz pura de estado operacional e acoes da cadeia do Pedido.
+// =====================================================================
+
+(function (window) {
+  'use strict';
+
+  window.RAVATEX_SCREENS = window.RAVATEX_SCREENS || {};
+
+  var STAGE_INDEX = Object.freeze({
+    recebido: 0,
+    confirmado: 1,
+    insumos: 2,
+    tecelagem: 3,
+    acabamento: 4,
+    expedicao: 5,
+    transporte: 6,
+    concluido: 7,
+  });
+
+  var CLIENT_STEPS = Object.freeze([
+    Object.freeze({ key: 'recebido', label: 'Recebido' }),
+    Object.freeze({ key: 'confirmado', label: 'Confirmado' }),
+    Object.freeze({ key: 'insumos', label: 'Insumos' }),
+    Object.freeze({ key: 'tecelagem', label: 'Tecelagem' }),
+    Object.freeze({ key: 'acabamento', label: 'Acabamento' }),
+    Object.freeze({ key: 'expedicao', label: 'Expedicao' }),
+    Object.freeze({ key: 'transporte', label: 'Transporte' }),
+    Object.freeze({ key: 'concluido', label: 'Concluido' }),
+  ]);
+
+  function toFiniteNumber(value) {
+    var n = Number(value);
+    return Number.isFinite(n) ? n : 0;
+  }
+
+  function round2(value) {
+    return Math.round(toFiniteNumber(value) * 100) / 100;
+  }
+
+  function clampPercent(value) {
+    if (!Number.isFinite(value) || value <= 0) return 0;
+    if (value >= 100) return 100;
+    return Number(value.toFixed(1));
+  }
+
+  function pedidoStatusLabel(status) {
+    var map = {
+      rascunho: 'Rascunho',
+      recebido: 'Recebido',
+      confirmado: 'Confirmado',
+      produzindo: 'Produzindo',
+      entregue: 'Concluido',
+      cancelado: 'Cancelado',
+    };
+    return map[status] || (status ? String(status) : 'Recebido');
+  }
+
+  function stageKeyForOp(row) {
+    return row && row.tipo === 'latex' ? 'acabamento' : 'tecelagem';
+  }
+
+  function deliveryStageForOp(row) {
+    return stageKeyForOp(row) === 'acabamento' ? 'latex' : 'cima';
+  }
+
+  function targetMetersForOpItem(row) {
+    if (!row) return 0;
+    return round2(row.metros_ajustados != null ? row.metros_ajustados : row.metros_pedidos);
+  }
+
+  function action(mode, label, extra) {
+    var safeMode = mode || 'hidden';
+    var visible = safeMode !== 'hidden';
+    var payload = {
+      visible: visible,
+      enabled: safeMode === 'enabled',
+      mode: safeMode,
+      label: label || (safeMode === 'enabled' ? 'Transferir' : safeMode === 'view' ? 'Visualizar' : 'Indisponivel'),
+    };
+    Object.keys(extra || {}).forEach(function (key) {
+      payload[key] = extra[key];
+    });
+    return payload;
+  }
+
+  function buildOpSummaries(input) {
+    var entregaItens = Array.isArray(input.entregaItens) ? input.entregaItens : [];
+    var entregasById = input.entregasById || {};
+
+    return (Array.isArray(input.ops) ? input.ops : []).map(function (op) {
+      var target = 0;
+      var done = 0;
+      var stageKey = stageKeyForOp(op);
+      var deliveryStage = deliveryStageForOp(op);
+      var itemIds = {};
+
+      (op.op_itens || []).forEach(function (item) {
+        target += targetMetersForOpItem(item);
+        if (item && item.id != null) itemIds[item.id] = true;
+      });
+
+      entregaItens.forEach(function (item) {
+        if (!item || item.defeito) return;
+        if (item.op_id !== op.id && !itemIds[item.op_item_id]) return;
+        var entrega = entregasById[item.entrega_id];
+        if (!entrega || entrega.etapa !== deliveryStage) return;
+        done += toFiniteNumber(item.metros_entregues);
+      });
+
+      target = round2(target);
+      done = round2(done);
+      return {
+        id: op.id,
+        op: op,
+        stageKey: stageKey,
+        status: op.status,
+        target: target,
+        done: done,
+        remaining: round2(Math.max(target - done, 0)),
+      };
+    });
+  }
+
+  function sum(rows, key) {
+    return round2((rows || []).reduce(function (acc, row) {
+      return acc + toFiniteNumber(row && row[key]);
+    }, 0));
+  }
+
+  function buildClientSteps(currentKey) {
+    var currentIndex = STAGE_INDEX[currentKey] != null ? STAGE_INDEX[currentKey] : 0;
+    return CLIENT_STEPS.map(function (step, index) {
+      var state = index < currentIndex ? 'concluido' : (index === currentIndex ? 'atual' : 'futuro');
+      return {
+        key: step.key,
+        label: step.label,
+        state: state,
+        percentual: state === 'futuro' ? 0 : 100,
+        sublabel: state === 'concluido' ? 'concluido' : (state === 'atual' ? 'em andamento' : 'aguardando'),
+      };
+    });
+  }
+
+  function derivePedidoChainState(input) {
+    input = input || {};
+    var pedido = input.pedido || {};
+    var opSummaries = buildOpSummaries(input);
+    var tecelagem = opSummaries.filter(function (row) { return row.stageKey === 'tecelagem'; });
+    var acabamento = opSummaries.filter(function (row) { return row.stageKey === 'acabamento'; });
+
+    var tecTarget = sum(tecelagem, 'target');
+    var tecDone = sum(tecelagem, 'done');
+    var tecRemaining = sum(tecelagem, 'remaining');
+    var acabTarget = sum(acabamento, 'target');
+    var acabDone = sum(acabamento, 'done');
+    var acabRemaining = sum(acabamento, 'remaining');
+
+    var hasTec = tecelagem.length > 0;
+    var hasAcab = acabamento.length > 0;
+    var tecProduction = tecelagem.some(function (row) { return row.status === 'em_producao'; });
+    var tecOpen = tecelagem.some(function (row) { return row.status === 'aberta' || row.status === 'simulada'; });
+    var tecFinished = tecelagem.some(function (row) { return row.status === 'finalizada' || row.status === 'concluida'; });
+    var acabOpen = acabamento.some(function (row) { return row.status === 'aberta' || row.status === 'simulada'; });
+    var acabProduction = acabamento.some(function (row) { return row.status === 'em_producao'; });
+    var acabFinished = acabamento.some(function (row) { return row.status === 'finalizada' || row.status === 'concluida'; });
+
+    var ordens = Array.isArray(input.ordensFio) ? input.ordensFio : [];
+    var insumoPedidoKg = sum(ordens, 'kg_pedido');
+    var insumoRecebidoKg = sum(ordens, 'kg_recebido');
+    var insumosConcluidos = insumoPedidoKg > 0
+      ? insumoRecebidoKg >= insumoPedidoKg
+      : (tecProduction || tecDone > 0 || hasAcab);
+
+    var expedicaoItens = Array.isArray(input.expedicaoItens) ? input.expedicaoItens : [];
+    var expedicoes = Array.isArray(input.expedicoes) ? input.expedicoes : [];
+    var expedicaoLiberado = sum(expedicaoItens, 'metros_liberados');
+    var expedicaoEntregue = sum(expedicaoItens, 'metros_entregues');
+    var expedicaoSaldo = round2(Math.max(expedicaoLiberado - expedicaoEntregue, 0));
+    var hasExpedicao = expedicoes.length > 0 || expedicaoItens.length > 0;
+
+    var totalPedido = round2(toFiniteNumber(input.totalPedido || pedido.metros_total));
+    var pedidoConcluido = pedido.status === 'entregue'
+      || (totalPedido > 0 && expedicaoEntregue >= totalPedido);
+
+    var stage = 'comercial';
+    var clientStep = pedido.status === 'confirmado' ? 'confirmado' : 'recebido';
+    var displayStatus = pedidoStatusLabel(pedido.status);
+    var adminBadge = displayStatus;
+
+    if (pedidoConcluido) {
+      stage = 'concluido';
+      clientStep = 'concluido';
+      displayStatus = 'Concluido';
+      adminBadge = 'Concluido';
+    } else if (hasExpedicao && expedicaoSaldo > 0) {
+      stage = 'expedicao';
+      clientStep = 'transporte';
+      displayStatus = 'Expedicao em andamento';
+      adminBadge = 'Expedicao';
+    } else if (acabFinished) {
+      stage = 'pronto_expedicao';
+      clientStep = 'expedicao';
+      displayStatus = hasExpedicao ? 'Expedicao liberada' : 'Pronto para expedicao';
+      adminBadge = 'Pronto para expedicao';
+    } else if (acabProduction) {
+      stage = 'acabamento';
+      clientStep = 'acabamento';
+      displayStatus = 'Acabamento em andamento';
+      adminBadge = 'Em acabamento';
+    } else if (acabOpen || (hasAcab && acabTarget > 0)) {
+      stage = 'acabamento_entrada';
+      clientStep = 'acabamento';
+      displayStatus = 'Acabamento aguardando entrada';
+      adminBadge = 'Aguardando entrada';
+    } else if (tecProduction || (tecRemaining > 0 && (insumosConcluidos || tecDone > 0))) {
+      stage = 'tecelagem';
+      clientStep = 'tecelagem';
+      displayStatus = 'Tecelagem em andamento';
+      adminBadge = 'Em producao';
+    } else if (hasTec || tecOpen) {
+      stage = 'preparacao';
+      clientStep = 'insumos';
+      displayStatus = insumosConcluidos ? 'Tecelagem pronta para iniciar' : 'Preparacao de insumos';
+      adminBadge = insumosConcluidos ? 'Preparado' : 'Insumos';
+    }
+
+    var tecOp = tecelagem.length ? tecelagem[0].op : null;
+    var acabOp = acabamento.length ? acabamento[0].op : null;
+    var canMoveTecToAcab = hasTec && tecRemaining > 0 && (tecProduction || tecDone > 0 || tecFinished);
+    var canReleaseExpedicao = acabFinished && !hasExpedicao;
+    var canRegisterDelivery = hasExpedicao && expedicaoSaldo > 0;
+
+    var actions = {
+      openTecelagemOp: hasTec
+        ? action('view', 'Ver OP Tecelagem', { op: tecOp })
+        : action('enabled', 'Abrir OP de Tecelagem'),
+      transferInsumosToTecelagem: !hasTec
+        ? action('disabled', 'Vincule uma OP')
+        : (insumosConcluidos || tecProduction || tecDone > 0 || hasAcab
+          ? action('view', 'Insumos concluidos', { op: tecOp })
+          : action('enabled', 'Transferir', { op: tecOp })),
+      transferTecelagemToAcabamento: !hasTec
+        ? action('hidden')
+        : (canMoveTecToAcab
+          ? action('enabled', 'Transferir', { op: tecOp })
+          : (tecDone > 0 || hasAcab
+            ? action('view', 'Ver movimento', { op: tecOp })
+            : action('disabled', 'Sem saldo disponivel', { op: tecOp }))),
+      confirmAcabamentoEntry: !hasAcab
+        ? action('hidden')
+        : (acabOpen
+          ? action('enabled', 'Confirmar entrada', { op: acabOp })
+          : action('view', 'Ver OP Acabamento', { op: acabOp })),
+      releaseExpedicao: canReleaseExpedicao
+        ? action('enabled', 'Liberar expedicao', { op: acabOp })
+        : (hasExpedicao ? action('view', 'Ver expedicao', { op: acabOp }) : action('disabled', 'Aguardando acabamento', { op: acabOp })),
+      registerDelivery: canRegisterDelivery
+        ? action('enabled', 'Registrar entrega')
+        : (hasExpedicao ? action('view', 'Ver entrega') : action('hidden')),
+      concludePedido: pedidoConcluido
+        ? action('view', 'Pedido concluido')
+        : action('disabled', 'Aguardando cadeia'),
+    };
+
+    var adminStepper = {
+      insumos: insumosConcluidos ? 'done' : (hasTec ? 'current' : 'future'),
+      tecelagem: tecTarget > 0 && tecRemaining <= 0 ? 'done' : (stage === 'tecelagem' ? 'current' : (tecDone > 0 ? 'current' : 'future')),
+      acabamento: acabTarget > 0 && acabRemaining <= 0 ? 'done' : ((stage === 'acabamento' || stage === 'acabamento_entrada') ? 'current' : (acabDone > 0 ? 'current' : 'future')),
+      expedicao: pedidoConcluido || (hasExpedicao && expedicaoSaldo <= 0 && expedicaoLiberado > 0) ? 'done' : ((stage === 'expedicao' || stage === 'pronto_expedicao') ? 'current' : 'future'),
+      entrega: pedidoConcluido ? 'done' : (expedicaoEntregue > 0 ? 'current' : 'future'),
+    };
+
+    return {
+      stage: stage,
+      displayStatus: displayStatus,
+      clientStep: clientStep,
+      adminBadge: adminBadge,
+      isOperationalOverride: hasTec || hasAcab || hasExpedicao || pedidoConcluido,
+      metrics: {
+        tecelagem: { target: tecTarget, done: tecDone, remaining: tecRemaining },
+        acabamento: { target: acabTarget, done: acabDone, remaining: acabRemaining },
+        insumos: { pedidoKg: insumoPedidoKg, recebidoKg: insumoRecebidoKg, concluido: insumosConcluidos },
+        expedicao: { liberado: expedicaoLiberado, entregue: expedicaoEntregue, saldo: expedicaoSaldo },
+      },
+      actions: actions,
+      adminStepper: adminStepper,
+      clientSteps: buildClientSteps(clientStep),
+      progressPercent: clampPercent(((STAGE_INDEX[clientStep] || 0) + 1) / CLIENT_STEPS.length * 100),
+    };
+  }
+
+  window.RAVATEX_SCREENS.pedidoChainState = {
+    derivePedidoChainState: derivePedidoChainState,
+  };
+})(window);

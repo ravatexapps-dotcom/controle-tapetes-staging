@@ -299,6 +299,20 @@
     var insumoPercent = insumoPedidoKg > 0
       ? ns.clampPercent((insumoRecebidoKg / insumoPedidoKg) * 100)
       : 0;
+    var chainApi = window.RAVATEX_SCREENS
+      && window.RAVATEX_SCREENS.pedidoChainState;
+    var chainState = chainApi && typeof chainApi.derivePedidoChainState === 'function'
+      ? chainApi.derivePedidoChainState({
+          pedido: pedido,
+          totalPedido: totalPedido,
+          ops: state.ops,
+          ordensFio: state.ordensFio,
+          entregaItens: state.entregaItens,
+          entregasById: state.entregasById,
+          expedicoes: state.expedicoes,
+          expedicaoItens: state.expedicaoItens,
+        })
+      : null;
 
     var partialMeta = collectPartialMeta(state);
     var itemMetricsById = {};
@@ -505,6 +519,7 @@
           detalhe: linkedOpCount ? 'O recebimento de fio continua canonico na OP de tecelagem vinculada.' : 'Vincule uma OP ao pedido para iniciar o fluxo produtivo.',
           op: tecelagemSummaries.length ? tecelagemSummaries[0].op : null,
           docs: 'NF de compra e romaneio',
+          action: chainState && chainState.actions ? chainState.actions.transferInsumosToTecelagem : null,
         },
       },
       {
@@ -521,6 +536,7 @@
           detalhe: tecelagemSummaries.length ? 'A mesma movimentacao da OP de origem deve ser usada aqui.' : 'Nenhuma OP de tecelagem vinculada.',
           op: tecelagemSummaries.length ? tecelagemSummaries[0].op : null,
           docs: 'Romaneio e NF',
+          action: chainState && chainState.actions ? chainState.actions.transferTecelagemToAcabamento : null,
         },
       },
       {
@@ -537,6 +553,7 @@
           detalhe: acabamentoSummaries.length ? 'A finalizacao continua sendo registrada na OP de acabamento (latex).' : 'Nenhuma OP de acabamento vinculada.',
           op: acabamentoSummaries.length ? acabamentoSummaries[0].op : null,
           docs: 'NF de servico e romaneio',
+          action: chainState && chainState.actions ? chainState.actions.releaseExpedicao : null,
         },
       },
       {
@@ -557,6 +574,7 @@
           detalhe: hasExpedicaoData ? 'Abra a expedicao vinculada para registrar entrega/coleta.' : 'Libere a expedicao a partir da OP de acabamento finalizada.',
           op: acabamentoSummaries.length ? acabamentoSummaries[0].op : null,
           docs: 'NF de expedicao',
+          action: chainState && chainState.actions ? chainState.actions.registerDelivery : null,
         },
       },
       {
@@ -572,9 +590,30 @@
       },
     ];
 
+    if (chainState && chainState.adminStepper) {
+      stepper.forEach(function (stage) {
+        var nextState = chainState.adminStepper[stage.key];
+        if (!nextState) return;
+        stage.state = nextState;
+        if (nextState === 'done') {
+          stage.percent = 100;
+          stage.sublabel = 'concluido';
+        }
+      });
+    }
+
+    if (chainState && chainState.actions) {
+      opSummaries.forEach(function (summary) {
+        summary.chainAction = summary.stageKey === 'tecelagem'
+          ? chainState.actions.transferTecelagemToAcabamento
+          : chainState.actions.releaseExpedicao;
+      });
+    }
+
     return {
       trackingApi: trackingApi,
       trackingSummary: trackingSummary,
+      chainState: chainState,
       totalPedido: totalPedido,
       opSummaries: opSummaries,
       itemMetricsById: itemMetricsById,

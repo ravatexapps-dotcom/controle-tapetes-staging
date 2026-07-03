@@ -110,6 +110,7 @@
       itens: [],
       modelosById: {},
       coresById: {},
+      chainState: null,
       eventos: [],
       eventosError: false,
     };
@@ -194,7 +195,7 @@
     async function carregar() {
       var pedidoRes = await window.supa
         .from('pedidos')
-        .select('id, numero, status, status_cliente_visual, status_cliente_excecao, status_cliente_mensagem, status_cliente_atualizado_em, prazo_entrega, observacao, criado_em, atualizado_em')
+        .select('id, numero, status, status_cliente_visual, status_cliente_excecao, status_cliente_mensagem, status_cliente_atualizado_em, prazo_entrega, observacao, criado_em, atualizado_em, metros_total')
         .eq('id', pedidoId)
         .maybeSingle();
 
@@ -294,6 +295,102 @@
           );
         }
       }
+
+      await carregarCadeiaCliente();
+    }
+
+    async function carregarCadeiaCliente() {
+      state.chainState = null;
+      var chainApi = window.RAVATEX_SCREENS
+        && window.RAVATEX_SCREENS.pedidoChainState;
+      if (!chainApi || typeof chainApi.derivePedidoChainState !== 'function') return;
+
+      var chainInput = {
+        pedido: state.pedido,
+        ops: [],
+        ordensFio: [],
+        entregaItens: [],
+        entregasById: {},
+        expedicoes: [],
+        expedicaoItens: [],
+      };
+
+      var lotesRes = await window.supa
+        .from('lotes')
+        .select('id, pedido_id')
+        .eq('pedido_id', pedidoId);
+
+      if (lotesRes.error || !(lotesRes.data || []).length) {
+        if (lotesRes.error) console.error('cliente-pedido-detail: cadeia indisponivel', lotesRes.error);
+        state.chainState = chainApi.derivePedidoChainState(chainInput);
+        return;
+      }
+
+      var loteIds = (lotesRes.data || []).map(function (row) { return row.id; });
+      var opsRes = await window.supa
+        .from('ops')
+        .select('id, numero, ano, status, tipo, origem_op_id, lote_id, op_itens(id, modelo_id, metros_pedidos, metros_ajustados, pedido_item_id)')
+        .in('lote_id', loteIds);
+
+      if (opsRes.error) {
+        console.error('cliente-pedido-detail: cadeia indisponivel', opsRes.error);
+        state.chainState = chainApi.derivePedidoChainState(chainInput);
+        return;
+      }
+
+      chainInput.ops = opsRes.data || [];
+      var idsEtapas = chainInput.ops.map(function (row) { return row.id; });
+      if (!idsEtapas.length) {
+        state.chainState = chainApi.derivePedidoChainState(chainInput);
+        return;
+      }
+
+      var entregaItensRes = await window.supa
+        .from('entrega_itens')
+        .select('id, entrega_id, op_id, op_item_id, metros_entregues, defeito')
+        .in('op_id', idsEtapas);
+
+      if (!entregaItensRes.error) {
+        chainInput.entregaItens = entregaItensRes.data || [];
+        var entregaIds = Array.from(new Set(chainInput.entregaItens
+          .map(function (row) { return row.entrega_id; })
+          .filter(function (id) { return id != null; })));
+        if (entregaIds.length > 0) {
+          var entregasRes = await window.supa
+            .from('entregas')
+            .select('id, etapa')
+            .in('id', entregaIds);
+          if (!entregasRes.error) {
+            chainInput.entregasById = Object.fromEntries((entregasRes.data || []).map(function (row) {
+              return [row.id, row];
+            }));
+          }
+        }
+      }
+
+      var ordensRes = await window.supa
+        .from('ordens_compra_fio')
+        .select('id, op_id, kg_pedido, kg_recebido, status')
+        .in('op_id', idsEtapas);
+      if (!ordensRes.error) chainInput.ordensFio = ordensRes.data || [];
+
+      var expedicoesRes = await window.supa
+        .from('expedicoes')
+        .select('id, pedido_id, op_latex_id, status')
+        .eq('pedido_id', pedidoId);
+      if (!expedicoesRes.error) {
+        chainInput.expedicoes = expedicoesRes.data || [];
+        var expedicaoIds = chainInput.expedicoes.map(function (row) { return row.id; });
+        if (expedicaoIds.length > 0) {
+          var expedicaoItensRes = await window.supa
+            .from('expedicao_itens')
+            .select('id, expedicao_id, op_item_id, pedido_item_id, modelo_id, metros_liberados, metros_entregues')
+            .in('expedicao_id', expedicaoIds);
+          if (!expedicaoItensRes.error) chainInput.expedicaoItens = expedicaoItensRes.data || [];
+        }
+      }
+
+      state.chainState = chainApi.derivePedidoChainState(chainInput);
     }
 
     // Breadcrumb + titulo + badge de status + data de atualizacao.
@@ -334,7 +431,17 @@
       var trackingApi = window.RavatexPedidoTracking
         || (window.RAVATEX_PEDIDO_UI && window.RAVATEX_PEDIDO_UI.CLIENTE_TRACKING);
       var statusBadge;
-      if (p.status_cliente_visual && trackingApi) {
+      if (state.chainState && state.chainState.isOperationalOverride) {
+        statusBadge = window.el('span', {
+          style: 'display:inline-flex;align-items:center;gap:7px;background:#eaf1fd;color:#2563eb;'
+            + 'border-radius:4px;padding:5px 12px;font-size:13px;font-weight:700;',
+        },
+          window.el('span', {
+            style: 'width:7px;height:7px;border-radius:50%;background:#2563eb;flex-shrink:0;display:inline-block;',
+          }),
+          state.chainState.displayStatus
+        );
+      } else if (p.status_cliente_visual && trackingApi) {
         var trackingStep = trackingApi.getClienteTrackingStep
           ? trackingApi.getClienteTrackingStep(p.status_cliente_visual) : null;
         var trackingLabel = trackingStep ? trackingStep.label : p.status_cliente_visual;
@@ -375,7 +482,7 @@
 
     function buildTracking() {
       if (!state.pedido) return window.el('div', {});
-      return window.buildClientePedidoTrackingCard(state.pedido, state.itens, state.parciais);
+      return window.buildClientePedidoTrackingCard(state.pedido, state.itens, state.parciais, state.chainState);
     }
 
     // Meta card com 3 colunas: Atualizado em | Prazo previsto | Recebimento.

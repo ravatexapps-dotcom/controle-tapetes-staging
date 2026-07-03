@@ -134,6 +134,24 @@ function renderCard(pedido) {
   return stub.collectText(node);
 }
 
+function renderCardComCadeia(pedido, chainState) {
+  const stub = makeElStub();
+  const sandbox = {
+    window: {
+      el: stub.el,
+      fmtDataCurta: (value) => 'FMT(' + value + ')',
+      RAVATEX_PEDIDO_UI: {},
+    },
+    console,
+  };
+  sandbox.window.window = sandbox.window;
+  vm.createContext(sandbox);
+  vm.runInContext(trackingUi, sandbox, { filename: 'js/pedido-tracking-ui.js' });
+  vm.runInContext(screen, sandbox, { filename: 'js/screens/cliente-pedido-tracking.js' });
+  const node = vm.runInContext('window.buildClientePedidoTrackingCard', sandbox)(pedido, [], [], chainState);
+  return stub.collectText(node);
+}
+
 const ETAPAS_ESPERADAS = [
   'Recebido', 'Confirmado', 'Insumos', 'Tecelagem',
   'Acabamento', 'Expedi', 'Transporte', 'Conclu',
@@ -144,6 +162,25 @@ test('cliente-pedido-tracking: renderiza as 8 etapas principais', () => {
   for (const etapa of ETAPAS_ESPERADAS) {
     assert.ok(texto.includes(etapa), `etapa "${etapa}" nao apareceu no card renderizado`);
   }
+});
+
+test('cliente-pedido-tracking: usa cadeia derivada para etapa em tecelagem', () => {
+  const texto = renderCardComCadeia({ status_cliente_visual: 'recebido' }, {
+    displayStatus: 'Tecelagem em andamento',
+    clientSteps: [
+      { key: 'recebido', label: 'Recebido', state: 'concluido' },
+      { key: 'confirmado', label: 'Confirmado', state: 'concluido' },
+      { key: 'insumos', label: 'Insumos', state: 'concluido' },
+      { key: 'tecelagem', label: 'Tecelagem', state: 'atual' },
+      { key: 'acabamento', label: 'Acabamento', state: 'futuro' },
+      { key: 'expedicao', label: 'Expedicao', state: 'futuro' },
+      { key: 'transporte', label: 'Transporte', state: 'futuro' },
+      { key: 'concluido', label: 'Concluido', state: 'futuro' },
+    ],
+  });
+  assert.ok(texto.includes('Tecelagem em andamento'));
+  assert.ok(texto.includes('em andamento'));
+  assert.equal(/Recebido\s+em andamento/i.test(texto), false);
 });
 
 test('cliente-pedido-tracking: pedido nulo nao lanca erro e devolve no vazio', () => {

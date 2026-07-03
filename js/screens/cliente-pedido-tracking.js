@@ -113,6 +113,12 @@
     var estado;
     if (hasParcial) {
       estado = 'parcial';
+    } else if (dtoStep && dtoStep.state === 'concluido') {
+      estado = 'concluido';
+    } else if (dtoStep && dtoStep.state === 'atual') {
+      estado = 'atual';
+    } else if (dtoStep && dtoStep.state === 'futuro') {
+      estado = 'futuro';
     } else if (isException && currentIndex >= 0 && index === currentIndex) {
       estado = 'atual-excecao';
     } else if (index < currentIndex) {
@@ -228,9 +234,13 @@
   // Banner abaixo do stepper, estilo info azul flat conforme standalone.
   // Mantém: getClienteTrackingStatusLabel, updatedAt e fallbackToRecebido
   // para compatibilidade com testes vm existentes.
-  function buildBanner(api, pedido, progress, hasParciais) {
-    var statusLabel = api.getClienteTrackingStatusLabel(pedido);
-    var mensagem = api.getClienteTrackingMensagem(pedido);
+  function buildBanner(api, pedido, progress, hasParciais, chainState) {
+    var statusLabel = chainState && chainState.displayStatus
+      ? chainState.displayStatus
+      : api.getClienteTrackingStatusLabel(pedido);
+    var mensagem = chainState && chainState.displayStatus
+      ? 'Seu pedido esta em ' + chainState.displayStatus.toLowerCase() + '.'
+      : api.getClienteTrackingMensagem(pedido);
     var bgColor = '#f1f6fe';
     var borderColor = '#d7e6fb';
     var iconColor = '#2563eb';
@@ -318,7 +328,7 @@
     return acompanhamento && Array.isArray(acompanhamento.steps) ? acompanhamento.steps : null;
   }
 
-  function buildClientePedidoTrackingCard(pedido, itens, parciais) {
+  function buildClientePedidoTrackingCard(pedido, itens, parciais, chainState) {
     if (!pedido) return window.el('div', {});
 
     var api = getTrackingApi();
@@ -336,7 +346,9 @@
       return buildCanceladoCard(api, trackingPedido, progress);
     }
 
-    var stepsComPercentual = buildStepsComPercentual(api, pedido, itens, parciais);
+    var stepsComPercentual = chainState && Array.isArray(chainState.clientSteps)
+      ? chainState.clientSteps
+      : buildStepsComPercentual(api, pedido, itens, parciais);
     var hasParciais = Array.isArray(parciais) && parciais.length > 0;
     var totalSteps = api.CLIENTE_TRACKING_STEPS.length;
 
@@ -358,7 +370,7 @@
     }
 
     card.appendChild(stepperRow);
-    card.appendChild(buildBanner(api, trackingPedido, progress, hasParciais));
+    card.appendChild(buildBanner(api, trackingPedido, progress, hasParciais, chainState));
     return card;
   }
 
