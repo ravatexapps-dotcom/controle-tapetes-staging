@@ -236,7 +236,7 @@ test('pedido-detail: conectores continuam como setas integradas, nao badges solt
   assert.doesNotMatch(connectorRegion, /border:\s*1px solid/);
 });
 
-test('pedido-detail: somente Transferir cria botao e handler no conector', () => {
+test('pedido-detail: Transferir e Concluido abrem transicao; Aguardar permanece sem handler', () => {
   const connectorRegion = (detailRender.match(
     /function isConnectorDoneAction\s*\(action\)\s*\{[\s\S]*?\n  function buildStepper/
   ) || [''])[0];
@@ -247,11 +247,12 @@ test('pedido-detail: somente Transferir cria botao e handler no conector', () =>
   assert.ok(connectorSlice, 'trecho buildTransferButton nao encontrado');
   assert.match(connectorRegion, /mode === ['"]hidden['"][\s\S]*?state:\s*['"]waiting['"][\s\S]*?label:\s*['"]Aguardar['"]/,
     'action hidden deve renderizar Aguardar, nao sumir');
-  assert.match(connectorSlice, /visual\.state === ['"]done['"] \|\| visual\.state === ['"]waiting['"]/);
+  assert.match(connectorSlice, /var\s+clickable\s*=\s*visual\.state === ['"]active['"] \|\| visual\.state === ['"]done['"]/,
+    'Concluido deve ficar clicavel para abrir historico da transicao');
   assert.match(connectorSlice, /window\.el\(['"]div['"][\s\S]*?buildConnectorStyle\(visual,\s*false\)/,
-    'Concluido/Aguardar devem ser elementos estaticos sem handler');
+    'Aguardar deve ser elemento estatico sem handler');
   assert.match(connectorSlice, /window\.el\(['"]button['"][\s\S]*?handlers\.openMovementModal\(stage\.transfer\)/,
-    'Transferir deve continuar abrindo a operacao canonica existente');
+    'Transferir/Concluido devem abrir o modal de transicao do Pedido');
   assert.doesNotMatch(connectorSlice, /visual\.state === ['"]view['"]/);
   assert.doesNotMatch(connectorSlice, /action\.mode === ['"]hidden['"][\s\S]*?return window\.el\(['"]div['"],\s*\{\s*style:\s*['"]display:flex;align-items:center;justify-content:center;height:42px;['"]\s*\}\)/);
 });
@@ -612,16 +613,18 @@ test('pedido-detail.js: NÃO referencia arquivos críticos de OP', () => {
   assert.doesNotMatch(detailBundle, /screenFornecedor/);
 });
 
-test('pedido-detail.js: openMovementModal existe e permanece somente leitura', () => {
+test('pedido-detail.js: openMovementModal abre transicao local e nao redireciona Transferir para OP', () => {
   assert.ok(movementModalSlice, 'trecho de openMovementModal nao encontrado');
-  assert.match(movementModalSlice, /somente leitura/i,
-    'modal deve se declarar somente leitura');
-  assert.match(movementModalSlice, /Operacao canonica da OP/,
-    'modal deve reforcar a origem canonica na OP');
-  assert.match(movementModalSlice, /Abrir OP de origem/,
-    'acao primaria do modal deve abrir a OP de origem');
-  assert.match(movementModalSlice, /nao grava entrega, nao cria movimentacao no Pedido/i,
-    'modal deve deixar explicito que nao grava nem cria estado paralelo');
+  assert.match(movementModalSlice, /Movimentacao no Pedido/,
+    'modal deve abrir a movimentacao no contexto do Pedido');
+  assert.match(movementModalSlice, /mode\s*=\s*action\.mode === ['"]enabled['"] \? ['"]transfer['"] : ['"]history['"]/,
+    'modal deve separar modo transfer do modo history');
+  assert.doesNotMatch(movementModalSlice, /Abrir OP de origem/,
+    'Transferir nao pode ser apenas um redirecionamento para OP');
+  assert.doesNotMatch(movementModalSlice, /window\.navigate\(\s*['"]#\/ops\//,
+    'openMovementModal nao deve navegar direto para OP');
+  assert.match(movementModalSlice, /nao mantem estado paralelo no Pedido/i,
+    'modal deve reforcar que nao existe write paralelo no Pedido');
 });
 
 test('pedido-detail.js: openMovementModal mostra contexto pre-carregado esperado', () => {
@@ -639,17 +642,38 @@ test('pedido-detail.js: openMovementModal mostra contexto pre-carregado esperado
   }
 });
 
-test('pedido-detail.js: openMovementModal nao vira formulario operacional nem chama writes proibidos', () => {
+test('pedido-detail.js: openMovementModal usa operacoes canonicas para movimentar pelo Pedido', () => {
   assert.ok(movementModalSlice, 'trecho de openMovementModal nao encontrado');
-  assert.doesNotMatch(movementModalSlice, /window\.el\(\s*['"]input['"]/);
-  assert.doesNotMatch(movementModalSlice, /window\.el\(\s*['"]textarea['"]/);
-  assert.doesNotMatch(movementModalSlice, /window\.el\(\s*['"]select['"]/);
-  assert.doesNotMatch(movementModalSlice, /salvarEntregaCima/);
-  assert.doesNotMatch(movementModalSlice, /salvarEntregaLatex/);
+  assert.match(detailEvents, /window\.registrarRecebimentoOrdemFio/,
+    'Insumos -> Tecelagem deve usar helper canonico de recebimento da OP');
+  assert.match(detailEvents, /window\.buildEntregaInlineForm/);
+  assert.match(detailEvents, /window\.salvarEntregaCima/,
+    'Tecelagem -> Acabamento deve usar helper canonico da OP');
+  assert.match(detailEvents, /window\.supa\.rpc\(['"]liberar_expedicao['"]/,
+    'Acabamento -> Expedicao deve usar RPC canonica ja usada pela OP');
+  assert.match(detailEvents, /window\.supa\.rpc\(['"]registrar_entrega_expedicao['"]/,
+    'Expedicao -> Entrega deve usar RPC canonica da tela de expedicao');
   assert.doesNotMatch(movementModalSlice, /gerar_op_latex/);
-  assert.doesNotMatch(movementModalSlice, /alterar_status_op/);
-  assert.doesNotMatch(movementModalSlice, /window\.supa/);
   assert.doesNotMatch(movementModalSlice, /\.from\(\s*['"]/);
+});
+
+test('pedido-detail.js: Concluido abre historico com parciais da OP e do Pedido', () => {
+  assert.ok(movementModalSlice, 'trecho de openMovementModal nao encontrado');
+  assert.match(detailEvents, /function buildTransitionHistoryEntries/);
+  assert.match(movementModalSlice, /buildHistoryBlock\(historyEntries\)/);
+  assert.match(detailEvents, /state\.entregaItens/);
+  assert.match(detailEvents, /state\.entregasById/);
+  assert.match(detailEvents, /state\.expedicaoMovimentos/);
+  assert.match(detailEvents, /state\.expedicaoMovimentoItens/);
+  assert.match(detailEvents, /state\.ordensFio/);
+  assert.match(detailEvents, /entries\.map\(function \(entry, index\)/,
+    'multiplas parciais devem aparecer como multiplas entradas, nao consolidadas em uma linha unica');
+});
+
+test('pedido-detail-data: carrega destinos latex para o formulario canonico de transferencia', () => {
+  assert.match(detailData, /state\.latexOptions\s*=\s*\[\]/);
+  assert.match(detailData, /\.from\(\s*['"]fornecedores['"]\s*\)[\s\S]{0,180}\.eq\(\s*['"]tipo['"]\s*,\s*['"]latex['"]\s*\)/,
+    'Pedido precisa carregar fornecedores latex para reutilizar buildEntregaInlineForm/salvarEntregaCima');
 });
 
 // ---------------------------------------------------------------------

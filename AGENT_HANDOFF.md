@@ -2651,3 +2651,27 @@ node --test tests/boot.smoke.js \
   `node --test tests/router.smoke.js` OK (43/43; imprime o aviso
   conhecido de sandbox sobre `window.addEventListener`, mas termina com
   exit code 0 e todos os subtestes passam).
+# Estado pos-fase - Pedido Transition Actions B
+
+- Fase: `RAVATEX-TAPETES-PEDIDO-TRANSITION-ACTIONS-B`.
+- Escopo local: setas/conectores do bloco `Progresso produtivo` no
+  Pedido Admin. Sem SQL, sem aplicacao Supabase remota, sem producao e
+  sem push.
+- Causa corrigida: `openMovementModal(stage.transfer)` abria contexto,
+  mas o modal era explicitamente somente leitura e o botao principal
+  redirecionava para `#/ops/<id>` como caminho de movimentacao. Assim a
+  seta `Transferir` nao era a interface da transicao.
+- Corrigido: `Transferir` abre modal operacional no Pedido e reutiliza
+  operacoes canonicas (`registrarRecebimentoOrdemFio`,
+  `salvarEntregaCima`, `liberar_expedicao`,
+  `registrar_entrega_expedicao`); `Concluido` virou seta clicavel para
+  historico/parciais; `Aguardar` continua conector muted sem handler;
+  as 5 etapas e 4 conectores foram preservados.
+- Historico/parciais: o modal lista recebimentos de fio, entregas de
+  Tecelagem -> Acabamento, liberacoes de Expedicao e movimentos de
+  entrega/coleta ja carregados no detalhe do Pedido. Movimentos feitos
+  pela OP aparecem ali porque sao lidos das tabelas canonicas, nao de
+  estado paralelo do Pedido.
+- Arquivo extra justificado: `js/screens/pedido-detail-data.js` passou a
+  carregar fornecedores Latex em leitura para alimentar
+  `buildEntregaInlineForm` no fluxo canonico Tecelagem -> Acabamento.

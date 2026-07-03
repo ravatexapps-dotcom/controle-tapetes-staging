@@ -24,6 +24,7 @@
     state.expedicaoMovimentos = [];
     state.expedicaoMovimentoItens = [];
     state.ordensFio = [];
+    state.latexOptions = [];
     state.modelosById = {};
     state.coresById = {};
     state.opsLoadError = false;
@@ -130,6 +131,21 @@
           return [cor.id, cor];
         }));
       }
+    }
+
+    var latexRes = await window.supa
+      .from('fornecedores')
+      .select('id, nome, tipo')
+      .eq('tipo', 'latex')
+      .order('nome', { ascending: true });
+
+    if (latexRes.error) {
+      state.latexOptions = [];
+      console.error('pedido-detail: erro ao carregar fornecedores latex', latexRes.error);
+    } else {
+      state.latexOptions = (latexRes.data || []).map(function (fornecedor) {
+        return { value: fornecedor.id, label: fornecedor.nome };
+      });
     }
 
     var expedicoesRes = await window.supa

@@ -1,4 +1,28 @@
 > **Atualizacao 2026-07-03 - fase
+> `RAVATEX-TAPETES-PEDIDO-TRANSITION-ACTIONS-B`.**
+> Patch funcional local, sem SQL/Supabase remoto/producao e sem push: as
+> setas do `Progresso produtivo` deixaram de ser atalho para abrir a OP
+> e passaram a ser a interface da transicao no Pedido. `Transferir`
+> abre um modal operacional local e chama os mesmos helpers/RPCs
+> canonicos usados pela OP/Expedicao; `Concluido` abre o historico da
+> transicao com parciais ja carregadas; `Aguardar` segue sem handler.
+>
+> Operacoes preservadas: recebimento de fios usa
+> `registrarRecebimentoOrdemFio`; Tecelagem -> Acabamento reutiliza
+> `buildEntregaInlineForm` + `salvarEntregaCima`; Acabamento ->
+> Expedicao chama `liberar_expedicao`; Expedicao -> Entrega chama
+> `registrar_entrega_expedicao`. A matriz `derivePedidoChainState`,
+> gates, lifecycle e writes canonicos nao foram alterados. Para o
+> formulario canonico de Tecelagem -> Acabamento, o detalhe do Pedido
+> passou a carregar somente leitura de fornecedores Latex como
+> `latexOptions`.
+>
+> Testes focados travam: 5 etapas/4 conectores, labels visiveis apenas
+> `Concluido`, `Transferir` e `Aguardar`, ausencia de redirecionamento
+> direto para OP no `Transferir`, `Concluido` clicavel para historico,
+> multiplas parciais como multiplas entradas e `Aguardar` sem handler.
+
+> **Atualizacao 2026-07-03 - fase
 > `RAVATEX-TAPETES-PEDIDO-PROGRESS-CONNECTORS-R2`.**
 > Correcao visual fina local, sem SQL/Supabase/producao e sem push: a
 > R1 acertou os labels curtos, mas simplificou demais o componente ao

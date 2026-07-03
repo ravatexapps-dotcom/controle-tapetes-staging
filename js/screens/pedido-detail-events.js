@@ -316,11 +316,375 @@
       });
     }
 
+    function transitionKey(ctxMovement) {
+      return String(ctxMovement.origem || '').split(' - ')[0] + '>' + String(ctxMovement.destino || '');
+    }
+
+    function formatTransitionDate(value) {
+      if (!value) return '-';
+      if (window.fmtDataCurta) return window.fmtDataCurta(value);
+      return String(value).slice(0, 10);
+    }
+
+    function modelLabelByModeloId(modeloId) {
+      var modelo = state.modelosById[modeloId] || {};
+      var cor1 = modelo.cor_1_id != null && state.coresById[modelo.cor_1_id] ? state.coresById[modelo.cor_1_id].nome : null;
+      var cor2 = modelo.cor_2_id != null && state.coresById[modelo.cor_2_id] ? state.coresById[modelo.cor_2_id].nome : null;
+      var label = modelo.nome || ('Modelo #' + modeloId);
+      if (modelo.largura != null) label += ' - ' + Number(modelo.largura).toFixed(2).replace('.', ',') + ' m';
+      if (cor1 || cor2) label += ' - ' + (cor1 || '-') + ' / ' + (cor2 || '-');
+      return label;
+    }
+
+    function buildModelosForEntregaForm() {
+      var result = {};
+      Object.keys(state.modelosById || {}).forEach(function (modeloId) {
+        var modelo = state.modelosById[modeloId] || {};
+        result[modeloId] = Object.assign({}, modelo, {
+          cor_1: modelo.cor_1_id != null ? state.coresById[modelo.cor_1_id] || null : null,
+          cor_2: modelo.cor_2_id != null ? state.coresById[modelo.cor_2_id] || null : null,
+        });
+      });
+      return result;
+    }
+
+    function opFornecedorId(op, etapa) {
+      var row = ((op && op.op_fornecedores) || []).find(function (fornecedor) {
+        return fornecedor && fornecedor.etapa === etapa;
+      });
+      return row ? row.fornecedor_id : null;
+    }
+
+    function findOpDestinoByEntregaId(entregaId) {
+      return (state.ops || []).find(function (op) {
+        return op && op.origem_entrega_id === entregaId;
+      }) || null;
+    }
+
+    function buildTransitionHistoryEntries(ctxMovement) {
+      var key = transitionKey(ctxMovement);
+      var entries = [];
+      if (key === 'Insumos>Tecelagem') {
+        var opIds = ctxMovement.op ? [ctxMovement.op.id] : (state.ops || [])
+          .filter(function (op) { return ns.stageKeyForOp(op) === 'tecelagem'; })
+          .map(function (op) { return op.id; });
+        (state.ordensFio || []).forEach(function (ordem) {
+          if (opIds.indexOf(ordem.op_id) === -1) return;
+          var recebido = ns.toFiniteNumber(ordem.kg_recebido);
+          if (!(recebido > 0)) return;
+          entries.push({
+            title: 'Recebimento de insumos',
+            meta: (window.rotuloFio ? window.rotuloFio(ordem) : ns.fmtTextoOuEmpty(ordem.tipo, 'Fio')),
+            amount: ns.fmtKg(recebido) + ' de ' + ns.fmtKg(ordem.kg_pedido),
+            status: (window.OCF_STATUS_LABEL && window.OCF_STATUS_LABEL[ordem.status]) || ns.fmtTextoOuEmpty(ordem.status, 'Recebido'),
+            date: '-',
+          });
+        });
+      }
+      if (key === 'Tecelagem>Acabamento') {
+        var tecOpIds = ctxMovement.op ? [ctxMovement.op.id] : (state.ops || [])
+          .filter(function (op) { return ns.stageKeyForOp(op) === 'tecelagem'; })
+          .map(function (op) { return op.id; });
+        (state.entregaItens || []).forEach(function (item) {
+          if (tecOpIds.indexOf(item.op_id) === -1 || item.defeito) return;
+          var entrega = state.entregasById[item.entrega_id];
+          if (!entrega || entrega.etapa !== 'cima') return;
+          var opDestino = findOpDestinoByEntregaId(entrega.id);
+          entries.push({
+            title: 'Transferencia para acabamento',
+            meta: modelLabelByModeloId((ctxMovement.op && (ctxMovement.op.op_itens || []).find(function (opItem) {
+              return opItem.id === item.op_item_id;
+            }) || {}).modelo_id),
+            amount: ns.fmtMetros(item.metros_entregues),
+            status: opDestino ? ('Gerou ' + ns.opLabel(opDestino)) : 'Registrada',
+            date: formatTransitionDate(entrega.data),
+            note: entrega.destino && entrega.destino.nome ? ('Destino: ' + entrega.destino.nome) : null,
+          });
+        });
+      }
+      if (key === 'Acabamento>Expedicao') {
+        var latexOpIds = ctxMovement.op ? [ctxMovement.op.id] : (state.ops || [])
+          .filter(function (op) { return ns.stageKeyForOp(op) === 'acabamento'; })
+          .map(function (op) { return op.id; });
+        (state.expedicoes || []).forEach(function (expedicao) {
+          if (latexOpIds.indexOf(expedicao.op_latex_id) === -1) return;
+          (state.expedicaoItens || []).forEach(function (item) {
+            if (item.expedicao_id !== expedicao.id) return;
+            entries.push({
+              title: 'Liberacao para expedicao',
+              meta: modelLabelByModeloId(item.modelo_id),
+              amount: ns.fmtMetros(item.metros_liberados),
+              status: ns.fmtTextoOuEmpty(expedicao.status, 'Liberada'),
+              date: formatTransitionDate(expedicao.liberado_em || expedicao.criado_em),
+              note: 'Expedicao #' + expedicao.id,
+            });
+          });
+        });
+      }
+      if (key === 'Expedicao>Entrega') {
+        var expedicoesById = {};
+        (state.expedicoes || []).forEach(function (expedicao) { expedicoesById[expedicao.id] = expedicao; });
+        var itensById = {};
+        (state.expedicaoItens || []).forEach(function (item) { itensById[item.id] = item; });
+        var movimentosById = {};
+        (state.expedicaoMovimentos || []).forEach(function (movimento) { movimentosById[movimento.id] = movimento; });
+        (state.expedicaoMovimentoItens || []).forEach(function (item) {
+          var movimento = movimentosById[item.movimento_id];
+          var expedicaoItem = itensById[item.expedicao_item_id];
+          if (!movimento || !expedicaoItem || !expedicoesById[movimento.expedicao_id]) return;
+          entries.push({
+            title: movimento.tipo === 'coleta' ? 'Coleta registrada' : 'Entrega registrada',
+            meta: modelLabelByModeloId(expedicaoItem.modelo_id),
+            amount: ns.fmtMetros(item.metros),
+            status: 'Registrada',
+            date: formatTransitionDate(movimento.data || movimento.criado_em),
+            note: movimento.observacao || ('Expedicao #' + movimento.expedicao_id),
+          });
+        });
+      }
+      return entries;
+    }
+
+    function buildHistoryBlock(entries) {
+      return window.el('div', {
+        style: 'border:1px solid #eceef1;border-radius:4px;background:#fff;overflow:hidden;margin-bottom:14px;',
+      },
+        window.el('div', {
+          style: 'padding:11px 14px;border-bottom:1px solid #f1f3f6;font-size:12px;font-weight:700;letter-spacing:.03em;color:#8a93a3;text-transform:uppercase;',
+        }, 'Historico da transicao'),
+        entries.length
+          ? entries.map(function (entry, index) {
+              return window.el('div', {
+                style: 'display:grid;grid-template-columns:92px 1fr auto;gap:12px;align-items:flex-start;padding:12px 14px;' + (index < entries.length - 1 ? 'border-bottom:1px solid #f1f3f6;' : ''),
+              },
+                window.el('div', { style: 'font-size:12px;font-weight:700;color:#8a93a3;white-space:nowrap;' }, entry.date || '-'),
+                window.el('div', { style: 'min-width:0;' },
+                  window.el('div', { style: 'font-size:13.5px;font-weight:700;color:#16203a;line-height:1.35;' }, entry.title),
+                  window.el('div', { style: 'font-size:12.5px;color:#5b6472;line-height:1.45;margin-top:2px;' }, entry.meta || '-'),
+                  entry.note ? window.el('div', { style: 'font-size:12px;color:#8a93a3;line-height:1.45;margin-top:2px;' }, entry.note) : null
+                ),
+                window.el('div', { style: 'text-align:right;' },
+                  window.el('div', { style: 'font-size:13px;font-weight:800;color:#2563eb;white-space:nowrap;' }, entry.amount || '-'),
+                  window.el('div', { style: 'font-size:11px;font-weight:700;color:#18794a;margin-top:4px;white-space:nowrap;' }, entry.status || 'Registrada')
+                )
+              );
+            })
+          : window.el('div', {
+              style: 'padding:12px 14px;font-size:13px;color:#8a93a3;',
+            }, 'Nenhuma parcial registrada para esta transicao.')
+      );
+    }
+
+    function buildInsumosTransferForm(ctxMovement) {
+      var opIds = ctxMovement.op ? [ctxMovement.op.id] : [];
+      var ordens = (state.ordensFio || []).filter(function (ordem) {
+        return opIds.indexOf(ordem.op_id) !== -1;
+      });
+      var dataInput = window.textInput({ type: 'date', value: new Date().toISOString().slice(0, 10) });
+      var linhas = ordens.map(function (ordem) {
+        var recebido = ns.toFiniteNumber(ordem.kg_recebido);
+        var pedido = ns.toFiniteNumber(ordem.kg_pedido);
+        var saldo = ns.round2(Math.max(pedido - recebido, 0));
+        var input = window.textInput({ type: 'number', step: '0.01', value: saldo > 0 ? String(saldo) : '0' });
+        input.disabled = saldo <= 0;
+        return { ordem: ordem, input: input, saldo: saldo, recebido: recebido, pedido: pedido };
+      });
+      return {
+        node: window.el('div', {},
+          window.el('div', { style: 'display:grid;grid-template-columns:180px 1fr;gap:12px;margin-bottom:12px;' },
+            window.el('div', {}, window.formField({ label: 'Data do recebimento', input: dataInput })),
+            window.el('div', { style: 'font-size:12.5px;color:#8a93a3;align-self:end;line-height:1.4;' },
+              'Informe a quantidade recebida agora; o helper canonico atualiza o total recebido da ordem.')
+          ),
+          window.el('div', { style: 'border:1px solid #eceef1;border-radius:4px;background:#fff;overflow:hidden;' },
+            linhas.length ? linhas.map(function (linha, index) {
+              return window.el('div', { style: 'display:grid;grid-template-columns:1fr 130px;gap:12px;align-items:center;padding:10px 12px;' + (index < linhas.length - 1 ? 'border-bottom:1px solid #f1f3f6;' : '') },
+                window.el('div', {},
+                  window.el('div', { style: 'font-size:13px;font-weight:700;color:#16203a;' }, window.rotuloFio ? window.rotuloFio(linha.ordem) : ns.fmtTextoOuEmpty(linha.ordem.tipo, 'Fio')),
+                  window.el('div', { style: 'font-size:11.5px;color:#8a93a3;margin-top:2px;' }, 'Saldo: ' + ns.fmtKg(linha.saldo))),
+                linha.input
+              );
+            }) : window.el('div', { style: 'padding:12px 14px;font-size:13px;color:#8a93a3;' }, 'Nenhuma ordem de fio vinculada.')
+          )
+        ),
+        saveLabel: 'Registrar recebimento',
+        onSave: async function () {
+          if (!window.registrarRecebimentoOrdemFio) {
+            window.toast('Operacao canonica de recebimento indisponivel.', 'error');
+            return false;
+          }
+          var changed = false;
+          for (var i = 0; i < linhas.length; i++) {
+            var qtd = ns.toFiniteNumber(linhas[i].input.value);
+            if (!(qtd > 0)) continue;
+            if (qtd > linhas[i].saldo) {
+              window.toast('Quantidade maior que o saldo do fio.', 'error');
+              return false;
+            }
+            changed = true;
+            var total = ns.round2(linhas[i].recebido + qtd);
+            var res = await window.registrarRecebimentoOrdemFio({
+              ordemId: linhas[i].ordem.id,
+              kgRecebido: total,
+              dataRecebimento: dataInput.value,
+              status: total < linhas[i].pedido ? 'recebido_parcial' : 'recebido_total',
+            });
+            if (res && res.error) {
+              window.toast('Erro ao registrar recebimento de fio.', 'error');
+              console.error(res.error);
+              return false;
+            }
+          }
+          if (!changed) {
+            window.toast('Informe ao menos uma quantidade de fio.', 'error');
+            return false;
+          }
+          return true;
+        },
+      };
+    }
+
+    function buildTecelagemTransferForm(ctxMovement) {
+      if (!ctxMovement.op || !window.buildEntregaInlineForm || !window.salvarEntregaCima) {
+        return null;
+      }
+      var form = window.buildEntregaInlineForm({
+        opItens: ctxMovement.op.op_itens || [],
+        modelosById: buildModelosForEntregaForm(),
+        latexOptions: state.latexOptions || [],
+      });
+      return {
+        node: form.node,
+        saveLabel: 'Salvar transferencia',
+        onSave: async function () {
+          var fornecedorId = opFornecedorId(ctxMovement.op, 'cima');
+          if (!fornecedorId) {
+            window.toast('Fornecedor de tecelagem nao vinculado a OP.', 'error');
+            return false;
+          }
+          return await window.salvarEntregaCima({
+            fornecedorId: fornecedorId,
+            opId: ctxMovement.op.id,
+            payload: form.getPayload(),
+          });
+        },
+      };
+    }
+
+    function buildAcabamentoTransferForm(ctxMovement) {
+      return {
+        node: window.el('div', { style: 'font-size:13px;color:#5b6472;line-height:1.5;' },
+          'Liberar expedicao usa a RPC canonica da OP de acabamento e cria/atualiza a expedicao vinculada ao Pedido.'),
+        saveLabel: 'Liberar expedicao',
+        onSave: async function () {
+          if (!ctxMovement.op || !window.supa) {
+            window.toast('OP de acabamento indisponivel para liberacao.', 'error');
+            return false;
+          }
+          var r = await window.supa.rpc('liberar_expedicao', { p_op_latex_id: ctxMovement.op.id });
+          if (r.error || (r.data && r.data.ok === false)) {
+            var msg = r.error ? r.error.message : (r.data && r.data.erro ? r.data.erro : 'Liberacao nao realizada');
+            window.toast('Erro ao liberar expedicao: ' + msg, 'error');
+            console.error(r.error || r.data);
+            return false;
+          }
+          return true;
+        },
+      };
+    }
+
+    function buildExpedicaoTransferForm() {
+      var expedicao = (state.expedicoes || []).find(function (row) {
+        return (state.expedicaoItens || []).some(function (item) {
+          return item.expedicao_id === row.id && ns.toFiniteNumber(item.metros_liberados) > ns.toFiniteNumber(item.metros_entregues);
+        });
+      });
+      if (!expedicao) return null;
+      var itens = (state.expedicaoItens || []).filter(function (item) { return item.expedicao_id === expedicao.id; });
+      var tipoInput = window.selectInput({
+        options: [{ value: 'entrega', label: 'Entrega' }, { value: 'coleta', label: 'Coleta' }],
+        value: 'entrega',
+      });
+      var dataInput = window.textInput({ type: 'date', value: new Date().toISOString().slice(0, 10) });
+      var obsInput = window.textInput({ type: 'text', value: '', placeholder: 'observacao (opcional)' });
+      var linhas = itens.map(function (item) {
+        var saldo = ns.round2(Math.max(ns.toFiniteNumber(item.metros_liberados) - ns.toFiniteNumber(item.metros_entregues), 0));
+        var input = window.textInput({ type: 'number', step: '0.01', value: saldo > 0 ? String(saldo) : '0' });
+        input.disabled = saldo <= 0;
+        return { item: item, input: input, saldo: saldo };
+      });
+      return {
+        node: window.el('div', {},
+          window.el('div', { style: 'display:grid;grid-template-columns:150px 150px 1fr;gap:12px;margin-bottom:12px;' },
+            window.el('div', {}, window.formField({ label: 'Tipo', input: tipoInput })),
+            window.el('div', {}, window.formField({ label: 'Data', input: dataInput })),
+            window.el('div', {}, window.formField({ label: 'Observacao', input: obsInput }))
+          ),
+          window.el('div', { style: 'border:1px solid #eceef1;border-radius:4px;background:#fff;overflow:hidden;' },
+            linhas.map(function (linha, index) {
+              return window.el('div', { style: 'display:grid;grid-template-columns:1fr 130px;gap:12px;align-items:center;padding:10px 12px;' + (index < linhas.length - 1 ? 'border-bottom:1px solid #f1f3f6;' : '') },
+                window.el('div', {},
+                  window.el('div', { style: 'font-size:13px;font-weight:700;color:#16203a;' }, modelLabelByModeloId(linha.item.modelo_id)),
+                  window.el('div', { style: 'font-size:11.5px;color:#8a93a3;margin-top:2px;' }, 'Saldo: ' + ns.fmtMetros(linha.saldo))),
+                linha.input
+              );
+            })
+          )
+        ),
+        saveLabel: 'Registrar entrega',
+        onSave: async function () {
+          var payload = [];
+          linhas.forEach(function (linha) {
+            var metros = ns.toFiniteNumber(linha.input.value);
+            if (metros > 0) payload.push({ expedicao_item_id: linha.item.id, metros: metros });
+          });
+          for (var i = 0; i < payload.length; i++) {
+            var linha = linhas.find(function (row) { return row.item.id === payload[i].expedicao_item_id; });
+            if (linha && payload[i].metros > linha.saldo) {
+              window.toast('Quantidade maior que o saldo do item.', 'error');
+              return false;
+            }
+          }
+          if (!payload.length) {
+            window.toast('Informe ao menos uma quantidade para entrega/coleta.', 'error');
+            return false;
+          }
+          var r = await window.supa.rpc('registrar_entrega_expedicao', {
+            p_expedicao_id: expedicao.id,
+            p_tipo: tipoInput.value,
+            p_data: dataInput.value,
+            p_itens: payload,
+            p_observacao: obsInput.value ? obsInput.value.trim() : null,
+          });
+          if (r.error || (r.data && r.data.ok === false)) {
+            var msg = r.error ? r.error.message : (r.data && r.data.erro ? r.data.erro : 'Nao foi possivel registrar');
+            window.toast('Erro ao registrar expedicao: ' + msg, 'error');
+            console.error(r.error || r.data);
+            return false;
+          }
+          return true;
+        },
+      };
+    }
+
+    function buildTransferForm(ctxMovement) {
+      var key = transitionKey(ctxMovement);
+      if (key === 'Insumos>Tecelagem') return buildInsumosTransferForm(ctxMovement);
+      if (key === 'Tecelagem>Acabamento') return buildTecelagemTransferForm(ctxMovement);
+      if (key === 'Acabamento>Expedicao') return buildAcabamentoTransferForm(ctxMovement);
+      if (key === 'Expedicao>Entrega') return buildExpedicaoTransferForm(ctxMovement);
+      return null;
+    }
+
     function openMovementModal(ctxMovement) {
       var opLabel = ctxMovement.op ? ns.opLabel(ctxMovement.op) : 'Sem OP vinculada';
       var items = buildMovementItems(ctxMovement);
       var metrics = buildMovementMetrics(ctxMovement);
       var docs = buildMovementDocs(ctxMovement);
+      var action = ctxMovement.action || {};
+      var mode = action.mode === 'enabled' ? 'transfer' : 'history';
+      var historyEntries = buildTransitionHistoryEntries(ctxMovement);
+      var transferForm = mode === 'transfer' ? buildTransferForm(ctxMovement) : null;
       var body = window.el('div', {},
         window.el('div', {
           style: 'display:flex;align-items:flex-start;gap:12px;margin-bottom:14px;',
@@ -331,7 +695,7 @@
           window.el('div', {},
             window.el('div', {
               style: 'font-size:11px;font-weight:700;letter-spacing:.04em;color:#2563eb;text-transform:uppercase;margin-bottom:4px;',
-            }, 'Operacao canonica da OP'),
+            }, mode === 'transfer' ? 'Movimentacao no Pedido' : 'Historico da transicao'),
             window.el('div', {
               style: 'font-size:15px;font-weight:800;color:#16203a;',
             }, ctxMovement.title),
@@ -346,7 +710,9 @@
           ns.svgEl(ns.SVG_INFO),
           window.el('span', {
             style: 'font-size:12.5px;color:#2c4a78;line-height:1.5;',
-          }, 'Este modal e somente leitura nesta fase. Revise o contexto abaixo e use "Abrir OP de origem" para executar a movimentacao canonica na OP.')
+          }, mode === 'transfer'
+            ? 'A transferencia acontece no contexto do Pedido, mas grava pela mesma operacao canonica usada na OP. Nao existe lancamento paralelo.'
+            : 'Movimentos feitos pela OP ou pela seta do Pedido aparecem neste historico da transicao.')
         ),
         window.el('div', {
           style: 'display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;',
@@ -382,7 +748,7 @@
                     style: 'font-size:13px;color:#16203a;line-height:1.45;',
                   }, item.label),
                   window.el('div', {
-                    style: 'font-size:12px;font-weight:700;color:#2563eb;white-space:nowrap;',
+            style: 'font-size:12px;font-weight:700;color:#2563eb;white-space:nowrap;',
                   }, item.meta)
                 );
               })
@@ -390,6 +756,20 @@
                 style: 'padding:12px 14px;font-size:13px;color:#8a93a3;',
               }, 'Nenhum item consolidado para exibir nesta origem.')
         ),
+        buildHistoryBlock(historyEntries),
+        mode === 'transfer'
+          ? window.el('div', {
+              style: 'border:1px solid #d0e0fb;border-radius:4px;background:#f8fbff;padding:13px 14px;margin-bottom:14px;',
+            },
+              window.el('div', {
+                style: 'font-size:12px;font-weight:700;letter-spacing:.03em;color:#2563eb;text-transform:uppercase;margin-bottom:10px;',
+              }, 'Registrar nova transferencia'),
+              transferForm
+                ? transferForm.node
+                : window.el('div', { style: 'font-size:13px;color:#8a93a3;line-height:1.5;' },
+                    'Nao ha formulario canonico disponivel para esta transicao no estado atual.')
+            )
+          : null,
         window.el('div', {
           style: 'border:1px solid #eceef1;border-radius:4px;background:#fff;overflow:hidden;',
         },
@@ -419,8 +799,8 @@
           window.el('span', {
             style: 'font-size:12.5px;color:#5b6472;line-height:1.5;',
           }, ctxMovement.op
-            ? 'A operacao continua canonica na OP de origem. Este atalho nao grava entrega, nao cria movimentacao no Pedido e nao mantem estado paralelo.'
-            : 'Ainda nao existe uma OP de origem vinculada para este atalho. O Pedido continua sem gravacao propria de movimentacao nesta fase.')
+            ? 'A operacao continua canonica na OP de origem. Este atalho reutiliza o mesmo helper/RPC operacional e nao mantem estado paralelo no Pedido.'
+            : 'Ainda nao existe uma OP de origem vinculada para esta transicao. O Pedido nao cria movimentacao propria fora da operacao canonica.')
         )
       );
 
@@ -460,22 +840,29 @@
         type: 'button',
         style: 'background:#fff;color:#3f4757;border:1px solid #d8dce2;border-radius:4px;padding:9px 18px;font-weight:600;font-size:13.5px;font-family:inherit;cursor:pointer;',
         onclick: closeModal,
-      }, 'Cancelar');
-      var primaryBtn = window.el('button', {
-        type: 'button',
-        style: 'background:#2563eb;color:#fff;border:none;border-radius:4px;padding:9px 20px;font-weight:700;font-size:13.5px;font-family:inherit;cursor:pointer;',
-        onclick: function () {
-          if (ctxMovement.op) {
-            closeModal();
-            window.navigate('#/ops/' + ctxMovement.op.id);
-            return;
-          }
-          closeModal();
-        },
-      }, ctxMovement.op ? 'Abrir OP de origem' : 'Fechar');
+      }, mode === 'transfer' ? 'Cancelar' : 'Fechar');
 
       footer.appendChild(cancelBtn);
-      footer.appendChild(primaryBtn);
+      if (mode === 'transfer' && transferForm && typeof transferForm.onSave === 'function') {
+        var primaryBtn = window.el('button', {
+          type: 'button',
+          style: 'background:#2563eb;color:#fff;border:none;border-radius:4px;padding:9px 20px;font-weight:700;font-size:13.5px;font-family:inherit;cursor:pointer;',
+          onclick: async function (event) {
+            var btn = event && event.currentTarget ? event.currentTarget : null;
+            if (btn) btn.disabled = true;
+            var ok = await transferForm.onSave();
+            if (!ok) {
+              if (btn) btn.disabled = false;
+              return;
+            }
+            window.toast('Movimentacao registrada.', 'success');
+            await reload();
+            render();
+            closeModal();
+          },
+        }, transferForm.saveLabel || 'Salvar');
+        footer.appendChild(primaryBtn);
+      }
       card.appendChild(closeBtn);
       card.appendChild(content);
       card.appendChild(footer);
