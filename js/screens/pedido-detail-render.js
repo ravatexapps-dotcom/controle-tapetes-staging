@@ -568,6 +568,98 @@
     return wrap;
   }
 
+  function buildExpedicoes(state, view, handlers) {
+    var wrap = window.el('div', {
+      id: 'expedicoes-vinculadas',
+      style: 'margin-bottom:14px;',
+    });
+
+    wrap.appendChild(window.el('div', {
+      style: 'font-size:15.5px;font-weight:700;color:#16203a;margin-bottom:10px;',
+    }, 'Expedicoes vinculadas'));
+
+    if (state.expedicoesLoadError) {
+      wrap.appendChild(window.el('div', {
+        style: 'background:#fff;border:1px solid #eceef1;border-radius:4px;padding:18px 20px;font-size:14px;color:#b45309;',
+      }, 'Nao foi possivel validar as expedicoes vinculadas agora.'));
+      return wrap;
+    }
+
+    if (!view.expedicaoSummaries.length) {
+      wrap.appendChild(window.el('div', {
+        style: 'background:#fff;border:1px solid #eceef1;border-radius:4px;padding:18px 20px;',
+      },
+        window.el('div', { style: 'font-size:14.5px;font-weight:700;color:#16203a;margin-bottom:6px;' }, 'Nenhuma expedicao liberada'),
+        window.el('div', { style: 'font-size:13px;color:#5b6472;line-height:1.5;' },
+          'A expedicao aparece aqui depois que uma OP de acabamento finalizada for liberada para entrega/coleta.')
+      ));
+      return wrap;
+    }
+
+    wrap.appendChild(window.el('div', {
+      style: 'display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;',
+    }, view.expedicaoSummaries.map(function (summary) {
+      var concluida = summary.status === 'concluida' && summary.saldo <= 0;
+      return window.el('div', {
+        style: 'background:#fff;border:1px solid #eceef1;border-radius:4px;overflow:hidden;',
+      },
+        window.el('div', {
+          style: 'display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 18px;border-bottom:1px solid #f1f3f6;',
+        },
+          window.el('div', { style: 'font-size:14.5px;font-weight:700;color:#2563eb;' }, 'Expedicao #' + summary.id),
+          window.el('span', {
+            style: 'background:' + (concluida ? '#e6f4ec' : '#fff4e6') + ';color:' + (concluida ? '#18794a' : '#c2610c') + ';border-radius:4px;padding:3px 9px;font-size:11.5px;font-weight:700;',
+          }, summary.status)
+        ),
+        window.el('div', { style: 'padding:13px 18px;display:flex;flex-direction:column;gap:8px;' },
+          window.el('div', { style: 'display:flex;justify-content:space-between;font-size:13px;color:#5b6472;' },
+            window.el('span', {}, 'Liberado'), window.el('span', { style: 'color:#16203a;font-weight:700;' }, ns.fmtMetros(summary.liberado))),
+          window.el('div', { style: 'display:flex;justify-content:space-between;font-size:13px;color:#5b6472;' },
+            window.el('span', {}, 'Entregue/coletado'), window.el('span', { style: 'color:#18794a;font-weight:700;' }, ns.fmtMetros(summary.entregue))),
+          window.el('div', { style: 'display:flex;justify-content:space-between;font-size:13px;color:#5b6472;' },
+            window.el('span', {}, 'Saldo'), window.el('span', { style: 'color:' + (summary.saldo > 0 ? '#c2610c' : '#18794a') + ';font-weight:700;' }, ns.fmtMetros(summary.saldo))),
+          window.el('div', { style: 'font-size:12px;color:#8a93a3;' },
+            summary.movimentos.length ? summary.movimentos.length + ' movimento(s) registrado(s)' : 'Sem entrega/coleta registrada')
+        ),
+        window.el('div', { style: 'padding:12px 18px;border-top:1px solid #f1f3f6;' },
+          buildFooterAction('Abrir expedicao', function () { handlers.navigateToExpedicao(summary.id); }, true))
+      );
+    })));
+
+    return wrap;
+  }
+
+  function buildConclusaoPedido(state, view, handlers) {
+    var conclusao = view.pedidoConclusao || { pronto: false, pendencias: [], label: 'Validacao indisponivel.' };
+    var jaEntregue = state.pedido && state.pedido.status === 'entregue';
+    var ready = conclusao.pronto && !jaEntregue;
+    var pendencias = conclusao.pendencias || [];
+
+    return window.el('div', {
+      style: 'background:#fff;border:1px solid #eceef1;border-radius:4px;padding:16px 20px;margin-bottom:14px;',
+    },
+      window.el('div', {
+        style: 'display:flex;align-items:flex-start;justify-content:space-between;gap:14px;flex-wrap:wrap;',
+      },
+        window.el('div', { style: 'min-width:260px;max-width:720px;' },
+          window.el('div', { style: 'font-size:15.5px;font-weight:700;color:#16203a;margin-bottom:6px;' }, 'Conclusao do pedido'),
+          window.el('div', { style: 'font-size:13px;color:#5b6472;line-height:1.5;' },
+            jaEntregue ? 'Pedido ja concluido no fluxo operacional.' : conclusao.label),
+          pendencias.length ? window.el('div', { style: 'margin-top:10px;display:flex;flex-direction:column;gap:5px;' },
+            pendencias.map(function (pendencia) {
+              return window.el('div', { style: 'font-size:12.5px;color:#b45309;line-height:1.4;' }, '- ' + pendencia);
+            })) : null
+        ),
+        window.el('button', {
+          type: 'button',
+          disabled: ready ? null : 'disabled',
+          style: 'display:inline-flex;align-items:center;justify-content:center;background:' + (ready ? '#18794a' : '#f1f3f6') + ';color:' + (ready ? '#fff' : '#9aa2af') + ';border:none;border-radius:4px;padding:10px 16px;font-weight:700;font-size:13.5px;font-family:inherit;cursor:' + (ready ? 'pointer' : 'not-allowed') + ';',
+          onclick: function (event) { if (ready) handlers.concluirPedido(event && event.currentTarget ? event.currentTarget : null); },
+        }, jaEntregue ? 'Pedido concluido' : 'Concluir pedido')
+      )
+    );
+  }
+
   function buildClienteStatusBadge(state, view) {
     var label = 'Recebido';
     var dot = '#2563eb';
@@ -796,6 +888,8 @@
       buildStepper(view, handlers),
       buildItens(state, view, handlers),
       buildOps(state, view, handlers),
+      buildExpedicoes(state, view, handlers),
+      buildConclusaoPedido(state, view, handlers),
       window.el('div', {
         style: 'display:grid;grid-template-columns:1fr 1fr;gap:14px;align-items:start;margin-bottom:14px;',
       },

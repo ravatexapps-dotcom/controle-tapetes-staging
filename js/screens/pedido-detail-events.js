@@ -23,6 +23,10 @@
       window.navigate('#/ops/' + opId);
     }
 
+    function navigateToExpedicao(expedicaoId) {
+      window.navigate('#/expedicoes/' + expedicaoId);
+    }
+
     function navigateToNovaOp() {
       window.navigate('#/ops/nova?pedido_id=' + pedidoId);
     }
@@ -156,6 +160,37 @@
       }
 
       await apply();
+    }
+
+    async function concluirPedido(btn) {
+      if (!state.pedido) {
+        window.toast('Pedido nao carregado.', 'error');
+        return;
+      }
+      var oldDisabled = btn ? btn.disabled : false;
+      var oldLabel = btn ? btn.textContent : null;
+      if (btn) {
+        btn.disabled = true;
+        btn.textContent = 'Concluindo...';
+      }
+
+      var r = await window.supa.rpc('concluir_pedido_se_pronto', { p_pedido_id: pedidoId });
+      if (r.error || (r.data && r.data.ok === false)) {
+        var msg = r.error ? r.error.message : (r.data && r.data.erro ? r.data.erro : 'Pedido com pendencias');
+        var pendencias = r.data && Array.isArray(r.data.pendencias) && r.data.pendencias.length
+          ? ' (' + r.data.pendencias.join('; ') + ')'
+          : '';
+        window.toast('Pedido nao concluido: ' + msg + pendencias, 'error');
+        if (btn) {
+          btn.disabled = oldDisabled;
+          btn.textContent = oldLabel;
+        }
+        return;
+      }
+
+      window.toast('Pedido concluido.', 'success');
+      await reload();
+      render();
     }
 
     function movementField(label, value) {
@@ -746,7 +781,9 @@
       buildEditItensButton: buildEditItensButton,
       navigateToPedidos: navigateToPedidos,
       navigateToOp: navigateToOp,
+      navigateToExpedicao: navigateToExpedicao,
       navigateToNovaOp: navigateToNovaOp,
+      concluirPedido: concluirPedido,
       scrollToSection: scrollToSection,
       openMovementModal: openMovementModal,
       openEditWarning: openEditWarning,

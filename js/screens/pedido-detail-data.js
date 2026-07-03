@@ -19,11 +19,16 @@
     state.parcialItens = [];
     state.entregaItens = [];
     state.entregasById = {};
+    state.expedicoes = [];
+    state.expedicaoItens = [];
+    state.expedicaoMovimentos = [];
+    state.expedicaoMovimentoItens = [];
     state.ordensFio = [];
     state.modelosById = {};
     state.coresById = {};
     state.opsLoadError = false;
     state.docsLoadError = false;
+    state.expedicoesLoadError = false;
     state.partialItemLoadError = false;
   }
 
@@ -124,6 +129,73 @@
         state.coresById = Object.fromEntries((coresRes.data || []).map(function (cor) {
           return [cor.id, cor];
         }));
+      }
+    }
+
+    var expedicoesRes = await window.supa
+      .from('expedicoes')
+      .select('id, pedido_id, op_latex_id, lote_id, cliente_id, status, liberado_em, criado_em, atualizado_em')
+      .eq('pedido_id', pedidoId)
+      .order('id', { ascending: true });
+
+    if (expedicoesRes.error) {
+      state.expedicoes = [];
+      state.expedicoesLoadError = true;
+      console.error('pedido-detail: erro ao carregar expedicoes', expedicoesRes.error);
+    } else {
+      state.expedicoes = expedicoesRes.data || [];
+    }
+
+    var expedicaoIds = uniqueNonNull(state.expedicoes.map(function (expedicao) {
+      return expedicao.id;
+    }));
+
+    if (expedicaoIds.length > 0) {
+      var expedicaoItensRes = await window.supa
+        .from('expedicao_itens')
+        .select('id, expedicao_id, op_item_id, pedido_item_id, modelo_id, metros_liberados, metros_entregues')
+        .in('expedicao_id', expedicaoIds);
+
+      if (expedicaoItensRes.error) {
+        state.expedicaoItens = [];
+        state.expedicoesLoadError = true;
+        console.error('pedido-detail: erro ao carregar expedicao_itens', expedicaoItensRes.error);
+      } else {
+        state.expedicaoItens = expedicaoItensRes.data || [];
+      }
+
+      var expedicaoMovimentosRes = await window.supa
+        .from('expedicao_movimentos')
+        .select('id, expedicao_id, tipo, data, observacao, criado_em')
+        .in('expedicao_id', expedicaoIds)
+        .order('data', { ascending: false })
+        .order('id', { ascending: false });
+
+      if (expedicaoMovimentosRes.error) {
+        state.expedicaoMovimentos = [];
+        state.expedicoesLoadError = true;
+        console.error('pedido-detail: erro ao carregar expedicao_movimentos', expedicaoMovimentosRes.error);
+      } else {
+        state.expedicaoMovimentos = expedicaoMovimentosRes.data || [];
+      }
+
+      var movimentoIds = uniqueNonNull(state.expedicaoMovimentos.map(function (movimento) {
+        return movimento.id;
+      }));
+
+      if (movimentoIds.length > 0) {
+        var expedicaoMovimentoItensRes = await window.supa
+          .from('expedicao_movimento_itens')
+          .select('id, movimento_id, expedicao_item_id, metros')
+          .in('movimento_id', movimentoIds);
+
+        if (expedicaoMovimentoItensRes.error) {
+          state.expedicaoMovimentoItens = [];
+          state.expedicoesLoadError = true;
+          console.error('pedido-detail: erro ao carregar expedicao_movimento_itens', expedicaoMovimentoItensRes.error);
+        } else {
+          state.expedicaoMovimentoItens = expedicaoMovimentoItensRes.data || [];
+        }
       }
     }
 

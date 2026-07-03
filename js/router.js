@@ -64,6 +64,14 @@
     // o match de detalhe (terminado em /editar) — vem antes do match
     // de detalhe para clareza, embora o regex do detalhe (ancorado em
     // $) já exclua o caso.
+    const mExp = String(hash || '').match(/^#\/expedicoes\/(\d+)$/);
+    if (mExp) {
+      return {
+        render: () => window.screenExpedicaoAdmin(Number(mExp[1])),
+        roles: ['admin'],
+      };
+    }
+
     const mPedEdit = String(hash || '').match(
       /^#\/pedidos\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\/editar$/i
     );

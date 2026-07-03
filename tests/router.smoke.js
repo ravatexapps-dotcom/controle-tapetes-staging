@@ -122,7 +122,7 @@ function firstInlineScriptIndex(html) {
 function makeRouterSandbox({ hash = '' } = {}) {
   const calls = {
     setApp: [], screenNotFound: 0, screenForbidden: 0,
-    screenNovaOP: [], screenPedidoDetalhe: [], screenPedidoEditar: [],
+    screenNovaOP: [], screenExpedicaoAdmin: [], screenPedidoDetalhe: [], screenPedidoEditar: [],
     screenPedidoItensEditar: [],
     loadCurrentUser: 0,
   };
@@ -139,6 +139,7 @@ function makeRouterSandbox({ hash = '' } = {}) {
   sandbox.screenNotFound = () => { calls.screenNotFound++; return { __screen: 'notFound' }; };
   sandbox.screenForbidden = () => { calls.screenForbidden++; return { __screen: 'forbidden' }; };
   sandbox.screenNovaOP = (id) => { calls.screenNovaOP.push(id); return { __screen: 'novaOP', id }; };
+  sandbox.screenExpedicaoAdmin = (id) => { calls.screenExpedicaoAdmin.push(id); return { __screen: 'expedicaoAdmin', id }; };
   sandbox.screenPedidoDetalhe = (id) => { calls.screenPedidoDetalhe.push(id); return { __screen: 'pedidoDetalhe', id }; };
   sandbox.screenPedidoEditar = (id) => { calls.screenPedidoEditar.push(id); return { __screen: 'pedidoEditar', id }; };
   sandbox.screenPedidoItensEditar = (id) => { calls.screenPedidoItensEditar.push(id); return { __screen: 'pedidoItensEditar', id }; };
@@ -339,6 +340,14 @@ test('runtime: matchRoute parseia #/ops/123 e route.render() chama window.screen
   assert.equal(vm.runInContext("JSON.stringify(window.matchRoute('#/ops/123').roles)", sandbox), '["admin"]');
   vm.runInContext("window.matchRoute('#/ops/123').render();", sandbox);
   assert.deepEqual(calls.screenNovaOP, [123]);
+});
+
+test('runtime: matchRoute parseia #/expedicoes/123 e chama screenExpedicaoAdmin(123)', () => {
+  const { sandbox, calls } = makeRouterSandbox();
+  vm.runInContext("window.RAVATEX_ROUTER.setRoutes({});", sandbox);
+  assert.equal(vm.runInContext("JSON.stringify(window.matchRoute('#/expedicoes/123').roles)", sandbox), '["admin"]');
+  vm.runInContext("window.matchRoute('#/expedicoes/123').render();", sandbox);
+  assert.deepEqual(calls.screenExpedicaoAdmin, [123]);
 });
 
 test('runtime: handleRoute renderiza rota pública sem exigir usuário', async () => {

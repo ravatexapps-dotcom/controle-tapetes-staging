@@ -1,4 +1,34 @@
 > **Atualizacao 2026-07-02 - fase
+> `RAVATEX-TAPETES-END-TO-END-PRODUCTION-FLOW-B`.**
+> Fluxo ponta a ponta preparado no codigo para staging: Acabamento/Latex
+> finalizado agora habilita uma acao explicita de Expedicao, sem concluir
+> Pedido diretamente na tela de OP. A nova tela `js/screens/expedicao-admin.js`
+> permite abrir a expedicao vinculada, ver itens liberados, registrar
+> entrega/coleta parcial ou total, acompanhar historico e acionar a conclusao
+> do Pedido quando nao houver saldo.
+>
+> Nova migration versionada: `db/23_expedicao_entrega_flow.sql`. Ela cria
+> `expedicoes`, `expedicao_itens`, `expedicao_movimentos` e
+> `expedicao_movimento_itens`, alem das RPCs `liberar_expedicao`,
+> `registrar_entrega_expedicao`, `recalcular_status_expedicao` e
+> `concluir_pedido_se_pronto`. A regra central fica no banco: Pedido so passa
+> para `entregue` quando as OPs vinculadas estao em estado terminal e toda
+> Expedicao criada para OP Latex finalizada esta concluida.
+>
+> Pedido Detail passou a carregar Expedicoes e movimentos vinculados, mostrar
+> o bloco de Expedicao, listar pendencias de conclusao e chamar
+> `concluir_pedido_se_pronto` para persistir a conclusao. `router.js` recebeu
+> a rota dinamica `#/expedicoes/:id`, e `index.html` carrega o novo modulo.
+> `gerar_op_latex` nao foi alterada nesta fase; permanece o contrato da fase B:
+> OP Latex nasce `aberta` e so entra em producao depois da confirmacao de
+> entrada no Acabamento.
+>
+> Gaps assumidos: NF, romaneio real e anexos/documentos seguem fora de escopo;
+> a finalizacao do Acabamento ainda usa o caminho operacional existente da
+> tela de Latex; a migration deve ser aplicada somente em Supabase staging
+> depois do commit/push desta fase.
+
+> **Atualizacao 2026-07-02 - fase
 > `RAVATEX-TAPETES-OP-LATEX-ENTRY-GATE-B`.**
 > Implementado localmente o gate Tecelagem -> Acabamento/Latex sem
 > aplicar SQL no Supabase. A nova migration versionada

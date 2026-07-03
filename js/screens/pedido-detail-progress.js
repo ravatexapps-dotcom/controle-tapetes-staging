@@ -225,15 +225,61 @@
     var emAcabamento = ns.round2(acabamentoSummaries.reduce(function (acc, row) { return acc + row.remaining; }, 0));
     var finishedLatex = ns.round2(acabamentoSummaries.reduce(function (acc, row) { return acc + row.done; }, 0));
 
-    var deliveredExactTotal = trackingSummary && trackingSummary.totais
-      ? ns.toFiniteNumber(trackingSummary.totais.entregue)
-      : 0;
+    var expedicaoItens = state.expedicaoItens || [];
+    var expedicoes = state.expedicoes || [];
+    var expedicaoLiberado = ns.round2(expedicaoItens.reduce(function (acc, row) {
+      return acc + ns.toFiniteNumber(row.metros_liberados);
+    }, 0));
+    var expedicaoEntregue = ns.round2(expedicaoItens.reduce(function (acc, row) {
+      return acc + ns.toFiniteNumber(row.metros_entregues);
+    }, 0));
+    var expedicaoSaldo = ns.round2(Math.max(expedicaoLiberado - expedicaoEntregue, 0));
+    var hasExpedicaoData = expedicoes.length > 0 || expedicaoItens.length > 0;
+    var expedicaoItensByExpedicaoId = {};
+    var expedicaoDeliveredByItem = {};
+    expedicaoItens.forEach(function (row) {
+      if (!expedicaoItensByExpedicaoId[row.expedicao_id]) expedicaoItensByExpedicaoId[row.expedicao_id] = [];
+      expedicaoItensByExpedicaoId[row.expedicao_id].push(row);
+      if (row.pedido_item_id) {
+        expedicaoDeliveredByItem[row.pedido_item_id] = ns.round2((expedicaoDeliveredByItem[row.pedido_item_id] || 0) + ns.toFiniteNumber(row.metros_entregues));
+      }
+    });
+
+    var movimentosByExpedicaoId = {};
+    (state.expedicaoMovimentos || []).forEach(function (movimento) {
+      if (!movimentosByExpedicaoId[movimento.expedicao_id]) movimentosByExpedicaoId[movimento.expedicao_id] = [];
+      movimentosByExpedicaoId[movimento.expedicao_id].push(movimento);
+    });
+
+    var expedicaoSummaries = expedicoes.map(function (expedicao) {
+      var itensExp = expedicaoItensByExpedicaoId[expedicao.id] || [];
+      var liberado = ns.round2(itensExp.reduce(function (acc, row) { return acc + ns.toFiniteNumber(row.metros_liberados); }, 0));
+      var entregue = ns.round2(itensExp.reduce(function (acc, row) { return acc + ns.toFiniteNumber(row.metros_entregues); }, 0));
+      return {
+        id: expedicao.id,
+        status: expedicao.status,
+        pedidoId: expedicao.pedido_id,
+        opLatexId: expedicao.op_latex_id,
+        loteId: expedicao.lote_id,
+        liberado: liberado,
+        entregue: entregue,
+        saldo: ns.round2(Math.max(liberado - entregue, 0)),
+        movimentos: movimentosByExpedicaoId[expedicao.id] || [],
+        op: opById[expedicao.op_latex_id] || null,
+      };
+    });
+
+    var deliveredExactTotal = hasExpedicaoData
+      ? expedicaoEntregue
+      : (trackingSummary && trackingSummary.totais ? ns.toFiniteNumber(trackingSummary.totais.entregue) : 0);
     if (!(deliveredExactTotal > 0) && (pedido.status === 'entregue' || (trackingSummary && trackingSummary.statusVisual === 'concluido'))) {
       deliveredExactTotal = totalPedido;
     }
     deliveredExactTotal = ns.round2(deliveredExactTotal);
 
-    var prontoExpedicao = ns.round2(Math.max(finishedLatex - deliveredExactTotal, 0));
+    var prontoExpedicao = hasExpedicaoData
+      ? expedicaoSaldo
+      : ns.round2(Math.max(finishedLatex - deliveredExactTotal, 0));
 
     var tecMeta = ns.round2(tecelagemSummaries.reduce(function (acc, row) { return acc + row.target; }, 0));
     var tecDone = ns.round2(tecelagemSummaries.reduce(function (acc, row) { return acc + row.done; }, 0));
@@ -321,7 +367,9 @@
 
       var deliveredItem = partialMeta.anyDeliveredBreakdown
         ? ns.toFiniteNumber(partialMeta.deliveredByItem[item.id])
-        : ns.toFiniteNumber(fallbackDeliveredByItem[item.id]);
+        : (hasExpedicaoData
+          ? ns.toFiniteNumber(expedicaoDeliveredByItem[item.id])
+          : ns.toFiniteNumber(fallbackDeliveredByItem[item.id]));
       deliveredItem = ns.round2(deliveredItem);
 
       var readyItem = partialMeta.anyReadyBreakdown
@@ -380,6 +428,15 @@
         });
       }
     });
+    expedicaoSummaries.forEach(function (summary) {
+      documentRowsOperacionais.push({
+        label: 'Expedicao #' + summary.id + (summary.op ? ' - ' + opLabel(summary.op) : ''),
+        status: summary.status === 'concluida' ? 'anexado' : 'pendente',
+        meta: summary.movimentos.length
+          ? String(summary.movimentos.length) + ' entrega/coleta registrada(s).'
+          : 'Sem entrega/coleta registrada ainda.',
+      });
+    });
     if (deliveredExactTotal > 0 || pedido.status === 'entregue') {
       documentRowsOperacionais.push({
         label: 'Comprovante de entrega',
@@ -391,6 +448,47 @@
     var pendingDocs = documentRowsPedido.concat(documentRowsOperacionais).filter(function (row) {
       return row.status !== 'anexado';
     }).length;
+
+    var pendenciasConclusao = [];
+    var statusTerminal = { concluida: true, finalizada: true, cancelada: true };
+    if (totalPedido <= 0) {
+      pendenciasConclusao.push('Pedido sem metragem consolidada.');
+    }
+    if (linkedOpCount === 0) {
+      pendenciasConclusao.push('Pedido sem OP vinculada.');
+    }
+    if (tecelagemSummaries.length > 0 && acabamentoSummaries.length === 0) {
+      pendenciasConclusao.push('Pedido sem OP de acabamento vinculada.');
+    }
+    opSummaries.forEach(function (summary) {
+      if (!statusTerminal[summary.status]) {
+        pendenciasConclusao.push(summary.label + ' ainda esta aberta ou em producao.');
+      }
+    });
+    acabamentoSummaries.forEach(function (summary) {
+      var temExpedicao = expedicoes.some(function (expedicao) {
+        return expedicao.op_latex_id === summary.id;
+      });
+      if ((summary.status === 'concluida' || summary.status === 'finalizada') && !temExpedicao) {
+        pendenciasConclusao.push(summary.label + ' finalizada sem expedicao liberada.');
+      }
+    });
+    if (state.expedicoesLoadError) {
+      pendenciasConclusao.push('Nao foi possivel validar expedicoes vinculadas.');
+    }
+    expedicaoSummaries.forEach(function (summary) {
+      if (summary.status !== 'concluida' || summary.saldo > 0) {
+        pendenciasConclusao.push('Expedicao #' + summary.id + ' ainda possui saldo pendente.');
+      }
+    });
+
+    var pedidoConclusao = {
+      pronto: pendenciasConclusao.length === 0,
+      pendencias: pendenciasConclusao,
+      label: pendenciasConclusao.length === 0
+        ? 'Toda a cadeia vinculada esta concluida.'
+        : 'Pedido ainda possui pendencias operacionais.',
+    };
 
     var stepper = [
       {
@@ -445,16 +543,18 @@
         key: 'expedicao',
         label: 'EXPEDICAO',
         color: '#2563eb',
-        percent: totalPedido > 0 ? ns.clampPercent((prontoExpedicao / totalPedido) * 100) : 0,
-        state: deliveredExactTotal >= totalPedido && totalPedido > 0
+        percent: totalPedido > 0 ? ns.clampPercent(((hasExpedicaoData ? expedicaoLiberado : prontoExpedicao) / totalPedido) * 100) : 0,
+        state: hasExpedicaoData && expedicaoSaldo <= 0 && expedicaoLiberado > 0
           ? 'done'
-          : (prontoExpedicao > 0 ? 'current' : 'future'),
-        sublabel: prontoExpedicao > 0 ? ns.fmtMetros(prontoExpedicao) : (deliveredExactTotal >= totalPedido && totalPedido > 0 ? 'concluido' : 'aguardando'),
+          : ((hasExpedicaoData && expedicaoLiberado > 0) || prontoExpedicao > 0 ? 'current' : 'future'),
+        sublabel: hasExpedicaoData
+          ? (expedicaoSaldo > 0 ? ns.fmtMetros(expedicaoSaldo) : 'concluido')
+          : (prontoExpedicao > 0 ? ns.fmtMetros(prontoExpedicao) : 'aguardando'),
         transfer: {
           title: 'Registrar saida para entrega',
           origem: 'Expedicao',
           destino: 'Entrega',
-          detalhe: 'Expedicao e entrega ainda nao possuem movimentacao canonica dedicada no schema atual.',
+          detalhe: hasExpedicaoData ? 'Abra a expedicao vinculada para registrar entrega/coleta.' : 'Libere a expedicao a partir da OP de acabamento finalizada.',
           op: acabamentoSummaries.length ? acabamentoSummaries[0].op : null,
           docs: 'NF de expedicao',
         },
@@ -483,6 +583,9 @@
       emTecelagem: emTecelagem,
       emAcabamento: emAcabamento,
       prontoExpedicao: prontoExpedicao,
+      expedicaoLiberado: expedicaoLiberado,
+      expedicaoSaldo: expedicaoSaldo,
+      expedicaoSummaries: expedicaoSummaries,
       entregue: deliveredExactTotal,
       insumoPedidoKg: insumoPedidoKg,
       insumoRecebidoKg: insumoRecebidoKg,
@@ -490,6 +593,7 @@
       documentRowsPedido: documentRowsPedido,
       documentRowsOperacionais: documentRowsOperacionais,
       linkedOpCount: linkedOpCount,
+      pedidoConclusao: pedidoConclusao,
     };
   }
 

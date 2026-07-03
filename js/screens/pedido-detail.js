@@ -169,11 +169,16 @@
       parcialItens: [],
       entregaItens: [],
       entregasById: {},
+      expedicoes: [],
+      expedicaoItens: [],
+      expedicaoMovimentos: [],
+      expedicaoMovimentoItens: [],
       ordensFio: [],
       modelosById: {},
       coresById: {},
       opsLoadError: false,
       docsLoadError: false,
+      expedicoesLoadError: false,
       partialItemLoadError: false,
     };
   };

@@ -335,6 +335,7 @@ function makeFullBootSandbox({
   entData = [],
   modelosData = [],
   origemOpData = null,
+  expedicaoData = null,
 } = {}) {
   const toastsNode = new FakeNode('div');
   const appNode = new FakeNode('div');
@@ -350,7 +351,7 @@ function makeFullBootSandbox({
   const calls = [];
 
   function makeChain(table) {
-    const opDataMap = { ops: opData, entregas: entData, modelos: modelosData };
+    const opDataMap = { ops: opData, entregas: entData, modelos: modelosData, expedicoes: expedicaoData };
     const defaultData = opDataMap[table] !== undefined ? opDataMap[table] : [];
     const state = { filters: [] };
     return {
@@ -387,6 +388,9 @@ function makeFullBootSandbox({
           if (idFilter && origemOpData && idFilter.val === origemOpData.id) {
             return Promise.resolve({ data: origemOpData, error: null });
           }
+        }
+        if (table === 'expedicoes') {
+          return Promise.resolve({ data: defaultData, error: null });
         }
         return Promise.resolve({ data: null, error: null });
       },
@@ -800,8 +804,9 @@ test('35. OP em producao de acabamento segue o standalone e nao mostra recebimen
     modelosData: [{ id: 1, nome: 'Roma', largura: 1.5, cor_1: { id: 1, nome: 'CINZA' }, cor_2: { id: 2, nome: 'GELO' } }],
     origemOpData: { id: 12, numero: 2, ano: 2026, tipo: 'tecelagem' },
   });
-  assert.match(rendered.text, /5\.\s*Movimenta/i);
-  assert.match(rendered.text, /Transferir/i);
+  assert.match(rendered.text, /5\.\s*Finalizacao/i);
+  assert.match(rendered.text, /Finalizar acabamento/i);
+  assert.match(rendered.text, /Finalize o acabamento antes de liberar o material para expedicao/i);
   assert.doesNotMatch(rendered.text, /Recebimentos/i);
   assert.doesNotMatch(rendered.text, /Novo recebimento/i);
   assert.doesNotMatch(rendered.text, /Finalizar OP de l[áa]tex/i);
@@ -934,13 +939,13 @@ test('40. OP em producao de acabamento mostra todos os blocos operacionais esper
     /1\.\s*Dados da OP/i,
     /2\.\s*Itens da OP/i,
     /3\.\s*Material recebido da tecelagem/i,
-    /5\.\s*Movimenta/i,
+    /5\.\s*Finalizacao/i,
     /6\.\s*Documentos da OP/i,
     /7\.\s*Hist.rico/i,
   ]) {
     assert.match(rendered.text, label);
   }
-  assert.match(rendered.text, /Transferir/i);
+  assert.match(rendered.text, /Finalizar acabamento/i);
   assert.match(rendered.text, /NF_INSUMOS_2026\.pdf/i);
   assert.match(rendered.text, /ROMANEIO_OP-002-2026\.pdf/i);
   assert.match(rendered.text, /Entrega parcial para Acabamento/i);
@@ -1014,6 +1019,34 @@ test('43. gate de entrada usa lifecycle sem schema/upload ou gerar_op_latex no m
     'documentos da OP devem ser placeholder controlado, sem upload real');
   assert.match(olaSrc, /alterar_status_op/);
   assert.doesNotMatch(olaSrc, /gerar_op_latex/);
+});
+
+test('43b. OP finalizada habilita liberar expedicao via RPC dedicada', async () => {
+  const rendered = await renderLatexAdminForTest({
+    opData: {
+      id: 42,
+      numero: 8,
+      ano: 2026,
+      status: 'finalizada',
+      tipo: 'latex',
+      observacao: '',
+      origem_op_id: 12,
+      lote: { id: 91, numero: 22, pedido_id: '11111111-2222-3333-4444-555555555555', cliente: { id: 3, nome: 'Cliente Atlas' } },
+      op_itens: [{ id: 100, modelo_id: 1, metros_pedidos: 125, pedido_item_id: 'aaaaaaaa-2222-3333-4444-555555555555' }],
+      op_fornecedores: [{ fornecedor_id: 7, etapa: 'latex', fornecedores: { nome: 'Acabamento Sul' } }],
+    },
+    modelosData: [{ id: 1, nome: 'Roma', largura: 1.5, cor_1: { id: 1, nome: 'CINZA' }, cor_2: { id: 2, nome: 'GELO' } }],
+    origemOpData: { id: 12, numero: 2, ano: 2026, tipo: 'tecelagem' },
+  });
+  assert.match(rendered.text, /Liberar para expedicao/i);
+  const btn = findNode(rendered.view, (n) => (
+    n.tagName === 'BUTTON' && /Liberar para expedicao/i.test(collectNodeText(n))
+  ));
+  assert.ok(btn, 'CTA de liberar expedicao nao encontrado');
+  await btn._listeners.click({ currentTarget: btn });
+  const rpcCalls = rendered.fakeSupa._calls.filter(c => c.op === 'rpc' && c.fn === 'liberar_expedicao');
+  assert.equal(rpcCalls.length, 1);
+  assert.equal(rpcCalls[0].params.p_op_latex_id, 42);
 });
 
 test('44. OP em producao de tecelagem fica em modulo proprio, fora do acabamento', () => {

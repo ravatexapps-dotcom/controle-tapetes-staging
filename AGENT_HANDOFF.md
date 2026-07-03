@@ -2375,3 +2375,31 @@ node --test tests/boot.smoke.js \
 - Gaps futuros:
   Expedicao operacional e regra de conclusao do Pedido seguem pendentes
   em fase propria.
+# Estado pos-fase - End-to-End Production Flow B
+
+- Fase: `RAVATEX-TAPETES-END-TO-END-PRODUCTION-FLOW-B`.
+- Escopo: preparar staging para testar o fluxo operacional completo ate
+  Expedicao, entrega/coleta e conclusao persistida do Pedido.
+- Migration nova: `db/23_expedicao_entrega_flow.sql`, criando as tabelas
+  `expedicoes`, `expedicao_itens`, `expedicao_movimentos` e
+  `expedicao_movimento_itens`, com RLS/admin e indices basicos.
+- RPCs novas: `liberar_expedicao(p_op_latex_id BIGINT)`,
+  `registrar_entrega_expedicao(...)`, `recalcular_status_expedicao(...)` e
+  `concluir_pedido_se_pronto(p_pedido_id UUID)`.
+- UI nova: `js/screens/expedicao-admin.js`, carregada em `index.html` e
+  acessada pela rota dinamica `#/expedicoes/:id` em `js/router.js`.
+- Acabamento/Latex: OP finalizada mostra bloco de Expedicao com acao
+  "Liberar para expedicao"; se a Expedicao ja existir, mostra link para abrir.
+  A tela nao conclui Pedido diretamente.
+- Pedido Detail: agora carrega Expedicoes e movimentos, mostra saldos de
+  Expedicao, lista pendencias para conclusao e chama
+  `concluir_pedido_se_pronto` para persistir `pedidos.status = 'entregue'`
+  quando a cadeia esta pronta.
+- Contrato preservado: `gerar_op_latex` nao foi alterada nesta fase; OP Latex
+  continua nascendo `aberta` pelo gate B. Fornecedor Latex segue vendo apenas
+  OPs em producao.
+- Gaps conhecidos: NF/romaneio/anexos reais continuam placeholder; nao houve
+  integracao externa; producao permanece intocada.
+- Operacao pendente desta fase: depois do commit e push em `staging`, aplicar
+  somente `db/23_expedicao_entrega_flow.sql` no Supabase staging
+  `ucrjtfswnfdlxwtmxnoo` e validar tabelas/RPCs.
