@@ -2457,3 +2457,20 @@ node --test tests/boot.smoke.js \
   passa com exit code 0. Busca de seguranca por `href=.*\/ops\/nova`,
   `location.href.*ops/nova` e `location.assign.*ops/nova` nao retornou
   ocorrencias. Residual permitido preservado: `?? supabase/.temp/`.
+
+# Estado pos-fase - Tecelagem Producao Movimentacao Card R1
+
+- Fase: `RAVATEX-TAPETES-TECELAGEM-PRODUCAO-MOVIMENTACAO-CARD-R1`.
+- Escopo fechado localmente: `js/screens/op-tecelagem-producao-admin.js`,
+  `tests/op-nova.smoke.js`, `PROJECT_STATE.md`, `AGENT_HANDOFF.md`.
+- Corrigido: `Entregas tecelagem` nao e mais card solto entre `4.
+  Capacidade e ajuste` e `5. Movimentacao - enviar para acabamento`.
+  A tabela/historico de entregas agora fica dentro do Card 5, com
+  resumo Disponivel/Ja enviado/Total ajustado no topo e acoes
+  `Transferir`, `+ Nova entrega`, `Editar`, `Excluir` e `Ver OP de latex`
+  preservadas.
+- Card 4 ficou restrito a capacidade/ajuste/sobras. Headers `STATUS` e
+  `FALTA` seguem alinhados a esquerda por teste.
+- Nao alterado: lifecycle, `salvarEntregaCima`, `atualizarEntregaCima`,
+  `excluirEntrega`, `gerar_op_latex`, Acabamento/Latex, SQL, Supabase,
+  producao ou push.

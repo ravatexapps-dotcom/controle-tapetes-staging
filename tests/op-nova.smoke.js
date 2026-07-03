@@ -787,6 +787,16 @@ function collectStyledTextNodes(node, out = []) {
   return out;
 }
 
+function findNodeById(node, id) {
+  if (!node) return null;
+  if (typeof node.getAttribute === 'function' && node.getAttribute('id') === id) return node;
+  for (const child of (node.children || [])) {
+    const found = findNodeById(child, id);
+    if (found) return found;
+  }
+  return null;
+}
+
 async function renderNovaOpForTest({ opId = null, pedidoId = null, db } = {}) {
   const sandbox = makeRenderSandbox(db || buildOpNovaFixture());
   sandbox.__args = { opId, pedidoId };
@@ -798,6 +808,7 @@ async function renderNovaOpForTest({ opId = null, pedidoId = null, db } = {}) {
     inputs: collectInputValues(view),
     styles: collectStyles(view),
     styledText: collectStyledTextNodes(view),
+    findById: (id) => findNodeById(view, id),
   };
 }
 
@@ -1251,7 +1262,57 @@ test('66. Headers STATUS e FALTA da OP Em ProduÃ§Ã£o Tecelagem ficam alinhad
   }
 });
 
-test('64. Bloco "5. Movimentacao" mostra na ultima entrega so metros sem defeito', async () => {
+test('67. Entregas tecelagem fica dentro do Card 5 Movimentacao e fora do Card 4', async () => {
+  const db = buildOpEmProducaoTecelagemFixture({
+    ops: [
+      {
+        id: 93,
+        numero: 9,
+        ano: 2026,
+        status: 'em_producao',
+        tipo: 'tecelagem',
+        observacao: '',
+        origem_op_id: null,
+        lote_id: 303,
+        criado_em: '2026-06-15T11:00:00Z',
+        lote: { id: 303, numero: 16, pedido_id: 'ped-1', cliente: { id: 501, nome: 'Cliente Atlas' } },
+        op_itens: [
+          { id: 3, modelo_id: 1, metros_pedidos: 120, metros_ajustados: 100, pedido_item_id: 'pi-1' },
+        ],
+        op_fornecedores: [{ fornecedor_id: 701, etapa: 'cima' }],
+      },
+      {
+        id: 95, numero: 8, ano: 2026, status: 'aberta', tipo: 'latex',
+        observacao: '', origem_op_id: 93, origem_entrega_id: 'ent-1', lote_id: null, lote: null,
+        op_itens: [], op_fornecedores: [],
+      },
+    ],
+    entregas: [
+      {
+        id: 'ent-1', fornecedor_id: 701, etapa: 'cima', data: '2026-06-30', observacao: '',
+        destino_fornecedor_id: 704, destino: { nome: 'Latex Base' }, fornecedores: { nome: 'Tecelagem Sul' },
+        entrega_itens: [{ id: 'ei-1', op_id: 93, op_item_id: 3, metros_entregues: 50, defeito: false, observacao: '' }],
+      },
+    ],
+  });
+  const rendered = await renderNovaOpForTest({ opId: 93, db });
+  const card4 = rendered.findById('capacidade-ajuste-op');
+  const card5 = rendered.findById('entregas-tecelagem-op');
+  assert.ok(card4, 'esperado encontrar o Card 4 Capacidade e ajuste');
+  assert.ok(card5, 'esperado encontrar o Card 5 Movimentacao');
+  const card4Text = collectNodeText(card4);
+  const card5Text = collectNodeText(card5);
+  assert.doesNotMatch(card4Text, /Entregas tecelagem/i);
+  assert.match(card5Text, /5\.\s*Movimenta/i);
+  assert.match(card5Text, /Entregas tecelagem/i);
+  assert.match(card5Text, /MODELO\s*PEDIDO\s*AJUSTADO\s*ENTREGUE\s*FALTA/i);
+  assert.match(card5Text, /\+ Nova entrega/);
+  assert.match(card5Text, /Editar/);
+  assert.match(card5Text, /Excluir/);
+  assert.match(card5Text, /Ver OP de l/i);
+});
+
+test('64. Bloco "5. Movimentacao" preserva historico detalhado sem totalizar defeito', async () => {
   const db = buildOpEmProducaoTecelagemFixture({
     entregas: [
       {
@@ -1265,8 +1326,12 @@ test('64. Bloco "5. Movimentacao" mostra na ultima entrega so metros sem defeito
     ],
   });
   const rendered = await renderNovaOpForTest({ opId: 93, db });
-  assert.match(rendered.text, /50,00\s*m\s*→\s*Latex Base/);
-  assert.doesNotMatch(rendered.text, /70,00\s*m\s*→\s*Latex Base/);
+  const card5Text = collectNodeText(rendered.findById('entregas-tecelagem-op'));
+  assert.match(card5Text, /Latex Base/);
+  assert.match(card5Text, /50,00\s*m/);
+  assert.match(card5Text, /20,00\s*m/);
+  assert.match(card5Text, /DEFEITO/);
+  assert.doesNotMatch(card5Text, /70,00\s*m/);
 });
 
 test('65. reloadEntregasCima recarrega numero/ano da OP de latex para a cadeia produtiva', () => {

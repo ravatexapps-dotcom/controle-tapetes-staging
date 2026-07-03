@@ -1,3 +1,16 @@
+> **Atualizacao 2026-07-03 - fase
+> `RAVATEX-TAPETES-TECELAGEM-PRODUCAO-MOVIMENTACAO-CARD-R1`.**
+> Patch visual/estrutural local, sem SQL/Supabase/producao e sem push:
+> o bloco solto `Entregas tecelagem` deixou de ser anexado entre os
+> cards 4 e 5 da OP Em Producao Tecelagem e foi incorporado ao card
+> `5. Movimentacao - enviar para acabamento`, mantendo resumo,
+> transferencia, `+ Nova entrega`, tabela, historico, Editar, Excluir
+> e Ver OP de Latex. O card `4. Capacidade e ajuste` fica restrito a
+> capacidade/ajuste/sobras. Alinhamento dos headers `STATUS` e `FALTA`
+> segue travado em left/start. Fluxos de write/lifecycle (`salvarEntregaCima`,
+> `atualizarEntregaCima`, `excluirEntrega`, `gerar_op_latex`) permanecem
+> intocados.
+
 > **Atualizacao 2026-07-02 - fase
 > `RAVATEX-TAPETES-END-TO-END-PRODUCTION-FLOW-B`.**
 > Fluxo ponta a ponta preparado no codigo para staging: Acabamento/Latex

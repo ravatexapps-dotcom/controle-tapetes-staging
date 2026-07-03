@@ -234,7 +234,7 @@
   }
 
   function buildBlocoCapacidadeAjuste(ctx, totais) {
-    var box = el('div', { style: CARD + 'padding:16px 20px;' },
+    var box = el('div', { id: 'capacidade-ajuste-op', style: CARD + 'padding:16px 20px;' },
       el('div', { style: 'display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:8px;' },
         el('div', { style: 'font-size:15.5px;font-weight:700;color:#16203a;' }, '4. Capacidade e ajuste'),
         el('span', { style: 'background:#eaf1fd;color:#2563eb;border-radius:4px;padding:4px 10px;font-size:11.5px;font-weight:700;' }, 'Ajustado')));
@@ -269,9 +269,10 @@
     return box;
   }
 
-  function buildBlocoTecelagem(ctx) {
-    var box = el('div', { style: CARD + 'padding:0;' });
-    box.appendChild(el('div', { style: 'display:flex;align-items:center;gap:10px;padding:20px 24px 16px;' },
+  function buildBlocoTecelagem(ctx, options) {
+    var embedded = options && options.embedded;
+    var box = el('div', { style: embedded ? 'border-top:1px solid #f1f3f6;margin-top:4px;padding-top:16px;' : CARD + 'padding:0;' });
+    box.appendChild(el('div', { style: 'display:flex;align-items:center;gap:10px;' + (embedded ? 'padding:0 0 12px;' : 'padding:20px 24px 16px;') },
       el('span', { style: 'font-size:16px;font-weight:700;color:#16203a;' }, 'Entregas tecelagem')));
 
     var todosItens = ctx.entregasCima.flatMap(function (e) {
@@ -302,9 +303,9 @@
     tabela.appendChild(tabelaInner);
     box.appendChild(tabela);
 
-    var formHolder = el('div', { style: 'padding:0 24px;' });
+    var formHolder = el('div', { style: embedded ? 'padding:0;' : 'padding:0 24px;' });
     var btnNova = el('button', {
-      type: 'button', style: BTN_LINK + 'margin:14px 24px 0;',
+      type: 'button', style: BTN_LINK + (embedded ? 'margin:14px 0 0;' : 'margin:14px 24px 0;'),
       onclick: function () {
         var form = window.buildEntregaInlineForm({ opItens: ctx.opItensRaw, modelosById: ctx.modelosById, latexOptions: ctx.latexOptions });
         var btnSalvar = el('button', {
@@ -327,7 +328,7 @@
     box.appendChild(btnNova);
     box.appendChild(formHolder);
 
-    box.appendChild(el('div', { style: 'padding:16px 24px 20px;' },
+    box.appendChild(el('div', { style: embedded ? 'padding:16px 0 0;' : 'padding:16px 24px 20px;' },
       el('div', { style: 'font-size:13px;font-weight:700;color:#16203a;margin-bottom:8px;' }, 'Histórico'),
       ctx.entregasCima.length === 0
         ? el('div', { style: 'font-size:13px;color:#aab2bf;' }, 'Nenhuma entrega registrada ainda.')
@@ -374,26 +375,9 @@
   }
 
   function buildBlocoMovimentacao(ctx, totais) {
-    var ultimaEntrega = ctx.entregasCima[0];
-    var historicoNode;
-    if (ultimaEntrega) {
-      var itensDaEntrega = (ultimaEntrega.entrega_itens || []).filter(function (ei) {
-        return ei.op_id === ctx.op.id && !ei.defeito;
-      });
-      var totalEntregaMetros = Math.round(itensDaEntrega.reduce(function (acc, ei) {
-        return acc + Number(ei.metros_entregues || 0);
-      }, 0) * 100) / 100;
-      var destinoTxt = ultimaEntrega.destino?.nome ? ' → ' + ultimaEntrega.destino.nome : '';
-      historicoNode = el('div', { style: 'display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 0;border-top:1px solid #f1f3f6;' },
-        el('div', {},
-          el('div', { style: 'font-size:13.5px;color:#16203a;font-weight:600;' }, window.fmtMetros(totalEntregaMetros) + destinoTxt),
-          el('div', { style: 'font-size:11.5px;color:#9aa2af;margin-top:2px;' }, new Date(ultimaEntrega.data + 'T00:00:00').toLocaleDateString('pt-BR'))));
-    } else {
-      historicoNode = el('div', { style: 'font-size:13px;color:#aab2bf;padding:10px 0;border-top:1px solid #f1f3f6;' }, 'Nenhuma entrega registrada ainda.');
-    }
     var disponivelCor = totais.excedente ? '#d6403a' : '#2563eb';
 
-    return el('div', { style: CARD + 'padding:16px 20px;' },
+    return el('div', { id: 'entregas-tecelagem-op', style: CARD + 'padding:16px 20px;' },
       el('div', { style: 'display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px;' },
         el('div', { style: 'font-size:15.5px;font-weight:700;color:#16203a;' }, '5. Movimentação — enviar para acabamento'),
         el('a', { href: '#entregas-tecelagem-op', style: BTN_SOLID_SM + 'text-decoration:none;' }, 'Transferir')),
@@ -401,8 +385,7 @@
         el('div', {}, el('div', { style: 'font-size:11.5px;color:#9aa2af;margin-bottom:4px;' }, 'Disponível'), el('div', { style: 'font-size:16px;font-weight:800;color:' + disponivelCor + ';' }, window.fmtMetros(totais.saldo) + (totais.excedente ? ' (excedente)' : ''))),
         el('div', {}, el('div', { style: 'font-size:11.5px;color:#9aa2af;margin-bottom:4px;' }, 'Já enviado'), el('div', { style: 'font-size:16px;font-weight:800;color:#18794a;' }, window.fmtMetros(totais.totalEntregue))),
         el('div', {}, el('div', { style: 'font-size:11.5px;color:#9aa2af;margin-bottom:4px;' }, 'Total ajustado da OP'), el('div', { style: 'font-size:16px;font-weight:800;color:#16203a;' }, window.fmtMetros(totais.totalAjustado)))),
-      el('div', { style: 'font-size:12.5px;font-weight:700;color:#8a93a3;letter-spacing:.03em;margin-bottom:8px;' }, 'HISTÓRICO DE ENTREGAS'),
-      historicoNode);
+      buildBlocoTecelagem(ctx, { embedded: true }));
   }
 
   function buildBlocoDocumentos() {
@@ -456,9 +439,6 @@
     wrap.appendChild(ctx.buildBlocoFios());
     wrap.appendChild(buildBlocoCapacidadeAjuste(ctx, totais));
     if (ctx.cimaFornecedorId) {
-      var cardEntregas = buildBlocoTecelagem(ctx);
-      cardEntregas.setAttribute('id', 'entregas-tecelagem-op');
-      wrap.appendChild(cardEntregas);
       wrap.appendChild(el('div', { style: 'display:grid;grid-template-columns:1fr 320px;gap:14px;align-items:start;' },
         buildBlocoMovimentacao(ctx, totais), buildBlocoDocumentos()));
     } else {
