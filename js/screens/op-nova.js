@@ -316,13 +316,13 @@
         .order('id', { ascending: false });
       if (entRes.error) { toast('Erro ao carregar entregas de tecelagem', 'error'); console.error(entRes.error); }
       entregasCima = (entRes.data || []).filter(e => (e.entrega_itens || []).some(ei => ei.op_id === op.id));
-      const latexOpsRes = await supa.from('ops').select('id, numero, ano, origem_entrega_id').eq('tipo', 'latex').eq('origem_op_id', op.id);
+      const latexOpsRes = await supa.from('ops').select('id, numero, ano, status, origem_entrega_id').eq('tipo', 'latex').eq('origem_op_id', op.id);
       latexOpPorEntrega = {};
       latexOpInfo = {};
       for (const lo of (latexOpsRes.data || [])) {
         if (!lo.origem_entrega_id) continue;
         latexOpPorEntrega[lo.origem_entrega_id] = lo.id;
-        latexOpInfo[lo.origem_entrega_id] = { id: lo.id, numero: lo.numero, ano: lo.ano };
+        latexOpInfo[lo.origem_entrega_id] = { id: lo.id, numero: lo.numero, ano: lo.ano, status: lo.status };
       }
 
       // Blocos 4/7 da OP Em Produção Tecelagem: leituras read-only
@@ -818,13 +818,13 @@
       .order('id', { ascending: false });
     if (entRes.error) { toast('Erro ao recarregar entregas', 'error'); console.error(entRes.error); return; }
     entregasCima = (entRes.data || []).filter(e => (e.entrega_itens || []).some(ei => ei.op_id === op.id));
-    const latexOpsRes = await supa.from('ops').select('id, numero, ano, origem_entrega_id').eq('tipo', 'latex').eq('origem_op_id', op.id);
+    const latexOpsRes = await supa.from('ops').select('id, numero, ano, status, origem_entrega_id').eq('tipo', 'latex').eq('origem_op_id', op.id);
     latexOpPorEntrega = {};
     latexOpInfo = {};
     for (const lo of (latexOpsRes.data || [])) {
       if (!lo.origem_entrega_id) continue;
       latexOpPorEntrega[lo.origem_entrega_id] = lo.id;
-      latexOpInfo[lo.origem_entrega_id] = { id: lo.id, numero: lo.numero, ano: lo.ano };
+      latexOpInfo[lo.origem_entrega_id] = { id: lo.id, numero: lo.numero, ano: lo.ano, status: lo.status };
     }
     render();
   }

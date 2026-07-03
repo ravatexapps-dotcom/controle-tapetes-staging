@@ -608,6 +608,20 @@ test('26. runtime: screenFornecedorLatex happy path — chama from das 3 tabelas
   }
 });
 
+test('26b. runtime: screenFornecedorLatex nao lista OP latex aberta como producao', async () => {
+  const { sandbox } = makeFornSandbox({
+    opfData: [{ ops: { id: 3, numero: 201, ano: 2026, status: 'aberta', tipo: 'latex',
+      op_itens: [{ id: 31, modelo_id: 201, metros_pedidos: 30 }] } }],
+    entData: [],
+    modelosData: [{ id: 201, nome: 'M2', largura: 3, cor_1: { nome: 'A' }, cor_2: { nome: 'B' } }],
+  });
+  vm.runInContext('window.CURRENT_USER = { nome: "X", tipo: "fornecedor", fornecedor_id: 1 }', sandbox);
+  const root = await vm.runInContext('window.screenFornecedorLatex()', sandbox);
+  const allText = JSON.stringify(root.children);
+  assert.match(allText, /Nenhuma OP/);
+  assert.doesNotMatch(allText, /201\/2026/);
+});
+
 test('27. runtime: screenFornecedorLatex — consumidores bare acham salvarEntregaLatex/atualizarEntregaLatex/excluirEntrega', async () => {
   const { sandbox } = makeFornSandbox();
   for (const k of ['salvarEntregaLatex', 'atualizarEntregaLatex', 'excluirEntrega']) {
@@ -838,7 +852,7 @@ test('33. boot: ui + badges + calculo-op + common + cadastros + ops-list + entre
   }
 });
 
-test('34. screenPainel (inline) ainda renderiza via shellLayout com 9 itens do ADMIN_MENU (regressão common)', () => {
+test('34. screenPainel renderiza via shellLayout com ADMIN_MENU atual', () => {
   const inline = extractInlineScript(indexSrc);
   const toastsNode = new FakeNode('div');
   const document = {
@@ -894,8 +908,8 @@ test('34. screenPainel (inline) ainda renderiza via shellLayout com 9 itens do A
   const flex = root.children.find((c) => c.tagName === 'DIV');
   const aside = flex && flex.children.find((c) => c.tagName === 'ASIDE');
   const links = aside && aside.children.filter((c) => c.tagName === 'A');
-  assert.ok(links && links.length === 9,
-    `screenPainel não renderizou 9 itens do ADMIN_MENU (renderizou ${links ? links.length : 0})`);
+  assert.ok(links && links.length === 10,
+    `screenPainel nao renderizou 10 itens do ADMIN_MENU (renderizou ${links ? links.length : 0})`);
 });
 
 test('35. screenCadastrosCores (cadastros) ainda renderiza (regressão cadastros)', async () => {

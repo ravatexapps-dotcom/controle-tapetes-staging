@@ -1,4 +1,32 @@
 > **Atualizacao 2026-07-02 - fase
+> `RAVATEX-TAPETES-OP-LATEX-ENTRY-GATE-B`.**
+> Implementado localmente o gate Tecelagem -> Acabamento/Latex sem
+> aplicar SQL no Supabase. A nova migration versionada
+> `db/22_latex_entry_gate.sql` redefine `gerar_op_latex(p_entrega_id
+> BIGINT)` com a mesma assinatura e o mesmo contrato de origem
+> (`tipo = 'latex'`, `origem_op_id`, `origem_entrega_id`, `lote_id`,
+> itens sem defeito e fornecedor de etapa `latex`), mudando apenas o
+> status inicial da OP criada para `aberta`.
+>
+> Em `js/screens/op-latex-admin.js`, a OP aberta de Acabamento agora
+> representa o gate real de entrada: o CTA "Confirmar entrada / iniciar
+> acabamento" chama `alterar_status_op(op.id, 'em_producao', 'Entrada no
+> acabamento confirmada')`, mostra feedback e recarrega a OP. Nao foi
+> criado `ops.update({ status: 'em_producao' })` direto para esse gate.
+> A finalizacao de Latex, recalculo, Pedido, Expedicao e entrega/coleta
+> ficaram fora de escopo e intocados.
+>
+> Em `op-nova.js` e no renderer de Tecelagem em producao, a cadeia
+> produtiva continua buscando OP Latex por `tipo = 'latex'` e
+> `origem_op_id`, sem filtro por status, e agora carrega `status` para
+> exibir "Aguardando entrada" quando a OP de Acabamento esta `aberta`.
+> A tela de fornecedor Latex continua listando apenas OPs
+> `em_producao`; OP aberta nao aparece como producao do fornecedor.
+>
+> Migration apenas versionada nesta fase. Proximo passo operacional, se
+> a fase for aceita: aplicar a migration em staging e homologar o gate.
+
+> **Atualizacao 2026-07-02 - fase
 > `RAVATEX-TAPETES-OP-PRODUCAO-STRUCTURE-CLOSEOUT-PUSH`.**
 > Fechamento estrutural coerente das telas de OP em producao antes do
 > push para staging. A OP Em Producao Tecelagem foi extraida de

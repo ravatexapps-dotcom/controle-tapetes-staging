@@ -154,6 +154,23 @@
         });
       }
 
+      async function confirmarEntradaAcabamento(id) {
+        var r = await supa.rpc('alterar_status_op', {
+          p_op_id: id,
+          p_novo_status: 'em_producao',
+          p_observacao: 'Entrada no acabamento confirmada',
+        });
+        if (r.error || (r.data && r.data.ok === false)) {
+          var msg = r.error ? r.error.message : (r.data && r.data.erro ? r.data.erro : 'Transicao nao realizada');
+          toast('Erro ao iniciar acabamento: ' + msg, 'error');
+          console.error(r.error || r.data);
+          return false;
+        }
+        toast('Entrada confirmada. Acabamento iniciado.', 'success');
+        await reload();
+        return true;
+      }
+
       function saldoLabel(valorBase, recebidoBase) {
         var falta = Math.round((Number(valorBase || 0) - Number(recebidoBase || 0)) * 100) / 100;
         if (falta > 0) return { text: window.fmtMetros(falta), color: '#d6403a' };
@@ -705,12 +722,17 @@
           el('div', { style: 'height:1px;background:#eceef1;margin-bottom:14px;' }),
           el('button', {
             type: 'button',
-            style: BTN_PRIMARY + 'margin-bottom:12px;opacity:.6;cursor:not-allowed;',
-            disabled: true,
-          }, svgEl(SVG_OPEN), 'Colocar em producao'),
+            style: BTN_PRIMARY + 'margin-bottom:12px;cursor:pointer;',
+            onclick: async function (event) {
+              var btn = event && event.currentTarget ? event.currentTarget : null;
+              if (btn) btn.disabled = true;
+              var ok = await confirmarEntradaAcabamento(op.id);
+              if (!ok && btn) btn.disabled = false;
+            },
+          }, svgEl(SVG_OPEN), 'Confirmar entrada / iniciar acabamento'),
           el('div', { style: 'display:flex;align-items:flex-start;gap:7px;margin-bottom:14px;' },
             svgEl(SVG_HINT_LOCK),
-            el('span', { style: 'font-size:12px;color:#8a93a3;line-height:1.5;' }, 'Transicao para producao sera implementada em fase propria.')),
+            el('span', { style: 'font-size:12px;color:#8a93a3;line-height:1.5;' }, 'Confirme a entrada do material no acabamento antes de iniciar a producao.')),
           origemOp ? el('button', { type: 'button', style: BTN_LINK + 'margin-bottom:10px;', onclick: function () { navigate('#/ops/' + origemOp.id); } }, 'Ir para OP de tecelagem') : '',
           el('button', { type: 'button', style: BTN_DANGER_LINK, onclick: function () { excluirOpLatex(op.id); } }, 'Excluir OP de acabamento'));
         return right;
@@ -719,7 +741,7 @@
       function buildBottomInfoBar() {
         return el('div', { style: 'margin-top:16px;display:flex;align-items:center;gap:10px;background:#fff;border:1px solid #eceef1;border-radius:6px;padding:12px 16px;' },
           svgEl(SVG_INFO_BAR),
-          el('span', { style: 'font-size:13px;color:#5b6472;' }, 'Esta OP esta aberta em modo de preparacao visual. A transicao para producao permanece fora de escopo nesta fase.'));
+          el('span', { style: 'font-size:13px;color:#5b6472;' }, 'Esta OP esta aberta aguardando confirmacao de entrada no acabamento.'));
       }
 
       container.replaceChildren(

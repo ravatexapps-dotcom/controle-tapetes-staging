@@ -146,6 +146,7 @@ const COMMON = path.join(ROOT, 'js', 'screens', 'common.js');
 const CAD    = path.join(ROOT, 'js', 'screens', 'cadastros.js');
 const OPS    = path.join(ROOT, 'js', 'screens', 'ops-list.js');
 const FORN   = path.join(ROOT, 'js', 'screens', 'fornecedor.js');
+const PAINEL = path.join(ROOT, 'js', 'screens', 'painel.js');
 
 const indexSrc  = fs.readFileSync(INDEX,  'utf8');
 const ewSrc     = fs.readFileSync(EW,     'utf8');
@@ -159,6 +160,7 @@ const commonSrc = fs.readFileSync(COMMON, 'utf8');
 const cadSrc    = fs.readFileSync(CAD,    'utf8');
 const fornSrc   = fs.readFileSync(FORN,   'utf8');
 const opsSrc    = fs.readFileSync(OPS,    'utf8');
+const painelSrc = fs.readFileSync(PAINEL, 'utf8');
 
 // -----------------------------------------------------------------------------
 // Helpers estáticos
@@ -169,12 +171,12 @@ function extractInlineScript(html) {
   const matches = [];
   let m;
   while ((m = re.exec(html)) !== null) matches.push(m[1]);
-  if (matches.length === 0) throw new Error('nenhum <script> inline encontrado');
+  if (matches.length === 0) return '';
   return matches.reduce((a, b) => (a.length >= b.length ? a : b));
 }
 
 function findScriptIdx(html, src) {
-  const re = new RegExp(`<script\\s+src="${src.replace(/\//g, '\\/')}"\\s*></script>`);
+  const re = new RegExp(`<script\\s+src="${src.replace(/\//g, '\\/').replace(/\./g, '\\.')}(?:\\?[^"]*)?"\\s*></script>`);
   const m = re.exec(html);
   return m ? m.index : -1;
 }
@@ -327,7 +329,7 @@ test('2. entrega-writes.js: sintaxe JS válida (node --check)', () => {
 });
 
 test('3. index.html carrega js/screens/entrega-writes.js EXATAMENTE UMA VEZ, sem type=module', () => {
-  const re = /<script\s+src="js\/screens\/entrega-writes\.js"\s*><\/script>/g;
+  const re = /<script\s+src="js\/screens\/entrega-writes\.js(?:\?[^"]*)?"\s*><\/script>/g;
   const matches = indexSrc.match(re) || [];
   assert.equal(matches.length, 1,
     `esperado 1 <script src="js/screens/entrega-writes.js">, encontrado ${matches.length}`);
@@ -339,14 +341,14 @@ test('4. index.html: ordem entrega-form → entrega-writes → jspdf → inline'
   const efIdx    = findScriptIdx(indexSrc, 'js/screens/entrega-form.js');
   const ewIdx    = findScriptIdx(indexSrc, 'js/screens/entrega-writes.js');
   const jspdfIdx = indexSrc.indexOf('cdnjs.cloudflare.com/ajax/libs/jspdf');
-  const inlineIdx = firstInlineScriptIndex(indexSrc);
+  const bootIdx = findScriptIdx(indexSrc, 'js/boot.js');
   assert.ok(efIdx > 0, 'js/screens/entrega-form.js não encontrado');
   assert.ok(ewIdx > 0, 'js/screens/entrega-writes.js não encontrado');
   assert.ok(jspdfIdx > 0, 'jspdf CDN não encontrado');
-  assert.ok(inlineIdx > 0, 'inline não encontrado');
+  assert.ok(bootIdx > 0, 'js/boot.js nao encontrado');
   assert.ok(efIdx < ewIdx, 'entrega-form deve vir antes de entrega-writes');
   assert.ok(ewIdx < jspdfIdx, 'entrega-writes deve vir antes de jspdf');
-  assert.ok(ewIdx < inlineIdx, 'entrega-writes deve vir antes do inline');
+  assert.ok(jspdfIdx < bootIdx, 'jspdf deve vir antes de boot.js');
 });
 
 test('5. script inline NÃO contém mais function excluirEntrega', () => {
@@ -355,34 +357,11 @@ test('5. script inline NÃO contém mais function excluirEntrega', () => {
     'inline ainda declara function excluirEntrega');
 });
 
-test('6. script inline AINDA contém as telas, helpers, setRoutes, main', () => {
+test('6. script inline foi removido do boot modular', () => {
   const inline = extractInlineScript(indexSrc);
-  // Todos os writes foram extraídos para js/screens/entrega-writes.js
-  // (Fases 2.1, 2.2 e 2.3 do DIAG). O inline NÃO deve mais
-  // declarar: excluirEntrega, salvarEntregaLatex,
-  // atualizarEntregaLatex, salvarEntregaCima, atualizarEntregaCima.
-  // As 4 telas de fornecedor foram extraídas para
-  // js/screens/fornecedor.js (FORNECEDOR-SCREENS-MODULE-A).
-  // A tela de admin de OP de látex foi extraída para
-  // js/screens/op-latex-admin.js (OP-LATEX-ADMIN-MODULE-A).
-  // Telas que permanecem inline
-  for (const fn of [
-    'screenPainel', 'screenNovaOP',
-  ]) {
-    assert.match(inline, new RegExp(`(async\\s+)?function\\s+${fn}\\s*\\(`),
-      `inline perdeu a função ${fn}`);
-  }
-  // renderOPLatexAdmin (clone local) foi extraído para
-  // op-latex-admin.js em OP-LATEX-ADMIN-MODULE-A
-  assert.equal(/function\s+renderOPLatexAdmin\s*\(/.test(inline), false,
-    'inline não deve mais declarar renderOPLatexAdmin (extraído para op-latex-admin.js)');
-  // rotuloFioOrdem (clone local) foi unificado com rotuloFio
-  // em OP-FORM-HELPERS-MODULE-A
-  assert.equal(/function\s+rotuloFioOrdem\s*\(/.test(inline), false,
-    'inline não deve mais declarar rotuloFioOrdem (unificado com rotuloFio)');
-  // setRoutes e main
-  assert.match(inline, /window\.RAVATEX_ROUTER\.setRoutes\(/);
-  assert.match(inline, /async\s+function\s+main\s*\(/);
+  assert.equal(inline, '');
+  assert.match(indexSrc, /js\/boot\.js/);
+  assert.match(indexSrc, /js\/screens\/painel\.js/);
 });
 
 test('7. js/screens/entrega-writes.js contém todos os 5 writes extraídos', () => {
@@ -1399,33 +1378,12 @@ test('55. boot: ui + router + system-screens + common + cadastros + ops-list + e
   sandbox.CURRENT_USER = { nome: 'Tester', tipo: 'admin' };
   sandbox.logout = () => {};
 
-  let threwSyntax = false;
-  let otherErr = null;
-  try {
-    vm.runInContext(inline, sandbox, { filename: 'index-inline.js' });
-  } catch (e) {
-    if (e instanceof SyntaxError && /already been declared|Identifier .* has already/.test(e.message)) {
-      threwSyntax = true;
-    } else {
-      otherErr = e;
-    }
-  }
-  assert.equal(threwSyntax, false,
-    'coexistência entrega-writes.js + inline lançou SyntaxError de duplicate identifier');
-
-  // setRoutes do inline deve ter registrado as rotas de cadastro
-  // (não testamos as rotas de entrega porque elas não existem —
-  // excluirEntrega não é uma rota, é um write helper).
-  const routes = vm.runInContext('window.routes', sandbox);
-  assert.ok(routes && routes['#/login'], 'rota #/login não registrada');
-
-  if (otherErr) {
-    console.log('(esperado) inline falhou em runtime fora do duplicate-identifier:',
-      String(otherErr.message).slice(0, 120));
-  }
+  assert.equal(inline, '');
+  assert.equal(typeof vm.runInContext('window.RAVATEX_ENTREGA_WRITES.salvarEntregaCima', sandbox), 'function');
+  assert.equal(typeof vm.runInContext('window.RAVATEX_ENTREGA_WRITES.salvarEntregaLatex', sandbox), 'function');
 });
 
-test('56. screenPainel (inline) ainda renderiza via shellLayout com 9 itens do ADMIN_MENU (regressão common)', () => {
+test('56. screenPainel renderiza via shellLayout com ADMIN_MENU atual', () => {
   const inline = extractInlineScript(indexSrc);
   const toastsNode = new FakeNode('div');
   const document = {
@@ -1464,24 +1422,19 @@ test('56. screenPainel (inline) ainda renderiza via shellLayout com 9 itens do A
   vm.runInContext(efSrc,     sandbox, { filename: 'js/screens/entrega-form.js' });
   vm.runInContext(ewSrc,     sandbox, { filename: 'js/screens/entrega-writes.js' });
   vm.runInContext(fornSrc,   sandbox, { filename: 'js/screens/fornecedor.js' });
+  vm.runInContext(painelSrc, sandbox, { filename: 'js/screens/painel.js' });
   sandbox.CURRENT_USER = { nome: 'Tester', tipo: 'admin' };
   sandbox.logout = () => {};
 
-  try {
-    vm.runInContext(inline, sandbox, { filename: 'index-inline.js' });
-  } catch (e) {
-    if (e instanceof SyntaxError && /already been declared|Identifier .* has already/.test(e.message)) {
-      throw new Error('duplicate-identifier SyntaxError no boot: ' + e.message);
-    }
-  }
+  assert.equal(inline, '');
 
   const root = vm.runInContext('window.screenPainel()', sandbox);
   assert.ok(root && root.tagName === 'DIV', 'screenPainel não devolveu <div>');
   const flex = root.children.find((c) => c.tagName === 'DIV');
   const aside = flex && flex.children.find((c) => c.tagName === 'ASIDE');
   const links = aside && aside.children.filter((c) => c.tagName === 'A');
-  assert.ok(links && links.length === 9,
-    `screenPainel não renderizou 9 itens do ADMIN_MENU (renderizou ${links ? links.length : 0})`);
+  assert.ok(links && links.length === 10,
+    `screenPainel nao renderizou 10 itens do ADMIN_MENU (renderizou ${links ? links.length : 0})`);
 });
 
 test('57. screenCadastrosCores (cadastros) ainda renderiza (regressão cadastros)', async () => {

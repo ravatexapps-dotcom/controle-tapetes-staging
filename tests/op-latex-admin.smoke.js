@@ -404,7 +404,10 @@ function makeFullBootSandbox({
       calls.push({ op: 'from', table });
       return makeChain(table);
     },
-    rpc: () => { calls.push({ op: 'rpc' }); return Promise.resolve({ data: null, error: null }); },
+    rpc: (fn, params) => {
+      calls.push({ op: 'rpc', fn, params });
+      return Promise.resolve({ data: { ok: true }, error: null });
+    },
     auth: {
       getSession: () => Promise.resolve({ data: { session: null }, error: null }),
       signInWithPassword: () => Promise.resolve({ data: { user: null }, error: null }),
@@ -691,10 +694,11 @@ function findNode(node, predicate) {
 }
 
 async function renderLatexAdminForTest(opts = {}) {
-  const { sandbox } = makeFullBootSandbox(opts);
+  const { sandbox, fakeSupa } = makeFullBootSandbox(opts);
   const view = await vm.runInContext('window.renderOPLatexAdmin(42)', sandbox);
   return {
     sandbox,
+    fakeSupa,
     view,
     text: collectNodeText(view),
     styles: collectStyles(view),
@@ -729,7 +733,7 @@ test('32. OP aberta de acabamento mostra linguagem de preparacao e fornecedor de
   assert.match(rendered.text, /Acabamento Sul/);
 });
 
-test('33. OP aberta de acabamento mostra origem e CTA de colocar em producao', async () => {
+test('33. OP aberta de acabamento mostra origem e CTA de confirmar entrada', async () => {
   const rendered = await renderLatexAdminForTest({
     opData: {
       id: 42,
@@ -748,7 +752,8 @@ test('33. OP aberta de acabamento mostra origem e CTA de colocar em producao', a
   });
   assert.match(rendered.text, /OP origem/i);
   assert.match(rendered.text, /OP 2\/2026 · Tecelagem/i);
-  assert.match(rendered.text, /Colocar em producao/i);
+  assert.match(rendered.text, /Confirmar entrada \/ iniciar acabamento/i);
+  assert.doesNotMatch(rendered.text, /Colocar em producao/i);
 });
 
 test('34. OP de acabamento nao mostra "4. Entregas tecelagem"', async () => {
@@ -802,7 +807,7 @@ test('35. OP em producao de acabamento segue o standalone e nao mostra recebimen
   assert.doesNotMatch(rendered.text, /Finalizar OP de l[áa]tex/i);
 });
 
-test('36. OP aberta de acabamento informa que a producao permanece fora de escopo', async () => {
+test('36. OP aberta de acabamento informa que aguarda entrada no acabamento', async () => {
   const rendered = await renderLatexAdminForTest({
     opData: {
       id: 42,
@@ -819,14 +824,46 @@ test('36. OP aberta de acabamento informa que a producao permanece fora de escop
     modelosData: [{ id: 1, nome: 'Roma', largura: 1.5, cor_1: { id: 1, nome: 'CINZA' }, cor_2: { id: 2, nome: 'GELO' } }],
     origemOpData: { id: 12, numero: 2, ano: 2026, tipo: 'tecelagem' },
   });
-  assert.match(rendered.text, /Transicao para producao sera implementada em fase propria/i);
+  assert.match(rendered.text, /aguardando confirmacao de entrada no acabamento/i);
+  assert.doesNotMatch(rendered.text, /Transicao para producao sera implementada em fase propria/i);
 });
 
-test('37. op-latex-admin.js nao chama alterar_status_op nem colocarEmProducao', () => {
-  assert.doesNotMatch(olaSrc, /alterar_status_op/,
-    'op-latex-admin.js nao pode chamar alterar_status_op nesta fase');
+test('37. OP aberta de acabamento confirma entrada via alterar_status_op', async () => {
+  const rendered = await renderLatexAdminForTest({
+    opData: {
+      id: 42,
+      numero: 8,
+      ano: 2026,
+      status: 'aberta',
+      tipo: 'latex',
+      observacao: '',
+      origem_op_id: 12,
+      lote: { id: 91, numero: 22, cliente: { id: 3, nome: 'Cliente Atlas' } },
+      op_itens: [{ id: 100, modelo_id: 1, metros_pedidos: 125 }],
+      op_fornecedores: [{ fornecedor_id: 7, etapa: 'latex', fornecedores: { nome: 'Acabamento Sul' } }],
+    },
+    modelosData: [{ id: 1, nome: 'Roma', largura: 1.5, cor_1: { id: 1, nome: 'CINZA' }, cor_2: { id: 2, nome: 'GELO' } }],
+    origemOpData: { id: 12, numero: 2, ano: 2026, tipo: 'tecelagem' },
+  });
+  const btn = findNode(rendered.view, (n) => (
+    n.tagName === 'BUTTON' && /Confirmar entrada \/ iniciar acabamento/i.test(collectNodeText(n))
+  ));
+  assert.ok(btn, 'CTA de confirmar entrada nao encontrado');
+  assert.equal(btn.disabled, false, 'CTA de confirmar entrada nao deve nascer desabilitado');
+
+  const opsFromBefore = rendered.fakeSupa._calls.filter(c => c.op === 'from' && c.table === 'ops').length;
+  await btn._listeners.click({ currentTarget: btn });
+
+  const rpcCalls = rendered.fakeSupa._calls.filter(c => c.op === 'rpc');
+  assert.equal(rpcCalls.length, 1, 'deve chamar uma RPC para confirmar entrada');
+  assert.equal(rpcCalls[0].fn, 'alterar_status_op');
+  assert.equal(rpcCalls[0].params.p_op_id, 42);
+  assert.equal(rpcCalls[0].params.p_novo_status, 'em_producao');
+  assert.equal(rpcCalls[0].params.p_observacao, 'Entrada no acabamento confirmada');
+  const opsFromAfter = rendered.fakeSupa._calls.filter(c => c.op === 'from' && c.table === 'ops').length;
+  assert.ok(opsFromAfter > opsFromBefore, 'confirmacao deve recarregar a OP apos sucesso');
   assert.doesNotMatch(olaSrc, /function\s+colocarEmProducao\s*\(/,
-    'op-latex-admin.js nao pode manter funcao colocarEmProducao funcional nesta fase');
+    'op-latex-admin.js nao deve manter funcao legada colocarEmProducao');
 });
 
 test('38. op-latex-admin.js nao faz update de status para em_producao', () => {
@@ -971,11 +1008,11 @@ test('42. OP em producao de acabamento nao mostra elementos de preparacao ou tec
   assert.doesNotMatch(rendered.text, /Transicao para producao sera implementada em fase propria/i);
 });
 
-test('43. nenhum schema, upload real ou lifecycle novo foi introduzido no modulo de acabamento', () => {
+test('43. gate de entrada usa lifecycle sem schema/upload ou gerar_op_latex no modulo de acabamento', () => {
   assert.doesNotMatch(olaSrc, /supa\.from\(\s*['"]op_eventos['"]\s*\)\.(insert|update|delete)/);
   assert.doesNotMatch(olaSrc, /storage\.from|upload\s*\(/,
     'documentos da OP devem ser placeholder controlado, sem upload real');
-  assert.doesNotMatch(olaSrc, /alterar_status_op/);
+  assert.match(olaSrc, /alterar_status_op/);
   assert.doesNotMatch(olaSrc, /gerar_op_latex/);
 });
 

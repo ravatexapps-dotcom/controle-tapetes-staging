@@ -2334,3 +2334,44 @@ node --test tests/boot.smoke.js \
   `node --test tests/painel-screen.smoke.js`.
   Todos OK. `router` e `painel-screen` imprimem mensagens esperadas do
   sandbox sobre `window.addEventListener`, mas passam com exit code 0.
+# Estado pos-fase - OP Latex Entry Gate B
+
+- Fase concluida localmente: `RAVATEX-TAPETES-OP-LATEX-ENTRY-GATE-B`.
+- Branch base da fase: `work/app-next`, HEAD inicial
+  `cc4c5e08092d2a58612fc671551b700cea2ef150`.
+- Escopo fechado:
+  `db/22_latex_entry_gate.sql`,
+  `js/screens/op-latex-admin.js`,
+  `js/screens/op-nova.js`,
+  `js/screens/op-tecelagem-producao-admin.js`,
+  `tests/op-latex-admin.smoke.js`,
+  `tests/op-nova.smoke.js`,
+  `tests/fornecedor-screens.smoke.js`,
+  `tests/latex-entry-gate-schema.smoke.js`,
+  `PROJECT_STATE.md`,
+  `AGENT_HANDOFF.md`.
+- Contrato SQL versionado, nao aplicado nesta fase:
+  `gerar_op_latex(p_entrega_id BIGINT)` preserva assinatura e vinculos
+  existentes, mas agora cria OP Latex/Acabamento com `status = 'aberta'`
+  em vez de `em_producao`.
+- UI:
+  OP Latex aberta passa a ser o gate de entrada no Acabamento.
+  O CTA "Confirmar entrada / iniciar acabamento" chama
+  `alterar_status_op` com observacao "Entrada no acabamento confirmada"
+  e recarrega a OP apos sucesso.
+- Tecelagem:
+  a cadeia produtiva continua sem filtro por status e passa a exibir
+  "Aguardando entrada" para OP de Acabamento aberta.
+- Fornecedor Latex:
+  a tela de producao do fornecedor continua mostrando apenas OPs
+  `em_producao`; OP aberta nao aparece como producao.
+- Preservado fora de escopo:
+  Pedido, Expedicao, finalizacao de Latex, recalculo, entrega/coleta,
+  Supabase remoto e producao.
+- Proxima etapa recomendada:
+  aplicar `db/22_latex_entry_gate.sql` em staging se a fase B for aceita,
+  depois homologar o caminho Tecelagem transfere -> OP Acabamento aberta
+  -> confirmar entrada -> OP em producao.
+- Gaps futuros:
+  Expedicao operacional e regra de conclusao do Pedido seguem pendentes
+  em fase propria.

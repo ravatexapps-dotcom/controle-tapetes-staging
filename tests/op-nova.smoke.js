@@ -1078,7 +1078,7 @@ test('50. Cadeia produtiva (lineage strip) aparece quando há OP de Acabamento g
         op_fornecedores: [{ fornecedor_id: 701, etapa: 'cima' }],
       },
       {
-        id: 95, numero: 8, ano: 2026, status: 'em_producao', tipo: 'latex',
+        id: 95, numero: 8, ano: 2026, status: 'aberta', tipo: 'latex',
         observacao: '', origem_op_id: 93, origem_entrega_id: 'ent-1', lote_id: null, lote: null,
         op_itens: [], op_fornecedores: [],
       },
@@ -1094,7 +1094,8 @@ test('50. Cadeia produtiva (lineage strip) aparece quando há OP de Acabamento g
   const rendered = await renderNovaOpForTest({ opId: 93, db });
   assert.match(rendered.text, /Cadeia produtiva/i);
   assert.match(rendered.text, /OP 8\/2026/);
-  assert.match(rendered.text, /Acabamento \(gerada por entrega parcial\)/i);
+  assert.match(rendered.text, /Acabamento/i);
+  assert.match(rendered.text, /Aguardando entrada/i);
 });
 
 test('51. Cadeia produtiva ausente quando não há OP de Acabamento gerada', async () => {
@@ -1241,7 +1242,7 @@ test('64. Bloco "5. Movimentacao" mostra na ultima entrega so metros sem defeito
 });
 
 test('65. reloadEntregasCima recarrega numero/ano da OP de latex para a cadeia produtiva', () => {
-  assert.match(opnSrc, /select\(['"]id,\s*numero,\s*ano,\s*origem_entrega_id['"]\)/);
+  assert.match(opnSrc, /select\(['"]id,\s*numero,\s*ano,\s*status,\s*origem_entrega_id['"]\)/);
   assert.match(opnSrc, /latexOpInfo\s*=\s*\{\}/);
-  assert.match(opnSrc, /latexOpInfo\[lo\.origem_entrega_id\]\s*=\s*\{\s*id:\s*lo\.id,\s*numero:\s*lo\.numero,\s*ano:\s*lo\.ano\s*\}/);
+  assert.match(opnSrc, /latexOpInfo\[lo\.origem_entrega_id\]\s*=\s*\{\s*id:\s*lo\.id,\s*numero:\s*lo\.numero,\s*ano:\s*lo\.ano,\s*status:\s*lo\.status\s*\}/);
 });

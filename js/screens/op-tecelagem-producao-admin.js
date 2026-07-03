@@ -106,6 +106,9 @@
       }
     }
     if (!destino) return null;
+    var destinoStatus = destino.status === 'aberta'
+      ? 'Aguardando entrada'
+      : (destino.status === 'em_producao' ? 'Em producao' : '');
     return el('div', { style: 'display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:#eaf1fd;border:1px solid #d7e6fb;border-radius:4px;padding:10px 16px;' },
       el('span', { style: 'font-size:12.5px;color:#2c4a78;' }, 'Cadeia produtiva:'),
       el('span', { style: 'font-size:12.5px;font-weight:700;color:#16203a;background:#fff;border-radius:4px;padding:3px 9px;' }, 'OP ' + ctx.numero + '/' + ctx.ano + ' · Tecelagem (esta OP)'),
@@ -113,7 +116,9 @@
         type: 'button',
         style: 'font-size:12.5px;font-weight:700;color:#2563eb;background:#fff;border:none;border-radius:4px;padding:3px 9px;cursor:pointer;font-family:inherit;',
         onclick: function () { window.navigate('#/ops/' + destino.id); },
-      }, 'OP ' + destino.numero + '/' + destino.ano + ' · Acabamento (gerada por entrega parcial)'));
+      }, 'OP ' + destino.numero + '/' + destino.ano + ' · Acabamento'
+        + (destinoStatus ? ' · ' + destinoStatus : '')
+        + ' (gerada por entrega parcial)'));
   }
 
   function buildHeaderProducao(ctx) {
