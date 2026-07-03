@@ -22,7 +22,7 @@
 //   - NÃO referencia pedido_eventos / OP / lote / fornecedor;
 //   - valida 1+ item, modelo, metros > 0;
 //   - compensa com DELETE em `pedidos` se itens falharem;
-//   - navega para detalhe ou lista após sucesso.
+//   - mostra resumo pós-envio sem CTA de OP.
 //
 // Não executa o app nem acessa Supabase real.
 // =====================================================================
@@ -253,7 +253,7 @@ test('cliente-pedido-form: valida modelo selecionado', () => {
 });
 
 test('cliente-pedido-form: valida metros > 0', () => {
-  assert.match(screen, /metros deve ser > 0/);
+  assert.match(screen, /metragem deve ser > 0/);
 });
 
 // ---------------------------------------------------------------------
@@ -285,12 +285,28 @@ test('cliente-pedido-form: NÃO usa rpc', () => {
 });
 
 // ---------------------------------------------------------------------
-// 12. Navegação pós-criação
+// 12. Pós-criação
 // ---------------------------------------------------------------------
 
-test('cliente-pedido-form: navega para detalhe após sucesso', () => {
-  // Deve haver navigate('#/cliente/pedidos/<id>') após insert
-  assert.match(screen, /navigate\(\s*['"]#\/cliente\/pedidos\/['"]\s*\+\s*pedidoId\s*\)/);
+test('cliente-pedido-form: após salvar mostra resumo do pedido e próximos passos', () => {
+  assert.match(screen, /function\s+buildPostSaveResumo\s*\(/);
+  assert.match(screen, /Pedido enviado/);
+  assert.match(screen, /Proximos passos/);
+  assert.match(screen, /data-post-save-summary['"]\s*:\s*['"]cliente['"]/);
+  assert.match(screen, /data-next-steps['"]\s*:\s*['"]cliente['"]/);
+});
+
+test('cliente-pedido-form: ações pós-save são Ver meus pedidos e Criar novo pedido', () => {
+  assert.match(screen, /Ver meus pedidos/);
+  assert.match(screen, /Criar novo pedido/);
+  assert.match(screen, /navigate\(\s*['"]#\/cliente\/pedidos['"]\s*\)/);
+  assert.match(screen, /navigate\(\s*['"]#\/cliente\/pedidos\/novo['"]\s*\)/);
+});
+
+test('cliente-pedido-form: cliente não vê CTA de OP após salvar', () => {
+  assert.doesNotMatch(screen, /Abrir OP de Tecelagem/);
+  assert.doesNotMatch(screen, /#\/ops\/nova/);
+  assert.doesNotMatch(screen, /pedido_id=/);
 });
 
 // ---------------------------------------------------------------------

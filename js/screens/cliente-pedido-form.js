@@ -70,6 +70,7 @@
         { uid: novoUid(), modeloId: '', metros: '', observacao: '' },
       ],
     };
+    var postSave = null;
 
     async function carregarDados() {
       var modRes = await window.supa
@@ -134,6 +135,13 @@
         if (Number.isFinite(n) && n > 0) t += n;
       }
       return t;
+    }
+
+    function totalMetrosStr() {
+      var t = totalMetros();
+      return t > 0
+        ? t.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' m'
+        : '0,00 m';
     }
 
     // ------------------------------------------------------------------
@@ -605,6 +613,56 @@
       }, instrCard, checkoutCard);
     }
 
+    function buildPostSaveResumo() {
+      var pedido = postSave && postSave.pedido ? postSave.pedido : {};
+      var resumo = postSave && postSave.resumo ? postSave.resumo : {};
+      var pedidoLabel = pedido.numero != null ? '#' + pedido.numero : pedido.id;
+      var fields = [
+        { label: 'Pedido', value: pedidoLabel || '-' },
+        { label: 'Itens', value: String(resumo.itemCount || 0) },
+        { label: 'Metragem total', value: resumo.totalMetrosLabel || '0,00 m' },
+        { label: 'Recebimento', value: resumo.recebimento === 'entrega' ? 'Entrega' : 'Retirada' },
+      ];
+
+      return window.el('div', {
+        style: 'background:#fff;border:1px solid #d7e6fb;border-radius:4px;box-shadow:0 1px 2px rgba(20,30,45,.04);padding:18px 20px;margin-bottom:14px;',
+        'data-post-save-summary': 'cliente',
+      },
+        window.el('div', { style: 'font-size:18px;font-weight:800;color:#16203a;margin-bottom:6px;' }, 'Pedido enviado'),
+        window.el('div', { style: 'font-size:13px;color:#5b6472;line-height:1.5;margin-bottom:14px;' },
+          'Recebemos seu pedido. A equipe da Ravatex fara a conferencia e atualizara o acompanhamento.'),
+        window.el('div', {
+          style: 'display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:16px;',
+        }, fields.map(function (field) {
+          return window.el('div', {
+            style: 'background:#f8f9fb;border:1px solid #eceef1;border-radius:4px;padding:10px 12px;',
+          },
+            window.el('div', { style: 'font-size:11.5px;color:#8a93a3;font-weight:600;margin-bottom:5px;' }, field.label),
+            window.el('div', { style: 'font-size:14px;color:#16203a;font-weight:700;' }, field.value)
+          );
+        })),
+        window.el('div', {
+          style: 'background:#f6f9ff;border:1px solid #d0e0fb;border-radius:4px;padding:12px 14px;font-size:13px;color:#2c4a78;line-height:1.5;margin-bottom:14px;',
+          'data-next-steps': 'cliente',
+        }, 'Proximos passos: acompanhe o andamento em Meus pedidos ou envie outro pedido quando precisar.'),
+        window.el('div', {
+          style: 'display:flex;align-items:center;justify-content:flex-end;gap:10px;flex-wrap:wrap;',
+          'data-post-save-actions': 'cliente',
+        },
+          window.el('button', {
+            type: 'button',
+            style: 'background:#fff;color:#3f4757;border:1px solid #d8dce2;border-radius:4px;padding:9px 14px;font-weight:600;font-size:13.5px;font-family:inherit;cursor:pointer;',
+            onclick: function () { window.navigate('#/cliente/pedidos'); },
+          }, 'Ver meus pedidos'),
+          window.el('button', {
+            type: 'button',
+            style: 'background:#2563eb;color:#fff;border:none;border-radius:4px;padding:9px 16px;font-weight:700;font-size:13.5px;font-family:inherit;cursor:pointer;',
+            onclick: function () { window.navigate('#/cliente/pedidos/novo'); },
+          }, 'Criar novo pedido')
+        )
+      );
+    }
+
     // ------------------------------------------------------------------
     // Save
     // ------------------------------------------------------------------
@@ -695,8 +753,16 @@
           return;
         }
 
+        postSave = {
+          pedido: pedidoRes.data,
+          resumo: {
+            itemCount: state.itens.length,
+            totalMetrosLabel: totalMetrosStr(),
+            recebimento: state.recebimento,
+          },
+        };
         window.toast('Pedido #' + pedidoRes.data.numero + ' enviado.', 'success');
-        window.navigate('#/cliente/pedidos/' + pedidoId);
+        render();
       } finally {
         btn.disabled = false;
         btn.textContent = oldLabel;
@@ -719,6 +785,14 @@
           window.el('div', {
             style: 'background:#fff; border:1px solid #eceef1; border-radius:4px; padding:24px; color:#d6403a;'
           }, 'Erro ao carregar dados de ' + loadingError + '. Tente recarregar a página.')
+        );
+        return;
+      }
+
+      if (postSave) {
+        container.replaceChildren(
+          buildHeader(),
+          buildPostSaveResumo()
         );
         return;
       }

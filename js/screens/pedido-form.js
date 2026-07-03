@@ -56,6 +56,7 @@
         { uid: novoUid(), modeloId: '', metros: '', observacao: '' }
       ]
     };
+    var postSave = null;
 
     function modeloById(id) {
       for (var i = 0; i < modelos.length; i++) {
@@ -94,6 +95,13 @@
       return total > 0
         ? total.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' m'
         : '0,00 m';
+    }
+
+    function clienteNomeById(id) {
+      for (var i = 0; i < clientes.length; i++) {
+        if (String(clientes[i].id) === String(id)) return clientes[i].nome;
+      }
+      return '-';
     }
 
     function swatchColor(modeloId) {
@@ -605,6 +613,63 @@
       }, instrCard, checkoutCard);
     }
 
+    function buildPostSaveResumo() {
+      var pedido = postSave && postSave.pedido ? postSave.pedido : {};
+      var resumo = postSave && postSave.resumo ? postSave.resumo : {};
+      var pedidoLabel = pedido.numero != null ? '#' + pedido.numero : pedido.id;
+      var fields = [
+        { label: 'Cliente', value: resumo.clienteNome || '-' },
+        { label: 'Pedido', value: pedidoLabel || '-' },
+        { label: 'Itens', value: String(resumo.itemCount || 0) },
+        { label: 'Metragem total', value: resumo.totalMetrosLabel || '0,00 m' },
+      ];
+
+      return window.el('div', {
+        style: 'background:#fff;border:1px solid #d7e6fb;border-radius:4px;box-shadow:0 1px 2px rgba(20,30,45,.04);padding:18px 20px;margin-bottom:14px;',
+        'data-post-save-summary': 'admin',
+      },
+        window.el('div', {
+          style: 'display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:14px;',
+        },
+          window.el('div', { style: 'min-width:240px;' },
+            window.el('div', { style: 'font-size:18px;font-weight:800;color:#16203a;margin-bottom:5px;' }, 'Pedido salvo com sucesso'),
+            window.el('div', { style: 'font-size:13px;color:#5b6472;line-height:1.5;' },
+              'O pedido foi salvo. Abra a OP de tecelagem quando estiver pronto para iniciar a producao.')
+          )
+        ),
+        window.el('div', {
+          style: 'display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:16px;',
+        }, fields.map(function (field) {
+          return window.el('div', {
+            style: 'background:#f8f9fb;border:1px solid #eceef1;border-radius:4px;padding:10px 12px;',
+          },
+            window.el('div', { style: 'font-size:11.5px;color:#8a93a3;font-weight:600;margin-bottom:5px;' }, field.label),
+            window.el('div', { style: 'font-size:14px;color:#16203a;font-weight:700;' }, field.value)
+          );
+        })),
+        window.el('div', {
+          style: 'display:flex;align-items:center;justify-content:flex-end;gap:10px;flex-wrap:wrap;',
+          'data-post-save-actions': 'right',
+        },
+          window.el('button', {
+            type: 'button',
+            style: 'background:#fff;color:#3f4757;border:1px solid #d8dce2;border-radius:4px;padding:9px 14px;font-weight:600;font-size:13.5px;font-family:inherit;cursor:pointer;',
+            onclick: function () { window.navigate('#/pedidos/' + pedido.id); },
+          }, 'Ver pedido'),
+          window.el('button', {
+            type: 'button',
+            style: 'background:#fff;color:#3f4757;border:1px solid #d8dce2;border-radius:4px;padding:9px 14px;font-weight:600;font-size:13.5px;font-family:inherit;cursor:pointer;',
+            onclick: function () { window.navigate('#/pedidos/novo'); },
+          }, 'Novo pedido'),
+          window.el('button', {
+            type: 'button',
+            style: 'background:#2563eb;color:#fff;border:none;border-radius:4px;padding:9px 16px;font-weight:700;font-size:13.5px;font-family:inherit;cursor:pointer;',
+            onclick: function () { window.location.hash = '#/ops/nova?pedido_id=' + pedido.id; },
+          }, 'Abrir OP de Tecelagem')
+        )
+      );
+    }
+
     async function salvar(btn, status) {
       if (!state.clienteId) {
         window.toast('Selecione um cliente.', 'error');
@@ -684,8 +749,16 @@
           return;
         }
 
+        postSave = {
+          pedido: pedidoRes.data,
+          resumo: {
+            clienteNome: clienteNomeById(state.clienteId),
+            itemCount: state.itens.length,
+            totalMetrosLabel: totalMetrosStr(),
+          },
+        };
         window.toast('Pedido #' + pedidoRes.data.numero + ' salvo como ' + status + '.', 'success');
-        window.navigate('#/pedidos');
+        render();
       } finally {
         btn.disabled = false;
         btn.textContent = oldLabel;
@@ -718,6 +791,14 @@
 
       if (loadingError) {
         container.replaceChildren(buildHeader(), buildErrorCard());
+        return;
+      }
+
+      if (postSave) {
+        container.replaceChildren(
+          buildHeader(),
+          buildPostSaveResumo()
+        );
         return;
       }
 

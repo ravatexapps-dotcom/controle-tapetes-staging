@@ -570,6 +570,29 @@ test('pedido-detail.js: botão Editar itens é controlado por status editável (
     'deve existir função buildEditItensButton()');
 });
 
+test('pedido-detail.js: "Gerar primeira OP" usa hash route #/ops/nova?pedido_id=<id>', () => {
+  assert.match(detailBundle, /Gerar primeira OP/);
+  assert.match(
+    detailEvents,
+    /navigate\(\s*['"]#\/ops\/nova\?pedido_id=['"]\s*\+\s*pedidoId\s*\)/,
+    'navigateToNovaOp deve usar hash route com pedido_id'
+  );
+  assert.doesNotMatch(detailBundle, /location\.href\s*=\s*['"]\/ops\/nova/);
+  assert.doesNotMatch(detailBundle, /location\.assign\s*\(\s*['"]\/ops\/nova/);
+});
+
+test('pedido-detail.js: se OP já existir não sugere gerar duplicada; mostra OP existente', () => {
+  const buildOpsSlice = (detailRender.match(
+    /function buildOps\s*\(state,\s*view,\s*handlers\)\s*\{[\s\S]*?\n  \}\n\n  function buildExpedicoes/
+  ) || [''])[0];
+  assert.ok(buildOpsSlice, 'trecho buildOps nao encontrado');
+  assert.match(buildOpsSlice, /if\s*\(\s*view\.opSummaries\.length\s*===\s*0\s*\)/);
+  assert.match(buildOpsSlice, /Gerar primeira OP/);
+  assert.match(buildOpsSlice, /view\.opSummaries\.map/);
+  assert.match(buildOpsSlice, /buildOpCard/);
+  assert.match(detailRender, /buildFooterAction\(\s*['"]Abrir OP['"]/);
+});
+
 test('pedido-detail.js: NÃO usa mais "Confirmar / Receber" como placeholder (substituído)', () => {
   // O placeholder antigo "Confirmar / Receber" foi substituído por
   // "Marcar como recebido" + "Confirmar pedido" como ações reais.

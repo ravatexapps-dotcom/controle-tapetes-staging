@@ -2403,3 +2403,57 @@ node --test tests/boot.smoke.js \
 - Operacao pendente desta fase: depois do commit e push em `staging`, aplicar
   somente `db/23_expedicao_entrega_flow.sql` no Supabase staging
   `ucrjtfswnfdlxwtmxnoo` e validar tabelas/RPCs.
+
+# Estado pos-fase - Pedido Post Save First OP CTA B
+
+- Fase concluida localmente:
+  `RAVATEX-TAPETES-PEDIDO-POST-SAVE-FIRST-OP-CTA-B`.
+- Branch base da fase: `work/app-next`, HEAD inicial
+  `c428134e1475fcc1dffa6164efd668a9978de3b8`.
+- Escopo fechado:
+  `js/screens/pedido-form.js`,
+  `js/screens/cliente-pedido-form.js`,
+  `js/screens/pedido-detail-render.js`,
+  `tests/pedido-form.smoke.js`,
+  `tests/cliente-pedido-form.smoke.js`,
+  `tests/pedido-detail.smoke.js`,
+  `PROJECT_STATE.md`,
+  `AGENT_HANDOFF.md`.
+- Admin pos-save:
+  apos salvar pedido, a tela renderiza resumo "Pedido salvo com sucesso"
+  com cliente, numero/id, quantidade de itens e metragem total, mantendo
+  acoes "Ver pedido", "Novo pedido" e CTA primario
+  "Abrir OP de Tecelagem" no bloco de acoes alinhado a direita.
+- Rota da OP:
+  o CTA admin usa hash route por `window.location.hash =
+  '#/ops/nova?pedido_id=' + pedido.id`; nao usa rota fisica `/ops/nova`.
+- Cliente pos-save:
+  apos enviar pedido, a tela renderiza resumo "Pedido enviado", proximos
+  passos e acoes "Ver meus pedidos" / "Criar novo pedido"; nenhuma acao de
+  OP aparece para cliente.
+- Detalhe do Pedido:
+  o primeiro CTA operacional agora aparece como "Gerar primeira OP" e
+  continua chamando `navigateToNovaOp`, que usa
+  `#/ops/nova?pedido_id=<pedido_id>`. Quando `view.opSummaries.length > 0`,
+  a tela renderiza cards de OP existentes com "Abrir OP" e nao sugere gerar
+  outra primeira OP.
+- Preservado fora de escopo:
+  SQL, Supabase remoto/producao, `gerar_op_latex`, expedicao,
+  entrega/coleta e `concluir_pedido_se_pronto`.
+- Testes/checks executados com sucesso:
+  `node --check js/screens/pedido-form.js`;
+  `node --check js/screens/cliente-pedido-form.js`;
+  `node --check js/screens/pedido-detail-events.js`;
+  `node --check js/screens/pedido-detail-render.js`;
+  `node --test tests/pedido-form.smoke.js`;
+  `node --test tests/cliente-pedido-form.smoke.js`;
+  `node --test tests/pedido-detail.smoke.js`;
+  `node --test tests/boot.smoke.js`;
+  `node --test tests/router.smoke.js`;
+  `node --test tests/op-nova.smoke.js`.
+- Observacoes:
+  `tests/pedido-novo.smoke.js` nao existe. `tests/router.smoke.js` imprime
+  diagnosticos esperados do sandbox sobre `window.addEventListener`, mas
+  passa com exit code 0. Busca de seguranca por `href=.*\/ops\/nova`,
+  `location.href.*ops/nova` e `location.assign.*ops/nova` nao retornou
+  ocorrencias. Residual permitido preservado: `?? supabase/.temp/`.

@@ -3389,3 +3389,31 @@ Senhas de teste antigas em `docs/qa/fase1-checklist.md` e
 > (`salvarEntregaLatex`, `atualizarEntregaLatex`, `excluirEntrega`) e a
 > finalizacao existente para `finalizada`; "Colocar em producao" permanece
 > no ramo de OP aberta/preparacao, nao no renderer `em_producao`.
+
+> **Atualizacao 2026-07-03 - fase
+> `RAVATEX-TAPETES-PEDIDO-POST-SAVE-FIRST-OP-CTA-B`.**
+> Implementado fluxo pos-salvamento de pedido sem alterar lifecycle
+> produtivo: admin agora permanece na tela apos salvar, ve resumo
+> "Pedido salvo com sucesso" com cliente, pedido, itens e metragem, e tem
+> CTA primario "Abrir OP de Tecelagem" alinhado a direita usando hash route
+> `#/ops/nova?pedido_id=<pedido_id>`. Cliente agora ve resumo "Pedido
+> enviado", proximos passos, "Ver meus pedidos" e "Criar novo pedido", sem
+> CTA de OP. No detalhe admin, o botao de primeira OP foi padronizado para
+> "Gerar primeira OP" e segue usando `#/ops/nova?pedido_id=<pedido_id>`;
+> quando ha OP vinculada, a tela continua mostrando cards de OP existentes
+> com "Abrir OP", sem sugerir duplicidade.
+> Preservado: nenhum SQL, Supabase remoto/producao, `gerar_op_latex`,
+> expedicao, entrega/coleta ou conclusao de pedido foram alterados.
+> Testes focados OK: `node --check js/screens/pedido-form.js`,
+> `node --check js/screens/cliente-pedido-form.js`,
+> `node --check js/screens/pedido-detail-events.js`,
+> `node --check js/screens/pedido-detail-render.js`,
+> `node --test tests/pedido-form.smoke.js`,
+> `node --test tests/cliente-pedido-form.smoke.js`,
+> `node --test tests/pedido-detail.smoke.js`,
+> `node --test tests/boot.smoke.js`,
+> `node --test tests/router.smoke.js`,
+> `node --test tests/op-nova.smoke.js`.
+> `tests/pedido-novo.smoke.js` nao existe. Busca de seguranca para rota
+> fisica `/ops/nova` sem ocorrencias. Residual preservado fora do commit:
+> `?? supabase/.temp/`.

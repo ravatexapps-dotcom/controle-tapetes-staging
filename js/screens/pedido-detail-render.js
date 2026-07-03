@@ -555,7 +555,7 @@
           type: 'button',
           style: 'display:inline-flex;align-items:center;gap:7px;background:#2563eb;color:#fff;border:none;border-radius:4px;padding:9px 14px;font-weight:700;font-size:13.5px;font-family:inherit;cursor:pointer;',
           onclick: handlers.navigateToNovaOp,
-        }, 'Criar primeira OP')
+        }, 'Gerar primeira OP')
       ));
       return wrap;
     }

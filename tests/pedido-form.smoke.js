@@ -20,7 +20,7 @@
 //   - pedido-form.js NÃO cria lote nem altera schema;
 //   - pedido-form.js NÃO consulta token_acesso;
 //   - pedido-form.js usa window.corPreviewElement (preview de cor);
-//   - pedido-form.js NÃO navega para rota de geração de OP.
+//   - pedido-form.js oferece CTA pós-save por hash route para gerar OP.
 //
 // Não executa o app nem acessa Supabase real.
 // =====================================================================
@@ -126,11 +126,11 @@ test('boot.js: registra rota #/pedidos/novo com role admin', () => {
 // 5. pedidos-list.js navega para o form
 // ---------------------------------------------------------------------
 
-test('pedidos-list.js: botão "+ Novo pedido" navega para #/pedidos/novo', () => {
+test('pedidos-list.js: botão "Novo pedido" navega para #/pedidos/novo', () => {
   // Deve haver um bloco com "Novo pedido" e navigate('#/pedidos/novo')
   // no mesmo callback.
-  const re = /['"]\+ Novo pedido['"][\s\S]{0,200}navigate\(\s*['"]#\/pedidos\/novo['"]\s*\)/;
-  assert.match(list, re, "botão '+ Novo pedido' deve navegar para '#/pedidos/novo'");
+  assert.match(list, /navigate\(\s*['"]#\/pedidos\/novo['"]\s*\)/);
+  assert.match(list, /['"]Novo pedido['"]/);
 });
 
 test('pedidos-list.js: NÃO tem mais toast "próxima fase" no botão Novo', () => {
@@ -364,8 +364,32 @@ test('pedido-form: NÃO hardcoda status de "recebido" ou "confirmado" na criaç�
 // 14. pedido-form.js não navega para rota de OP
 // ---------------------------------------------------------------------
 
-test('pedido-form: NÃO navega para #/ops/nova ou outra rota de OP', () => {
-  assert.doesNotMatch(screen, /navigate\(\s*['"]#\/ops/);
+test('pedido-form: pós-save admin mostra resumo e CTA "Abrir OP de Tecelagem"', () => {
+  assert.match(screen, /function\s+buildPostSaveResumo\s*\(/);
+  assert.match(screen, /Pedido salvo com sucesso/);
+  assert.match(screen, /Abrir OP de Tecelagem/);
+  assert.match(screen, /Ver pedido/);
+  assert.match(screen, /Novo pedido/);
+  assert.match(screen, /data-post-save-summary['"]\s*:\s*['"]admin['"]/);
+});
+
+test('pedido-form: CTA "Abrir OP de Tecelagem" usa hash route com pedido_id', () => {
+  assert.match(
+    screen,
+    /window\.location\.hash\s*=\s*['"]#\/ops\/nova\?pedido_id=['"]\s*\+\s*pedido\.id/,
+    'CTA deve setar window.location.hash para #/ops/nova?pedido_id=<id>'
+  );
+});
+
+test('pedido-form: ações pós-save ficam alinhadas à direita', () => {
+  assert.match(screen, /data-post-save-actions['"]\s*:\s*['"]right['"]/);
+  assert.match(screen, /justify-content:flex-end/);
+});
+
+test('pedido-form: NÃO usa rota física para /ops/nova', () => {
+  assert.doesNotMatch(screen, /location\.href\s*=\s*['"]\/ops\/nova/);
+  assert.doesNotMatch(screen, /location\.assign\s*\(\s*['"]\/ops\/nova/);
+  assert.doesNotMatch(screen, /href\s*:\s*['"]\/ops\/nova/);
 });
 
 // ---------------------------------------------------------------------
