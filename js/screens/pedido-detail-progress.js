@@ -602,6 +602,14 @@
       });
     }
 
+    if (chainState && chainState.tecPendingAcceptance) {
+      stepper.forEach(function (stage) {
+        if (stage.key !== 'tecelagem') return;
+        stage.state = stage.state === 'done' ? 'current' : stage.state;
+        stage.sublabel = 'OP pendente de aceite';
+      });
+    }
+
     if (chainState && chainState.actions) {
       opSummaries.forEach(function (summary) {
         summary.chainAction = summary.stageKey === 'tecelagem'

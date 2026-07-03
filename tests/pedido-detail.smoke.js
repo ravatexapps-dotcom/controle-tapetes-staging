@@ -328,6 +328,37 @@ test('pedido-chain-state: matriz preserva labels contextuais e gates funcionais'
   assert.equal(result.actions.releaseExpedicao.label, 'Aguardando acabamento');
 });
 
+test('pedido-chain-state: insumos recebidos com OP aberta expõe pendência de aceite', () => {
+  const sandbox = { window: {}, console };
+  vm.createContext(sandbox);
+  vm.runInContext(chainState, sandbox, { filename: 'js/screens/pedido-chain-state.js' });
+  const derive = sandbox.window.RAVATEX_SCREENS.pedidoChainState.derivePedidoChainState;
+  const result = derive({
+    pedido: { id: 'p1', status: 'rascunho', metros_total: 100 },
+    ops: [{
+      id: 12,
+      numero: 12,
+      ano: 2026,
+      status: 'aberta',
+      tipo: 'tecelagem',
+      op_itens: [{ id: 'i1', metros_pedidos: 100 }],
+    }],
+    ordensFio: [{ op_id: 12, kg_pedido: 10, kg_recebido: 10 }],
+    entregaItens: [],
+    entregasById: {},
+    expedicoes: [],
+    expedicaoItens: [],
+  });
+
+  assert.equal(result.adminStepper.insumos, 'done');
+  assert.equal(result.actions.transferInsumosToTecelagem.mode, 'view');
+  assert.equal(result.actions.transferTecelagemToAcabamento.mode, 'disabled');
+  assert.equal(result.actions.transferTecelagemToAcabamento.label, 'OP pendente de aceite');
+  assert.equal(result.tecPendingAcceptance.label, 'OP 12/2026 pendente de aceite');
+  assert.equal(result.tecPendingAcceptance.message, 'Insumos recebidos; OP pendente de aceite');
+  assert.equal(result.tecPendingAcceptance.opId, 12);
+});
+
 // ---------------------------------------------------------------------
 // 3. index.html carrega exatamente uma vez e na ordem correta
 // ---------------------------------------------------------------------
@@ -660,6 +691,17 @@ test('pedido-detail.js: modal de transicao usa contrato visual discreto', () => 
   assert.match(movementModalSlice, /border-radius:' \+ MOVEMENT_SURFACE_RADIUS/);
   assert.doesNotMatch(movementModalSlice, /border-radius:999px/);
   assert.doesNotMatch(movementModalSlice, /rounded-(?:lg|xl|2xl|full)/);
+});
+
+test('pedido-detail.js: OP aberta com insumos recebidos mostra bloqueio e CTA contextual', () => {
+  assert.match(detailEvents, /function buildPendingAcceptanceBlock/);
+  assert.match(detailEvents, /OP pendente de aceite/);
+  assert.match(detailEvents, /Insumos recebidos; OP ainda precisa ser aceita para liberar producao\./);
+  assert.match(detailEvents, /Abrir OP ['"] \+ ctxMovement\.op\.numero \+ ['"]\/['"] \+ ctxMovement\.op\.ano/);
+  assert.match(detailEvents, /navigateToOp\(ctxMovement\.op\.id\)/);
+  assert.match(detailProgress, /stage\.sublabel\s*=\s*['"]OP pendente de aceite['"]/);
+  assert.doesNotMatch(detailEvents, /aplicarRecalculoOP/);
+  assert.doesNotMatch(detailEvents, /status:\s*['"]em_producao['"]/);
 });
 
 test('pedido-detail.js: openMovementModal usa operacoes canonicas para movimentar pelo Pedido', () => {

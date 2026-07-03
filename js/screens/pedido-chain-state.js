@@ -161,6 +161,7 @@
     var hasAcab = acabamento.length > 0;
     var tecProduction = tecelagem.some(function (row) { return row.status === 'em_producao'; });
     var tecOpen = tecelagem.some(function (row) { return row.status === 'aberta' || row.status === 'simulada'; });
+    var tecOpenAcceptance = tecelagem.find(function (row) { return row.status === 'aberta'; }) || null;
     var tecFinished = tecelagem.some(function (row) { return row.status === 'finalizada' || row.status === 'concluida'; });
     var acabOpen = acabamento.some(function (row) { return row.status === 'aberta' || row.status === 'simulada'; });
     var acabProduction = acabamento.some(function (row) { return row.status === 'em_producao'; });
@@ -228,6 +229,11 @@
 
     var tecOp = tecelagem.length ? tecelagem[0].op : null;
     var acabOp = acabamento.length ? acabamento[0].op : null;
+    var tecPendingAcceptance = !!(tecOpenAcceptance && insumosConcluidos && !tecProduction);
+    var tecPendingAcceptanceOp = tecOpenAcceptance ? tecOpenAcceptance.op : null;
+    var tecPendingAcceptanceLabel = tecPendingAcceptanceOp
+      ? 'OP ' + tecPendingAcceptanceOp.numero + '/' + tecPendingAcceptanceOp.ano + ' pendente de aceite'
+      : 'OP pendente de aceite';
     var canMoveTecToAcab = hasTec && tecRemaining > 0 && (tecProduction || tecDone > 0 || tecFinished);
     var canReleaseExpedicao = acabFinished && !hasExpedicao;
     var canRegisterDelivery = hasExpedicao && expedicaoSaldo > 0;
@@ -247,7 +253,7 @@
           ? action('enabled', 'Transferir', { op: tecOp })
           : (tecDone > 0 || hasAcab
             ? action('view', 'Ver movimento', { op: tecOp })
-            : action('disabled', 'Sem saldo disponivel', { op: tecOp }))),
+            : action('disabled', tecPendingAcceptance ? 'OP pendente de aceite' : 'Sem saldo disponivel', { op: tecOp }))),
       confirmAcabamentoEntry: !hasAcab
         ? action('hidden')
         : (acabOpen
@@ -284,6 +290,15 @@
         insumos: { pedidoKg: insumoPedidoKg, recebidoKg: insumoRecebidoKg, concluido: insumosConcluidos },
         expedicao: { liberado: expedicaoLiberado, entregue: expedicaoEntregue, saldo: expedicaoSaldo },
       },
+      tecPendingAcceptance: tecPendingAcceptance ? {
+        label: tecPendingAcceptanceLabel,
+        message: 'Insumos recebidos; OP pendente de aceite',
+        op: tecPendingAcceptanceOp,
+        opId: tecPendingAcceptanceOp ? tecPendingAcceptanceOp.id : null,
+        numero: tecPendingAcceptanceOp ? tecPendingAcceptanceOp.numero : null,
+        ano: tecPendingAcceptanceOp ? tecPendingAcceptanceOp.ano : null,
+        status: tecPendingAcceptanceOp ? tecPendingAcceptanceOp.status : null,
+      } : null,
       actions: actions,
       adminStepper: adminStepper,
       clientSteps: buildClientSteps(clientStep),

@@ -452,6 +452,31 @@
       }) || null;
     }
 
+    function buildPendingAcceptanceBlock(ctxMovement) {
+      if (transitionKey(ctxMovement) !== 'Insumos>Tecelagem') return null;
+      if (!ctxMovement.op || ctxMovement.op.status !== 'aberta') return null;
+      var insumos = summarizeInsumos(ctxMovement);
+      if (!(insumos.pedido > 0) || insumos.saldo > 0) return null;
+      var opLabel = ctxMovement.op.numero && ctxMovement.op.ano
+        ? 'Abrir OP ' + ctxMovement.op.numero + '/' + ctxMovement.op.ano
+        : 'Abrir OP de Tecelagem';
+
+      return window.el('div', {
+        style: 'display:flex;align-items:center;justify-content:space-between;gap:12px;background:#fff9ee;border:1px solid #fbe8c6;border-radius:' + MOVEMENT_SURFACE_RADIUS + ';padding:11px 14px;margin-bottom:14px;',
+      },
+        window.el('div', { style: 'min-width:0;' },
+          window.el('div', { style: 'font-size:13px;font-weight:800;color:#8a5a15;line-height:1.3;' }, 'OP pendente de aceite'),
+          window.el('div', { style: 'font-size:12.5px;color:#8a5a15;line-height:1.45;margin-top:2px;' },
+            'Insumos recebidos; OP ainda precisa ser aceita para liberar producao.')
+        ),
+        window.el('button', {
+          type: 'button',
+          style: 'flex-shrink:0;background:#fff;color:#2563eb;border:1px solid #2563eb;border-radius:' + MOVEMENT_SURFACE_RADIUS + ';padding:8px 12px;font-size:12.5px;font-weight:700;font-family:inherit;cursor:pointer;',
+          onclick: function () { navigateToOp(ctxMovement.op.id); },
+        }, opLabel)
+      );
+    }
+
     function buildTransitionHistoryEntries(ctxMovement) {
       var key = transitionKey(ctxMovement);
       var entries = [];
@@ -806,6 +831,7 @@
             ? 'A transferencia acontece no contexto do Pedido, mas grava pela mesma operacao canonica usada na OP. Nao existe lancamento paralelo.'
             : 'Movimentos feitos pela OP ou pela seta do Pedido aparecem neste historico da transicao.')
         ),
+        buildPendingAcceptanceBlock(ctxMovement),
         window.el('div', {
           style: 'display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;',
         },
