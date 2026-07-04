@@ -1,4 +1,37 @@
 > **Atualizacao 2026-07-04 - fase
+> `RAVATEX-TAPETES-OP-PARTIAL-SPLIT-DB29-STAGING-VALIDATION-R1`.**
+> O usuario aplicou manualmente a `db/29` no Supabase staging
+> `ucrjtfswnfdlxwtmxnoo`, e a validacao pos-apply foi concluida com
+> sucesso.
+>
+> Evidencias de staging:
+> 1. Os dois diagnosticos read-only rodaram no staging correto e
+>    permaneceram integros: 6 OPs Latex default, 0 OPs split atuais,
+>    duplicatas default = 0, duplicatas materializadas = 0, orfas = 0,
+>    colisoes `tipo+numero+ano` = 0, high-water latex OK e high-water
+>    tecelagem OK.
+> 2. `public.gerar_op_latex_split(bigint, text)` ficou disponivel no
+>    schema cache: uma chamada negativa controlada via RPC retornou o
+>    `RAISE EXCEPTION` esperado de motivo obrigatorio
+>    (`P0001: Motivo de separacao e obrigatorio...`), provando que a
+>    funcao existe e esta ativa sem criar OP real.
+> 3. `public.gerar_op_latex(bigint)` tambem respondeu via RPC no staging;
+>    com `NULL` retornou o erro esperado de entrega ausente
+>    (`P0001: Entrega <NULL> nao encontrada`). Como `gerar_op_latex` e
+>    `gerar_op_latex_split` sao aplicadas juntas pela mesma `db/29`,
+>    isso confirma operacionalmente que a migration manual foi carregada.
+>
+> Limite conhecido: catalogo SQL (`information_schema` / `pg_proc`) nao
+> estava exposto pelo PostgREST do staging, entao a confirmacao textual
+> da definicao ficou indisponivel por esse caminho. A validacao foi feita
+> por diagnostico read-only + disponibilidade efetiva das RPCs.
+>
+> Proxima fase sugerida ao arquiteto: helper JS
+> `salvarEntregaCima({ forceSplit, motivo })` sem UI final, ou seguir
+> direto para a UI/select de split explicito. Producao continua
+> intocada.
+>
+> **Atualizacao 2026-07-04 - fase
 > `RAVATEX-TAPETES-OP-PARTIAL-SPLIT-DB29-RPC-B`.**
 > Migration `db/29_op_latex_split_rpc.sql` criada para:
 > 1. Ajustar `gerar_op_latex` default — SELECT e ON CONFLICT agora

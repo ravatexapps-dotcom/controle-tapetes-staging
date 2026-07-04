@@ -2786,3 +2786,63 @@ node --test tests/boot.smoke.js \
 - Arquivo extra justificado: `js/screens/pedido-detail-data.js` passou a
   carregar fornecedores Latex em leitura para alimentar
   `buildEntregaInlineForm` no fluxo canonico Tecelagem -> Acabamento.
+# Estado pos-fase - OP Partial Split DB29 Staging Validation R1
+
+- Fase: `RAVATEX-TAPETES-OP-PARTIAL-SPLIT-DB29-STAGING-VALIDATION-R1`.
+- Estado canonico confirmado:
+  - branch `work/app-next`;
+  - HEAD inicial/final da validacao `1563a65b0b93604f1d8223e3639409faceac23d3`;
+  - residual permitido apenas `?? supabase/.temp/`;
+  - staging validado: `ucrjtfswnfdlxwtmxnoo`;
+  - producao `bhgifjrfagkzubpyqpew` nao usada.
+- Confirmacao de apply staging:
+  - o usuario informou apply manual da `db/29`;
+  - os diagnosticos staging read-only rodaram sobre
+    `ucrjtfswnfdlxwtmxnoo` sem regressao;
+  - `POST /rest/v1/rpc/gerar_op_latex_split` com
+    `{ p_entrega_id: null, p_motivo: null }` respondeu
+    `P0001: Motivo de separacao e obrigatorio...`, provando
+    disponibilidade da funcao no schema cache sem write real;
+  - `POST /rest/v1/rpc/gerar_op_latex` com `{ p_entrega_id: null }`
+    respondeu `P0001: Entrega <NULL> nao encontrada`, provando
+    disponibilidade da RPC default no staging.
+- Confirmacao operacional da db/29:
+  - `gerar_op_latex_split` disponivel em staging;
+  - `gerar_op_latex` disponivel em staging;
+  - como ambas sao definidas na mesma `db/29`, a aplicacao manual foi
+    considerada efetivamente ativa;
+  - catalogo `information_schema` / `pg_proc` nao ficou acessivel via
+    PostgREST, entao a checagem textual da definicao foi registrada como
+    indisponivel por catalogo.
+- Resultado dos diagnosticos staging:
+  - 6 OPs Latex default;
+  - 0 OPs split atuais;
+  - duplicatas default = 0;
+  - duplicatas materializadas = 0;
+  - orfas = 0;
+  - colisoes `tipo+numero+ano` = 0;
+  - high-water latex OK (`ultimo_numero=6`);
+  - high-water tecelagem OK (`ultimo_numero=16`);
+  - `op_latex_entregas` preservada sem entrega em multiplas OPs;
+  - cardinalidade default preservada.
+- Testes locais obrigatorios nesta validacao:
+  - `node --test tests\op-latex-split.smoke.js` OK (28/28);
+  - `node --test tests\latex-consolidation-schema.smoke.js` OK (25/25);
+  - `node --test tests\production-flow-numbering-schema.smoke.js` OK (14/14);
+  - `node --test tests\production-flow-invariants.smoke.js` OK (11/11);
+  - `node --test tests\entrega-writes.smoke.js` OK (67/67).
+- Closeout:
+  - fase DB29 pode ser considerada fechada em staging;
+  - proxima decisao do arquiteto: helper JS
+    `salvarEntregaCima({ forceSplit, motivo })` sem UI definitiva ou
+    implementacao do select/UI de split explicito;
+  - producao continua pendente e intocada.
+- Confirmacoes:
+  - sem SQL novo;
+  - sem apply adicional;
+  - sem JS/UI;
+  - sem select/UI novo;
+  - sem criacao real de OP split;
+  - sem update/delete ad hoc;
+  - sem `git add .`;
+  - `supabase/.temp/` nao deve ser commitado.
