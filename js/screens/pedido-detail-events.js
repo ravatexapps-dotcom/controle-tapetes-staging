@@ -277,7 +277,7 @@
           var op = (state.ops || []).find(function (row) { return row.id === ordem.op_id; }) || null;
           return {
             label: window.rotuloFio ? window.rotuloFio(ordem) : ns.fmtTextoOuEmpty(ordem.tipo, 'Fio'),
-            meta: 'Saldo ' + ns.fmtKg(saldo) + (op ? ' - ' + ns.opLabel(op) : ''),
+            meta: ns.fmtKg(recebido) + ' de ' + ns.fmtKg(pedido) + ' · ' + (saldo > 0 ? ns.fmtKg(saldo) + ' pendente' : 'completo') + (op ? ' · ' + ns.opLabel(op) : ''),
           };
         });
       }
@@ -288,22 +288,135 @@
           var saldo = ns.round2(Math.max(liberado - entregue, 0));
           return {
             label: modelLabelByModeloId(item.modelo_id),
-            meta: 'Saldo ' + ns.fmtMetros(saldo) + ' de ' + ns.fmtMetros(liberado),
+            meta: ns.fmtMetros(entregue) + ' de ' + ns.fmtMetros(liberado) + ' · ' + (saldo > 0 ? ns.fmtMetros(saldo) + ' pendente' : 'completo'),
           };
         });
       }
       if (!ctxMovement.op || !Array.isArray(ctxMovement.op.op_itens) || !ctxMovement.op.op_itens.length) return [];
 
       var uniquePedidoItemByModelo = resolveUniquePedidoItemByModelo();
+      var stage = typeof ns.deliveryStageForOp === 'function'
+        ? ns.deliveryStageForOp(ctxMovement.op)
+        : (ctxMovement.op && ctxMovement.op.tipo === 'latex' ? 'latex' : 'cima');
+      var movedByOpItem = {};
+      state.entregaItens.forEach(function (ei) {
+        if (ei.defeito) return;
+        var entrega = state.entregasById[ei.entrega_id];
+        if (!entrega || entrega.etapa !== stage) return;
+        movedByOpItem[ei.op_item_id] = ns.round2((movedByOpItem[ei.op_item_id] || 0) + ns.toFiniteNumber(ei.metros_entregues));
+      });
       return ctxMovement.op.op_itens.map(function (opItem) {
         var metros = typeof ns.targetMetersForOpItem === 'function'
           ? ns.targetMetersForOpItem(opItem)
           : ns.round2(opItem && opItem.metros_ajustados != null ? opItem.metros_ajustados : opItem.metros_pedidos);
+        var moved = movedByOpItem[opItem.id] || 0;
+        var pendente = ns.round2(Math.max(metros - moved, 0));
+        var statusMeta = pendente > 0 ? ns.fmtMetrosShort(pendente) + ' pendente' : 'completo';
         return {
           label: movementItemLabel(opItem, uniquePedidoItemByModelo),
-          meta: ns.fmtMetrosShort(metros),
+          meta: ns.fmtMetrosShort(moved) + ' de ' + ns.fmtMetrosShort(metros) + ' · ' + statusMeta,
         };
       });
+    }
+
+    function buildTransitionPendingTable(ctxMovement) {
+      var key = transitionKey(ctxMovement);
+      var rows = [];
+
+      if (key === 'Insumos>Tecelagem') {
+        var insumos = summarizeInsumos(ctxMovement);
+        rows = insumos.ordens.map(function (ordem) {
+          var pedido = ns.toFiniteNumber(ordem.kg_pedido);
+          var recebido = ns.toFiniteNumber(ordem.kg_recebido);
+          var pendente = ns.round2(Math.max(pedido - recebido, 0));
+          return {
+            label: window.rotuloFio ? window.rotuloFio(ordem) : ns.fmtTextoOuEmpty(ordem.tipo, 'Fio'),
+            target: ns.fmtKg(pedido),
+            moved: ns.fmtKg(recebido),
+            remaining: pendente > 0 ? ns.fmtKg(pendente) : 'Completo',
+            remainingColor: pendente > 0 ? '#d6403a' : '#18794a',
+            isComplete: pendente <= 0,
+          };
+        });
+      } else if (key === 'Expedicao>Entrega') {
+        rows = (state.expedicaoItens || []).map(function (item) {
+          var liberado = ns.toFiniteNumber(item.metros_liberados);
+          var entregue = ns.toFiniteNumber(item.metros_entregues);
+          var pendente = ns.round2(Math.max(liberado - entregue, 0));
+          return {
+            label: modelLabelByModeloId(item.modelo_id),
+            target: ns.fmtMetros(liberado),
+            moved: ns.fmtMetros(entregue),
+            remaining: pendente > 0 ? ns.fmtMetros(pendente) : 'Completo',
+            remainingColor: pendente > 0 ? '#d6403a' : '#18794a',
+            isComplete: pendente <= 0,
+          };
+        });
+      } else if (ctxMovement.op && Array.isArray(ctxMovement.op.op_itens) && ctxMovement.op.op_itens.length) {
+        var stage = typeof ns.deliveryStageForOp === 'function'
+          ? ns.deliveryStageForOp(ctxMovement.op)
+          : (ctxMovement.op.tipo === 'latex' ? 'latex' : 'cima');
+        var opItemIds = {};
+        var movedByItem = {};
+        ctxMovement.op.op_itens.forEach(function (opItem) {
+          if (opItem && opItem.id != null) {
+            opItemIds[opItem.id] = true;
+            movedByItem[opItem.id] = 0;
+          }
+        });
+        state.entregaItens.forEach(function (ei) {
+          if (!opItemIds[ei.op_item_id] || ei.defeito) return;
+          var entrega = state.entregasById[ei.entrega_id];
+          if (!entrega || entrega.etapa !== stage) return;
+          movedByItem[ei.op_item_id] = ns.round2((movedByItem[ei.op_item_id] || 0) + ns.toFiniteNumber(ei.metros_entregues));
+        });
+        var uniquePedidoItemByModelo = resolveUniquePedidoItemByModelo();
+        rows = ctxMovement.op.op_itens.map(function (opItem) {
+          var target = typeof ns.targetMetersForOpItem === 'function'
+            ? ns.targetMetersForOpItem(opItem)
+            : ns.round2(opItem && opItem.metros_ajustados != null ? opItem.metros_ajustados : opItem.metros_pedidos);
+          var moved = movedByItem[opItem.id] || 0;
+          var pendente = ns.round2(Math.max(target - moved, 0));
+          return {
+            label: movementItemLabel(opItem, uniquePedidoItemByModelo),
+            target: ns.fmtMetros(target),
+            moved: ns.fmtMetros(moved),
+            remaining: pendente > 0 ? ns.fmtMetros(pendente) : 'Completo',
+            remainingColor: pendente > 0 ? '#d6403a' : '#18794a',
+            isComplete: pendente <= 0,
+          };
+        });
+      }
+
+      if (!rows.length) return null;
+
+      return window.el('div', {
+        style: 'border:1px solid #eceef1;border-radius:4px;background:#fff;overflow:hidden;margin-bottom:14px;',
+      },
+        window.el('div', {
+          style: 'padding:11px 14px;border-bottom:1px solid #f1f3f6;font-size:12px;font-weight:700;letter-spacing:.03em;color:#8a93a3;text-transform:uppercase;',
+        }, 'Pendencias por produto'),
+        window.el('div', {
+          style: 'display:grid;grid-template-columns:1fr auto auto auto;gap:10px;padding:10px 14px;border-bottom:1px solid #f1f3f6;background:#f8f9fb;font-size:11px;font-weight:700;color:#8a93a3;letter-spacing:.03em;',
+        },
+          window.el('span', {}, 'Produto'),
+          window.el('span', { style: 'text-align:right;' }, key === 'Insumos>Tecelagem' ? 'Pedido' : 'Alocado'),
+          window.el('span', { style: 'text-align:right;' }, 'Transferido'),
+          window.el('span', { style: 'text-align:right;' }, 'Pendente')
+        ),
+        rows.map(function (row, index) {
+          return window.el('div', {
+            style: 'display:grid;grid-template-columns:1fr auto auto auto;gap:10px;padding:11px 14px;align-items:center;' + (index < rows.length - 1 ? 'border-bottom:1px solid #f1f3f6;' : ''),
+          },
+            window.el('div', { style: 'font-size:13px;color:#16203a;line-height:1.45;' }, row.label),
+            window.el('div', { style: 'font-size:12.5px;font-weight:600;color:#3f4757;text-align:right;' }, row.target),
+            window.el('div', { style: 'font-size:12.5px;font-weight:600;color:#2563eb;text-align:right;' }, row.moved),
+            window.el('div', {
+              style: 'font-size:12.5px;font-weight:700;color:' + row.remainingColor + ';text-align:right;white-space:nowrap;',
+            }, row.remaining)
+          );
+        })
+      );
     }
 
     function buildMovementMetrics(ctxMovement) {
@@ -870,6 +983,7 @@
           movementMetricCard('Ja movimentado', metrics.movedLabel, '#2563eb'),
           movementMetricCard('Restante na origem', metrics.remainingLabel, '#c2610c')
         ),
+        buildTransitionPendingTable(ctxMovement),
         window.el('div', {
           style: 'border:1px solid #eceef1;border-radius:4px;background:#fff;overflow:hidden;margin-bottom:14px;',
         },

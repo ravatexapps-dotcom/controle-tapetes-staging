@@ -1026,3 +1026,82 @@ test('pedido-detail.js: Gerar primeira OP preserva pedido_id UUID sem Number/par
   assert.doesNotMatch(detailEvents, /Number\s*\(\s*pedidoId\s*\)/);
   assert.doesNotMatch(detailEvents, /parseInt\s*\(\s*pedidoId\s*/);
 });
+
+// ---------------------------------------------------------------------
+// 18. PEDIDO-TRANSITION-MODAL-GAPS-B — pendências nos modais de seta
+// ---------------------------------------------------------------------
+
+test('modal-gaps-B: buildTransitionPendingTable existe e usa a fonte canônica', () => {
+  assert.match(detailEvents, /function buildTransitionPendingTable/,
+    'deve ter funcao dedicada para tabela de pendencias por produto');
+  assert.match(detailEvents, /var key = transitionKey\(ctxMovement\)/,
+    'deve usar a mesma chave de transicao dos outros builders');
+});
+
+test('modal-gaps-B: modal mostra tabela "Pendencias por produto" com colunas Produto/Alocado/Transferido/Pendente', () => {
+  assert.match(detailEvents, /Pendencias por produto/,
+    'tabela de pendencias deve ter titulo "Pendencias por produto"');
+  // Colunas da tabela
+  assert.match(detailEvents, /'Produto'/);
+  assert.match(detailEvents, /'Alocado'/);
+  assert.match(detailEvents, /'Transferido'/);
+  assert.match(detailEvents, /'Pendente'/);
+});
+
+test('modal-gaps-B: tabela de pendencias usa state.entregaItens e state.entregasById (fonte canônica)', () => {
+  const slice = (detailEvents.match(/function buildTransitionPendingTable[\s\S]*?\n    \}\n\n    function buildMovementMetrics/) || [''])[0];
+  assert.ok(slice, 'trecho buildTransitionPendingTable nao encontrado');
+  assert.match(slice, /state\.entregaItens/,
+    'deve usar state.entregaItens como fonte canonica de dados');
+  assert.match(slice, /state\.entregasById/,
+    'deve usar state.entregasById como fonte canonica de dados');
+});
+
+test('modal-gaps-B: itens da tabela de pendencias calculam moved/remaining por op_item', () => {
+  const slice = (detailEvents.match(/function buildTransitionPendingTable[\s\S]*?\n    \}\n\n    function buildMovementMetrics/) || [''])[0];
+  assert.match(slice, /movedByItem/,
+    'deve calcular movedByItem por op_item_id');
+  assert.match(slice, /pendente > 0 \? ns\.fmtMetros\(pendente\) : 'Completo'/,
+    'deve rotular item como "Completo" quando pendente <= 0');
+  assert.match(slice, /remainingColor/,
+    'deve colorir pendente de vermelho quando > 0 e verde quando completo');
+});
+
+test('modal-gaps-B: tabela de pendencias cobre Insumos, Tecelagem e Expedicao', () => {
+  const slice = (detailEvents.match(/function buildTransitionPendingTable[\s\S]*?\n    \}\n\n    function buildMovementMetrics/) || [''])[0];
+  assert.match(slice, /'Insumos>Tecelagem'/,
+    'deve ter ramo para Insumos>Tecelagem');
+  assert.match(slice, /'Expedicao>Entrega'/,
+    'deve ter ramo para Expedicao>Entrega');
+  // O ramo genérico cobre Tecelagem>Acabamento e Acabamento>Expedicao via ctxMovement.op.op_itens
+  assert.match(slice, /ctxMovement\.op && Array\.isArray\(ctxMovement\.op\.op_itens\)/,
+    'deve ter ramo generico para OPs com op_itens (Tecelagem>Acabamento, etc)');
+});
+
+test('modal-gaps-B: openMovementModal integra tabela de pendencias', () => {
+  assert.match(movementModalSlice, /buildTransitionPendingTable\(ctxMovement\)/,
+    'openMovementModal deve chamar buildTransitionPendingTable');
+});
+
+test('modal-gaps-B: items do modal mostram moved/de/pendente por item', () => {
+  // buildMovementItems agora mostra "X de Y · Z pendente" ou "X de Y · completo"
+  const itemsSlice = (detailEvents.match(/function buildMovementItems[\s\S]*?\n    \}\n\n    function buildMovementMetrics/) || [''])[0];
+  assert.match(itemsSlice, /movedByOpItem/,
+    'deve calcular movedByOpItem para enriquecer o meta dos itens');
+  assert.match(itemsSlice, /pendente > 0 \? ns\.fmtMetrosShort\(pendente\) \+ ' pendente' : 'completo'/,
+    'meta dos itens deve mostrar status pendente/completo');
+  assert.match(itemsSlice, /ns\.fmtMetrosShort\(moved\) \+ ' de ' \+ ns\.fmtMetrosShort\(metros\)/,
+    'meta dos itens deve mostrar moved de target');
+});
+
+test('modal-gaps-B: itens de insumos mostram recebido/de/pedido/pendente', () => {
+  const itemsSlice = (detailEvents.match(/function buildMovementItems[\s\S]*?\n    \}\n\n    function buildMovementMetrics/) || [''])[0];
+  assert.match(itemsSlice, /ns\.fmtKg\(recebido\) \+ ' de ' \+ ns\.fmtKg\(pedido\)/,
+    'meta de insumos deve mostrar recebido de pedido');
+});
+
+test('modal-gaps-B: itens de expedicao mostram entregue/de/liberado/pendente', () => {
+  const itemsSlice = (detailEvents.match(/function buildMovementItems[\s\S]*?\n    \}\n\n    function buildMovementMetrics/) || [''])[0];
+  assert.match(itemsSlice, /ns\.fmtMetros\(entregue\) \+ ' de ' \+ ns\.fmtMetros\(liberado\)/,
+    'meta de expedicao deve mostrar entregue de liberado');
+});
