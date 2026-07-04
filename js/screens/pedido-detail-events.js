@@ -1018,6 +1018,7 @@
         opItens: ctxMovement.op.op_itens || [],
         modelosById: buildModelosForEntregaForm(),
         latexOptions: state.latexOptions || [],
+        comOpcaoSplit: true,
       });
       var pendingByItem = computePendingByItem(ctxMovement);
       var hasRemaining = pendingByItem.some(function (row) { return row.pending > 0; });
@@ -1042,11 +1043,12 @@
             window.toast('Fornecedor de tecelagem nao vinculado a OP.', 'error');
             return false;
           }
+          var splitOpt = form.getSplitOption();
           return await window.salvarEntregaCima({
             fornecedorId: fornecedorId,
             opId: ctxMovement.op.id,
             payload: form.getPayload(),
-          });
+          }, splitOpt.forceSplit ? { forceSplit: true, motivo: splitOpt.motivo } : undefined);
         },
       };
     }

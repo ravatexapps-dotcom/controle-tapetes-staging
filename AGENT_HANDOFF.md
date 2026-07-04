@@ -1,4 +1,39 @@
-﻿# Estado pos-fase - OP Partial Split DB29 RPC B
+﻿# Estado pos-fase - OP Partial Split UI B
+
+- Fase: `RAVATEX-TAPETES-OP-PARTIAL-SPLIT-UI-B`.
+- Escopo implementado: `js/screens/entrega-form.js`,
+  `js/screens/pedido-detail-events.js`,
+  `js/screens/op-tecelagem-producao-admin.js`,
+  `tests/pedido-detail.smoke.js`,
+  `tests/tec-to-acabamento-flow.smoke.js`,
+  `PROJECT_STATE.md`, `AGENT_HANDOFF.md`.
+- Contrato da UI:
+  - `buildEntregaInlineForm` aceita `comOpcaoSplit` (default false);
+  - quando true, renderiza select "Acumular" / "Criar nova OP" e campo
+    motivo (visivel so com split selecionado);
+  - retorna `getSplitOption()` → `{ forceSplit, motivo }`;
+  - wire em `pedido-detail-events.js` (`buildTecelagemTransferForm`) e
+    `op-tecelagem-producao-admin.js` (`+Nova entrega` onclick);
+  - `abrirEdicaoAdmin` NAO passa `comOpcaoSplit`.
+- Preservado: default acumula; split e opt-in; a UI chama apenas
+  `salvarEntregaCima(args, { forceSplit, motivo })`, nunca a RPC
+  diretamente; `gerar_op_latex` / `gerar_op_latex_split` intocadas;
+  db/25-db/29 intocadas; sem SQL/migration; sem criacao real de OP
+  split; "Transferir restante" preservado.
+- Testes locais obrigatorios:
+  - `node --test tests\pedido-detail.smoke.js` OK (118/118);
+  - `node --test tests\tec-to-acabamento-flow.smoke.js` OK (28/28);
+  - `node --test tests\entrega-writes.smoke.js` OK (70/70);
+  - `node --test tests\op-latex-split.smoke.js` OK (28/28);
+  - `node --test tests\production-flow-invariants.smoke.js` OK (11/11).
+- Diagnosticos staging OK: 6 OPs Latex default, 0 splits, 0 duplicatas,
+  0 orfas, high-water OK. RPC `gerar_op_latex_split` aparece como
+  "INDISPONIVEL" por GET mas responde por POST auth (mesmo comportamento
+  conhecido da fase anterior).
+- Producao intocada; `origin` nao usado para escrita; sem update/delete
+  ad hoc; sem `git add .`; residual permitido `supabase/.temp/`.
+
+# Estado pos-fase - OP Partial Split DB29 RPC B
 
 - Fase: `RAVATEX-TAPETES-OP-PARTIAL-SPLIT-DB29-RPC-B`.
 - Escopo implementado localmente: `db/29_op_latex_split_rpc.sql`,

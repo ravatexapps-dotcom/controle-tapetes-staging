@@ -1,4 +1,51 @@
 > **Atualizacao 2026-07-04 - fase
+> `RAVATEX-TAPETES-OP-PARTIAL-SPLIT-UI-B`.**
+> UI explicita para escolher "Acumular" (default) ou "Criar nova OP" no
+> lançamento Tecelagem → Acabamento/Latex, usando o seam ja implementado
+> em `salvarEntregaCima(args, { forceSplit, motivo })`.
+>
+> Implementado em `js/screens/entrega-form.js`:
+> - parametro `comOpcaoSplit` (default false) adicionado a
+>   `buildEntregaInlineForm`
+> - quando true, renderiza select com duas opcoes:
+>   "Acumular na OP existente quando possivel" (default) e
+>   "Criar nova OP para esta parcial"
+> - opcao split exibe campo obrigatorio "Motivo da separacao" e aviso
+>   ambar: "A excecao cria uma OP de acabamento separada e registra o
+>   motivo no historico."
+> - retorna `getSplitOption()` com `{ forceSplit, motivo }`, motivo
+>   trimado
+> - sem `comOpcaoSplit`, `getSplitOption()` retorna sempre
+>   `{ forceSplit: false, motivo: null }`
+>
+> Wire nos callers:
+> - `pedido-detail-events.js`: `buildTecelagemTransferForm` passa
+>   `comOpcaoSplit: true` e o `onSave` le `getSplitOption()` passando
+>   `{ forceSplit, motivo }` para `salvarEntregaCima` apenas quando
+>   split selecionado
+> - `op-tecelagem-producao-admin.js`: `buildBlocoTecelagem` (+ Nova
+>   entrega) passa `comOpcaoSplit: true`; `abrirEdicaoAdmin` NAO passa
+>   `comOpcaoSplit` (edicao nao altera decisao de split)
+>
+> Preservacoes: default acumula; split nao e automatico; a UI chama
+> apenas `salvarEntregaCima` via helper JS, nao a RPC diretamente;
+> "Transferir restante" continua funcionando; fluxos que nao sao
+> Tecelagem→Acabamento nao exibem select; `gerar_op_latex` intocada;
+> `gerar_op_latex_split` intocada; db/25-db/29 intocadas; sem
+> SQL/migration; sem criacao real de OP split.
+>
+> Testes locais obrigatorios:
+> `node --test tests\pedido-detail.smoke.js` (118/118),
+> `node --test tests\tec-to-acabamento-flow.smoke.js` (28/28),
+> `node --test tests\entrega-writes.smoke.js` (70/70),
+> `node --test tests\op-latex-split.smoke.js` (28/28),
+> `node --test tests\production-flow-invariants.smoke.js` (11/11).
+>
+> Diagnosticos staging: 6 OPs Latex default, 0 OPs split atuais,
+> duplicatas default = 0, duplicatas materializadas = 0, orfas = 0,
+> high-water latex OK, high-water tecelagem OK.
+>
+> **Atualizacao 2026-07-04 - fase
 > `RAVATEX-TAPETES-OP-PARTIAL-SPLIT-HELPER-B`.**
 > Helper tecnico implementado em `salvarEntregaCima` para permitir split
 > explicito sem alterar UI/select: a assinatura segue compativel

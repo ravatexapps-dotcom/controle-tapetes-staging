@@ -58,7 +58,7 @@
   // modelosById: { [id]: { id, nome, largura, cor_1:{id,nome}, cor_2:{id,nome} } }
   // entrega (opcional, para edição): { id, data, observacao, entrega_itens: [...] }
   // Retorna: { node, getPayload }
-  function buildEntregaInlineForm({ opItens, modelosById, entrega = null, latexOptions = [], comDestino = true }) {
+  function buildEntregaInlineForm({ opItens, modelosById, entrega = null, latexOptions = [], comDestino = true, comOpcaoSplit = false }) {
     const hoje = new Date().toISOString().slice(0, 10);
     const dataInput = window.textInput({ type: 'date', value: entrega?.data || hoje });
     const obsInput = window.textInput({ type: 'text', value: entrega?.observacao || '', placeholder: 'observação (opcional)' });
@@ -98,13 +98,51 @@
       ));
     }
 
-    const node = window.el('div', { class: 'mt-3 border-t pt-3' },
+    var splitUI = null;
+    if (comOpcaoSplit) {
+      var splitSelect = window.selectInput({
+        options: [
+          { value: 'acumular', label: 'Acumular na OP existente quando possível' },
+          { value: 'split', label: 'Criar nova OP para esta parcial' },
+        ],
+        value: 'acumular',
+      });
+      var motivoWrapper = window.el('div', { style: 'display:none;' });
+      var motivoInput = window.textInput({ type: 'text', value: '', placeholder: 'Ex.: amostra separada, retrabalho...' });
+      motivoWrapper.appendChild(window.formField({ label: 'Motivo da separação', input: motivoInput }));
+      var avisoEl = window.el('div', { style: 'display:none;font-size:12px;color:#b08b3a;margin-top:4px;line-height:1.4;' },
+        'A exceção cria uma OP de acabamento separada e registra o motivo no histórico.');
+      function toggleSplitUI() {
+        var isSplit = splitSelect.value === 'split';
+        motivoWrapper.style.display = isSplit ? '' : 'none';
+        avisoEl.style.display = isSplit ? '' : 'none';
+        if (!isSplit) motivoInput.value = '';
+      }
+      splitSelect.addEventListener('change', toggleSplitUI);
+      function _resolveSplit() {
+        if (splitSelect.value === 'split') {
+          var motivo = String(motivoInput.value || '').trim();
+          return { forceSplit: true, motivo: motivo };
+        }
+        return { forceSplit: false, motivo: null };
+      }
+      splitUI = {
+        node: window.el('div', { class: 'mt-3 pt-3 border-t border-gray-100' },
+          window.el('div', {}, window.formField({ label: 'Tipo de lançamento (Tecelagem → Acabamento)', input: splitSelect })),
+          motivoWrapper,
+          avisoEl),
+        resolveSplit: _resolveSplit,
+      };
+    }
+
+    var node = window.el('div', { class: 'mt-3 border-t pt-3' },
       window.el('div', { class: 'flex flex-wrap gap-3 mb-2' },
         window.el('div', { class: 'w-40' }, window.formField({ label: 'Data', input: dataInput })),
         comDestino ? window.el('div', { class: 'w-64 min-w-[200px]' }, window.formField({ label: 'Destino (látex)', input: destinoSelect })) : window.el('span', {}),
         window.el('div', { class: 'flex-1 min-w-[200px]' }, window.formField({ label: 'Observação da entrega', input: obsInput })),
       ),
       linhasNode,
+      splitUI ? splitUI.node : window.el('span', {}),
     );
 
     function getPayload() {
@@ -120,7 +158,12 @@
       return { data: dataInput.value || hoje, observacao: obsInput.value || null, destino_fornecedor_id: destino, linhas };
     }
 
-    return { node, getPayload };
+    function _getSplitOption() {
+      if (!splitUI) return { forceSplit: false, motivo: null };
+      return splitUI.resolveSplit();
+    }
+
+    return { node, getPayload, getSplitOption: _getSplitOption };
   }
 
   // -------------------------------------------------------------------

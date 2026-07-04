@@ -316,12 +316,13 @@
     var btnNova = el('button', {
       type: 'button', style: BTN_LINK + (embedded ? 'margin:14px 0 0;' : 'margin:14px 24px 0;'),
       onclick: function () {
-        var form = window.buildEntregaInlineForm({ opItens: ctx.opItensRaw, modelosById: ctx.modelosById, latexOptions: ctx.latexOptions });
+        var form = window.buildEntregaInlineForm({ opItens: ctx.opItensRaw, modelosById: ctx.modelosById, latexOptions: ctx.latexOptions, comOpcaoSplit: true });
         var btnSalvar = el('button', {
           type: 'button', style: BTN_SOLID_SM + 'margin-right:8px;',
           onclick: async function () {
             btnSalvar.disabled = true;
-            var ok = await window.salvarEntregaCima({ fornecedorId: ctx.cimaFornecedorId, opId: ctx.op.id, payload: form.getPayload() });
+            var splitOpt = form.getSplitOption();
+            var ok = await window.salvarEntregaCima({ fornecedorId: ctx.cimaFornecedorId, opId: ctx.op.id, payload: form.getPayload() }, splitOpt.forceSplit ? { forceSplit: true, motivo: splitOpt.motivo } : undefined);
             btnSalvar.disabled = false;
             if (ok) ctx.reloadEntregasCima();
           },

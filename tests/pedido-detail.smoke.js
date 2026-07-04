@@ -1440,3 +1440,59 @@ test('tec-acceptance-B: modal recarrega apos aceite com sucesso', () => {
   assert.match(accSlice, /render\(\)/,
     'deve re-renderizar apos aceite');
 });
+
+// ---------------------------------------------------------------------
+// 23. RAVATEX-TAPETES-OP-PARTIAL-SPLIT-UI-B — select split no lançamento
+// ---------------------------------------------------------------------
+
+test('split-UI-B: buildTecelagemTransferForm contem comOpcaoSplit:true', () => {
+  var slice = (detailEvents.match(/function buildTecelagemTransferForm[\s\S]*?\n    \}\n\n    function buildAcabamentoTransferForm/) || [''])[0];
+  assert.ok(slice, 'trecho buildTecelagemTransferForm nao encontrado');
+  assert.match(slice, /comOpcaoSplit:\s*true/,
+    'deve passar comOpcaoSplit:true para buildEntregaInlineForm');
+});
+
+test('split-UI-B: buildTecelagemTransferForm onSave le getSplitOption e passa a salvarEntregaCima', () => {
+  var slice = (detailEvents.match(/function buildTecelagemTransferForm[\s\S]*?\n    \}\n\n    function buildAcabamentoTransferForm/) || [''])[0];
+  assert.match(slice, /form\.getSplitOption\(\)/,
+    'onSave deve chamar form.getSplitOption()');
+  assert.match(slice, /splitOpt\.forceSplit\s*\?\s*\{/,
+    'onSave deve condicionar forceSplit no segundo arg de salvarEntregaCima');
+  assert.match(slice, /salvarEntregaCima\([\s\S]*splitOpt/,
+    'salvarEntregaCima deve receber os dados do split via segundo arg');
+});
+
+test('split-UI-B: buildTecelagemTransferForm NAO referencia gerar_op_latex_split', () => {
+  assert.doesNotMatch(detailEvents, /gerar_op_latex_split/,
+    'pedido-detail-events.js nao deve chamar gerar_op_latex_split diretamente');
+});
+
+test('split-UI-B: buildTecelagemTransferForm nao referencia gerar_op_latex diretamente', () => {
+  var slice = (detailEvents.match(/function buildTecelagemTransferForm[\s\S]*?\n    \}\n\n    function buildAcabamentoTransferForm/) || [''])[0];
+  assert.doesNotMatch(slice, /gerar_op_latex/,
+    'buildTecelagemTransferForm nao deve chamar RPC diretamente; delega a salvarEntregaCima');
+});
+
+test('split-UI-B: outros fluxos (Insumos, Expedicao, Acabamento) NAO tem comOpcaoSplit', () => {
+  assert.doesNotMatch(detailEvents, /buildInsumosTransferForm[\s\S]{0,300}comOpcaoSplit/,
+    'buildInsumosTransferForm nao deve ter comOpcaoSplit');
+  assert.doesNotMatch(detailEvents, /buildAcabamentoTransferForm[\s\S]{0,300}comOpcaoSplit/,
+    'buildAcabamentoTransferForm nao deve ter comOpcaoSplit');
+  assert.doesNotMatch(detailEvents, /buildExpedicaoTransferForm[\s\S]{0,300}comOpcaoSplit/,
+    'buildExpedicaoTransferForm nao deve ter comOpcaoSplit');
+});
+
+test('split-UI-B: "Transferir restante" continua preservado no modal', () => {
+  assert.match(detailEvents, /Transferir restante/,
+    '"Transferir restante" deve continuar preservado');
+  assert.match(detailEvents, /transferForm\.fillRemaining\(\)/,
+    'fillRemaining deve continuar existindo');
+});
+
+test('split-UI-B: "Transferir restante" permanece sem chamar writes ou RPC split', () => {
+  var transferRestanteSlice = (detailEvents.match(/Transferir restante[\s\S]*?\n\s*\}\)/) || [''])[0];
+  assert.doesNotMatch(transferRestanteSlice, /salvarEntregaCima/);
+  assert.doesNotMatch(transferRestanteSlice, /gerar_op_latex/);
+  assert.doesNotMatch(transferRestanteSlice, /supa\.rpc/);
+  assert.doesNotMatch(transferRestanteSlice, /transferForm\.onSave/);
+});

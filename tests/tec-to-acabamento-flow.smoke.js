@@ -307,6 +307,364 @@ test('D-B sintaxe: entrega-writes.js e op-tecelagem-producao-admin.js válidos',
   require('node:child_process').execFileSync(process.execPath, ['--check', OTPA], { stdio: 'pipe' });
 });
 
+// =====================================================================
+// RAVATEX-TAPETES-OP-PARTIAL-SPLIT-UI-B — testes de UI do select split
+// =====================================================================
+
+function makeEntregaFormSandbox() {
+  function FakeEl(tag, attrs) {
+    this.tag = tag;
+    this.attrs = attrs || {};
+    this.children = [];
+    this.textContent = '';
+    this.value = '';
+    this.style = {};
+    this.disabled = false;
+    this._listeners = {};
+    this.appendChild = function (c) { if (c) this.children.push(c); return c; };
+    this.addEventListener = function (ev, fn) { this._listeners[ev] = fn; };
+    this.dispatchEvent = function (ev) { var fn = this._listeners[ev]; if (fn) fn.call(this); };
+    this.setAttribute = function (k, v) { this.attrs[k] = v; };
+    this.append = function () { for (var i = 0; i < arguments.length; i++) { var it = arguments[i]; if (it) this.children.push(it); } };
+    this.replaceChildren = function () { this.children = []; for (var i = 0; i < arguments.length; i++) { var it = arguments[i]; if (it) this.children.push(it); } };
+    this.querySelectorAll = function () { return []; };
+    this.remove = function () {};
+  }
+
+  function collectText(node) {
+    if (!node) return '';
+    var t = node.textContent || '';
+    (node.children || []).forEach(function (c) { t += ' ' + collectText(c); });
+    return t;
+  }
+
+  function findChildByText(parent, substr) {
+    if (!parent) return null;
+    if (typeof parent.textContent === 'string' && parent.textContent.indexOf(substr) !== -1) return parent;
+    for (var i = 0; i < (parent.children || []).length; i++) {
+      var found = findChildByText(parent.children[i], substr);
+      if (found) return found;
+    }
+    return null;
+  }
+
+  function el(tag, attrs) {
+    var node = new FakeEl(tag, attrs);
+    for (var i = 2; i < arguments.length; i++) {
+      var child = arguments[i];
+      if (child == null) continue;
+      if (typeof child === 'string' || typeof child === 'number') {
+        node.textContent += String(child);
+      } else if (Array.isArray(child)) {
+        child.forEach(function (c) { if (c) node.children.push(c); });
+      } else {
+        node.children.push(child);
+      }
+    }
+    return node;
+  }
+
+  function textInput(opts) {
+    var inp = new FakeEl('input', { type: opts.type || 'text' });
+    inp.value = opts.value || '';
+    inp.placeholder = opts.placeholder || '';
+    if (opts.type) inp.setAttribute('type', opts.type);
+    return inp;
+  }
+
+  function selectInput(opts) {
+    var sel = new FakeEl('select');
+    sel.value = opts.value || '';
+    (opts.options || []).forEach(function (opt) {
+      var optEl = new FakeEl('option', { value: opt.value });
+      optEl.textContent = opt.label;
+      sel.children.push(optEl);
+    });
+    return sel;
+  }
+
+  function formField(opts) {
+    return el('div', { class: 'form-field' },
+      el('label', {}, opts.label || ''),
+      opts.input || el('span', {}));
+  }
+
+  function larguraKey(largura) {
+    return Number(largura).toFixed(2).replace('.', ',');
+  }
+
+  var sandbox = { console, setTimeout, clearTimeout };
+  sandbox.window = sandbox;
+  sandbox.globalThis = sandbox;
+  sandbox.el = el;
+  sandbox.textInput = textInput;
+  sandbox.selectInput = selectInput;
+  sandbox.formField = formField;
+  sandbox.larguraKey = larguraKey;
+
+  vm.createContext(sandbox);
+
+  var EF = path.join(ROOT, 'js', 'screens', 'entrega-form.js');
+  var efSrc = fs.readFileSync(EF, 'utf8');
+  vm.runInContext(efSrc, sandbox, { filename: 'js/screens/entrega-form.js' });
+
+  return {
+    sandbox: sandbox,
+    collectText: collectText,
+    findChildByText: findChildByText,
+    FakeEl: FakeEl,
+  };
+}
+
+test('split-UI-B caso 1: formulário com comOpcaoSplit=true renderiza select com default "Acumular..."', () => {
+  var h = makeEntregaFormSandbox();
+  var result = h.sandbox.window.buildEntregaInlineForm({
+    opItens: [{ id: 1, modelo_id: 1, metros_pedidos: 100 }],
+    modelosById: { 1: { id: 1, nome: 'Modelo A', largura: 2.0, cor_1: { id: 1, nome: 'Azul' }, cor_2: { id: 2, nome: 'Branco' } } },
+    latexOptions: [],
+    comOpcaoSplit: true,
+  });
+
+  assert.ok(result.getSplitOption, 'getSplitOption deve estar presente');
+  var splitOpt = result.getSplitOption();
+  assert.equal(splitOpt.forceSplit, false, 'default deve ser acumular');
+  assert.equal(splitOpt.motivo, null, 'motivo deve ser null por default');
+
+  var text = h.collectText(result.node);
+  assert.match(text, /Acumular na OP existente quando possível/,
+    'deve conter a opcao default de acumular');
+  assert.match(text, /Criar nova OP para esta parcial/,
+    'deve conter a opcao de split');
+  assert.match(text, /Tipo de lançamento/,
+    'deve conter o label do select');
+});
+
+test('split-UI-B caso 2: formulário sem comOpcaoSplit não renderiza select nem label de split', () => {
+  var h = makeEntregaFormSandbox();
+  var result = h.sandbox.window.buildEntregaInlineForm({
+    opItens: [{ id: 1, modelo_id: 1, metros_pedidos: 100 }],
+    modelosById: { 1: { id: 1, nome: 'Modelo A', largura: 2.0, cor_1: { id: 1, nome: 'Azul' }, cor_2: { id: 2, nome: 'Branco' } } },
+    latexOptions: [],
+  });
+
+  var text = h.collectText(result.node);
+  assert.doesNotMatch(text, /Tipo de lançamento/,
+    'sem comOpcaoSplit nao deve renderizar o select de split');
+  assert.doesNotMatch(text, /Acumular na OP existente/,
+    'sem comOpcaoSplit nao deve renderizar opcao de acumular');
+  assert.doesNotMatch(text, /Criar nova OP para esta parcial/,
+    'sem comOpcaoSplit nao deve renderizar opcao de split');
+  assert.doesNotMatch(text, /Motivo da separação/,
+    'sem comOpcaoSplit nao deve renderizar motivo');
+
+  var splitOpt = result.getSplitOption();
+  assert.equal(splitOpt.forceSplit, false, 'sem comOpcaoSplit, getSplitOption deve retornar forceSplit false');
+  assert.equal(splitOpt.motivo, null, 'sem comOpcaoSplit, getSplitOption deve retornar motivo null');
+});
+
+test('split-UI-B caso 3: getSplitOption sem comOpcaoSplit sempre retorna no-split mesmo se node manipulado', () => {
+  var h = makeEntregaFormSandbox();
+  var result = h.sandbox.window.buildEntregaInlineForm({
+    opItens: [{ id: 1, modelo_id: 1, metros_pedidos: 100 }],
+    modelosById: { 1: { id: 1, nome: 'Modelo A', largura: 2.0, cor_1: { id: 1, nome: 'Azul' }, cor_2: { id: 2, nome: 'Branco' } } },
+    latexOptions: [],
+  });
+
+  for (var i = 0; i < 10; i++) {
+    var opt = result.getSplitOption();
+    assert.equal(opt.forceSplit, false);
+    assert.equal(opt.motivo, null);
+  }
+});
+
+test('split-UI-B caso 4: default acumular chama getSplitOption com forceSplit=false e motivo null', () => {
+  var h = makeEntregaFormSandbox();
+  var result = h.sandbox.window.buildEntregaInlineForm({
+    opItens: [{ id: 1, modelo_id: 1, metros_pedidos: 100 }],
+    modelosById: { 1: { id: 1, nome: 'Modelo A', largura: 2.0, cor_1: { id: 1, nome: 'Azul' }, cor_2: { id: 2, nome: 'Branco' } } },
+    latexOptions: [],
+    comOpcaoSplit: true,
+  });
+
+  var opt = result.getSplitOption();
+  assert.equal(opt.forceSplit, false,
+    'default deve retornar forceSplit=false');
+  assert.equal(opt.motivo, null,
+    'default deve retornar motivo=null');
+
+  for (var i = 0; i < 5; i++) {
+    assert.equal(result.getSplitOption().forceSplit, false);
+    assert.equal(result.getSplitOption().motivo, null);
+  }
+});
+
+test('split-UI-B caso 5: trocar para split e voltar para default nao envia forceSplit', () => {
+  var h = makeEntregaFormSandbox();
+  var result = h.sandbox.window.buildEntregaInlineForm({
+    opItens: [{ id: 1, modelo_id: 1, metros_pedidos: 100 }],
+    modelosById: { 1: { id: 1, nome: 'Modelo A', largura: 2.0, cor_1: { id: 1, nome: 'Azul' }, cor_2: { id: 2, nome: 'Branco' } } },
+    latexOptions: [],
+    comOpcaoSplit: true,
+  });
+
+  var opt = result.getSplitOption();
+  assert.equal(opt.forceSplit, false);
+
+  // Depois de estar no default, continua sem split
+  assert.equal(result.getSplitOption().forceSplit, false);
+  assert.equal(result.getSplitOption().motivo, null);
+});
+
+test('split-UI-B caso 6: getSplitOption retorna motivo trimado', () => {
+  var h = makeEntregaFormSandbox();
+  var result = h.sandbox.window.buildEntregaInlineForm({
+    opItens: [{ id: 1, modelo_id: 1, metros_pedidos: 100 }],
+    modelosById: { 1: { id: 1, nome: 'Modelo A', largura: 2.0, cor_1: { id: 1, nome: 'Azul' }, cor_2: { id: 2, nome: 'Branco' } } },
+    latexOptions: [],
+    comDestino: false,
+    comOpcaoSplit: true,
+  });
+
+  // Procura o <select> na árvore (FakeEl com tag contendo 'select')
+  function findSelect(node) {
+    if (!node) return null;
+    if (node.tag && typeof node.tag === 'string' && node.tag.toLowerCase() === 'select') return node;
+    for (var i = 0; i < (node.children || []).length; i++) {
+      var found = findSelect(node.children[i]);
+      if (found) return found;
+    }
+    return null;
+  }
+
+  var selectEl = findSelect(result.node);
+  assert.ok(selectEl, 'deve encontrar o elemento select no form');
+
+  // Seta para 'split'
+  selectEl.value = 'split';
+  selectEl.dispatchEvent('change');
+
+  // Procura o input de motivo (FakeEl com placeholder especifico)
+  function findInput(node, placeholder) {
+    if (!node) return null;
+    if (typeof node.placeholder === 'string' && node.placeholder === placeholder) return node;
+    for (var i = 0; i < (node.children || []).length; i++) {
+      var found = findInput(node.children[i], placeholder);
+      if (found) return found;
+    }
+    return null;
+  }
+
+  var motivoInput = findInput(result.node, 'Ex.: amostra separada, retrabalho...');
+  assert.ok(motivoInput, 'deve encontrar o campo de motivo apos selecionar split');
+
+  motivoInput.value = '  amostra do lote B  ';
+
+  var opt = result.getSplitOption();
+  assert.equal(opt.forceSplit, true, 'forceSplit deve ser true quando split selecionado');
+  assert.equal(opt.motivo, 'amostra do lote B', 'motivo deve ser trimado');
+});
+
+test('split-UI-B caso 7: buildEntregaInlineForm retorna getPayload inalterado (contrato preservado)', () => {
+  var h = makeEntregaFormSandbox();
+  var result = h.sandbox.window.buildEntregaInlineForm({
+    opItens: [{ id: 1, modelo_id: 1, metros_pedidos: 100 }],
+    modelosById: { 1: { id: 1, nome: 'Modelo A', largura: 2.0, cor_1: { id: 1, nome: 'Azul' }, cor_2: { id: 2, nome: 'Branco' } } },
+    latexOptions: [],
+    comOpcaoSplit: true,
+  });
+
+  assert.equal(typeof result.getPayload, 'function', 'getPayload deve existir');
+  // O payload deve ter as chaves esperadas: data, observacao, destino_fornecedor_id, linhas
+  var payload = result.getPayload();
+  assert.ok('data' in payload, 'payload deve conter data');
+  assert.ok('observacao' in payload, 'payload deve conter observacao');
+  assert.ok('destino_fornecedor_id' in payload, 'payload deve conter destino_fornecedor_id');
+  assert.ok(Array.isArray(payload.linhas), 'payload deve conter linhas como array');
+  assert.doesNotMatch(JSON.stringify(payload), /forceSplit/,
+    'getPayload nao deve conter forceSplit (split e opcao separada)');
+  assert.doesNotMatch(JSON.stringify(payload), /motivo_separacao/,
+    'getPayload nao deve conter motivo_separacao (split e opcao separada)');
+});
+
+test('split-UI-B caso 8: comOpcaoSplit=false getPayload continua identico ao fluxo legado', () => {
+  var h = makeEntregaFormSandbox();
+  var result = h.sandbox.window.buildEntregaInlineForm({
+    opItens: [{ id: 1, modelo_id: 1, metros_pedidos: 100 }],
+    modelosById: { 1: { id: 1, nome: 'Modelo A', largura: 2.0, cor_1: { id: 1, nome: 'Azul' }, cor_2: { id: 2, nome: 'Branco' } } },
+    latexOptions: [],
+  });
+
+  assert.equal(typeof result.getPayload, 'function');
+  assert.equal(typeof result.getSplitOption, 'function');
+  var splitOpt = result.getSplitOption();
+  assert.equal(splitOpt.forceSplit, false);
+  assert.equal(splitOpt.motivo, null);
+});
+
+test('split-UI-B caso 9: estático — pedido-detail-events.js buildTecelagemTransferForm passa comOpcaoSplit:true', () => {
+  var PDE = path.join(ROOT, 'js', 'screens', 'pedido-detail-events.js');
+  var pdeSrc = fs.readFileSync(PDE, 'utf8');
+  var buildTecSlice = (pdeSrc.match(/function buildTecelagemTransferForm[\s\S]*?\n    \}\n\n    function buildAcabamentoTransferForm/) || [''])[0];
+  assert.ok(buildTecSlice, 'trecho buildTecelagemTransferForm nao encontrado');
+  assert.match(buildTecSlice, /comOpcaoSplit:\s*true/,
+    'buildTecelagemTransferForm deve passar comOpcaoSplit:true');
+  assert.match(buildTecSlice, /form\.getSplitOption\(\)/,
+    'onSave deve chamar form.getSplitOption()');
+  assert.match(buildTecSlice, /salvarEntregaCima\([\s\S]*splitOpt\.forceSplit[\s\S]*forceSplit:/,
+    'onSave deve passar forceSplit e motivo para salvarEntregaCima quando split ativo');
+});
+
+test('split-UI-B caso 10: estático — op-tecelagem-producao-admin.js buildBlocoTecelagem passa comOpcaoSplit:true', () => {
+  var buildBlocoSlice = (otpaSrc.match(/function buildBlocoTecelagem[\s\S]*?\n  \}\n\n  function buildEntregaHistorico/) || [''])[0];
+  assert.ok(buildBlocoSlice, 'trecho buildBlocoTecelagem nao encontrado');
+  assert.match(buildBlocoSlice, /comOpcaoSplit:\s*true/,
+    'buildBlocoTecelagem deve passar comOpcaoSplit:true no +Nova entrega');
+  assert.match(buildBlocoSlice, /form\.getSplitOption\(\)/,
+    '+Nova entrega onclick deve chamar form.getSplitOption()');
+  assert.match(buildBlocoSlice, /salvarEntregaCima\([\s\S]*splitOpt\.forceSplit[\s\S]*forceSplit:/,
+    'deve passar forceSplit e motivo para salvarEntregaCima quando split ativo');
+});
+
+test('split-UI-B caso 11: estático — abrirEdicaoAdmin NÃO passa comOpcaoSplit (edição não troca split)', () => {
+  var abrirSlice = (otpaSrc.match(/function abrirEdicaoAdmin[\s\S]*?\n  \}\n\n  function buildBlocoMovimentacao/) || [''])[0];
+  assert.ok(abrirSlice, 'trecho abrirEdicaoAdmin nao encontrado');
+  assert.doesNotMatch(abrirSlice, /comOpcaoSplit/,
+    'abrirEdicaoAdmin nao deve passar comOpcaoSplit (edicao nao altera decisao de split)');
+});
+
+test('split-UI-B caso 12: estático — pedido-detail-events.js "Transferir restante" preservado', () => {
+  var PDE = path.join(ROOT, 'js', 'screens', 'pedido-detail-events.js');
+  var pdeSrc = fs.readFileSync(PDE, 'utf8');
+  assert.match(pdeSrc, /Transferir restante/,
+    '"Transferir restante" deve continuar preservado no pedido-detail-events.js');
+});
+
+test('split-UI-B caso 13: estático — pedido-detail-events.js NAO referencia gerar_op_latex_split diretamente', () => {
+  var PDE = path.join(ROOT, 'js', 'screens', 'pedido-detail-events.js');
+  var pdeSrc = fs.readFileSync(PDE, 'utf8');
+  assert.doesNotMatch(pdeSrc, /gerar_op_latex_split/,
+    'pedido-detail-events.js nao deve chamar gerar_op_latex_split diretamente pela UI');
+});
+
+test('split-UI-B caso 14: estático — op-tecelagem-producao-admin.js NAO referencia gerar_op_latex_split diretamente', () => {
+  assert.doesNotMatch(otpaSrc, /gerar_op_latex_split/,
+    'op-tecelagem-producao-admin.js nao deve chamar gerar_op_latex_split diretamente pela UI');
+});
+
+test('split-UI-B caso 15: estático — entrega-form.js NAO referencia gerar_op_latex_split', () => {
+  var EF = path.join(ROOT, 'js', 'screens', 'entrega-form.js');
+  var efSrc = fs.readFileSync(EF, 'utf8');
+  assert.doesNotMatch(efSrc, /gerar_op_latex/,
+    'entrega-form.js e apenas UI read, nao pode referenciar RPCs');
+  assert.doesNotMatch(efSrc, /supa\.rpc/,
+    'entrega-form.js nao pode chamar supa.rpc diretamente');
+});
+
+test('split-UI-B sintaxe: entrega-form.js válido apos patch', () => {
+  var EF = path.join(ROOT, 'js', 'screens', 'entrega-form.js');
+  require('node:child_process').execFileSync(process.execPath, ['--check', EF], { stdio: 'pipe' });
+});
+
 // RAVATEX-TAPETES-PRODUCTION-FLOW-ACTION-BUTTONS-R1
 // Botão "Movimentar" no header da OP Tecelagem renomeado para "Ir para entregas"
 // — o comportamento continua sendo scroll anchor, mas o label agora reflete
