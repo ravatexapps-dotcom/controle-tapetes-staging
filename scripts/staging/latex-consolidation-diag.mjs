@@ -181,4 +181,26 @@ const round2 = (n) => Math.round(Number(n || 0) * 100) / 100;
   }
   console.log('Grupos duplicados:', dupGroups.length, '| OPs látex envolvidas em duplicidade:', dupCount);
   console.log('OPs latex split atuais:', splitLatexOps.length);
+  if (splitLatexOps.length) {
+    const splitIds = splitLatexOps.map((op) => op.id);
+    const origemIds = [...new Set(splitLatexOps.map((op) => op.origem_op_id).filter(Boolean))];
+    const splitEvents = await sel(token,
+      'op_eventos?op_id=in.(' + splitIds.join(',') + ')&select=op_id,tipo_evento,payload,observacao,criado_em&order=criado_em.asc');
+    const origemEvents = origemIds.length ? await sel(token,
+      'op_eventos?op_id=in.(' + origemIds.join(',') + ')&tipo_evento=eq.split_derivado&select=op_id,tipo_evento,payload,observacao,criado_em&order=criado_em.asc') : [];
+    const hasCriacao = new Set(splitEvents.filter((e) => e.tipo_evento === 'criacao_split').map((e) => Number(e.op_id)));
+    const derivedNovaIds = new Set(origemEvents
+      .map((e) => e.payload && Number(e.payload.nova_op_id))
+      .filter(Boolean));
+    const semRastro = splitLatexOps.filter((op) => !hasCriacao.has(Number(op.id)) || !derivedNovaIds.has(Number(op.id)));
+    console.log('Eventos criacao_split nas OPs split:', hasCriacao.size + '/' + splitLatexOps.length);
+    console.log('Eventos split_derivado apontando para OP split:', derivedNovaIds.size + '/' + splitLatexOps.length);
+    console.log('OPs split sem rastro completo:', semRastro.length ? semRastro.map((op) => op.numero + '/' + op.ano).join(', ') : '0 (OK)');
+  }
+  try {
+    const rpcCheck = await sel(token, 'rpc/gerar_op_latex_split?select=op_latex_id');
+    console.log('RPC gerar_op_latex_split: OK (acessivel via PostgREST)');
+  } catch {
+    console.log('RPC gerar_op_latex_split: INDISPONIVEL (db/29 nao aplicada ou schema nao recarregado)');
+  }
 })().catch((e) => die(e && e.message ? e.message : String(e)));

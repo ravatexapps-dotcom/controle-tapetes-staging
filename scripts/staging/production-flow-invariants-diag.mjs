@@ -176,6 +176,29 @@ const opLbl = (o) => o ? (o.numero + '/' + o.ano) : '—';
   if (splitLatexOps.length) {
     splitLatexOps.forEach((o) => console.log('  SPLIT OP ' + opLbl(o) + ' id=' + o.id + ' origem=' + o.origem_op_id
       + ' destino=' + o.destino_fornecedor_id + ' motivo=' + JSON.stringify(o.motivo_separacao)));
+    const splitIds = splitLatexOps.map((o) => o.id);
+    const splitOrigemIds = [...new Set(splitLatexOps.map((o) => o.origem_op_id).filter(Boolean))];
+    const splitEvents = await sel('op_eventos?op_id=in.(' + splitIds.join(',') + ')&select=op_id,tipo_evento,payload,observacao,criado_em&order=criado_em.asc');
+    const origemSplitEvents = splitOrigemIds.length
+      ? await sel('op_eventos?op_id=in.(' + splitOrigemIds.join(',') + ')&tipo_evento=eq.split_derivado&select=op_id,tipo_evento,payload,observacao,criado_em&order=criado_em.asc')
+      : [];
+    const hasCriacao = new Set(splitEvents.filter((e) => e.tipo_evento === 'criacao_split').map((e) => Number(e.op_id)));
+    const derivedNovaIds = new Set(origemSplitEvents
+      .map((e) => e.payload && Number(e.payload.nova_op_id))
+      .filter(Boolean));
+    const splitSemRastro = splitLatexOps.filter((o) => !hasCriacao.has(Number(o.id)) || !derivedNovaIds.has(Number(o.id)));
+    console.log('Eventos criacao_split nas OPs split:', hasCriacao.size + '/' + splitLatexOps.length);
+    console.log('Eventos split_derivado apontando para OP split:', derivedNovaIds.size + '/' + splitLatexOps.length);
+    console.log('OPs split sem rastro completo:', splitSemRastro.length ? splitSemRastro.map(opLbl).join(', ') : '0 (OK)');
+  }
+
+  // ---- 2.5c  DB/29 RPC check
+  console.log('\n===== [2.5c] DB/29 RPC SPLIT CHECK =====');
+  try {
+    const rpcCheck = await selOptional('rpc/gerar_op_latex_split?select=op_latex_id');
+    console.log('RPC gerar_op_latex_split: OK (acessivel)');
+  } catch {
+    console.log('RPC gerar_op_latex_split: INDISPONIVEL (db/29 nao aplicada ou nao recarregada)');
   }
 
   // ---- 2.6 op_latex_entregas N:1
@@ -204,9 +227,9 @@ const opLbl = (o) => o ? (o.numero + '/' + o.ano) : '—';
   const op15 = (await sel('ops?numero=eq.15&ano=eq.2026&select=id,numero,ano,tipo,status,lote_id,origem_op_id'))[0];
   const evIds = [...latexIds];
   if (op15) evIds.push(op15.id);
-  const eventos = evIds.length ? await sel('op_eventos?op_id=in.(' + evIds.join(',') + ')&select=op_id,tipo_evento,status_anterior,status_novo,observacao,criado_em&order=criado_em.asc') : [];
+  const eventos = evIds.length ? await sel('op_eventos?op_id=in.(' + evIds.join(',') + ')&select=op_id,tipo_evento,status_anterior,status_novo,observacao,payload,criado_em&order=criado_em.asc') : [];
   if (!eventos.length) console.log('  (nenhum op_evento)');
-  eventos.forEach((e) => console.log('  OP ' + opLbl(opById[e.op_id]) + ' | ' + e.tipo_evento + ' ' + (e.status_anterior || '') + '->' + (e.status_novo || '') + ' | obs=' + (e.observacao || '') + ' | ' + e.criado_em));
+  eventos.forEach((e) => console.log('  OP ' + opLbl(opById[e.op_id]) + ' | ' + e.tipo_evento + ' ' + (e.status_anterior || '') + '->' + (e.status_novo || '') + ' | obs=' + (e.observacao || '') + ' | payload=' + JSON.stringify(e.payload || {}) + ' | ' + e.criado_em));
 
   // ---- INVARIANTES de fluxo
   console.log('\n===== INVARIANTES DE FLUXO =====');

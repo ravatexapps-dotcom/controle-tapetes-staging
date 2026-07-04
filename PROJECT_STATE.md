@@ -1,4 +1,22 @@
 > **Atualizacao 2026-07-04 - fase
+> `RAVATEX-TAPETES-OP-PARTIAL-SPLIT-DB29-RPC-B`.**
+> Migration `db/29_op_latex_split_rpc.sql` criada para:
+> 1. Ajustar `gerar_op_latex` default — SELECT e ON CONFLICT agora
+>    filtram `motivo_separacao IS NULL`, alinhando ao indice parcial
+>    da db/28. OPs split (motivo_separacao IS NOT NULL) ficam fora
+>    da consolidacao default.
+> 2. Criar `gerar_op_latex_split(p_entrega_id BIGINT, p_motivo TEXT)`
+>    para split excepcional explicito: exige motivo nao vazio,
+>    admin-only, idempotente por entrega (op_latex_entregas),
+>    registra rastro em op_eventos (criacao_split + split_derivado),
+>    usa `proximo_numero_op` lock-safe, escreve `motivo_separacao`,
+>    retorna `split:true` + `motivo`.
+>
+> Preservacoes: default continua acumulando; split nao e automatico;
+> cardinalidade default mantida; db/25/db/26/db/27/db/28 intocadas;
+> JS/UI nao alterados nesta fase; producao intocada.
+>
+> **Atualizacao 2026-07-04 - fase
 > `RAVATEX-TAPETES-OP-PARTIAL-SPLIT-DB28-B`.**
 > Migration `db/28_op_latex_split_discriminator.sql` criada para preparar
 > OPs Latex split excepcionais sem alterar `gerar_op_latex`, sem criar

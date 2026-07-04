@@ -1,4 +1,34 @@
-﻿# Estado pos-fase - OP Partial Split DB28 B (apply staging bloqueado)
+﻿# Estado pos-fase - OP Partial Split DB29 RPC B
+
+- Fase: `RAVATEX-TAPETES-OP-PARTIAL-SPLIT-DB29-RPC-B`.
+- Escopo implementado localmente: `db/29_op_latex_split_rpc.sql`,
+  `tests/op-latex-split.smoke.js`,
+  `tests/latex-consolidation-schema.smoke.js`,
+  `tests/production-flow-invariants.smoke.js`,
+  `scripts/staging/production-flow-invariants-diag.mjs`,
+  `scripts/staging/latex-consolidation-diag.mjs`, `PROJECT_STATE.md`,
+  `AGENT_HANDOFF.md`.
+- Contrato da db/29:
+  - `gerar_op_latex` atualizada: SELECT e ON CONFLICT filtram
+    `motivo_separacao IS NULL`. OPs split ficam fora da busca default.
+  - `gerar_op_latex_split(p_entrega_id BIGINT, p_motivo TEXT)` criada:
+    exige motivo, admin-only, idempotente por entrega, registra
+    `criacao_split` + `split_derivado` em `op_eventos`, usa
+    `proximo_numero_op`, escreve `motivo_separacao`.
+- Preservado: default acumula; split nao e automatico;
+  cardinalidade default mantida; `db/25`-`db/28` intocadas; JS/UI
+  intocados nesta fase.
+- DB/28 permanece como pre-requisito (coluna + indices parciais).
+- Testes locais obrigatorios: `node --test tests\op-latex-split.smoke.js`,
+  `node --test tests\latex-consolidation-schema.smoke.js`,
+  `node --test tests\production-flow-invariants.smoke.js`,
+  `node --test tests\production-flow-numbering-schema.smoke.js`,
+  `node --test tests\entrega-writes.smoke.js`.
+- Aplicacao staging: bloqueada / pendente de credencial SQL.
+- Producao intocada; `origin` nao usado para escrita; sem update/delete
+  ad hoc; sem `git add .`; residual permitido `supabase/.temp/`.
+
+# Estado pos-fase - OP Partial Split DB28 B (apply staging bloqueado)
 
 - Fase: `RAVATEX-TAPETES-OP-PARTIAL-SPLIT-DB28-B`.
 - Escopo implementado localmente: `db/28_op_latex_split_discriminator.sql`,

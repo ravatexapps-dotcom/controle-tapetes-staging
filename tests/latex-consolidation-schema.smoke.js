@@ -31,11 +31,14 @@ const path = require('node:path');
 const ROOT = path.resolve(__dirname, '..');
 const MIGRATION = path.join(ROOT, 'db', '25_latex_consolidation.sql');
 const MIGRATION_28 = path.join(ROOT, 'db', '28_op_latex_split_discriminator.sql');
+const MIGRATION_29 = path.join(ROOT, 'db', '29_op_latex_split_rpc.sql');
 const rawSql = fs.existsSync(MIGRATION) ? fs.readFileSync(MIGRATION, 'utf8') : '';
 const rawSql28 = fs.existsSync(MIGRATION_28) ? fs.readFileSync(MIGRATION_28, 'utf8') : '';
+const rawSql29 = fs.existsSync(MIGRATION_29) ? fs.readFileSync(MIGRATION_29, 'utf8') : '';
 const stripLineComments = (s) => s.replace(/^\s*--.*$/gm, '');
 const sql = stripLineComments(rawSql);
 const sql28 = stripLineComments(rawSql28);
+const sql29 = stripLineComments(rawSql29);
 
 // ---------------------------------------------------------------------
 // 1. Existência
@@ -188,4 +191,39 @@ test('db/28 nao altera gerar_op_latex, nao cria split funcional e nao mexe em da
   assert.doesNotMatch(sql28, /op_numeros/i);
   assert.match(sql28, /NOTIFY\s+pgrst,\s*'reload schema'/i);
   assert.match(sql28, /NOTIFY\s+pgrst,\s*'reload config'/i);
+});
+
+// ---------------------------------------------------------------------
+// 10. db/29: ajuste do ON CONFLICT e criacao da split RPC
+// ---------------------------------------------------------------------
+
+test('db/29 existe como migration seguinte a db/28', () => {
+  assert.ok(fs.existsSync(MIGRATION_29), 'migration db/29_op_latex_split_rpc.sql nao existe');
+});
+
+test('db/29 redefine gerar_op_latex com CREATE OR REPLACE', () => {
+  assert.match(sql29, /CREATE\s+OR\s+REPLACE\s+FUNCTION\s+public\.gerar_op_latex/i);
+});
+
+test('db/29 ajusta gerar_op_latex: SELECT filtra motivo_separacao IS NULL', () => {
+  const slice = (sql29.match(/CREATE\s+OR\s+REPLACE\s+FUNCTION\s+public\.gerar_op_latex[\s\S]*?END;\s*\$\$;/i) || [''])[0];
+  assert.match(slice, /motivo_separacao\s+IS\s+NULL/i);
+});
+
+test('db/29 ajusta gerar_op_latex: ON CONFLICT com predicado parcial', () => {
+  assert.match(sql29, /ON\s+CONFLICT\s*\(\s*origem_op_id\s*,\s*destino_fornecedor_id\s*\)\s*WHERE\s+tipo\s*=\s*'latex'\s+AND\s+motivo_separacao\s+IS\s+NULL\s+DO\s+NOTHING/i);
+});
+
+test('db/29 cria gerar_op_latex_split com assinatura (BIGINT, TEXT)', () => {
+  assert.match(sql29, /CREATE\s+OR\s+REPLACE\s+FUNCTION\s+public\.gerar_op_latex_split\s*\(\s*p_entrega_id\s+BIGINT\s*,\s*p_motivo\s+TEXT\s*\)/i);
+});
+
+test('db/29: gerar_op_latex_split exige p_motivo com RAISE EXCEPTION', () => {
+  assert.match(sql29, /p_motivo\s+IS\s+NULL\s+OR\s+btrim\s*\(\s*p_motivo\s*\)\s*=\s*''/i);
+  assert.match(sql29, /RAISE\s+EXCEPTION\s+'Motivo de separacao/i);
+});
+
+test('db/29: gerar_op_latex_split registra criacao_split e split_derivado em op_eventos', () => {
+  assert.match(sql29, /criacao_split/i);
+  assert.match(sql29, /split_derivado/i);
 });
