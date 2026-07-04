@@ -1139,6 +1139,8 @@ test('45. runtime: salvarEntregaCima happy path — insert etapa=cima + destino 
   assert.equal(itemInsert[0].metros_entregues, 12);
   // RPC com payload original
   assert.equal(rpcCalls[0].fn, 'gerar_op_latex');
+  assert.equal(rpcCalls.some(c => c.fn === 'gerar_op_latex_split'), false,
+    'default nao deve chamar gerar_op_latex_split');
   assert.equal(JSON.stringify(rpcCalls[0].params), JSON.stringify({ p_entrega_id: 999 }),
     'RPC deve receber { p_entrega_id: 999 }');
   // Toast de success com linguagem neutra de vínculo (rpc.data truthy):
@@ -1854,4 +1856,59 @@ test('58. screenListaOPs (ops-list) ainda renderiza (regressão ops-list)', asyn
   assert.ok(node && node.tagName === 'DIV', 'screenListaOPs não devolveu <div>');
   const header = node.children.find((c) => c.tagName === 'HEADER');
   assert.ok(header, 'header ausente em screenListaOPs');
+});
+
+test('59. Helper-B: salvarEntregaCima forceSplit chama gerar_op_latex_split com motivo trimado', async () => {
+  const { sandbox, fakeSupa, getToasts } = makeEWCimaSandbox({
+    rpcResult: { data: { op_latex_id: 55, numero: 7, ano: 2026, created: true, split: true, motivo: 'amostra separada' }, error: null },
+  });
+  const result = await vm.runInContext(
+    'window.salvarEntregaCima({ fornecedorId: 5, opId: 10, payload: ' + JSON.stringify(CIMA_VALID_PAYLOAD) + ' }, { forceSplit: true, motivo: "  amostra separada  " })',
+    sandbox);
+  assert.equal(result, true);
+  const rpcCalls = fakeSupa._calls.filter(c => c.op === 'rpc');
+  assert.equal(rpcCalls.length, 1, '1 rpc split');
+  assert.equal(rpcCalls[0].fn, 'gerar_op_latex_split');
+  assert.equal(JSON.stringify(rpcCalls[0].params), JSON.stringify({ p_entrega_id: 999, p_motivo: 'amostra separada' }));
+  const successToasts = getToasts().filter(t => t.type === 'success');
+  assert.equal(successToasts.length, 1);
+  assert.equal(successToasts[0].msg, 'OP de acabamento separada criada: OP 7/2026');
+});
+
+test('60. Helper-B: salvarEntregaCima forceSplit com motivo vazio bloqueia antes de Supabase', async () => {
+  const { sandbox, fakeSupa, getToasts } = makeEWCimaSandbox();
+  const result = await vm.runInContext(
+    'window.salvarEntregaCima({ fornecedorId: 5, opId: 10, payload: ' + JSON.stringify(CIMA_VALID_PAYLOAD) + ' }, { forceSplit: true, motivo: "   " })',
+    sandbox);
+  assert.equal(result, false);
+  assert.equal(fakeSupa._calls.length, 0, 'motivo vazio nao deve chamar Supabase');
+  const errorToasts = getToasts().filter(t => t.type === 'error');
+  assert.equal(errorToasts.length, 1);
+  assert.match(errorToasts[0].msg, /motivo/i);
+  assert.match(errorToasts[0].msg, /OP de acabamento separada/);
+});
+
+test('61. Helper-B: salvarEntregaCima normaliza split already_linked/erro sem afirmar criacao', async () => {
+  const { sandbox, getToasts } = makeEWCimaSandbox({
+    rpcResult: {
+      data: {
+        op_latex_id: 55,
+        numero: 7,
+        ano: 2026,
+        created: false,
+        split: false,
+        already_linked: true,
+        erro: 'Entrega ja vinculada a OP 7/2026. Nao foi criado split.',
+      },
+      error: null,
+    },
+  });
+  const result = await vm.runInContext(
+    'window.salvarEntregaCima({ fornecedorId: 5, opId: 10, payload: ' + JSON.stringify(CIMA_VALID_PAYLOAD) + ' }, { forceSplit: true, motivo: "retrabalho" })',
+    sandbox);
+  assert.equal(result, true);
+  const successToasts = getToasts().filter(t => t.type === 'success');
+  assert.equal(successToasts.length, 1);
+  assert.equal(successToasts[0].msg, 'Entrega ja vinculada a OP 7/2026. Nao foi criado split.');
+  assert.doesNotMatch(successToasts[0].msg, /criada/i);
 });

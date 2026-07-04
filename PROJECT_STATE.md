@@ -1,4 +1,39 @@
 > **Atualizacao 2026-07-04 - fase
+> `RAVATEX-TAPETES-OP-PARTIAL-SPLIT-HELPER-B`.**
+> Helper tecnico implementado em `salvarEntregaCima` para permitir split
+> explicito sem alterar UI/select: a assinatura segue compativel
+> `salvarEntregaCima({ fornecedorId, opId, payload }, options)`, e o
+> fluxo legado sem `options` continua chamando `gerar_op_latex` com
+> `{ p_entrega_id }`.
+>
+> Novo caminho opt-in: `salvarEntregaCima(args, { forceSplit: true,
+> motivo })` valida motivo nao vazio (trim), grava a entrega de Cima pelo
+> mesmo fluxo existente e chama `gerar_op_latex_split` com
+> `{ p_entrega_id, p_motivo }`. O helper normaliza retorno split criado
+> (`split:true`, `created:true`) e retorno idempotente/ja vinculado sem
+> afirmar criacao indevida. Falha da RPC split continua best-effort: a
+> entrega fica salva e o usuario recebe aviso para gerar manualmente.
+>
+> Preservacoes: default acumula; split nao e automatico; UI/select e
+> `buildEntregaInlineForm` intocados; `gerar_op_latex` intocada nesta
+> fase; db/25-db/29 intocadas; nenhuma migration/SQL aplicada; nenhuma
+> OP split real criada.
+>
+> Validacao local: `node --test tests\entrega-writes.smoke.js` (70/70),
+> `node --test tests\op-latex-split.smoke.js` (28/28),
+> `node --test tests\tec-to-acabamento-flow.smoke.js` (12/12),
+> `node --test tests\pedido-detail.smoke.js` (111/111) e
+> `node --test tests\production-flow-invariants.smoke.js` (11/11).
+>
+> Diagnosticos staging em `ucrjtfswnfdlxwtmxnoo`: cardinalidade
+> preservada com 6 OPs Latex default, 0 splits atuais, 0 duplicatas
+> default/materializadas, 0 orfas, 0 colisoes de numeracao, high-water
+> latex=6 e tecelagem=16. Os diagnosticos legados ainda reportam falso
+> negativo para `GET /rpc/gerar_op_latex_split`, mas chamada controlada
+> via `POST` autenticado retornou `P0001: Entrega -999999 nao
+> encontrada`, confirmando a RPC ativa sem criar OP real.
+>
+> **Atualizacao 2026-07-04 - fase
 > `RAVATEX-TAPETES-OP-PARTIAL-SPLIT-DB29-STAGING-VALIDATION-R1`.**
 > O usuario aplicou manualmente a `db/29` no Supabase staging
 > `ucrjtfswnfdlxwtmxnoo`, e a validacao pos-apply foi concluida com

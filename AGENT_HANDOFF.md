@@ -2846,3 +2846,42 @@ node --test tests/boot.smoke.js \
   - sem update/delete ad hoc;
   - sem `git add .`;
   - `supabase/.temp/` nao deve ser commitado.
+
+# Estado pos-fase - OP Partial Split Helper B
+
+- Fase: `RAVATEX-TAPETES-OP-PARTIAL-SPLIT-HELPER-B`.
+- Escopo implementado localmente: `js/screens/entrega-writes.js`,
+  `tests/entrega-writes.smoke.js`, `PROJECT_STATE.md`,
+  `AGENT_HANDOFF.md`.
+- Contrato do helper:
+  - chamada legado/default preservada:
+    `salvarEntregaCima({ fornecedorId, opId, payload })`;
+  - chamada split opt-in:
+    `salvarEntregaCima(args, { forceSplit: true, motivo })`;
+  - motivo e trimado e motivo vazio bloqueia antes de qualquer Supabase
+    write;
+  - default chama `gerar_op_latex` com `{ p_entrega_id }`;
+  - split chama `gerar_op_latex_split` com
+    `{ p_entrega_id, p_motivo }`;
+  - retorno split criado usa mensagem propria; retorno
+    `already_linked`/`erro` nao afirma criacao.
+- Preservado: UI/select e `buildEntregaInlineForm` intocados; split nao
+  e automatico; default continua acumulando; `created`,
+  `accumulated` e `already_linked` preservados; `gerar_op_latex`
+  intocada nesta fase; db/25-db/29 intocadas; sem migration/SQL.
+- Testes locais:
+  - `node --test tests\entrega-writes.smoke.js` OK (70/70);
+  - `node --test tests\op-latex-split.smoke.js` OK (28/28);
+  - `node --test tests\tec-to-acabamento-flow.smoke.js` OK (12/12);
+  - `node --test tests\pedido-detail.smoke.js` OK (111/111);
+  - `node --test tests\production-flow-invariants.smoke.js` OK (11/11).
+- Diagnosticos staging read-only em `ucrjtfswnfdlxwtmxnoo`: 6 OPs Latex
+  default, 0 splits atuais, 0 duplicatas default/materializadas, 0 orfas,
+  0 colisoes de numeracao, high-water latex=6 e tecelagem=16.
+- Observacao staging: os diagnosticos legados consultam
+  `GET /rpc/gerar_op_latex_split` e ainda imprimem "INDISPONIVEL".
+  Chamada controlada por `POST` autenticado com entrega inexistente
+  retornou `P0001: Entrega -999999 nao encontrada`, confirmando funcao
+  ativa e sem criar OP real.
+- Producao intocada; `origin` nao usado para escrita; sem `git add .`;
+  residual permitido `supabase/.temp/` nao deve ser commitado.

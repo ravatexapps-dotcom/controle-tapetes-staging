@@ -126,6 +126,9 @@
     var info = normalizeGerarOpLatexResult(data);
     if (!info || (!info.op_latex_id && info.numero == null && info.ano == null)) return 'Entrega registrada';
     var label = opLatexLabelFromRpc(info);
+    if (info.split === true && info.created === true) return 'OP de acabamento separada criada: ' + label;
+    if (info.already_linked === true && info.erro) return info.erro;
+    if (info.split === false && info.already_linked === true) return 'Entrega ja vinculada a ' + label + '. Nenhuma OP separada foi criada.';
     if (info.created === true) return 'Criou ' + label;
     if (info.accumulated === true) return 'Acumulou na ' + label;
     if (info.already_linked === true) return 'Já vinculada à ' + label;
@@ -209,9 +212,13 @@
   // - salvarEntregaCima: após gravar a entrega, chama a RPC
   //   `gerar_op_latex` em modo best-effort. Falha da RPC NÃO
   //   desfaz a entrega; apenas emite toast de aviso.
-  async function salvarEntregaCima({ fornecedorId, opId, payload }) {
+  async function salvarEntregaCima({ fornecedorId, opId, payload }, options) {
+    var splitOpts = options || {};
+    var forceSplit = splitOpts.forceSplit === true;
+    var splitMotivo = forceSplit && splitOpts.motivo != null ? String(splitOpts.motivo).trim() : '';
     if (payload.linhas.length === 0) { window.toast('Adicione ao menos 1 item com metros entregues', 'error'); return false; }
     if (!payload.destino_fornecedor_id) { window.toast('Escolha a empresa de látex de destino', 'error'); return false; }
+    if (forceSplit && !splitMotivo) { window.toast('Informe o motivo para criar uma OP de acabamento separada', 'error'); return false; }
     const ins = await window.supa.from('entregas').insert({
       fornecedor_id: fornecedorId, etapa: 'cima', data: payload.data, observacao: payload.observacao,
       destino_fornecedor_id: payload.destino_fornecedor_id,
@@ -225,8 +232,17 @@
       window.toast('Erro ao gravar itens da entrega', 'error'); console.error(insItens.error); return false;
     }
     // Fase 5b: a entrega de tecelagem gera automaticamente a OP de látex.
-    const rpc = await window.supa.rpc('gerar_op_latex', { p_entrega_id: entregaId });
+    const rpcName = forceSplit ? 'gerar_op_latex_split' : 'gerar_op_latex';
+    const rpcParams = forceSplit
+      ? { p_entrega_id: entregaId, p_motivo: splitMotivo }
+      : { p_entrega_id: entregaId };
+    const rpc = await window.supa.rpc(rpcName, rpcParams);
     if (rpc.error) {
+      if (forceSplit) {
+        window.toast('Entrega salva, mas falhou ao criar a OP de acabamento separada. Gere manualmente.', 'error');
+        console.error(rpc.error);
+        return true;
+      }
       window.toast('Entrega salva, mas falhou ao gerar a OP de látex. Gere manualmente.', 'error');
       console.error(rpc.error);
       return true;
