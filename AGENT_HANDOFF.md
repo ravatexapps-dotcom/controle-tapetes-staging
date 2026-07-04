@@ -1,4 +1,36 @@
-﻿# Estado pos-fase - OP Em Producao Acabamento (correcao pos-implementacao)
+﻿# Estado pos-fase - Production Flow Backlog Register A
+
+- Fase: `RAVATEX-TAPETES-PRODUCTION-BACKLOG-REGISTER-A` (docs-only, patch
+  documental).
+- Escopo fechado: `docs/architecture/PEDIDO_PRODUCTION_FLOW_BACKLOG.md`,
+  `PROJECT_STATE.md`, `AGENT_HANDOFF.md`. Nenhum outro arquivo.
+- Backlog funcional/arquitetural registrado permanentemente em
+  `docs/architecture/PEDIDO_PRODUCTION_FLOW_BACKLOG.md`. Leitura obrigatoria
+  antes de qualquer implementacao no fluxo produtivo do Pedido.
+- 8 itens ordenados no backlog (A-H):
+  A. ACTION-BUTTONS-R1 — corrigir botoes "Movimentar" ambiguos/anchors
+  B. PEDIDO-TRANSITION-MODAL-GAPS-B — modais de seta com pendencias completas
+  C. PEDIDO-TRANSFER-REMAINING-B — botao "Transferir restante"
+  D. PEDIDO-TEC-ACCEPTANCE-B — aceite/ajuste da OP Tecelagem pelo Pedido
+  E. LATEX-SPLIT-PARTIAL-POLICY-A — diagnostico de split parcial (Latex)
+  F. PEDIDO-STEPPER-STAGE-MODALS-B — bolinhas do stepper clicaveis
+  G. TEC-STAGE-FINALIZATION-A — finalizacao explicita da Tecelagem
+  H. OP-PEDIDO-LINEAGE-UX-B — padronizar correlacao visual OP↔Pedido
+- Ordem tecnica definida: A → B → C → F → H → D → E → G.
+- Regras vinculantes registradas:
+  - padrao de consolidacao Latex: acumular na mesma OP (find-or-accumulate)
+  - excecao de split parcial: explicita por select, exige rastro/historico,
+    nova chave de agrupamento, nao reintroduz automatico
+  - modais de transicao: fonte de calculo canonica compartilhada
+    (`derivePedidoChainState`), nao duplicada
+  - uma fase por grupo de problema
+  - diagnostico antes de codigo para itens de alto risco
+  - testes/evidencia antes de fechamento
+  - staging seletivo, sem `git add .`
+  - producao intocada, origin nao usado para escrita
+- Proximo passo: iniciar pelo item A (ACTION-BUTTONS-R1) quando autorizado.
+
+# Estado pos-fase - OP Em Producao Acabamento (correcao pos-implementacao)
 
 - Fase: `RAVATEX-TAPETES-OP-EM-PRODUCAO-ACABAMENTO-STANDALONE-B`, correcao
   aplicada em cima do commit `f675818` (mesma fase, achado ao verificar

@@ -1,5 +1,42 @@
-> **Atualizacao 2026-07-03 - fase
-> `RAVATEX-TAPETES-PEDIDO-TRANSITION-ACTIONS-B`.**
+> **Atualizacao 2026-07-04 - fase
+> `RAVATEX-TAPETES-PRODUCTION-BACKLOG-REGISTER-A`.**
+> Patch documental somente, sem JS/SQL/migration/producao. Registrado
+> permanentemente o backlog funcional/arquitetural do fluxo produtivo
+> centrado no Pedido, com ordem tecnica de implementacao, dependencias,
+> riscos e criterios de aceite, em
+> `docs/architecture/PEDIDO_PRODUCTION_FLOW_BACKLOG.md`.
+>
+> O backlog cobre 8 itens (A-H) ordenados: correcao de botoes
+> "Movimentar" ambiguos (A), modais de seta com pendencias completas
+> (B), "Transferir restante" (C), aceite/ajuste da OP Tecelagem pelo
+> Pedido (D), diagnostico de split parcial de Latex (E), bolinhas do
+> stepper clicaveis (F), finalizacao explicita da Tecelagem (G) e
+> padronizacao da correlacao visual OP↔Pedido (H).
+>
+> Registrado o novo requisito de split parcial:
+> - padrao continua acumular na mesma OP (find-or-accumulate)
+> - excecao explicita por select para criar OP separada
+> - exige rastro/historico e nova chave de agrupamento
+> - nao pode reintroduzir "uma OP por parcial" automatico
+> - antes de implementar: diagnosticar indices/RPC/tabelas
+>
+> Registrado o requisito de pendencias nos modais de transicao:
+> - cada modal de seta deve mostrar totais por produto, ja movimentado,
+>   faltante, OPs relacionadas, bloqueios e proxima acao
+> - fonte de calculo canonica compartilhada (`derivePedidoChainState`),
+>   nao duplicada por modal
+>
+> Ordem tecnica: A → B → C → F → H → D → E → G. Uma fase por grupo,
+> diagnostico antes de codigo, testes/evidencia antes de fechamento,
+> staging seletivo sem `git add .`, `AGENT_HANDOFF.md` atualizado ao
+> fim.
+>
+> Sem JS, sem SQL/migration, sem `git add .`, sem commit de
+> `supabase/.temp/`, producao intocada, origin nao usado para escrita.
+> Push apenas para `staging`.
+>
+> > **Atualizacao 2026-07-03 - fase
+> > `RAVATEX-TAPETES-PEDIDO-TRANSITION-ACTIONS-B`.**
 > Patch funcional local, sem SQL/Supabase remoto/producao e sem push: as
 > setas do `Progresso produtivo` deixaram de ser atalho para abrir a OP
 > e passaram a ser a interface da transicao no Pedido. `Transferir`
