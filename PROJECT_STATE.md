@@ -1,4 +1,43 @@
 > **Atualizacao 2026-07-04 - fase
+> `RAVATEX-TAPETES-OP-PARTIAL-SPLIT-DB28-B`.**
+> Migration `db/28_op_latex_split_discriminator.sql` criada para preparar
+> OPs Latex split excepcionais sem alterar `gerar_op_latex`, sem criar
+> `gerar_op_latex_split`, sem JS/UI e sem alterar cardinalidade funcional.
+>
+> A db/28 adiciona `ops.motivo_separacao TEXT NULL`, comenta a coluna,
+> faz hard-stop se houver duplicidade default atual por
+> `(origem_op_id, destino_fornecedor_id)`, recria
+> `ops_latex_origem_destino_uidx` como UNIQUE parcial apenas para
+> `tipo='latex' AND motivo_separacao IS NULL`, cria
+> `ops_latex_split_idx` para auditoria de splits futuros e notifica
+> PostgREST.
+>
+> Testes locais obrigatorios passaram:
+> `node --test tests\latex-consolidation-schema.smoke.js` (18/18),
+> `node --test tests\production-flow-numbering-schema.smoke.js` (14/14)
+> e `node --test tests\production-flow-invariants.smoke.js` (7/7).
+> Validacao SQL isolada em PGlite confirmou coluna, predicado dos dois
+> indices, coexistencia de 1 default + 2 splits na mesma chave e
+> hard-stop `P0001` para duplicidade default.
+>
+> Diagnosticos staging foram atualizados para reportar
+> `motivo_separacao`, OPs default, OPs split e duplicatas default, mas o
+> apply remoto da db/28 ficou **bloqueado** nesta execucao: `npx
+> supabase db push --linked --dry-run` falhou com `Cannot find project
+> ref. Have you run supabase link?`, apesar de `supabase/.temp` apontar
+> para o staging `ucrjtfswnfdlxwtmxnoo`. Nao havia `DB_URL`, senha SQL
+> nem sessao Supabase CLI utilizavel no ambiente.
+>
+> Alerta vinculante: depois da db/28 aplicada, a db/29 e obrigatoria
+> antes de homologar criacao funcional de nova OP Latex default, porque
+> `gerar_op_latex` ainda usa o `ON CONFLICT` antigo
+> `WHERE tipo = 'latex'`, que falha contra o novo indice parcial.
+>
+> Producao intocada, `origin` nao usado para escrita, sem update/delete
+> ad hoc, sem migration aplicada remotamente, sem `git add .`, sem
+> `supabase/.temp` commitado.
+>
+> **Atualizacao 2026-07-04 - fase
 > `RAVATEX-TAPETES-PRODUCTION-BACKLOG-REGISTER-A`.**
 > Patch documental somente, sem JS/SQL/migration/producao. Registrado
 > permanentemente o backlog funcional/arquitetural do fluxo produtivo

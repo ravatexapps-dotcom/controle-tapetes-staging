@@ -23,14 +23,17 @@ const path = require('node:path');
 const ROOT = path.resolve(__dirname, '..');
 const MIGRATION = path.join(ROOT, 'db', '26_production_flow_invariants.sql');
 const MIGRATION_27 = path.join(ROOT, 'db', '27_op_numbering_highwater_reconcile.sql');
+const MIGRATION_28 = path.join(ROOT, 'db', '28_op_latex_split_discriminator.sql');
 const ENTREGA_WRITES = path.join(ROOT, 'js', 'screens', 'entrega-writes.js');
 const OP_PERSISTIR = path.join(ROOT, 'js', 'screens', 'op-persistir.js');
 const OP_NOVA = path.join(ROOT, 'js', 'screens', 'op-nova.js');
 
 const rawSql = fs.existsSync(MIGRATION) ? fs.readFileSync(MIGRATION, 'utf8') : '';
 const rawSql27 = fs.existsSync(MIGRATION_27) ? fs.readFileSync(MIGRATION_27, 'utf8') : '';
+const rawSql28 = fs.existsSync(MIGRATION_28) ? fs.readFileSync(MIGRATION_28, 'utf8') : '';
 const sql = rawSql.replace(/^\s*--.*$/gm, '');
 const sql27 = rawSql27.replace(/^\s*--.*$/gm, '');
+const sql28 = rawSql28.replace(/^\s*--.*$/gm, '');
 const entregaWrites = fs.existsSync(ENTREGA_WRITES) ? fs.readFileSync(ENTREGA_WRITES, 'utf8') : '';
 const opPersistir = fs.existsSync(OP_PERSISTIR) ? fs.readFileSync(OP_PERSISTIR, 'utf8') : '';
 const opNova = fs.existsSync(OP_NOVA) ? fs.readFileSync(OP_NOVA, 'utf8') : '';
@@ -127,4 +130,12 @@ test('entrega-writes.js trata created/accumulated/already_linked da RPC', () => 
   assert.match(entregaWrites, /accumulated\s*===\s*true[\s\S]*Acumulou na\s+/);
   assert.match(entregaWrites, /already_linked\s*===\s*true[\s\S]*J[aá]\s+vinculada\s+[àa]\s+/i);
   assert.match(entregaWrites, /normalizeGerarOpLatexResult/);
+});
+
+test('db/28 registra que db/29 deve ajustar ON CONFLICT de gerar_op_latex', () => {
+  assert.ok(fs.existsSync(MIGRATION_28), 'migration db/28_op_latex_split_discriminator.sql nao existe');
+  assert.match(rawSql28, /db\/29 must adjust gerar_op_latex/i);
+  assert.match(rawSql28, /ON CONFLICT \(origem_op_id, destino_fornecedor_id\)/i);
+  assert.match(rawSql28, /WHERE tipo = 'latex' AND motivo_separacao IS NULL/i);
+  assert.doesNotMatch(sql28, /CREATE\s+OR\s+REPLACE\s+FUNCTION\s+public\.gerar_op_latex/i);
 });

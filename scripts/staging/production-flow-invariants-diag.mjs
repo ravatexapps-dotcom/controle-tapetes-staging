@@ -69,6 +69,50 @@ async function selOptional(pathq) {
 }
 
 const r2 = (n) => Math.round(Number(n || 0) * 100) / 100;
+async function sqlCatalogDiag() {
+  const dbUrl = process.env.STAGING_DB_URL || process.env.DB_URL || process.env.DATABASE_URL || '';
+  console.log('\n===== DB/28 CATALOGO SQL (indices) =====');
+  if (!dbUrl) {
+    console.log('Checagem SQL de indices pulada: STAGING_DB_URL/DB_URL/DATABASE_URL ausente.');
+    return;
+  }
+  if (dbUrl.includes(PROD_REF)) die('DB_URL aponta para PRODUCAO - bloqueado');
+  if (!dbUrl.includes(STAGING_REF)) die('DB_URL nao e staging autorizado');
+
+  const { Client } = await import('pg');
+  const client = new Client({ connectionString: dbUrl, ssl: { rejectUnauthorized: false } });
+  await client.connect();
+  try {
+    const col = await client.query(`
+      SELECT column_name, data_type, is_nullable
+        FROM information_schema.columns
+       WHERE table_schema = 'public'
+         AND table_name = 'ops'
+         AND column_name = 'motivo_separacao'
+    `);
+    const idx = await client.query(`
+      SELECT indexname, indexdef
+        FROM pg_indexes
+       WHERE schemaname = 'public'
+         AND indexname IN ('ops_latex_origem_destino_uidx', 'ops_latex_split_idx')
+       ORDER BY indexname
+    `);
+    const defaultIdx = idx.rows.find((row) => row.indexname === 'ops_latex_origem_destino_uidx');
+    const splitIdx = idx.rows.find((row) => row.indexname === 'ops_latex_split_idx');
+    const defaultOk = !!defaultIdx
+      && defaultIdx.indexdef.includes("tipo = 'latex'::text")
+      && defaultIdx.indexdef.includes('motivo_separacao IS NULL');
+    const splitOk = !!splitIdx
+      && splitIdx.indexdef.includes("tipo = 'latex'::text")
+      && splitIdx.indexdef.includes('motivo_separacao IS NOT NULL');
+    console.log('Coluna motivo_separacao catalogo:', col.rows.length ? JSON.stringify(col.rows[0]) : 'AUSENTE');
+    console.log('Indice default ops_latex_origem_destino_uidx:', defaultOk ? 'OK' : '!!! INVALIDO/AUSENTE');
+    console.log('Indice split ops_latex_split_idx:', splitOk ? 'OK' : '!!! INVALIDO/AUSENTE');
+    idx.rows.forEach((row) => console.log('  ' + row.indexname + ': ' + row.indexdef));
+  } finally {
+    await client.end();
+  }
+}
 const opLbl = (o) => o ? (o.numero + '/' + o.ano) : '—';
 
 (async () => {
@@ -87,7 +131,7 @@ const opLbl = (o) => o ? (o.numero + '/' + o.ano) : '—';
   console.log('pedido_id=' + (pedido && pedido.id) + ' status=' + (pedido && pedido.status) + ' | lotes=' + JSON.stringify(loteIds));
   let pedidoOps = [];
   if (loteIds.length) {
-    pedidoOps = await sel('ops?lote_id=in.(' + loteIds.join(',') + ')&select=id,numero,ano,tipo,status,origem_op_id,origem_entrega_id,destino_fornecedor_id,lote_id,criado_em&order=criado_em.asc');
+    pedidoOps = await sel('ops?lote_id=in.(' + loteIds.join(',') + ')&select=id,numero,ano,tipo,status,origem_op_id,origem_entrega_id,destino_fornecedor_id,motivo_separacao,lote_id,criado_em&order=criado_em.asc');
   }
   pedidoOps.forEach((o) => console.log('  OP ' + opLbl(o) + ' id=' + o.id + ' tipo=' + o.tipo + ' status=' + o.status
     + ' origem_op_id=' + o.origem_op_id + ' destino=' + (o.destino_fornecedor_id ? fornById[o.destino_fornecedor_id] : '—')
@@ -95,12 +139,13 @@ const opLbl = (o) => o ? (o.numero + '/' + o.ano) : '—';
 
   // ---- 2.3 Todas OPs látex + origem + destino
   console.log('\n===== [2.3] OPs LÁTEX (origem + destino) =====');
-  const latexOps = await sel('ops?tipo=eq.latex&select=id,numero,ano,tipo,status,origem_op_id,origem_entrega_id,destino_fornecedor_id,criado_em&order=ano.asc,numero.asc');
+  const latexOps = await sel('ops?tipo=eq.latex&select=id,numero,ano,tipo,status,origem_op_id,origem_entrega_id,destino_fornecedor_id,motivo_separacao,criado_em&order=ano.asc,numero.asc');
   const opById = Object.fromEntries((await sel('ops?select=id,numero,ano,tipo,status')).map((o) => [o.id, o]));
   latexOps.forEach((o) => console.log('  OP ' + opLbl(o) + ' id=' + o.id + ' status=' + o.status
     + ' | origem=' + opLbl(opById[o.origem_op_id]) + '(id ' + o.origem_op_id + ',' + (opById[o.origem_op_id] ? opById[o.origem_op_id].tipo : '?') + ')'
     + ' | origem_entrega_id=' + o.origem_entrega_id
     + ' | destino=' + (o.destino_fornecedor_id ? fornById[o.destino_fornecedor_id] : 'NULL') + '(id ' + o.destino_fornecedor_id + ')'
+    + ' | motivo_separacao=' + (o.motivo_separacao == null ? 'NULL(default)' : JSON.stringify(o.motivo_separacao))
     + ' | criado=' + o.criado_em));
 
   // ---- 2.4 OP 4/2026 atual
@@ -115,7 +160,23 @@ const opLbl = (o) => o ? (o.numero + '/' + o.ano) : '—';
   const grp = {};
   latexOps.forEach((o) => { const k = o.origem_op_id + '::' + o.destino_fornecedor_id; (grp[k] = grp[k] || []).push(o); });
   const dups = Object.entries(grp).filter(([, a]) => a.length > 1);
+  const defaultLatexOps = latexOps.filter((o) => o.motivo_separacao == null);
+  const splitLatexOps = latexOps.filter((o) => o.motivo_separacao != null);
+  const defaultGrp = {};
+  defaultLatexOps.forEach((o) => { const k = o.origem_op_id + '::' + o.destino_fornecedor_id; (defaultGrp[k] = defaultGrp[k] || []).push(o); });
+  const defaultDups = Object.entries(defaultGrp).filter(([, a]) => a.length > 1);
   console.log(dups.length ? ('!!! ' + dups.length + ' grupo(s) DUPLICADO(s): ' + JSON.stringify(dups.map(([k, a]) => ({ k, ops: a.map(opLbl) })))) : 'OK — 0 duplicatas.');
+
+  console.log('\n===== [2.5b] DB/28 SPLIT LATEX (motivo_separacao) =====');
+  console.log('Coluna ops.motivo_separacao: OK (select executado)');
+  console.log('OPs latex default (motivo_separacao NULL):', defaultLatexOps.length);
+  console.log('OPs latex split atuais (motivo_separacao NOT NULL):', splitLatexOps.length);
+  console.log('Duplicatas default por (origem_op_id,destino_fornecedor_id):',
+    defaultDups.length ? ('!!! ' + JSON.stringify(defaultDups.map(([k, a]) => ({ k, ops: a.map(opLbl) })))) : '0 (OK)');
+  if (splitLatexOps.length) {
+    splitLatexOps.forEach((o) => console.log('  SPLIT OP ' + opLbl(o) + ' id=' + o.id + ' origem=' + o.origem_op_id
+      + ' destino=' + o.destino_fornecedor_id + ' motivo=' + JSON.stringify(o.motivo_separacao)));
+  }
 
   // ---- 2.6 op_latex_entregas N:1
   console.log('\n===== [2.6] op_latex_entregas (N entregas -> 1 OP) =====');
@@ -188,6 +249,8 @@ const opLbl = (o) => o ? (o.numero + '/' + o.ano) : '—';
       console.log('  ' + key + ' ultimo_numero=' + row.ultimo_numero + ' max_ops_atual=' + maxAtual + ' -> ' + (ok ? 'OK' : '!!! MENOR QUE MAX OPS'));
     });
   }
+
+  await sqlCatalogDiag();
 
   console.log('\n================ FIM ================');
 })().catch((e) => die(e && e.message ? e.message : String(e)));

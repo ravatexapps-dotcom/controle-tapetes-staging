@@ -1,4 +1,53 @@
-﻿# Estado pos-fase - Production Flow Backlog Register A
+﻿# Estado pos-fase - OP Partial Split DB28 B (apply staging bloqueado)
+
+- Fase: `RAVATEX-TAPETES-OP-PARTIAL-SPLIT-DB28-B`.
+- Escopo implementado localmente: `db/28_op_latex_split_discriminator.sql`,
+  `tests/latex-consolidation-schema.smoke.js`,
+  `tests/production-flow-numbering-schema.smoke.js`,
+  `tests/production-flow-invariants.smoke.js`,
+  `scripts/staging/production-flow-invariants-diag.mjs`,
+  `scripts/staging/latex-consolidation-diag.mjs`, `PROJECT_STATE.md`,
+  `AGENT_HANDOFF.md`.
+- Contrato da db/28:
+  - `ops.motivo_separacao TEXT NULL`;
+  - OP Latex default = `motivo_separacao IS NULL`;
+  - OP Latex split futura = `motivo_separacao IS NOT NULL`;
+  - indice default unico:
+    `(origem_op_id, destino_fornecedor_id) WHERE tipo='latex' AND motivo_separacao IS NULL`;
+  - indice auxiliar `ops_latex_split_idx` para splits futuros;
+  - hard-stop se ja houver duplicidade default antes de recriar o indice.
+- Preservado: `gerar_op_latex` nao foi alterada; nao foi criada
+  `gerar_op_latex_split`; nenhum JS/UI/select funcional foi implementado;
+  `db/25`, `db/26` e `db/27` ficaram intocados.
+- Testes locais obrigatorios:
+  - `node --test tests\latex-consolidation-schema.smoke.js` OK (18/18);
+  - `node --test tests\production-flow-numbering-schema.smoke.js` OK (14/14);
+  - `node --test tests\production-flow-invariants.smoke.js` OK (7/7).
+- Validacao SQL isolada: PGlite aplicou a db/28 sobre schema minimo,
+  confirmou coluna `motivo_separacao`, predicado dos indices
+  `ops_latex_origem_destino_uidx` e `ops_latex_split_idx`, permitiu 1
+  default + 2 splits na mesma chave e abortou duplicidade default com
+  `P0001`.
+- BLOQUEIO operacional: a db/28 nao foi aplicada no Supabase staging
+  nesta execucao. `npx supabase db push --linked --dry-run` falhou com
+  `Cannot find project ref. Have you run supabase link?`. O arquivo
+  `supabase/.temp/linked-project.json` aponta para
+  `ucrjtfswnfdlxwtmxnoo`, mas a CLI nao reconheceu link utilizavel e
+  nao havia `DB_URL`, senha SQL ou sessao Supabase CLI disponivel.
+- Proximo passo obrigatorio: fornecer/linkar credencial SQL/CLI do
+  staging `ucrjtfswnfdlxwtmxnoo`, aplicar somente a db/28, rodar os
+  dois diagnosticos staging atualizados e validar coluna/indices:
+  `motivo_separacao`, `ops_latex_origem_destino_uidx` com predicado
+  `tipo='latex' AND motivo_separacao IS NULL`, `ops_latex_split_idx`,
+  duplicatas default = 0 e splits atuais = 0.
+- Alerta vinculante: db/29 deve ajustar o `ON CONFLICT` da RPC default
+  `gerar_op_latex` para incluir `motivo_separacao IS NULL` antes de
+  homologar criacao real de novas OPs Latex apos db/28.
+- Producao intocada; `origin` nao usado para escrita; sem update/delete
+  ad hoc; sem migration remota aplicada; sem `git add .`; residual
+  permitido `supabase/.temp/` nao deve ser commitado.
+
+# Estado pos-fase - Production Flow Backlog Register A
 
 - Fase: `RAVATEX-TAPETES-PRODUCTION-BACKLOG-REGISTER-A` (docs-only, patch
   documental).

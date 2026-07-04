@@ -30,9 +30,12 @@ const path = require('node:path');
 
 const ROOT = path.resolve(__dirname, '..');
 const MIGRATION = path.join(ROOT, 'db', '25_latex_consolidation.sql');
+const MIGRATION_28 = path.join(ROOT, 'db', '28_op_latex_split_discriminator.sql');
 const rawSql = fs.existsSync(MIGRATION) ? fs.readFileSync(MIGRATION, 'utf8') : '';
+const rawSql28 = fs.existsSync(MIGRATION_28) ? fs.readFileSync(MIGRATION_28, 'utf8') : '';
 const stripLineComments = (s) => s.replace(/^\s*--.*$/gm, '');
 const sql = stripLineComments(rawSql);
+const sql28 = stripLineComments(rawSql28);
 
 // ---------------------------------------------------------------------
 // 1. Existência
@@ -148,4 +151,41 @@ test('idempotência: usa IF NOT EXISTS / CREATE OR REPLACE e NOTIFY pgrst', () =
 
 test('não cria/dropa tabelas de dados destrutivamente (só op_latex_entregas via IF NOT EXISTS)', () => {
   assert.doesNotMatch(sql, /DROP\s+TABLE/i);
+});
+
+// ---------------------------------------------------------------------
+// 9. db/28: discriminador de split Latex sem alterar a RPC
+// ---------------------------------------------------------------------
+
+test('db/28 adiciona ops.motivo_separacao como discriminador nullable de split Latex', () => {
+  assert.ok(fs.existsSync(MIGRATION_28), 'migration db/28_op_latex_split_discriminator.sql nao existe');
+  assert.match(sql28, /ALTER\s+TABLE\s+public\.ops\s+ADD\s+COLUMN\s+IF\s+NOT\s+EXISTS\s+motivo_separacao\s+TEXT\s+NULL/i);
+  assert.match(rawSql28, /COMMENT\s+ON\s+COLUMN\s+public\.ops\.motivo_separacao\s+IS[\s\S]*NULL = OP latex consolidada default/i);
+});
+
+test('db/28 faz hard-stop se houver duplicidade default antes de recriar indice', () => {
+  assert.match(sql28, /DO\s+\$\$[\s\S]*WHERE\s+o\.tipo\s*=\s*'latex'[\s\S]*o\.motivo_separacao\s+IS\s+NULL[\s\S]*GROUP\s+BY\s+o\.origem_op_id,\s*o\.destino_fornecedor_id[\s\S]*HAVING\s+count\(\*\)\s*>\s*1/i);
+  assert.match(sql28, /RAISE\s+EXCEPTION\s+'db\/28 abortada: duplicidade default de OP latex/i);
+});
+
+test('db/28 recria indice unico parcial somente para OP Latex default', () => {
+  assert.match(sql28, /DROP\s+INDEX\s+IF\s+EXISTS\s+public\.ops_latex_origem_destino_uidx/i);
+  assert.match(sql28, /CREATE\s+UNIQUE\s+INDEX\s+ops_latex_origem_destino_uidx\s+ON\s+public\.ops\s*\(\s*origem_op_id,\s*destino_fornecedor_id\s*\)\s*WHERE\s+tipo\s*=\s*'latex'\s+AND\s+motivo_separacao\s+IS\s+NULL/i);
+});
+
+test('db/28 cria indice auxiliar para auditoria de OPs Latex split', () => {
+  assert.match(sql28, /CREATE\s+INDEX\s+IF\s+NOT\s+EXISTS\s+ops_latex_split_idx\s+ON\s+public\.ops\s*\(\s*origem_op_id,\s*destino_fornecedor_id\s*\)\s*WHERE\s+tipo\s*=\s*'latex'\s+AND\s+motivo_separacao\s+IS\s+NOT\s+NULL/i);
+});
+
+test('db/28 nao altera gerar_op_latex, nao cria split funcional e nao mexe em dados operacionais', () => {
+  assert.doesNotMatch(sql28, /CREATE\s+OR\s+REPLACE\s+FUNCTION\s+public\.gerar_op_latex/i);
+  assert.doesNotMatch(sql28, /DROP\s+FUNCTION\s+IF\s+EXISTS\s+public\.gerar_op_latex/i);
+  assert.doesNotMatch(sql28, /gerar_op_latex_split/i);
+  assert.doesNotMatch(sql28, /INSERT\s+INTO\s+public\./i);
+  assert.doesNotMatch(sql28, /UPDATE\s+public\.ops\b/i);
+  assert.doesNotMatch(sql28, /DELETE\s+FROM\s+public\.ops\b/i);
+  assert.doesNotMatch(sql28, /op_latex_entregas/i);
+  assert.doesNotMatch(sql28, /op_numeros/i);
+  assert.match(sql28, /NOTIFY\s+pgrst,\s*'reload schema'/i);
+  assert.match(sql28, /NOTIFY\s+pgrst,\s*'reload config'/i);
 });

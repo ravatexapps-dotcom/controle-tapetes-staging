@@ -31,11 +31,25 @@ const path = require('node:path');
 const ROOT = path.resolve(__dirname, '..');
 const read = (p) => fs.readFileSync(path.join(ROOT, p), 'utf8');
 
+const db28 = read('db/28_op_latex_split_discriminator.sql');
 const detailEvents = read('js/screens/pedido-detail-events.js');
 const detailProgress = read('js/screens/pedido-detail-progress.js');
 const detailRender = read('js/screens/pedido-detail-render.js');
 const opTec = read('js/screens/op-tecelagem-producao-admin.js');
 const entregaWrites = read('js/screens/entrega-writes.js');
+
+// ---------------------------------------------------------------------
+// Contrato split Latex - db/28 prepara schema sem mudar fluxo funcional
+// ---------------------------------------------------------------------
+
+test('Contrato split Latex: db/28 preserva acumular como default e reserva split para motivo explicito', () => {
+  assert.match(db28, /motivo_separacao\s+TEXT\s+NULL/i);
+  assert.match(db28, /Default Latex OP: motivo_separacao IS NULL/i);
+  assert.match(db28, /Future split Latex OP: motivo_separacao IS NOT NULL/i);
+  assert.match(db28, /WHERE\s+tipo\s*=\s*'latex'\s+AND\s+motivo_separacao\s+IS\s+NULL/i);
+  assert.match(db28, /WHERE\s+tipo\s*=\s*'latex'\s+AND\s+motivo_separacao\s+IS\s+NOT\s+NULL/i);
+  assert.doesNotMatch(db28, /gerar_op_latex_split/i);
+});
 
 // ---------------------------------------------------------------------
 // Contrato 6 — histórico distingue criar vs acumular

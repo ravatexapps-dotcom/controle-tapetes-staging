@@ -78,7 +78,7 @@ const round2 = (n) => Math.round(Number(n || 0) * 100) / 100;
   const token = await login();
 
   const latexOps = await sel(token,
-    'ops?tipo=eq.latex&select=id,numero,ano,status,origem_op_id,origem_entrega_id,lote_id,op_fornecedores(fornecedor_id,etapa),op_itens(id,modelo_id,metros_pedidos)&order=id.asc');
+    'ops?tipo=eq.latex&select=id,numero,ano,status,origem_op_id,origem_entrega_id,motivo_separacao,lote_id,op_fornecedores(fornecedor_id,etapa),op_itens(id,modelo_id,metros_pedidos)&order=id.asc');
   const allOps = await sel(token, 'ops?select=id,numero,ano,tipo,status,lote_id&order=id.asc');
   const cimaEntregas = await sel(token,
     'entregas?etapa=eq.cima&select=id,fornecedor_id,destino_fornecedor_id,data,entrega_itens(id,op_id,op_item_id,metros_entregues,defeito)&order=id.asc');
@@ -89,6 +89,8 @@ const round2 = (n) => Math.round(Number(n || 0) * 100) / 100;
   const opById = Object.fromEntries(allOps.map((o) => [o.id, o]));
   const expByLatex = {};
   expedicoes.forEach((e) => { (expByLatex[e.op_latex_id] = expByLatex[e.op_latex_id] || []).push(e); });
+  const defaultLatexOps = latexOps.filter((op) => op.motivo_separacao == null);
+  const splitLatexOps = latexOps.filter((op) => op.motivo_separacao != null);
 
   console.log('\n================ RESUMO DE CONTAGENS ================');
   console.log('OPs totais:', allOps.length,
@@ -99,8 +101,12 @@ const round2 = (n) => Math.round(Number(n || 0) * 100) / 100;
 
   // ---- Q1: Duplicidade de OP Látex por (origem_op_id, fornecedor latex)
   console.log('\n===== Q1: OPs LÁTEX DUPLICADAS por (origem_op_id + fornecedor acabamento) =====');
+  console.log('Coluna ops.motivo_separacao: OK (select executado)');
+  console.log('OPs latex default (motivo_separacao NULL):', defaultLatexOps.length);
+  console.log('OPs latex split atuais (motivo_separacao NOT NULL):', splitLatexOps.length);
+
   const groups = {};
-  latexOps.forEach((op) => {
+  defaultLatexOps.forEach((op) => {
     const key = op.origem_op_id + '::' + fornecedorLatex(op);
     (groups[key] = groups[key] || []).push(op);
   });
@@ -174,4 +180,5 @@ const round2 = (n) => Math.round(Number(n || 0) * 100) / 100;
     console.log('DUPLICIDADE SEM produção/expedição — merge de dados possível, porém ainda requer plano de migration cuidadoso.');
   }
   console.log('Grupos duplicados:', dupGroups.length, '| OPs látex envolvidas em duplicidade:', dupCount);
+  console.log('OPs latex split atuais:', splitLatexOps.length);
 })().catch((e) => die(e && e.message ? e.message : String(e)));
