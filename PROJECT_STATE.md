@@ -1,4 +1,33 @@
 > **Atualizacao 2026-07-04 - fase
+> `RAVATEX-TAPETES-STAGING-FLOW-REGRESSION-AUDIT-A`.**
+> Auditoria do fluxo staging/local (Pedido -> OP -> Tecelagem ->
+> Acabamento/Latex -> Expedicao -> Entrega). Causa raiz encontrada e
+> corrigida para o sintoma "Pedido com OP nao abre".
+>
+> BUG: `buildOpCard` em `js/screens/pedido-detail-render.js` e funcao de
+> modulo (irma de `buildOps`/`renderPedidoDetailScreen`) e nao recebia
+> `state`. A tira de linhagem adicionada em `977be36` le
+> `state.pedido.numero`; sem `state` no escopo, renderizar qualquer
+> Pedido com >=1 OP lancava `ReferenceError: state is not defined`,
+> derrubando o render. Pedido sem OP nao chama `buildOpCard`, por isso
+> abria. Reproduzido em runtime (harness DOM): com OP -> crash; sem OP ->
+> OK; pos-patch ambos OK.
+>
+> PATCH minimo: `buildOpCard(state, summary, handlers)` passa a receber
+> `state` e `buildOps` repassa `state` na chamada. Sem try/catch, sem
+> remover UI, sem tocar regra de negocio, stepper, modal, lineage ou
+> split. Guarda de regressao adicionada em `tests/pedido-detail.smoke.js`
+> (a suite era 100% string-match, por isso nao pegava erro de escopo).
+>
+> Testes: `node --test tests/pedido-detail.smoke.js` OK (119/119);
+> `node --test tests/pedido-detail-linked-ops.smoke.js` OK (7/7);
+> `node --test tests/production-flow-invariants.smoke.js` OK (11/11);
+> Part D completa OK (490/490). Diagnosticos staging READ-ONLY:
+> duplicatas/split/orfas=0, `op_latex_entregas` N:1, colisoes=0,
+> high-water latex+tecelagem OK. db/25-db/29 intocadas; sem SQL; sem
+> push de producao; `origin` nao usado para escrita.
+>
+> **Atualizacao 2026-07-04 - fase
 > `RAVATEX-TAPETES-OP-PARTIAL-SPLIT-UI-B`.**
 > UI explicita para escolher "Acumular" (default) ou "Criar nova OP" no
 > lançamento Tecelagem → Acabamento/Latex, usando o seam ja implementado

@@ -530,7 +530,7 @@
     }, label);
   }
 
-  function buildOpCard(summary, handlers) {
+  function buildOpCard(state, summary, handlers) {
     var typeTone = summary.stageKey === 'tecelagem'
       ? { bg: '#f3effe', text: '#7c3aed' }
       : { bg: '#fef9ec', text: '#b45309' };
@@ -707,7 +707,7 @@
     wrap.appendChild(window.el('div', {
       style: 'display:grid;grid-template-columns:1fr 1fr;gap:14px;align-items:start;',
     }, view.opSummaries.map(function (summary) {
-      return buildOpCard(summary, handlers);
+      return buildOpCard(state, summary, handlers);
     })));
     return wrap;
   }

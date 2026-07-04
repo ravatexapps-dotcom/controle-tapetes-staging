@@ -1,4 +1,48 @@
-﻿# Estado pos-fase - OP Partial Split UI B
+﻿# Estado pos-fase - Staging Flow Regression Audit A
+
+- Fase: `RAVATEX-TAPETES-STAGING-FLOW-REGRESSION-AUDIT-A`.
+- Sintoma reportado: Pedido recem-criado com OP recem-criada nao abre;
+  alguns outros Pedidos tambem nao abrem. Pedidos sem OP abrem normal.
+- Causa raiz (isolada): `buildOpCard` em
+  `js/screens/pedido-detail-render.js` e funcao de modulo (irma de
+  `buildOps`/`renderPedidoDetailScreen`) e NAO recebia `state`. A tira de
+  linhagem adicionada em `977be36` le `state.pedido.numero`; sem `state`
+  no escopo, renderizar QUALQUER Pedido com >=1 OP lanca
+  `ReferenceError: state is not defined`, quebrando o render (tela nao
+  abre). Pedido sem OP nao chama `buildOpCard` (retorno antecipado em
+  `buildOps`), por isso abria.
+- Reproduzido em runtime com harness DOM minimo: Pedido com 1 OP →
+  CRASH `ReferenceError: state is not defined`; Pedido sem OP → RENDER OK.
+  Pos-patch: ambos RENDER OK.
+- Patch minimo aplicado (sem try/catch, sem remover UI, sem regra de
+  negocio):
+  - `buildOpCard(state, summary, handlers)` passa a receber `state`;
+  - `buildOps` repassa `state` na chamada.
+- Guarda de regressao adicionada em `tests/pedido-detail.smoke.js`:
+  verifica que `buildOpCard` recebe `state` e que a chamada o repassa
+  (a suite era 100% estatica por string-match, por isso nao pegava um
+  erro de escopo em runtime).
+- Testes locais pos-patch:
+  - `node --test tests\pedido-detail.smoke.js` OK (119/119);
+  - `node --test tests\pedido-detail-linked-ops.smoke.js` OK (7/7);
+  - `node --test tests\production-flow-invariants.smoke.js` OK (11/11);
+  - suite prioritaria Part D completa OK (490/490).
+- Diagnosticos staging (READ-ONLY, staging ucrjtfswnfdlxwtmxnoo):
+  duplicatas default=0, split atuais=0, duplicatas materializadas=0,
+  orfas=0, `op_latex_entregas` N:1 (0 em multiplas OPs), colisoes
+  tipo+numero+ano=0, high-water latex e tecelagem OK, `motivo_separacao`
+  (db/28) presente. RPC `gerar_op_latex_split` "INDISPONIVEL" por GET
+  (comportamento conhecido; responde por POST auth).
+- Nota de infra (nao introduzido por esta fase): a suite completa
+  (`node --test tests\*.js`) tem ~87 falhas PRE-EXISTENTES de testes de
+  estrutura do `index.html` e de `http.server` em `:8765` (servidor nao
+  iniciado). Confirmado identico em HEAD limpo, sem relacao com o patch.
+- Producao intocada; `origin` nao usado para escrita; sem SQL/migration;
+  sem OP split real; sem `git add .`; residual permitido `supabase/.temp/`;
+  E2E de split segue suspenso ate a auditoria passar.
+- db/25-db/29 intocadas.
+
+# Estado pos-fase - OP Partial Split UI B
 
 - Fase: `RAVATEX-TAPETES-OP-PARTIAL-SPLIT-UI-B`.
 - Escopo implementado: `js/screens/entrega-form.js`,

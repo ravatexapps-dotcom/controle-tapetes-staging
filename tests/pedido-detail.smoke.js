@@ -1328,6 +1328,18 @@ test('lineage-UX-B: buildOpCard renderiza lineage strip com Pedido + OP', () => 
     'deve renderizar lineageStrip nos cards de OP');
 });
 
+test('lineage-UX-B: buildOpCard recebe state no escopo (regressao ReferenceError)', () => {
+  // O lineage strip lê state.pedido.numero. buildOpCard é uma função de
+  // módulo (irmã de buildOps/renderPedidoDetailScreen), portanto NÃO herda
+  // o `state` de nenhum escopo externo: ele precisa vir por parâmetro. Sem
+  // isso, renderizar QUALQUER pedido com >=1 OP lança
+  // "ReferenceError: state is not defined" e a tela não abre.
+  assert.match(detailRender, /function buildOpCard\(state,\s*summary,\s*handlers\)/,
+    'buildOpCard deve receber `state` como primeiro parametro');
+  assert.match(detailRender, /return buildOpCard\(state,\s*summary,\s*handlers\)/,
+    'a chamada em buildOps deve repassar `state` para buildOpCard');
+});
+
 test('lineage-UX-B: buildOpCard mostra origem para OP de acabamento', () => {
   assert.match(detailRender, /summary\.origemOp/,
     'deve verificar origemOp para OP de acabamento');
