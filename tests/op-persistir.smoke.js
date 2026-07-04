@@ -484,6 +484,8 @@ test('30. boot chain: todos os módulos + op-persistir + inline coexiste sem Syn
 // quais steps retornam erro. Suporta múltiplas mutações no mesmo from()
 // (ex: from('saldo_fios') chamado para select e depois update/insert).
 function makePersistirOPSandbox({
+  opNumeroRpcResult = { data: 5, error: null },
+  opNumeroRpcError = null,
   opsInsertResult = { data: { id: 42 }, error: null },
   opsInsertError = null,
   opsUpdateResult = { data: { id: 42 }, error: null },
@@ -658,7 +660,16 @@ function makePersistirOPSandbox({
       };
       return chain;
     },
-    rpc: () => Promise.resolve({ data: null, error: null }),
+    rpc: (fn, params) => {
+      calls.push({ op: 'rpc', fn, params });
+      if (fn === 'proximo_numero_op') {
+        if (opNumeroRpcError) {
+          return Promise.resolve({ data: null, error: opNumeroRpcError });
+        }
+        return Promise.resolve(opNumeroRpcResult);
+      }
+      return Promise.resolve({ data: null, error: null });
+    },
     auth: {
       getSession: () => Promise.resolve({ data: { session: null }, error: null }),
       signInWithPassword: () => Promise.resolve({ data: { user: null }, error: null }),
@@ -745,7 +756,7 @@ test('32. window.RAVATEX_SCREENS.opPersistir.persistirOP existe', () => {
 // ---- 3-6: Sucesso -----------------------------------------------------
 
 test('33. sucesso criar OP simulada retorna { error:null, step:"ok", partial:false, opId }', async () => {
-  const { sandbox } = makePersistirOPSandbox();
+  const { sandbox, calls } = makePersistirOPSandbox({ opNumeroRpcResult: { data: 17, error: null } });
   sandbox.payload = payloadBase();
   const result = await vm.runInContext(
     'window.persistirOP(payload)',
@@ -755,6 +766,10 @@ test('33. sucesso criar OP simulada retorna { error:null, step:"ok", partial:fal
   assert.equal(result.step, 'ok', 'step deveria ser "ok"');
   assert.equal(result.partial, false);
   assert.equal(result.opId, 42);
+  assert.equal(result.numero, 17);
+  assert.ok(calls.some((c) => c.op === 'rpc' && c.fn === 'proximo_numero_op'), 'OP nova deve chamar proximo_numero_op');
+  const insert = calls.find((c) => c.op === 'ops_insert_single');
+  assert.equal(insert.payload.numero, 17, 'ops.insert deve usar numero retornado pela RPC');
 });
 
 test('34. sucesso criar OP aberta retorna { error:null, step:"ok", partial:false, opId }', async () => {
@@ -801,6 +816,17 @@ test('37. falha em ops.insert retorna step "ops_insert" e opId null', async () =
   assert.equal(result.step, 'ops_insert');
   assert.equal(result.partial, false);
   assert.equal(result.opId, null, 'opId deveria ser null');
+});
+
+test('37.1 falha em proximo_numero_op retorna step "op_numero_next" e nao insere ops', async () => {
+  const { sandbox, calls } = makePersistirOPSandbox({ opNumeroRpcError: new Error('mock numero') });
+  sandbox.payload = payloadBase();
+  const result = await vm.runInContext('window.persistirOP(payload)', sandbox);
+  assert.ok(result.error, 'error deveria estar setado');
+  assert.equal(result.step, 'op_numero_next');
+  assert.equal(result.partial, false);
+  assert.equal(result.opId, null);
+  assert.equal(calls.some((c) => c.op === 'ops_insert_single'), false, 'nao deve inserir ops sem numero monotonicamente reservado');
 });
 
 test('38. falha em ops.update retorna step "ops_update" e opId do OP existente', async () => {

@@ -458,6 +458,13 @@ test('16. op-nova.js chama window.persistirOP', () => {
     'op-nova.js não referencia window.persistirOP');
 });
 
+test('16.1 op-nova.js nao usa MAX(numero)+1 para previa de OP Tecelagem', () => {
+  assert.doesNotMatch(opnSrc, /from\(\s*['"]ops['"]\s*\)\s*\.select\(\s*['"]numero['"]\s*\)[\s\S]*?order\(\s*['"]numero['"]/,
+    'op-nova.js nao deve calcular OP nova por maior numero existente em ops');
+  assert.match(opnSrc, /from\(\s*['"]op_numeros['"]\s*\)[\s\S]*?eq\(\s*['"]tipo['"]\s*,\s*['"]tecelagem['"]\s*\)/,
+    'previa de numero deve ler op_numeros tecelagem');
+});
+
 test('17. op-nova.js chama window.aplicarRecalculoOP', () => {
   assert.match(opnSrc, /window\.aplicarRecalculoOP\(/,
     'op-nova.js não referencia window.aplicarRecalculoOP');

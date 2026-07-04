@@ -106,6 +106,18 @@
     const anoInt = parseInt(ano, 10);
     const validos = itensValidosOP(itens);
     const isNova = !op;
+    let numeroPersistido = numeroInt;
+
+    if (isNova) {
+      const numeroRes = await supa.rpc('proximo_numero_op', { p_tipo: 'tecelagem', p_ano: anoInt });
+      if (numeroRes.error) {
+        return { error: numeroRes.error, step: 'op_numero_next', partial: false, opId: null };
+      }
+      numeroPersistido = parseInt(numeroRes.data, 10);
+      if (!numeroPersistido) {
+        return { error: { message: 'proximo_numero_op nao retornou numero valido' }, step: 'op_numero_next', partial: false, opId: null };
+      }
+    }
 
     // 1) upsert ops PRIMEIRO — evita lote órfão se o número da OP duplicar.
     let opRow;
@@ -118,7 +130,7 @@
       opRow = r.data;
       opIdSalvo = opRow.id;
     } else {
-      const r = await supa.from('ops').insert({ numero: numeroInt, ano: anoInt, status }).select().single();
+      const r = await supa.from('ops').insert({ numero: numeroPersistido, ano: anoInt, status }).select().single();
       if (r.error) {
         return { error: r.error, step: 'ops_insert', partial: false, opId: null };
       }
@@ -213,7 +225,7 @@
       }
     }
 
-    return { error: null, step: 'ok', partial: false, opId: opIdSalvo };
+    return { error: null, step: 'ok', partial: false, opId: opIdSalvo, numero: numeroPersistido };
   }
 
   window.RAVATEX_SCREENS = window.RAVATEX_SCREENS || {};

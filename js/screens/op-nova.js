@@ -351,8 +351,15 @@
       }
     }
   } else {
-    const { data } = await supa.from('ops').select('numero').eq('ano', ano).order('numero', { ascending: false }).limit(1);
-    numero = (data && data[0] ? data[0].numero : 0) + 1;
+    const numeroPreviewRes = await supa.from('op_numeros')
+      .select('ultimo_numero')
+      .eq('tipo', 'tecelagem')
+      .eq('ano', ano)
+      .maybeSingle();
+    if (numeroPreviewRes.error) {
+      console.error('op-nova: erro ao carregar previa de numeracao', numeroPreviewRes.error);
+    }
+    numero = (numeroPreviewRes.data && numeroPreviewRes.data.ultimo_numero ? Number(numeroPreviewRes.data.ultimo_numero) : 0) + 1;
   }
 
   // 3) Validação e persistência
@@ -418,6 +425,7 @@
 
       if (result.error) {
         const mensagens = {
+          op_numero_next: 'Erro ao reservar numero da OP',
           ops_insert: 'Erro ao salvar OP',
           ops_update: 'Erro ao salvar OP',
           lotes_insert: 'Erro ao criar lote',
