@@ -337,6 +337,7 @@ function makeFullBootSandbox({
   modelosData = [],
   origemOpData = null,
   expedicaoData = null,
+  saldoData = { ok: true, acabado_total: 0, liberado_total: 0, saldo_disponivel_total: 0, itens: [] },
 } = {}) {
   const toastsNode = new FakeNode('div');
   const appNode = new FakeNode('div');
@@ -422,6 +423,12 @@ function makeFullBootSandbox({
     },
     rpc: (fn, params) => {
       calls.push({ op: 'rpc', fn, params });
+      if (fn === 'consultar_saldo_expedicao_latex') {
+        return Promise.resolve({ data: saldoData, error: null });
+      }
+      if (fn === 'liberar_expedicao_latex_parcial') {
+        return Promise.resolve({ data: { ok: true, expedicao_id: 88 }, error: null });
+      }
       return Promise.resolve({ data: { ok: true }, error: null });
     },
     auth: {
@@ -891,7 +898,8 @@ test('35. OP em producao de acabamento segue o standalone e nao mostra recebimen
   });
   assert.match(rendered.text, /5\.\s*Finalizacao/i);
   assert.match(rendered.text, /Finalizar acabamento/i);
-  assert.match(rendered.text, /Finalize o acabamento antes de liberar o material para expedicao/i);
+  assert.match(rendered.text, /Sem quantidade acabada disponivel para expedicao/i);
+  assert.doesNotMatch(rendered.text, /Finalize o acabamento antes de liberar o material para expedicao/i);
   assert.doesNotMatch(rendered.text, /Recebimentos/i);
   assert.doesNotMatch(rendered.text, /Novo recebimento/i);
   assert.doesNotMatch(rendered.text, /Finalizar OP de l[áa]tex/i);
@@ -944,7 +952,7 @@ test('37. OP aberta de acabamento confirma entrada via alterar_status_op', async
   const opsFromBefore = rendered.fakeSupa._calls.filter(c => c.op === 'from' && c.table === 'ops').length;
   await btn._listeners.click({ currentTarget: btn });
 
-  const rpcCalls = rendered.fakeSupa._calls.filter(c => c.op === 'rpc');
+  const rpcCalls = rendered.fakeSupa._calls.filter(c => c.op === 'rpc' && c.fn === 'alterar_status_op');
   assert.equal(rpcCalls.length, 1, 'deve chamar uma RPC para confirmar entrada');
   assert.equal(rpcCalls[0].fn, 'alterar_status_op');
   assert.equal(rpcCalls[0].params.p_op_id, 42);
@@ -1109,7 +1117,57 @@ test('43. gate de entrada usa lifecycle sem schema/upload ou gerar_op_latex no m
   assert.doesNotMatch(olaSrc, /gerar_op_latex/);
 });
 
-test('43b. OP finalizada habilita liberar expedicao via RPC dedicada', async () => {
+test('43a. OP em producao com saldo acabado libera expedicao parcial sem finalizar OP', async () => {
+  const rendered = await renderLatexAdminForTest({
+    opData: {
+      id: 42,
+      numero: 8,
+      ano: 2026,
+      status: 'em_producao',
+      tipo: 'latex',
+      observacao: '',
+      origem_op_id: 12,
+      lote: { id: 91, numero: 22, pedido_id: '11111111-2222-3333-4444-555555555555', cliente: { id: 3, nome: 'Cliente Atlas' } },
+      op_itens: [{ id: 100, modelo_id: 1, metros_pedidos: 125, pedido_item_id: 'aaaaaaaa-2222-3333-4444-555555555555' }],
+      op_fornecedores: [{ fornecedor_id: 7, etapa: 'latex', fornecedores: { nome: 'Acabamento Sul' } }],
+    },
+    modelosData: [{ id: 1, nome: 'Roma', largura: 1.5, cor_1: { id: 1, nome: 'CINZA' }, cor_2: { id: 2, nome: 'GELO' } }],
+    origemOpData: { id: 12, numero: 2, ano: 2026, tipo: 'tecelagem' },
+    saldoData: {
+      ok: true,
+      acabado_total: 50,
+      liberado_total: 20,
+      saldo_disponivel_total: 30,
+      itens: [{
+        op_item_id: 100,
+        pedido_item_id: 'aaaaaaaa-2222-3333-4444-555555555555',
+        modelo_id: 1,
+        previsto: 125,
+        acabado: 50,
+        liberado: 20,
+        saldo_disponivel: 30,
+      }],
+    },
+  });
+
+  assert.match(rendered.text, /Saldo liberavel/i);
+  assert.match(rendered.text, /Liberar para expedicao/i);
+  const btn = findNode(rendered.view, (n) => (
+    n.tagName === 'BUTTON' && /Liberar para expedicao/i.test(collectNodeText(n))
+  ));
+  assert.ok(btn, 'CTA parcial de liberar expedicao nao encontrado');
+  await btn._listeners.click({ currentTarget: btn });
+  const rpcCalls = rendered.fakeSupa._calls.filter(c => c.op === 'rpc' && c.fn === 'liberar_expedicao_latex_parcial');
+  assert.equal(rpcCalls.length, 1);
+  assert.equal(rpcCalls[0].params.p_op_latex_id, 42);
+  assert.equal(rpcCalls[0].params.p_itens.length, 1);
+  assert.equal(rpcCalls[0].params.p_itens[0].op_item_id, 100);
+  assert.equal(rpcCalls[0].params.p_itens[0].metros, 30);
+  assert.equal(rendered.fakeSupa._calls.some(c => c.op === 'rpc' && c.fn === 'alterar_status_op'), false);
+  assert.equal(rendered.fakeSupa._calls.some(c => c.op === 'rpc' && c.fn === 'liberar_expedicao'), false);
+});
+
+test('43b. OP finalizada preserva liberar expedicao total legado quando nao ha saldo parcial', async () => {
   const rendered = await renderLatexAdminForTest({
     opData: {
       id: 42,
@@ -1126,18 +1184,18 @@ test('43b. OP finalizada habilita liberar expedicao via RPC dedicada', async () 
     modelosData: [{ id: 1, nome: 'Roma', largura: 1.5, cor_1: { id: 1, nome: 'CINZA' }, cor_2: { id: 2, nome: 'GELO' } }],
     origemOpData: { id: 12, numero: 2, ano: 2026, tipo: 'tecelagem' },
   });
-  assert.match(rendered.text, /Liberar para expedicao/i);
+  assert.match(rendered.text, /Liberar total para expedicao/i);
   const btn = findNode(rendered.view, (n) => (
-    n.tagName === 'BUTTON' && /Liberar para expedicao/i.test(collectNodeText(n))
+    n.tagName === 'BUTTON' && /Liberar total para expedicao/i.test(collectNodeText(n))
   ));
-  assert.ok(btn, 'CTA de liberar expedicao nao encontrado');
+  assert.ok(btn, 'CTA legado de liberar expedicao nao encontrado');
   await btn._listeners.click({ currentTarget: btn });
   const rpcCalls = rendered.fakeSupa._calls.filter(c => c.op === 'rpc' && c.fn === 'liberar_expedicao');
   assert.equal(rpcCalls.length, 1);
   assert.equal(rpcCalls[0].params.p_op_latex_id, 42);
 });
 
-test('43c. OP concluida habilita liberar expedicao via RPC dedicada', async () => {
+test('43c. OP concluida preserva liberar expedicao total legado quando nao ha saldo parcial', async () => {
   const rendered = await renderLatexAdminForTest({
     opData: {
       id: 42,
@@ -1154,11 +1212,11 @@ test('43c. OP concluida habilita liberar expedicao via RPC dedicada', async () =
     modelosData: [{ id: 1, nome: 'Roma', largura: 1.5, cor_1: { id: 1, nome: 'CINZA' }, cor_2: { id: 2, nome: 'GELO' } }],
     origemOpData: { id: 12, numero: 2, ano: 2026, tipo: 'tecelagem' },
   });
-  assert.match(rendered.text, /Liberar para expedicao/i);
+  assert.match(rendered.text, /Liberar total para expedicao/i);
   const btn = findNode(rendered.view, (n) => (
-    n.tagName === 'BUTTON' && /Liberar para expedicao/i.test(collectNodeText(n))
+    n.tagName === 'BUTTON' && /Liberar total para expedicao/i.test(collectNodeText(n))
   ));
-  assert.ok(btn, 'CTA de liberar expedicao nao encontrado');
+  assert.ok(btn, 'CTA legado de liberar expedicao nao encontrado');
   await btn._listeners.click({ currentTarget: btn });
   const rpcCalls = rendered.fakeSupa._calls.filter(c => c.op === 'rpc' && c.fn === 'liberar_expedicao');
   assert.equal(rpcCalls.length, 1);

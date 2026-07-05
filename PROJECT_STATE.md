@@ -1,4 +1,98 @@
 > **Atualizacao 2026-07-05 - fase
+> `RAVATEX-TAPETES-ACABAMENTO-PARTIAL-EXPEDITION-CONTRACT-B`.**
+> Status: OK em staging. Esta fase destravou a fase anterior
+> `ACABAMENTO-PARTIAL-EXPEDITION-PARITY-A-B`, cujo bloqueio era o gate
+> terminal da RPC `liberar_expedicao(BIGINT)` e a repeticao desse gate na
+> UI/matriz do Pedido.
+>
+> Causa raiz confirmada: Acabamento/Latex ja registrava parcial como
+> movimento em `entregas`/`entrega_itens`, mas a liberacao para Expedicao
+> so existia pelo fluxo legado total, exigindo OP Latex `finalizada` ou
+> `concluida` e populando `expedicao_itens.metros_liberados` a partir do
+> total de `op_itens`.
+>
+> Contrato corrigido: OP Latex continua sendo unidade produtiva; parcial
+> continua sendo movimento/rastro; finalizacao de OP continua separada da
+> liberacao. Quantidade acabada/liberavel agora e calculada por
+> `entregas.etapa='latex'` + `entrega_itens` sem defeito, por
+> `op_item_id`, menos o acumulado ja liberado em `expedicao_itens` da OP.
+>
+> Migration nova aplicada somente no Supabase staging
+> `ucrjtfswnfdlxwtmxnoo`: `db/31_acabamento_partial_expedition_flow.sql`,
+> via `npx.cmd supabase --workdir supabase db query --linked --file ...`.
+> Producao `bhgifjrfagkzubpyqpew` nao foi tocada. A migration cria os
+> indices `entrega_itens_op_item_idx` e `expedicao_itens_op_item_idx` e
+> as RPCs `consultar_saldo_expedicao_latex(BIGINT)` e
+> `liberar_expedicao_latex_parcial(BIGINT, JSONB, TEXT)`. A RPC parcial e
+> admin-only, `SECURITY DEFINER`, transacional, aceita OP Latex em
+> `em_producao`/`concluida`/`finalizada`, bloqueia quantidade acima do
+> saldo acabado, cria/reusa `expedicoes`, soma em `expedicao_itens`, chama
+> `recalcular_status_expedicao` e nao altera `public.ops`.
+>
+> Frontend: `js/screens/op-latex-admin.js` consulta saldo por RPC e
+> permite liberar apenas o saldo acabado item a item sem finalizar OP.
+> Quando nao ha saldo parcial e a OP esta terminal, o fluxo legado total
+> `liberar_expedicao` permanece. `pedido-chain-state.js`,
+> `pedido-detail-progress.js` e `pedido-detail-events.js` passaram a
+> reconhecer saldo acabado liberavel e a chamar a RPC parcial pelo modal
+> Acabamento -> Expedicao. O botao de finalizacao da OP continua separado.
+>
+> Validacao local obrigatoria: sintaxe dos JS/scripts OK; suites
+> `expedicao-partial-flow`, `op-latex-admin`, `expedicao-flow`,
+> `pedido-detail`, `pedido-detail-linked-ops`,
+> `tec-to-acabamento-flow`, `entrega-writes`, `op-latex-split`,
+> `cliente-pedido-summary-readmodel`, `production-flow-invariants`,
+> `production-flow-numbering-schema` e `latex-consolidation-schema` =
+> 391/391 OK.
+>
+> Validacao staging: `production-flow-invariants-diag` OK,
+> `latex-consolidation-diag` OK e novo
+> `scripts/staging/expedicao-partial-flow-diag.mjs` OK. Catalogo remoto
+> confirmou as 2 RPCs e os 2 indices da DB/31. O pedido #19 permanece
+> explicavel: OP Latex 9/2026 `em_producao` e OP Latex 10/2026
+> `concluida`, ambas sem movimento Latex acabado e sem expedicao; logo nao
+> ha saldo parcial atual. O diagnostico tambem reporta 3 itens de
+> expedicao legada total (DB/23) sem movimento Latex, classificados como
+> legado terminal, nao como falha do contrato parcial.
+>
+> Preservado: db/23 legado, split/default Latex db/25-db/29, read model
+> Cliente, `origin`, producao e dados reais de OP/pedido/expedicao
+> (nenhum write de negocio foi feito nesta fase alem da DDL em staging).
+> Backlog mantido: `RAVATEX-TAPETES-PEDIDO-STAGE-BLOCKER-EXPLANATION-R1`
+> para explicar bloqueios sem poluir as setas com texto longo.
+>
+> **Atualizacao 2026-07-05 - fase
+> `RAVATEX-TAPETES-ACABAMENTO-PARTIAL-EXPEDITION-PARITY-A-B`.**
+> Premissa registrada: Acabamento/Latex deve ter paridade conceitual com
+> Tecelagem; OP e unidade produtiva, parcial e movimento/rastro, e a
+> finalizacao da OP e terminalidade do total. A investigacao buscou
+> bloqueio indevido de liberacao parcial para expedicao.
+>
+> Diagnostico: caso 2. O bloqueio principal esta na RPC
+> `liberar_expedicao`, que em staging e no SQL versionado rejeita OP Latex
+> fora de `finalizada`/`concluida` com a mensagem "Finalize o acabamento
+> antes de liberar expedicao". A UI (`op-latex-admin.js`) e a matriz do
+> Pedido (`pedido-chain-state.js`) repetem essa regra visualmente, mas
+> mudar somente JS criaria bypass aparente sem backend capaz de liberar
+> quantidade parcial.
+>
+> Evidencia de dados: no pedido #19, OP Latex 9/2026 segue
+> `em_producao`, OP Latex 10/2026 esta `concluida`, nao ha expedicoes
+> vinculadas e nao ha movimentos `entregas.etapa='latex'` registrados. No
+> staging inteiro, as OPs Latex em producao tambem nao possuem recebimento
+> Latex parcial. A quantidade liberada atual de expedicao nasce apenas em
+> `expedicao_itens.metros_liberados`, criada pela RPC a partir do total de
+> `op_itens`, nao de quantidade acabada parcial.
+>
+> Decisao: sem patch funcional nesta fase, pois corrigir exige nova
+> migration/RPC/contrato para calcular quantidade acabada/liberavel parcial
+> a partir de `entregas`/`entrega_itens` de acabamento e evitar liberar
+> mais do que o saldo real. Backlog registrado:
+> `RAVATEX-TAPETES-PEDIDO-STAGE-BLOCKER-EXPLANATION-R1`, mantendo o texto
+> curto "Aguarde/Aguardando" nas setas e movendo explicacoes para
+> tooltip/modal/painel/lista.
+>
+> **Atualizacao 2026-07-05 - fase
 > `RAVATEX-TAPETES-ADMIN-TEC-FINALIZE-CTA-R1`.**
 > Diagnostico em staging somente leitura: pedido mais recente #19 tinha
 > OP Tecelagem 17/2026 em `em_producao`, item ajustado 5100,00 m,

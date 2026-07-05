@@ -149,10 +149,18 @@
         .maybeSingle();
       if (!expRes.error && expRes.data) expedicao = expRes.data;
 
-      render(op, movimentosLatex, origemEntregas, modelosById, latexFornecedorId, origemOp, expedicao);
+      var saldoExpedicao = null;
+      var saldoRes = await supa.rpc('consultar_saldo_expedicao_latex', { p_op_latex_id: op.id });
+      if (!saldoRes.error && saldoRes.data && saldoRes.data.ok !== false) {
+        saldoExpedicao = saldoRes.data;
+      } else if (saldoRes.error || (saldoRes.data && saldoRes.data.ok === false)) {
+        console.error('op-latex-admin: erro ao consultar saldo de expedicao', saldoRes.error || saldoRes.data);
+      }
+
+      render(op, movimentosLatex, origemEntregas, modelosById, latexFornecedorId, origemOp, expedicao, saldoExpedicao);
     }
 
-    function render(op, movimentosLatex, origemEntregas, modelosById, latexFornecedorId, origemOp, expedicao) {
+    function render(op, movimentosLatex, origemEntregas, modelosById, latexFornecedorId, origemOp, expedicao, saldoExpedicao) {
       movimentosLatex = movimentosLatex || [];
       origemEntregas = origemEntregas || [];
       var recItens = movimentosLatex.flatMap(function (ent) {
@@ -190,6 +198,8 @@
       var totalRecebido = Math.round(Object.keys(totalPorItem).reduce(function (acc, key) {
         return acc + Number(totalPorItem[key] || 0);
       }, 0) * 100) / 100;
+      var totalLiberadoExpedicao = saldoExpedicao ? Number(saldoExpedicao.liberado_total || 0) : 0;
+      var saldoDisponivelExpedicao = saldoExpedicao ? Number(saldoExpedicao.saldo_disponivel_total || 0) : 0;
       var saldoAcabamento = Math.round((totalEnviado - totalRecebido) * 100) / 100;
       var faltaAcabamento = Math.max(saldoAcabamento, 0);
       var excedenteAcabamento = saldoAcabamento < 0 ? Math.abs(saldoAcabamento) : 0;
@@ -251,6 +261,30 @@
         return true;
       }
 
+      async function liberarExpedicaoParcial(id, itens, btn) {
+        if (btn) btn.disabled = true;
+        var r = await supa.rpc('liberar_expedicao_latex_parcial', {
+          p_op_latex_id: id,
+          p_itens: itens,
+          p_observacao: 'Liberacao parcial pelo painel da OP Latex',
+        });
+        if (r.error || (r.data && r.data.ok === false)) {
+          var msg = r.error ? r.error.message : (r.data && r.data.erro ? r.data.erro : 'Liberacao parcial nao realizada');
+          toast('Erro ao liberar expedicao: ' + msg, 'error');
+          console.error(r.error || r.data);
+          if (btn) btn.disabled = false;
+          return false;
+        }
+        var expedicaoId = r.data && r.data.expedicao_id;
+        toast('Expedicao liberada.', 'success');
+        if (expedicaoId) {
+          navigate('#/expedicoes/' + expedicaoId);
+        } else {
+          await reload();
+        }
+        return true;
+      }
+
       function saldoLabel(valorBase, recebidoBase) {
         var falta = Math.round((Number(valorBase || 0) - Number(recebidoBase || 0)) * 100) / 100;
         if (falta > 0) return { text: window.fmtMetros(falta), color: '#d6403a' };
@@ -262,18 +296,42 @@
         return el('span', { style: 'display:inline-flex;align-items:center;border-radius:4px;padding:4px 9px;background:' + bg + ';color:' + color + ';font-size:11.5px;font-weight:700;white-space:nowrap;' }, label);
       }
 
-      function buildExpedicaoCard(opArg, expedicaoArg) {
+      function buildExpedicaoCard(opArg, expedicaoArg, saldoArg) {
         var statusOk = opArg.status === 'finalizada' || opArg.status === 'concluida';
+        var saldoItens = ((saldoArg && Array.isArray(saldoArg.itens)) ? saldoArg.itens : [])
+          .map(function (row) {
+            return Object.assign({}, row, {
+              acabado: Number(row.acabado || 0),
+              liberado: Number(row.liberado || 0),
+              saldo_disponivel: Number(row.saldo_disponivel || 0),
+            });
+          });
+        var liberaveis = saldoItens.filter(function (row) { return row.saldo_disponivel > 0; });
+        var saldoTotal = Math.round(liberaveis.reduce(function (acc, row) {
+          return acc + Number(row.saldo_disponivel || 0);
+        }, 0) * 100) / 100;
+        var acabadoTotal = saldoArg ? Number(saldoArg.acabado_total || 0) : 0;
+        var liberadoTotal = saldoArg ? Number(saldoArg.liberado_total || 0) : 0;
+
+        function modeloSaldoLabel(row) {
+          var modelo = modelosById[row.modelo_id];
+          return modelo ? window.rotuloModelo(modelo) : ('Item #' + row.op_item_id);
+        }
+
         var card = el('div', { style: CARD + 'padding:16px 20px;' });
         card.appendChild(el('div', { style: 'display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px;flex-wrap:wrap;' },
           el('div', { style: 'font-size:15.5px;font-weight:700;color:#16203a;' }, 'Expedicao'),
           expedicaoArg
             ? smallBadge('Expedicao ' + expedicaoArg.status, '#eaf1fd', '#2563eb')
-            : smallBadge(statusOk ? 'Aguardando liberacao' : 'Bloqueada', statusOk ? '#fff4e6' : '#f1f3f6', statusOk ? '#c2610c' : '#6b7280')));
+            : smallBadge(saldoTotal > 0 ? 'Saldo liberavel' : (statusOk ? 'Fluxo total disponivel' : 'Sem saldo'), saldoTotal > 0 ? '#e6f4ec' : (statusOk ? '#fff4e6' : '#f1f3f6'), saldoTotal > 0 ? '#18794a' : (statusOk ? '#c2610c' : '#6b7280'))));
 
         if (expedicaoArg) {
           card.appendChild(el('div', { style: 'font-size:13px;color:#5b6472;line-height:1.5;margin-bottom:12px;' },
-            'A expedicao desta OP ja foi criada. Registre entrega/coleta na tela operacional de expedicao.'));
+            'Expedicao criada. Registre entrega/coleta na tela operacional de expedicao.'));
+          card.appendChild(el('div', { style: 'display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-bottom:12px;' },
+            fieldBlock('Acabado', el('div', { style: 'font-size:14px;font-weight:700;color:#16203a;' }, window.fmtMetros(acabadoTotal))),
+            fieldBlock('Ja liberado', el('div', { style: 'font-size:14px;font-weight:700;color:#18794a;' }, window.fmtMetros(liberadoTotal))),
+            fieldBlock('Disponivel', el('div', { style: 'font-size:14px;font-weight:700;color:' + (saldoTotal > 0 ? '#2563eb' : '#8a93a3') + ';' }, window.fmtMetros(saldoTotal)))));
           card.appendChild(el('button', {
             type: 'button',
             style: BTN_SOLID_SM,
@@ -282,21 +340,63 @@
           return card;
         }
 
+        if (saldoTotal > 0) {
+          var linhas = liberaveis.map(function (row) {
+            var input = textInput({ type: 'number', step: '0.01', value: String(row.saldo_disponivel) });
+            return { row: row, input: input };
+          });
+          card.appendChild(el('div', { style: 'display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-bottom:12px;' },
+            fieldBlock('Acabado', el('div', { style: 'font-size:14px;font-weight:700;color:#16203a;' }, window.fmtMetros(acabadoTotal))),
+            fieldBlock('Ja liberado', el('div', { style: 'font-size:14px;font-weight:700;color:#18794a;' }, window.fmtMetros(liberadoTotal))),
+            fieldBlock('Disponivel', el('div', { style: 'font-size:14px;font-weight:800;color:#2563eb;' }, window.fmtMetros(saldoTotal)))));
+          card.appendChild(el('div', { style: 'border:1px solid #eceef1;border-radius:4px;overflow:hidden;margin-bottom:12px;' },
+            linhas.map(function (linha, index) {
+              return el('div', { style: 'display:grid;grid-template-columns:1fr 100px 100px 120px;gap:10px;align-items:center;padding:10px 12px;' + (index < linhas.length - 1 ? 'border-bottom:1px solid #f1f3f6;' : '') },
+                el('div', {},
+                  el('div', { style: 'font-size:13px;font-weight:700;color:#16203a;' }, modeloSaldoLabel(linha.row)),
+                  el('div', { style: 'font-size:11.5px;color:#8a93a3;margin-top:2px;' }, 'Acabado ' + window.fmtMetros(linha.row.acabado) + ' | liberado ' + window.fmtMetros(linha.row.liberado))),
+                el('div', { style: 'font-size:12.5px;color:#5b6472;font-weight:700;' }, window.fmtMetros(linha.row.saldo_disponivel)),
+                el('label', { style: 'font-size:11.5px;color:#8a93a3;font-weight:700;text-transform:uppercase;' }, 'Liberar'),
+                linha.input);
+            })));
+          card.appendChild(el('button', {
+            type: 'button',
+            style: BTN_SOLID_SM,
+            onclick: function (event) {
+              var payload = [];
+              for (var i = 0; i < linhas.length; i++) {
+                var metros = Number(linhas[i].input.value || 0);
+                if (metros > linhas[i].row.saldo_disponivel) {
+                  toast('Quantidade maior que o saldo acabado disponivel.', 'error');
+                  return;
+                }
+                if (metros > 0) payload.push({ op_item_id: linhas[i].row.op_item_id, metros: metros });
+              }
+              if (!payload.length) {
+                toast('Informe ao menos uma quantidade para liberar.', 'error');
+                return;
+              }
+              liberarExpedicaoParcial(opArg.id, payload, event && event.currentTarget ? event.currentTarget : null);
+            },
+          }, 'Liberar para expedicao'));
+          return card;
+        }
+
         if (!statusOk) {
           card.appendChild(el('div', { style: 'font-size:13px;color:#5b6472;line-height:1.5;' },
-            'Finalize o acabamento antes de liberar o material para expedicao.'));
+            'Sem quantidade acabada disponivel para expedicao.'));
           return card;
         }
 
         card.appendChild(el('div', { style: 'font-size:13px;color:#5b6472;line-height:1.5;margin-bottom:12px;' },
-          'Depois da conferencia, libere esta OP para a expedicao registrar entrega ou coleta. O pedido nao sera concluido automaticamente.'));
+          'OP terminal sem saldo parcial calculado. Use a liberacao total legada para criar a expedicao desta OP.'));
         card.appendChild(el('button', {
           type: 'button',
           style: BTN_SOLID_SM,
           onclick: function (event) {
             liberarExpedicao(opArg.id, event && event.currentTarget ? event.currentTarget : null);
           },
-        }, 'Liberar para expedicao'));
+        }, 'Liberar total para expedicao'));
         return card;
       }
 
@@ -475,10 +575,12 @@
             el('div', { style: 'display:flex;flex-direction:column;gap:9px;' },
               linhaResumo('Total ajustado da OP', window.fmtMetros(totalEnviado)),
               linhaResumo('Finalizado (pronto + entregue)', window.fmtMetros(totalRecebido)),
+              linhaResumo('Ja liberado para expedicao', window.fmtMetros(totalLiberadoExpedicao), '#18794a'),
+              linhaResumo('Disponivel para expedicao', window.fmtMetros(saldoDisponivelExpedicao), saldoDisponivelExpedicao > 0 ? '#2563eb' : '#8a93a3'),
               linhaResumo(excedenteAcabamento ? 'Excedente em acabamento' : 'Saldo em acabamento', resumoSaldoTexto, resumoSaldoCor)),
             el('div', { style: 'height:6px;border-radius:99px;background:#e2e5ea;overflow:hidden;margin:12px 0 6px;' },
               el('div', { style: 'width:' + percentualClamp + '%;height:100%;background:' + (percentualAcabamento > 100 ? '#d6403a' : '#2563eb') + ';' })),
-            el('div', { style: 'font-size:11.5px;color:#9aa2af;' }, pctLabel + '% já liberado para expedição'));
+            el('div', { style: 'font-size:11.5px;color:#9aa2af;' }, pctLabel + '% ja finalizado no acabamento'));
         }
 
         function buildItens() {
@@ -570,11 +672,11 @@
 
           return el('div', { style: CARD_PROD + 'padding:16px 20px;' },
             el('div', { style: 'display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;gap:12px;flex-wrap:wrap;' },
-              el('div', { style: 'font-size:15.5px;font-weight:700;color:#16203a;' }, '5. Finalizacao - habilita expedicao'),
-              el('button', { type: 'button', style: 'height:30px;padding:0 14px 0 18px;background:#2563eb;color:#fff;border:none;font-size:12px;font-weight:700;font-family:inherit;cursor:pointer;clip-path:polygon(0% 0%,82% 0%,100% 50%,82% 100%,0% 100%,13% 50%);white-space:nowrap;', onclick: function () { finalizar(op.id); } }, 'Finalizar')),
+              el('div', { style: 'font-size:15.5px;font-weight:700;color:#16203a;' }, '5. Finalizacao da OP'),
+              el('button', { type: 'button', style: 'height:30px;padding:0 14px 0 18px;background:#2563eb;color:#fff;border:none;font-size:12px;font-weight:700;font-family:inherit;cursor:pointer;clip-path:polygon(0% 0%,82% 0%,100% 50%,82% 100%,0% 100%,13% 50%);white-space:nowrap;', onclick: function () { finalizar(op.id); } }, 'Finalizar OP')),
             el('div', { style: 'display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin-bottom:14px;' },
-              el('div', {}, el('div', { style: 'font-size:11.5px;color:#9aa2af;margin-bottom:4px;' }, 'Disponível'), el('div', { style: 'font-size:16px;font-weight:800;color:#2563eb;' }, window.fmtMetros(faltaAcabamento))),
-              el('div', {}, el('div', { style: 'font-size:11.5px;color:#9aa2af;margin-bottom:4px;' }, 'Já liberado'), el('div', { style: 'font-size:16px;font-weight:800;color:#18794a;' }, window.fmtMetros(totalRecebido))),
+              el('div', {}, el('div', { style: 'font-size:11.5px;color:#9aa2af;margin-bottom:4px;' }, 'Acabado'), el('div', { style: 'font-size:16px;font-weight:800;color:#18794a;' }, window.fmtMetros(totalRecebido))),
+              el('div', {}, el('div', { style: 'font-size:11.5px;color:#9aa2af;margin-bottom:4px;' }, 'Pendente'), el('div', { style: 'font-size:16px;font-weight:800;color:' + (faltaAcabamento > 0 ? '#2563eb' : '#18794a') + ';' }, window.fmtMetros(faltaAcabamento))),
               el('div', {}, el('div', { style: 'font-size:11.5px;color:#9aa2af;margin-bottom:4px;' }, 'Total ajustado da OP'), el('div', { style: 'font-size:16px;font-weight:800;color:#16203a;' }, window.fmtMetros(totalEnviado)))),
             el('div', { style: 'font-size:12.5px;font-weight:700;color:#8a93a3;letter-spacing:.03em;margin-bottom:8px;' }, 'HISTORICO DE MOVIMENTOS DO ACABAMENTO'),
             historico);
@@ -625,7 +727,7 @@
           buildMaterialRecebido(),
           el('div', { id: 'movimentacao-op', style: 'display:grid;grid-template-columns:1fr 320px;gap:14px;align-items:start;margin-bottom:14px;margin-top:14px;' },
             buildMovimentacao(), buildDocumentos()),
-          buildExpedicaoCard(op, expedicao),
+          buildExpedicaoCard(op, expedicao, saldoExpedicao),
           buildHistorico());
       }
 
@@ -715,7 +817,7 @@
           });
         }
 
-        container.replaceChildren(header, info, tabela, el('div', { class: 'h-4' }), box, el('div', { class: 'h-4' }), buildExpedicaoCard(op, expedicao));
+        container.replaceChildren(header, info, tabela, el('div', { class: 'h-4' }), box, el('div', { class: 'h-4' }), buildExpedicaoCard(op, expedicao, saldoExpedicao));
         return;
       }
 

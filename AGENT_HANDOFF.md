@@ -1,4 +1,123 @@
-﻿# Estado pos-fase - Admin Tecelagem Finalize CTA R1
+﻿# Estado pos-fase - Acabamento Partial Expedition Contract B
+
+- Fase: `RAVATEX-TAPETES-ACABAMENTO-PARTIAL-EXPEDITION-CONTRACT-B`.
+- Status: OK em staging.
+- Branch/HEAD base recebido: `work/app-next`,
+  `b65f8d5e63603928c46080dc6c9b132087551657`.
+- Esta fase resolve o bloqueio documentado na fase anterior
+  `RAVATEX-TAPETES-ACABAMENTO-PARTIAL-EXPEDITION-PARITY-A-B`.
+- Causa raiz: o backend canonico de Expedicao era somente a RPC legada
+  `liberar_expedicao(BIGINT)`, que exige OP Latex `finalizada` ou
+  `concluida`; UI de Acabamento e matriz do Pedido repetiam essa regra,
+  impedindo liberar quantidade ja acabada enquanto a OP Latex seguia em
+  `em_producao`.
+- Fonte canonica adotada:
+  - acabado/liberavel: `entregas.etapa='latex'` +
+    `entrega_itens` sem defeito, por `op_item_id`;
+  - ja liberado: `expedicao_itens.metros_liberados` somado por
+    `expedicoes.op_latex_id` + `op_item_id`;
+  - saldo: acabado acumulado menos liberado acumulado.
+- Migration aplicada somente em staging `ucrjtfswnfdlxwtmxnoo`:
+  `db/31_acabamento_partial_expedition_flow.sql`.
+  Metodo: `npx.cmd supabase --workdir supabase db query --linked --file
+  D:\OneDrive\Programacao\Ravatex\controle-tapetes\db\31_acabamento_partial_expedition_flow.sql`
+  apos `supabase link --project-ref ucrjtfswnfdlxwtmxnoo`.
+  Producao `bhgifjrfagkzubpyqpew` intocada.
+- DB/31 cria:
+  - indices `entrega_itens_op_item_idx` e `expedicao_itens_op_item_idx`;
+  - RPC read-only `consultar_saldo_expedicao_latex(BIGINT)`;
+  - RPC write admin-only `liberar_expedicao_latex_parcial(BIGINT, JSONB, TEXT)`.
+- Contrato da RPC parcial:
+  - aceita OP Latex `em_producao`, `concluida` ou `finalizada`;
+  - valida item pertencente a OP e quantidade maior que zero;
+  - bloqueia `metros` acima do saldo acabado disponivel;
+  - trava OP, itens, movimentos de acabamento e itens de expedicao;
+  - cria ou reusa `expedicoes`, soma em `expedicao_itens`, recalcula
+    status da expedicao;
+  - nao atualiza `public.ops` e nao finaliza OP automaticamente.
+- Frontend:
+  - `js/screens/op-latex-admin.js`: consulta saldo por RPC, mostra
+    Acabado / Ja liberado / Disponivel, libera parcial por item e mantem
+    o botao de finalizacao separado; fluxo legado total segue apenas para
+    OP terminal sem saldo parcial;
+  - `js/screens/pedido-chain-state.js`: etapa Expedicao passa a enxergar
+    saldo acabado liberavel;
+  - `js/screens/pedido-detail-progress.js`: progresso usa acabado menos
+    liberado, sem exigir finalizacao da OP para o saldo parcial;
+  - `js/screens/pedido-detail-events.js`: modal Acabamento -> Expedicao
+    chama `liberar_expedicao_latex_parcial` com validacao local por
+    saldo.
+- Diagnostico staging:
+  - `production-flow-invariants-diag` OK;
+  - `latex-consolidation-diag` OK;
+  - `expedicao-partial-flow-diag` OK;
+  - catalogo remoto confirmou as 2 RPCs e os 2 indices da DB/31.
+- Estado real observado em staging:
+  - Pedido #19 segue explicavel: OP Latex 9/2026 `em_producao` e OP
+    Latex 10/2026 `concluida`, sem movimento `entregas.etapa='latex'` e
+    sem expedicao; portanto nao ha saldo parcial atual para liberar;
+  - staging nao possui candidato atual de OP `em_producao` com saldo
+    acabado; o contrato foi aplicado e validado por RPC/read model;
+  - 3 itens de expedicao antiga foram classificados como fluxo terminal
+    legado DB/23, sem movimento Latex, e nao como falha parcial.
+- Testes locais obrigatorios: 391/391 OK nas suites
+  `expedicao-partial-flow`, `op-latex-admin`, `expedicao-flow`,
+  `pedido-detail`, `pedido-detail-linked-ops`, `tec-to-acabamento-flow`,
+  `entrega-writes`, `op-latex-split`, `cliente-pedido-summary-readmodel`,
+  `production-flow-invariants`, `production-flow-numbering-schema` e
+  `latex-consolidation-schema`.
+- Preservado: `liberar_expedicao` legado, db/25-db/29, split/default
+  Latex, read model Cliente, `origin`, producao e dados reais de negocio.
+- Backlog mantido:
+  `RAVATEX-TAPETES-PEDIDO-STAGE-BLOCKER-EXPLANATION-R1`.
+
+# Estado pos-fase - Acabamento Partial Expedition Parity A-B
+
+- Fase: `RAVATEX-TAPETES-ACABAMENTO-PARTIAL-EXPEDITION-PARITY-A-B`.
+- Status: bloqueado para patch funcional nesta fase.
+- Premissa registrada: Acabamento/Latex deve ter paridade conceitual com
+  Tecelagem; OP e unidade produtiva, parcial e movimento/rastro, e
+  finalizacao de OP e terminalidade do total.
+- Classificacao principal: caso 2 - RPC exige OP concluida/finalizada.
+- Evidencia:
+  - `db/23_expedicao_entrega_flow.sql` e a definicao real em staging de
+    `public.liberar_expedicao(BIGINT)` contem o gate
+    `v_op.status NOT IN ('finalizada', 'concluida')`;
+  - a RPC retorna "Finalize o acabamento antes de liberar expedicao" para
+    OP Latex fora de status terminal;
+  - `js/screens/op-latex-admin.js` replica a regra no card de Expedicao
+    (`statusOk = finalizada || concluida`);
+  - `js/screens/pedido-chain-state.js` habilita `releaseExpedicao` somente
+    quando `acabFinished && !hasExpedicao`;
+  - `js/screens/pedido-detail-events.js` chama a mesma RPC canonica, sem
+    write alternativo.
+- Dados staging somente leitura:
+  - pedido analisado: #19
+    `ecebc55a-03cc-486f-9b1d-dc63995894d1`;
+  - OP Latex 9/2026 id `27`: `em_producao`, previsto 100,00 m, sem
+    recebimento Latex e sem expedicao;
+  - OP Latex 10/2026 id `28`: `concluida`, previsto 5000,00 m, sem
+    recebimento Latex e sem expedicao;
+  - no staging inteiro, OPs Latex em producao tambem nao possuem movimentos
+    `entregas.etapa='latex'` que comprovem quantidade acabada parcial.
+- Diagnostico de contrato: a quantidade liberada atual so existe depois da
+  criacao de `expedicao_itens.metros_liberados`, e a RPC atual popula esse
+  campo com o total de `op_itens`, nao com quantidade acabada parcial.
+- Decisao: nao aplicar patch JS. Liberar o CTA em UI sem mudar a RPC
+  continuaria falhando e poderia sugerir uma capacidade que o backend ainda
+  nao tem.
+- Proxima fase recomendada: criar fase de migration/RPC para liberacao
+  parcial de Acabamento -> Expedicao, definindo fonte de quantidade
+  acabada/liberavel por `entregas`/`entrega_itens` etapa `latex`,
+  idempotencia por OP/item, saldo ja liberado em `expedicao_itens` e guard
+  transacional contra excesso.
+- Backlog registrado: `RAVATEX-TAPETES-PEDIDO-STAGE-BLOCKER-EXPLANATION-R1`.
+  Manter texto de seta curto ("Aguarde" ou "Aguardando") e mostrar a
+  explicacao em tooltip, modal, popover, painel ou lista auxiliar.
+- Sem SQL mutavel, sem migration, sem dados reais novos, sem producao, sem
+  origin e sem mudancas em Cliente/read model/Latex default/split.
+
+# Estado pos-fase - Admin Tecelagem Finalize CTA R1
 
 - Fase: `RAVATEX-TAPETES-ADMIN-TEC-FINALIZE-CTA-R1`.
 - Objetivo: diagnosticar e corrigir a baixa visibilidade da acao de

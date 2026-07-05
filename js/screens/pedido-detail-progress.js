@@ -278,9 +278,7 @@
     }
     deliveredExactTotal = ns.round2(deliveredExactTotal);
 
-    var prontoExpedicao = hasExpedicaoData
-      ? expedicaoSaldo
-      : ns.round2(Math.max(finishedLatex - deliveredExactTotal, 0));
+    var prontoExpedicao = ns.round2(Math.max(finishedLatex - expedicaoLiberado, 0));
 
     var tecMeta = ns.round2(tecelagemSummaries.reduce(function (acc, row) { return acc + row.target; }, 0));
     var tecDone = ns.round2(tecelagemSummaries.reduce(function (acc, row) { return acc + row.done; }, 0));
@@ -552,7 +550,7 @@
           title: 'Movimentar Acabamento -> Expedicao',
           origem: 'Acabamento',
           destino: 'Expedicao',
-          detalhe: acabamentoSummaries.length ? 'A finalizacao continua sendo registrada na OP de acabamento (latex).' : 'Nenhuma OP de acabamento vinculada.',
+          detalhe: acabamentoSummaries.length ? 'Libere para expedicao a quantidade acabada disponivel; a finalizacao da OP continua separada.' : 'Nenhuma OP de acabamento vinculada.',
           op: acabamentoSummaries.length ? acabamentoSummaries[0].op : null,
           docs: 'NF de servico e romaneio',
           action: chainState && chainState.actions ? chainState.actions.releaseExpedicao : null,
@@ -563,7 +561,7 @@
         label: 'EXPEDICAO',
         color: '#2563eb',
         percent: totalPedido > 0 ? ns.clampPercent(((hasExpedicaoData ? expedicaoLiberado : prontoExpedicao) / totalPedido) * 100) : 0,
-        state: hasExpedicaoData && expedicaoSaldo <= 0 && expedicaoLiberado > 0
+        state: hasExpedicaoData && expedicaoSaldo <= 0 && expedicaoLiberado > 0 && prontoExpedicao <= 0
           ? 'done'
           : ((hasExpedicaoData && expedicaoLiberado > 0) || prontoExpedicao > 0 ? 'current' : 'future'),
         sublabel: hasExpedicaoData
@@ -573,7 +571,7 @@
           title: 'Registrar saida para entrega',
           origem: 'Expedicao',
           destino: 'Entrega',
-          detalhe: hasExpedicaoData ? 'Abra a expedicao vinculada para registrar entrega/coleta.' : 'Libere a expedicao a partir da OP de acabamento finalizada.',
+          detalhe: hasExpedicaoData ? 'Abra a expedicao vinculada para registrar entrega/coleta.' : 'Libere a expedicao a partir da OP de acabamento.',
           op: acabamentoSummaries.length ? acabamentoSummaries[0].op : null,
           docs: 'NF de expedicao',
           action: chainState && chainState.actions ? chainState.actions.registerDelivery : null,

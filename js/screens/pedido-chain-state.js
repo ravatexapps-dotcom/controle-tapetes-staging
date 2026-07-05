@@ -182,6 +182,26 @@
     var expedicaoEntregue = sum(expedicaoItens, 'metros_entregues');
     var expedicaoSaldo = round2(Math.max(expedicaoLiberado - expedicaoEntregue, 0));
     var hasExpedicao = expedicoes.length > 0 || expedicaoItens.length > 0;
+    var expedicoesById = {};
+    var expedicoesByOp = {};
+    expedicoes.forEach(function (expedicao) {
+      if (!expedicao) return;
+      expedicoesById[expedicao.id] = expedicao;
+      if (expedicao.op_latex_id != null) expedicoesByOp[expedicao.op_latex_id] = expedicao;
+    });
+    var liberadoByLatexOp = {};
+    expedicaoItens.forEach(function (item) {
+      var expedicao = expedicoesById[item.expedicao_id];
+      if (!expedicao || expedicao.op_latex_id == null) return;
+      liberadoByLatexOp[expedicao.op_latex_id] = round2((liberadoByLatexOp[expedicao.op_latex_id] || 0) + toFiniteNumber(item.metros_liberados));
+    });
+    var acabLiberavel = round2(acabamento.reduce(function (acc, row) {
+      return acc + Math.max(row.done - (liberadoByLatexOp[row.id] || 0), 0);
+    }, 0));
+    var hasAcabLiberavel = acabLiberavel > 0;
+    var acabTerminalSemExpedicao = acabamento.some(function (row) {
+      return (row.status === 'finalizada' || row.status === 'concluida') && !expedicoesByOp[row.id];
+    });
 
     var totalPedido = round2(toFiniteNumber(input.totalPedido || pedido.metros_total));
     // Conclusão formal depende exclusivamente do status gravado pela RPC
@@ -206,7 +226,7 @@
       clientStep = 'transporte';
       displayStatus = 'Expedicao em andamento';
       adminBadge = 'Expedicao';
-    } else if (acabFinished) {
+    } else if (hasAcabLiberavel || acabTerminalSemExpedicao || acabFinished) {
       stage = 'pronto_expedicao';
       clientStep = 'expedicao';
       displayStatus = hasExpedicao ? 'Expedicao liberada' : 'Pronto para expedicao';
@@ -239,14 +259,19 @@
     }
 
     var tecOp = tecelagem.length ? tecelagem[0].op : null;
-    var acabOp = acabamento.length ? acabamento[0].op : null;
+    var acabLiberavelSummary = acabamento.find(function (row) {
+      return Math.max(row.done - (liberadoByLatexOp[row.id] || 0), 0) > 0;
+    }) || acabamento.find(function (row) {
+      return (row.status === 'finalizada' || row.status === 'concluida') && !expedicoesByOp[row.id];
+    }) || null;
+    var acabOp = acabLiberavelSummary ? acabLiberavelSummary.op : (acabamento.length ? acabamento[0].op : null);
     var tecPendingAcceptance = !!(tecOpenAcceptance && insumosConcluidos && !tecProduction);
     var tecPendingAcceptanceOp = tecOpenAcceptance ? tecOpenAcceptance.op : null;
     var tecPendingAcceptanceLabel = tecPendingAcceptanceOp
       ? 'OP ' + tecPendingAcceptanceOp.numero + '/' + tecPendingAcceptanceOp.ano + ' pendente de aceite'
       : 'OP pendente de aceite';
     var canMoveTecToAcab = hasTec && tecRemaining > 0 && (tecProduction || tecDone > 0 || tecFinished);
-    var canReleaseExpedicao = acabFinished && !hasExpedicao;
+    var canReleaseExpedicao = hasAcabLiberavel || acabTerminalSemExpedicao;
     var canRegisterDelivery = hasExpedicao && expedicaoSaldo > 0;
 
     var actions = {
@@ -303,7 +328,7 @@
         tecelagem: { target: tecTarget, done: tecDone, remaining: tecRemaining, saldoEntregue: tecSaldoEntregue, terminal: tecFinished },
         acabamento: { target: acabTarget, done: acabDone, remaining: acabRemaining, saldoEntregue: acabSaldoEntregue, terminal: acabFinished },
         insumos: { pedidoKg: insumoPedidoKg, recebidoKg: insumoRecebidoKg, concluido: insumosConcluidos },
-        expedicao: { liberado: expedicaoLiberado, entregue: expedicaoEntregue, saldo: expedicaoSaldo },
+        expedicao: { liberado: expedicaoLiberado, entregue: expedicaoEntregue, saldo: expedicaoSaldo, liberavel: acabLiberavel },
       },
       tecPendingAcceptance: tecPendingAcceptance ? {
         label: tecPendingAcceptanceLabel,

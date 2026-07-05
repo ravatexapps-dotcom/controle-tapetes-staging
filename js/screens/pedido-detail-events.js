@@ -1053,17 +1053,113 @@
       };
     }
 
+    function buildAcabamentoLiberavelRows(ctxMovement) {
+      if (!ctxMovement.op || !Array.isArray(ctxMovement.op.op_itens)) return [];
+      var opItemIds = {};
+      ctxMovement.op.op_itens.forEach(function (opItem) {
+        if (opItem && opItem.id != null) opItemIds[opItem.id] = true;
+      });
+
+      var expedicaoIds = {};
+      (state.expedicoes || []).forEach(function (expedicao) {
+        if (String(expedicao.op_latex_id) === String(ctxMovement.op.id)) expedicaoIds[expedicao.id] = true;
+      });
+
+      var liberadoByItem = {};
+      (state.expedicaoItens || []).forEach(function (item) {
+        if (!expedicaoIds[item.expedicao_id]) return;
+        liberadoByItem[item.op_item_id] = ns.round2((liberadoByItem[item.op_item_id] || 0) + ns.toFiniteNumber(item.metros_liberados));
+      });
+
+      var acabadoByItem = {};
+      (state.entregaItens || []).forEach(function (ei) {
+        if (!opItemIds[ei.op_item_id] || ei.defeito) return;
+        var entrega = state.entregasById[ei.entrega_id];
+        if (!entrega || entrega.etapa !== 'latex') return;
+        acabadoByItem[ei.op_item_id] = ns.round2((acabadoByItem[ei.op_item_id] || 0) + ns.toFiniteNumber(ei.metros_entregues));
+      });
+
+      return ctxMovement.op.op_itens.map(function (opItem) {
+        var acabado = ns.toFiniteNumber(acabadoByItem[opItem.id]);
+        var liberado = ns.toFiniteNumber(liberadoByItem[opItem.id]);
+        return {
+          opItem: opItem,
+          acabado: ns.round2(acabado),
+          liberado: ns.round2(liberado),
+          saldo: ns.round2(Math.max(acabado - liberado, 0)),
+        };
+      });
+    }
+
     function buildAcabamentoTransferForm(ctxMovement) {
+      var rows = buildAcabamentoLiberavelRows(ctxMovement).filter(function (row) { return row.saldo > 0; });
+      if (!rows.length) {
+        return {
+          node: window.el('div', { style: 'font-size:13px;color:#5b6472;line-height:1.5;' },
+            'Sem saldo parcial calculado. Para OP terminal, a liberacao total legada continua disponivel.'),
+          saveLabel: 'Liberar expedicao',
+          onSave: async function () {
+            if (!ctxMovement.op || !window.supa) {
+              window.toast('OP de acabamento indisponivel para liberacao.', 'error');
+              return false;
+            }
+            var r = await window.supa.rpc('liberar_expedicao', { p_op_latex_id: ctxMovement.op.id });
+            if (r.error || (r.data && r.data.ok === false)) {
+              var msg = r.error ? r.error.message : (r.data && r.data.erro ? r.data.erro : 'Liberacao nao realizada');
+              window.toast('Erro ao liberar expedicao: ' + msg, 'error');
+              console.error(r.error || r.data);
+              return false;
+            }
+            return true;
+          },
+        };
+      }
+
+      var linhas = rows.map(function (row) {
+        var input = window.textInput({ type: 'number', step: '0.01', value: String(row.saldo) });
+        return { row: row, input: input };
+      });
+
       return {
-        node: window.el('div', { style: 'font-size:13px;color:#5b6472;line-height:1.5;' },
-          'Liberar expedicao usa a RPC canonica da OP de acabamento e cria/atualiza a expedicao vinculada ao Pedido.'),
+        node: window.el('div', {},
+          window.el('div', { style: 'border:1px solid #eceef1;border-radius:4px;background:#fff;overflow:hidden;' },
+            linhas.map(function (linha, index) {
+              return window.el('div', { style: 'display:grid;grid-template-columns:1fr 120px 120px 130px;gap:12px;align-items:center;padding:10px 12px;' + (index < linhas.length - 1 ? 'border-bottom:1px solid #f1f3f6;' : '') },
+                window.el('div', {},
+                  window.el('div', { style: 'font-size:13px;font-weight:700;color:#16203a;' }, modelLabelByModeloId(linha.row.opItem.modelo_id)),
+                  window.el('div', { style: 'font-size:11.5px;color:#8a93a3;margin-top:2px;' },
+                    'Acabado: ' + ns.fmtMetros(linha.row.acabado) + ' | liberado: ' + ns.fmtMetros(linha.row.liberado))),
+                window.el('div', { style: 'font-size:12.5px;font-weight:700;color:#2563eb;' }, ns.fmtMetros(linha.row.saldo)),
+                window.el('label', { style: 'font-size:11.5px;color:#8a93a3;font-weight:700;text-transform:uppercase;' }, 'Liberar'),
+                linha.input
+              );
+            })
+          )
+        ),
         saveLabel: 'Liberar expedicao',
         onSave: async function () {
           if (!ctxMovement.op || !window.supa) {
             window.toast('OP de acabamento indisponivel para liberacao.', 'error');
             return false;
           }
-          var r = await window.supa.rpc('liberar_expedicao', { p_op_latex_id: ctxMovement.op.id });
+          var payload = [];
+          for (var i = 0; i < linhas.length; i++) {
+            var metros = ns.toFiniteNumber(linhas[i].input.value);
+            if (metros > linhas[i].row.saldo) {
+              window.toast('Quantidade maior que o saldo acabado disponivel.', 'error');
+              return false;
+            }
+            if (metros > 0) payload.push({ op_item_id: linhas[i].row.opItem.id, metros: metros });
+          }
+          if (!payload.length) {
+            window.toast('Informe ao menos uma quantidade para liberar.', 'error');
+            return false;
+          }
+          var r = await window.supa.rpc('liberar_expedicao_latex_parcial', {
+            p_op_latex_id: ctxMovement.op.id,
+            p_itens: payload,
+            p_observacao: 'Liberacao parcial pelo detalhe do Pedido',
+          });
           if (r.error || (r.data && r.data.ok === false)) {
             var msg = r.error ? r.error.message : (r.data && r.data.erro ? r.data.erro : 'Liberacao nao realizada');
             window.toast('Erro ao liberar expedicao: ' + msg, 'error');
