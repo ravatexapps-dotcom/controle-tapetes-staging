@@ -294,6 +294,12 @@
           };
         });
       }
+      if (key === 'Acabamento>Expedicao') {
+        // Recebido da Tecelagem menos ja movimentado para Expedicao.
+        return buildAcabamentoLiberavelRows(ctxMovement).map(function (row) {
+          return { opItemId: row.opItem.id, target: row.recebido, moved: row.liberado, pending: row.saldo };
+        });
+      }
       if (ctxMovement.op && Array.isArray(ctxMovement.op.op_itens) && ctxMovement.op.op_itens.length) {
         var stage = typeof ns.deliveryStageForOp === 'function'
           ? ns.deliveryStageForOp(ctxMovement.op)
@@ -347,6 +353,14 @@
           return {
             label: modelLabelByModeloId(item.modelo_id),
             meta: ns.fmtMetros(entregue) + ' de ' + ns.fmtMetros(liberado) + ' · ' + (saldo > 0 ? ns.fmtMetros(saldo) + ' pendente' : 'completo'),
+          };
+        });
+      }
+      if (key === 'Acabamento>Expedicao') {
+        return buildAcabamentoLiberavelRows(ctxMovement).map(function (row) {
+          return {
+            label: modelLabelByModeloId(row.opItem.modelo_id),
+            meta: ns.fmtMetros(row.liberado) + ' de ' + ns.fmtMetros(row.recebido) + ' · ' + (row.saldo > 0 ? ns.fmtMetros(row.saldo) + ' pendente' : 'completo'),
           };
         });
       }
@@ -405,6 +419,18 @@
             label: modelLabelByModeloId(item.modelo_id),
             target: ns.fmtMetros(liberado),
             moved: ns.fmtMetros(entregue),
+            remaining: pendente > 0 ? ns.fmtMetros(pendente) : 'Completo',
+            remainingColor: pendente > 0 ? '#d6403a' : '#18794a',
+            isComplete: pendente <= 0,
+          };
+        });
+      } else if (key === 'Acabamento>Expedicao') {
+        rows = buildAcabamentoLiberavelRows(ctxMovement).map(function (row) {
+          var pendente = row.saldo;
+          return {
+            label: modelLabelByModeloId(row.opItem.modelo_id),
+            target: ns.fmtMetros(row.recebido),
+            moved: ns.fmtMetros(row.liberado),
             remaining: pendente > 0 ? ns.fmtMetros(pendente) : 'Completo',
             remainingColor: pendente > 0 ? '#d6403a' : '#18794a',
             isComplete: pendente <= 0,
@@ -494,6 +520,16 @@
           totalLabel: ns.fmtMetros(expedicao.liberado),
           movedLabel: ns.fmtMetros(expedicao.entregue),
           remainingLabel: ns.fmtMetros(expedicao.saldo),
+        };
+      }
+      if (key === 'Acabamento>Expedicao') {
+        var acabRows = buildAcabamentoLiberavelRows(ctxMovement);
+        var recebidoAcab = ns.round2(acabRows.reduce(function (acc, row) { return acc + row.recebido; }, 0));
+        var movidoAcab = ns.round2(acabRows.reduce(function (acc, row) { return acc + row.liberado; }, 0));
+        return {
+          totalLabel: ns.fmtMetros(recebidoAcab),
+          movedLabel: ns.fmtMetros(movidoAcab),
+          remainingLabel: ns.fmtMetros(ns.round2(Math.max(recebidoAcab - movidoAcab, 0))),
         };
       }
       if (!ctxMovement.op || !Array.isArray(ctxMovement.op.op_itens) || !ctxMovement.op.op_itens.length) {
@@ -1055,10 +1091,6 @@
 
     function buildAcabamentoLiberavelRows(ctxMovement) {
       if (!ctxMovement.op || !Array.isArray(ctxMovement.op.op_itens)) return [];
-      var opItemIds = {};
-      ctxMovement.op.op_itens.forEach(function (opItem) {
-        if (opItem && opItem.id != null) opItemIds[opItem.id] = true;
-      });
 
       var expedicaoIds = {};
       (state.expedicoes || []).forEach(function (expedicao) {
@@ -1071,22 +1103,19 @@
         liberadoByItem[item.op_item_id] = ns.round2((liberadoByItem[item.op_item_id] || 0) + ns.toFiniteNumber(item.metros_liberados));
       });
 
-      var acabadoByItem = {};
-      (state.entregaItens || []).forEach(function (ei) {
-        if (!opItemIds[ei.op_item_id] || ei.defeito) return;
-        var entrega = state.entregasById[ei.entrega_id];
-        if (!entrega || entrega.etapa !== 'latex') return;
-        acabadoByItem[ei.op_item_id] = ns.round2((acabadoByItem[ei.op_item_id] || 0) + ns.toFiniteNumber(ei.metros_entregues));
-      });
-
+      // Recebido no acabamento = op_item da OP Latex (acumulado a partir das
+      // entregas Tecelagem->Acabamento). Sem premissa etapa='latex'.
+      // Disponivel para movimentar = recebido - ja movimentado para expedicao.
       return ctxMovement.op.op_itens.map(function (opItem) {
-        var acabado = ns.toFiniteNumber(acabadoByItem[opItem.id]);
+        var recebido = typeof ns.targetMetersForOpItem === 'function'
+          ? ns.targetMetersForOpItem(opItem)
+          : ns.round2(opItem && opItem.metros_ajustados != null ? opItem.metros_ajustados : opItem.metros_pedidos);
         var liberado = ns.toFiniteNumber(liberadoByItem[opItem.id]);
         return {
           opItem: opItem,
-          acabado: ns.round2(acabado),
+          recebido: ns.round2(recebido),
           liberado: ns.round2(liberado),
-          saldo: ns.round2(Math.max(acabado - liberado, 0)),
+          saldo: ns.round2(Math.max(recebido - liberado, 0)),
         };
       });
     }
@@ -1096,17 +1125,17 @@
       if (!rows.length) {
         return {
           node: window.el('div', { style: 'font-size:13px;color:#5b6472;line-height:1.5;' },
-            'Sem saldo parcial calculado. Para OP terminal, a liberacao total legada continua disponivel.'),
-          saveLabel: 'Liberar expedicao',
+            'Sem saldo recebido para movimentar. Para OP terminal, a liberacao total legada continua disponivel.'),
+          saveLabel: 'Movimentar para expedicao',
           onSave: async function () {
             if (!ctxMovement.op || !window.supa) {
-              window.toast('OP de acabamento indisponivel para liberacao.', 'error');
+              window.toast('OP de acabamento indisponivel para movimentar.', 'error');
               return false;
             }
             var r = await window.supa.rpc('liberar_expedicao', { p_op_latex_id: ctxMovement.op.id });
             if (r.error || (r.data && r.data.ok === false)) {
-              var msg = r.error ? r.error.message : (r.data && r.data.erro ? r.data.erro : 'Liberacao nao realizada');
-              window.toast('Erro ao liberar expedicao: ' + msg, 'error');
+              var msg = r.error ? r.error.message : (r.data && r.data.erro ? r.data.erro : 'Movimentacao nao realizada');
+              window.toast('Erro ao movimentar para expedicao: ' + msg, 'error');
               console.error(r.error || r.data);
               return false;
             }
@@ -1128,41 +1157,41 @@
                 window.el('div', {},
                   window.el('div', { style: 'font-size:13px;font-weight:700;color:#16203a;' }, modelLabelByModeloId(linha.row.opItem.modelo_id)),
                   window.el('div', { style: 'font-size:11.5px;color:#8a93a3;margin-top:2px;' },
-                    'Acabado: ' + ns.fmtMetros(linha.row.acabado) + ' | liberado: ' + ns.fmtMetros(linha.row.liberado))),
+                    'Recebido: ' + ns.fmtMetros(linha.row.recebido) + ' | movimentado: ' + ns.fmtMetros(linha.row.liberado))),
                 window.el('div', { style: 'font-size:12.5px;font-weight:700;color:#2563eb;' }, ns.fmtMetros(linha.row.saldo)),
-                window.el('label', { style: 'font-size:11.5px;color:#8a93a3;font-weight:700;text-transform:uppercase;' }, 'Liberar'),
+                window.el('label', { style: 'font-size:11.5px;color:#8a93a3;font-weight:700;text-transform:uppercase;' }, 'Movimentar'),
                 linha.input
               );
             })
           )
         ),
-        saveLabel: 'Liberar expedicao',
+        saveLabel: 'Movimentar para expedicao',
         onSave: async function () {
           if (!ctxMovement.op || !window.supa) {
-            window.toast('OP de acabamento indisponivel para liberacao.', 'error');
+            window.toast('OP de acabamento indisponivel para movimentar.', 'error');
             return false;
           }
           var payload = [];
           for (var i = 0; i < linhas.length; i++) {
             var metros = ns.toFiniteNumber(linhas[i].input.value);
             if (metros > linhas[i].row.saldo) {
-              window.toast('Quantidade maior que o saldo acabado disponivel.', 'error');
+              window.toast('Quantidade maior que o saldo disponivel para movimentar.', 'error');
               return false;
             }
             if (metros > 0) payload.push({ op_item_id: linhas[i].row.opItem.id, metros: metros });
           }
           if (!payload.length) {
-            window.toast('Informe ao menos uma quantidade para liberar.', 'error');
+            window.toast('Informe ao menos uma quantidade para movimentar.', 'error');
             return false;
           }
           var r = await window.supa.rpc('liberar_expedicao_latex_parcial', {
             p_op_latex_id: ctxMovement.op.id,
             p_itens: payload,
-            p_observacao: 'Liberacao parcial pelo detalhe do Pedido',
+            p_observacao: 'Movimentacao Acabamento -> Expedicao pelo detalhe do Pedido',
           });
           if (r.error || (r.data && r.data.ok === false)) {
-            var msg = r.error ? r.error.message : (r.data && r.data.erro ? r.data.erro : 'Liberacao nao realizada');
-            window.toast('Erro ao liberar expedicao: ' + msg, 'error');
+            var msg = r.error ? r.error.message : (r.data && r.data.erro ? r.data.erro : 'Movimentacao nao realizada');
+            window.toast('Erro ao movimentar para expedicao: ' + msg, 'error');
             console.error(r.error || r.data);
             return false;
           }

@@ -143,6 +143,27 @@
       opById[op.id] = op;
     });
 
+    // Movido para a Expedicao por OP Latex (paridade com Tecelagem): a saida
+    // de uma OP de Acabamento e o que ja foi movimentado para a Expedicao,
+    // nao um movimento intermediario etapa='latex'.
+    var expedicoesByIdEarly = {};
+    (state.expedicoes || []).forEach(function (expedicao) {
+      if (expedicao) expedicoesByIdEarly[expedicao.id] = expedicao;
+    });
+    var liberadoByLatexOp = {};
+    var liberadoByLatexOpItem = {};
+    var entregueByLatexOpItem = {};
+    (state.expedicaoItens || []).forEach(function (row) {
+      var expedicao = expedicoesByIdEarly[row.expedicao_id];
+      if (expedicao && expedicao.op_latex_id != null) {
+        liberadoByLatexOp[expedicao.op_latex_id] = ns.round2((liberadoByLatexOp[expedicao.op_latex_id] || 0) + ns.toFiniteNumber(row.metros_liberados));
+      }
+      if (row.op_item_id != null) {
+        liberadoByLatexOpItem[row.op_item_id] = ns.round2((liberadoByLatexOpItem[row.op_item_id] || 0) + ns.toFiniteNumber(row.metros_liberados));
+        entregueByLatexOpItem[row.op_item_id] = ns.round2((entregueByLatexOpItem[row.op_item_id] || 0) + ns.toFiniteNumber(row.metros_entregues));
+      }
+    });
+
     state.ops.forEach(function (op) {
       var totalTarget = 0;
       var doneTarget = 0;
@@ -171,6 +192,11 @@
 
       totalTarget = ns.round2(totalTarget);
       doneTarget = ns.round2(doneTarget);
+      // Acabamento: "movido" da OP = ja movimentado para a Expedicao;
+      // "remaining" = em acabamento = recebido - movimentado.
+      if (stageKeyForOp(op) === 'acabamento') {
+        doneTarget = ns.round2(liberadoByLatexOp[op.id] || 0);
+      }
       var remaining = ns.round2(Math.max(totalTarget - doneTarget, 0));
       var modelNames = Object.keys(itemNamesMap);
       var progress = totalTarget > 0
@@ -278,7 +304,8 @@
     }
     deliveredExactTotal = ns.round2(deliveredExactTotal);
 
-    var prontoExpedicao = ns.round2(Math.max(finishedLatex - expedicaoLiberado, 0));
+    // Pronto/expedicao = ja movimentado para a Expedicao - entregue ao cliente.
+    var prontoExpedicao = expedicaoSaldo;
 
     var tecMeta = ns.round2(tecelagemSummaries.reduce(function (acc, row) { return acc + row.target; }, 0));
     var tecDone = ns.round2(tecelagemSummaries.reduce(function (acc, row) { return acc + row.done; }, 0));
@@ -320,21 +347,15 @@
 
     if (!partialMeta.anyDeliveredBreakdown && deliveredExactTotal > 0) {
       var fallbackRows = state.itens.map(function (item) {
-        var finishedByItem = 0;
+        var recebidoByItem = 0;
         opItemsFlat.forEach(function (row) {
           if ((row.opItem.pedido_item_id || (uniquePedidoItemByModelo[row.opItem.modelo_id] && uniquePedidoItemByModelo[row.opItem.modelo_id].id)) !== item.id) return;
           if (stageKeyForOp(row.op) !== 'acabamento') return;
-          state.entregaItens.forEach(function (ei) {
-            if (ei.op_item_id !== row.opItem.id || ei.defeito) return;
-            var entrega = state.entregasById[ei.entrega_id];
-            if (entrega && entrega.etapa === 'latex') {
-              finishedByItem += ns.toFiniteNumber(ei.metros_entregues);
-            }
-          });
+          recebidoByItem += targetMetersForOpItem(row.opItem);
         });
         return {
           itemId: item.id,
-          weight: finishedByItem > 0 ? finishedByItem : ns.toFiniteNumber(item.metros),
+          weight: recebidoByItem > 0 ? recebidoByItem : ns.toFiniteNumber(item.metros),
         };
       });
       fallbackDeliveredByItem = allocateByWeight(deliveredExactTotal, fallbackRows, 'itemId');
@@ -346,6 +367,7 @@
       var tecDoneItem = 0;
       var acabTotal = 0;
       var acabDoneItem = 0;
+      var acabEntregueItem = 0;
 
       opItemsFlat.forEach(function (row) {
         var resolvedPedidoItemId = row.opItem.pedido_item_id
@@ -359,6 +381,10 @@
           tecTotal += targetMetersForOpItem(row.opItem);
         } else {
           acabTotal += targetMetersForOpItem(row.opItem);
+          // Acabamento: movido = ja movimentado para a Expedicao por op_item;
+          // entregue = ja entregue ao cliente por op_item.
+          acabDoneItem += ns.toFiniteNumber(liberadoByLatexOpItem[row.opItem.id]);
+          acabEntregueItem += ns.toFiniteNumber(entregueByLatexOpItem[row.opItem.id]);
         }
 
         state.entregaItens.forEach(function (ei) {
@@ -368,9 +394,6 @@
           if (stageKeyForOp(row.op) === 'tecelagem' && entrega.etapa === 'cima') {
             tecDoneItem += ns.toFiniteNumber(ei.metros_entregues);
           }
-          if (stageKeyForOp(row.op) === 'acabamento' && entrega.etapa === 'latex') {
-            acabDoneItem += ns.toFiniteNumber(ei.metros_entregues);
-          }
         });
       });
 
@@ -378,11 +401,12 @@
       tecDoneItem = ns.round2(tecDoneItem);
       acabTotal = ns.round2(acabTotal);
       acabDoneItem = ns.round2(acabDoneItem);
+      acabEntregueItem = ns.round2(acabEntregueItem);
 
       var deliveredItem = partialMeta.anyDeliveredBreakdown
         ? ns.toFiniteNumber(partialMeta.deliveredByItem[item.id])
         : (hasExpedicaoData
-          ? ns.toFiniteNumber(expedicaoDeliveredByItem[item.id])
+          ? acabEntregueItem
           : ns.toFiniteNumber(fallbackDeliveredByItem[item.id]));
       deliveredItem = ns.round2(deliveredItem);
 
@@ -550,7 +574,7 @@
           title: 'Movimentar Acabamento -> Expedicao',
           origem: 'Acabamento',
           destino: 'Expedicao',
-          detalhe: acabamentoSummaries.length ? 'Libere para expedicao a quantidade acabada disponivel; a finalizacao da OP continua separada.' : 'Nenhuma OP de acabamento vinculada.',
+          detalhe: acabamentoSummaries.length ? 'Movimente para expedicao a quantidade recebida da tecelagem ainda disponivel; a finalizacao da OP continua separada.' : 'Nenhuma OP de acabamento vinculada.',
           op: acabamentoSummaries.length ? acabamentoSummaries[0].op : null,
           docs: 'NF de servico e romaneio',
           action: chainState && chainState.actions ? chainState.actions.releaseExpedicao : null,

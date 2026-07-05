@@ -3,9 +3,11 @@
 // Diagnostico READ-ONLY do contrato de expedicao parcial de acabamento
 // em Supabase STAGING (ucrjtfswnfdlxwtmxnoo).
 //
-// Fase: RAVATEX-TAPETES-ACABAMENTO-PARTIAL-EXPEDITION-CONTRACT-B
+// Fase: RAVATEX-TAPETES-ACABAMENTO-EXPEDICAO-FLOW-COHERENCE-C
 //
-// - Recalcula saldo liberavel por SELECT nas tabelas de movimento.
+// - recebido no acabamento = entregas Tecelagem->Acabamento (etapa=cima)
+//   vinculadas por op_latex_entregas; disponivel = recebido - ja movimentado.
+// - Recalcula saldo movimentavel por SELECT nas tabelas de movimento.
 // - Chama somente a RPC read-only consultar_saldo_expedicao_latex.
 // - Bloqueia se a URL for producao (bhgifjrfagkzubpyqpew).
 // - Exige URL de staging (ucrjtfswnfdlxwtmxnoo).
@@ -80,7 +82,7 @@ async function rpcRead(name, payload) {
 
 async function sqlCatalogDiag() {
   const dbUrl = process.env.STAGING_DB_URL || process.env.DB_URL || process.env.DATABASE_URL || '';
-  console.log('\n===== DB/31 CATALOGO SQL (opcional) =====');
+  console.log('\n===== DB/31+DB/32 CATALOGO SQL (opcional) =====');
   if (!dbUrl) {
     console.log('Checagem SQL pulada: STAGING_DB_URL/DB_URL/DATABASE_URL ausente.');
     return;
@@ -103,11 +105,11 @@ async function sqlCatalogDiag() {
       SELECT indexname
         FROM pg_indexes
        WHERE schemaname = 'public'
-         AND indexname IN ('entrega_itens_op_item_idx', 'expedicao_itens_op_item_idx')
+         AND indexname IN ('entrega_itens_op_item_idx', 'expedicao_itens_op_item_idx', 'entrega_itens_entrega_idx')
        ORDER BY indexname
     `);
-    console.log('RPCs DB/31:', procs.rows.length ? procs.rows.map((row) => row.proname + '(' + row.args + ')').join(' | ') : 'AUSENTES');
-    console.log('Indices DB/31:', idx.rows.length ? idx.rows.map((row) => row.indexname).join(', ') : 'AUSENTES');
+    console.log('RPCs DB/31+DB/32:', procs.rows.length ? procs.rows.map((row) => row.proname + '(' + row.args + ')').join(' | ') : 'AUSENTES');
+    console.log('Indices DB/31+DB/32:', idx.rows.length ? idx.rows.map((row) => row.indexname).join(', ') : 'AUSENTES');
   } finally {
     await client.end();
   }
@@ -125,10 +127,14 @@ function add(map, key, value) {
     'ops?tipo=eq.latex&select=id,numero,ano,tipo,status,lote_id,origem_op_id,destino_fornecedor_id,motivo_separacao,criado_em,op_itens(id,pedido_item_id,modelo_id,metros_pedidos,metros_ajustados)&order=id.asc'
   );
   const lotes = await sel('lotes?select=id,numero,pedido_id,cliente_id&order=id.asc');
-  const pedidos19 = await sel('pedidos?numero=eq.19&select=id,numero,status,status_cliente_visual&order=criado_em.desc');
-  const entregasLatex = await sel(
-    'entregas?etapa=eq.latex&select=id,etapa,data,fornecedor_id,entrega_itens(id,op_id,op_item_id,metros_entregues,defeito)&order=id.asc'
+  const pedidosAlvo = await sel('pedidos?numero=eq.20&select=id,numero,status,status_cliente_visual&order=criado_em.desc');
+  // Recebido no acabamento vem das entregas Tecelagem->Acabamento (etapa=cima)
+  // vinculadas por op_latex_entregas. NAO de entregas etapa=latex.
+  const opLatexEntregas = await sel('op_latex_entregas?select=op_latex_id,entrega_id&order=id.asc');
+  const entregasCima = await sel(
+    'entregas?etapa=eq.cima&select=id,etapa,data,fornecedor_id,entrega_itens(id,op_id,op_item_id,modelo_id,metros_entregues,defeito)&order=id.asc'
   );
+  const allOpItens = await sel('op_itens?select=id,modelo_id&order=id.asc');
   const expedicoes = await sel('expedicoes?select=id,pedido_id,op_latex_id,lote_id,status,criado_em,atualizado_em&order=id.asc');
   const expedicaoItens = await sel('expedicao_itens?select=id,expedicao_id,op_item_id,pedido_item_id,modelo_id,metros_liberados,metros_entregues&order=id.asc');
 
@@ -138,11 +144,20 @@ function add(map, key, value) {
   const expedicoesByOp = {};
   expedicoes.forEach((exp) => { expedicoesByOp[String(exp.op_latex_id)] = exp; });
 
-  const acabadoByOpItem = {};
-  entregasLatex.forEach((entrega) => {
-    (entrega.entrega_itens || []).forEach((item) => {
-      if (item.defeito || item.op_item_id == null) return;
-      add(acabadoByOpItem, item.op_item_id, item.metros_entregues);
+  const opItemModeloById = Object.fromEntries(allOpItens.map((it) => [String(it.id), it.modelo_id]));
+  const entregasCimaById = Object.fromEntries(entregasCima.map((e) => [String(e.id), e]));
+
+  // recebido por (op_latex_id::modelo_id): mesma logica de gerar_op_latex /
+  // db/32 (agrupa cima entregas linkadas por modelo do op_item de tecelagem).
+  const recebidoByOpModelo = {};
+  opLatexEntregas.forEach((link) => {
+    const ent = entregasCimaById[String(link.entrega_id)];
+    if (!ent) return;
+    (ent.entrega_itens || []).forEach((ei) => {
+      if (ei.defeito || !(Number(ei.metros_entregues) > 0)) return;
+      const modelo = opItemModeloById[String(ei.op_item_id)] ?? ei.modelo_id;
+      if (modelo == null) return;
+      add(recebidoByOpModelo, String(link.op_latex_id) + '::' + String(modelo), ei.metros_entregues);
     });
   });
 
@@ -157,7 +172,7 @@ function add(map, key, value) {
   latexOps.forEach((op) => {
     (op.op_itens || []).forEach((item) => {
       const previsto = round2(item.metros_ajustados || item.metros_pedidos || 0);
-      const acabado = round2(acabadoByOpItem[String(item.id)] || 0);
+      const recebido = round2(recebidoByOpModelo[String(op.id) + '::' + String(item.modelo_id)] || 0);
       const liberado = round2(liberadoByOpItem[String(item.id)] || 0);
       const entregue = round2(entregueByOpItem[String(item.id)] || 0);
       itemRows.push({
@@ -166,10 +181,10 @@ function add(map, key, value) {
         pedido_item_id: item.pedido_item_id,
         modelo_id: item.modelo_id,
         previsto,
-        acabado,
+        recebido,
         liberado,
         entregue,
-        saldo: round2(Math.max(acabado - liberado, 0)),
+        saldo: round2(Math.max(recebido - liberado, 0)),
       });
     });
   });
@@ -177,10 +192,10 @@ function add(map, key, value) {
   const rowsByOp = {};
   itemRows.forEach((row) => { (rowsByOp[String(row.op.id)] = rowsByOp[String(row.op.id)] || []).push(row); });
 
-  const overReleaseRaw = itemRows.filter((row) => row.liberado > row.acabado + EPS);
+  const overReleaseRaw = itemRows.filter((row) => row.liberado > row.recebido + EPS);
   const legacyTotalReleaseRows = overReleaseRaw.filter((row) => {
     const terminal = row.op.status === 'concluida' || row.op.status === 'finalizada';
-    return terminal && row.acabado <= EPS && row.liberado <= row.previsto + EPS;
+    return terminal && row.liberado <= row.previsto + EPS;
   });
   const overRelease = overReleaseRaw.filter((row) => legacyTotalReleaseRows.indexOf(row) === -1);
   const overDelivery = expedicaoItens.filter((item) => Number(item.metros_entregues || 0) > Number(item.metros_liberados || 0) + EPS);
@@ -212,7 +227,7 @@ function add(map, key, value) {
       const rows = rowsByOp[String(op.id)] || [];
       return {
         op,
-        acabado: round2(rows.reduce((acc, row) => acc + row.acabado, 0)),
+        recebido: round2(rows.reduce((acc, row) => acc + row.recebido, 0)),
         liberado: round2(rows.reduce((acc, row) => acc + row.liberado, 0)),
         saldo: round2(rows.reduce((acc, row) => acc + row.saldo, 0)),
       };
@@ -220,26 +235,26 @@ function add(map, key, value) {
     .filter((row) => row.saldo > EPS);
 
   console.log('\n===== RESUMO =====');
-  console.log('OPs latex:', latexOps.length, '| entregas latex:', entregasLatex.length, '| expedicoes:', expedicoes.length, '| expedicao_itens:', expedicaoItens.length);
-  console.log('OPs em_producao com saldo acabado liberavel:', partialCandidates.length);
+  console.log('OPs latex:', latexOps.length, '| entregas cima:', entregasCima.length, '| vinculos op_latex_entregas:', opLatexEntregas.length, '| expedicoes:', expedicoes.length, '| expedicao_itens:', expedicaoItens.length);
+  console.log('OPs em_producao com saldo recebido movimentavel:', partialCandidates.length);
   partialCandidates.slice(0, 8).forEach((row) => {
     console.log('  - ' + opLabel(row.op) + ' status=' + row.op.status
-      + ' acabado=' + fmt(row.acabado) + ' liberado=' + fmt(row.liberado) + ' disponivel=' + fmt(row.saldo));
+      + ' recebido=' + fmt(row.recebido) + ' movimentado=' + fmt(row.liberado) + ' disponivel=' + fmt(row.saldo));
   });
   if (!partialCandidates.length) {
     console.log('  (sem candidato atual em staging; invariantes de excesso ainda foram recalculadas)');
   }
 
   console.log('\n===== INVARIANTES DE QUANTIDADE =====');
-  console.log('Liberacao parcial > acabado:', overRelease.length ? 'FAIL ' + overRelease.length : 'OK 0');
+  console.log('Movimentado para expedicao > recebido:', overRelease.length ? 'FAIL ' + overRelease.length : 'OK 0');
   overRelease.slice(0, 12).forEach((row) => {
     console.log('  - ' + opLabel(row.op) + ' item ' + row.op_item_id
-      + ' acabado=' + fmt(row.acabado) + ' liberado=' + fmt(row.liberado));
+      + ' recebido=' + fmt(row.recebido) + ' movimentado=' + fmt(row.liberado));
   });
-  console.log('Liberacao legada total sem movimento latex:', legacyTotalReleaseRows.length ? legacyTotalReleaseRows.length + ' item(ns) reportado(s)' : '0');
+  console.log('Liberacao legada total (db/23) tolerada:', legacyTotalReleaseRows.length ? legacyTotalReleaseRows.length + ' item(ns) reportado(s)' : '0');
   legacyTotalReleaseRows.slice(0, 12).forEach((row) => {
     console.log('  - ' + opLabel(row.op) + ' item ' + row.op_item_id
-      + ' previsto=' + fmt(row.previsto) + ' acabado=' + fmt(row.acabado)
+      + ' previsto=' + fmt(row.previsto) + ' recebido=' + fmt(row.recebido)
       + ' liberado=' + fmt(row.liberado) + ' (db/23 terminal legado)');
   });
   console.log('Entrega/coleta > liberado:', overDelivery.length ? 'FAIL ' + overDelivery.length : 'OK 0');
@@ -265,21 +280,23 @@ function add(map, key, value) {
   }
   console.log('Sem OP criada por liberacao parcial: validado por inexistencia de nova OP default duplicada e por expedicoes vinculadas a OP latex existente.');
 
-  const rpcTarget = partialCandidates[0]?.op || latexOps.find((op) => (rowsByOp[String(op.id)] || []).some((row) => row.acabado > 0)) || latexOps[0];
+  const rpcTarget = partialCandidates[0]?.op || latexOps.find((op) => (rowsByOp[String(op.id)] || []).some((row) => row.recebido > 0)) || latexOps[0];
   if (rpcTarget) {
     console.log('\n===== RPC READ-ONLY consultar_saldo_expedicao_latex =====');
     const rpc = await rpcRead('consultar_saldo_expedicao_latex', { p_op_latex_id: rpcTarget.id });
     if (!rpc || rpc.ok !== true) die('consultar_saldo_expedicao_latex retornou erro: ' + JSON.stringify(rpc));
     console.log(opLabel(rpcTarget) + ' status=' + rpc.op_status
       + ' previsto=' + fmt(rpc.previsto_total)
-      + ' acabado=' + fmt(rpc.acabado_total)
-      + ' liberado=' + fmt(rpc.liberado_total)
-      + ' disponivel=' + fmt(rpc.saldo_disponivel_total)
+      + ' recebido=' + fmt(rpc.recebido_total)
+      + ' movimentado=' + fmt(rpc.liberado_total)
+      + ' disponivel=' + fmt(rpc.disponivel_total)
+      + ' saldo_em_acabamento=' + fmt(rpc.saldo_em_acabamento_total)
+      + ' entregue=' + fmt(rpc.entregue_total)
       + ' itens=' + ((rpc.itens || []).length));
   }
 
   console.log('\n===== PEDIDO ANALISADO =====');
-  let selectedPedido = pedidos19[0] || null;
+  let selectedPedido = pedidosAlvo[0] || null;
   if (!selectedPedido) {
     const fromCandidate = partialCandidates[0]?.op;
     const candidateLote = fromCandidate ? lotesById[String(fromCandidate.lote_id)] : null;
@@ -307,8 +324,8 @@ function add(map, key, value) {
       const rows = rowsByOp[String(op.id)] || [];
       const exp = expedicoesByOp[String(op.id)];
       console.log('  - ' + opLabel(op) + ' status=' + op.status
-        + ' acabado=' + fmt(rows.reduce((acc, row) => acc + row.acabado, 0))
-        + ' liberado=' + fmt(rows.reduce((acc, row) => acc + row.liberado, 0))
+        + ' recebido=' + fmt(rows.reduce((acc, row) => acc + row.recebido, 0))
+        + ' movimentado=' + fmt(rows.reduce((acc, row) => acc + row.liberado, 0))
         + ' disponivel=' + fmt(rows.reduce((acc, row) => acc + row.saldo, 0))
         + ' expedicao=' + (exp ? '#' + exp.id + ':' + exp.status : 'nenhuma'));
     });

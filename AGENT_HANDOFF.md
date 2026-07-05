@@ -1,4 +1,70 @@
-﻿# Estado pos-fase - Acabamento Partial Expedition Contract B
+﻿# Estado pos-fase - Acabamento Expedicao Flow Coherence C
+
+- Fase: `RAVATEX-TAPETES-ACABAMENTO-EXPEDICAO-FLOW-COHERENCE-C`.
+- Status: OK em staging.
+- Branch/HEAD base recebido: `work/app-next`,
+  `4fb655d19fb5c0e3a53951f0e4bec676ece8268e`.
+- Premissa (decidida, nao aberta): Acabamento/Latex em paridade com
+  Tecelagem; parcial e movimento/rastro; a OP continua aberta enquanto ha
+  saldo; movimentar parcial NAO finaliza a OP; finalizar a OP e
+  terminalidade do total; NAO existe etapa intermediaria obrigatoria
+  "registrar acabamento"; o movimento Acabamento -> Expedicao e a propria
+  declaracao de que a quantidade ficou acabada/liberada.
+- Causa raiz: a db/31 (CONTRACT-B) calculava "acabado" liberavel a partir
+  de `entregas.etapa='latex'` (etapa que so nasce no portal do fornecedor,
+  ausente no fluxo admin), entao o saldo liberavel ficava 0 e a expedicao
+  travava mesmo com material recebido da Tecelagem.
+- Contrato depois:
+  - recebido_no_acabamento = SUM(entrega_itens das entregas
+    Tecelagem->Acabamento etapa='cima' vinculadas por op_latex_entregas,
+    por modelo -> op_item da OP Latex) (== op_itens acumulados);
+  - ja_movimentado = SUM(expedicao_itens.metros_liberados) por
+    op_latex_id + op_item_id;
+  - disponivel = saldo_em_acabamento = recebido - ja_movimentado.
+- Migration criada e aplicada SOMENTE em staging `ucrjtfswnfdlxwtmxnoo`
+  (producao `bhgifjrfagkzubpyqpew` intocada):
+  `db/32_acabamento_expedicao_direct_movement.sql`. Aplicada via `pg`
+  client com guarda anti-producao; transacao BEGIN/COMMIT concluida.
+  Sobrescreve `consultar_saldo_expedicao_latex(BIGINT)` (retorna
+  recebido/liberado/disponivel/entregue/saldo_em_acabamento totais e por
+  item) e `liberar_expedicao_latex_parcial(BIGINT, JSONB, TEXT)` (guarda
+  por recebido - ja_movimentado; aceita em_producao/concluida/finalizada;
+  nao altera ops.status; cria/reusa expedicao; soma metros_liberados).
+  Cria o indice `entrega_itens_entrega_idx`.
+- RPC legada `liberar_expedicao(BIGINT)` (db/23) preservada como atalho de
+  liberacao total terminal.
+- Frontend:
+  - `op-latex-admin.js`: resumo canonico (Recebido da Tecelagem / Ja
+    movimentado para Expedicao / Disponivel para movimentar / Entregue ao
+    Cliente / Saldo em Acabamento); CTA "Movimentar para Expedicao";
+    "Finalizar OP" separado; removida a nocao de "registrar acabamento"
+    ("Novo recebimento"); item table Recebido/Movimentado/Disponivel/
+    Entregue; fallback para op_itens quando a RPC nao traz os novos campos.
+  - `pedido-chain-state.js`: `acabLiberavel`/`acabLiberavelSummary` por
+    recebido(op_itens) - movimentado, so para OP nao-aberta.
+  - `pedido-detail-progress.js`: acab `done` = movido para expedicao;
+    em_acabamento = recebido - movimentado; pronto_expedicao = saldo da
+    expedicao (movimentado - entregue); por item usa liberado/entregue de
+    expedicao_itens; fallback de rateio por op_itens (sem etapa=latex).
+  - `pedido-detail-events.js`: modal Acabamento -> Expedicao e as
+    metricas/tabela da transicao usam recebido - liberado; textos/CTA de
+    "movimentar".
+  - `expedicao-admin.js`: sem alteracao (ja limita entrega a liberado).
+- Pedido #20 (id ad988da1-df36-4441-afef-16d9172f5c01): OP Acabamento
+  11/2026 (id 30) em_producao; staging pos-fix confirma recebido=1000,
+  movimentado=0, disponivel=1000, expedicao=nenhuma.
+- Testes locais obrigatorios: 393/393 OK.
+- Diagnosticos staging: `production-flow-invariants-diag` OK,
+  `latex-consolidation-diag` OK (0 duplicidade, split 1 legitimo),
+  `expedicao-partial-flow-diag` reescrito OK (4 OPs em_producao com saldo
+  recebido movimentavel; invariantes de quantidade OK; catalogo confirma as
+  2 RPCs e `entrega_itens_entrega_idx`).
+- Backlog mantido:
+  `RAVATEX-TAPETES-PEDIDO-STAGE-BLOCKER-EXPLANATION-R1`.
+- Nao tocado: producao, `origin` para escrita, db/23/db/25-db/29,
+  read model Cliente, split/default Latex.
+
+# Estado pos-fase - Acabamento Partial Expedition Contract B
 
 - Fase: `RAVATEX-TAPETES-ACABAMENTO-PARTIAL-EXPEDITION-CONTRACT-B`.
 - Status: OK em staging.

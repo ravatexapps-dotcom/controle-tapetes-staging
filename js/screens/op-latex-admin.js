@@ -198,12 +198,27 @@
       var totalRecebido = Math.round(Object.keys(totalPorItem).reduce(function (acc, key) {
         return acc + Number(totalPorItem[key] || 0);
       }, 0) * 100) / 100;
-      var totalLiberadoExpedicao = saldoExpedicao ? Number(saldoExpedicao.liberado_total || 0) : 0;
-      var saldoDisponivelExpedicao = saldoExpedicao ? Number(saldoExpedicao.saldo_disponivel_total || 0) : 0;
-      var saldoAcabamento = Math.round((totalEnviado - totalRecebido) * 100) / 100;
-      var faltaAcabamento = Math.max(saldoAcabamento, 0);
-      var excedenteAcabamento = saldoAcabamento < 0 ? Math.abs(saldoAcabamento) : 0;
-      var percentualAcabamento = totalEnviado > 0 ? Math.round((totalRecebido / totalEnviado) * 1000) / 10 : 0;
+      // Contrato direto Acabamento -> Expedicao (db/32): a fonte canonica de
+      // saldo e a RPC consultar_saldo_expedicao_latex. "Recebido da Tecelagem"
+      // e o material que entrou na OP Latex (entregas etapa='cima' via
+      // op_latex_entregas). Nao existe etapa intermediaria "registrar
+      // acabamento"; movimentar para a Expedicao e a propria liberacao.
+      var recebidoTecelagem = (saldoExpedicao && saldoExpedicao.recebido_total != null)
+        ? Number(saldoExpedicao.recebido_total) : totalEnviado;
+      var movimentadoExpedicao = (saldoExpedicao && saldoExpedicao.liberado_total != null)
+        ? Number(saldoExpedicao.liberado_total) : 0;
+      var disponivelMovimentar = (saldoExpedicao && saldoExpedicao.disponivel_total != null)
+        ? Number(saldoExpedicao.disponivel_total)
+        : Math.max(Math.round((recebidoTecelagem - movimentadoExpedicao) * 100) / 100, 0);
+      var entregueCliente = (saldoExpedicao && saldoExpedicao.entregue_total != null)
+        ? Number(saldoExpedicao.entregue_total) : 0;
+      var saldoEmAcabamento = (saldoExpedicao && saldoExpedicao.saldo_em_acabamento_total != null)
+        ? Number(saldoExpedicao.saldo_em_acabamento_total) : disponivelMovimentar;
+      var saldoItemById = {};
+      ((saldoExpedicao && Array.isArray(saldoExpedicao.itens)) ? saldoExpedicao.itens : []).forEach(function (row) {
+        if (row && row.op_item_id != null) saldoItemById[row.op_item_id] = row;
+      });
+      var movimentadoPercent = recebidoTecelagem > 0 ? Math.round((movimentadoExpedicao / recebidoTecelagem) * 1000) / 10 : 0;
       var latexFornecedorNome = ((op.op_fornecedores || []).find(function (row) {
         return row.etapa === 'latex';
       }) || {}).fornecedores?.nome || '---';
@@ -269,14 +284,14 @@
           p_observacao: 'Liberacao parcial pelo painel da OP Latex',
         });
         if (r.error || (r.data && r.data.ok === false)) {
-          var msg = r.error ? r.error.message : (r.data && r.data.erro ? r.data.erro : 'Liberacao parcial nao realizada');
-          toast('Erro ao liberar expedicao: ' + msg, 'error');
+          var msg = r.error ? r.error.message : (r.data && r.data.erro ? r.data.erro : 'Movimentacao nao realizada');
+          toast('Erro ao movimentar para expedicao: ' + msg, 'error');
           console.error(r.error || r.data);
           if (btn) btn.disabled = false;
           return false;
         }
         var expedicaoId = r.data && r.data.expedicao_id;
-        toast('Expedicao liberada.', 'success');
+        toast('Movimentado para expedicao.', 'success');
         if (expedicaoId) {
           navigate('#/expedicoes/' + expedicaoId);
         } else {
@@ -301,16 +316,16 @@
         var saldoItens = ((saldoArg && Array.isArray(saldoArg.itens)) ? saldoArg.itens : [])
           .map(function (row) {
             return Object.assign({}, row, {
-              acabado: Number(row.acabado || 0),
+              recebido: Number(row.recebido || 0),
               liberado: Number(row.liberado || 0),
-              saldo_disponivel: Number(row.saldo_disponivel || 0),
+              disponivel: Number(row.disponivel || 0),
             });
           });
-        var liberaveis = saldoItens.filter(function (row) { return row.saldo_disponivel > 0; });
+        var liberaveis = saldoItens.filter(function (row) { return row.disponivel > 0; });
         var saldoTotal = Math.round(liberaveis.reduce(function (acc, row) {
-          return acc + Number(row.saldo_disponivel || 0);
+          return acc + Number(row.disponivel || 0);
         }, 0) * 100) / 100;
-        var acabadoTotal = saldoArg ? Number(saldoArg.acabado_total || 0) : 0;
+        var recebidoTotal = saldoArg ? Number(saldoArg.recebido_total || 0) : 0;
         var liberadoTotal = saldoArg ? Number(saldoArg.liberado_total || 0) : 0;
 
         function modeloSaldoLabel(row) {
@@ -323,15 +338,19 @@
           el('div', { style: 'font-size:15.5px;font-weight:700;color:#16203a;' }, 'Expedicao'),
           expedicaoArg
             ? smallBadge('Expedicao ' + expedicaoArg.status, '#eaf1fd', '#2563eb')
-            : smallBadge(saldoTotal > 0 ? 'Saldo liberavel' : (statusOk ? 'Fluxo total disponivel' : 'Sem saldo'), saldoTotal > 0 ? '#e6f4ec' : (statusOk ? '#fff4e6' : '#f1f3f6'), saldoTotal > 0 ? '#18794a' : (statusOk ? '#c2610c' : '#6b7280'))));
+            : smallBadge(saldoTotal > 0 ? 'Saldo movimentavel' : (statusOk ? 'Fluxo total disponivel' : 'Sem saldo'), saldoTotal > 0 ? '#e6f4ec' : (statusOk ? '#fff4e6' : '#f1f3f6'), saldoTotal > 0 ? '#18794a' : (statusOk ? '#c2610c' : '#6b7280'))));
 
         if (expedicaoArg) {
           card.appendChild(el('div', { style: 'font-size:13px;color:#5b6472;line-height:1.5;margin-bottom:12px;' },
             'Expedicao criada. Registre entrega/coleta na tela operacional de expedicao.'));
           card.appendChild(el('div', { style: 'display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-bottom:12px;' },
-            fieldBlock('Acabado', el('div', { style: 'font-size:14px;font-weight:700;color:#16203a;' }, window.fmtMetros(acabadoTotal))),
-            fieldBlock('Ja liberado', el('div', { style: 'font-size:14px;font-weight:700;color:#18794a;' }, window.fmtMetros(liberadoTotal))),
+            fieldBlock('Recebido', el('div', { style: 'font-size:14px;font-weight:700;color:#16203a;' }, window.fmtMetros(recebidoTotal))),
+            fieldBlock('Movimentado', el('div', { style: 'font-size:14px;font-weight:700;color:#18794a;' }, window.fmtMetros(liberadoTotal))),
             fieldBlock('Disponivel', el('div', { style: 'font-size:14px;font-weight:700;color:' + (saldoTotal > 0 ? '#2563eb' : '#8a93a3') + ';' }, window.fmtMetros(saldoTotal)))));
+          if (saldoTotal > 0) {
+            card.appendChild(el('div', { style: 'font-size:12px;color:#8a93a3;line-height:1.5;margin-bottom:10px;' },
+              'Ainda ha saldo recebido para movimentar. Use "Movimentar para Expedicao" na expedicao vinculada.'));
+          }
           card.appendChild(el('button', {
             type: 'button',
             style: BTN_SOLID_SM,
@@ -342,21 +361,21 @@
 
         if (saldoTotal > 0) {
           var linhas = liberaveis.map(function (row) {
-            var input = textInput({ type: 'number', step: '0.01', value: String(row.saldo_disponivel) });
+            var input = textInput({ type: 'number', step: '0.01', value: String(row.disponivel) });
             return { row: row, input: input };
           });
           card.appendChild(el('div', { style: 'display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-bottom:12px;' },
-            fieldBlock('Acabado', el('div', { style: 'font-size:14px;font-weight:700;color:#16203a;' }, window.fmtMetros(acabadoTotal))),
-            fieldBlock('Ja liberado', el('div', { style: 'font-size:14px;font-weight:700;color:#18794a;' }, window.fmtMetros(liberadoTotal))),
+            fieldBlock('Recebido', el('div', { style: 'font-size:14px;font-weight:700;color:#16203a;' }, window.fmtMetros(recebidoTotal))),
+            fieldBlock('Movimentado', el('div', { style: 'font-size:14px;font-weight:700;color:#18794a;' }, window.fmtMetros(liberadoTotal))),
             fieldBlock('Disponivel', el('div', { style: 'font-size:14px;font-weight:800;color:#2563eb;' }, window.fmtMetros(saldoTotal)))));
           card.appendChild(el('div', { style: 'border:1px solid #eceef1;border-radius:4px;overflow:hidden;margin-bottom:12px;' },
             linhas.map(function (linha, index) {
               return el('div', { style: 'display:grid;grid-template-columns:1fr 100px 100px 120px;gap:10px;align-items:center;padding:10px 12px;' + (index < linhas.length - 1 ? 'border-bottom:1px solid #f1f3f6;' : '') },
                 el('div', {},
                   el('div', { style: 'font-size:13px;font-weight:700;color:#16203a;' }, modeloSaldoLabel(linha.row)),
-                  el('div', { style: 'font-size:11.5px;color:#8a93a3;margin-top:2px;' }, 'Acabado ' + window.fmtMetros(linha.row.acabado) + ' | liberado ' + window.fmtMetros(linha.row.liberado))),
-                el('div', { style: 'font-size:12.5px;color:#5b6472;font-weight:700;' }, window.fmtMetros(linha.row.saldo_disponivel)),
-                el('label', { style: 'font-size:11.5px;color:#8a93a3;font-weight:700;text-transform:uppercase;' }, 'Liberar'),
+                  el('div', { style: 'font-size:11.5px;color:#8a93a3;margin-top:2px;' }, 'Recebido ' + window.fmtMetros(linha.row.recebido) + ' | movimentado ' + window.fmtMetros(linha.row.liberado))),
+                el('div', { style: 'font-size:12.5px;color:#5b6472;font-weight:700;' }, window.fmtMetros(linha.row.disponivel)),
+                el('label', { style: 'font-size:11.5px;color:#8a93a3;font-weight:700;text-transform:uppercase;' }, 'Mover'),
                 linha.input);
             })));
           card.appendChild(el('button', {
@@ -366,25 +385,25 @@
               var payload = [];
               for (var i = 0; i < linhas.length; i++) {
                 var metros = Number(linhas[i].input.value || 0);
-                if (metros > linhas[i].row.saldo_disponivel) {
-                  toast('Quantidade maior que o saldo acabado disponivel.', 'error');
+                if (metros > linhas[i].row.disponivel) {
+                  toast('Quantidade maior que o saldo disponivel para movimentar.', 'error');
                   return;
                 }
                 if (metros > 0) payload.push({ op_item_id: linhas[i].row.op_item_id, metros: metros });
               }
               if (!payload.length) {
-                toast('Informe ao menos uma quantidade para liberar.', 'error');
+                toast('Informe ao menos uma quantidade para movimentar.', 'error');
                 return;
               }
               liberarExpedicaoParcial(opArg.id, payload, event && event.currentTarget ? event.currentTarget : null);
             },
-          }, 'Liberar para expedicao'));
+          }, 'Movimentar para Expedicao'));
           return card;
         }
 
         if (!statusOk) {
           card.appendChild(el('div', { style: 'font-size:13px;color:#5b6472;line-height:1.5;' },
-            'Sem quantidade acabada disponivel para expedicao.'));
+            'Sem saldo recebido disponivel para movimentar.'));
           return card;
         }
 
@@ -400,53 +419,12 @@
         return card;
       }
 
-      function buildRecebimentosOperacional(opArg, recebimentosArg, modelosByIdArg, latexFornecedorIdArg) {
-        var box = el('div', { style: CARD + 'padding:16px 20px;' });
-        box.appendChild(el('div', { style: 'display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px;flex-wrap:wrap;' },
-          el('span', { style: 'font-size:15.5px;font-weight:700;color:#16203a;' }, '4. Movimentos do acabamento'),
-          opArg.status === 'em_producao' && latexFornecedorIdArg
-            ? el('button', { type: 'button', style: BTN_SOLID_SM,
-              onclick: function () {
-                var form = buildEntregaInlineForm({ opItens: opArg.op_itens || [], modelosById: modelosByIdArg, comDestino: false });
-                modal({
-                  title: 'Novo recebimento de acabamento',
-                  body: form.node,
-                  saveLabel: 'Salvar recebimento',
-                  onSave: async function () {
-                    var ok = await salvarEntregaLatex({ fornecedorId: latexFornecedorIdArg, opId: opArg.id, payload: form.getPayload() });
-                    if (ok) reload();
-                    return ok;
-                  },
-                });
-              } }, '+ Novo recebimento')
-            : ''));
-
-        if (!recebimentosArg.length) {
-          box.appendChild(el('div', { style: 'font-size:13px;color:#aab2bf;' }, 'Nenhum movimento de acabamento registrado ainda.'));
-          return box;
-        }
-
-        recebimentosArg.forEach(function (ent) {
-          var sub = el('div', { style: 'border-top:1px solid #f1f3f6;padding:14px 0 0;margin-top:12px;' });
-          sub.appendChild(el('div', { style: 'display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;' },
-            el('div', {},
-              el('div', { style: 'font-size:14px;font-weight:700;color:#16203a;' }, new Date(ent.data + 'T00:00:00').toLocaleDateString('pt-BR')),
-              ent.observacao ? el('div', { style: 'font-size:12px;color:#8a93a3;margin-top:2px;' }, ent.observacao) : ''),
-            opArg.status === 'em_producao' ? el('div', { style: 'display:flex;gap:12px;align-items:center;' },
-              el('button', { type: 'button', style: BTN_LINK, onclick: function () { abrirEdicaoAdmin(ent, opArg, modelosByIdArg); } }, 'Editar recebimento'),
-              el('button', { type: 'button', style: BTN_DANGER_LINK, onclick: function () { excluirEntrega(ent.id, reload); } }, 'Excluir recebimento')) : ''));
-          (ent.entrega_itens || []).filter(function (item) { return item.op_id === opArg.id; }).forEach(function (ei) {
-            var it = (opArg.op_itens || []).find(function (item) { return item.id === ei.op_item_id; });
-            var modelo = it ? modelosByIdArg[it.modelo_id] : null;
-            sub.appendChild(el('div', { style: 'font-size:13.5px;color:#3f4757;margin-top:7px;' },
-              (modelo ? window.rotuloModelo(modelo) : ('#' + ei.op_item_id)) + ': ' + window.fmtMetros(ei.metros_entregues),
-              ei.defeito ? el('span', { style: 'margin-left:8px;color:#d6403a;font-weight:700;font-size:12px;' }, 'DEFEITO') : '',
-              ei.observacao ? el('span', { style: 'margin-left:8px;font-size:12px;color:#8a93a3;' }, '(' + ei.observacao + ')') : ''));
-          });
-          box.appendChild(sub);
-        });
-        return box;
-      }
+      // Nota: nao existe etapa intermediaria "registrar acabamento". O
+      // material disponivel na OP e o recebido da Tecelagem (entregas
+      // etapa='cima' via op_latex_entregas); o movimento Acabamento ->
+      // Expedicao (buildExpedicaoCard) e a propria declaracao de acabado/
+      // liberado. Por isso nao ha card operacional de "novo recebimento" de
+      // acabamento nesta tela.
 
       function renderOPLatexProducao() {
         var CARD_PROD = 'background:#fff;border:1px solid #eceef1;border-radius:4px;';
@@ -459,12 +437,10 @@
         var SVG_CLOCK = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><polyline points="12 7 12 12 15 14"></polyline></svg>';
         var SVG_LINEAGE = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"></path><rect x="9" y="3" width="6" height="4" rx="1"></rect></svg>';
 
-        var resumoSaldoTexto = excedenteAcabamento
-          ? 'Excedente ' + window.fmtMetros(excedenteAcabamento)
-          : window.fmtMetros(faltaAcabamento);
-        var resumoSaldoCor = excedenteAcabamento ? '#c2610c' : (faltaAcabamento > 0 ? '#2563eb' : '#18794a');
-        var percentualClamp = Math.max(0, Math.min(100, percentualAcabamento));
-        var pctLabel = String(percentualAcabamento).replace('.', ',');
+        var resumoSaldoTexto = window.fmtMetros(saldoEmAcabamento);
+        var resumoSaldoCor = saldoEmAcabamento > 0 ? '#c2610c' : '#18794a';
+        var percentualClamp = Math.max(0, Math.min(100, movimentadoPercent));
+        var pctLabel = String(movimentadoPercent).replace('.', ',');
         var pedidoId = op.lote && op.lote.pedido_id ? op.lote.pedido_id : null;
         var pedidoLabelCurto = pedidoId ? ('Pedido #' + pedidoId) : 'Pedido vinculado';
         var pedidoCodigo = pedidoId ? ('PED-' + String(pedidoId).padStart(6, '0')) : '---';
@@ -552,7 +528,7 @@
               pedidoId ? el('button', { type: 'button', style: BTN_ACTION, onclick: function () { navigate('#/pedidos/' + pedidoId); } }, svgEl(SVG_DOC), 'Abrir Pedido') : '',
               el('button', { type: 'button', style: BTN_ACTION, onclick: function () { toastOperacional('Produção pausada.'); } }, svgEl(SVG_PAUSE), 'Pausar'),
               el('a', { href: '#movimentacao-op', style: BTN_ACTION_LINK }, svgEl(SVG_ARROW_RIGHT), 'Ir para movimentos'),
-              el('button', { type: 'button', style: BTN_ACTION, onclick: function () { finalizar(op.id); } }, svgEl(SVG_CHECK), 'Finalizar acabamento'),
+              el('button', { type: 'button', style: BTN_ACTION, onclick: function () { finalizar(op.id); } }, svgEl(SVG_CHECK), 'Finalizar OP'),
               el('a', { href: '#documentos-op', style: BTN_ACTION_LINK }, svgEl(SVG_DOC), 'Documentos'),
               el('a', { href: '#historico-op', style: BTN_ACTION_LINK }, svgEl(SVG_CLOCK), 'Histórico')));
         }
@@ -573,14 +549,14 @@
           return el('div', { style: CARD_PROD + 'padding:16px 20px;' },
             el('div', { style: 'font-size:13px;font-weight:700;color:#16203a;margin-bottom:12px;' }, 'Resumo desta OP'),
             el('div', { style: 'display:flex;flex-direction:column;gap:9px;' },
-              linhaResumo('Total ajustado da OP', window.fmtMetros(totalEnviado)),
-              linhaResumo('Finalizado (pronto + entregue)', window.fmtMetros(totalRecebido)),
-              linhaResumo('Ja liberado para expedicao', window.fmtMetros(totalLiberadoExpedicao), '#18794a'),
-              linhaResumo('Disponivel para expedicao', window.fmtMetros(saldoDisponivelExpedicao), saldoDisponivelExpedicao > 0 ? '#2563eb' : '#8a93a3'),
-              linhaResumo(excedenteAcabamento ? 'Excedente em acabamento' : 'Saldo em acabamento', resumoSaldoTexto, resumoSaldoCor)),
+              linhaResumo('Recebido da Tecelagem', window.fmtMetros(recebidoTecelagem)),
+              linhaResumo('Ja movimentado para Expedicao', window.fmtMetros(movimentadoExpedicao), '#18794a'),
+              linhaResumo('Disponivel para movimentar', window.fmtMetros(disponivelMovimentar), disponivelMovimentar > 0 ? '#2563eb' : '#8a93a3'),
+              linhaResumo('Entregue ao Cliente', window.fmtMetros(entregueCliente), '#18794a'),
+              linhaResumo('Saldo em Acabamento', resumoSaldoTexto, resumoSaldoCor)),
             el('div', { style: 'height:6px;border-radius:99px;background:#e2e5ea;overflow:hidden;margin:12px 0 6px;' },
-              el('div', { style: 'width:' + percentualClamp + '%;height:100%;background:' + (percentualAcabamento > 100 ? '#d6403a' : '#2563eb') + ';' })),
-            el('div', { style: 'font-size:11.5px;color:#9aa2af;' }, pctLabel + '% ja finalizado no acabamento'));
+              el('div', { style: 'width:' + percentualClamp + '%;height:100%;background:#2563eb;' })),
+            el('div', { style: 'font-size:11.5px;color:#9aa2af;' }, pctLabel + '% ja movimentado para expedicao'));
         }
 
         function buildItens() {
@@ -601,17 +577,21 @@
             return card;
           }
           var table = el('div', { style: 'overflow-x:auto;' });
-          table.appendChild(tableHead(['MODELO / CORES', 'PEDIDO', 'AJUSTADO', 'ENTREGUE', 'FALTA', 'ITEM DO PEDIDO']));
+          table.appendChild(tableHead(['MODELO / CORES', 'RECEBIDO', 'MOVIMENTADO', 'DISPONIVEL', 'ENTREGUE', 'ITEM DO PEDIDO']));
           (op.op_itens || []).forEach(function (item) {
-            var recebido = totalPorItem[item.id] || 0;
-            var ajustado = metrosAjustadosItem(item);
-            var saldo = saldoLabel(ajustado, recebido);
+            var saldoItem = saldoItemById[item.id] || {};
+            var recebidoItem = saldoItem.recebido != null ? Number(saldoItem.recebido) : metrosAjustadosItem(item);
+            var movimentadoItem = Number(saldoItem.liberado || 0);
+            var disponivelItem = saldoItem.disponivel != null
+              ? Number(saldoItem.disponivel)
+              : Math.max(Math.round((recebidoItem - movimentadoItem) * 100) / 100, 0);
+            var entregueItem = Number(saldoItem.entregue || 0);
             table.appendChild(tableRow([
               el('div', { style: 'font-size:13.5px;font-weight:700;color:#16203a;' }, modeloLabel(item)),
-              el('div', { style: 'font-size:13.5px;color:#3f4757;font-weight:600;' }, window.fmtMetros(item.metros_pedidos)),
-              el('div', { style: 'font-size:13.5px;color:#3f4757;font-weight:600;' }, window.fmtMetros(ajustado)),
-              el('div', { style: 'font-size:13.5px;color:#18794a;font-weight:700;' }, window.fmtMetros(recebido)),
-              el('div', { style: 'font-size:13.5px;color:' + saldo.color + ';font-weight:700;' }, saldo.text),
+              el('div', { style: 'font-size:13.5px;color:#3f4757;font-weight:600;' }, window.fmtMetros(recebidoItem)),
+              el('div', { style: 'font-size:13.5px;color:#2563eb;font-weight:700;' }, window.fmtMetros(movimentadoItem)),
+              el('div', { style: 'font-size:13.5px;color:' + (disponivelItem > 0 ? '#c2610c' : '#18794a') + ';font-weight:700;' }, window.fmtMetros(disponivelItem)),
+              el('div', { style: 'font-size:13.5px;color:#18794a;font-weight:700;' }, window.fmtMetros(entregueItem)),
               el('div', { style: 'font-size:12.5px;color:#2563eb;font-weight:600;' }, item.pedido_item_id ? (pedidoId ? ('Pedido #' + pedidoId + ' · item ' + item.pedido_item_id) : ('Item #' + item.pedido_item_id)) : '---'),
             ]));
           });
@@ -647,39 +627,21 @@
             el('div', { style: 'font-size:12.5px;font-weight:700;color:#8a93a3;letter-spacing:.03em;margin-bottom:8px;' }, 'ENTRADAS DA TECELAGEM'),
             el('div', {}, listaEntregasOrigem),
             el('div', { style: 'display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin-top:14px;' },
-              campo('Metros em acabamento', valor(window.fmtMetros(faltaAcabamento), '#c2610c', '700'))),
-            el('a', { href: '#movimentacao-op', style: 'display:inline-flex;align-items:center;gap:6px;font-size:12.5px;color:#2563eb;font-weight:600;text-decoration:none;' }, 'Ver liberação para expedição ↓'));
+              campo('Saldo em acabamento', valor(window.fmtMetros(saldoEmAcabamento), '#c2610c', '700'))),
+            el('a', { href: '#movimentacao-op', style: 'display:inline-flex;align-items:center;gap:6px;font-size:12.5px;color:#2563eb;font-weight:600;text-decoration:none;' }, 'Ver movimentação para expedição ↓'));
         }
 
         function buildMovimentacao() {
-          var ultimaEntrega = movimentosLatex[0];
-          var itensDaEntrega = ultimaEntrega ? (ultimaEntrega.entrega_itens || []).filter(function (ei) {
-            return ei.op_id === op.id && !ei.defeito;
-          }) : [];
-          var totalUltimaEntrega = Math.round(itensDaEntrega.reduce(function (acc, ei) {
-            return acc + Number(ei.metros_entregues || 0);
-          }, 0) * 100) / 100;
-          var itemHistorico = itensDaEntrega.length
-            ? (op.op_itens || []).find(function (item) { return item.id === itensDaEntrega[0].op_item_id; })
-            : (op.op_itens || [])[0];
-          var historico = ultimaEntrega
-            ? el('div', { style: 'display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 0;border-top:1px solid #f1f3f6;' },
-              el('div', {},
-                el('div', { style: 'font-size:13.5px;color:#16203a;font-weight:600;' }, window.fmtMetros(totalUltimaEntrega) + ' → Expedição'),
-                el('div', { style: 'font-size:11.5px;color:#9aa2af;margin-top:2px;' }, fmtData(ultimaEntrega.data) + ' · Item ' + modeloLabel(itemHistorico))),
-              el('span', { style: 'background:#fff4e6;color:#c2610c;border-radius:4px;padding:3px 9px;font-size:11.5px;font-weight:600;flex-shrink:0;' }, 'Romaneio pendente'))
-            : el('div', { style: 'font-size:13px;color:#aab2bf;padding:10px 0;border-top:1px solid #f1f3f6;' }, 'Nenhum movimento de acabamento registrado ainda.');
-
           return el('div', { style: CARD_PROD + 'padding:16px 20px;' },
             el('div', { style: 'display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;gap:12px;flex-wrap:wrap;' },
               el('div', { style: 'font-size:15.5px;font-weight:700;color:#16203a;' }, '5. Finalizacao da OP'),
               el('button', { type: 'button', style: 'height:30px;padding:0 14px 0 18px;background:#2563eb;color:#fff;border:none;font-size:12px;font-weight:700;font-family:inherit;cursor:pointer;clip-path:polygon(0% 0%,82% 0%,100% 50%,82% 100%,0% 100%,13% 50%);white-space:nowrap;', onclick: function () { finalizar(op.id); } }, 'Finalizar OP')),
             el('div', { style: 'display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin-bottom:14px;' },
-              el('div', {}, el('div', { style: 'font-size:11.5px;color:#9aa2af;margin-bottom:4px;' }, 'Acabado'), el('div', { style: 'font-size:16px;font-weight:800;color:#18794a;' }, window.fmtMetros(totalRecebido))),
-              el('div', {}, el('div', { style: 'font-size:11.5px;color:#9aa2af;margin-bottom:4px;' }, 'Pendente'), el('div', { style: 'font-size:16px;font-weight:800;color:' + (faltaAcabamento > 0 ? '#2563eb' : '#18794a') + ';' }, window.fmtMetros(faltaAcabamento))),
-              el('div', {}, el('div', { style: 'font-size:11.5px;color:#9aa2af;margin-bottom:4px;' }, 'Total ajustado da OP'), el('div', { style: 'font-size:16px;font-weight:800;color:#16203a;' }, window.fmtMetros(totalEnviado)))),
-            el('div', { style: 'font-size:12.5px;font-weight:700;color:#8a93a3;letter-spacing:.03em;margin-bottom:8px;' }, 'HISTORICO DE MOVIMENTOS DO ACABAMENTO'),
-            historico);
+              el('div', {}, el('div', { style: 'font-size:11.5px;color:#9aa2af;margin-bottom:4px;' }, 'Recebido da Tecelagem'), el('div', { style: 'font-size:16px;font-weight:800;color:#16203a;' }, window.fmtMetros(recebidoTecelagem))),
+              el('div', {}, el('div', { style: 'font-size:11.5px;color:#9aa2af;margin-bottom:4px;' }, 'Movimentado p/ Expedicao'), el('div', { style: 'font-size:16px;font-weight:800;color:#18794a;' }, window.fmtMetros(movimentadoExpedicao))),
+              el('div', {}, el('div', { style: 'font-size:11.5px;color:#9aa2af;margin-bottom:4px;' }, 'Saldo em Acabamento'), el('div', { style: 'font-size:16px;font-weight:800;color:' + (saldoEmAcabamento > 0 ? '#c2610c' : '#18794a') + ';' }, window.fmtMetros(saldoEmAcabamento)))),
+            el('div', { style: 'font-size:12.5px;color:#5b6472;line-height:1.5;background:#f8f9fb;border:1px solid #eceef1;border-radius:4px;padding:10px 12px;' },
+              'Movimentar para a Expedicao (bloco abaixo) e o que declara a quantidade acabada/liberada. Finalizar a OP e uma acao separada e so encerra o total desta OP; nao e pre-requisito para movimentar parciais.'));
         }
 
         function buildDocumentos() {
@@ -766,34 +728,10 @@
         });
 
         var box = el('div', { class: 'bg-white rounded-xl shadow p-5' });
-        box.appendChild(el('div', { class: 'font-semibold text-gray-700 mb-3' }, 'Recebimentos'));
-
-        if (op.status === 'em_producao' && latexFornecedorId) {
-          var formHolder = el('div', {});
-          var btnNova = el('button', { class: 'text-sm text-blue-700 hover:underline mb-2',
-            onclick: function () {
-              var form = buildEntregaInlineForm({ opItens: op.op_itens || [], modelosById: modelosById, comDestino: false });
-              var btnSalvar = el('button', { class: 'bg-blue-700 hover:bg-blue-800 text-white text-sm font-semibold rounded-lg px-3 py-2 mr-2',
-                onclick: async function () {
-                  btnSalvar.disabled = true;
-                  var ok = await salvarEntregaLatex({ fornecedorId: latexFornecedorId, opId: op.id, payload: form.getPayload() });
-                  btnSalvar.disabled = false;
-                  if (ok) reload();
-                } }, 'Salvar recebimento');
-              var btnCancelar = el('button', { class: 'bg-gray-200 hover:bg-gray-300 text-gray-800 text-sm font-semibold rounded-lg px-3 py-2',
-                onclick: function () {
-                  formHolder.replaceChildren();
-                  btnNova.style.display = '';
-                } }, 'Cancelar');
-              formHolder.replaceChildren(el('div', {}, form.node, el('div', { class: 'mt-2' }, btnSalvar, btnCancelar)));
-              btnNova.style.display = 'none';
-            } }, '+ Novo recebimento');
-          box.appendChild(btnNova);
-          box.appendChild(formHolder);
-        }
+        box.appendChild(el('div', { class: 'font-semibold text-gray-700 mb-3' }, 'Movimentos de acabamento (informativo)'));
 
         if (movimentosLatex.length === 0) {
-          box.appendChild(el('p', { class: 'text-sm text-gray-400 mt-2' }, 'Nenhum recebimento registrado ainda.'));
+          box.appendChild(el('p', { class: 'text-sm text-gray-400 mt-2' }, 'Nenhum movimento de acabamento registrado.'));
         } else {
           movimentosLatex.forEach(function (ent) {
             var sub = el('div', { class: 'border-b py-3' });

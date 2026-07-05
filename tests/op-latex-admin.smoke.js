@@ -337,7 +337,7 @@ function makeFullBootSandbox({
   modelosData = [],
   origemOpData = null,
   expedicaoData = null,
-  saldoData = { ok: true, acabado_total: 0, liberado_total: 0, saldo_disponivel_total: 0, itens: [] },
+  saldoData = { ok: true, recebido_total: 0, liberado_total: 0, disponivel_total: 0, entregue_total: 0, saldo_em_acabamento_total: 0, itens: [] },
 } = {}) {
   const toastsNode = new FakeNode('div');
   const appNode = new FakeNode('div');
@@ -563,7 +563,8 @@ test('22b. OP latex consolidada mostra multiplas entregas de origem por op_latex
   assert.match(rendered.text, /Entrega #7/);
   assert.match(rendered.text, /Entrega #9/);
   assert.match(rendered.text, /5265,00 m/);
-  assert.match(rendered.text, /HISTORICO DE MOVIMENTOS DO ACABAMENTO/);
+  assert.match(rendered.text, /5\.\s*Finalizacao da OP/);
+  assert.match(rendered.text, /Movimentado p\/ Expedicao/);
   assert.doesNotMatch(rendered.text, /gerou a OP/);
   assert.doesNotMatch(rendered.text, /origem - entrega parcial/);
 });
@@ -897,10 +898,10 @@ test('35. OP em producao de acabamento segue o standalone e nao mostra recebimen
     origemOpData: { id: 12, numero: 2, ano: 2026, tipo: 'tecelagem' },
   });
   assert.match(rendered.text, /5\.\s*Finalizacao/i);
-  assert.match(rendered.text, /Finalizar acabamento/i);
-  assert.match(rendered.text, /Sem quantidade acabada disponivel para expedicao/i);
+  assert.match(rendered.text, /Finalizar OP/i);
+  assert.match(rendered.text, /Sem saldo recebido disponivel para movimentar/i);
   assert.doesNotMatch(rendered.text, /Finalize o acabamento antes de liberar o material para expedicao/i);
-  assert.doesNotMatch(rendered.text, /Recebimentos/i);
+  assert.doesNotMatch(rendered.text, /Finalizar acabamento/i);
   assert.doesNotMatch(rendered.text, /Novo recebimento/i);
   assert.doesNotMatch(rendered.text, /Finalizar OP de l[áa]tex/i);
 });
@@ -1040,16 +1041,17 @@ test('40. OP em producao de acabamento mostra todos os blocos operacionais esper
   ]) {
     assert.match(rendered.text, label);
   }
-  assert.match(rendered.text, /Finalizar acabamento/i);
+  assert.match(rendered.text, /Finalizar OP/i);
   assert.match(rendered.text, /NF_INSUMOS_2026\.pdf/i);
   assert.match(rendered.text, /ROMANEIO_OP-002-2026\.pdf/i);
   assert.match(rendered.text, /Entrada consolidada da Tecelagem/i);
   assert.match(rendered.text, /OP aberta/i);
+  assert.doesNotMatch(rendered.text, /Finalizar acabamento/i);
   assert.doesNotMatch(rendered.text, /4\.\s*Recebimentos \/ acabamento/i);
   assert.doesNotMatch(rendered.text, /5\.\s*Finalizacao \/ liberar para proxima etapa/i);
 });
 
-test('41. OP em producao de acabamento mostra enviado, recebido, falta e excedente quando houver', async () => {
+test('41. OP em producao de acabamento mostra recebido, movimentado, disponivel e saldo em acabamento', async () => {
   const rendered = await renderLatexAdminForTest({
     opData: {
       id: 42,
@@ -1063,23 +1065,26 @@ test('41. OP em producao de acabamento mostra enviado, recebido, falta e exceden
       op_itens: [{ id: 100, modelo_id: 1, metros_pedidos: 100, pedido_item_id: 700 }],
       op_fornecedores: [{ fornecedor_id: 7, etapa: 'latex', fornecedores: { nome: 'Acabamento Sul' } }],
     },
-    entData: [{
-      id: 501,
-      etapa: 'latex',
-      fornecedor_id: 7,
-      data: '2026-07-01',
-      observacao: 'Excedente informado',
-      entrega_itens: [{ id: 601, op_id: 42, op_item_id: 100, metros_entregues: 120, defeito: false, observacao: '' }],
-    }],
     modelosData: [{ id: 1, nome: 'Roma', largura: 1.5, cor_1: { id: 1, nome: 'CINZA' }, cor_2: { id: 2, nome: 'GELO' } }],
     origemOpData: { id: 12, numero: 2, ano: 2026, tipo: 'tecelagem' },
+    saldoData: {
+      ok: true,
+      recebido_total: 100,
+      liberado_total: 40,
+      disponivel_total: 60,
+      entregue_total: 0,
+      saldo_em_acabamento_total: 60,
+      itens: [{ op_item_id: 100, pedido_item_id: 700, modelo_id: 1, previsto: 100, recebido: 100, liberado: 40, entregue: 0, disponivel: 60 }],
+    },
   });
 
-  assert.match(rendered.text, /Total ajustado da OP/i);
-  assert.match(rendered.text, /Finalizado \(pronto \+ entregue\)/i);
-  assert.match(rendered.text, /J[aá] liberado/i);
-  assert.match(rendered.text, /Excedente/i);
-  assert.match(rendered.text, /120,00 m/);
+  assert.match(rendered.text, /Recebido da Tecelagem/i);
+  assert.match(rendered.text, /Ja movimentado para Expedicao/i);
+  assert.match(rendered.text, /Disponivel para movimentar/i);
+  assert.match(rendered.text, /Saldo em Acabamento/i);
+  assert.doesNotMatch(rendered.text, /Finalizado \(pronto \+ entregue\)/i);
+  assert.match(rendered.text, /100,00 m/);
+  assert.match(rendered.text, /60,00 m/);
 });
 
 test('42. OP em producao de acabamento nao mostra elementos de preparacao ou tecelagem', async () => {
@@ -1135,27 +1140,30 @@ test('43a. OP em producao com saldo acabado libera expedicao parcial sem finaliz
     origemOpData: { id: 12, numero: 2, ano: 2026, tipo: 'tecelagem' },
     saldoData: {
       ok: true,
-      acabado_total: 50,
+      recebido_total: 50,
       liberado_total: 20,
-      saldo_disponivel_total: 30,
+      disponivel_total: 30,
+      entregue_total: 0,
+      saldo_em_acabamento_total: 30,
       itens: [{
         op_item_id: 100,
         pedido_item_id: 'aaaaaaaa-2222-3333-4444-555555555555',
         modelo_id: 1,
         previsto: 125,
-        acabado: 50,
+        recebido: 50,
         liberado: 20,
-        saldo_disponivel: 30,
+        entregue: 0,
+        disponivel: 30,
       }],
     },
   });
 
-  assert.match(rendered.text, /Saldo liberavel/i);
-  assert.match(rendered.text, /Liberar para expedicao/i);
+  assert.match(rendered.text, /Saldo movimentavel/i);
+  assert.match(rendered.text, /Movimentar para Expedicao/i);
   const btn = findNode(rendered.view, (n) => (
-    n.tagName === 'BUTTON' && /Liberar para expedicao/i.test(collectNodeText(n))
+    n.tagName === 'BUTTON' && /Movimentar para Expedicao/i.test(collectNodeText(n))
   ));
-  assert.ok(btn, 'CTA parcial de liberar expedicao nao encontrado');
+  assert.ok(btn, 'CTA parcial de movimentar para expedicao nao encontrado');
   await btn._listeners.click({ currentTarget: btn });
   const rpcCalls = rendered.fakeSupa._calls.filter(c => c.op === 'rpc' && c.fn === 'liberar_expedicao_latex_parcial');
   assert.equal(rpcCalls.length, 1);

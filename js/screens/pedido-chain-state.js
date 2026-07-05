@@ -195,8 +195,18 @@
       if (!expedicao || expedicao.op_latex_id == null) return;
       liberadoByLatexOp[expedicao.op_latex_id] = round2((liberadoByLatexOp[expedicao.op_latex_id] || 0) + toFiniteNumber(item.metros_liberados));
     });
+    // Paridade com Tecelagem: o material disponivel na OP de Acabamento e o
+    // RECEBIDO da Tecelagem (op_itens acumulados = row.target), nao um
+    // movimento intermediario "registrar acabamento" (etapa='latex'). O saldo
+    // movimentavel para Expedicao = recebido - ja movimentado para expedicao.
+    // Somente OP que ja confirmou entrada (em_producao/concluida/finalizada)
+    // pode movimentar.
+    function acabPodeMovimentar(status) {
+      return status === 'em_producao' || status === 'concluida' || status === 'finalizada';
+    }
     var acabLiberavel = round2(acabamento.reduce(function (acc, row) {
-      return acc + Math.max(row.done - (liberadoByLatexOp[row.id] || 0), 0);
+      var recebido = acabPodeMovimentar(row.status) ? row.target : 0;
+      return acc + Math.max(round2(recebido - (liberadoByLatexOp[row.id] || 0)), 0);
     }, 0));
     var hasAcabLiberavel = acabLiberavel > 0;
     var acabTerminalSemExpedicao = acabamento.some(function (row) {
@@ -260,7 +270,8 @@
 
     var tecOp = tecelagem.length ? tecelagem[0].op : null;
     var acabLiberavelSummary = acabamento.find(function (row) {
-      return Math.max(row.done - (liberadoByLatexOp[row.id] || 0), 0) > 0;
+      var recebido = acabPodeMovimentar(row.status) ? row.target : 0;
+      return Math.max(round2(recebido - (liberadoByLatexOp[row.id] || 0)), 0) > 0;
     }) || acabamento.find(function (row) {
       return (row.status === 'finalizada' || row.status === 'concluida') && !expedicoesByOp[row.id];
     }) || null;

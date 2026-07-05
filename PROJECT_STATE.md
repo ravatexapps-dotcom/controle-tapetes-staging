@@ -1,4 +1,85 @@
 > **Atualizacao 2026-07-05 - fase
+> `RAVATEX-TAPETES-ACABAMENTO-EXPEDICAO-FLOW-COHERENCE-C`.**
+> Status: OK em staging. Reparou de ponta a ponta o fluxo Acabamento/Latex
+> -> Expedicao -> Entrega, dando paridade com Tecelagem -> Acabamento.
+>
+> Premissa (decidida, nao aberta): parcial e movimento/rastro; a OP
+> continua aberta enquanto ha saldo; movimentar parcial NAO finaliza a OP;
+> finalizar a OP e terminalidade do total; NAO existe etapa intermediaria
+> obrigatoria "registrar acabamento"; o movimento Acabamento -> Expedicao e
+> a propria declaracao de que a quantidade ficou acabada/liberada.
+>
+> Causa raiz: a fase anterior (CONTRACT-B, db/31) corrigiu o backend com a
+> premissa ERRADA de que o "acabado" liberavel vinha de um movimento
+> `entregas.etapa='latex'` ("registrar acabamento"). Como esse movimento nao
+> existe no fluxo normal do admin (etapa=latex so nasce no portal do
+> fornecedor), o saldo liberavel ficava sempre 0 e a expedicao travava,
+> mesmo com material ja recebido da Tecelagem.
+>
+> Contrato antes: `acabado = SUM(entregas.etapa='latex' + entrega_itens por
+> op_item)`; liberavel = acabado - liberado.
+> Contrato depois: `recebido_no_acabamento = SUM(entrega_itens das entregas
+> Tecelagem->Acabamento etapa='cima' vinculadas por op_latex_entregas,
+> mapeadas ao op_item da OP Latex por modelo)` (== op_itens acumulados de
+> gerar_op_latex); `ja_movimentado = SUM(expedicao_itens.metros_liberados)
+> por op_latex_id+op_item_id`; `disponivel = saldo_em_acabamento = recebido
+> - ja_movimentado`.
+>
+> Migration corretiva `db/32_acabamento_expedicao_direct_movement.sql`
+> criada e aplicada SOMENTE no Supabase staging `ucrjtfswnfdlxwtmxnoo`
+> (producao `bhgifjrfagkzubpyqpew` intocada). Ela SOBRESCREVE (CREATE OR
+> REPLACE, mesmas assinaturas) as RPCs da db/31:
+> `consultar_saldo_expedicao_latex(BIGINT)` retorna recebido_total,
+> liberado_total, disponivel_total, entregue_total,
+> saldo_em_acabamento_total e itens {recebido, liberado, entregue,
+> disponivel, saldo_em_acabamento}; `liberar_expedicao_latex_parcial(BIGINT,
+> JSONB, TEXT)` guarda por `recebido - ja_movimentado`, aceita OP
+> em_producao/concluida/finalizada, nao altera `ops.status`, cria/reusa
+> expedicao, soma em expedicao_itens.metros_liberados e chama
+> `recalcular_status_expedicao`. Cria o indice `entrega_itens_entrega_idx`.
+> A RPC legada `liberar_expedicao(BIGINT)` (db/23, liberacao total terminal)
+> permanece intocada como atalho legado.
+>
+> Frontend: `op-latex-admin.js` usa o resumo canonico (Recebido da
+> Tecelagem / Ja movimentado para Expedicao / Disponivel para movimentar /
+> Entregue ao Cliente / Saldo em Acabamento), CTA "Movimentar para
+> Expedicao", "Finalizar OP" separado (header e card 5), e removeu a nocao
+> operacional de "registrar acabamento" / "Novo recebimento". Item table
+> passou a Recebido/Movimentado/Disponivel/Entregue. `pedido-chain-state.js`
+> calcula `acabLiberavel` por recebido(op_itens) - movimentado, so para OP
+> em_producao/concluida/finalizada. `pedido-detail-progress.js`:
+> em_acabamento = recebido - movimentado; pronto_expedicao = movimentado -
+> entregue (= saldo da expedicao); por item usa liberado/entregue por
+> op_item de expedicao_itens. `pedido-detail-events.js`: modal Acabamento ->
+> Expedicao calcula saldo por recebido - liberado e as metricas/tabela de
+> pendencias da transicao usam recebido/movimentado. `expedicao-admin.js`
+> nao precisou de alteracao (ja limita entrega a metros_liberados).
+>
+> Pedido #20 (id ad988da1-df36-4441-afef-16d9172f5c01): OP Tecelagem
+> 18/2026, OP Acabamento 11/2026 (id 30) em_producao, recebido=1000 m. Antes
+> do fix o saldo liberavel era 0 (sem movimento etapa=latex); depois do fix
+> o diagnostico staging confirma recebido=1000, movimentado=0,
+> disponivel=1000, expedicao=nenhuma — CTA "Movimentar para Expedicao"
+> disponivel sem finalizar a OP.
+>
+> Testes locais obrigatorios: 393/393 OK (`expedicao-partial-flow`
+> reescrito, `op-latex-admin`, `expedicao-flow`, `pedido-detail`,
+> `pedido-detail-linked-ops`, `tec-to-acabamento-flow`, `entrega-writes`,
+> `op-latex-split`, `cliente-pedido-summary-readmodel`,
+> `production-flow-invariants`, `production-flow-numbering-schema`,
+> `latex-consolidation-schema`). Diagnosticos staging OK:
+> `production-flow-invariants-diag`, `latex-consolidation-diag` e o
+> reescrito `expedicao-partial-flow-diag` (4 OPs em_producao com saldo
+> recebido movimentavel; movimentado>recebido=0; entrega>liberado=0; status
+> expedicao coerente; sem OP criada por parcial; catalogo confirma as 2 RPCs
+> e o indice novo).
+>
+> Preservado: `liberar_expedicao` legado, db/23, db/25-db/29,
+> consolidacao/split Latex, read model Cliente, `origin`, producao. Backlog
+> mantido: `RAVATEX-TAPETES-PEDIDO-STAGE-BLOCKER-EXPLANATION-R1` (texto curto
+> nas setas, explicacao em painel/tooltip separado).
+
+> **Atualizacao 2026-07-05 - fase
 > `RAVATEX-TAPETES-ACABAMENTO-PARTIAL-EXPEDITION-CONTRACT-B`.**
 > Status: OK em staging. Esta fase destravou a fase anterior
 > `ACABAMENTO-PARTIAL-EXPEDITION-PARITY-A-B`, cujo bloqueio era o gate
