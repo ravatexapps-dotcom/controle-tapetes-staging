@@ -26,6 +26,7 @@
   var CARD = 'background:#fff;border:1px solid #eceef1;border-radius:6px;';
   var TH_STYLE = 'font-size:11px;font-weight:700;color:#8a93a3;letter-spacing:.04em;white-space:nowrap;';
   var BTN_BACK = 'display:inline-flex;align-items:center;gap:7px;background:#fff;color:#5b6472;border:1px solid #d8dce2;border-radius:4px;padding:8px 16px;font-weight:600;font-size:13.5px;font-family:inherit;cursor:pointer;';
+  var BTN_FINALIZAR_TEC = 'display:inline-flex;align-items:center;gap:7px;background:#18794a;color:#fff;border:1px solid #18794a;border-radius:4px;padding:9px 16px;font-weight:800;font-size:13.5px;font-family:inherit;cursor:pointer;white-space:nowrap;box-shadow:0 6px 14px rgba(24,121,74,.18);';
   var BTN_SOLID_SM = 'display:inline-flex;align-items:center;background:#2563eb;color:#fff;border:none;border-radius:4px;padding:8px 16px;font-weight:600;font-size:13px;font-family:inherit;cursor:pointer;white-space:nowrap;';
   var BTN_LINK = 'display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:600;color:#2563eb;background:none;border:none;padding:0;cursor:pointer;font-family:inherit;';
   var BADGE_TECELAGEM = 'background:#f3effe;color:#7c3aed;border-radius:4px;padding:4px 11px;font-size:12.5px;font-weight:700;';
@@ -158,12 +159,12 @@
     if (ctx.cimaFornecedorId) acoes.push(el('a', { href: '#entregas-tecelagem-op', style: BTN_BACK + 'text-decoration:none;' }, 'Ir para entregas'));
     var concluirAttrs = {
       type: 'button',
-      style: podeConcluir ? BTN_BACK : BTN_BACK + 'opacity:.55;cursor:not-allowed;',
-      title: podeConcluir ? 'Registrar conclusao explicita da Tecelagem' : 'Concluir fica disponivel quando nao houver saldo pendente.',
+      style: podeConcluir ? BTN_FINALIZAR_TEC : BTN_BACK + 'opacity:.55;cursor:not-allowed;',
+      title: podeConcluir ? 'Finalizar formalmente a OP Tecelagem pela RPC canonica.' : 'Finalizar fica disponivel quando nao houver saldo pendente.',
       onclick: function (event) { if (podeConcluir) finalizarTecelagem(ctx, totais, event && event.currentTarget); },
     };
     if (!podeConcluir) concluirAttrs.disabled = 'disabled';
-    acoes.push(el('button', concluirAttrs, 'Concluir'));
+    acoes.push(el('button', concluirAttrs, 'Finalizar OP Tecelagem'));
     acoes.push(el('a', { href: '#documentos-op', style: BTN_BACK + 'text-decoration:none;' }, 'Documentos'));
     acoes.push(el('a', { href: '#historico-op', style: BTN_BACK + 'text-decoration:none;' }, 'Histórico'));
 

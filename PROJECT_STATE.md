@@ -1,4 +1,23 @@
 > **Atualizacao 2026-07-05 - fase
+> `RAVATEX-TAPETES-ADMIN-TEC-FINALIZE-CTA-R1`.**
+> Diagnostico em staging somente leitura: pedido mais recente #19 tinha
+> OP Tecelagem 17/2026 em `em_producao`, item ajustado 5100,00 m,
+> entregas somando 5100,00 m e saldo produtivo zero. Havia evento de
+> abertura para producao, mas nenhum evento de finalizacao.
+>
+> Classificacao: caso 2. A OP estava pronta para conclusao formal, e a
+> tela Admin ja chamava a RPC canonica `alterar_status_op(...,
+> 'concluida')`, mas o CTA aparecia como um botao secundario generico
+> `Concluir`, junto das demais acoes do cabecalho.
+>
+> Correcao: `js/screens/op-tecelagem-producao-admin.js` manteve a
+> condicao `totalAjustado > 0 && saldo <= 0`, sem autofinalizar e sem
+> write direto em `ops`, mas passou a exibir o CTA habilitado como
+> `Finalizar OP Tecelagem`, em destaque visual. O teste
+> `tests/tec-to-acabamento-flow.smoke.js` agora protege a regra de saldo,
+> o rotulo explicito e o estilo destacado do CTA.
+>
+> **Atualizacao 2026-07-05 - fase
 > `RAVATEX-TAPETES-CLIENTE-ORDER-SUMMARY-READMODEL-A-B`.**
 > P1 `CLIENTE-INTERNAL-CHAIN-READ-A` resolvido com read model publico
 > para o detalhe do pedido no Portal Cliente. A tela cliente deixou de

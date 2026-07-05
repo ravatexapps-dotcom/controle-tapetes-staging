@@ -1,4 +1,32 @@
-﻿# Estado pos-fase - Cliente Order Summary Readmodel A-B
+﻿# Estado pos-fase - Admin Tecelagem Finalize CTA R1
+
+- Fase: `RAVATEX-TAPETES-ADMIN-TEC-FINALIZE-CTA-R1`.
+- Objetivo: diagnosticar e corrigir a baixa visibilidade da acao de
+  finalizacao formal da OP Tecelagem no Admin.
+- Branch/HEAD base: `work/app-next`,
+  `a46d8530aa2e46730edb11f197aa7d96964e898a`.
+- Diagnostico staging somente leitura:
+  - pedido mais recente analisado: #19
+    `ecebc55a-03cc-486f-9b1d-dc63995894d1`, status `rascunho`;
+  - OP Tecelagem: id `24`, OP `17/2026`, status `em_producao`;
+  - item ajustado: 5100,00 m; entregas da OP: 100,00 m + 5000,00 m;
+  - saldo produtivo: zero;
+  - eventos: havia `aberta -> em_producao`, sem evento de finalizacao.
+- Classificacao: caso 2. A OP estava com producao totalmente entregue e
+  pendia apenas da conclusao formal.
+- Causa raiz: UX P1. O fluxo tecnico estava correto (`alterar_status_op`
+  para `concluida`, sem update direto em `ops`), mas o botao aparecia
+  como acao secundaria generica `Concluir` no cabecalho.
+- Patch:
+  - `js/screens/op-tecelagem-producao-admin.js`: CTA habilitado passou a
+    usar estilo destacado e rotulo `Finalizar OP Tecelagem`; a condicao
+    continua `totalAjustado > 0 && saldo <= 0`;
+  - `tests/tec-to-acabamento-flow.smoke.js`: teste protege saldo zerado,
+    rotulo explicito, estilo destacado e chamada a `finalizarTecelagem`.
+- Sem SQL, sem migration, sem producao, sem criacao/alteracao de dados
+  reais e sem mudancas em Cliente/read model/Latex/default/split.
+
+# Estado pos-fase - Cliente Order Summary Readmodel A-B
 
 - Fase: `RAVATEX-TAPETES-CLIENTE-ORDER-SUMMARY-READMODEL-A-B`.
 - Objetivo: resolver o P1 `CLIENTE-INTERNAL-CHAIN-READ-A`, impedindo
