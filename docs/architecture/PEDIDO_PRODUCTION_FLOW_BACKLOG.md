@@ -376,3 +376,204 @@ Cada modal aberto pelas setas do stepper no Pedido Detail deve exibir:
 - `docs/architecture/PEDIDO_OP_SCHEMA_CONTRACT.md` — Contrato de schema
 - `PROJECT_STATE.md` — Histórico completo de fases
 - `AGENT_HANDOFF.md` — Estado atual e regras vinculantes
+
+---
+
+## 9. Backlog Admin — Validação operacional
+
+Fase: `RAVATEX-TAPETES-ADMIN-FLOW-BACKLOG-SYNC-A`
+Data: 2026-07-05
+Tipo: docs-only, read-only patch documental. Consolida observações de
+validação do fluxo Admin sem implementar UI, JS, SQL ou migration.
+
+### 9.1 Itens registrados (ordem recomendada)
+
+#### 1. PEDIDO-CONCLUIR-ACTION-R1
+
+| Campo | Valor |
+|---|---|
+| **Prioridade** | P1 |
+| **Sintoma** | A ação de concluir/concluir Pedido via `concluir_pedido_se_pronto` não tem CTA explícito visível no cabeçalho do Pedido Detail Admin quando todas as condições de conclusão são satisfeitas. O usuário depende de efeito colateral de entrega de expedição para disparar a conclusão. |
+| **Fluxo afetado** | Pedido Detail Admin — conclusão do Pedido |
+| **Causa provável** | O CTA de conclusão ficou acoplado ao fluxo Expedição → Entrega (`registrar_entrega_expedicao`). Quando não existe expedição pendente mas o Pedido está pronto por outros critérios, não há CTA visível. |
+| **Arquivos prováveis** | `js/screens/pedido-detail.js`, `js/screens/pedido-detail-events.js`, `js/screens/pedido-detail-render.js` |
+| **Critério de aceite** | Botão "Concluir Pedido" visível no cabeçalho/ações do Pedido Detail quando `concluir_pedido_se_pronto` é elegível; confirmação antes do write; feedback de sucesso/erro. |
+| **Dependências** | Nenhuma (a RPC `concluir_pedido_se_pronto` já existe em db/23). |
+| **Fase recomendada** | `ADMIN-PEDIDO-CONCLUIR-CTA-R1` |
+| **Ordem** | 1 |
+
+#### 2. PEDIDO-STAGE-ACTION-HUB-B
+
+| Campo | Valor |
+|---|---|
+| **Prioridade** | P1 |
+| **Sintoma** | As setas do stepper são o único ponto de ação de transição no Pedido Detail. Não existe um hub/centro unificado que agregue todas as ações pendentes por etapa, com explicações de bloqueio e links para OPs relacionadas. |
+| **Fluxo afetado** | Pedido Detail Admin — todas as transições de etapa |
+| **Causa provável** | Os modais de seta foram enriquecidos incrementalmente (fases B/C), mas cada um ainda é isolado. Falta um painel/hub que consolide: o que está bloqueado em cada etapa, por quê, quais OPs estão envolvidas e o que fazer. |
+| **Arquivos prováveis** | `js/screens/pedido-detail-events.js`, `js/screens/pedido-detail-render.js`, `js/screens/pedido-chain-state.js`, `js/screens/pedido-detail-progress.js` |
+| **Critério de aceite** | Hub/centro de ações no Pedido Detail que, para cada etapa ativa/bloqueada: exibe status, bloqueios com explicação curta + detalhe expansível, OPs relacionadas com links, CTA da próxima ação canônica. Fonte única: `derivePedidoChainState`. |
+| **Dependências** | Nenhuma (usa dados já carregados + `derivePedidoChainState`). |
+| **Fase recomendada** | `ADMIN-PEDIDO-STAGE-ACTION-HUB-B` |
+| **Ordem** | 2 |
+
+**Itens absorvidos por PEDIDO-STAGE-ACTION-HUB-B:**
+
+| Item absorvido | Como é absorvido |
+|---|---|
+| `PEDIDO-STAGE-BLOCKER-EXPLANATION-R1` | A explicação textual de cada bloqueio passa a residir no hub, com texto curto visível e detalhe em tooltip/expansão. A seta mantém label curto; o hub concentra a explicação. |
+| `PEDIDO-STAGE-RELATED-OPS-LINKS-R1` | Os links para OPs relacionadas a cada etapa passam a ser exibidos no hub, não como texto inline nas setas. |
+| Parte de `TEC-ACCEPTANCE-IN-PEDIDO-MODAL-B` | O hub exibe se a OP Tecelagem vinculada ainda precisa de aceite/ajuste, com CTA para o modal de aceite. O modal de aceite em si é implementado separadamente (item 3). |
+| Parte de `PEDIDO-STAGE-MODAL-WIDTH-R1` | O hub usa largura expandida por padrão (não modal estreito), resolvendo o problema de truncamento de informações densas. |
+
+#### 3. TEC-ACCEPTANCE-IN-PEDIDO-MODAL-B
+
+| Campo | Valor |
+|---|---|
+| **Prioridade** | P1 |
+| **Sintoma** | O aceite/ajuste da OP Tecelagem exige navegar para a tela de OP (`#/ops/<id>`). O Pedido Detail não oferece interface inline para revisar e aceitar a OP de tecelagem vinculada. |
+| **Fluxo afetado** | Pedido Detail Admin — transição Insumos → Tecelagem ou Tecelagem → Acabamento |
+| **Causa provável** | A criação de OP Tecelagem a partir do Pedido (Fase C) populou `lotes.pedido_id` e `op_itens.pedido_item_id`, mas o ciclo de aceite/ajuste ainda não tem tela no contexto do Pedido. O modal de transição atual só sabe abrir a OP. |
+| **Arquivos prováveis** | `js/screens/pedido-detail-events.js`, `js/screens/pedido-detail-render.js`, `js/screens/pedido-chain-state.js` |
+| **Critério de aceite** | Modal inline no Pedido Detail que: lista itens da OP Tecelagem com quantidades ajustadas vs pedidas, permite ajustes dentro do saldo do pedido, mostra parâmetros de largura, exibe status da OP e tem CTA "Confirmar e iniciar produção" que chama `alterar_status_op(..., 'em_producao')`. |
+| **Dependências** | `PEDIDO-STAGE-ACTION-HUB-B` (o hub expõe o CTA para este modal). |
+| **Fase recomendada** | `ADMIN-TEC-ACCEPTANCE-IN-PEDIDO-MODAL-B` |
+| **Ordem** | 3 |
+
+#### 4. OP-NOVA-METRAGEM-INPUT-FOCUS-R1
+
+| Campo | Valor |
+|---|---|
+| **Prioridade** | P2 |
+| **Sintoma** | Ao adicionar itens na tela de Nova OP (Tecelagem ou Acabamento), o foco não vai automaticamente para o campo de metragem após selecionar o modelo, obrigando clique ou Tab manual. |
+| **Fluxo afetado** | Admin — Nova OP (`#/ops/nova`) |
+| **Causa provável** | O select de modelo dispara `onchange` que atualiza o estado do item (cores, largura derivada), mas não há `focus()` programático no input de metragem após a seleção. |
+| **Arquivos prováveis** | `js/screens/op-nova.js` |
+| **Critério de aceite** | Ao selecionar um modelo no select de item da Nova OP, o foco move-se automaticamente para o campo de metragem correspondente. |
+| **Dependências** | Nenhuma. |
+| **Fase recomendada** | `ADMIN-OP-NOVA-METRAGEM-FOCUS-R1` |
+| **Ordem** | 4 |
+
+#### 5. PEDIDO-FIRST-OP-CTA-PLACEMENT-R1
+
+| Campo | Valor |
+|---|---|
+| **Prioridade** | P1 |
+| **Sintoma** | Quando um Pedido não tem nenhuma OP vinculada, o CTA "Criar OP" / "Lançar produção" está ausente ou posicionado de forma não proeminente no Pedido Detail. O usuário precisa saber que deve navegar manualmente para `#/ops/nova?pedido_id=<id>`. |
+| **Fluxo afetado** | Pedido Detail Admin — Pedido sem OP |
+| **Causa provável** | O bloco de OPs vinculadas no Pedido Detail só aparece quando há OPs. O estado "sem OP" não tem um CTA contextual visível para criar a primeira OP a partir do Pedido. |
+| **Arquivos prováveis** | `js/screens/pedido-detail-render.js`, `js/screens/pedido-detail.js` |
+| **Critério de aceite** | No Pedido Detail sem OPs, bloco visível com CTA destacado "Criar OP de produção" que navega para `#/ops/nova?pedido_id=<id>` com pré-preenchimento dos itens do pedido. |
+| **Dependências** | Nenhuma (rota `#/ops/nova?pedido_id=` já existe desde a Fase C). |
+| **Fase recomendada** | `ADMIN-PEDIDO-FIRST-OP-CTA-R1` |
+| **Ordem** | 5 |
+
+#### 6. TEC-TO-ACABAMENTO-MODAL-LAYOUT-R1
+
+| Campo | Valor |
+|---|---|
+| **Prioridade** | P2 |
+| **Sintoma** | O modal de transição Tecelagem → Acabamento (`openMovementModal`) exibe o formulário de entrega (`buildEntregaInlineForm`) com layout que pode ficar comprimido em resoluções menores, especialmente o select de split e o campo de motivo. |
+| **Fluxo afetado** | Pedido Detail Admin — seta Tecelagem → Acabamento |
+| **Causa provável** | O `buildEntregaInlineForm` foi projetado para a tela de OP (largura total), mas no modal do Pedido Detail a largura disponível é menor (~520px), comprimindo campos, select de split e aviso ambar. |
+| **Arquivos prováveis** | `js/screens/pedido-detail-events.js`, `js/screens/entrega-form.js` |
+| **Critério de aceite** | Modal Tecelagem → Acabamento com layout responsivo: campos em grid flexível, select de split e motivo com largura adequada, aviso ambar legível e tabela de pendências sem truncamento horizontal. |
+| **Dependências** | `PEDIDO-STAGE-MODAL-WIDTH-R1` (largura base do modal padronizada beneficia este também). |
+| **Fase recomendada** | `ADMIN-TEC-TO-ACABAMENTO-MODAL-LAYOUT-R1` |
+| **Ordem** | 6 |
+
+#### 7. PEDIDO-STAGE-MODAL-WIDTH-R1
+
+| Campo | Valor |
+|---|---|
+| **Prioridade** | P2 |
+| **Sintoma** | Os modais de transição entre etapas do stepper usam largura fixa estreita (~520px), truncando informações de totais, tabelas de pendências e listas de OPs relacionadas. |
+| **Fluxo afetado** | Pedido Detail Admin — todos os modais de seta |
+| **Causa provável** | Largura fixa herdada de modais simples; os modais foram enriquecidos com mais dados ao longo das fases, mas a largura base não foi ajustada. |
+| **Arquivos prováveis** | `js/screens/pedido-detail-events.js` |
+| **Critério de aceite** | Modais de transição com largura mínima de 640px (ou responsiva `min(90vw, 720px)`); tabelas internas sem scroll horizontal forçado; informações de totais e OPs relacionadas totalmente visíveis. |
+| **Dependências** | Nenhuma. Parcialmente absorvido por `PEDIDO-STAGE-ACTION-HUB-B` (o hub usa painel expandido, não modal estreito). |
+| **Fase recomendada** | `ADMIN-PEDIDO-STAGE-MODAL-WIDTH-R1` |
+| **Ordem** | 7 |
+
+#### 8. LATEX-ADMIN-COMPACT-BUTTONS-R1
+
+| Campo | Valor |
+|---|---|
+| **Prioridade** | P2 |
+| **Sintoma** | Na tela de OP Latex Admin (`op-latex-admin.js`), os botões de ação (Movimentar para Expedição, Finalizar OP) e os cards de resumo ocupam espaço vertical excessivo, exigindo scroll frequente em OPs com muitos itens. |
+| **Fluxo afetado** | Admin — OP Latex/Acabamento (`#/ops/<id>` com tipo=latex) |
+| **Causa provável** | Layout herdado do standalone com cards e botões em tamanho generoso; com os novos cards de resumo canônico (Recebido/Movimentado/Disponível/Entregue/Saldo) e a tabela de itens, a densidade vertical aumentou mas os botões não foram compactados proporcionalmente. |
+| **Arquivos prováveis** | `js/screens/op-latex-admin.js` |
+| **Critério de aceite** | Botões de ação e cards de resumo com altura reduzida (padding/margem compactos); CTA "Movimentar para Expedição" e "Finalizar OP" visíveis sem scroll na maioria das OPs; tabela de itens preservada. |
+| **Dependências** | Nenhuma. |
+| **Fase recomendada** | `ADMIN-LATEX-COMPACT-BUTTONS-R1` |
+| **Ordem** | 8 |
+
+### 9.2 Itens absorvidos (não implementar isoladamente)
+
+Estes itens são resolvidos como parte de `PEDIDO-STAGE-ACTION-HUB-B` (item 2 acima):
+
+#### PEDIDO-STAGE-BLOCKER-EXPLANATION-R1
+
+| Campo | Valor |
+|---|---|
+| **Prioridade** | P2 (absorvido) |
+| **Sintoma** | As setas do stepper no Pedido Detail mostram apenas label curto ("Aguardar", "Transferir", "Concluído") sem explicar o motivo do bloqueio quando uma etapa está em "Aguardar". |
+| **Fluxo afetado** | Pedido Detail Admin — stepper entre etapas |
+| **Causa provável** | Decisão de produto: labels curtos nas setas para evitar poluição visual. A explicação do bloqueio precisa de um local separado. |
+| **Critério de aceite** | Bloqueios explicados no hub de ações (`PEDIDO-STAGE-ACTION-HUB-B`), com texto curto visível + detalhe expansível. Setas mantêm labels curtos. |
+| **Dependências** | `PEDIDO-STAGE-ACTION-HUB-B`. |
+| **Fase recomendada** | Absorvido por `ADMIN-PEDIDO-STAGE-ACTION-HUB-B`. |
+
+#### PEDIDO-STAGE-RELATED-OPS-LINKS-R1
+
+| Campo | Valor |
+|---|---|
+| **Prioridade** | P2 (absorvido) |
+| **Sintoma** | Os modais de transição não exibem links diretos para as OPs relacionadas à etapa. O usuário precisa sair do modal, encontrar o bloco de OPs vinculadas e clicar lá. |
+| **Fluxo afetado** | Pedido Detail Admin — modais de transição |
+| **Causa provável** | Os modais foram evoluídos para mostrar totais e pendências, mas não links de navegação para as OPs. |
+| **Critério de aceite** | O hub de ações (`PEDIDO-STAGE-ACTION-HUB-B`) exibe, para cada etapa, links clicáveis para as OPs relacionadas (`#/ops/<id>`). |
+| **Dependências** | `PEDIDO-STAGE-ACTION-HUB-B`. |
+| **Fase recomendada** | Absorvido por `ADMIN-PEDIDO-STAGE-ACTION-HUB-B`. |
+
+### 9.3 Sequência de implementação recomendada
+
+| # | Item | Absorve | Risco |
+|---|---|---|---|
+| 1 | PEDIDO-CONCLUIR-ACTION-R1 | — | Baixo |
+| 2 | PEDIDO-STAGE-ACTION-HUB-B | BLOCKER-EXPLANATION-R1, RELATED-OPS-LINKS-R1, parte de TEC-ACCEPTANCE, parte de MODAL-WIDTH | Médio |
+| 3 | TEC-ACCEPTANCE-IN-PEDIDO-MODAL-B | — | Médio |
+| 4 | OP-NOVA-METRAGEM-INPUT-FOCUS-R1 | — | Baixo |
+| 5 | PEDIDO-FIRST-OP-CTA-PLACEMENT-R1 | — | Baixo |
+| 6 | TEC-TO-ACABAMENTO-MODAL-LAYOUT-R1 | — | Baixo |
+| 7 | PEDIDO-STAGE-MODAL-WIDTH-R1 | — | Baixo |
+| 8 | LATEX-ADMIN-COMPACT-BUTTONS-R1 | — | Baixo |
+
+### 9.4 Relação com backlog de produção (§2)
+
+O backlog Admin (§9) é complementar ao backlog de fluxo produtivo (§2).
+Os itens de §2 (A-H) cobrem a mecânica de transição e a cadeia
+produtiva; os itens de §9 cobrem usabilidade, clareza de ações e
+organização visual da interface Admin já existente.
+
+Sobreposições resolvidas:
+- §2 item D (`PEDIDO-TEC-ACCEPTANCE-B`) ≈ §9 item 3 (`TEC-ACCEPTANCE-IN-PEDIDO-MODAL-B`): o item §9.3 detalha o aceite inline no Pedido. Ambos convergem na mesma implementação.
+- §2 item B (`PEDIDO-TRANSITION-MODAL-GAPS-B`) ≈ §9 item 2 (`PEDIDO-STAGE-ACTION-HUB-B`): o hub de ações é a evolução natural dos modais de seta enriquecidos.
+- §9 itens 6 e 7 (`TEC-TO-ACABAMENTO-MODAL-LAYOUT-R1`, `PEDIDO-STAGE-MODAL-WIDTH-R1`) são ajustes de layout que beneficiam os modais de §2.B.
+
+Itens de §2 já implementados e fora do backlog Admin: C, F, H, A, G, E (todos resolvidos em fases anteriores conforme `PROJECT_STATE.md`).
+
+### 9.5 Regras vinculantes
+
+1. **Não implementar isoladamente itens absorvidos.** `BLOCKER-EXPLANATION-R1`
+   e `RELATED-OPS-LINKS-R1` só fazem sentido dentro do hub.
+2. **Fonte de cálculo canônica:** `derivePedidoChainState` para qualquer
+   dado de etapa, bloqueio ou progresso. Não duplicar lógica.
+3. **Writes somente via operações canônicas existentes:** `alterar_status_op`,
+   `salvarEntregaCima`, `liberar_expedicao_latex_parcial`,
+   `concluir_pedido_se_pronto`. Nunca write direto em tabelas.
+4. **Uma fase por item.** Não agrupar múltiplos itens em uma fase só.
+5. **Staging seletivo.** `git add` apenas os arquivos da fase.
+6. **Produção intocada.** `bhgifjrfagkzubpyqpew` e `origin/main` nunca
+   são alvo de push.

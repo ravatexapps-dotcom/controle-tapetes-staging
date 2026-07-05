@@ -1,4 +1,58 @@
-﻿# Estado pos-fase - Acabamento Expedicao Flow Coherence C
+﻿# Estado pos-fase - Admin Flow Backlog Sync A
+
+- Fase: `RAVATEX-TAPETES-ADMIN-FLOW-BACKLOG-SYNC-A`.
+- Status: OK. Docs-only, read-only patch documental.
+- Branch/HEAD base recebido: `work/app-next`,
+  `153a45ea863bc5183f333cd2c4b795bd1bd8ee8b`.
+- Objetivo: consolidar observacoes de validacao operacional do fluxo
+  Admin como itens hierarquizados de backlog, sem implementar correcoes.
+- Backlog Admin registrado em
+  `docs/architecture/PEDIDO_PRODUCTION_FLOW_BACKLOG.md` §9 com 10 itens:
+  - `PEDIDO-CONCLUIR-ACTION-R1` (P1) — CTA explicito para concluir Pedido.
+  - `PEDIDO-STAGE-ACTION-HUB-B` (P1) — hub central de acoes por etapa.
+  - `PEDIDO-STAGE-BLOCKER-EXPLANATION-R1` (P2, absorvido) — explicacao de
+    bloqueios no hub, nao nas setas.
+  - `TEC-ACCEPTANCE-IN-PEDIDO-MODAL-B` (P1) — aceite/ajuste da OP
+    Tecelagem inline no Pedido Detail.
+  - `OP-NOVA-METRAGEM-INPUT-FOCUS-R1` (P2) — autofoco no campo metragem.
+  - `PEDIDO-FIRST-OP-CTA-PLACEMENT-R1` (P1) — CTA "Criar OP" visivel
+    quando Pedido sem OP.
+  - `TEC-TO-ACABAMENTO-MODAL-LAYOUT-R1` (P2) — layout responsivo no
+    modal Tecelagem -> Acabamento.
+  - `PEDIDO-STAGE-MODAL-WIDTH-R1` (P2) — largura minima de 640px nos
+    modais de transicao.
+  - `PEDIDO-STAGE-RELATED-OPS-LINKS-R1` (P2, absorvido) — links para OPs
+    relacionadas no hub.
+  - `LATEX-ADMIN-COMPACT-BUTTONS-R1` (P2) — compactar botoes/cards na
+    tela de OP Latex Admin.
+- `PEDIDO-STAGE-ACTION-HUB-B` (item 2) absorve:
+  - `PEDIDO-STAGE-BLOCKER-EXPLANATION-R1`
+  - `PEDIDO-STAGE-RELATED-OPS-LINKS-R1`
+  - parte de `TEC-ACCEPTANCE-IN-PEDIDO-MODAL-B` (exposicao do CTA)
+  - parte de `PEDIDO-STAGE-MODAL-WIDTH-R1` (hub usa painel, nao modal)
+- Sequencia recomendada:
+  1. PEDIDO-CONCLUIR-ACTION-R1
+  2. PEDIDO-STAGE-ACTION-HUB-B
+  3. TEC-ACCEPTANCE-IN-PEDIDO-MODAL-B
+  4. OP-NOVA-METRAGEM-INPUT-FOCUS-R1
+  5. PEDIDO-FIRST-OP-CTA-PLACEMENT-R1
+  6. TEC-TO-ACABAMENTO-MODAL-LAYOUT-R1
+  7. PEDIDO-STAGE-MODAL-WIDTH-R1
+  8. LATEX-ADMIN-COMPACT-BUTTONS-R1
+- Relacao com backlog de producao (§2 do mesmo arquivo):
+  - §9 e complementar a §2. Itens de §2 ja implementados: A, C, D, E,
+    F, G, H. Itens sobrepostos: §2.D ≈ §9.3, §2.B ≈ §9.2.
+- Arquivos alterados nesta fase:
+  - `docs/architecture/PEDIDO_PRODUCTION_FLOW_BACKLOG.md`
+  - `PROJECT_STATE.md`
+  - `AGENT_HANDOFF.md`
+- Nao tocado: JS, testes, SQL, migration, producao
+  `bhgifjrfagkzubpyqpew`, `origin/main`, `supabase/.temp/`.
+- Push: staging `work/app-next`.
+- Proximo passo: aguardar autorizacao do arquiteto para iniciar
+  implementacao pelo item 1 (`PEDIDO-CONCLUIR-ACTION-R1`).
+
+# Estado pos-fase - Acabamento Expedicao Flow Coherence C
 
 - Fase: `RAVATEX-TAPETES-ACABAMENTO-EXPEDICAO-FLOW-COHERENCE-C`.
 - Status: OK em staging.

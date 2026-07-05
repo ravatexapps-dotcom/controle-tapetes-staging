@@ -1,4 +1,37 @@
 > **Atualizacao 2026-07-05 - fase
+> `RAVATEX-TAPETES-ADMIN-FLOW-BACKLOG-SYNC-A`.**
+> Status: OK. Patch documental somente, sem JS/SQL/migration/producao.
+> Fase de consolidacao de backlog Admin — registra observacoes de
+> validacao operacional como itens hierarquizados de backlog, sem
+> implementar correcoes.
+>
+> Registrados 10 itens de backlog Admin em
+> `docs/architecture/PEDIDO_PRODUCTION_FLOW_BACKLOG.md` §9:
+> `PEDIDO-CONCLUIR-ACTION-R1` (P1), `PEDIDO-STAGE-ACTION-HUB-B` (P1),
+> `PEDIDO-STAGE-BLOCKER-EXPLANATION-R1` (P2, absorvido),
+> `PEDIDO-FIRST-OP-CTA-PLACEMENT-R1` (P1),
+> `OP-NOVA-METRAGEM-INPUT-FOCUS-R1` (P2),
+> `TEC-ACCEPTANCE-IN-PEDIDO-MODAL-B` (P1),
+> `PEDIDO-STAGE-MODAL-WIDTH-R1` (P2),
+> `TEC-TO-ACABAMENTO-MODAL-LAYOUT-R1` (P2),
+> `PEDIDO-STAGE-RELATED-OPS-LINKS-R1` (P2, absorvido),
+> `LATEX-ADMIN-COMPACT-BUTTONS-R1` (P2).
+>
+> `PEDIDO-STAGE-ACTION-HUB-B` absorve 4 itens:
+> `BLOCKER-EXPLANATION-R1`, `RELATED-OPS-LINKS-R1`,
+> parte de `TEC-ACCEPTANCE-IN-PEDIDO-MODAL-B` e
+> parte de `PEDIDO-STAGE-MODAL-WIDTH-R1`.
+>
+> Sequencia recomendada: CONCLUIR-ACTION → STAGE-ACTION-HUB →
+> TEC-ACCEPTANCE-IN-PEDIDO-MODAL → OP-NOVA-METRAGEM-FOCUS →
+> FIRST-OP-CTA → TEC-TO-ACABAMENTO-MODAL-LAYOUT →
+> STAGE-MODAL-WIDTH → LATEX-COMPACT-BUTTONS.
+>
+> Arquivos alterados: `docs/architecture/PEDIDO_PRODUCTION_FLOW_BACKLOG.md`,
+> `PROJECT_STATE.md`, `AGENT_HANDOFF.md`.
+> Nenhum JS, teste, SQL, migration, producao ou origin alterado.
+>
+> **Atualizacao 2026-07-05 - fase
 > `RAVATEX-TAPETES-ACABAMENTO-EXPEDICAO-FLOW-COHERENCE-C`.**
 > Status: OK em staging. Reparou de ponta a ponta o fluxo Acabamento/Latex
 > -> Expedicao -> Entrega, dando paridade com Tecelagem -> Acabamento.
