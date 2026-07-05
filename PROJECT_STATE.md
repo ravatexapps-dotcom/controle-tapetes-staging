@@ -1,4 +1,63 @@
 > **Atualizacao 2026-07-05 - fase
+> `RAVATEX-TAPETES-ADMIN-BACKLOG-VISUAL-CLOSEOUT-A`.**
+> Status: BLOQUEADO / backlog Admin-Pedido NAO zerado. Auditoria visual
+> read-only em app real servido por `http://localhost:8765/` apontando para
+> Supabase staging `ucrjtfswnfdlxwtmxnoo`; producao `bhgifjrfagkzubpyqpew`
+> intocada.
+>
+> Premissa registrada: relatorio tecnico e teste local nao bastam para fechar
+> backlog de UX/fluxo. Cada item foi classificado por comportamento real em
+> staging: OK visual, Parcial, Falhou, Reabrir R2 ou Nao validavel sem acao
+> manual.
+>
+> Estado inicial confirmado: branch `work/app-next`, HEAD
+> `57719298dcbd370cb7b1a0ca3ff1365c30ca8fb9`, remoto
+> `staging/work/app-next` no mesmo commit, status inicial somente
+> `?? supabase/.temp/`. `origin` nao foi usado para escrita.
+>
+> Staging/frontend: o app servido localmente resolveu `APP_ENV=staging` e
+> `https://ucrjtfswnfdlxwtmxnoo.supabase.co`; `pedido-detail-render.js`
+> servido bateu SHA-256 com o arquivo local do HEAD e nao contem mais
+> `disabled: ready ? null`. Cache foi evitado com querystring `?audit=...`;
+> nao ha service worker no app. Observacao: busca estatica ainda encontrou
+> `disabled: ready ? null : 'disabled'` em `js/screens/expedicao-admin.js`,
+> fora do botao do Pedido Detail validado nesta auditoria.
+>
+> Resultado visual por item:
+>
+> | Item | Status visual real | Evidencia | Decisao |
+> |---|---|---|---|
+> | `PEDIDO-CONCLUIR-ACTION-R1/R2` | OK visual no Pedido Detail | Pedido #20 aparece `Concluido` / `Comercial: Entregue`, botao final `Pedido concluido` com `disabled="disabled"` e cursor `not-allowed`; Pedido #21 apto mostra `Concluir pedido` habilitado, sem `disabled`; nenhum `disabled="null"` nos botoes do Pedido Detail. | Fechado para Pedido Detail; manter nota sobre residuo estatico em `expedicao-admin.js`. |
+> | `PEDIDO-STAGE-ACTION-HUB-B` | Falhou | Pedido #21 abre hub de Entrega e mostra `Concluir`, mas Pedido #13 ao clicar Tecelagem/seta `Aguardar` gera `TypeError: Failed to execute 'appendChild' on 'Node'` em `pedido-detail-events.js:1726`; hub nao abre. | Reabrir R2. |
+> | `PEDIDO-STAGE-BLOCKER-EXPLANATION-R1` | Falhou | Setas mantem texto curto `Aguardar`, mas no Pedido #13 o clique nao mostra motivo/proxima acao por causa do crash do hub. | Reabrir R2 junto com hub. |
+> | `PEDIDO-FIRST-OP-CTA-PLACEMENT-R1` | OK visual | Pedido #1 sem OP mostra `Gerar primeira OP` destacado a direita no bloco `OPs vinculadas`; card vazio e explicativo. | Fechado. |
+> | `OP-NOVA-METRAGEM-INPUT-FOCUS-R1` | OK visual | Nova OP aberta pelo Pedido #1; em linha temporaria nao salva, campo `metros` aceitou `1000` continuamente e foco permaneceu no mesmo input. | Fechado. |
+> | `TEC-TO-ACABAMENTO-MODAL-LAYOUT-R1` | OK visual | Pedido #14 abriu modal Tecelagem -> Acabamento; ordem observada: nome do item, depois Data/Destino/Metros, depois Observacao; conteudo `Itens envolvidos` legivel. Nenhuma transferencia salva. | Fechado. |
+> | `LATEX-ADMIN-COMPACT-BUTTONS-R1` | OK visual | OP Latex #27 / OP 9/2026 em producao nao mostra `Confirmar entrada / iniciar acabamento`; botoes curtos `Finalizar OP` e `Movimentar` aparecem separados. | Fechado. |
+> | `TEC-ACCEPTANCE-IN-PEDIDO-MODAL-B` | Falhou | Pedido #13 tem OP Tecelagem aberta (OP 10/2026), mas o hub de Tecelagem crasha antes de exibir `Aceitar OP`; card principal so mostra `Abrir OP` e `Sem saldo disponivel`. | Reabrir R2. |
+> | `PEDIDO-STAGE-MODAL-WIDTH-R1` | Parcial | Modal de movimento do Pedido #14 esta legivel e nao esmaga `Itens envolvidos`; hub de etapa nao pode ser validado em Tecelagem por crash real. | Revalidar apos R2 do hub. |
+> | `PEDIDO-STAGE-RELATED-OPS-LINKS-R1` | Parcial / Reabrir R2 | Cards principais mostram `Abrir OP` e expedicoes mostram `Abrir expedicao`, mas os links dentro do hub de etapa para Tecelagem nao sao validaveis porque o hub crasha. | Reabrir junto com hub. |
+>
+> P1 falhou, portanto o backlog Admin/Pedido NAO esta zerado. Pedido #20
+> permanece entregue/concluido e nao deve mais ser usado como pedido rascunho
+> apto. Pedido #21 foi apenas inspecionado como apto; nao foi concluido.
+>
+> Testes locais obrigatorios OK: `pedido-detail.smoke.js` (147/147),
+> `pedido-detail-linked-ops.smoke.js` (7/7), `op-latex-admin.smoke.js`
+> (55/55), `tec-to-acabamento-flow.smoke.js` (37/37) e
+> `expedicao-partial-flow.smoke.js` (12/12). Observacao critica: os testes
+> de hub passaram, mas divergiram do browser real no caso com lista de OPs.
+>
+> Diagnosticos staging read-only OK: `production-flow-invariants-diag`,
+> `latex-consolidation-diag` e `expedicao-partial-flow-diag`.
+>
+> Arquivos alterados nesta fase: `PROJECT_STATE.md`, `AGENT_HANDOFF.md` e
+> `docs/architecture/PEDIDO_PRODUCTION_FLOW_BACKLOG.md`. Confirmacoes: sem
+> SQL, sem migration, sem dados reais novos, sem concluir novo pedido, sem
+> aceitar OP real, sem transferencia, sem save de Nova OP, sem acao
+> destrutiva, sem `git add .`, `supabase/.temp/` fora do commit.
+>
+> **Atualizacao 2026-07-05 - fase
 > `RAVATEX-TAPETES-PEDIDO-CONCLUIR-ACTION-R2-REAL-STAGING`.**
 > Status: OK. R1 foi reaberto porque a validacao visual real do Arquiteto
 > prevalece sobre o relatorio anterior: o botao `Concluir pedido` parecia

@@ -1,4 +1,45 @@
-﻿# Estado pos-fase - Latex Admin Compact Buttons R1
+﻿# Estado pos-fase - Admin Backlog Visual Closeout A
+
+- Fase: `RAVATEX-TAPETES-ADMIN-BACKLOG-VISUAL-CLOSEOUT-A`.
+- Status: BLOQUEADO. Backlog Admin/Pedido NAO zerado em staging real.
+- Branch/HEAD: `work/app-next`,
+  `57719298dcbd370cb7b1a0ca3ff1365c30ca8fb9`; remoto
+  `staging/work/app-next` no mesmo commit; status inicial somente
+  `?? supabase/.temp/`.
+- Frontend auditado em `http://localhost:8765/` contra Supabase staging
+  `ucrjtfswnfdlxwtmxnoo`; producao intocada. Cache mitigado com
+  `?audit=...`; `pedido-detail-render.js` servido bate SHA-256 com o local
+  e nao contem `disabled: ready ? null`.
+- Resultado: Pedido #20 entregue/concluido OK; Pedido #21 apto mostra
+  `Concluir pedido` habilitado e sem `disabled`; Pedido #13 quebra o hub de
+  etapa Tecelagem/`Aguardar` com
+  `TypeError: Failed to execute 'appendChild' on 'Node'` em
+  `pedido-detail-events.js:1726` (`tecOps.map(...)` passado como array para
+  `window.el(...)`).
+- OK visual: `PEDIDO-CONCLUIR-ACTION-R1/R2`,
+  `PEDIDO-FIRST-OP-CTA-PLACEMENT-R1`,
+  `OP-NOVA-METRAGEM-INPUT-FOCUS-R1`,
+  `TEC-TO-ACABAMENTO-MODAL-LAYOUT-R1`,
+  `LATEX-ADMIN-COMPACT-BUTTONS-R1`.
+- Falhou/Reabrir R2: `PEDIDO-STAGE-ACTION-HUB-B`,
+  `PEDIDO-STAGE-BLOCKER-EXPLANATION-R1`,
+  `TEC-ACCEPTANCE-IN-PEDIDO-MODAL-B`.
+- Parcial/Reabrir junto com hub: `PEDIDO-STAGE-MODAL-WIDTH-R1`,
+  `PEDIDO-STAGE-RELATED-OPS-LINKS-R1`.
+- Testes obrigatorios OK: `pedido-detail.smoke.js` 147/147,
+  `pedido-detail-linked-ops.smoke.js` 7/7, `op-latex-admin.smoke.js` 55/55,
+  `tec-to-acabamento-flow.smoke.js` 37/37,
+  `expedicao-partial-flow.smoke.js` 12/12. Diagnosticos staging read-only OK:
+  invariantes, consolidacao Latex e expedicao partial.
+- Observacoes: `js/screens/expedicao-admin.js:361` ainda contem
+  `disabled: ready ? null : 'disabled'` fora do Pedido Detail; Pedido #20 nao
+  deve mais ser usado como rascunho/apto.
+- Arquivos desta fase: `PROJECT_STATE.md`, `AGENT_HANDOFF.md`,
+  `docs/architecture/PEDIDO_PRODUCTION_FLOW_BACKLOG.md`. Sem SQL, sem
+  migration, sem dados reais novos, sem mutacao nao autorizada, sem
+  `git add .`; `supabase/.temp/` fora do commit.
+
+# Estado pos-fase - Latex Admin Compact Buttons R1
 
 - Fase: `RAVATEX-TAPETES-LATEX-ADMIN-COMPACT-BUTTONS-R1`.
 - Status: OK. Patch UI focado + testes; sem SQL, migration, producao,
