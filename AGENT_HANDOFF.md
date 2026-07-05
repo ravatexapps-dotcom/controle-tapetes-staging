@@ -3982,3 +3982,77 @@ node --test tests/boot.smoke.js \
   ativa e sem criar OP real.
 - Producao intocada; `origin` nao usado para escrita; sem `git add .`;
   residual permitido `supabase/.temp/` nao deve ser commitado.
+# Estado pos-fase - Pedido Concluir Action R2 Real Staging
+
+- Fase: `RAVATEX-TAPETES-PEDIDO-CONCLUIR-ACTION-R2-REAL-STAGING`.
+- Status: OK. R1 reaberto corretamente: a validacao visual real do Arquiteto
+  prevalece sobre o relatorio anterior.
+- Branch/HEAD base: `work/app-next`,
+  `0867cf48a652c3b428e5d781d33649ebc2e9b95f`.
+- Status inicial: somente `?? supabase/.temp/`.
+- Staging/remoto:
+  - `staging/work/app-next` confirmado em
+    `0867cf48a652c3b428e5d781d33649ebc2e9b95f`;
+  - `staging/main` estava em `49897275ee46702e66807c914c6b9ecc11bbecb2`;
+  - URLs publicas obvias de GitHub Pages staging deram 404;
+  - reproducao real feita em `http://localhost:8765/` conectado ao Supabase
+    staging `ucrjtfswnfdlxwtmxnoo`;
+  - asset servido verificado com o patch e sem `disabled: ready ? null`;
+  - nao ha service worker no codigo do app.
+- Reproducao real no Pedido #20
+  (`ad988da1-df36-4441-afef-16d9172f5c01`):
+  - antes do patch, tela mostrava cadeia pronta e botao verde
+    `Concluir pedido`;
+  - DOM do botao: `disabledProp=true`, `disabledAttr="null"`,
+    cursor `pointer`;
+  - `onclick` property vazio porque o helper registra eventos via
+    `addEventListener`;
+  - sem overlay cobrindo o centro do botao;
+  - console sem erro;
+  - clique visual por automacao disparou a RPC e toast `Pedido concluido.`;
+  - o Pedido #20 ficou `entregue` no staging durante a reproducao. Nao houve
+    dado real novo, SQL ou migration, mas houve alteracao real de status
+    desse pedido.
+- Causa raiz:
+  - `buildConclusaoPedido` renderizava `disabled: ready ? null : 'disabled'`;
+  - `window.el(...)` faz `setAttribute(k, v)` e, no browser, atributo
+    `disabled` presente desabilita o botao mesmo com valor `"null"`;
+  - `buildFooterAction` tinha a mesma armadilha para acoes do Pedido Detail.
+- Por que R1 nao pegou:
+  - o harness fake tratava `disabled: null` como habilitado, diferente do DOM
+    real;
+  - os testes validavam o handler/RPC, mas nao validavam o atributo renderizado
+    pelo helper real.
+- Correcao aplicada:
+  - `js/screens/pedido-detail-render.js`: atributos dos botoes agora sao
+    montados condicionalmente. Apto = `onclick` + sem `disabled`; bloqueado ou
+    concluido = `disabled="disabled"` + sem handler silencioso.
+  - `tests/pedido-detail.smoke.js`: runtime fake passou a seguir
+    `setAttribute` real e cobre pedido apto, nao apto e ja concluido.
+- Comportamento depois:
+  - Pedido #20 recarrega como `Concluido` / `Comercial: Entregue`;
+  - botao final mostra `Pedido concluido`, cinza, `disabled="disabled"`,
+    cursor `not-allowed`;
+  - sem toast pendente e sem erro de console.
+- Testes locais OK:
+  - `node --test tests\pedido-detail.smoke.js` = 147/147;
+  - `node --test tests\pedido-detail-linked-ops.smoke.js` = 7/7;
+  - `node --test tests\expedicao-flow.smoke.js` = 8/8;
+  - `node --test tests\expedicao-partial-flow.smoke.js` = 12/12;
+  - `node --test tests\tec-to-acabamento-flow.smoke.js` = 37/37;
+  - `node --test tests\op-latex-admin.smoke.js` = 55/55.
+- Diagnosticos staging read-only OK:
+  - `node scripts/staging/production-flow-invariants-diag.mjs`;
+  - `node scripts/staging/latex-consolidation-diag.mjs`;
+  - `node scripts/staging/expedicao-partial-flow-diag.mjs`.
+- Arquivos alterados:
+  - `js/screens/pedido-detail-render.js`;
+  - `tests/pedido-detail.smoke.js`;
+  - `PROJECT_STATE.md`;
+  - `AGENT_HANDOFF.md`.
+- Commit/push de fechamento: `Fix real pedido completion click`, somente para
+  `staging/work/app-next`.
+- Confirmacoes: producao intocada, `origin` nao usado para escrita, nenhum
+  segredo impresso intencionalmente, sem SQL, sem migration, sem dados reais
+  novos, sem alteracao destrutiva, sem `git add .`, sem reset/rebase/clean/
+  stash e `supabase/.temp/` fora do commit.

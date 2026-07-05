@@ -531,12 +531,16 @@
   }
 
   function buildFooterAction(label, onclick, primary, disabled) {
-    return window.el('button', {
+    var attrs = {
       type: 'button',
-      disabled: disabled ? 'disabled' : null,
       style: 'flex:1;background:' + (disabled ? '#f1f3f6' : (primary ? '#2563eb' : '#fff')) + ';color:' + (disabled ? '#9aa2af' : (primary ? '#fff' : '#3f4757')) + ';border:' + (primary && !disabled ? 'none' : '1px solid #d8dce2') + ';border-radius:4px;padding:8px 0;font-size:12.5px;font-weight:' + (primary ? '700' : '600') + ';font-family:inherit;cursor:' + (disabled ? 'not-allowed' : 'pointer') + ';',
-      onclick: disabled ? null : onclick,
-    }, label);
+    };
+    if (disabled) {
+      attrs.disabled = 'disabled';
+    } else if (typeof onclick === 'function') {
+      attrs.onclick = onclick;
+    }
+    return window.el('button', attrs, label);
   }
 
   function buildOpCard(state, summary, handlers) {
@@ -795,7 +799,19 @@
     var conclusao = view.pedidoConclusao || { pronto: false, pendencias: [], label: 'Validacao indisponivel.' };
     var jaEntregue = state.pedido && state.pedido.status === 'entregue';
     var ready = conclusao.pronto && !jaEntregue;
+    var actionable = ready && handlers && typeof handlers.concluirPedido === 'function';
     var pendencias = conclusao.pendencias || [];
+    var buttonAttrs = {
+      type: 'button',
+      style: 'display:inline-flex;align-items:center;justify-content:center;background:' + (actionable ? '#18794a' : '#f1f3f6') + ';color:' + (actionable ? '#fff' : '#9aa2af') + ';border:none;border-radius:4px;padding:10px 16px;font-weight:700;font-size:13.5px;font-family:inherit;cursor:' + (actionable ? 'pointer' : 'not-allowed') + ';',
+    };
+    if (actionable) {
+      buttonAttrs.onclick = function (event) {
+        handlers.concluirPedido(event && event.currentTarget ? event.currentTarget : null);
+      };
+    } else {
+      buttonAttrs.disabled = 'disabled';
+    }
 
     return window.el('div', {
       style: 'background:#fff;border:1px solid #eceef1;border-radius:4px;padding:16px 20px;margin-bottom:14px;',
@@ -812,12 +828,7 @@
               return window.el('div', { style: 'font-size:12.5px;color:#b45309;line-height:1.4;' }, '- ' + pendencia);
             })) : null
         ),
-        window.el('button', {
-          type: 'button',
-          disabled: ready ? null : 'disabled',
-          style: 'display:inline-flex;align-items:center;justify-content:center;background:' + (ready ? '#18794a' : '#f1f3f6') + ';color:' + (ready ? '#fff' : '#9aa2af') + ';border:none;border-radius:4px;padding:10px 16px;font-weight:700;font-size:13.5px;font-family:inherit;cursor:' + (ready ? 'pointer' : 'not-allowed') + ';',
-          onclick: function (event) { if (ready) handlers.concluirPedido(event && event.currentTarget ? event.currentTarget : null); },
-        }, jaEntregue ? 'Pedido concluido' : 'Concluir pedido')
+        window.el('button', buttonAttrs, jaEntregue ? 'Pedido concluido' : 'Concluir pedido')
       )
     );
   }

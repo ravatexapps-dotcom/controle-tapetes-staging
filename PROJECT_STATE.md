@@ -1,4 +1,68 @@
 > **Atualizacao 2026-07-05 - fase
+> `RAVATEX-TAPETES-PEDIDO-CONCLUIR-ACTION-R2-REAL-STAGING`.**
+> Status: OK. R1 foi reaberto porque a validacao visual real do Arquiteto
+> prevalece sobre o relatorio anterior: o botao `Concluir pedido` parecia
+> ativo no Pedido Detail Admin, mas o DOM real estava com
+> `disabled="null"`.
+>
+> Validacao inicial: branch `work/app-next`, HEAD base
+> `0867cf48a652c3b428e5d781d33649ebc2e9b95f`, status inicial somente
+> `?? supabase/.temp/`. Remoto `staging/work/app-next` tambem estava em
+> `0867cf48a652c3b428e5d781d33649ebc2e9b95f`; `staging/main` permanecia em
+> `49897275ee46702e66807c914c6b9ecc11bbecb2`. URLs publicas obvias de
+> GitHub Pages staging retornaram 404, portanto a reproducao real foi no app
+> local `http://localhost:8765/` conectado ao Supabase staging
+> `ucrjtfswnfdlxwtmxnoo`. O asset servido foi verificado, sem service worker
+> registrado no codigo.
+>
+> Reproducao real antes do patch, Pedido #20
+> (`ad988da1-df36-4441-afef-16d9172f5c01`): tela mostrava cadeia pronta e
+> botao verde `Concluir pedido`; DOM do botao: `disabledProp=true`,
+> `disabledAttr="null"`, cursor `pointer`, sem overlay no centro do botao,
+> `onclick` property sem handler porque o app usa `addEventListener`.
+> O clique visual por automacao disparou a RPC e exibiu toast
+> `Pedido concluido.`, concluindo o Pedido #20 no staging; portanto nao houve
+> dado real novo, SQL ou migration, mas houve alteracao real de status do
+> pedido de `rascunho` para `entregue` durante a reproducao. Console sem erro.
+>
+> Causa raiz: `buildConclusaoPedido` passava
+> `disabled: ready ? null : 'disabled'` para o helper global `el(...)`. Como
+> `el(...)` chama `setAttribute(k, v)` para qualquer atributo nao-evento,
+> `null` virava atributo presente (`disabled="null"`), que desabilita o
+> botao nativo. A mesma armadilha existia em `buildFooterAction` dentro do
+> Pedido Detail. O harness R1 nao pegou porque o DOM fake tratava
+> `disabled: null` como habilitado, divergindo do browser real.
+>
+> Correcao: `js/screens/pedido-detail-render.js` agora monta atributos de
+> botoes condicionalmente: botoes aptos recebem `onclick` e nenhum
+> `disabled`; botoes bloqueados/concluidos recebem `disabled="disabled"` e
+> nenhum handler silencioso. `tests/pedido-detail.smoke.js` passou a simular
+> o comportamento real de `setAttribute`, adicionando regressao para pedido
+> apto, nao apto e ja concluido.
+>
+> Comportamento depois: Pedido #20, agora entregue, recarrega como
+> `Concluido` / `Comercial: Entregue` e mostra `Pedido concluido` cinza,
+> `disabled="disabled"`, cursor `not-allowed`, sem toast pendente e sem erro
+> de console. O asset servido em `localhost:8765` nao contem mais
+> `disabled: ready ? null`.
+>
+> Testes locais OK: `pedido-detail.smoke.js` (147/147),
+> `pedido-detail-linked-ops.smoke.js` (7/7), `expedicao-flow.smoke.js`
+> (8/8), `expedicao-partial-flow.smoke.js` (12/12),
+> `tec-to-acabamento-flow.smoke.js` (37/37) e
+> `op-latex-admin.smoke.js` (55/55). Diagnosticos staging read-only OK:
+> `production-flow-invariants-diag`, `latex-consolidation-diag` e
+> `expedicao-partial-flow-diag`.
+>
+> Arquivos alterados: `js/screens/pedido-detail-render.js`,
+> `tests/pedido-detail.smoke.js`, `PROJECT_STATE.md`,
+> `AGENT_HANDOFF.md`. Confirmacoes: producao intocada, `origin` nao usado
+> para escrita, sem SQL, sem migration, sem dados reais novos, sem
+> alteracao destrutiva, sem `git add .`, `supabase/.temp/` fora do commit.
+> Commit/push de fechamento: `Fix real pedido completion click`, somente
+> para `staging/work/app-next`.
+>
+> **Atualizacao 2026-07-05 - fase
 > `RAVATEX-TAPETES-LATEX-ADMIN-COMPACT-BUTTONS-R1`.**
 > Status: OK. Patch UI focado na tela OP Latex/Acabamento Admin; sem SQL,
 > migration, producao, dados reais novos, payload novo, RPC nova ou alteracao

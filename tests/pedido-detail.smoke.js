@@ -1731,6 +1731,10 @@ test('PEDIDO-CONCLUIR: falha ao re-renderizar pos-sucesso nao induz novo clique/
 test('PEDIDO-CONCLUIR: onclick delega ao handler canonico e handler nao engole erro', () => {
   assert.match(detailRender, /handlers\.concluirPedido\(/);
   assert.match(detailRender, /jaEntregue \? 'Pedido concluido' : 'Concluir pedido'/);
+  assert.doesNotMatch(detailRender, /disabled:\s*ready\s*\?\s*null\s*:\s*['"]disabled['"]/,
+    'botao pronto nao pode renderizar disabled=null, pois ui.el cria disabled="null" no DOM real');
+  assert.doesNotMatch(detailRender, /disabled:\s*disabled\s*\?\s*['"]disabled['"]\s*:\s*null/,
+    'acoes habilitadas nao podem renderizar disabled=null no DOM real');
   assert.match(detailEvents, /try\s*\{[\s\S]*?concluir_pedido_se_pronto[\s\S]*?\}\s*catch/);
   assert.match(detailEvents, /Erro ao concluir pedido/);
   assert.doesNotMatch(detailEvents, /catch\s*\([^)]*\)\s*\{\s*\}/);
@@ -1803,10 +1807,16 @@ test('HUB: modal Acabamento usa recebido/movimentado/disponivel (contrato Acabam
 function makeHubRuntime() {
   function node(tag) {
     return {
-      tagName: (tag || 'div').toUpperCase(), attrs: {}, children: [], _listeners: {}, style: {}, textContent: '', disabled: false,
+      tagName: (tag || 'div').toUpperCase(), attrs: {}, children: [], _listeners: {}, style: {}, textContent: '', disabled: false, className: '',
       appendChild(c) { this.children.push(c); return c; }, append() { for (const c of arguments) this.children.push(c); },
       replaceChildren() { this.children = Array.prototype.slice.call(arguments); },
-      setAttribute(k, v) { this.attrs[k] = v; }, getAttribute(k) { return this.attrs[k]; },
+      setAttribute(k, v) {
+        this.attrs[k] = v == null ? String(v) : String(v);
+        if (k === 'disabled') this.disabled = true;
+        if (k === 'class') this.className = String(v || '');
+      },
+      getAttribute(k) { return Object.prototype.hasOwnProperty.call(this.attrs, k) ? this.attrs[k] : null; },
+      hasAttribute(k) { return Object.prototype.hasOwnProperty.call(this.attrs, k); },
       querySelector() { return null; }, querySelectorAll() { return []; },
       addEventListener(ev, fn) { this._listeners[ev] = fn; }, removeEventListener() {}, remove() {}, focus() {},
     };
@@ -1822,10 +1832,10 @@ function makeHubRuntime() {
   sandbox.window.el = function el(tag, attrs) {
     const n = node(tag); attrs = attrs || {};
     Object.keys(attrs).forEach((k) => {
-      if (k === 'onclick') n._listeners.click = attrs[k];
-      else if (k === 'disabled') n.disabled = attrs[k] != null && attrs[k] !== false;
-      else if (k === 'style') n.style = attrs[k];
-      else n.attrs[k] = attrs[k];
+      const v = attrs[k];
+      if (k === 'class') n.className = v;
+      else if (k.startsWith('on') && typeof v === 'function') n._listeners[k.slice(2)] = v;
+      else n.setAttribute(k, v);
     });
     const kids = Array.prototype.slice.call(arguments, 2);
     (function add(c) {
@@ -1900,6 +1910,80 @@ function countHubBtns(n, re) {
   for (const c of (n.children || [])) count += countHubBtns(c, re);
   return count;
 }
+
+test('PEDIDO-CONCLUIR runtime: botao apto fica habilitado no DOM real e chama handler', () => {
+  const rt = makeHubRuntime();
+  const s = aptConclusaoState(rt.ns);
+  const view = rt.ns.computeViewModel(s);
+  const container = rt.node('div');
+  let concluirCalls = 0;
+  const handlers = {
+    buildEditButton: () => rt.node('button'),
+    navigateToPedidos: () => {},
+    scrollToSection: () => {},
+    openStatusActions: () => {},
+    navigateToNovaOp: () => {},
+    navigateToOp: () => {},
+    navigateToExpedicao: () => {},
+    openMovementModal: () => {},
+    openStageDetailModal: () => {},
+    openTrackingModal: () => {},
+    concluirPedido: (btn) => {
+      concluirCalls++;
+      assert.equal(btn, concluir);
+    },
+  };
+  rt.ns.renderPedidoDetailScreen({ container, state: s, view, handlers, loadingError: null });
+  const concluir = findHubBtn(container, /^Concluir pedido$/i);
+  assert.ok(concluir, 'botao Concluir pedido deve existir');
+  assert.equal(concluir.disabled, false, 'pedido apto deve renderizar botao habilitado');
+  assert.equal(concluir.getAttribute('disabled'), null, 'pedido apto nao pode ter atributo disabled fantasma');
+  assert.equal(typeof concluir._listeners.click, 'function', 'pedido apto deve ter handler de clique');
+
+  concluir._listeners.click({ currentTarget: concluir });
+  assert.equal(concluirCalls, 1);
+});
+
+test('PEDIDO-CONCLUIR runtime: pedido nao apto ou ja concluido nao mostra acao falsa', () => {
+  const rt = makeHubRuntime();
+  const handlers = {
+    buildEditButton: () => rt.node('button'),
+    navigateToPedidos: () => {},
+    scrollToSection: () => {},
+    openStatusActions: () => {},
+    navigateToNovaOp: () => {},
+    navigateToOp: () => {},
+    navigateToExpedicao: () => {},
+    openMovementModal: () => {},
+    openStageDetailModal: () => {},
+    openTrackingModal: () => {},
+    concluirPedido: () => { throw new Error('nao deve chamar'); },
+  };
+
+  const pendente = aptConclusaoState(rt.ns);
+  pendente.ops[1].status = 'em_producao';
+  pendente.expedicoes = [];
+  pendente.expedicaoItens = [];
+  const pendingView = rt.ns.computeViewModel(pendente);
+  const pendingRoot = rt.node('div');
+  rt.ns.renderPedidoDetailScreen({ container: pendingRoot, state: pendente, view: pendingView, handlers, loadingError: null });
+  const pendingBtn = findHubBtn(pendingRoot, /^Concluir pedido$/i);
+  assert.ok(pendingBtn, 'botao bloqueado deve continuar visivel');
+  assert.equal(pendingBtn.disabled, true, 'pedido nao apto deve ficar claramente disabled');
+  assert.equal(pendingBtn.getAttribute('disabled'), 'disabled');
+  assert.equal(pendingBtn._listeners.click, undefined, 'pedido nao apto nao deve ter guarda silenciosa clicavel');
+  assert.match(collectHubText(pendingRoot), /Pendencias|pendencias|saldo em acabamento/i);
+
+  const entregue = aptConclusaoState(rt.ns);
+  entregue.pedido.status = 'entregue';
+  const entregueView = rt.ns.computeViewModel(entregue);
+  const entregueRoot = rt.node('div');
+  rt.ns.renderPedidoDetailScreen({ container: entregueRoot, state: entregue, view: entregueView, handlers, loadingError: null });
+  const entregueBtn = findHubBtn(entregueRoot, /^Pedido concluido$/i);
+  assert.ok(entregueBtn, 'pedido entregue deve mostrar estado concluido');
+  assert.equal(entregueBtn.disabled, true);
+  assert.equal(entregueBtn._listeners.click, undefined);
+});
 
 function renderDetailForFirstOp(rt, s) {
   const view = rt.ns.computeViewModel(s);
