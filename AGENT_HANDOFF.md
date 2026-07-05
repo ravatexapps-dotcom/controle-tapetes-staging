@@ -1,4 +1,68 @@
-﻿# Estado pos-fase - Pedido Stage Blocker Explanation R1
+﻿# Estado pos-fase - Pedido First OP CTA Placement R1
+
+- Fase: `RAVATEX-TAPETES-PEDIDO-FIRST-OP-CTA-PLACEMENT-R1`.
+- Status: OK. Patch em JS + testes + docs; sem SQL, migration, producao,
+  dados novos ou write paralelo no Pedido.
+- Branch/HEAD base: `work/app-next`,
+  `2790cc5f828538bdcf68e3837ac00991721f3185`.
+- Validacao inicial: branch correta, HEAD esperado, status inicial somente
+  `?? supabase/.temp/`; remoto `staging` confirmado e `origin` nao usado para
+  escrita.
+- Diagnostico:
+  - o estado sem OP ja tinha rota canonica para criar OP:
+    `navigateToNovaOp` -> `#/ops/nova?pedido_id=<id>`;
+  - o hub contextual da etapa sem OP ja oferecia `Gerar primeira OP`;
+  - no bloco principal `OPs vinculadas`, a chamada ficava pouco proeminente
+    dentro do card vazio, depois do texto explicativo.
+- Implementado (`js/screens/pedido-detail-render.js`):
+  - `buildOps` agora calcula `semOps = view.opSummaries.length === 0 &&
+    !state.opsLoadError`;
+  - o helper `firstOpButton()` renderiza o CTA `Gerar primeira OP` com
+    `onclick: handlers.navigateToNovaOp`;
+  - o cabecalho do bloco `OPs vinculadas` passou a usar layout flex com o
+    titulo a esquerda e o CTA a direita quando `semOps`;
+  - o card vazio ficou explicativo: `Nenhuma OP vinculada ainda.` e `Proxima
+    acao: gerar a primeira OP de Tecelagem...`;
+  - o botao antigo dentro do card vazio foi removido para evitar CTA duplicado.
+- Comportamento validado:
+  - pedido sem OP mostra exatamente um CTA `Gerar primeira OP` na tela
+    principal e delega para o handler canonico;
+  - pedido com OP vinculada nao mostra CTA de primeira OP duplicada e segue
+    exibindo os cards/acoes existentes, incluindo `Abrir OP`;
+  - hub da etapa sem OP permanece como explicacao contextual complementar.
+- Reuso canonico preservado: `handlers.navigateToNovaOp` ->
+  `navigateToNovaOp()` -> `window.navigate('#/ops/nova?pedido_id=' +
+  pedidoId)`.
+- Garantias: sem insert/update/delete, sem RPC nova, sem update direto em
+  `ops.status`, sem alteracao de lifecycle de OP, stepper, modais,
+  expedicao, metragens, split ou consolidacao Latex.
+- Testes locais OK:
+  - `node --check js\screens\pedido-detail-render.js`;
+  - `node --check tests\pedido-detail.smoke.js`;
+  - `node --test tests\pedido-detail.smoke.js` = 145/145;
+  - `node --test tests\pedido-detail-linked-ops.smoke.js` = 7/7;
+  - `node --test tests\tec-to-acabamento-flow.smoke.js` = 30/30;
+  - `node --test tests\op-latex-admin.smoke.js` = 53/53;
+  - `node --test tests\expedicao-partial-flow.smoke.js` = 12/12;
+  - `node --test tests\expedicao-flow.smoke.js` = 8/8.
+- Diagnosticos staging read-only OK:
+  - `node scripts/staging/production-flow-invariants-diag.mjs`;
+  - `node scripts/staging/latex-consolidation-diag.mjs`;
+  - `node scripts/staging/expedicao-partial-flow-diag.mjs`.
+- Arquivos alterados:
+  - `js/screens/pedido-detail-render.js`;
+  - `tests/pedido-detail.smoke.js`;
+  - `PROJECT_STATE.md`;
+  - `AGENT_HANDOFF.md`.
+- Proximo backlog recomendado: `OP-NOVA-METRAGEM-INPUT-FOCUS-R1`; depois
+  `TEC-TO-ACABAMENTO-MODAL-LAYOUT-R1` se a validacao visual pedir ajuste de
+  largura/layout do modal de transferencia.
+- Confirmacoes: producao intocada, `origin` nao usado para escrita, nenhum
+  segredo impresso intencionalmente, sem SQL, sem migration, sem dados reais
+  novos, sem alteracao destrutiva, sem `git add .`, `supabase/.temp/` fora do
+  escopo.
+
+# Estado pos-fase - Pedido Stage Blocker Explanation R1
 
 - Fase: `RAVATEX-TAPETES-PEDIDO-STAGE-BLOCKER-EXPLANATION-R1`.
 - Status: OK local / push staging bloqueado por autenticacao GitHub. Patch

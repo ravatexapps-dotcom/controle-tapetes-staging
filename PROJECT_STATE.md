@@ -1,4 +1,44 @@
 > **Atualizacao 2026-07-05 - fase
+> `RAVATEX-TAPETES-PEDIDO-FIRST-OP-CTA-PLACEMENT-R1`.**
+> Status: OK. Patch leve em JS + testes + docs; sem SQL/migration/producao,
+> sem dados novos, sem write paralelo no Pedido e sem uso de `origin` para
+> escrita.
+>
+> Diagnostico: o Pedido Detail ja tinha a navegacao canonica para criar OP
+> (`navigateToNovaOp` -> `#/ops/nova?pedido_id=<id>`) e o hub da etapa sem OP
+> ja oferecia "Gerar primeira OP". O estado vazio do bloco `OPs vinculadas`,
+> porem, deixava a chamada principal pouco destacada dentro do card vazio,
+> depois da explicacao. O operador ainda precisava procurar a acao.
+>
+> Implementado: no bloco `OPs vinculadas`, quando `view.opSummaries.length ===
+> 0` e nao ha `opsLoadError`, o CTA `Gerar primeira OP` aparece destacado no
+> lado direito do cabecalho. O card vazio ficou apenas explicativo, com
+> "Nenhuma OP vinculada ainda." e "Proxima acao: gerar a primeira OP de
+> Tecelagem...". O botao reutiliza o mesmo handler canonico
+> `handlers.navigateToNovaOp`; nao foi criada rota, RPC, insert/update/delete
+> ou logica paralela.
+>
+> Comportamento final: pedido sem OP mostra um unico CTA na tela principal e
+> leva para `#/ops/nova?pedido_id=<id>`; pedido com OP vinculada nao mostra o
+> CTA de primeira OP e continua exibindo os cards/acoes existentes ("Abrir OP",
+> etapa/hub, setas e modais). O hub da etapa sem OP permanece funcionando como
+> explicacao contextual complementar.
+>
+> Testes locais OK: `node --check js\screens\pedido-detail-render.js`,
+> `node --check tests\pedido-detail.smoke.js`, `node --test
+> tests\pedido-detail.smoke.js` (145/145), `pedido-detail-linked-ops.smoke.js`
+> (7/7), `tec-to-acabamento-flow.smoke.js` (30/30),
+> `op-latex-admin.smoke.js` (53/53), `expedicao-partial-flow.smoke.js`
+> (12/12), `expedicao-flow.smoke.js` (8/8). Diagnosticos staging read-only OK:
+> invariantes do fluxo produtivo, consolidacao Latex e expedicao partial.
+>
+> Arquivos alterados: `js/screens/pedido-detail-render.js`,
+> `tests/pedido-detail.smoke.js`, `PROJECT_STATE.md`, `AGENT_HANDOFF.md`.
+> Proximo backlog recomendado: `OP-NOVA-METRAGEM-INPUT-FOCUS-R1`; depois
+> `TEC-TO-ACABAMENTO-MODAL-LAYOUT-R1` se a validacao visual pedir ajuste de
+> largura/layout do modal de transferencia.
+>
+> **Atualizacao 2026-07-05 - fase
 > `RAVATEX-TAPETES-PEDIDO-STAGE-BLOCKER-EXPLANATION-R1`.**
 > Status: OK local / push staging bloqueado por autenticacao GitHub. Patch
 > leve em JS + testes + docs; sem SQL/migration/producao e sem dados novos.

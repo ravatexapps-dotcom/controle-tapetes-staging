@@ -1058,12 +1058,34 @@ test('pedido-detail.js: "Gerar primeira OP" usa hash route #/ops/nova?pedido_id=
   assert.doesNotMatch(detailBundle, /location\.assign\s*\(\s*['"]\/ops\/nova/);
 });
 
+test('FIRST-OP-CTA: CTA destacado fica no cabecalho do bloco OPs vinculadas', () => {
+  const buildOpsSlice = (detailRender.match(
+    /function buildOps\s*\(state,\s*view,\s*handlers\)\s*\{[\s\S]*?\n  \}\n\n  function buildExpedicoes/
+  ) || [''])[0];
+  assert.ok(buildOpsSlice, 'trecho buildOps nao encontrado');
+  assert.match(buildOpsSlice, /var\s+semOps\s*=\s*view\.opSummaries\.length === 0 && !state\.opsLoadError/,
+    'CTA deve ser exibido somente quando nao ha OP e nao houve erro de carga');
+  assert.match(buildOpsSlice, /var\s+firstOpButton\s*=\s*function\s*\(\)\s*\{/,
+    'CTA deve ser helper unico reaproveitado no bloco');
+  assert.match(buildOpsSlice, /justify-content:space-between/,
+    'cabecalho deve distribuir titulo e CTA nas extremidades');
+  assert.match(buildOpsSlice, /semOps\s*\?\s*firstOpButton\(\)\s*:\s*null/,
+    'CTA deve ficar no lado direito do cabecalho quando o pedido nao tem OP');
+  assert.equal((buildOpsSlice.match(/firstOpButton\(\)/g) || []).length, 1,
+    'nao deve duplicar o botao em outro ponto do bloco vazio');
+  assert.match(buildOpsSlice, /onclick:\s*handlers\.navigateToNovaOp/,
+    'CTA deve reutilizar o handler canonico existente');
+  assert.match(buildOpsSlice, /Nenhuma OP vinculada ainda\./);
+  assert.match(buildOpsSlice, /Proxima acao: gerar a primeira OP de Tecelagem\./);
+});
+
 test('pedido-detail.js: se OP já existir não sugere gerar duplicada; mostra OP existente', () => {
   const buildOpsSlice = (detailRender.match(
     /function buildOps\s*\(state,\s*view,\s*handlers\)\s*\{[\s\S]*?\n  \}\n\n  function buildExpedicoes/
   ) || [''])[0];
   assert.ok(buildOpsSlice, 'trecho buildOps nao encontrado');
   assert.match(buildOpsSlice, /if\s*\(\s*view\.opSummaries\.length\s*===\s*0\s*\)/);
+  assert.match(buildOpsSlice, /semOps\s*\?\s*firstOpButton\(\)\s*:\s*null/);
   assert.match(buildOpsSlice, /Gerar primeira OP/);
   assert.match(buildOpsSlice, /view\.opSummaries\.map/);
   assert.match(buildOpsSlice, /buildOpCard/);
@@ -1871,6 +1893,56 @@ function hubTecAcab(ns, latexStatus) {
   s.opLatexEntregas = [{ op_latex_id: 30, entrega_id: 'e1' }];
   return s;
 }
+
+function countHubBtns(n, re) {
+  if (!n) return 0;
+  var count = n.tagName === 'BUTTON' && re.test(collectHubText(n)) ? 1 : 0;
+  for (const c of (n.children || [])) count += countHubBtns(c, re);
+  return count;
+}
+
+function renderDetailForFirstOp(rt, s) {
+  const view = rt.ns.computeViewModel(s);
+  const container = rt.node('div');
+  const handlers = {
+    buildEditButton: () => rt.node('button'),
+    navigateToPedidos: () => {},
+    scrollToSection: () => {},
+    openStatusActions: () => {},
+    navigateToNovaOp: () => { rt.events.push('nova-op'); },
+    navigateToOp: () => {},
+    navigateToExpedicao: () => {},
+    concluirPedido: () => {},
+    openTrackingModal: () => {},
+    openMovementModal: () => {},
+    openStageDetailModal: () => {},
+  };
+  rt.ns.renderPedidoDetailScreen({ container, state: s, view, handlers, loadingError: null });
+  return { root: container, view: view };
+}
+
+test('FIRST-OP runtime: pedido sem OP mostra CTA destacado e usa handler canonico', () => {
+  const rt = makeHubRuntime();
+  const rendered = renderDetailForFirstOp(rt, hubBase(rt.ns));
+  assert.match(collectHubText(rendered.root), /Nenhuma OP vinculada ainda\./);
+  assert.match(collectHubText(rendered.root), /Proxima acao: gerar a primeira OP de Tecelagem\./);
+  assert.equal(countHubBtns(rendered.root, /^Gerar primeira OP$/i), 1,
+    'deve haver um unico CTA Gerar primeira OP na tela principal');
+  const cta = findHubBtn(rendered.root, /^Gerar primeira OP$/i);
+  assert.ok(cta, 'CTA Gerar primeira OP deve estar renderizado');
+  rt.events.length = 0;
+  cta._listeners.click({});
+  assert.ok(rt.events.indexOf('nova-op') !== -1,
+    'CTA deve delegar para handlers.navigateToNovaOp');
+});
+
+test('FIRST-OP runtime: pedido com OP nao mostra CTA de gerar primeira OP na tela principal', () => {
+  const rt = makeHubRuntime();
+  const rendered = renderDetailForFirstOp(rt, hubTecAcab(rt.ns, 'em_producao'));
+  assert.equal(countHubBtns(rendered.root, /^Gerar primeira OP$/i), 0,
+    'pedido com OP vinculada nao deve sugerir gerar primeira OP duplicada');
+  assert.match(collectHubText(rendered.root), /Abrir OP/);
+});
 
 test('BLOCKER runtime: clique em seta Aguardar abre hub contextual da etapa', () => {
   const rt = makeHubRuntime();

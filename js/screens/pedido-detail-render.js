@@ -669,10 +669,23 @@
       id: 'ops-vinculadas',
       style: 'margin-bottom:14px;',
     });
+    var semOps = view.opSummaries.length === 0 && !state.opsLoadError;
+    var firstOpButton = function () {
+      return window.el('button', {
+        type: 'button',
+        style: 'display:inline-flex;align-items:center;justify-content:center;gap:7px;background:#2563eb;color:#fff;border:none;border-radius:4px;padding:9px 14px;font-weight:700;font-size:13.5px;font-family:inherit;cursor:pointer;white-space:nowrap;',
+        onclick: handlers.navigateToNovaOp,
+      }, 'Gerar primeira OP');
+    };
 
     wrap.appendChild(window.el('div', {
-      style: 'font-size:15.5px;font-weight:700;color:#16203a;margin-bottom:10px;',
-    }, 'OPs vinculadas'));
+      style: 'display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px;',
+    },
+      window.el('div', {
+        style: 'font-size:15.5px;font-weight:700;color:#16203a;',
+      }, 'OPs vinculadas'),
+      semOps ? firstOpButton() : null
+    ));
 
     // Fallback global APENAS quando a camada base de OPs falhou de fato
     // (erro na consulta canônica de `ops`). Uma falha de enriquecimento
@@ -687,19 +700,15 @@
 
     if (view.opSummaries.length === 0) {
       wrap.appendChild(window.el('div', {
-        style: 'background:#fff;border:1px solid #eceef1;border-radius:4px;padding:18px 20px;',
+        style: 'background:#fff;border:1px solid #d0e0fb;border-radius:4px;padding:20px;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;',
       },
-        window.el('div', {
-          style: 'font-size:14.5px;font-weight:700;color:#16203a;margin-bottom:6px;',
-        }, 'Este pedido ainda nao possui OPs vinculadas'),
-        window.el('div', {
-          style: 'font-size:13px;color:#5b6472;line-height:1.5;margin-bottom:12px;',
-        }, 'Assim que a primeira OP for aberta com este pedido vinculado, a cadeia produtiva passa a ser refletida aqui.'),
-        window.el('button', {
-          type: 'button',
-          style: 'display:inline-flex;align-items:center;gap:7px;background:#2563eb;color:#fff;border:none;border-radius:4px;padding:9px 14px;font-weight:700;font-size:13.5px;font-family:inherit;cursor:pointer;',
-          onclick: handlers.navigateToNovaOp,
-        }, 'Gerar primeira OP')
+        window.el('div', { style: 'min-width:240px;flex:1;' },
+          window.el('div', {
+            style: 'font-size:14.5px;font-weight:700;color:#16203a;margin-bottom:6px;',
+          }, 'Nenhuma OP vinculada ainda.'),
+          window.el('div', {
+            style: 'font-size:13px;color:#5b6472;line-height:1.5;',
+          }, 'Proxima acao: gerar a primeira OP de Tecelagem. A cadeia produtiva passa a ser refletida aqui depois disso.'))
       ));
       return wrap;
     }
