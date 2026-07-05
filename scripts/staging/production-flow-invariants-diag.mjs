@@ -206,13 +206,15 @@ const opLbl = (o) => o ? (o.numero + '/' + o.ano) : '—';
   }
 
   // ---- 2.5c  DB/29 RPC check
+  // PostgREST so aceita RPC via POST; GET/select em rpc/<fn> retorna 404
+  // mesmo com a funcao aplicada e funcional (nao e um sinal de
+  // indisponibilidade). Este diagnostico e SELECT-only por contrato
+  // (ver cabecalho do arquivo) e nao deve invocar a RPC via POST aqui.
+  // Disponibilidade real ja foi confirmada por E2E autenticado na fase
+  // OP-PARTIAL-SPLIT-E2E-STAGING-C (criou OP latex 8/2026).
   console.log('\n===== [2.5c] DB/29 RPC SPLIT CHECK =====');
-  try {
-    const rpcCheck = await selOptional('rpc/gerar_op_latex_split?select=op_latex_id');
-    console.log('RPC gerar_op_latex_split:', rpcCheck ? 'OK (acessivel)' : 'INDISPONIVEL (db/29 nao aplicada ou nao recarregada)');
-  } catch {
-    console.log('RPC gerar_op_latex_split: INDISPONIVEL (db/29 nao aplicada ou nao recarregada)');
-  }
+  console.log('RPC gerar_op_latex_split: nao verificavel por GET (PostgREST so aceita RPC via POST). '
+    + 'Disponibilidade confirmada por E2E autenticado (ver AGENT_HANDOFF, fase OP-PARTIAL-SPLIT-E2E-STAGING-C).');
 
   // ---- 2.6 op_latex_entregas N:1
   console.log('\n===== [2.6] op_latex_entregas (N entregas -> 1 OP) =====');

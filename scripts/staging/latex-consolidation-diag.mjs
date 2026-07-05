@@ -208,10 +208,12 @@ const round2 = (n) => Math.round(Number(n || 0) * 100) / 100;
     console.log('Eventos split_derivado apontando para OP split:', derivedNovaIds.size + '/' + splitLatexOps.length);
     console.log('OPs split sem rastro completo:', semRastro.length ? semRastro.map((op) => op.numero + '/' + op.ano).join(', ') : '0 (OK)');
   }
-  try {
-    const rpcCheck = await selOptional(token, 'rpc/gerar_op_latex_split?select=op_latex_id');
-    console.log('RPC gerar_op_latex_split:', rpcCheck ? 'OK (acessivel via PostgREST)' : 'INDISPONIVEL (db/29 nao aplicada ou schema nao recarregado)');
-  } catch {
-    console.log('RPC gerar_op_latex_split: INDISPONIVEL (db/29 nao aplicada ou schema nao recarregado)');
-  }
+  // PostgREST so aceita RPC via POST; GET/select em rpc/<fn> retorna 404
+  // mesmo com a funcao aplicada e funcional (nao e sinal de
+  // indisponibilidade). Este diagnostico e SELECT-only por contrato e nao
+  // deve invocar a RPC via POST aqui. Disponibilidade real ja foi
+  // confirmada por E2E autenticado na fase OP-PARTIAL-SPLIT-E2E-STAGING-C
+  // (criou OP latex 8/2026).
+  console.log('RPC gerar_op_latex_split: nao verificavel por GET (PostgREST so aceita RPC via POST). '
+    + 'Disponibilidade confirmada por E2E autenticado (ver AGENT_HANDOFF, fase OP-PARTIAL-SPLIT-E2E-STAGING-C).');
 })().catch((e) => die(e && e.message ? e.message : String(e)));

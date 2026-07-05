@@ -1,4 +1,36 @@
 > **Atualizacao 2026-07-04 - fase
+> `RAVATEX-TAPETES-STAGING-HARDENING-R1`.**
+> Limpeza de 2 pendencias nao-fatais reveladas pelo E2E do split.
+>
+> (A) `parametros_largura.id` 42703: o select em
+> `js/screens/pedido-detail-data.js` pedia `id, largura,
+> r_algoritmo_poliester, r_algoritmo_algodao` — nenhuma dessas 3 colunas
+> alem de `largura` existe (schema real: `largura, peso_linear,
+> algodao_por_ml, poliester_por_ml, valor_x, atualizado_em`). Confirmado
+> por probe direto: removendo so `id` o erro migra para
+> `r_algoritmo_poliester`. Unico consumidor (`pedido-detail-events.js`,
+> `openTecAcceptanceModal`) so le `largura` como chave de mapa (dead
+> read nos demais campos) — sem decisao de schema pendente. Select
+> reduzido para `'largura'`. Nao e migration.
+>
+> (B) Falso alerta RPC "INDISPONIVEL": os diagnosticos sondavam
+> `rpc/gerar_op_latex_split` via GET, que sempre 404 no PostgREST
+> (RPC so aceita POST) independente da funcao existir. E2E anterior ja
+> provou disponibilidade real (criou OP latex 8/2026). Optei por
+> reclassificar a mensagem em vez de sondar via POST negativo, pois
+> ambos os scripts se autodocumentam "SOMENTE SELECT... Nenhum
+> write/RPC/DDL" — introduzir uma chamada RPC quebraria esse contrato.
+> `[2.5c]` agora diz "nao verificavel por GET... disponibilidade
+> confirmada por E2E autenticado".
+>
+> Validado com helper real contra staging: pedido do E2E (#12, tec OP
+> 11) abre sem 42703, `parametrosLargura` preenchido, RENDER OK.
+> Testes: 357/357 OK. Diagnosticos pos-patch: default=7, split=1
+> legitimo, duplicatas/orfas=0, high-water latex=8 e tecelagem=17
+> (identico ao fim da fase anterior — nenhuma OP nova criada). db/25-29,
+> `gerar_op_latex`, `gerar_op_latex_split` e regra default intocados.
+>
+> **Atualizacao 2026-07-04 - fase
 > `RAVATEX-TAPETES-OP-PARTIAL-SPLIT-E2E-STAGING-C`.**
 > E2E controlado do split parcial no staging (ucrjtfswnfdlxwtmxnoo),
 > apos a correcao da regressao do Pedido Detail. Part 0 confirmou que

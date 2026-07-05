@@ -1,4 +1,69 @@
-﻿# Estado pos-fase - OP Partial Split E2E Staging C
+﻿# Estado pos-fase - Staging Hardening R1
+
+- Fase: `RAVATEX-TAPETES-STAGING-HARDENING-R1`.
+- Objetivo: limpar 2 pendencias nao-fatais reveladas pelo E2E do split,
+  sem tocar fluxo homologado.
+
+- **Pendencia A — `parametros_largura.id` (42703):**
+  `loadPedidoDetailData` (`js/screens/pedido-detail-data.js`) selecionava
+  `id, largura, r_algoritmo_poliester, r_algoritmo_algodao`. Investigacao
+  provou que **nenhuma** dessas 3 colunas alem de `largura` existe na
+  tabela (`db/01_schema.sql`: PK e a propria `largura`; colunas reais sao
+  `largura, peso_linear, algodao_por_ml, poliester_por_ml, valor_x,
+  atualizado_em`). Confirmado por probe read-only direto no staging:
+  removendo so `id` o erro 42703 apenas migra para
+  `r_algoritmo_poliester`. O consumidor unico
+  (`pedido-detail-events.js:641-644`, `openTecAcceptanceModal`) monta
+  `parametrosByLargura` indexado por `largura` e NUNCA le nenhum outro
+  campo do objeto (dead read, confirmado por grep no arquivo inteiro) —
+  nao ha decisao de schema pendente. Patch: select reduzido para
+  `'largura'` (unica coluna real e realmente usada). Nao e migration; nao
+  adiciona nem renomeia coluna alguma.
+- **Pendencia B — falso alerta RPC "INDISPONIVEL" via GET:** os 2
+  diagnosticos sondavam `rpc/gerar_op_latex_split?select=...` via GET.
+  PostgREST so aceita RPC via POST — GET sempre responde 404,
+  independente da funcao existir/funcionar (o E2E anterior, fase
+  `OP-PARTIAL-SPLIT-E2E-STAGING-C`, ja provou disponibilidade real: a RPC
+  criou a OP latex 8/2026 via POST autenticado). Optei pela alternativa
+  mais segura oferecida pelo brief (reclassificar em vez de sondar por
+  POST negativo): ambos os scripts se autodocumentam como
+  "SOMENTE SELECT via PostgREST. Nenhum write/RPC/DDL." — introduzir
+  qualquer chamada RPC, mesmo negativa/sem efeito, quebraria esse
+  contrato documentado e aumentaria a superficie de um script de
+  diagnostico. Patch: a secao `[2.5c]` agora imprime
+  "nao verificavel por GET (PostgREST so aceita RPC via POST).
+  Disponibilidade confirmada por E2E autenticado" em vez de
+  "INDISPONIVEL". Nenhuma chamada de rede nova foi adicionada.
+- Arquivos alterados: `js/screens/pedido-detail-data.js`,
+  `scripts/staging/production-flow-invariants-diag.mjs`,
+  `scripts/staging/latex-consolidation-diag.mjs`, `PROJECT_STATE.md`,
+  `AGENT_HANDOFF.md`. `tests/pedido-detail.smoke.js` e
+  `tests/production-flow-invariants.smoke.js` **nao precisaram de
+  alteracao** — nenhum teste fixava as colunas antigas nem o texto
+  "INDISPONIVEL" (verificado antes do patch).
+- Validado contra staging real (read-only + via helper real, sem escrita
+  nova): `loadPedidoDetailData` no pedido usado no E2E (#12, tecelagem
+  OP 11) retorna `loadingError=null`, zero linha de erro 42703 no log,
+  `parametrosLargura=[{largura:1.4},{largura:2.1}]`, RENDER OK (9 nodes,
+  3 opSummaries — ja incluindo as OPs 7/2026 e 8/2026 do E2E anterior).
+- Testes locais: `pedido-detail`, `pedido-detail-linked-ops`, `op-nova`,
+  `tec-to-acabamento-flow`, `entrega-writes`, `op-latex-split`,
+  `production-flow-invariants`, `latex-consolidation-schema` —
+  **357/357 OK**.
+- Diagnosticos pos-patch (staging): latex default=7, split atuais=1
+  (legitimo, rastro completo 1/1+1/1), duplicatas default=0, duplicidade
+  materializada=0, orfas=0, `op_latex_entregas` N:1 (11 entregas, 0 em
+  multiplas OPs), colisoes=0, high-water latex=8 e tecelagem=17 (ambos
+  identicos ao fim da fase anterior — **nenhuma OP nova foi criada**),
+  sem falso alerta de RPC.
+- Nao tocado (fora de escopo, preservado): `gerar_op_latex`,
+  `gerar_op_latex_split`, db/25-db/29, regra default de acumulacao,
+  fluxo de split ja homologado.
+- Producao intocada; `origin` nao usado para escrita; sem SQL/migration;
+  sem cleanup destrutivo; sem OP split real adicional; sem `git add .`;
+  residual permitido `supabase/.temp/`.
+
+# Estado pos-fase - OP Partial Split E2E Staging C
 
 - Fase: `RAVATEX-TAPETES-OP-PARTIAL-SPLIT-E2E-STAGING-C`.
 - Objetivo: validar o fluxo REAL de split parcial no staging

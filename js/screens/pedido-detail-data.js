@@ -355,7 +355,7 @@
 
     var parametrosRes = await window.supa
       .from('parametros_largura')
-      .select('id, largura, r_algoritmo_poliester, r_algoritmo_algodao')
+      .select('largura')
       .order('largura', { ascending: true });
     if (parametrosRes.error) {
       state.parametrosLargura = [];
