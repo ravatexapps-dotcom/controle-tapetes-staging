@@ -97,6 +97,27 @@
         : '0,00 m';
     }
 
+    function updateItensSummary() {
+      var totalLabel = totalMetrosStr();
+      var itemCountLabel = String(state.itens.length);
+      if (!container.querySelectorAll) return;
+
+      var totalNodes = container.querySelectorAll('[data-pedido-total-metros]');
+      for (var i = 0; i < totalNodes.length; i++) {
+        totalNodes[i].textContent = totalLabel;
+      }
+
+      var countNodes = container.querySelectorAll('[data-pedido-total-itens]');
+      for (var c = 0; c < countNodes.length; c++) {
+        countNodes[c].textContent = itemCountLabel;
+      }
+
+      var summaryNodes = container.querySelectorAll('[data-pedido-checkout-summary]');
+      for (var s = 0; s < summaryNodes.length; s++) {
+        summaryNodes[s].textContent = 'Resumo: ' + itemCountLabel + ' item(ns) | ' + totalLabel;
+      }
+    }
+
     function clienteNomeById(id) {
       for (var i = 0; i < clientes.length; i++) {
         if (String(clientes[i].id) === String(id)) return clientes[i].nome;
@@ -299,7 +320,7 @@
       });
       metrosInput.addEventListener('input', function () {
         item.metros = metrosInput.value;
-        render();
+        updateItensSummary();
       });
 
       var obsInput = window.el('input', {
@@ -554,11 +575,17 @@
       },
       window.el('span', { style: 'font-size:13.5px; color:#5b6472;' },
         'Total de itens: ',
-        window.el('strong', { style: 'color:#16203a; font-weight:700;' }, String(state.itens.length))
+        window.el('strong', {
+          style: 'color:#16203a; font-weight:700;',
+          'data-pedido-total-itens': '1'
+        }, String(state.itens.length))
       ),
       window.el('span', { style: 'font-size:13.5px; color:#5b6472;' },
         'Metragem total: ',
-        window.el('strong', { style: 'color:#16203a; font-weight:700;' }, totalMetrosStr())
+        window.el('strong', {
+          style: 'color:#16203a; font-weight:700;',
+          'data-pedido-total-metros': '1'
+        }, totalMetrosStr())
       )));
 
       return window.el('div', {
@@ -603,7 +630,10 @@
         style: 'background:#fff; border:1px solid #eceef1; border-radius:4px; box-shadow:0 1px 2px rgba(20,30,45,.04); padding:16px 20px; display:flex; flex-direction:column; justify-content:center;'
       },
       window.el('div', { style: 'font-size:16px; font-weight:700; color:#16203a;' }, 'Salvar rascunho'),
-      window.el('div', { style: 'font-size:13px; color:#8a93a3; line-height:1.5; margin-top:10px; margin-bottom:14px;' },
+      window.el('div', {
+        style: 'font-size:13px; color:#8a93a3; line-height:1.5; margin-top:10px; margin-bottom:14px;',
+        'data-pedido-checkout-summary': '1'
+      },
         'Resumo: ' + String(state.itens.length) + ' item(ns) | ' + totalMetrosStr()
       ),
       saveBtn);

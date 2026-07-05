@@ -1,4 +1,67 @@
-﻿# Estado pos-fase - Pedido First OP CTA Placement R1
+﻿# Estado pos-fase - OP Nova Metragem Input Focus R1
+
+- Fase: `RAVATEX-TAPETES-OP-NOVA-METRAGEM-INPUT-FOCUS-R1`.
+- Status: OK. Bugfix UI focado + teste de regressao; sem SQL, migration,
+  producao, dados novos, lifecycle de OP ou alteracao do fluxo
+  Pedido -> OP -> Expedicao.
+- Branch/HEAD base: `work/app-next`,
+  `f368805fde9ed439c7639d0309ea7a622888a747`.
+- Validacao inicial: branch correta, HEAD esperado, status inicial somente
+  `?? supabase/.temp/`; remoto `staging` confirmado e `origin` nao usado para
+  escrita.
+- Diagnostico:
+  - `op-nova.js` foi lido; o campo de metros da Nova OP atualiza o resumo
+    lateral com `renderRight()` e nao reconstruiu a linha durante o input;
+  - `op-nova-writes.js` nao existe no workspace e nao foi recriado;
+  - o relato "abertura de pedido, item 1 ja listado" mapeou o bug real para
+    `js/screens/pedido-form.js`, no item inline do Novo Pedido admin;
+  - causa raiz: o handler `metrosInput.addEventListener('input', ...)`
+    chamava `render()` a cada digito, disparando `container.replaceChildren`
+    e recriando a tela inteira, inclusive o proprio input.
+- Correcao aplicada (`js/screens/pedido-form.js`):
+  - adicionado `updateItensSummary()` para atualizar localmente `Metragem
+    total`, `Total de itens` e o resumo do card de salvamento;
+  - os marcadores `data-pedido-total-metros`,
+    `data-pedido-total-itens` e `data-pedido-checkout-summary` permitem
+    atualizar os textos sem reconstruir a linha;
+  - o handler de metragem agora faz apenas `item.metros = metrosInput.value`
+    e `updateItensSummary()`, sem `render()`;
+  - nenhum `setTimeout`, refocus bruto ou hack de selection foi usado.
+- Comportamento validado:
+  - digitacao continua `1 -> 10 -> 100 -> 1000` preserva o mesmo input no DOM;
+  - foco/DOM ficam preservados porque o input nao e recriado;
+  - valor final `1000` chega ao payload de `pedido_itens.metros`;
+  - calculo derivado de metragem total continua atualizando ao vivo;
+  - validacoes de modelo/metragem e persistencia do pedido permanecem iguais.
+- Arquivo extra justificado: `pedido-form.js`/`tests/pedido-form.smoke.js`
+  nao estavam na lista inicial, mas foram o componente real afetado. Pedido
+  Detail/hub, OP Nova, OP Persistir, lifecycle de OP, expedicao, split e
+  consolidacao Latex nao foram alterados.
+- Testes locais OK:
+  - `node --check js\screens\pedido-form.js`;
+  - `node --check tests\pedido-form.smoke.js`;
+  - `node --test tests\pedido-form.smoke.js` = 41/41;
+  - `node --test tests\op-nova.smoke.js` = 69/69;
+  - `node --test tests\op-persistir.smoke.js` = 69/69;
+  - `node --test tests\pedido-detail.smoke.js` = 145/145;
+  - `node --test tests\pedido-detail-linked-ops.smoke.js` = 7/7;
+  - `node --test tests\tec-to-acabamento-flow.smoke.js` = 30/30.
+- Diagnosticos staging read-only OK:
+  - `node scripts/staging/production-flow-invariants-diag.mjs`;
+  - `node scripts/staging/latex-consolidation-diag.mjs`;
+  - `node scripts/staging/expedicao-partial-flow-diag.mjs`.
+- Arquivos alterados:
+  - `js/screens/pedido-form.js`;
+  - `tests/pedido-form.smoke.js`;
+  - `PROJECT_STATE.md`;
+  - `AGENT_HANDOFF.md`.
+- Proximo backlog recomendado: `TEC-TO-ACABAMENTO-MODAL-LAYOUT-R1`.
+- Confirmacoes: producao intocada, `origin` nao usado para escrita, nenhum
+  segredo impresso intencionalmente, sem SQL, sem migration, sem dados reais
+  novos, sem alteracao destrutiva, sem `git add .`, `supabase/.temp/` fora do
+  escopo.
+
+# Estado pos-fase - Pedido First OP CTA Placement R1
 
 - Fase: `RAVATEX-TAPETES-PEDIDO-FIRST-OP-CTA-PLACEMENT-R1`.
 - Status: OK. Patch em JS + testes + docs; sem SQL, migration, producao,

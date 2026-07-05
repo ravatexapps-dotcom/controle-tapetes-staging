@@ -51,6 +51,204 @@ const list   = readOrFail(LIST);
 const index  = readOrFail(INDEX);
 const schema = readOrFail(SCHEMA);
 
+class RuntimeNode {
+  constructor(tag) {
+    this.tagName = String(tag || '').toUpperCase();
+    this.children = [];
+    this._attrs = {};
+    this._listeners = {};
+    this._text = null;
+    this.value = '';
+    this.disabled = false;
+    this.className = '';
+    this.style = {};
+    this.classList = {
+      add: (...names) => {
+        this.className = [this.className].concat(names).filter(Boolean).join(' ');
+      },
+    };
+  }
+  appendChild(node) {
+    if (node == null || node === false) return node;
+    const child = typeof node === 'string' ? textNode(node) : node;
+    child._parent = this;
+    this.children.push(child);
+    return child;
+  }
+  replaceChildren(...nodes) {
+    this.children.forEach((child) => { if (child) child._parent = null; });
+    this.children = [];
+    nodes.flat().forEach((node) => this.appendChild(node));
+  }
+  setAttribute(key, value) {
+    this._attrs[key] = value;
+    if (key === 'disabled') this.disabled = true;
+    if (key === 'style') this.style.cssText = String(value);
+  }
+  addEventListener(type, fn) { this._listeners[type] = fn; }
+  removeEventListener(type) { delete this._listeners[type]; }
+  remove() {
+    if (!this._parent) return;
+    this._parent.children = this._parent.children.filter((child) => child !== this);
+    this._parent = null;
+  }
+  querySelectorAll(selector) {
+    const attr = selector.match(/^\[([^=\]]+)(?:=['"]?([^'"\]]+)['"]?)?\]$/);
+    const out = [];
+    function walk(node) {
+      if (!node || !node.children) return;
+      if (attr) {
+        const actual = node._attrs ? node._attrs[attr[1]] : undefined;
+        if (actual != null && (attr[2] == null || String(actual) === attr[2])) out.push(node);
+      }
+      node.children.forEach(walk);
+    }
+    walk(this);
+    return out;
+  }
+  set innerHTML(value) {
+    this._innerHTML = value;
+    this._firstElementChild = new RuntimeNode('svg');
+  }
+  get firstElementChild() {
+    return this._firstElementChild || this.children.find((child) => child && child.tagName) || null;
+  }
+  get textContent() {
+    if (this._text != null) return this._text;
+    return this.children.map((child) => child && child.textContent ? child.textContent : '').join('');
+  }
+  set textContent(value) { this._text = String(value); }
+}
+
+function textNode(value) {
+  return {
+    tagName: '#TEXT',
+    textContent: String(value),
+    children: [],
+    setAttribute() {},
+    appendChild() {},
+  };
+}
+
+function runtimeEl(tag, attrs, ...children) {
+  const node = new RuntimeNode(tag);
+  Object.entries(attrs || {}).forEach(([key, value]) => {
+    if (key === 'style') {
+      node.setAttribute(key, value);
+    } else if (key === 'class') {
+      node.className = value;
+      node._attrs[key] = value;
+    } else if (key.startsWith('data-')) {
+      node.setAttribute(key, value);
+    } else {
+      node[key] = value;
+      node._attrs[key] = value;
+      if (key === 'disabled') node.disabled = true;
+    }
+  });
+  children.flat().forEach((child) => node.appendChild(child));
+  return node;
+}
+
+function allByTag(root, tag) {
+  const wanted = String(tag).toUpperCase();
+  const out = [];
+  function walk(node) {
+    if (!node || !node.children) return;
+    if (node.tagName === wanted) out.push(node);
+    node.children.forEach(walk);
+  }
+  walk(root);
+  return out;
+}
+
+function containsNode(root, target) {
+  if (root === target) return true;
+  if (!root || !root.children) return false;
+  return root.children.some((child) => containsNode(child, target));
+}
+
+function findButton(root, re) {
+  return allByTag(root, 'button').find((button) => re.test(button.textContent));
+}
+
+function makePedidoFormRuntime() {
+  const calls = { pedidoInsert: null, pedidoItensInsert: null };
+  const document = {
+    createElement: (tag) => new RuntimeNode(tag),
+    createTextNode: textNode,
+    body: new RuntimeNode('body'),
+    addEventListener() {},
+    removeEventListener() {},
+  };
+  function tableData(table) {
+    if (table === 'clientes') return [{ id: 501, nome: 'Cliente Atlas' }];
+    if (table === 'modelos') {
+      return [{
+        id: 1,
+        nome: 'Modelo A',
+        largura: 1.4,
+        cor_1: { id: 1, nome: 'Azul' },
+        cor_2: { id: 2, nome: 'Branco' },
+      }];
+    }
+    return [];
+  }
+  function chain(table) {
+    let mutation = null;
+    let payload = null;
+    const api = {
+      select() { return api; },
+      order() { return api; },
+      eq() { return api; },
+      insert(value) {
+        mutation = 'insert';
+        payload = value;
+        if (table === 'pedidos') calls.pedidoInsert = value;
+        if (table === 'pedido_itens') calls.pedidoItensInsert = value;
+        return api;
+      },
+      delete() { mutation = 'delete'; return api; },
+      single() {
+        if (table === 'pedidos' && mutation === 'insert') {
+          return Promise.resolve({ data: { id: 'ped-1', numero: 7, status: 'rascunho' }, error: null });
+        }
+        return Promise.resolve({ data: null, error: null });
+      },
+      then(resolve, reject) {
+        const result = table === 'pedido_itens' && mutation === 'insert'
+          ? { data: [{ id: 'pi-1' }], error: null }
+          : { data: tableData(table), error: null };
+        return Promise.resolve(result).then(resolve, reject);
+      },
+    };
+    return api;
+  }
+  const sandbox = {
+    window: {},
+    document,
+    console,
+    setTimeout,
+    clearTimeout,
+  };
+  sandbox.window = sandbox;
+  sandbox.supa = { from: (table) => chain(table) };
+  sandbox.el = runtimeEl;
+  sandbox.ADMIN_MENU = [];
+  sandbox.shellLayout = (_menu, content) => content;
+  sandbox.toast = () => {};
+  sandbox.navigate = () => {};
+  sandbox.requestAnimationFrame = (fn) => fn();
+  sandbox.corPreviewElement = () => new RuntimeNode('div');
+  vm.createContext(sandbox);
+  vm.runInContext(screen, sandbox, { filename: 'js/screens/pedido-form.js' });
+  return { sandbox, calls };
+}
+
+function flushRuntime() {
+  return new Promise((resolve) => setImmediate(resolve));
+}
+
 // ---------------------------------------------------------------------
 // 1. Existência
 // ---------------------------------------------------------------------
@@ -424,4 +622,56 @@ test('pedido-form: CTA post-save aceita pedido_id UUID sem Number/parseInt', () 
   assert.match(postSave, /#\/ops\/nova\?pedido_id=['"]\s*\+\s*pedido\.id/);
   assert.doesNotMatch(postSave, /Number\s*\(\s*pedido\.id\s*\)/);
   assert.doesNotMatch(postSave, /parseInt\s*\(\s*pedido\.id\s*/);
+});
+
+test('pedido-form: input de metragem atualiza resumo sem render global', () => {
+  const buildItemRow = (screen.match(/function\s+buildItemRow\s*\(item\)\s*\{[\s\S]*?\n    function openAddItemModal/) || [''])[0];
+  assert.ok(buildItemRow, 'trecho buildItemRow nao encontrado');
+  const inputHandler = (buildItemRow.match(/metrosInput\.addEventListener\(\s*['"]input['"]\s*,\s*function\s*\(\)\s*\{[\s\S]*?\n      \}\);/) || [''])[0];
+  assert.ok(inputHandler, 'handler input de metros nao encontrado');
+  assert.match(inputHandler, /item\.metros\s*=\s*metrosInput\.value/);
+  assert.match(inputHandler, /updateItensSummary\s*\(\s*\)/,
+    'handler deve atualizar totais/resumo localmente');
+  assert.doesNotMatch(inputHandler, /render\s*\(\s*\)/,
+    'handler de metragem nao pode reconstruir a tela a cada digito');
+  assert.match(screen, /function\s+updateItensSummary\s*\(\)\s*\{/);
+  assert.match(screen, /data-pedido-total-metros/);
+  assert.match(screen, /data-pedido-checkout-summary/);
+});
+
+test('pedido-form runtime: digitar 1000 preserva o mesmo input e salva metragem correta', async () => {
+  const { sandbox, calls } = makePedidoFormRuntime();
+  const root = await vm.runInContext('window.screenPedidoNovo()', sandbox);
+  await flushRuntime();
+
+  const selects = allByTag(root, 'select');
+  assert.ok(selects.length >= 3, 'selects de cliente/status/modelo nao renderizados');
+  selects[0].value = '501';
+  selects[0]._listeners.change();
+  selects[2].value = '1';
+  selects[2]._listeners.change();
+
+  const metrosInput = allByTag(root, 'input').find((input) => input.placeholder === '0,00');
+  assert.ok(metrosInput, 'input de metragem do item inicial nao encontrado');
+
+  for (const value of ['1', '10', '100', '1000']) {
+    metrosInput.value = value;
+    metrosInput._listeners.input();
+    assert.equal(containsNode(root, metrosInput), true,
+      'input de metragem foi recriado durante a digitacao');
+  }
+
+  assert.equal(metrosInput.value, '1000');
+  const totalLabel = (1000).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' m';
+  assert.equal(root.querySelectorAll('[data-pedido-total-metros]')[0].textContent, totalLabel);
+  assert.match(root.querySelectorAll('[data-pedido-checkout-summary]')[0].textContent, /1000|1\.000,00|1,000\.00/);
+
+  const saveBtn = findButton(root, /^Salvar rascunho$/);
+  assert.ok(saveBtn, 'botao Salvar rascunho nao encontrado');
+  saveBtn.onclick();
+  await flushRuntime();
+  await flushRuntime();
+
+  assert.ok(Array.isArray(calls.pedidoItensInsert), 'insert de pedido_itens nao chamado');
+  assert.equal(calls.pedidoItensInsert[0].metros, 1000);
 });

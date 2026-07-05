@@ -1,4 +1,47 @@
 > **Atualizacao 2026-07-05 - fase
+> `RAVATEX-TAPETES-OP-NOVA-METRAGEM-INPUT-FOCUS-R1`.**
+> Status: OK. Bugfix UI focado + teste de regressao; sem SQL/migration,
+> sem producao, sem dados novos, sem lifecycle de OP e sem fluxo
+> Pedido->OP->Expedicao.
+>
+> Diagnostico: `op-nova.js` foi inspecionado e o campo de metros da Nova OP
+> atualiza apenas o resumo lateral via `renderRight()`, sem reconstruir a
+> linha. O relato operacional ("abertura de pedido", item 1 ja listado)
+> mapeou o bug real para `js/screens/pedido-form.js`: o input `Metragem` do
+> item inline chamava `render()` a cada evento `input`, fazendo
+> `container.replaceChildren(...)` reconstruir toda a tela e destruir o
+> proprio input a cada digito.
+>
+> Correcao: em `pedido-form.js`, o handler de metragem agora atualiza apenas
+> `item.metros` e chama `updateItensSummary()`, que recalcula localmente
+> `Metragem total`, `Total de itens` e o resumo do card de salvamento usando
+> marcadores `data-pedido-*`. A linha e o input permanecem no DOM durante a
+> digitacao; nao ha `setTimeout`, refocus bruto, hack de selection, redesenho
+> de tela, write novo ou alteracao de contrato DB. O modal de adicionar item
+> e os fluxos OP Nova/OP Persistir/Pedido Detail ficaram preservados.
+>
+> Comportamento validado: digitacao continua `1 -> 10 -> 100 -> 1000` sem
+> recriar o input; foco/DOM preservado; valor final `1000` segue para
+> `pedido_itens.metros` no payload de salvamento; calculo de metragem total
+> continua atualizando ao vivo; validacoes de modelo/metragem e persistencia
+> permanecem iguais.
+>
+> Testes locais OK: `node --check js\screens\pedido-form.js`,
+> `node --check tests\pedido-form.smoke.js`, `node --test
+> tests\pedido-form.smoke.js` (41/41), `op-nova.smoke.js` (69/69),
+> `op-persistir.smoke.js` (69/69), `pedido-detail.smoke.js` (145/145),
+> `pedido-detail-linked-ops.smoke.js` (7/7) e
+> `tec-to-acabamento-flow.smoke.js` (30/30). Diagnosticos staging read-only
+> OK: invariantes do fluxo produtivo, consolidacao Latex e expedicao partial.
+>
+> Arquivos alterados: `js/screens/pedido-form.js`,
+> `tests/pedido-form.smoke.js`, `PROJECT_STATE.md`, `AGENT_HANDOFF.md`.
+> Arquivo extra justificado: `pedido-form.js`/`pedido-form.smoke.js` nao
+> estavam na lista inicial, mas sao o componente real do campo de metragem
+> afetado. `op-nova-writes.js` nao existe no workspace e nao foi recriado.
+> Proximo backlog recomendado: `TEC-TO-ACABAMENTO-MODAL-LAYOUT-R1`.
+>
+> **Atualizacao 2026-07-05 - fase
 > `RAVATEX-TAPETES-PEDIDO-FIRST-OP-CTA-PLACEMENT-R1`.**
 > Status: OK. Patch leve em JS + testes + docs; sem SQL/migration/producao,
 > sem dados novos, sem write paralelo no Pedido e sem uso de `origin` para
