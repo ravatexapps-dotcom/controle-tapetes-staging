@@ -58,7 +58,11 @@
   // modelosById: { [id]: { id, nome, largura, cor_1:{id,nome}, cor_2:{id,nome} } }
   // entrega (opcional, para edição): { id, data, observacao, entrega_itens: [...] }
   // Retorna: { node, getPayload }
-  function buildEntregaInlineForm({ opItens, modelosById, entrega = null, latexOptions = [], comDestino = true, comOpcaoSplit = false }) {
+  // layout: 'inline' (padrão histórico, linha única por item) ou 'stacked'
+  // (empilhado — usado no modal Tecelagem → Acabamento do Pedido). Os inputs
+  // e o getPayload são idênticos nos dois layouts — só muda a ordem/estrutura
+  // do DOM para: Nome do item → Data/Destino/Metros → Observação.
+  function buildEntregaInlineForm({ opItens, modelosById, entrega = null, latexOptions = [], comDestino = true, comOpcaoSplit = false, layout = 'inline' }) {
     const hoje = new Date().toISOString().slice(0, 10);
     const dataInput = window.textInput({ type: 'date', value: entrega?.data || hoje });
     const obsInput = window.textInput({ type: 'text', value: entrega?.observacao || '', placeholder: 'observação (opcional)' });
@@ -82,7 +86,17 @@
       return { op_item_id: it.id, metrosInput, defeitoChk, obsLinha };
     });
 
-    const linhasNode = window.el('div', { class: 'space-y-2 mt-2 mb-3' });
+    const stacked = layout === 'stacked';
+    var stackedSharedFieldsAttached = false;
+
+    function buildStackedSharedFields() {
+      return [
+        window.el('div', { class: 'w-40' }, window.formField({ label: 'Data', input: dataInput })),
+        comDestino ? window.el('div', { class: 'flex-1 min-w-[180px]' }, window.formField({ label: 'Destino (látex)', input: destinoSelect })) : window.el('span', {}),
+      ];
+    }
+
+    const linhasNode = window.el('div', { class: stacked ? 'space-y-3' : 'space-y-2 mt-2 mb-3' });
     for (let idx = 0; idx < linhasState.length; idx++) {
       const ls = linhasState[idx];
       const it = opItens[idx];
@@ -90,12 +104,30 @@
       const rotulo = modelo
         ? `${modelo.nome} ${window.larguraKey(modelo.largura)}m · ${modelo.cor_1?.nome || '?'}/${modelo.cor_2?.nome || '?'}`
         : ('#' + it.modelo_id);
-      linhasNode.appendChild(window.el('div', { class: 'flex flex-wrap items-end gap-2 border-b pb-2' },
-        window.el('div', { class: 'flex-1 min-w-[180px] text-sm text-gray-700' }, rotulo),
-        window.el('div', { class: 'w-28' }, window.formField({ label: 'Metros', input: ls.metrosInput })),
-        window.el('label', { class: 'flex items-center gap-1 text-sm text-gray-700 mb-1' }, ls.defeitoChk, 'defeito'),
-        window.el('div', { class: 'flex-1 min-w-[140px]' }, window.formField({ label: 'Observação', input: ls.obsLinha })),
-      ));
+      if (stacked) {
+        var fieldRow = [];
+        if (!stackedSharedFieldsAttached) {
+          fieldRow = fieldRow.concat(buildStackedSharedFields());
+          stackedSharedFieldsAttached = true;
+        }
+        fieldRow.push(window.el('div', { class: 'w-32' }, window.formField({ label: 'Metros', input: ls.metrosInput })));
+        fieldRow.push(window.el('label', { class: 'flex items-center gap-1 text-sm text-gray-700 mb-3' }, ls.defeitoChk, 'defeito'));
+
+        // Card por item: Nome (linha 1) → Data/Destino/Metros (linha 2) →
+        // Observação do item (linha 3). Mesmos inputs do layout inline.
+        linhasNode.appendChild(window.el('div', { class: 'border rounded bg-white px-3 py-3' },
+          window.el('div', { class: 'text-sm font-semibold text-gray-800 mb-2' }, rotulo),
+          window.el('div', { class: 'flex flex-wrap items-end gap-3' }, fieldRow),
+          window.el('div', {}, window.formField({ label: 'Observação', input: ls.obsLinha })),
+        ));
+      } else {
+        linhasNode.appendChild(window.el('div', { class: 'flex flex-wrap items-end gap-2 border-b pb-2' },
+          window.el('div', { class: 'flex-1 min-w-[180px] text-sm text-gray-700' }, rotulo),
+          window.el('div', { class: 'w-28' }, window.formField({ label: 'Metros', input: ls.metrosInput })),
+          window.el('label', { class: 'flex items-center gap-1 text-sm text-gray-700 mb-1' }, ls.defeitoChk, 'defeito'),
+          window.el('div', { class: 'flex-1 min-w-[140px]' }, window.formField({ label: 'Observação', input: ls.obsLinha })),
+        ));
+      }
     }
 
     var splitUI = null;
@@ -135,15 +167,28 @@
       };
     }
 
-    var node = window.el('div', { class: 'mt-3 border-t pt-3' },
-      window.el('div', { class: 'flex flex-wrap gap-3 mb-2' },
-        window.el('div', { class: 'w-40' }, window.formField({ label: 'Data', input: dataInput })),
-        comDestino ? window.el('div', { class: 'w-64 min-w-[200px]' }, window.formField({ label: 'Destino (látex)', input: destinoSelect })) : window.el('span', {}),
-        window.el('div', { class: 'flex-1 min-w-[200px]' }, window.formField({ label: 'Observação da entrega', input: obsInput })),
-      ),
-      linhasNode,
-      splitUI ? splitUI.node : window.el('span', {}),
-    );
+    var node;
+    if (stacked) {
+      // Ordem alvo: Nome do item → Data/Destino/Metros → Observação.
+      // Data e Destino continuam campos compartilhados da entrega, apenas
+      // posicionados junto da primeira linha de item neste layout opt-in.
+      node = window.el('div', { class: 'mt-3 border-t pt-3 space-y-3' },
+        linhasNode,
+        !stackedSharedFieldsAttached ? window.el('div', { class: 'border rounded bg-white px-3 py-3 flex flex-wrap items-end gap-3' }, buildStackedSharedFields()) : null,
+        window.el('div', {}, window.formField({ label: 'Observação da entrega', input: obsInput })),
+        splitUI ? splitUI.node : window.el('span', {}),
+      );
+    } else {
+      node = window.el('div', { class: 'mt-3 border-t pt-3' },
+        window.el('div', { class: 'flex flex-wrap gap-3 mb-2' },
+          window.el('div', { class: 'w-40' }, window.formField({ label: 'Data', input: dataInput })),
+          comDestino ? window.el('div', { class: 'w-64 min-w-[200px]' }, window.formField({ label: 'Destino (látex)', input: destinoSelect })) : window.el('span', {}),
+          window.el('div', { class: 'flex-1 min-w-[200px]' }, window.formField({ label: 'Observação da entrega', input: obsInput })),
+        ),
+        linhasNode,
+        splitUI ? splitUI.node : window.el('span', {}),
+      );
+    }
 
     function getPayload() {
       const linhas = linhasState

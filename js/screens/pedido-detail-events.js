@@ -1118,6 +1118,7 @@
         modelosById: buildModelosForEntregaForm(),
         latexOptions: state.latexOptions || [],
         comOpcaoSplit: true,
+        layout: 'stacked',
       });
       var pendingByItem = computePendingByItem(ctxMovement);
       var hasRemaining = pendingByItem.some(function (row) { return row.pending > 0; });
@@ -1512,7 +1513,7 @@
       document.addEventListener('keydown', escListener);
 
       var card = window.el('div', {
-        style: 'position:relative;background:#fff;border:1px solid #eceef1;border-radius:' + MOVEMENT_MODAL_RADIUS + ';width:520px;max-height:calc(100vh - 48px);overflow-y:auto;box-shadow:' + MOVEMENT_MODAL_SHADOW + ';',
+        style: 'position:relative;background:#fff;border:1px solid #eceef1;border-radius:' + MOVEMENT_MODAL_RADIUS + ';width:100%;max-width:520px;max-height:calc(100vh - 48px);overflow-y:auto;box-shadow:' + MOVEMENT_MODAL_SHADOW + ';',
       });
       var closeBtn = window.el('button', {
         type: 'button',
@@ -1955,7 +1956,7 @@
       });
 
       var card = window.el('div', {
-        style: 'position:relative;background:#fff;border:1px solid #eceef1;border-radius:' + MOVEMENT_MODAL_RADIUS + ';width:520px;max-height:calc(100vh - 48px);overflow-y:auto;box-shadow:' + MOVEMENT_MODAL_SHADOW + ';',
+        style: 'position:relative;background:#fff;border:1px solid #eceef1;border-radius:' + MOVEMENT_MODAL_RADIUS + ';width:100%;max-width:520px;max-height:calc(100vh - 48px);overflow-y:auto;box-shadow:' + MOVEMENT_MODAL_SHADOW + ';',
       });
 
       var titleBar = window.el('div', {

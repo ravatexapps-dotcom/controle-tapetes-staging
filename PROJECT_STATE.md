@@ -1,4 +1,52 @@
 > **Atualizacao 2026-07-05 - fase
+> `RAVATEX-TAPETES-TEC-TO-ACABAMENTO-MODAL-LAYOUT-R1-CLOSEOUT`.**
+> Status: OK. Closeout de patch parcial retomado; executor anterior havia
+> parado antes de testes, docs, commit e push. Sem SQL/migration, sem
+> producao, sem dados reais novos e sem alteracao de persistencia.
+>
+> Diagnostico inicial: branch `work/app-next`, HEAD base
+> `2b2b4c008681eca153e1d404dab16ca96a9ef09e`, com patch local ja existente
+> em `js/screens/entrega-form.js`, `js/screens/pedido-detail-events.js` e
+> `tests/tec-to-acabamento-flow.smoke.js`; `supabase/.temp/` permaneceu fora
+> do escopo. O arquivo real do formulario do modal "Registrar nova
+> transferencia" e `js/screens/entrega-form.js`, componente compartilhado por
+> outros fluxos de entrega.
+>
+> Auditoria/correcao: o helper `buildEntregaInlineForm` ganhou `layout =
+> 'inline'` como default historico e `layout: 'stacked'` como opt-in. O
+> opt-in e usado somente em `buildTecelagemTransferForm` no fluxo
+> Tecelagem -> Acabamento. O layout antigo permanece Data/Destino/Observacao
+> da entrega antes das linhas de item. O layout final do modal alvo ficou:
+> Nome do item; Data/Destino/Metros; Observacao. Data e Destino continuam
+> campos compartilhados da entrega, apenas reposicionados junto da primeira
+> linha de item no layout opt-in.
+>
+> Compatibilidade preservada: handler canonico continua
+> `window.salvarEntregaCima`; `getPayload()` e `getSplitOption()` seguem com
+> o mesmo contrato; validacao de metragem, criacao de entrega, split opcional,
+> saldo e fluxo Acabamento -> Expedicao nao foram alterados. A largura do
+> modal foi ajustada de `width:520px` para `width:100%;max-width:520px`, sem
+> aumentar o maximo visual e mantendo o ajuste responsivo controlado.
+>
+> Testes locais OK: `pedido-detail.smoke.js` (145/145),
+> `pedido-detail-linked-ops.smoke.js` (7/7),
+> `tec-to-acabamento-flow.smoke.js` (37/37),
+> `op-latex-admin.smoke.js` (53/53),
+> `expedicao-partial-flow.smoke.js` (12/12),
+> `expedicao-flow.smoke.js` (8/8), `entrega-writes.smoke.js` (70/70),
+> `op-latex-split.smoke.js` (28/28) e
+> `production-flow-invariants.smoke.js` (11/11). Checks extras OK:
+> `node --check js\screens\entrega-form.js`,
+> `node --check js\screens\pedido-detail-events.js` e
+> `node --check tests\tec-to-acabamento-flow.smoke.js`.
+>
+> Diagnosticos staging read-only OK: invariantes do fluxo produtivo,
+> consolidacao Latex e expedicao partial. Commit/push de fechamento:
+> `Reorder tecelagem transfer modal fields`, enviado somente para
+> `staging/work/app-next`. Proximo backlog recomendado:
+> `LATEX-ADMIN-COMPACT-BUTTONS-R1`.
+>
+> **Atualizacao 2026-07-05 - fase
 > `RAVATEX-TAPETES-OP-NOVA-METRAGEM-INPUT-FOCUS-R1`.**
 > Status: OK. Bugfix UI focado + teste de regressao; sem SQL/migration,
 > sem producao, sem dados novos, sem lifecycle de OP e sem fluxo

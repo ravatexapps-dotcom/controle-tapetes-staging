@@ -710,3 +710,108 @@ test('R1: OP Tecelagem anchor #entregas-tecelagem-op continua sendo destino do s
   assert.match(otpaSrc, /href:\s*['"]#entregas-tecelagem-op['"]/,
     'o anchor para #entregas-tecelagem-op deve continuar existindo no botão renomeado');
 });
+
+// =====================================================================
+// RAVATEX-TAPETES-TEC-TO-ACABAMENTO-MODAL-LAYOUT-R1
+// Reorganização do layout do modal "Registrar nova transferência"
+// (Tecelagem → Acabamento). Apenas ordem/estrutura do DOM: mesmos
+// inputs, mesmo getPayload/getSplitOption, mesmo handler canônico.
+// =====================================================================
+
+const STACKED_ARGS = {
+  opItens: [{ id: 1, modelo_id: 1, metros_pedidos: 100 }],
+  modelosById: { 1: { id: 1, nome: 'Modelo A', largura: 2.0, cor_1: { id: 1, nome: 'Azul' }, cor_2: { id: 2, nome: 'Branco' } } },
+  latexOptions: [{ value: 7, label: 'Latex X' }],
+  comOpcaoSplit: true,
+};
+
+test('MODAL-LAYOUT-R1 caso 1: layout stacked renderiza Nome, depois Data/Destino/Metros', () => {
+  const h = makeEntregaFormSandbox();
+  const result = h.sandbox.window.buildEntregaInlineForm(Object.assign({}, STACKED_ARGS, { layout: 'stacked' }));
+  const text = h.collectText(result.node);
+
+  const idxNome = text.indexOf('Modelo A');
+  const idxData = text.indexOf('Data');
+  const idxDestino = text.indexOf('Destino');
+  const idxMetros = text.indexOf('Metros');
+  assert.ok(idxNome >= 0, 'Nome do item deve aparecer no form');
+  assert.ok(idxData >= 0, 'label Data deve aparecer no form');
+  assert.ok(idxNome < idxData, 'Nome do item deve vir ANTES de Data');
+  assert.ok(idxNome < idxDestino, 'Nome do item deve vir ANTES de Destino');
+  assert.ok(idxData < idxMetros, 'Data deve vir ANTES de Metros no layout final');
+  assert.ok(idxDestino < idxMetros, 'Destino deve vir ANTES de Metros no layout final');
+});
+
+test('MODAL-LAYOUT-R1 caso 2: layout stacked coloca Observação DEPOIS de Data/Destino/Metros', () => {
+  const h = makeEntregaFormSandbox();
+  const result = h.sandbox.window.buildEntregaInlineForm(Object.assign({}, STACKED_ARGS, { layout: 'stacked' }));
+  const text = h.collectText(result.node);
+
+  const idxData = text.indexOf('Data');
+  const idxMetros = text.indexOf('Metros');
+  const idxObsItem = text.indexOf('Observação');
+  const idxObsEntrega = text.indexOf('Observação da entrega');
+  assert.ok(idxObsItem >= 0, 'Observação do item deve aparecer');
+  assert.ok(idxObsEntrega >= 0, 'Observação da entrega deve continuar aparecendo');
+  assert.ok(idxData < idxObsItem, 'Observação do item deve vir DEPOIS de Data');
+  assert.ok(idxMetros < idxObsItem, 'Observação do item deve vir DEPOIS de Metros');
+  assert.ok(idxObsItem < idxObsEntrega, 'Observação da entrega deve continuar depois da Observação do item');
+});
+
+test('MODAL-LAYOUT-R1 caso 3: layout stacked preserva getPayload (contrato inalterado)', () => {
+  const h = makeEntregaFormSandbox();
+  const result = h.sandbox.window.buildEntregaInlineForm(Object.assign({}, STACKED_ARGS, { layout: 'stacked' }));
+
+  assert.equal(typeof result.getPayload, 'function', 'getPayload deve existir');
+  const payload = result.getPayload();
+  assert.ok('data' in payload, 'payload deve conter data');
+  assert.ok('observacao' in payload, 'payload deve conter observacao');
+  assert.ok('destino_fornecedor_id' in payload, 'payload deve conter destino_fornecedor_id');
+  assert.ok(Array.isArray(payload.linhas), 'payload deve conter linhas como array');
+  assert.deepEqual(Object.keys(payload).sort(), ['data', 'destino_fornecedor_id', 'linhas', 'observacao']);
+});
+
+test('MODAL-LAYOUT-R1 caso 4: layout stacked mantém getSplitOption (handler canônico intacto)', () => {
+  const h = makeEntregaFormSandbox();
+  const result = h.sandbox.window.buildEntregaInlineForm(Object.assign({}, STACKED_ARGS, { layout: 'stacked' }));
+
+  assert.equal(typeof result.getSplitOption, 'function', 'getSplitOption deve existir no layout stacked');
+  const opt = result.getSplitOption();
+  assert.equal(opt.forceSplit, false, 'default deve continuar sendo acumular');
+  assert.equal(opt.motivo, null, 'motivo default deve continuar null');
+});
+
+test('MODAL-LAYOUT-R1 caso 5: layout inline (default) permanece com Data ANTES do Nome (sem regressão)', () => {
+  const h = makeEntregaFormSandbox();
+  const result = h.sandbox.window.buildEntregaInlineForm(Object.assign({}, STACKED_ARGS)); // sem layout => inline
+  const text = h.collectText(result.node);
+
+  const idxData = text.indexOf('Data');
+  const idxNome = text.indexOf('Modelo A');
+  assert.ok(idxData >= 0 && idxNome >= 0);
+  assert.ok(idxData < idxNome, 'no layout inline histórico, o cabeçalho Data/Destino continua ANTES dos itens');
+});
+
+test('MODAL-LAYOUT-R1 caso 6: estático — buildTecelagemTransferForm passa layout stacked ao helper canônico', () => {
+  const PDE = path.join(ROOT, 'js', 'screens', 'pedido-detail-events.js');
+  const pdeSrc = fs.readFileSync(PDE, 'utf8');
+  const buildTecSlice = (pdeSrc.match(/function buildTecelagemTransferForm[\s\S]*?\n    \}\n\n    function buildAcabamentoTransferForm/) || [''])[0];
+  assert.ok(buildTecSlice, 'trecho buildTecelagemTransferForm não encontrado');
+  assert.match(buildTecSlice, /layout:\s*['"]stacked['"]/,
+    'buildTecelagemTransferForm deve pedir o layout empilhado');
+  assert.match(buildTecSlice, /window\.buildEntregaInlineForm/,
+    'deve continuar reutilizando o helper canônico buildEntregaInlineForm');
+  assert.match(buildTecSlice, /comOpcaoSplit:\s*true/,
+    'comOpcaoSplit:true deve ser preservado junto com o novo layout');
+});
+
+test('MODAL-LAYOUT-R1 caso 7: estático — outras telas NÃO adotam o layout stacked (escopo isolado)', () => {
+  const OLA = path.join(ROOT, 'js', 'screens', 'op-latex-admin.js');
+  const FORN = path.join(ROOT, 'js', 'screens', 'fornecedor.js');
+  assert.doesNotMatch(otpaSrc, /layout:\s*['"]stacked['"]/,
+    'op-tecelagem-producao-admin.js não deve mudar de layout (tela já validada)');
+  assert.doesNotMatch(fs.readFileSync(OLA, 'utf8'), /layout:\s*['"]stacked['"]/,
+    'op-latex-admin.js não deve mudar de layout (tela já validada)');
+  assert.doesNotMatch(fs.readFileSync(FORN, 'utf8'), /layout:\s*['"]stacked['"]/,
+    'fornecedor.js não deve mudar de layout (tela já validada)');
+});

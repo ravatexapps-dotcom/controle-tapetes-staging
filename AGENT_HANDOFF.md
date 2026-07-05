@@ -1,4 +1,75 @@
-﻿# Estado pos-fase - OP Nova Metragem Input Focus R1
+﻿# Estado pos-fase - Tec To Acabamento Modal Layout R1 Closeout
+
+- Fase: `RAVATEX-TAPETES-TEC-TO-ACABAMENTO-MODAL-LAYOUT-R1-CLOSEOUT`.
+- Status: OK. Closeout de patch parcial retomado; executor anterior foi
+  interrompido antes de testes, docs, commit e push.
+- Branch/HEAD base: `work/app-next`,
+  `2b2b4c008681eca153e1d404dab16ca96a9ef09e`.
+- Validacao inicial:
+  - status local tinha alteracoes em `js/screens/entrega-form.js`,
+    `js/screens/pedido-detail-events.js` e
+    `tests/tec-to-acabamento-flow.smoke.js`;
+  - `supabase/.temp/` estava e continua fora do escopo;
+  - nenhum reset, rebase, stash, clean ou `git add .` foi usado.
+- Diagnostico do patch parcial:
+  - `entrega-form.js` ja havia recebido a variante `layout: 'stacked'`;
+  - o default historico ficou preservado como `layout = 'inline'`;
+  - `pedido-detail-events.js` passava `layout: 'stacked'` somente em
+    `buildTecelagemTransferForm`;
+  - os testes ja cobriam opt-in, default e contrato basico;
+  - foi necessario corrigir a ordem final do layout empilhado para bater com
+    a fase: Nome do item; Data/Destino/Metros; Observacao.
+- Arquivo real do modal: `js/screens/entrega-form.js`.
+- Componente compartilhado: sim. Estrategia usada: default preservado e novo
+  layout apenas opt-in no fluxo Tecelagem -> Acabamento do Pedido.
+- Layout anterior do helper compartilhado:
+  - bloco Data/Destino/Observacao da entrega;
+  - depois linhas de item com Nome, Metros, defeito e Observacao.
+- Layout final do modal alvo:
+  - Nome do item;
+  - Data, Destino e Metros na linha seguinte;
+  - Observacao do item depois;
+  - Observacao da entrega e split continuam preservados abaixo.
+- Largura ajustada: sim, de `width:520px` para
+  `width:100%;max-width:520px`, mantendo o maximo em 520px.
+- Payload/handler preservado:
+  - `buildTecelagemTransferForm` segue chamando `window.salvarEntregaCima`;
+  - `payload: form.getPayload()` segue igual;
+  - `form.getSplitOption()` segue separado do payload;
+  - sem alteracao em validacao de metragem, criacao de entrega, saldo,
+    persistencia ou Acabamento -> Expedicao.
+- Testes locais OK:
+  - `node --check js\screens\entrega-form.js`;
+  - `node --check js\screens\pedido-detail-events.js`;
+  - `node --check tests\tec-to-acabamento-flow.smoke.js`;
+  - `node --test tests\pedido-detail.smoke.js` = 145/145;
+  - `node --test tests\pedido-detail-linked-ops.smoke.js` = 7/7;
+  - `node --test tests\tec-to-acabamento-flow.smoke.js` = 37/37;
+  - `node --test tests\op-latex-admin.smoke.js` = 53/53;
+  - `node --test tests\expedicao-partial-flow.smoke.js` = 12/12;
+  - `node --test tests\expedicao-flow.smoke.js` = 8/8;
+  - `node --test tests\entrega-writes.smoke.js` = 70/70;
+  - `node --test tests\op-latex-split.smoke.js` = 28/28;
+  - `node --test tests\production-flow-invariants.smoke.js` = 11/11.
+- Diagnosticos staging read-only OK:
+  - `node scripts/staging/production-flow-invariants-diag.mjs`;
+  - `node scripts/staging/latex-consolidation-diag.mjs`;
+  - `node scripts/staging/expedicao-partial-flow-diag.mjs`.
+- Arquivos alterados finais:
+  - `js/screens/entrega-form.js`;
+  - `js/screens/pedido-detail-events.js`;
+  - `tests/tec-to-acabamento-flow.smoke.js`;
+  - `PROJECT_STATE.md`;
+  - `AGENT_HANDOFF.md`.
+- Git: commit de fechamento `Reorder tecelagem transfer modal fields`; push
+  somente para `staging/work/app-next`.
+- Confirmacoes: producao intocada, `origin` nao usado para escrita, nenhum
+  segredo impresso intencionalmente, sem SQL, sem migration, sem dados reais
+  novos, sem alteracao destrutiva, sem `git add .`, `supabase/.temp/` fora do
+  commit.
+- Proximo backlog recomendado: `LATEX-ADMIN-COMPACT-BUTTONS-R1`.
+
+# Estado pos-fase - OP Nova Metragem Input Focus R1
 
 - Fase: `RAVATEX-TAPETES-OP-NOVA-METRAGEM-INPUT-FOCUS-R1`.
 - Status: OK. Bugfix UI focado + teste de regressao; sem SQL, migration,
