@@ -11,6 +11,7 @@ const defaultAssign = createAssignPedido();
 export interface ScanGmailOptions {
   daysBack?: number;
   confirmReal?: boolean;
+  maxAttachments?: number;
 }
 
 export async function scanGmail(options: ScanGmailOptions = {}): Promise<ScanResult> {
@@ -22,12 +23,15 @@ export async function scanGmail(options: ScanGmailOptions = {}): Promise<ScanRes
       attachmentsFound: 0,
       newDocuments: 0,
       duplicates: 0,
+      crossMessageDuplicates: 0,
+      skippedByCap: 0,
       errors: [],
     };
   }
   return defaultScan({
     daysBack: options.daysBack,
     confirmReal: true,
+    maxAttachments: options.maxAttachments,
   });
 }
 

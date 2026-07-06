@@ -15,14 +15,36 @@ program
 program
   .command('scan')
   .description('Scan Gmail for new document attachments')
-  .option('-d, --days <number>', 'Number of days back to scan', String(config.scanDaysBack))
+  .option('-d, --days <number>', 'Number of days back to scan (1-30; >7 requires --wide-scan)', String(config.scanDaysBack))
+  .option('--max-attachments <number>', 'Hard cap on attachments processed per run (1-200)', '25')
+  .option('--wide-scan', 'Acknowledge scanning more than 7 days back (required for --days > 7)')
   .option('--confirm-real-google', 'Process real Gmail/Drive (otherwise dry-run)')
   .option('--dry-run', 'Force dry-run even if --confirm-real-google is set')
   .action(async (opts) => {
+    const days = parseInt(opts.days, 10);
+    if (!Number.isFinite(days) || days < 1 || days > 30) {
+      console.error('[scan] --days must be between 1 and 30. Got:', opts.days);
+      process.exit(1);
+    }
+    if (days > 7 && !opts.wideScan) {
+      console.error(`[scan] --days=${days} requires --wide-scan. Refusing to run a wide scan without explicit opt-in.`);
+      process.exit(1);
+    }
+
+    const maxAttachments = parseInt(opts.maxAttachments, 10);
+    if (!Number.isFinite(maxAttachments) || maxAttachments < 1 || maxAttachments > 200) {
+      console.error('[scan] --max-attachments must be between 1 and 200. Got:', opts.maxAttachments);
+      process.exit(1);
+    }
+
     const confirmReal = Boolean(opts.confirmRealGoogle) && !opts.dryRun;
+    if (days > 7) {
+      console.warn(`[scan] WIDE-SCAN: processing up to ${days} days of inbox. Cap: ${maxAttachments} attachments.`);
+    }
     const result = await scanGmail({
-      daysBack: parseInt(opts.days, 10),
+      daysBack: days,
       confirmReal,
+      maxAttachments,
     });
     if (result.mode === 'dry-run') {
       console.log('[scan] DRY-RUN — no real Gmail/Drive calls performed.');
@@ -33,6 +55,11 @@ program
       console.log(`  attachmentsFound: ${result.attachmentsFound}`);
       console.log(`  newDocuments:     ${result.newDocuments}`);
       console.log(`  duplicates:       ${result.duplicates}`);
+      console.log(`  crossMsgDuplicates: ${result.crossMessageDuplicates ?? 0}`);
+      console.log(`  skippedByCap:     ${result.skippedByCap ?? 0}`);
+      if (result.runLogPath) {
+        console.log(`  runLog:           ${result.runLogPath}`);
+      }
       if (result.errors.length) {
         console.log(`  errors:           ${result.errors.length}`);
         for (const e of result.errors) console.log(`    - ${e}`);

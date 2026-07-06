@@ -3,6 +3,8 @@ data/*.db
 data/google-token.json
 data/documents/
 data/outbox/*.jsonl
+data/runs/
+data/cache/
 credentials*.json
 node_modules/
 dist/

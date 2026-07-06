@@ -12,6 +12,43 @@ export function isDuplicate(gmailMessageId: string, attachmentId: string, sha256
   return !!row;
 }
 
+export interface CrossMessageMatch {
+  documentId: string;
+  driveFileId: string;
+  driveFolderId: string | null;
+  storageUri: string;
+  driveWebViewLink: string;
+  driveWebContentLink: string | null;
+  filenameOriginal: string;
+  gmailMessageId: string;
+}
+
+export function findExistingBySha256(sha256: string, filename: string, size: number): CrossMessageMatch | null {
+  const database = getDb();
+  const row = database.prepare(
+    `SELECT id, drive_file_id, drive_folder_id, storage_uri,
+            drive_web_view_link, drive_web_content_link,
+            filename_original, gmail_message_id
+       FROM documentos
+       WHERE sha256 = ?
+         AND filename_original = ?
+         AND drive_file_id IS NOT NULL
+       ORDER BY created_at ASC
+       LIMIT 1`
+  ).get(sha256, filename) as any;
+  if (!row) return null;
+  return {
+    documentId: row.id,
+    driveFileId: row.drive_file_id,
+    driveFolderId: row.drive_folder_id ?? null,
+    storageUri: row.storage_uri ?? '',
+    driveWebViewLink: row.drive_web_view_link ?? '',
+    driveWebContentLink: row.drive_web_content_link ?? null,
+    filenameOriginal: row.filename_original,
+    gmailMessageId: row.gmail_message_id,
+  };
+}
+
 export function isEmailProcessed(gmailMessageId: string): boolean {
   const database = getDb();
   const row = database.prepare(

@@ -1,15 +1,17 @@
 import { createHash, randomUUID } from 'node:crypto';
 import { getDb } from '../storage/sqlite.js';
 import { classifyAttachment } from './classifier.js';
-import { isDuplicate, isEmailProcessed, markEmailProcessed } from './dedupe.js';
+import { isDuplicate, isEmailProcessed, markEmailProcessed, findExistingBySha256 } from './dedupe.js';
 import { pendenteDrivePath } from './paths.js';
-import { uploadDocument, uploadManifest } from '../connectors/drive.js';
+import { uploadDocument } from '../connectors/drive.js';
 import { fetchRecentEmails, listAttachments, downloadAttachment, isAttachmentCandidate } from '../connectors/gmail.js';
-import type { GmailAttachmentRef, GmailMessageMeta, RawAttachment } from '../connectors/gmail.js';
+import { createRunLogger, type RunLogger } from './runLog.js';
+import type { GmailAttachmentRef, GmailMessageMeta } from '../connectors/gmail.js';
 
 export interface ScanOptions {
   daysBack?: number;
   confirmReal?: boolean;
+  maxAttachments?: number;
 }
 
 export interface ScanResult {
@@ -18,7 +20,10 @@ export interface ScanResult {
   attachmentsFound: number;
   newDocuments: number;
   duplicates: number;
+  crossMessageDuplicates: number;
+  skippedByCap: number;
   errors: string[];
+  runLogPath?: string;
 }
 
 export interface ScanDeps {
@@ -26,6 +31,7 @@ export interface ScanDeps {
   listAtts: (msgId: string) => Promise<GmailAttachmentRef[]>;
   downloadAtt: (msgId: string, attId: string) => Promise<Buffer | null>;
   uploadDoc: (params: { folderLogicalPath: string; filename: string; mimeType: string; data: Buffer }) => Promise<{ file: { storageUri: string; driveFileId: string; driveWebViewLink: string; driveFolderId?: string; driveWebContentLink?: string } }>;
+  logger?: RunLogger;
 }
 
 const defaultDeps: ScanDeps = {
@@ -36,16 +42,22 @@ const defaultDeps: ScanDeps = {
     const r = await uploadDocument(params);
     return { file: r.file };
   },
+  logger: createRunLogger(),
 };
 
 export function createScan(deps: ScanDeps = defaultDeps) {
   return async function scan(opts: ScanOptions = {}): Promise<ScanResult> {
     const mode: 'real' | 'dry-run' = opts.confirmReal ? 'real' : 'dry-run';
     const daysBack = opts.daysBack ?? 7;
+    const maxAttachments = opts.maxAttachments ?? 25;
+    const wideScan = daysBack > 7;
     const errors: string[] = [];
     let attachmentsFound = 0;
     let newDocuments = 0;
     let duplicates = 0;
+    let crossMessageDuplicates = 0;
+    let skippedByCap = 0;
+    let processedAttachments = 0;
 
     if (mode === 'dry-run') {
       return {
@@ -54,15 +66,23 @@ export function createScan(deps: ScanDeps = defaultDeps) {
         attachmentsFound: 0,
         newDocuments: 0,
         duplicates: 0,
+        crossMessageDuplicates: 0,
+        skippedByCap: 0,
         errors: [],
       };
     }
+
+    const logger = deps.logger ?? createRunLogger();
+    logger.log({ type: 'run.start', timestamp: new Date().toISOString(), daysBack, maxAttachments, wideScan });
 
     const emails = await deps.fetchEmails(daysBack);
     const database = getDb();
 
     for (const email of emails) {
-      if (isEmailProcessed(email.gmailMessageId)) continue;
+      if (isEmailProcessed(email.gmailMessageId)) {
+        logger.log({ type: 'email.scanned', timestamp: new Date().toISOString(), gmailMessageId: email.gmailMessageId, subject: email.subject, attachmentsCount: 0, status: 'skipped_already' });
+        continue;
+      }
 
       markEmailProcessed(email.gmailMessageId, email.threadId, email.subject, 0);
 
@@ -72,6 +92,11 @@ export function createScan(deps: ScanDeps = defaultDeps) {
 
       let processedCount = 0;
       for (const att of candidates) {
+        if (processedAttachments >= maxAttachments) {
+          skippedByCap++;
+          logger.log({ type: 'attachment.processed', timestamp: new Date().toISOString(), gmailMessageId: email.gmailMessageId, attachmentId: att.attachmentId, filename: att.filename, sha256: '', status: 'skipped_cap' });
+          continue;
+        }
         try {
           const buffer = await deps.downloadAtt(email.gmailMessageId, att.attachmentId);
           if (!buffer) {
@@ -82,6 +107,41 @@ export function createScan(deps: ScanDeps = defaultDeps) {
           const sha256 = createHash('sha256').update(buffer).digest('hex');
           if (isDuplicate(email.gmailMessageId, att.attachmentId, sha256)) {
             duplicates++;
+            logger.log({ type: 'attachment.processed', timestamp: new Date().toISOString(), gmailMessageId: email.gmailMessageId, attachmentId: att.attachmentId, filename: att.filename, sha256, status: 'duplicate' });
+            continue;
+          }
+
+          const crossMatch = findExistingBySha256(sha256, att.filename, att.size);
+          if (crossMatch) {
+            const documentId = randomUUID();
+            database.prepare(
+              `INSERT INTO documentos (
+                 id, gmail_message_id, thread_id, attachment_id, filename_original,
+                 sha256, tipo_documento,
+                 storage_backend, storage_uri, drive_file_id, drive_folder_id,
+                 drive_web_view_link, drive_web_content_link, local_cache_path,
+                 status
+               ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending')`
+            ).run(
+              documentId,
+              email.gmailMessageId,
+              email.threadId,
+              att.attachmentId,
+              att.filename,
+              sha256,
+              'desconhecido',
+              'google_drive',
+              crossMatch.storageUri,
+              crossMatch.driveFileId,
+              crossMatch.driveFolderId,
+              crossMatch.driveWebViewLink,
+              crossMatch.driveWebContentLink,
+              null,
+            );
+            crossMessageDuplicates++;
+            processedAttachments++;
+            processedCount++;
+            logger.log({ type: 'attachment.processed', timestamp: new Date().toISOString(), gmailMessageId: email.gmailMessageId, attachmentId: att.attachmentId, filename: att.filename, sha256, status: 'cross_message_duplicate', driveFileId: crossMatch.driveFileId, reusedFrom: crossMatch.gmailMessageId });
             continue;
           }
 
@@ -126,16 +186,21 @@ export function createScan(deps: ScanDeps = defaultDeps) {
             null,
           );
           newDocuments++;
+          processedAttachments++;
           processedCount++;
+          logger.log({ type: 'attachment.processed', timestamp: new Date().toISOString(), gmailMessageId: email.gmailMessageId, attachmentId: att.attachmentId, filename: att.filename, sha256, status: 'new', driveFileId: upload.file.driveFileId });
         } catch (err: any) {
           errors.push(`att ${att.attachmentId}: ${err?.message ?? String(err)}`);
         }
       }
 
+      logger.log({ type: 'email.scanned', timestamp: new Date().toISOString(), gmailMessageId: email.gmailMessageId, subject: email.subject, attachmentsCount: processedCount, status: 'processed' });
       database.prepare(
         `UPDATE emails_processados SET attachments_count = ? WHERE gmail_message_id = ?`
       ).run(processedCount, email.gmailMessageId);
     }
+
+    logger.log({ type: 'run.end', timestamp: new Date().toISOString(), emailsScanned: emails.length, attachmentsFound, newDocuments, duplicates, crossMessageDuplicates, skippedByCap, errors: errors.length });
 
     return {
       mode,
@@ -143,7 +208,10 @@ export function createScan(deps: ScanDeps = defaultDeps) {
       attachmentsFound,
       newDocuments,
       duplicates,
+      crossMessageDuplicates,
+      skippedByCap,
       errors,
+      runLogPath: logger.path,
     };
   };
 }

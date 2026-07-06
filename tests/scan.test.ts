@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { existsSync, rmSync, mkdirSync, readFileSync } from 'node:fs';
+import { existsSync, rmSync, mkdirSync, readFileSync, appendFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { createScan } from '../src/core/realScan.js';
@@ -229,5 +229,90 @@ describe('real scan flow (mocked Google)', () => {
     const r = await scan({ confirmReal: true });
     expect(r.newDocuments).toBe(0);
     expect(r.errors.length).toBeGreaterThan(0);
+  });
+
+  it('hardening: same SHA256 across two messages reuses first Drive file (cross-message dedup)', async () => {
+    const fakePdf = Buffer.from('%PDF-1.4\nSAME CONTENT');
+    const firstUploadId = 'mock-first-upload-id';
+    let uploadCalls = 0;
+    const deps = mkDeps({
+      fetchEmails: async () => [
+        { gmailMessageId: 'msg-A', threadId: 'tA', from: '', subject: 'NF A', date: '', attachmentCount: 1 },
+        { gmailMessageId: 'msg-B', threadId: 'tB', from: '', subject: 'NF B (re-send)', date: '', attachmentCount: 1 },
+      ],
+      listAtts: async (msgId) => [
+        { gmailMessageId: msgId, threadId: 't', attachmentId: 'a', filename: 'NF-001.pdf', mimeType: 'application/pdf', size: fakePdf.length },
+      ],
+      downloadAtt: async () => fakePdf,
+      uploadDoc: async ({ filename, mimeType }) => {
+        uploadCalls++;
+        return {
+          file: {
+            storageUri: `gdrive://file/${firstUploadId}`,
+            driveFileId: firstUploadId,
+            driveWebViewLink: `https://drive.google.com/file/d/${firstUploadId}/view`,
+            driveFolderId: 'mock-folder',
+          },
+        };
+      },
+    });
+    const scan = createScan(deps);
+    const r = await scan({ confirmReal: true });
+    expect(r.newDocuments).toBe(1);
+    expect(r.crossMessageDuplicates).toBe(1);
+    expect(uploadCalls).toBe(1);
+    const db = getDb();
+    const docs = db.prepare(`SELECT gmail_message_id, drive_file_id FROM documentos ORDER BY created_at`).all() as any[];
+    expect(docs).toHaveLength(2);
+    expect(docs[0].drive_file_id).toBe(firstUploadId);
+    expect(docs[1].drive_file_id).toBe(firstUploadId);
+  });
+
+  it('hardening: per-run maxAttachments cap is enforced', async () => {
+    const fakePdf = Buffer.from('%PDF-1.4\n...');
+    const deps = mkDeps({
+      fetchEmails: async () => [
+        { gmailMessageId: 'm-cap-1', threadId: 't', from: '', subject: 'A', date: '', attachmentCount: 2 },
+        { gmailMessageId: 'm-cap-2', threadId: 't', from: '', subject: 'B', date: '', attachmentCount: 2 },
+      ],
+      listAtts: async (msgId) => [
+        { gmailMessageId: msgId, threadId: 't', attachmentId: `${msgId}-a1`, filename: 'n1.pdf', mimeType: 'application/pdf', size: 0 },
+        { gmailMessageId: msgId, threadId: 't', attachmentId: `${msgId}-a2`, filename: 'n2.pdf', mimeType: 'application/pdf', size: 0 },
+      ],
+      downloadAtt: async () => fakePdf,
+    });
+    const scan = createScan(deps);
+    const r = await scan({ confirmReal: true, maxAttachments: 2 });
+    expect(r.newDocuments).toBe(2);
+    expect(r.skippedByCap).toBe(2);
+  });
+
+  it('hardening: run log is written with start/end events and per-attachment status', async () => {
+    const fakePdf = Buffer.from('%PDF-1.4\nLOG TEST');
+    const logPath = join(DB_DIR, 'run-test.jsonl');
+    const logger = {
+      path: logPath,
+      log(event: any): void {
+        appendFileSync(logPath, JSON.stringify(event) + '\n', 'utf-8');
+      },
+    };
+    const deps = mkDeps({
+      fetchEmails: async () => [
+        { gmailMessageId: 'm-log', threadId: 't', from: '', subject: 'LOG', date: '', attachmentCount: 1 },
+      ],
+      listAtts: async () => [
+        { gmailMessageId: 'm-log', threadId: 't', attachmentId: 'a', filename: 'L.pdf', mimeType: 'application/pdf', size: 0 },
+      ],
+      downloadAtt: async () => fakePdf,
+      logger,
+    });
+    const scan = createScan(deps);
+    const r = await scan({ confirmReal: true });
+    expect(r.runLogPath).toBe(logPath);
+    const content = readFileSync(logPath, 'utf-8');
+    const lines = content.trim().split('\n').map((l) => JSON.parse(l));
+    expect(lines.some((l) => l.type === 'run.start')).toBe(true);
+    expect(lines.some((l) => l.type === 'attachment.processed' && l.status === 'new')).toBe(true);
+    expect(lines.some((l) => l.type === 'run.end')).toBe(true);
   });
 });
