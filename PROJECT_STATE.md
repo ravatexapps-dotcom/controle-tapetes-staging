@@ -1,41 +1,28 @@
 > **Atualizacao 2026-07-06 - fase
-> `RAVATEX-TAPETES-ACABAMENTO-ENTRY-QUICK-ACTION-C`.**
-> Status: **PATCH ACABAMENTO ENTRY QUICK ACTION PRONTO — AGUARDANDO RETESTE DO USUARIO**.
+> `RAVATEX-TAPETES-ACABAMENTO-ENTRY-LABEL-R1`.**
+> Status: **PATCH ACABAMENTO ENTRY LABEL PRONTO — AGUARDANDO RETESTE DO USUARIO**.
 > Entrada: branch `work/app-next`, HEAD inicial
-> `0710a18`; status inicial somente `?? supabase/.temp/`;
+> `a97e5b0`; status inicial somente `?? supabase/.temp/`;
 > `origin` somente leitura e producao intocados.
 >
 > Fase anterior:
-> `RAVATEX-TAPETES-MODAL-FOOTER-TRANSFER-UX-B` (HEAD
-> `0710a18`).
+> `RAVATEX-TAPETES-ACABAMENTO-ENTRY-QUICK-ACTION-C` (HEAD
+> `a97e5b0`).
 >
-> Itens entregues (P1):
+> Itens entregues (P2):
 >
-> 1. **Botao rapido "Entrada" para confirmar OP Acabamento no modal/card.**
+> 1. **Label do botao rapido renomeado.**
 > (`js/screens/pedido-detail-events.js`,
 >  `js/screens/pedido-detail-render.js`).
-> - Novo handler `confirmEntradaAcabamento` chama
->   `alterar_status_op(em_producao)` — mesma RPC canonica de
->   `confirmarEntradaAcabamento` em `op-latex-admin.js`.
-> - Botao "Entrada" no modal de OPs relacionadas
->   (`buildRelatedOpsSection`): entre "Ver OP" e "Carregar nesta
->   movimentacao", visivel quando `stageKey === 'acabamento'` e
->   `status === 'aberta'`.
-> - Botao "Entrada" no card de OP do Pedido Detail (`buildOpCard`):
->   primario (azul), mesma condicao.
-> - Nao aparece em OP ja aceita (`em_producao`, `concluida`,
->   `finalizada`) ou OP de Tecelagem.
-> - "Ver OP" preservado inalterado.
+> `'Entrada'` → `'Confirmar'` (mais claro, mantendo texto curto).
+> Handler `confirmEntradaAcabamento`, regra de exibicao e RPC inalterados.
 >
 > - **Arquivos alterados:**
 >   - `js/screens/pedido-detail-events.js`
 >   - `js/screens/pedido-detail-render.js`
-> - **Nao alterado:** schema, migrations, RPCs, SQL, op-latex-admin.js,
->   fluxo Tecelagem→Acabamento.
 > - **Testes:** `pedido-detail.smoke.js` 172/172,
 >   `pedido-detail-linked-ops.smoke.js` 7/7,
->   `tec-to-acabamento-flow.smoke.js` 39/39,
->   `op-latex-admin.smoke.js` 55/55.
+>   `tec-to-acabamento-flow.smoke.js` 39/39.
 > - **Garantias:** producao intocada; `origin` nao usado; sem
 >   `git add .`; `supabase/.temp` fora do commit.
 >

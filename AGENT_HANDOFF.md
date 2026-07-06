@@ -5308,3 +5308,30 @@ movimentacao e determinada pelo estagio do Pedido.
   - Sem `git add .`.
   - `supabase/.temp` fora do commit.
   - Sem SQL/migration.
+
+---
+
+# Estado pos-fase - Acabamento Entry Label R1
+
+- Fase: `RAVATEX-TAPETES-ACABAMENTO-ENTRY-LABEL-R1`.
+- Status: **PATCH ACABAMENTO ENTRY LABEL PRONTO — AGUARDANDO RETESTE DO USUARIO**.
+- Branch/HEAD base: `work/app-next`, `a97e5b0`. Prioridade: P2.
+
+- **Entregas:** Renomeado label do botao rapido de `'Entrada'` para
+  `'Confirmar'` em `pedido-detail-events.js` (`buildRelatedOpsSection`)
+  e `pedido-detail-render.js` (`buildOpCard`). Handler, RPC e regra de
+  exibicao inalterados.
+
+- **Arquivos alterados:**
+  - `js/screens/pedido-detail-events.js`
+  - `js/screens/pedido-detail-render.js`
+
+- **Testes:** `pedido-detail.smoke.js` 172/172,
+  `pedido-detail-linked-ops.smoke.js` 7/7,
+  `tec-to-acabamento-flow.smoke.js` 39/39.
+
+- **Garantias:**
+  - Producao intocada.
+  - `origin` nao usado para escrita.
+  - Sem `git add .`.
+  - `supabase/.temp` fora do commit.
