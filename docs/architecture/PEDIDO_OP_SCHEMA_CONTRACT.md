@@ -50,7 +50,7 @@ preparado em migration versionada `db/33_op_latex_requires_pedido_guard.sql`.
   filtros `motivo_separacao IS NULL`.
 - Nao ha constraint global, trigger, `NOT NULL`, backfill, cleanup, RLS ou
   correcao de dados historicos nesta fase.
-- Aplicacao em staging ainda pendente; producao intocada.
+- Aplicado em staging `ucrjtfswnfdlxwtmxnoo` pelo usuario; producao intocada. Validacao completa executada em `2026-07-06` (5 diagnosticos OK, testes locais verdes).
 
 O diagnostico de orfaos foi ampliado para listar as 11 OPs historicas sem
 Pedido com entregas, movimentacao/expedicao, possibilidade de inferir Pedido e

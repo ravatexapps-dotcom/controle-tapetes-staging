@@ -1,5 +1,51 @@
 > **Atualizacao 2026-07-06 - fase
-> `RAVATEX-TAPETES-OP-CREATE-REQUIRES-PEDIDO-RPC-GUARD-C-STAGING-APPLY`.**
+> `RAVATEX-TAPETES-OP-CREATE-REQUIRES-PEDIDO-RPC-GUARD-C-CLOSEOUT`.** 
+> Status: **STAGING APPLY OK — VERIFICADO / CLOSEOUT**.
+> Entrada: branch `work/app-next`, HEAD
+> `b976fbf7a43bee0156f483c7ca745db4d2308d2c`; status somente
+> `?? scripts/staging/orphaned-ops-triage-diag.mjs` (fase D) e
+> `?? supabase/.temp/`. `origin` e producao intocados.
+>
+> **Closeout da fase C:** A guarda RPC ja estava implementada em
+> `db/33_op_latex_requires_pedido_guard.sql` (commit `95946d5`) e aplicada em
+> staging pelo usuario (commit `a760158`). Esta fase realizou verificacao
+> completa:
+>
+> **RPCs auditadas:**
+> - `gerar_op_latex(p_entrega_id BIGINT)` — guarda `lote_id`/`pedido_id` em
+>   `db/33:127-135`, antes de `proximo_numero_op` (`db/33:139`).
+> - `gerar_op_latex_split(p_entrega_id BIGINT, p_motivo TEXT)` — guarda
+>   `lote_id`/`pedido_id` em `db/33:337-345`, antes de `proximo_numero_op`
+>   (`db/33:349`).
+> - Mensagem de erro controlada em ambas: `Nao e possivel gerar OP de
+>   Acabamento/Latex: OP origem nao possui Pedido vinculado.`
+>
+> **Validacao staging (5 diagnosticos, todos OK):**
+> - `ops-without-pedido-diag`: 11 OPs orfas, ALERTA controlado (historico).
+> - `orphaned-ops-triage-diag` (novo, fase D): classificacao A2=6, B1=4, D=1,
+>   A1=0, B2=0. Nenhum backfill automatico seguro.
+> - `production-flow-invariants-diag`: OK — 0 duplicatas, 0 colisoes,
+>   high-water OK, 1 split legitimo com rastro completo.
+> - `latex-consolidation-diag`: OK — 0 duplicidades, 1 split com rastro.
+> - `expedicao-partial-flow-diag`: OK — saldos/status coerentes, 0 violacoes.
+>
+> **Testes locais (todos verdes):**
+> - `op-nova`: 69/69, `op-persistir`: 70/70, `op-display`: 20/20,
+>   `op-latex-admin`: 55/55.
+> - `production-flow-invariants`: 13/13 (inclui teste estatico da guarda
+>   `db/33`).
+>
+> **Confirmacoes finais:** guarda presente e funcional; fluxo com Pedido
+> preservado; split valido preservado; dados historicos intocados; nenhum
+> backfill; sem constraint global; sem producao; `supabase/.temp/` fora do
+> patch.
+>
+> **Proxima fase recomendada:**
+> `RAVATEX-TAPETES-OP-ORPHANED-HISTORICAL-TRIAGE-D` — diagnostico aprofundado
+> das 11 OPs historicas (script `orphaned-ops-triage-diag.mjs` ja criado).
+>
+> > **Atualizacao 2026-07-06 - fase
+> > `RAVATEX-TAPETES-OP-CREATE-REQUIRES-PEDIDO-RPC-GUARD-C-STAGING-APPLY`.**
 > Status: **STAGING APPLY OK**.
 > Entrada: branch `work/app-next`, HEAD inicial/final antes do registro
 > `95946d5f4026fa927c41be486eefecb68a01100c`; status inicial somente

@@ -37,7 +37,7 @@ revisado e autorizacao explicita.
 # Atualizacao 2026-07-06 - OP Create Requires Pedido RPC Guard C
 
 Fase: `RAVATEX-TAPETES-OP-CREATE-REQUIRES-PEDIDO-RPC-GUARD-C`
-Status: **PATCH TECNICO PRONTO - AGUARDANDO VALIDACAO TECNICA/STAGING**
+Status: **STAGING APPLY OK — VERIFICADO / CLOSEOUT**
 
 Item P1 `OP-LATEX-RPC-REQUIRES-PEDIDO-GUARD-C` preparado em
 `db/33_op_latex_requires_pedido_guard.sql`.

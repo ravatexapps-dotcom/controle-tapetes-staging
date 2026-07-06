@@ -1,4 +1,30 @@
-﻿# Estado pos-fase - OP Operational Code Admin Wide Expand D
+﻿# Estado pos-fase - OP Create Requires Pedido RPC Guard C — Closeout
+
+- Fase: `RAVATEX-TAPETES-OP-CREATE-REQUIRES-PEDIDO-RPC-GUARD-C-CLOSEOUT`.
+- Status: **STAGING APPLY OK — VERIFICADO / CLOSEOUT**.
+- Branch/HEAD: `work/app-next`,
+  `b976fbf7a43bee0156f483c7ca745db4d2308d2c`; status somente
+  `?? scripts/staging/orphaned-ops-triage-diag.mjs` (fase D) e
+  `?? supabase/.temp/`.
+- Guarda RPC implementada em `db/33_op_latex_requires_pedido_guard.sql`
+  (commit `95946d5`) e aplicada em staging pelo usuario (commit `a760158`).
+- `gerar_op_latex(BIGINT)` — guarda em `db/33:127-135`, antes de
+  `proximo_numero_op` (`db/33:139`).
+- `gerar_op_latex_split(BIGINT, TEXT)` — guarda em `db/33:337-345`, antes de
+  `proximo_numero_op` (`db/33:349`).
+- Mensagem de erro: `Nao e possivel gerar OP de Acabamento/Latex: OP origem nao
+  possui Pedido vinculado.`
+- Comportamento valido com Pedido preservado; split valido preservado.
+- Diagnosticos staging (5/5 OK): orfas=11 (ALERTA historico), fluxo OK,
+  consolidacao OK, expedicao OK.
+- Testes locais: `op-nova` 69/69, `op-persistir` 70/70, `op-display` 20/20,
+  `op-latex-admin` 55/55, `production-flow-invariants` 13/13.
+- Confirmacoes: sem backfill, sem constraint global, sem producao,
+  sem alteracao de dados historicos, sem `git add .`.
+- Proxima fase: `RAVATEX-TAPETES-OP-ORPHANED-HISTORICAL-TRIAGE-D` (script
+  `orphaned-ops-triage-diag.mjs` ja criado, pendente commit).
+
+# Estado pos-fase - OP Operational Code Admin Wide Expand D
 
 - Fase: `RAVATEX-TAPETES-OP-OPERATIONAL-CODE-ADMIN-WIDE-EXPAND-D`.
 - Status: **PATCH TECNICO PRONTO - AGUARDANDO VALIDACAO VISUAL DO USUARIO**.
