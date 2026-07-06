@@ -1,3 +1,42 @@
+# Atualizacao 2026-07-06 - Pedido Flow UI Audit Fix R1
+
+Fase: `RAVATEX-TAPETES-PEDIDO-FLOW-UI-AUDIT-FIX-R1`
+Status: **PATCH TECNICO PRONTO - AGUARDANDO VALIDACAO VISUAL DO USUARIO**
+
+Escopo desta correcao: tratar os desalinhamentos medios da auditoria
+read-only da faixa de fluxo do Pedido sem reformular UX nem alterar regra de
+produto.
+
+Resultado por item:
+
+| Item | Resultado |
+|---|---|
+| B2-label | Corrigido. Setas ativas agora usam labels especificos e curtos: `Iniciar`, `Receber`, `Transferir`, `Movimentar`, `Entregar`. Modais/CTAs usam os textos explicativos do contrato. |
+| E2-E5 | Comprovado/coberto. Writes do modal da seta continuam canonicos e o sucesso re-renderiza o proprio modal via `refreshPedidoTransitionModal(...)`. |
+| C3-done | Sem conflito funcional; registrado como sobreposicao segura. `adminStepper` e `applyFormalPendingStage` preservam a regra: `concluido` so sem saldo operacional relevante e sem OP pendente relevante. Refactor de centralizacao fica como P2 tecnico se voltar a aparecer. |
+| D1/D3 | Mantidos como polish P2, fora do patch principal. |
+
+Labels finais da faixa:
+
+- `Insumos -> Tecelagem` sem OP: seta `Iniciar`; modal/CTA `Gerar primeira OP`.
+- `Insumos -> Tecelagem` com OP: seta `Receber`; modal
+  `Registrar recebimento de insumos`.
+- `Tecelagem -> Acabamento`: seta `Transferir`; modal/CTA
+  `Transferir para Acabamento`.
+- `Acabamento -> Expedicao`: seta `Movimentar`; modal/CTA
+  `Movimentar para Expedicao`.
+- `Expedicao -> Entrega`: seta `Entregar`; modal `Registrar entrega`.
+
+Garantias preservadas: sem SQL, sem migration, sem dados reais novos, sem
+write paralelo no Pedido, sem update direto em `ops.status`, sem tocar
+producao e sem escrita em `origin`.
+
+Testes obrigatorios OK: `pedido-detail` 161/161, `pedido-detail-linked-ops`
+7/7, `tec-to-acabamento-flow` 39/39, `expedicao-partial-flow` 12/12,
+`expedicao-flow` 8/8, `op-latex-admin` 55/55,
+`production-flow-invariants` 11/11. Diagnosticos staging read-only OK:
+invariantes de fluxo, consolidacao Latex e expedicao parcial.
+
 # Atualizacao 2026-07-05 - Pedido Insumos Tecelagem Modal Parity And Refresh R1
 
 Fase: `RAVATEX-TAPETES-PEDIDO-INSUMOS-TECELAGEM-MODAL-PARITY-AND-REFRESH-R1`

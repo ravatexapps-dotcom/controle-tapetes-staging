@@ -1,3 +1,62 @@
+> **Atualizacao 2026-07-06 - fase
+> `RAVATEX-TAPETES-PEDIDO-FLOW-UI-AUDIT-FIX-R1`.**
+> Status: PATCH TECNICO PRONTO - AGUARDANDO VALIDACAO VISUAL DO USUARIO.
+> Entrada: base confirmada em `work/app-next`, HEAD inicial
+> `faf11f421c4b4413bfc54607979f7e821213a864`; status inicial observado
+> `?? AUDIT_REPORT.md` e `?? supabase/.temp/`. `AUDIT_REPORT.md` foi
+> tratado como insumo/registro da auditoria; `supabase/.temp/` permanece fora
+> do patch. Producao proibida e nao tocada; `origin` nao usado para escrita.
+>
+> Diagnostico antes do patch:
+>
+> 1. Labels/titulos das setas nascem em `pedido-detail-progress.js` no objeto
+>    `stage.transfer`.
+> 2. O texto visual da seta era normalizado em `pedido-detail-render.js` por
+>    `buildConnectorVisual`, que usava `Transferir` para toda seta ativa.
+> 3. Os titulos do modal usam `stage.transfer.title` dentro de
+>    `openMovementModal`.
+> 4. `refreshPedidoTransitionModal(...)` ja existia e ja era usado pelo save
+>    principal do modal e pela proposta inline; o patch consolidou a cobertura
+>    em teste para evitar stale.
+> 5. C3-done nao revelou conflito funcional: `adminStepper.acabamento` so
+>    marca `done` quando nao ha OP formal pendente; `applyFormalPendingStage`
+>    e backstop visual para saldo 0 com OP ainda pendente.
+>
+> B2-label corrigido: Insumos -> Tecelagem sem OP mostra seta `Iniciar` e
+> modal/CTA `Gerar primeira OP`; Insumos -> Tecelagem com OP mostra seta
+> `Receber` e modal `Registrar recebimento de insumos`; Tecelagem ->
+> Acabamento mostra seta `Transferir` e modal/CTA `Transferir para
+> Acabamento`; Acabamento -> Expedicao mostra seta `Movimentar` e modal/CTA
+> `Movimentar para Expedicao`; Expedicao -> Entrega mostra seta `Entregar` e
+> modal `Registrar entrega`. A matriz canonica de actions em
+> `pedido-chain-state.js` nao foi renomeada por causa de label visual.
+>
+> E2-E5 auditado/coberto: `openMovementModal` executa write canonico e, apos
+> sucesso, chama `refreshPedidoTransitionModal(...)`, que faz `reload()`,
+> recalcula `computeViewModel(state)`, re-renderiza a tela e re-renderiza o
+> modal no proximo estado. Isso cobre aceitar proposta, registrar recebimento,
+> transferir Tecelagem -> Acabamento, movimentar Acabamento -> Expedicao e
+> registrar entrega. Carregar OP relacionada continua sem write e apenas troca
+> contexto/saldo/produtos do modal.
+>
+> C3-done: registrado como sobreposicao segura nesta fase, sem refactor. Regra
+> preservada: check/`concluido` so quando nao ha saldo operacional relevante e
+> nao ha OP pendente relevante. D1/D3 mantidos como polish P2.
+>
+> Testes OK: `node --test tests\pedido-detail.smoke.js` 161/161;
+> `pedido-detail-linked-ops` 7/7; `tec-to-acabamento-flow` 39/39;
+> `expedicao-partial-flow` 12/12; `expedicao-flow` 8/8;
+> `op-latex-admin` 55/55; `production-flow-invariants` 11/11.
+> Diagnosticos staging read-only OK: invariantes de fluxo, consolidacao Latex
+> e expedicao parcial.
+>
+> Confirmacoes: sem SQL, sem migration, sem dados reais novos, sem aceitar OP
+> real, sem registrar recebimento real, sem movimentar saldo real, sem
+> finalizar OP real, sem concluir pedido real, sem update direto em
+> `ops.status`, sem write paralelo no Pedido, sem `git add .` e
+> `supabase/.temp/` fora do patch. Validacao visual do usuario segue pendente;
+> nao declarar OK visual nem backlog zerado por esta fase.
+
 > **Atualizacao 2026-07-05 - fase
 > `RAVATEX-TAPETES-PEDIDO-INSUMOS-TECELAGEM-MODAL-PARITY-AND-REFRESH-R1`.**
 > Status: PATCH TECNICO PRONTO - AGUARDANDO VALIDACAO VISUAL DO USUARIO.

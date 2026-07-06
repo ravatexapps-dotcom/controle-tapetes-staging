@@ -563,7 +563,10 @@
         state: stageState(insumoPercent, insumoPedidoKg, Math.max(insumoPedidoKg - insumoRecebidoKg, 0), insumoRecebidoKg, false),
         sublabel: insumoPercent >= 100 ? 'concluido' : (insumoPedidoKg > 0 ? ns.fmtKg(insumoRecebidoKg) : 'aguardando'),
         transfer: {
-          title: linkedOpCount ? 'Registrar recebimento de insumos' : 'Gerar primeira OP de Tecelagem',
+          title: linkedOpCount ? 'Registrar recebimento de insumos' : 'Gerar primeira OP',
+          connectorLabel: linkedOpCount ? 'Receber' : 'Iniciar',
+          allowWithoutOp: !linkedOpCount,
+          forceActionConnector: !linkedOpCount,
           origem: 'Insumos',
           destino: 'Tecelagem',
           detalhe: linkedOpCount ? 'O recebimento de fio continua canonico na OP de tecelagem vinculada.' : 'Este pedido ainda nao possui OP de Tecelagem vinculada. Gere a primeira OP para iniciar o fluxo produtivo.',
@@ -580,7 +583,8 @@
         state: stageState(tecMeta > 0 ? ns.clampPercent((tecDone / tecMeta) * 100) : 0, tecMeta, emTecelagem, tecDone, false),
         sublabel: emTecelagem > 0 ? ns.fmtMetros(emTecelagem) : (tecMeta > 0 ? (tecTerminal ? 'concluido' : 'entregue; finalizar OP') : 'aguardando'),
         transfer: {
-          title: 'Movimentar Tecelagem -> Acabamento',
+          title: 'Transferir para Acabamento',
+          connectorLabel: 'Transferir',
           origem: 'Tecelagem',
           destino: 'Acabamento',
           detalhe: tecelagemSummaries.length ? 'A mesma movimentacao da OP de origem deve ser usada aqui.' : 'Nenhuma OP de tecelagem vinculada.',
@@ -597,7 +601,8 @@
         state: stageState(acabMeta > 0 ? ns.clampPercent((acabDone / acabMeta) * 100) : 0, acabMeta, emAcabamento, acabDone, false),
         sublabel: emAcabamento > 0 ? ns.fmtMetros(emAcabamento) : (acabMeta > 0 ? (acabTerminal ? 'concluido' : 'OP pendente') : 'aguardando'),
         transfer: {
-          title: 'Movimentar Acabamento -> Expedicao',
+          title: 'Movimentar para Expedicao',
+          connectorLabel: 'Movimentar',
           origem: 'Acabamento',
           destino: 'Expedicao',
           detalhe: acabamentoSummaries.length ? 'Movimente para expedicao a quantidade recebida da tecelagem ainda disponivel; a finalizacao da OP continua separada.' : 'Nenhuma OP de acabamento vinculada.',
@@ -620,7 +625,9 @@
           ? (expedicaoSaldo > 0 ? ns.fmtMetros(expedicaoSaldo) : 'concluido')
           : (prontoExpedicao > 0 ? ns.fmtMetros(prontoExpedicao) : 'aguardando'),
         transfer: {
-          title: 'Registrar saida para entrega',
+          title: 'Registrar entrega',
+          connectorLabel: 'Entregar',
+          allowWithoutOp: true,
           origem: 'Expedicao',
           destino: 'Entrega',
           detalhe: hasExpedicaoData ? 'Abra a expedicao vinculada para registrar entrega/coleta.' : 'Libere a expedicao a partir da OP de acabamento.',

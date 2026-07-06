@@ -307,9 +307,10 @@
     return label.indexOf('conclu') >= 0;
   }
 
-  function buildConnectorVisual(action, disabled) {
+  function buildConnectorVisual(stage, action, disabled) {
     var mode = action && action.mode ? action.mode : 'enabled';
     var label = String(action && action.label ? action.label : '').toLowerCase();
+    var transfer = stage && stage.transfer ? stage.transfer : {};
     // Defesa B2: uma action que representa aguardo/bloqueio (mesmo em
     // modo view) não pode virar Concluído. O gate canônico fica em
     // pedido-chain-state.js (transferInsumosToTecelagem); este é o
@@ -319,15 +320,18 @@
       return { state: 'done', label: 'Concluído' };
     }
     if (disabled || isWaiting) {
+      if (transfer.forceActionConnector && transfer.connectorLabel) {
+        return { state: 'active', label: transfer.connectorLabel };
+      }
       return { state: 'waiting', label: 'Aguardar' };
+    }
+    if (transfer.connectorLabel) {
+      return { state: 'active', label: transfer.connectorLabel };
     }
     return { state: 'active', label: 'Transferir' };
   }
 
   function buildConnectorTitle(stage, action, visual) {
-    if (visual.state === 'active' && stage.transfer && stage.transfer.origem && stage.transfer.destino) {
-      return 'Transferir de ' + stage.transfer.origem + ' para ' + stage.transfer.destino;
-    }
     return (stage.transfer && stage.transfer.title) || (action && action.label) || visual.label;
   }
 
@@ -352,8 +356,8 @@
     }
     var action = stage.transfer.action || {};
     var mode = action.mode || 'enabled';
-    var disabled = mode === 'disabled' || (!stage.transfer.op && (stage.transfer.title !== 'Registrar saida para entrega'));
-    var visual = buildConnectorVisual(action, disabled);
+    var disabled = mode === 'disabled' || (!stage.transfer.op && !stage.transfer.allowWithoutOp);
+    var visual = buildConnectorVisual(stage, action, disabled);
     var title = buildConnectorTitle(stage, action, visual);
     var clickable = typeof handlers.openMovementModal === 'function';
     return window.el('div', {
@@ -640,7 +644,7 @@
         buildFooterAction('Abrir OP', function () { handlers.navigateToOp(summary.id); }, false),
         buildFooterAction(movementLabel, function () {
           handlers.openMovementModal({
-            title: summary.stageKey === 'tecelagem' ? 'Movimentar Tecelagem -> Acabamento' : 'Movimentar Acabamento -> Expedicao',
+            title: summary.stageKey === 'tecelagem' ? 'Transferir para Acabamento' : 'Movimentar para Expedicao',
             origem: summary.stageLabel + ' - ' + summary.label,
             destino: summary.stageKey === 'tecelagem' ? 'Acabamento' : 'Expedicao',
             detalhe: 'A movimentacao continua sendo registrada na OP vinculada.',

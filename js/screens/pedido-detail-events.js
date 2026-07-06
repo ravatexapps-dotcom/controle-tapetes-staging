@@ -1572,7 +1572,7 @@
       var hasRemaining = pendingByItem.some(function (row) { return row.pending > 0; });
       return {
         node: form.node,
-        saveLabel: 'Salvar transferencia',
+        saveLabel: 'Transferir para Acabamento',
         fillRemaining: function () {
           var inputs = form.node.querySelectorAll
             ? form.node.querySelectorAll('input[type="number"]')
@@ -1901,7 +1901,7 @@
               }, 'Fluxo produtivo bloqueado'),
               window.el('div', {
                 style: 'font-size:15px;font-weight:800;color:#16203a;',
-              }, activeCtx.title || 'Gerar primeira OP de Tecelagem'),
+              }, activeCtx.title || 'Gerar primeira OP'),
               window.el('div', {
                 style: 'font-size:13px;color:#5b6472;margin-top:6px;line-height:1.5;',
               }, 'Este pedido ainda nao possui OP de Tecelagem vinculada. Gere a primeira OP para iniciar o fluxo produtivo.')

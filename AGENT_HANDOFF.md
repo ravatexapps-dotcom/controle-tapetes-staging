@@ -1,4 +1,72 @@
-﻿# Estado pos-fase - Pedido Insumos Tecelagem Modal Parity And Refresh R1
+﻿# Estado pos-fase - Pedido Flow UI Audit Fix R1
+
+- Fase: `RAVATEX-TAPETES-PEDIDO-FLOW-UI-AUDIT-FIX-R1`.
+- Status: PATCH TECNICO PRONTO - AGUARDANDO VALIDACAO VISUAL DO USUARIO.
+- Branch/HEAD base: `work/app-next`,
+  `faf11f421c4b4413bfc54607979f7e821213a864`.
+- Status inicial observado: `?? AUDIT_REPORT.md` e `?? supabase/.temp/`.
+  `AUDIT_REPORT.md` foi tratado como registro da auditoria; `supabase/.temp/`
+  permanece fora do patch.
+- Diagnostico obrigatorio antes do patch:
+  1. labels das setas: definidos no `stage.transfer` montado por
+     `js/screens/pedido-detail-progress.js`;
+  2. titulos dos modais: consumidos de `stage.transfer.title` por
+     `openMovementModal` em `js/screens/pedido-detail-events.js`;
+  3. refresh ja existente: save principal do modal chama
+     `refreshPedidoTransitionModal(...)`; proposta inline recebe
+     `onAfterSuccess` com o mesmo helper;
+  4. risco stale restante: labels nao estavam cobertos para todas as setas e
+     precisava travar que carregar OP relacionada nao grava nada;
+  5. C3-done: sobreposicao segura entre `adminStepper` e
+     `applyFormalPendingStage`, sem conflito funcional nesta fase.
+- Patch aplicado:
+  - `js/screens/pedido-detail-progress.js`: adiciona `connectorLabel`,
+    `allowWithoutOp` e `forceActionConnector` onde necessario; troca titulos
+    do modal para o contrato (`Gerar primeira OP`, `Transferir para
+    Acabamento`, `Movimentar para Expedicao`, `Registrar entrega`).
+  - `js/screens/pedido-detail-render.js`: `buildConnectorVisual` passa a usar
+    `stage.transfer.connectorLabel` para setas ativas, preservando
+    `Aguardar`/`Concluido` para estados passivos; `allowWithoutOp` substitui
+    o antigo special-case de expedicao.
+  - `js/screens/pedido-detail-events.js`: CTA de Tecelagem -> Acabamento passa
+    a `Transferir para Acabamento`; fallback sem OP usa `Gerar primeira OP`.
+  - `tests/pedido-detail.smoke.js`: cobre runtime dos labels `Iniciar`,
+    `Receber`, `Transferir`, `Movimentar`, `Entregar`, clique da seta
+    `Iniciar`, refresh do modal e carga de OP relacionada sem write.
+- B2-label final:
+  - sem OP: `Iniciar` / `Gerar primeira OP`;
+  - com OP: `Receber` / `Registrar recebimento de insumos`;
+  - Tecelagem -> Acabamento: `Transferir` / `Transferir para Acabamento`;
+  - Acabamento -> Expedicao: `Movimentar` /
+    `Movimentar para Expedicao`;
+  - Expedicao -> Entrega: `Entregar` / `Registrar entrega`.
+- E2-E5: comprovado seguro/coberto. Writes do modal continuam canonicos
+  (`registrarRecebimentoOrdemFio`, `salvarEntregaCima`,
+  `liberar_expedicao_latex_parcial`, `registrar_entrega_expedicao`) e o save
+  de sucesso re-renderiza o mesmo modal via `refreshPedidoTransitionModal`.
+  Carregar OP relacionada apenas troca o contexto renderizado e nao chama RPC.
+- C3-done: sem ajuste funcional; registrado como sobreposicao segura. Se
+  virar refactor de centralizacao no futuro, tratar como P2 tecnico.
+- D1/D3: mantidos como polish P2.
+- Testes OK:
+  - `node --test tests\pedido-detail.smoke.js` = 161/161;
+  - `node --test tests\pedido-detail-linked-ops.smoke.js` = 7/7;
+  - `node --test tests\tec-to-acabamento-flow.smoke.js` = 39/39;
+  - `node --test tests\expedicao-partial-flow.smoke.js` = 12/12;
+  - `node --test tests\expedicao-flow.smoke.js` = 8/8;
+  - `node --test tests\op-latex-admin.smoke.js` = 55/55;
+  - `node --test tests\production-flow-invariants.smoke.js` = 11/11.
+- Diagnosticos staging read-only OK:
+  - `node scripts/staging/production-flow-invariants-diag.mjs`;
+  - `node scripts/staging/latex-consolidation-diag.mjs`;
+  - `node scripts/staging/expedicao-partial-flow-diag.mjs`.
+- Confirmacoes: producao intocada, `origin` nao usado para escrita, sem SQL,
+  sem migration, sem dados reais novos, sem aceitar OP real, sem registrar
+  recebimento real, sem movimentar saldo real, sem finalizar OP real, sem
+  concluir pedido real, sem update direto em `ops.status`, sem write paralelo
+  no Pedido, sem `git add .`, `supabase/.temp/` fora do patch.
+
+# Estado pos-fase - Pedido Insumos Tecelagem Modal Parity And Refresh R1
 
 - Fase: `RAVATEX-TAPETES-PEDIDO-INSUMOS-TECELAGEM-MODAL-PARITY-AND-REFRESH-R1`.
 - Status: PATCH TECNICO PRONTO - AGUARDANDO VALIDACAO VISUAL DO USUARIO.

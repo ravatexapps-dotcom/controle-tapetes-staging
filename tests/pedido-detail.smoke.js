@@ -354,6 +354,10 @@ test('pedido-detail: conectores do progresso usam labels visuais curtos', () => 
   assert.match(detailRender, /label:\s*['"]Conclu[ií]do['"]/);
   assert.match(detailRender, /label:\s*['"]Transferir['"]/);
   assert.match(detailRender, /label:\s*['"]Aguardar['"]/);
+  assert.match(detailRender, /connectorLabel/);
+  assert.match(detailProgress, /connectorLabel:\s*linkedOpCount\s*\?\s*['"]Receber['"]\s*:\s*['"]Iniciar['"]/);
+  assert.match(detailProgress, /connectorLabel:\s*['"]Movimentar['"]/);
+  assert.match(detailProgress, /connectorLabel:\s*['"]Entregar['"]/);
   assert.doesNotMatch(connectorRegion, /['"](?:Ver|Editar|Entregar|Done|Waiting|View|Edit)['"]/);
   assert.doesNotMatch(connectorSlice, /var\s+label\s*=\s*action\.label/);
   assert.doesNotMatch(connectorSlice, /action\.label\s*\|\|/);
@@ -2200,7 +2204,56 @@ test('FIRST-OP runtime: pedido com OP nao mostra CTA de gerar primeira OP na tel
   assert.match(collectHubText(rendered.root), /Abrir OP/);
 });
 
-test('TRANSITION runtime: clique em seta Aguardar abre modal de transicao', () => {
+test('TRANSITION runtime: setas ativas usam labels especificos do contrato', () => {
+  const rt = makeHubRuntime();
+
+  let rendered = renderDetailForFirstOp(rt, hubBase(rt.ns));
+  assert.ok(findHubBtn(rendered.root, /^Iniciar$/i),
+    'Insumos -> Tecelagem sem OP deve mostrar Iniciar');
+
+  const receberState = hubBase(rt.ns);
+  receberState.ops = [{
+    id: 29,
+    tipo: 'tecelagem',
+    numero: 18,
+    ano: 2026,
+    status: 'aberta',
+    op_fornecedores: [{ fornecedor_id: 5, etapa: 'cima' }],
+    op_itens: [{ id: 290, modelo_id: 7, metros_pedidos: 1000, pedido_item_id: 'pi1' }],
+  }];
+  receberState.ordensFio = [{ id: 'fio1', op_id: 29, tipo: 'algodao', kg_pedido: 10, kg_recebido: 4 }];
+  rendered = renderDetailForFirstOp(rt, receberState);
+  assert.ok(findHubBtn(rendered.root, /^Receber$/i),
+    'Insumos -> Tecelagem com OP deve mostrar Receber');
+
+  const transferirState = hubBase(rt.ns);
+  transferirState.ops = [{
+    id: 29,
+    tipo: 'tecelagem',
+    numero: 18,
+    ano: 2026,
+    status: 'em_producao',
+    op_fornecedores: [{ fornecedor_id: 5, etapa: 'cima' }],
+    op_itens: [{ id: 290, modelo_id: 7, metros_pedidos: 1000, pedido_item_id: 'pi1' }],
+  }];
+  transferirState.ordensFio = [{ id: 'fio1', op_id: 29, tipo: 'algodao', kg_pedido: 10, kg_recebido: 10 }];
+  rendered = renderDetailForFirstOp(rt, transferirState);
+  assert.ok(findHubBtn(rendered.root, /^Transferir$/i),
+    'Tecelagem -> Acabamento deve mostrar Transferir');
+
+  rendered = renderDetailForFirstOp(rt, hubTecAcab(rt.ns, 'aberta'));
+  assert.ok(findHubBtn(rendered.root, /^Movimentar$/i),
+    'Acabamento -> Expedicao deve mostrar Movimentar');
+
+  const entregarState = hubBase(rt.ns);
+  entregarState.expedicoes = [{ id: 'ex1', status: 'aberta' }];
+  entregarState.expedicaoItens = [{ id: 'exi1', expedicao_id: 'ex1', modelo_id: 7, metros_liberados: 1000, metros_entregues: 0 }];
+  rendered = renderDetailForFirstOp(rt, entregarState);
+  assert.ok(findHubBtn(rendered.root, /^Entregar$/i),
+    'Expedicao -> Entrega deve mostrar Entregar');
+});
+
+test('TRANSITION runtime: clique em seta Iniciar abre modal de transicao', () => {
   const rt = makeHubRuntime();
   const s = hubBase(rt.ns);
   const view = rt.ns.computeViewModel(s);
@@ -2221,13 +2274,13 @@ test('TRANSITION runtime: clique em seta Aguardar abre modal de transicao', () =
     },
   };
   rt.ns.renderPedidoDetailScreen({ container, state: s, view, handlers, loadingError: null });
-  const wait = findHubBtn(container, /^Aguardar$/i);
-  assert.ok(wait, 'seta Aguardar deve renderizar como botao clicavel');
-  wait._listeners.click({});
+  const start = findHubBtn(container, /^Iniciar$/i);
+  assert.ok(start, 'seta Iniciar deve renderizar como botao clicavel');
+  start._listeners.click({});
   assert.ok(rt.events.indexOf('movement') !== -1,
-    'Aguardar da transicao inicial deve abrir o modal de transicao/movimento');
+    'Iniciar da transicao inicial deve abrir o modal de transicao/movimento');
   assert.equal(rt.events.indexOf('stage:insumos:same-view'), -1,
-    'Aguardar da seta nao deve abrir o hub contextual da bolinha');
+    'Iniciar da seta nao deve abrir o hub contextual da bolinha');
 });
 
 test('INSUMOS-TECELAGEM modal: pedido sem OP bloqueia recebimento e oferece Gerar primeira OP', () => {
