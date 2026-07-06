@@ -13,6 +13,7 @@
     "export:events": "tsx src/cli.ts export-events",
     "build": "tsc",
     "test": "vitest run",
+    "test:ci": "vitest run",
     "test:watch": "vitest"
   },
   "dependencies": {

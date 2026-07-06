@@ -203,3 +203,33 @@ Por padrão, `assignPedido` **copia** o documento do Drive `pendentes/` para `pe
 - ❌ Sem uso de escopo `drive` (amplo)
 - ❌ Sem deletar/mover emails
 - ❌ Sem usar disco local como fonte canônica de documento
+
+## Validação hermética / CI
+
+A suíte de testes é **hermética**: não usa `.env` real, não usa `data/google-token.json` real, não faz chamadas reais a Gmail/Drive. Todo o tráfego para Google é injetado via mocks/fakes (DI explícita em `createScan`/`createAssignPedido` e fake `drive_v3.Drive`).
+
+| Comando | O que faz | Dependências externas |
+|---------|-----------|----------------------|
+| `npm test` | Roda todos os testes com setup hermético (`tests/setup.ts`) | Nenhuma |
+| `npm run test:ci` | Mesmo que `npm test` (alias para CI) | Nenhuma |
+| `npm run test:watch` | Modo watch para desenvolvimento local | Nenhuma |
+
+### Garantias automáticas
+
+- `tests/setup.ts` força `GOOGLE_TOKEN_PATH` para um path **inexistente** em `os.tmpdir()` antes de qualquer módulo carregar `config.ts`. Resultado: nenhum token real é lido.
+- `DATABASE_PATH`, `OUTBOX_PATH`, `LOCAL_CACHE_PATH` apontam para diretórios temporários únicos por run. Nenhum `data/app.db`, `data/outbox/*.jsonl` ou `data/cache/` real é tocado.
+- `INGEST_REAL_GOOGLE=false` é forçado no env de teste.
+- O teste de integração (`tests/integration-mock-flow.test.ts`) exercita o fluxo completo fake Gmail → fake Drive → SQLite temporário → outbox JSONL temporário, sem nenhuma chamada de rede.
+
+### Smoke real (opcional, manual)
+
+O smoke real com conta Google (`REAL-ACCOUNT-SMOKE-C2`) é **manual e explícito**:
+- Requer `npm run login` para gerar `data/google-token.json`.
+- Requer `--confirm-real-google` na CLI.
+- Toca o Drive real e o Gmail real.
+
+Não faz parte de `npm test` / `npm run test:ci` / CI. Nunca commite `data/google-token.json`, `data/app.db`, `data/outbox/*.jsonl` ou `data/runs/*.jsonl` — todos estão no `.gitignore`.
+
+### Workflow CI
+
+`.github/workflows/test.yml` roda `npm install && npm run test:ci` em push/PR. Não requer secrets, não usa credenciais Google, não publica artefatos.
