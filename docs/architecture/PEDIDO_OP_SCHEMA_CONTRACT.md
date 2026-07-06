@@ -538,6 +538,21 @@ WHERE l.pedido_id = :pedido_id;
 | D-L06 | RLS de `op_eventos` segue padrão `ops`: admin ALL, fornecedor SELECT se vinculado via `op_fornecedores`. | Consistência com políticas existentes. |
 | D-L07 | Nenhum arquivo JS alterado nesta fase. UI virá em fase posterior. | Separação backend/UI. |
 
+### Fase OP-OPERATIONAL-CODE-HELPER-B (display operacional, sem schema)
+
+> Fase `RAVATEX-TAPETES-OP-OPERATIONAL-CODE-HELPER-B`. **Não altera schema, RPC,
+> `op_numeros`, `ops.id/numero/ano` nem dados.** Apenas display calculado.
+
+| # | Decisão | Fundamentação |
+|---|---|---|
+| D-OC01 | Código operacional de OP é **display calculado**, não coluna. Formato `OP {pedido_numero}/{pedido_ano}-{tipo}{seq}`. Helper central `js/op-display.js` (`window.RAVATEX_OP_DISPLAY`). | Evita migration/backfill/trigger; `numero/ano` é display-only (navegação usa `ops.id`). |
+| D-OC02 | `pedido_ano = year(pedido.criado_em)`. `pedidos` não tem coluna `ano` (`numero` é IDENTITY global). | Contrato aprovado; deriva do único campo temporal do Pedido. |
+| D-OC03 | Letras `T=tecelagem`, `A=latex/acabamento`. O prefixo desambigua a colisão `numero/ano` entre tipos (UNIQUE é `(numero, ano, tipo)`; `op_numeros` conta por `(tipo, ano)`). | Fluxo do usuário chama a etapa de Acabamento; `A` aprovado. |
+| D-OC04 | `seq` = sequencial de 2 dígitos por **Pedido + Tipo**, ordenado por `ops.criado_em` asc, desempate `ops.id` asc. Independente do `numero` legado. | Ambos campos existem e são monotônicos por criação. |
+| D-OC05 | Fallback obrigatório ao legado `OP {numero}/{ano}` sem `pedido.numero`/`pedido.criado_em`/irmãs/tipo conhecido, e onde não há contexto de Pedido (PDF, fornecedor/RLS, toasts, `ops-list`, telas de OP standalone). | Não inventar código incompleto; respeitar RLS do fornecedor. |
+| D-OC06 | `pedido-detail-data.js` seleciona `ops.criado_em` (SELECT aditivo, sem write) para o sequencial. | Base de OPs já carregava por `lote_id`; só faltava o campo de ordenação. |
+| D-OC07 | Aplicado nesta fase apenas em telas com contexto de Pedido (Pedido Detail Admin). `painel.js`/`expedicao-admin.js` ficam para o próximo incremento (têm contexto, exigem resolver OP→Pedido sem query nova). | Escopo inicial obrigatório + gestão de risco. |
+
 ###
 
 ---

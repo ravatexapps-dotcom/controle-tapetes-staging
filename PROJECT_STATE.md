@@ -1,4 +1,73 @@
 > **Atualizacao 2026-07-06 - fase
+> `RAVATEX-TAPETES-OP-OPERATIONAL-CODE-HELPER-B`.**
+> Status: PATCH TECNICO PRONTO - AGUARDANDO VALIDACAO VISUAL DO USUARIO.
+> Entrada: branch `work/app-next`, HEAD inicial
+> `e56746ee3c16340198db370d45bc8ddbcb192923`; status inicial somente
+> `?? supabase/.temp/`; `origin` somente leitura; escrita permitida em
+> `staging/work/app-next`.
+>
+> Objetivo: helper central de identificacao operacional de OP e uso desse
+> display nas telas com contexto de Pedido. Contrato aprovado:
+> `OP {pedido_numero}/{pedido_ano}-{tipo}{seq}` (ex.: `OP 21/2026-T01`,
+> `OP 21/2026-A02`). `pedido_ano = year(pedido.criado_em)`;
+> `T = tecelagem`, `A = latex/acabamento`; `seq` = sequencial de 2 digitos
+> por Pedido + Tipo, ordenado por `ops.criado_em` asc com desempate `ops.id`
+> asc. Sem SQL, sem migration, sem alterar dados/RPC/`op_numeros`/`ops.id`/
+> `ops.numero`/`ops.ano`.
+>
+> Helper criado: `js/op-display.js` -> `window.RAVATEX_OP_DISPLAY`
+> (`getOpTypeLetter`, `getPedidoOperationalYear`, `buildOpOperationalSequence`,
+> `formatOpOperationalCode`, `formatOpLegacyCode`). Puro, sem DOM/Supabase.
+> Carregado em `index.html` logo apos `js/badges.js`. Fallback obrigatorio ao
+> legado `OP {numero}/{ano}` sem `pedido.numero`, sem `pedido.criado_em`, sem
+> OP na lista de irmas ou tipo desconhecido; consumidores tambem caem no
+> legado se o helper nao estiver carregado.
+>
+> Telas alteradas (contexto de Pedido): `js/screens/pedido-detail-progress.js`
+> (`computeViewModel` calcula o codigo por OP: `summary.label`,
+> `summary.legacyLabel`, `summary.origemOpLabel`, `relatedOpsLabel`, labels de
+> documentos/expedicao), `js/screens/pedido-detail-render.js` (origem da OP via
+> `summary.origemOpLabel` com fallback `ns.opLabel`),
+> `js/screens/pedido-detail-events.js` (finalizar OP, OPs relacionadas do modal
+> da seta, modal Aceitar OP, botao Revisar e aceitar) e
+> `js/screens/pedido-chain-state.js` (`tecPendingAcceptance.label`). Fonte de
+> dados: `pedido-detail-data.js` passou a selecionar `ops.criado_em` (SELECT
+> aditivo, sem write).
+>
+> Mantidos em legado nesta fase (contexto de Pedido insuficiente sem query
+> nova, ou regra explicita): PDFs (`op-pdf.js`), telas de fornecedor/RLS
+> (`fornecedor.js`), toasts globais e diagnosticos sem contexto,
+> `ops-list.js` (sem Pedido no SELECT), `op-latex-admin.js`,
+> `op-tecelagem-producao-admin.js`, `op-nova.js`, `expedicao-admin.js` e o
+> Dashboard Admin `painel.js`. O numero/ano interno permanece como referencia
+> secundaria (ex.: linha "Numero/Ano" no modal). Proximo incremento recomendado:
+> aplicar o mesmo helper ao `painel.js` e `expedicao-admin.js` (ambos tem
+> `lotes.pedido_id` + todas as OPs carregadas; exige apenas um resolver
+> OP->Pedido a partir dos dados ja carregados, sem query nova).
+>
+> Testes: novo `tests/op-display.smoke.js` (20 casos: T01, T01/T02, A01/A02,
+> colisao legada T/A distinta, fallback sem pedido/criado_em/numero, ordenacao
+> criado_em/id, padStart, ausencia de ID inventado). `tests/pedido-detail.smoke.js`
+> ganhou `js/op-display.js` no bundle e 2 casos de integracao (codigo
+> operacional via `computeViewModel` com `criado_em`; fallback legado sem
+> `criado_em`). Suite obrigatoria verde: `pedido-detail` 163/163,
+> `pedido-detail-linked-ops`, `tec-to-acabamento-flow`, `op-latex-admin`,
+> `expedicao-partial-flow`, `expedicao-flow`, `admin-dashboard`,
+> `painel-screen`, `production-flow-invariants`, `op-display` = 337/337 no
+> conjunto. Diagnosticos staging read-only OK (invariantes, consolidacao Latex,
+> expedicao partial): 0 violacoes, 0 colisoes de numeracao. A numeracao real de
+> staging confirma que tecelagem e latex compartilham numeros por ano (ex.:
+> ambos com 1..16 em 2026), reforcando o discriminador T/A.
+>
+> Confirmacoes: producao intocada, `origin` nao usado para escrita, sem SQL,
+> sem migration, sem dados reais novos, sem alterar `op_numeros`/RPC/`ops.id`/
+> `ops.numero`/`ops.ano`, sem `git add .`, `supabase/.temp/` fora do commit.
+> Validacao visual pendente do usuario: abrir um Pedido com OPs vinculadas e
+> conferir os codigos `OP {pedido}/{ano}-{tipo}{seq}` nos cards de OPs
+> vinculadas, OPs relacionadas, modais das setas e hub; conferir que o
+> numero/ano legado aparece como referencia secundaria.
+
+> **Atualizacao 2026-07-06 - fase
 > `RAVATEX-TAPETES-ADMIN-DASHBOARD-STANDALONE-PARITY-R1`.**
 > Status: PATCH TECNICO PRONTO - AGUARDANDO VALIDACAO VISUAL DO USUARIO.
 > Entrada: branch `work/app-next`, HEAD inicial

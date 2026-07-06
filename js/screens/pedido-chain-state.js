@@ -69,6 +69,14 @@
     return status === 'concluida' || status === 'finalizada' || status === 'cancelada';
   }
 
+  function opDisplayLabel(op, pedido, ops) {
+    var api = window.RAVATEX_OP_DISPLAY;
+    if (api && typeof api.formatOpOperationalCode === 'function') {
+      return api.formatOpOperationalCode(op, { pedido: pedido, ops: ops });
+    }
+    return 'OP ' + (op && op.numero != null ? op.numero : '-') + (op && op.ano != null ? '/' + op.ano : '');
+  }
+
   function targetMetersForOpItem(row) {
     if (!row) return 0;
     return round2(row.metros_ajustados != null ? row.metros_ajustados : row.metros_pedidos);
@@ -299,8 +307,10 @@
     var acabOp = acabLiberavelSummary ? acabLiberavelSummary.op : (acabamento.length ? acabamento[0].op : null);
     var tecPendingAcceptance = !!(tecOpenAcceptance && insumosConcluidos && !tecProduction);
     var tecPendingAcceptanceOp = tecOpenAcceptance ? tecOpenAcceptance.op : null;
+    // Codigo operacional (OP {pedido}/{ano}-{tipo}{seq}) via helper central;
+    // cai no legado `OP {numero}/{ano}` sem helper/contexto de Pedido.
     var tecPendingAcceptanceLabel = tecPendingAcceptanceOp
-      ? 'OP ' + tecPendingAcceptanceOp.numero + '/' + tecPendingAcceptanceOp.ano + ' pendente de aceite'
+      ? opDisplayLabel(tecPendingAcceptanceOp, pedido, input.ops) + ' pendente de aceite'
       : 'OP pendente de aceite';
     var canMoveTecToAcab = hasTec && tecRemaining > 0 && (tecProduction || tecDone > 0 || tecFinished);
     var canReleaseExpedicao = hasAcabLiberavel || acabTerminalSemExpedicao;

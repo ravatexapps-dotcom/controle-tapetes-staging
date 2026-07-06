@@ -80,7 +80,9 @@ const OPTP = path.join(ROOT, 'js', 'screens', 'op-tecelagem-producao-admin.js');
 const olaSrc = fs.readFileSync(OLA, 'utf8');
 const optpSrc = fs.readFileSync(OPTP, 'utf8');
 const opnSrc = fs.readFileSync(path.join(ROOT, 'js', 'screens', 'op-nova.js'), 'utf8');
+const opDisplay = readOrFail(path.join(ROOT, 'js', 'op-display.js'));
 const detailBundle = [
+  opDisplay,
   chainState,
   screen,
   detailData,
@@ -2315,6 +2317,42 @@ test('INSUMOS-TECELAGEM modal: pedido sem OP bloqueia recebimento e oferece Gera
   gerar._listeners.click({});
   assert.ok(rt.events.some((e) => /navigate:#\/ops\/nova/.test(e)),
     'CTA deve usar a rota canonica de Nova OP do Pedido');
+});
+
+test('OP-OPERATIONAL-CODE-B: computeViewModel rende OP {pedido}/{ano}-{tipo}{seq} com contexto completo', () => {
+  const rt = makeHubRuntime();
+  const s = hubTecAcab(rt.ns, 'aberta');
+  // Pedido com contexto completo: numero + criado_em (ano operacional).
+  s.pedido = { id: s.pedido.id, numero: 21, status: 'rascunho', metros_total: 1000, criado_em: '2026-03-15T10:00:00Z' };
+  // Duas OPs de Tecelagem + uma de Acabamento/Latex, todas com criado_em
+  // para o sequencial por Pedido + Tipo.
+  s.ops = [
+    { id: 29, tipo: 'tecelagem', numero: 18, ano: 2026, status: 'em_producao', criado_em: '2026-03-15T10:00:00Z', op_fornecedores: [{ fornecedor_id: 5, etapa: 'cima' }], op_itens: [{ id: 290, modelo_id: 7, metros_pedidos: 600, metros_ajustados: 600, pedido_item_id: 'pi1' }] },
+    { id: 40, tipo: 'tecelagem', numero: 19, ano: 2026, status: 'aberta', criado_em: '2026-03-16T10:00:00Z', op_fornecedores: [{ fornecedor_id: 5, etapa: 'cima' }], op_itens: [{ id: 400, modelo_id: 7, metros_pedidos: 400, metros_ajustados: 400, pedido_item_id: 'pi1' }] },
+    { id: 30, tipo: 'latex', numero: 11, ano: 2026, status: 'aberta', origem_op_id: 29, criado_em: '2026-03-17T10:00:00Z', op_itens: [{ id: 301, modelo_id: 7, metros_pedidos: 600, pedido_item_id: 'pi1' }] },
+  ];
+  const view = rt.ns.computeViewModel(s);
+  const byId = {};
+  view.opSummaries.forEach((sm) => { byId[sm.id] = sm; });
+  assert.equal(byId[29].label, 'OP 21/2026-T01', 'primeira Tecelagem = T01');
+  assert.equal(byId[40].label, 'OP 21/2026-T02', 'segunda Tecelagem = T02');
+  assert.equal(byId[30].label, 'OP 21/2026-A01', 'primeira Acabamento/Latex = A01');
+  // Numero/ano legado permanece disponivel como referencia secundaria.
+  assert.equal(byId[29].legacyLabel, 'OP 18/2026');
+  assert.equal(byId[30].legacyLabel, 'OP 11/2026');
+  // OP de origem (Tecelagem) tambem exibida em codigo operacional.
+  assert.equal(byId[30].origemOpLabel, 'OP 21/2026-T01');
+  // OPs relacionadas do item usam o codigo operacional.
+  assert.equal(view.itemMetricsById.pi1.relatedOpsLabel, 'OP 21/2026-T01 -> OP 21/2026-T02 -> OP 21/2026-A01');
+});
+
+test('OP-OPERATIONAL-CODE-B: sem pedido.criado_em cai no legado OP {numero}/{ano}', () => {
+  const rt = makeHubRuntime();
+  const s = hubTecAcab(rt.ns, 'aberta');
+  // hubBase nao tem criado_em => fallback legado.
+  const view = rt.ns.computeViewModel(s);
+  const tec = view.opSummaries.find((sm) => sm.id === 29);
+  assert.equal(tec.label, 'OP 18/2026', 'sem ano operacional confiavel, mantem legado');
 });
 
 test('INSUMOS-TECELAGEM modal: OP aberta mostra proposta com slider e botao canonico', () => {

@@ -1,4 +1,70 @@
-﻿# Estado pos-fase - Admin Dashboard Standalone Parity R1
+﻿# Estado pos-fase - OP Operational Code Helper B
+
+- Fase: `RAVATEX-TAPETES-OP-OPERATIONAL-CODE-HELPER-B`.
+- Status: PATCH TECNICO PRONTO - AGUARDANDO VALIDACAO VISUAL DO USUARIO.
+- Branch/HEAD base: `work/app-next`,
+  `e56746ee3c16340198db370d45bc8ddbcb192923`; status inicial somente
+  `?? supabase/.temp/`; remoto de escrita permitido: `staging/work/app-next`.
+- Contrato aprovado: `OP {pedido_numero}/{pedido_ano}-{tipo}{seq}`
+  (`OP 21/2026-T01`, `OP 21/2026-A02`). `pedido_ano = year(pedido.criado_em)`;
+  `T=tecelagem`, `A=latex/acabamento`; `seq` = 2 digitos por Pedido+Tipo,
+  ordenado por `ops.criado_em` asc, desempate `ops.id` asc.
+- Helper central: `js/op-display.js` -> `window.RAVATEX_OP_DISPLAY`
+  (`getOpTypeLetter`, `getPedidoOperationalYear`, `buildOpOperationalSequence`,
+  `formatOpOperationalCode`, `formatOpLegacyCode`). Puro (sem DOM/Supabase),
+  carregado em `index.html` apos `js/badges.js`. Fallback obrigatorio ao legado
+  `OP {numero}/{ano}` sem contexto confiavel de Pedido; consumidores tambem
+  caem no legado se o helper nao estiver carregado.
+- Regra de ano: `year(pedido.criado_em)` (Pedido nao tem coluna `ano`; `numero`
+  e IDENTITY global). Regra T/A: `A` porque o fluxo do usuario chama a etapa de
+  Acabamento (o `badgeTipo` tecnico ainda diz "Latex"). Estrategia: helper
+  calculado (Opcao C), sem migration, sem coluna persistida.
+- Telas alteradas (com contexto de Pedido): `pedido-detail-progress.js`
+  (`computeViewModel`: `summary.label`/`legacyLabel`/`origemOpLabel`,
+  `relatedOpsLabel`, labels de documentos e de expedicao),
+  `pedido-detail-render.js` (origem via `summary.origemOpLabel` com fallback
+  `ns.opLabel`), `pedido-detail-events.js` (finalizar OP, OPs relacionadas do
+  modal da seta, modal Aceitar OP, botao Revisar e aceitar),
+  `pedido-chain-state.js` (`tecPendingAcceptance.label`). Dados:
+  `pedido-detail-data.js` passou a selecionar `ops.criado_em` (SELECT aditivo).
+- Mantidos em legado (documentado): PDFs (`op-pdf.js`), telas de
+  fornecedor/RLS (`fornecedor.js`), toasts globais/diagnosticos, `ops-list.js`
+  (sem Pedido no SELECT), `op-latex-admin.js`, `op-tecelagem-producao-admin.js`,
+  `op-nova.js`, `expedicao-admin.js` e o Dashboard `painel.js`. O numero/ano
+  interno segue como referencia secundaria (linha "Numero/Ano" no modal).
+  Proximo incremento recomendado: `painel.js` + `expedicao-admin.js` (tem
+  contexto suficiente via `lotes.pedido_id` + OPs carregadas; so falta um
+  resolver OP->Pedido, sem query nova).
+- Testes: novo `tests/op-display.smoke.js` (20 casos do contrato + fallbacks +
+  ordenacao). `tests/pedido-detail.smoke.js` recebeu `js/op-display.js` no
+  bundle e 2 casos de integracao (codigo operacional com `criado_em`; fallback
+  legado sem `criado_em`).
+- Testes OK:
+  - `node --test tests\op-display.smoke.js` = 20/20;
+  - `node --test tests\pedido-detail.smoke.js` = 163/163;
+  - `node --test tests\pedido-detail-linked-ops.smoke.js` OK;
+  - `node --test tests\tec-to-acabamento-flow.smoke.js` OK;
+  - `node --test tests\op-latex-admin.smoke.js` OK;
+  - `node --test tests\expedicao-partial-flow.smoke.js` OK;
+  - `node --test tests\expedicao-flow.smoke.js` OK;
+  - `node --test tests\admin-dashboard.smoke.js` OK;
+  - `node --test tests\painel-screen.smoke.js` OK;
+  - `node --test tests\production-flow-invariants.smoke.js` OK;
+  - conjunto obrigatorio = 337/337.
+- Diagnosticos staging read-only OK:
+  - `node scripts/staging/production-flow-invariants-diag.mjs` (0 violacoes,
+    0 colisoes; tecelagem 1..24 e latex 1..16 em 2026 => numeros compartilhados
+    por tipo, reforcando T/A);
+  - `node scripts/staging/latex-consolidation-diag.mjs`;
+  - `node scripts/staging/expedicao-partial-flow-diag.mjs`.
+- Confirmacoes: producao intocada, `origin` nao usado para escrita, sem SQL,
+  sem migration, sem dados reais novos, sem alterar `op_numeros`/RPC/`ops.id`/
+  `ops.numero`/`ops.ano`, sem `git add .`, `supabase/.temp/` fora do commit.
+- Validacao visual pendente: abrir Pedido com OPs vinculadas e conferir os
+  codigos `OP {pedido}/{ano}-{tipo}{seq}` em OPs vinculadas, OPs relacionadas,
+  modais das setas e hub; conferir numero/ano legado como referencia secundaria.
+
+# Estado pos-fase - Admin Dashboard Standalone Parity R1
 
 - Fase: `RAVATEX-TAPETES-ADMIN-DASHBOARD-STANDALONE-PARITY-R1`.
 - Status: PATCH TECNICO PRONTO - AGUARDANDO VALIDACAO VISUAL DO USUARIO.

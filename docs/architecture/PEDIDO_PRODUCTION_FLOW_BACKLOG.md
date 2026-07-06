@@ -1,3 +1,33 @@
+# Atualizacao 2026-07-06 - OP Operational Code Helper B
+
+Fase: `RAVATEX-TAPETES-OP-OPERATIONAL-CODE-HELPER-B`
+Status: **PATCH TECNICO PRONTO - AGUARDANDO VALIDACAO VISUAL DO USUARIO**
+
+Escopo: helper central de identificacao operacional de OP e uso desse display
+nas telas com contexto de Pedido. Sem SQL, sem migration, sem alterar
+dados/RPC/`op_numeros`/`ops.id/numero/ano`.
+
+Contrato: `OP {pedido_numero}/{pedido_ano}-{tipo}{seq}` (ex.: `OP 21/2026-T01`,
+`OP 21/2026-A02`). `pedido_ano = year(pedido.criado_em)`; `T=tecelagem`,
+`A=latex/acabamento`; `seq` = 2 digitos por Pedido+Tipo, ordenado por
+`ops.criado_em` asc, desempate `ops.id` asc. Fallback obrigatorio ao legado
+`OP {numero}/{ano}` sem contexto confiavel de Pedido.
+
+| Item | Resultado |
+|---|---|
+| Helper central | `js/op-display.js` -> `window.RAVATEX_OP_DISPLAY`; puro; carregado apos `js/badges.js`. |
+| Pedido Detail | Display operacional em OPs vinculadas, OPs relacionadas, modais das setas, hub, `tecPendingAcceptance`, `relatedOpsLabel` e labels de documentos/expedicao. Numero/ano legado como referencia secundaria. |
+| Dados | `pedido-detail-data.js` seleciona `ops.criado_em` (SELECT aditivo). |
+| Legado mantido | PDFs, fornecedor/RLS, toasts globais, `ops-list`, `op-latex-admin`, `op-tecelagem-producao-admin`, `op-nova`, `expedicao-admin`, `painel`. |
+| Proximo incremento | `painel.js` + `expedicao-admin.js` (tem contexto; so falta resolver OP->Pedido, sem query nova). |
+
+Testes: novo `tests/op-display.smoke.js` (20/20) e 2 casos de integracao em
+`tests/pedido-detail.smoke.js` (agora 163/163). Conjunto obrigatorio 337/337.
+Diagnosticos staging read-only OK (0 violacoes/colisoes).
+
+Garantias: sem SQL, sem migration, sem dados reais novos, sem alterar
+`op_numeros`/RPC/`ops`, sem tocar producao, sem escrita em `origin`.
+
 # Atualizacao 2026-07-06 - Pedido Flow UI Audit Fix R1
 
 Fase: `RAVATEX-TAPETES-PEDIDO-FLOW-UI-AUDIT-FIX-R1`

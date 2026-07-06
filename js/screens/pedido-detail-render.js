@@ -571,7 +571,7 @@
         summary.origemOp
           ? window.el('div', {
               style: 'padding:12px 18px 0;font-size:11.5px;color:#9aa2af;',
-            }, 'Origem: entrega parcial de ', window.el('span', { style: 'color:#2563eb;font-weight:600;' }, ns.opLabel(summary.origemOp)))
+            }, 'Origem: entrega parcial de ', window.el('span', { style: 'color:#2563eb;font-weight:600;' }, summary.origemOpLabel || ns.opLabel(summary.origemOp)))
           : null,
         window.el('div', {
           style: 'padding:10px 18px 14px;display:flex;flex-direction:column;gap:9px;',
@@ -614,7 +614,7 @@
         type: 'button',
         style: 'font-size:11.5px;font-weight:600;color:#2563eb;background:none;border:none;padding:0;cursor:pointer;font-family:inherit;',
         onclick: function () { handlers.navigateToOp(summary.origemOp.id); },
-      }, ns.opLabel(summary.origemOp)));
+      }, summary.origemOpLabel || ns.opLabel(summary.origemOp)));
     }
     var lineageStrip = window.el('div', {
       style: 'display:flex;align-items:center;gap:6px;flex-wrap:wrap;padding:8px 18px;background:#f6f9ff;border-bottom:1px solid #f1f3f6;',

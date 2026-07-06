@@ -32,6 +32,17 @@
       window.navigate('#/ops/nova?pedido_id=' + pedidoId);
     }
 
+    // Codigo operacional da OP no contexto deste Pedido (via helper central).
+    // Cai no legado `OP {numero}/{ano}` (ns.opLabel) sem helper/contexto.
+    function opCode(op) {
+      if (!op) return '';
+      var api = window.RAVATEX_OP_DISPLAY;
+      if (api && typeof api.formatOpOperationalCode === 'function') {
+        return api.formatOpOperationalCode(op, { pedido: state.pedido, ops: state.ops });
+      }
+      return ns.opLabel(op);
+    }
+
     function scrollToSection(id) {
       var node = document.getElementById(id);
       if (node && typeof node.scrollIntoView === 'function') {
@@ -249,8 +260,8 @@
       // para que ela apareca no topo e visivel. Sem gambiarra de z-index.
       closeTopPedidoOverlay();
       window.confirmDialog({
-        title: 'Finalizar OP ' + ns.opLabel(op),
-        message: 'Marcar a OP ' + ns.opLabel(op) + ' como concluida? Isto encerra o total desta OP; nao e pre-requisito para movimentacoes parciais ja registradas.',
+        title: 'Finalizar ' + opCode(op),
+        message: 'Marcar a ' + opCode(op) + ' como concluida? Isto encerra o total desta OP; nao e pre-requisito para movimentacoes parciais ja registradas.',
         confirmLabel: 'Finalizar OP',
         onConfirm: async function () {
           var r;
@@ -271,7 +282,7 @@
             console.error(r.error || r.data);
             return;
           }
-          window.toast('OP ' + ns.opLabel(op) + ' concluida.', 'success');
+          window.toast(opCode(op) + ' concluida.', 'success');
           await reload();
           render();
         },
@@ -1129,7 +1140,7 @@
                   style: 'display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap;',
                 },
                   window.el('div', { style: 'min-width:190px;' },
-                    window.el('div', { style: 'font-size:13.5px;font-weight:800;color:#16203a;line-height:1.35;' }, ns.opLabel(op)),
+                    window.el('div', { style: 'font-size:13.5px;font-weight:800;color:#16203a;line-height:1.35;' }, opCode(op)),
                     window.el('div', { style: 'font-size:12px;color:#5b6472;line-height:1.45;margin-top:3px;' },
                       'Tipo: ' + typeLabel(op) + ' | Numero/Ano: ' + (op.numero && op.ano ? (op.numero + '/' + op.ano) : '-') + ' | Status: ' + statusLabel(op)),
                     summary.target != null
@@ -1284,13 +1295,13 @@
       }
 
       window.modal({
-        title: 'Aceitar OP ' + ns.opLabel(op) + (pedidoNumero ? ' · Pedido ' + pedidoNumero : ''),
+        title: 'Aceitar ' + opCode(op),
         body: window.el('div', {},
           buildInfoBanner(),
           window.el('div', {
             style: 'display:flex;gap:12px;margin-bottom:12px;',
           },
-            movementField('OP', ns.opLabel(op)),
+            movementField('OP', opCode(op)),
             movementField('Status', ns.fmtTextoOuEmpty(op.status, 'aberta'))
           ),
           window.el('div', { style: 'font-size:13px;font-weight:700;color:#16203a;margin-bottom:8px;' }, 'Itens da OP'),
@@ -1311,8 +1322,8 @@
       if (!ctxMovement.op || ctxMovement.op.status !== 'aberta') return null;
       var insumos = summarizeInsumos(ctxMovement);
       if (!(insumos.pedido > 0) || insumos.saldo > 0) return null;
-      var opLabelBtn = ctxMovement.op.numero && ctxMovement.op.ano
-        ? 'Revisar e aceitar OP ' + ctxMovement.op.numero + '/' + ctxMovement.op.ano
+      var opLabelBtn = ctxMovement.op
+        ? 'Revisar e aceitar ' + opCode(ctxMovement.op)
         : 'Revisar e aceitar OP';
 
       var tecAcceptance = currentView && currentView.chainState && currentView.chainState.tecPendingAcceptance || null;
