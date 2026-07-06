@@ -14,9 +14,11 @@
   var ICONS = {
     pedidos: '<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"></path><polyline points="14 3 14 8 19 8"></polyline>',
     clipboard: '<path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"></path><rect x="9" y="3" width="6" height="4" rx="1"></rect><line x1="9" y1="12" x2="15" y2="12"></line><line x1="9" y1="16" x2="13" y2="16"></line>',
+    opDoc: '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="9" y1="13" x2="15" y2="13"></line><line x1="9" y1="17" x2="13" y2="17"></line>',
     gear: '<circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.6 1.6 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.6 1.6 0 0 0-2.7 1.1V21a2 2 0 0 1-4 0v-.1A1.6 1.6 0 0 0 6.6 19.4l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1A1.6 1.6 0 0 0 4.6 9.6H3a2 2 0 0 1 0-4h.1A1.6 1.6 0 0 0 4.6 6.6l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.6 1.6 0 0 0 1.8.3V3a2 2 0 0 1 4 0v.1a1.6 1.6 0 0 0 2.7 1.1l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.6 1.6 0 0 0-.3 1.8V9.4a1.6 1.6 0 0 0 1.5 1.1H21a2 2 0 0 1 0 4z"></path>',
     truck: '<rect x="1" y="3" width="15" height="13"></rect><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"></polygon><circle cx="5.5" cy="18.5" r="2.5"></circle><circle cx="18.5" cy="18.5" r="2.5"></circle>',
     check: '<path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline>',
+    triangle: '<path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12" y2="17"></line>',
     plus: '<line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line>',
     arrowRight: '<polyline points="9 6 15 12 9 18"></polyline>',
     warning: '<circle cx="12" cy="12" r="9"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12" y2="16"></line>'
@@ -43,7 +45,7 @@
   function dashboardCss() {
     return [
       '@import url("https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&display=swap");',
-      '.rv-admin-dashboard{font-family:"Hanken Grotesk",Inter,"Segoe UI",Arial,sans-serif;color:#16203a;}',
+      '.rv-admin-dashboard{font-family:"Hanken Grotesk",Inter,"Segoe UI",Arial,sans-serif;color:#16203a;margin:-2px 2px 0 2px;}',
       '.rv-admin-dashboard *{box-sizing:border-box;}',
       '.rv-adm-head{display:flex;align-items:flex-end;justify-content:space-between;gap:20px;margin-bottom:20px;flex-wrap:wrap;}',
       '.rv-adm-title{margin:0;font-size:23px;line-height:1.12;font-weight:800;color:#16203a;letter-spacing:0;}',
@@ -58,53 +60,66 @@
       '.rv-adm-kpi-top{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:13px;}',
       '.rv-adm-icon{width:34px;height:34px;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}',
       '.rv-adm-kpi-value{font-size:30px;font-weight:800;color:#16203a;line-height:.95;}',
-      '.rv-adm-kpi-label{font-size:13px;font-weight:700;color:#3f4757;margin-top:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}',
-      '.rv-adm-kpi-sub{font-size:12px;color:#9aa2af;margin-top:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}',
-      '.rv-adm-pill{display:inline-flex;align-items:center;gap:6px;border-radius:999px;padding:3px 8px;font-size:11.5px;font-weight:800;white-space:nowrap;}',
+      '.rv-adm-kpi-label{font-size:13px;font-weight:600;color:#3f4757;margin-top:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}',
+      '.rv-adm-kpi-sub{font-size:12px;color:#9aa2af;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}',
+      '.rv-adm-pill{display:inline-flex;align-items:center;gap:3px;border-radius:99px;padding:2px 8px;font-size:11px;font-weight:700;white-space:nowrap;}',
       '.rv-adm-two{display:grid;grid-template-columns:minmax(0,1.9fr) minmax(280px,1fr);gap:16px;margin-bottom:18px;align-items:start;}',
-      '.rv-adm-section{padding:16px 18px;}',
-      '.rv-adm-section-head{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;margin-bottom:14px;}',
-      '.rv-adm-section-title{font-size:16px;font-weight:800;color:#16203a;line-height:1.2;}',
+      '.rv-adm-section{padding:0;overflow:hidden;}',
+      '.rv-adm-section-head{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:0;padding:14px 18px;border-bottom:1px solid #eceef1;}',
+      '.rv-adm-section-title{font-size:15px;font-weight:700;color:#16203a;line-height:1.2;}',
       '.rv-adm-section-sub{font-size:12.5px;color:#8a93a3;margin-top:3px;}',
-      '.rv-adm-action-row{display:grid;grid-template-columns:4px minmax(0,1fr) auto;gap:13px;align-items:center;padding:13px 0;border-top:1px solid #f1f3f6;}',
-      '.rv-adm-action-row:first-of-type{border-top:0;padding-top:2px;}',
-      '.rv-adm-bar{height:48px;border-radius:999px;background:#2563eb;}',
-      '.rv-adm-action-main{min-width:0;}',
+      '.rv-adm-head-left{display:flex;align-items:center;gap:9px;min-width:0;}',
+      '.rv-adm-action-row{display:flex;align-items:center;gap:14px;padding:13px 18px;border-bottom:1px solid #f4f5f7;}',
+      '.rv-adm-action-row:last-child{border-bottom:0;}',
+      '.rv-adm-bar{width:4px;height:38px;border-radius:99px;background:#2563eb;flex-shrink:0;}',
+      '.rv-adm-action-main{min-width:0;flex:1;}',
       '.rv-adm-action-line{display:flex;align-items:center;gap:8px;min-width:0;flex-wrap:wrap;}',
-      '.rv-adm-type{display:inline-flex;align-items:center;border-radius:4px;background:#f1f3f6;color:#5b6472;padding:3px 6px;font-size:10.5px;font-weight:800;letter-spacing:0;}',
-      '.rv-adm-ref{font-size:13px;font-weight:800;color:#2563eb;white-space:nowrap;}',
-      '.rv-adm-action-title{font-size:14px;font-weight:800;color:#16203a;min-width:0;}',
-      '.rv-adm-action-sub{font-size:12.5px;color:#8a93a3;margin-top:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}',
-      '.rv-adm-action-meta{display:flex;align-items:center;gap:8px;margin-top:7px;flex-wrap:wrap;}',
-      '.rv-adm-mini{font-size:12px;color:#5b6472;font-weight:700;}',
-      '.rv-adm-cta{height:30px;border-radius:4px;border:1px solid #d8dce2;background:#fff;color:#2563eb;font-size:12.5px;font-weight:800;font-family:inherit;padding:0 11px;cursor:pointer;white-space:nowrap;}',
-      '.rv-adm-alert{display:flex;gap:10px;padding:11px 0;border-top:1px solid #f1f3f6;}',
-      '.rv-adm-alert:first-of-type{border-top:0;padding-top:0;}',
+      '.rv-adm-type{display:inline-flex;align-items:center;border-radius:4px;background:#f1f3f6;color:#8a93a3;padding:2px 7px;font-size:11px;font-weight:700;letter-spacing:0;}',
+      '.rv-adm-ref{font-size:13.5px;font-weight:700;color:#2563eb;white-space:nowrap;}',
+      '.rv-adm-action-title{font-size:13.5px;font-weight:600;color:#16203a;min-width:0;}',
+      '.rv-adm-action-sub{font-size:12.5px;color:#8a93a3;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}',
+      '.rv-adm-action-side{text-align:right;flex-shrink:0;}',
+      '.rv-adm-action-side .rv-adm-pill{margin-top:4px;}',
+      '.rv-adm-mini{font-size:13px;color:#3f4757;font-weight:600;white-space:nowrap;}',
+      '.rv-adm-cta{flex-shrink:0;border-radius:4px;border:1px solid #bcd3f7;background:#fff;color:#2563eb;font-size:13px;font-weight:600;font-family:inherit;padding:8px 14px;cursor:pointer;white-space:nowrap;}',
+      '.rv-adm-cta.primary{border-color:#2563eb;background:#2563eb;color:#fff;}',
+      '.rv-adm-cta.neutral{border-color:#d8dce2;color:#5b6472;}',
+      '.rv-adm-alert{display:flex;align-items:flex-start;gap:11px;padding:12px 18px;border-bottom:1px solid #f4f5f7;cursor:pointer;}',
+      '.rv-adm-alert:last-child{border-bottom:0;}',
       '.rv-adm-dot{width:9px;height:9px;border-radius:50%;margin-top:5px;flex-shrink:0;}',
-      '.rv-adm-alert-title{font-size:13.5px;font-weight:800;color:#16203a;}',
-      '.rv-adm-alert-sub{font-size:12.5px;color:#8a93a3;margin-top:3px;line-height:1.35;}',
+      '.rv-adm-alert .rv-adm-dot{width:8px;height:8px;}',
+      '.rv-adm-alert-title{font-size:13px;font-weight:600;color:#26303f;}',
+      '.rv-adm-alert-sub{font-size:12px;color:#8a93a3;margin-top:2px;line-height:1.35;}',
+      '.rv-adm-alert-body{min-width:0;flex:1;}',
+      '.rv-adm-alert-tag{flex-shrink:0;border-radius:99px;padding:1px 7px;font-size:11px;font-weight:700;}',
       '.rv-adm-pipeline{padding:16px 18px;margin-bottom:18px;}',
-      '.rv-adm-pipeline-grid{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:10px;}',
-      '.rv-adm-stage{border:1px solid #eceef1;background:#f8f9fb;border-radius:6px;padding:12px;min-height:164px;}',
+      '.rv-adm-pipeline-grid{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:10px;align-items:stretch;}',
+      '.rv-adm-stage{position:relative;border:1px solid #eceef1;background:#f8f9fb;border-radius:6px;padding:11px 12px;min-height:150px;}',
       '.rv-adm-stage.warn{background:#fff8ef;border-color:#f0d9b8;}',
       '.rv-adm-stage.done{background:#f4faf6;border-color:#dcefe3;}',
-      '.rv-adm-stage-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:11px;}',
-      '.rv-adm-stage-title{font-size:13px;font-weight:800;color:#16203a;}',
-      '.rv-adm-stage-count{font-size:12px;font-weight:800;color:#5b6472;background:#fff;border:1px solid #eceef1;border-radius:999px;padding:2px 7px;}',
-      '.rv-adm-stage-item{border-top:1px solid rgba(223,227,232,.75);padding:8px 0;}',
-      '.rv-adm-stage-item:first-of-type{border-top:0;padding-top:0;}',
-      '.rv-adm-stage-primary{font-size:12.5px;font-weight:800;color:#26303f;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}',
-      '.rv-adm-stage-secondary{font-size:11.5px;color:#8a93a3;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}',
-      '.rv-adm-activity{padding:16px 18px;}',
-      '.rv-adm-activity-row{display:grid;grid-template-columns:12px 96px minmax(0,1fr);gap:12px;align-items:start;padding:11px 0;border-top:1px solid #f1f3f6;}',
-      '.rv-adm-activity-row:first-of-type{border-top:0;padding-top:0;}',
-      '.rv-adm-time{font-size:12.5px;color:#8a93a3;white-space:nowrap;}',
+      '.rv-adm-stage-arrow{position:absolute;top:50%;right:-11px;transform:translateY(-50%);z-index:2;background:#f6f7f9;color:#c5cad4;}',
+      '.rv-adm-stage-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:9px;}',
+      '.rv-adm-stage-title{font-size:11.5px;font-weight:700;letter-spacing:0;color:#8a93a3;text-transform:uppercase;}',
+      '.rv-adm-stage.warn .rv-adm-stage-title{color:#b45309;}',
+      '.rv-adm-stage.done .rv-adm-stage-title{color:#18794a;}',
+      '.rv-adm-stage-count{font-size:16px;font-weight:800;color:#16203a;}',
+      '.rv-adm-stage-badge{display:inline-flex;align-items:center;gap:4px;background:#fff4e6;color:#b45309;border-radius:4px;padding:2px 7px;font-size:10.5px;font-weight:700;margin-bottom:8px;}',
+      '.rv-adm-stage-items{display:flex;flex-direction:column;gap:6px;}',
+      '.rv-adm-stage-item{background:#fff;border:1px solid #eceef1;border-radius:4px;padding:6px 8px;}',
+      '.rv-adm-stage-primary{font-size:12px;font-weight:600;color:#26303f;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}',
+      '.rv-adm-stage-secondary{font-size:11px;color:#9aa2af;margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}',
+      '.rv-adm-activity{padding:16px 18px 8px;}',
+      '.rv-adm-activity .rv-adm-section-head{padding:0;border-bottom:0;margin-bottom:6px;}',
+      '.rv-adm-activity-row{display:flex;align-items:center;gap:14px;padding:9px 0;border-bottom:1px solid #f4f5f7;}',
+      '.rv-adm-activity-row:last-child{border-bottom:0;}',
+      '.rv-adm-time{font-size:12.5px;color:#9aa2af;font-variant-numeric:tabular-nums;width:96px;flex-shrink:0;white-space:nowrap;}',
       '.rv-adm-activity-text{font-size:13.5px;color:#3f4757;line-height:1.35;}',
-      '.rv-adm-empty{font-size:13px;color:#9aa2af;padding:14px 0;}',
+      '.rv-adm-history{background:none;border:0;color:#2563eb;font-size:12.5px;font-weight:600;font-family:inherit;cursor:pointer;padding:0;}',
+      '.rv-adm-empty{font-size:13px;color:#9aa2af;padding:14px 18px;}',
       '.rv-adm-warning{display:inline-flex;align-items:center;gap:7px;color:#9a6b15;background:#fff8ef;border:1px solid #f0d9b8;border-radius:4px;padding:6px 9px;font-size:12.5px;font-weight:700;margin-top:10px;}',
       '@media (max-width:1180px){.rv-adm-kpis{grid-template-columns:repeat(3,minmax(0,1fr));}.rv-adm-pipeline-grid{grid-template-columns:repeat(3,minmax(0,1fr));}}',
       '@media (max-width:900px){.rv-adm-two{grid-template-columns:1fr;}.rv-adm-kpis{grid-template-columns:repeat(2,minmax(0,1fr));}.rv-adm-pipeline-grid{grid-template-columns:repeat(2,minmax(0,1fr));}}',
-      '@media (max-width:640px){.rv-adm-kpis,.rv-adm-pipeline-grid{grid-template-columns:1fr;}.rv-adm-action-row{grid-template-columns:4px minmax(0,1fr);}.rv-adm-action-row .rv-adm-cta{grid-column:2;justify-self:start;}.rv-adm-activity-row{grid-template-columns:12px minmax(0,1fr);}.rv-adm-time{grid-column:2;}.rv-adm-activity-text{grid-column:2;}.rv-adm-head{align-items:flex-start;}.rv-adm-actions{width:100%;}.rv-adm-btn{flex:1;justify-content:center;}}'
+      '@media (max-width:640px){.rv-admin-dashboard{margin:0;}.rv-adm-kpis,.rv-adm-pipeline-grid{grid-template-columns:1fr;}.rv-adm-action-row{align-items:flex-start;flex-wrap:wrap;}.rv-adm-action-main{flex-basis:calc(100% - 18px);}.rv-adm-action-side{text-align:left;margin-left:18px;}.rv-adm-cta{margin-left:18px;}.rv-adm-stage-arrow{display:none;}.rv-adm-activity-row{align-items:flex-start;flex-wrap:wrap;gap:8px 12px;}.rv-adm-time{width:auto;}.rv-adm-activity-text{flex-basis:100%;padding-left:21px;}.rv-adm-head{align-items:flex-start;}.rv-adm-actions{width:100%;}.rv-adm-btn{flex:1;justify-content:center;}}'
     ].join('');
   }
 
@@ -445,8 +460,9 @@
         sub: clienteNome(pedidoSemOp, clientesById) + ' - recebido ' + tempoRelativo(pedidoSemOp.criado_em),
         meta: pedidoSemOp.metros_total ? fmtMetros(pedidoSemOp.metros_total) : 'Sem metragem',
         status: 'Sem OP',
-        statusTone: 'amber',
+        statusTone: 'red',
         cta: 'Abrir OP',
+        ctaTone: 'primary',
         href: '#/ops/nova?pedido_id=' + encodeURIComponent(pedidoSemOp.id)
       });
     }
@@ -463,6 +479,7 @@
         status: 'Pronta',
         statusTone: 'green',
         cta: 'Resolver',
+        ctaTone: 'default',
         href: '#/ops/' + tecPronta.id
       });
     }
@@ -479,6 +496,7 @@
         status: 'Em trânsito',
         statusTone: 'blue',
         cta: 'Confirmar',
+        ctaTone: 'default',
         href: '#/ops/' + latexAberta.id
       });
     }
@@ -494,8 +512,9 @@
         sub: 'Expedicao com saldo pendente - ' + tempoRelativo(parcial.atualizado_em || parcial.criado_em),
         meta: fmtMetros(saldo.entregue) + ' / ' + fmtMetros(saldo.liberado),
         status: 'Parcial',
-        statusTone: 'red',
+        statusTone: 'purple',
         cta: 'Resolver',
+        ctaTone: 'default',
         href: '#/expedicoes/' + parcial.id
       });
     }
@@ -512,6 +531,7 @@
         status: 'Pronto',
         statusTone: 'green',
         cta: 'Ver pedido',
+        ctaTone: 'neutral',
         href: pedidoHref(pedidoConcluido)
       });
     }
@@ -521,7 +541,9 @@
       alerts.push({
         tone: 'amber',
         title: 'Pedido sem OP',
-        sub: pedidosSemOp.length + ' pedido(s) aberto(s) ainda não tem OP vinculada.'
+        sub: pedidosSemOp.length + ' pedido(s) aberto(s) ainda não tem OP vinculada.',
+        tag: 'Bloqueio',
+        tagTone: 'red'
       });
     }
     var prepParadas = opsPreparacao.filter(function (op) {
@@ -532,28 +554,36 @@
       alerts.push({
         tone: 'red',
         title: 'OP parada em preparação',
-        sub: prepParadas.length + ' OP(s) sem avanço há 5 dias ou mais.'
+        sub: prepParadas.length + ' OP(s) sem avanço há 5 dias ou mais.',
+        tag: '5 dias',
+        tagTone: 'amber'
       });
     }
     if (latexProntasSemExpedicao.length) {
       alerts.push({
         tone: 'amber',
         title: 'Acabamento sem expedição',
-        sub: latexProntasSemExpedicao.length + ' OP(s) de acabamento pronta(s) aguardam expedição.'
+        sub: latexProntasSemExpedicao.length + ' OP(s) de acabamento pronta(s) aguardam expedição.',
+        tag: 'Atenção',
+        tagTone: 'amber'
       });
     }
     if (expedicoesParciais.length) {
       alerts.push({
-        tone: 'red',
+        tone: 'blue',
         title: 'Entrega parcial pendente',
-        sub: expedicoesParciais.length + ' expedição(ões) tem saldo de entrega em aberto.'
+        sub: expedicoesParciais.length + ' expedição(ões) tem saldo de entrega em aberto.',
+        tag: 'Info',
+        tagTone: 'blue'
       });
     }
     if (safeArray(state.errors).length) {
       alerts.push({
-        tone: 'amber',
+        tone: 'gray',
         title: 'Fonte auxiliar indisponível',
-        sub: 'Alguns dados não carregaram: ' + state.errors.join(', ') + '.'
+        sub: 'Alguns dados não carregaram: ' + state.errors.join(', ') + '.',
+        tag: 'Dados',
+        tagTone: 'gray'
       });
     }
 
@@ -614,6 +644,9 @@
         items: pedidosConcluidos.slice().sort(sortByRecent).slice(0, 3).map(pedidoStageItem)
       }
     ];
+    stages.forEach(function (stage, idx) {
+      stage.showArrow = idx < stages.length - 1;
+    });
 
     var activities = [];
     safeArray(state.eventos).slice(0, 4).forEach(function (evento) {
@@ -655,23 +688,23 @@
           sub: pedidosSemOp.length + ' aguardam primeira OP'
         },
         {
-          icon: ICONS.clipboard,
-          iconBg: '#f1f3f6',
-          iconColor: '#5b6472',
+          icon: ICONS.opDoc,
+          iconBg: '#fff4e6',
+          iconColor: '#e07b39',
           label: 'OPs em preparação',
           value: opsPreparacao.length,
           trend: tecelagemProntas.length ? tecelagemProntas.length + ' p/ liberar' : 'fila limpa',
-          trendTone: tecelagemProntas.length ? 'blue' : 'green',
+          trendTone: tecelagemProntas.length ? 'gray' : 'green',
           sub: prepParadas.length + ' parada(s) há 5 dias'
         },
         {
           icon: ICONS.gear,
-          iconBg: '#fdf3e0',
-          iconColor: '#d99a2b',
+          iconBg: '#f3effe',
+          iconColor: '#8b5cf6',
           label: 'OPs em produção',
           value: opsProducao.length,
           trend: opsProducao.length ? 'ativo' : 'sem fila',
-          trendTone: opsProducao.length ? 'green' : 'gray',
+          trendTone: opsProducao.length ? 'purple' : 'gray',
           sub: 'Tecelagem e Acabamento'
         },
         {
@@ -685,7 +718,7 @@
           sub: expedicoesPendentes.length + ' expedição(ões) em aberto'
         },
         {
-          icon: ICONS.check,
+          icon: ICONS.triangle,
           iconBg: '#fdecec',
           iconColor: '#d6403a',
           label: 'Entregas pendentes',
@@ -710,17 +743,22 @@
     return svgEl(markup, size, stroke);
   }
 
-  function pill(text, tone) {
+  function pillStyle(tone) {
     var styles = {
       blue: 'background:#eaf1fd;color:#2563eb;',
       green: 'background:#e6f4ec;color:#18794a;',
       amber: 'background:#fdf3e0;color:#9a6b15;',
       red: 'background:#fdecec;color:#b91c1c;',
-      gray: 'background:#f4f5f7;color:#5b6472;'
+      purple: 'background:#f3effe;color:#7c3aed;',
+      gray: 'background:#f1f3f6;color:#8a93a3;'
     };
+    return styles[tone || 'gray'] || styles.gray;
+  }
+
+  function pill(text, tone) {
     return window.el('span', {
       class: 'rv-adm-pill',
-      style: styles[tone || 'gray'] || styles.gray
+      style: pillStyle(tone)
     }, text);
   }
 
@@ -793,6 +831,9 @@
       : row.tone === 'amber' ? '#d99a2b'
       : row.tone === 'green' ? '#18794a'
       : '#2563eb';
+    var ctaClass = 'rv-adm-cta'
+      + (row.ctaTone === 'primary' ? ' primary' : '')
+      + (row.ctaTone === 'neutral' ? ' neutral' : '');
 
     return window.el('div', { class: 'rv-adm-action-row' },
       window.el('div', { class: 'rv-adm-bar', style: 'background:' + barColor + ';' }),
@@ -802,15 +843,15 @@
           window.el('span', { class: 'rv-adm-ref' }, row.ref),
           window.el('span', { class: 'rv-adm-action-title' }, row.title)
         ),
-        window.el('div', { class: 'rv-adm-action-sub' }, row.sub),
-        window.el('div', { class: 'rv-adm-action-meta' },
-          window.el('span', { class: 'rv-adm-mini' }, row.meta),
-          pill(row.status, row.statusTone)
-        )
+        window.el('div', { class: 'rv-adm-action-sub' }, row.sub)
+      ),
+      window.el('div', { class: 'rv-adm-action-side' },
+        window.el('div', { class: 'rv-adm-mini' }, row.meta),
+        pill(row.status, row.statusTone)
       ),
       window.el('button', {
         type: 'button',
-        class: 'rv-adm-cta',
+        class: ctaClass,
         onclick: function () { navigateTo(row.href); }
       }, row.cta)
     );
@@ -820,13 +861,20 @@
     var dot = row.tone === 'red' ? '#d6403a'
       : row.tone === 'amber' ? '#d99a2b'
       : row.tone === 'green' ? '#18794a'
+      : row.tone === 'gray' ? '#9aa2af'
       : '#2563eb';
+    var tag = row.tag || 'Info';
+    var tagTone = row.tagTone || 'blue';
     return window.el('div', { class: 'rv-adm-alert' },
       window.el('span', { class: 'rv-adm-dot', style: 'background:' + dot + ';' }),
-      window.el('div', {},
+      window.el('div', { class: 'rv-adm-alert-body' },
         window.el('div', { class: 'rv-adm-alert-title' }, row.title),
         window.el('div', { class: 'rv-adm-alert-sub' }, row.sub)
-      )
+      ),
+      window.el('span', {
+        class: 'rv-adm-alert-tag',
+        style: pillStyle(tagTone)
+      }, tag)
     );
   }
 
@@ -836,8 +884,16 @@
       : (view.actions.length ? view.actions.map(actionRow)
         : [window.el('div', { class: 'rv-adm-empty' }, 'Sem ações operacionais pendentes no momento.')]);
 
+    var head = window.el('div', { class: 'rv-adm-section-head' },
+      window.el('div', { class: 'rv-adm-head-left' },
+        window.el('span', { class: 'rv-adm-section-title' }, 'Fila de ações'),
+        pill(view.loading ? '-- pendentes' : view.actions.length + ' pendentes', view.actions.length ? 'red' : 'green')
+      ),
+      window.el('span', { style: 'font-size:12.5px;color:#8a93a3;font-weight:600;' }, 'Prioridade')
+    );
+
     return window.el('div', { class: 'rv-adm-card rv-adm-section' },
-      sectionHead('Fila de ações', null, pill(view.loading ? '-- pendentes' : view.actions.length + ' pendentes', view.actions.length ? 'amber' : 'green')),
+      head,
       body
     );
   }
@@ -848,8 +904,16 @@
       : (view.alerts.length ? view.alerts.map(alertRow)
         : [window.el('div', { class: 'rv-adm-empty' }, 'Sem alertas operacionais no momento.')]);
 
+    var head = window.el('div', { class: 'rv-adm-section-head' },
+      window.el('div', { class: 'rv-adm-head-left' },
+        icon(ICONS.triangle, 16, '#e07b39'),
+        window.el('span', { class: 'rv-adm-section-title' }, 'Alertas')
+      ),
+      pill(view.loading ? '--' : String(view.alerts.length), view.alerts.length ? 'amber' : 'green')
+    );
+
     return window.el('div', { class: 'rv-adm-card rv-adm-section' },
-      sectionHead('Alertas', null, pill(view.loading ? '--' : String(view.alerts.length), view.alerts.length ? 'red' : 'green')),
+      head,
       body
     );
   }
@@ -865,22 +929,34 @@
     var classes = 'rv-adm-stage' + (stage.tone ? ' ' + stage.tone : '');
     var items = stage.items && stage.items.length ? stage.items : [{ primary: 'Sem itens', secondary: 'Fila vazia' }];
     return window.el('div', { class: classes },
+      stage.showArrow ? window.el('span', { class: 'rv-adm-stage-arrow' }, icon(ICONS.arrowRight, 16, '#c5cad4')) : null,
       window.el('div', { class: 'rv-adm-stage-head' },
         window.el('div', { class: 'rv-adm-stage-title' }, stage.title),
-        stage.badge ? pill(stage.badge, 'amber') : window.el('span', { class: 'rv-adm-stage-count' }, String(stage.count))
+        window.el('span', { class: 'rv-adm-stage-count' }, String(stage.count))
       ),
-      items.map(function (item) {
-        return window.el('div', { class: 'rv-adm-stage-item' },
-          window.el('div', { class: 'rv-adm-stage-primary' }, item.primary),
-          window.el('div', { class: 'rv-adm-stage-secondary' }, item.secondary)
-        );
-      })
+      stage.badge ? window.el('div', { class: 'rv-adm-stage-badge' },
+        icon('<line x1="12" y1="2" x2="12" y2="12"></line><path d="M5 8a7 7 0 0 0 14 0"></path>', 10, 'currentColor'),
+        stage.badge
+      ) : null,
+      window.el('div', { class: 'rv-adm-stage-items' },
+        items.map(function (item) {
+          return window.el('div', { class: 'rv-adm-stage-item' },
+            window.el('div', { class: 'rv-adm-stage-primary' }, item.primary),
+            window.el('div', { class: 'rv-adm-stage-secondary' }, item.secondary)
+          );
+        })
+      )
     );
   }
 
   function buildPipeline(view) {
     return window.el('div', { class: 'rv-adm-card rv-adm-pipeline' },
-      sectionHead('Cadeia produtiva', 'Fluxo do pedido à conclusão', window.el('span', { class: 'rv-adm-section-sub' }, '')),
+      window.el('div', {
+        style: 'display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;gap:14px;'
+      },
+        window.el('span', { style: 'font-size:15px;font-weight:700;color:#16203a;' }, 'Cadeia produtiva'),
+        window.el('span', { style: 'font-size:12.5px;color:#8a93a3;' }, 'Fluxo do pedido à conclusão')
+      ),
       window.el('div', { class: 'rv-adm-pipeline-grid' }, view.stages.map(stageCard))
     );
   }
@@ -891,7 +967,7 @@
       : row.tone === 'red' ? '#d6403a'
       : '#2563eb';
     return window.el('div', { class: 'rv-adm-activity-row' },
-      window.el('span', { class: 'rv-adm-dot', style: 'background:' + color + ';margin-top:4px;' }),
+      window.el('span', { class: 'rv-adm-dot', style: 'background:' + color + ';margin-top:0;' }),
       window.el('div', { class: 'rv-adm-time' }, row.when),
       window.el('div', { class: 'rv-adm-activity-text' }, row.text)
     );
@@ -905,7 +981,7 @@
 
     var historico = window.el('button', {
       type: 'button',
-      class: 'rv-adm-cta',
+      class: 'rv-adm-history',
       onclick: function () { navigateTo('#/pedidos'); }
     }, 'Ver histórico');
 

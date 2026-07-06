@@ -26,6 +26,13 @@
     blocos principais, selects e ausencia de writes;
   - `tests/painel-screen.smoke.js`: atualizado para o dashboard atual e
     sandbox de boot limpo.
+- Ajuste corretivo apos retorno do usuario:
+  - miolo do dashboard reapertado contra o standalone por fonte;
+  - KPIs com paleta/icones/pills revisados;
+  - cards de acoes e alertas com headers, linhas flex, CTAs e tags laterais;
+  - cadeia produtiva com setas entre etapas, cards internos e contadores;
+  - atividade recente com layout de linha e link textual;
+  - sem alteracao de dados, rotas ou fluxos Pedido/OP/Expedicao.
 - Diferencas/pendencias visuais:
   - o shell global foi preservado por ser a versao homologada do app;
   - estados vazios sao reais, nao mockados permanentemente;

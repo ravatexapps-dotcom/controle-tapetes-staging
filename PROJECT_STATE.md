@@ -35,6 +35,12 @@
 > nao foi feito workaround. Portanto nao declarar OK visual/identico. Pendencia:
 > validacao visual manual do usuario contra o standalone.
 >
+> Ajuste corretivo apos retorno do usuario: o miolo do dashboard foi reaproximado
+> do standalone por fonte, incluindo paleta/icones dos KPIs, headers com borda,
+> linhas flex de acoes e alertas, tags laterais, CTAs, pipeline com setas e cards
+> internos, e atividade recente em link textual. Sem alteracao de dados, rotas ou
+> fluxos Pedido/OP/Expedicao.
+>
 > Testes OK: `node --check js\screens\painel.js`;
 > `node --test tests\admin-dashboard.smoke.js` 6/6;
 > `node --test tests\painel-screen.smoke.js` 16/16;
