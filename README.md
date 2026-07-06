@@ -233,3 +233,69 @@ Não faz parte de `npm test` / `npm run test:ci` / CI. Nunca commite `data/googl
 ### Workflow CI
 
 `.github/workflows/test.yml` roda `npm install && npm run test:ci` em push/PR. Não requer secrets, não usa credenciais Google, não publica artefatos.
+
+## Operação diária
+
+Comandos para inspecionar, reportar e reprocessar documentos sem fazer chamadas reais ao Google.
+
+| Comando | Tipo | O que faz | Requer `--confirm-real-google`? |
+|---------|------|-----------|-------------------------------|
+| `npm run list:pending` | read-only | Lista documentos com saída segura (IDs mascarados) | não |
+| `npm run inspect -- --id <id>` | read-only | Mostra detalhes de um documento/email | não |
+| `npm run report` | read-only | Relatório agregado (por tipo, status, pedido) | não |
+| `npm run reprocess -- --id <id>` | dry-run | Mostra o que faria (padrão) | não |
+| `npm run reprocess -- --id <id> --confirm` | write local | Aplica ações locais idempotentes | não |
+| `npm run scan -- --confirm-real-google` | real Google | Scan + upload Drive | sim |
+| `npm run assign -- --id <id> --pedido <p> --confirm-real-google` | real Google | Atribui Pedido + move Drive | sim |
+
+### Exemplos
+
+```bash
+# Listar últimos 20 documentos pendentes
+npm run list:pending
+
+# Filtrar por status e tipo
+npm run list:pending -- --status pending --tipo nf_pdf
+
+# Limitar a 10 resultados
+npm run list:pending -- --limit 10
+
+# Saída JSON (para automação)
+npm run list-pending -- --json
+
+# Inspecionar um documento específico
+npm run inspect -- --id doc-abc123
+npm run inspect -- --id msg-gmail-id --json
+
+# Relatório agregado
+npm run report
+npm run report -- --days 30 --pedido PED-25-2026
+npm run report -- --json
+
+# Reprocessar (dry-run por padrão)
+npm run reprocess -- --id doc-abc123
+
+# Reprocessar com aplicação local
+npm run reprocess -- --id doc-abc123 --confirm
+```
+
+### Segurança de saída
+
+- Modo texto: IDs longos são mascarados (ex: `1a2b****c3d4`). Emails têm parte local mascarada. Assuntos são truncados. Links Drive mostram apenas o ID do arquivo mascarado.
+- Modo JSON: mesma política de mascaramento. Nenhum token, secret ou credencial é incluído.
+- Nenhum comando (exceto `scan --confirm-real-google` e `assign --confirm-real-google`) faz chamadas reais ao Google.
+
+### O que nunca commitar
+
+- `data/google-token.json` — token OAuth real
+- `data/app.db` — banco SQLite local
+- `data/outbox/*.jsonl` — eventos reais
+- `data/runs/*.jsonl` — logs de run reais
+- `data/cache/` — cache local de arquivos
+- `.env` — credenciais
+
+Todos estão no `.gitignore`. Use `git status --short` antes de qualquer commit.
+
+## Contrato futuro
+
+O contrato de integração com o Controle de Tapetes está documentado em `docs/CONTROL_TAPETES_DOCUMENTS_CONTRACT.md`. Nenhuma integração é implementada nesta fase — o documento é apenas design/read-only.
