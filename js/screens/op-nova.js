@@ -186,6 +186,7 @@
   let saving = false;
   let pedidoIdState = null;
   let pedidoCtx = null;
+  let opSiblingOps = [];
 
   function humanizeLabel(value) {
     if (!value) return '—';
@@ -198,6 +199,52 @@
       return new Date(value).toLocaleDateString('pt-BR');
     } catch (err) {
       return '';
+    }
+  }
+
+  function pedidoDisplaySource() {
+    if (!pedidoCtx) return null;
+    return {
+      id: pedidoCtx.id,
+      numero: pedidoCtx.numero,
+      criado_em: pedidoCtx.criadoEm || pedidoCtx.criado_em,
+    };
+  }
+
+  function opDisplayContext() {
+    return { pedido: pedidoDisplaySource(), ops: opSiblingOps };
+  }
+
+  function formatOpDisplay(opArg) {
+    var api = window.RAVATEX_OP_DISPLAY;
+    if (api && typeof api.formatOpOperationalCode === 'function') {
+      return api.formatOpOperationalCode(opArg, opDisplayContext());
+    }
+    var numeroLabel = opArg && opArg.numero != null ? opArg.numero : (numero || '—');
+    var anoLabel = opArg && opArg.ano != null ? opArg.ano : (ano || '—');
+    return 'OP ' + numeroLabel + '/' + anoLabel;
+  }
+
+  async function loadPedidoSiblingOps(targetPedidoId) {
+    if (!targetPedidoId || !supa || typeof supa.from !== 'function') return [];
+    try {
+      var lotesRes = await supa.from('lotes')
+        .select('id')
+        .eq('pedido_id', targetPedidoId);
+      if (lotesRes.error) return [];
+      var loteIds = (lotesRes.data || [])
+        .map(function (lote) { return lote && lote.id; })
+        .filter(function (id) { return id != null; });
+      if (!loteIds.length) return [];
+      var opsRes = await supa.from('ops')
+        .select('id, numero, ano, status, tipo, criado_em, lote_id')
+        .in('lote_id', loteIds)
+        .order('criado_em', { ascending: true })
+        .order('id', { ascending: true });
+      return opsRes.error ? [] : (opsRes.data || []);
+    } catch (err) {
+      console.error('op-nova: erro ao carregar OPs irmas do pedido', err);
+      return [];
     }
   }
 
@@ -320,14 +367,14 @@
       // Consolidação: uma OP Látex agrega N entregas via op_latex_entregas.
       // Mapeamos cada entrega vinculada -> sua OP Látex (todas as parciais
       // da mesma OP Tecelagem + destino apontam para a mesma OP).
-      const latexOpsRes = await supa.from('ops').select('id, numero, ano, status, op_latex_entregas(entrega_id)').eq('tipo', 'latex').eq('origem_op_id', op.id);
+      const latexOpsRes = await supa.from('ops').select('id, numero, ano, status, tipo, criado_em, lote_id, op_latex_entregas(entrega_id)').eq('tipo', 'latex').eq('origem_op_id', op.id);
       latexOpPorEntrega = {};
       latexOpInfo = {};
       for (const lo of (latexOpsRes.data || [])) {
         for (const link of (lo.op_latex_entregas || [])) {
           if (link.entrega_id == null) continue;
           latexOpPorEntrega[link.entrega_id] = lo.id;
-          latexOpInfo[link.entrega_id] = { id: lo.id, numero: lo.numero, ano: lo.ano, status: lo.status };
+          latexOpInfo[link.entrega_id] = { id: lo.id, numero: lo.numero, ano: lo.ano, status: lo.status, tipo: lo.tipo, criado_em: lo.criado_em, lote_id: lo.lote_id };
         }
       }
 
@@ -360,6 +407,10 @@
       console.error('op-nova: erro ao carregar previa de numeracao', numeroPreviewRes.error);
     }
     numero = (numeroPreviewRes.data && numeroPreviewRes.data.ultimo_numero ? Number(numeroPreviewRes.data.ultimo_numero) : 0) + 1;
+  }
+
+  if (pedidoIdState) {
+    opSiblingOps = await loadPedidoSiblingOps(pedidoIdState);
   }
 
   // 3) Validação e persistência
@@ -459,6 +510,7 @@
       return window.renderOPTecelagemProducaoAdmin({
         op, numero, ano,
         pedidoCtx,
+        opDisplayContext: opDisplayContext(),
         itens,
         opItensRaw,
         modelosById,
@@ -500,12 +552,12 @@
     if (hasLinkedPedido() && !op) {
       subtitulo = `Pedido Nº ${pedidoCtx.numero} como origem principal. Cliente derivado do pedido.`;
     } else if (isOpAbertaTecelagem()) {
-      titulo = `OP Aberta de Tecelagem · Nº ${op.numero}/${op.ano}`;
+      titulo = `OP Aberta de Tecelagem · ${formatOpDisplay(op)}`;
       subtitulo = hasLinkedPedido()
         ? `Preparacao da OP com Pedido Nº ${pedidoCtx.numero} como origem principal.`
         : 'Preparacao da OP de tecelagem antes da producao.';
     } else if (op) {
-      titulo = `OP Nº ${op.numero}/${op.ano}`;
+      titulo = formatOpDisplay(op);
       subtitulo = loteTxt || 'Acompanhamento da OP de tecelagem.';
     }
 
@@ -1063,7 +1115,8 @@
           el('span', { style: 'display:inline-block;margin-top:4px;background:#eaf1fd;color:#2563eb;font-size:11.5px;font-weight:600;border-radius:4px;padding:2px 8px;' }, statusLabel),
         ),
       ),
-      el('div', { style: 'font-size:13px;color:#5b6472;font-weight:500;margin-bottom:16px;' }, `OP ${numero || '—'}/${ano || '—'}`),
+      el('div', { style: 'font-size:13px;color:#5b6472;font-weight:500;margin-bottom:4px;' }, op ? formatOpDisplay(op) : `OP ${numero || '—'}/${ano || '—'}`),
+      op ? el('div', { style: 'font-size:11.5px;color:#9aa2af;margin-bottom:16px;' }, `Nº interno ${op.numero}/${op.ano}`) : '',
       el('div', { style: 'height:1px;background:#eceef1;margin-bottom:16px;' }),
     ];
 

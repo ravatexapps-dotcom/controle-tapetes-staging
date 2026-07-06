@@ -1,4 +1,43 @@
-﻿# Estado pos-fase - OP Operational Code Closeout C
+﻿# Estado pos-fase - OP Operational Code Admin Wide Expand D
+
+- Fase: `RAVATEX-TAPETES-OP-OPERATIONAL-CODE-ADMIN-WIDE-EXPAND-D`.
+- Status: **PATCH TECNICO PRONTO - AGUARDANDO VALIDACAO VISUAL DO USUARIO**.
+- Retomada apos bloqueio por limite de sessao.
+- Branch/HEAD inicial: `work/app-next`, `6cc8e41`; status inicial:
+  `M js/screens/painel.js` (inicio parcial preservado) e `?? supabase/.temp/`.
+- Contrato aplicado: identificacao principal
+  `OP {pedido_numero}/{year(pedido.criado_em)}-{tipo}{seq}` via
+  `js/op-display.js`; legado como secundario/fallback (`Nº interno {numero}/{ano}`
+  ou `OP {numero}/{ano}` sem contexto).
+- Telas alteradas:
+  - `painel.js`: OP->Pedido por `lotes.pedido_id` + `pedidoById`; siblings por
+    `opsByPedido`; zero query nova.
+  - `ops-list.js`: SELECT aditivo em `lote:lote_id(...)` com `pedido_id` e
+    `pedido:pedido_id(id,numero,criado_em)`; siblings pela lista completa.
+  - `op-nova.js`: normaliza `pedidoCtx.criadoEm`; busca leve
+    `lotes do pedido -> ops desses lotes`; passa contexto para
+    `op-tecelagem-producao-admin.js`.
+  - `op-tecelagem-producao-admin.js`: breadcrumb, header e lineage via helper,
+    com `Nº interno` visivel.
+  - `op-latex-admin.js`: quando ha `lote.pedido_id`, consulta Pedido + siblings;
+    sem Pedido cai no legado, preservando fixtures sem `pedido_id`.
+  - `expedicao-admin.js`: SELECT aditivo de `pedido.criado_em` e
+    `op.criado_em/lote_id`; siblings por lotes do Pedido.
+- Mantidos em legado por regra: PDFs, fornecedor/RLS e qualquer tela/fixture sem
+  Pedido resolvivel.
+- Garantias: sem SQL/migration/dados reais novos; sem alterar `ops.numero`,
+  `ops.ano`, `op_numeros`, RPCs; producao/origin intocados; `supabase/.temp/`
+  nao deve ser commitado.
+- Testes OK: `op-display`, `admin-dashboard`, `painel-screen`, `op-latex-admin`,
+  `expedicao-flow`, `expedicao-partial-flow`, `router`, `pedido-detail`,
+  `pedido-detail-linked-ops`, `production-flow-invariants`.
+- Diagnosticos staging read-only OK: invariantes de fluxo, consolidacao Latex e
+  expedicao parcial.
+- Observacao: `tests/ops-list-screen.smoke.js` opcional foi executado e ainda
+  falha por contratos antigos de script inline; nao e o teste obrigatorio desta
+  fase e nao foi atualizado.
+
+# Estado pos-fase - OP Operational Code Closeout C
 
 - Fase: `RAVATEX-TAPETES-OP-OPERATIONAL-CODE-CLOSEOUT-C`.
 - Status: **OK VISUAL NO ESCOPO COM CONTEXTO DE PEDIDO**. Closeout

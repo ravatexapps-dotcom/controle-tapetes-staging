@@ -68,6 +68,56 @@
     }, 0) * 100) / 100;
   }
 
+  function formatOpDisplay(op, ctx) {
+    var api = window.RAVATEX_OP_DISPLAY;
+    if (api && typeof api.formatOpOperationalCode === 'function') {
+      return api.formatOpOperationalCode(op, ctx || {});
+    }
+    var numero = op && op.numero != null ? op.numero : '---';
+    return 'OP ' + numero + (op && op.ano != null ? '/' + op.ano : '');
+  }
+
+  function formatOpLegacy(op) {
+    var api = window.RAVATEX_OP_DISPLAY;
+    if (api && typeof api.formatOpLegacyCode === 'function') return api.formatOpLegacyCode(op);
+    var numero = op && op.numero != null ? op.numero : '---';
+    return 'OP ' + numero + (op && op.ano != null ? '/' + op.ano : '');
+  }
+
+  function internalOpLabel(op) {
+    return formatOpLegacy(op).replace(/^OP /, 'Nº interno ');
+  }
+
+  async function loadPedidoOperationalContext(op) {
+    var pedidoId = op && op.lote && op.lote.pedido_id ? op.lote.pedido_id : null;
+    if (!pedidoId || !supa || typeof supa.from !== 'function') return null;
+    try {
+      var pedidoRes = await supa.from('pedidos')
+        .select('id, numero, criado_em')
+        .eq('id', pedidoId)
+        .maybeSingle();
+      if (pedidoRes.error || !pedidoRes.data) return null;
+      var lotesRes = await supa.from('lotes')
+        .select('id')
+        .eq('pedido_id', pedidoId);
+      if (lotesRes.error) return null;
+      var loteIds = (lotesRes.data || [])
+        .map(function (lote) { return lote && lote.id; })
+        .filter(function (id) { return id != null; });
+      if (!loteIds.length) return null;
+      var opsRes = await supa.from('ops')
+        .select('id, numero, ano, status, tipo, criado_em, lote_id')
+        .in('lote_id', loteIds)
+        .order('criado_em', { ascending: true })
+        .order('id', { ascending: true });
+      if (opsRes.error) return null;
+      return { pedido: pedidoRes.data, ops: opsRes.data || [] };
+    } catch (err) {
+      console.error('op-latex-admin: erro ao carregar contexto operacional da OP', err);
+      return null;
+    }
+  }
+
   async function renderOPLatexAdmin(opId) {
     var container = el('div', {});
 
@@ -85,11 +135,12 @@
       var op = opRes.data;
       var latexForn = (op.op_fornecedores || []).find(function (row) { return row.etapa === 'latex'; });
       var latexFornecedorId = latexForn ? latexForn.fornecedor_id : null;
+      var opDisplayContext = await loadPedidoOperationalContext(op);
 
       var origemOp = null;
       if (op.origem_op_id) {
         var origemRes = await supa.from('ops')
-          .select('id, numero, ano, tipo, op_itens(id, modelo_id, pedido_item_id)')
+          .select('id, numero, ano, tipo, criado_em, lote_id, op_itens(id, modelo_id, pedido_item_id)')
           .eq('id', op.origem_op_id)
           .maybeSingle();
         if (!origemRes.error && origemRes.data) origemOp = origemRes.data;
@@ -157,10 +208,10 @@
         console.error('op-latex-admin: erro ao consultar saldo de expedicao', saldoRes.error || saldoRes.data);
       }
 
-      render(op, movimentosLatex, origemEntregas, modelosById, latexFornecedorId, origemOp, expedicao, saldoExpedicao);
+      render(op, movimentosLatex, origemEntregas, modelosById, latexFornecedorId, origemOp, expedicao, saldoExpedicao, opDisplayContext);
     }
 
-    function render(op, movimentosLatex, origemEntregas, modelosById, latexFornecedorId, origemOp, expedicao, saldoExpedicao) {
+    function render(op, movimentosLatex, origemEntregas, modelosById, latexFornecedorId, origemOp, expedicao, saldoExpedicao, opDisplayContext) {
       movimentosLatex = movimentosLatex || [];
       origemEntregas = origemEntregas || [];
       var recItens = movimentosLatex.flatMap(function (ent) {
@@ -223,7 +274,7 @@
         return row.etapa === 'latex';
       }) || {}).fornecedores?.nome || '---';
       var origemLabel = origemOp
-        ? ('OP ' + origemOp.numero + '/' + origemOp.ano + ' - Tecelagem')
+        ? (formatOpDisplay(origemOp, opDisplayContext) + ' - Tecelagem')
         : (op.origem_op_id ? ('OP #' + op.origem_op_id) : '---');
       function abrirEdicaoAdmin(ent, opArg, modelosByIdArg) {
         var form = buildEntregaInlineForm({ opItens: opArg.op_itens || [], modelosById: modelosByIdArg, entrega: ent, comDestino: false });
@@ -444,14 +495,15 @@
         var percentualClamp = Math.max(0, Math.min(100, movimentadoPercent));
         var pctLabel = String(movimentadoPercent).replace('.', ',');
         var pedidoId = op.lote && op.lote.pedido_id ? op.lote.pedido_id : null;
-        var pedidoLabelCurto = pedidoId ? ('Pedido #' + pedidoId) : 'Pedido vinculado';
-        var pedidoCodigo = pedidoId ? ('PED-' + String(pedidoId).padStart(6, '0')) : '---';
+        var pedidoDisplay = opDisplayContext && opDisplayContext.pedido ? opDisplayContext.pedido : null;
+        var pedidoLabelCurto = pedidoDisplay && pedidoDisplay.numero != null ? ('Pedido Nº ' + pedidoDisplay.numero) : (pedidoId ? ('Pedido #' + pedidoId) : 'Pedido vinculado');
+        var pedidoCodigo = pedidoDisplay && pedidoDisplay.numero != null ? ('Pedido Nº ' + pedidoDisplay.numero) : (pedidoId ? ('PED-' + String(pedidoId).padStart(6, '0')) : '---');
         var clienteNome = op.lote?.cliente?.nome || '---';
         var itemVinculadoLabel = (op.op_itens || []).length
           ? String((op.op_itens || []).length) + ' ' + ((op.op_itens || []).length === 1 ? 'item' : 'itens') + ' (ver abaixo)'
           : '---';
         var abertaEm = op.criado_em ? new Date(op.criado_em).toLocaleDateString('pt-BR') : '';
-        var origemProdLabel = origemOp ? ('OP ' + origemOp.numero + '/' + origemOp.ano + ' · Tecelagem') : origemLabel;
+        var origemProdLabel = origemOp ? (formatOpDisplay(origemOp, opDisplayContext) + ' · Tecelagem') : origemLabel;
 
         function fmtData(value) {
           if (!value) return '---';
@@ -488,7 +540,7 @@
           return el('div', { style: 'display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;' },
             el('div', { style: 'font-size:13.5px;color:#9aa2af;' },
               'OPs ', el('span', { style: 'margin:0 6px;color:#d0d5dc;' }, '/'),
-              el('span', { style: 'color:#5b6472;font-weight:600;' }, 'OP ' + op.numero + '/' + op.ano)),
+              el('span', { style: 'color:#5b6472;font-weight:600;' }, formatOpDisplay(op, opDisplayContext))),
             el('button', { type: 'button', style: 'display:inline-flex;align-items:center;gap:7px;background:#fff;color:#5b6472;border:1px solid #d8dce2;border-radius:4px;padding:7px 14px;font-size:13px;font-weight:600;font-family:inherit;cursor:pointer;', onclick: function () { navigate('#/ops'); } }, svgEl(SVG_BACK), 'Voltar'));
         }
 
@@ -497,7 +549,7 @@
           nodes.push(svgEl(SVG_LINEAGE));
           nodes.push(el('span', { style: 'font-size:12.5px;color:#2c4a78;' }, 'Cadeia produtiva:'));
           if (pedidoId) {
-            nodes.push(el('button', { type: 'button', style: 'font-size:12.5px;font-weight:700;color:#2563eb;background:#fff;border:none;border-radius:4px;padding:3px 9px;cursor:pointer;font-family:inherit;', onclick: function () { navigate('#/pedidos/' + pedidoId); } }, 'Pedido #' + pedidoId));
+            nodes.push(el('button', { type: 'button', style: 'font-size:12.5px;font-weight:700;color:#2563eb;background:#fff;border:none;border-radius:4px;padding:3px 9px;cursor:pointer;font-family:inherit;', onclick: function () { navigate('#/pedidos/' + pedidoId); } }, pedidoLabelCurto));
             nodes.push(svgEl('<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"></path></svg>'));
           }
           if (op.origem_op_id) {
@@ -507,7 +559,7 @@
             nodes.push(el('span', { style: 'font-size:12.5px;font-weight:700;color:#8a93a3;background:#fff;border-radius:4px;padding:3px 9px;' }, 'Tecelagem sem vínculo'));
             nodes.push(svgEl('<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"></path></svg>'));
           }
-          nodes.push(el('span', { style: 'font-size:12.5px;font-weight:700;color:#16203a;background:#fff;border-radius:4px;padding:3px 9px;' }, 'OP ' + op.numero + '/' + op.ano + ' · Acabamento (esta OP)'));
+          nodes.push(el('span', { style: 'font-size:12.5px;font-weight:700;color:#16203a;background:#fff;border-radius:4px;padding:3px 9px;' }, formatOpDisplay(op, opDisplayContext) + ' · Acabamento (esta OP)'));
           return el('div', { style: 'display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:#eaf1fd;border:1px solid #d7e6fb;border-radius:4px;padding:10px 16px;margin-bottom:16px;' }, nodes);
         }
 
@@ -516,16 +568,18 @@
           if (op.lote && op.lote.cliente && op.lote.cliente.nome) meta.push(op.lote.cliente.nome);
           if (op.lote) meta.push('Lote Nº ' + op.lote.numero);
           if (abertaEm) meta.push('Aberta em ' + abertaEm);
+          var metaLine = ' · ' + internalOpLabel(op)
+            + (meta.length ? ' · ' + meta.join(' · ') : ' · Operação de acabamento em andamento.');
           return el('div', { style: 'display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:16px;' },
             el('div', {},
               el('div', { style: 'display:flex;align-items:center;gap:10px;flex-wrap:wrap;' },
-                el('h1', { style: 'margin:0;font-size:24px;font-weight:800;color:#16203a;letter-spacing:-.01em;' }, 'OP ' + op.numero + '/' + op.ano),
+                el('h1', { style: 'margin:0;font-size:24px;font-weight:800;color:#16203a;letter-spacing:-.01em;' }, formatOpDisplay(op, opDisplayContext)),
                 el('span', { style: 'background:#fef9ec;color:#b45309;border-radius:4px;padding:4px 11px;font-size:12.5px;font-weight:700;' }, 'Acabamento'),
                 el('span', { style: 'display:inline-flex;align-items:center;gap:6px;background:#fff4e6;color:#c2610c;border-radius:4px;padding:4px 11px;font-size:12.5px;font-weight:700;' },
                   el('span', { style: 'width:6px;height:6px;border-radius:50%;background:#e07b39;' }), 'Em produção')),
               el('div', { style: 'font-size:13px;color:#8a93a3;margin-top:6px;' },
                 pedidoId ? el('button', { type: 'button', style: 'background:none;border:none;padding:0;color:#2563eb;font-weight:600;font:inherit;cursor:pointer;', onclick: function () { navigate('#/pedidos/' + pedidoId); } }, pedidoLabelCurto) : 'Pedido',
-                meta.length ? ' · ' + meta.join(' · ') : ' · Operação de acabamento em andamento.')),
+                metaLine)),
             el('div', { style: 'display:flex;align-items:center;gap:8px;flex-wrap:wrap;' },
               pedidoId ? el('button', { type: 'button', style: BTN_ACTION, onclick: function () { navigate('#/pedidos/' + pedidoId); } }, svgEl(SVG_DOC), 'Abrir Pedido') : '',
               el('button', { type: 'button', style: BTN_ACTION, onclick: function () { toastOperacional('Produção pausada.'); } }, svgEl(SVG_PAUSE), 'Pausar'),
@@ -673,13 +727,13 @@
               el('div', { style: 'padding-bottom:16px;' },
                 el('div', { style: 'font-size:12px;color:#9aa2af;' }, dataBase),
                 el('div', { style: 'font-size:14px;font-weight:700;color:#16203a;margin-top:2px;' }, 'Entrada consolidada da Tecelagem'),
-                el('div', { style: 'font-size:13px;color:#7b8494;margin-top:1px;' }, resumoOrigem + ' em OP ' + op.numero + '/' + op.ano + ' (Acabamento). Romaneio marcado como pendente.'))),
+                el('div', { style: 'font-size:13px;color:#7b8494;margin-top:1px;' }, resumoOrigem + ' em ' + formatOpDisplay(op, opDisplayContext) + ' (Acabamento). Romaneio marcado como pendente.'))),
             el('div', { style: 'display:flex;gap:12px;align-items:flex-start;' },
               el('div', { style: 'width:11px;height:11px;border-radius:50%;background:#cfd5de;margin-top:4px;flex-shrink:0;' }),
               el('div', {},
                 el('div', { style: 'font-size:14px;font-weight:600;color:#475065;margin-top:2px;' }, 'OP aberta'),
                 el('div', { style: 'font-size:12px;color:#9aa2af;' }, dataBase),
-                el('div', { style: 'font-size:13px;color:#7b8494;margin-top:1px;' }, 'OP ' + op.numero + '/' + op.ano + ' acompanha a origem consolidada da ' + origemProdLabel + '.'))));
+                el('div', { style: 'font-size:13px;color:#7b8494;margin-top:1px;' }, formatOpDisplay(op, opDisplayContext) + ' acompanha a origem consolidada da ' + origemProdLabel + '.'))));
         }
 
         return el('div', { style: 'display:block;' },
@@ -707,7 +761,7 @@
         if (op.status === 'em_producao') acoes.push({ label: 'Editar enviado', onclick: function () { editarEnviado(op, modelosById); } });
         acoes.push({ label: 'Excluir OP', onclick: function () { excluirOpLatex(op.id); } });
 
-        var header = pageHeader('OP de látex Nº ' + op.numero + '/' + op.ano, acoes);
+        var header = pageHeader(formatOpDisplay(op, opDisplayContext) + ' · Látex', acoes);
         var info = el('div', { class: 'bg-white rounded-xl shadow p-5 mb-4' },
           el('div', { class: 'flex items-center gap-3 mb-2' }, badgeTipo('latex'), badgeStatus(op.status)),
           op.lote ? el('div', { class: 'text-sm text-gray-700 mb-1' }, 'Lote Nº ' + op.lote.numero + ' · ' + (op.lote.cliente?.nome || '—')) : el('span', {}),
@@ -770,7 +824,7 @@
         return row.etapa === 'latex';
       }) || {}).fornecedores?.nome || '—';
       var origemLabel = origemOp
-        ? ('OP ' + origemOp.numero + '/' + origemOp.ano + ' · Tecelagem')
+        ? (formatOpDisplay(origemOp, opDisplayContext) + ' · Tecelagem')
         : (op.origem_op_id ? ('OP #' + op.origem_op_id) : '—');
 
       function buildHeader() {
@@ -779,7 +833,7 @@
           : 'Preparacao da OP de acabamento antes do inicio da producao.';
         return el('div', { style: 'display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:22px;gap:12px;flex-wrap:wrap;' },
           el('div', {},
-            el('div', { style: 'font-size:22px;font-weight:800;color:#16203a;letter-spacing:-.01em;' }, 'OP Aberta de Acabamento · Nº ' + op.numero + '/' + op.ano),
+            el('div', { style: 'font-size:22px;font-weight:800;color:#16203a;letter-spacing:-.01em;' }, 'OP Aberta de Acabamento · ' + formatOpDisplay(op, opDisplayContext)),
             el('div', { style: 'font-size:13px;color:#8a93a3;margin-top:3px;line-height:1.45;' }, subtitulo)),
           el('button', { type: 'button', style: BTN_BACK, onclick: function () { navigate('#/ops'); } }, svgEl(SVG_BACK), 'Voltar'));
       }
@@ -867,7 +921,8 @@
             el('div', {},
               el('div', { style: 'font-size:15px;font-weight:700;color:#16203a;' }, 'Resumo da OP'),
               el('span', { style: 'display:inline-block;margin-top:4px;background:#eaf1fd;color:#2563eb;font-size:11.5px;font-weight:600;border-radius:4px;padding:2px 8px;' }, 'Preparacao'))),
-          el('div', { style: 'font-size:13px;color:#5b6472;font-weight:500;margin-bottom:16px;' }, 'OP ' + op.numero + '/' + op.ano),
+          el('div', { style: 'font-size:13px;color:#5b6472;font-weight:500;margin-bottom:4px;' }, formatOpDisplay(op, opDisplayContext)),
+          el('div', { style: 'font-size:11.5px;color:#9aa2af;margin-bottom:16px;' }, internalOpLabel(op)),
           el('div', { style: 'height:1px;background:#eceef1;margin-bottom:16px;' }),
           origemOp ? el('div', { style: 'font-size:10.5px;font-weight:700;color:#8a93a3;letter-spacing:.06em;margin-bottom:6px;' }, 'ORIGEM') : '',
           origemOp ? el('div', { style: 'font-size:13.5px;font-weight:700;color:#16203a;margin-bottom:4px;' }, origemLabel) : '',

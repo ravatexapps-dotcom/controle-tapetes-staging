@@ -168,16 +168,19 @@
     return '#' + (pedido.numero != null ? pedido.numero : pedido.id || '--');
   }
 
-  function fmtOp(op) {
+  function fmtOp(op, ctx) {
     if (!op) return 'OP --';
+    var api = window.RAVATEX_OP_DISPLAY;
+    if (api && typeof api.formatOpOperationalCode === 'function') {
+      return api.formatOpOperationalCode(op, ctx || {});
+    }
     var numero = op.numero != null ? op.numero : '--';
     return 'OP ' + numero + (op.ano ? '/' + op.ano : '');
   }
 
-  function fmtAcabamento(op) {
+  function fmtAcabamento(op, ctx) {
     if (!op) return 'Acab. --';
-    var numero = op.numero != null ? op.numero : '--';
-    return 'Acab. ' + numero + (op.ano ? '/' + op.ano : '');
+    return fmtOp(op, ctx).replace(/^OP /, 'Acab. ');
   }
 
   function labelStatus(value) {
@@ -424,6 +427,14 @@
       itensByExpedicao[item.expedicao_id].push(item);
     });
 
+    function opDisplayContext(op) {
+      var lote = op && op.lote_id != null ? lotesById[op.lote_id] : null;
+      var pedidoId = lote && lote.pedido_id != null ? lote.pedido_id : null;
+      var pedido = pedidoId != null ? pedidoById[pedidoId] : null;
+      if (!pedido) return null;
+      return { pedido: pedido, ops: safeArray(opsByPedido[pedidoId]) };
+    }
+
     var pedidosAbertos = safeArray(state.pedidos).filter(isPedidoAberto);
     var pedidosSemOp = pedidosAbertos.filter(function (pedido) {
       return !safeArray(opsByPedido[pedido.id]).length;
@@ -472,7 +483,7 @@
       actionRows.push({
         tone: 'green',
         type: 'OP',
-        ref: fmtOp(tecPronta).replace(/^OP /, ''),
+        ref: fmtOp(tecPronta, opDisplayContext(tecPronta)).replace(/^OP /, ''),
         title: 'Transferir para Acabamento',
         sub: 'Tecelagem finalizada - ' + tempoRelativo(tecPronta.atualizado_em || tecPronta.criado_em),
         meta: fmtMetros(opMetros(tecPronta)),
@@ -489,7 +500,7 @@
       actionRows.push({
         tone: 'amber',
         type: 'OP',
-        ref: fmtAcabamento(latexAberta),
+        ref: fmtAcabamento(latexAberta, opDisplayContext(latexAberta)),
         title: 'Confirmar entrada em Acabamento',
         sub: 'OP de látex aberta - ' + tempoRelativo(latexAberta.criado_em),
         meta: fmtMetros(opMetros(latexAberta)),
@@ -596,7 +607,7 @@
 
     function opStageItem(op) {
       return {
-        primary: fmtOp(op),
+        primary: fmtOp(op, opDisplayContext(op)),
         secondary: labelStatus(op && op.status) + (opMetros(op) ? ' - ' + fmtMetros(opMetros(op)) : '')
       };
     }
@@ -667,7 +678,7 @@
     safeArray(state.ops).slice().sort(sortByRecent).slice(0, 3).forEach(function (op) {
       activities.push({
         when: fmtDataCurta(op && (op.atualizado_em || op.criado_em)),
-        text: fmtOp(op) + ' atualizada para ' + labelStatus(op && op.status) + '.',
+        text: fmtOp(op, opDisplayContext(op)) + ' atualizada para ' + labelStatus(op && op.status) + '.',
         tone: isLatex(op) ? 'amber' : 'blue'
       });
     });

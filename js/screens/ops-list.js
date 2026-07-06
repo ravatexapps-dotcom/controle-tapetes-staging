@@ -54,6 +54,19 @@
     }
   }
 
+  function fmtOpLegacy(row) {
+    var api = window.RAVATEX_OP_DISPLAY;
+    if (api && typeof api.formatOpLegacyCode === 'function') return api.formatOpLegacyCode(row);
+    var numero = row && row.numero != null ? row.numero : '---';
+    return 'OP ' + numero + (row && row.ano != null ? '/' + row.ano : '');
+  }
+
+  function fmtOpDisplay(row, ctx) {
+    var api = window.RAVATEX_OP_DISPLAY;
+    if (api && typeof api.formatOpOperationalCode === 'function') return api.formatOpOperationalCode(row, ctx || {});
+    return fmtOpLegacy(row);
+  }
+
   function kpiCard(iconBg, iconMarkup, label, value) {
     return window.el('div', {
       style: 'background:#fff;border:1px solid #eceef1;border-radius:6px;padding:14px 16px;display:flex;align-items:center;gap:12px;min-width:0;'
@@ -122,7 +135,7 @@
 
     async function carregar() {
       var opsRes = await window.supa.from('ops')
-        .select('id, numero, ano, status, tipo, criado_em, lote:lote_id(numero, cliente:cliente_id(nome)), op_itens(id, metros_pedidos, metros_ajustados)')
+        .select('id, numero, ano, status, tipo, criado_em, lote:lote_id(numero, pedido_id, pedido:pedido_id(id,numero,criado_em), cliente:cliente_id(nome)), op_itens(id, metros_pedidos, metros_ajustados)')
         .order('ano', { ascending: false })
         .order('numero', { ascending: false });
 
@@ -163,6 +176,24 @@
       return row && row.lote && row.lote.cliente && row.lote.cliente.nome
         ? String(row.lote.cliente.nome)
         : '—';
+    }
+
+    function opsByPedido() {
+      var grouped = {};
+      state.rows.forEach(function (row) {
+        var pedidoId = row && row.lote && row.lote.pedido_id != null ? row.lote.pedido_id : null;
+        if (pedidoId == null) return;
+        if (!grouped[pedidoId]) grouped[pedidoId] = [];
+        grouped[pedidoId].push(row);
+      });
+      return grouped;
+    }
+
+    function opContext(row, grouped) {
+      var pedido = row && row.lote && row.lote.pedido ? row.lote.pedido : null;
+      var pedidoId = row && row.lote && row.lote.pedido_id != null ? row.lote.pedido_id : null;
+      if (!pedido || pedidoId == null) return null;
+      return { pedido: pedido, ops: grouped[pedidoId] || [] };
     }
 
     function statusBucket(row) {
@@ -209,6 +240,7 @@
 
     function applyFilters() {
       var termo = normalizarKey(ui.busca);
+      var grouped = termo ? opsByPedido() : {};
       return state.rows.filter(function (row) {
         if (!tabMatches(row, ui.tab)) return false;
         if (ui.cliente !== 'todos' && clienteNome(row) !== ui.cliente) return false;
@@ -216,9 +248,11 @@
         if (ui.criadaEm !== 'todos' && createdBucket(row) !== ui.criadaEm) return false;
         if (termo) {
           var opLabel = row.numero != null ? String(row.numero).toLowerCase() : '';
+          var displayLabel = fmtOpDisplay(row, opContext(row, grouped)).toLowerCase();
+          var legacyLabel = fmtOpLegacy(row).toLowerCase();
           var loteLabel = row.lote && row.lote.numero != null ? String(row.lote.numero).toLowerCase() : '';
           var cliente = clienteNome(row).toLowerCase();
-          if (opLabel.indexOf(termo) === -1 && loteLabel.indexOf(termo) === -1 && cliente.indexOf(termo) === -1) return false;
+          if (opLabel.indexOf(termo) === -1 && displayLabel.indexOf(termo) === -1 && legacyLabel.indexOf(termo) === -1 && loteLabel.indexOf(termo) === -1 && cliente.indexOf(termo) === -1) return false;
         }
         return true;
       });
@@ -417,13 +451,16 @@
       return row;
     }
 
-    function buildRow(row, isLast) {
+    function buildRow(row, isLast, ctx) {
+      var primaryLabel = fmtOpDisplay(row, ctx);
+      var legacyLabel = fmtOpLegacy(row).replace(/^OP /, ctx ? 'Nº interno ' : 'Nº ');
+      var loteLabel = row.lote ? 'Lote Nº ' + row.lote.numero : 'Sem lote';
       return window.el('div', {
         style: 'display:grid;grid-template-columns:minmax(130px,1.05fr) minmax(120px,.9fr) minmax(170px,1.3fr) minmax(130px,1fr) minmax(130px,.95fr) 110px 90px;gap:18px;align-items:center;padding:14px 16px;min-width:980px;' + (isLast ? '' : 'border-bottom:1px solid #f1f3f6;')
       },
       window.el('div', {},
-        window.el('div', { style: 'font-size:14px;font-weight:700;color:#2563eb;' }, 'Nº ' + row.numero + '/' + row.ano),
-        window.el('div', { style: 'font-size:11px;color:#9aa2af;margin-top:1px;' }, row.lote ? 'Lote Nº ' + row.lote.numero : 'Sem lote')
+        window.el('div', { style: 'font-size:14px;font-weight:700;color:#2563eb;' }, primaryLabel),
+        window.el('div', { style: 'font-size:11px;color:#9aa2af;margin-top:1px;' }, legacyLabel + ' · ' + loteLabel)
       ),
       window.el('div', {}, window.badgeTipo(row.tipo || 'tecelagem')),
       window.el('div', { style: 'font-size:13px;color:#3f4757;' }, clienteNome(row)),
@@ -434,6 +471,7 @@
     }
 
     function buildTable(rows) {
+      var grouped = opsByPedido();
       var wrap = window.el('div', {
         style: 'background:#fff;border:1px solid #eceef1;border-radius:6px;overflow:hidden;'
       });
@@ -457,7 +495,7 @@
       }
 
       rows.forEach(function (row, idx) {
-        scroll.appendChild(buildRow(row, idx === rows.length - 1));
+        scroll.appendChild(buildRow(row, idx === rows.length - 1, opContext(row, grouped)));
       });
       wrap.appendChild(scroll);
       return wrap;

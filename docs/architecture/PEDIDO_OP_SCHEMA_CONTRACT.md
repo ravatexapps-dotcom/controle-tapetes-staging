@@ -8,6 +8,23 @@
 
 ---
 
+## Atualizacao 2026-07-06 - Admin Wide Expand D
+
+Fase `RAVATEX-TAPETES-OP-OPERATIONAL-CODE-ADMIN-WIDE-EXPAND-D`: expansao
+frontend-only do display operacional de OP para telas Admin com Pedido
+resolvivel. O contrato permanece sem schema novo:
+
+- identificacao principal: `OP {pedido_numero}/{year(pedido.criado_em)}-{tipo}{seq}`;
+- `tipo`: `T` para tecelagem, `A` para latex/acabamento;
+- `seq`: por Pedido+Tipo, ordenado por `ops.criado_em` e `ops.id`;
+- fallback/legado: `OP {numero}/{ano}` e exibicao secundaria `Nº interno {numero}/{ano}`;
+- resolucao OP->Pedido continua por `ops.lote_id -> lotes.pedido_id -> pedidos.id`;
+- siblings sao OPs dos lotes do mesmo Pedido, obtidos em memoria quando ja carregados
+  ou por leitura leve `lotes do pedido -> ops desses lotes`.
+
+Nao houve alteracao em `ops.numero`, `ops.ano`, `op_numeros`, RPCs, RLS, PDFs,
+fornecedor, banco ou migrations.
+
 ## 1. Estado atual validado no schema
 
 ### 1.1. Tabelas existentes relevantes

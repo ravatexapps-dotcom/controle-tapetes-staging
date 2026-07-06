@@ -1,4 +1,40 @@
 > **Atualizacao 2026-07-06 - fase
+> `RAVATEX-TAPETES-OP-OPERATIONAL-CODE-ADMIN-WIDE-EXPAND-D`.**
+> Status: **PATCH TECNICO PRONTO - AGUARDANDO VALIDACAO VISUAL DO USUARIO**.
+> Retomada apos bloqueio por limite de sessao. Entrada: branch `work/app-next`,
+> HEAD inicial `6cc8e41`; status inicial com `js/screens/painel.js` ja
+> modificado parcialmente e `?? supabase/.temp/`.
+>
+> Objetivo entregue: expandir o uso de `js/op-display.js` para telas Admin
+> operacionais que exibem OPs quando ha contexto confiavel de Pedido. Regra
+> principal: `OP {pedido_numero}/{year(pedido.criado_em)}-{tipo}{seq}`;
+> legado mantido como secundario/fallback `Nº interno {numero}/{ano}` ou
+> `OP {numero}/{ano}` sem contexto.
+>
+> Telas alteradas e resolucao OP->Pedido/siblings:
+> `painel.js` usa dados ja carregados (`lotes.pedido_id`, `pedidos`, `ops`) e
+> agrupa `opsByPedido` em memoria, sem query nova. `ops-list.js` adiciona
+> `pedido_id` e `pedido:pedido_id(id,numero,criado_em)` ao SELECT do lote e
+> agrupa as OPs da lista por Pedido. `op-nova.js`/`op-tecelagem-producao-admin.js`
+> usam `pedidoCtx` e uma leitura leve `lotes do pedido -> ops desses lotes`.
+> `op-latex-admin.js` consulta Pedido + siblings somente quando `lote.pedido_id`
+> existe; fixtures/OPs sem Pedido caem no fallback legado. `expedicao-admin.js`
+> usa `pedido:pedido_id(...,criado_em)` e busca siblings por lotes do Pedido.
+>
+> Mantidos em legado por regra: PDFs (`op-pdf.js`), fornecedor/RLS e telas sem
+> Pedido resolvivel. Nao houve SQL, migration, dados reais novos, alteracao em
+> `ops.numero`, `ops.ano`, `op_numeros` ou RPCs. `origin` e producao intocados.
+>
+> Testes obrigatorios verdes: `op-display`, `admin-dashboard`, `painel-screen`,
+> `op-latex-admin`, `expedicao-flow`, `expedicao-partial-flow`, `router`,
+> `pedido-detail`, `pedido-detail-linked-ops`, `production-flow-invariants`.
+> Diagnosticos staging read-only OK: invariantes de fluxo, consolidacao Latex e
+> expedicao parcial. `tests/ops-list-screen.smoke.js` opcional continua obsoleto
+> para a arquitetura atual e falha em asserts antigos de script inline; nao foi
+> alterado nesta fase.
+>
+
+> **Atualizacao 2026-07-06 - fase
 > `RAVATEX-TAPETES-OP-OPERATIONAL-CODE-CLOSEOUT-C`.**
 > Status: **OK VISUAL NO ESCOPO COM CONTEXTO DE PEDIDO**. Closeout
 > documental/estado, sem patch funcional.

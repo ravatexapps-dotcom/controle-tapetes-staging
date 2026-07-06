@@ -23,6 +23,23 @@
     catch (_) { return String(value); }
   }
 
+  function formatOpDisplay(op, ctx) {
+    var api = window.RAVATEX_OP_DISPLAY;
+    if (api && typeof api.formatOpOperationalCode === 'function') {
+      return api.formatOpOperationalCode(op, ctx || {});
+    }
+    var numero = op && op.numero != null ? op.numero : '-';
+    return 'OP ' + numero + (op && op.ano != null ? '/' + op.ano : '');
+  }
+
+  function internalOpLabel(op) {
+    var api = window.RAVATEX_OP_DISPLAY;
+    var legacy = api && typeof api.formatOpLegacyCode === 'function'
+      ? api.formatOpLegacyCode(op)
+      : formatOpDisplay(op, null);
+    return legacy.replace(/^OP /, 'Nº interno ');
+  }
+
   function round2(value) {
     var n = Number(value || 0);
     return Math.round(n * 100) / 100;
@@ -84,6 +101,7 @@
       itens: [],
       movimentos: [],
       movimentoItens: [],
+      opSiblings: [],
       loadingError: null,
     };
 
@@ -91,7 +109,7 @@
       state.loadingError = null;
 
       var expRes = await window.supa.from('expedicoes')
-        .select('id, pedido_id, op_latex_id, lote_id, cliente_id, status, liberado_em, criado_em, atualizado_em, pedido:pedido_id(id, numero, status, tipo_recebimento), op:op_latex_id(id, numero, ano, status, tipo), lote:lote_id(id, numero), cliente:cliente_id(id, nome)')
+        .select('id, pedido_id, op_latex_id, lote_id, cliente_id, status, liberado_em, criado_em, atualizado_em, pedido:pedido_id(id, numero, status, tipo_recebimento, criado_em), op:op_latex_id(id, numero, ano, status, tipo, criado_em, lote_id), lote:lote_id(id, numero), cliente:cliente_id(id, nome)')
         .eq('id', expedicaoId)
         .maybeSingle();
 
@@ -104,6 +122,28 @@
       }
 
       state.expedicao = expRes.data;
+      state.opSiblings = [];
+      if (state.expedicao.pedido_id) {
+        try {
+          var lotesRes = await window.supa.from('lotes')
+            .select('id')
+            .eq('pedido_id', state.expedicao.pedido_id);
+          var loteIds = lotesRes.error ? [] : (lotesRes.data || [])
+            .map(function (lote) { return lote && lote.id; })
+            .filter(function (id) { return id != null; });
+          if (loteIds.length) {
+            var siblingsRes = await window.supa.from('ops')
+              .select('id, numero, ano, status, tipo, criado_em, lote_id')
+              .in('lote_id', loteIds)
+              .order('criado_em', { ascending: true })
+              .order('id', { ascending: true });
+            state.opSiblings = siblingsRes.error ? [] : (siblingsRes.data || []);
+          }
+        } catch (err) {
+          console.error('expedicao-admin: erro ao carregar OPs irmas do pedido', err);
+          state.opSiblings = [];
+        }
+      }
 
       var itensRes = await window.supa.from('expedicao_itens')
         .select('id, expedicao_id, op_item_id, pedido_item_id, modelo_id, metros_liberados, metros_entregues, modelo:modelo_id(id, nome, largura, cor_1:cor_1_id(id, nome), cor_2:cor_2_id(id, nome))')
@@ -146,8 +186,9 @@
     function buildHeader(totalLiberado, totalEntregue) {
       var exp = state.expedicao || {};
       var pedidoNumero = exp.pedido && exp.pedido.numero ? ('#' + exp.pedido.numero) : ('#' + exp.pedido_id);
+      var opCtx = { pedido: exp.pedido || null, ops: state.opSiblings };
       var opLabel = exp.op && exp.op.numero && exp.op.ano
-        ? ('OP ' + exp.op.numero + '/' + exp.op.ano)
+        ? formatOpDisplay(exp.op, opCtx)
         : (exp.op_latex_id ? 'OP #' + exp.op_latex_id : null);
 
       var lineageNodes = [];
@@ -161,6 +202,9 @@
             onclick: function () { window.navigate('#/ops/' + exp.op_latex_id); },
           }, opLabel)
         : window.el('span', { style: 'font-size:12.5px;font-weight:700;color:#8a93a3;background:#fff;border-radius:3px;padding:3px 7px;' }, 'OP sem vinculo'));
+      if (exp.op) {
+        lineageNodes.push(window.el('span', { style: 'font-size:11.5px;color:#8a93a3;background:#fff;border-radius:3px;padding:3px 7px;' }, internalOpLabel(exp.op)));
+      }
       lineageNodes.push(window.el('span', { style: 'font-size:12px;color:#9aa2af;' }, '→'));
       lineageNodes.push(window.el('span', { style: 'font-size:12.5px;font-weight:700;color:#c2610c;background:#fff;border-radius:3px;padding:3px 7px;' }, 'Expedicao (esta tela)'));
       var lineageStrip = window.el('div', {

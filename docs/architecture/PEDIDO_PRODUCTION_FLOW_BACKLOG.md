@@ -1,5 +1,30 @@
 # Atualizacao 2026-07-06 - OP Operational Code Closeout C
 
+# Atualizacao 2026-07-06 - OP Operational Code Admin Wide Expand D
+
+Fase: `RAVATEX-TAPETES-OP-OPERATIONAL-CODE-ADMIN-WIDE-EXPAND-D`
+Status: **PATCH TECNICO PRONTO - AGUARDANDO VALIDACAO VISUAL DO USUARIO**
+
+Expansao aplicada nas telas Admin operacionais com Pedido resolvivel:
+`painel.js`, `ops-list.js`, `op-nova.js`, `op-tecelagem-producao-admin.js`,
+`op-latex-admin.js` e `expedicao-admin.js`.
+
+| Tela | OP -> Pedido | Siblings |
+|---|---|---|
+| `painel.js` | `lote_id -> lotes.pedido_id -> pedidos` ja carregados | `opsByPedido` em memoria, zero query nova |
+| `ops-list.js` | SELECT aditivo `lote.pedido_id` + `pedido:pedido_id(id,numero,criado_em)` | lista completa de OPs carregada na tela |
+| `op-nova.js` / `op-tecelagem-producao-admin.js` | `pedidoCtx` (`criadoEm` normalizado) | query leve `lotes do pedido -> ops desses lotes` |
+| `op-latex-admin.js` | `op.lote.pedido_id`; sem pedido cai no legado | query leve Pedido + siblings quando houver `pedido_id` |
+| `expedicao-admin.js` | `pedido:pedido_id(...,criado_em)` | query leve por lotes do Pedido |
+
+Garantias: regra T/A/seq continua somente em `js/op-display.js`; legado aparece
+como `Nº interno {numero}/{ano}` quando ha operacional e como fallback quando
+nao ha contexto; sem SQL/migration/dados reais novos; sem alterar `ops.numero`,
+`ops.ano`, `op_numeros`, RPCs, PDFs ou fornecedor/RLS.
+
+Testes obrigatorios e diagnosticos staging read-only verdes. Validacao visual
+do usuario pendente.
+
 Fase: `RAVATEX-TAPETES-OP-OPERATIONAL-CODE-CLOSEOUT-C`
 Status: **OK VISUAL NO ESCOPO COM CONTEXTO DE PEDIDO** (closeout documental)
 
