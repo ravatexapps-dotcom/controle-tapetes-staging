@@ -1,4 +1,40 @@
 > **Atualizacao 2026-07-06 - fase
+> `RAVATEX-TAPETES-OP-CREATE-REQUIRES-PEDIDO-RPC-GUARD-C`.**
+> Status: **PATCH TECNICO PRONTO - AGUARDANDO VALIDACAO TECNICA/STAGING**.
+> Entrada: branch `work/app-next`, HEAD inicial
+> `0245fc771158527954c91bc158f63396d96e4cad`; status inicial somente
+> `?? supabase/.temp/`; `origin` somente leitura; producao intocada.
+>
+> Guard backend preparado em `db/33_op_latex_requires_pedido_guard.sql`,
+> substituindo `gerar_op_latex(BIGINT)` e
+> `gerar_op_latex_split(BIGINT, TEXT)` a partir do contrato efetivo da `db/29`.
+> As duas RPCs agora resolvem `ops.lote_id -> lotes.pedido_id` da OP origem e
+> abortam antes de `proximo_numero_op('latex', ...)` quando a origem nao tem
+> lote/Pedido. Erro controlado: `Nao e possivel gerar OP de Acabamento/Latex:
+> OP origem nao possui Pedido vinculado.`
+>
+> Diagnostico ampliado em `scripts/staging/ops-without-pedido-diag.mjs`: alem
+> das contagens ja conhecidas (`0` OPs com `lote_id NULL`, `11` OPs cujo
+> `lote.pedido_id IS NULL`, `9` lotes sem Pedido vinculados a OPs), o script
+> lista cada OP orfa com `op_id`, numero/ano/tipo/status, lote, criado_em,
+> entregas vinculadas, expedicao/movimentacao, Pedido possivelmente inferivel
+> por `op_itens`/`pedido_itens`/expedicao e classificacao preliminar A/B/C/D.
+> Resultado staging desta rodada: A=6 (`op_id` 1,2,3,4,9,15), B=4 (`op_id`
+> 5,6,7,8), C=0, D=1 (`op_id` 10). Continua read-only: somente SELECT,
+> bloqueio de producao e sem RPC POST.
+>
+> Testes locais adicionados/atualizados: `op-latex-requires-pedido-guard`
+> valida a guarda nas duas RPCs, preservacao dos fluxos validos e ausencia de
+> constraint/backfill; `production-flow-invariants` passa a cobrir `db/33` e a
+> classificacao do diagnostico. Migration nao aplicada em staging nesta etapa:
+> pendente aplicar/validar tecnicamente em staging `ucrjtfswnfdlxwtmxnoo`.
+>
+> Confirmacoes: nenhuma correcao de dados historicos, sem cleanup/backfill, sem
+> constraint global, sem alterar RLS, sem alterar `op_numeros`, sem producao,
+> sem push para `origin`, sem `git add .`; `supabase/.temp/` permanece fora do
+> patch.
+
+> **Atualizacao 2026-07-06 - fase
 > `RAVATEX-TAPETES-OP-CREATE-REQUIRES-PEDIDO-GUARD-B`.**
 > Status: **PATCH TECNICO PRONTO - AGUARDANDO VALIDACAO VISUAL DO USUARIO**.
 > Entrada: branch `work/app-next`, HEAD inicial

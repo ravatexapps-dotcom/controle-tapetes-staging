@@ -33,6 +33,7 @@ const read = (p) => fs.readFileSync(path.join(ROOT, p), 'utf8');
 
 const db28 = read('db/28_op_latex_split_discriminator.sql');
 const db29 = read('db/29_op_latex_split_rpc.sql');
+const db33 = read('db/33_op_latex_requires_pedido_guard.sql');
 const detailEvents = read('js/screens/pedido-detail-events.js');
 const detailProgress = read('js/screens/pedido-detail-progress.js');
 const detailRender = read('js/screens/pedido-detail-render.js');
@@ -58,6 +59,9 @@ test('Diagnostico staging de OPs sem Pedido e read-only e bloqueia producao', ()
   assert.match(opsWithoutPedidoDiag, /lotes\?select=/);
   assert.match(opsWithoutPedidoDiag, /STATUS OK/);
   assert.match(opsWithoutPedidoDiag, /STATUS ALERTA/);
+  assert.match(opsWithoutPedidoDiag, /DETALHE OPs ORFAS SEM PEDIDO/);
+  assert.match(opsWithoutPedidoDiag, /classificacao=/);
+  assert.match(opsWithoutPedidoDiag, /pedido_inferivel=/);
   assert.match(opsWithoutPedidoDiag, /URL aponta para PRODUCAO - bloqueado/);
   assert.match(opsWithoutPedidoDiag, /URL nao e staging autorizado/);
   assert.doesNotMatch(opsWithoutPedidoDiag, /\b(?:insert|update|delete|upsert)\s*\(/i);
@@ -95,6 +99,13 @@ test('Contrato split Latex: gerar_op_latex_split exige p_motivo, escreve motivo_
 test('Contrato split Latex: split e idempotente por entrega (op_latex_entregas)', () => {
   assert.match(db29, /FROM\s+public\.op_latex_entregas[\s\S]*WHERE\s+ole\.entrega_id\s*=\s*p_entrega_id/i);
   assert.match(db29, /'already_linked',\s*true/i);
+});
+
+test('Contrato Pedido: db/33 bloqueia gerar OP Latex a partir de origem sem Pedido', () => {
+  assert.match(db33, /CREATE\s+OR\s+REPLACE\s+FUNCTION\s+public\.gerar_op_latex/i);
+  assert.match(db33, /CREATE\s+OR\s+REPLACE\s+FUNCTION\s+public\.gerar_op_latex_split/i);
+  assert.match(db33, /SELECT\s+o\.lote_id,\s*l\.pedido_id\s+INTO\s+v_lote_id,\s*v_pedido_id/i);
+  assert.match(db33, /IF\s+v_lote_id\s+IS\s+NULL\s+OR\s+v_pedido_id\s+IS\s+NULL\s+THEN[\s\S]*Nao e possivel gerar OP de Acabamento\/Latex: OP origem nao possui Pedido vinculado/i);
 });
 
 // ---------------------------------------------------------------------

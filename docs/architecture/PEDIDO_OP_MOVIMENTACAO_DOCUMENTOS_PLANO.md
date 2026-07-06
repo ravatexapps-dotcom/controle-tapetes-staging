@@ -30,6 +30,26 @@ Proximo passo recomendado desta frente: `OP-LATEX-RPC-REQUIRES-PEDIDO-GUARD-C`
 para bloquear em backend a geracao de OP filha quando a origem nao tiver
 `lotes.pedido_id`.
 
+## Atualizacao 2026-07-06 - OP Create Requires Pedido RPC Guard C
+
+Fase `RAVATEX-TAPETES-OP-CREATE-REQUIRES-PEDIDO-RPC-GUARD-C` prepara a guarda
+backend para impedir que movimentacao Tecelagem -> Acabamento/Latex propague OP
+orfa.
+
+Decisoes novas:
+
+| # | Decisao | Fundamentacao |
+|---|---|---|
+| D-GUARD05 | RPCs de Latex/split devem bloquear OP origem sem `lotes.pedido_id`. | O backend precisa proteger caminhos transacionais que nao passam pelo bloqueio visual. |
+| D-GUARD06 | A guarda roda antes de reservar numero em `op_numeros`. | Origem invalida nao deve consumir numeracao operacional. |
+| D-GUARD07 | Dados historicos orfaos seguem apenas diagnosticados. | Relacao com Pedido pode exigir decisao de produto; sem backfill nesta fase. |
+| D-GUARD08 | Constraint global fica fase posterior. | Primeiro e necessario triar as 11 OPs historicas e validar impacto. |
+
+Artefatos: `db/33_op_latex_requires_pedido_guard.sql` e diagnostico ampliado
+`scripts/staging/ops-without-pedido-diag.mjs`. Classificacao staging das 11 OPs
+orfas: A=6 (`op_id` 1,2,3,4,9,15), B=4 (`op_id` 5,6,7,8), C=0, D=1 (`op_id`
+10). Aplicacao em staging pendente; producao intocada.
+
 ## 1. Estado de entrada
 
 | Item | Valor |

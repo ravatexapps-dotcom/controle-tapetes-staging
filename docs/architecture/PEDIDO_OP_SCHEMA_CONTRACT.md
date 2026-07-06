@@ -33,6 +33,31 @@ Pendencia obrigatoria de backend: criar guard em `gerar_op_latex` e funcoes de
 split/derivadas para rejeitar origem sem Pedido antes de criar OP filha. A
 mitigacao atual e frontend/persistencia JS, nao substitui constraint/RPC.
 
+## Atualizacao 2026-07-06 - OP Create Requires Pedido RPC Guard C
+
+Fase `RAVATEX-TAPETES-OP-CREATE-REQUIRES-PEDIDO-RPC-GUARD-C`: guard backend
+preparado em migration versionada `db/33_op_latex_requires_pedido_guard.sql`.
+
+- `gerar_op_latex(BIGINT)` e `gerar_op_latex_split(BIGINT, TEXT)` passam a
+  exigir que a OP origem tenha `lote_id` e que `lotes.pedido_id` esteja
+  preenchido.
+- A validacao ocorre antes de `proximo_numero_op`, evitando consumo de
+  numeracao quando a origem e orfa.
+- Erro controlado: `Nao e possivel gerar OP de Acabamento/Latex: OP origem nao
+  possui Pedido vinculado.`
+- Fluxos validos com Pedido preservam assinatura, retorno JSONB,
+  `op_latex_entregas`, `op_fornecedores`, `op_itens`, eventos de split e
+  filtros `motivo_separacao IS NULL`.
+- Nao ha constraint global, trigger, `NOT NULL`, backfill, cleanup, RLS ou
+  correcao de dados historicos nesta fase.
+- Aplicacao em staging ainda pendente; producao intocada.
+
+O diagnostico de orfaos foi ampliado para listar as 11 OPs historicas sem
+Pedido com entregas, movimentacao/expedicao, possibilidade de inferir Pedido e
+classificacao preliminar A/B/C/D. A classificacao e informativa; nao autoriza
+correcao automatica. Resultado desta rodada em staging: A=6 (`op_id`
+1,2,3,4,9,15), B=4 (`op_id` 5,6,7,8), C=0, D=1 (`op_id` 10).
+
 ## Atualizacao 2026-07-06 - Admin Wide Expand D
 
 Fase `RAVATEX-TAPETES-OP-OPERATIONAL-CODE-ADMIN-WIDE-EXPAND-D`: expansao

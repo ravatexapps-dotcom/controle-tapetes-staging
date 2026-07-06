@@ -72,6 +72,17 @@ async function sel(pathq) {
   return res.json();
 }
 
+async function selOptional(pathq) {
+  const res = await fetch(url + '/rest/v1/' + pathq, {
+    headers: { apikey: anonKey, Authorization: 'Bearer ' + TOKEN },
+  });
+  if (!res.ok) {
+    console.log('SELECT opcional indisponivel (' + pathq + '): HTTP ' + res.status);
+    return [];
+  }
+  return res.json();
+}
+
 function printCounts(title, counts) {
   console.log('\n===== ' + title + ' =====');
   const rows = Object.entries(counts).sort(([a], [b]) => a.localeCompare(b));
@@ -101,13 +112,123 @@ function printExamples(title, rows) {
   if (rows.length > LIMIT_EXAMPLES) console.log('  ... +' + (rows.length - LIMIT_EXAMPLES) + ' exemplo(s)');
 }
 
+function byId(rows) {
+  return Object.fromEntries(rows.map((row) => [String(row.id), row]));
+}
+
+function unique(values) {
+  return [...new Set(values.filter((v) => v != null).map((v) => String(v)))];
+}
+
+function summarizeIds(rows) {
+  if (!rows.length) return '0';
+  return rows.map((row) => '#' + row.id).join(',');
+}
+
+function classifyOrphan(ctx) {
+  if (ctx.pedidoIdsInferidos.length > 0) return 'C) orfa com possivel Pedido inferivel';
+  if (ctx.temMovimentacao) return 'B) orfa com movimentacao';
+  if (ctx.op.status === 'aberta' || ctx.op.status === 'simulada' || !ctx.op.status) {
+    return 'A) orfa sem movimentacao';
+  }
+  return 'D) legado sem correcao segura';
+}
+
+function buildOrphanContext(op, refs) {
+  const opItemIds = refs.opItens
+    .filter((item) => String(item.op_id) === String(op.id))
+    .map((item) => String(item.id));
+  const directEntregaItens = refs.entregaItens.filter((item) => (
+    String(item.op_id) === String(op.id) || opItemIds.includes(String(item.op_item_id))
+  ));
+  const latexLinks = refs.opLatexEntregas.filter((link) => String(link.op_latex_id) === String(op.id));
+  const entregaIds = unique([
+    ...directEntregaItens.map((item) => item.entrega_id),
+    ...latexLinks.map((link) => link.entrega_id),
+    op.origem_entrega_id,
+  ]);
+  const expedicoesOp = refs.expedicoes.filter((exp) => String(exp.op_latex_id) === String(op.id));
+  const expedicoesLote = op.lote_id == null ? [] : refs.expedicoes.filter((exp) => String(exp.lote_id) === String(op.lote_id));
+  const expedicaoIds = unique([...expedicoesOp.map((exp) => exp.id), ...expedicoesLote.map((exp) => exp.id)]);
+  const expedicaoItens = refs.expedicaoItens.filter((item) => (
+    expedicaoIds.includes(String(item.expedicao_id)) || opItemIds.includes(String(item.op_item_id))
+  ));
+  const pedidoIdsPorOpItem = refs.opItens
+    .filter((item) => String(item.op_id) === String(op.id) && item.pedido_item_id != null)
+    .map((item) => refs.pedidoItemById[String(item.pedido_item_id)] && refs.pedidoItemById[String(item.pedido_item_id)].pedido_id);
+  const pedidoIdsPorExpedicao = [
+    ...expedicoesOp.map((exp) => exp.pedido_id),
+    ...expedicoesLote.map((exp) => exp.pedido_id),
+    ...expedicaoItens.map((item) => {
+      const pedidoItem = item.pedido_item_id == null ? null : refs.pedidoItemById[String(item.pedido_item_id)];
+      return pedidoItem && pedidoItem.pedido_id;
+    }),
+  ];
+  const pedidoIdsInferidos = unique([...pedidoIdsPorOpItem, ...pedidoIdsPorExpedicao]);
+  const temEntregas = entregaIds.length > 0;
+  const temExpedicao = expedicoesOp.length > 0 || expedicoesLote.length > 0 || expedicaoItens.length > 0;
+  const temMovimentacao = temEntregas || temExpedicao;
+  const ctx = {
+    op,
+    opItemIds,
+    entregaIds,
+    latexLinks,
+    expedicoesOp,
+    expedicoesLote,
+    expedicaoItens,
+    pedidoIdsInferidos,
+    temEntregas,
+    temExpedicao,
+    temMovimentacao,
+  };
+  ctx.classificacao = classifyOrphan(ctx);
+  return ctx;
+}
+
+function printOrphanDetails(rows, refs) {
+  console.log('\n===== DETALHE OPs ORFAS SEM PEDIDO =====');
+  if (!rows.length) {
+    console.log('0');
+    return;
+  }
+
+  rows.forEach((op) => {
+    const ctx = buildOrphanContext(op, refs);
+    const lote = op.lote || {};
+    console.log('  - op_id=' + op.id
+      + ' numero=' + (op.numero ?? 'NULL')
+      + ' ano=' + (op.ano ?? 'NULL')
+      + ' tipo=' + (op.tipo || 'NULL')
+      + ' status=' + (op.status || 'NULL')
+      + ' lote_id=' + (op.lote_id == null ? 'NULL' : op.lote_id)
+      + ' lote.numero=' + (lote.numero == null ? 'NULL' : lote.numero)
+      + ' lote.pedido_id=' + (lote.pedido_id == null ? 'NULL' : lote.pedido_id)
+      + ' criado_em=' + (op.criado_em || 'NULL'));
+    console.log('    natureza=' + (op.tipo === 'latex' ? 'Latex/Acabamento' : 'Tecelagem/Origem')
+      + ' | entregas_vinculadas=' + (ctx.temEntregas ? ctx.entregaIds.join(',') : '0')
+      + ' | op_latex_entregas=' + summarizeIds(ctx.latexLinks));
+    console.log('    expedicao_movimentacao=' + (ctx.temExpedicao ? 'sim' : 'nao')
+      + ' | expedicoes_por_op=' + summarizeIds(ctx.expedicoesOp)
+      + ' | expedicoes_por_lote=' + summarizeIds(ctx.expedicoesLote)
+      + ' | expedicao_itens=' + summarizeIds(ctx.expedicaoItens));
+    console.log('    pedido_inferivel=' + (ctx.pedidoIdsInferidos.length ? ctx.pedidoIdsInferidos.join(',') : 'nao')
+      + ' | classificacao=' + ctx.classificacao);
+  });
+}
+
 (async () => {
   TOKEN = await login();
 
   const ops = await sel(
-    'ops?select=id,numero,ano,tipo,status,lote_id,criado_em,lote:lote_id(id,numero,pedido_id)&order=ano.asc,numero.asc,id.asc'
+    'ops?select=id,numero,ano,tipo,status,lote_id,origem_op_id,origem_entrega_id,criado_em,lote:lote_id(id,numero,pedido_id)&order=ano.asc,numero.asc,id.asc'
   );
   const lotes = await sel('lotes?select=id,numero,pedido_id&order=id.asc');
+  const opItens = await sel('op_itens?select=id,op_id,pedido_item_id&order=id.asc');
+  const pedidoItens = await sel('pedido_itens?select=id,pedido_id&order=id.asc');
+  const entregaItens = await sel('entrega_itens?select=id,entrega_id,op_id,op_item_id,metros_entregues,defeito&order=id.asc');
+  const opLatexEntregas = await sel('op_latex_entregas?select=id,op_latex_id,entrega_id&order=id.asc');
+  const expedicoes = await selOptional('expedicoes?select=id,pedido_id,op_latex_id,lote_id,status&order=id.asc');
+  const expedicaoItens = await selOptional('expedicao_itens?select=id,expedicao_id,op_item_id,pedido_item_id,metros_liberados&order=id.asc');
 
   const opsSemLote = ops.filter((op) => op.lote_id == null);
   const opsLoteSemPedido = ops.filter((op) => op.lote_id != null && op.lote && op.lote.pedido_id == null);
@@ -130,6 +251,14 @@ function printExamples(title, rows) {
   printCounts('CONTAGEM OPs COM lote.pedido_id NULL POR tipo/status', countsLoteSemPedido);
   printExamples('EXEMPLOS OPs COM lote_id NULL', opsSemLote);
   printExamples('EXEMPLOS OPs COM lote.pedido_id NULL', opsLoteSemPedido);
+  printOrphanDetails([...opsSemLote, ...opsLoteSemPedido], {
+    opItens,
+    pedidoItemById: byId(pedidoItens),
+    entregaItens,
+    opLatexEntregas,
+    expedicoes,
+    expedicaoItens,
+  });
 
   console.log('\n===== LOTES SEM PEDIDO VINCULADOS A OPs =====');
   if (!lotesSemPedidoComOps.length) {

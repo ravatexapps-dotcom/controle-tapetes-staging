@@ -4671,3 +4671,41 @@ node --test tests/boot.smoke.js \
   staging, em fase propria e com autorizacao explicita.
 - Confirmacoes: sem SQL, sem migration, sem producao, sem dados reais novos,
   sem push para `origin`, sem `git add .`, `supabase/.temp/` fora do commit.
+# Estado pos-fase - OP Create Requires Pedido RPC Guard C
+
+- Fase: `RAVATEX-TAPETES-OP-CREATE-REQUIRES-PEDIDO-RPC-GUARD-C`.
+- Status: **PATCH TECNICO PRONTO - AGUARDANDO VALIDACAO TECNICA/STAGING**.
+- Branch/HEAD inicial: `work/app-next`,
+  `0245fc771158527954c91bc158f63396d96e4cad`; status inicial somente
+  `?? supabase/.temp/`.
+- RPCs auditadas: historicas `db/08`, `db/09`, `db/22`, `db/26`; efetivas para
+  esta frente `db/29_op_latex_split_rpc.sql` (`gerar_op_latex` e
+  `gerar_op_latex_split`). Scripts auditados: `latex-consolidation-diag` e
+  `ops-without-pedido-diag`. Testes relacionados: `production-flow-invariants`,
+  `op-latex-split`, `latex-consolidation-schema`, `op-latex-admin`.
+- Migration criada: `db/33_op_latex_requires_pedido_guard.sql`. Ela redefine
+  `gerar_op_latex(BIGINT)` e `gerar_op_latex_split(BIGINT, TEXT)` preservando o
+  contrato da `db/29`, mas adicionando guarda da OP origem:
+  `ops.lote_id -> lotes.pedido_id` precisa existir. Caso contrario, aborta com
+  `Nao e possivel gerar OP de Acabamento/Latex: OP origem nao possui Pedido
+  vinculado.` antes de chamar `proximo_numero_op`.
+- Diagnostico ampliado: `scripts/staging/ops-without-pedido-diag.mjs` lista as
+  OPs orfas com contexto de entregas, `op_latex_entregas`,
+  expedicoes/`expedicao_itens`, possivel Pedido inferivel por
+  `op_itens.pedido_item_id -> pedido_itens.pedido_id` e classificacao
+  preliminar A/B/C/D. Continua apenas SELECT e bloqueia producao.
+- Dados historicos conhecidos em staging continuam sem cleanup:
+  `OPs com lote_id NULL: 0`; `OPs cujo lote.pedido_id IS NULL: 11`;
+  `Lotes com pedido_id IS NULL vinculados a OPs: 9`. Classificacao desta
+  rodada: A=6 (`op_id` 1,2,3,4,9,15), B=4 (`op_id` 5,6,7,8), C=0, D=1
+  (`op_id` 10).
+- Testes locais verdes: bateria obrigatoria (`op-nova`, `op-persistir`,
+  `op-display`, `op-latex-admin`, `production-flow-invariants`) mais
+  `op-latex-requires-pedido-guard`, `op-latex-split` e
+  `latex-consolidation-schema`.
+- Aplicacao staging: **nao aplicada nesta etapa**. Pendente aplicar/validar em
+  staging `ucrjtfswnfdlxwtmxnoo` se o fluxo tecnico autorizar.
+- Confirmacoes: producao intocada; `origin` nao usado para escrita; sem
+  cleanup/backfill; sem constraint global; sem alteracao de dados reais; sem
+  RLS; sem fornecedor/PDF; sem alterar identificacao OP; sem `git add .`;
+  `supabase/.temp/` fora do patch.

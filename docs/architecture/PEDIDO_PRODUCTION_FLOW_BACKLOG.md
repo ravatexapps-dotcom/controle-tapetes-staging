@@ -34,6 +34,29 @@ Dados historicos de staging continuam sem cleanup: `OPs com lote_id NULL: 0`,
 a OPs: 9`. Qualquer backfill/correcao real deve ser fase propria, com script
 revisado e autorizacao explicita.
 
+# Atualizacao 2026-07-06 - OP Create Requires Pedido RPC Guard C
+
+Fase: `RAVATEX-TAPETES-OP-CREATE-REQUIRES-PEDIDO-RPC-GUARD-C`
+Status: **PATCH TECNICO PRONTO - AGUARDANDO VALIDACAO TECNICA/STAGING**
+
+Item P1 `OP-LATEX-RPC-REQUIRES-PEDIDO-GUARD-C` preparado em
+`db/33_op_latex_requires_pedido_guard.sql`.
+
+| Item | Estado |
+|---|---|
+| `gerar_op_latex` | Guarda `ops.lote_id -> lotes.pedido_id` antes de numerar/criar OP. |
+| `gerar_op_latex_split` | Mesma guarda antes de numerar/criar split. |
+| OP origem sem lote/Pedido | Erro controlado; nenhuma OP filha criada. |
+| OP origem com Pedido | Fluxo da `db/29` preservado. |
+| Diagnostico de orfaos | Lista contexto individual e classificacao A/B/C/D, read-only. |
+| Staging | Migration pronta; aplicacao ainda pendente. |
+
+Dados historicos permanecem somente diagnosticados: `0` OPs com `lote_id NULL`,
+`11` OPs cujo `lote.pedido_id IS NULL`, `9` lotes sem Pedido vinculados a OPs.
+Classificacao desta rodada: A=6 (`op_id` 1,2,3,4,9,15), B=4 (`op_id`
+5,6,7,8), C=0, D=1 (`op_id` 10). Sem cleanup/backfill, sem constraint global,
+sem producao.
+
 # Atualizacao 2026-07-06 - OP Operational Code Closeout C
 
 # Atualizacao 2026-07-06 - OP Operational Code Admin Wide Expand D
