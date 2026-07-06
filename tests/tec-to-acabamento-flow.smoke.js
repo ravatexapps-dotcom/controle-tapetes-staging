@@ -660,11 +660,13 @@ test('split-UI-B caso 11: estático — abrirEdicaoAdmin NÃO passa comOpcaoSpli
     'abrirEdicaoAdmin nao deve passar comOpcaoSplit (edicao nao altera decisao de split)');
 });
 
-test('split-UI-B caso 12: estático — pedido-detail-events.js "Transferir restante" preservado', () => {
+test('split-UI-B caso 12: estático — pedido-detail-events.js NAO tem "Transferir restante" duplicado (unificado com "Preencher restante" no form)', () => {
   var PDE = path.join(ROOT, 'js', 'screens', 'pedido-detail-events.js');
   var pdeSrc = fs.readFileSync(PDE, 'utf8');
-  assert.match(pdeSrc, /Transferir restante/,
-    '"Transferir restante" deve continuar preservado no pedido-detail-events.js');
+  assert.doesNotMatch(pdeSrc, /Transferir restante/,
+    '"Transferir restante" foi removido — "Preencher restante" ja existe no form canonico');
+  assert.match(pdeSrc, /Preencher restante/,
+    '"Preencher restante" continua preservado no form canonico');
 });
 
 test('split-UI-B caso 13: estático — pedido-detail-events.js NAO referencia gerar_op_latex_split diretamente', () => {

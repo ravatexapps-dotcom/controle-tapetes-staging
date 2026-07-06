@@ -5181,3 +5181,74 @@ movimentacao e determinada pelo estagio do Pedido.
   - Sem `git add .`.
   - `supabase/.temp` fora do commit.
   - Sem SQL/migration.
+
+---
+
+# Estado pos-fase - Modal/Footer/Transfer UX B
+
+- Fase: `RAVATEX-TAPETES-MODAL-FOOTER-TRANSFER-UX-B`.
+- Status: **PATCH MODAL/FOOTER/TRANSFER UX PRONTO — AGUARDANDO RETESTE DO USUARIO**.
+- Branch/HEAD base: `work/app-next`, `90a1f80`; status inicial somente
+  `?? supabase/.temp/`; `origin` somente leitura; producao intocada.
+
+- **Entregas (P1):**
+
+  1. **Dialogo de finalizar OP padronizado.**
+     (`js/ui.js`). O `confirmDialog` agora encaminha o parametro `danger`
+     (default `true`) para `modal()`. Quando `danger=true`, o botao de
+     confirmacao usa cor vermelha (`bg-red-600 hover:bg-red-700`).
+     Quando `danger=false`, mantem o azul padrao. Ordem de botoes
+     preservada: Cancelar (esquerda), Confirmar (direita). Handlers de
+     finalizar OP (`alterar_status_op` via `finalizarOp`) intocados.
+
+  2. **Mensagens/toasts acima do modal.**
+     (`index.html`). O container `#toasts` tinha `z-50` mas o modal de
+     transicao (`openMovementModal`) usa `z-index:200`. Aumentado para
+     `z-[250]` para que toasts de feedback (sucesso/erro) aparecam
+     acima do overlay do modal, sem esconder botoes criticos.
+
+  3. **Footer de OPs vinculadas alinhado.**
+     (`js/screens/pedido-detail-render.js:buildFooterAction`).
+     Botoes `flex:1` ganharam `min-height:34px`, `white-space:nowrap`,
+     `box-sizing:border-box`, `line-height:1.2` e padding horizontal
+     (`padding:6px 4px`). Isso evita que labels longos (ex. "Liberar
+     expedicao", "Ver movimento") quebrem linha e deixem o botao mais
+     alto que os vizinhos no grupo da esquerda.
+
+  4. **"Transferir restante" unificado com "Preencher restante".**
+     (`js/screens/pedido-detail-events.js`). Removido o botao
+     "Transferir restante" do `transferBlock` no `openMovementModal`.
+     Ambos faziam a mesma acao (`fillRemaining`). O link "Preencher
+     restante" no cabecalho do form canonico (stacked) permanece como
+     acao auxiliar. Calculo de quantidade e handler `fillRemaining`
+     preservados.
+
+- **Arquivos alterados:**
+  - `js/ui.js` (confirmDialog encaminha danger; modal aceita danger
+    e aplica cor vermelha)
+  - `index.html` (`#toasts` z-50 → z-[250])
+  - `js/screens/pedido-detail-render.js` (buildFooterAction compacto e
+    alinhado)
+  - `js/screens/pedido-detail-events.js` (removido "Transferir restante")
+  - `tests/pedido-detail.smoke.js` (testes atualizados para remocao do
+    duplicado)
+  - `tests/tec-to-acabamento-flow.smoke.js` (teste split-UI-B caso 12
+    atualizado)
+
+- **Nao alterado:** schema, migrations, RPCs, SQL, handlers produtivos,
+  fluxo Tecelagem→Acabamento.
+
+- **Testes:**
+  - `node --test tests/pedido-detail.smoke.js` — 172/172 OK.
+  - `node --test tests/op-latex-admin.smoke.js` — 55/55 OK.
+  - `node --test tests/tec-to-acabamento-flow.smoke.js` — 39/39 OK.
+  - `node --test tests/pedido-detail-linked-ops.smoke.js` — 7/7 OK.
+  - `node --test tests/expedicao-flow.smoke.js` — 8/8 OK.
+  - `node --test tests/expedicao-partial-flow.smoke.js` — 12/12 OK.
+
+- **Garantias:**
+  - Producao intocada.
+  - `origin` nao usado para escrita.
+  - Sem `git add .`.
+  - `supabase/.temp` fora do commit.
+  - Sem SQL/migration.

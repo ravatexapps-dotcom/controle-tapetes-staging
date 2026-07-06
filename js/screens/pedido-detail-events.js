@@ -2048,15 +2048,7 @@
               transferForm
                 ? transferForm.node
                 : window.el('div', { style: 'font-size:13px;color:#8a93a3;line-height:1.5;' },
-                    'Nao ha formulario canonico disponivel para esta transicao no estado atual.'),
-              transferForm && transferForm.hasRemaining && typeof transferForm.fillRemaining === 'function'
-                ? window.el('div', { style: 'margin-top:10px;' },
-                    window.el('button', {
-                      type: 'button',
-                      style: 'display:inline-flex;align-items:center;gap:6px;background:#fff;color:#2563eb;border:1px solid #cfe0fb;border-radius:' + MOVEMENT_SURFACE_RADIUS + ';padding:7px 12px;font-size:12.5px;font-weight:600;font-family:inherit;cursor:pointer;',
-                      onclick: function () { transferForm.fillRemaining(); },
-                    }, 'Transferir restante'))
-                : null
+                    'Nao ha formulario canonico disponivel para esta transicao no estado atual.')
             )
           : null;
 

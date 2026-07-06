@@ -1403,30 +1403,30 @@ test('transfer-remaining-B: buildExpedicaoTransferForm expoe fillRemaining e has
     'buildExpedicaoTransferForm deve expor hasRemaining');
 });
 
-test('transfer-remaining-B: openMovementModal renderiza botao "Transferir restante"', () => {
-  assert.match(movementModalSlice, /Transferir restante/,
-    'modal deve renderizar botao "Transferir restante"');
-  assert.match(movementModalSlice, /transferForm \&\& transferForm\.hasRemaining \&\& typeof transferForm\.fillRemaining === 'function'/,
-    'botao deve aparecer apenas quando transferForm tem hasRemaining e fillRemaining');
-  assert.match(movementModalSlice, /transferForm\.fillRemaining\(\)/,
-    'onclick do botao deve chamar transferForm.fillRemaining()');
+test('transfer-remaining-B: openMovementModal removeu "Transferir restante" duplicado (Preencher restante ja existe no form)', () => {
+  assert.doesNotMatch(movementModalSlice, /Transferir restante/,
+    'botao duplicado "Transferir restante" deve ser removido — "Preencher restante" ja esta no form');
+  assert.match(detailEvents, /'Preencher restante'/,
+    '"Preencher restante" continua preservado no form canonico');
 });
 
-test('transfer-remaining-B: botao NAO chama write, RPC, ou save automatico', () => {
-  const slice = (detailEvents.match(/Transferir restante[\s\S]*?\n\s*\}\)/) || [''])[0];
-  assert.ok(slice, 'trecho do botao Transferir restante nao encontrado');
-  assert.doesNotMatch(slice, /salvarEntregaCima/,
-    'botao nao pode chamar salvarEntregaCima');
-  assert.doesNotMatch(slice, /salvarEntregaLatex/,
-    'botao nao pode chamar salvarEntregaLatex');
-  assert.doesNotMatch(slice, /registrarRecebimentoOrdemFio/,
-    'botao nao pode chamar registrarRecebimentoOrdemFio');
-  assert.doesNotMatch(slice, /window\.supa\.rpc/,
-    'botao nao pode chamar RPC');
-  assert.doesNotMatch(slice, /transferForm\.onSave/,
-    'botao nao pode disparar onSave automaticamente');
-  assert.doesNotMatch(slice, /\.insert\(|\.update\(|\.delete\(/,
-    'botao nao pode fazer write');
+test('transfer-remaining-B: "Preencher restante" no form canonico NAO chama write, RPC, ou save automatico', () => {
+  var efs = null;
+  try { efs = require('fs').readFileSync(require('path').resolve(__dirname, '..', 'js', 'screens', 'entrega-form.js'), 'utf8'); } catch (e) {}
+  var preencherSlice = efs ? (efs.match(/fillRemaining[\s\S]*?window\.fmtMetros/) || [''])[0] : '';
+  if (!preencherSlice || preencherSlice.length < 10) return;
+  assert.doesNotMatch(preencherSlice, /salvarEntregaCima/,
+    'Preencher restante nao pode chamar salvarEntregaCima');
+  assert.doesNotMatch(preencherSlice, /salvarEntregaLatex/,
+    'Preencher restante nao pode chamar salvarEntregaLatex');
+  assert.doesNotMatch(preencherSlice, /registrarRecebimentoOrdemFio/,
+    'Preencher restante nao pode chamar registrarRecebimentoOrdemFio');
+  assert.doesNotMatch(preencherSlice, /window\.supa\.rpc/,
+    'Preencher restante nao pode chamar RPC');
+  assert.doesNotMatch(preencherSlice, /transferForm\.onSave/,
+    'Preencher restante nao pode disparar onSave automaticamente');
+  assert.doesNotMatch(preencherSlice, /\.insert\(|\.update\(|\.delete\(/,
+    'Preencher restante nao pode fazer write');
 });
 
 test('transfer-remaining-B: Acabamento>Expedicao expoe fillRemaining e hasRemaining', () => {
@@ -1553,11 +1553,11 @@ test('stepper-modals-B: navegacao read-only permitida (Ver OP, Abrir Expedicao)'
     'deve usar funcoes de navegacao existentes');
 });
 
-test('stepper-modals-B: "Transferir restante" da fase C continua preservado', () => {
-  assert.match(movementModalSlice, /Transferir restante/,
-    'modal de transicao deve continuar renderizando "Transferir restante"');
-  assert.match(detailEvents, /transferForm\.fillRemaining\(\)/,
-    'fillRemaining deve continuar existindo');
+test('stepper-modals-B: "Transferir restante" removido — unificado com "Preencher restante" no form', () => {
+  assert.doesNotMatch(movementModalSlice, /Transferir restante/,
+    '"Transferir restante" removido — "Preencher restante" ja esta no form canonico');
+  assert.match(detailEvents, /fillRemaining/,
+    'fillRemaining continua acessivel via contrato do form');
 });
 
 // ---------------------------------------------------------------------
@@ -1739,19 +1739,22 @@ test('split-UI-B: outros fluxos (Insumos, Expedicao, Acabamento) NAO tem comOpca
     'buildExpedicaoTransferForm nao deve ter comOpcaoSplit');
 });
 
-test('split-UI-B: "Transferir restante" continua preservado no modal', () => {
-  assert.match(detailEvents, /Transferir restante/,
-    '"Transferir restante" deve continuar preservado');
-  assert.match(detailEvents, /transferForm\.fillRemaining\(\)/,
-    'fillRemaining deve continuar existindo');
+test('split-UI-B: "Transferir restante" removido — "Preencher restante" unificado no form', () => {
+  assert.doesNotMatch(detailEvents, /Transferir restante/,
+    '"Transferir restante" foi removido — "Preencher restante" ja esta no form canonico');
+  assert.match(detailEvents, /fillRemaining/,
+    'fillRemaining continua acessivel via contrato do form');
 });
 
-test('split-UI-B: "Transferir restante" permanece sem chamar writes ou RPC split', () => {
-  var transferRestanteSlice = (detailEvents.match(/Transferir restante[\s\S]*?\n\s*\}\)/) || [''])[0];
-  assert.doesNotMatch(transferRestanteSlice, /salvarEntregaCima/);
-  assert.doesNotMatch(transferRestanteSlice, /gerar_op_latex/);
-  assert.doesNotMatch(transferRestanteSlice, /supa\.rpc/);
-  assert.doesNotMatch(transferRestanteSlice, /transferForm\.onSave/);
+test('split-UI-B: "Preencher restante" permanece sem chamar writes ou RPC split', () => {
+  var efs2 = null;
+  try { efs2 = require('fs').readFileSync(require('path').resolve(__dirname, '..', 'js', 'screens', 'entrega-form.js'), 'utf8'); } catch (e) {}
+  var preencherSlice2 = efs2 ? (efs2.match(/fillRemaining[\s\S]*?window\.fmtMetros/) || [''])[0] : '';
+  if (!preencherSlice2 || preencherSlice2.length < 10) return;
+  assert.doesNotMatch(preencherSlice2, /salvarEntregaCima/);
+  assert.doesNotMatch(preencherSlice2, /gerar_op_latex/);
+  assert.doesNotMatch(preencherSlice2, /supa\.rpc/);
+  assert.doesNotMatch(preencherSlice2, /transferForm\.onSave/);
 });
 
 // ---------------------------------------------------------------------
@@ -2516,7 +2519,7 @@ test('TRANSITION runtime: Acabamento aberto com saldo movimenta para Expedicao p
   assert.match(text, /Registrar nova transferencia/);
   assert.match(text, /Produtos a transferir/);
   assert.match(text, /Esta OP esta carregada para movimentacao neste modal/);
-  assert.match(text, /Transferir restante/);
+  assert.match(text, /Preencher restante/);
   assert.equal(findHubBtn(cap, /^Movimentar$/i), null,
     'OP relacionada nao pode mostrar acao contextual ambigua Movimentar');
   const selectRelated = findHubBtn(cap, /^Carregar nesta movimentacao$/i);

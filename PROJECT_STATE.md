@@ -1,59 +1,56 @@
 > **Atualizacao 2026-07-06 - fase
-> `RAVATEX-TAPETES-OP-ACTION-BAR-UX-CLEANUP-A`.**
-> Status: **PATCH OP ACTION BAR UX PRONTO — AGUARDANDO RETESTE DO USUARIO**.
+> `RAVATEX-TAPETES-MODAL-FOOTER-TRANSFER-UX-B`.**
+> Status: **PATCH MODAL/FOOTER/TRANSFER UX PRONTO — AGUARDANDO RETESTE DO USUARIO**.
 > Entrada: branch `work/app-next`, HEAD inicial
-> `05d96e2`; status inicial somente `?? supabase/.temp/`;
+> `90a1f80`; status inicial somente `?? supabase/.temp/`;
 > `origin` somente leitura e producao intocados.
 >
 > Fase anterior:
-> `RAVATEX-TAPETES-TEC-ACABAMENTO-TRANSFER-404-A` (HEAD
-> `05d96e2`).
+> `RAVATEX-TAPETES-OP-ACTION-BAR-UX-CLEANUP-A` (HEAD
+> `90a1f80`).
 >
 > Itens entregues (P1):
 >
-> 1. **Resumo da OP de Acabamento limpo.**
-> (`js/screens/op-latex-admin.js:buildRight`).
-> Removidos os hypertextos encavalados "Ir para OP de tecelagem" e
-> "Excluir OP" da coluna lateral `buildRight()` (status `aberta`).
-> O botao "Excluir OP" foi reposicionado na barra de acoes do header
-> (`buildHeaderProducao`) ao lado de "Finalizar OP", usando o helper
-> canonico `excluirOpLatex`.
+> 1. **Dialogo de finalizar OP padronizado.**
+> (`js/ui.js`). `confirmDialog` agora encaminha `danger` (default `true`)
+> para `modal()`. Botao de confirmacao usa vermelho (`bg-red-600`) quando
+> `danger=true`, azul padrao caso contrario. Cancelar mantido a esquerda,
+> Confirmar a direita. Handler `alterar_status_op` via `finalizarOp`
+> preservado.
 >
-> 2. **Barras/botoes de acao compactos e alinhados.**
-> - OP Tecelagem: criado `BTN_ACTION`
->   (`display:inline-flex;padding:7px 12px;font-size:12.5px`),
->   substituindo `BTN_BACK` (8px 16px / 13.5px) em todos os botoes
->   do header: Ver Pedido, Pausar, Ir para entregas, Excluir OP,
->   Finalizar OP, Documentos, Historico.
-> - OP Latex: `BTN_ACTION` reduzido ao mesmo padrao compacto.
-> - Labels encurtados:
->   - `'Abrir Pedido'` → `'Ver Pedido'` (OP Tecelagem + OP Latex)
->   - `'Finalizar OP Tecelagem'` → `'Finalizar OP'`
->   - `'Abrir OP'` → `'Ver OP'` nos cards e hub do Pedido Detail
->     (`pedido-detail-render.js`, `pedido-detail-events.js`)
->   - `'Abrir OP'`/`'Abrir pedido'` → `'Ver OP'`/`'Ver pedido'`
->     em `expedicao-admin.js`
-> - Preservado `'Abrir OP'` em `op-nova.js:1228` (acao de iniciar
->   producao, nao apenas visualizar OP ja aberta).
+> 2. **Toasts visiveis acima do modal de transicao.**
+> (`index.html:69`). Container `#toasts` alterado de `z-50` para
+> `z-[250]`, acima do overlay do `openMovementModal` (`z-index:200`).
+> Sem novo sistema de toast, sem gambiarra de z-index.
+>
+> 3. **Footer de OPs vinculadas com alinhamento consistente.**
+> (`js/screens/pedido-detail-render.js:buildFooterAction`).
+> Botoes `flex:1` ganharam `min-height:34px`, `white-space:nowrap`,
+> `box-sizing:border-box`, padding horizontal. Labels longos (ex.
+> "Liberar expedicao") nao quebram linha nem desalinham o grupo.
+>
+> 4. **"Transferir restante" unificado com "Preencher restante".**
+> (`js/screens/pedido-detail-events.js:openMovementModal`).
+> Botao duplicado removido do `transferBlock`. "Preencher restante"
+> no form canonico (stacked) permanece como acao auxiliar. `fillRemaining`
+> preservado.
 >
 > - **Arquivos alterados:**
->   - `js/screens/op-tecelagem-producao-admin.js`
->   - `js/screens/op-latex-admin.js`
+>   - `js/ui.js`
+>   - `index.html`
 >   - `js/screens/pedido-detail-render.js`
 >   - `js/screens/pedido-detail-events.js`
->   - `js/screens/expedicao-admin.js`
->   - `tests/tec-to-acabamento-flow.smoke.js`
 >   - `tests/pedido-detail.smoke.js`
-> - **Nao alterado:** schema, migrations, RPCs, fluxo produtivo,
->   handlers canonicos.
-> - **Testes:**
->   - `node --test tests/tec-to-acabamento-flow.smoke.js` — 39/39 OK.
->   - `node --test tests/pedido-detail.smoke.js` — 172/172 OK.
->   - `node --test tests/op-latex-admin.smoke.js` — 55/55 OK.
->   - `node --test tests/pedido-detail-linked-ops.smoke.js` — 7/7 OK.
-> - **Garantias:** producao intocada; `origin` nao usado para escrita;
->   sem `git add .`; `supabase/.temp` fora do commit; handlers
->   preservados.
+>   - `tests/tec-to-acabamento-flow.smoke.js`
+> - **Nao alterado:** schema, migrations, RPCs, handlers.
+> - **Testes:** `pedido-detail.smoke.js` 172/172,
+>   `op-latex-admin.smoke.js` 55/55,
+>   `tec-to-acabamento-flow.smoke.js` 39/39,
+>   `pedido-detail-linked-ops.smoke.js` 7/7,
+>   `expedicao-flow.smoke.js` 8/8,
+>   `expedicao-partial-flow.smoke.js` 12/12.
+> - **Garantias:** producao intocada; `origin` nao usado; sem
+>   `git add .`; `supabase/.temp` fora do commit.
 >
 > ---
 >

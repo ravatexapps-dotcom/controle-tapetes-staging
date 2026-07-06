@@ -45,7 +45,7 @@ function setApp(node) {
 
 // --- Modal genérico ---
 // Uso: modal({title, body: node, onSave, saveLabel='Salvar'})
-function modal({ title, body, onSave, saveLabel = 'Salvar', onClose }) {
+function modal({ title, body, onSave, saveLabel = 'Salvar', onClose, danger = false }) {
   const overlay = el('div', {
     class: 'fixed inset-0 bg-black/40 flex items-center justify-center p-4 z-40',
     onclick: (e) => { if (e.target === overlay) close(); }
@@ -71,7 +71,7 @@ function modal({ title, body, onSave, saveLabel = 'Salvar', onClose }) {
   const btnCancel = el('button', { type: 'button',
     class: 'px-4 py-2 rounded border border-[#d8dce2] text-[#3f4757] font-semibold hover:bg-gray-50', onclick: close }, 'Cancelar');
   const btnSave = el('button', { type: 'button',
-    class: 'px-5 py-2 rounded bg-[#2563eb] hover:bg-[#1e56d6] text-white font-bold',
+    class: 'px-5 py-2 rounded text-white font-bold ' + (danger ? 'bg-red-600 hover:bg-red-700' : 'bg-[#2563eb] hover:bg-[#1e56d6]'),
     onclick: async () => {
       btnSave.disabled = true;
       btnSave.textContent = 'Salvando...';
@@ -103,6 +103,7 @@ function confirmDialog({ title, message, confirmLabel = 'Confirmar', danger = tr
     title,
     body,
     saveLabel: confirmLabel,
+    danger: danger,
     onSave: async () => {
       await onConfirm();
     }
