@@ -3,6 +3,7 @@ import { dirname } from 'node:path';
 import { config } from '../config.js';
 import type { DocumentEvent } from '../types/event.js';
 import { getDb } from '../storage/sqlite.js';
+import { buildStorageUri } from '../types/document.js';
 
 export function appendEvent(event: DocumentEvent): void {
   const dir = dirname(config.outboxPath);
@@ -21,7 +22,9 @@ export function exportPendingEvents(): DocumentEvent[] {
   const events: DocumentEvent[] = [];
   for (const row of rows) {
     const doc = database.prepare(
-      `SELECT d.*, e.pedido_manual, e.event_type, e.status AS event_status
+      `SELECT d.*, e.pedido_manual, e.event_type, e.status AS event_status,
+              e.storage_uri, e.drive_file_id, e.drive_web_view_link,
+              e.manifest_storage_uri
        FROM ingestion_events e
        JOIN documentos d ON d.id = e.document_id
        WHERE e.id = ?`
@@ -42,6 +45,9 @@ export function exportPendingEvents(): DocumentEvent[] {
 }
 
 function buildEventFromRow(row: any): DocumentEvent {
+  const driveFileId: string = row.drive_file_id ?? '';
+  const storageUri: string = row.storage_uri ?? (driveFileId ? buildStorageUri(driveFileId) : '');
+
   return {
     schema_version: 1,
     event_type: 'document.detected',
@@ -56,8 +62,14 @@ function buildEventFromRow(row: any): DocumentEvent {
       tipo_documento: row.tipo_documento,
       filename_original: row.filename_original,
       sha256: row.sha256,
-      local_path: row.local_path,
-      manifest_path: row.manifest_path ?? '',
+      storage_backend: 'google_drive',
+      storage_uri: storageUri,
+      drive_file_id: driveFileId,
+      drive_folder_id: row.drive_folder_id,
+      drive_web_view_link: row.drive_web_view_link,
+      drive_web_content_link: row.drive_web_content_link,
+      local_cache_path: row.local_cache_path,
+      manifest_storage_uri: row.manifest_storage_uri,
     },
     status: row.event_status,
   };

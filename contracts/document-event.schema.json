@@ -1,7 +1,7 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "title": "DocumentEvent",
-  "description": "Evento gerado quando um documento é detectado e atribuído a um Pedido no Ravatex Documents Ingestor. Este evento é escrito no outbox local (JSONL) para consumo futuro pelo app principal (Controle de Tapetes).",
+  "description": "Evento gerado quando um documento é detectado e atribuído a um Pedido no Ravatex Documents Ingestor. Os documentos vivem no Google Drive (mesma conta do Gmail). Este evento é escrito no outbox local (JSONL) para consumo futuro pelo app principal (Controle de Tapetes).",
   "type": "object",
   "required": [
     "schema_version",
@@ -18,42 +18,32 @@
   "properties": {
     "schema_version": {
       "type": "integer",
-      "const": 1,
-      "description": "Versão do schema do evento para rastreamento de quebras futuras"
+      "const": 1
     },
     "event_type": {
       "type": "string",
-      "enum": ["document.detected"],
-      "description": "Tipo do evento. No momento apenas document.detected está definido."
+      "enum": ["document.detected"]
     },
     "event_id": {
       "type": "string",
-      "format": "uuid",
-      "description": "UUID v4 único do evento"
+      "format": "uuid"
     },
     "created_at": {
       "type": "string",
-      "format": "date-time",
-      "description": "Timestamp ISO 8601 de quando o evento foi gerado"
+      "format": "date-time"
     },
     "pedido_manual": {
       "type": "string",
       "pattern": "^PED-\\d{2}-\\d{4}$",
-      "description": "Identificador normalizado do Pedido (PED-XX-YYYY). Atribuído manualmente — o sistema nunca tenta inferir o Pedido automaticamente."
+      "description": "Identificador normalizado do Pedido (PED-XX-YYYY)."
     },
     "source": {
       "type": "string",
       "enum": ["gmail"],
-      "description": "Origem do documento. Atualmente apenas gmail."
+      "description": "Origem do anexo (origem dos dados). O storage canônico é sempre google_drive, independente de source."
     },
-    "gmail_message_id": {
-      "type": "string",
-      "description": "ID da mensagem no Gmail"
-    },
-    "thread_id": {
-      "type": "string",
-      "description": "ID da thread no Gmail"
-    },
+    "gmail_message_id": { "type": "string" },
+    "thread_id": { "type": "string" },
     "document": {
       "type": "object",
       "required": [
@@ -61,43 +51,43 @@
         "tipo_documento",
         "filename_original",
         "sha256",
-        "local_path",
-        "manifest_path"
+        "storage_backend",
+        "storage_uri",
+        "drive_file_id"
       ],
       "properties": {
-        "document_id": {
-          "type": "string",
-          "format": "uuid",
-          "description": "UUID v4 único do documento"
-        },
+        "document_id": { "type": "string", "format": "uuid" },
         "tipo_documento": {
           "type": "string",
-          "enum": ["nf_xml", "nf_pdf", "romaneio", "desconhecido"],
-          "description": "Classificação do tipo de documento"
+          "enum": ["nf_xml", "nf_pdf", "romaneio", "desconhecido"]
         },
-        "filename_original": {
+        "filename_original": { "type": "string" },
+        "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+        "storage_backend": {
           "type": "string",
-          "description": "Nome original do anexo"
+          "enum": ["google_drive"]
         },
-        "sha256": {
+        "storage_uri": {
           "type": "string",
-          "pattern": "^[a-f0-9]{64}$",
-          "description": "Hash SHA-256 do conteúdo do anexo"
+          "pattern": "^gdrive://file/.+"
         },
-        "local_path": {
+        "drive_file_id": { "type": "string" },
+        "drive_folder_id": { "type": "string" },
+        "drive_web_view_link": { "type": "string", "format": "uri" },
+        "drive_web_content_link": { "type": "string", "format": "uri" },
+        "local_cache_path": {
           "type": "string",
-          "description": "Caminho relativo para o arquivo dentro de data/documents/pedidos/"
+          "description": "Caminho do espelho local (cache). Não-canônico."
         },
-        "manifest_path": {
+        "manifest_storage_uri": {
           "type": "string",
-          "description": "Caminho relativo para o manifest.json do Pedido"
+          "pattern": "^gdrive://file/.+"
         }
       }
     },
     "status": {
       "type": "string",
-      "enum": ["pending_app_acceptance", "accepted", "rejected"],
-      "description": "Status do documento. pending_app_acceptance indica que o documento foi detectado e atribuído, mas aguarda aceite do usuário no app principal."
+      "enum": ["pending_app_acceptance", "accepted", "rejected"]
     }
   }
 }

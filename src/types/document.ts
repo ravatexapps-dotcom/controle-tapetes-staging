@@ -1,5 +1,7 @@
 export type TipoDocumento = 'nf_xml' | 'nf_pdf' | 'romaneio' | 'desconhecido';
 
+export type StorageBackend = 'google_drive';
+
 export interface RawAttachment {
   gmailMessageId: string;
   threadId: string;
@@ -17,7 +19,17 @@ export interface DocumentRecord {
   filenameOriginal: string;
   sha256: string;
   tipoDocumento: TipoDocumento;
-  localPath: string;
+
+  storageBackend: StorageBackend;
+  storageUri?: string;
+  driveFileId?: string;
+  driveFolderId?: string;
+  driveWebViewLink?: string;
+  driveWebContentLink?: string;
+
+  localCachePath?: string;
+  localPath?: string;
+
   pedidoManual: string | null;
   status: DocumentStatus;
   createdAt: string;
@@ -25,6 +37,10 @@ export interface DocumentRecord {
 }
 
 export type DocumentStatus = 'pending' | 'assigned' | 'accepted' | 'rejected';
+
+export function buildStorageUri(driveFileId: string): string {
+  return `gdrive://file/${driveFileId}`;
+}
 
 export function documentStatusFromEvent(s: string): DocumentStatus {
   const map: Record<string, DocumentStatus> = {

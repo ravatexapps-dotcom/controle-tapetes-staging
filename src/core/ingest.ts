@@ -1,17 +1,26 @@
 import { randomUUID } from 'node:crypto';
-import { createHash } from 'node:crypto';
-import { mkdirSync, writeFileSync, existsSync, copyFileSync } from 'node:fs';
+import { mkdirSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { getDb } from '../storage/sqlite.js';
 import { classifyAttachment } from './classifier.js';
 import { isDuplicate, isEmailProcessed, markEmailProcessed } from './dedupe.js';
-import { pendentePath } from './paths.js';
 import { appendEvent, isEventDuplicate } from './outbox.js';
 import { normalizePedido } from './pedido.js';
-import { addDocumentToManifest, loadManifest } from './manifest.js';
-import { pedidoPath, pedidoDocumentPath, manifestPath } from './paths.js';
+import { addDocumentToManifest } from './manifest.js';
+import {
+  pedidoSubfolderDrivePath,
+  manifestDrivePath,
+  localCacheRoot,
+} from './paths.js';
+import {
+  ensureRootFolder,
+  ensureFolderPath,
+  uploadDocument,
+  uploadManifest,
+} from '../connectors/drive.js';
 import { createDocumentEvent } from '../types/event.js';
-import type { RawAttachment, TipoDocumento } from '../types/document.js';
+import type { TipoDocumento } from '../types/document.js';
+import { config } from '../config.js';
 
 export async function scanGmail(options: { daysBack?: number } = {}): Promise<number> {
   console.log('[scanGmail] Structure prepared — Gmail connector not yet wired.');
@@ -23,12 +32,14 @@ export interface AssignResult {
   documentId: string;
   pedidoManual: string;
   eventId: string;
+  storageUri: string;
+  driveFileId: string;
 }
 
-export function assignPedido(
+export async function assignPedido(
   emailOrDocumentId: string,
   pedidoManual: string,
-): AssignResult | null {
+): Promise<AssignResult | null> {
   const normalized = normalizePedido(pedidoManual);
   if (!normalized) {
     console.error('Invalid pedido format:', pedidoManual);
@@ -54,40 +65,65 @@ export function assignPedido(
   const eventId = randomUUID();
   const tipo = doc.tipo_documento as TipoDocumento;
 
-  const destDir = pedidoPath(normalized);
-  if (!existsSync(destDir)) {
-    mkdirSync(destDir, { recursive: true });
-  }
+  const subfolder = pedidoSubfolderDrivePath(normalized, tipo);
+  const mPath = manifestDrivePath(normalized);
 
-  const destFile = pedidoDocumentPath(normalized, tipo, doc.filename_original);
-  const destDirFile = join(destDir, pdfSubfolder(tipo));
-  if (!existsSync(destDirFile)) {
-    mkdirSync(destDirFile, { recursive: true });
-  }
+  const folderRef = await ensureFolderPath(subfolder.logicalPath);
+  const upload = await uploadDocument({
+    folderLogicalPath: subfolder.logicalPath,
+    filename: doc.filename_original,
+    mimeType: 'application/octet-stream',
+  });
+  void mPath;
 
-  const destPath = destFile;
-  const pendingPath = doc.local_path;
-  if (existsSync(pendingPath)) {
-    copyFileSync(pendingPath, destPath);
-  }
+  const localCacheFilePath = join(localCacheRoot(), 'pedidos', normalized, subfolder.logicalPath.split('/').slice(-2).join('/'), doc.filename_original);
+  ensureLocalCacheDir(localCacheFilePath);
 
-  const mPath = manifestPath(normalized);
-  const relDestPath = join('pedidos', normalized, todayDir(), pdfSubfolder(tipo), doc.filename_original);
+  const manifestUpload = await uploadManifest({
+    pedido: normalized,
+    payload: { pedido: normalized, documents: [] },
+  });
 
-  addDocumentToManifest(mPath, normalized, {
+  addDocumentToManifest('/dev/null', normalized, {
     document_id: doc.id,
     tipo_documento: tipo,
     filename_original: doc.filename_original,
     sha256: doc.sha256,
-    local_path: relDestPath,
+    storage_backend: 'google_drive',
+    storage_uri: upload.file.storageUri,
+    drive_file_id: upload.file.driveFileId,
+    drive_folder_id: upload.file.driveFolderId,
+    drive_web_view_link: upload.file.driveWebViewLink,
+    drive_web_content_link: upload.file.driveWebContentLink,
+    local_cache_path: localCacheFilePath,
     ingested_at: new Date().toISOString(),
     event_id: eventId,
     status: 'pending_app_acceptance',
   });
 
   database.prepare(
-    `UPDATE documentos SET status = 'assigned', pedido_manual = ?, updated_at = datetime('now'), local_path = ? WHERE id = ?`
-  ).run(normalized, relDestPath, doc.id);
+    `UPDATE documentos
+     SET status = 'assigned',
+         pedido_manual = ?,
+         updated_at = datetime('now'),
+         storage_backend = 'google_drive',
+         storage_uri = ?,
+         drive_file_id = ?,
+         drive_folder_id = ?,
+         drive_web_view_link = ?,
+         drive_web_content_link = ?,
+         local_cache_path = ?
+     WHERE id = ?`
+  ).run(
+    normalized,
+    upload.file.storageUri,
+    upload.file.driveFileId,
+    upload.file.driveFolderId,
+    upload.file.driveWebViewLink,
+    upload.file.driveWebContentLink,
+    localCacheFilePath,
+    doc.id,
+  );
 
   const event = createDocumentEvent({
     eventId,
@@ -98,38 +134,57 @@ export function assignPedido(
     tipoDocumento: tipo,
     filenameOriginal: doc.filename_original,
     sha256: doc.sha256,
-    localPath: relDestPath,
-    manifestPath: join('pedidos', normalized, 'manifest.json'),
+    driveFileId: upload.file.driveFileId,
+    driveFolderId: upload.file.driveFolderId,
+    driveWebViewLink: upload.file.driveWebViewLink,
+    driveWebContentLink: upload.file.driveWebContentLink,
+    localCachePath: localCacheFilePath,
+    manifestStorageUri: manifestUpload.storageUri,
     status: 'pending_app_acceptance',
   });
 
   if (!isEventDuplicate(eventId)) {
     database.prepare(
-      `INSERT INTO ingestion_events (id, event_type, pedido_manual, document_id, status) VALUES (?, ?, ?, ?, ?)`
-    ).run(eventId, 'document.detected', normalized, doc.id, 'pending_app_acceptance');
+      `INSERT INTO ingestion_events (
+         id, event_type, pedido_manual, document_id, status,
+         storage_backend, storage_uri, drive_file_id, drive_web_view_link,
+         manifest_storage_uri, manifest_drive_file_id
+       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+    ).run(
+      eventId,
+      'document.detected',
+      normalized,
+      doc.id,
+      'pending_app_acceptance',
+      'google_drive',
+      event.document.storage_uri,
+      event.document.drive_file_id,
+      event.document.drive_web_view_link ?? null,
+      event.document.manifest_storage_uri ?? null,
+      manifestUpload.driveFileId,
+    );
 
     appendEvent(event);
   }
 
-  return { documentId: doc.id, pedidoManual: normalized, eventId };
-}
+  void folderRef;
+  void ensureRootFolder;
+  void config;
 
-function todayDir(): string {
-  const d = new Date();
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, '0');
-  const day = String(d.getDate()).padStart(2, '0');
-  return `${y}-${m}-${day}`;
-}
-
-function pdfSubfolder(tipo: TipoDocumento): string {
-  const map: Record<TipoDocumento, string> = {
-    nf_pdf: 'nf',
-    nf_xml: 'nf',
-    romaneio: 'romaneio',
-    desconhecido: 'desconhecido',
+  return {
+    documentId: doc.id,
+    pedidoManual: normalized,
+    eventId,
+    storageUri: upload.file.storageUri,
+    driveFileId: upload.file.driveFileId,
   };
-  return map[tipo];
+}
+
+function ensureLocalCacheDir(filePath: string): void {
+  const idx = filePath.lastIndexOf('\\') >= 0 ? filePath.lastIndexOf('\\') : filePath.lastIndexOf('/');
+  if (idx === -1) return;
+  const dir = filePath.slice(0, idx);
+  if (!existsSync(dir)) mkdirSync(dir, { recursive: true });
 }
 
 export function listPending(): any[] {

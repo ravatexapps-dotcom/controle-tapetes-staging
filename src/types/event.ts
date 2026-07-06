@@ -1,5 +1,25 @@
 export type EventStatus = 'pending_app_acceptance' | 'accepted' | 'rejected';
 
+export type StorageBackend = 'google_drive';
+
+export interface DocumentEventDocument {
+  document_id: string;
+  tipo_documento: string;
+  filename_original: string;
+  sha256: string;
+
+  storage_backend: StorageBackend;
+  storage_uri: string;
+  drive_file_id: string;
+  drive_folder_id?: string;
+  drive_web_view_link?: string;
+  drive_web_content_link?: string;
+
+  local_cache_path?: string;
+
+  manifest_storage_uri?: string;
+}
+
 export interface DocumentEvent {
   schema_version: 1;
   event_type: 'document.detected';
@@ -9,14 +29,7 @@ export interface DocumentEvent {
   source: 'gmail';
   gmail_message_id: string;
   thread_id: string;
-  document: {
-    document_id: string;
-    tipo_documento: string;
-    filename_original: string;
-    sha256: string;
-    local_path: string;
-    manifest_path: string;
-  };
+  document: DocumentEventDocument;
   status: EventStatus;
 }
 
@@ -29,8 +42,12 @@ export function createDocumentEvent(params: {
   tipoDocumento: string;
   filenameOriginal: string;
   sha256: string;
-  localPath: string;
-  manifestPath: string;
+  driveFileId: string;
+  driveFolderId?: string;
+  driveWebViewLink?: string;
+  driveWebContentLink?: string;
+  localCachePath?: string;
+  manifestStorageUri?: string;
   status?: EventStatus;
 }): DocumentEvent {
   return {
@@ -47,8 +64,14 @@ export function createDocumentEvent(params: {
       tipo_documento: params.tipoDocumento,
       filename_original: params.filenameOriginal,
       sha256: params.sha256,
-      local_path: params.localPath,
-      manifest_path: params.manifestPath,
+      storage_backend: 'google_drive',
+      storage_uri: `gdrive://file/${params.driveFileId}`,
+      drive_file_id: params.driveFileId,
+      drive_folder_id: params.driveFolderId,
+      drive_web_view_link: params.driveWebViewLink,
+      drive_web_content_link: params.driveWebContentLink,
+      local_cache_path: params.localCachePath,
+      manifest_storage_uri: params.manifestStorageUri,
     },
     status: params.status ?? 'pending_app_acceptance',
   };

@@ -9,7 +9,11 @@ CREATE TABLE IF NOT EXISTS emails_processados (
   attachments_count INTEGER NOT NULL DEFAULT 0
 );
 
--- documentos: cada anexo baixado
+-- documentos: cada anexo detectado.
+-- O armazenamento canônico é Google Drive (storage_backend='google_drive').
+-- local_cache_path é apenas cache/mirror local, nunca fonte canônica.
+-- local_path é mantido apenas para compatibilidade com scaffold anterior
+-- e representa cache local, não a fonte de verdade.
 CREATE TABLE IF NOT EXISTS documentos (
   id TEXT PRIMARY KEY,
   gmail_message_id TEXT NOT NULL,
@@ -19,7 +23,20 @@ CREATE TABLE IF NOT EXISTS documentos (
   sha256 TEXT NOT NULL,
   tipo_documento TEXT NOT NULL DEFAULT 'desconhecido'
     CHECK (tipo_documento IN ('nf_xml', 'nf_pdf', 'romaneio', 'desconhecido')),
-  local_path TEXT NOT NULL,
+
+  -- Storage canônico (Drive-first)
+  storage_backend TEXT NOT NULL DEFAULT 'google_drive'
+    CHECK (storage_backend IN ('google_drive')),
+  storage_uri TEXT,
+  drive_file_id TEXT,
+  drive_folder_id TEXT,
+  drive_web_view_link TEXT,
+  drive_web_content_link TEXT,
+
+  -- Cache local (não-canônico)
+  local_cache_path TEXT,
+  local_path TEXT,
+
   pedido_manual TEXT,
   status TEXT NOT NULL DEFAULT 'pending'
     CHECK (status IN ('pending', 'assigned', 'accepted', 'rejected')),
@@ -31,12 +48,25 @@ CREATE TABLE IF NOT EXISTS documentos (
 CREATE UNIQUE INDEX IF NOT EXISTS idx_documentos_dedup
   ON documentos(gmail_message_id, attachment_id, sha256);
 
--- ingestion_events: eventos gerados no outbox JSONL
+CREATE INDEX IF NOT EXISTS idx_documentos_drive_file_id
+  ON documentos(drive_file_id);
+
+-- ingestion_events: eventos gerados no outbox JSONL.
+-- Carregam referências Drive (storage_uri, drive_file_id, manifest_storage_uri).
 CREATE TABLE IF NOT EXISTS ingestion_events (
   id TEXT PRIMARY KEY,
   event_type TEXT NOT NULL DEFAULT 'document.detected',
   pedido_manual TEXT NOT NULL,
   document_id TEXT NOT NULL,
+
+  -- Referência Drive
+  storage_backend TEXT NOT NULL DEFAULT 'google_drive',
+  storage_uri TEXT,
+  drive_file_id TEXT,
+  drive_web_view_link TEXT,
+  manifest_storage_uri TEXT,
+  manifest_drive_file_id TEXT,
+
   status TEXT NOT NULL DEFAULT 'pending_app_acceptance'
     CHECK (status IN ('pending_app_acceptance', 'accepted', 'rejected')),
   created_at TEXT NOT NULL DEFAULT (datetime('now')),

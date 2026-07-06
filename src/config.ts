@@ -32,8 +32,14 @@ export const config = {
   googleClientSecret: env.GOOGLE_CLIENT_SECRET ?? '',
   googleRedirectUri: env.GOOGLE_REDIRECT_URI ?? '',
   googleTokenPath: resolve(process.cwd(), env.GOOGLE_TOKEN_PATH ?? './data/google-token.json'),
+
+  googleDriveRootFolderName: env.GOOGLE_DRIVE_ROOT_FOLDER_NAME ?? 'Ravatex Documents Ingestor',
+  googleDriveRootFolderId: env.GOOGLE_DRIVE_ROOT_FOLDER_ID ?? '',
+  googleDriveCreateMissingFolders: (env.GOOGLE_DRIVE_CREATE_MISSING_FOLDERS ?? 'true').toLowerCase() === 'true',
+
+  localCachePath: resolve(process.cwd(), env.LOCAL_CACHE_PATH ?? './data/cache'),
+
   databasePath: resolve(process.cwd(), env.DATABASE_PATH ?? './data/app.db'),
-  documentRootPath: resolve(process.cwd(), env.DOCUMENT_ROOT_PATH ?? './data/documents'),
   outboxPath: resolve(process.cwd(), env.OUTBOX_PATH ?? './data/outbox/document-events.jsonl'),
   scanDaysBack: parseInt(env.SCAN_DAYS_BACK ?? '7', 10),
 };

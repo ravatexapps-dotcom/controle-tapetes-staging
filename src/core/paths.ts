@@ -1,6 +1,12 @@
 import { config } from '../config.js';
-import { join } from 'node:path';
 import type { TipoDocumento } from '../types/document.js';
+
+export interface DriveLogicalPath {
+  backend: 'google_drive';
+  rootFolderName: string;
+  logicalPath: string;
+  folderUri?: string;
+}
 
 function todayDir(): string {
   const d = new Date();
@@ -10,8 +16,8 @@ function todayDir(): string {
   return `${y}-${m}-${day}`;
 }
 
-export function pendentePath(gmailMessageId: string): string {
-  return join(config.documentRootPath, 'pendentes', todayDir(), `email-${gmailMessageId}`);
+function rootName(): string {
+  return config.googleDriveRootFolderName;
 }
 
 export function pdfSubfolder(tipo: TipoDocumento): string {
@@ -24,14 +30,53 @@ export function pdfSubfolder(tipo: TipoDocumento): string {
   return map[tipo];
 }
 
-export function pedidoPath(pedidoManual: string): string {
-  return join(config.documentRootPath, 'pedidos', pedidoManual, todayDir());
+export function pendenteDrivePath(gmailMessageId: string): DriveLogicalPath {
+  return {
+    backend: 'google_drive',
+    rootFolderName: rootName(),
+    logicalPath: `${rootName()}/pendentes/${todayDir()}/email-${gmailMessageId}`,
+  };
 }
 
-export function pedidoDocumentPath(pedidoManual: string, tipo: TipoDocumento, filename: string): string {
-  return join(pedidoPath(pedidoManual), pdfSubfolder(tipo), filename);
+export function pedidoDrivePath(pedidoManual: string): DriveLogicalPath {
+  return {
+    backend: 'google_drive',
+    rootFolderName: rootName(),
+    logicalPath: `${rootName()}/pedidos/${pedidoManual}/${todayDir()}`,
+  };
 }
 
-export function manifestPath(pedidoManual: string): string {
-  return join(config.documentRootPath, 'pedidos', pedidoManual, 'manifest.json');
+export function pedidoDocumentDrivePath(
+  pedidoManual: string,
+  tipo: TipoDocumento,
+  filename: string,
+): DriveLogicalPath {
+  return {
+    backend: 'google_drive',
+    rootFolderName: rootName(),
+    logicalPath: `${rootName()}/pedidos/${pedidoManual}/${todayDir()}/${pdfSubfolder(tipo)}/${filename}`,
+  };
+}
+
+export function pedidoSubfolderDrivePath(
+  pedidoManual: string,
+  tipo: TipoDocumento,
+): DriveLogicalPath {
+  return {
+    backend: 'google_drive',
+    rootFolderName: rootName(),
+    logicalPath: `${rootName()}/pedidos/${pedidoManual}/${todayDir()}/${pdfSubfolder(tipo)}`,
+  };
+}
+
+export function manifestDrivePath(pedidoManual: string): DriveLogicalPath {
+  return {
+    backend: 'google_drive',
+    rootFolderName: rootName(),
+    logicalPath: `${rootName()}/pedidos/${pedidoManual}/manifest.json`,
+  };
+}
+
+export function localCacheRoot(): string {
+  return config.localCachePath;
 }

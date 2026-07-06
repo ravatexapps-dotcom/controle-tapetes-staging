@@ -1,7 +1,6 @@
 #!/usr/bin/env node
 import { Command } from 'commander';
 import { scanGmail, listPending, assignPedido, exportPendingEvents } from './index.js';
-import { getDb, getDbPath } from './storage/sqlite.js';
 
 const program = new Command();
 
@@ -38,10 +37,10 @@ program
   .description('Assign a document to a Pedido')
   .requiredOption('--id <id>', 'Document ID or Gmail message ID')
   .requiredOption('--pedido <pedido>', 'Pedido number (e.g. 25/2026)')
-  .action((opts) => {
-    const result = assignPedido(opts.id, opts.pedido);
+  .action(async (opts) => {
+    const result = await assignPedido(opts.id, opts.pedido);
     if (result) {
-      console.log('Assigned: document=%s pedido=%s event=%s', result.documentId, result.pedidoManual, result.eventId);
+      console.log('Assigned: document=%s pedido=%s event=%s storage=%s', result.documentId, result.pedidoManual, result.eventId, result.storageUri);
     } else {
       process.exit(1);
     }

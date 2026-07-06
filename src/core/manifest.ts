@@ -1,13 +1,23 @@
-import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'node:fs';
+import { writeFileSync, existsSync, mkdirSync, readFileSync } from 'node:fs';
 import { dirname } from 'node:path';
-import type { TipoDocumento } from '../types/document.js';
+import type { TipoDocumento, StorageBackend } from '../types/document.js';
 
 export interface ManifestDocument {
   document_id: string;
   tipo_documento: TipoDocumento;
   filename_original: string;
   sha256: string;
-  local_path: string;
+
+  storage_backend: StorageBackend;
+  storage_uri: string;
+  drive_file_id: string;
+  drive_folder_id?: string;
+  drive_web_view_link?: string;
+  drive_web_content_link?: string;
+
+  local_cache_path?: string;
+  local_path?: string;
+
   ingested_at: string;
   event_id: string;
   status: 'pending_app_acceptance' | 'accepted' | 'rejected';
@@ -18,6 +28,12 @@ export interface Manifest {
   pedido: string;
   created_at: string;
   updated_at: string;
+
+  storage_backend: StorageBackend;
+  manifest_storage_uri?: string;
+  manifest_drive_file_id?: string;
+  manifest_drive_web_view_link?: string;
+
   documents: ManifestDocument[];
 }
 
@@ -28,6 +44,7 @@ export function loadManifest(manifestPath: string): Manifest {
       pedido: '',
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
+      storage_backend: 'google_drive',
       documents: [],
     };
   }

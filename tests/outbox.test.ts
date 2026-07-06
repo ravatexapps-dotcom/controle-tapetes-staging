@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { existsSync, rmSync, readFileSync } from 'node:fs';
 import { appendEvent, isEventDuplicate } from '../src/core/outbox.js';
 import { config } from '../src/config.js';
+import { createDocumentEvent } from '../src/types/event.js';
 import type { DocumentEvent } from '../src/types/event.js';
 
 describe('outbox', () => {
@@ -15,32 +16,55 @@ describe('outbox', () => {
     if (existsSync(outboxPath)) rmSync(outboxPath);
   });
 
-  it('appends event to JSONL', () => {
-    const event: DocumentEvent = {
-      schema_version: 1,
-      event_type: 'document.detected',
-      event_id: 'evt-001',
-      created_at: new Date().toISOString(),
-      pedido_manual: 'PED-25-2026',
-      source: 'gmail',
-      gmail_message_id: 'msg-001',
-      thread_id: 'thread-001',
-      document: {
-        document_id: 'doc-001',
-        tipo_documento: 'nf_pdf',
-        filename_original: 'nota.pdf',
-        sha256: 'a'.repeat(64),
-        local_path: 'pedidos/PED-25-2026/2026-01-01/nf/nota.pdf',
-        manifest_path: 'pedidos/PED-25-2026/manifest.json',
-      },
-      status: 'pending_app_acceptance',
-    };
+  it('appends event with Drive references to JSONL', () => {
+    const event = createDocumentEvent({
+      eventId: 'evt-001',
+      pedidoManual: 'PED-25-2026',
+      gmailMessageId: 'msg-001',
+      threadId: 'thread-001',
+      documentId: 'doc-001',
+      tipoDocumento: 'nf_pdf',
+      filenameOriginal: 'nota.pdf',
+      sha256: 'a'.repeat(64),
+      driveFileId: 'file-abc',
+      driveFolderId: 'folder-xyz',
+      driveWebViewLink: 'https://drive.google.com/file/d/file-abc/view',
+      driveWebContentLink: 'https://drive.google.com/uc?export=download&id=file-abc',
+      localCachePath: './data/cache/pedidos/PED-25-2026/2026-07-06/nf/nota.pdf',
+      manifestStorageUri: 'gdrive://file/manifest-1',
+    });
 
     appendEvent(event);
 
     const content = readFileSync(outboxPath, 'utf-8').trim();
-    const parsed = JSON.parse(content);
+    const parsed: DocumentEvent = JSON.parse(content);
+
     expect(parsed.event_id).toBe('evt-001');
     expect(parsed.status).toBe('pending_app_acceptance');
+    expect(parsed.document.storage_backend).toBe('google_drive');
+    expect(parsed.document.storage_uri).toBe('gdrive://file/file-abc');
+    expect(parsed.document.drive_file_id).toBe('file-abc');
+    expect(parsed.document.manifest_storage_uri).toBe('gdrive://file/manifest-1');
+  });
+
+  it('event storage_uri is gdrive://file/<drive_file_id>', () => {
+    const event = createDocumentEvent({
+      eventId: 'evt-002',
+      pedidoManual: 'PED-01-2026',
+      gmailMessageId: 'msg-002',
+      threadId: 'thread-002',
+      documentId: 'doc-002',
+      tipoDocumento: 'nf_xml',
+      filenameOriginal: 'nf.xml',
+      sha256: 'c'.repeat(64),
+      driveFileId: 'XYZ-FILE-ID-99',
+    });
+
+    expect(event.document.storage_uri).toBe('gdrive://file/XYZ-FILE-ID-99');
+    expect(event.document.storage_backend).toBe('google_drive');
+  });
+
+  it('isEventDuplicate is a function', () => {
+    expect(typeof isEventDuplicate).toBe('function');
   });
 });
