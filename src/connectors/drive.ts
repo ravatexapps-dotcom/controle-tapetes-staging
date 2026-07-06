@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import { google, drive_v3 } from 'googleapis';
+import { Readable } from 'node:stream';
 import type { OAuth2Client } from 'google-auth-library';
 import { getAuthenticatedClient, loadOAuthConfig } from './oauth.js';
 import { config } from '../config.js';
@@ -322,6 +323,5 @@ export async function listRecentFiles(daysBack: number): Promise<DriveReference[
 }
 
 function BufferToReadable(buf: Buffer): NodeJS.ReadableStream {
-  const { Readable } = require('node:stream') as typeof import('node:stream');
   return Readable.from(buf);
 }
