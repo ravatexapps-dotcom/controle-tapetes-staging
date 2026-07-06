@@ -5335,3 +5335,39 @@ movimentacao e determinada pelo estagio do Pedido.
   - `origin` nao usado para escrita.
   - Sem `git add .`.
   - `supabase/.temp` fora do commit.
+
+---
+
+# Estado pos-fase - OP Proposal Controls Parity R1
+
+- Fase: `RAVATEX-TAPETES-OP-PROPOSAL-CONTROLS-PARITY-R1`.
+- Status: **PATCH OP PROPOSAL CONTROLS PARITY PRONTO — AGUARDANDO RETESTE DO USUARIO**.
+- Branch/HEAD base: `work/app-next`, `608ec4e`. Prioridade: P0.
+
+- **Causa raiz:** A tela da OP (`op-nova.js:buildProposta`) usava
+  `recompute()` que desabilitava "Aceitar proposta" apenas quando
+  `algumExcede` (fio excedido), mas nao verificava se o slider foi
+  movido para fora do default. O modal do Pedido ja tinha essa regra
+  corrigida no commit `04cc445`.
+
+- **Correcao:** Adicionado snapshot `defaultMetrosOverride` e helper
+  `propostaDivergente()` (mesmo padrao do modal). `recompute()` agora:
+  `disabled = algumExcede || !propostaDivergente()`.
+  - "Manter pedido" ativo por default.
+  - "Aceitar proposta" comeca desabilitado; habilita ao mover slider;
+    desabilita ao voltar ao default.
+  - "Voltar a proposta proporcional" restaura default e desabilita.
+
+- **Arquivos alterados:** `js/screens/op-nova.js`.
+
+- **Nao alterado:** schema, RPC, `aplicarRecalculoOP`, fluxo produtivo.
+
+- **Testes:**
+  - `node --test tests/tec-to-acabamento-flow.smoke.js` — 39/39 OK.
+  - `node --test tests/pedido-detail.smoke.js` — 172/172 OK.
+
+- **Garantias:**
+  - Producao intocada.
+  - `origin` nao usado para escrita.
+  - Sem `git add .`.
+  - `supabase/.temp` fora do commit.

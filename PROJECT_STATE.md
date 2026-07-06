@@ -1,28 +1,37 @@
 > **Atualizacao 2026-07-06 - fase
-> `RAVATEX-TAPETES-ACABAMENTO-ENTRY-LABEL-R1`.**
-> Status: **PATCH ACABAMENTO ENTRY LABEL PRONTO — AGUARDANDO RETESTE DO USUARIO**.
+> `RAVATEX-TAPETES-OP-PROPOSAL-CONTROLS-PARITY-R1`.**
+> Status: **PATCH OP PROPOSAL CONTROLS PARITY PRONTO — AGUARDANDO RETESTE DO USUARIO**.
 > Entrada: branch `work/app-next`, HEAD inicial
-> `a97e5b0`; status inicial somente `?? supabase/.temp/`;
+> `608ec4e`; status inicial somente `?? supabase/.temp/`;
 > `origin` somente leitura e producao intocados.
 >
 > Fase anterior:
-> `RAVATEX-TAPETES-ACABAMENTO-ENTRY-QUICK-ACTION-C` (HEAD
-> `a97e5b0`).
+> `RAVATEX-TAPETES-ACABAMENTO-ENTRY-LABEL-R1` (HEAD
+> `608ec4e`).
 >
-> Itens entregues (P2):
+> Itens entregues (P0):
 >
-> 1. **Label do botao rapido renomeado.**
-> (`js/screens/pedido-detail-events.js`,
->  `js/screens/pedido-detail-render.js`).
-> `'Entrada'` → `'Confirmar'` (mais claro, mantendo texto curto).
-> Handler `confirmEntradaAcabamento`, regra de exibicao e RPC inalterados.
+> 1. **Paridade de controles de proposta na tela da OP.**
+> (`js/screens/op-nova.js:buildProposta`).
+> Causa raiz: a tela da OP usava `recompute()` que so desabilitava
+> "Aceitar proposta" quando `algumExcede`, mas nao verificava se o
+> usuario moveu o slider para fora do default (divergencia).
+> Correcao: adicionado snapshot `defaultMetrosOverride` + helper
+> `propostaDivergente()` (mesmo padrao do
+> `buildTecAcceptanceProposalBlock` no modal do Pedido).
+> `recompute()` agora aplica `disabled = algumExcede || !divergente`.
+> - "Manter pedido" ativo por default.
+> - "Aceitar proposta" comeca desabilitado.
+> - Move slider → habilita.
+> - Volta ao default → desabilita.
+> - "Voltar a proposta proporcional" restaura default e desabilita.
 >
 > - **Arquivos alterados:**
->   - `js/screens/pedido-detail-events.js`
->   - `js/screens/pedido-detail-render.js`
-> - **Testes:** `pedido-detail.smoke.js` 172/172,
->   `pedido-detail-linked-ops.smoke.js` 7/7,
->   `tec-to-acabamento-flow.smoke.js` 39/39.
+>   - `js/screens/op-nova.js`
+> - **Nao alterado:** schema, RPC, handler de aceite (`aplicarRecalculoOP`),
+>   fluxo produtivo.
+> - **Testes:** `tec-to-acabamento-flow.smoke.js` 39/39,
+>   `pedido-detail.smoke.js` 172/172.
 > - **Garantias:** producao intocada; `origin` nao usado; sem
 >   `git add .`; `supabase/.temp` fora do commit.
 >

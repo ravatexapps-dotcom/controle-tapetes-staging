@@ -970,6 +970,19 @@
     const metrosOverride = {};
     for (const it of resultado.itens) metrosOverride[it.op_item_id] = it.metros_ajustados;
 
+    // Snapshot do default proporcional. "Aceitar proposta" so habilita quando
+    // o usuario move o slider para fora deste default (paridade com o modal
+    // do Pedido).
+    var defaultMetrosOverride = {};
+    for (var dk in metrosOverride) { defaultMetrosOverride[dk] = String(Math.round(metrosOverride[dk])); }
+
+    function propostaDivergente() {
+      for (var key in defaultMetrosOverride) {
+        if (String(Math.round(metrosOverride[key] || 0)) !== defaultMetrosOverride[key]) return true;
+      }
+      return false;
+    }
+
     const wrap = el('div', { style: 'border-top:2px solid #eceef1;padding:18px 24px 0;' });
 
     const semFio = ordens.some(o => Number(o.kg_recebido) <= 0);
@@ -1072,7 +1085,7 @@
       }
       consumoBox.replaceChildren(...linhas);
 
-      if (algumExcede) {
+      if (algumExcede || !propostaDivergente()) {
         btnAceitar.disabled = true;
         btnAceitar.setAttribute('style', 'display:inline-flex;align-items:center;gap:7px;background:#93b7f5;color:#fff;border:none;border-radius:4px;padding:10px 20px;font-weight:700;font-size:14px;font-family:inherit;cursor:not-allowed;');
       } else {
