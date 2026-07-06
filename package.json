@@ -9,6 +9,7 @@
     "scan": "tsx src/cli.ts scan",
     "list:pending": "tsx src/cli.ts list-pending",
     "assign": "tsx src/cli.ts assign",
+    "login": "tsx src/cli.ts login",
     "export:events": "tsx src/cli.ts export-events",
     "build": "tsc",
     "test": "vitest run",
