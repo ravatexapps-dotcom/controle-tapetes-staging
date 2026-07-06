@@ -1,4 +1,102 @@
 > **Atualizacao 2026-07-06 - fase
+> `RAVATEX-TAPETES-INSUMOS-TECELAGEM-UI-FIX-A`.**
+> Status: **PATCH UI INSUMOS/TECELAGEM PRONTO — AGUARDANDO RETESTE DO USUÁRIO**.
+> Entrada: branch `work/app-next`, HEAD inicial
+> `2a492f08ee8c9d0b85f6a012f2ca84a767321338`; status inicial somente
+> `?? supabase/.temp/`; `origin` somente leitura e producao intocados.
+>
+> Itens entregues (P0):
+>
+> 1. **Alinhamento do bloco "Data do recebimento" + texto auxiliar**
+> (`buildInsumosTransferForm` em
+> `js/screens/pedido-detail-events.js:1497-1586`).
+> Causa raiz: o layout usava `display:grid;grid-template-columns:180px 1fr`
+> com o `formField` na primeira coluna e o texto auxiliar na segunda
+> coluna usando `align-self:end`, o que empurrava o texto para a base da
+> coluna (e nao alinhava com o input de Data abaixo). O auxiliar passava
+> a flutuar na lateral, desalinhado do input.
+> Correcao: troquei o grid 2 colunas por um bloco vertical empilhado:
+> `formField({ label: 'Data do recebimento', input })` seguido do texto
+> auxiliar com `margin-top:4px;line-height:1.4;`. O auxiliar agora fica
+> imediatamente abaixo do input e segue a mesma largura. Responsividade
+> preservada (sem regras mobile novas). Regra de negocio intocada.
+>
+> 2. **Default state de "Manter pedido" e "Aceitar proposta"** no
+> `buildTecAcceptanceProposalBlock`
+> (`js/screens/pedido-detail-events.js:800-1067`).
+> Causa raiz: o `recompute()` calculava apenas
+> `disabled = algumExcede || aplicarRecalculoOP ausente`, ou seja, o
+> botao "Aceitar proposta" ficava habilitado por default desde que nao
+> houvesse excedente — o que permitia aceitar a OP sem que o usuario
+> tivesse mexido no slider, podendo alterar a proposta sem intencao.
+> Correcao: foi introduzido um snapshot `defaultMetrosOverride` no
+> momento da criacao do bloco (a "proposta proporcional" canonica
+> produzida por `recalcularOP`). O helper `propostaDivergente()`
+> compara cada `metrosOverride` com o default usando
+> `ns.round2(...).toString() === defaultMetrosOverride[id]`. A regra do
+> `recompute()` agora e
+> `disabled = !divergente || algumExcede || aplicarRecalculoOP ausente`.
+> "Manter pedido" segue sempre ativo (nao e tocado pelo recompute);
+> "Voltar a proposta proporcional" reseta os sliders para o default e o
+> `recompute()` automatico desabilita "Aceitar proposta". O fluxo de
+> `refreshPedidoTransitionModal` continua recriando o modal apos
+> registrar recebimento, o que chama `recompute()` novamente e reflete
+> a regra de divergencia desde o primeiro frame. Sem mudar a fonte do
+> aceite (continua `aplicarRecalculoOP`).
+>
+> 3. **Excluir Pedido + Excluir OPs relacionadas na UI**
+> - Pedido Detail ja tinha "Excluir Pedido" no header
+>   (`handlers.buildDeleteButton` chamado por
+>   `pedido-detail-render.js:137+201`, usando
+>   `RAVATEX_DELETE.excluirPedidoComFluxo`).
+> - Foi adicionado **"Excluir OP"** no card de cada OP em
+>   `pedido-detail-render.js` `buildOpCard`. Botao e condicional a
+>   `handlers.excluirOpRelacionada` e `summary.op.id`, com label curto,
+>   `white-space:nowrap`, `title` explicito e tom danger coerente com o
+>   "Excluir OP" ja existente em `pedidos-list.js`/`ops-list.js`/
+>   `op-latex-admin.js`/`op-nova.js`/`op-tecelagem-producao-admin.js`.
+> - O handler canonico `excluirOpRelacionada` foi adicionado em
+>   `pedido-detail-events.js` e exportado no retorno dos handlers. Ele
+>   chama `RAVATEX_DELETE.excluirOPComFluxo(op.id, ...)` e em sucesso
+>   faz `await reload()` + `render()` — mesmo padrao do
+>   `excluirPedido`. Nao foi feito delete direto em `ops`/`pedidos`,
+>   nenhuma RPC nova, nenhuma migration. O RPC canonico
+>   `remover_op(p_op_id, p_confirmacao)` continua sendo usado (testado
+>   ate `2a492f0`).
+>
+> Testes focados verdes: `pedido-detail.smoke.js` 171/171
+> (8 novos casos: alinhamento, `defaultMetrosOverride`,
+> `propostaDivergente`, fluxo default -> mover -> voltar ->
+> `Aceitar proposta` desabilitado, `Manter pedido` sempre ativo,
+> `excluirOpRelacionada` exposto e usando helper canonico, card de OP
+> exposto, sem delete direto em `ops`/`pedidos`,
+> `summary.op.id` obrigatorio),
+> `controlled-delete.smoke.js` 32/32, `ops-list.smoke.js` 1/1,
+> `op-latex-admin.smoke.js` 55/55,
+> `pedido-detail-linked-ops.smoke.js` 7/7,
+> `tec-to-acabamento-flow.smoke.js` 39/39,
+> `expedicao-partial-flow.smoke.js` 12/12, `expedicao-flow.smoke.js` 8/8,
+> `production-flow-invariants.smoke.js` 13/13. Total focados: 338/338.
+>
+> Confirmacoes: producao intocada, `origin` nao usado para escrita, sem
+> SQL, sem migration, sem dados reais novos, sem `git add .`,
+> `supabase/.temp/` permanece fora do commit. Validacao visual do
+> usuario segue pendente: conferir o alinhamento do bloco "Data do
+> recebimento" no modal de registrar transferencia, abrir Pedido com OP
+> Tecelagem aberta para conferir slider/proposta default
+> (Manter pedido ativo, Aceitar proposta desabilitado ate mover slider),
+> e abrir Pedido com OPs vinculadas para conferir o botao "Excluir OP"
+> no card e o modal canonico de confirmacao do helper
+> `RAVATEX_DELETE.excluirOPComFluxo`.
+>
+> Commitar apenas se os testes focados acima continuarem verdes.
+>
+> Proximo passo recomendado:
+> `RAVATEX-TAPETES-INSUMOS-TECELAGEM-UI-FIX-B` (validacao visual real
+> contra staging) e/ou outros polishes P1/P2 do backlog Admin/Pedido
+> (ex.: `OP-LATEX-ADMIN-COMPACT-BUTTONS-R1` ja fechado).
+>
+> **Atualizacao 2026-07-06 - fase
 > `RAVATEX-TAPETES-OP-CREATE-REQUIRES-PEDIDO-RPC-GUARD-C-CLOSEOUT`.** 
 > Status: **STAGING APPLY OK — VERIFICADO / CLOSEOUT**.
 > Entrada: branch `work/app-next`, HEAD

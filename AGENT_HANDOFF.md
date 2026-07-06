@@ -1,4 +1,81 @@
-﻿# Estado pos-fase - OP Create Requires Pedido RPC Guard C — Closeout
+﻿# Estado pos-fase - Insumos Tecelagem UI Fix A
+
+- Fase: `RAVATEX-TAPETES-INSUMOS-TECELAGEM-UI-FIX-A`.
+- Status: **PATCH UI INSUMOS/TECELAGEM PRONTO — AGUARDANDO RETESTE DO USUARIO**.
+- Branch/HEAD base: `work/app-next`,
+  `2a492f08ee8c9d0b85f6a012f2ca84a767321338`; status inicial somente
+  `?? supabase/.temp/`; `origin` somente leitura; producao intocada.
+- Itens entregues (P0):
+  1. **Alinhamento do bloco "Data do recebimento" + texto auxiliar**
+     em `buildInsumosTransferForm`
+     (`js/screens/pedido-detail-events.js`). Layout trocado de
+     `display:grid;grid-template-columns:180px 1fr` (com texto auxiliar em
+     `align-self:end` na segunda coluna) para bloco vertical empilhado com
+     `margin-top:4px` no texto auxiliar. O auxiliar agora segue
+     imediatamente abaixo do input de Data e mantem a mesma largura.
+     Responsividade preservada; regra de negocio intocada.
+  2. **Default state de "Manter pedido" e "Aceitar proposta"** no
+     `buildTecAcceptanceProposalBlock`. Foi introduzido um snapshot
+     `defaultMetrosOverride` (proposta proporcional canonica) e um helper
+     `propostaDivergente()` que compara cada `metrosOverride` com o
+     default. Regra do `recompute()` agora e
+     `disabled = !divergente || algumExcede || aplicarRecalculoOP ausente`.
+     - "Manter pedido" continua sempre ativo (sem mudanca).
+     - "Aceitar proposta" inicia desabilitado e so habilita quando o
+       usuario move o slider para um valor divergente do default.
+     - "Voltar a proposta proporcional" reseta para o default e o botao
+       volta a ser desabilitado.
+     - O fluxo de `refreshPedidoTransitionModal` continua recriando o
+       modal apos registrar recebimento, garantindo que a regra seja
+       recalculada a cada frame.
+     - Fonte do aceite preservada: `window.aplicarRecalculoOP` (helper
+       canonico), sem write paralelo em `ops.status`.
+  3. **Excluir Pedido + Excluir OPs relacionadas**:
+     - Pedido Detail ja tinha "Excluir Pedido" no header
+       (`handlers.buildDeleteButton` -> `excluirPedidoComFluxo`).
+     - Foi adicionado botao "Excluir OP" no card de cada OP em
+       `pedido-detail-render.js` `buildOpCard`. Botao condicional a
+       `handlers.excluirOpRelacionada` e `summary.op.id`.
+     - O handler canonico `excluirOpRelacionada` foi adicionado em
+       `pedido-detail-events.js` e exportado. Ele chama
+       `RAVATEX_DELETE.excluirOPComFluxo(op.id, ...)` e em sucesso
+       recarrega + re-renderiza. Sem delete direto em Supabase, sem RPC
+       nova, sem migration.
+- Arquivos alterados:
+  - `js/screens/pedido-detail-events.js`
+    (alinhamento, snapshot default, `propostaDivergente()`, regra de
+    disabled, `excluirOpRelacionada`, exposicao no retorno);
+  - `js/screens/pedido-detail-render.js` (card de OP ganha botao
+    "Excluir OP" condicional ao handler canonico);
+  - `tests/pedido-detail.smoke.js` (8 novos casos para a fase).
+- Testes focados verdes:
+  - `pedido-detail.smoke.js` 171/171 (inclui os 8 novos casos
+    `INSUMOS-TECELAGEM-UI-FIX-A`);
+  - `controlled-delete.smoke.js` 32/32;
+  - `ops-list.smoke.js` 1/1; `op-latex-admin.smoke.js` 55/55;
+  - `pedido-detail-linked-ops.smoke.js` 7/7;
+  - `tec-to-acabamento-flow.smoke.js` 39/39;
+  - `expedicao-partial-flow.smoke.js` 12/12;
+  - `expedicao-flow.smoke.js` 8/8;
+  - `production-flow-invariants.smoke.js` 13/13.
+  - Total focados: 338/338.
+- Riscos / observacoes:
+  - O botao "Excluir OP" novo no card depende de `handlers.excluirOpRelacionada`.
+    Telas que nao passarão o handler (ex.: variante antiga de render) nao
+    vao expor o botao (condicional explicita no source).
+  - A regra de "Aceitar proposta" desabilitado por default muda o
+    comportamento da OP em alguns smoke testes legados que clicavam no
+    botao imediatamente; os testes novos cobrem o caminho via slider.
+  - Validacao visual real contra staging ainda pendente (Browser
+    navegacao real). Nao declarar OK visual.
+- Proximo passo recomendado:
+  `RAVATEX-TAPETES-INSUMOS-TECELAGEM-UI-FIX-B` (validacao visual real
+  contra staging) e/ou outros polishes P1/P2 do backlog Admin/Pedido.
+- Confirmacoes: producao intocada, `origin` nao usado para escrita, sem
+  SQL, sem migration, sem dados reais novos, sem `git add .`,
+  `supabase/.temp/` fora do commit.
+
+# Estado pos-fase - OP Create Requires Pedido RPC Guard C — Closeout
 
 - Fase: `RAVATEX-TAPETES-OP-CREATE-REQUIRES-PEDIDO-RPC-GUARD-C-CLOSEOUT`.
 - Status: **STAGING APPLY OK — VERIFICADO / CLOSEOUT**.

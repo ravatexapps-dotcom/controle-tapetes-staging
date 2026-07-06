@@ -138,6 +138,30 @@
       });
     }
 
+    // Excluir OP relacionada a partir do card de OPs vinculadas no Pedido Detail.
+    // Reaproveita o helper canonico de js/delete-helpers.js (mesmo helper usado
+    // por ops-list / op-latex-admin / op-nova / op-tecelagem-producao-admin).
+    // Apos a exclusao, recarrega a tela e re-renderiza para refletir o estado.
+    async function excluirOpRelacionada(op) {
+      if (!op || op.id == null) {
+        window.toast('OP indisponivel para exclusao.', 'error');
+        return;
+      }
+      if (!window.RAVATEX_DELETE || typeof window.RAVATEX_DELETE.excluirOPComFluxo !== 'function') {
+        window.toast('Exclusao controlada indisponivel.', 'error');
+        return;
+      }
+      await window.RAVATEX_DELETE.excluirOPComFluxo(op.id, async function () {
+        try {
+          await reload();
+          render();
+        } catch (e) {
+          console.error('pedido-detail: falha ao recarregar apos excluir OP', e);
+          window.toast('OP excluida. Recarregue a pagina para ver o estado atualizado.', 'info');
+        }
+      });
+    }
+
     async function alterarStatus(novoStatus, btn) {
       if (!state.pedido) {
         window.toast('Pedido nao carregado.', 'error');
@@ -856,6 +880,14 @@
       (resultado.itens || []).forEach(function (item) {
         metrosOverride[item.op_item_id] = ns.round2(ns.toFiniteNumber(item.metros_ajustados));
       });
+      // Snapshot do default (proporcional). "Aceitar proposta" so fica ativo
+      // quando o usuario move algum slider para um valor divergente deste
+      // default. Voltar a proposta proporcional ou restaurar manualmente
+      // re-desabilita o botao.
+      var defaultMetrosOverride = {};
+      Object.keys(metrosOverride).forEach(function (opItemId) {
+        defaultMetrosOverride[opItemId] = metrosOverride[opItemId];
+      });
 
       var wrap = window.el('div', {
         style: (options.compact
@@ -975,6 +1007,17 @@
         }
       }
 
+      function propostaDivergente() {
+        var keys = Object.keys(metrosOverride);
+        for (var i = 0; i < keys.length; i++) {
+          var opItemId = keys[i];
+          var current = ns.round2(ns.toFiniteNumber(metrosOverride[opItemId]));
+          var def = ns.round2(ns.toFiniteNumber(defaultMetrosOverride[opItemId]));
+          if (current !== def) return true;
+        }
+        return false;
+      }
+
       function recompute() {
         var consumos = currentConsumos();
         var algumExcede = consumos.some(function (row) { return row.sobra < 0; });
@@ -1001,7 +1044,11 @@
           }, 'Consumo de fio sera recalculado quando as ordens e parametros estiverem disponiveis.'));
         }
 
-        var disabled = algumExcede || typeof window.aplicarRecalculoOP !== 'function';
+        // Regra de aceite: "Aceitar proposta" so fica ativo se o usuario moveu
+        // o slider para fora do default (proporcional). Sem mudanca, manter
+        // desabilitado. Tambem bloqueia em excedente ou helper ausente.
+        var divergente = propostaDivergente();
+        var disabled = !divergente || algumExcede || typeof window.aplicarRecalculoOP !== 'function';
         btnAceitar.disabled = disabled;
         btnAceitar.setAttribute('style', 'display:inline-flex;align-items:center;justify-content:center;background:' + (disabled ? '#93b7f5' : '#2563eb') + ';color:#fff;border:none;border-radius:4px;padding:8px 14px;font-weight:800;font-size:12.5px;font-family:inherit;cursor:' + (disabled ? 'not-allowed' : 'pointer') + ';');
       }
@@ -1524,9 +1571,9 @@
       });
       return {
         node: window.el('div', {},
-          window.el('div', { style: 'display:grid;grid-template-columns:180px 1fr;gap:12px;margin-bottom:12px;' },
-            window.el('div', {}, window.formField({ label: 'Data do recebimento', input: dataInput })),
-            window.el('div', { style: 'font-size:12.5px;color:#8a93a3;align-self:end;line-height:1.4;' },
+          window.el('div', { style: 'margin-bottom:12px;' },
+            window.formField({ label: 'Data do recebimento', input: dataInput }),
+            window.el('div', { style: 'font-size:12.5px;color:#8a93a3;line-height:1.4;margin-top:4px;' },
               'Informe a quantidade recebida agora; o helper canonico atualiza o total recebido da ordem.')
           ),
           window.el('div', { style: 'border:1px solid #eceef1;border-radius:4px;background:#fff;overflow:hidden;' },
@@ -2903,6 +2950,8 @@
       navigateToNovaOp: navigateToNovaOp,
       concluirPedido: concluirPedido,
       finalizarOp: finalizarOp,
+      excluirPedido: excluirPedido,
+      excluirOpRelacionada: excluirOpRelacionada,
       scrollToSection: scrollToSection,
       openMovementModal: openMovementModal,
       openStageDetailModal: openStageDetailModal,

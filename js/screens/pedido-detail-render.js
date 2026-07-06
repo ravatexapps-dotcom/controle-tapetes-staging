@@ -641,21 +641,31 @@
       ),
       metricsBlock,
       window.el('div', {
-        style: 'display:flex;gap:8px;padding:12px 18px;border-top:1px solid #f1f3f6;',
+        style: 'display:flex;gap:8px;padding:12px 18px;border-top:1px solid #f1f3f6;flex-wrap:wrap;align-items:center;justify-content:space-between;',
       },
-        buildFooterAction('Abrir OP', function () { handlers.navigateToOp(summary.id); }, false),
-        buildFooterAction(movementLabel, function () {
-          handlers.openMovementModal({
-            title: summary.stageKey === 'tecelagem' ? 'Transferir para Acabamento' : 'Movimentar para Expedicao',
-            origem: summary.stageLabel + ' - ' + summary.label,
-            destino: summary.stageKey === 'tecelagem' ? 'Acabamento' : 'Expedicao',
-            detalhe: 'A movimentacao continua sendo registrada na OP vinculada.',
-            op: summary.op,
-            docs: summary.stageKey === 'tecelagem' ? 'Romaneio e NF' : 'NF de expedicao',
-            action: movementAction,
-          });
-        }, movementAction.mode === 'enabled', movementDisabled),
-        buildFooterAction('Documentos', function () { handlers.scrollToSection('documentos'); }, false)
+        window.el('div', { style: 'display:flex;gap:8px;flex-wrap:wrap;align-items:center;' },
+          buildFooterAction('Abrir OP', function () { handlers.navigateToOp(summary.id); }, false),
+          buildFooterAction(movementLabel, function () {
+            handlers.openMovementModal({
+              title: summary.stageKey === 'tecelagem' ? 'Transferir para Acabamento' : 'Movimentar para Expedicao',
+              origem: summary.stageLabel + ' - ' + summary.label,
+              destino: summary.stageKey === 'tecelagem' ? 'Acabamento' : 'Expedicao',
+              detalhe: 'A movimentacao continua sendo registrada na OP vinculada.',
+              op: summary.op,
+              docs: summary.stageKey === 'tecelagem' ? 'Romaneio e NF' : 'NF de expedicao',
+              action: movementAction,
+            });
+          }, movementAction.mode === 'enabled', movementDisabled),
+          buildFooterAction('Documentos', function () { handlers.scrollToSection('documentos'); }, false)
+        ),
+        handlers && typeof handlers.excluirOpRelacionada === 'function' && summary.op && summary.op.id != null
+          ? window.el('button', {
+              type: 'button',
+              title: 'Excluir OP (controlado, exige confirmacao forte)',
+              style: 'display:inline-flex;align-items:center;gap:6px;background:#fff;color:#d6403a;border:1px solid #f1c7c5;border-radius:4px;padding:8px 12px;font-size:12.5px;font-weight:700;font-family:inherit;cursor:pointer;white-space:nowrap;',
+              onclick: function () { handlers.excluirOpRelacionada(summary.op); },
+            }, 'Excluir OP')
+          : null
       )
     );
   }

@@ -2649,3 +2649,144 @@ test('HUB runtime: Pedido sem OP oferece Gerar primeira OP; etapa entrega apto o
   rt.events.length = 0; concluir._listeners.click({ currentTarget: rt.node('button') });
   assert.ok(rt.events.indexOf('rpc:concluir_pedido_se_pronto') !== -1, 'Concluir deve reutilizar concluir_pedido_se_pronto');
 });
+
+// ---------------------------------------------------------------------
+// 24. RAVATEX-TAPETES-INSUMOS-TECELAGEM-UI-FIX-A — alinhamento +
+//     botoes default da proposta + Excluir OP/OPs relacionadas
+// ---------------------------------------------------------------------
+
+test('INSUMOS-TECELAGEM-UI-FIX-A: buildInsumosTransferForm empilha Data do recebimento + texto auxiliar', () => {
+  const slice = (detailEvents.match(/function buildInsumosTransferForm[\s\S]*?\n    \}\n\n    function buildTecelagemTransferForm/) || [''])[0];
+  assert.ok(slice, 'trecho buildInsumosTransferForm nao encontrado');
+  assert.doesNotMatch(slice, /grid-template-columns:\s*['"]?180px\s+1fr/,
+    'nao deve usar grid 2 colunas (180px 1fr) para alinhar label com texto auxiliar');
+  assert.match(slice, /Data do recebimento/,
+    'label Data do recebimento deve continuar visivel');
+  assert.match(slice, /Informe a quantidade recebida agora/,
+    'texto auxiliar canonico deve continuar visivel');
+  assert.match(slice, /margin-top:\s*4px/,
+    'texto auxiliar deve usar margin-top para alinhar logo abaixo do input');
+});
+
+test('INSUMOS-TECELAGEM-UI-FIX-A: buildTecAcceptanceProposalBlock tem defaultMetrosOverride e propostaDivergente', () => {
+  const proposalSlice = (detailEvents.match(/function buildTecAcceptanceProposalBlock[\s\S]*?\n    \}\n\n    function relatedActionButton/) || [''])[0];
+  assert.ok(proposalSlice, 'trecho buildTecAcceptanceProposalBlock nao encontrado');
+  assert.match(proposalSlice, /defaultMetrosOverride/,
+    'deve armazenar snapshot do default da proposta para comparar com estado atual');
+  assert.match(proposalSlice, /function propostaDivergente/,
+    'deve ter helper de comparacao contra default (propostaDivergente)');
+  assert.match(proposalSlice, /var divergente\s*=\s*propostaDivergente\(\)/,
+    'recompute deve usar propostaDivergente para habilitar/desabilitar');
+  assert.match(proposalSlice, /!divergente \|\| algumExcede \|\| typeof window\.aplicarRecalculoOP !== 'function'/,
+    'disabled = !divergente || algumExcede || helper ausente');
+});
+
+test('INSUMOS-TECELAGEM-UI-FIX-A: Aceitar proposta desabilitado por default; slider divergente habilita; voltar desabilita', () => {
+  const rt = makeHubRuntime();
+  const s = hubTecAcab(rt.ns, 'em_producao');
+  s.ops = [s.ops[0]];
+  s.ops[0].status = 'aberta';
+  s.entregaItens = [];
+  s.entregasById = {};
+  s.opLatexEntregas = [];
+  // 10 kg pedidos, 10 recebidos -> proposta proporcional fator 1, sem excedente
+  s.ordensFio = [{ id: 'fio1', op_id: 29, tipo: 'algodao', kg_pedido: 10, kg_recebido: 10 }];
+  rt.sandbox.window.recalcularOP = () => ({
+    fator: 1,
+    itens: [
+      { op_item_id: 290, metros_pedidos: 1000, metros_ajustados: 1000 },
+    ],
+    sobras: [],
+  });
+  rt.sandbox.window.aplicarRecalculoOP = async () => ({ error: null });
+  const view = rt.ns.computeViewModel(s);
+  const handlers = rt.ns.createPedidoDetailEvents({
+    pedidoId: s.pedido.id, state: s,
+    reload: async () => {}, render: () => {},
+    getLoadingError: () => null, setLoadingError: () => {},
+  });
+  handlers.currentView = view;
+  const cap = rt.node('body');
+  rt.sandbox.document.body = cap;
+  handlers.openMovementModal(view.stepper[0].transfer);
+
+  const aceitar = findHubBtn(cap, /^Aceitar proposta$/i);
+  assert.ok(aceitar, 'botao Aceitar proposta deve existir');
+  assert.equal(aceitar.disabled, true,
+    'por default (sem divergencia), Aceitar proposta deve estar desabilitado');
+
+  const sliders = [];
+  function walk(n) {
+    if (n && n.tagName === 'INPUT' && n.getAttribute('type') === 'range') sliders.push(n);
+    (n && n.children || []).forEach(walk);
+  }
+  walk(cap);
+  assert.equal(sliders.length, 1, 'deve existir 1 slider para o unico op_item');
+  const slider = sliders[0];
+  // Simula o usuario movendo o slider para um valor divergente do default
+  slider.value = String(Math.max(0, Number(slider.value) - 100));
+  slider._listeners.input({ currentTarget: slider });
+  assert.equal(aceitar.disabled, false,
+    'apos mover o slider, Aceitar proposta deve ficar habilitado');
+
+  // Volta exatamente para o default (proporcional): o input inicial e o
+  // valor que o `recompute` original deixou no slider.
+  slider.value = String(Math.round(1000));
+  slider._listeners.input({ currentTarget: slider });
+  assert.equal(aceitar.disabled, true,
+    'ao voltar ao default, Aceitar proposta deve voltar a ficar desabilitado');
+});
+
+test('INSUMOS-TECELAGEM-UI-FIX-A: Manter pedido continua sempre ativo (default) na proposta inline', () => {
+  const proposalSlice = (detailEvents.match(/function buildTecAcceptanceProposalBlock[\s\S]*?\n    \}\n\n    function relatedActionButton/) || [''])[0];
+  assert.ok(proposalSlice, 'trecho buildTecAcceptanceProposalBlock nao encontrado');
+  assert.match(proposalSlice, /btnManter[\s\S]{0,300}onclick[\s\S]{0,80}aceitarProposta\('manter'/,
+    'btnManter (Manter pedido) deve chamar aceitarProposta("manter") e estar sempre habilitado');
+  assert.doesNotMatch(proposalSlice, /btnManter[\s\S]{0,260}btnManter\.disabled\s*=\s*true/,
+    'btnManter nao deve ser desabilitado em momento algum pelo recompute');
+});
+
+test('INSUMOS-TECELAGEM-UI-FIX-A: excluirOpRelacionada exposto nos handlers e usa helper canonico', () => {
+  assert.match(detailEvents, /function excluirOpRelacionada/,
+    'deve existir funcao excluirOpRelacionada');
+  assert.match(detailEvents, /excluirOpRelacionada:\s*excluirOpRelacionada/,
+    'excluirOpRelacionada deve ser exposta no retorno dos handlers');
+  assert.match(detailEvents, /excluirOpRelacionada[\s\S]{0,400}RAVATEX_DELETE\.excluirOPComFluxo/,
+    'excluirOpRelacionada deve chamar o helper canonico excluirOPComFluxo');
+  assert.match(detailEvents, /window\.RAVATEX_DELETE\.excluirOPComFluxo[\s\S]{0,300}await reload\(\)[\s\S]{0,80}render\(\)/,
+    'apos sucesso, deve recarregar e re-renderizar a tela');
+});
+
+test('INSUMOS-TECELAGEM-UI-FIX-A: card de OP no render expõe botao Excluir OP via handler canonico', () => {
+  const opCardSlice = (detailRender.match(/function buildOpCard[\s\S]*?\n  \}/) || [''])[0];
+  assert.ok(opCardSlice, 'trecho buildOpCard nao encontrado');
+  assert.match(opCardSlice, /handlers\.excluirOpRelacionada/,
+    'buildOpCard deve referenciar handlers.excluirOpRelacionada');
+  assert.match(opCardSlice, /'Excluir OP'/,
+    'card deve renderizar botao Excluir OP');
+  assert.match(opCardSlice, /handlers\.excluirOpRelacionada\(summary\.op\)/,
+    'onclick deve chamar handlers.excluirOpRelacionada(summary.op)');
+  assert.doesNotMatch(opCardSlice, /\.from\(\s*['"]ops['"]\s*\)[\s\S]{0,160}\.delete\s*\(/,
+    'card nao pode fazer delete direto em ops');
+  assert.doesNotMatch(opCardSlice, /\.from\(\s*['"]pedidos['"]\s*\)[\s\S]{0,160}\.delete\s*\(/,
+    'card nao pode fazer delete direto em pedidos');
+});
+
+test('INSUMOS-TECELAGEM-UI-FIX-A: Excluir OP no card usa helper central (sem delete direto)', () => {
+  const bundle = [detailEvents, detailRender].join('\n');
+  assert.match(bundle, /RAVATEX_DELETE\.excluirOPComFluxo/,
+    'deve usar helper canonico RAVATEX_DELETE.excluirOPComFluxo');
+  assert.doesNotMatch(bundle, /\.from\(\s*['"]ops['"]\s*\)[\s\S]{0,200}\.delete\s*\(/,
+    'nao deve chamar supabase.from("ops").delete() direto');
+  assert.doesNotMatch(bundle, /\.from\(\s*['"]pedidos['"]\s*\)[\s\S]{0,200}\.delete\s*\(/,
+    'nao deve chamar supabase.from("pedidos").delete() direto');
+});
+
+test('INSUMOS-TECELAGEM-UI-FIX-A: Excluir OP no card passa summary.op e exige helper', () => {
+  const opCardSlice = (detailRender.match(/function buildOpCard[\s\S]*?\n  \}/) || [''])[0];
+  // O botao so aparece quando o handler existe e o summary.op tem id.
+  assert.match(opCardSlice, /summary\.op\s*&&\s*summary\.op\.id\s*!=\s*null/,
+    'botao deve ser condicional a summary.op.id valido');
+  assert.match(opCardSlice, /typeof handlers\.excluirOpRelacionada === 'function'/,
+    'botao deve ser condicional a handlers.excluirOpRelacionada existir');
+});
