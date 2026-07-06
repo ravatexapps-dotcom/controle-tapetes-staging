@@ -646,7 +646,7 @@
         window.el('div', { style: 'display:flex;gap:8px;flex-wrap:wrap;align-items:center;' },
           buildFooterAction('Ver OP', function () { handlers.navigateToOp(summary.id); }, false),
           summary.stageKey === 'acabamento' && summary.op && summary.op.status === 'aberta' && typeof handlers.confirmEntradaAcabamento === 'function'
-            ? buildFooterAction('Entrada', function () { handlers.confirmEntradaAcabamento(summary.op); }, true)
+            ? buildFooterAction('Confirmar', function () { handlers.confirmEntradaAcabamento(summary.op); }, true)
             : null,
           buildFooterAction(movementLabel, function () {
             handlers.openMovementModal({

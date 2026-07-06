@@ -1258,7 +1258,7 @@
                       : null),
                   window.el('div', { style: 'display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end;' },
                     relatedActionButton('Ver OP', function () { navigateToOp(op.id); }, 'secondary'),
-                    podeConfirmarEntrada ? relatedActionButton('Entrada', function () { confirmEntradaAcabamento(op); }) : null,
+                    podeConfirmarEntrada ? relatedActionButton('Confirmar', function () { confirmEntradaAcabamento(op); }) : null,
                     !opCarregada && podeMovimentar ? relatedActionButton('Carregar nesta movimentacao', function () {
                       var nextCtx = movementContextForStage(movementStep(op), op);
                       if (typeof options.onSelectOp === 'function') options.onSelectOp(nextCtx);
