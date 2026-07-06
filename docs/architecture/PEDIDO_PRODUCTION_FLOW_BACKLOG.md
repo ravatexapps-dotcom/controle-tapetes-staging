@@ -1098,3 +1098,24 @@ Nota de backlog: os itens reabertos do hub estao zerados nesta R2. O backlog
 Admin/Pedido geral nao deve ser declarado zerado sem tratar ou explicitamente
 retirar de escopo o residuo estatico `disabled: ready ? null : 'disabled'` em
 `js/screens/expedicao-admin.js:361`.
+# Atualizacao 2026-07-06 - Pedido/OP Controlled Delete B
+
+Fase: `RAVATEX-TAPETES-PEDIDO-OP-CONTROLLED-DELETE-B`
+Status: **PATCH TECNICO PRONTO - AGUARDANDO VALIDACAO VISUAL/TECNICA DO USUARIO**
+
+Patch tecnico para limpeza de dados de validacao em ambiente de testes:
+`db/34_controlled_delete_pedido_op.sql` cria diagnosticos e remocao
+transacional; `js/delete-helpers.js` concentra o fluxo visual e impede delete
+direto em telas.
+
+Politica atual: excluir Pedido/OP sem entrega/expedicao; exigir `EXCLUIR`
+quando houver OP/dependencias nao bloqueadoras; bloquear entrega, expedicao e
+OP filha; nao alterar `op_numeros`, nao renumerar OPs e nao reciclar numeros.
+Futuro de producao: senha/admin forte, soft-delete e auditoria permanente.
+
+Backlog residual:
+
+| Item | Prioridade | Descricao |
+|---|---|---|
+| `DELETE-PROD-GUARD-A` | P1 futuro | Trocar exclusao fisica temporaria por fluxo produtivo com senha admin, soft-delete e auditoria permanente antes de liberar em producao. |
+| `DELETE-AUDIT-LOG-A` | P2 futuro | Registrar solicitante, impacto aprovado e resultado final em trilha auditavel. |

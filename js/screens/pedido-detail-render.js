@@ -134,6 +134,7 @@
     var updatedAt = ns.fmtDataHora(pedido.atualizado_em);
     var prazo = ns.fmtData(pedido.prazo_desejado || pedido.prazo_entrega);
     var editBtn = handlers.buildEditButton();
+    var deleteBtn = handlers.buildDeleteButton ? handlers.buildDeleteButton() : null;
     var chainState = view && view.chainState ? view.chainState : null;
     var showOperationalStatus = !!(chainState && chainState.isOperationalOverride);
 
@@ -197,6 +198,7 @@
             style: 'display:flex;align-items:center;gap:8px;flex-wrap:wrap;',
           },
             editBtn,
+            deleteBtn,
             window.el('button', {
               type: 'button',
               style: 'display:inline-flex;align-items:center;gap:7px;background:#fff;color:#3f4757;border:1px solid #d8dce2;border-radius:4px;padding:9px 14px;font-weight:600;font-size:13.5px;font-family:inherit;cursor:pointer;',

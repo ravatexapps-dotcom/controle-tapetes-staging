@@ -3,7 +3,7 @@
 // Tela admin `#/pedidos` read-only, alinhada ao idioma visual da tela
 // nova `#/cliente/pedidos`, preservando dados, filtros e acoes admin.
 //
-// Sem insert/update/delete/rpc. Apenas SELECTs.
+// Sem insert/update/delete direto. Exclusao controlada usa helper/RPC central.
 // =====================================================================
 
 (function (window) {
@@ -35,6 +35,7 @@
   var ICON_X = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>';
   var ICON_EYE = '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"></path><circle cx="12" cy="12" r="3"></circle></svg>';
   var ICON_MORE = '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="5" r="1.2"></circle><circle cx="12" cy="12" r="1.2"></circle><circle cx="12" cy="19" r="1.2"></circle></svg>';
+  var ICON_TRASH = '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path><path d="M10 11v6M14 11v6"></path><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"></path></svg>';
   var ICON_LEFT = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>';
   var ICON_RIGHT = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>';
   var ICON_DOC = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"></path><polyline points="14 3 14 8 19 8"></polyline></svg>';
@@ -606,6 +607,17 @@
     }
 
     function rowActions(row) {
+      async function excluirPedido() {
+        if (!window.RAVATEX_DELETE || typeof window.RAVATEX_DELETE.excluirPedidoComFluxo !== 'function') {
+          window.toast('Exclusao controlada indisponivel.', 'error');
+          return;
+        }
+        await window.RAVATEX_DELETE.excluirPedidoComFluxo(row.id, async function () {
+          await carregar();
+          render();
+        });
+      }
+
       var eyeBtn = window.el('button', {
         type: 'button',
         title: 'Visualizar',
@@ -621,16 +633,26 @@
         eyeBtn.style.background = 'none';
       });
 
-      var moreBtn = window.el('button', {
+      var deleteBtn = window.el('button', {
         type: 'button',
         title: 'Mais ações',
         style: 'background:none;border:none;cursor:default;display:inline-flex;align-items:center;justify-content:center;color:#c2c9d4;padding:4px;border-radius:3px;'
-      }, svgEl(ICON_MORE));
-      moreBtn.disabled = true;
+      }, svgEl(ICON_TRASH));
+      deleteBtn.title = 'Excluir Pedido';
+      deleteBtn.style.cursor = 'pointer';
+      deleteBtn.style.color = '#d6403a';
+      deleteBtn.disabled = false;
+      deleteBtn.addEventListener('click', excluirPedido);
+      deleteBtn.addEventListener('mouseenter', function () {
+        deleteBtn.style.background = '#fdecec';
+      });
+      deleteBtn.addEventListener('mouseleave', function () {
+        deleteBtn.style.background = 'none';
+      });
 
       return window.el('div', {
         style: 'display:flex;align-items:center;justify-content:center;gap:8px;'
-      }, eyeBtn, moreBtn);
+      }, eyeBtn, deleteBtn);
     }
 
     function buildTableHead() {

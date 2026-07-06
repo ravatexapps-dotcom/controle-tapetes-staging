@@ -176,6 +176,13 @@
     }
     acoes.push(el('button', { type: 'button', style: BTN_BACK + 'opacity:.55;cursor:not-allowed;', disabled: true }, 'Pausar'));
     if (ctx.cimaFornecedorId) acoes.push(el('a', { href: '#entregas-tecelagem-op', style: BTN_BACK + 'text-decoration:none;' }, 'Ir para entregas'));
+    if (typeof ctx.excluirOP === 'function') {
+      acoes.push(el('button', {
+        type: 'button',
+        style: 'display:inline-flex;align-items:center;gap:7px;background:#fff;color:#d6403a;border:1px solid #f1c7c5;border-radius:4px;padding:9px 16px;font-weight:700;font-size:13.5px;font-family:inherit;cursor:pointer;white-space:nowrap;',
+        onclick: ctx.excluirOP,
+      }, 'Excluir OP'));
+    }
     var concluirAttrs = {
       type: 'button',
       style: podeConcluir ? BTN_FINALIZAR_TEC : BTN_BACK + 'opacity:.55;cursor:not-allowed;',

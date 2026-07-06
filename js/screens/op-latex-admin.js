@@ -1044,20 +1044,12 @@
     }
 
     function excluirOpLatex(id) {
-      confirmDialog({
-        title: 'Excluir OP de latex',
-        message: 'Isto remove a OP de latex e seus itens. Se ja houver recebimentos lancados, a exclusao sera bloqueada - exclua os recebimentos primeiro. Continuar?',
-        confirmLabel: 'Excluir',
-        onConfirm: async function () {
-          var r = await supa.from('ops').delete().eq('id', id);
-          if (r.error) {
-            toast('Erro ao excluir OP de latex', 'error');
-            console.error(r.error);
-            return;
-          }
-          toast('OP de latex excluida', 'success');
-          navigate('#/ops');
-        },
+      if (!window.RAVATEX_DELETE || typeof window.RAVATEX_DELETE.excluirOPComFluxo !== 'function') {
+        toast('Exclusao controlada indisponivel.', 'error');
+        return;
+      }
+      window.RAVATEX_DELETE.excluirOPComFluxo(id, async function () {
+        navigate('#/ops');
       });
     }
 

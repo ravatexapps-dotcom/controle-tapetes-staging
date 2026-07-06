@@ -640,3 +640,27 @@ WHERE l.pedido_id = :pedido_id;
 > **Este contrato é fonte canônica para implementação das Fases C a J.**
 > Deve ser consultado antes de qualquer migration, RPC ou alteração de schema nesta frente.
 > Indexado em `docs/DOCUMENTATION_INDEX.md` §1.
+## Atualizacao 2026-07-06 - Pedido/OP Controlled Delete B
+
+Fase `RAVATEX-TAPETES-PEDIDO-OP-CONTROLLED-DELETE-B`: adiciona exclusao
+fisica controlada somente para testes/admin, concentrada em RPC transacional e
+helper JS unico.
+
+- Novas RPCs versionadas em `db/34_controlled_delete_pedido_op.sql`:
+  `diagnosticar_impacto_pedido`, `diagnosticar_impacto_op`, `remover_pedido`,
+  `remover_op`.
+- Aplicado e validado somente em staging `ucrjtfswnfdlxwtmxnoo`; producao
+  `bhgifjrfagkzubpyqpew` permanece intocada.
+- Diagnostico classifica `safe`, `requires_confirmation` e `blocked`, sempre
+  retornando relatorio de impacto antes da remocao.
+- Pedido seguro: sem OP/entrega/expedicao. Pedido com OP sem movimento exige
+  `EXCLUIR` e remove tambem lotes/OPs sem movimento vinculados ao Pedido.
+- Bloqueadores: entrega vinculada, expedicao vinculada, OP filha nao tratada e
+  FKs restritivas conhecidas do fluxo produtivo.
+- OP individual: bloqueia com entrega, expedicao ou OP filha; OP sem
+  bloqueadores pode ser removida com confirmacao quando ha dependencias
+  nao bloqueadoras.
+- `op_numeros` nao e alterado, numeros nao sao reciclados e OPs nao sao
+  renumeradas.
+- A exclusao fisica e temporaria para validacao; producao futura deve usar
+  senha/admin forte, soft-delete e auditoria permanente.

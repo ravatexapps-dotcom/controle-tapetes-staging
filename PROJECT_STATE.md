@@ -5431,3 +5431,42 @@ Senhas de teste antigas em `docs/qa/fase1-checklist.md` e
 > `node --test tests/boot.smoke.js` OK (29/29);
 > `node --test tests/router.smoke.js` OK (43/43, com aviso conhecido
 > de sandbox sobre `window.addEventListener`, exit code 0).
+> **Atualizacao 2026-07-06 - fase
+> `RAVATEX-TAPETES-PEDIDO-OP-CONTROLLED-DELETE-B`.**
+> Status: **STAGING APPLY OK - AGUARDANDO VALIDACAO VISUAL/TECNICA DO
+> USUARIO**.
+>
+> Implementada exclusao fisica controlada para ambiente de testes/admin por RPC
+> transacional em `db/34_controlled_delete_pedido_op.sql`: diagnosticos
+> `diagnosticar_impacto_pedido(UUID)` e `diagnosticar_impacto_op(BIGINT)`;
+> remocoes `remover_pedido(UUID, TEXT)` e `remover_op(BIGINT, TEXT)`.
+> A migration foi aplicada somente em staging `ucrjtfswnfdlxwtmxnoo` via
+> `npx.cmd supabase --workdir supabase db query --linked --file ...`; producao
+> `bhgifjrfagkzubpyqpew` nao foi tocada. Catalogo pos-apply confirmou as quatro
+> RPCs.
+> A politica desta fase e temporaria para limpeza de validacao: Pedido sem
+> cadeia produtiva e seguro; Pedido com OP sem entrega/expedicao exige
+> confirmacao textual `EXCLUIR`; Pedido/OP com entrega ou expedicao bloqueia;
+> OP mae com OP de Acabamento filha bloqueia na remocao individual. `op_numeros`
+> nao e alterado, OPs nao sao renumeradas e numeros nao sao reciclados.
+>
+> Criado helper central `js/delete-helpers.js` (`window.RAVATEX_DELETE`) com
+> diagnostico, relatorio de impacto, confirmacao forte e chamada das RPCs. As
+> telas alteradas foram: lista de Pedidos, detalhe do Pedido, lista de OPs,
+> detalhe OP Tecelagem/OP em producao e OP Acabamento/Latex. O antigo
+> `excluirOpLatex` deixou de usar `supa.from('ops').delete()` e agora delega ao
+> helper central. Deletes diretos de Pedido/OP continuam proibidos na UI.
+>
+> Criado diagnostico staging read-only
+> `scripts/staging/delete-impact-diag.mjs`, com filtros opcionais por
+> `PEDIDO_ID`/`OP_ID`, sem mutacao. Producao e `origin` permanecem proibidos;
+> nenhuma exclusao real em staging deve ocorrer sem autorizacao explicita de ID
+> pelo usuario. Senha/admin forte, soft-delete e auditoria permanente ficam para
+> fase futura de producao.
+> Validacao staging read-only: `delete-impact-diag` geral/targeted OK
+> (Pedido #27 `requires_confirmation`; OP 5/2026 `blocked` por entrega);
+> diagnosticos de fluxo OK, com alerta historico preservado de 11 OPs/lotes
+> orfaos sem Pedido. Testes locais verdes: checks JS, `controlled-delete`,
+> `pedidos-list`, `ops-list`, `pedido-detail`, `op-nova`, `op-latex-admin` e
+> `production-flow-invariants`.
+>

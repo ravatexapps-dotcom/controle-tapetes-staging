@@ -4772,3 +4772,37 @@ node --test tests/boot.smoke.js \
   cleanup/backfill; sem constraint global; sem dados reais novos; sem alterar
   RLS/PDF/fornecedor/identificacao OP; sem alterar `op_numeros`; usar staging
   seletivo se houver commit; `supabase/.temp/` fora do patch.
+# Estado pos-fase - Pedido/OP Controlled Delete B
+
+- Fase: `RAVATEX-TAPETES-PEDIDO-OP-CONTROLLED-DELETE-B`.
+- Status: **STAGING APPLY OK - AGUARDANDO VALIDACAO VISUAL/TECNICA DO USUARIO**.
+- Migration nova: `db/34_controlled_delete_pedido_op.sql`.
+- Aplicada somente em staging `ucrjtfswnfdlxwtmxnoo` via
+  `npx.cmd supabase --workdir supabase db query --linked --file ...`.
+  Producao `bhgifjrfagkzubpyqpew` intocada.
+- RPCs: `diagnosticar_impacto_pedido(UUID)`,
+  `diagnosticar_impacto_op(BIGINT)`, `remover_pedido(UUID, TEXT)`,
+  `remover_op(BIGINT, TEXT)`.
+- Politica implementada: exclusao fisica temporaria apenas para testes/admin;
+  Pedido sem cadeia produtiva e seguro; Pedido com OP sem movimento exige
+  `EXCLUIR`; Pedido/OP com entrega ou expedicao bloqueia; OP Tecelagem com OP
+  de Acabamento filha bloqueia na remocao individual e orienta excluir a filha
+  primeiro.
+- Helper central: `js/delete-helpers.js` exposto como `window.RAVATEX_DELETE`.
+- Telas alteradas: `pedidos-list`, `pedido-detail`, `ops-list`, `op-nova`,
+  `op-tecelagem-producao-admin`, `op-latex-admin`.
+- `excluirOpLatex` foi substituido internamente: nao faz mais
+  `supa.from('ops').delete()`, delega ao helper/RPC central.
+- Script staging read-only: `scripts/staging/delete-impact-diag.mjs`.
+- Validacao staging pos-apply: catalogo confirmou as 4 RPCs; diagnostico
+  targeted confirmou Pedido #27 como `requires_confirmation` e OP 5/2026 como
+  `blocked` por entrega. Diagnosticos read-only da malha continuam coerentes;
+  alerta historico preservado: 11 OPs/lotes orfaos sem Pedido em staging.
+- Testes locais verdes: checks JS, `controlled-delete`, `pedidos-list`,
+  `ops-list`, `pedido-detail`, `op-nova`, `op-latex-admin` e
+  `production-flow-invariants`.
+- Garantias: sem alterar `op_numeros`, sem renumerar OPs, sem soft-delete,
+  sem senha admin nesta fase, sem producao, sem push/escrita em `origin`, sem
+  exclusao real em staging sem ID autorizado explicitamente.
+- Futuro: senha/admin forte + soft-delete/auditoria permanente antes de
+  qualquer uso em producao.

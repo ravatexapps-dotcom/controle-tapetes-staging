@@ -534,6 +534,20 @@
     } finally { saving = false; }
   }
 
+  async function excluirOP() {
+    if (!op || !op.id) {
+      toast('OP nao carregada.', 'error');
+      return;
+    }
+    if (!window.RAVATEX_DELETE || typeof window.RAVATEX_DELETE.excluirOPComFluxo !== 'function') {
+      toast('Exclusao controlada indisponivel.', 'error');
+      return;
+    }
+    await window.RAVATEX_DELETE.excluirOPComFluxo(op.id, async function () {
+      navigate('#/ops');
+    });
+  }
+
   // 4) Render
   function render() {
     container.replaceChildren(buildScreen());
@@ -562,6 +576,7 @@
         latexOptions,
         buildBlocoFios,
         reloadEntregasCima,
+        excluirOP,
       });
     }
 
@@ -601,9 +616,18 @@
       el('div', { style: 'font-size:22px;font-weight:800;color:#16203a;letter-spacing:-.01em;' }, titulo),
       el('div', { style: 'font-size:13px;color:#8a93a3;margin-top:3px;line-height:1.45;' }, subtitulo),
     );
+    var actions = [el('button', { type: 'button', style: BTN_BACK, onclick: () => navigate('#/ops') }, svgEl(SVG_BACK), 'Voltar')];
+    if (op) {
+      actions.unshift(el('button', {
+        type: 'button',
+        style: 'display:inline-flex;align-items:center;gap:7px;background:#fff;color:#d6403a;border:1px solid #f1c7c5;border-radius:4px;padding:8px 16px;font-weight:600;font-size:13.5px;font-family:inherit;cursor:pointer;',
+        onclick: excluirOP,
+      }, svgEl(SVG_TRASH), 'Excluir OP'));
+    }
+
     return el('div', { style: 'display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:22px;' },
       headerLeft,
-      el('button', { type: 'button', style: BTN_BACK, onclick: () => navigate('#/ops') }, svgEl(SVG_BACK), 'Voltar'),
+      el('div', { style: 'display:flex;align-items:center;gap:8px;flex-wrap:wrap;' }, actions),
     );
   }
 

@@ -116,6 +116,28 @@
       return placeholderButton('Editar', motivo);
     }
 
+    function buildDeleteButton() {
+      return window.el('button', {
+        type: 'button',
+        style: 'display:inline-flex;align-items:center;gap:7px;background:#fff;color:#d6403a;border:1px solid #f1c7c5;border-radius:4px;padding:9px 14px;font-weight:600;font-size:13.5px;font-family:inherit;cursor:pointer;',
+        onclick: excluirPedido,
+      }, 'Excluir Pedido');
+    }
+
+    async function excluirPedido() {
+      if (!state.pedido || !state.pedido.id) {
+        window.toast('Pedido nao carregado.', 'error');
+        return;
+      }
+      if (!window.RAVATEX_DELETE || typeof window.RAVATEX_DELETE.excluirPedidoComFluxo !== 'function') {
+        window.toast('Exclusao controlada indisponivel.', 'error');
+        return;
+      }
+      await window.RAVATEX_DELETE.excluirPedidoComFluxo(state.pedido.id, async function () {
+        window.navigate('#/pedidos');
+      });
+    }
+
     async function alterarStatus(novoStatus, btn) {
       if (!state.pedido) {
         window.toast('Pedido nao carregado.', 'error');
@@ -2873,6 +2895,7 @@
       buildTrackingAdmin: buildTrackingAdmin,
       buildParciaisAdmin: buildParciaisAdmin,
       buildEditButton: buildEditButton,
+      buildDeleteButton: buildDeleteButton,
       buildEditItensButton: buildEditItensButton,
       navigateToPedidos: navigateToPedidos,
       navigateToOp: navigateToOp,

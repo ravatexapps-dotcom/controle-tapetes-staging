@@ -633,16 +633,16 @@ test('25. runtime: editarEnviado chama supa.from("op_itens").update com { metros
     'editarEnviado não filtra op_itens por eq("id", row.id)');
 });
 
-test('26. runtime: excluirOpLatex chama supa.from("ops").delete()', async () => {
+test('26. runtime: excluirOpLatex usa helper central e nao delete direto', async () => {
   const { sandbox, fakeSupa } = makeFullBootSandbox();
   await vm.runInContext('window.renderOPLatexAdmin(42)', sandbox);
   // Validação estática: excluirOpLatex está no source e contém o write.
   assert.match(olaSrc, /function\s+excluirOpLatex/,
     'op-latex-admin.js deve ter function excluirOpLatex');
-  assert.match(olaSrc, /from\(\s*['"]ops['"]\s*\)\s*\.delete/,
+  assert.match(olaSrc, /RAVATEX_DELETE\.excluirOPComFluxo\(\s*id/,
     'excluirOpLatex não chama ops.delete()');
   // Confirma que o source faz write via .eq('id', id)
-  assert.match(olaSrc, /delete\s*\(\s*\)\s*\.eq\(\s*['"]id['"]\s*,\s*id\s*\)/,
+  assert.doesNotMatch(olaSrc, /from\(\s*['"]ops['"]\s*\)\s*\.delete/,
     'excluirOpLatex não filtra ops por eq("id", id)');
 });
 

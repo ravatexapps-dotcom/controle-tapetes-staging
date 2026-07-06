@@ -278,3 +278,21 @@ discutida em fase separada, com autorizacao explicita.
 > **Este plano é fonte canônica para a frente Pedido ↔ OP ↔ Movimentação ↔ Documentos.**
 > Deve ser consultado antes de qualquer ação e atualizado ao final de cada etapa.
 > Indexado em `docs/DOCUMENTATION_INDEX.md` §1.
+## Atualizacao 2026-07-06 - Pedido/OP Controlled Delete B
+
+Fase `RAVATEX-TAPETES-PEDIDO-OP-CONTROLLED-DELETE-B` cria uma porta
+controlada de limpeza para dados de teste sem alterar o contrato produtivo:
+
+| # | Decisao | Fundamentacao |
+|---|---|---|
+| D-DEL01 | Exclusao de Pedido/OP fica centralizada em RPC transacional. | Evita deletes diretos espalhados na UI e respeita FKs/triggers. |
+| D-DEL02 | A UI sempre chama diagnostico e mostra impacto antes de remover. | O usuario ve OPs, lotes, entregas e expedicoes afetadas antes da acao final. |
+| D-DEL03 | Entrega/expedicao bloqueiam exclusao. | Dados produtivos e documentos operacionais nao podem ser apagados nesta fase. |
+| D-DEL04 | Pedido com OP sem movimento exige `EXCLUIR` e remove OPs/lotes vinculados. | Limpeza de teste nao deve deixar lote orfao nem OP vinculada a Pedido apagado. |
+| D-DEL05 | OP mae com filha bloqueia na exclusao individual. | Evita deixar OP de Acabamento orfa; o usuario deve excluir a filha primeiro. |
+| D-DEL06 | `op_numeros` nao e alterado. | Numeracao e historico operacional seguem monotonicamente preservados. |
+
+Botao/fluxo adicionado nas telas principais de Pedido e OP por
+`window.RAVATEX_DELETE`. O antigo `excluirOpLatex` direto foi substituido pelo
+helper central. Senha admin, soft-delete e auditoria permanente ficam para a
+fase futura de producao.
