@@ -33,6 +33,13 @@ export const config = {
   googleRedirectUri: env.GOOGLE_REDIRECT_URI ?? '',
   googleTokenPath: resolve(process.cwd(), env.GOOGLE_TOKEN_PATH ?? './data/google-token.json'),
 
+  googleOAuthScopes: (env.GOOGLE_OAUTH_SCOPES
+    ? env.GOOGLE_OAUTH_SCOPES.split(',').map(s => s.trim()).filter(Boolean)
+    : [
+        'https://www.googleapis.com/auth/gmail.readonly',
+        'https://www.googleapis.com/auth/drive.file',
+      ]),
+
   googleDriveRootFolderName: env.GOOGLE_DRIVE_ROOT_FOLDER_NAME ?? 'Ravatex Documents Ingestor',
   googleDriveRootFolderId: env.GOOGLE_DRIVE_ROOT_FOLDER_ID ?? '',
   googleDriveCreateMissingFolders: (env.GOOGLE_DRIVE_CREATE_MISSING_FOLDERS ?? 'true').toLowerCase() === 'true',
@@ -42,4 +49,6 @@ export const config = {
   databasePath: resolve(process.cwd(), env.DATABASE_PATH ?? './data/app.db'),
   outboxPath: resolve(process.cwd(), env.OUTBOX_PATH ?? './data/outbox/document-events.jsonl'),
   scanDaysBack: parseInt(env.SCAN_DAYS_BACK ?? '7', 10),
+
+  ingestRealGoogle: (env.INGEST_REAL_GOOGLE ?? 'false').toLowerCase() === 'true',
 };

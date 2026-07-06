@@ -1,16 +1,23 @@
 import { appendFileSync, existsSync, mkdirSync } from 'node:fs';
-import { dirname } from 'node:path';
+import { dirname, resolve } from 'node:path';
 import { config } from '../config.js';
 import type { DocumentEvent } from '../types/event.js';
 import { getDb } from '../storage/sqlite.js';
 import { buildStorageUri } from '../types/document.js';
 
+function resolveOutboxPath(): string {
+  const envPath = process.env.OUTBOX_PATH;
+  if (envPath) return resolve(process.cwd(), envPath);
+  return config.outboxPath;
+}
+
 export function appendEvent(event: DocumentEvent): void {
-  const dir = dirname(config.outboxPath);
+  const path = resolveOutboxPath();
+  const dir = dirname(path);
   if (!existsSync(dir)) {
     mkdirSync(dir, { recursive: true });
   }
-  appendFileSync(config.outboxPath, JSON.stringify(event) + '\n', 'utf-8');
+  appendFileSync(path, JSON.stringify(event) + '\n', 'utf-8');
 }
 
 export function exportPendingEvents(): DocumentEvent[] {
