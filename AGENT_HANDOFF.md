@@ -3,7 +3,7 @@
 ## Branch/HEAD/Status
 ### documentos-ingestor (este repositório)
 - Branch: master
-- HEAD: `(new commit)` — Add local manifest export and sync dry run (G9-B)
+- HEAD: `f289833` — Add local manifest export and sync dry run (G9-B)
 
 ### Controle de Tapetes (staging/work/app-next)
 - HEAD canônico: `997486a`
