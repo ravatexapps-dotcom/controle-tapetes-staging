@@ -661,19 +661,19 @@
           style: 'display:grid;grid-template-columns:minmax(0,1fr) 80px 80px 80px;gap:10px;padding:10px 14px;border-bottom:1px solid #f1f3f6;background:#f8f9fb;font-size:11px;font-weight:700;color:#8a93a3;letter-spacing:.03em;',
         },
           window.el('span', {}, 'Produto'),
-          window.el('span', { style: 'text-align:right;' }, key === 'Insumos>Tecelagem' ? 'Pedido' : 'Alocado'),
-          window.el('span', { style: 'text-align:right;' }, 'Transferido'),
-          window.el('span', { style: 'text-align:right;' }, 'Pendente')
+          window.el('span', { style: 'text-align:center;' }, key === 'Insumos>Tecelagem' ? 'Pedido' : 'Alocado'),
+          window.el('span', { style: 'text-align:center;' }, 'Transferido'),
+          window.el('span', { style: 'text-align:center;' }, 'Pendente')
         ),
         rows.map(function (row, index) {
           return window.el('div', {
             style: 'display:grid;grid-template-columns:minmax(0,1fr) 80px 80px 80px;gap:10px;padding:11px 14px;align-items:center;' + (index < rows.length - 1 ? 'border-bottom:1px solid #f1f3f6;' : ''),
           },
             window.el('div', { style: 'font-size:13px;color:#16203a;line-height:1.45;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;', title: row.label }, row.label),
-            window.el('div', { style: 'font-size:12.5px;font-weight:600;color:#3f4757;text-align:right;' }, row.target),
-            window.el('div', { style: 'font-size:12.5px;font-weight:600;color:#2563eb;text-align:right;' }, row.moved),
+            window.el('div', { style: 'font-size:12.5px;font-weight:600;color:#3f4757;text-align:center;' }, row.target),
+            window.el('div', { style: 'font-size:12.5px;font-weight:600;color:#2563eb;text-align:center;' }, row.moved),
             window.el('div', {
-              style: 'font-size:12.5px;font-weight:700;color:' + row.remainingColor + ';text-align:right;white-space:nowrap;',
+              style: 'font-size:12.5px;font-weight:700;color:' + row.remainingColor + ';text-align:center;white-space:nowrap;',
             }, row.remaining)
           );
         })
@@ -981,7 +981,7 @@
           slider,
           window.el('div', { style: 'display:flex;justify-content:space-between;gap:10px;margin-top:4px;' },
             window.el('span', { style: 'font-size:11px;color:#aab2bf;' }, '0 m'),
-            window.el('span', { style: 'font-size:11px;color:#aab2bf;text-align:right;' }, 'max individual: ' + fmtMetros(max)))
+            window.el('span', { style: 'font-size:11px;color:#aab2bf;text-align:center;' }, 'max individual: ' + fmtMetros(max)))
         ));
         itemRowState[item.op_item_id] = { slider: slider, valorLabel: valorLabel };
       });
@@ -1311,14 +1311,14 @@
             style: 'display:grid;grid-template-columns:1fr auto;gap:10px;padding:10px 14px;border-bottom:1px solid #f1f3f6;background:#f8f9fb;font-size:11px;font-weight:700;color:#8a93a3;letter-spacing:.03em;',
           },
             window.el('span', {}, 'Produto'),
-            window.el('span', { style: 'text-align:right;' }, 'Metros pedido')),
+            window.el('span', { style: 'text-align:center;' }, 'Metros pedido')),
           op.op_itens.map(function (opItem, index) {
             var metros = ns.toFiniteNumber(opItem.metros_pedidos);
             return window.el('div', {
               style: 'display:grid;grid-template-columns:1fr auto;gap:10px;padding:11px 14px;align-items:center;' + (index < op.op_itens.length - 1 ? 'border-bottom:1px solid #f1f3f6;' : ''),
             },
               window.el('div', { style: 'font-size:13px;color:#16203a;line-height:1.45;' }, itemLabel(opItem)),
-              window.el('div', { style: 'font-size:13px;font-weight:600;color:#3f4757;text-align:right;' }, ns.fmtMetros(metros))
+              window.el('div', { style: 'font-size:13px;font-weight:600;color:#3f4757;text-align:center;' }, ns.fmtMetros(metros))
             );
           })
         );
@@ -1572,7 +1572,7 @@
                   window.el('div', { style: 'font-size:12.5px;color:#5b6472;line-height:1.45;margin-top:2px;' }, entry.meta || '-'),
                   entry.note ? window.el('div', { style: 'font-size:12px;color:#8a93a3;line-height:1.45;margin-top:2px;' }, entry.note) : null
                 ),
-                window.el('div', { style: 'text-align:right;' },
+                window.el('div', { style: 'text-align:center;' },
                   window.el('div', { style: 'font-size:13px;font-weight:800;color:#2563eb;white-space:nowrap;' }, entry.amount || '-'),
                   window.el('div', { style: 'font-size:11px;font-weight:700;color:#18794a;margin-top:4px;white-space:nowrap;' }, entry.status || 'Registrada')
                 )
@@ -2328,7 +2328,7 @@
                 },
                   window.el('div', { style: 'font-size:12.5px;color:#3f4757;' },
                     window.rotuloFio ? window.rotuloFio(ordem) : ns.fmtTextoOuEmpty(ordem.tipo, 'Fio')),
-                  window.el('div', { style: 'font-size:12.5px;font-weight:600;color:#2563eb;text-align:right;' },
+                  window.el('div', { style: 'font-size:12.5px;font-weight:600;color:#2563eb;text-align:center;' },
                     ns.fmtKg(ordem.kg_recebido) + ' de ' + ns.fmtKg(ordem.kg_pedido) + ' · ' + (ns.toFiniteNumber(ordem.kg_recebido) >= ns.toFiniteNumber(ordem.kg_pedido) ? 'completo' : 'pendente'))
                 );
               })
@@ -2424,7 +2424,7 @@
             },
               window.el('div', { style: 'font-size:12px;color:#3f4757;' },
                 formatTransitionDate(entrega && entrega.data) + ' · ' + ns.fmtMetros(ei.metros_entregues)),
-              window.el('div', { style: 'font-size:11.5px;color:#8a93a3;text-align:right;' },
+              window.el('div', { style: 'font-size:11.5px;color:#8a93a3;text-align:center;' },
                 opDestino ? ('→ ' + ns.opLabel(opDestino)) : 'Registrada'));
           }).length
             ? (tecOps.length ? '' : emptyRow('Nenhuma entrega registrada.'))
@@ -2525,7 +2525,7 @@
             },
               window.el('div', { style: 'font-size:12px;color:#3f4757;' },
                 formatTransitionDate(entrega && entrega.data) + ' · ' + ns.fmtMetros(ei.metros_entregues)),
-              window.el('div', { style: 'font-size:11.5px;color:#8a93a3;text-align:right;' }, 'Recebido da Tecelagem'));
+              window.el('div', { style: 'font-size:11.5px;color:#8a93a3;text-align:center;' }, 'Recebido da Tecelagem'));
           }).length ? null : emptyRow('Nenhum material registrado.')
         );
       }
