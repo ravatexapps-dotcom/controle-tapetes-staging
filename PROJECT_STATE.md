@@ -19,7 +19,7 @@ D:\OneDrive\Programação\Ravatex\documents-ingestor
 - `contracts/manifest.schema.json` — schema do manifest de Pedido
 
 ## Status atual
-- HEAD (documents-ingestor): `2c8f316`
+- HEAD (documents-ingestor): `a48209a`
 - HEAD canônico staging/work/app-next (Controle de Tapetes): `997486a`
 - Push staging: `af919a2..997486a` (produção/origin oficial intocados)
 - 152 testes passando (20 suites) — incluindo integração mockada completa
@@ -29,6 +29,7 @@ D:\OneDrive\Programação\Ravatex\documents-ingestor
 - Hardening de scan (caps, wide-scan guard, cross-msg dedup, run log) aplicado (D)
 - Drive tests isolados de credenciais reais (D-R1)
 - CI workflow criado (E)
+- G5 taxonomy validado em real (R4-R1): retry por Gmail messageId confirmado funcional
 
 ## Comandos disponíveis
 - `npm run dev` — tsx watch
@@ -68,6 +69,10 @@ Não integrar Supabase nesta fase. O outbox JSONL é o contrato de integração.
 - E — CI mock integration (hermetic setup + integration test + workflow)
 - F — UX (documents-ingestor operational UX)
 - G1 — Taxonomia 3 eixos: types + contracts + storage (21 files, 152 testes)
+- G2 — Classificação XML NF-e direção (entrada/saída via CNPJs)
+- G3 — Drive folder layout hierarchical (pendentes + pedidos por tipo/direção)
+- G4 — Manifest do Pedido (estrutura + add document ao manifest)
+- G5 — Retry por Gmail messageId + validação real R4-R1 + crossMessageDuplicates tracking
 - G/H — UI Backlog (Controle de Tapetes — staging/work/app-next)
 
 ## Fase G1: Taxonomia de Documentos (3 eixos)
@@ -89,5 +94,5 @@ Não integrar Supabase nesta fase. O outbox JSONL é o contrato de integração.
 - Status residual esperado: `?? supabase/.temp/`
 
 ## Próxima fase recomendada
-RAVATEX-DOC-INGESTOR-TAXONOMY-G2-XML-NF-DIRECTION-PATCH
-Foco: classificar XML NF-e como entrada/saída/desconhecida usando RAVATEX_CNPJS, sem OCR e sem PDF parsing ainda.
+RAVATEX-DOC-INGESTOR-G6-ASSIGNMENT-AND-OPERATIONAL-LINK
+Foco: vincular documento pending a pedido sem Google real (assign local-only — sem Drive move, sem upload manifest, apenas SQLite + outbox). Ver diagnóstico completo em AGENT_HANDOFF.md (G6-A diagnostic) para detalhes, riscos e ordem de implementação.
