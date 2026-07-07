@@ -8,6 +8,8 @@ import { appendEvent, isEventDuplicate } from './outbox.js';
 import { addDocumentToManifest } from './manifest.js';
 import { join } from 'node:path';
 import { mkdirSync, existsSync } from 'node:fs';
+import { fromLegacyTipo } from '../types/document.js';
+import type { TipoDocumento } from '../types/document.js';
 
 export interface AssignOptions {
   confirmReal?: boolean;
@@ -74,7 +76,9 @@ export function createAssignPedido(deps: AssignDeps = defaultDeps) {
       return null;
     }
 
-    const tipo = doc.tipo_documento;
+    const tipoRaw: string = doc.tipo_documento;
+    const tax = fromLegacyTipo(tipoRaw as any);
+    const tipo: TipoDocumento = tax.tipoDocumento;
     const subfolder = pedidoSubfolderDrivePath(normalized, tipo);
     const moveResult = await deps.moveOrCopy({
       sourceFileId: doc.drive_file_id,

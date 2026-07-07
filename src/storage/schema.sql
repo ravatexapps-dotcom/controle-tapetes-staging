@@ -14,6 +14,7 @@ CREATE TABLE IF NOT EXISTS emails_processados (
 -- local_cache_path é apenas cache/mirror local, nunca fonte canônica.
 -- local_path é mantido apenas para compatibilidade com scaffold anterior
 -- e representa cache local, não a fonte de verdade.
+-- Taxonomia G1: tipo_documento aceita novo (nf/romaneio/desconhecido) e legado (nf_xml/nf_pdf).
 CREATE TABLE IF NOT EXISTS documentos (
   id TEXT PRIMARY KEY,
   gmail_message_id TEXT NOT NULL,
@@ -22,7 +23,13 @@ CREATE TABLE IF NOT EXISTS documentos (
   filename_original TEXT NOT NULL,
   sha256 TEXT NOT NULL,
   tipo_documento TEXT NOT NULL DEFAULT 'desconhecido'
-    CHECK (tipo_documento IN ('nf_xml', 'nf_pdf', 'romaneio', 'desconhecido')),
+    CHECK (tipo_documento IN ('nf', 'romaneio', 'desconhecido', 'nf_xml', 'nf_pdf')),
+
+  formato TEXT NOT NULL DEFAULT 'desconhecido'
+    CHECK (formato IN ('pdf', 'xml', 'desconhecido')),
+
+  direcao_nf TEXT
+    CHECK (direcao_nf IS NULL OR direcao_nf IN ('entrada', 'saida', 'desconhecida')),
 
   -- Storage canônico (Drive-first)
   storage_backend TEXT NOT NULL DEFAULT 'google_drive'

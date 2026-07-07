@@ -44,7 +44,7 @@ describe('manifest', () => {
   it('adds document with storage_backend=google_drive and storage_uri', () => {
     const m = addDocumentToManifest(manifestPath, 'PED-25-2026', {
       document_id: 'doc-123',
-      tipo_documento: 'nf_pdf',
+      tipo_documento: 'nf',
       filename_original: 'nota.pdf',
       sha256: 'a'.repeat(64),
       storage_backend: 'google_drive',
@@ -78,5 +78,21 @@ describe('manifest', () => {
     });
     expect(m.documents[0].local_cache_path).toContain('data/cache');
     expect(m.documents[0].local_path).toBeUndefined();
+  });
+
+  it('accepts legacy tipo nf_pdf in document', () => {
+    const m = addDocumentToManifest(manifestPath, 'PED-25-2026', {
+      document_id: 'doc-legacy',
+      tipo_documento: 'nf_pdf',
+      filename_original: 'legacy.pdf',
+      sha256: 'c'.repeat(64),
+      storage_backend: 'google_drive',
+      storage_uri: 'gdrive://file/legacy',
+      drive_file_id: 'legacy',
+      ingested_at: '2026-01-01T00:00:00.000Z',
+      event_id: 'evt-legacy',
+      status: 'pending_app_acceptance',
+    });
+    expect(m.documents[0].tipo_documento).toBe('nf_pdf');
   });
 });

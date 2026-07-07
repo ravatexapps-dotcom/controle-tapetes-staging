@@ -70,7 +70,7 @@ describe('real scan flow (mocked Google)', () => {
     expect(result.newDocuments).toBe(0);
   });
 
-  it('real scan: detects PDF, classifies as nf_pdf, uploads, persists in SQLite', async () => {
+  it('real scan: detects PDF, classifies as nf, uploads, persists in SQLite', async () => {
     const fakePdf = Buffer.from('%PDF-1.4\n...nota fiscal fake content...');
     const deps = mkDeps({
       fetchEmails: async () => [
@@ -104,7 +104,8 @@ describe('real scan flow (mocked Google)', () => {
     const docs = db.prepare(`SELECT * FROM documentos`).all() as any[];
     expect(docs).toHaveLength(1);
     expect(docs[0].filename_original).toBe('NF-12345.pdf');
-    expect(docs[0].tipo_documento).toBe('nf_pdf');
+    expect(docs[0].tipo_documento).toBe('nf');
+    expect(docs[0].formato).toBe('pdf');
     expect(docs[0].storage_backend).toBe('google_drive');
     expect(docs[0].storage_uri).toMatch(/^gdrive:\/\/file\//);
     expect(docs[0].drive_file_id).toBeTruthy();
@@ -134,7 +135,7 @@ describe('real scan flow (mocked Google)', () => {
     expect(docCount).toBe(1);
   });
 
-  it('real scan: XML with NF-e structure is classified as nf_xml', async () => {
+  it('real scan: XML with NF-e structure is classified as nf + formato xml', async () => {
     const xml = Buffer.from('<nfeProc xmlns="http://www.portalfiscal.inf.br/nfe"><NFe>...</NFe></nfeProc>');
     const deps = mkDeps({
       fetchEmails: async () => [
@@ -149,8 +150,9 @@ describe('real scan flow (mocked Google)', () => {
     const r = await scan({ confirmReal: true });
     expect(r.newDocuments).toBe(1);
     const db = getDb();
-    const doc = db.prepare(`SELECT tipo_documento FROM documentos LIMIT 1`).get() as any;
-    expect(doc.tipo_documento).toBe('nf_xml');
+    const doc = db.prepare(`SELECT tipo_documento, formato FROM documentos LIMIT 1`).get() as any;
+    expect(doc.tipo_documento).toBe('nf');
+    expect(doc.formato).toBe('xml');
   });
 
   it('real scan: PDF with romaneio in name is classified as romaneio', async () => {

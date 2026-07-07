@@ -38,11 +38,11 @@ function seedPendingDoc(database: any, overrides: any = {}): string {
   database.prepare(
     `INSERT INTO documentos (
        id, gmail_message_id, thread_id, attachment_id, filename_original,
-       sha256, tipo_documento,
+       sha256, tipo_documento, formato, direcao_nf,
        storage_backend, storage_uri, drive_file_id, drive_folder_id,
        drive_web_view_link, drive_web_content_link, local_cache_path,
        status
-     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending')`
+     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending')`
   ).run(
     id,
     gmailMessageId,
@@ -50,7 +50,9 @@ function seedPendingDoc(database: any, overrides: any = {}): string {
     overrides.attachmentId ?? 'att-seed',
     overrides.filename ?? 'NF-001.pdf',
     overrides.sha256 ?? 'a'.repeat(64),
-    overrides.tipoDocumento ?? 'nf_pdf',
+    overrides.tipoDocumento ?? 'nf',
+    overrides.formato ?? 'pdf',
+    overrides.direcaoNf ?? null,
     'google_drive',
     overrides.storageUri ?? 'gdrive://file/seed-file',
     overrides.driveFileId ?? 'seed-file',
@@ -174,5 +176,14 @@ describe('real assign flow (mocked Google)', () => {
     const assign = createAssignPedido(deps);
     await assign(docId, '25/2026', { confirmReal: true, copyInsteadOfMove: true });
     expect(copyUsed).toBe(true);
+  });
+
+  it('real assign: handles legacy nf_pdf tipo from DB', async () => {
+    const database = getDb();
+    const docId = seedPendingDoc(database, { tipoDocumento: 'nf_pdf', formato: 'pdf' });
+    const assign = createAssignPedido(mkDeps());
+    const r = await assign(docId, '25/2026', { confirmReal: true });
+    expect(r).not.toBeNull();
+    expect(r!.pedidoManual).toBe('PED-25-2026');
   });
 });

@@ -117,11 +117,11 @@ export function createScan(deps: ScanDeps = defaultDeps) {
             database.prepare(
               `INSERT INTO documentos (
                  id, gmail_message_id, thread_id, attachment_id, filename_original,
-                 sha256, tipo_documento,
+                 sha256, tipo_documento, formato, direcao_nf,
                  storage_backend, storage_uri, drive_file_id, drive_folder_id,
                  drive_web_view_link, drive_web_content_link, local_cache_path,
                  status
-               ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending')`
+               ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending')`
             ).run(
               documentId,
               email.gmailMessageId,
@@ -130,6 +130,8 @@ export function createScan(deps: ScanDeps = defaultDeps) {
               att.filename,
               sha256,
               'desconhecido',
+              'desconhecido',
+              null,
               'google_drive',
               crossMatch.storageUri,
               crossMatch.driveFileId,
@@ -145,7 +147,7 @@ export function createScan(deps: ScanDeps = defaultDeps) {
             continue;
           }
 
-          const tipo = classifyAttachment({
+          const classificacao = classifyAttachment({
             filename: att.filename,
             mimeType: att.mimeType,
             subject: email.subject,
@@ -164,11 +166,11 @@ export function createScan(deps: ScanDeps = defaultDeps) {
           database.prepare(
             `INSERT INTO documentos (
                id, gmail_message_id, thread_id, attachment_id, filename_original,
-               sha256, tipo_documento,
+               sha256, tipo_documento, formato, direcao_nf,
                storage_backend, storage_uri, drive_file_id, drive_folder_id,
                drive_web_view_link, drive_web_content_link, local_cache_path,
                status
-             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending')`
+             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending')`
           ).run(
             documentId,
             email.gmailMessageId,
@@ -176,7 +178,9 @@ export function createScan(deps: ScanDeps = defaultDeps) {
             att.attachmentId,
             att.filename,
             sha256,
-            tipo,
+            classificacao.tipoDocumento,
+            classificacao.formato,
+            null,
             'google_drive',
             upload.file.storageUri,
             upload.file.driveFileId,

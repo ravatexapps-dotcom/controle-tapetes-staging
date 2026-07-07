@@ -75,7 +75,9 @@ program
   .description('List documents with safe (masked) text output or full JSON')
   .option('--limit <n>', 'Max rows to return (default 20, cap 200)', '20')
   .option('--status <status>', 'Filter by status: pending|assigned|accepted|rejected')
-  .option('--tipo <tipo>', 'Filter by tipo: nf_pdf|nf_xml|romaneio|desconhecido')
+  .option('--tipo <tipo>', 'Filter by tipo: nf|romaneio|desconhecido (also accepts legacy nf_pdf|nf_xml)')
+  .option('--formato <formato>', 'Filter by formato: pdf|xml|desconhecido')
+  .option('--direcao <direcao>', 'Filter by direcao NF: entrada|saida|desconhecida')
   .option('--json', 'Print full JSON (no token/secret by design)', false)
   .action((opts) => {
     let limit = parseInt(opts.limit, 10);
@@ -85,11 +87,15 @@ program
       limit = 200;
     }
     const validStatuses = ['pending', 'assigned', 'accepted', 'rejected'] as const;
-    const validTipos = ['nf_pdf', 'nf_xml', 'romaneio', 'desconhecido'] as const;
+    const validTipos = ['nf', 'romaneio', 'desconhecido', 'nf_pdf', 'nf_xml'] as const;
+    const validFormatos = ['pdf', 'xml', 'desconhecido'] as const;
+    const validDirecoes = ['entrada', 'saida', 'desconhecida'] as const;
     const status = (validStatuses as readonly string[]).includes(opts.status) ? opts.status as any : undefined;
     const tipo = (validTipos as readonly string[]).includes(opts.tipo) ? opts.tipo as any : undefined;
+    const formato = (validFormatos as readonly string[]).includes(opts.formato) ? opts.formato as any : undefined;
+    const direcaoNf = (validDirecoes as readonly string[]).includes(opts.direcao) ? opts.direcao as any : undefined;
 
-    const rows = listPendingDocuments({ limit, status, tipo });
+    const rows = listPendingDocuments({ limit, status, tipo, formato, direcaoNf });
     if (rows.length === 0) {
       console.log('No documents matched.');
       closeDb();
@@ -106,8 +112,8 @@ program
       }));
       console.log(JSON.stringify({ count: safe.length, documents: safe }, null, 2));
     } else {
-      console.log('doc_id              | email_id       | date       | subject                    | filename           | tipo       | status    | pedido        | drive_id');
-      console.log('-'.repeat(180));
+      console.log('doc_id              | email_id       | date       | subject                    | filename           | tipo       | fmt | dir        | status    | pedido        | drive_id');
+      console.log('-'.repeat(200));
       for (const r of rows) {
         const line = [
           maskIdStrict(r.id).padEnd(18),
@@ -116,6 +122,8 @@ program
           maskSubject(r.email_subject, 28).padEnd(28),
           (r.filename_original ?? '').slice(0, 18).padEnd(18),
           (r.tipo_documento ?? '').padEnd(10),
+          (r.formato ?? '').padEnd(4),
+          (r.direcao_nf ?? '-').padEnd(12),
           (r.status ?? '').padEnd(9),
           (r.pedido_manual ?? '-').padEnd(14),
           r.drive_file_id ? maskIdStrict(r.drive_file_id) : 'no-drive',
@@ -190,6 +198,8 @@ program
       console.log(`  gmail_message_id: ${maskIdStrict(d.gmail_message_id)}`);
       console.log(`  filename:         ${d.filename_original}`);
       console.log(`  tipo_documento:   ${d.tipo_documento}`);
+      console.log(`  formato:          ${d.formato ?? '(none)'}`);
+      console.log(`  direcao_nf:       ${d.direcao_nf ?? '(none)'}`);
       console.log(`  status:           ${d.status}`);
       console.log(`  pedido_manual:    ${d.pedido_manual ?? '(none)'}`);
       console.log(`  storage_backend:  ${d.storage_backend}`);

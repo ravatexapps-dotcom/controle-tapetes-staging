@@ -1,4 +1,10 @@
-import type { TipoDocumento } from '../types/document.js';
+import type { TipoDocumento, FormatoDocumento } from '../types/document.js';
+import { formatoFromMimeType } from '../types/document.js';
+
+export interface ClassifyOutput {
+  tipoDocumento: TipoDocumento;
+  formato: FormatoDocumento;
+}
 
 export interface ClassifyInput {
   filename: string;
@@ -7,18 +13,19 @@ export interface ClassifyInput {
   contentSample?: string;
 }
 
-export function classifyAttachment(input: ClassifyInput): TipoDocumento {
+export function classifyAttachment(input: ClassifyInput): ClassifyOutput {
   const name = input.filename.toLowerCase();
   const subj = (input.subject ?? '').toLowerCase();
+  const formato = formatoFromMimeType(input.mimeType);
 
   if (input.mimeType === 'text/xml' || name.endsWith('.xml')) {
     if (hasNfeStructure(input.contentSample ?? '')) {
-      return 'nf_xml';
+      return { tipoDocumento: 'nf', formato: 'xml' };
     }
   }
 
   if (name.includes('romaneio') || subj.includes('romaneio')) {
-    return 'romaneio';
+    return { tipoDocumento: 'romaneio', formato };
   }
 
   const nfKeywords = ['nf', 'nfe', 'nota', 'danfe'];
@@ -27,11 +34,11 @@ export function classifyAttachment(input: ClassifyInput): TipoDocumento {
 
   if (input.mimeType === 'application/pdf' || name.endsWith('.pdf')) {
     if (nameMatch || subjMatch) {
-      return 'nf_pdf';
+      return { tipoDocumento: 'nf', formato: 'pdf' };
     }
   }
 
-  return 'desconhecido';
+  return { tipoDocumento: 'desconhecido', formato };
 }
 
 function hasNfeStructure(content: string): boolean {

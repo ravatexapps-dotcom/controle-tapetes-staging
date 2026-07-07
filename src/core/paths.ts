@@ -22,8 +22,7 @@ function rootName(): string {
 
 export function pdfSubfolder(tipo: TipoDocumento): string {
   const map: Record<TipoDocumento, string> = {
-    nf_pdf: 'nf',
-    nf_xml: 'nf',
+    nf: 'nf',
     romaneio: 'romaneio',
     desconhecido: 'desconhecido',
   };

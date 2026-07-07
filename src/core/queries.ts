@@ -1,17 +1,21 @@
 import { getDb } from '../storage/sqlite.js';
-import type { DocumentStatus, TipoDocumento } from '../types/document.js';
+import type { DocumentStatus } from '../types/document.js';
 
 export interface ListPendingFilters {
   limit?: number;
   status?: DocumentStatus;
-  tipo?: TipoDocumento;
+  tipo?: string;
+  formato?: string;
+  direcaoNf?: string;
 }
 
 export interface PendingDocumentRow {
   id: string;
   gmail_message_id: string;
   filename_original: string;
-  tipo_documento: TipoDocumento;
+  tipo_documento: string;
+  formato: string;
+  direcao_nf: string | null;
   status: DocumentStatus;
   pedido_manual: string | null;
   storage_backend: string;
@@ -37,10 +41,20 @@ export function listPendingDocuments(filters: ListPendingFilters = {}): PendingD
     where.push('d.tipo_documento = ?');
     params.push(filters.tipo);
   }
+  if (filters.formato) {
+    where.push('d.formato = ?');
+    params.push(filters.formato);
+  }
+  if (filters.direcaoNf) {
+    where.push('d.direcao_nf = ?');
+    params.push(filters.direcaoNf);
+  }
 
   const whereClause = where.length > 0 ? `WHERE ${where.join(' AND ')}` : '';
   const sql = `
     SELECT d.id, d.gmail_message_id, d.filename_original, d.tipo_documento,
+           COALESCE(d.formato, 'desconhecido') AS formato,
+           d.direcao_nf,
            d.status, d.pedido_manual, d.storage_backend, d.drive_file_id,
            d.created_at, d.updated_at,
            e.subject AS email_subject, NULL AS email_from, NULL AS email_date

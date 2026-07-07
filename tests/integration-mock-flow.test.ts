@@ -139,9 +139,10 @@ describe('integration mock flow — full Gmail→Drive→SQLite→Outbox hermeti
     expect(scanResult.duplicates).toBe(0);
 
     const db = getDb();
-    const docs = db.prepare(`SELECT id, sha256, tipo_documento, drive_file_id, status, gmail_message_id FROM documentos`).all() as any[];
+    const docs = db.prepare(`SELECT id, sha256, tipo_documento, formato, drive_file_id, status, gmail_message_id FROM documentos`).all() as any[];
     expect(docs).toHaveLength(1);
-    expect(docs[0].tipo_documento).toBe('nf_pdf');
+    expect(docs[0].tipo_documento).toBe('nf');
+    expect(docs[0].formato).toBe('pdf');
     expect(docs[0].status).toBe('pending');
     expect(docs[0].drive_file_id).toMatch(/^file-/);
     void sha256Expected;

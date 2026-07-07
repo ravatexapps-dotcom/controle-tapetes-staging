@@ -1,10 +1,12 @@
 import { writeFileSync, existsSync, mkdirSync, readFileSync } from 'node:fs';
 import { dirname } from 'node:path';
-import type { TipoDocumento, StorageBackend } from '../types/document.js';
+import type { TipoDocumento, FormatoDocumento, DirecaoNF, StorageBackend, TipoDocumentoLegado } from '../types/document.js';
 
 export interface ManifestDocument {
   document_id: string;
-  tipo_documento: TipoDocumento;
+  tipo_documento: TipoDocumento | TipoDocumentoLegado;
+  formato?: FormatoDocumento;
+  direcao_nf?: DirecaoNF | null;
   filename_original: string;
   sha256: string;
 
@@ -24,7 +26,7 @@ export interface ManifestDocument {
 }
 
 export interface Manifest {
-  schema_version: 1;
+  schema_version: 1 | 2;
   pedido: string;
   created_at: string;
   updated_at: string;

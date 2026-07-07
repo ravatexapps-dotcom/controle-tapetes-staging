@@ -9,12 +9,8 @@ import {
 } from '../src/core/paths.js';
 
 describe('paths (Drive logical)', () => {
-  it('maps nf_pdf to nf/', () => {
-    expect(pdfSubfolder('nf_pdf')).toBe('nf');
-  });
-
-  it('maps nf_xml to nf/', () => {
-    expect(pdfSubfolder('nf_xml')).toBe('nf');
+  it('maps nf to nf/', () => {
+    expect(pdfSubfolder('nf')).toBe('nf');
   });
 
   it('maps romaneio to romaneio/', () => {
@@ -46,7 +42,7 @@ describe('paths (Drive logical)', () => {
   });
 
   it('pedidoSubfolderDrivePath is a folder, no filename', () => {
-    const p = pedidoSubfolderDrivePath('PED-25-2026', 'nf_pdf');
+    const p = pedidoSubfolderDrivePath('PED-25-2026', 'nf');
     expect(p.logicalPath).toMatch(/\/nf$/);
   });
 
@@ -57,7 +53,7 @@ describe('paths (Drive logical)', () => {
   });
 
   it('pathes returned are NOT absolute local disk paths', () => {
-    const p = pedidoDocumentDrivePath('PED-25-2026', 'nf_pdf', 'n.pdf');
+    const p = pedidoDocumentDrivePath('PED-25-2026', 'nf', 'n.pdf');
     expect(p.logicalPath.includes(':\\')).toBe(false);
     expect(p.logicalPath.startsWith('/')).toBe(false);
   });

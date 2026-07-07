@@ -18,10 +18,13 @@ export interface DocumentEventDocument {
   local_cache_path?: string;
 
   manifest_storage_uri?: string;
+
+  formato?: string;
+  direcao_nf?: string;
 }
 
 export interface DocumentEvent {
-  schema_version: 1;
+  schema_version: 1 | 2;
   event_type: 'document.detected';
   event_id: string;
   created_at: string;
@@ -49,7 +52,29 @@ export function createDocumentEvent(params: {
   localCachePath?: string;
   manifestStorageUri?: string;
   status?: EventStatus;
+  formato?: string;
+  direcaoNf?: string;
 }): DocumentEvent {
+  const document: DocumentEventDocument = {
+    document_id: params.documentId,
+    tipo_documento: params.tipoDocumento,
+    filename_original: params.filenameOriginal,
+    sha256: params.sha256,
+    storage_backend: 'google_drive',
+    storage_uri: `gdrive://file/${params.driveFileId}`,
+    drive_file_id: params.driveFileId,
+    drive_folder_id: params.driveFolderId,
+    drive_web_view_link: params.driveWebViewLink,
+    drive_web_content_link: params.driveWebContentLink,
+    local_cache_path: params.localCachePath,
+    manifest_storage_uri: params.manifestStorageUri,
+  };
+  if (params.formato) {
+    document.formato = params.formato;
+  }
+  if (params.direcaoNf) {
+    document.direcao_nf = params.direcaoNf;
+  }
   return {
     schema_version: 1,
     event_type: 'document.detected',
@@ -59,20 +84,7 @@ export function createDocumentEvent(params: {
     source: 'gmail',
     gmail_message_id: params.gmailMessageId,
     thread_id: params.threadId,
-    document: {
-      document_id: params.documentId,
-      tipo_documento: params.tipoDocumento,
-      filename_original: params.filenameOriginal,
-      sha256: params.sha256,
-      storage_backend: 'google_drive',
-      storage_uri: `gdrive://file/${params.driveFileId}`,
-      drive_file_id: params.driveFileId,
-      drive_folder_id: params.driveFolderId,
-      drive_web_view_link: params.driveWebViewLink,
-      drive_web_content_link: params.driveWebContentLink,
-      local_cache_path: params.localCachePath,
-      manifest_storage_uri: params.manifestStorageUri,
-    },
+    document,
     status: params.status ?? 'pending_app_acceptance',
   };
 }
