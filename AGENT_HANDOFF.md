@@ -3,57 +3,58 @@
 ## Branch/HEAD/Status
 ### documentos-ingestor (este repositório)
 - Branch: master
-- HEAD: `984c7f0` — Add documents integration handoff package (G8-E)
+- HEAD: `(new commit)` — Record drive manifest sync design (G9-A)
 
 ### Controle de Tapetes (staging/work/app-next)
 - HEAD canônico: `997486a`
 
 ## Fase concluída
-RAVATEX-DOC-INGESTOR-G8-E-INTEGRATION-HANDOFF-PACKAGE
+RAVATEX-DOC-INGESTOR-G9-A-DRIVE-MANIFEST-SYNC-DESIGN
 
 ## Fase anterior
-G8-D — Smoke real-lite operacional
+G8-E — Pacote de handoff de integração (exemplos JSONL, regras, idempotência)
 
-## Objetivo da fase G8-E
-Entregar pacote de handoff claro para integração futura com Controle de Tapetes: eventos, campos, exemplos JSONL, regras de consumo/idempotência, comandos operacionais e limites.
+## Objetivo da fase G9-A
+Diagnosticar e desenhar o modelo de sincronização do manifest Drive sem implementar patch funcional.
 
-### Pacote criado
+### Diagnóstico principal
+- Manifest Drive é criado APENAS por `realAssign.ts` — é snapshot do assign real
+- Link/accept/reject são local-only e NÃO tocam manifest
+- `realAssign.ts:73` bloqueia documentos linked (`if (doc.status !== 'pending')`)
+- `manifest.ts:117` em realAssign escreve em `/dev/null` (placeholder local)
+- `drive.ts:202-265` uploadManifest cria/atualiza manifest.json no Drive
 
-**1. Exemplo JSONL** (`contracts/examples/document-events.sample.jsonl`)
-- 4 eventos fictícios: `document.detected`, `document.linked`, `document.accepted`, `document.rejected`
-- IDs fictícios (sem dados reais)
-- `event_id` repete-se (legado), `ingestion_event_id` é único por evento
-- `reason` presente apenas em `document.rejected`
+### Fonte de verdade
+- **SQLite** = estado operacional (status, pedido, taxonomy)
+- **Outbox JSONL** = eventos (contrato de integração)
+- **Manifest Drive** = snapshot derivado (deve ser sincronizável, não fonte primária)
 
-**2. Contrato atualizado** (`docs/CONTROL_TAPETES_DOCUMENTS_CONTRACT.md`)
-- Seção 6: Regras de idempotência (5 regras: `ingestion_event_id` canônico, `event_id` legado, ordenação, status derivado)
-- Seção 7: Exemplo JSONL (tabela com 4 eventos)
-- Seção 8-10: Fases, limites, comandos expandidos (inclui export filtrado, --pedido, --event-type, --mark-exported)
+### Opções avaliadas (4)
 
-### Decisões documentadas
-- `ingestion_event_id` deve ser usado como identificador canônico do evento pelo consumidor
-- `event_id` é legado e pode repetir-se (documento com linked+accepted compartilha event_id)
-- Visualização Drive: consumidor abre `drive_web_view_link` em nova aba, sem Supabase/backend
-- Assign real e link local-only são rotas alternativas, não complementares
-- Manifest Drive sync deferido
-- Bloqueio de direção NF deferido (falta modelo de pedido)
-- event_id v2 deferido
+| Opção | Veredito | Risco |
+|---|---|---|
+| 1 — Nada | Não atende | linked/rejected invisíveis |
+| 2 — Manifest local exportável | Complementar | Baixo |
+| **3 — Sync:manifest Drive** | **Recomendado** | Médio (dry-run protege) |
+| 4 — Revisar assign real | Não recomendado | Alto (mistura rotas) |
+
+### Recomendação
+Implementar opção 2 + 3: comando `export:manifest` (local, sem Drive) e `sync:manifest` (Drive com `--confirm-real-google`), sem alterar assign real, sem mover arquivos.
+
+### Decisões documentais
+- Design completo em `docs/architecture/G9_DRIVE_MANIFEST_SYNC_DESIGN.md`
+- Manifest classificado como snapshot derivado, não fonte de verdade
+- Integração Controle de Tapetes permanece baseada em outbox (G8-E)
 
 ### Arquivos alterados/criados
-- `contracts/examples/document-events.sample.jsonl` — **novo** (4 eventos fictícios)
-- `docs/CONTROL_TAPETES_DOCUMENTS_CONTRACT.md` — seções 6-10 adicionadas/expandidas
+- `docs/architecture/G9_DRIVE_MANIFEST_SYNC_DESIGN.md` — novo (design completo + ordem)
 - `PROJECT_STATE.md`, `AGENT_HANDOFF.md` — atualização
 
-### Testes
-- Apenas documentação/fixture (sem código funcional)
-- `git diff --check` limpo
-
 ### Riscos remanescentes
-1. Manifest Drive sync deferido
-2. Bloqueio de mismatch entrada/saída deferido
-3. event_id v2 deferido
-4. Integração real com Controle de Tapetes não iniciada
+1. Bloqueio de mismatch entrada/saída deferido
+2. event_id v2 deferido
+3. Sync manifest não implementado ainda
 
 ### Próxima fase recomendada
-RAVATEX-DOC-INGESTOR-G9-DRIVE-MANIFEST-SYNC
-Foco: sincronizar assign real com documentos linked, atualizar manifest Drive para refletir estado local, preparar integração com Controle de Tapetes.
+RAVATEX-DOC-INGESTOR-G9-B-MANIFEST-LOCAL-AND-SYNC
+Foco: export:manifest local + sync:manifest Drive com --confirm-real-google. Manifest reflete linked/accepted/rejected.
