@@ -180,7 +180,7 @@ export function createScan(deps: ScanDeps = defaultDeps) {
             sha256,
             classificacao.tipoDocumento,
             classificacao.formato,
-            null,
+            classificacao.direcaoNf,
             'google_drive',
             upload.file.storageUri,
             upload.file.driveFileId,

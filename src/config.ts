@@ -51,4 +51,8 @@ export const config = {
   scanDaysBack: parseInt(env.SCAN_DAYS_BACK ?? '7', 10),
 
   ingestRealGoogle: (env.INGEST_REAL_GOOGLE ?? 'false').toLowerCase() === 'true',
+
+  ravatexCnpjs: (env.RAVATEX_CNPJS
+    ? env.RAVATEX_CNPJS.split(',').map(s => s.replace(/\D/g, '')).filter(s => s.length === 14)
+    : []),
 };

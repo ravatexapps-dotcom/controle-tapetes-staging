@@ -150,9 +150,10 @@ describe('real scan flow (mocked Google)', () => {
     const r = await scan({ confirmReal: true });
     expect(r.newDocuments).toBe(1);
     const db = getDb();
-    const doc = db.prepare(`SELECT tipo_documento, formato FROM documentos LIMIT 1`).get() as any;
+    const doc = db.prepare(`SELECT tipo_documento, formato, direcao_nf FROM documentos LIMIT 1`).get() as any;
     expect(doc.tipo_documento).toBe('nf');
     expect(doc.formato).toBe('xml');
+    expect(doc.direcao_nf).toBe('desconhecida');
   });
 
   it('real scan: PDF with romaneio in name is classified as romaneio', async () => {
