@@ -3,7 +3,7 @@
 ## Branch/HEAD/Status
 ### documents-ingestor (este repositório)
 - Branch: master
-- HEAD: `(new commit)` — Improve local document operations (G8-C)
+- HEAD: `76ace64` — Improve local document operations (G8-C)
 
 ## Fase concluída
 RAVATEX-DOC-INGESTOR-G8-C-OPERATIONAL-POLISH
