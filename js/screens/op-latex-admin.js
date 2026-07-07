@@ -440,26 +440,34 @@
         }
 
         var card = el('div', { style: CARD + 'padding:15px 17px;' });
-        card.appendChild(el('div', { style: 'display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px;flex-wrap:wrap;' },
+        card.appendChild(el('div', { style: 'display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:13px;flex-wrap:wrap;' },
           rvSectionPill('Expedição', IC_MOV),
           expedicaoArg
             ? smallBadge('Expedicao ' + expedicaoArg.status, 'var(--rv-color-subtle-bg)', 'var(--rv-color-accent)')
             : smallBadge(saldoTotal > 0 ? 'Saldo movimentavel' : (statusOk ? 'Fluxo total disponivel' : 'Sem saldo'), saldoTotal > 0 ? '#e6f4ec' : (statusOk ? '#fff4e6' : 'var(--rv-color-line-100)'), saldoTotal > 0 ? '#18794a' : (statusOk ? '#c2610c' : '#6b7280'))));
 
+        // Métricas empilhadas (rail-friendly): nada de grid de 3 colunas, que
+        // estoura os 300px do rail. Rótulo à esquerda, valor tabular à direita.
+        function expMetric(label, value, color) {
+          return el('div', { style: 'display:flex;align-items:baseline;justify-content:space-between;gap:12px;' },
+            el('span', { style: 'font-size:12.5px;color:#5b6472;flex:1;min-width:0;' }, label),
+            el('span', { style: 'font-size:14px;font-weight:700;color:' + (color || 'var(--rv-color-title)') + ';white-space:nowrap;font-variant-numeric:tabular-nums;' }, value));
+        }
+
         if (expedicaoArg) {
-          card.appendChild(el('div', { style: 'font-size:13px;color:#5b6472;line-height:1.5;margin-bottom:12px;' },
+          card.appendChild(el('div', { style: 'font-size:12.5px;color:#5b6472;line-height:1.5;margin-bottom:13px;' },
             'Expedicao criada. Registre entrega/coleta na tela operacional de expedicao.'));
-          card.appendChild(el('div', { style: 'display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-bottom:12px;' },
-            fieldBlock('Recebido', el('div', { style: 'font-size:14px;font-weight:700;color:var(--rv-color-title);' }, window.fmtMetros(recebidoTotal))),
-            fieldBlock('Movimentado', el('div', { style: 'font-size:14px;font-weight:700;color:#18794a;' }, window.fmtMetros(liberadoTotal))),
-            fieldBlock('Disponivel', el('div', { style: 'font-size:14px;font-weight:700;color:' + (saldoTotal > 0 ? 'var(--rv-color-accent)' : 'var(--rv-color-muted)') + ';' }, window.fmtMetros(saldoTotal)))));
+          card.appendChild(el('div', { style: 'display:flex;flex-direction:column;gap:10px;margin-bottom:14px;' },
+            expMetric('Recebido', window.fmtMetros(recebidoTotal), 'var(--rv-color-title)'),
+            expMetric('Movimentado', window.fmtMetros(liberadoTotal), '#18794a'),
+            expMetric('Disponivel', window.fmtMetros(saldoTotal), saldoTotal > 0 ? 'var(--rv-color-accent)' : 'var(--rv-color-muted)')));
           if (saldoTotal > 0) {
-            card.appendChild(el('div', { style: 'font-size:12px;color:var(--rv-color-muted);line-height:1.5;margin-bottom:10px;' },
+            card.appendChild(el('div', { style: 'font-size:11.5px;color:var(--rv-color-muted);line-height:1.5;margin-bottom:12px;' },
               'Ainda ha saldo recebido para movimentar. Use a acao Movimentar na expedicao vinculada.'));
           }
           card.appendChild(el('button', {
             type: 'button',
-            style: BTN_SOLID_SM,
+            style: BTN_PRIMARY,
             onclick: function () { navigate('#/expedicoes/' + expedicaoArg.id); },
           }, 'Abrir expedicao'));
           return card;
@@ -470,23 +478,26 @@
             var input = textInput({ type: 'number', step: '0.01', value: String(row.disponivel) });
             return { row: row, input: input };
           });
-          card.appendChild(el('div', { style: 'display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-bottom:12px;' },
-            fieldBlock('Recebido', el('div', { style: 'font-size:14px;font-weight:700;color:var(--rv-color-title);' }, window.fmtMetros(recebidoTotal))),
-            fieldBlock('Movimentado', el('div', { style: 'font-size:14px;font-weight:700;color:#18794a;' }, window.fmtMetros(liberadoTotal))),
-            fieldBlock('Disponivel', el('div', { style: 'font-size:14px;font-weight:800;color:var(--rv-color-accent);' }, window.fmtMetros(saldoTotal)))));
+          card.appendChild(el('div', { style: 'display:flex;flex-direction:column;gap:10px;margin-bottom:14px;' },
+            expMetric('Recebido', window.fmtMetros(recebidoTotal), 'var(--rv-color-title)'),
+            expMetric('Movimentado', window.fmtMetros(liberadoTotal), '#18794a'),
+            expMetric('Disponivel', window.fmtMetros(saldoTotal), 'var(--rv-color-accent)')));
+          // Cada item movimentável empilhado (nome, contexto, campo Mover full-width) —
+          // sem grid de colunas fixas que estouraria a largura do rail.
           card.appendChild(el('div', { style: 'border:1px solid var(--rv-color-line-200);border-radius:var(--rv-radius-control);overflow:hidden;margin-bottom:12px;' },
             linhas.map(function (linha, index) {
-              return el('div', { style: 'display:grid;grid-template-columns:1fr 100px 100px 120px;gap:10px;align-items:center;padding:10px 12px;' + (index < linhas.length - 1 ? 'border-bottom:1px solid var(--rv-color-line-100);' : '') },
-                el('div', {},
-                  el('div', { style: 'font-size:13px;font-weight:700;color:var(--rv-color-title);' }, modeloSaldoLabel(linha.row)),
-                  el('div', { style: 'font-size:11.5px;color:var(--rv-color-muted);margin-top:2px;' }, 'Recebido ' + window.fmtMetros(linha.row.recebido) + ' | movimentado ' + window.fmtMetros(linha.row.liberado))),
-                el('div', { style: 'font-size:12.5px;color:#5b6472;font-weight:700;' }, window.fmtMetros(linha.row.disponivel)),
-                el('label', { style: 'font-size:11.5px;color:var(--rv-color-muted);font-weight:700;text-transform:uppercase;' }, 'Mover'),
-                linha.input);
+              return el('div', { style: 'padding:11px 12px;' + (index < linhas.length - 1 ? 'border-bottom:1px solid var(--rv-color-line-100);' : '') },
+                el('div', { style: 'font-size:13px;font-weight:700;color:var(--rv-color-title);' }, modeloSaldoLabel(linha.row)),
+                el('div', { style: 'font-size:11.5px;color:var(--rv-color-muted);margin:2px 0 9px;line-height:1.5;' },
+                  'Recebido ' + window.fmtMetros(linha.row.recebido) + ' · movimentado ' + window.fmtMetros(linha.row.liberado) + ' · disponivel ' + window.fmtMetros(linha.row.disponivel)),
+                el('div', { style: 'display:flex;align-items:center;gap:8px;' },
+                  el('label', { style: 'font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--rv-color-muted);white-space:nowrap;' }, 'Mover'),
+                  el('div', { style: 'flex:1;min-width:0;' }, linha.input),
+                  el('span', { style: 'font-size:12px;color:var(--rv-color-muted);' }, 'm')));
             })));
           card.appendChild(el('button', {
             type: 'button',
-            style: BTN_SOLID_SM,
+            style: BTN_PRIMARY,
             onclick: function (event) {
               var payload = [];
               for (var i = 0; i < linhas.length; i++) {
@@ -504,22 +515,22 @@
               liberarExpedicaoParcial(opArg.id, payload, event && event.currentTarget ? event.currentTarget : null);
             },
           }, 'Movimentar'));
-          card.appendChild(el('div', { style: 'font-size:12px;color:var(--rv-color-muted);line-height:1.5;margin-top:8px;' },
+          card.appendChild(el('div', { style: 'font-size:11.5px;color:var(--rv-color-muted);line-height:1.5;margin-top:9px;' },
             'Movimenta a quantidade disponivel do Acabamento para Expedicao.'));
           return card;
         }
 
         if (!statusOk) {
-          card.appendChild(el('div', { style: 'font-size:13px;color:#5b6472;line-height:1.5;' },
+          card.appendChild(el('div', { style: 'font-size:12.5px;color:#5b6472;line-height:1.5;' },
             'Sem saldo recebido disponivel para movimentar.'));
           return card;
         }
 
-        card.appendChild(el('div', { style: 'font-size:13px;color:#5b6472;line-height:1.5;margin-bottom:12px;' },
+        card.appendChild(el('div', { style: 'font-size:12.5px;color:#5b6472;line-height:1.5;margin-bottom:12px;' },
           'OP terminal sem saldo parcial calculado. Use a liberacao total legada para criar a expedicao desta OP.'));
         card.appendChild(el('button', {
           type: 'button',
-          style: BTN_SOLID_SM,
+          style: BTN_PRIMARY,
           onclick: function (event) {
             liberarExpedicao(opArg.id, event && event.currentTarget ? event.currentTarget : null);
           },
@@ -719,12 +730,27 @@
         }
 
         function buildDocumentos() {
-          // Sem storage de documentos wired nesta tela: estado vazio honesto,
-          // sem fabricar nomes de arquivo/estados (nada de mock).
-          return el('div', { id: 'documentos-op', style: CARD_PROD + 'padding:15px 17px;' },
-            rvSectionPill('Documentos', IC_DOC),
-            el('div', { style: 'font-size:12.5px;color:#a2aab6;line-height:1.5;' },
-              'Nenhum documento anexado a esta OP.'));
+          // Camada VISUAL pronta (slots por tipo + Anexar full-width). O backend
+          // de anexo via Google Drive sera plugado depois — por isso nada de
+          // arquivos fabricados: cada tipo nasce vazio e o Anexar so sinaliza que
+          // a integracao ainda entra. Layout rail-friendly (tudo full-width).
+          var SVG_CLIP = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path></svg>';
+          var ANEXAR_BTN = 'width:100%;display:inline-flex;align-items:center;justify-content:center;gap:6px;height:32px;border:1px dashed var(--rv-color-input-border);border-radius:var(--rv-radius-control);background:#fff;color:#5b6472;font-size:12px;font-weight:600;font-family:inherit;cursor:pointer;';
+          var tipos = ['Romaneio', 'NF de entrada', 'NF de saida'];
+          var card = el('div', { id: 'documentos-op', style: CARD_PROD + 'padding:15px 17px;' },
+            rvSectionPill('Documentos', IC_DOC));
+          tipos.forEach(function (tipo, i) {
+            card.appendChild(el('div', { style: (i > 0 ? 'border-top:1px solid var(--rv-color-line-100);margin-top:13px;padding-top:13px;' : '') },
+              el('div', { style: 'display:flex;align-items:center;gap:7px;margin-bottom:8px;' },
+                el('span', { style: 'font-size:12px;font-weight:600;color:var(--rv-color-value);' }, tipo),
+                el('span', { style: 'font-size:10px;font-weight:600;color:var(--rv-color-accent);background:var(--rv-color-subtle-bg);padding:1px 6px;border-radius:var(--rv-radius-pill);' }, '0')),
+              el('div', { style: 'font-size:11.5px;color:#a2aab6;margin-bottom:8px;' }, 'Nenhum arquivo anexado.'),
+              el('button', {
+                type: 'button', style: ANEXAR_BTN,
+                onclick: function () { toast('Anexo de documentos sera integrado (Google Drive) em breve.', 'info'); },
+              }, svgEl(SVG_CLIP), 'Anexar ' + tipo)));
+          });
+          return card;
         }
 
         function buildHistorico() {

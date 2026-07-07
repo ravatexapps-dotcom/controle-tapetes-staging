@@ -1070,8 +1070,10 @@ test('40. OP em producao de acabamento mostra todos os blocos operacionais esper
     assert.match(rendered.text, label);
   }
   assert.match(rendered.text, /Finalizar OP/i);
-  // Sem storage real de documentos: estado vazio honesto, sem nomes de arquivo fabricados.
-  assert.match(rendered.text, /Nenhum documento anexado/i);
+  // Documentos: slots por tipo com Anexar (camada visual), sem nomes de arquivo
+  // fabricados nem badges falsos de "Anexado/Pendente".
+  assert.match(rendered.text, /Anexar Romaneio/i);
+  assert.match(rendered.text, /Nenhum arquivo anexado/i);
   assert.doesNotMatch(rendered.text, /NF_INSUMOS_.*\.pdf/i);
   assert.doesNotMatch(rendered.text, /ROMANEIO_OP-.*\.pdf/i);
   assert.match(rendered.text, /Entrada consolidada da Tecelagem/i);

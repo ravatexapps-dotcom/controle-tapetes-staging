@@ -5936,3 +5936,25 @@ Senhas de teste antigas em `docs/qa/fase1-checklist.md` e
 > - **Garantias:** producao intocada; `origin` (grupoterrabranca) nao usado
 >   para escrita; sem `git add .`; `.claude/` e `supabase/.temp` fora do
 >   commit.
+
+> **Correcao 2026-07-07 - B-R1 pos-validacao (OP Acabamento em_producao).**
+> A validacao apontou dois defeitos no rail em produção:
+> - **Card Expedicao estourava o rail de 300px** (linha de movimentacao usava
+>   grid `1fr 100px 100px 120px` ~437px, jogando o input para fora da tela).
+>   Refeito **rail-friendly**: metricas empilhadas (rotulo/valor) e cada item
+>   movimentavel em bloco vertical (nome + contexto + campo "Mover"
+>   full-width + unidade), botoes de acao full-width (`BTN_PRIMARY`). Sem
+>   overflow. Handlers (`liberarExpedicaoParcial`/`liberarExpedicao`) e
+>   validacoes intactos.
+> - **Bloco Documentos** trocado do one-liner vazio para a **camada visual da
+>   referencia**: slots por tipo (Romaneio, NF de entrada, NF de saida) com
+>   badge de contagem, estado vazio honesto e **botao "Anexar" tracejado
+>   full-width** por tipo (largura correta no rail). Decisao do usuario:
+>   **visual pronto sem backend** — o upload/anexo sera plugado depois via
+>   Google Drive; por ora o Anexar apenas sinaliza (sem `storage.from`/upload
+>   real, sem arquivos fabricados).
+> - **Arquivos:** `js/screens/op-latex-admin.js`,
+>   `tests/op-latex-admin.smoke.js` (assercao de Documentos atualizada),
+>   `PROJECT_STATE.md`. Testes: op-latex-admin 55/55, tec-to-acabamento 39/39,
+>   pedido-detail 172/172, op-latex-split 28/28. Evidencia visual real
+>   (harness) confirmando ausencia de overflow e Anexar full-width.
