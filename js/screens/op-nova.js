@@ -104,6 +104,49 @@
   var BTN_SOLID_SM = 'display:inline-flex;align-items:center;background:#2563eb;color:#fff;border:none;border-radius:4px;padding:8px 16px;font-weight:600;font-size:13px;font-family:inherit;cursor:pointer;white-space:nowrap;';
   var BTN_LINK = 'display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:600;color:#2563eb;background:none;border:none;padding:0;cursor:pointer;font-family:inherit;';
   var SECTION_ICON = 'width:34px;height:34px;border-radius:6px;background:#eaf1fd;display:flex;align-items:center;justify-content:center;flex-shrink:0;';
+  var RV_CARD = 'background:var(--rv-color-surface);border:1px solid var(--rv-color-line-200);border-radius:var(--rv-radius-card);';
+  var RV_TH_STYLE = 'font-size:var(--rv-font-size-label);font-weight:700;color:var(--rv-color-muted);letter-spacing:.04em;text-transform:uppercase;white-space:nowrap;';
+  var RV_FIELD_LABEL = 'display:block;font-size:11.5px;color:#9aa2af;margin-bottom:2px;';
+  var RV_VALUE = 'font-size:13.5px;color:var(--rv-color-value);font-weight:600;line-height:1.35;';
+  var RV_BTN_HDR_DANGER = 'display:inline-flex;align-items:center;gap:7px;height:34px;padding:0 13px;border-radius:var(--rv-radius-control);font-size:13px;font-weight:500;color:var(--rv-color-danger);border:1px solid #f0d2d2;background:#fff;cursor:pointer;font-family:inherit;white-space:nowrap;';
+  var RV_BTN_PRIMARY = 'display:inline-flex;align-items:center;justify-content:center;gap:8px;width:100%;height:38px;background:var(--rv-color-accent);color:#fff;border:none;border-radius:var(--rv-radius-control);padding:0 16px;font-weight:600;font-size:13.5px;font-family:inherit;white-space:nowrap;cursor:pointer;';
+  var RV_BTN_DASHED = 'width:100%;display:inline-flex;align-items:center;justify-content:center;gap:6px;height:32px;border:1px dashed var(--rv-color-input-border);border-radius:var(--rv-radius-control);background:#fff;color:#5b6472;font-size:12px;font-weight:600;font-family:inherit;cursor:pointer;';
+
+  var CHIP_STYLE = 'display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:var(--rv-radius-control);background:var(--rv-color-chip-bg);border:1px solid var(--rv-color-line-200);color:var(--rv-color-chip-glyph);flex-shrink:0;';
+  var SECTION_LABEL_STYLE = 'font-size:var(--rv-font-size-label);font-weight:700;color:var(--rv-color-section-label);letter-spacing:var(--rv-tracking-label);text-transform:uppercase;';
+  function chipSvg(inner) {
+    return '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' + inner + '</svg>';
+  }
+  var IC_DADOS = chipSvg('<path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><rect x="8" y="2" width="8" height="4" rx="1"></rect>');
+  var IC_ITENS = chipSvg('<rect x="3" y="3" width="18" height="18" rx="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="9" y1="21" x2="9" y2="9"></line>');
+  var IC_FIOS = chipSvg('<path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4A2 2 0 0 0 13 22l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line>');
+  var IC_RESUMO = chipSvg('<line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line>');
+  var IC_MOV = chipSvg('<line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>');
+  var IC_DOC = chipSvg('<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline>');
+  var IC_CLIP = chipSvg('<path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path>');
+
+  function chipLabel(label, iconMarkup) {
+    return el('div', { style: 'display:flex;align-items:center;gap:9px;' },
+      el('span', { style: CHIP_STYLE }, svgEl(iconMarkup || IC_DADOS)),
+      el('span', { style: SECTION_LABEL_STYLE }, label));
+  }
+
+  function rvSectionPill(label, iconMarkup) {
+    var node = chipLabel(label, iconMarkup);
+    node.setAttribute('style', 'display:flex;align-items:center;gap:9px;margin-bottom:14px;');
+    return node;
+  }
+
+  var PILL_BASE = 'display:inline-flex;align-items:center;gap:5px;font-size:11.5px;font-weight:600;padding:3px 10px;border-radius:var(--rv-radius-pill);white-space:nowrap;';
+  function rvDot(color) {
+    return el('span', { style: 'width:6px;height:6px;border-radius:50%;background:' + color + ';' });
+  }
+  function rvStageTecelagemBadge() {
+    return el('span', { style: PILL_BASE + 'background:var(--rv-stage-tecelagem-bg);color:var(--rv-stage-tecelagem);' }, 'Tecelagem');
+  }
+  function rvStatusPrepBadge() {
+    return el('span', { style: PILL_BASE + 'background:var(--rv-status-prep-bg);color:var(--rv-status-prep);' }, rvDot('var(--rv-status-prep)'), 'Preparacao');
+  }
 
   function sectionIcon(svgMarkup) {
     return el('div', { style: SECTION_ICON }, svgEl(svgMarkup));
@@ -583,15 +626,19 @@
     const wrap = el('div', {});
     wrap.appendChild(buildHeader());
 
-    const grid = el('div', { style: 'display:grid;grid-template-columns:1fr 288px;gap:16px;align-items:start;' });
-    const leftCol = el('div', { style: 'display:flex;flex-direction:column;gap:16px;' });
+    const grid = isOpAbertaTecelagem()
+      ? el('div', { style: 'display:grid;grid-template-columns:minmax(0,1fr) var(--rv-rail-w);gap:var(--rv-gap-cols);align-items:start;' })
+      : el('div', { style: 'display:grid;grid-template-columns:1fr 288px;gap:16px;align-items:start;' });
+    const leftCol = isOpAbertaTecelagem()
+      ? el('div', { style: 'min-width:0;display:flex;flex-direction:column;gap:14px;' })
+      : el('div', { style: 'display:flex;flex-direction:column;gap:16px;' });
     leftCol.appendChild(buildCardDados());
     leftCol.appendChild(buildCardItens());
     if (op && op.status !== 'simulada') leftCol.appendChild(buildBlocoFios());
     grid.appendChild(leftCol);
     grid.appendChild(buildRight());
     wrap.appendChild(grid);
-    wrap.appendChild(buildBottomInfoBar());
+    if (!isOpAbertaTecelagem()) wrap.appendChild(buildBottomInfoBar());
     return wrap;
   }
 
@@ -612,6 +659,8 @@
       subtitulo = loteTxt || 'Acompanhamento da OP de tecelagem.';
     }
 
+    if (isOpAbertaTecelagem()) return buildHeaderAbertaTecelagem();
+
     const headerLeft = el('div', {},
       el('div', { style: 'font-size:22px;font-weight:800;color:#16203a;letter-spacing:-.01em;' }, titulo),
       el('div', { style: 'font-size:13px;color:#8a93a3;margin-top:3px;line-height:1.45;' }, subtitulo),
@@ -631,6 +680,37 @@
     );
   }
 
+  function internalOpLabel(opArg) {
+    var api = window.RAVATEX_OP_DISPLAY;
+    var legacy = api && typeof api.formatOpLegacyCode === 'function'
+      ? api.formatOpLegacyCode(opArg)
+      : formatOpDisplay(opArg);
+    return legacy.replace(/^OP /, 'N\u00ba interno ');
+  }
+
+  function buildHeaderAbertaTecelagem() {
+    var meta = [internalOpLabel(op)];
+    if (hasLinkedPedido()) meta.push('Pedido N\u00ba ' + pedidoCtx.numero);
+    meta.push(resolveClienteNome());
+    if (op.lote) meta.push('Lote N\u00ba ' + op.lote.numero);
+    if (op.criado_em) meta.push('Aberta em ' + fmtDateLabel(op.criado_em));
+
+    return el('div', {},
+      el('div', { style: 'display:flex;align-items:center;gap:6px;font-size:12px;color:#9aa2af;font-weight:500;margin-bottom:8px;' },
+        el('button', { type: 'button', style: 'background:none;border:none;padding:0;font:inherit;color:#9aa2af;cursor:pointer;', onclick: function () { navigate('#/ops'); } }, 'OPs'),
+        el('span', { style: 'color:#c8ced6;' }, '/'),
+        el('span', { style: 'color:#5b6472;' }, formatOpDisplay(op))),
+      el('div', { style: 'display:flex;align-items:flex-start;justify-content:space-between;gap:20px;flex-wrap:wrap;margin-bottom:16px;' },
+        el('div', { style: 'min-width:0;' },
+          el('div', { style: 'display:flex;align-items:center;gap:11px;flex-wrap:wrap;' },
+            el('h1', { style: 'margin:0;font-size:22px;font-weight:800;color:var(--rv-color-title);letter-spacing:-.02em;' }, formatOpDisplay(op)),
+            rvStageTecelagemBadge(),
+            rvStatusPrepBadge()),
+          el('div', { style: 'font-size:12.5px;color:var(--rv-color-muted);margin-top:7px;line-height:1.5;' }, meta.join(' \u00b7 '))),
+        el('div', { style: 'display:flex;align-items:center;gap:8px;flex-shrink:0;flex-wrap:wrap;' },
+          el('button', { type: 'button', style: RV_BTN_HDR_DANGER, onclick: excluirOP }, svgEl(SVG_TRASH), 'Excluir'))));
+  }
+
   function buildBottomInfoBar() {
     let texto = 'Apos abrir a OP, voce podera acompanhar o andamento e gerenciar entregas nas proximas etapas.';
     if (!op) {
@@ -645,6 +725,8 @@
   }
 
   function buildCardDados() {
+    if (isOpAbertaTecelagem()) return buildCardDadosAbertaTecelagem();
+
     const numInput = disabledAttr(readOnly, textInput({ type: 'number', value: String(numero) }));
     styleInput(numInput);
     numInput.addEventListener('input', () => { numero = numInput.value; });
@@ -688,7 +770,47 @@
     );
   }
 
+  function rvCampo(label, node) {
+    return el('div', { style: 'min-width:0;' },
+      el('label', { style: RV_FIELD_LABEL }, label),
+      typeof node === 'string'
+        ? el('div', { style: RV_VALUE }, node)
+        : node);
+  }
+
+  function rvValor(text, color, weight) {
+    return el('div', { style: RV_VALUE + (color ? 'color:' + color + ';' : '') + (weight ? 'font-weight:' + weight + ';' : '') }, text);
+  }
+
+  function fornecedorNomePorEtapa(etapa) {
+    var id = fornSel[etapa];
+    var found = forns.find(function (f) { return String(f.id) === String(id); });
+    return found ? found.nome : '-';
+  }
+
+  function buildCardDadosAbertaTecelagem() {
+    var pedidoNode = hasLinkedPedido()
+      ? el('button', { type: 'button', style: 'background:none;border:none;padding:0;font:inherit;color:var(--rv-color-accent);font-weight:700;cursor:pointer;text-align:left;', onclick: function () { navigate('#/pedidos/' + pedidoCtx.id); } }, 'Pedido N\u00ba ' + pedidoCtx.numero)
+      : rvValor('-', '#8a93a3');
+    var loteLabel = op.lote ? 'Lote N\u00ba ' + op.lote.numero : '-';
+    var itemLabel = opItensRaw.length
+      ? opItensRaw.length + ' ' + (opItensRaw.length === 1 ? 'item' : 'itens') + ' do pedido'
+      : '-';
+
+    return el('div', { style: RV_CARD + 'padding:15px 17px;' },
+      rvSectionPill('Dados da OP', IC_DADOS),
+      el('div', { style: 'display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:13px 18px;' },
+        rvCampo('Cliente', resolveClienteNome()),
+        rvCampo('Lote', loteLabel),
+        rvCampo('Fornecedor de tecelagem', fornecedorNomePorEtapa('cima')),
+        rvCampo('Pedido vinculado', pedidoNode),
+        rvCampo('Itens vinculados', itemLabel),
+        rvCampo('Status', rvValor('Preparacao', 'var(--rv-status-prep)'))));
+  }
+
   function buildCardItens() {
+    if (isOpAbertaTecelagem()) return buildCardItensAbertaTecelagem();
+
     const modeloOptions = modelos.map(m => ({
       value: m.id,
       label: `${m.nome} ${larguraKey(m.largura)}m · ${m.cor_1?.nome}/${m.cor_2?.nome}`,
@@ -752,6 +874,45 @@
       wrapSelect(modeloSel, true), metrosInput, acoes);
   }
 
+  function rvThRow(colsTemplate, labels) {
+    return el('div', { style: 'display:grid;grid-template-columns:' + colsTemplate + ';gap:10px;padding:9px 17px;background:var(--rv-color-bg-header);border-top:1px solid var(--rv-color-line-200);border-bottom:1px solid var(--rv-color-line-200);' },
+      labels.map(function (label, idx) {
+        return el('div', { style: RV_TH_STYLE + (idx > 0 ? 'text-align:right;' : '') }, label);
+      }));
+  }
+
+  function rvGridRow(colsTemplate, cells) {
+    return el('div', { style: 'display:grid;grid-template-columns:' + colsTemplate + ';gap:10px;padding:11px 17px;border-bottom:1px solid var(--rv-color-line-100);align-items:center;' }, cells);
+  }
+
+  function buildCardItensAbertaTecelagem() {
+    var cols = 'minmax(220px,1fr) 130px 150px';
+    var card = el('div', { style: RV_CARD + 'overflow:hidden;' },
+      el('div', { style: 'display:flex;align-items:center;gap:8px;padding:15px 17px 12px;' },
+        rvSectionPill('Itens da OP', IC_ITENS),
+        el('span', { style: 'font-size:11.5px;color:var(--rv-color-muted);font-weight:400;margin-bottom:14px;' }, 'modelo x metros')));
+
+    if (!opItensRaw.length) {
+      card.appendChild(el('div', { style: 'padding:0 17px 18px;font-size:13px;color:#a2aab6;' }, 'Nenhum item vinculado a esta OP.'));
+      return card;
+    }
+
+    var table = el('div', { style: 'overflow-x:auto;' });
+    var inner = el('div', { style: 'min-width:520px;' });
+    inner.appendChild(rvThRow(cols, ['MODELO / CORES', 'PEDIDO', 'ITEM DO PEDIDO']));
+    opItensRaw.forEach(function (item) {
+      var itemPedidoLabel = (hasLinkedPedido() && item.pedido_item_id) ? 'Pedido N\u00ba ' + pedidoCtx.numero : '-';
+      inner.appendChild(rvGridRow(cols, [
+        el('div', { style: 'font-size:13px;font-weight:600;color:var(--rv-color-value);' }, window.rotuloModelo(modelosById[item.modelo_id])),
+        el('div', { class: 'num', style: 'font-size:13px;text-align:right;color:#3a4453;font-variant-numeric:tabular-nums;' }, window.fmtMetros(item.metros_pedidos)),
+        el('div', { style: 'font-size:12.5px;text-align:right;color:var(--rv-color-accent);font-weight:600;' }, itemPedidoLabel),
+      ]));
+    });
+    table.appendChild(inner);
+    card.appendChild(table);
+    return card;
+  }
+
   function buildFornField(label, etapa) {
     const fornsTipo = etapa === 'cima' ? fornsPorTipo('tecelagem') : fornsPorTipo(etapa);
     const sel = disabledAttr(readOnly, selectInput({ options: fornsTipo, value: fornSel[etapa], placeholder: 'Selecione o fornecedor...' }));
@@ -812,7 +973,7 @@
   }
 
   function buildBlocoFios() {
-    const box = el('div', { style: CARD + 'padding:0;' });
+    const box = el('div', { id: isOpAbertaTecelagem() ? 'insumos-open-op' : null, style: (isOpAbertaTecelagem() ? RV_CARD : CARD) + 'padding:0;overflow:hidden;' });
     // Título/ícone dependem do contexto: OP Aberta usa a linguagem de
     // preparação (com ícone, como os demais cards dessa tela); OP Em
     // Produção usa o texto do standalone PROD-OP-TECELAGEM ("3. Insumos
@@ -820,9 +981,8 @@
     // blocos — confirmado card a card no markup de referência.
     if (op.status === 'aberta') {
       // OP Aberta: linguagem de preparação (ícone grande + título 16px).
-      box.appendChild(el('div', { style: 'display:flex;align-items:center;gap:10px;padding:20px 24px 16px;' },
-        sectionIcon(SVG_ICON_LINES),
-        el('span', { style: 'font-size:16px;font-weight:700;color:#16203a;' }, '3. Recebimento de fios')));
+      box.appendChild(el('div', { style: 'padding:15px 17px 12px;' },
+        rvSectionPill('Insumos - recebimento de fios', IC_FIOS)));
     } else {
       // OP Em Produção: header no padrão Inttex (icon-chip 22px + rótulo
       // UPPERCASE), consistente com os demais blocos do cockpit de produção
@@ -835,7 +995,7 @@
     }
 
     if (ordens.length) {
-      box.appendChild(el('div', { style: 'padding:0 24px 16px;' },
+      box.appendChild(el('div', { style: isOpAbertaTecelagem() ? 'padding:0 17px 14px;' : 'padding:0 24px 16px;' },
         el('button', {
           type: 'button', style: BTN_LINK + 'margin:0;',
           onclick: () => window.gerarPdfCompraFios({ op, ordens }),
@@ -1168,11 +1328,95 @@
 
   let rightNode = null;
   function buildRight() {
+    if (isOpAbertaTecelagem()) return buildRightAbertaTecelagem();
     rightNode = el('div', { style: CARD + 'padding:20px;' });
     renderRightInto();
     return rightNode;
   }
   function renderRight() { if (rightNode) renderRightInto(); }
+
+  function metricRow(label, value, color) {
+    return el('div', { style: 'display:flex;align-items:baseline;justify-content:space-between;gap:12px;' },
+      el('span', { style: 'font-size:12.5px;color:#5b6472;flex:1;min-width:0;' }, label),
+      el('span', { style: 'font-size:15px;font-weight:700;color:' + (color || 'var(--rv-color-title)') + ';white-space:nowrap;font-variant-numeric:tabular-nums;' }, value));
+  }
+
+  function sumMetrosAbertos() {
+    return Math.round(opItensRaw.reduce(function (acc, item) {
+      return acc + Number(item.metros_pedidos || 0);
+    }, 0) * 100) / 100;
+  }
+
+  function buildRightAbertaTecelagem() {
+    var calc = null;
+    try {
+      calc = calcularFiosOP(itens, modelosById, parametrosByLargura);
+    } catch (err) {
+      calc = null;
+    }
+    var rail = el('div', { style: 'min-width:0;position:sticky;top:0;display:flex;flex-direction:column;gap:14px;' });
+    rail.appendChild(buildResumoAberta(calc));
+    rail.appendChild(buildAcaoAberta());
+    rail.appendChild(buildDocumentosAberta());
+    return rail;
+  }
+
+  function buildResumoAberta(calc) {
+    var algodaoTotal = calc
+      ? Object.values(calc.algodaoPorCor).reduce(function (acc, row) { return acc + Number(row.kg || 0); }, 0)
+      : 0;
+    var poliTotal = calc ? Number(calc.poliester.PRETO || 0) + Number(calc.poliester.BRANCO || 0) : 0;
+    return el('div', { style: RV_CARD + 'padding:15px 17px;' },
+      rvSectionPill('Resumo desta OP', IC_RESUMO),
+      el('div', { style: 'display:flex;flex-direction:column;gap:11px;' },
+        metricRow('Total pedido', window.fmtMetros(sumMetrosAbertos()), 'var(--rv-color-title)'),
+        metricRow('Itens vinculados', String(opItensRaw.length), 'var(--rv-color-title)'),
+        metricRow('Ordens de fio', String(ordens.length), ordens.length ? 'var(--rv-color-accent)' : '#a2aab6'),
+        metricRow('Algodao estimado', window.fmtKg ? window.fmtKg(algodaoTotal) : (algodaoTotal.toFixed(3) + ' kg')),
+        metricRow('Poliester estimado', window.fmtKg ? window.fmtKg(poliTotal) : (poliTotal.toFixed(3) + ' kg'))),
+      hasLinkedPedido()
+        ? el('div', { style: 'margin-top:13px;padding-top:12px;border-top:1px solid var(--rv-color-line-100);font-size:11.5px;color:#a2aab6;line-height:1.45;' }, 'Origem: Pedido N\u00ba ' + pedidoCtx.numero)
+        : '');
+  }
+
+  function buildAcaoAberta() {
+    var pendentes = ordens.filter(function (o) { return o.status === 'pendente'; });
+    var todasRecebidas = ordens.length > 0 && pendentes.length === 0;
+    var label = todasRecebidas ? 'Revisar proposta' : 'Receber fios';
+    var detail = todasRecebidas
+      ? 'Todos os fios foram recebidos; revise a proposta para liberar a producao.'
+      : (pendentes.length ? 'Ha ' + pendentes.length + ' ordem(ns) pendente(s) de recebimento.' : 'Aguardando ordens de compra de fio.');
+    return el('div', { style: RV_CARD + 'padding:15px 17px;' },
+      rvSectionPill('Preparacao', IC_MOV),
+      el('button', {
+        type: 'button',
+        style: RV_BTN_PRIMARY,
+        onclick: function () {
+          var alvo = document.getElementById && document.getElementById('insumos-open-op');
+          if (alvo && alvo.scrollIntoView) alvo.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        },
+      }, label),
+      el('div', { style: 'font-size:11.5px;color:#a2aab6;margin-top:9px;line-height:1.45;' }, detail));
+  }
+
+  function buildDocumentosAberta() {
+    var tipos = ['Romaneio', 'NF de entrada', 'NF de saida'];
+    var card = el('div', { id: 'documentos-op', style: RV_CARD + 'padding:15px 17px;' },
+      rvSectionPill('Documentos', IC_DOC));
+    tipos.forEach(function (tipo, idx) {
+      card.appendChild(el('div', { style: idx > 0 ? 'border-top:1px solid var(--rv-color-line-100);margin-top:13px;padding-top:13px;' : '' },
+        el('div', { style: 'display:flex;align-items:center;gap:7px;margin-bottom:8px;' },
+          el('span', { style: 'font-size:12px;font-weight:600;color:var(--rv-color-value);' }, tipo),
+          el('span', { style: 'font-size:10px;font-weight:600;color:var(--rv-color-accent);background:var(--rv-color-subtle-bg);padding:1px 6px;border-radius:var(--rv-radius-pill);' }, '0')),
+        el('div', { style: 'font-size:11.5px;color:#a2aab6;margin-bottom:8px;' }, 'Nenhum arquivo anexado.'),
+        el('button', {
+          type: 'button',
+          style: RV_BTN_DASHED,
+          onclick: function () { toast('Anexo de documentos sera integrado (Google Drive) em breve.', 'info'); },
+        }, svgEl(IC_CLIP), 'Anexar ' + tipo)));
+    });
+    return card;
+  }
 
   function renderRightInto() {
     let calc;

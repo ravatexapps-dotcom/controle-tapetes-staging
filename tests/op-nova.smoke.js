@@ -921,8 +921,10 @@ test('38. OP Aberta de Tecelagem mostra linguagem de preparação', async () => 
     ordens_compra_fio: [],
   });
   const rendered = await renderNovaOpForTest({ opId: 92, db });
-  assert.match(rendered.text, /OP Aberta de Tecelagem/i);
-  assert.match(rendered.text, /Preparacao da OP/i);
+  assert.match(rendered.text, /OP 8\/2026/i);
+  assert.match(rendered.text, /Tecelagem/i);
+  assert.match(rendered.text, /Preparacao/i);
+  assert.match(rendered.text, /Dados da OP/i);
 });
 
 function buildOpEmProducaoTecelagemFixture(overrides = {}) {
@@ -1251,7 +1253,7 @@ test('62. Card 3 mostra confirmação "Todos os fios desta OP já foram recebido
   assert.match(rendered.text, /Todos os fios desta OP já foram recebidos\./i);
 });
 
-test('63. OP Aberta Tecelagem continua com o ícone do Card 3 (ajuste é condicional por status, não afeta a preparação)', async () => {
+test('63. OP Aberta Tecelagem usa icon-chip real e remove header numerado antigo', async () => {
   const db = buildOpNovaFixture({
     ops: [
       {
@@ -1265,9 +1267,12 @@ test('63. OP Aberta Tecelagem continua com o ícone do Card 3 (ajuste é condici
     ordens_compra_fio: [],
   });
   const rendered = await renderNovaOpForTest({ opId: 92, db });
-  const temIconeSecao = rendered.styles.some((s) => /width:34px;height:34px;border-radius:6px;background:#eaf1fd/.test(s));
-  assert.equal(temIconeSecao, true, 'OP Aberta deve manter o ícone do Card 3 — o ajuste do standalone PROD-OP é condicional só para em_producao');
-  assert.match(rendered.text, /3\.\s*Recebimento de fios/i);
+  const temChipReal = rendered.styles.some((s) => /width:22px;height:22px/.test(s) && /var\(--rv-color-chip-bg\)/.test(s));
+  assert.equal(temChipReal, true, 'OP Aberta deve usar icon-chip real de 22px com token de chip');
+  const temIconeGrandeAntigo = rendered.styles.some((s) => /width:34px;height:34px;border-radius:6px;background:#eaf1fd/.test(s));
+  assert.equal(temIconeGrandeAntigo, false, 'OP Aberta nao deve manter o icone grande do template antigo');
+  assert.match(rendered.text, /Insumos\s*-\s*recebimento de fios/i);
+  assert.doesNotMatch(rendered.text, /3\.\s*Recebimento de fios/i);
 });
 
 test('66. Headers STATUS e FALTA da OP Em ProduÃ§Ã£o Tecelagem ficam alinhados Ã  esquerda', async () => {

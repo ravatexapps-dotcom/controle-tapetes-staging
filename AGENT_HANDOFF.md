@@ -1,4 +1,52 @@
-﻿# Estado pos-fase - Design Tokens Target Pilot B
+﻿# Estado pos-fase - OP Tecelagem Aberta Visual Alignment D
+
+- Fase: `RAVATEX-TAPETES-OP-TECELAGEM-ABERTA-VISUAL-ALIGNMENT-D`.
+- Status: **PATCH UI VISUAL APLICADO E VALIDADO - COMMIT LOCAL; PUSH
+  STAGING BLOQUEADO POR CREDENCIAL**.
+- Branch/HEAD base: `work/app-next`,
+  `e4c69aa0c2a8ada9c94f82e3655c6d1f5696a279`; status inicial
+  `?? .claude/` e `?? supabase/.temp/`; `origin` somente leitura e
+  producao intocados. Escrita permitida somente em
+  `staging/work/app-next`.
+- Objetivo: alinhar visualmente a OP Tecelagem aberta ao cockpit ja
+  validado de OP Acabamento aberta e OP Tecelagem em producao, sem
+  alterar comportamento funcional.
+- Arquivos alterados:
+  - `js/screens/op-nova.js`: novo tratamento visual apenas para
+    OP Tecelagem aberta, com header canonico, pills de etapa/status,
+    cards Dados/Itens/Insumos tokenizados, icon-chip real, rail de
+    Resumo/Preparacao/Documentos e largura consistente.
+  - `tests/op-nova.smoke.js`: expectativas atualizadas para o novo
+    contrato visual da OP aberta.
+  - `PROJECT_STATE.md` e `AGENT_HANDOFF.md`: registro desta fase.
+- Preservado explicitamente: handlers de recebimento de fios,
+  atribuicao de fornecedor, PDF de compra de fios, proposta/aceite,
+  writes canonicos ja existentes, rotas e leituras. Sem SQL, sem
+  schema, sem migration, sem RPC nova, sem lifecycle/status/tipo
+  interno/calculo/regra de negocio.
+- Arquivos/telas fora do patch: `common.js`, `ui.js`, `badges.js`,
+  OP Acabamento/Latex, OP Tecelagem em producao, Pedido Detail,
+  listas, painel, expedicao, SQL/schema/RPC e helpers globais.
+- Validacao executada:
+  - `node --check js/screens/op-nova.js`;
+  - `node --check js/screens/op-tecelagem-producao-admin.js`;
+  - `node --test tests/op-nova.smoke.js` (69/69);
+  - `node --test tests/tec-to-acabamento-flow.smoke.js` (39/39);
+  - `node --test tests/pedido-detail.smoke.js` (172/172; logs de
+    erro simulados fazem parte do teste);
+  - nao ha arquivo `tests/op-tecelagem*.smoke.js` no repositorio.
+- Validacao visual local: screenshots gerados em
+  `.claude/preview/screenshots/op-aberta-tecelagem.png`,
+  `.claude/preview/screenshots/op-tecelagem-producao.png` e
+  `.claude/preview/screenshots/op-acabamento-aberta.png`. O preview
+  de `.claude/` permanece untracked e nao deve ser commitado.
+- Higiene Git: nao usar `git add .`; manter `.claude/` e
+  `supabase/.temp/` fora de stage/commit. Push somente para
+  `staging work/app-next`.
+- Proxima fase sugerida: autenticar o remoto `staging`, publicar
+  `work/app-next` e entao validar visualmente a OP Tecelagem aberta.
+
+# Estado pos-fase - Design Tokens Target Pilot B
 
 - Fase: `RAVATEX-TAPETES-DESIGN-TOKENS-TARGET-PILOT-B`.
 - Status: **PATCH UI PRONTO - AGUARDANDO VALIDACAO VISUAL DO USUARIO**.
