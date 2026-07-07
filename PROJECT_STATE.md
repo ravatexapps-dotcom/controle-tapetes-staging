@@ -19,10 +19,10 @@ D:\OneDrive\Programação\Ravatex\documents-ingestor
 - `contracts/manifest.schema.json` — schema do manifest de Pedido
 
 ## Status atual
-- HEAD (documents-ingestor): `d0f3bc4`
+- HEAD (documents-ingestor): `c7cb500`
 - HEAD canônico staging/work/app-next (Controle de Tapetes): `997486a`
 - Push staging: `af919a2..997486a` (produção/origin oficial intocados)
-- 260 testes passando (23 suites) — incluindo integração mockada completa
+- 264 testes passando (24 suites) — incluindo integração mockada completa
 - Hermético: nenhum teste depende de `.env` real, token real ou chamadas Google
 - OAuth real validado (C1)
 - Smoke real com Drive/Gmail reais validado (C2)
@@ -55,8 +55,8 @@ D:\OneDrive\Programação\Ravatex\documents-ingestor
 
 ## Última evidência de testes
 ```
-Test Files  23 passed (23)
-     Tests  260 passed (260)
+Test Files  24 passed (24)
+     Tests  264 passed (264)
 ```
 
 ## Decisão arquitetural
@@ -86,6 +86,7 @@ Não integrar Supabase nesta fase. O outbox JSONL é o contrato de integração.
 - G6-C — Comandos `accept`/`reject` local-only + funil operacional no report
 - G7-A — Diagnóstico de guardrails (direção NF, event_id, manifest, report)
 - G7-B — Guardrails patch (warning direção, ingestion_event_id, report seções)
+- G7-C — Smoke local sintético (funil pending→link→accept/reject→outbox→report validado)
 - G/H — UI Backlog (Controle de Tapetes — staging/work/app-next)
 
 ## Fase G1: Taxonomia de Documentos (3 eixos)
@@ -108,4 +109,4 @@ Não integrar Supabase nesta fase. O outbox JSONL é o contrato de integração.
 
 ## Próxima fase recomendada
 RAVATEX-DOC-INGESTOR-G8-INTEGRATION-AND-SYNC
-Foco: revisar assign real para incluir documentos já linked, sync de manifest Drive, e preparação para integração com Controle de Tapetes. Guardrails locais estão completos.
+Foco: revisar assign real para incluir documentos já linked, sync de manifest Drive, e integração com Controle de Tapetes. Funil local completo e validado.
