@@ -1,64 +1,87 @@
 # AGENT HANDOFF
 
 ## Branch/HEAD/Status
-### documents-ingestor (este repositório)
+### documentos-ingestor (este repositório)
 - Branch: master
-- HEAD: `76ace64` — Improve local document operations (G8-C)
+- HEAD: `0f864a2` — Record real-lite operational smoke
+- Status: limpo
+
+### Controle de Tapetes (staging/work/app-next)
+- HEAD canônico: `997486a`
 
 ## Fase concluída
-RAVATEX-DOC-INGESTOR-G8-C-OPERATIONAL-POLISH
+RAVATEX-DOC-INGESTOR-G8-D-REAL-LITE-OPERATIONAL-SMOKE
 
 ## Fase anterior
-G8-B — Atualização de contrato (JSON schema + docs)
+G8-C — Polish operacional (filtros, export, inspect)
 
-## Objetivo da fase G8-C
-Melhorar operação local em 3 pontos: filtro por pedido, export filtrado de eventos, e inspect com links Drive claros.
+## Objetivo da fase G8-D
+Validar em ambiente real-lite (SQLite real, sem Google/Drive) que o funil local funciona com documento teste do G5.
 
-### Patch 1 — Filtro por pedido
-- `queries.ts`: `ListPendingFilters` ganhou `pedido?: string`; filtra por `documentos.pedido_manual`
-- `cli.ts list-pending`: nova opção `--pedido <25/2026 or PED-25-2026>`
-- Pedido normalizado via `normalizePedido()`: `25/2026` → `PED-25-2026`
-- 2 testes em `queries.test.ts`
+### Documento teste usado
+- Gmail message ID: `19f3...e1` (G5 smoke document)
+- Doc ID: `cda1...05` (masked)
+- Tipo: nf, formato: xml, direção: entrada
+- Status inicial: `pending`
+- Pedido inicial: `(none)`
 
-### Patch 2 — Export filtrado
-- `outbox.ts`: nova função `queryAndExportEvents(filters)` — read-only, sem marcar exported_at
-- `cli.ts export-events`: novas opções `--event-type`, `--pedido`, `--mark-exported`, `--json`
-- `--mark-exported` executa o export batch original (side-effect)
-- Sem `--mark-exported`: read-only, imprime eventos em JSONL ou JSON
-- 3 testes em `guardrails.test.ts` (filter por event_type, por pedido, preserva ingestion_event_id + reason)
+### Comandos executados
 
-### Patch 3 — Inspect com links Drive
-- `cli.ts inspect`: separa seção `--- drive links ---` com todos os campos Drive (não mascarados)
-- Campos exibidos: `drive_file_id`, `drive_web_view_link`, `drive_web_content_link`, `drive_folder_id`, `storage_uri`
-- Texto mode mostra valores reais; JSON mode já exibia (inalterado)
-- Exibe apenas se `drive_file_id` existe
-
-### Comandos implementados
+**Parte 1 — Baseline:**
 ```
-npm run list:pending -- --pedido 25/2026 --status assigned
-npm run export:events -- --event-type document.linked --pedido PED-25-2026 --json
-npm run export:events -- --event-type document.accepted
-npm run inspect -- --id <doc_id>
+npm.cmd run inspect -- --id 19f3c813e8d45be1
+→ status=pending, pedido=none, drive_file_id presente, drive_web_view_link presente
+
+npm.cmd run report -- --days 1
+→ 3 documentos (1 nf/entrada, 2 desconhecido), 0 accepted, 0 rejected
 ```
 
-### Arquivos alterados
-- `src/cli.ts` — --pedido no list-pending, export-events filtrado, inspect com Drive links
-- `src/core/queries.ts` — ListPendingFilters.pedido + filtro
-- `src/core/outbox.ts` — queryAndExportEvents()
-- `src/index.ts` — export queryAndExportEvents
-- `tests/queries.test.ts` — +2 pedido filter tests
-- `tests/guardrails.test.ts` — +3 filtered export tests
-- `PROJECT_STATE.md`, `AGENT_HANDOFF.md` — atualização
+**Parte 2 — Link local-only:**
+```
+npm.cmd run link -- --id 19f3c813e8d45be1 --pedido 999/2026
+→ [link] Linked: document=cda1...05 pedido=PED-99-2026 event=c9fe...fc
 
-### Testes
-- 24 suites, 270 testes passando (5 novos)
-- Nenhuma regressão
+npm.cmd run inspect -- --id 19f3c813e8d45be1
+→ status=assigned, pedido=PED-99-2026
+
+npm.cmd run export:events -- --pedido PED-99-2026 --event-type document.linked --json
+→ event_type=document.linked, ingestion_event_id=c9fe...fc, event_id=cda1...05 (legado)
+```
+
+**Parte 3 — Accept local-only:**
+```
+npm.cmd run accept -- --id 19f3c813e8d45be1
+→ [accept] Accepted: document=cda1...05 pedido=PED-99-2026 event=ebfd...76
+
+npm.cmd run inspect -- --id 19f3c813e8d45be1
+→ status=accepted
+
+npm.cmd run export:events -- --pedido PED-99-2026 --event-type document.accepted --json
+→ event_type=document.accepted, ingestion_event_id=ebfd...76, status=accepted, event_id legado preservado
+
+npm.cmd run report -- --days 1
+→ documentsAccepted=1, pendingWithoutPedido=2
+```
+
+### Evidências
+- **Link**: `document.linked` exportado com `ingestion_event_id` UUID, `event_id` = document_id (legado)
+- **Accept**: `document.accepted` exportado com `ingestion_event_id` diferente do linked
+- **Links Drive**: `inspect` mostra `drive_file_id`, `drive_web_view_link`, `drive_content_link`, `storage_uri` (valores reais, sem máscara)
+- **Report**: baseline 3 pending → após link+accept: 1 accepted, 2 pending (sem pedido)
+- **Git status**: limpo (nenhum arquivo alterado, nenhum dado commitado)
+
+### Garantias
+- Nenhum scan real executado
+- Nenhum assign real executado
+- Nenhuma chamada Google/Drive real
+- Nenhum dado commitado
+- Apenas documento teste controlado foi tocado via comandos CLI local-only
 
 ### Riscos remanescentes
-1. Bloqueio de mismatch entrada/saída deferido
-2. Manifest Drive sync deferido
+1. Manifest Drive não reflete link/accept local-only (documento não foi movido no Drive)
+2. Bloqueio de mismatch entrada/saída deferido
 3. event_id migração v2 deferida
 
 ### Próxima fase recomendada
-RAVATEX-DOC-INGESTOR-G8-D-SMOKE-REAL-REVISIT
-Foco: revalidar scan + link + accept/reject com Google/Drive real, validar manifest Drive e consumo de outbox.
+RAVATEX-DOC-INGESTOR-G9-DRIVE-MANIFEST-SYNC-DESIGN
+Foco: sincronizar assign real com documentos linked, atualizar manifest Drive, integração Controle de Tapetes.

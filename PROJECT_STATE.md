@@ -19,7 +19,7 @@ D:\OneDrive\Programação\Ravatex\documents-ingestor
 - `contracts/manifest.schema.json` — schema do manifest de Pedido
 
 ## Status atual
-- HEAD (documents-ingestor): `60bc12e`
+- HEAD (documents-ingestor): `0f864a2`
 - HEAD canônico staging/work/app-next (Controle de Tapetes): `997486a`
 - Push staging: `af919a2..997486a` (produção/origin oficial intocados)
 - 264 testes passando (24 suites) — incluindo integração mockada completa
@@ -91,6 +91,7 @@ Não integrar Supabase nesta fase. O outbox JSONL é o contrato de integração.
 - G8-A — Design de integração e sync (matriz link/assign/manifest/outbox/Drive/event_id)
 - G8-B — Atualização de contrato (JSON schema + docs) refletindo estado real G6/G7
 - G8-C — Polish operacional (filtro por pedido, export eventos filtrado, inspect com links Drive)
+- G8-D — Smoke real-lite (link+accept local-only validados em documento real existente)
 - G/H — UI Backlog (Controle de Tapetes — staging/work/app-next)
 
 ## Fase G1: Taxonomia de Documentos (3 eixos)
@@ -112,5 +113,5 @@ Não integrar Supabase nesta fase. O outbox JSONL é o contrato de integração.
 - Status residual esperado: `?? supabase/.temp/`
 
 ## Próxima fase recomendada
-RAVATEX-DOC-INGESTOR-G8-D-SMOKE-REAL-REVISIT
-Foco: revalidar scan + link + accept/reject em ambiente real com --confirm-real-google, validar manifest Drive e testar consumo de outbox pelo Controle de Tapetes.
+RAVATEX-DOC-INGESTOR-G9-DRIVE-MANIFEST-SYNC-DESIGN
+Foco: sincronizar assign real com documentos linked, atualizar manifest Drive, e preparar integração com Controle de Tapetes via outbox. Funil local validado em real-lite.
