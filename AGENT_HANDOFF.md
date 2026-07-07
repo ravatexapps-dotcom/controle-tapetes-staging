@@ -3,7 +3,7 @@
 ## Branch/HEAD/Status
 ### documentos-ingestor (este repositório)
 - Branch: master
-- HEAD: `(new commit)` — Record Controle Tapetes integration design (G10-A)
+- HEAD: `207572b` — Record Controle Tapetes integration design (G10-A)
 
 ### Controle de Tapetes (staging/work/app-next)
 - HEAD canônico: `997486a`
