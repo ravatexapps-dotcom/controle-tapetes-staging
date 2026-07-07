@@ -10,8 +10,9 @@
 - HEAD final da implementacao:
   `97b62a63adeac2026616ecd02d436dd4ed4103ad`.
 - Objetivo: registrar o fechamento da validacao visual da OP
-  Tecelagem aberta alinhada ao padrao validado da OP Acabamento
-  aberta e da OP Tecelagem em producao.
+  Tecelagem aberta alinhada ao padrao validado da OP
+  Acabamento/Latex aberta e em producao, e da OP Tecelagem em
+  producao.
 - Arquivos alterados na implementacao:
   `js/screens/op-nova.js`, `tests/op-nova.smoke.js`,
   `PROJECT_STATE.md`, `AGENT_HANDOFF.md`.

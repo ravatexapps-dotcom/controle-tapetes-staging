@@ -11,7 +11,8 @@
 >
 > Escopo: alinhamento visual controlado da OP Tecelagem aberta
 > (`js/screens/op-nova.js`) aos padroes visuais validados da OP
-> Acabamento aberta e da OP Tecelagem em producao. A fase foi
+> Acabamento/Latex aberta e em producao, e da OP Tecelagem em
+> producao. A fase foi
 > estritamente visual: sem SQL, sem schema, sem migration, sem RPC
 > nova, sem alterar lifecycle, status, tipo interno, calculos, rotas,
 > writes Supabase ou regras de negocio.
