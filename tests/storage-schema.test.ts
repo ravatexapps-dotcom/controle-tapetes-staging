@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { existsSync, rmSync, mkdirSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { getDb, closeDb, ensureLocalMigrations } from '../src/storage/sqlite.js';
+import { getDb, closeDb, ensureLocalMigrations, ensureCheckMigration } from '../src/storage/sqlite.js';
 import Database from 'better-sqlite3';
 import { randomUUID } from 'node:crypto';
 
@@ -281,6 +281,133 @@ describe('SQLite migration for taxonomy columns (pre-G1 → G1+)', () => {
     expect(rows[0].tipo_documento).toBe('nf_pdf');
     expect(rows[0].formato).toBe('pdf');
 
+    db.close();
+  });
+});
+
+const CHECK_DB_DIR = join(tmpdir(), `ravatex-check-test-${randomUUID()}`);
+
+function createDbWithOldCheck(db: Database.Database): void {
+  db.exec(`CREATE TABLE IF NOT EXISTS emails_processados (
+    gmail_message_id TEXT PRIMARY KEY,
+    thread_id TEXT NOT NULL DEFAULT '',
+    subject TEXT NOT NULL DEFAULT '',
+    processed_at TEXT NOT NULL DEFAULT (datetime('now')),
+    scan_status TEXT NOT NULL DEFAULT 'processed',
+    attachments_count INTEGER NOT NULL DEFAULT 0
+  )`);
+  db.exec(`CREATE TABLE IF NOT EXISTS documentos (
+    id TEXT PRIMARY KEY,
+    gmail_message_id TEXT NOT NULL,
+    thread_id TEXT NOT NULL DEFAULT '',
+    attachment_id TEXT NOT NULL,
+    filename_original TEXT NOT NULL,
+    sha256 TEXT NOT NULL,
+    tipo_documento TEXT NOT NULL DEFAULT 'desconhecido'
+      CHECK (tipo_documento IN ('nf_xml', 'nf_pdf', 'romaneio', 'desconhecido')),
+    storage_backend TEXT NOT NULL DEFAULT 'google_drive',
+    storage_uri TEXT,
+    drive_file_id TEXT,
+    drive_folder_id TEXT,
+    drive_web_view_link TEXT,
+    drive_web_content_link TEXT,
+    local_cache_path TEXT,
+    local_path TEXT,
+    pedido_manual TEXT,
+    status TEXT NOT NULL DEFAULT 'pending',
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+  )`);
+}
+
+describe('SQLite CHECK constraint rebuild (pre-G1 legacy CHECK)', () => {
+  beforeEach(() => {
+    if (existsSync(CHECK_DB_DIR)) rmSync(CHECK_DB_DIR, { recursive: true });
+    mkdirSync(CHECK_DB_DIR, { recursive: true });
+  });
+
+  afterEach(() => {
+    if (existsSync(CHECK_DB_DIR)) rmSync(CHECK_DB_DIR, { recursive: true });
+  });
+
+  function openLegacyDb(): Database.Database {
+    const dbPath = join(CHECK_DB_DIR, 'legacy-check.db');
+    const db = new Database(dbPath);
+    db.pragma('journal_mode = WAL');
+    createDbWithOldCheck(db);
+    return db;
+  }
+
+  it('detects old CHECK and rebuilds table', () => {
+    const db = openLegacyDb();
+    const oldSql = db.prepare(`SELECT sql FROM sqlite_master WHERE type='table' AND name='documentos'`).get() as any;
+    expect(oldSql.sql).toContain("'nf_xml'");
+    expect(oldSql.sql).not.toContain("'nf', 'romaneio'");
+
+    ensureLocalMigrations(db);
+    ensureCheckMigration(db);
+
+    const newSql = db.prepare(`SELECT sql FROM sqlite_master WHERE type='table' AND name='documentos'`).get() as any;
+    expect(newSql.sql).toContain("'nf', 'romaneio', 'desconhecido', 'nf_xml', 'nf_pdf'");
+    db.close();
+  });
+
+  it('preserves existing data after CHECK rebuild', () => {
+    const db = openLegacyDb();
+    db.prepare(`INSERT INTO documentos (id, gmail_message_id, attachment_id, filename_original, sha256, tipo_documento, drive_file_id, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`).run('ck1', 'm1', 'a1', 'nota.xml', 'sha-ck1', 'nf_xml', 'drive-ck1', 'pending');
+    db.prepare(`INSERT INTO documentos (id, gmail_message_id, attachment_id, filename_original, sha256, tipo_documento, drive_file_id, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`).run('ck2', 'm1', 'a2', 'nota.pdf', 'sha-ck2', 'nf_pdf', 'drive-ck2', 'assigned');
+
+    ensureLocalMigrations(db);
+    ensureCheckMigration(db);
+
+    const rows = db.prepare(`SELECT id, tipo_documento, drive_file_id, status FROM documentos ORDER BY id`).all() as any[];
+    expect(rows).toHaveLength(2);
+    expect(rows[0].id).toBe('ck1');
+    expect(rows[0].tipo_documento).toBe('nf_xml');
+    expect(rows[0].drive_file_id).toBe('drive-ck1');
+    expect(rows[1].id).toBe('ck2');
+    expect(rows[1].status).toBe('assigned');
+    db.close();
+  });
+
+  it('accepts new tipo_documento=nf after CHECK rebuild', () => {
+    const db = openLegacyDb();
+    ensureLocalMigrations(db);
+    ensureCheckMigration(db);
+
+    db.prepare(`INSERT OR IGNORE INTO emails_processados (gmail_message_id) VALUES (?)`).run('m2');
+    expect(() => {
+      db.prepare(`INSERT INTO documentos (id, gmail_message_id, attachment_id, filename_original, sha256, tipo_documento, formato, direcao_nf) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`).run('ck3', 'm2', 'a1', 'nfe.xml', 'sha-ck3', 'nf', 'xml', 'entrada');
+    }).not.toThrow();
+    db.close();
+  });
+
+  it('CHECK rebuild is idempotent', () => {
+    const db = openLegacyDb();
+    db.prepare(`INSERT OR IGNORE INTO emails_processados (gmail_message_id) VALUES (?)`).run('m3');
+    db.prepare(`INSERT INTO documentos (id, gmail_message_id, attachment_id, filename_original, sha256, tipo_documento) VALUES (?, ?, ?, ?, ?, ?)`).run('ck4', 'm3', 'a1', 'r.pdf', 'sha-ck4', 'nf_pdf');
+
+    ensureLocalMigrations(db);
+    ensureCheckMigration(db);
+    ensureCheckMigration(db);
+
+    const rows = db.prepare(`SELECT COUNT(*) AS c FROM documentos`).get() as any;
+    expect(rows.c).toBe(1);
+    const doc = db.prepare(`SELECT tipo_documento, formato FROM documentos WHERE id = ?`).get('ck4') as any;
+    expect(doc.tipo_documento).toBe('nf_pdf');
+    expect(doc.formato).toBe('pdf');
+    db.close();
+  });
+
+  it('indexes are preserved after CHECK rebuild', () => {
+    const db = openLegacyDb();
+    ensureLocalMigrations(db);
+    ensureCheckMigration(db);
+
+    const indexes = db.prepare(`SELECT name FROM sqlite_master WHERE type='index' AND tbl_name='documentos'`).all() as any[];
+    const names = indexes.map((i: any) => i.name);
+    expect(names).toContain('idx_documentos_dedup');
+    expect(names).toContain('idx_documentos_drive_file_id');
     db.close();
   });
 });

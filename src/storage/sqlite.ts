@@ -16,6 +16,7 @@ export function getDb(): Database.Database {
   db.pragma('foreign_keys = ON');
   runMigrations(db);
   ensureLocalMigrations(db);
+  ensureCheckMigration(db);
   return db;
 }
 
@@ -49,6 +50,72 @@ export function ensureLocalMigrations(database: Database.Database): void {
     UPDATE documentos SET formato = 'desconhecido', direcao_nf = NULL
       WHERE tipo_documento = 'desconhecido' AND formato IN ('desconhecido', '');
   `);
+}
+
+export function ensureCheckMigration(database: Database.Database): void {
+  const tableRow = database.prepare(
+    `SELECT sql FROM sqlite_master WHERE type='table' AND name='documentos'`
+  ).get() as { sql: string } | undefined;
+
+  if (!tableRow || !tableRow.sql) return;
+
+  const sql: string = tableRow.sql;
+  const needsRebuild =
+    sql.includes("'nf_xml'") && sql.includes("'nf_pdf'") &&
+    !sql.includes("'nf', 'romaneio'");
+
+  if (!needsRebuild) return;
+
+  database.exec('PRAGMA foreign_keys = OFF');
+
+  const createSql = `CREATE TABLE documentos_new (
+    id TEXT PRIMARY KEY,
+    gmail_message_id TEXT NOT NULL,
+    thread_id TEXT NOT NULL DEFAULT '',
+    attachment_id TEXT NOT NULL,
+    filename_original TEXT NOT NULL,
+    sha256 TEXT NOT NULL,
+    tipo_documento TEXT NOT NULL DEFAULT 'desconhecido'
+      CHECK (tipo_documento IN ('nf', 'romaneio', 'desconhecido', 'nf_xml', 'nf_pdf')),
+    formato TEXT NOT NULL DEFAULT 'desconhecido'
+      CHECK (formato IN ('pdf', 'xml', 'desconhecido')),
+    direcao_nf TEXT
+      CHECK (direcao_nf IS NULL OR direcao_nf IN ('entrada', 'saida', 'desconhecida')),
+    storage_backend TEXT NOT NULL DEFAULT 'google_drive',
+    storage_uri TEXT,
+    drive_file_id TEXT,
+    drive_folder_id TEXT,
+    drive_web_view_link TEXT,
+    drive_web_content_link TEXT,
+    local_cache_path TEXT,
+    local_path TEXT,
+    pedido_manual TEXT,
+    status TEXT NOT NULL DEFAULT 'pending'
+      CHECK (status IN ('pending', 'assigned', 'accepted', 'rejected')),
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+    FOREIGN KEY (gmail_message_id) REFERENCES emails_processados(gmail_message_id)
+  )`;
+
+  database.exec('BEGIN');
+  database.exec(createSql);
+
+  const cols = database.prepare(`PRAGMA table_info(documentos)`).all() as any[];
+  const colList = cols.map((c: any) => c.name).join(', ');
+
+  database.exec(`INSERT INTO documentos_new (${colList}) SELECT ${colList} FROM documentos`);
+  database.exec('DROP TABLE documentos');
+  database.exec('ALTER TABLE documentos_new RENAME TO documentos');
+  database.exec(`
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_documentos_dedup
+      ON documentos(gmail_message_id, attachment_id, sha256)
+  `);
+  database.exec(`
+    CREATE INDEX IF NOT EXISTS idx_documentos_drive_file_id
+      ON documentos(drive_file_id)
+  `);
+  database.exec('COMMIT');
+  database.exec('PRAGMA foreign_keys = ON');
 }
 
 export function closeDb(): void {
