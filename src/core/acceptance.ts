@@ -86,8 +86,8 @@ export function acceptDocument(emailOrDocumentId: string): AcceptanceResult {
       `INSERT INTO ingestion_events (
          id, event_type, pedido_manual, document_id, status,
          storage_backend, storage_uri, drive_file_id, drive_web_view_link,
-         manifest_storage_uri, manifest_drive_file_id
-       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+         manifest_storage_uri, manifest_drive_file_id, reason
+       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
     ).run(
       eventId,
       'document.accepted',
@@ -98,6 +98,7 @@ export function acceptDocument(emailOrDocumentId: string): AcceptanceResult {
       doc.storage_uri ?? null,
       doc.drive_file_id ?? null,
       doc.drive_web_view_link ?? null,
+      null,
       null,
       null,
     );
@@ -158,8 +159,8 @@ export function rejectDocument(emailOrDocumentId: string, reason?: string): Acce
       `INSERT INTO ingestion_events (
          id, event_type, pedido_manual, document_id, status,
          storage_backend, storage_uri, drive_file_id, drive_web_view_link,
-         manifest_storage_uri, manifest_drive_file_id
-       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+         manifest_storage_uri, manifest_drive_file_id, reason
+       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
     ).run(
       eventId,
       'document.rejected',
@@ -172,6 +173,7 @@ export function rejectDocument(emailOrDocumentId: string, reason?: string): Acce
       doc.drive_web_view_link ?? null,
       null,
       null,
+      reason ?? null,
     );
     appendEvent(event as any);
   }

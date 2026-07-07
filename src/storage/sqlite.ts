@@ -50,6 +50,12 @@ export function ensureLocalMigrations(database: Database.Database): void {
     UPDATE documentos SET formato = 'desconhecido', direcao_nf = NULL
       WHERE tipo_documento = 'desconhecido' AND formato IN ('desconhecido', '');
   `);
+
+  const eventCols = database.prepare(`PRAGMA table_info(ingestion_events)`).all() as any[];
+  const eventColNames = new Set(eventCols.map((c: any) => c.name));
+  if (eventCols.length > 0 && !eventColNames.has('reason')) {
+    database.exec(`ALTER TABLE ingestion_events ADD COLUMN reason TEXT`);
+  }
 }
 
 export function ensureCheckMigration(database: Database.Database): void {

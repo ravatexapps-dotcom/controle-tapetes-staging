@@ -145,6 +145,7 @@ describe('local document funnel smoke', () => {
     const rejectEvent = exported.find(e => e.event_type === 'document.rejected');
     expect(rejectEvent).toBeTruthy();
     expect(rejectEvent!.status).toBe('rejected');
+    expect(rejectEvent!.document.reason).toBe('Documento duplicado');
     expect(rejectEvent!.event_id).toBe(docId);
     expect(rejectEvent!.ingestion_event_id).toBeTruthy();
   });

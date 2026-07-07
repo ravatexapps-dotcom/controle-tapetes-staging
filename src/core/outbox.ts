@@ -32,7 +32,7 @@ export function exportPendingEvents(): DocumentEvent[] {
       `SELECT d.*, e.id AS ingestion_event_id,
               e.pedido_manual, e.event_type, e.status AS event_status,
               e.storage_uri, e.drive_file_id, e.drive_web_view_link,
-              e.manifest_storage_uri
+              e.manifest_storage_uri, e.reason
        FROM ingestion_events e
        JOIN documentos d ON d.id = e.document_id
        WHERE e.id = ?`
@@ -79,6 +79,7 @@ function buildEventFromRow(row: any): DocumentEvent {
       drive_web_content_link: row.drive_web_content_link,
       local_cache_path: row.local_cache_path,
       manifest_storage_uri: row.manifest_storage_uri,
+      ...(row.reason ? { reason: row.reason } : {}),
     },
     status: row.event_status,
   };

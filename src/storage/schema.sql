@@ -76,6 +76,7 @@ CREATE TABLE IF NOT EXISTS ingestion_events (
 
   status TEXT NOT NULL DEFAULT 'pending_app_acceptance'
     CHECK (status IN ('pending_app_acceptance', 'accepted', 'rejected')),
+  reason TEXT,
   created_at TEXT NOT NULL DEFAULT (datetime('now')),
   exported_at TEXT,
   FOREIGN KEY (document_id) REFERENCES documentos(id)
