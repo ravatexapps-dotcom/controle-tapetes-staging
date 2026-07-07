@@ -3,7 +3,7 @@
 ## Branch/HEAD/Status
 ### documentos-ingestor (este repositório)
 - Branch: master
-- HEAD: `(new commit)` — Update document event contract (G8-B)
+- HEAD: `fd75989` — Update document event contract (G8-B)
 
 ### Controle de Tapetes (staging/work/app-next)
 - HEAD canônico: `997486a`
