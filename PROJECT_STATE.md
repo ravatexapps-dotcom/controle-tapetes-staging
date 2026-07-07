@@ -1,37 +1,32 @@
 > **Atualizacao 2026-07-06 - fase
-> `RAVATEX-TAPETES-OP-PROPOSAL-CONTROLS-PARITY-R1`.**
-> Status: **PATCH OP PROPOSAL CONTROLS PARITY PRONTO — AGUARDANDO RETESTE DO USUARIO**.
+> `RAVATEX-TAPETES-TRANSFER-METRICS-ALIGNMENT-D`.**
+> Status: **PATCH TRANSFER METRICS ALIGNMENT PRONTO — AGUARDANDO RETESTE DO USUARIO**.
 > Entrada: branch `work/app-next`, HEAD inicial
-> `608ec4e`; status inicial somente `?? supabase/.temp/`;
+> `4cf35de`; status inicial somente `?? supabase/.temp/`;
 > `origin` somente leitura e producao intocados.
 >
 > Fase anterior:
-> `RAVATEX-TAPETES-ACABAMENTO-ENTRY-LABEL-R1` (HEAD
-> `608ec4e`).
+> `RAVATEX-TAPETES-OP-PROPOSAL-CONTROLS-PARITY-R1` (HEAD
+> `4cf35de`).
 >
-> Itens entregues (P0):
+> Itens entregues (P2):
 >
-> 1. **Paridade de controles de proposta na tela da OP.**
-> (`js/screens/op-nova.js:buildProposta`).
-> Causa raiz: a tela da OP usava `recompute()` que so desabilitava
-> "Aceitar proposta" quando `algumExcede`, mas nao verificava se o
-> usuario moveu o slider para fora do default (divergencia).
-> Correcao: adicionado snapshot `defaultMetrosOverride` + helper
-> `propostaDivergente()` (mesmo padrao do
-> `buildTecAcceptanceProposalBlock` no modal do Pedido).
-> `recompute()` agora aplica `disabled = algumExcede || !divergente`.
-> - "Manter pedido" ativo por default.
-> - "Aceitar proposta" comeca desabilitado.
-> - Move slider → habilita.
-> - Volta ao default → desabilita.
-> - "Voltar a proposta proporcional" restaura default e desabilita.
+> 1. **Alinhamento das metricas no modal Acabamento → Expedicao.**
+> (`js/screens/pedido-detail-events.js:buildAcabamentoTransferForm`).
+> Causa raiz: o grid `align-items:end` + valores em `font-size:12.5px`
+> (sem padding) ficavam deslocados e pequenos em relacao ao campo input
+> de "Movimentar" (altura ~38px via `textInput` com `px-3 py-2`).
+> Correcao: `align-items:end` → `align-items:start`; valores de
+> "Recebido" e "Ja movimentado" ganharam `font-size:14px` e
+> `padding:8px 0` para equilibrar visualmente com o input.
+> Labels, calculos e handlers preservados. <Preencher restante> intacto.
 >
 > - **Arquivos alterados:**
->   - `js/screens/op-nova.js`
-> - **Nao alterado:** schema, RPC, handler de aceite (`aplicarRecalculoOP`),
->   fluxo produtivo.
-> - **Testes:** `tec-to-acabamento-flow.smoke.js` 39/39,
->   `pedido-detail.smoke.js` 172/172.
+>   - `js/screens/pedido-detail-events.js`
+> - **Nao alterado:** calculo de quantidade, handler de movimentacao,
+>   RPC, schema.
+> - **Testes:** `pedido-detail.smoke.js` 172/172,
+>   `tec-to-acabamento-flow.smoke.js` 39/39.
 > - **Garantias:** producao intocada; `origin` nao usado; sem
 >   `git add .`; `supabase/.temp` fora do commit.
 >
