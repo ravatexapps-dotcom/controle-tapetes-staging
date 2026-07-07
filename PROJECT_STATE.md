@@ -22,7 +22,7 @@ D:\OneDrive\Programação\Ravatex\documents-ingestor
 - HEAD (documents-ingestor): `6622526`
 - HEAD canônico staging/work/app-next (Controle de Tapetes): `997486a`
 - Push staging: `af919a2..997486a` (produção/origin oficial intocados)
-- 229 testes passando (21 suites) — incluindo integração mockada completa
+- 232 testes passando (21 suites) — incluindo integração mockada completa
 - Hermético: nenhum teste depende de `.env` real, token real ou chamadas Google
 - OAuth real validado (C1)
 - Smoke real com Drive/Gmail reais validado (C2)
@@ -54,11 +54,18 @@ D:\OneDrive\Programação\Ravatex\documents-ingestor
 ## Última evidência de testes
 ```
 Test Files  21 passed (21)
-     Tests  229 passed (229)
+     Tests  232 passed (232)
 ```
 
 ## Decisão arquitetural
 Não integrar Supabase nesta fase. O outbox JSONL é o contrato de integração. O app principal consumirá os eventos quando estiver pronto.
+
+### Correção G6-B-R1: Preservação de event_type no outbox
+- `DocumentEvent.event_type` ampliado de `'document.detected'` para `string`
+- `buildEventFromRow()` em `outbox.ts` agora usa `row.event_type` do DB em vez de hardcode
+- `document.linked` exporta como `document.linked` (não é mais sobrescrito como `document.detected`)
+- `document.detected` continua preservado
+- `status` (`pending_app_acceptance`) já era preservado corretamente (usava `row.event_status`)
 
 ## Fases concluídas
 - A — Scaffold
@@ -75,6 +82,7 @@ Não integrar Supabase nesta fase. O outbox JSONL é o contrato de integração.
 - G4 — Manifest do Pedido (estrutura + add document ao manifest)
 - G5 — Retry por Gmail messageId + validação real R4-R1 + crossMessageDuplicates tracking
 - G6-B — Comando `link` local-only (vincular documento pending a pedido sem Drive)
+- G6-B-R1 — Preservação de event_type/status no outbox export (fix `buildEventFromRow`)
 - G/H — UI Backlog (Controle de Tapetes — staging/work/app-next)
 
 ## Fase G1: Taxonomia de Documentos (3 eixos)

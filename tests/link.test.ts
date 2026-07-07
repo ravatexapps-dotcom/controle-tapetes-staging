@@ -4,6 +4,7 @@ import { join } from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { getDb, closeDb } from '../src/storage/sqlite.js';
 import { linkDocumentToPedido } from '../src/core/link.js';
+import { exportPendingEvents } from '../src/core/outbox.js';
 import { HERMETIC_TEST_ROOT } from './setup.js';
 
 const SCENARIO_DIR = join(HERMETIC_TEST_ROOT, `link-test-${randomUUID()}`);
@@ -184,5 +185,77 @@ describe('link document to pedido (local-only)', () => {
     const docId = seedPendingDoc(db, { gmailMessageId: 'msg-specific' });
     const result = linkDocumentToPedido('msg-specific', '25/2026');
     expect(result.documentId).toBe(docId);
+  });
+
+  it('exportPendingEvents preserves document.linked event_type and status', () => {
+    const db = getDb();
+    const docId = seedPendingDoc(db);
+    const linkResult = linkDocumentToPedido(docId, '25/2026');
+
+    db.prepare(`UPDATE ingestion_events SET exported_at = NULL WHERE id = ?`).run(linkResult.eventId);
+
+    const outboxPath = join(SCENARIO_DIR, 'outbox.jsonl');
+    if (existsSync(outboxPath)) rmSync(outboxPath);
+
+    const exported = exportPendingEvents();
+    expect(exported).toHaveLength(1);
+    expect(exported[0].event_type).toBe('document.linked');
+    expect(exported[0].document.document_id).toBe(docId);
+    expect(exported[0].status).toBe('pending_app_acceptance');
+    expect(exported[0].pedido_manual).toBe('PED-25-2026');
+    expect(exported[0].document.document_id).toBe(docId);
+    expect(exported[0].document.tipo_documento).toBe('nf');
+    expect(exported[0].document.filename_original).toBe('NF-test.pdf');
+
+    expect(existsSync(outboxPath)).toBe(true);
+    const lines = readFileSync(outboxPath, 'utf-8').trim().split('\n').filter(Boolean);
+    expect(lines).toHaveLength(1);
+    const parsed = JSON.parse(lines[0]);
+    expect(parsed.event_type).toBe('document.linked');
+    expect(parsed.status).toBe('pending_app_acceptance');
+
+    const evt = db.prepare(`SELECT exported_at FROM ingestion_events WHERE id = ?`).get(linkResult.eventId) as any;
+    expect(evt.exported_at).toBeTruthy();
+  });
+
+  it('exportPendingEvents preserves document.detected event_type from real assign', () => {
+    const db = getDb();
+    const docId = seedPendingDoc(db);
+
+    db.prepare(
+      `INSERT INTO ingestion_events (id, event_type, pedido_manual, document_id, status, storage_backend)
+       VALUES (?, ?, ?, ?, ?, ?)`
+    ).run(
+      randomUUID(),
+      'document.detected',
+      'PED-50-2026',
+      docId,
+      'pending_app_acceptance',
+      'google_drive',
+    );
+
+    const outboxPath = join(SCENARIO_DIR, 'outbox.jsonl');
+    if (existsSync(outboxPath)) rmSync(outboxPath);
+
+    const exported = exportPendingEvents();
+    expect(exported).toHaveLength(1);
+    expect(exported[0].event_type).toBe('document.detected');
+    expect(exported[0].status).toBe('pending_app_acceptance');
+  });
+
+  it('re-export does NOT transform document.linked into document.detected', () => {
+    const db = getDb();
+    const docId = seedPendingDoc(db);
+    const linkResult = linkDocumentToPedido(docId, '25/2026');
+
+    db.prepare(`UPDATE ingestion_events SET exported_at = NULL WHERE id = ?`).run(linkResult.eventId);
+
+    const outboxPath = join(SCENARIO_DIR, 'outbox.jsonl');
+    if (existsSync(outboxPath)) rmSync(outboxPath);
+
+    const exported = exportPendingEvents();
+    expect(exported).toHaveLength(1);
+    expect(exported[0].event_type).not.toBe('document.detected');
+    expect(exported[0].event_type).toBe('document.linked');
   });
 });

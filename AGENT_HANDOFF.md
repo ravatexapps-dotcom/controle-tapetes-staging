@@ -3,7 +3,7 @@
 ## Branch/HEAD/Status
 ### documentos-ingestor (este repositório)
 - Branch: master
-- HEAD: `6622526` — Add local-only document link command (G6-B)
+- HEAD: `75ef242` — Preserve document event type in outbox export (G6-B-R1)
 - Status: limpo
 
 ### Controle de Tapetes (staging/work/app-next)
@@ -13,61 +13,52 @@
 - Status residual esperado: `?? supabase/.temp/`
 
 ## Fase concluída
-RAVATEX-DOC-INGESTOR-G6-B-LINK-LOCAL-ONLY
+RAVATEX-DOC-INGESTOR-G6-B-R1-OUTBOX-EVENT-PRESERVATION
 
 ## Fase anterior
-G6-A — Diagnóstico do fluxo pending → pedido/app/outbox
+G6-B — Comando `link` local-only (vincular documento pending a pedido sem Drive)
 
-## Objetivo da fase G6-B
-Implementar comando `link` local-only para vincular documento pending a pedido, atualizando apenas SQLite e outbox, sem Google Drive, sem mover arquivos e sem manifest real.
+## Objetivo da fase G6-B-R1
+Corrigir o `exportPendingEvents` / `buildEventFromRow` para preservar o `event_type` real salvo em `ingestion_events`, em vez de hardcoded `'document.detected'`.
 
-### Resultados G6-B
-- Comando `link` implementado em `src/cli.ts`
-- Função `linkDocumentToPedido` em `src/core/link.ts`
-- Exportado via `src/index.ts`
-- Script npm `npm run link` em `package.json`
-- 12 testes herméticos em `tests/link.test.ts`
-- 229 testes passando (21 suites) — 12 novos + 217 existentes
+### Causa raiz
+`buildEventFromRow()` em `src/core/outbox.ts:60` hardcodava `event_type: 'document.detected'`, ignorando `e.event_type` que já era SELECTado da tabela `ingestion_events`. Eventos `document.linked` exportavam incorretamente como `document.detected`.
 
-### Sintaxe do comando
-```
-npm.cmd run link -- --id <document_id_or_gmail_message_id> --pedido <pedido_ref>
-```
+### Onde estava o hardcode
+- `src/core/outbox.ts`, linha 60: `event_type: 'document.detected'` (hardcoded)
+- `src/types/event.ts`, linha 28: `event_type: 'document.detected'` (tipo literal restritivo)
 
-Exemplos:
-```
-npm.cmd run link -- --id <doc_uuid> --pedido 25/2026
-npm.cmd run link -- --id <gmail_msg_id> --pedido PED-25-2026
-```
+### Como foi corrigido
+1. `src/types/event.ts`: `event_type` ampliado de `'document.detected'` → `string`
+2. `src/core/outbox.ts`: `buildEventFromRow` usa `row.event_type` (valor real do DB) em vez de hardcode
+3. `status` (`row.event_status`) já era preservado corretamente — nenhuma alteração necessária
+4. O SQL de export (`exportPendingEvents`) já SELECTava `e.event_type, e.status AS event_status` — a query estava correta, o bug era só na função `buildEventFromRow`
 
-### Semântica
-- **Local-only**: não chama Gmail, Drive, upload, move, manifest real ou scan
-- Não exige `--confirm-real-google`
-- Atualiza SQLite: `pedido_manual`, `status='assigned'`, `updated_at`
-- Cria evento `ingestion_events` com `event_type='document.linked'`, status `pending_app_acceptance`
-- Append no outbox JSONL
-- **Idempotente**: mesmo documento + mesmo pedido retorna sucesso sem duplicar evento
-- **Bloqueia** vínculo conflitante (documento já vinculado a pedido diferente)
-- **Bloqueia** pedido inválido, documento inexistente, status não-pending
-- Output deixa claro: `Local-only — no Google Drive calls performed`
+### Testes
+- 3 novos testes em `tests/link.test.ts`:
+  - `exportPendingEvents preserves document.linked event_type and status`
+  - `exportPendingEvents preserves document.detected event_type from real assign`
+  - `re-export does NOT transform document.linked into document.detected`
+- 232 testes passando (21 suites) — 3 novos + 229 existentes
 
-### Campos SQLite alterados pelo link
-- `documentos.pedido_manual` — preenchido com pedido normalizado (PED-NN-YYYY)
-- `documentos.status` — muda de `pending` para `assigned`
-- `documentos.updated_at` — atualizado para datetime('now')
-- `ingestion_events` — INSERT com event_type `document.linked`, status `pending_app_acceptance`
+### Arquivos alterados
+- `src/types/event.ts` — `event_type: string` (era `'document.detected'`)
+- `src/core/outbox.ts` — `event_type: row.event_type` (era hardcoded)
+- `tests/link.test.ts` — 3 novos testes de preservação de export
+- `PROJECT_STATE.md`, `AGENT_HANDOFF.md` — atualização documental
 
-### Evento outbox emitido
-- `schema_version`: 1
-- `event_type`: `document.linked`
-- `status`: `pending_app_acceptance`
-- Contém: document_id, pedido_manual, gmail_message_id, thread_id, sha256, tipo_documento, filename_original, storage_uri, drive_file_id (se existir)
+### Garantias
+- `document.detected` continua exportando como `document.detected`
+- `document.linked` exporta como `document.linked`
+- `status` (`pending_app_acceptance`) preservado em ambos
+- Nenhuma alteração em schema, assign real, scan real, ou comando `link`
+- Nenhum Google/Drive chamado
 
 ### Riscos remanescentes
 1. **App acceptance é dead end**: não há comando para transicionar `assigned → accepted/rejected`
-2. **ExportPendingEvents ignora event_type do DB**: `buildEventFromRow` hardcoded `document.detected`, então re-export batch override `document.linked` para `document.detected`
+2. **event_id no export é document_id, não ingestion_events.id**: `buildEventFromRow` usa `row.id` que é `d.id` (document_id), não `e.id`. Comportamento legado, não quebra integração atual.
 3. **Sem proteção contra vínculo de direção errada**: NF entrada pode ser linked a pedido de saída sem aviso
-4. **Manifest do Pedido desatualizado**: se o documento for linked local-only e depois um assign real for executado, o manifest Drive não refletirá o documento (pois o arquivo não está na pasta do pedido)
+4. **Manifest do Pedido desatualizado após link**: documento linked local-only não está na pasta do pedido no Drive
 5. **accepted/rejected não geram evento de outbox**
 
 ### Próxima fase recomendada

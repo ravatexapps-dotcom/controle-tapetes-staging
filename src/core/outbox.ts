@@ -57,7 +57,7 @@ function buildEventFromRow(row: any): DocumentEvent {
 
   return {
     schema_version: 1,
-    event_type: 'document.detected',
+    event_type: row.event_type,
     event_id: row.id,
     created_at: row.created_at,
     pedido_manual: row.pedido_manual,

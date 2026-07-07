@@ -25,7 +25,7 @@ export interface DocumentEventDocument {
 
 export interface DocumentEvent {
   schema_version: 1 | 2;
-  event_type: 'document.detected';
+  event_type: string;
   event_id: string;
   created_at: string;
   pedido_manual: string;
