@@ -58,12 +58,20 @@
     return el('div', { style: SECTION_ICON }, svgEl(svgMarkup));
   }
 
-  // Header de seção canônico (chip de ícone + rótulo UPPERCASE). `iconMarkup`
-  // é o SVG do chip; se ausente cai no ícone de "dados".
-  function rvSectionPill(label, iconMarkup) {
-    return el('div', { style: 'display:flex;align-items:center;gap:9px;margin-bottom:14px;' },
+  // Chip de ícone + rótulo UPPERCASE, SEM margem — para usar dentro de um
+  // cabeçalho flex (ex.: pill à esquerda + badge à direita alinhados).
+  function chipLabel(label, iconMarkup) {
+    return el('div', { style: 'display:flex;align-items:center;gap:9px;' },
       el('span', { style: CHIP_STYLE }, svgEl(iconMarkup || IC_DADOS)),
       el('span', { style: SECTION_LABEL_STYLE }, label));
+  }
+
+  // Header de seção canônico (chip de ícone + rótulo UPPERCASE) com a margem
+  // inferior padrão que separa o header do conteúdo do card.
+  function rvSectionPill(label, iconMarkup) {
+    var node = chipLabel(label, iconMarkup);
+    node.setAttribute('style', 'display:flex;align-items:center;gap:9px;margin-bottom:14px;');
+    return node;
   }
 
   function sectionHead(svgMarkup, title) {
@@ -440,8 +448,8 @@
         }
 
         var card = el('div', { style: CARD + 'padding:15px 17px;' });
-        card.appendChild(el('div', { style: 'display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:13px;flex-wrap:wrap;' },
-          rvSectionPill('Expedição', IC_MOV),
+        card.appendChild(el('div', { style: 'display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:13px;' },
+          chipLabel('Expedição', IC_MOV),
           expedicaoArg
             ? smallBadge('Expedicao ' + expedicaoArg.status, 'var(--rv-color-subtle-bg)', 'var(--rv-color-accent)')
             : smallBadge(saldoTotal > 0 ? 'Saldo movimentavel' : (statusOk ? 'Fluxo total disponivel' : 'Sem saldo'), saldoTotal > 0 ? '#e6f4ec' : (statusOk ? '#fff4e6' : 'var(--rv-color-line-100)'), saldoTotal > 0 ? '#18794a' : (statusOk ? '#c2610c' : '#6b7280'))));
@@ -699,34 +707,44 @@
         }
 
         function buildMaterialRecebido() {
+          // Fornecedor(es) de origem = quem entregou da tecelagem (etapa 'cima').
+          var fornecedoresOrigem = Array.from(new Set(origemEntregas
+            .map(function (ent) { return ent.fornecedores && ent.fornecedores.nome; })
+            .filter(Boolean)));
+          var fornecedorOrigemLabel = fornecedoresOrigem.length ? fornecedoresOrigem.join(', ') : '---';
+
           var listaEntregasOrigem = origemEntregas.length
             ? origemEntregas.map(function (ent) {
               var itens = origemEntregaItens(ent);
-              return el('div', { style: 'border-top:1px solid var(--rv-color-line-100);padding:12px 0 0;margin-top:12px;' },
-                el('div', { style: 'display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;' },
-                  el('div', { style: 'font-size:13.5px;font-weight:700;color:var(--rv-color-title);' }, 'Entrega #' + ent.id),
-                  el('div', { style: 'font-size:12px;color:var(--rv-color-muted);font-weight:600;' }, fmtData(ent.data))),
-                el('div', { style: 'font-size:12.5px;color:#5b6472;margin-top:4px;line-height:1.5;' },
-                  origemProdLabel + ' para ' + ((ent.destino && ent.destino.nome) || latexFornecedorNome)),
+              var forn = (ent.fornecedores && ent.fornecedores.nome) || fornecedorOrigemLabel;
+              var dest = (ent.destino && ent.destino.nome) || latexFornecedorNome;
+              return el('div', { style: 'border-top:1px solid var(--rv-color-line-100);padding-top:11px;margin-top:11px;' },
+                // Data inline junto do título (sem space-between que abre um vão enorme).
+                el('div', { style: 'display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;' },
+                  el('span', { style: 'font-size:13.5px;font-weight:700;color:var(--rv-color-title);' }, 'Entrega #' + ent.id),
+                  el('span', { style: 'font-size:12px;color:var(--rv-color-muted);' }, fmtData(ent.data))),
+                el('div', { style: 'font-size:12.5px;color:#5b6472;margin-top:3px;' },
+                  forn + ' → ' + dest),
                 itens.map(function (ei) {
                   return el('div', { style: 'font-size:13.5px;color:#3f4757;margin-top:5px;' },
                     origemItemLabel(ei) + ': ' + window.fmtMetros(ei.metros_entregues));
                 }));
             })
-            : [el('div', { style: 'font-size:13px;color:#aab2bf;border-top:1px solid var(--rv-color-line-100);padding-top:12px;margin-top:12px;' },
+            : [el('div', { style: 'font-size:13px;color:#aab2bf;border-top:1px solid var(--rv-color-line-100);padding-top:11px;margin-top:11px;' },
               'Vinculos de origem nao encontrados; usando total consolidado da OP.')];
+
           return el('div', { style: CARD_PROD + 'padding:15px 17px;' },
             rvSectionPill('Material recebido da tecelagem', IC_MATERIAL),
-            el('div', { style: 'display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;margin-bottom:14px;' },
+            el('div', { style: 'display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:13px 18px;margin-bottom:14px;' },
               campo('OP origem',
-                op.origem_op_id ? el('button', { type: 'button', style: 'font-size:13.5px;color:#2563eb;font-weight:700;text-decoration:none;background:none;border:none;padding:0;cursor:pointer;font-family:inherit;', onclick: function () { navigate('#/ops/' + op.origem_op_id); } }, origemProdLabel)
+                op.origem_op_id ? el('button', { type: 'button', style: 'font-size:13.5px;color:#2563eb;font-weight:700;background:none;border:none;padding:0;cursor:pointer;font-family:inherit;text-align:left;', onclick: function () { navigate('#/ops/' + op.origem_op_id); } }, origemProdLabel)
                   : valor(origemLabel, '#8a93a3')),
+              campo('Fornecedor de origem', valor(fornecedorOrigemLabel)),
+              campo('Metros recebidos', valor(window.fmtMetros(totalOrigemTecelagem || totalEnviado))),
               campo('Entregas vinculadas', valor(String(origemEntregas.length || 0))),
-              campo('Metros recebidos', valor(window.fmtMetros(totalOrigemTecelagem || totalEnviado)))),
-            el('div', { style: 'font-size:12.5px;font-weight:700;color:var(--rv-color-muted);letter-spacing:.03em;margin-bottom:8px;' }, 'ENTRADAS DA TECELAGEM'),
-            el('div', {}, listaEntregasOrigem),
-            el('div', { style: 'display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin-top:14px;' },
-              campo('Saldo em acabamento', valor(window.fmtMetros(saldoEmAcabamento), '#c2610c', '700'))));
+              campo('Saldo em acabamento', valor(window.fmtMetros(saldoEmAcabamento), '#c2610c', '700'))),
+            el('div', { style: 'font-size:11px;font-weight:700;color:var(--rv-color-section-label);letter-spacing:.06em;text-transform:uppercase;margin-bottom:2px;' }, 'Entradas da tecelagem'),
+            el('div', {}, listaEntregasOrigem));
         }
 
         function buildDocumentos() {
