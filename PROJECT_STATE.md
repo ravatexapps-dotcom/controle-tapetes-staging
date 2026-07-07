@@ -6000,3 +6000,53 @@ Senhas de teste antigas em `docs/qa/fase1-checklist.md` e
 >   — badges roxo/ambar, rail 300px sem overflow, icon-chips, largura ampla.
 > - **Garantias:** producao intocada; `origin` (grupoterrabranca) somente
 >   leitura; sem `git add .`; `.claude/` e `supabase/.temp` fora do commit.
+>
+> **Atualizacao 2026-07-07 - fase
+> `RAVATEX-TAPETES-OP-TECELAGEM-VISUAL-ALIGNMENT-C-CLOSEOUT`.**
+> Status: **CLOSED / VALIDADO PELO USUARIO**.
+> Closeout documental — a fase
+> `RAVATEX-TAPETES-DESIGN-TOKENS-TARGET-PILOT-TECELAGEM` (HEAD
+> `134e806`) foi validada visualmente pelo usuario e esta fechada.
+> Push staging: `e7bf87e..134e806`.
+>
+> **Itens validados na OP Tecelagem em producao:**
+> - OP Tecelagem em producao alinhada ao padrao visual validado da OP Acabamento
+> - Icon-chips reais aplicados (sem barras/numeros)
+> - Header enxuto aplicado (breadcrumb + H1 + badge etapa roxo Tecelagem + status ambar + metadados)
+> - Rail sticky 300px aplicado sem overflow
+> - Documentos em slots (Romaneio / NF entrada / NF saida) com Anexar full-width
+> - Elementos proprios da Tecelagem preservados:
+>   - fios/insumos
+>   - capacidade e ajuste
+>   - entregas de tecelagem
+>   - nova entrega (split, editar, excluir)
+>   - envio para acabamento
+>   - historico
+>   - finalizar OP (gated por saldo)
+>   - exclusao canonica
+> - Funcionalidade/RPC/schema preservados
+>
+> **Testes reportados (verdes):**
+> - op-nova 69/69
+> - op-latex-admin 55/55
+> - tec-to-acabamento 39/39
+> - pedido-detail 172/172
+> - op-latex-split 28/28
+> - admin-dashboard 6/6
+>
+> **Garantias:**
+> - HEAD final da implementacao: `134e806`
+> - Push staging ja realizado: `e7bf87e..134e806`
+> - Origin oficial/producao intocados
+> - `.claude/` atualizado localmente como retroalimentacao de skill, mas nao versionado
+> - `supabase/.temp/` preservado fora do commit
+> - Nenhum codigo alterado (fechamento estritamente documental)
+> - Nenhum `git add .`
+>
+> **Proxima fase candidata (nao iniciada):**
+> `RAVATEX-TAPETES-OP-TECELAGEM-ABERTA-VISUAL-ALIGNMENT-D`
+>
+> **Observacao sobre skill:**
+> A retroalimentacao em `.claude/design-skill/README.md` permanece untracked.
+> Decisao posterior necessaria: (1) manter skill local/untracked; (2) versionar
+> `.claude/design-skill/`; (3) ou copiar aprendizados para docs versionados.

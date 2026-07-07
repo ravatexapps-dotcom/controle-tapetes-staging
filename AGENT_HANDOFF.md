@@ -5678,3 +5678,29 @@ Tecelagem em producao** — `js/screens/op-tecelagem-producao-admin.js` (reescri
   Aberta de Tecelagem/demais telas (ainda no visual antigo).
 - **Garantias:** producao intocada; `origin` somente leitura; sem `git add .`;
   `.claude/` e `supabase/.temp` fora do commit.
+
+---
+
+## RAVATEX-TAPETES-OP-TECELAGEM-VISUAL-ALIGNMENT-C-CLOSEOUT (2026-07-07)
+
+**Closeout documental.** A fase `RAVATEX-TAPETES-DESIGN-TOKENS-TARGET-PILOT-TECELAGEM`
+(HEAD `134e806`) foi validada visualmente pelo usuario e esta fechada.
+
+- **Status:** CLOSED / VALIDADO PELO USUARIO
+- **HEAD final da implementacao:** `134e806`
+- **OP Tecelagem em producao** alinhada ao padrao visual validado da OP Acabamento
+- **Itens validados:** icon-chips reais, header enxuto, rail sticky 300px sem overflow,
+  Documentos em slots, fios/insumos, capacidade e ajuste, entregas tecelagem,
+  nova entrega, envio para acabamento, historico, finalizar OP gated, exclusao canonica
+- **Funcionalidade/RPC/schema:** preservados
+- **Testes:** op-nova 69/69, op-latex-admin 55/55, tec-to-acabamento 39/39,
+  pedido-detail 172/172, op-latex-split 28/28, admin-dashboard 6/6
+- **Push staging ja realizado:** `e7bf87e..134e806`
+- **Origin oficial/producao:** intocados
+- **`.claude/`:** atualizado localmente como retroalimentacao de skill, nao versionado
+- **`supabase/.temp/`:** preservado fora do commit
+- **Proxima fase candidata (nao iniciada):**
+  `RAVATEX-TAPETES-OP-TECELAGEM-ABERTA-VISUAL-ALIGNMENT-D`
+- **Observacao sobre skill:** `.claude/design-skill/README.md` permanece untracked.
+  Decisao posterior: (1) manter local/untracked; (2) versionar `.claude/design-skill/`;
+  (3) copiar aprendizados para docs versionados do projeto.
