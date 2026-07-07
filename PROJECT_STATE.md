@@ -19,7 +19,7 @@ D:\OneDrive\Programação\Ravatex\documents-ingestor
 - `contracts/manifest.schema.json` — schema do manifest de Pedido
 
 ## Status atual
-- HEAD (documents-ingestor): `0f864a2`
+- HEAD (documents-ingestor): `984c7f0`
 - HEAD canônico staging/work/app-next (Controle de Tapetes): `997486a`
 - Push staging: `af919a2..997486a` (produção/origin oficial intocados)
 - 264 testes passando (24 suites) — incluindo integração mockada completa

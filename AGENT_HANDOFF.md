@@ -3,7 +3,7 @@
 ## Branch/HEAD/Status
 ### documentos-ingestor (este repositório)
 - Branch: master
-- HEAD: `(new commit)` — Add documents integration handoff package (G8-E)
+- HEAD: `984c7f0` — Add documents integration handoff package (G8-E)
 
 ### Controle de Tapetes (staging/work/app-next)
 - HEAD canônico: `997486a`
