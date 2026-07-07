@@ -79,18 +79,25 @@ export function createAssignPedido(deps: AssignDeps = defaultDeps) {
     const tipoRaw: string = doc.tipo_documento;
     const tax = fromLegacyTipo(tipoRaw as any);
     const tipo: TipoDocumento = tax.tipoDocumento;
-    const subfolder = pedidoSubfolderDrivePath(normalized, tipo);
+    const direcaoNf = (doc.direcao_nf as string | null) ?? tax.direcaoNf;
+    const subfolder = pedidoSubfolderDrivePath({
+      pedidoManual: normalized,
+      tipoDocumento: tipo,
+      direcaoNf: direcaoNf as any,
+    });
     const moveResult = await deps.moveOrCopy({
       sourceFileId: doc.drive_file_id,
       destinationLogicalPath: subfolder.logicalPath,
       copy: opts.copyInsteadOfMove ?? true,
     });
 
+    const pathParts = subfolder.logicalPath.split('/');
+    const subPath = pathParts.slice(-3).join('/');
     const localCacheFilePath = join(
       localCacheRoot(),
       'pedidos',
       normalized,
-      subfolder.logicalPath.split('/').slice(-2).join('/'),
+      subPath,
       doc.filename_original,
     );
     ensureLocalCacheDir(localCacheFilePath);

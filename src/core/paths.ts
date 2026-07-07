@@ -1,5 +1,5 @@
 import { config } from '../config.js';
-import type { TipoDocumento } from '../types/document.js';
+import type { TipoDocumento, DirecaoNF } from '../types/document.js';
 
 export interface DriveLogicalPath {
   backend: 'google_drive';
@@ -20,51 +20,62 @@ function rootName(): string {
   return config.googleDriveRootFolderName;
 }
 
-export function pdfSubfolder(tipo: TipoDocumento): string {
-  const map: Record<TipoDocumento, string> = {
-    nf: 'nf',
-    romaneio: 'romaneio',
-    desconhecido: 'desconhecido',
-  };
-  return map[tipo];
+export function tipoSubfolder(tipo: TipoDocumento, direcaoNf?: DirecaoNF | null): string {
+  if (tipo === 'nf') {
+    const dir = direcaoNf ?? 'desconhecida';
+    return `nf/${dir}`;
+  }
+  return tipo;
 }
 
-export function pendenteDrivePath(gmailMessageId: string): DriveLogicalPath {
+export function pendenteDrivePath(params: {
+  date?: string;
+  tipoDocumento: TipoDocumento;
+  direcaoNf?: DirecaoNF | null;
+  filename?: string;
+}): DriveLogicalPath {
+  const date = params.date ?? todayDir();
+  const sub = tipoSubfolder(params.tipoDocumento, params.direcaoNf);
+  const path = params.filename
+    ? `${rootName()}/pendentes/${date}/${sub}/${params.filename}`
+    : `${rootName()}/pendentes/${date}/${sub}`;
   return {
     backend: 'google_drive',
     rootFolderName: rootName(),
-    logicalPath: `${rootName()}/pendentes/${todayDir()}/email-${gmailMessageId}`,
+    logicalPath: path,
   };
 }
 
-export function pedidoDrivePath(pedidoManual: string): DriveLogicalPath {
+export function pedidoDocumentDrivePath(params: {
+  pedidoManual: string;
+  date?: string;
+  tipoDocumento: TipoDocumento;
+  direcaoNf?: DirecaoNF | null;
+  filename: string;
+}): DriveLogicalPath {
+  const date = params.date ?? todayDir();
+  const sub = tipoSubfolder(params.tipoDocumento, params.direcaoNf);
+  const path = `${rootName()}/pedidos/${params.pedidoManual}/${date}/${sub}/${params.filename}`;
   return {
     backend: 'google_drive',
     rootFolderName: rootName(),
-    logicalPath: `${rootName()}/pedidos/${pedidoManual}/${todayDir()}`,
+    logicalPath: path,
   };
 }
 
-export function pedidoDocumentDrivePath(
-  pedidoManual: string,
-  tipo: TipoDocumento,
-  filename: string,
-): DriveLogicalPath {
+export function pedidoSubfolderDrivePath(params: {
+  pedidoManual: string;
+  date?: string;
+  tipoDocumento: TipoDocumento;
+  direcaoNf?: DirecaoNF | null;
+}): DriveLogicalPath {
+  const date = params.date ?? todayDir();
+  const sub = tipoSubfolder(params.tipoDocumento, params.direcaoNf);
+  const path = `${rootName()}/pedidos/${params.pedidoManual}/${date}/${sub}`;
   return {
     backend: 'google_drive',
     rootFolderName: rootName(),
-    logicalPath: `${rootName()}/pedidos/${pedidoManual}/${todayDir()}/${pdfSubfolder(tipo)}/${filename}`,
-  };
-}
-
-export function pedidoSubfolderDrivePath(
-  pedidoManual: string,
-  tipo: TipoDocumento,
-): DriveLogicalPath {
-  return {
-    backend: 'google_drive',
-    rootFolderName: rootName(),
-    logicalPath: `${rootName()}/pedidos/${pedidoManual}/${todayDir()}/${pdfSubfolder(tipo)}`,
+    logicalPath: path,
   };
 }
 

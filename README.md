@@ -125,20 +125,44 @@ npm run export:events
 ## Estrutura de armazenamento
 
 ### Google Drive (canônico)
+
+Novo layout (G3+) — organizado por data/tipo/direção:
+
 ```
 Ravatex Documents Ingestor/                 ← GOOGLE_DRIVE_ROOT_FOLDER_NAME
 ├── pendentes/
 │   └── YYYY-MM-DD/
-│       └── email-<gmail_message_id>/
-│           └── <anexo>.pdf|xml
+│       ├── nf/
+│       │   ├── entrada/
+│       │   │   └── <anexo>.pdf|xml
+│       │   ├── saida/
+│       │   │   └── <anexo>.pdf|xml
+│       │   └── desconhecida/
+│       │       └── <anexo>.pdf|xml
+│       ├── romaneio/
+│       │   └── <anexo>.pdf
+│       └── desconhecido/
+│           └── <anexo>.*
 └── pedidos/
     └── PED-XX-YYYY/
+        ├── manifest.json
         └── YYYY-MM-DD/
-            ├── nf/                ← nf_pdf + nf_xml
+            ├── nf/
+            │   ├── entrada/
+            │   ├── saida/
+            │   └── desconhecida/
             ├── romaneio/
-            ├── desconhecido/
-            └── manifest.json
+            └── desconhecido/
 ```
+
+Layout antigo (pré-G3) — para compatibilidade, arquivos enviados antes de G3 podem permanecer em:
+
+```
+pendentes/YYYY-MM-DD/email-<gmail_message_id>/<anexo>.pdf|xml
+pedidos/PED-XX-YYYY/YYYY-MM-DD/{nf,romaneio,desconhecido}/<anexo>.pdf|xml
+```
+
+Manifests e eventos existentes apontando para paths antigos continuam legíveis.
 
 ### Disco local (não-canônico)
 ```

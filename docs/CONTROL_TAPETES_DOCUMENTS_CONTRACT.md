@@ -96,6 +96,25 @@ Estrutura:
 
 Os documentos ficam no Google Drive da mesma conta usada para o Gmail. Links são públicos dentro do workspace.
 
+**Layout Drive (G3+):**
+```
+Ravatex Documents Ingestor/
+  pendentes/
+    YYYY-MM-DD/
+      nf/{entrada,saida,desconhecida}/
+      romaneio/
+      desconhecido/
+  pedidos/
+    PED-XX-YYYY/
+      manifest.json
+      YYYY-MM-DD/
+        nf/{entrada,saida,desconhecida}/
+        romaneio/
+        desconhecido/
+```
+
+**Compatibilidade:** Arquivos pré-G3 em `pendentes/YYYY-MM-DD/email-<msgid>/` e manifests/eventos antigos continuam válidos.
+
 ---
 
 ## 3. Campos mínimos para exibição no Pedido

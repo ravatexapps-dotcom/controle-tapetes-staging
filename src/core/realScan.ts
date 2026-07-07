@@ -154,7 +154,10 @@ export function createScan(deps: ScanDeps = defaultDeps) {
             contentSample: sampleXml(buffer, att.mimeType),
           });
 
-          const drivePath = pendenteDrivePath(email.gmailMessageId).logicalPath;
+          const drivePath = pendenteDrivePath({
+            tipoDocumento: classificacao.tipoDocumento,
+            direcaoNf: classificacao.direcaoNf,
+          }).logicalPath;
           const upload = await deps.uploadDoc({
             folderLogicalPath: drivePath,
             filename: att.filename,
