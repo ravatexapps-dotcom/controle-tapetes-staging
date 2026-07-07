@@ -5371,3 +5371,32 @@ movimentacao e determinada pelo estagio do Pedido.
   - `origin` nao usado para escrita.
   - Sem `git add .`.
   - `supabase/.temp` fora do commit.
+
+---
+
+# Estado pos-fase - Transfer Metrics Alignment D
+
+- Fase: `RAVATEX-TAPETES-TRANSFER-METRICS-ALIGNMENT-D`.
+- Status: **PATCH TRANSFER METRICS ALIGNMENT PRONTO — AGUARDANDO RETESTE DO USUARIO**.
+- Branch/HEAD base: `work/app-next`, `4cf35de`. Prioridade: P2.
+
+- **Causa raiz:** No `buildAcabamentoTransferForm`, o grid de metricas
+  usava `align-items:end` com valores em `font-size:12.5px` sem padding.
+  O input "Movimentar" (`textInput`, ~38px altura) ficava visualmente
+  muito maior que os valores de "Recebido" e "Ja movimentado".
+
+- **Correcao:** `align-items:end` → `align-items:start`. Valores
+  `font-size:12.5px` → `14px` com `padding:8px 0`. Labels, calculos
+  (`linha.row.recebido`, `linha.row.liberado`), "Preencher restante"
+  e handler `onSave` preservados.
+
+- **Arquivos alterados:** `js/screens/pedido-detail-events.js`.
+
+- **Testes:** `pedido-detail.smoke.js` 172/172,
+  `tec-to-acabamento-flow.smoke.js` 39/39.
+
+- **Garantias:**
+  - Producao intocada.
+  - `origin` nao usado para escrita.
+  - Sem `git add .`.
+  - `supabase/.temp` fora do commit.
