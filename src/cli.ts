@@ -6,6 +6,8 @@ import { config } from './config.js';
 import { assertSafeScopes, exchangeCodeForToken, generateAuthUrl, loadOAuthConfig } from './connectors/oauth.js';
 import { listPendingDocuments, inspectByDocumentOrEmail, generateReport, planReprocess } from './core/queries.js';
 import { maskId, maskIdStrict, maskEmail, maskSubject, maskLink } from './core/mask.js';
+import { fromLegacyTipo } from './types/document.js';
+import type { TipoDocumentoLegado } from './types/document.js';
 import { closeDb, getDb } from './storage/sqlite.js';
 
 const program = new Command();
@@ -112,8 +114,8 @@ program
       }));
       console.log(JSON.stringify({ count: safe.length, documents: safe }, null, 2));
     } else {
-      console.log('doc_id              | email_id       | date       | subject                    | filename           | tipo       | fmt | dir        | status    | pedido        | drive_id');
-      console.log('-'.repeat(200));
+      console.log('doc_id              | email_id       | date       | subject                    | filename           | tipo       | fmt | dir         | status    | pedido        | drive_id');
+      console.log('-'.repeat(202));
       for (const r of rows) {
         const line = [
           maskIdStrict(r.id).padEnd(18),
@@ -193,13 +195,16 @@ program
       console.log(JSON.stringify(safe, null, 2));
     } else {
       const d = result.document;
+      const tipoRaw: string = d.tipo_documento ?? 'desconhecido';
+      const isLegacy = tipoRaw === 'nf_xml' || tipoRaw === 'nf_pdf';
+      const tax = isLegacy ? fromLegacyTipo(tipoRaw as TipoDocumentoLegado) : null;
       console.log('--- document ---');
       console.log(`  id:               ${maskIdStrict(d.id)}`);
       console.log(`  gmail_message_id: ${maskIdStrict(d.gmail_message_id)}`);
       console.log(`  filename:         ${d.filename_original}`);
-      console.log(`  tipo_documento:   ${d.tipo_documento}`);
-      console.log(`  formato:          ${d.formato ?? '(none)'}`);
-      console.log(`  direcao_nf:       ${d.direcao_nf ?? '(none)'}`);
+      console.log(`  tipo_documento:   ${tax ? tax.tipoDocumento : d.tipo_documento}${isLegacy ? ` (original: ${tipoRaw})` : ''}`);
+      console.log(`  formato:          ${tax ? tax.formato : (d.formato ?? '(none)')}`);
+      console.log(`  direcao_nf:       ${tax ? (tax.direcaoNf ?? '(none)') : (d.direcao_nf ?? '(none)')}`);
       console.log(`  status:           ${d.status}`);
       console.log(`  pedido_manual:    ${d.pedido_manual ?? '(none)'}`);
       console.log(`  storage_backend:  ${d.storage_backend}`);
@@ -244,6 +249,22 @@ program
       console.log(`  recentErrors (${days}d):   ${report.recentErrors}`);
       console.log('  by tipo:');
       for (const [k, v] of Object.entries(report.documentsByTipo)) {
+        console.log(`    ${k}: ${v}`);
+      }
+      console.log('  by formato:');
+      for (const [k, v] of Object.entries(report.documentsByFormato)) {
+        console.log(`    ${k}: ${v}`);
+      }
+      console.log('  by direcao NF:');
+      for (const [k, v] of Object.entries(report.documentsByDirecao)) {
+        console.log(`    ${k}: ${v}`);
+      }
+      console.log('  NF by direcao:');
+      for (const [k, v] of Object.entries(report.nfByDirecao)) {
+        console.log(`    ${k}: ${v}`);
+      }
+      console.log('  pending NF by direcao:');
+      for (const [k, v] of Object.entries(report.pendingByDirecao)) {
         console.log(`    ${k}: ${v}`);
       }
       console.log('  by status:');

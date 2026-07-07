@@ -37,10 +37,18 @@ export function listPendingDocuments(filters: ListPendingFilters = {}): PendingD
     where.push('d.status = ?');
     params.push(filters.status);
   }
+
   if (filters.tipo) {
-    where.push('d.tipo_documento = ?');
-    params.push(filters.tipo);
+    if (filters.tipo === 'nf_pdf') {
+      where.push("(d.tipo_documento = 'nf_pdf' OR (d.tipo_documento = 'nf' AND d.formato = 'pdf'))");
+    } else if (filters.tipo === 'nf_xml') {
+      where.push("(d.tipo_documento = 'nf_xml' OR (d.tipo_documento = 'nf' AND d.formato = 'xml'))");
+    } else {
+      where.push('d.tipo_documento = ?');
+      params.push(filters.tipo);
+    }
   }
+
   if (filters.formato) {
     where.push('d.formato = ?');
     params.push(filters.formato);
@@ -102,6 +110,10 @@ export interface ReportSummary {
   totalDocuments: number;
   documentsByTipo: Record<string, number>;
   documentsByStatus: Record<string, number>;
+  documentsByFormato: Record<string, number>;
+  documentsByDirecao: Record<string, number>;
+  nfByDirecao: Record<string, number>;
+  pendingByDirecao: Record<string, number>;
   pendingWithoutPedido: number;
   assignedByPedido: Record<string, number>;
   pendingAppAcceptance: number;
@@ -129,11 +141,35 @@ export function generateReport(opts: { daysBack?: number; pedido?: string } = {}
   const documentsByTipo: Record<string, number> = {};
   for (const r of tipoRows) documentsByTipo[r.tipo_documento] = r.c;
 
-  const statusRows = database.prepare(
+  const estadoRows = database.prepare(
     `SELECT status, COUNT(*) AS c FROM documentos GROUP BY status`
   ).all() as any[];
   const documentsByStatus: Record<string, number> = {};
-  for (const r of statusRows) documentsByStatus[r.status] = r.c;
+  for (const r of estadoRows) documentsByStatus[r.status] = r.c;
+
+  const formatoRows = database.prepare(
+    `SELECT COALESCE(formato, 'desconhecido') AS fmt, COUNT(*) AS c FROM documentos GROUP BY fmt`
+  ).all() as any[];
+  const documentsByFormato: Record<string, number> = {};
+  for (const r of formatoRows) documentsByFormato[r.fmt] = r.c;
+
+  const direcaoRows = database.prepare(
+    `SELECT COALESCE(direcao_nf, 'null') AS dir, COUNT(*) AS c FROM documentos GROUP BY dir`
+  ).all() as any[];
+  const documentsByDirecao: Record<string, number> = {};
+  for (const r of direcaoRows) documentsByDirecao[r.dir] = r.c;
+
+  const nfDirRows = database.prepare(
+    `SELECT COALESCE(direcao_nf, 'null') AS dir, COUNT(*) AS c FROM documentos WHERE tipo_documento = 'nf' GROUP BY dir`
+  ).all() as any[];
+  const nfByDirecao: Record<string, number> = {};
+  for (const r of nfDirRows) nfByDirecao[r.dir] = r.c;
+
+  const pendDirRows = database.prepare(
+    `SELECT COALESCE(direcao_nf, 'null') AS dir, COUNT(*) AS c FROM documentos WHERE status = 'pending' AND tipo_documento = 'nf' GROUP BY dir`
+  ).all() as any[];
+  const pendingByDirecao: Record<string, number> = {};
+  for (const r of pendDirRows) pendingByDirecao[r.dir] = r.c;
 
   let pendingSql = `SELECT COUNT(*) AS c FROM documentos WHERE status = 'pending'`;
   const pendingParams: any[] = [];
@@ -174,6 +210,10 @@ export function generateReport(opts: { daysBack?: number; pedido?: string } = {}
     totalDocuments,
     documentsByTipo,
     documentsByStatus,
+    documentsByFormato,
+    documentsByDirecao,
+    nfByDirecao,
+    pendingByDirecao,
     pendingWithoutPedido,
     assignedByPedido,
     pendingAppAcceptance,
