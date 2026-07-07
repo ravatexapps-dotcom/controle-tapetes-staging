@@ -3,7 +3,7 @@
 ## Branch/HEAD/Status
 ### documentos-ingestor (este repositório)
 - Branch: master
-- HEAD: `(new commit)` — Add Controle Tapetes export package (G10-B)
+- HEAD: `318302a` — Add Controle Tapetes export package (G10-B)
 
 ### Controle de Tapetes (staging/work/app-next)
 - HEAD canônico: `997486a`
