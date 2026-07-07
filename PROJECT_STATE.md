@@ -19,7 +19,7 @@ D:\OneDrive\Programação\Ravatex\documents-ingestor
 - `contracts/manifest.schema.json` — schema do manifest de Pedido
 
 ## Status atual
-- HEAD (documents-ingestor): `0889d29`
+- HEAD (documents-ingestor): `4385697`
 - HEAD canônico staging/work/app-next (Controle de Tapetes): `997486a`
 - Push staging: `af919a2..997486a` (produção/origin oficial intocados)
 - 250 testes passando (22 suites) — incluindo integração mockada completa
@@ -84,6 +84,7 @@ Não integrar Supabase nesta fase. O outbox JSONL é o contrato de integração.
 - G6-B — Comando `link` local-only (vincular documento pending a pedido sem Drive)
 - G6-B-R1 — Preservação de event_type/status no outbox export (fix `buildEventFromRow`)
 - G6-C — Comandos `accept`/`reject` local-only + funil operacional no report
+- G7-A — Diagnóstico de guardrails (direção NF, event_id, manifest, report)
 - G/H — UI Backlog (Controle de Tapetes — staging/work/app-next)
 
 ## Fase G1: Taxonomia de Documentos (3 eixos)
@@ -105,5 +106,5 @@ Não integrar Supabase nesta fase. O outbox JSONL é o contrato de integração.
 - Status residual esperado: `?? supabase/.temp/`
 
 ## Próxima fase recomendada
-RAVATEX-DOC-INGESTOR-G7-DIRECTION-GUARD-AND-CLEANUP
-Foco: adicionar proteção contra vínculo de NF entrada/saída com pedido errado, revisar event_id legado no outbox (document_id vs event_id), e opcionalmente limpar/accepted docs. Funil operacional local está fechado (pending → assigned → accepted/rejected).
+RAVATEX-DOC-INGESTOR-G7-B-GUARDRAILS-PATCH
+Foco: 3 patches seguros — warning de direção NF no link, ingestion_event_id no outbox, reorganização do report. Sem bloqueio de direção, sem migração de event_id, sem tocar manifest Drive. Ver diagnóstico completo em AGENT_HANDOFF.md (G7-A diagnostic).
