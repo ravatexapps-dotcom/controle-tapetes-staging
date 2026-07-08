@@ -1,5 +1,48 @@
 > **Atualizacao 2026-07-08 - fase
-> `RAVATEX-TAPETES-G11-F-LOADER-REAL-PACKAGE`.**
+> `RAVATEX-TAPETES-G11-F-R1-IMPORT-UI-BROWSER-VALIDATION-CLOSEOUT`.**
+> Status: **FECHADO — VALIDACAO BROWSER CONCLUIDA**.
+> Entrada: branch `work/app-next`, HEAD `4c5e27a`.
+>
+> Fases fechadas no bloco G11-F:
+>
+> | Fase | Commit | Descricao |
+> |------|--------|-----------|
+> | G11-F | `562a123` + `8667035` | UX orientada p/ export package |
+> | G11-F-R1 | `a2ec41e` + `4c5e27a` | Slow poll + namespace fix + diagnostics |
+>
+> Validacao browser real:
+> - APP_ENV = staging
+> - CURRENT_USER.tipo = admin
+> - RAVATEX_DOCUMENTS existe
+> - RAVATEX_DOCUMENTS.loadDocumentsIngestorEventsFromText = function
+> - RAVATEX_DOCUMENTS.setDocumentsIngestorEvents = function
+> - Botao "Importar eventos" visivel
+> - Import de fixture carregou 7 eventos
+> - Toast: "7 evento(s) carregado(s) de document-events.jsonl"
+>
+> Padrao de namespace confirmado:
+> As funcoes estao em `window.RAVATEX_DOCUMENTS.*`, nao
+> diretamente em `window.*`. Este e o design correto.
+>
+> Arquivos alterados: `PROJECT_STATE.md`,
+> `AGENT_HANDOFF.md` (docs-only).
+>
+> Confirmacoes finais do bloco G11:
+> - Sem Supabase.
+> - Sem Google/Drive real.
+> - Sem export real.
+> - Sem watcher/polling.
+> - Sem persistencia.
+> - Sem alteracao no repo Documents Ingestor.
+> - Nenhum PDF/XML armazenado.
+> - `.claude/`, `supabase/.temp/` e fixture local
+>   fora do commit.
+> - Origin/producao intocados.
+>
+> Proximo: integracao com export:package real.
+>
+> > **Atualizacao 2026-07-08 - fase
+> > `RAVATEX-TAPETES-G11-F-LOADER-REAL-PACKAGE`.**
 > Status: **PRONTO — UX ORIENTADA P/ EXPORT PACKAGE**.
 > Entrada: branch `work/app-next`, HEAD base `87d52f5`.
 >

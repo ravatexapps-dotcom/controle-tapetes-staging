@@ -1,4 +1,31 @@
-﻿# Estado pos-fase - Documents Export Package Import
+﻿# Estado pos-fase - Import UI Browser Validation Closeout
+
+- Fase: `RAVATEX-TAPETES-G11-F-R1-IMPORT-UI-BROWSER-VALIDATION-CLOSEOUT`.
+- Status: **FECHADO — VALIDACAO BROWSER CONCLUIDA**.
+- Branch/HEAD: `work/app-next`, `4c5e27a`.
+- Push staging: `8667035..4c5e27a` → `staging/work/app-next`.
+
+G11-F: UX orientada para export package ("Importar
+eventos", title/aria-label document-events.jsonl).
+
+G11-F-R1: slow poll + namespace fix + console.warn
+diagnostico. Botao aparece para admin em staging
+(ate 10s apos login SPA).
+
+Validacao browser:
+- RAVATEX_DOCUMENTS.loadDocumentsIngestorEventsFromText
+  = function
+- Botao "Importar eventos" visivel
+- Import fixture carregou 7 eventos, toast correto
+- Funcoes no namespace RAVATEX_DOCUMENTS, nao no window
+
+Blocos fechados: G11-B/C/D/D-R1/E/R1/R2/R3/R3-R1/F/F-R1.
+Sem Supabase, Drive, export, persistencia, watcher.
+Origin/producao intocados.
+
+Proximo: integracao com export:package real.
+
+# Estado pos-fase - Documents Export Package Import
 
 - Fase: `RAVATEX-TAPETES-G11-F-LOADER-REAL-PACKAGE`.
 - Status: **PRONTO — UX ORIENTADA P/ EXPORT PACKAGE**.
