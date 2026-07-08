@@ -558,3 +558,298 @@ test('index.html: documents-ingestor-loader.js EXATAMENTE UMA VEZ', function () 
   var matches = index.match(/js\/documents-ingestor-loader\.js/g) || [];
   assert.equal(matches.length, 1, 'documents-ingestor-loader.js carregado ' + matches.length + ' vez(es)');
 });
+
+// =====================================================================
+// Bloco G12-G1: received documents parser/loader
+// Formato flat (sem wrapper document{}, sem event_type).
+// Estado separado: window.RAVATEX_DOCUMENTS_RECEIVED.
+// NAO toca window.RAVATEX_DOCUMENTS_LOADED_EVENTS (Pedido Detail).
+// =====================================================================
+
+const RECEIVED_JSONL = [
+  JSON.stringify({
+    document_id: 'doc-rcv-1',
+    gmail_message_id: 'msg-1',
+    filename_original: 'NF-001.xml',
+    tipo_documento: 'nf',
+    formato: 'xml',
+    direcao_nf: 'entrada',
+    drive_file_id: 'drive-1',
+    drive_web_view_link: 'https://drive.google.com/file/d/1/view',
+    created_at: '2026-07-07T12:00:00.000Z',
+  }),
+  JSON.stringify({
+    document_id: 'doc-rcv-2',
+    gmail_message_id: 'msg-2',
+    filename_original: 'romaneio.pdf',
+    tipo_documento: 'romaneio',
+    formato: 'pdf',
+    direcao_nf: null,
+    created_at: '2026-07-07T12:10:00.000Z',
+  }),
+  JSON.stringify({
+    document_id: 'doc-rcv-3',
+    gmail_message_id: 'msg-3',
+    filename_original: 'NF-002.pdf',
+    tipo_documento: 'nf',
+    formato: 'pdf',
+    direcao_nf: 'saida',
+    created_at: '2026-07-07T12:20:00.000Z',
+  }),
+].join('\n');
+
+test('received-loader: expoe 3 funcoes no namespace', function () {
+  var sandbox = makeLoaderSandbox();
+  var ns = sandbox.window.RAVATEX_DOCUMENTS;
+  assert.equal(typeof ns.loadReceivedDocumentsFromText, 'function',
+    'loadReceivedDocumentsFromText ausente');
+  assert.equal(typeof ns.loadReceivedDocumentsFromUrl, 'function',
+    'loadReceivedDocumentsFromUrl ausente');
+  assert.equal(typeof ns.setReceivedDocuments, 'function',
+    'setReceivedDocuments ausente');
+});
+
+test('received-loader: loadReceivedDocumentsFromText popula RAVATEX_DOCUMENTS_RECEIVED', function () {
+  var sandbox = makeLoaderSandbox();
+  var ns = sandbox.window.RAVATEX_DOCUMENTS;
+  var result = ns.loadReceivedDocumentsFromText(RECEIVED_JSONL);
+  assert.equal(result.ok, true);
+  assert.equal(result.count, 3, '3 documentos apos dedup');
+  var received = sandbox.window.RAVATEX_DOCUMENTS_RECEIVED;
+  assert.ok(Array.isArray(received));
+  assert.equal(received.length, 3);
+  assert.equal(received[0].document_id, 'doc-rcv-1');
+  assert.equal(received[0].filename_original, 'NF-001.xml');
+  assert.equal(received[2].tipo_documento, 'nf');
+});
+
+test('received-loader: loadReceivedDocumentsFromText NAO sobrescreve RAVATEX_DOCUMENTS_LOADED_EVENTS', function () {
+  var sandbox = makeLoaderSandbox();
+  var ns = sandbox.window.RAVATEX_DOCUMENTS;
+
+  // Pre-popula o estado do Pedido Detail (legado)
+  var events = ns.parseDocumentEventsJsonl(fixtureText);
+  ns.loadDocumentsIngestorEventsFromText(fixtureText);
+  var legacyBefore = sandbox.window.RAVATEX_DOCUMENTS_LOADED_EVENTS;
+  assert.ok(Array.isArray(legacyBefore));
+  assert.equal(legacyBefore.length, 7, 'estado legado deve ter 7 eventos');
+  var sampleEvent = legacyBefore[0];
+
+  // Carrega received em seguida
+  ns.loadReceivedDocumentsFromText(RECEIVED_JSONL);
+
+  var legacyAfter = sandbox.window.RAVATEX_DOCUMENTS_LOADED_EVENTS;
+  assert.ok(Array.isArray(legacyAfter));
+  assert.equal(legacyAfter.length, 7, 'estado legado NAO pode mudar de tamanho');
+  assert.strictEqual(legacyAfter[0], sampleEvent, 'estado legado NAO pode ser sobrescrito');
+  assert.notStrictEqual(legacyAfter, sandbox.window.RAVATEX_DOCUMENTS_RECEIVED,
+    'devem ser referencias distintas');
+});
+
+test('received-loader: loadReceivedDocumentsFromText texto vazio falha', function () {
+  var sandbox = makeLoaderSandbox();
+  var ns = sandbox.window.RAVATEX_DOCUMENTS;
+  assert.equal(ns.loadReceivedDocumentsFromText('').ok, false);
+  assert.equal(ns.loadReceivedDocumentsFromText(null).ok, false);
+  assert.equal(ns.loadReceivedDocumentsFromText(undefined).ok, false);
+});
+
+test('received-loader: loadReceivedDocumentsFromText com JSON malformado', function () {
+  var sandbox = makeLoaderSandbox();
+  var ns = sandbox.window.RAVATEX_DOCUMENTS;
+  var result = ns.loadReceivedDocumentsFromText('isto nao e json');
+  assert.equal(result.ok, false);
+});
+
+test('received-loader: loadReceivedDocumentsFromText deduplica por document_id', function () {
+  var sandbox = makeLoaderSandbox();
+  var ns = sandbox.window.RAVATEX_DOCUMENTS;
+  var doc = JSON.parse(RECEIVED_JSONL.split('\n')[0]);
+  var duplicated = JSON.stringify(doc) + '\n' + RECEIVED_JSONL;
+  var result = ns.loadReceivedDocumentsFromText(duplicated);
+  assert.equal(result.ok, true);
+  assert.equal(result.count, 3, 'duplicata removida');
+});
+
+test('received-loader: loadReceivedDocumentsFromText linha sem document_id rejeitada', function () {
+  var sandbox = makeLoaderSandbox();
+  var ns = sandbox.window.RAVATEX_DOCUMENTS;
+  var valid = JSON.stringify({ document_id: 'd-1' });
+  var invalid = JSON.stringify({ filename_original: 'sem id' });
+  var text = valid + '\n' + invalid;
+  var result = ns.loadReceivedDocumentsFromText(text);
+  assert.equal(result.ok, true);
+  assert.equal(result.count, 1, 'apenas 1 doc com document_id');
+});
+
+test('received-loader: setReceivedDocuments com array valido', function () {
+  var sandbox = makeLoaderSandbox();
+  var ns = sandbox.window.RAVATEX_DOCUMENTS;
+  var docs = [
+    { document_id: 'a', filename_original: 'a.xml' },
+    { document_id: 'b', filename_original: 'b.pdf' },
+  ];
+  var result = ns.setReceivedDocuments(docs);
+  assert.equal(result.ok, true);
+  assert.equal(result.count, 2);
+  assert.equal(sandbox.window.RAVATEX_DOCUMENTS_RECEIVED.length, 2);
+});
+
+test('received-loader: setReceivedDocuments com array vazio', function () {
+  var sandbox = makeLoaderSandbox();
+  var ns = sandbox.window.RAVATEX_DOCUMENTS;
+  var result = ns.setReceivedDocuments([]);
+  assert.equal(result.ok, true);
+  assert.equal(result.count, 0);
+  assert.ok(Array.isArray(sandbox.window.RAVATEX_DOCUMENTS_RECEIVED));
+  assert.equal(sandbox.window.RAVATEX_DOCUMENTS_RECEIVED.length, 0);
+});
+
+test('received-loader: setReceivedDocuments com entrada invalida', function () {
+  var sandbox = makeLoaderSandbox();
+  var ns = sandbox.window.RAVATEX_DOCUMENTS;
+  assert.equal(ns.setReceivedDocuments(null).ok, false);
+  assert.equal(ns.setReceivedDocuments('string').ok, false);
+  assert.equal(ns.setReceivedDocuments(42).ok, false);
+});
+
+test('received-loader: setReceivedDocuments com doc invalido falha', function () {
+  var sandbox = makeLoaderSandbox();
+  var ns = sandbox.window.RAVATEX_DOCUMENTS;
+  var result = ns.setReceivedDocuments([{ not: 'valid' }]);
+  assert.equal(result.ok, false);
+  assert.ok(result.error.indexOf('invalido') >= 0 || result.error.indexOf('document_id') >= 0);
+});
+
+test('received-loader: setReceivedDocuments deduplica automaticamente', function () {
+  var sandbox = makeLoaderSandbox();
+  var ns = sandbox.window.RAVATEX_DOCUMENTS;
+  var docs = ns.parseReceivedDocumentsJsonl(RECEIVED_JSONL);
+  var duplicated = docs.concat(docs);
+  var result = ns.setReceivedDocuments(duplicated);
+  assert.equal(result.ok, true);
+  assert.equal(result.count, 3, 'duplicatas removidas pelo dedup');
+});
+
+test('received-loader: loadReceivedDocumentsFromUrl com fetch mockado (sucesso)', async function () {
+  var sandbox = makeLoaderSandbox({
+    mockFetch: function (url) {
+      return Promise.resolve({
+        ok: true,
+        text: function () { return Promise.resolve(RECEIVED_JSONL); },
+      });
+    },
+  });
+  var ns = sandbox.window.RAVATEX_DOCUMENTS;
+  var result = await ns.loadReceivedDocumentsFromUrl('/fake/documentos-recebidos.jsonl');
+  assert.equal(result.ok, true);
+  assert.equal(result.count, 3);
+  assert.equal(sandbox.window.RAVATEX_DOCUMENTS_RECEIVED.length, 3);
+});
+
+test('received-loader: loadReceivedDocumentsFromUrl respeita URL guard (https)', async function () {
+  var sandbox = makeLoaderSandbox();
+  var ns = sandbox.window.RAVATEX_DOCUMENTS;
+  var result = await ns.loadReceivedDocumentsFromUrl('https://evil.example/data.jsonl');
+  assert.equal(result.ok, false);
+  assert.ok(result.error.indexOf('URLs absolutas') >= 0 || result.error.indexOf('://') >= 0);
+});
+
+test('received-loader: loadReceivedDocumentsFromUrl bloqueia javascript:', async function () {
+  var sandbox = makeLoaderSandbox();
+  var ns = sandbox.window.RAVATEX_DOCUMENTS;
+  var result = await ns.loadReceivedDocumentsFromUrl('javascript:alert(1)');
+  assert.equal(result.ok, false);
+});
+
+test('received-loader: loadReceivedDocumentsFromUrl bloqueia path traversal', async function () {
+  var sandbox = makeLoaderSandbox();
+  var ns = sandbox.window.RAVATEX_DOCUMENTS;
+  var result = await ns.loadReceivedDocumentsFromUrl('../etc/secrets.jsonl');
+  assert.equal(result.ok, false);
+  assert.ok(result.error.indexOf('Path traversal') >= 0);
+});
+
+test('received-loader: loadReceivedDocumentsFromUrl sem fetch retorna erro', async function () {
+  var sandbox = makeLoaderSandbox();
+  if (sandbox.window.fetch) delete sandbox.window.fetch;
+  var ns = sandbox.window.RAVATEX_DOCUMENTS;
+  var result = await ns.loadReceivedDocumentsFromUrl('/test.jsonl');
+  assert.equal(result.ok, false);
+  assert.ok(result.error.indexOf('fetch') >= 0);
+});
+
+test('received-loader: loadReceivedDocumentsFromUrl URL vazia falha', async function () {
+  var sandbox = makeLoaderSandbox();
+  var ns = sandbox.window.RAVATEX_DOCUMENTS;
+  var result = await ns.loadReceivedDocumentsFromUrl('');
+  assert.equal(result.ok, false);
+});
+
+test('received-loader: integracao com Pedido Detail NAO quebra', function () {
+  // Garante que mesmo com RAVATEX_DOCUMENTS_RECEIVED populado,
+  // o Pedido Detail continua lendo apenas o estado legado.
+  var sandbox = { window: {}, console: {} };
+  sandbox.window.el = function (tag, attrs) {
+    var children = [];
+    for (var i = 2; i < arguments.length; i++) {
+      if (arguments[i] === null || arguments[i] === undefined) continue;
+      children.push(arguments[i]);
+    }
+    return {
+      tag: tag,
+      attrs: attrs || {},
+      children: children,
+      textContent: children.filter(function (c) { return typeof c === 'string'; }).join(''),
+      appendChild: function (child) {
+        if (child === null || child === undefined) return;
+        children.push(child);
+        this.children = children;
+      },
+    };
+  };
+
+  vm.createContext(sandbox);
+  vm.runInContext(documentsIngestorSrc, sandbox);
+  vm.runInContext(documentsLoaderSrc, sandbox);
+
+  // Popula ambos os estados
+  sandbox.window.RAVATEX_DOCUMENTS.loadDocumentsIngestorEventsFromText(fixtureText);
+  sandbox.window.RAVATEX_DOCUMENTS.loadReceivedDocumentsFromText(RECEIVED_JSONL);
+
+  assert.equal(sandbox.window.RAVATEX_DOCUMENTS_LOADED_EVENTS.length, 7);
+  assert.equal(sandbox.window.RAVATEX_DOCUMENTS_RECEIVED.length, 3);
+
+  // Carrega o bundle do Pedido Detail
+  var opDisplaySrc = readOrFail(path.join(ROOT, 'js', 'op-display.js'));
+  var chainStateSrc = readOrFail(path.join(ROOT, 'js', 'screens', 'pedido-chain-state.js'));
+  var screenSrc = readOrFail(path.join(ROOT, 'js', 'screens', 'pedido-detail.js'));
+  var detailDataSrc = readOrFail(path.join(ROOT, 'js', 'screens', 'pedido-detail-data.js'));
+  var detailEventsSrc = readOrFail(path.join(ROOT, 'js', 'screens', 'pedido-detail-events.js'));
+  var detailRenderSrc = readOrFail(DETAIL_RENDER);
+
+  var bundle = [opDisplaySrc, chainStateSrc, screenSrc, detailDataSrc, detailProgressSrc, detailEventsSrc, detailRenderSrc].join('\n\n');
+  vm.runInContext(bundle, sandbox);
+
+  var ns = sandbox.window.RAVATEX_SCREENS.pedidoDetail;
+  var s = ns.createInitialState();
+  s.pedido = { id: 'ped-test-25', numero: 25, status: 'recebido', metros_total: 0 };
+  s.pedido.criado_em = '2026-01-15T10:00:00.000Z';
+  s.itens = [];
+  s.ops = [];
+  s.entregaItens = [];
+  s.entregasById = {};
+  s.opLatexEntregas = [];
+  s.expedicoes = [];
+  s.expedicaoItens = [];
+  s.modelosById = {};
+  s.coresById = {};
+
+  var view = ns.computeViewModel(s);
+  assert.equal(view.ingestorDocsLoaded, true);
+  assert.equal(view.ingestorDocumentRows.length, 3, 'Pedido Detail continua vendo 3 docs do estado legado');
+  assert.equal(view.ingestorTimeline.length, 7, 'Pedido Detail continua vendo 7 eventos do estado legado');
+  // Documentos recebidos NAO vazam para o Pedido Detail
+  assert.ok(!('receivedDocumentRows' in view),
+    'Pedido Detail NAO deve ter coluna de received');
+});

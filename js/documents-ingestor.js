@@ -242,6 +242,63 @@
   };
 
   // -------------------------------------------------------------------
+  // Suporte a documentos-recebidos.jsonl (formato flat)
+  //
+  // O export global do Documents Ingestor (G12-D1) gera um arquivo
+  // JSONL com 1 documento por linha, em formato flat (sem wrapper
+  // {document: {...}}, sem event_type). Este bloco adiciona
+  // parser/validador/auxiliares CONSUMIDORES desse formato, sem
+  // tocar nas funcoes de eventos do bloco anterior.
+  //
+  // O estado populado e window.RAVATEX_DOCUMENTS_RECEIVED (criado
+  // pelo loader), nunca window.RAVATEX_DOCUMENTS_LOADED_EVENTS.
+  // O Pedido Detail continua consumindo apenas o estado legado.
+  // -------------------------------------------------------------------
+
+  ns.isValidReceivedDocument = function isValidReceivedDocument(doc) {
+    if (!doc || typeof doc !== 'object') return false;
+    if (typeof doc.document_id !== 'string' || !doc.document_id) return false;
+    if (doc.filename_original != null && typeof doc.filename_original !== 'string') return false;
+    if (doc.tipo_documento != null && typeof doc.tipo_documento !== 'string') return false;
+    if (doc.formato != null && typeof doc.formato !== 'string') return false;
+    if (doc.direcao_nf != null && typeof doc.direcao_nf !== 'string') return false;
+    if (doc.drive_web_view_link != null && typeof doc.drive_web_view_link !== 'string') return false;
+    if (doc.created_at != null && typeof doc.created_at !== 'string') return false;
+    return true;
+  };
+
+  ns.parseReceivedDocumentsJsonl = function parseReceivedDocumentsJsonl(text) {
+    if (typeof text !== 'string' || !text.trim()) return [];
+    var docs = [];
+    var lines = text.split('\n');
+    for (var i = 0; i < lines.length; i++) {
+      var line = lines[i].trim();
+      if (!line) continue;
+      try {
+        var obj = JSON.parse(line);
+        if (ns.isValidReceivedDocument(obj)) {
+          docs.push(obj);
+        }
+      } catch (_e) {
+        // Linha malformada ignorada.
+      }
+    }
+    return docs;
+  };
+
+  ns.filterDocumentsWithoutPedido = function filterDocumentsWithoutPedido(docs) {
+    if (!Array.isArray(docs)) return [];
+    // Recebidos exportados pelo Ingestor G12-D1 ja vem com
+    // pedido_manual IS NULL/'' por construcao (estado atual do
+    // documento na tabela). Mantemos a funcao para simetria com
+    // filterEventsByPedido e como defesa em profundidade caso o
+    // payload venha com pedido_manual preenchido.
+    return docs.filter(function (d) {
+      return !(d && typeof d.pedido_manual === 'string' && d.pedido_manual);
+    });
+  };
+
+  // -------------------------------------------------------------------
   // Namespace
   // -------------------------------------------------------------------
 

@@ -1,4 +1,32 @@
-﻿# Estado pos-fase - Import UI Browser Validation Closeout
+﻿# Estado pos-fase - Received Documents Parser/Loader (G12-G1)
+
+- Fase: `RAVATEX-TAPETES-G12-G1-RECEIVED-DOCUMENTS-PARSER-LOADER`.
+- Status: **PRONTO**.
+- Branch/HEAD base: `work/app-next`, `5aca3c9`.
+- Escopo (parser+loader para `documentos-recebidos.jsonl`):
+  - `js/documents-ingestor.js`:
+    `isValidReceivedDocument`, `parseReceivedDocumentsJsonl`,
+    `filterDocumentsWithoutPedido`. Funcao pura, sem side-effects.
+  - `js/documents-ingestor-loader.js`:
+    `setReceivedDocuments`, `loadReceivedDocumentsFromText`,
+    `loadReceivedDocumentsFromUrl`. Populam
+    `window.RAVATEX_DOCUMENTS_RECEIVED` (estado separado).
+- Estado separado: `RAVATEX_DOCUMENTS_RECEIVED` nao toca
+  `RAVATEX_DOCUMENTS_LOADED_EVENTS`.
+- Sem alteracao semantica em `parseDocumentEventsJsonl`,
+  `isValidDocumentEvent`, `buildDocumentsForPedido`,
+  `filterEventsByPedido`, `deduplicateEvents`,
+  `consolidateDocumentState`, `loadDocumentsIngestorEventsFromText`,
+  `loadDocumentsIngestorEventsFromUrl`, `setDocumentsIngestorEvents`.
+- Testes: 60/60 parser, 62/62 loader, 34/34 import-ui (regressao).
+  156/156 nas 3 suites focadas (sem regressao).
+- Sem Supabase, Drive, export real, persistencia, watcher.
+- Sem alteracao no repo Documents Ingestor, no Pedido Detail
+  e no Controle de Tapetes alem desses 2 arquivos.
+- Proximo: G12-G2 tela global + rota + menu
+  (`#/documentos/recebidos`).
+
+# Estado pos-fase - Import UI Browser Validation Closeout
 
 - Fase: `RAVATEX-TAPETES-G11-F-R1-IMPORT-UI-BROWSER-VALIDATION-CLOSEOUT`.
 - Status: **FECHADO — VALIDACAO BROWSER CONCLUIDA**.

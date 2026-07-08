@@ -1,4 +1,34 @@
 > **Atualizacao 2026-07-08 - fase
+> `RAVATEX-TAPETES-G12-G1-RECEIVED-DOCUMENTS-PARSER-LOADER`.**
+> Status: **PRONTO — PARSER + LOADER PARA documentos-recebidos.jsonl**.
+> Entrada: branch `work/app-next`, HEAD `5aca3c9`.
+>
+> Escopo:
+> - `js/documents-ingestor.js`: `isValidReceivedDocument`,
+>   `parseReceivedDocumentsJsonl`, `filterDocumentsWithoutPedido`
+>   (formato flat do Ingestor G12-D1, sem tocar o parser de eventos
+>   do bloco G11-B).
+> - `js/documents-ingestor-loader.js`: `setReceivedDocuments`,
+>   `loadReceivedDocumentsFromText`, `loadReceivedDocumentsFromUrl`.
+>   Estado separado: `window.RAVATEX_DOCUMENTS_RECEIVED`.
+>   NAO toca `window.RAVATEX_DOCUMENTS_LOADED_EVENTS`.
+> - Reutiliza a politica de URL guard do loader atual.
+>
+> Garantias:
+> - Pedido Detail continua consumindo apenas o estado legado.
+> - Funcao `parseDocumentEventsJsonl` / `isValidDocumentEvent` /
+>   `buildDocumentsForPedido` / `filterEventsByPedido` /
+>   `deduplicateEvents` / `consolidateDocumentState` inalteradas
+>   (apenas adicoes, sem patch nessas funcoes).
+> - Loader atual (`loadDocumentsIngestorEventsFromText` etc)
+>   inalterado.
+>
+> Testes: 60/60 parser, 62/62 loader, 34/34 import-ui (regressao).
+> 156/156 nas 3 suites focadas.
+>
+> Proximo: G12-G2 tela global + rota + menu.
+
+> **Atualizacao 2026-07-08 - fase
 > `RAVATEX-TAPETES-G11-F-R1-IMPORT-UI-BROWSER-VALIDATION-CLOSEOUT`.**
 > Status: **FECHADO — VALIDACAO BROWSER CONCLUIDA**.
 > Entrada: branch `work/app-next`, HEAD `4c5e27a`.

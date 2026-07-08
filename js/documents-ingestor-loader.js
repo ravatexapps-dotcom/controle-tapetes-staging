@@ -175,4 +175,125 @@
     return { ok: true, count: deduped.length };
   };
 
+  // -------------------------------------------------------------------
+  // Suporte a documentos-recebidos.jsonl (formato flat do Ingestor G12-D1)
+  //
+  // Estado separado: window.RAVATEX_DOCUMENTS_RECEIVED (array de docs).
+  // NAO toca window.RAVATEX_DOCUMENTS_LOADED_EVENTS.
+  // Reutiliza validateLoaderUrl (mesma politica de URL guard).
+  //
+  // Fase: RAVATEX-TAPETES-G12-G1-RECEIVED-DOCUMENTS-PARSER-LOADER
+  // -------------------------------------------------------------------
+
+  function validateReceivedDocumentsArray(docs) {
+    if (!Array.isArray(docs)) {
+      return { valid: false, error: '{input} deve ser um array.' };
+    }
+    if (docs.length > MAX_EVENTS) {
+      return { valid: false, error: 'Excedeu o limite maximo de ' + MAX_EVENTS + ' documentos.' };
+    }
+    for (var i = 0; i < docs.length; i++) {
+      if (!ns.isValidReceivedDocument(docs[i])) {
+        return { valid: false, error: 'Documento invalido na posicao ' + i + ' (falta document_id).' };
+      }
+    }
+    return { valid: true };
+  }
+
+  function dedupeReceivedDocuments(docs) {
+    var seen = {};
+    var deduped = [];
+    for (var i = 0; i < docs.length; i++) {
+      var key = docs[i] && docs[i].document_id;
+      if (!key) continue;
+      if (!seen[key]) {
+        seen[key] = true;
+        deduped.push(docs[i]);
+      }
+    }
+    return deduped;
+  }
+
+  ns.setReceivedDocuments = function setReceivedDocuments(docs) {
+    if (!Array.isArray(docs)) {
+      return { ok: false, count: 0, error: '{docs} deve ser um array.' };
+    }
+
+    if (docs.length === 0) {
+      window.RAVATEX_DOCUMENTS_RECEIVED = [];
+      return { ok: true, count: 0 };
+    }
+
+    var validation = validateReceivedDocumentsArray(docs);
+    if (!validation.valid) {
+      return { ok: false, count: 0, error: validation.error };
+    }
+
+    var deduped = dedupeReceivedDocuments(docs);
+    window.RAVATEX_DOCUMENTS_RECEIVED = deduped;
+
+    return { ok: true, count: deduped.length };
+  };
+
+  ns.loadReceivedDocumentsFromText = function loadReceivedDocumentsFromText(jsonlText) {
+    if (typeof jsonlText !== 'string' || !jsonlText.trim()) {
+      return { ok: false, count: 0, error: '{input} deve ser uma string JSONL nao vazia.' };
+    }
+
+    var docs;
+    try {
+      docs = ns.parseReceivedDocumentsJsonl(jsonlText);
+    } catch (_e) {
+      return { ok: false, count: 0, error: 'Falha ao interpretar JSONL como documentos recebidos: ' + String(_e) };
+    }
+
+    if (!docs.length) {
+      return { ok: false, count: 0, error: 'Nenhum documento valido encontrado no texto JSONL.' };
+    }
+
+    var validation = validateReceivedDocumentsArray(docs);
+    if (!validation.valid) {
+      return { ok: false, count: 0, error: validation.error };
+    }
+
+    var deduped = dedupeReceivedDocuments(docs);
+    window.RAVATEX_DOCUMENTS_RECEIVED = deduped;
+
+    return { ok: true, count: deduped.length };
+  };
+
+  ns.loadReceivedDocumentsFromUrl = function loadReceivedDocumentsFromUrl(url) {
+    if (typeof url !== 'string' || !url.trim()) {
+      return Promise.resolve({ ok: false, count: 0, error: '{url} deve ser uma string nao vazia.' });
+    }
+
+    var urlCheck = validateLoaderUrl(url);
+    if (!urlCheck.valid) {
+      return Promise.resolve({ ok: false, count: 0, error: urlCheck.error });
+    }
+
+    if (typeof window.fetch !== 'function') {
+      return new Promise(function (resolve) {
+        resolve({ ok: false, count: 0, error: 'fetch nao esta disponivel neste ambiente.' });
+      });
+    }
+
+    return window.fetch(url)
+      .then(function (response) {
+        if (!response.ok) {
+          throw new Error('HTTP ' + response.status);
+        }
+        return response.text();
+      })
+      .then(function (text) {
+        if (typeof text !== 'string' || !text.trim()) {
+          return { ok: false, count: 0, error: 'Resposta da URL esta vazia.' };
+        }
+        return ns.loadReceivedDocumentsFromText(text);
+      })
+      .catch(function (err) {
+        return { ok: false, count: 0, error: 'Erro ao carregar documentos da URL: ' + String(err) };
+      });
+  };
+
 })(window);
