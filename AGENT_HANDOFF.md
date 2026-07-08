@@ -1,4 +1,37 @@
-﻿# Estado pos-fase - Documents Loader URL Guard
+﻿# Estado pos-fase - Documents Manual Import UX
+
+- Fase: `RAVATEX-TAPETES-G11-E-DOCUMENTS-MANUAL-IMPORT-UX`.
+- Status: **PRONTO — UX MANUAL DE IMPORT IMPLEMENTADA**.
+- Branch/HEAD base: `work/app-next`, `7e087f0`;
+  reconciliacao: `381506c` e ancestral de `7e087f0`;
+  G11-B/C/D/D-R1 presentes no HEAD.
+- HEAD final: `(commit g11-e)`.
+- Escopo: UX manual (file input + FileReader) para
+  operador carregar JSONL do Documents Ingestor.
+- UX: botao flutuante fixo no canto inferior direito,
+  abre dialogo de arquivo `.jsonl/.txt`, FileReader le,
+  chama `loadDocumentsIngestorEventsFromText`, toast
+  de sucesso (count + aviso de nao-persistencia) ou
+  erro controlado.
+- Sem rerender automatico do Pedido Detail (operador
+  recarrega/navega manualmente).
+- Arquivos:
+  - `js/documents-ingestor-import-ui.js` (novo,
+    86 linhas): IIFE, cria button + file input no DOM.
+  - `tests/documents-ingestor-import-ui.test.js` (novo,
+    18 testes): DOM, fluxo sucesso/erro, seguranca,
+    integracao com loader.
+  - `index.html`: +1 linha de script.
+  - `PROJECT_STATE.md`, `AGENT_HANDOFF.md` atualizados.
+- Testes: import-ui 18/18, ingestor 44/44,
+  UI smoke 35/35, loader 43/43, pedido-detail 172/172.
+- Garantias: sem Supabase, Google/Drive, export real,
+  alteracao no Documents Ingestor, PDF/XML, dados reais,
+  watcher, polling, persistencia, URL digitavel.
+  `.claude/` e `supabase/.temp/` fora do commit.
+- Proxima: validacao visual staging/browser.
+
+# Estado pos-fase - Documents Loader URL Guard
 
 - Fase: `RAVATEX-TAPETES-G11-D-R1-DOCUMENTS-LOADER-URL-GUARD`.
 - Status: **PRONTO — URL GUARD APLICADO**.

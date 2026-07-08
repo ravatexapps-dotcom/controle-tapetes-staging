@@ -1,5 +1,64 @@
 > **Atualizacao 2026-07-08 - fase
-> `RAVATEX-TAPETES-G11-D-R1-DOCUMENTS-LOADER-URL-GUARD`.**
+> `RAVATEX-TAPETES-G11-E-DOCUMENTS-MANUAL-IMPORT-UX`.**
+> Status: **PRONTO — UX MANUAL DE IMPORT IMPLEMENTADA**.
+> Entrada: branch `work/app-next`, HEAD base
+> `7e087f0` (G11-D-R1); reconciliação com `381506c`
+> confirmada (ancestral, G11-B/C/D/D-R1 presentes no
+> HEAD atual). `origin` somente leitura.
+>
+> Escopo: UX manual para o operador carregar eventos
+> JSONL do Documents Ingestor via botão flutuante.
+> Sem watcher, sem Supabase, sem persistência.
+>
+> UX implementada: **Opção A (file input + FileReader)**.
+> - Botão flutuante fixo no canto inferior direito
+>   (`position:fixed; bottom:16px; right:16px`).
+> - Abre diálogo de arquivo nativo
+>   (`<input type="file" accept=".jsonl,.txt">`).
+> - FileReader lê o conteúdo.
+> - Chama `loadDocumentsIngestorEventsFromText`.
+> - Toast de sucesso mostra count e lembra que nada
+>   foi persistido.
+> - Toast de erro mostra mensagem controlada.
+> - Input limpo após cada import (permite reimportar).
+> - Não há URL digitável.
+> - Não há rerender automático (operador deve
+>   navegar/recarregar o Pedido).
+>
+> Arquivo criado: `js/documents-ingestor-import-ui.js`
+> (86 linhas, IIFE).
+> Teste novo: `tests/documents-ingestor-import-ui.test.js`
+> (18 testes: DOM, fluxo sucesso/erro, seguranca,
+> integracao, index.html).
+> `index.html`: +1 linha de script para import-ui.js.
+>
+> Testes reportados:
+> - `documents-ingestor.test.js`: 44/44;
+> - `documents-ingestor-ui-smoke.test.js`: 35/35;
+> - `documents-ingestor-loader.test.js`: 43/43;
+> - `documents-ingestor-import-ui.test.js`: 18/18;
+> - `pedido-detail.smoke.js`: 172/172 (sem regressao).
+>
+> Garantias: sem Supabase, Google/Drive, export real,
+> alteracao no Documents Ingestor, PDF/XML, dados reais,
+> watcher, polling, persistencia, URL digitavel.
+> `.claude/` e `supabase/.temp/` fora do commit.
+> Sem push.
+>
+> Riscos remanescentes:
+> 1. Botão visível em todas as páginas (admin e
+>    cliente). O texto do toast orienta sobre uso.
+> 2. Sem rerender automático: após import, o Pedido
+>    Detail só reflete os documentos após recarregar
+>    ou navegar novamente ao pedido.
+> 3. Validação visual browser/staging pendente.
+>
+> Proxima fase: teste visual em staging/browser com
+> fixture real e validação do fluxo completo
+> import -> Pedido Detail.
+>
+> > **Atualizacao 2026-07-08 - fase
+> > `RAVATEX-TAPETES-G11-D-R1-DOCUMENTS-LOADER-URL-GUARD`.**
 > Status: **PRONTO — URL GUARD APLICADO**.
 > Entrada: branch `work/app-next`, HEAD base
 > `ef14648`; status inicial `?? .claude/` e
