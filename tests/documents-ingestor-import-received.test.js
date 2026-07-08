@@ -1,27 +1,23 @@
 // =====================================================================
 // === tests/documents-ingestor-import-received.test.js =================
-// Testes para a UX manual de import de `documentos-recebidos.jsonl`
+// Testes para a UX de import de `documentos-recebidos.jsonl`
 // em js/documents-ingestor-import-received.js.
 //
 // Fase: RAVATEX-TAPETES-G12-G3-RECEIVED-DOCUMENTS-IMPORT-BUTTON
-// Escopo: valida botao de import, file input, FileReader, integracao
-//   com loadReceivedDocumentsFromText, separacao do estado legado
-//   (RAVATEX_DOCUMENTS_LOADED_EVENTS), feedback toast e guarda
-//   admin/staging.
+//       + G12-R1 (refactor: botao inline na tela, sem auto-floating)
 //
 // Garante:
-//   - Botao e file input sao criados no DOM
+//   - Botao NAO aparece flutuando por padrao (G12-R1)
+//   - API createReceivedImportButton() retorna { button, fileInput, mount }
+//   - Botao pode ser montado inline em qualquer container
 //   - FileReader le arquivo e chama loadReceivedDocumentsFromText
 //   - Popula window.RAVATEX_DOCUMENTS_RECEIVED
 //   - NAO sobrescreve window.RAVATEX_DOCUMENTS_LOADED_EVENTS (legado)
 //   - Coexiste com o botao legado "Importar eventos" sem conflito
-//   - Toast de sucesso mostra count e referencia a tela Documentos
+//   - Toast de sucesso mostra count
 //   - Toast de erro para JSONL invalido
 //   - Erro de FileReader tratado
-//   - Botao nao aparece em producao
-//   - Botao nao aparece para usuario nao-admin sem flag
-//   - Botao aparece com flag explicita em staging
-//   - Polling detecta admin tardio (slow poll)
+//   - Guarda admin/staging mantida
 //   - Loader ausente -> console.warn + sem crash
 //   - Nao chama Supabase, Google/Drive, rede
 //   - Sem persistencia (localStorage/sessionStorage)
@@ -43,6 +39,8 @@ const DOC_INGESTOR = path.join(ROOT, 'js', 'documents-ingestor.js');
 const DOC_LOADER = path.join(ROOT, 'js', 'documents-ingestor-loader.js');
 const DOC_IMPORT_LEGACY = path.join(ROOT, 'js', 'documents-ingestor-import-ui.js');
 const DOC_IMPORT_RECEIVED = path.join(ROOT, 'js', 'documents-ingestor-import-received.js');
+const DOC_SCREEN = path.join(ROOT, 'js', 'screens', 'documentos-recebidos.js');
+const UI = path.join(ROOT, 'js', 'ui.js');
 const FIXTURE = path.join(ROOT, 'data', 'fixtures', 'document-events-sample.jsonl');
 
 function readOrFail(p) {
@@ -98,7 +96,10 @@ function makeImportReceivedSandbox(opts) {
   var fileReaderMocks = [];
 
   var mockDocument = {
-    body: { appendChild: function (el) { /* ok */ } },
+    body: {
+      appendChild: function (el) { /* ok - no-op */ },
+      children: [],
+    },
     createElement: function (tag) {
       var el = {
         tagName: tag.toUpperCase(),
@@ -173,6 +174,7 @@ function makeImportReceivedSandbox(opts) {
   }
 
   sandbox.window.RAVATEX_ENABLE_DOCUMENTS_IMPORT_UI = opts.enableFlag === true ? true : undefined;
+  sandbox.window.RAVATEX_ENABLE_FLOATING_RECEIVED_IMPORT = opts.floatingFlag === true ? true : undefined;
 
   sandbox.window.toast = function (msg, type) {
     toasts.push({ msg: msg, type: type || 'info' });
@@ -183,16 +185,19 @@ function makeImportReceivedSandbox(opts) {
 
   vm.createContext(sandbox);
 
-  // Carrega dependências: ingestor + loader
+  // Carrega UI primeiro (para que window.el esteja disponivel)
+  vm.runInContext(readOrFail(UI), sandbox);
+  // Carrega dependencias: ingestor + loader
   vm.runInContext(readOrFail(DOC_INGESTOR), sandbox);
   vm.runInContext(readOrFail(DOC_LOADER), sandbox);
 
-  // Carrega o import legado também (coexistência)
+  // Carrega o import legado tambem (coexistência)
   if (opts.includeLegacy !== false) {
     vm.runInContext(importLegacySrc, sandbox);
   }
 
-  // Carrega o import received (sob teste)
+  // Carrega o import received (sob teste) - G12-R1: NAO auto-cria
+  // botao flutuante por padrao
   vm.runInContext(importReceivedSrc, sandbox);
 
   return {
@@ -202,6 +207,15 @@ function makeImportReceivedSandbox(opts) {
     fileInputEl: fileInputEl,
     fileReaderMocks: fileReaderMocks,
     RAVATEX_DOCUMENTS: sandbox.window.RAVATEX_DOCUMENTS,
+  };
+}
+
+// Helper: cria container para montar botao inline (fake).
+function makeContainer() {
+  return {
+    tagName: 'DIV',
+    children: [],
+    appendChild: function (el) { if (el != null) this.children.push(el); return el; },
   };
 }
 
@@ -228,164 +242,171 @@ test('import-received: expoe funcoes de diagnostico no namespace', function () {
     '_importReceivedUIHasButton ausente');
 });
 
+test('import-received: expoe API createReceivedImportButton', function () {
+  var rt = makeImportReceivedSandbox();
+  assert.equal(typeof rt.RAVATEX_DOCUMENTS.createReceivedImportButton, 'function',
+    'createReceivedImportButton ausente');
+});
+
 // -------------------------------------------------------------------
-// 2. Testes de DOM: botao criado
+// 2. G12-R1: botao NAO aparece flutuando por padrao
 // -------------------------------------------------------------------
 
-test('import-received: cria botao de import no DOM', function () {
+test('import-received (G12-R1): NAO cria botao flutuante por padrao', function () {
   var rt = makeImportReceivedSandbox();
   var buttons = rt.domElements['button'] || [];
   var importBtn = buttons.find(function (b) { return b.id === 'rv-docs-received-import-btn'; });
-  assert.ok(importBtn, 'botao de import de recebidos deve existir');
+  assert.equal(importBtn, undefined,
+    'botao flutuante NAO deve existir por padrao (G12-R1)');
+  assert.equal(rt.sandbox.window.RAVATEX_DOCUMENTS._importReceivedUIHasButton(), false,
+    '_importReceivedUIHasButton deve retornar false sem auto-bootstrap');
+});
+
+test('import-received (G12-R1): NAO cria botao flutuante em producao', function () {
+  var rt = makeImportReceivedSandbox({ appEnv: 'production', currentUser: { tipo: 'admin' } });
+  var buttons = rt.domElements['button'] || [];
+  var importBtn = buttons.find(function (b) { return b.id === 'rv-docs-received-import-btn'; });
+  assert.equal(importBtn, undefined, 'em producao, sem botao');
+});
+
+test('import-received (G12-R1): NAO cria botao flutuante para nao-admin sem flag', function () {
+  var rt = makeImportReceivedSandbox({ currentUser: { tipo: 'cliente' } });
+  var buttons = rt.domElements['button'] || [];
+  var importBtn = buttons.find(function (b) { return b.id === 'rv-docs-received-import-btn'; });
+  assert.equal(importBtn, undefined, 'sem flag, sem botao flutuante');
+});
+
+test('import-received (G12-R1): flag RAVATEX_ENABLE_FLOATING_RECEIVED_IMPORT restaura flutuante', function () {
+  var rt = makeImportReceivedSandbox({ floatingFlag: true });
+  var buttons = rt.domElements['button'] || [];
+  var importBtn = buttons.find(function (b) { return b.id === 'rv-docs-received-import-btn'; });
+  assert.ok(importBtn, 'com flag explicita, botao flutuante opcional aparece');
   assert.equal(importBtn.textContent, 'Importar recebidos', 'label do botao');
 });
 
-test('import-received: botao title menciona documentos-recebidos.jsonl', function () {
+// -------------------------------------------------------------------
+// 3. G12-R1: API createReceivedImportButton para uso inline
+// -------------------------------------------------------------------
+
+test('import-received (G12-R1): createReceivedImportButton retorna button+fileInput+mount', function () {
   var rt = makeImportReceivedSandbox();
-  var buttons = rt.domElements['button'] || [];
-  var importBtn = buttons.find(function (b) { return b.id === 'rv-docs-received-import-btn'; });
-  assert.ok(importBtn.title.indexOf('documentos-recebidos.jsonl') >= 0,
-    'title deve mencionar documentos-recebidos.jsonl: ' + importBtn.title);
+  var pair = rt.RAVATEX_DOCUMENTS.createReceivedImportButton({ buttonId: 'btn-inline-test' });
+  assert.ok(pair, 'par deve existir');
+  assert.ok(pair.button, 'button deve existir');
+  assert.ok(pair.fileInput, 'fileInput deve existir');
+  assert.equal(typeof pair.mount, 'function', 'mount deve ser funcao');
+  assert.equal(typeof pair.mountBody, 'function', 'mountBody deve ser funcao');
+  assert.equal(pair.button.id, 'btn-inline-test', 'id customizada respeitada');
+  assert.equal(pair.button.textContent, 'Importar recebidos', 'label padrao');
+  assert.equal(pair.fileInput.type, 'file', 'file input type=file');
+  assert.ok(pair.fileInput.accept.indexOf('.jsonl') >= 0, 'accept inclui .jsonl');
+  assert.equal(pair.fileInput.style.display, 'none', 'file input escondido');
 });
 
-test('import-received: botao aria-label menciona documentos-recebidos.jsonl', function () {
+test('import-received (G12-R1): botao inline menciona documentos-recebidos.jsonl no title/aria', function () {
   var rt = makeImportReceivedSandbox();
-  var buttons = rt.domElements['button'] || [];
-  var importBtn = buttons.find(function (b) { return b.id === 'rv-docs-received-import-btn'; });
-  var al = importBtn['aria-label'] || importBtn.ariaLabel || '';
+  var pair = rt.RAVATEX_DOCUMENTS.createReceivedImportButton();
+  assert.ok(pair.button.title.indexOf('documentos-recebidos.jsonl') >= 0,
+    'title menciona arquivo: ' + pair.button.title);
+  var al = pair.button['aria-label'] || pair.button.ariaLabel || '';
   assert.ok(al.indexOf('documentos-recebidos.jsonl') >= 0,
-    'aria-label deve mencionar documentos-recebidos.jsonl: ' + al);
+    'aria-label menciona arquivo: ' + al);
+  var fil = pair.fileInput['aria-label'] || pair.fileInput.ariaLabel || '';
+  assert.ok(fil.indexOf('documentos-recebidos.jsonl') >= 0,
+    'input aria-label menciona arquivo: ' + fil);
 });
 
-test('import-received: file input aria-label menciona documentos-recebidos.jsonl', function () {
+test('import-received (G12-R1): mount() anexa button+input ao container', function () {
   var rt = makeImportReceivedSandbox();
-  var fi = rt.fileInputEl;
-  assert.ok(fi, 'file input deve existir');
-  assert.ok(fi['aria-label'] && fi['aria-label'].indexOf('documentos-recebidos.jsonl') >= 0,
-    'input aria-label deve mencionar documentos-recebidos.jsonl: ' + fi['aria-label']);
+  var pair = rt.RAVATEX_DOCUMENTS.createReceivedImportButton({ buttonId: 'btn-mount-test' });
+  var container = makeContainer();
+  pair.mount(container);
+  assert.equal(container.children.length, 2, 'container tem 2 children (input + button)');
+  assert.equal(container.children[0].type, 'file', 'primeiro filho e file input');
+  assert.equal(container.children[1].id, 'btn-mount-test', 'segundo filho e button');
 });
 
-test('import-received: cria file input hidden com accept .jsonl', function () {
-  var rt = makeImportReceivedSandbox();
-  assert.ok(rt.fileInputEl, 'file input deve existir');
-  assert.equal(rt.fileInputEl.type, 'file');
-  assert.equal(rt.fileInputEl.style.display, 'none');
-  assert.ok(rt.fileInputEl.accept.indexOf('.jsonl') >= 0, 'deve aceitar .jsonl');
-  assert.ok(rt.fileInputEl.id === 'rv-docs-received-import-input',
-    'id do input deve ser rv-docs-received-import-input');
-});
+test('import-received (G12-R1): botao inline funciona -> popula RECEIVED via FileReader', function () {
+  var rt = makeImportReceivedSandbox({ mockFileContent: RECEIVED_JSONL });
+  var pair = rt.RAVATEX_DOCUMENTS.createReceivedImportButton({ buttonId: 'btn-flow' });
+  var container = makeContainer();
+  pair.mount(container);
 
-// -------------------------------------------------------------------
-// 3. Testes: fluxo de import com sucesso
-// -------------------------------------------------------------------
-
-test('import-received: fileReader le arquivo e chama loadReceivedDocumentsFromText', function () {
-  var rt = makeImportReceivedSandbox({
-    mockFileContent: RECEIVED_JSONL,
-  });
-
-  var fileInput = rt.fileInputEl;
-  fileInput.files = [{ name: 'documentos-recebidos.jsonl' }];
-  fileInput._changeHandlers.forEach(function (fn) { fn(); });
+  // Simula FileReader
+  pair.fileInput.files = [{ name: 'documentos-recebidos.jsonl' }];
+  pair.fileInput._changeHandlers.forEach(function (fn) { fn(); });
 
   var received = rt.sandbox.window.RAVATEX_DOCUMENTS_RECEIVED;
-  assert.ok(Array.isArray(received), 'RAVATEX_DOCUMENTS_RECEIVED deve ser populado');
-  assert.equal(received.length, 3, '3 documentos devem ser carregados');
+  assert.ok(Array.isArray(received), 'RAVATEX_DOCUMENTS_RECEIVED populado');
+  assert.equal(received.length, 3, '3 documentos carregados');
   assert.equal(received[0].document_id, 'doc-rcv-1');
-  assert.equal(received[2].filename_original, 'NF-002.pdf');
 });
 
-test('import-received: NAO altera RAVATEX_DOCUMENTS_LOADED_EVENTS (estado legado)', function () {
-  var rt = makeImportReceivedSandbox({
-    mockFileContent: RECEIVED_JSONL,
-  });
-
-  // Semeia o estado legado (consumido pelo Pedido Detail)
+test('import-received (G12-R1): NAO altera RAVATEX_DOCUMENTS_LOADED_EVENTS (legado)', function () {
+  var rt = makeImportReceivedSandbox({ mockFileContent: RECEIVED_JSONL });
   rt.sandbox.window.RAVATEX_DOCUMENTS.loadDocumentsIngestorEventsFromText(fixtureText);
   var legacyBefore = rt.sandbox.window.RAVATEX_DOCUMENTS_LOADED_EVENTS;
-  assert.equal(legacyBefore.length, 7, 'estado legado deve ter 7 eventos pre-populados');
-  var sampleLegacy = legacyBefore[0];
+  assert.equal(legacyBefore.length, 7, 'estado legado pre-populado');
 
-  // Carrega recebidos pelo botao novo
-  var fileInput = rt.fileInputEl;
-  fileInput.files = [{ name: 'documentos-recebidos.jsonl' }];
-  fileInput._changeHandlers.forEach(function (fn) { fn(); });
+  var pair = rt.RAVATEX_DOCUMENTS.createReceivedImportButton({ buttonId: 'btn-flow' });
+  var container = makeContainer();
+  pair.mount(container);
+  pair.fileInput.files = [{ name: 'documentos-recebidos.jsonl' }];
+  pair.fileInput._changeHandlers.forEach(function (fn) { fn(); });
 
-  // Estado legado deve estar INTACTO
   var legacyAfter = rt.sandbox.window.RAVATEX_DOCUMENTS_LOADED_EVENTS;
-  assert.ok(Array.isArray(legacyAfter), 'estado legado deve continuar array');
-  assert.equal(legacyAfter.length, 7, 'estado legado NAO pode mudar de tamanho');
-  assert.strictEqual(legacyAfter[0], sampleLegacy,
-    'estado legado NAO pode ser sobrescrito pelo import de recebidos');
-  assert.notStrictEqual(legacyAfter, rt.sandbox.window.RAVATEX_DOCUMENTS_RECEIVED,
-    'devem ser referencias distintas');
-
-  // Estado novo populado
-  assert.equal(rt.sandbox.window.RAVATEX_DOCUMENTS_RECEIVED.length, 3,
-    'RAVATEX_DOCUMENTS_RECEIVED deve ter 3 docs');
+  assert.equal(legacyAfter.length, 7, 'legado NAO alterado pelo novo import');
+  assert.strictEqual(legacyAfter[0], legacyBefore[0], 'evento legado preservado');
+  assert.equal(rt.sandbox.window.RAVATEX_DOCUMENTS_RECEIVED.length, 3, 'novo estado populado');
 });
 
-test('import-received: toast sucesso menciona count e tela Documentos', function () {
-  var rt = makeImportReceivedSandbox({
-    mockFileContent: RECEIVED_JSONL,
-  });
-
-  var fileInput = rt.fileInputEl;
-  fileInput.files = [{ name: 'documentos-recebidos.jsonl' }];
-  fileInput._changeHandlers.forEach(function (fn) { fn(); });
+test('import-received (G12-R1): toast sucesso mostra count e "Nada foi persistido"', function () {
+  var rt = makeImportReceivedSandbox({ mockFileContent: RECEIVED_JSONL });
+  var pair = rt.RAVATEX_DOCUMENTS.createReceivedImportButton({ buttonId: 'btn-toast' });
+  var container = makeContainer();
+  pair.mount(container);
+  pair.fileInput.files = [{ name: 'documentos-recebidos.jsonl' }];
+  pair.fileInput._changeHandlers.forEach(function (fn) { fn(); });
 
   var successToast = rt.toasts.find(function (t) { return t.type === 'success'; });
   assert.ok(successToast, 'deve haver toast de sucesso');
-  assert.ok(successToast.msg.indexOf('3 documento') >= 0,
-    'toast deve conter count: ' + successToast.msg);
-  assert.ok(successToast.msg.indexOf('documentos-recebidos.jsonl') >= 0,
-    'toast deve mencionar o arquivo: ' + successToast.msg);
-  assert.ok(successToast.msg.indexOf('Documentos') >= 0,
-    'toast deve mencionar a tela Documentos: ' + successToast.msg);
-  assert.ok(successToast.msg.indexOf('Nada foi persistido') >= 0,
-    'toast deve avisar que nada foi persistido');
+  assert.ok(successToast.msg.indexOf('3 documento') >= 0, 'count no toast');
+  assert.ok(successToast.msg.indexOf('documentos-recebidos.jsonl') >= 0, 'arquivo no toast');
+  assert.ok(successToast.msg.indexOf('Nada foi persistido') >= 0, 'aviso de persistencia no toast');
 });
 
-// -------------------------------------------------------------------
-// 4. Testes: fluxo de import com erro
-// -------------------------------------------------------------------
-
-test('import-received: JSONL invalido mostra toast de erro', function () {
-  var rt = makeImportReceivedSandbox({
-    mockFileContent: 'isto nao e json valido',
-  });
-
-  var fileInput = rt.fileInputEl;
-  fileInput.files = [{ name: 'broken.jsonl' }];
-  fileInput._changeHandlers.forEach(function (fn) { fn(); });
+test('import-received (G12-R1): JSONL invalido mostra toast de erro', function () {
+  var rt = makeImportReceivedSandbox({ mockFileContent: 'isto nao e json' });
+  var pair = rt.RAVATEX_DOCUMENTS.createReceivedImportButton({ buttonId: 'btn-err' });
+  var container = makeContainer();
+  pair.mount(container);
+  pair.fileInput.files = [{ name: 'broken.jsonl' }];
+  pair.fileInput._changeHandlers.forEach(function (fn) { fn(); });
 
   var errorToast = rt.toasts.find(function (t) { return t.type === 'error'; });
   assert.ok(errorToast, 'deve haver toast de erro');
-  assert.ok(errorToast.msg.indexOf('Erro ao importar') >= 0,
-    'toast deve mostrar "Erro ao importar": ' + errorToast.msg);
+  assert.ok(errorToast.msg.indexOf('Erro ao importar') >= 0, 'mensagem de erro');
 });
 
-test('import-received: texto vazio mostra toast de erro', function () {
-  var rt = makeImportReceivedSandbox({
-    mockFileContent: '',
-  });
-
-  var fileInput = rt.fileInputEl;
-  fileInput.files = [{ name: 'empty.jsonl' }];
-  fileInput._changeHandlers.forEach(function (fn) { fn(); });
+test('import-received (G12-R1): texto vazio mostra toast de erro', function () {
+  var rt = makeImportReceivedSandbox({ mockFileContent: '' });
+  var pair = rt.RAVATEX_DOCUMENTS.createReceivedImportButton({ buttonId: 'btn-empty' });
+  var container = makeContainer();
+  pair.mount(container);
+  pair.fileInput.files = [{ name: 'empty.jsonl' }];
+  pair.fileInput._changeHandlers.forEach(function (fn) { fn(); });
 
   var errorToast = rt.toasts.find(function (t) { return t.type === 'error'; });
   assert.ok(errorToast, 'deve haver toast de erro para arquivo vazio');
 });
 
-test('import-received: erro de FileReader mostra toast de erro', function () {
-  var rt = makeImportReceivedSandbox({
-    fileReadError: true,
-  });
-
-  var fileInput = rt.fileInputEl;
-  fileInput.files = [{ name: 'unreadable.jsonl' }];
-  fileInput._changeHandlers.forEach(function (fn) { fn(); });
+test('import-received (G12-R1): erro de FileReader mostra toast de erro', function () {
+  var rt = makeImportReceivedSandbox({ fileReadError: true });
+  var pair = rt.RAVATEX_DOCUMENTS.createReceivedImportButton({ buttonId: 'btn-freaderr' });
+  var container = makeContainer();
+  pair.mount(container);
+  pair.fileInput.files = [{ name: 'unreadable.jsonl' }];
+  pair.fileInput._changeHandlers.forEach(function (fn) { fn(); });
 
   var errorToast = rt.toasts.find(function (t) {
     return t.type === 'error' && t.msg.indexOf('Erro ao ler') >= 0;
@@ -393,220 +414,92 @@ test('import-received: erro de FileReader mostra toast de erro', function () {
   assert.ok(errorToast, 'deve haver toast de erro de leitura');
 });
 
-test('import-received: sem arquivo selecionado nao faz nada', function () {
+test('import-received (G12-R1): sem arquivo selecionado nao faz nada', function () {
   var rt = makeImportReceivedSandbox();
+  var pair = rt.RAVATEX_DOCUMENTS.createReceivedImportButton({ buttonId: 'btn-noop' });
+  var container = makeContainer();
+  pair.mount(container);
   var toastCountBefore = rt.toasts.length;
-
-  var fileInput = rt.fileInputEl;
-  fileInput.files = null;
-  fileInput._changeHandlers.forEach(function (fn) { fn(); });
-
-  assert.equal(rt.toasts.length, toastCountBefore, 'nenhum toast deve ser gerado sem arquivo');
+  pair.fileInput.files = null;
+  pair.fileInput._changeHandlers.forEach(function (fn) { fn(); });
+  assert.equal(rt.toasts.length, toastCountBefore, 'nenhum toast sem arquivo');
 });
 
 // -------------------------------------------------------------------
-// 5. Testes: scope guard - visibilidade por ambiente e role
+// 4. Coexistência com o botao legado
 // -------------------------------------------------------------------
 
-test('import-received-scope: producao + admin => NAO aparece', function () {
-  var rt = makeImportReceivedSandbox({
-    appEnv: 'production',
-    currentUser: { tipo: 'admin' },
-  });
+test('import-received (G12-R1): coexistencia - botao legado segue flutuando, novo e inline', function () {
+  var rt = makeImportReceivedSandbox();
+  // Legado segue auto-bootstrapando
   var buttons = rt.domElements['button'] || [];
-  var importBtn = buttons.find(function (b) { return b.id === 'rv-docs-received-import-btn'; });
-  assert.equal(importBtn, undefined, 'botao nao deve existir em producao mesmo admin');
+  var legacyBtn = buttons.find(function (b) { return b.id === 'rv-docs-import-btn'; });
+  assert.ok(legacyBtn, 'botao legado segue flutuando (sua politica inalterada)');
+
+  // Novo e inline: precisa ser criado explicitamente
+  var inlineBtn = buttons.find(function (b) { return b.id === 'rv-docs-received-import-btn' });
+  assert.equal(inlineBtn, undefined, 'botao novo NAO esta no DOM (apenas inline)');
+
+  // Mas a API existe
+  var pair = rt.RAVATEX_DOCUMENTS.createReceivedImportButton({ buttonId: 'inline-test' });
+  var container = makeContainer();
+  pair.mount(container);
+  assert.equal(container.children.length, 2, 'botao novo + input anexados ao container');
+  assert.notStrictEqual(legacyBtn, pair.button, 'botoes sao instancias distintas');
 });
 
-test('import-received-scope: producao + cliente => NAO aparece', function () {
-  var rt = makeImportReceivedSandbox({
-    appEnv: 'production',
-    currentUser: { tipo: 'cliente' },
-  });
-  var buttons = rt.domElements['button'] || [];
-  var importBtn = buttons.find(function (b) { return b.id === 'rv-docs-received-import-btn'; });
-  assert.equal(importBtn, undefined, 'botao nao deve existir em producao para cliente');
+test('import-received (G12-R1): botao inline nao conflita com legado (IDs distintos)', function () {
+  var rt = makeImportReceivedSandbox();
+  var pair = rt.RAVATEX_DOCUMENTS.createReceivedImportButton({ buttonId: 'inline-distinct' });
+  var container = makeContainer();
+  pair.mount(container);
+
+  var allBtns = [];
+  function walk(n) {
+    if (n.tagName === 'BUTTON' && n.id) allBtns.push(n.id);
+    if (n.children) for (var i = 0; i < n.children.length; i++) walk(n.children[i]);
+  }
+  // Walk em todos os elementos criados
+  for (var tag in rt.domElements) {
+    for (var i = 0; i < rt.domElements[tag].length; i++) walk(rt.domElements[tag][i]);
+  }
+  // Deve ter 2 IDs distintos
+  assert.ok(allBtns.indexOf('rv-docs-import-btn') >= 0, 'id legado presente');
+  assert.ok(allBtns.indexOf('inline-distinct') >= 0, 'id inline presente');
+  assert.notStrictEqual(
+    allBtns.indexOf('rv-docs-import-btn'),
+    allBtns.indexOf('inline-distinct'),
+    'IDs sao distintos'
+  );
 });
 
-test('import-received-scope: staging + admin => aparece', function () {
-  var rt = makeImportReceivedSandbox({
-    appEnv: 'staging',
-    currentUser: { tipo: 'admin' },
-  });
-  var buttons = rt.domElements['button'] || [];
-  var importBtn = buttons.find(function (b) { return b.id === 'rv-docs-received-import-btn'; });
-  assert.ok(importBtn, 'botao deve existir em staging para admin');
-  assert.ok(rt.fileInputEl, 'file input deve existir');
-});
+// -------------------------------------------------------------------
+// 5. Loader ausente
+// -------------------------------------------------------------------
 
-test('import-received-scope: staging + cliente => NAO aparece', function () {
-  var rt = makeImportReceivedSandbox({
-    appEnv: 'staging',
-    currentUser: { tipo: 'cliente' },
-  });
-  var buttons = rt.domElements['button'] || [];
-  var importBtn = buttons.find(function (b) { return b.id === 'rv-docs-received-import-btn'; });
-  assert.equal(importBtn, undefined, 'botao nao deve existir em staging para cliente');
-});
-
-test('import-received-scope: staging + fornecedor => NAO aparece', function () {
-  var rt = makeImportReceivedSandbox({
-    appEnv: 'staging',
-    currentUser: { tipo: 'fornecedor' },
-  });
-  var buttons = rt.domElements['button'] || [];
-  var importBtn = buttons.find(function (b) { return b.id === 'rv-docs-received-import-btn'; });
-  assert.equal(importBtn, undefined, 'botao nao deve existir para fornecedor');
-});
-
-test('import-received-scope: staging + flag=true (sem admin) => aparece', function () {
-  var rt = makeImportReceivedSandbox({
-    appEnv: 'staging',
-    currentUser: null,
-    enableFlag: true,
-  });
-  var buttons = rt.domElements['button'] || [];
-  var importBtn = buttons.find(function (b) { return b.id === 'rv-docs-received-import-btn'; });
-  assert.ok(importBtn, 'botao deve existir com flag=true mesmo sem admin logado');
-});
-
-test('import-received-scope: local + admin => aparece', function () {
-  var rt = makeImportReceivedSandbox({
-    appEnv: 'local',
-    currentUser: { tipo: 'admin' },
-  });
-  var buttons = rt.domElements['button'] || [];
-  var importBtn = buttons.find(function (b) { return b.id === 'rv-docs-received-import-btn'; });
-  assert.ok(importBtn, 'botao deve existir em local para admin');
-});
-
-test('import-received-scope: staging + admin + import funciona', function () {
-  var rt = makeImportReceivedSandbox({
-    appEnv: 'staging',
-    currentUser: { tipo: 'admin' },
-    mockFileContent: RECEIVED_JSONL,
-  });
-
-  var fileInput = rt.fileInputEl;
-  fileInput.files = [{ name: 'documentos-recebidos.jsonl' }];
-  fileInput._changeHandlers.forEach(function (fn) { fn(); });
-
-  var received = rt.sandbox.window.RAVATEX_DOCUMENTS_RECEIVED;
-  assert.ok(Array.isArray(received));
-  assert.equal(received.length, 3);
-  var successToast = rt.toasts.find(function (t) { return t.type === 'success'; });
-  assert.ok(successToast, 'deve haver toast de sucesso');
-});
-
-test('import-received-scope: admin tardio via SPA - comeca null, dps vira admin', function () {
-  var rt = makeImportReceivedSandbox({
-    appEnv: 'staging',
-    currentUser: null,
-  });
-  var buttons = rt.domElements['button'] || [];
-  var importBtn = buttons.find(function (b) { return b.id === 'rv-docs-received-import-btn'; });
-  assert.equal(importBtn, undefined, 'botao nao deve existir com CURRENT_USER null');
-
-  // Simula login: CURRENT_USER vira admin
-  rt.sandbox.window.CURRENT_USER = { tipo: 'admin' };
-  // Dispara recheck manual (equivalente a proxima iteracao do slow poll)
-  rt.sandbox.window.RAVATEX_DOCUMENTS._importReceivedUIRecheck();
-
-  buttons = rt.domElements['button'] || [];
-  importBtn = buttons.find(function (b) { return b.id === 'rv-docs-received-import-btn'; });
-  assert.ok(importBtn, 'botao deve aparecer apos admin ser detectado via recheck');
-});
-
-test('import-received-scope: admin tardio - _importReceivedUIHasButton confirma estado', function () {
-  var rt = makeImportReceivedSandbox({
-    appEnv: 'staging',
-    currentUser: null,
-  });
-  assert.equal(rt.sandbox.window.RAVATEX_DOCUMENTS._importReceivedUIHasButton(), false,
-    'sem admin, sem botao');
-  rt.sandbox.window.CURRENT_USER = { tipo: 'admin' };
-  rt.sandbox.window.RAVATEX_DOCUMENTS._importReceivedUIRecheck();
-  assert.equal(rt.sandbox.window.RAVATEX_DOCUMENTS._importReceivedUIHasButton(), true,
-    'com admin, botao criado');
-});
-
-test('import-received-scope: loader ausentes - erro controlado, sem crash', function () {
+test('import-received (G12-R1): loader ausentes - erro controlado, sem crash', function () {
   var warnings = [];
-  var sandbox = {
+  var sandbox2 = {
     window: { APP_ENV: 'staging', CURRENT_USER: { tipo: 'admin' }, toast: function () {} },
     document: {
       body: { appendChild: function () {} },
       createElement: function () {
-        return {
-          style: {}, addEventListener: function () {}, setAttribute: function () {},
-          click: function () {},
-        };
+        return { style: {}, addEventListener: function () {}, setAttribute: function () {}, click: function () {} };
       },
       addEventListener: function () {},
     },
     console: { warn: function (msg) { warnings.push(msg); } },
   };
-  vm.createContext(sandbox);
-  // NAO carrega documents-ingestor.js nem loader
-  vm.runInContext(importReceivedSrc, sandbox);
+  vm.createContext(sandbox2);
+  vm.runInContext(importReceivedSrc, sandbox2);
 
   assert.ok(warnings.length >= 1, 'deve emitir console.warn');
   assert.ok(warnings.join(' ').indexOf('RAVATEX_DOCUMENTS') >= 0,
     'warn deve mencionar RAVATEX_DOCUMENTS');
-  assert.ok(warnings.join(' ').indexOf('loadReceivedDocumentsFromText') >= 0,
-    'warn deve mencionar loadReceivedDocumentsFromText');
 });
 
 // -------------------------------------------------------------------
-// 6. Testes: coexistência com o botao legado "Importar eventos"
-// -------------------------------------------------------------------
-
-test('import-received-coexistence: botao legado e novo funcionam independentemente', function () {
-  var rt = makeImportReceivedSandbox({
-    appEnv: 'staging',
-    currentUser: { tipo: 'admin' },
-  });
-
-  var buttons = rt.domElements['button'] || [];
-  var legacyBtn = buttons.find(function (b) { return b.id === 'rv-docs-import-btn'; });
-  var receivedBtn = buttons.find(function (b) { return b.id === 'rv-docs-received-import-btn'; });
-  assert.ok(legacyBtn, 'botao legado deve existir');
-  assert.ok(receivedBtn, 'botao de recebidos deve existir');
-  assert.notStrictEqual(legacyBtn, receivedBtn, 'botoes devem ser distintos');
-  assert.equal(legacyBtn.textContent, 'Importar eventos');
-  assert.equal(receivedBtn.textContent, 'Importar recebidos');
-});
-
-test('import-received-coexistence: arquivos sao independentes (sem cross-talk)', function () {
-  var rt = makeImportReceivedSandbox({
-    appEnv: 'staging',
-    currentUser: { tipo: 'admin' },
-  });
-
-  var inputs = rt.domElements['input'] || [];
-  var legacyInput = inputs.find(function (i) { return i.id === 'rv-docs-import-input'; });
-  var receivedInput = inputs.find(function (i) { return i.id === 'rv-docs-received-import-input'; });
-  assert.ok(legacyInput, 'input legado deve existir');
-  assert.ok(receivedInput, 'input de recebidos deve existir');
-  assert.notStrictEqual(legacyInput, receivedInput, 'inputs devem ser distintos');
-
-  // Importar via legado -> atualiza LOADED_EVENTS, NAO toca RECEIVED
-  rt.sandbox.window.RAVATEX_DOCUMENTS.loadDocumentsIngestorEventsFromText(fixtureText);
-  assert.equal(rt.sandbox.window.RAVATEX_DOCUMENTS_LOADED_EVENTS.length, 7);
-  assert.ok(!rt.sandbox.window.RAVATEX_DOCUMENTS_RECEIVED
-    || rt.sandbox.window.RAVATEX_DOCUMENTS_RECEIVED.length === 0,
-    'RECEIVED NAO deve ser afetado pelo import legado');
-
-  // Limpar RECEIVED e importar via novo -> atualiza RECEIVED, NAO toca LOADED_EVENTS
-  rt.sandbox.window.RAVATEX_DOCUMENTS_RECEIVED = [];
-  rt.sandbox.window.RAVATEX_DOCUMENTS.loadReceivedDocumentsFromText(RECEIVED_JSONL);
-  assert.equal(rt.sandbox.window.RAVATEX_DOCUMENTS_RECEIVED.length, 3);
-  assert.equal(rt.sandbox.window.RAVATEX_DOCUMENTS_LOADED_EVENTS.length, 7,
-    'LOADED_EVENTS NAO deve ser afetado pelo import de recebidos');
-});
-
-// -------------------------------------------------------------------
-// 7. Testes de seguranca
+// 6. Seguranca
 // -------------------------------------------------------------------
 
 test('import-received: NAO referencia Supabase', function () {
@@ -633,7 +526,7 @@ test('import-received: NAO persiste em localStorage/sessionStorage', function ()
 });
 
 // -------------------------------------------------------------------
-// 8. Testes: index.html carrega o script
+// 7. index.html
 // -------------------------------------------------------------------
 
 test('import-received: index.html carrega documents-ingestor-import-received.js uma vez', function () {
@@ -654,4 +547,20 @@ test('import-received: import-received.js carregado depois do import legado', fu
   var idxLegacy = index.indexOf('js/documents-ingestor-import-ui.js');
   var idxReceived = index.indexOf('js/documents-ingestor-import-received.js');
   assert.ok(idxReceived > idxLegacy, 'import-received.js deve vir depois do import legado');
+});
+
+test('import-received: index.html NAO referencia documentos-recebidos.js (nao ha auto-floating)', function () {
+  // G12-R1: o botao so aparece dentro da tela. O script da tela
+  // (documentos-recebidos.js) e o unico lugar onde createReceivedImportButton
+  // e chamado. Esta assercao documenta o novo padrao.
+  var index = readOrFail(path.join(ROOT, 'index.html'));
+  // O modulo de import nao depende da tela
+  var importReceivedIdx = index.indexOf('js/documents-ingestor-import-received.js');
+  var screenIdx = index.indexOf('js/screens/documentos-recebidos.js');
+  assert.ok(importReceivedIdx > 0, 'import-received.js presente no index');
+  assert.ok(screenIdx > 0, 'documentos-recebidos.js presente no index');
+  // E ambos carregam antes do boot.js
+  var bootIdx = index.indexOf('js/boot.js');
+  assert.ok(importReceivedIdx < bootIdx, 'import-received.js antes do boot.js');
+  assert.ok(screenIdx < bootIdx, 'documentos-recebidos.js antes do boot.js');
 });

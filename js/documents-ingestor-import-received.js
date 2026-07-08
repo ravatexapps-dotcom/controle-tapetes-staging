@@ -1,8 +1,8 @@
 // =====================================================================
 // === js/documents-ingestor-import-received.js =========================
-// UX manual para importar `documentos-recebidos.jsonl` (formato flat
-// do Ingestor G12-D1). Adiciona um botao flutuante que abre dialogo
-// de arquivo, le via FileReader e chama
+// UX para importar `documentos-recebidos.jsonl` (formato flat do
+// Ingestor G12-D1). Cria um botao (inline na tela, NAO flutuante)
+// que abre dialogo de arquivo, le via FileReader e chama
 // `loadReceivedDocumentsFromText` do loader dedicado (G12-G1).
 //
 // Estado populado: window.RAVATEX_DOCUMENTS_RECEIVED.
@@ -10,6 +10,7 @@
 // consumido pelo Pedido Detail).
 //
 // Fase: RAVATEX-TAPETES-G12-G3-RECEIVED-DOCUMENTS-IMPORT-BUTTON
+//       + G12-R1 (refactor: botao inline na tela, sem flutuante)
 // Escopo: UX manual, local, read-only. Sem rede, sem Supabase, sem
 //   Google/Drive, sem persistencia, sem watcher, sem auto-load.
 //
@@ -21,12 +22,26 @@
 //   - CURRENT_USER pode ser populado assincronamente; um poll curto
 //     aguarda ate ~10s apos o carregamento da pagina.
 //
+// Comportamento desde G12-R1:
+//   - Botao NAO aparece flutuando o tempo todo.
+//   - Botao aparece APENAS dentro da tela #/documentos/recebidos,
+//     montado pelo screenDocumentosRecebidos.
+//   - Auto-flutuante opcional via flag
+//     RAVATEX_ENABLE_FLOATING_RECEIVED_IMPORT === true
+//     (padrao: false). Mantido para diagnostico, mas nao e o padrao.
+//
 // Separacao do import legado:
 //   - Botao legado (Importar eventos) -> document-events.jsonl
 //     -> RAVATEX_DOCUMENTS_LOADED_EVENTS (Pedido Detail).
 //   - Este botao -> documentos-recebidos.jsonl
 //     -> RAVATEX_DOCUMENTS_RECEIVED (tela global G12-G2).
 //   - Os dois coexistem; cada um escreve em seu proprio estado.
+//
+// API exposta:
+//   RAVATEX_DOCUMENTS.createReceivedImportButton(opts) ->
+//     { button, fileInput }   (cria elementos; chama .mount(container)
+//                              para anexar a um container especifico,
+//                              ou .mountBody() para o body).
 //
 // Depende de:
 //   - js/documents-ingestor-loader.js
@@ -51,8 +66,7 @@
     return;
   }
 
-  var IMPORT_BUTTON_ID = 'rv-docs-received-import-btn';
-  var _uiCreated = false;
+  var _floatingButton = null;
   var _fastPollTimer = null;
   var _slowPollTimer = null;
   var _fastPollAttempts = 0;
@@ -68,19 +82,117 @@
     return false;
   }
 
-  function tryCreateImportUI() {
-    if (_uiCreated) return true;
-    var decision = shouldShowImportUI();
-    if (decision === true) {
-      createImportUI();
-      _uiCreated = true;
-      stopAllPolls();
-      return true;
+  function shouldAutoFloat() {
+    if (window.APP_ENV === 'production') return false;
+    if (window.RAVATEX_ENABLE_FLOATING_RECEIVED_IMPORT !== true) return false;
+    return shouldShowImportUI() === true;
+  }
+
+  // Cria os elementos de UI (file input + button) SEM anexa-los a nada.
+  // O chamador decide onde montar via .mount(container) ou .mountBody().
+  function createReceivedImportElements(opts) {
+    opts = opts || {};
+    var fileInput = document.createElement('input');
+    fileInput.type = 'file';
+    fileInput.accept = '.jsonl,.txt,application/jsonl,text/plain';
+    fileInput.style.display = 'none';
+    fileInput.id = 'rv-docs-received-import-input';
+    if (!opts.buttonId) fileInput.id = 'rv-docs-received-import-input';
+    fileInput.setAttribute('aria-label', 'Selecionar documentos-recebidos.jsonl do export global do Documents Ingestor');
+
+    var toast = (typeof window.toast === 'function') ? window.toast : function (msg) { console.log(msg); };
+
+    fileInput.addEventListener('change', function () {
+      var file = fileInput.files && fileInput.files[0];
+      if (!file) return;
+
+      var reader = new FileReader();
+      reader.onload = function () {
+        var text = typeof reader.result === 'string' ? reader.result : '';
+        var result = docs.loadReceivedDocumentsFromText(text);
+
+        if (result && result.ok) {
+          toast(result.count + ' documento(s) carregado(s) de documentos-recebidos.jsonl. '
+            + 'Nada foi persistido.', 'success');
+        } else {
+          toast('Erro ao importar: ' + ((result && result.error) || 'Falha desconhecida.'), 'error');
+        }
+
+        fileInput.value = '';
+      };
+
+      reader.onerror = function () {
+        toast('Erro ao ler o arquivo selecionado.', 'error');
+        fileInput.value = '';
+      };
+
+      reader.readAsText(file);
+    });
+
+    var btn = document.createElement('button');
+    btn.type = 'button';
+    btn.id = opts.buttonId || 'rv-docs-received-import-btn';
+    btn.setAttribute('aria-label', 'Selecionar documentos-recebidos.jsonl do export global do Documents Ingestor');
+    btn.title = 'Selecionar documentos-recebidos.jsonl do export global do Documents Ingestor';
+    btn.textContent = 'Importar recebidos';
+    btn.style.cssText =
+      'background:#18794a;color:#fff;border:none;border-radius:4px;'
+      + 'padding:8px 16px;font-size:13px;font-weight:600;'
+      + 'font-family:inherit;cursor:pointer;box-shadow:0 1px 3px rgba(24,121,74,.3);'
+      + 'transition:opacity .2s;opacity:.95;';
+
+    btn.addEventListener('mouseenter', function () { btn.style.opacity = '1'; });
+    btn.addEventListener('mouseleave', function () { btn.style.opacity = '.95'; });
+
+    btn.addEventListener('click', function () {
+      fileInput.click();
+    });
+
+    return {
+      button: btn,
+      fileInput: fileInput,
+      mount: function (container) {
+        if (!container) return;
+        container.appendChild(fileInput);
+        container.appendChild(btn);
+      },
+      mountBody: function () {
+        if (document.body) {
+          document.body.appendChild(fileInput);
+          document.body.appendChild(btn);
+        }
+      },
+    };
+  }
+
+  // API exposta para a tela Documentos montar o botao inline.
+  docs.createReceivedImportButton = function (opts) {
+    return createReceivedImportElements(opts);
+  };
+
+  // API de diagnostico (ja existia).
+  docs._importReceivedUIRecheck = function () {
+    if (shouldAutoFloat() && !_floatingButton) {
+      _floatingButton = createReceivedImportElements();
+      _floatingButton.mountBody();
     }
-    if (decision === false) {
-      stopAllPolls();
-    }
-    return false;
+  };
+  docs._importReceivedUIHasButton = function () {
+    return !!_floatingButton;
+  };
+
+  // Auto-bootstrap flutuante: DESLIGADO por padrao desde G12-R1.
+  // Para reativar, defina window.RAVATEX_ENABLE_FLOATING_RECEIVED_IMPORT = true.
+  function tryAutoFloat() {
+    if (!shouldAutoFloat()) return false;
+    if (_floatingButton) return true;
+    _floatingButton = createReceivedImportElements({ buttonId: 'rv-docs-received-import-btn' });
+    _floatingButton.mountBody();
+    _floatingButton.button.style.position = 'fixed';
+    _floatingButton.button.style.bottom = '16px';
+    _floatingButton.button.style.right = '200px';
+    _floatingButton.button.style.zIndex = '100';
+    return true;
   }
 
   function startFastPoll() {
@@ -88,13 +200,12 @@
     _fastPollAttempts = 0;
     _fastPollTimer = setInterval(function () {
       _fastPollAttempts++;
-      var decision = shouldShowImportUI();
-      if (decision === true) {
-        tryCreateImportUI();
+      if (tryAutoFloat()) {
         clearInterval(_fastPollTimer);
         _fastPollTimer = null;
         return;
       }
+      var decision = shouldShowImportUI();
       if (decision === false) {
         stopAllPolls();
         return;
@@ -102,7 +213,7 @@
       if (_fastPollAttempts >= FAST_POLL_MAX) {
         clearInterval(_fastPollTimer);
         _fastPollTimer = null;
-        if (!_uiCreated) {
+        if (!_floatingButton) {
           startSlowPoll();
         }
       }
@@ -110,13 +221,8 @@
   }
 
   function startSlowPoll() {
-    if (_uiCreated) return;
-    var decision = shouldShowImportUI();
-    if (decision === true) {
-      tryCreateImportUI();
-      return;
-    }
-    if (decision === false) return;
+    if (_floatingButton) return;
+    if (!shouldAutoFloat() && shouldShowImportUI() !== null) return;
     _slowPollTimer = setTimeout(function () {
       _slowPollTimer = null;
       startSlowPoll();
@@ -134,83 +240,14 @@
     }
   }
 
-  function createImportUI() {
-    var fileInput = document.createElement('input');
-    fileInput.type = 'file';
-    fileInput.accept = '.jsonl,.txt,application/jsonl,text/plain';
-    fileInput.style.display = 'none';
-    fileInput.id = 'rv-docs-received-import-input';
-    fileInput.setAttribute('aria-label', 'Selecionar documentos-recebidos.jsonl do export global do Documents Ingestor');
-
-    fileInput.addEventListener('change', function () {
-      var file = fileInput.files && fileInput.files[0];
-      if (!file) return;
-
-      var reader = new FileReader();
-      reader.onload = function () {
-        var text = typeof reader.result === 'string' ? reader.result : '';
-        var result = docs.loadReceivedDocumentsFromText(text);
-
-        if (result && result.ok) {
-          var msg = result.count + ' documento(s) carregado(s) de documentos-recebidos.jsonl. '
-            + 'Abra Documentos para visualizar a fila. '
-            + 'Nada foi persistido.';
-          window.toast(msg, 'success');
-        } else {
-          window.toast('Erro ao importar: ' + ((result && result.error) || 'Falha desconhecida.'), 'error');
-        }
-
-        fileInput.value = '';
-      };
-
-      reader.onerror = function () {
-        window.toast('Erro ao ler o arquivo selecionado.', 'error');
-        fileInput.value = '';
-      };
-
-      reader.readAsText(file);
-    });
-
-    document.body.appendChild(fileInput);
-
-    var btn = document.createElement('button');
-    btn.type = 'button';
-    btn.id = IMPORT_BUTTON_ID;
-    btn.setAttribute('aria-label', 'Selecionar documentos-recebidos.jsonl do export global do Documents Ingestor');
-    btn.title = 'Selecionar documentos-recebidos.jsonl do export global do Documents Ingestor';
-    btn.textContent = 'Importar recebidos';
-    btn.style.cssText =
-      'position:fixed;bottom:16px;right:200px;z-index:100;'
-      + 'background:#18794a;color:#fff;border:none;border-radius:6px;'
-      + 'padding:8px 16px;font-size:13px;font-weight:600;'
-      + 'font-family:inherit;cursor:pointer;box-shadow:0 2px 8px rgba(24,121,74,.35);'
-      + 'transition:opacity .2s;opacity:.85;';
-
-    btn.addEventListener('mouseenter', function () { btn.style.opacity = '1'; });
-    btn.addEventListener('mouseleave', function () { btn.style.opacity = '.85'; });
-
-    btn.addEventListener('click', function () {
-      fileInput.click();
-    });
-
-    document.body.appendChild(btn);
-  }
-
-  docs._importReceivedUIRecheck = function () {
-    tryCreateImportUI();
-  };
-  docs._importReceivedUIHasButton = function () {
-    return _uiCreated;
-  };
-
   try {
     if (document.body) {
-      if (!tryCreateImportUI()) {
+      if (!tryAutoFloat()) {
         startFastPoll();
       }
     } else if (document.addEventListener) {
       document.addEventListener('DOMContentLoaded', function () {
-        if (!tryCreateImportUI()) {
+        if (!tryAutoFloat()) {
           startFastPoll();
         }
       });

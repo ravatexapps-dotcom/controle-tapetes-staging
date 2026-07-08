@@ -1,4 +1,56 @@
-﻿# Estado pos-fase - Received Documents Browser Closeout (G12)
+﻿# Estado pos-fase - Received Documents Real Browser Fix (G12-R1)
+
+- Fase: `RAVATEX-TAPETES-G12-R1-DOCUMENTOS-REAL-BROWSER-FIX`.
+- Status: **PRONTO**.
+- Branch/HEAD base: `work/app-next`, `2c7f72f`.
+- HEAD final: `(commit g12-r1)`.
+
+Causa raiz (UX):
+- Botao "Importar recebidos" ficava sempre flutuando e a tela
+  prometia "documentos detectados pelo Ingestor" sem deixar
+  claro que era necessario importar manualmente. Resultado:
+  o usuario clicava em Documentos, via um "fundo vazio",
+  e nao entendia o que fazer.
+
+Patch minimo aplicado:
+- `js/documents-ingestor-import-received.js`:
+  - Auto-floating DESLIGADO por padrao (flag
+    `RAVATEX_ENABLE_FLOATING_RECEIVED_IMPORT`, default off).
+  - Nova API: `RAVATEX_DOCUMENTS.createReceivedImportButton(opts)`
+    -> `{ button, fileInput, mount, mountBody }`. A tela
+    monta o botao inline.
+- `js/screens/documentos-recebidos.js`:
+  - Botao inline renderizado na section
+    `data-section="documentos-recebidos-import-action"`,
+    acima do card.
+  - Header reescrito: "Documentos recebidos importados do
+    arquivo documentos-recebidos.jsonl. Nada e carregado
+    automaticamente do Gmail nesta tela." (texto exato
+    conforme alinhamento com operador).
+  - Empty state instrui: "Use o botao acima para carregar..."
+- `index.html`: indentacao quebrada por G12-G2 corrigida
+  (4 linhas com 4-space em vez de 2-space; HTML tolerante
+  mas ficou fora de padrao).
+
+Compatibilidade preservada:
+- Botao legado "Importar eventos" continua flutuando
+  (sua politica inalterada; serve ao Pedido Detail).
+- Pedido Detail continua consumindo apenas
+  `RAVATEX_DOCUMENTS_LOADED_EVENTS`. Nenhum vazamento
+  para `RAVATEX_DOCUMENTS_RECEIVED`.
+
+Testes: 427/427 focado (7 suites), 37/37 validacao browser.
+0 regressao.
+
+Risco: baixo. Botao legado flutuante continua igual. Botao
+novo so aparece na tela Documentos (via G12-R1). Sem
+quebra em outras telas.
+
+Proximo: opcional G12-H (smoke browser real via
+puppeteer/playwright + screenshots). Sem nova fase
+obrigatoria.
+
+# Estado pos-fase - Received Documents Browser Closeout (G12)
 
 - Fase: `RAVATEX-TAPETES-G12-RECEIVED-DOCUMENTS-BROWSER-CLOSEOUT`.
 - Status: **FECHADO**.

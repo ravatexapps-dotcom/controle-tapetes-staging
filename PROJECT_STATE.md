@@ -1,4 +1,49 @@
 > **Atualizacao 2026-07-08 - fase
+> `RAVATEX-TAPETES-G12-R1-DOCUMENTOS-REAL-BROWSER-FIX`.**
+> Status: **PRONTO — UX: BOTAO INLINE + TEXTO EXPLICITO**.
+> Entrada: branch `work/app-next`, HEAD `2c7f72f`.
+>
+> Escopo:
+> - `js/documents-ingestor-import-received.js`: refatorado.
+>   - Auto-floating DESLIGADO por padrao (controlado por
+>     flag `RAVATEX_ENABLE_FLOATING_RECEIVED_IMPORT`,
+>     default off).
+>   - Nova API: `RAVATEX_DOCUMENTS.createReceivedImportButton(opts)`
+>     retorna `{ button, fileInput, mount, mountBody }` para a
+>     tela montar inline.
+> - `js/screens/documentos-recebidos.js`: tela agora
+>   renderiza o botao inline via `createReceivedImportButton()`.
+>   Texto do header esclarece:
+>   "Documentos recebidos importados do arquivo
+>    documentos-recebidos.jsonl.
+>    Nada e carregado automaticamente do Gmail nesta tela."
+> - `index.html`: indentacao corrigida (G12-G2 havia
+>   quebrado 4 linhas com 4-space em vez de 2-space).
+> - Testes atualizados para o novo padrao.
+>   - `documents-ingestor-import-received.test.js`: 29/29.
+>   - `documentos-recebidos.smoke.js`: 27/27.
+>   - Validacao browser (g12-browser-validation.mjs): 37/37.
+>
+> Causa raiz (UX):
+> - Antes: o botao flutuante "Importar recebidos" ficava
+>   sempre visivel no canto inferior direito, e a tela
+>   prometia "documentos do Ingestor" mas so mostrava uma
+>   mensagem vazia. O usuario nao sabia que precisava
+>   importar manualmente. Falso integracao.
+> - Agora: botao so aparece dentro da tela, e a tela
+>   esclarece a ausencia de auto-load.
+>
+> Risco do patch:
+> - Pequeno: o botao legado "Importar eventos" continua
+>   flutuando (sua politica inalterada). O botao novo
+>   migrou para inline.
+> - Sem regressao no Pedido Detail, que continua
+>   consumindo apenas `RAVATEX_DOCUMENTS_LOADED_EVENTS`.
+>
+> Proximo: opcional G12-H (smoke browser real via
+> puppeteer/playwright).
+
+> **Atualizacao 2026-07-08 - fase
 > `RAVATEX-TAPETES-G12-RECEIVED-DOCUMENTS-BROWSER-CLOSEOUT`.**
 > Status: **FECHADO — VALIDACAO BROWSER + CLOSEOUT**.
 > Entrada: branch `work/app-next`, HEAD `bfc36c2`.

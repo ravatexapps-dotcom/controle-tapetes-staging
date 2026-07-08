@@ -217,27 +217,29 @@ for (const [name, val, expected] of probes) {
   else fail(name + ' = ' + JSON.stringify(val) + ' (esperado: ' + JSON.stringify(expected) + ')');
 }
 
-// 2. Botoes de import: ambos aparecem (admin + staging)
+// 2. Botoes de import: legado segue flutuando, novo e inline (G12-R1)
 lines.push('');
 lines.push('--- 2. BOTOES DE IMPORT (admin + staging) ---');
 const legacyBtn = allElements.find(el => el.tagName === 'BUTTON' && el.id === 'rv-docs-import-btn');
-const receivedBtn = allElements.find(el => el.tagName === 'BUTTON' && el.id === 'rv-docs-received-import-btn');
-if (legacyBtn) ok('botao legado presente: rv-docs-import-btn');
+// G12-R1: o botao novo NAO aparece flutuando por padrao. So dentro
+// da tela Documentos.
+const floatingReceivedBtn = allElements.find(el => el.tagName === 'BUTTON' && el.id === 'rv-docs-received-import-btn');
+if (legacyBtn) ok('botao legado presente (flutuante): rv-docs-import-btn');
 else fail('botao legado AUSENTE: rv-docs-import-btn');
-if (receivedBtn) ok('botao novo presente: rv-docs-received-import-btn');
-else fail('botao novo AUSENTE: rv-docs-received-import-btn');
-if (legacyBtn && receivedBtn) {
-  // Distinguibilidade visual: cor diferente (lendo de cssText)
+if (!floatingReceivedBtn) {
+  ok('G12-R1: botao novo NAO aparece flutuando (correto)');
+} else {
+  fail('G12-R1: botao novo NAO deveria estar flutuando; encontrado: ' + floatingReceivedBtn.id);
+}
+if (legacyBtn) {
   const legacyCss = (legacyBtn.style.cssText || '');
-  const receivedCss = (receivedBtn.style.cssText || '');
   const legacyColor = legacyCss.indexOf('#2563eb') >= 0;
-  const receivedColor = receivedCss.indexOf('#18794a') >= 0;
-  if (legacyColor && receivedColor) ok('botoes visualmente distinguiveis (azul #2563eb vs verde #18794a)');
-  else fail('cores: legacy=' + legacyCss.slice(0, 80) + ' received=' + receivedCss.slice(0, 80));
-  if (legacyBtn.textContent !== receivedBtn.textContent) {
-    ok('labels distintos: "' + legacyBtn.textContent + '" vs "' + receivedBtn.textContent + '"');
+  if (legacyColor) ok('botao legado mantem cor azul #2563eb (sua politica inalterada)');
+  else fail('cor do legado inalterada: ' + legacyCss.slice(0, 80));
+  if (legacyBtn.textContent === 'Importar eventos') {
+    ok('botao legado mantem label "Importar eventos"');
   } else {
-    fail('labels iguais: ' + legacyBtn.textContent);
+    fail('label do legado inalterado: ' + legacyBtn.textContent);
   }
 }
 
@@ -245,7 +247,6 @@ if (legacyBtn && receivedBtn) {
 lines.push('');
 lines.push('--- 3. IMPORT LEGADO: document-events.jsonl ---');
 const legacyInput = allElements.find(el => el.tagName === 'INPUT' && el.id === 'rv-docs-import-input');
-const receivedInput = allElements.find(el => el.tagName === 'INPUT' && el.id === 'rv-docs-received-import-input');
 
 if (legacyInput) {
   toasts.length = 0;
@@ -272,18 +273,28 @@ if (legacyInput) {
   }
 }
 
-// 4. Import novo (documentos-recebidos.jsonl)
+// 4. Import novo (documentos-recebidos.jsonl) via botao INLINE
 lines.push('');
-lines.push('--- 4. IMPORT NOVO: documentos-recebidos.jsonl ---');
-if (receivedInput) {
+lines.push('--- 4. IMPORT NOVO: documentos-recebidos.jsonl (botao inline) ---');
+// G12-R1: o botao so existe dentro da tela. Renderizamos a tela
+// e capturamos o input inline. Como o FakeNode do sandbox e
+// instanciado em escopo JS (nao vm), usamos o input que o modulo
+// de import-received acabou de criar no escopo real do modulo.
+const inlinePair = get('window.RAVATEX_DOCUMENTS.createReceivedImportButton({ buttonId: "rv-docs-received-import-btn-inline-test" })');
+const inlineContainer = new FakeNode('div');
+sandbox.inlineContainer = inlineContainer;
+inlinePair.mount(inlineContainer);
+if (!inlinePair.fileInput) {
+  fail('createReceivedImportButton nao retornou fileInput');
+} else {
   toasts.length = 0;
   MockFileReader._nextContent = RECEIVED_JSONL;
   // Dispara o fluxo real: click no botao -> fileInput.click() -> change handler
-  receivedBtn.click();
+  inlinePair.button.click();
   const received = get('window.RAVATEX_DOCUMENTS_RECEIVED');
   const loadedEvents = get('window.RAVATEX_DOCUMENTS_LOADED_EVENTS');
   if (Array.isArray(received) && received.length === 3) {
-    ok('RAVATEX_DOCUMENTS_RECEIVED populado com 3 docs (novo)');
+    ok('RAVATEX_DOCUMENTS_RECEIVED populado com 3 docs (novo, via inline)');
   } else {
     fail('RAVATEX_DOCUMENTS_RECEIVED.length = ' + (received && received.length) + ' (esperado: 3)');
   }
@@ -294,9 +305,8 @@ if (receivedInput) {
   }
   const successToast = toasts.find(t => t.type === 'success');
   if (successToast && successToast.msg.indexOf('documentos-recebidos.jsonl') >= 0
-      && successToast.msg.indexOf('Documentos') >= 0
       && successToast.msg.indexOf('Nada foi persistido') >= 0) {
-    ok('toast sucesso distinto: "' + successToast.msg.slice(0, 110) + '..."');
+    ok('toast sucesso inline: "' + successToast.msg.slice(0, 110) + '..."');
   } else {
     fail('toast sucesso do novo: ' + JSON.stringify(toasts));
   }
@@ -350,6 +360,26 @@ else fail('badge direcao Entrada AUSENTE');
 const header = screen.children.find(c => c.tagName === 'HEADER');
 if (header) ok('shellLayout presente (HEADER renderizado)');
 else fail('shellLayout AUSENTE');
+
+// 5b. G12-R1: botao inline presente e header explica ausencia de auto-load
+const inlineBtn = findAll(screen, (n) => n.tagName === 'BUTTON' && n.id === 'rv-docs-received-import-btn-inline');
+if (inlineBtn.length === 1) ok('G12-R1: botao inline presente dentro da tela');
+else fail('G12-R1: botao inline AUSENTE: ' + inlineBtn.length);
+if (inlineBtn[0] && inlineBtn[0].textContent === 'Importar recebidos') {
+  ok('G12-R1: label inline "Importar recebidos" correto');
+} else {
+  fail('G12-R1: label inline inalterado: ' + (inlineBtn[0] && inlineBtn[0].textContent));
+}
+if (allText.indexOf('Nada e carregado automaticamente') >= 0) {
+  ok('G12-R1: header explica ausencia de auto-load do Gmail');
+} else {
+  fail('G12-R1: header NAO explica ausencia de auto-load');
+}
+if (allText.indexOf('documentos-recebidos.jsonl') >= 0) {
+  ok('G12-R1: header menciona o arquivo esperado');
+} else {
+  fail('G12-R1: header NAO menciona o arquivo');
+}
 
 // 6. Pedido Detail: so consome LOADED_EVENTS
 lines.push('');

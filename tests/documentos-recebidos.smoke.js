@@ -56,6 +56,8 @@ function readOrFail(p) {
 const screen = readOrFail(SCREEN);
 const ingestor = readOrFail(INGESTOR);
 const loader = readOrFail(LOADER);
+const IMPORT_RECEIVED = path.join(ROOT, 'js', 'documents-ingestor-import-received.js');
+const importReceivedSrc = readOrFail(IMPORT_RECEIVED);
 const common = readOrFail(COMMON);
 const boot = readOrFail(BOOT);
 const ui = readOrFail(UI);
@@ -240,6 +242,8 @@ function makeScreenSandbox(received) {
   // Carrega ingestor + loader (para garantir que RAVATEX_DOCUMENTS existe)
   vm.runInContext(ingestor, sandbox, { filename: 'js/documents-ingestor.js' });
   vm.runInContext(loader, sandbox, { filename: 'js/documents-ingestor-loader.js' });
+  // Carrega import-received (G12-R1: expoe createReceivedImportButton)
+  vm.runInContext(importReceivedSrc, sandbox, { filename: 'js/documents-ingestor-import-received.js' });
   // Carrega common (shellLayout + ADMIN_MENU)
   vm.runInContext(common, sandbox, { filename: 'js/screens/common.js' });
   // Carrega a tela
@@ -262,8 +266,10 @@ test('runtime: screenDocumentosRecebidos renderiza empty state sem documentos', 
   const allText = JSON.stringify(findAll(result, () => true).map((n) => textOf(n)));
   assert.ok(allText.indexOf('Nenhum documento recebido') >= 0,
     'empty state deve aparecer quando RAVATEX_DOCUMENTS_RECEIVED e vazio');
-  assert.ok(allText.indexOf('Documentos Recebidos (Ingestor)') >= 0,
+  assert.ok(allText.indexOf('Documentos Recebidos') >= 0,
     'header deve aparecer');
+  assert.ok(allText.indexOf('Nada e carregado automaticamente') >= 0,
+    'subtitulo deve esclarecer que nao ha auto-load');
   // Nenhuma row data-document-id
   const rows = findAll(result, findRow);
   assert.equal(rows.length, 0, 'sem rows quando empty state');
@@ -436,4 +442,94 @@ test('runtime: NAO le RAVATEX_DOCUMENTS_LOADED_EVENTS (legado continua intacto)'
     'estado legado NAO pode ser afetado pela tela global');
   assert.equal(sb.window.RAVATEX_DOCUMENTS_LOADED_EVENTS[0].event_type, 'document.linked',
     'evento legado preservado');
+});
+
+// ---------------------------------------------------------------------
+// 8. G12-R1: botao inline (NAO flutuante) + texto explicito
+// ---------------------------------------------------------------------
+
+test('G12-R1: tela renderiza botao inline de import (NAO flutuante)', function () {
+  const sb = makeScreenSandbox([]);
+  const container = new FakeNode('div');
+  sb.container = container;
+  const result = vm.runInContext('window.screenDocumentosRecebidos(container)', sb);
+  // Botao inline dentro da tela, com id customizado (rv-docs-received-import-btn-inline)
+  const inlineBtn = findAll(result, (n) => n.tagName === 'BUTTON' && n.id === 'rv-docs-received-import-btn-inline');
+  assert.equal(inlineBtn.length, 1, 'botao inline com id customizado presente');
+  // NAO deve haver botao flutuante rv-docs-received-import-btn (sem sufixo)
+  const floatingBtn = findAll(result, (n) => n.tagName === 'BUTTON' && n.id === 'rv-docs-received-import-btn');
+  assert.equal(floatingBtn.length, 0, 'botao flutuante NAO aparece dentro da tela');
+});
+
+test('G12-R1: botao inline aparece mesmo com RECEIVED vazio e mesmo com docs', function () {
+  const sbEmpty = makeScreenSandbox([]);
+  const c1 = new FakeNode('div');
+  sbEmpty.container = c1;
+  const r1 = vm.runInContext('window.screenDocumentosRecebidos(container)', sbEmpty);
+  const inline1 = findAll(r1, (n) => n.tagName === 'BUTTON' && n.id === 'rv-docs-received-import-btn-inline');
+  assert.equal(inline1.length, 1, 'botao inline presente no empty state');
+
+  const sbFilled = makeScreenSandbox([{
+    document_id: 'd1', filename_original: 'NF.xml', tipo_documento: 'nf', formato: 'xml',
+    drive_web_view_link: 'https://drive/d1', created_at: '2026-07-08T10:00:00.000Z',
+  }]);
+  const c2 = new FakeNode('div');
+  sbFilled.container = c2;
+  const r2 = vm.runInContext('window.screenDocumentosRecebidos(container)', sbFilled);
+  const inline2 = findAll(r2, (n) => n.tagName === 'BUTTON' && n.id === 'rv-docs-received-import-btn-inline');
+  assert.equal(inline2.length, 1, 'botao inline presente com 1 doc');
+});
+
+test('G12-R1: botao inline NAO e flutuante (position != fixed)', function () {
+  const sb = makeScreenSandbox([]);
+  const container = new FakeNode('div');
+  sb.container = container;
+  const result = vm.runInContext('window.screenDocumentosRecebidos(container)', sb);
+  const inlineBtn = findAll(result, (n) => n.tagName === 'BUTTON' && n.id === 'rv-docs-received-import-btn-inline');
+  assert.equal(inlineBtn.length, 1);
+  const btn = inlineBtn[0];
+  // Nao deve ser position:fixed (G12-R1: inline, nao flutuante)
+  var cssText = (btn._attrs && btn._attrs.style) || '';
+  // O botao inline e criado por createReceivedImportButton (G12-R3 refactor)
+  // que nao define position:fixed. Verifica ausencia.
+  if (cssText && cssText.indexOf && cssText.indexOf('fixed') >= 0) {
+    assert.fail('botao inline NAO deve ser position:fixed; cssText=' + cssText);
+  }
+});
+
+test('G12-R1: tela contem section data-section="documentos-recebidos-import-action"', function () {
+  const sb = makeScreenSandbox([]);
+  const container = new FakeNode('div');
+  sb.container = container;
+  const result = vm.runInContext('window.screenDocumentosRecebidos(container)', sb);
+  const sections = findAll(result, (n) => n._attrs && n._attrs['data-section'] === 'documentos-recebidos-import-action');
+  assert.equal(sections.length, 1, 'section de import action presente');
+  // Deve estar antes do card de empty state
+  var allText = JSON.stringify(findAll(result, () => true).map(textOf));
+  var importIdx = allText.indexOf('Importar recebidos');
+  var emptyIdx = allText.indexOf('Nenhum documento recebido');
+  assert.ok(importIdx >= 0 && emptyIdx >= 0, 'ambos textos presentes');
+  assert.ok(importIdx < emptyIdx, 'botao inline vem antes do empty state');
+});
+
+test('G12-R1: header explica que nada e carregado automaticamente do Gmail', function () {
+  const sb = makeScreenSandbox([]);
+  const container = new FakeNode('div');
+  sb.container = container;
+  const result = vm.runInContext('window.screenDocumentosRecebidos(container)', sb);
+  const allText = JSON.stringify(findAll(result, () => true).map(textOf));
+  assert.ok(allText.indexOf('Nada e carregado automaticamente') >= 0,
+    'subtitulo explica ausencia de auto-load do Gmail: ' + allText.slice(0, 400));
+  assert.ok(allText.indexOf('documentos-recebidos.jsonl') >= 0,
+    'subtitulo menciona o arquivo esperado');
+});
+
+test('G12-R1: empty state instrui a usar o botao acima', function () {
+  const sb = makeScreenSandbox([]);
+  const container = new FakeNode('div');
+  sb.container = container;
+  const result = vm.runInContext('window.screenDocumentosRecebidos(container)', sb);
+  const allText = JSON.stringify(findAll(result, () => true).map(textOf));
+  assert.ok(allText.indexOf('Use o botao acima para carregar') >= 0,
+    'empty state instrui a usar botao acima');
 });

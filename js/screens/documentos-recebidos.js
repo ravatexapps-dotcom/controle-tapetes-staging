@@ -10,14 +10,20 @@
 // nenhum atrelamento e criado aqui; o botao "Ver" abre o link do
 // Drive em nova aba.
 //
+// Fase: RAVATEX-TAPETES-G12-G2 + G12-R1 (UX: botao inline, sem
+// flutuante; texto explicito sobre ausencia de auto-load).
+//
 // Sem Supabase, sem Google/Drive real, sem persistencia, sem
 // watcher/polling. Documentos NAO sao armazenados no navegador
-// alem do snapshot em memoria ja carregado via import manual.
+// alem do snapshot em memoria ja carregado via import manual
+// (botao inline nesta tela).
 //
 // Carregar via <script src="js/screens/documentos-recebidos.js"></script>
-// DEPOIS de js/documents-ingestor.js e js/documents-ingestor-loader.js
-// e DEPOIS de js/screens/common.js (precisa de window.shellLayout e
-// window.ADMIN_MENU), e ANTES de js/boot.js (que registra a rota).
+// DEPOIS de js/documents-ingestor.js, js/documents-ingestor-loader.js
+// e js/documents-ingestor-import-received.js (para ter o botao
+// inline), e DEPOIS de js/screens/common.js (precisa de
+// window.shellLayout e window.ADMIN_MENU), e ANTES de js/boot.js
+// (que registra a rota).
 // =====================================================================
 
 (function (window) {
@@ -75,15 +81,42 @@
   }
 
   function buildHeader() {
-    var header = window.el('div', { style: 'margin-bottom:14px;' },
+    var header = window.el('div', { style: 'margin-bottom:8px;' },
       window.el('div', {
         style: 'font-size:20px;font-weight:800;color:#16203a;letter-spacing:-.01em;margin-bottom:4px;',
-      }, 'Documentos Recebidos (Ingestor)'),
+      }, 'Documentos Recebidos'),
       window.el('div', {
         style: 'font-size:13px;color:#5b6472;line-height:1.5;',
-      }, 'Fila de documentos detectados pelo Documents Ingestor que ainda nao foram atrelados a um Pedido.')
+      }, 'Documentos recebidos importados do arquivo documentos-recebidos.jsonl. '
+        + 'Nada e carregado automaticamente do Gmail nesta tela.')
     );
     return header;
+  }
+
+  function buildImportAction() {
+    // Container horizontal para o botao inline de import.
+    // Anexa o file input + button via API exposta em G12-G3.
+    var wrap = window.el('div', {
+      'data-section': 'documentos-recebidos-import-action',
+      style: 'display:flex;align-items:center;gap:10px;'
+        + 'background:#fff;border:1px solid #eceef1;border-radius:4px;'
+        + 'padding:10px 14px;margin-bottom:14px;',
+    });
+
+    if (window.RAVATEX_DOCUMENTS
+        && typeof window.RAVATEX_DOCUMENTS.createReceivedImportButton === 'function') {
+      var importPair = window.RAVATEX_DOCUMENTS.createReceivedImportButton({
+        buttonId: 'rv-docs-received-import-btn-inline',
+      });
+      importPair.mount(wrap);
+    } else {
+      // Fallback defensivo: o modulo de import nao carregou.
+      // Mostra aviso sem quebrar a tela.
+      wrap.appendChild(window.el('div', {
+        style: 'font-size:12.5px;color:#b45309;',
+      }, 'Modulo de import nao carregado.'));
+    }
+    return wrap;
   }
 
   function buildEmptyState() {
@@ -96,7 +129,8 @@
       }, 'Nenhum documento recebido'),
       window.el('div', {
         style: 'font-size:13px;color:#8a93a3;line-height:1.5;',
-      }, 'Carregue um arquivo documentos-recebidos.jsonl no Pedido ou via botao dedicado de import para popular esta fila.')
+      }, 'Use o botao acima para carregar um arquivo documentos-recebidos.jsonl. '
+        + 'A lista abaixo sera preenchida com os documentos importados.')
     );
     return card;
   }
@@ -216,6 +250,10 @@
 
     var page = window.el('div', { style: 'max-width:1100px;' });
     page.appendChild(buildHeader());
+
+    // Botao inline: aparece APENAS dentro desta tela (G12-R1).
+    // Substitui o antigo botao flutuante, que ficava sempre visivel.
+    page.appendChild(buildImportAction());
 
     if (!received.length) {
       page.appendChild(buildEmptyState());
