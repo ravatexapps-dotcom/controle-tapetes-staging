@@ -3,63 +3,59 @@
 ## Branch/HEAD/Status
 ### documentos-ingestor (este repositório)
 - Branch: master
-- HEAD: `318302a` — Add Controle Tapetes export package (G10-B)
+- HEAD: `(new commit)` — Record export package real-lite smoke (G10-C)
 
 ### Controle de Tapetes (staging/work/app-next)
 - HEAD canônico: `997486a`
 
 ## Fase concluída
-RAVATEX-DOC-INGESTOR-G10-B-EXPORT-PACKAGE
+RAVATEX-DOC-INGESTOR-G10-C-EXPORT-PACKAGE-REAL-LITE-SMOKE
 
 ## Fase anterior
-G10-A — Design de integração Controle de Tapetes
+G10-B — Export package (comando + testes)
 
-## Objetivo da fase G10-B
-Criar comando `export:package` que gera pacote consolidado por pedido para consumo pelo Controle de Tapetes.
+## Objetivo da fase G10-C
+Validar `export:package --pedido PED-99-2026` contra dados reais-lite existentes.
 
-### Comando implementado
+### Pedido usado
+PED-99-2026 (documento teste: nf/xml/entrada, status accepted)
+
+### Comando executado
 ```
-npm run export:package -- --pedido 25/2026
-npm run export:package -- --pedido PED-25-2026 --output ./my-exports
+npm.cmd run export:package -- --pedido PED-99-2026 --output data\exports\packages\smoke-g10c
 ```
 
-### Formato do pacote
-4 arquivos gerados em `data/exports/packages/<PEDIDO>/` (ou `--output`):
+### Pacote gerado — 4 arquivos
 
-| Arquivo | Conteúdo |
-|---|---|
-| `document-events.jsonl` | Eventos filtrados por pedido (read-only do SQLite) |
-| `manifest.json` | Snapshot derivado do SQLite com todos os documentos do pedido |
-| `summary.json` | totalEvents, totalDocuments, eventsByType, documentsWithDriveLink |
-| `README.md` | Instruções de consumo (ingestion_event_id, drive_web_view_link, idempotência) |
+**document-events.jsonl** (2 eventos):
+- `document.accepted` — ingestion_event_id=ebfd..., status=accepted, Drive links presentes
+- `document.linked` — ingestion_event_id=c9fe..., status=pending_app_acceptance, Drive links presentes
+- event_id legado = document_id em ambos
+- reason não aplicável (não há rejected)
 
-### Semântica
-- **Read-only**: não altera banco, outbox, status, documentos
-- **Local-only**: não chama Google/Drive, não toca Controle de Tapetes
-- **Idempotente**: mesma execução gera mesmo output (timestamps diferem)
-- Eventos filtrados por `pedido_manual` via `queryAndExportEvents`
-- Manifest via `buildManifestFromDb`
-- Normalização de pedido: `25/2026` → `PED-25-2026`
+**manifest.json** (1 documento):
+- pedido: PED-99-2026
+- status: accepted, tipo: nf, formato: xml, direcao_nf: entrada
+- drive_web_view_link presente, storage_uri presente
+
+**summary.json**:
+- totalEvents: 2, totalDocuments: 1
+- eventsByType: document.linked=1, document.accepted=1
+- documentsWithDriveLink: 1
+
+**README.md**:
+- Instruções de idempotência (ingestion_event_id)
+- event_id legado documentado
+- Visualização via drive_web_view_link
+- Sem Supabase/backend
 
 ### Garantias
-- `ingestion_event_id` preservado em eventos
-- `event_id` legado preservado
-- `reason` preservado em `document.rejected`
-- Campos Drive preservados quando presentes
-- README contém instruções de consumo
-
-### Testes
-- 8 testes em `tests/export-package.test.ts`
-- 26 suites, 286 testes passando (8 novos)
-- Nenhuma regressão
-
-### Arquivos alterados/criados
-- `src/core/exportPackage.ts` — novo (exportPackage function)
-- `src/cli.ts` — comando export-package
-- `src/index.ts` — export ExportPackageResult
-- `package.json` — script npm
-- `tests/export-package.test.ts` — novo, 8 testes
-- `PROJECT_STATE.md`, `AGENT_HANDOFF.md` — atualização
+- Nenhum scan/assign/sync/link/accept/reject executado
+- Google/Drive não chamado
+- Controle de Tapetes não tocado
+- `data/app.db` não alterado
+- Pacote gerado removido; arquivos não commitados
+- `.gitignore` atualizado com `data/exports/`
 
 ### Riscos remanescentes
 1. Bloqueio de mismatch entrada/saída deferido
@@ -68,4 +64,4 @@ npm run export:package -- --pedido PED-25-2026 --output ./my-exports
 
 ### Próxima fase recomendada
 RAVATEX-DOC-INGESTOR-G11-CONTROLE-TAPETES-WATCHER
-Foco: implementar consumo de outbox no Controle de Tapetes. Exibir documentos no pedido via drive_web_view_link. Integrar timeline de eventos. A implementação é no repositório do Controle de Tapetes.
+Foco: implementar consumo de outbox no Controle de Tapetes. Exibir documentos no pedido via drive_web_view_link. A implementação é no repositório do Controle de Tapetes.

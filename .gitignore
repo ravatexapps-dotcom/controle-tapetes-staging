@@ -6,6 +6,7 @@ data/google-token.json
 data/documents/
 data/outbox/*.jsonl
 data/runs/
+data/exports/
 data/cache/
 credentials*.json
 node_modules/

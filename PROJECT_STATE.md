@@ -98,6 +98,7 @@ Não integrar Supabase nesta fase. O outbox JSONL é o contrato de integração.
 - G9-C — Smoke real de manifest (sync real confirmado, manifest Drive publicado, 0 efeitos colaterais)
 - G10-A — Design de integração Controle de Tapetes (modelo outbox, fonte de verdade, transporte, UI)
 - G10-B — Pacote export:package (eventos + manifest + summary + README por pedido, 8 testes)
+- G10-C — Smoke real-lite do export:package em PED-99-2026 (4 arquivos validados, 0 alterações)
 - G/H — UI Backlog (Controle de Tapetes — staging/work/app-next)
 
 ## Fase G1: Taxonomia de Documentos (3 eixos)
