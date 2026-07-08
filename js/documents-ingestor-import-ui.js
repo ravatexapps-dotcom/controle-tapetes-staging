@@ -35,9 +35,11 @@
 
   var IMPORT_BUTTON_ID = 'rv-docs-import-btn';
   var _uiCreated = false;
-  var _pollTimer = null;
-  var _pollAttempts = 0;
-  var MAX_POLL_ATTEMPTS = 50; // ~10 s com intervalo de 200 ms
+  var _fastPollTimer = null;
+  var _slowPollTimer = null;
+  var _fastPollAttempts = 0;
+  var FAST_POLL_MAX = 50;        // ~10 s com intervalo de 200 ms
+  var SLOW_POLL_INTERVAL = 10000; // 10 s, indefinido
 
   // -------------------------------------------------------------------
   // Decisao de visibilidade
@@ -63,31 +65,69 @@
     if (decision === true) {
       createImportUI();
       _uiCreated = true;
+      stopAllPolls();
       return true;
     }
     // decision === null: CURRENT_USER ainda nao setado, continue polling
-    // decision === false: usuario claramente nao autorizado
+    // decision === false: usuario claramente nao autorizado, pare tudo
     if (decision === false) {
-      stopPoll();
+      stopAllPolls();
     }
     return false;
   }
 
-  function startPoll() {
-    if (_pollTimer) return;
-    _pollAttempts = 0;
-    _pollTimer = setInterval(function () {
-      _pollAttempts++;
-      if (tryCreateImportUI() || _pollAttempts >= MAX_POLL_ATTEMPTS) {
-        stopPoll();
+  function startFastPoll() {
+    if (_fastPollTimer) return;
+    _fastPollAttempts = 0;
+    _fastPollTimer = setInterval(function () {
+      _fastPollAttempts++;
+      var decision = shouldShowImportUI();
+      if (decision === true) {
+        tryCreateImportUI();
+        clearInterval(_fastPollTimer);
+        _fastPollTimer = null;
+        return;
+      }
+      if (decision === false) {
+        // Usuario nao-admin — para tudo
+        stopAllPolls();
+        return;
+      }
+      // decision === null: CURRENT_USER ainda nao setado
+      if (_fastPollAttempts >= FAST_POLL_MAX) {
+        clearInterval(_fastPollTimer);
+        _fastPollTimer = null;
+        if (!_uiCreated) {
+          startSlowPoll();
+        }
       }
     }, 200);
   }
 
-  function stopPoll() {
-    if (_pollTimer) {
-      clearInterval(_pollTimer);
-      _pollTimer = null;
+  function startSlowPoll() {
+    if (_uiCreated) return;
+    var decision = shouldShowImportUI();
+    if (decision === true) {
+      tryCreateImportUI();
+      return;
+    }
+    // decision === false: usuario claramente nao-autorizado, para tudo
+    if (decision === false) return;
+    // decision === null: CURRENT_USER nao setado, agenda retentativa
+    _slowPollTimer = setTimeout(function () {
+      _slowPollTimer = null;
+      startSlowPoll();
+    }, SLOW_POLL_INTERVAL);
+  }
+
+  function stopAllPolls() {
+    if (_fastPollTimer) {
+      clearInterval(_fastPollTimer);
+      _fastPollTimer = null;
+    }
+    if (_slowPollTimer) {
+      clearTimeout(_slowPollTimer);
+      _slowPollTimer = null;
     }
   }
 
@@ -167,17 +207,12 @@
   try {
     if (document.body) {
       if (!tryCreateImportUI()) {
-        // CURRENT_USER provavelmente ainda nao foi populado.
-        // Poll ate o usuario ser carregado ou timeout.
-        startPoll();
-        // Tambem observa CURRENT_USER diretamente quando for sobrescrito
-        // por loadCurrentUser (setCurrentUser reatribui window.CURRENT_USER).
-        // Usamos um Object.defineProperty ou setInterval simples.
+        startFastPoll();
       }
     } else if (document.addEventListener) {
       document.addEventListener('DOMContentLoaded', function () {
         if (!tryCreateImportUI()) {
-          startPoll();
+          startFastPoll();
         }
       });
     }
