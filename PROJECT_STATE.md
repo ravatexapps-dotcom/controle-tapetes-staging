@@ -1,4 +1,43 @@
 > **Atualizacao 2026-07-08 - fase
+> `RAVATEX-TAPETES-G12-G2-RECEIVED-DOCUMENTS-GLOBAL-SCREEN`.**
+> Status: **PRONTO — TELA GLOBAL + ROTA + MENU**.
+> Entrada: branch `work/app-next`, HEAD `8fc2568`.
+>
+> Escopo:
+> - `js/screens/documentos-recebidos.js` (novo, 196 linhas):
+>   `screenDocumentosRecebidos(container)` — renderiza empty state ou
+>   card com cards/tabela de documentos, lendo exclusivamente
+>   `window.RAVATEX_DOCUMENTS_RECEIVED`. Botao "Ver" abre
+>   `drive_web_view_link` em nova aba (noopener,noreferrer).
+>   Status pill "Pendente" sempre visivel. "Sem link" para docs
+>   sem `drive_web_view_link`.
+> - `js/boot.js`: rota `#/documentos/recebidos` (admin-only) registrada.
+> - `js/screens/common.js`: ADMIN_MENU recebe item
+>   `{ href: '#/documentos/recebidos', label: 'Documentos' }`
+>   entre Pedidos e Cores. Icone SVG adicionado em MENU_ICONS.
+> - `index.html`: `<script src="js/screens/documentos-recebidos.js">`
+>   inserido apos `pedidos-list.js`, antes de `boot.js`.
+> - `tests/documentos-recebidos.smoke.js` (novo, 21 testes).
+> - `tests/screens-common.smoke.js`: EXPECTED_ADMIN_MENU atualizado
+>   de 9 para 11 itens (Pedidos + Documentos + 9 originais).
+>
+> Garantias:
+> - Tela NAO le `RAVATEX_DOCUMENTS_LOADED_EVENTS` (estado legado
+>   do Pedido Detail permanece intocado).
+> - Sem Supabase, sem Google/Drive real, sem fetch, sem
+>   localStorage/sessionStorage.
+> - Sem persistencia, sem watcher/polling/backend.
+> - Sem PDF/XML armazenado.
+> - Sem associacao documento -> Pedido (apenas EXIBE).
+>
+> Testes: 21/21 tela nova, 315/315 focado (4 suites G12 + Pedido
+> Detail), 43/43 router, 172/172 pedido-detail. Zero regressao
+> nos suites cobertos.
+>
+> Proximo: G12-G3 (import dedicado de documentos-recebidos.jsonl,
+> opcional, separar do import atual de document-events.jsonl).
+
+> **Atualizacao 2026-07-08 - fase
 > `RAVATEX-TAPETES-G12-G1-RECEIVED-DOCUMENTS-PARSER-LOADER`.**
 > Status: **PRONTO — PARSER + LOADER PARA documentos-recebidos.jsonl**.
 > Entrada: branch `work/app-next`, HEAD `5aca3c9`.

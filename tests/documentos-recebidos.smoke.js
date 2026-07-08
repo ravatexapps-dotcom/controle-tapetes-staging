@@ -1,0 +1,439 @@
+// =====================================================================
+// === tests/documentos-recebidos.smoke.js =============================
+// Smoke test da tela admin js/screens/documentos-recebidos.js
+// (`screenDocumentosRecebidos`) e sua integração com
+// `window.RAVATEX_DOCUMENTS_RECEIVED` (loader do G12-G1).
+//
+// Fase: RAVATEX-TAPETES-G12-G2-RECEIVED-DOCUMENTS-GLOBAL-SCREEN
+// Escopo: valida a fila global de documentos recebidos, separada do
+//   estado do Pedido Detail (RAVATEX_DOCUMENTS_LOADED_EVENTS).
+//
+// Garante:
+//   - arquivo existe e sintaxe JS valida;
+//   - expoe window.screenDocumentosRecebidos e
+//     RAVATEX_SCREENS.documentosRecebidos;
+//   - index.html carrega documentos-recebidos.js EXATAMENTE UMA VEZ;
+//   - ordem: documents-ingestor + loader antes de common + tela antes
+//     de boot;
+//   - boot.js registra a rota '#/documentos/recebidos' (admin-only);
+//   - ADMIN_MENU contem entrada "Documentos" -> '#/documentos/recebidos';
+//   - tela renderiza empty state se RAVATEX_DOCUMENTS_RECEIVED ausente
+//     ou vazio;
+//   - tela renderiza card com 1+ documentos quando o estado esta
+//     populado;
+//   - badges de tipo/formato/direcao aparecem para os campos
+//     preenchidos;
+//   - status pill "Pendente" sempre visivel;
+//   - botao "Ver" chama window.open com noopener,noreferrer;
+//   - documento sem drive_web_view_link mostra "Sem link";
+//   - NAO le RAVATEX_DOCUMENTS_LOADED_EVENTS (estado legado continua
+//     intocado);
+//   - NAO referencia Supabase, Google/Drive, fetch, localStorage;
+// =====================================================================
+
+'use strict';
+
+const test = require('node:test');
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const path = require('node:path');
+const vm = require('node:vm');
+
+const ROOT = path.resolve(__dirname, '..');
+const SCREEN = path.join(ROOT, 'js', 'screens', 'documentos-recebidos.js');
+const INGESTOR = path.join(ROOT, 'js', 'documents-ingestor.js');
+const LOADER = path.join(ROOT, 'js', 'documents-ingestor-loader.js');
+const COMMON = path.join(ROOT, 'js', 'screens', 'common.js');
+const BOOT = path.join(ROOT, 'js', 'boot.js');
+const UI = path.join(ROOT, 'js', 'ui.js');
+const INDEX = path.join(ROOT, 'index.html');
+
+function readOrFail(p) {
+  assert.ok(fs.existsSync(p), 'arquivo nao encontrado: ' + p);
+  return fs.readFileSync(p, 'utf8');
+}
+
+const screen = readOrFail(SCREEN);
+const ingestor = readOrFail(INGESTOR);
+const loader = readOrFail(LOADER);
+const common = readOrFail(COMMON);
+const boot = readOrFail(BOOT);
+const ui = readOrFail(UI);
+const index = readOrFail(INDEX);
+
+// ---------------------------------------------------------------------
+// 1. Existencia e sintaxe
+// ---------------------------------------------------------------------
+
+test('documentos-recebidos: arquivo existe', function () {
+  assert.ok(fs.existsSync(SCREEN), 'js/screens/documentos-recebidos.js ausente');
+});
+
+test('documentos-recebidos: sintaxe JS valida', function () {
+  require('node:child_process').execFileSync(
+    process.execPath, ['--check', SCREEN], { stdio: 'pipe' }
+  );
+});
+
+test('documentos-recebidos: expoe window.screenDocumentosRecebidos', function () {
+  assert.match(screen, /window\.screenDocumentosRecebidos\s*=\s*screenDocumentosRecebidos/,
+    'tela nao expoe window.screenDocumentosRecebidos');
+});
+
+test('documentos-recebidos: expoe RAVATEX_SCREENS.documentosRecebidos', function () {
+  assert.match(screen, /window\.RAVATEX_SCREENS\.documentosRecebidos\s*=/,
+    'tela nao expoe RAVATEX_SCREENS.documentosRecebidos');
+});
+
+// ---------------------------------------------------------------------
+// 2. index.html: ordem de scripts
+// ---------------------------------------------------------------------
+
+test('index.html: documentos-recebidos.js carregado EXATAMENTE UMA VEZ', function () {
+  const re = /<script\s+src="js\/screens\/documentos-recebidos\.js(?:\?[^"]*)?"\s*><\/script>/g;
+  const matches = index.match(re) || [];
+  assert.equal(matches.length, 1, 'documentos-recebidos.js deve ser carregado 1 vez');
+});
+
+test('index.html: ordem documents-ingestor + loader < common < documentos-recebidos < boot', function () {
+  const idxIngestor = index.indexOf('js/documents-ingestor.js');
+  const idxLoader = index.indexOf('js/documents-ingestor-loader.js');
+  const idxCommon = index.indexOf('js/screens/common.js');
+  const idxScreen = index.indexOf('js/screens/documentos-recebidos.js');
+  const idxBoot = index.indexOf('js/boot.js');
+  assert.ok(idxIngestor > 0, 'ingestor ausente');
+  assert.ok(idxLoader > 0, 'loader ausente');
+  assert.ok(idxCommon > 0, 'common ausente');
+  assert.ok(idxScreen > 0, 'documentos-recebidos ausente');
+  assert.ok(idxBoot > 0, 'boot ausente');
+  assert.ok(idxIngestor < idxLoader, 'ingestor antes do loader');
+  assert.ok(idxLoader < idxCommon, 'loader antes do common');
+  assert.ok(idxCommon < idxScreen, 'common antes da tela');
+  assert.ok(idxScreen < idxBoot, 'tela antes do boot');
+});
+
+// ---------------------------------------------------------------------
+// 3. boot.js registra a rota
+// ---------------------------------------------------------------------
+
+test('boot.js: registra rota #/documentos/recebidos com role admin', function () {
+  assert.match(
+    boot,
+    /'#\/documentos\/recebidos'\s*:\s*\{\s*render\s*:\s*window\.screenDocumentosRecebidos[^}]*roles\s*:\s*\[\s*['"]admin['"]\s*\]/i,
+    "rota #/documentos/recebidos deve ser registrada com role admin e render=screenDocumentosRecebidos"
+  );
+});
+
+// ---------------------------------------------------------------------
+// 4. ADMIN_MENU contem "Documentos"
+// ---------------------------------------------------------------------
+
+test('common.js: ADMIN_MENU contem entrada Documentos -> #/documentos/recebidos', function () {
+  assert.match(common, /\{\s*href:\s*'#\/documentos\/recebidos'[^}]*label:\s*'Documentos'/,
+    'ADMIN_MENU deve ter entrada Documentos apontando para #/documentos/recebidos');
+});
+
+// ---------------------------------------------------------------------
+// 5. Garantias: sem Supabase/Drive/fetch/persist
+// ---------------------------------------------------------------------
+
+test('documentos-recebidos: NAO referencia Supabase', function () {
+  assert.equal(/supa\.from\s*\(/.test(screen), false, 'supa.from em documentos-recebidos');
+  assert.equal(/supabase/.test(screen), false, 'supabase em documentos-recebidos');
+  assert.equal(/window\.supa/.test(screen), false, 'window.supa em documentos-recebidos');
+});
+
+test('documentos-recebidos: NAO referencia Google/Drive API', function () {
+  assert.equal(/googleapis/.test(screen), false, 'googleapis em documentos-recebidos');
+  assert.equal(/google-auth/.test(screen), false, 'google-auth em documentos-recebidos');
+});
+
+test('documentos-recebidos: NAO faz fetch nem XMLHttpRequest', function () {
+  assert.equal(/fetch\s*\(/.test(screen), false, 'fetch em documentos-recebidos');
+  assert.equal(/XMLHttpRequest/.test(screen), false, 'XHR em documentos-recebidos');
+});
+
+test('documentos-recebidos: NAO usa localStorage/sessionStorage', function () {
+  assert.equal(/localStorage/.test(screen), false, 'localStorage em documentos-recebidos');
+  assert.equal(/sessionStorage/.test(screen), false, 'sessionStorage em documentos-recebidos');
+});
+
+// ---------------------------------------------------------------------
+// 6. Runtime: render da tela em vm.Context
+// ---------------------------------------------------------------------
+
+class FakeNode {
+  constructor(t) {
+    this.tagName = (t + '').toUpperCase();
+    this.children = [];
+    this.className = '';
+    this._text = null;
+    this._listeners = {};
+    this._attrs = {};
+    this.style = {};
+    this.disabled = false;
+    this.value = '';
+  }
+  appendChild(n) { if (n != null) this.children.push(n); return n; }
+  setAttribute(k, v) { this._attrs[k] = v; }
+  getAttribute(k) { return this._attrs[k]; }
+  addEventListener(type, fn) { (this._listeners[type] = this._listeners[type] || []).push(fn); }
+  removeEventListener() {}
+  replaceChildren() { this.children = []; }
+  remove() { this._removed = true; }
+  get textContent() { return this._text != null ? this._text : ''; }
+  set textContent(v) { this._text = v; }
+}
+
+function findAll(node, pred, out) {
+  out = out || [];
+  if (node && pred(node)) out.push(node);
+  if (node && node.children) {
+    for (const c of node.children) findAll(c, pred, out);
+  }
+  return out;
+}
+
+function findRow(node) {
+  return (node && node._attrs && node._attrs['data-row'] === 'documento-recebido');
+}
+
+function findAction(action) {
+  return function (node) {
+    return !!(node && node._attrs && node._attrs['data-action'] === action);
+  };
+}
+
+function textOf(node) {
+  if (node && node.children && node.children.length) {
+    return node.children.map(textOf).join('');
+  }
+  return (node && node.textContent) || '';
+}
+
+function makeScreenSandbox(received) {
+  const documentMock = {
+    createElement: (t) => new FakeNode(t),
+    createTextNode: (t) => ({ textContent: t, appendChild() {}, setAttribute() {} }),
+    querySelector: () => new FakeNode('div'),
+    querySelectorAll: () => [],
+    addEventListener: () => {},
+    removeEventListener: () => {},
+    body: new FakeNode('body'),
+  };
+  const sandbox = {
+    document: documentMock,
+    console,
+    setTimeout,
+    clearTimeout,
+    URL,
+    URLSearchParams,
+  };
+  sandbox.window = sandbox;
+  sandbox.globalThis = sandbox;
+  sandbox.CURRENT_USER = { nome: 'Admin', tipo: 'admin' };
+  sandbox.logout = () => {};
+
+  vm.createContext(sandbox);
+  // Carrega ui.js (window.el real)
+  vm.runInContext(ui, sandbox, { filename: 'js/ui.js' });
+  // Carrega ingestor + loader (para garantir que RAVATEX_DOCUMENTS existe)
+  vm.runInContext(ingestor, sandbox, { filename: 'js/documents-ingestor.js' });
+  vm.runInContext(loader, sandbox, { filename: 'js/documents-ingestor-loader.js' });
+  // Carrega common (shellLayout + ADMIN_MENU)
+  vm.runInContext(common, sandbox, { filename: 'js/screens/common.js' });
+  // Carrega a tela
+  vm.runInContext(screen, sandbox, { filename: 'js/screens/documentos-recebidos.js' });
+
+  if (received !== undefined) {
+    sandbox.window.RAVATEX_DOCUMENTS_RECEIVED = received;
+  } else {
+    delete sandbox.window.RAVATEX_DOCUMENTS_RECEIVED;
+  }
+
+  return sandbox;
+}
+
+test('runtime: screenDocumentosRecebidos renderiza empty state sem documentos', function () {
+  const sb = makeScreenSandbox([]);
+  const container = new FakeNode('div');
+  sb.container = container;
+  const result = vm.runInContext('window.screenDocumentosRecebidos(container)', sb);
+  const allText = JSON.stringify(findAll(result, () => true).map((n) => textOf(n)));
+  assert.ok(allText.indexOf('Nenhum documento recebido') >= 0,
+    'empty state deve aparecer quando RAVATEX_DOCUMENTS_RECEIVED e vazio');
+  assert.ok(allText.indexOf('Documentos Recebidos (Ingestor)') >= 0,
+    'header deve aparecer');
+  // Nenhuma row data-document-id
+  const rows = findAll(result, findRow);
+  assert.equal(rows.length, 0, 'sem rows quando empty state');
+});
+
+test('runtime: screenDocumentosRecebidos renderiza empty state quando global ausente', function () {
+  const sb = makeScreenSandbox(undefined);
+  const container = new FakeNode('div');
+  sb.container = container;
+  const result = vm.runInContext('window.screenDocumentosRecebidos(container)', sb);
+  const allText = JSON.stringify(findAll(result, () => true).map((n) => textOf(n)));
+  assert.ok(allText.indexOf('Nenhum documento recebido') >= 0,
+    'empty state aparece se RAVATEX_DOCUMENTS_RECEIVED nao definido');
+});
+
+test('runtime: screenDocumentosRecebidos renderiza card com 1 documento', function () {
+  const sb = makeScreenSandbox([
+    {
+      document_id: 'doc-x',
+      gmail_message_id: 'msg-x',
+      filename_original: 'NF-001.xml',
+      tipo_documento: 'nf',
+      formato: 'xml',
+      direcao_nf: 'entrada',
+      drive_file_id: 'drive-x',
+      drive_web_view_link: 'https://drive.google.com/file/d/x/view',
+      created_at: '2026-07-08T10:30:00.000Z',
+    },
+  ]);
+  const container = new FakeNode('div');
+  sb.container = container;
+  const result = vm.runInContext('window.screenDocumentosRecebidos(container)', sb);
+  const rows = findAll(result, findRow);
+  assert.equal(rows.length, 1, '1 row esperada');
+  const row = rows[0];
+  assert.equal(row._attrs['data-document-id'], 'doc-x', 'data-document-id do row');
+  const rowText = textOf(row);
+  assert.ok(rowText.indexOf('NF-001.xml') >= 0, 'filename aparece no row');
+  assert.ok(rowText.indexOf('NF') >= 0, 'badge tipo NF aparece');
+  assert.ok(rowText.indexOf('XML') >= 0, 'badge formato XML aparece');
+  assert.ok(rowText.indexOf('Entrada') >= 0, 'badge direcao Entrada aparece');
+  assert.ok(rowText.indexOf('Pendente') >= 0, 'status Pendente aparece');
+  // Botao Ver
+  const verBtn = findAll(row, findAction('ver-documento-drive'));
+  assert.equal(verBtn.length, 1, '1 botao Ver esperado');
+  const btn = verBtn[0];
+  assert.equal(textOf(btn), 'Ver', 'label do botao');
+});
+
+test('runtime: botao Ver chama window.open com noopener,noreferrer', function () {
+  let openedUrl = null;
+  let openedTarget = null;
+  let openedFeatures = null;
+  const sb = makeScreenSandbox([
+    {
+      document_id: 'doc-open',
+      filename_original: 'NF-001.xml',
+      tipo_documento: 'nf',
+      formato: 'xml',
+      drive_web_view_link: 'https://drive.google.com/file/d/open/view',
+    },
+  ]);
+  sb.window.open = function (url, target, features) {
+    openedUrl = url;
+    openedTarget = target;
+    openedFeatures = features;
+  };
+  const container = new FakeNode('div');
+  sb.container = container;
+  const result = vm.runInContext('window.screenDocumentosRecebidos(container)', sb);
+  const btn = findAll(result, findAction('ver-documento-drive'))[0];
+  assert.ok(btn, 'botao Ver existe');
+  assert.equal(btn._listeners.click.length, 1, '1 click handler');
+  btn._listeners.click[0]();
+  assert.equal(openedUrl, 'https://drive.google.com/file/d/open/view',
+    'window.open deve receber o drive_web_view_link');
+  assert.equal(openedTarget, '_blank', 'alvo _blank');
+  assert.ok(openedFeatures && openedFeatures.indexOf('noopener') >= 0,
+    'features deve conter noopener: ' + openedFeatures);
+  assert.ok(openedFeatures && openedFeatures.indexOf('noreferrer') >= 0,
+    'features deve conter noreferrer: ' + openedFeatures);
+});
+
+test('runtime: documento sem drive_web_view_link mostra "Sem link"', function () {
+  const sb = makeScreenSandbox([
+    {
+      document_id: 'doc-no-link',
+      filename_original: 'NF-no-link.pdf',
+      tipo_documento: 'nf',
+      formato: 'pdf',
+      drive_web_view_link: null,
+    },
+  ]);
+  const container = new FakeNode('div');
+  sb.container = container;
+  const result = vm.runInContext('window.screenDocumentosRecebidos(container)', sb);
+  const semLink = findAll(result, findAction('sem-link'));
+  assert.equal(semLink.length, 1, 'placeholder Sem link aparece');
+  assert.equal(textOf(semLink[0]), 'Sem link', 'label do placeholder');
+  const verBtns = findAll(result, findAction('ver-documento-drive'));
+  assert.equal(verBtns.length, 0, 'sem botao Ver para doc sem link');
+});
+
+test('runtime: documento com direcao nula NAO mostra badge direcao', function () {
+  const sb = makeScreenSandbox([
+    {
+      document_id: 'doc-no-dir',
+      filename_original: 'romaneio.pdf',
+      tipo_documento: 'romaneio',
+      formato: 'pdf',
+      direcao_nf: null,
+    },
+  ]);
+  const container = new FakeNode('div');
+  sb.container = container;
+  const result = vm.runInContext('window.screenDocumentosRecebidos(container)', sb);
+  const allText = JSON.stringify(findAll(result, () => true).map((n) => textOf(n)));
+  assert.ok(allText.indexOf('Romaneio') >= 0, 'badge tipo Romaneio aparece');
+  assert.ok(allText.indexOf('PDF') >= 0, 'badge formato PDF aparece');
+  assert.ok(allText.indexOf('Entrada') === -1, 'sem badge Entrada');
+  assert.ok(allText.indexOf('Saida') === -1, 'sem badge Saida');
+});
+
+test('runtime: renderiza 3 documentos com todos os campos', function () {
+  const sb = makeScreenSandbox([
+    { document_id: 'a', filename_original: 'NF-a.xml', tipo_documento: 'nf', formato: 'xml', direcao_nf: 'entrada', drive_web_view_link: 'https://drive/a' },
+    { document_id: 'b', filename_original: 'romaneio-b.pdf', tipo_documento: 'romaneio', formato: 'pdf', drive_web_view_link: null },
+    { document_id: 'c', filename_original: 'NF-c.pdf', tipo_documento: 'nf', formato: 'pdf', direcao_nf: 'saida', drive_web_view_link: 'https://drive/c' },
+  ]);
+  const container = new FakeNode('div');
+  sb.container = container;
+  const result = vm.runInContext('window.screenDocumentosRecebidos(container)', sb);
+  const rows = findAll(result, findRow);
+  assert.equal(rows.length, 3, '3 rows esperados');
+  const verBtns = findAll(result, findAction('ver-documento-drive'));
+  assert.equal(verBtns.length, 2, '2 botoes Ver esperados (a e c)');
+  const semLinks = findAll(result, findAction('sem-link'));
+  assert.equal(semLinks.length, 1, '1 placeholder Sem link esperado (b)');
+});
+
+test('runtime: tela usa shellLayout(ADMIN_MENU, container)', function () {
+  const sb = makeScreenSandbox([]);
+  const container = new FakeNode('div');
+  sb.container = container;
+  const result = vm.runInContext('window.screenDocumentosRecebidos(container)', sb);
+  // shellLayout retorna <div> com header + flex(aside + main)
+  assert.equal(result.tagName, 'DIV', 'shellLayout retorna <div>');
+  const flexDiv = result.children.find((c) => c.tagName === 'DIV');
+  assert.ok(flexDiv, 'flex div esperado');
+  const aside = flexDiv.children.find((c) => c.tagName === 'ASIDE');
+  assert.ok(aside, 'aside esperado (menu lateral)');
+  const links = aside.children.filter((c) => c.tagName === 'A');
+  // ADMIN_MENU agora tem 11 itens (10 originais + Documentos)
+  assert.equal(links.length, 11, 'menu admin deve ter 11 itens apos G12-G2');
+});
+
+test('runtime: NAO le RAVATEX_DOCUMENTS_LOADED_EVENTS (legado continua intacto)', function () {
+  const sb = makeScreenSandbox([
+    { document_id: 'rcv-1', filename_original: 'rcv.xml', tipo_documento: 'nf', formato: 'xml', drive_web_view_link: 'https://drive/1' },
+  ]);
+  // Semeia o estado legado
+  sb.window.RAVATEX_DOCUMENTS_LOADED_EVENTS = [
+    { event_type: 'document.linked', pedido_manual: 'PED-25-2026', document: { document_id: 'legacy-1' } },
+  ];
+  const container = new FakeNode('div');
+  sb.container = container;
+  vm.runInContext('window.screenDocumentosRecebidos(container)', sb);
+  // Estado legado deve estar INTACTO
+  assert.equal(sb.window.RAVATEX_DOCUMENTS_LOADED_EVENTS.length, 1,
+    'estado legado NAO pode ser afetado pela tela global');
+  assert.equal(sb.window.RAVATEX_DOCUMENTS_LOADED_EVENTS[0].event_type, 'document.linked',
+    'evento legado preservado');
+});

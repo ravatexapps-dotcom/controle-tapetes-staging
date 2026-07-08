@@ -88,15 +88,17 @@ const routerSrc  = fs.readFileSync(ROUTER, 'utf8');
 const sysSrc     = fs.readFileSync(SYSTEM_SCREENS, 'utf8');
 
 const EXPECTED_ADMIN_MENU = [
-  { href: '#/painel',                 label: 'Painel' },
-  { href: '#/ops',                    label: 'OPs' },
-  { href: '#/cadastros/cores',        label: 'Cores' },
-  { href: '#/cadastros/modelos',      label: 'Modelos' },
-  { href: '#/cadastros/parametros',   label: 'Parâmetros' },
-  { href: '#/cadastros/fornecedores', label: 'Fornecedores' },
-  { href: '#/cadastros/clientes',     label: 'Clientes' },
-  { href: '#/cadastros/precos',       label: 'Preços' },
-  { href: '#/cadastros/usuarios',     label: 'Usuários' },
+  { href: '#/painel',                  label: 'Painel' },
+  { href: '#/ops',                     label: 'OPs' },
+  { href: '#/pedidos',                 label: 'Pedidos' },
+  { href: '#/documentos/recebidos',    label: 'Documentos' },
+  { href: '#/cadastros/cores',         label: 'Cores' },
+  { href: '#/cadastros/modelos',       label: 'Modelos' },
+  { href: '#/cadastros/parametros',    label: 'Parâmetros' },
+  { href: '#/cadastros/fornecedores',  label: 'Fornecedores' },
+  { href: '#/cadastros/clientes',      label: 'Clientes' },
+  { href: '#/cadastros/precos',        label: 'Preços' },
+  { href: '#/cadastros/usuarios',      label: 'Usuários' },
 ];
 
 // -----------------------------------------------------------------------------

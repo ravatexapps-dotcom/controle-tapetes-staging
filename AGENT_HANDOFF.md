@@ -1,4 +1,35 @@
-﻿# Estado pos-fase - Received Documents Parser/Loader (G12-G1)
+﻿# Estado pos-fase - Received Documents Global Screen (G12-G2)
+
+- Fase: `RAVATEX-TAPETES-G12-G2-RECEIVED-DOCUMENTS-GLOBAL-SCREEN`.
+- Status: **PRONTO**.
+- Branch/HEAD base: `work/app-next`, `8fc2568`.
+- HEAD final: `(commit g12-g2)`.
+- Escopo:
+  - `js/screens/documentos-recebidos.js` (novo):
+    `screenDocumentosRecebidos(container)` — empty state ou card com
+    linhas de documentos. Botao "Ver" abre
+    `drive_web_view_link` em nova aba (noopener,noreferrer).
+    Status pill "Pendente". "Sem link" para docs sem link.
+  - `js/boot.js`: rota `#/documentos/recebidos` (admin-only).
+  - `js/screens/common.js`: ADMIN_MENU recebe
+    `{ href: '#/documentos/recebidos', label: 'Documentos' }` entre
+    Pedidos e Cores. Icone SVG adicionado em MENU_ICONS.
+  - `index.html`: script da nova tela entre `pedidos-list.js` e
+    `boot.js`.
+  - `tests/documentos-recebidos.smoke.js` (novo, 21 testes).
+  - `tests/screens-common.smoke.js`: EXPECTED_ADMIN_MENU de 9
+    para 11 itens.
+- Estado: `window.RAVATEX_DOCUMENTS_RECEIVED` (G12-G1) consumido.
+  Pedido Detail continua consumindo apenas
+  `RAVATEX_DOCUMENTS_LOADED_EVENTS` (testes cobrem o isolamento).
+- Sem Supabase, sem Google/Drive real, sem fetch, sem persistencia,
+  sem watcher/polling.
+- Sem alteracao no repo Documents Ingestor, no Supabase, no
+  Controle de Tapetes alem desses 6 arquivos.
+- Proximo (G12-G3): import dedicado de
+  `documentos-recebidos.jsonl` (separado do botao "Importar eventos").
+
+# Estado pos-fase - Received Documents Parser/Loader (G12-G1)
 
 - Fase: `RAVATEX-TAPETES-G12-G1-RECEIVED-DOCUMENTS-PARSER-LOADER`.
 - Status: **PRONTO**.

@@ -27,6 +27,7 @@
 //   - window.screenPedidosLista                (js/screens/pedidos-list.js)
 //   - window.screenCadastros{Cores,Clientes,Modelos,
 //     Parametros,Fornecedores,Precos,Usuarios} (js/screens/cadastros.js)
+//   - window.screenDocumentosRecebidos         (js/screens/documentos-recebidos.js)
 //   - window.screenFornecedorHome,
 //     screenFornecedorOrdens,
 //     screenFornecedorEntregas,
@@ -55,6 +56,8 @@
     '#/ops/nova': { render: () => { var h = window.location.hash; var q = h.indexOf('?'); var pid = null; if (q >= 0) { var params = new URLSearchParams(h.slice(q)); pid = params.get('pedido_id') || null; } if (!pid) window.toast('Crie a OP a partir de um Pedido.', 'info'); return window.screenNovaOP(null, pid); }, roles: ['admin'] },
     '#/pedidos':  { render: window.screenPedidosLista, roles: ['admin'] },
     '#/pedidos/novo': { render: window.screenPedidoNovo, roles: ['admin'] },
+
+    '#/documentos/recebidos': { render: window.screenDocumentosRecebidos, roles: ['admin'] },
 
     '#/cadastros/cores':       { render: window.screenCadastrosCores,       roles: ['admin'] },
     '#/cadastros/modelos':     { render: window.screenCadastrosModelos,     roles: ['admin'] },
