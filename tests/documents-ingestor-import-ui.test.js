@@ -303,7 +303,10 @@ test('import-ui: JSONL invalido mostra toast de erro', function () {
 
   var errorToast = rt.toasts.find(function (t) { return t.type === 'error'; });
   assert.ok(errorToast, 'deve haver toast de erro');
-  assert.ok(errorToast.msg.indexOf('Erro ao importar') >= 0, 'deve mostrar erro de import');
+  assert.ok(errorToast.msg.indexOf('Arquivo incompativel com document-events.jsonl') >= 0,
+    'deve mostrar erro de arquivo incompativel (G12-R3)');
+  assert.ok(errorToast.msg.indexOf('Motivo:') >= 0,
+    'deve detalhar o motivo do erro (G12-R3)');
 });
 
 test('import-ui: texto vazio mostra toast de erro', function () {
@@ -498,6 +501,123 @@ test('import-ui-scope: loader globals ausentes — erro controlado, sem crash', 
     'warn deve mencionar RAVATEX_DOCUMENTS');
   assert.ok(warnings.join(' ').indexOf('loadDocumentsIngestorEventsFromText') >= 0,
     'warn deve mencionar loadDocumentsIngestorEventsFromText');
+});
+
+// -------------------------------------------------------------------
+// 4c. G12-R3: esconder botao quando location.hash === '#/documentos/recebidos'
+// -------------------------------------------------------------------
+
+function makeImportUISandboxWithHash(opts) {
+  opts = opts || {};
+  // Constroi um sandbox manual para garantir que location.hash
+  // existe ANTES do import-ui ser carregado (a visibilidade inicial
+  // e avaliada no bootstrap via applyHashVisibility()).
+  opts = Object.assign({}, opts, { _preloadHash: opts.hash });
+  var rt = makeImportUISandbox(opts);
+  return rt;
+}
+
+test('import-ui (G12-R3): comeca visivel quando hash NAO e #/documentos/recebidos', function () {
+  var rt = makeImportUISandbox();
+  // Sandbox basico NAO tem location; isHiddenHash deve retornar false
+  // e o botao NAO deve ter display:none
+  var btn = (rt.domElements['button'] || []).find(function (b) { return b.id === 'rv-docs-import-btn'; });
+  assert.ok(btn, 'botao criado');
+  assert.equal(btn.style.display, '',
+    'botao visivel por default (sem location.hash definido)');
+});
+
+test('import-ui (G12-R3): comeca OCULTO quando hash === #/documentos/recebidos', function () {
+  // Hack: rodar o modulo com location pre-injetado via context.
+  var toasts = [];
+  var domElements = {};
+  var fileInputEl = null;
+  var mockDocument = {
+    body: { appendChild: function () {} },
+    createElement: function (tag) {
+      var el = {
+        tagName: tag.toUpperCase(),
+        type: '', accept: '', style: {}, id: '', textContent: '', title: '',
+        files: null, _clickHandlers: [], _changeHandlers: [],
+        setAttribute: function () {}, addEventListener: function () {},
+        removeEventListener: function () {}, click: function () {},
+      };
+      domElements[tag] = domElements[tag] || [];
+      domElements[tag].push(el);
+      if (tag === 'input') fileInputEl = el;
+      return el;
+    },
+    addEventListener: function () {},
+  };
+  var sandbox = {
+    location: { hash: '#/documentos/recebidos' },
+    document: mockDocument,
+    FileReader: function () { return { result: null, onload: null, onerror: null, readAsText: function () {} }; },
+    console: {},
+  };
+  sandbox.window = sandbox;
+  sandbox.window.APP_ENV = 'staging';
+  sandbox.window.CURRENT_USER = { tipo: 'admin' };
+  sandbox.window.toast = function (m, t) { toasts.push({ msg: m, type: t || 'info' }); };
+  sandbox.window.document = mockDocument;
+  sandbox.window.FileReader = sandbox.FileReader;
+  sandbox.window.addEventListener = function () {}; // hashchange nao faz nada no test
+  vm.createContext(sandbox);
+  vm.runInContext(readOrFail(DOC_INGESTOR), sandbox);
+  vm.runInContext(readOrFail(DOC_LOADER), sandbox);
+  vm.runInContext(importUiSrc, sandbox);
+
+  var btn = (domElements['button'] || []).find(function (b) { return b.id === 'rv-docs-import-btn'; });
+  assert.ok(btn, 'botao criado');
+  assert.equal(btn.style.display, 'none',
+    'botao legado OCULTO quando location.hash === #/documentos/recebidos');
+});
+
+test('import-ui (G12-R3): isHiddenHash() detecta #/documentos/recebidos', function () {
+  var rt = makeImportUISandbox();
+  // No vm.Context, `window === sandbox.window` (objeto separado).
+  // Entao `window.location` deve ser setado em sandbox.window.location.
+  rt.sandbox.window.location = { hash: '' };
+  rt.sandbox.window.location.hash = '#/documentos/recebidos';
+  assert.equal(rt.RAVATEX_DOCUMENTS._importUIIsHiddenHash(), true,
+    'detecta #/documentos/recebidos como hash oculto');
+  rt.sandbox.window.location.hash = '#/documentos/recebidos?foo=bar';
+  assert.equal(rt.RAVATEX_DOCUMENTS._importUIIsHiddenHash(), true,
+    'detecta #/documentos/recebidos?queryString como hash oculto');
+  rt.sandbox.window.location.hash = '#/painel';
+  assert.equal(rt.RAVATEX_DOCUMENTS._importUIIsHiddenHash(), false,
+    'NAO esconde em #/painel');
+  rt.sandbox.window.location.hash = '';
+  assert.equal(rt.RAVATEX_DOCUMENTS._importUIIsHiddenHash(), false,
+    'NAO esconde sem hash');
+});
+
+test('import-ui (G12-R3): applyHashVisibility muda display quando hash muda', function () {
+  var rt = makeImportUISandbox();
+  rt.sandbox.window.location = { hash: '' };
+  rt.sandbox.window.location.hash = '#/documentos/recebidos';
+  rt.RAVATEX_DOCUMENTS._importUIApplyHashVisibility();
+  var btn = (rt.domElements['button'] || []).find(function (b) { return b.id === 'rv-docs-import-btn'; });
+  assert.ok(btn, 'botao criado');
+  assert.equal(btn.style.display, 'none', 'oculto ao aplicar hash recebidos');
+
+  // Muda hash para outra rota
+  rt.sandbox.window.location.hash = '#/painel';
+  rt.RAVATEX_DOCUMENTS._importUIApplyHashVisibility();
+  assert.notEqual(btn.style.display, 'none', 'visivel apos mudar hash');
+
+  // Volta para recebidos
+  rt.sandbox.window.location.hash = '#/documentos/recebidos';
+  rt.RAVATEX_DOCUMENTS._importUIApplyHashVisibility();
+  assert.equal(btn.style.display, 'none', 'oculto novamente ao voltar');
+});
+
+test('import-ui (G12-R3): expoe helpers _importUIIsHiddenHash e _importUIApplyHashVisibility', function () {
+  var rt = makeImportUISandbox();
+  assert.equal(typeof rt.RAVATEX_DOCUMENTS._importUIIsHiddenHash, 'function',
+    '_importUIIsHiddenHash presente');
+  assert.equal(typeof rt.RAVATEX_DOCUMENTS._importUIApplyHashVisibility, 'function',
+    '_importUIApplyHashVisibility presente');
 });
 
 // -------------------------------------------------------------------

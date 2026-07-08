@@ -385,7 +385,10 @@ test('import-received (G12-R1): JSONL invalido mostra toast de erro', function (
 
   var errorToast = rt.toasts.find(function (t) { return t.type === 'error'; });
   assert.ok(errorToast, 'deve haver toast de erro');
-  assert.ok(errorToast.msg.indexOf('Erro ao importar') >= 0, 'mensagem de erro');
+  assert.ok(errorToast.msg.indexOf('Arquivo incompativel com documentos-recebidos.jsonl') >= 0,
+    'mensagem clara de arquivo incompativel (G12-R3)');
+  assert.ok(errorToast.msg.indexOf('Motivo:') >= 0,
+    'detalha o motivo do erro (G12-R3)');
 });
 
 test('import-received (G12-R1): texto vazio mostra toast de erro', function () {
@@ -563,4 +566,43 @@ test('import-received: index.html NAO referencia documentos-recebidos.js (nao ha
   var bootIdx = index.indexOf('js/boot.js');
   assert.ok(importReceivedIdx < bootIdx, 'import-received.js antes do boot.js');
   assert.ok(screenIdx < bootIdx, 'documentos-recebidos.js antes do boot.js');
+});
+
+// -------------------------------------------------------------------
+// 8. G12-R3: mensagem de erro de arquivo incompativel mais clara
+// -------------------------------------------------------------------
+
+test('import-received (G12-R3): JSONL do Ingestor (formato de eventos) e rejeitado como incompativel', function () {
+  // Carrega um JSONL no formato errado (eventos de Pedido, nao flat docs)
+  // e espera mensagem clara apontando o motivo.
+  var wrongFormat = fixtureText; // document-events-sample.jsonl (formato wrapper {event_type,...})
+  var rt = makeImportReceivedSandbox({ mockFileContent: wrongFormat });
+  var pair = rt.RAVATEX_DOCUMENTS.createReceivedImportButton({ buttonId: 'btn-wrong' });
+  var container = makeContainer();
+  pair.mount(container);
+  pair.fileInput.files = [{ name: 'document-events.jsonl' }];
+  pair.fileInput._changeHandlers.forEach(function (fn) { fn(); });
+
+  var errorToast = rt.toasts.find(function (t) { return t.type === 'error'; });
+  assert.ok(errorToast, 'deve haver toast de erro');
+  assert.ok(errorToast.msg.indexOf('Arquivo incompativel com documentos-recebidos.jsonl') >= 0,
+    'mensagem sinaliza o arquivo esperado');
+  assert.ok(errorToast.msg.indexOf('Motivo:') >= 0, 'detalha o motivo');
+});
+
+test('import-received (G12-R3): toast de erro NAO usa mais copy generica "Erro ao importar"', function () {
+  var rt = makeImportReceivedSandbox({ mockFileContent: 'isto nao e json' });
+  var pair = rt.RAVATEX_DOCUMENTS.createReceivedImportButton({ buttonId: 'btn-old-msg' });
+  var container = makeContainer();
+  pair.mount(container);
+  pair.fileInput.files = [{ name: 'broken.jsonl' }];
+  pair.fileInput._changeHandlers.forEach(function (fn) { fn(); });
+
+  var errorToast = rt.toasts.find(function (t) { return t.type === 'error'; });
+  assert.ok(errorToast, 'deve haver toast de erro');
+  // G12-R3: copy antiga foi removida; nova copy e especifica.
+  assert.equal(errorToast.msg.indexOf('Erro ao importar:'), -1,
+    'copy antiga "Erro ao importar:" removida (G12-R3)');
+  assert.ok(errorToast.msg.indexOf('documentos-recebidos.jsonl') >= 0,
+    'nova copy menciona o arquivo esperado');
 });

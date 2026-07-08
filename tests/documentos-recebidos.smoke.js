@@ -268,8 +268,8 @@ test('runtime: screenDocumentosRecebidos renderiza empty state sem documentos', 
     'empty state deve aparecer quando RAVATEX_DOCUMENTS_RECEIVED e vazio');
   assert.ok(allText.indexOf('Documentos Recebidos') >= 0,
     'header deve aparecer');
-  assert.ok(allText.indexOf('Nada e carregado automaticamente') >= 0,
-    'subtitulo deve esclarecer que nao ha auto-load');
+  assert.ok(allText.indexOf('Importe a lista gerada pelo Documents Ingestor') >= 0,
+    'subtitulo explica o fluxo de import (G12-R3)');
   // Nenhuma row data-document-id
   const rows = findAll(result, findRow);
   assert.equal(rows.length, 0, 'sem rows quando empty state');
@@ -512,16 +512,106 @@ test('G12-R1: tela contem section data-section="documentos-recebidos-import-acti
   assert.ok(importIdx < emptyIdx, 'botao inline vem antes do empty state');
 });
 
-test('G12-R1: header explica que nada e carregado automaticamente do Gmail', function () {
+test('G12-R3: header instrui a importar a lista do Documents Ingestor', function () {
   const sb = makeScreenSandbox([]);
   const container = new FakeNode('div');
   sb.container = container;
   const result = vm.runInContext('window.screenDocumentosRecebidos(container)', sb);
   const allText = JSON.stringify(findAll(result, () => true).map(textOf));
-  assert.ok(allText.indexOf('Nada e carregado automaticamente') >= 0,
-    'subtitulo explica ausencia de auto-load do Gmail: ' + allText.slice(0, 400));
-  assert.ok(allText.indexOf('documentos-recebidos.jsonl') >= 0,
-    'subtitulo menciona o arquivo esperado');
+  assert.ok(allText.indexOf('Importe a lista gerada pelo Documents Ingestor') >= 0,
+    'subtitulo instrui importacao via Documents Ingestor: ' + allText.slice(0, 400));
+  assert.ok(allText.indexOf('documentos mapeados') >= 0,
+    'subtitulo menciona o objetivo (documentos mapeados)');
+  // G12-R3: copy NAO afirma mais "carregado automaticamente do Gmail".
+  assert.equal(allText.indexOf('automaticamente'), -1,
+    'subtitulo NAO deve sugerir auto-load: ' + allText.slice(0, 400));
+  assert.equal(allText.indexOf('Gmail'), -1,
+    'subtitulo NAO deve mencionar Gmail explicitamente: ' + allText.slice(0, 400));
+});
+
+test('G12-R3: card exibe colunas Status, Pedido e Recebido em', function () {
+  const sb = makeScreenSandbox([
+    {
+      document_id: 'doc-cols',
+      filename_original: 'NF-001.xml',
+      tipo_documento: 'nf',
+      formato: 'xml',
+      direcao_nf: 'entrada',
+      drive_web_view_link: 'https://drive/x',
+      pedido_manual: 'PED-25-2026',
+      created_at: '2026-07-08T10:30:00.000Z',
+    },
+  ]);
+  const container = new FakeNode('div');
+  sb.container = container;
+  const result = vm.runInContext('window.screenDocumentosRecebidos(container)', sb);
+  const allText = JSON.stringify(findAll(result, () => true).map(textOf));
+
+  // Cabecalho de colunas presente
+  const colsHeader = findAll(result, (n) => n._attrs && n._attrs['data-section'] === 'documentos-recebidos-columns');
+  assert.equal(colsHeader.length, 1, 'cabecalho de colunas presente');
+  const colsText = textOf(colsHeader[0]);
+  assert.ok(colsText.indexOf('STATUS') >= 0, 'cabecalho tem STATUS');
+  assert.ok(colsText.indexOf('PEDIDO') >= 0, 'cabecalho tem PEDIDO');
+  assert.ok(colsText.indexOf('RECEBIDO EM') >= 0, 'cabecalho tem RECEBIDO EM');
+
+  // Cada row exibe os tres campos
+  const rows = findAll(result, findRow);
+  assert.equal(rows.length, 1);
+  const row = rows[0];
+  const rowText = textOf(row);
+  assert.ok(rowText.indexOf('PED-25-2026') >= 0, 'pedido_manual aparece no row');
+  assert.ok(rowText.indexOf('Pendente') >= 0, 'status Pendente padrao aparece');
+  // Recebido em aparece formatado (dd/mm HH:MM)
+  assert.ok(/\d{2}\/\d{2}\s+\d{2}:\d{2}/.test(rowText),
+    'Recebido em formatado dd/mm HH:MM: ' + rowText);
+});
+
+test('G12-R3: row sem pedido_manual mostra placeholder "— sem pedido"', function () {
+  const sb = makeScreenSandbox([
+    {
+      document_id: 'doc-no-ped',
+      filename_original: 'NF-001.xml',
+      tipo_documento: 'nf',
+      formato: 'xml',
+      drive_web_view_link: 'https://drive/y',
+      // sem pedido_manual
+    },
+  ]);
+  const container = new FakeNode('div');
+  sb.container = container;
+  const result = vm.runInContext('window.screenDocumentosRecebidos(container)', sb);
+  const row = findAll(result, findRow)[0];
+  assert.ok(row, 'row existe');
+  const pedidoCell = findAll(row, (n) => n._attrs && n._attrs['data-field'] === 'pedido')[0];
+  assert.ok(pedidoCell, 'celula de pedido existe');
+  assert.equal(pedidoCell._attrs['data-pedido'], '',
+    'data-pedido vazio quando nao ha pedido_manual');
+  assert.ok(textOf(pedidoCell).indexOf('sem pedido') >= 0,
+    'placeholder "sem pedido" aparece: ' + textOf(pedidoCell));
+});
+
+test('G12-R3: row com pedido_manual exibe chip de pedido', function () {
+  const sb = makeScreenSandbox([
+    {
+      document_id: 'doc-with-ped',
+      filename_original: 'NF-002.xml',
+      tipo_documento: 'nf',
+      formato: 'xml',
+      drive_web_view_link: 'https://drive/z',
+      pedido_manual: 'PED-99-2026',
+    },
+  ]);
+  const container = new FakeNode('div');
+  sb.container = container;
+  const result = vm.runInContext('window.screenDocumentosRecebidos(container)', sb);
+  const row = findAll(result, findRow)[0];
+  const pedidoCell = findAll(row, (n) => n._attrs && n._attrs['data-field'] === 'pedido')[0];
+  assert.ok(pedidoCell, 'celula de pedido existe');
+  assert.equal(pedidoCell._attrs['data-pedido'], 'PED-99-2026',
+    'data-pedido igual a pedido_manual');
+  assert.ok(textOf(pedidoCell).indexOf('PED-99-2026') >= 0,
+    'label com chave do pedido aparece');
 });
 
 test('G12-R1: empty state instrui a usar o botao acima', function () {

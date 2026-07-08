@@ -11,7 +11,9 @@
 // Drive em nova aba.
 //
 // Fase: RAVATEX-TAPETES-G12-G2 + G12-R1 (UX: botao inline, sem
-// flutuante; texto explicito sobre ausencia de auto-load).
+// flutuante) + G12-R3 (limpeza UX: copy de import, exibicao
+// das colunas Status/Pedido/Recebido em, esconder botao legado
+// "Importar eventos" na rota).
 //
 // Sem Supabase, sem Google/Drive real, sem persistencia, sem
 // watcher/polling. Documentos NAO sao armazenados no navegador
@@ -87,8 +89,7 @@
       }, 'Documentos Recebidos'),
       window.el('div', {
         style: 'font-size:13px;color:#5b6472;line-height:1.5;',
-      }, 'Documentos recebidos importados do arquivo documentos-recebidos.jsonl. '
-        + 'Nada e carregado automaticamente do Gmail nesta tela.')
+      }, 'Importe a lista gerada pelo Documents Ingestor para revisar documentos mapeados.')
     );
     return header;
   }
@@ -148,6 +149,34 @@
     );
   }
 
+  function buildColumnsLegend() {
+    // Cabecalho tabular com os nomes das colunas exibidas em cada
+    // linha (Status, Pedido, Recebido em). Posicionado logo apos
+    // o contador e antes do primeiro row. Marca tambem a presenca
+    // da coluna acao (Ver / Sem link).
+    var cell = function (label) {
+      return window.el('div', {
+        style: 'font-size:10px;font-weight:700;color:#8a93a3;letter-spacing:.06em;',
+      }, label);
+    };
+    return window.el('div', {
+      'data-section': 'documentos-recebidos-columns',
+      style: 'display:flex;align-items:center;gap:14px;padding:8px 18px;'
+        + 'background:#f8f9fb;border-bottom:1px solid #eceef1;'
+        + 'font-family:inherit;',
+    },
+      window.el('div', {
+        style: 'flex:1 1 0%;display:flex;align-items:center;gap:14px;min-width:0;',
+      },
+        cell('DOCUMENTO'),
+        cell('STATUS'),
+        cell('PEDIDO'),
+        cell('RECEBIDO EM')
+      ),
+      cell('AÇÃO')
+    );
+  }
+
   function buildDocumentRow(doc) {
     var tipo = doc && doc.tipo_documento;
     var formato = doc && doc.formato;
@@ -155,6 +184,7 @@
     var filename = doc && doc.filename_original ? doc.filename_original : 'Documento';
     var driveLink = doc && doc.drive_web_view_link ? doc.drive_web_view_link : null;
     var when = doc && doc.created_at ? doc.created_at : null;
+    var pedido = doc && doc.pedido_manual ? doc.pedido_manual : '';
 
     var badges = window.el('div', { style: 'display:flex;gap:5px;flex-wrap:wrap;align-items:center;' });
     var tipoB = buildBadge(badgeTone(tipo));
@@ -165,10 +195,33 @@
     if (direcaoB) badges.appendChild(direcaoB);
 
     var statusPill = window.el('span', {
+      'data-field': 'status',
       style: 'display:inline-flex;background:#fff4e6;color:#c2610c;'
         + 'border-radius:4px;padding:2px 8px;font-size:10.5px;font-weight:700;'
         + 'letter-spacing:.02em;flex-shrink:0;',
     }, 'Pendente');
+
+    var pedidoCell;
+    if (pedido) {
+      pedidoCell = window.el('span', {
+        'data-field': 'pedido',
+        'data-pedido': pedido,
+        style: 'display:inline-flex;background:#eaf1fd;color:#2563eb;'
+          + 'border-radius:4px;padding:2px 8px;font-size:10.5px;font-weight:700;'
+          + 'letter-spacing:.02em;flex-shrink:0;',
+      }, pedido);
+    } else {
+      pedidoCell = window.el('span', {
+        'data-field': 'pedido',
+        'data-pedido': '',
+        style: 'color:#9aa2af;font-size:11px;font-style:italic;flex-shrink:0;',
+      }, '— sem pedido');
+    }
+
+    var recebidoEm = window.el('span', {
+      'data-field': 'recebido-em',
+      style: 'font-size:11.5px;color:#5b6472;flex-shrink:0;white-space:nowrap;',
+    }, fmtDataHoraCurta(when));
 
     var verBtn;
     if (driveLink) {
@@ -193,24 +246,51 @@
       }, 'Sem link');
     }
 
-    var right = window.el('div', { style: 'display:flex;align-items:center;gap:10px;flex-shrink:0;' },
-      statusPill,
-      verBtn
+    var metaRow = window.el('div', {
+      'data-row': 'documento-recebido-meta',
+      style: 'display:flex;align-items:center;gap:14px;flex-wrap:wrap;'
+        + 'padding-top:6px;border-top:1px dashed #f1f3f6;margin-top:6px;',
+    },
+      window.el('div', { style: 'display:flex;align-items:center;gap:5px;flex-shrink:0;' },
+        window.el('span', {
+          style: 'font-size:10px;font-weight:700;color:#8a93a3;letter-spacing:.06em;',
+        }, 'STATUS'),
+        statusPill
+      ),
+      window.el('div', { style: 'display:flex;align-items:center;gap:5px;flex-shrink:0;' },
+        window.el('span', {
+          style: 'font-size:10px;font-weight:700;color:#8a93a3;letter-spacing:.06em;',
+        }, 'PEDIDO'),
+        pedidoCell
+      ),
+      window.el('div', { style: 'display:flex;align-items:center;gap:5px;flex-shrink:0;' },
+        window.el('span', {
+          style: 'font-size:10px;font-weight:700;color:#8a93a3;letter-spacing:.06em;',
+        }, 'RECEBIDO EM'),
+        recebidoEm
+      )
     );
 
-    var left = window.el('div', { style: 'display:flex;align-items:center;gap:12px;min-width:0;flex:1 1 0%;' },
+    var right = window.el('div', {
+      style: 'display:flex;align-items:center;gap:10px;flex-shrink:0;',
+    }, verBtn);
+
+    var left = window.el('div', {
+      style: 'display:flex;align-items:center;gap:14px;min-width:0;flex:1 1 0%;',
+    },
       window.el('div', {
-        style: 'display:flex;flex-direction:column;gap:5px;min-width:0;flex:1 1 0%;',
+        style: 'display:flex;flex-direction:column;gap:6px;min-width:0;flex:1 1 0%;',
       },
         window.el('div', {
-          style: 'font-size:13.5px;font-weight:600;color:#16203a;'
-            + 'overflow:hidden;text-overflow:ellipsis;white-space:nowrap;',
-        }, filename),
-        window.el('div', {
-          style: 'display:flex;align-items:center;gap:8px;flex-wrap:wrap;',
-        }, badges, window.el('span', {
-          style: 'font-size:11.5px;color:#9aa2af;flex-shrink:0;',
-        }, fmtDataHoraCurta(when)))
+          style: 'display:flex;align-items:center;gap:10px;min-width:0;',
+        },
+          window.el('div', {
+            style: 'font-size:13.5px;font-weight:600;color:#16203a;'
+              + 'overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1 1 0%;min-width:0;',
+          }, filename),
+          badges
+        ),
+        metaRow
       ),
       right
     );
@@ -231,6 +311,7 @@
     });
 
     card.appendChild(buildCountHeader(received.length));
+    card.appendChild(buildColumnsLegend());
 
     var list = window.el('div', { style: 'display:flex;flex-direction:column;' });
     received.forEach(function (doc, index) {

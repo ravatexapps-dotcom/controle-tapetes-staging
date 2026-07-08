@@ -115,7 +115,13 @@
           toast(result.count + ' documento(s) carregado(s) de documentos-recebidos.jsonl. '
             + 'Nada foi persistido.', 'success');
         } else {
-          toast('Erro ao importar: ' + ((result && result.error) || 'Falha desconhecida.'), 'error');
+          toast(
+            'Arquivo incompativel com documentos-recebidos.jsonl. '
+            + 'Selecione o export global do Documents Ingestor (lista flat, '
+            + '1 documento por linha, com document_id). '
+            + 'Motivo: ' + ((result && result.error) || 'falha desconhecida.'),
+            'error'
+          );
         }
 
         fileInput.value = '';

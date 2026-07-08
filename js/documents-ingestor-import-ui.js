@@ -41,11 +41,46 @@
 
   var IMPORT_BUTTON_ID = 'rv-docs-import-btn';
   var _uiCreated = false;
+  var _importButton = null;
+  var _importInput = null;
+  var _hashListenerAttached = false;
   var _fastPollTimer = null;
   var _slowPollTimer = null;
   var _fastPollAttempts = 0;
   var FAST_POLL_MAX = 50;        // ~10 s com intervalo de 200 ms
   var SLOW_POLL_INTERVAL = 10000; // 10 s, indefinido
+
+  // Hashes em que o botao legado NAO deve aparecer. A tela
+  // #/documentos/recebidos e dedicada ao import de
+  // documentos-recebidos.jsonl (botao inline verde), e a presenca
+  // do botao azul "Importar eventos" causa ruido visual.
+  var HIDDEN_HASHES = ['#/documentos/recebidos'];
+
+  function isHiddenHash() {
+    var h = (window.location && window.location.hash) || '';
+    for (var i = 0; i < HIDDEN_HASHES.length; i++) {
+      if (h === HIDDEN_HASHES[i] || h.indexOf(HIDDEN_HASHES[i] + '?') === 0) return true;
+    }
+    return false;
+  }
+
+  function applyHashVisibility() {
+    if (!_importButton) return;
+    if (isHiddenHash()) {
+      _importButton.style.display = 'none';
+      if (_importInput) _importInput.style.display = 'none';
+    } else {
+      _importButton.style.display = '';
+      if (_importInput) _importInput.style.display = 'none';
+    }
+  }
+
+  function attachHashListener() {
+    if (_hashListenerAttached) return;
+    if (typeof window.addEventListener !== 'function') return;
+    _hashListenerAttached = true;
+    window.addEventListener('hashchange', applyHashVisibility);
+  }
 
   // -------------------------------------------------------------------
   // Decisao de visibilidade
@@ -165,7 +200,12 @@
             + 'Nada foi persistido.';
           window.toast(msg, 'success');
         } else {
-          window.toast('Erro ao importar: ' + (result.error || 'Falha desconhecida.'), 'error');
+          window.toast(
+            'Arquivo incompativel com document-events.jsonl. '
+            + 'Selecione o export do Documents Ingestor (eventos por pedido). '
+            + 'Motivo: ' + (result.error || 'falha desconhecida.'),
+            'error'
+          );
         }
 
         // Limpa o input para permitir reimportar o mesmo arquivo
@@ -204,6 +244,12 @@
     });
 
     document.body.appendChild(btn);
+
+    // Guarda referencias para ocultar/exibir pelo hash.
+    _importButton = btn;
+    _importInput = fileInput;
+    attachHashListener();
+    applyHashVisibility();
   }
 
   // -------------------------------------------------------------------
@@ -216,6 +262,12 @@
   };
   docs._importUIHasButton = function () {
     return _uiCreated;
+  };
+  docs._importUIApplyHashVisibility = function () {
+    applyHashVisibility();
+  };
+  docs._importUIIsHiddenHash = function () {
+    return isHiddenHash();
   };
 
   try {
