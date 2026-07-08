@@ -721,6 +721,23 @@
         ? window.RAVATEX_DOCUMENTS_LOADED_EVENTS : [];
       if (loadedEvents.length > 0 && pedidoKey) {
         var result = window.RAVATEX_DOCUMENTS.buildDocumentsForPedido(loadedEvents, pedidoKey);
+
+        // Fallback: se nao encontrou eventos pelo pedidoKey exato (ano do
+        // criado_em pode divergir do ano usado no pedido_manual da fixture),
+        // tenta casar pelo prefixo do numero do pedido.
+        if ((!result || !Array.isArray(result.consolidatedDocuments) || result.consolidatedDocuments.length === 0)
+            && pedido.numero != null) {
+          var numeroPad = String(pedido.numero).padStart(2, '0');
+          var prefixo = 'PED-' + numeroPad + '-';
+          var matchingEvents = loadedEvents.filter(function (ev) {
+            return ev.pedido_manual && ev.pedido_manual.indexOf(prefixo) === 0;
+          });
+          if (matchingEvents.length > 0) {
+            var matchKey = matchingEvents[0].pedido_manual;
+            result = window.RAVATEX_DOCUMENTS.buildDocumentsForPedido(loadedEvents, matchKey);
+          }
+        }
+
         if (result && Array.isArray(result.consolidatedDocuments)) {
           result.consolidatedDocuments.forEach(function (ev) {
             var doc = ev.document;

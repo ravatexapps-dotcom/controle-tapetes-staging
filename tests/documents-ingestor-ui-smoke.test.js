@@ -409,6 +409,57 @@ test('ingestor-ui-data: sem injecao para pedido diferente', () => {
     'nenhum evento de timeline para pedido diferente');
 });
 
+test('ingestor-ui-data: year-mismatch fallback — criado_em ano diferente do pedido_manual', () => {
+  // Fixture tem PED-25-2026, mas pedido.criado_em tem ano 2025.
+  // O fallback por prefixo deve encontrar os eventos pelo numero 25.
+  var rt = makeIngestorRuntime();
+  var ns = rt.ns;
+  var s = ns.createInitialState();
+  s.pedido = { id: 'ped-test-25', numero: 25, status: 'recebido', metros_total: 0 };
+  s.pedido.criado_em = '2025-03-15T10:00:00.000Z'; // ano 2025, nao 2026
+  s.itens = [];
+  s.ops = [];
+  s.entregaItens = [];
+  s.entregasById = {};
+  s.opLatexEntregas = [];
+  s.expedicoes = [];
+  s.expedicaoItens = [];
+  s.modelosById = {};
+  s.coresById = {};
+  var view = ns.computeViewModel(s);
+  assert.equal(view.ingestorDocsLoaded, true,
+    'ingestorDocsLoaded deve ser true mesmo com year mismatch');
+  assert.equal(view.ingestorDocumentRows.length, 3,
+    '3 documentos devem ser encontrados via prefix-fallback');
+  assert.equal(view.ingestorTimeline.length, 7,
+    '7 eventos na timeline via prefix-fallback');
+});
+
+test('ingestor-ui-data: year-mismatch fallback — criado_em nulo usa prefixo', () => {
+  // Fixture tem PED-25-2026, mas pedido.criado_em eh nulo.
+  // normalizePedidoKey(25, null) = PED-25-XXXX, nao casa com PED-25-2026.
+  // O fallback por prefixo deve encontrar os eventos.
+  var rt = makeIngestorRuntime();
+  var ns = rt.ns;
+  var s = ns.createInitialState();
+  s.pedido = { id: 'ped-test-25', numero: 25, status: 'recebido', metros_total: 0 };
+  // criado_em nao definido (nulo)
+  s.itens = [];
+  s.ops = [];
+  s.entregaItens = [];
+  s.entregasById = {};
+  s.opLatexEntregas = [];
+  s.expedicoes = [];
+  s.expedicaoItens = [];
+  s.modelosById = {};
+  s.coresById = {};
+  var view = ns.computeViewModel(s);
+  assert.equal(view.ingestorDocsLoaded, true,
+    'ingestorDocsLoaded deve ser true mesmo com criado_em nulo');
+  assert.equal(view.ingestorDocumentRows.length, 3,
+    '3 documentos encontrados via prefix-fallback com criado_em nulo');
+});
+
 // -------------------------------------------------------------------
 // 3. Testes DOM (buildDocuments via runtime)
 // -------------------------------------------------------------------
