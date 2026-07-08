@@ -1,5 +1,58 @@
 > **Atualizacao 2026-07-08 - fase
-> `RAVATEX-TAPETES-G11-D-DOCUMENTS-LOCAL-LOADER`.**
+> `RAVATEX-TAPETES-G11-D-R1-DOCUMENTS-LOADER-URL-GUARD`.**
+> Status: **PRONTO — URL GUARD APLICADO**.
+> Entrada: branch `work/app-next`, HEAD base
+> `ef14648`; status inicial `?? .claude/` e
+> `?? supabase/.temp/`; `origin` somente leitura.
+>
+> Escopo: microfix — hardening de
+> `loadDocumentsIngestorEventsFromUrl` com validacao
+> de URL antes do fetch.
+>
+> Política de URL aplicada:
+> - Bloqueia esquemas: `javascript:`, `data:`, `blob:`,
+>   `file:`, `ftp:`, `chrome:`, `edge:`.
+> - Bloqueia URLs absolutas com `://` (http, https, etc).
+> - Bloqueia protocolo relativo `//`.
+> - Bloqueia path traversal `../` e `..\\`.
+> - Bloqueia caminhos UNC `\\\\`.
+> - Permite caminhos relativos (`/data/fixtures/`,
+>   `data/fixtures/`).
+>
+> `loadDocumentsIngestorEventsFromUrl` mantida, mas com
+> validacao antes de qualquer fetch. Caminhos locais
+> (mesma origem) continuam funcionando.
+>
+> Testes adicionados: 11 novos casos URL guard (bloqueio
+> https, http, file, javascript, data, blob, ../,
+> ..\\, //; permissao relativa com/sem leading slash).
+>
+> Arquivos alterados: `js/documents-ingestor-loader.js`
+> (+25 linhas: `BLOCKED_SCHEMES`, `validateLoaderUrl`,
+> integracao em `loadFromUrl`),
+> `tests/documents-ingestor-loader.test.js`
+> (+139 linhas: 11 testes de guard),
+> `PROJECT_STATE.md`, `AGENT_HANDOFF.md`.
+>
+> Testes reportados:
+> - `documents-ingestor.test.js`: 44/44;
+> - `documents-ingestor-ui-smoke.test.js`: 35/35;
+> - `documents-ingestor-loader.test.js`: 43/43;
+> - `pedido-detail.smoke.js`: 172/172.
+>
+> Garantias: sem Supabase, Google/Drive, export real,
+> alteracao no Documents Ingestor, PDF/XML, dados reais,
+> `.claude/` e `supabase/.temp/` fora do commit.
+>
+> Riscos remanescentes:
+> 1. Fetch por URL relativa ainda e possivel se chamado
+>    explicitamente (design: dev/teste manual).
+> 2. `loadFromUrl` pode ser chamada do console, mas
+>    limitada a mesma origem.
+> 3. Validacao browser/staging pendente.
+>
+> > **Atualizacao 2026-07-08 - fase
+> > `RAVATEX-TAPETES-G11-D-DOCUMENTS-LOCAL-LOADER`.**
 > Status: **PRONTO — LOADER LOCAL IMPLEMENTADO**.
 > Entrada: branch `work/app-next`, HEAD base
 > `a8f932b`; status inicial `?? .claude/` e

@@ -1,4 +1,33 @@
-﻿# Estado pos-fase - Documents Local Loader
+﻿# Estado pos-fase - Documents Loader URL Guard
+
+- Fase: `RAVATEX-TAPETES-G11-D-R1-DOCUMENTS-LOADER-URL-GUARD`.
+- Status: **PRONTO — URL GUARD APLICADO**.
+- Branch/HEAD base: `work/app-next`, `ef14648`;
+  HEAD final: `(commit g11-d-r1)`.
+- Escopo: microfix de seguranca em
+  `loadDocumentsIngestorEventsFromUrl` — validacao de
+  URL antes do fetch.
+- Politica: bloqueia esquemas perigosos (`javascript:`,
+  `data:`, `blob:`, `file:`, `ftp:`, `chrome:`,
+  `edge:`), URLs absolutas (`://`), protocolo relativo
+  (`//`), path traversal (`../`, `..\\`), UNC (`\\\\`).
+  Permite apenas caminhos relativos mesma origem.
+- `validateLoaderUrl(url)` — helper interno de
+  validacao, chamado antes de qualquer fetch em
+  `loadDocumentsIngestorEventsFromUrl`.
+- `loadDocumentsIngestorEventsFromText` e
+  `setDocumentsIngestorEvents` inalterados.
+- `index.html` inalterado.
+- Testes: loader 43/43 (+11 casos de guard: bloqueio
+  https/http/file/javascript/data/blob/../..\\/\/\;
+  permissao relativa com/sem /), ingestor 44/44,
+  UI smoke 35/35, pedido-detail 172/172. Sem regressao.
+- Confirmacoes: sem Supabase, Google/Drive, export real,
+  alteracao no Documents Ingestor, PDF/XML, dados reais,
+  `.claude/` e `supabase/.temp/` fora do commit.
+- Proxima: G11-E (watcher/export:package).
+
+# Estado pos-fase - Documents Local Loader
 
 - Fase: `RAVATEX-TAPETES-G11-D-DOCUMENTS-LOCAL-LOADER`.
 - Status: **PRONTO — LOADER LOCAL IMPLEMENTADO**.

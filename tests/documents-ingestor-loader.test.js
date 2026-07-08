@@ -286,6 +286,109 @@ test('loader: loadDocumentsIngestorEventsFromUrl sem fetch disponivel', async fu
 });
 
 // -------------------------------------------------------------------
+// 4b. Testes: seguranca de URL — bloqueios
+// -------------------------------------------------------------------
+
+test('loader-url-guard: bloqueia URL externa https', async function () {
+  var sandbox = makeLoaderSandbox();
+  var ns = sandbox.window.RAVATEX_DOCUMENTS;
+  var result = await ns.loadDocumentsIngestorEventsFromUrl('https://evil.example/events.jsonl');
+  assert.equal(result.ok, false);
+  assert.ok(result.error.indexOf('URLs absolutas') >= 0 || result.error.indexOf('://') >= 0);
+});
+
+test('loader-url-guard: bloqueia URL externa http', async function () {
+  var sandbox = makeLoaderSandbox();
+  var ns = sandbox.window.RAVATEX_DOCUMENTS;
+  var result = await ns.loadDocumentsIngestorEventsFromUrl('http://192.168.1.1:8080/data.jsonl');
+  assert.equal(result.ok, false);
+});
+
+test('loader-url-guard: bloqueia file://', async function () {
+  var sandbox = makeLoaderSandbox();
+  var ns = sandbox.window.RAVATEX_DOCUMENTS;
+  var result = await ns.loadDocumentsIngestorEventsFromUrl('file:///etc/passwd');
+  assert.equal(result.ok, false);
+});
+
+test('loader-url-guard: bloqueia javascript:', async function () {
+  var sandbox = makeLoaderSandbox();
+  var ns = sandbox.window.RAVATEX_DOCUMENTS;
+  var result = await ns.loadDocumentsIngestorEventsFromUrl('javascript:alert(1)');
+  assert.equal(result.ok, false);
+  assert.ok(result.error.indexOf('Esquema de URL bloqueado') >= 0);
+});
+
+test('loader-url-guard: bloqueia data:', async function () {
+  var sandbox = makeLoaderSandbox();
+  var ns = sandbox.window.RAVATEX_DOCUMENTS;
+  var result = await ns.loadDocumentsIngestorEventsFromUrl('data:text/html,<script>alert(1)</script>');
+  assert.equal(result.ok, false);
+  assert.ok(result.error.indexOf('Esquema de URL bloqueado') >= 0);
+});
+
+test('loader-url-guard: bloqueia blob:', async function () {
+  var sandbox = makeLoaderSandbox();
+  var ns = sandbox.window.RAVATEX_DOCUMENTS;
+  var result = await ns.loadDocumentsIngestorEventsFromUrl('blob:https://example.com/uuid');
+  assert.equal(result.ok, false);
+  assert.ok(result.error.indexOf('Esquema de URL bloqueado') >= 0);
+});
+
+test('loader-url-guard: bloqueia path traversal ../', async function () {
+  var sandbox = makeLoaderSandbox();
+  var ns = sandbox.window.RAVATEX_DOCUMENTS;
+  var result = await ns.loadDocumentsIngestorEventsFromUrl('../etc/secrets.jsonl');
+  assert.equal(result.ok, false);
+  assert.ok(result.error.indexOf('Path traversal') >= 0);
+});
+
+test('loader-url-guard: bloqueia path traversal ..\\ (Windows)', async function () {
+  var sandbox = makeLoaderSandbox();
+  var ns = sandbox.window.RAVATEX_DOCUMENTS;
+  var result = await ns.loadDocumentsIngestorEventsFromUrl('..\\windows\\system32\\config.jsonl');
+  assert.equal(result.ok, false);
+  assert.ok(result.error.indexOf('Path traversal') >= 0);
+});
+
+test('loader-url-guard: permite caminho relativo /data/fixtures/', async function () {
+  var sandbox = makeLoaderSandbox({
+    mockFetch: function () {
+      return Promise.resolve({
+        ok: true,
+        text: function () { return Promise.resolve(fixtureText); },
+      });
+    },
+  });
+  var ns = sandbox.window.RAVATEX_DOCUMENTS;
+  var result = await ns.loadDocumentsIngestorEventsFromUrl('/data/fixtures/document-events-sample.jsonl');
+  assert.equal(result.ok, true);
+  assert.equal(result.count, 7);
+});
+
+test('loader-url-guard: permite caminho relativo sem leading slash', async function () {
+  var sandbox = makeLoaderSandbox({
+    mockFetch: function () {
+      return Promise.resolve({
+        ok: true,
+        text: function () { return Promise.resolve(fixtureText); },
+      });
+    },
+  });
+  var ns = sandbox.window.RAVATEX_DOCUMENTS;
+  var result = await ns.loadDocumentsIngestorEventsFromUrl('data/fixtures/document-events-sample.jsonl');
+  assert.equal(result.ok, true);
+  assert.equal(result.count, 7);
+});
+
+test('loader-url-guard: bloqueia protocolo relativo //evil.example', async function () {
+  var sandbox = makeLoaderSandbox();
+  var ns = sandbox.window.RAVATEX_DOCUMENTS;
+  var result = await ns.loadDocumentsIngestorEventsFromUrl('//evil.example/events.jsonl');
+  assert.equal(result.ok, false);
+});
+
+// -------------------------------------------------------------------
 // 5. Testes de garantia (seguranca)
 // -------------------------------------------------------------------
 

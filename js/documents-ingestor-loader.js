@@ -30,6 +30,38 @@
 
   var MAX_EVENTS = 2000;
 
+  var BLOCKED_SCHEMES = ['javascript:', 'data:', 'blob:', 'file:', 'ftp:', 'chrome:', 'edge:'];
+
+  // -------------------------------------------------------------------
+  // Validacao de URL do loader (mesma origem / caminho local controlado)
+  // -------------------------------------------------------------------
+
+  function validateLoaderUrl(url) {
+    var trimmed = url.trim();
+    if (!trimmed) {
+      return { valid: false, error: 'URL nao pode ser vazia.' };
+    }
+    var lower = trimmed.toLowerCase();
+    for (var i = 0; i < BLOCKED_SCHEMES.length; i++) {
+      if (lower.indexOf(BLOCKED_SCHEMES[i]) === 0) {
+        return { valid: false, error: 'Esquema de URL bloqueado: ' + BLOCKED_SCHEMES[i] };
+      }
+    }
+    if (lower.indexOf('://') !== -1) {
+      return { valid: false, error: 'URLs absolutas (com ://) nao sao permitidas. Use caminho relativo ou mesma origem.' };
+    }
+    if (lower.indexOf('//') === 0) {
+      return { valid: false, error: 'URLs com protocolo relativo (//) nao sao permitidas. Use caminho relativo ou mesma origem.' };
+    }
+    if (lower.indexOf('../') !== -1 || lower.indexOf('..\\') !== -1) {
+      return { valid: false, error: 'Path traversal (../) nao e permitido.' };
+    }
+    if (lower.indexOf('\\\\') === 0) {
+      return { valid: false, error: 'Caminhos UNC nao sao permitidos.' };
+    }
+    return { valid: true };
+  }
+
   // -------------------------------------------------------------------
   // Validacao de array de eventos
   // -------------------------------------------------------------------
@@ -87,6 +119,11 @@
   ns.loadDocumentsIngestorEventsFromUrl = function loadDocumentsIngestorEventsFromUrl(url) {
     if (typeof url !== 'string' || !url.trim()) {
       return Promise.resolve({ ok: false, count: 0, error: '{url} deve ser uma string nao vazia.' });
+    }
+
+    var urlCheck = validateLoaderUrl(url);
+    if (!urlCheck.valid) {
+      return Promise.resolve({ ok: false, count: 0, error: urlCheck.error });
     }
 
     if (typeof window.fetch !== 'function') {
