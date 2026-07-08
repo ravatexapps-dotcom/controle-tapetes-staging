@@ -1,4 +1,30 @@
-﻿# Estado pos-fase - Documents Manual Import UX
+﻿# Estado pos-fase - Documents Manual Import Scope Guard
+
+- Fase: `RAVATEX-TAPETES-G11-E-R1-DOCUMENTS-MANUAL-IMPORT-SCOPE-GUARD`.
+- Status: **PRONTO — SCOPE GUARD APLICADO**.
+- Branch/HEAD base: `work/app-next`, `56eb5a6`.
+- HEAD final: `(commit g11-e-r1)`.
+- Causa raiz: G11-E botao de import visivel
+  indiscriminadamente (admin + cliente + todas as
+  paginas).
+- Correcao: gate `window.APP_ENV !== 'production'`
+  (padrao `environment-banner.js`). Producao = nunca
+  visivel. Staging/dev/local = botao aparece.
+- Loader (`loadFromText`, `loadFromUrl`,
+  `setEvents`) inalterado.
+- Arquivos: `js/documents-ingestor-import-ui.js`
+  (+4 linhas), `tests/documents-ingestor-import-ui.test.js`
+  (+56 linhas, 4 novos testes de scope),
+  `PROJECT_STATE.md`, `AGENT_HANDOFF.md`.
+  `index.html` inalterado.
+- Testes: import-ui 22/22, loader 43/43, UI smoke 35/35,
+  ingestor 44/44, pedido-detail 172/172 = 316/316.
+- Garantias: sem Supabase, Google/Drive, export real,
+  alteracao no Documents Ingestor, PDF/XML, dados reais.
+  `.claude/` e `supabase/.temp/` fora do commit.
+- Proxima: validacao visual staging/browser.
+
+# Estado pos-fase - Documents Manual Import UX
 
 - Fase: `RAVATEX-TAPETES-G11-E-DOCUMENTS-MANUAL-IMPORT-UX`.
 - Status: **PRONTO — UX MANUAL DE IMPORT IMPLEMENTADA**.

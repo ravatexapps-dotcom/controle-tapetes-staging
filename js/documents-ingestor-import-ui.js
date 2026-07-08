@@ -94,9 +94,15 @@
 
   try {
     if (document.body) {
-      createImportUI();
+      if (window.APP_ENV !== 'production') {
+        createImportUI();
+      }
     } else if (document.addEventListener) {
-      document.addEventListener('DOMContentLoaded', createImportUI);
+      document.addEventListener('DOMContentLoaded', function () {
+        if (window.APP_ENV !== 'production') {
+          createImportUI();
+        }
+      });
     }
   } catch (_e) {
     // Melhor esforco: nao quebrar outros scripts.

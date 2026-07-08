@@ -1,5 +1,48 @@
 > **Atualizacao 2026-07-08 - fase
-> `RAVATEX-TAPETES-G11-E-DOCUMENTS-MANUAL-IMPORT-UX`.**
+> `RAVATEX-TAPETES-G11-E-R1-DOCUMENTS-MANUAL-IMPORT-SCOPE-GUARD`.**
+> Status: **PRONTO — SCOPE GUARD APLICADO**.
+> Entrada: branch `work/app-next`, HEAD base
+> `56eb5a6`; status inicial `?? .claude/` e
+> `?? supabase/.temp/`; `origin` somente leitura.
+>
+> Causa raiz: G11-E injetava o botao de import
+> incondicionalmente em `document.body`, visivel em
+> todas as paginas (admin e cliente).
+>
+> Correcao: gate via `window.APP_ENV !== 'production'`
+> (mesmo padrao do `environment-banner.js`).
+> Em producao, botao nunca aparece. Em staging/dev/local,
+> botao disponivel para teste pelo operador/admin.
+>
+> Arquivos alterados:
+> `js/documents-ingestor-import-ui.js` (+4 linhas:
+> condicional `APP_ENV` no bootstrap),
+> `tests/documents-ingestor-import-ui.test.js`
+> (+56 linhas: 4 testes de scope guard + suporte a
+> `appEnv` no sandbox),
+> `PROJECT_STATE.md`, `AGENT_HANDOFF.md`.
+>
+> Testes reportados:
+> - `documents-ingestor-import-ui.test.js`: 22/22
+>   (+4 scope guard: bloqueio em production, permissao
+>   em staging/undefined, funcionalidade preservada);
+> - `documents-ingestor-loader.test.js`: 43/43;
+> - `documents-ingestor-ui-smoke.test.js`: 35/35;
+> - `documents-ingestor.test.js`: 44/44;
+> - `pedido-detail.smoke.js`: 172/172 (sem regressao).
+>
+> Garantias: sem Supabase, Google/Drive, export real,
+> alteracao no Documents Ingestor, PDF/XML, dados reais,
+> watcher, polling, persistencia. `.claude/` e
+> `supabase/.temp/` fora do commit. Sem push.
+>
+> Riscos remanescentes:
+> 1. Em staging, qualquer usuario autenticado (admin ou
+>    cliente de teste) ve o botao. Em producao, ninguem.
+> 2. Validacao visual staging/browser pendente.
+>
+> > **Atualizacao 2026-07-08 - fase
+> > `RAVATEX-TAPETES-G11-E-DOCUMENTS-MANUAL-IMPORT-UX`.**
 > Status: **PRONTO — UX MANUAL DE IMPORT IMPLEMENTADA**.
 > Entrada: branch `work/app-next`, HEAD base
 > `7e087f0` (G11-D-R1); reconciliação com `381506c`

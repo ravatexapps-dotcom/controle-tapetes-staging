@@ -124,6 +124,8 @@ function makeImportUISandbox(opts) {
     console: {},
   };
 
+  sandbox.window.APP_ENV = opts.appEnv !== undefined ? opts.appEnv : 'staging';
+
   sandbox.window.toast = function (msg, type) {
     toasts.push({ msg: msg, type: type || 'info' });
   };
@@ -285,6 +287,50 @@ test('import-ui: sem arquivo selecionado nao faz nada', function () {
   fileInput._changeHandlers.forEach(function (fn) { fn(); });
 
   assert.equal(rt.toasts.length, toastCountBefore, 'nenhum toast deve ser gerado sem arquivo');
+});
+
+// -------------------------------------------------------------------
+// 4b. Testes: scope guard — visibilidade por ambiente
+// -------------------------------------------------------------------
+
+test('import-ui-scope: botao NAO aparece em producao (APP_ENV=production)', function () {
+  var rt = makeImportUISandbox({ appEnv: 'production' });
+  var buttons = rt.domElements['button'] || [];
+  var importBtn = buttons.find(function (b) { return b.id === 'rv-docs-import-btn'; });
+  assert.equal(importBtn, undefined, 'botao nao deve existir em producao');
+  assert.equal(rt.fileInputEl, null, 'file input nao deve existir em producao');
+});
+
+test('import-ui-scope: botao aparece em staging (APP_ENV=staging)', function () {
+  var rt = makeImportUISandbox({ appEnv: 'staging' });
+  var buttons = rt.domElements['button'] || [];
+  var importBtn = buttons.find(function (b) { return b.id === 'rv-docs-import-btn'; });
+  assert.ok(importBtn, 'botao deve existir em staging');
+  assert.ok(rt.fileInputEl, 'file input deve existir em staging');
+});
+
+test('import-ui-scope: botao aparece com APP_ENV indefinido (default dev/local)', function () {
+  var rt = makeImportUISandbox({ appEnv: undefined });
+  var buttons = rt.domElements['button'] || [];
+  var importBtn = buttons.find(function (b) { return b.id === 'rv-docs-import-btn'; });
+  assert.ok(importBtn, 'botao deve existir com APP_ENV indefinido (dev/local default)');
+});
+
+test('import-ui-scope: import ainda funciona em staging', function () {
+  var rt = makeImportUISandbox({
+    appEnv: 'staging',
+    mockFileContent: fixtureText,
+  });
+
+  var fileInput = rt.fileInputEl;
+  fileInput.files = [{ name: 'events.jsonl' }];
+  fileInput._changeHandlers.forEach(function (fn) { fn(); });
+
+  var events = rt.sandbox.window.RAVATEX_DOCUMENTS_LOADED_EVENTS;
+  assert.ok(Array.isArray(events));
+  assert.equal(events.length, 7);
+  var successToast = rt.toasts.find(function (t) { return t.type === 'success'; });
+  assert.ok(successToast, 'deve haver toast de sucesso');
 });
 
 // -------------------------------------------------------------------
