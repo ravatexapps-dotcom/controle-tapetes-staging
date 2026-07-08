@@ -1023,6 +1023,123 @@
       });
     }
 
+    if (view.ingestorDocsLoaded && view.ingestorDocumentRows && view.ingestorDocumentRows.length > 0) {
+      card.appendChild(window.el('div', {
+        style: 'font-size:11px;font-weight:700;color:#2563eb;letter-spacing:.04em;margin:14px 0 8px;',
+      }, 'DOCUMENTOS RECEBIDOS (INGESTOR)'));
+
+      view.ingestorDocumentRows.forEach(function (row, index) {
+        var isLast = index === view.ingestorDocumentRows.length - 1;
+        var docRow = window.el('div', {
+          style: 'padding:9px 0;' + (isLast && view.ingestorTimeline.length === 0 ? '' : 'border-bottom:1px solid #f1f3f6;'),
+        });
+
+        // Linha superior: filename + badges + status pill + botao Ver
+        var topRow = window.el('div', {
+          style: 'display:flex;align-items:center;justify-content:space-between;gap:12px;',
+        });
+
+        var leftGroup = window.el('div', {
+          style: 'display:flex;align-items:center;gap:9px;min-width:0;',
+        },
+          ns.svgEl(ns.SVG_FILE),
+          window.el('span', {
+            style: 'font-size:13px;color:#3f4757;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;',
+          }, row.label)
+        );
+
+        if (row.badges && row.badges.length > 0) {
+          row.badges.forEach(function (b) {
+            leftGroup.appendChild(window.el('span', {
+              style: 'background:' + b.bg + ';color:' + b.text + ';border-radius:4px;padding:1px 6px;font-size:10px;font-weight:700;flex-shrink:0;white-space:nowrap;',
+            }, b.label));
+          });
+        }
+
+        var rightGroup = window.el('div', {
+          style: 'display:flex;align-items:center;gap:8px;flex-shrink:0;',
+        });
+
+        var statusMeta = row.statusMeta || window.RAVATEX_DOCUMENTS.getDocumentStatusBadgeMeta(row.status);
+        rightGroup.appendChild(window.el('span', {
+          style: 'background:' + statusMeta.bg + ';color:' + statusMeta.text + ';border-radius:4px;padding:2px 8px;font-size:11px;font-weight:600;flex-shrink:0;',
+        }, statusMeta.label));
+
+        if (row.driveLink) {
+          rightGroup.appendChild(window.el('button', {
+            type: 'button',
+            style: 'display:inline-flex;align-items:center;gap:6px;background:#fff;color:#2563eb;border:1px solid #2563eb;border-radius:4px;padding:3px 10px;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit;',
+            onclick: function () {
+              window.open(row.driveLink, '_blank', 'noopener,noreferrer');
+            },
+          }, 'Ver'));
+        } else {
+          rightGroup.appendChild(window.el('span', {
+            style: 'color:#9aa2af;font-size:11px;font-style:italic;',
+          }, 'Link indisponivel'));
+        }
+
+        topRow.appendChild(leftGroup);
+        topRow.appendChild(rightGroup);
+        docRow.appendChild(topRow);
+
+        // Linha inferior: meta timestamp + reason
+        var bottomLine = row.meta || '';
+        if (row.reason) {
+          bottomLine = (bottomLine ? bottomLine + ' · ' : '') + 'Rejeitado: ' + row.reason;
+        }
+        var bottomColor = row.reason ? '#a23434' : '#9aa2af';
+        docRow.appendChild(window.el('div', {
+          style: 'font-size:11px;color:' + bottomColor + ';margin-top:3px;',
+        }, bottomLine));
+
+        card.appendChild(docRow);
+      });
+
+      // Timeline de eventos
+      if (view.ingestorTimeline && view.ingestorTimeline.length > 0) {
+        card.appendChild(window.el('div', {
+          style: 'font-size:11px;font-weight:700;color:#8a93a3;letter-spacing:.04em;margin:14px 0 8px;',
+        }, 'EVENTOS'));
+
+        view.ingestorTimeline.forEach(function (item, idx) {
+          var isLastTimeline = idx === view.ingestorTimeline.length - 1;
+          var isFirst = idx === 0;
+          var dotColor = isFirst ? '#2563eb' : '#cfd5de';
+
+          var timelineItem = window.el('div', {
+            style: 'display:flex;gap:12px;',
+          },
+            window.el('div', {
+              style: 'display:flex;flex-direction:column;align-items:center;',
+            },
+              window.el('div', {
+                style: 'width:9px;height:9px;border-radius:50%;background:' + dotColor
+                  + ';margin-top:3px;flex-shrink:0;',
+              }),
+              isLastTimeline ? null : window.el('div', {
+                style: 'width:2px;flex:1;background:#eceef1;margin-top:3px;',
+              })
+            ),
+            window.el('div', { style: 'padding-bottom:' + (isLastTimeline ? '0' : '10px') + ';' },
+              window.el('div', {
+                style: 'font-size:11px;color:#9aa2af;',
+              }, item.formattedTime),
+              window.el('div', {
+                style: 'font-size:12px;font-weight:' + (isFirst ? '700' : '500') + ';color:'
+                  + (isFirst ? '#16203a' : '#5b6472') + ';margin-top:1px;',
+              }, item.label),
+              item.docLabel ? window.el('div', {
+                style: 'font-size:11px;color:#7b8494;margin-top:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;',
+              }, item.docLabel) : null
+            )
+          );
+
+          card.appendChild(timelineItem);
+        });
+      }
+    }
+
     card.appendChild(window.el('div', {
       style: 'margin-top:12px;font-size:11.5px;color:#9aa2af;line-height:1.5;',
     }, 'A tabela de anexos operacionais ainda nao existe no schema atual. A tela ja consolida as pendencias e preserva o layout do fluxo final.'));

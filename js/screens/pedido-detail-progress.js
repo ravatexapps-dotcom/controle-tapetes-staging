@@ -702,6 +702,79 @@
       });
     }
 
+    var ingestorDocumentRows = [];
+    var ingestorTimeline = [];
+    var ingestorDocsLoaded = false;
+
+    if (pedido && typeof window.RAVATEX_DOCUMENTS !== 'undefined'
+      && typeof window.RAVATEX_DOCUMENTS.buildDocumentsForPedido === 'function'
+      && typeof window.RAVATEX_DOCUMENTS.normalizePedidoKey === 'function') {
+      var pedidoAno = null;
+      try {
+        if (pedido.criado_em) {
+          pedidoAno = new Date(pedido.criado_em).getFullYear();
+        }
+      } catch (_e) { /* ignora */ }
+      var pedidoKey = window.RAVATEX_DOCUMENTS.normalizePedidoKey(pedido.numero, pedidoAno);
+      var loadedEvents = (typeof window.RAVATEX_DOCUMENTS_LOADED_EVENTS !== 'undefined'
+        && Array.isArray(window.RAVATEX_DOCUMENTS_LOADED_EVENTS))
+        ? window.RAVATEX_DOCUMENTS_LOADED_EVENTS : [];
+      if (loadedEvents.length > 0 && pedidoKey) {
+        var result = window.RAVATEX_DOCUMENTS.buildDocumentsForPedido(loadedEvents, pedidoKey);
+        if (result && Array.isArray(result.consolidatedDocuments)) {
+          result.consolidatedDocuments.forEach(function (ev) {
+            var doc = ev.document;
+            var statusMeta = window.RAVATEX_DOCUMENTS.getDocumentStatusBadgeMeta(ev.status || 'pending_app_acceptance');
+            var tipoMeta = window.RAVATEX_DOCUMENTS.getDocumentTipoBadgeMeta(doc && doc.tipo_documento);
+            var formatoMeta = window.RAVATEX_DOCUMENTS.getDocumentFormatoBadgeMeta(doc && doc.formato);
+            var direcaoMeta = window.RAVATEX_DOCUMENTS.getDocumentDirecaoBadgeMeta(doc && doc.direcao_nf);
+            var reason = doc && doc.reason ? doc.reason : null;
+            var driveLink = doc && doc.drive_web_view_link ? doc.drive_web_view_link : null;
+
+            var badges = [];
+            badges.push({ bg: tipoMeta.bg, text: tipoMeta.text, label: tipoMeta.label });
+            if (formatoMeta) {
+              badges.push({ bg: formatoMeta.bg, text: formatoMeta.text, label: formatoMeta.label });
+            }
+            if (direcaoMeta) {
+              badges.push({ bg: direcaoMeta.bg, text: direcaoMeta.text, label: direcaoMeta.label });
+            }
+
+            ingestorDocumentRows.push({
+              label: doc && doc.filename_original ? doc.filename_original : 'Documento',
+              status: ev.status || 'pending_app_acceptance',
+              statusMeta: statusMeta,
+              badges: badges,
+              reason: reason,
+              driveLink: driveLink,
+              meta: 'Ingestor · ' + (window.RAVATEX_DOCUMENTS.fmtTimestamp
+                ? window.RAVATEX_DOCUMENTS.fmtTimestamp(ev.created_at)
+                : String(ev.created_at || '')),
+            });
+          });
+
+          if (Array.isArray(result.timeline)) {
+            result.timeline.forEach(function (ev) {
+              ingestorTimeline.push({
+                eventType: ev.event_type || '',
+                label: (typeof window.RAVATEX_DOCUMENTS.getDocumentEventLabel === 'function'
+                  ? window.RAVATEX_DOCUMENTS.getDocumentEventLabel(ev.event_type)
+                  : ev.event_type),
+                timestamp: ev.created_at || '',
+                formattedTime: (typeof window.RAVATEX_DOCUMENTS.fmtTimestamp === 'function'
+                  ? window.RAVATEX_DOCUMENTS.fmtTimestamp(ev.created_at)
+                  : String(ev.created_at || '')),
+                docLabel: ev.document && ev.document.filename_original
+                  ? ev.document.filename_original : (ev.document && ev.document.document_id || ''),
+              });
+            });
+          }
+
+          ingestorDocsLoaded = true;
+        }
+      }
+    }
+
     return {
       trackingApi: trackingApi,
       trackingSummary: trackingSummary,
@@ -723,6 +796,9 @@
       stepper: stepper,
       documentRowsPedido: documentRowsPedido,
       documentRowsOperacionais: documentRowsOperacionais,
+      ingestorDocumentRows: ingestorDocumentRows,
+      ingestorTimeline: ingestorTimeline,
+      ingestorDocsLoaded: ingestorDocsLoaded,
       linkedOpCount: linkedOpCount,
       pedidoConclusao: pedidoConclusao,
     };

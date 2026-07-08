@@ -6191,3 +6191,89 @@ Patch funcional minimo com:
 3. Modificacao em `pedido-detail-progress.js` (computeViewModel)
 4. Modificacao em `pedido-detail-render.js` (buildDocuments)
 5. Testes: `tests/documents-ingestor.test.js` + smoke
+
+---
+
+## Fase: RAVATEX-TAPETES-G11-B-DOCUMENTS-CONSUMER-PATCH
+
+> **Status:** CONCLUIDO — PATCH VALIDADO LOCALMENTE
+> **Tipo:** Patch funcional minimo com parser JSONL, fixture e UI read-only no detalhe do Pedido.
+> **HEAD base:** `c6b8e20` — `work/app-next`
+> **Data:** 2026-07-07
+> **Documents Ingestor HEAD:** `956682d` — `master` (nao alterado)
+
+### Escopo
+
+Implementar consumo visual read-only de documentos do Documents Ingestor no
+detalhe do Pedido usando fixture JSONL local, sem Supabase, sem Google/Drive,
+sem fetch real.
+
+### Arquivos criados
+
+- `js/documents-ingestor.js` — parser JSONL, normalizador de pedido,
+  deduplicacao (`ingestion_event_id`), consolidacao (`document_id`),
+  ordenacao (`created_at`), badges, filtro por pedido
+- `data/fixtures/document-events-sample.jsonl` — 7 eventos sinteticos
+  (2 documentos NF + 1 romaneio) para `PED-25-2026`
+- `tests/documents-ingestor.test.js` — 44 testes puros (parser, filtro,
+  consolidacao, deduplicacao, badges, garantias)
+
+### Arquivos alterados
+
+- `js/screens/pedido-detail-progress.js` — `computeViewModel()` adiciona
+  `ingestorDocumentRows` e `ingestorTimeline` ao view model quando
+  `window.RAVATEX_DOCUMENTS_LOADED_EVENTS` contém eventos para o pedido
+- `js/screens/pedido-detail-render.js` — `buildDocuments()` adiciona seção
+  "DOCUMENTOS RECEBIDOS (INGESTOR)" com badges, botão "Ver" via
+  `window.open(drive_web_view_link, '_blank', 'noopener,noreferrer')`,
+  reason quando rejected, timeline de eventos
+- `PROJECT_STATE.md` — atualizado
+- `AGENT_HANDOFF.md` — atualizado
+
+### Decisoes
+
+| # | Decisao | Fundamentacao |
+|---|---------|--------------|
+| D-G11B-01 | Parser puro em memoria, sem fetch/Supabase/Drive | Sem acoplamento externo |
+| D-G11B-02 | Idempotencia por `ingestion_event_id` | Contrato §6 do Ingestor |
+| D-G11B-03 | Consolidacao por `document_id` (ultimo `created_at`) | Estado derivado do evento mais recente |
+| D-G11B-04 | View model injecta docs via `window.RAVATEX_DOCUMENTS_LOADED_EVENTS` | Sem novo state no Pedido Detail |
+| D-G11B-05 | Timeline vertical com dots (padrao existente no app) | Reutiliza padrao de `cliente-pedido-detail.js` |
+| D-G11B-06 | Botao "Ver" usa `window.open()` em nova aba | Contrato §2.3; sem iframe/supabase storage |
+| D-G11B-07 | Link indisponivel mostra texto, nunca tenta download | Sem acesso a ficheiro nem API |
+| D-G11B-08 | Reason exibido em vermelho abaixo do documento rejected | Visivel, sem expor IDs |
+
+### Testes
+
+- `documents-ingestor.test.js`: 44/44 passando
+- `pedido-detail.smoke.js`: 172/172 passando (sem regressao)
+
+### Garantias
+
+- Nenhum Supabase tocado
+- Nenhuma chamada Google/Drive
+- Nenhum export real executado
+- Documents Ingestor inalterado
+- Nenhum PDF/XML armazenado no Supabase/backend
+- Nenhum dado real commitado (fixture usa IDs ficticios: `doc_sample_*`,
+  `ingevt-*`, `gmsg-sample-*`, `drive_sample_*`)
+- Todos os `drive_web_view_link` sao URLs ficticias do Google Drive
+- Modulo `documents-ingestor.js` nao contem `fetch`, `XMLHttpRequest`,
+  `window.supa`, `window.supabase`, `googleapis` ou `google-auth`
+
+### Riscos remanescentes
+
+| Risco | Mitigacao |
+|-------|-----------|
+| Fixture nao carregada (global vazia) | Secao de documentos simplesmente nao aparece; sem erro |
+| Pedido com numero > 99 | `padStart` suporta qualquer numero de digitos; mapeamento continua funcional |
+| Eventos carregados fora de pedido diferente | Filtro por `pedido_manual` impede docs de outros pedidos |
+| Timeline com muitos eventos pode crescer | Read-only; sem impacto de performance com fixture controlada |
+| Link Drive real requer permissao | Documentado como pre-requisito operacional; app apenas abre o link |
+
+### Proxima fase
+
+`RAVATEX-TAPETES-G11-C-DOCUMENTS-WATCHER` (opcional/deferido):
+- Watcher persistente para outbox JSONL
+- Recarregar eventos ao abrir Pedido Detail
+- Ou manter consumo manual via `export:package` ate definicao de produto

@@ -5821,3 +5821,73 @@ direto.
 
 Ver `docs/architecture/DOCUMENTS_INGESTOR_CONSUMER_DESIGN.md` para matriz de
 decisao, riscos, UI minima, e ordem pronta para o proximo IAExecutor.
+
+---
+
+## RAVATEX-TAPETES-G11-B-DOCUMENTS-CONSUMER-PATCH (2026-07-07)
+
+**Patch funcional.**
+Consumo visual read-only de documentos do Documents Ingestor no detalhe do
+Pedido usando fixture JSONL local. Sem Supabase, sem Google/Drive, sem fetch.
+
+- **Status:** CONCLUIDO — VALIDADO LOCALMENTE
+- **HEAD inicial:** `c6b8e20` — `work/app-next`
+- **HEAD final do patch:** (a definir apos commit)
+- **Documents Ingestor HEAD:** `956682d` — `master` (nao alterado)
+
+### Arquivos criados
+
+- `js/documents-ingestor.js` — parser JSONL, normalizador `PED-XX-YYYY`,
+  deduplicacao por `ingestion_event_id`, consolidacao por `document_id`,
+  ordenacao por `created_at`, badges (status/tipo/formato/direcao),
+  filtro por `pedido_manual`, timeline. Namespace `window.RAVATEX_DOCUMENTS`.
+- `data/fixtures/document-events-sample.jsonl` — 7 eventos sinteticos
+  (doc_sample_001: detected→linked→accepted; doc_sample_002: detected→
+  linked→rejected com reason; doc_sample_003: romaneio detected).
+- `tests/documents-ingestor.test.js` — 44 testes: parser, filtro, dedup,
+  consolidacao, badges, fixture, garantias (sem Supabase/Drive/rede).
+
+### Arquivos alterados
+
+- `js/screens/pedido-detail-progress.js` — `computeViewModel()`:
+  * Deriva `pedidoKey` de `pedido.numero` + `criado_em`
+  * Consulta `window.RAVATEX_DOCUMENTS_LOADED_EVENTS`
+  * Adiciona `ingestorDocumentRows` (badges, status, reason, driveLink)
+    e `ingestorTimeline` (eventos ordenados com timestamp formatado)
+- `js/screens/pedido-detail-render.js` — `buildDocuments()`:
+  * Nova secao "DOCUMENTOS RECEBIDOS (INGESTOR)" com badges inline
+    (tipo/formato/direcao), status pill (aceito/pendente/rejeitado),
+    botao "Ver" via `window.open(drive_web_view_link, '_blank')`,
+    "Link indisponivel" quando ausente
+  * Reason em vermelho abaixo de documentos rejected
+  * Timeline de eventos com dots + linhas verticais (padrao existente)
+
+### Como funciona
+
+1. Um loader externo (fixture loader ou futuro watcher) popula
+   `window.RAVATEX_DOCUMENTS_LOADED_EVENTS` com array de eventos
+2. Ao abrir o detalhe do Pedido, `computeViewModel` normaliza o pedido
+   (`PED-25-2026`), filtra os eventos e consolida por documento
+3. `buildDocuments` renderiza a secao com badges, links e timeline
+4. Se a global estiver vazia ou sem eventos para o pedido, a secao
+   simplesmente nao aparece — zero impacto
+
+### Testes
+
+- `documents-ingestor.test.js`: 44/44 passando
+- `pedido-detail.smoke.js`: 172/172 passando (sem regressao)
+
+### Garantias
+
+- Nenhum Supabase, Google/Drive, export real ou data real
+- Modulo sem `fetch`, `XMLHttpRequest`, `supabase`, `googleapis`
+- Fixture com IDs ficticios (`doc_sample_*`, `ingevt-*`, `gmsg-sample-*`)
+- `drive_web_view_link` ficticio
+- Documents Ingestor completamente inalterado
+
+### Proxima fase
+
+`RAVATEX-TAPETES-G11-C-DOCUMENTS-WATCHER` (deferido):
+- Watcher de outbox ou loader que popula a global com eventos reais
+  gerados por `export:package --pedido <PED-XX-YYYY>`
+- Alternativa: consumo manual via import ate definicao de produto

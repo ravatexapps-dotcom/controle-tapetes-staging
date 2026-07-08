@@ -1,0 +1,461 @@
+// =====================================================================
+// === tests/documents-ingestor.test.js =================================
+// Testes puros para o parser/consolidator de eventos do Documents
+// Ingestor em js/documents-ingestor.js.
+//
+// Fase: RAVATEX-TAPETES-G11-B-DOCUMENTS-CONSUMER-PATCH
+// Escopo: valida parser, deduplicacao, consolidacao, filtro, badges.
+//   Nao acessa Supabase, Google/Drive, DOM ou rede.
+//
+// Garante:
+//   - parseDocumentEventsJsonl le JSONL valido e rejeita malformado
+//   - deduplicateEvents remove duplicatas por ingestion_event_id
+//   - consolidateDocumentState retorna ultimo estado por document_id
+//   - filterEventsByPedido filtra por pedido_manual
+//   - normalizePedidoKey gera PED-XX-YYYY
+//   - fixture sample produz 3 docs consolidados para PED-25-2026
+//   - status badges meta: accepted, rejected, pending
+//   - reason preservado em rejected
+//   - drive_web_view_link preservado
+//   - sem chamada Supabase
+//   - sem chamada Google/Drive
+// =====================================================================
+
+const test = require('node:test');
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const path = require('node:path');
+const vm = require('node:vm');
+
+const ROOT = path.resolve(__dirname, '..');
+const MODULE = path.join(ROOT, 'js', 'documents-ingestor.js');
+const FIXTURE = path.join(ROOT, 'data', 'fixtures', 'document-events-sample.jsonl');
+
+// -------------------------------------------------------------------
+// Helpers para carregar o modulo em sandbox
+// -------------------------------------------------------------------
+
+function loadModule() {
+  const src = fs.readFileSync(MODULE, 'utf8');
+  const sandbox = { window: {}, console };
+  vm.createContext(sandbox);
+  vm.runInContext(src, sandbox);
+  return sandbox.window.RAVATEX_DOCUMENTS;
+}
+
+function loadFixture() {
+  const text = fs.readFileSync(FIXTURE, 'utf8');
+  return { text: text, lines: text.split('\n').filter(function (l) { return l.trim(); }) };
+}
+
+// -------------------------------------------------------------------
+// Testes: arquivo existe e sintaxe
+// -------------------------------------------------------------------
+
+test('documents-ingestor.js: arquivo existe', function () {
+  assert.ok(fs.existsSync(MODULE), 'js/documents-ingestor.js ausente');
+});
+
+test('documents-ingestor.js: sintaxe JS valida', function () {
+  const RAVATEX_DOCUMENTS = loadModule();
+  assert.ok(RAVATEX_DOCUMENTS, 'RAVATEX_DOCUMENTS nao exposto');
+});
+
+test('fixture existe', function () {
+  assert.ok(fs.existsSync(FIXTURE), 'data/fixtures/document-events-sample.jsonl ausente');
+});
+
+// -------------------------------------------------------------------
+// Testes: normalizePedidoKey
+// -------------------------------------------------------------------
+
+test('normalizePedidoKey: gera PED-XX-YYYY corretamente', function () {
+  var RAVATEX_DOCUMENTS = loadModule();
+  assert.strictEqual(RAVATEX_DOCUMENTS.normalizePedidoKey(25, 2026), 'PED-25-2026');
+  assert.strictEqual(RAVATEX_DOCUMENTS.normalizePedidoKey(7, 2025), 'PED-07-2025');
+  assert.strictEqual(RAVATEX_DOCUMENTS.normalizePedidoKey(99, 2024), 'PED-99-2024');
+});
+
+test('normalizePedidoKey: padding de 2 digitos', function () {
+  var RAVATEX_DOCUMENTS = loadModule();
+  assert.strictEqual(RAVATEX_DOCUMENTS.normalizePedidoKey(5, 2026), 'PED-05-2026');
+  assert.strictEqual(RAVATEX_DOCUMENTS.normalizePedidoKey(0, 2026), 'PED-00-2026');
+});
+
+test('normalizePedidoKey: numero nulo', function () {
+  var RAVATEX_DOCUMENTS = loadModule();
+  assert.strictEqual(RAVATEX_DOCUMENTS.normalizePedidoKey(null, 2026), 'PED-XX-2026');
+});
+
+test('normalizePedidoKey: ambos nulos', function () {
+  var RAVATEX_DOCUMENTS = loadModule();
+  assert.strictEqual(RAVATEX_DOCUMENTS.normalizePedidoKey(null, null), null);
+});
+
+// -------------------------------------------------------------------
+// Testes: parseDocumentEventsJsonl
+// -------------------------------------------------------------------
+
+test('parseDocumentEventsJsonl: parseia JSONL valido', function () {
+  var RAVATEX_DOCUMENTS = loadModule();
+  var fixture = loadFixture();
+  var events = RAVATEX_DOCUMENTS.parseDocumentEventsJsonl(fixture.text);
+  assert.strictEqual(events.length, 7, '7 eventos esperados na fixture');
+  assert.strictEqual(events[0].event_type, 'document.detected');
+  assert.strictEqual(events[1].event_type, 'document.linked');
+});
+
+test('parseDocumentEventsJsonl: texto vazio retorna array vazio', function () {
+  var RAVATEX_DOCUMENTS = loadModule();
+  assert.ok(Array.isArray(RAVATEX_DOCUMENTS.parseDocumentEventsJsonl('')));
+  assert.strictEqual(RAVATEX_DOCUMENTS.parseDocumentEventsJsonl('').length, 0);
+  assert.strictEqual(RAVATEX_DOCUMENTS.parseDocumentEventsJsonl('  \n  \n').length, 0);
+});
+
+test('parseDocumentEventsJsonl: linha malformada ignorada', function () {
+  var RAVATEX_DOCUMENTS = loadModule();
+  var text = '{"event_type":"test","pedido_manual":"PED-01-2026","document":{"document_id":"1"}}\nnao e json\n{"event_type":"test2","pedido_manual":"PED-01-2026","document":{"document_id":"2"}}';
+  var events = RAVATEX_DOCUMENTS.parseDocumentEventsJsonl(text);
+  assert.strictEqual(events.length, 2, 'Linha malformada deve ser ignorada');
+});
+
+test('parseDocumentEventsJsonl: string nao eh string trata como vazio', function () {
+  var RAVATEX_DOCUMENTS = loadModule();
+  var r1 = RAVATEX_DOCUMENTS.parseDocumentEventsJsonl(null);
+  var r2 = RAVATEX_DOCUMENTS.parseDocumentEventsJsonl(undefined);
+  assert.ok(Array.isArray(r1), 'null deve retornar array');
+  assert.strictEqual(r1.length, 0, 'null deve retornar array vazio');
+  assert.ok(Array.isArray(r2), 'undefined deve retornar array');
+  assert.strictEqual(r2.length, 0, 'undefined deve retornar array vazio');
+});
+
+// -------------------------------------------------------------------
+// Testes: isValidDocumentEvent
+// -------------------------------------------------------------------
+
+test('isValidDocumentEvent: evento valido passa', function () {
+  var RAVATEX_DOCUMENTS = loadModule();
+  assert.ok(RAVATEX_DOCUMENTS.isValidDocumentEvent({
+    event_type: 'document.detected',
+    pedido_manual: 'PED-25-2026',
+    document: { document_id: 'abc' },
+  }));
+});
+
+test('isValidDocumentEvent: evento sem event_type falha', function () {
+  var RAVATEX_DOCUMENTS = loadModule();
+  assert.strictEqual(RAVATEX_DOCUMENTS.isValidDocumentEvent({
+    pedido_manual: 'PED-25-2026',
+    document: { document_id: 'abc' },
+  }), false);
+});
+
+test('isValidDocumentEvent: evento sem document falha', function () {
+  var RAVATEX_DOCUMENTS = loadModule();
+  assert.strictEqual(RAVATEX_DOCUMENTS.isValidDocumentEvent({
+    event_type: 'document.detected',
+    pedido_manual: 'PED-25-2026',
+  }), false);
+});
+
+// -------------------------------------------------------------------
+// Testes: filterEventsByPedido
+// -------------------------------------------------------------------
+
+test('filterEventsByPedido: filtra por pedido_manual', function () {
+  var RAVATEX_DOCUMENTS = loadModule();
+  var events = [
+    { pedido_manual: 'PED-25-2026', event_type: 'a' },
+    { pedido_manual: 'PED-26-2026', event_type: 'b' },
+    { pedido_manual: 'PED-25-2026', event_type: 'c' },
+  ];
+  var filtered = RAVATEX_DOCUMENTS.filterEventsByPedido(events, 'PED-25-2026');
+  assert.strictEqual(filtered.length, 2);
+  assert.strictEqual(filtered[0].event_type, 'a');
+  assert.strictEqual(filtered[1].event_type, 'c');
+});
+
+test('filterEventsByPedido: pedido nao encontrado retorna vazio', function () {
+  var RAVATEX_DOCUMENTS = loadModule();
+  var events = [
+    { pedido_manual: 'PED-25-2026', event_type: 'a' },
+  ];
+  var filtered = RAVATEX_DOCUMENTS.filterEventsByPedido(events, 'PED-99-2026');
+  assert.strictEqual(filtered.length, 0);
+});
+
+// -------------------------------------------------------------------
+// Testes: deduplicateEvents
+// -------------------------------------------------------------------
+
+test('deduplicateEvents: remove duplicatas por ingestion_event_id', function () {
+  var RAVATEX_DOCUMENTS = loadModule();
+  var events = [
+    { ingestion_event_id: 'a', data: 1 },
+    { ingestion_event_id: 'b', data: 2 },
+    { ingestion_event_id: 'a', data: 3 }, // duplicata
+    { ingestion_event_id: 'c', data: 4 },
+  ];
+  var deduped = RAVATEX_DOCUMENTS.deduplicateEvents(events);
+  assert.strictEqual(deduped.length, 3);
+  assert.strictEqual(deduped[0].data, 1);
+  assert.strictEqual(deduped[1].data, 2);
+  assert.strictEqual(deduped[2].data, 4);
+});
+
+test('deduplicateEvents: usa event_id como fallback', function () {
+  var RAVATEX_DOCUMENTS = loadModule();
+  var events = [
+    { event_id: 'x', data: 1 },
+    { event_id: 'x', data: 2 },
+  ];
+  var deduped = RAVATEX_DOCUMENTS.deduplicateEvents(events);
+  assert.strictEqual(deduped.length, 1);
+});
+
+// -------------------------------------------------------------------
+// Testes: sortEventsByCreatedAt
+// -------------------------------------------------------------------
+
+test('sortEventsByCreatedAt: ordena por created_at ascendente', function () {
+  var RAVATEX_DOCUMENTS = loadModule();
+  var events = [
+    { created_at: '2026-07-07T12:20:00Z', label: 'c' },
+    { created_at: '2026-07-07T12:00:00Z', label: 'a' },
+    { created_at: '2026-07-07T12:10:00Z', label: 'b' },
+  ];
+  var sorted = RAVATEX_DOCUMENTS.sortEventsByCreatedAt(events);
+  assert.strictEqual(sorted[0].label, 'a');
+  assert.strictEqual(sorted[1].label, 'b');
+  assert.strictEqual(sorted[2].label, 'c');
+});
+
+// -------------------------------------------------------------------
+// Testes: consolidateDocumentState
+// -------------------------------------------------------------------
+
+test('consolidateDocumentState: ultimo evento por document_id vence', function () {
+  var RAVATEX_DOCUMENTS = loadModule();
+  var events = [
+    { document: { document_id: 'd1' }, status: 'pending_app_acceptance', created_at: '2026-07-07T12:00:00Z' },
+    { document: { document_id: 'd1' }, status: 'accepted', created_at: '2026-07-07T12:20:00Z' },
+    { document: { document_id: 'd2' }, status: 'pending_app_acceptance', created_at: '2026-07-07T12:10:00Z' },
+  ];
+  var consolidated = RAVATEX_DOCUMENTS.consolidateDocumentState(events);
+  assert.strictEqual(consolidated.length, 2);
+  assert.strictEqual(consolidated[0].status, 'accepted');
+  assert.strictEqual(consolidated[1].status, 'pending_app_acceptance');
+});
+
+test('consolidateDocumentState: mantem ordem de primeira aparencia', function () {
+  var RAVATEX_DOCUMENTS = loadModule();
+  var events = [
+    { document: { document_id: 'd1' }, created_at: '2026-07-07T12:00:00Z' },
+    { document: { document_id: 'd2' }, created_at: '2026-07-07T12:10:00Z' },
+    { document: { document_id: 'd1' }, created_at: '2026-07-07T12:20:00Z' },
+  ];
+  var consolidated = RAVATEX_DOCUMENTS.consolidateDocumentState(events);
+  assert.strictEqual(consolidated[0].document.document_id, 'd1');
+  assert.strictEqual(consolidated[1].document.document_id, 'd2');
+});
+
+// -------------------------------------------------------------------
+// Testes: fixture completa
+// -------------------------------------------------------------------
+
+test('fixture: 7 eventos parseados', function () {
+  var RAVATEX_DOCUMENTS = loadModule();
+  var fixture = loadFixture();
+  var events = RAVATEX_DOCUMENTS.parseDocumentEventsJsonl(fixture.text);
+  assert.strictEqual(events.length, 7);
+});
+
+test('fixture: filtro PED-25-2026 retorna todos os eventos', function () {
+  var RAVATEX_DOCUMENTS = loadModule();
+  var fixture = loadFixture();
+  var events = RAVATEX_DOCUMENTS.parseDocumentEventsJsonl(fixture.text);
+  var filtered = RAVATEX_DOCUMENTS.filterEventsByPedido(events, 'PED-25-2026');
+  assert.strictEqual(filtered.length, 7);
+});
+
+test('fixture: filtro pedido inexistente retorna vazio', function () {
+  var RAVATEX_DOCUMENTS = loadModule();
+  var fixture = loadFixture();
+  var events = RAVATEX_DOCUMENTS.parseDocumentEventsJsonl(fixture.text);
+  var filtered = RAVATEX_DOCUMENTS.filterEventsByPedido(events, 'PED-99-2099');
+  assert.strictEqual(filtered.length, 0);
+});
+
+test('fixture: buildDocumentsForPedido consolida 3 docs', function () {
+  var RAVATEX_DOCUMENTS = loadModule();
+  var fixture = loadFixture();
+  var events = RAVATEX_DOCUMENTS.parseDocumentEventsJsonl(fixture.text);
+  var result = RAVATEX_DOCUMENTS.buildDocumentsForPedido(events, 'PED-25-2026');
+  assert.strictEqual(result.consolidatedDocuments.length, 3);
+});
+
+test('fixture: doc_sample_001 consolidado como accepted', function () {
+  var RAVATEX_DOCUMENTS = loadModule();
+  var fixture = loadFixture();
+  var events = RAVATEX_DOCUMENTS.parseDocumentEventsJsonl(fixture.text);
+  var result = RAVATEX_DOCUMENTS.buildDocumentsForPedido(events, 'PED-25-2026');
+  var doc1 = result.consolidatedDocuments.find(function (d) {
+    return d.document.document_id === 'doc_sample_001';
+  });
+  assert.ok(doc1, 'doc_sample_001 nao encontrado');
+  assert.strictEqual(doc1.status, 'accepted');
+  assert.strictEqual(doc1.document.drive_web_view_link, 'https://drive.google.com/file/d/drive_sample_001/view');
+});
+
+test('fixture: drive_web_view_link preservado em cada doc', function () {
+  var RAVATEX_DOCUMENTS = loadModule();
+  var fixture = loadFixture();
+  var events = RAVATEX_DOCUMENTS.parseDocumentEventsJsonl(fixture.text);
+  var result = RAVATEX_DOCUMENTS.buildDocumentsForPedido(events, 'PED-25-2026');
+  result.consolidatedDocuments.forEach(function (doc) {
+    assert.ok(typeof doc.document.drive_web_view_link === 'string', 'doc sem drive_web_view_link');
+    assert.ok(doc.document.drive_web_view_link.indexOf('drive.google.com') !== -1, 'link nao parece do Google Drive');
+  });
+});
+
+test('fixture: doc_sample_002 consolidado como rejected com reason', function () {
+  var RAVATEX_DOCUMENTS = loadModule();
+  var fixture = loadFixture();
+  var events = RAVATEX_DOCUMENTS.parseDocumentEventsJsonl(fixture.text);
+  var result = RAVATEX_DOCUMENTS.buildDocumentsForPedido(events, 'PED-25-2026');
+  var doc2 = result.consolidatedDocuments.find(function (d) {
+    return d.document.document_id === 'doc_sample_002';
+  });
+  assert.ok(doc2, 'doc_sample_002 nao encontrado');
+  assert.strictEqual(doc2.status, 'rejected');
+  assert.ok(doc2.document.reason, 'reason deveria existir em rejected');
+  assert.ok(doc2.document.reason.length > 0, 'reason nao pode ser vazio');
+});
+
+test('fixture: timeline contem 7 eventos ordenados', function () {
+  var RAVATEX_DOCUMENTS = loadModule();
+  var fixture = loadFixture();
+  var events = RAVATEX_DOCUMENTS.parseDocumentEventsJsonl(fixture.text);
+  var result = RAVATEX_DOCUMENTS.buildDocumentsForPedido(events, 'PED-25-2026');
+  assert.strictEqual(result.timeline.length, 7);
+  // Verificar ordenacao ascendente
+  for (var i = 1; i < result.timeline.length; i++) {
+    assert.ok(result.timeline[i - 1].created_at <= result.timeline[i].created_at,
+      'Timeline fora de ordem: ' + result.timeline[i - 1].created_at + ' > ' + result.timeline[i].created_at);
+  }
+});
+
+// -------------------------------------------------------------------
+// Testes: badges
+// -------------------------------------------------------------------
+
+test('badges: status aceito', function () {
+  var RAVATEX_DOCUMENTS = loadModule();
+  var meta = RAVATEX_DOCUMENTS.getDocumentStatusBadgeMeta('accepted');
+  assert.strictEqual(meta.label, 'Aceito');
+  assert.strictEqual(meta.text, '#18794a');
+});
+
+test('badges: status rejeitado', function () {
+  var RAVATEX_DOCUMENTS = loadModule();
+  var meta = RAVATEX_DOCUMENTS.getDocumentStatusBadgeMeta('rejected');
+  assert.strictEqual(meta.label, 'Rejeitado');
+  assert.strictEqual(meta.text, '#a23434');
+});
+
+test('badges: tipo NF', function () {
+  var RAVATEX_DOCUMENTS = loadModule();
+  var meta = RAVATEX_DOCUMENTS.getDocumentTipoBadgeMeta('nf');
+  assert.strictEqual(meta.label, 'NF');
+});
+
+test('badges: tipo romaneio', function () {
+  var RAVATEX_DOCUMENTS = loadModule();
+  var meta = RAVATEX_DOCUMENTS.getDocumentTipoBadgeMeta('romaneio');
+  assert.strictEqual(meta.label, 'Romaneio');
+});
+
+test('badges: formato PDF', function () {
+  var RAVATEX_DOCUMENTS = loadModule();
+  var meta = RAVATEX_DOCUMENTS.getDocumentFormatoBadgeMeta('pdf');
+  assert.strictEqual(meta.label, 'PDF');
+});
+
+test('badges: formato XML', function () {
+  var RAVATEX_DOCUMENTS = loadModule();
+  var meta = RAVATEX_DOCUMENTS.getDocumentFormatoBadgeMeta('xml');
+  assert.strictEqual(meta.label, 'XML');
+});
+
+test('badges: direcao entrada', function () {
+  var RAVATEX_DOCUMENTS = loadModule();
+  var meta = RAVATEX_DOCUMENTS.getDocumentDirecaoBadgeMeta('entrada');
+  assert.strictEqual(meta.label, 'Entrada');
+});
+
+test('badges: direcao saida', function () {
+  var RAVATEX_DOCUMENTS = loadModule();
+  var meta = RAVATEX_DOCUMENTS.getDocumentDirecaoBadgeMeta('saida');
+  assert.strictEqual(meta.label, 'Saida');
+});
+
+test('badges: direcao desconhecida retorna null', function () {
+  var RAVATEX_DOCUMENTS = loadModule();
+  var meta = RAVATEX_DOCUMENTS.getDocumentDirecaoBadgeMeta('desconhecida');
+  assert.strictEqual(meta, null);
+});
+
+// -------------------------------------------------------------------
+// Testes: fmtTimestamp
+// -------------------------------------------------------------------
+
+test('fmtTimestamp: formata ISO para dd/MM HH:mm', function () {
+  var RAVATEX_DOCUMENTS = loadModule();
+  var result = RAVATEX_DOCUMENTS.fmtTimestamp('2026-07-07T12:20:00.000Z');
+  assert.ok(typeof result === 'string');
+  assert.ok(result.indexOf('/') !== -1, 'deveria conter barra de data');
+});
+
+test('fmtTimestamp: valor nulo retorna "-"', function () {
+  var RAVATEX_DOCUMENTS = loadModule();
+  assert.strictEqual(RAVATEX_DOCUMENTS.fmtTimestamp(null), '-');
+});
+
+// -------------------------------------------------------------------
+// Testes: garantias
+// -------------------------------------------------------------------
+
+test('garantias: sem chamada Supabase', function () {
+  var RAVATEX_DOCUMENTS = loadModule();
+  // O modulo nao referencia window.supa ou window.supabase
+  var src = fs.readFileSync(MODULE, 'utf8');
+  assert.ok(src.indexOf('window.supa') === -1, 'modulo referencia window.supa');
+  assert.ok(src.indexOf('window.supabase') === -1, 'modulo referencia window.supabase');
+  assert.ok(src.indexOf('supabase') === -1, 'modulo referencia supabase');
+});
+
+test('garantias: sem chamada Google/Drive', function () {
+  var RAVATEX_DOCUMENTS = loadModule();
+  var src = fs.readFileSync(MODULE, 'utf8');
+  // A unica mencao a drive deve ser no contexto de link de visualizacao
+  // Nao deve importar googleapis, google-auth-library, etc
+  assert.ok(src.indexOf('googleapis') === -1, 'modulo referencia googleapis');
+  assert.ok(src.indexOf('google-auth') === -1, 'modulo referencia google-auth');
+});
+
+test('garantias: sem fetch/rede no modulo', function () {
+  var RAVATEX_DOCUMENTS = loadModule();
+  var src = fs.readFileSync(MODULE, 'utf8');
+  assert.ok(src.indexOf('fetch(') === -1, 'modulo contem fetch');
+  assert.ok(src.indexOf('XMLHttpRequest') === -1, 'modulo contem XMLHttpRequest');
+});
+
+test('garantias: modulo expoe namespace no window', function () {
+  var RAVATEX_DOCUMENTS = loadModule();
+  assert.ok(RAVATEX_DOCUMENTS.parseDocumentEventsJsonl, 'parseDocumentEventsJsonl ausente');
+  assert.ok(RAVATEX_DOCUMENTS.normalizePedidoKey, 'normalizePedidoKey ausente');
+  assert.ok(RAVATEX_DOCUMENTS.buildDocumentsForPedido, 'buildDocumentsForPedido ausente');
+  assert.ok(RAVATEX_DOCUMENTS.deduplicateEvents, 'deduplicateEvents ausente');
+  assert.ok(RAVATEX_DOCUMENTS.consolidateDocumentState, 'consolidateDocumentState ausente');
+  assert.ok(RAVATEX_DOCUMENTS.filterEventsByPedido, 'filterEventsByPedido ausente');
+});
