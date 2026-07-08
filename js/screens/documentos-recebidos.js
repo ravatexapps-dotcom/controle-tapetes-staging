@@ -245,7 +245,8 @@
     return card;
   }
 
-  function screenDocumentosRecebidos(container) {
+  function screenDocumentosRecebidos() {
+    var container = window.el('div', {});
     var received = getReceived();
 
     var page = window.el('div', { style: 'max-width:1100px;' });
