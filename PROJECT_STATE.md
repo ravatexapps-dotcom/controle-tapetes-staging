@@ -19,10 +19,10 @@ D:\OneDrive\Programação\Ravatex\documents-ingestor
 - `contracts/manifest.schema.json` — schema do manifest de Pedido
 
 ## Status atual
-- HEAD (documents-ingestor): `984c7f0`
+- HEAD (documents-ingestor): `956682d`
 - HEAD canônico staging/work/app-next (Controle de Tapetes): `997486a`
 - Push staging: `af919a2..997486a` (produção/origin oficial intocados)
-- 264 testes passando (24 suites) — incluindo integração mockada completa
+- 312 testes passando (26 suites) — incluindo integração mockada completa
 - Hermético: nenhum teste depende de `.env` real, token real ou chamadas Google
 - OAuth real validado (C1)
 - Smoke real com Drive/Gmail reais validado (C2)
@@ -30,6 +30,7 @@ D:\OneDrive\Programação\Ravatex\documents-ingestor
 - Drive tests isolados de credenciais reais (D-R1)
 - CI workflow criado (E)
 - G5 taxonomy validado em real (R4-R1): retry por Gmail messageId confirmado funcional
+- G12-B folder taxonomy paths: builders Recebidos/Pedidos com YYYY/MM/DD (testes, sem ativação no fluxo real)
 
 ## Comandos disponíveis
 - `npm run dev` — tsx watch
@@ -55,8 +56,8 @@ D:\OneDrive\Programação\Ravatex\documents-ingestor
 
 ## Última evidência de testes
 ```
-Test Files  24 passed (24)
-     Tests  264 passed (264)
+Test Files  26 passed (26)
+     Tests  312 passed (312)
 ```
 
 ## Decisão arquitetural
@@ -99,6 +100,8 @@ Não integrar Supabase nesta fase. O outbox JSONL é o contrato de integração.
 - G10-A — Design de integração Controle de Tapetes (modelo outbox, fonte de verdade, transporte, UI)
 - G10-B — Pacote export:package (eventos + manifest + summary + README por pedido, 8 testes)
 - G10-C — Smoke real-lite do export:package em PED-99-2026 (4 arquivos validados, 0 alterações)
+- G12-A — Design da taxonomia futura de Drive (Recebidos + Pedidos com YYYY/MM/DD)
+- G12-B — Path builders da taxonomia futura + testes (sem ativação no fluxo real)
 - G/H — UI Backlog (Controle de Tapetes — staging/work/app-next)
 
 ## Fase G1: Taxonomia de Documentos (3 eixos)

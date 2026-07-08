@@ -3,65 +3,46 @@
 ## Branch/HEAD/Status
 ### documentos-ingestor (este repositório)
 - Branch: master
-- HEAD: `e5c872c` — Record export package real-lite smoke and add data/exports/ to gitignore (G10-C)
+- HEAD: `956682d` — G12-B folder taxonomy path builders + tests (patch pequeno, sem ativação no fluxo real)
 
 ### Controle de Tapetes (staging/work/app-next)
 - HEAD canônico: `997486a`
 
 ## Fase concluída
-RAVATEX-DOC-INGESTOR-G10-C-EXPORT-PACKAGE-REAL-LITE-SMOKE
+RAVATEX-DOCUMENTS-G12-B-FOLDER-TAXONOMY-PATHS
 
 ## Fase anterior
-G10-B — Export package (comando + testes)
+G12-A — Design da taxonomia futura de Drive
 
-## Objetivo da fase G10-C
-Validar `export:package --pedido PED-99-2026` contra dados reais-lite existentes.
+## Objetivo da fase G12-B
+Materializar helpers de paths para a taxonomia futura definida em G12-A, com testes, sem tocar fluxo real (scan, assign, Drive, SQLite, outbox, manifest, export).
 
-### Pedido usado
-PED-99-2026 (documento teste: nf/xml/entrada, status accepted)
+### Novos path builders (src/core/paths.ts)
+- `taxonomiaDatePath(date?)` — helper que retorna `YYYY/MM/DD` (barras, não hífens)
+- `recebidoDrivePath(params)` — path `ROOT/Recebidos/YYYY/MM/DD/tipo/direcao[/filename]`
+- `pedidoTaxonomiaDocumentDrivePath(params)` — path `ROOT/Pedidos/PED/YYYY/MM/DD/tipo/direcao/filename`
+- `pedidoTaxonomiaFolderDrivePath(params)` — path `ROOT/Pedidos/PED/YYYY/MM/DD/tipo/direcao` (pasta)
 
-### Comando executado
-```
-npm.cmd run export:package -- --pedido PED-99-2026 --output data\exports\packages\smoke-g10c
-```
-
-### Pacote gerado — 4 arquivos
-
-**document-events.jsonl** (2 eventos):
-- `document.accepted` — ingestion_event_id=ebfd..., status=accepted, Drive links presentes
-- `document.linked` — ingestion_event_id=c9fe..., status=pending_app_acceptance, Drive links presentes
-- event_id legado = document_id em ambos
-- reason não aplicável (não há rejected)
-
-**manifest.json** (1 documento):
-- pedido: PED-99-2026
-- status: accepted, tipo: nf, formato: xml, direcao_nf: entrada
-- drive_web_view_link presente, storage_uri presente
-
-**summary.json**:
-- totalEvents: 2, totalDocuments: 1
-- eventsByType: document.linked=1, document.accepted=1
-- documentsWithDriveLink: 1
-
-**README.md**:
-- Instruções de idempotência (ingestion_event_id)
-- event_id legado documentado
-- Visualização via drive_web_view_link
-- Sem Supabase/backend
+### Builders legados preservados e inalterados
+- `pendenteDrivePath`, `pedidoDocumentDrivePath`, `pedidoSubfolderDrivePath`, `manifestDrivePath`
+- Continuam usando `pendentes`/`pedidos` (lowercase) com `YYYY-MM-DD` (hífens)
 
 ### Garantias
 - Nenhum scan/assign/sync/link/accept/reject executado
 - Google/Drive não chamado
+- Nenhum arquivo real movido
+- SQLite/schema não alterado
+- Outbox não alterado
+- Manifest não alterado
+- Export package não alterado
 - Controle de Tapetes não tocado
-- `data/app.db` não alterado
-- Pacote gerado removido; arquivos não commitados
-- `.gitignore` atualizado com `data/exports/`
+- Credenciais não tocadas
+- `realScan.ts` e `realAssign.ts` mantêm imports originais de paths legados
 
-### Riscos remanescentes
-1. Bloqueio de mismatch entrada/saída deferido
-2. event_id v2 deferido
-3. Controle de Tapetes ainda não implementa consumo de outbox
+### Testes
+- `tests/paths.test.ts`: 47 testes (era 15, +32 novos)
+- 312 testes totais passando (26 suites)
 
 ### Próxima fase recomendada
-RAVATEX-DOC-INGESTOR-G11-CONTROLE-TAPETES-WATCHER
-Foco: implementar consumo de outbox no Controle de Tapetes. Exibir documentos no pedido via drive_web_view_link. A implementação é no repositório do Controle de Tapetes.
+RAVATEX-DOCUMENTS-G12-C-DRIVE-TAXONOMY-SCAN
+Foco: ativar `recebidoDrivePath` no scan real para novos documentos irem para `Recebidos/YYYY/MM/DD/...` em vez de `pendentes/YYYY-MM-DD/...`. Requer smoke/dry-run prévio e verificação de que documentos existentes não são afetados.
