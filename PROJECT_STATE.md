@@ -1,5 +1,36 @@
 > **Atualizacao 2026-07-08 - fase
-> `RAVATEX-TAPETES-G11-E-DOCUMENTS-MANUAL-IMPORT-UX-CLOSEOUT`.**
+> `RAVATEX-TAPETES-G11-F-LOADER-REAL-PACKAGE`.**
+> Status: **PRONTO — UX ORIENTADA P/ EXPORT PACKAGE**.
+> Entrada: branch `work/app-next`, HEAD base `87d52f5`.
+>
+> Fase minima: ajuste de UX copy para orientar o
+> operador a selecionar `document-events.jsonl` do
+> export package do Documents Ingestor.
+>
+> Nenhuma lacuna tecnica: o parser/loader ja consome
+> corretamente o conteudo de `document-events.jsonl`.
+> `manifest.json`, `summary.json` e `README.md` sao
+> ignorados nesta etapa.
+>
+> Alteracoes:
+> - `js/documents-ingestor-import-ui.js`: botao
+>   "Importar eventos" (antes "Importar docs"),
+>   title/aria-label orientando
+>   "document-events.jsonl do export package",
+>   toast menciona "de document-events.jsonl".
+> - `tests/documents-ingestor-import-ui.test.js`:
+>   5 novos testes validando label, title,
+>   aria-label e toast.
+>
+> Sem ZIP, multi-file, pasta, watcher, polling,
+> Supabase, Google/Drive, export real, alteracao no
+> Documents Ingestor, PDF/XML, persistencia.
+>
+> Testes: import-ui 31/31, loader 43/43, ingestor
+> 44/44, UI smoke 39/39, pedido-detail 172/172.
+>
+> > **Atualizacao 2026-07-08 - fase
+> > `RAVATEX-TAPETES-G11-E-DOCUMENTS-MANUAL-IMPORT-UX-CLOSEOUT`.**
 > Status: **FECHADO — VALIDACAO MANUAL CONCLUIDA**.
 > Entrada: branch `work/app-next`, HEAD base
 > `888cf47`; `origin` e producao intocados. Escrita

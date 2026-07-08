@@ -1,4 +1,26 @@
-﻿# Estado pos-fase - Documents Manual Import UX Closeout
+﻿# Estado pos-fase - Documents Export Package Import
+
+- Fase: `RAVATEX-TAPETES-G11-F-LOADER-REAL-PACKAGE`.
+- Status: **PRONTO — UX ORIENTADA P/ EXPORT PACKAGE**.
+- Branch/HEAD base: `work/app-next`, `87d52f5`.
+- HEAD final: `(commit g11-f)`.
+- Escopo: UX copy para orientar operador a selecionar
+  `document-events.jsonl` do export package.
+- Botao: "Importar eventos" (antes "Importar docs").
+- Title/aria-label: "Selecionar document-events.jsonl
+  do export package do Documents Ingestor".
+- Toast: "N evento(s) carregado(s) de
+  document-events.jsonl. Nada foi persistido."
+- `manifest.json`, `summary.json`, `README.md`
+  ignorados. Sem ZIP, multi-file, pasta, watcher.
+- Testes: 31/31 import-ui (+5 novos), 298/298 total.
+- Arquivos: `documents-ingestor-import-ui.js` (6
+  linhas alteradas), `tests/` (53 linhas, 5 novos
+  testes), `PROJECT_STATE.md`, `AGENT_HANDOFF.md`.
+- Sem alteracao no loader, parser, Pedido Detail,
+  Documents Ingestor, Supabase, Drive, export real.
+
+# Estado pos-fase - Documents Manual Import UX Closeout
 
 - Fase: `RAVATEX-TAPETES-G11-E-DOCUMENTS-MANUAL-IMPORT-UX-CLOSEOUT`.
 - Status: **FECHADO — VALIDACAO MANUAL CONCLUIDA**.
