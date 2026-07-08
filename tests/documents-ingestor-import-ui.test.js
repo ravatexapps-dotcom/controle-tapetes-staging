@@ -186,6 +186,54 @@ test('import-ui: cria botao de import no DOM', function () {
   assert.ok(importBtn.textContent.indexOf('Importar') >= 0, 'label deve conter "Importar"');
 });
 
+test('import-ui: botao exibe "Importar eventos"', function () {
+  var rt = makeImportUISandbox();
+  var buttons = rt.domElements['button'] || [];
+  var importBtn = buttons.find(function (b) { return b.id === 'rv-docs-import-btn'; });
+  assert.equal(importBtn.textContent, 'Importar eventos', 'texto do botao');
+});
+
+test('import-ui: botao title menciona document-events.jsonl', function () {
+  var rt = makeImportUISandbox();
+  var buttons = rt.domElements['button'] || [];
+  var importBtn = buttons.find(function (b) { return b.id === 'rv-docs-import-btn'; });
+  assert.ok(importBtn.title.indexOf('document-events.jsonl') >= 0,
+    'title deve mencionar document-events.jsonl: ' + importBtn.title);
+  assert.ok(importBtn.title.indexOf('export package') >= 0,
+    'title deve mencionar export package: ' + importBtn.title);
+});
+
+test('import-ui: botao aria-label menciona document-events.jsonl', function () {
+  var rt = makeImportUISandbox();
+  var buttons = rt.domElements['button'] || [];
+  var importBtn = buttons.find(function (b) { return b.id === 'rv-docs-import-btn'; });
+  var al = importBtn['aria-label'] || importBtn.ariaLabel || '';
+  assert.ok(al.indexOf('document-events.jsonl') >= 0,
+    'aria-label deve mencionar document-events.jsonl: ' + al);
+});
+
+test('import-ui: file input aria-label menciona document-events.jsonl', function () {
+  var rt = makeImportUISandbox();
+  var fi = rt.fileInputEl;
+  assert.ok(fi, 'file input deve existir');
+  assert.ok(fi['aria-label'] && fi['aria-label'].indexOf('document-events.jsonl') >= 0,
+    'input aria-label deve mencionar document-events.jsonl: ' + fi['aria-label']);
+});
+
+test('import-ui: toast sucesso menciona document-events.jsonl', function () {
+  var rt = makeImportUISandbox({
+    mockFileContent: fixtureText,
+  });
+  var fileInput = rt.fileInputEl;
+  fileInput.files = [{ name: 'events.jsonl' }];
+  fileInput._changeHandlers.forEach(function (fn) { fn(); });
+  var successToast = rt.toasts.find(function (t) { return t.type === 'success'; });
+  assert.ok(successToast, 'deve haver toast de sucesso');
+  assert.ok(successToast.msg.indexOf('document-events.jsonl') >= 0,
+    'toast deve mencionar document-events.jsonl');
+  assert.ok(successToast.msg.indexOf('7 evento(s)') >= 0, 'deve conter o count');
+});
+
 test('import-ui: cria file input hidden', function () {
   var rt = makeImportUISandbox();
   assert.ok(rt.fileInputEl, 'file input deve existir');

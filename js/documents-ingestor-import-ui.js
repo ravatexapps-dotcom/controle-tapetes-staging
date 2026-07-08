@@ -102,7 +102,7 @@
     fileInput.accept = '.jsonl,.txt,application/jsonl,text/plain';
     fileInput.style.display = 'none';
     fileInput.id = 'rv-docs-import-input';
-    fileInput.setAttribute('aria-label', 'Selecionar arquivo JSONL do Documents Ingestor');
+    fileInput.setAttribute('aria-label', 'Selecionar document-events.jsonl do export package do Documents Ingestor');
 
     fileInput.addEventListener('change', function () {
       var file = fileInput.files && fileInput.files[0];
@@ -114,7 +114,7 @@
         var result = docs.loadDocumentsIngestorEventsFromText(text);
 
         if (result.ok) {
-          var msg = result.count + ' evento(s) do Documents Ingestor carregado(s). '
+          var msg = result.count + ' evento(s) carregado(s) de document-events.jsonl. '
             + 'Abra ou recarregue o Pedido para ver "Documentos Recebidos (Ingestor)". '
             + 'Nada foi persistido.';
           window.toast(msg, 'success');
@@ -140,9 +140,9 @@
     var btn = document.createElement('button');
     btn.type = 'button';
     btn.id = IMPORT_BUTTON_ID;
-    btn.setAttribute('aria-label', 'Importar eventos do Documents Ingestor');
-    btn.title = 'Importar JSONL do Documents Ingestor';
-    btn.textContent = 'Importar docs';
+    btn.setAttribute('aria-label', 'Selecionar document-events.jsonl do export package do Documents Ingestor');
+    btn.title = 'Selecionar document-events.jsonl do export package do Documents Ingestor';
+    btn.textContent = 'Importar eventos';
     btn.style.cssText =
       'position:fixed;bottom:16px;right:16px;z-index:100;'
       + 'background:#2563eb;color:#fff;border:none;border-radius:6px;'
