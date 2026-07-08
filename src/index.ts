@@ -14,3 +14,5 @@ export type { SyncManifestResult } from './core/syncManifest.js';
 export type { ExportPackageResult } from './core/exportPackage.js';
 export { exportReceivedDocuments, listReceivedDocuments } from './core/exportPackage.js';
 export type { ExportReceivedResult, ExportReceivedOptions, ReceivedDocumentRow } from './core/exportPackage.js';
+export { exportMappedDocuments, listMappedDocuments } from './core/exportPackage.js';
+export type { ExportMappedResult, ExportMappedOptions, MappedDocumentRow } from './core/exportPackage.js';

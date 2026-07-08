@@ -3,13 +3,13 @@
 ## Branch/HEAD/Status
 ### documentos-ingestor (este repositório)
 - Branch: master
-- HEAD: `7affcfe` — G12-C1: scan emite document.detected, assign emite document.linked (sem schema novo)
+- HEAD: `60ccada` — G12-E2: exportMappedDocuments + CLI export-mapped (sem schema novo, sem Drive, sem scan)
 
 ### Controle de Tapetes (staging/work/app-next)
 - HEAD canônico: `997486a`
 
 ## Fase concluída
-RAVATEX-DOCUMENTS-G12-D1-RECEIVED-DOCUMENTS-EXPORT
+RAVATEX-DOCUMENTS-G12-E2-MAPPED-DOCUMENTS-EXPORT
 
 ## Fase anterior
 G12-C1 — Evento document.detected no scan (sem schema novo)
@@ -140,3 +140,114 @@ A consulta parte do estado atual do documento (não do evento), protegendo contr
 ### Próxima fase recomendada
 RAVATEX-DOCUMENTS-G12-D2-RECEIVED-DOCUMENTS-CONSUMER
 Foco: opcionalmente integrar `documentos-recebidos.jsonl` no Controle de Tapetes para exibir a fila de documentos pendentes de atrelamento (read-only, mesmo contrato JSONL).
+
+---
+
+## Fase G12-E2: Mapped Documents Export (patch pequeno)
+
+### Objetivo
+Exportar todos os documentos mapeados (pending/assigned/accepted/rejected) para JSONL (`documentos-mapeados.jsonl`), com timestamps por evento, sem mutar DB, sem Drive, sem schema, sem scan real.
+
+### Patch aplicado (a partir de `60ccada`)
+
+**src/core/exportPackage.ts:**
+- `listMappedDocuments({ status?, daysBack?, limit? })` — consulta `documentos` (todas as status) com subqueries correlacionadas em `ingestion_events` para `detected_at`, `linked_at`, `accepted_at`, `rejected_at` (via `MIN(created_at)` por `event_type`) e `rejected_reason` (do evento rejected)
+- `exportMappedDocuments({ outputPath?, status?, daysBack?, limit? })` — gera JSONL; default `data/exports/documentos-mapeados.jsonl`
+- Tipos: `MappedDocumentRow`, `ExportMappedOptions`, `ExportMappedResult`
+- Idempotente: não altera DB, não marca `exported_at`, não escreve no outbox
+- Cada linha inclui `schema_version: 1`
+
+**src/index.ts:**
+- Re-exporta `exportMappedDocuments`, `listMappedDocuments` e tipos `ExportMappedResult`, `ExportMappedOptions`, `MappedDocumentRow`
+
+**src/cli.ts:**
+- Novo comando `export-mapped` com flags `--output`, `--status`, `--days`, `--limit` (cap 5000)
+- Sem `--confirm-real-google` — operação é inerentemente read-only
+
+**package.json:**
+- Script `export:mapped` (`tsx src/cli.ts export-mapped`)
+
+**tests/export-mapped.test.ts (novo, 13 testes):**
+- Exporta pending sem pedido_manual
+- Exporta assigned com pedido_manual
+- Exporta accepted com accepted_at
+- Exporta rejected com rejected_at e rejected_reason
+- Campos não aplicáveis saem null
+- schema_version: 1 em todas as linhas
+- Filtro --status
+- Filtro --days
+- --limit
+- Idempotência (DB, outbox, eventos intactos)
+- Duplicatas de evento do mesmo tipo não duplicam documento no export
+- Integração com link/accept flow
+- Integração com link/reject flow
+
+### Contrato JSONL por linha (documentos-mapeados.jsonl)
+```json
+{
+  "schema_version": 1,
+  "document_id": "uuid",
+  "filename_original": "NF-12345.xml",
+  "tipo_documento": "nf",
+  "formato": "xml",
+  "direcao_nf": "entrada",
+  "status": "pending|assigned|accepted|rejected",
+  "pedido_manual": "PED-XX-YYYY ou null",
+  "gmail_message_id": "...",
+  "thread_id": "...",
+  "drive_file_id": "...",
+  "drive_web_view_link": "https://...",
+  "received_at": "ISO",
+  "detected_at": "ISO ou null",
+  "linked_at": "ISO ou null",
+  "accepted_at": "ISO ou null",
+  "rejected_at": "ISO ou null",
+  "rejected_reason": "string ou null"
+}
+```
+
+### Query final (partindo de `documentos d`)
+```sql
+SELECT
+  d.id, d.filename_original, d.tipo_documento, d.formato, d.direcao_nf,
+  d.status, d.pedido_manual, d.gmail_message_id, d.thread_id,
+  d.drive_file_id, d.drive_web_view_link,
+  d.created_at AS received_at,
+  (SELECT MIN(e.created_at) FROM ingestion_events e
+    WHERE e.document_id = d.id AND e.event_type = 'document.detected') AS detected_at,
+  (SELECT MIN(e.created_at) FROM ingestion_events e
+    WHERE e.document_id = d.id AND e.event_type = 'document.linked') AS linked_at,
+  (SELECT MIN(e.created_at) FROM ingestion_events e
+    WHERE e.document_id = d.id AND e.event_type = 'document.accepted') AS accepted_at,
+  (SELECT MIN(e.created_at) FROM ingestion_events e
+    WHERE e.document_id = d.id AND e.event_type = 'document.rejected') AS rejected_at,
+  (SELECT e.reason FROM ingestion_events e
+    WHERE e.document_id = d.id AND e.event_type = 'document.rejected'
+    ORDER BY e.created_at ASC LIMIT 1) AS rejected_reason
+FROM documentos d
+[WHERE d.status = ? AND d.created_at >= ?]
+ORDER BY d.created_at DESC
+LIMIT ?
+```
+
+A query parte de `documentos` (não de eventos) — `MIN(created_at)` agregado por `event_type` garante que duplicatas de evento (cenário defensivo) não duplicam documentos.
+
+### Garantias
+- Nenhuma chamada Google/Drive
+- Nenhum scan real
+- Nenhum export real externo
+- SQLite/schema.sql não alterado
+- `exportPackage()` e `exportReceivedDocuments()` inalterados
+- `outbox.ts`, `link.ts`, `queries.ts`, `acceptance.ts`, `realAssign.ts`, `realScan.ts` não alterados
+- Controle de Tapetes não tocado
+- `documentos-recebidos.jsonl` continua funcionando (sem quebra)
+- 13 testes novos passando, 0 quebrados nas regressões
+
+### Riscos remanescentes
+- **Sem `received_at` nativo**: usa `documentos.created_at` (≈scan time). Se a UI precisar do timestamp do email, JOIN com `emails_processados.processed_at` seria necessário em fase futura.
+- **Múltiplos eventos do mesmo tipo**: mitigado com `MIN(created_at)` — se houver, o timestamp mais antigo prevalece (semântica: "quando o documento foi detectado/pela primeira vez").
+- **Sem marca `exported_at`**: consumidor (Controle) deve dedupar por `document_id` se rodar o export múltiplas vezes.
+
+### Próxima fase recomendada
+RAVATEX-DOCUMENTS-G12-F-MAPPED-DOCUMENTS-CONSUMER
+Foco: opcionalmente integrar `documentos-mapeados.jsonl` no Controle de Tapetes para exibir a fila de documentos com status, pedido_manual, timestamps por evento e `rejected_reason` (read-only, mesmo contrato JSONL).

@@ -19,10 +19,10 @@ D:\OneDrive\Programação\Ravatex\documents-ingestor
 - `contracts/manifest.schema.json` — schema do manifest de Pedido
 
 ## Status atual
-- HEAD (documents-ingestor): `7affcfe`
+- HEAD (documents-ingestor): `60ccada`
 - HEAD canônico staging/work/app-next (Controle de Tapetes): `997486a`
 - Push staging: `af919a2..997486a` (produção/origin oficial intocados)
-- 327 testes passando (27 suites) — incluindo integração mockada completa
+- 327+13=340 testes passando (28 suites) — incluindo integração mockada completa
 - Hermético: nenhum teste depende de `.env` real, token real ou chamadas Google
 - OAuth real validado (C1)
 - Smoke real com Drive/Gmail reais validado (C2)
@@ -33,6 +33,8 @@ D:\OneDrive\Programação\Ravatex\documents-ingestor
 - G12-B folder taxonomy paths: builders Recebidos/Pedidos com YYYY/MM/DD
 - G12-C1: scan emite document.detected (pedido_manual=''); assign emite document.linked
 - G12-D1: exportReceivedDocuments + CLI export-received (9 testes herméticos)
+- G12-E1: design do export de documentos mapeados (read-only, zero alterações)
+- G12-E2: exportMappedDocuments + CLI export-mapped (13 testes herméticos)
 
 ## Comandos disponíveis
 - `npm run dev` — tsx watch
@@ -111,6 +113,8 @@ Não integrar Supabase nesta fase. O outbox JSONL é o contrato de integração.
 - G12-B — Path builders da taxonomia futura + testes (sem ativação no fluxo real)
 - G12-C1 — Evento document.detected no scan + document.linked no assign (sem schema novo)
 - G12-D1 — exportReceivedDocuments + CLI `export-received` (read-only, sem Drive, sem scan, sem schema)
+- G12-E1 — Design do export de documentos mapeados (todos os status, com timestamps por evento)
+- G12-E2 — exportMappedDocuments + CLI `export-mapped` (read-only, sem Drive, sem scan, sem schema, 13 testes)
 - G/H — UI Backlog (Controle de Tapetes — staging/work/app-next)
 
 ## Fase G1: Taxonomia de Documentos (3 eixos)
@@ -132,5 +136,5 @@ Não integrar Supabase nesta fase. O outbox JSONL é o contrato de integração.
 - Status residual esperado: `?? supabase/.temp/`
 
 ## Próxima fase recomendada
-RAVATEX-DOCUMENTS-G12-D2-RECEIVED-DOCUMENTS-CONSUMER
-Foco: integração opcional do `documentos-recebidos.jsonl` no Controle de Tapetes para exibir a fila de documentos pendentes de atrelamento (read-only, sem mutação, mesmo contrato JSONL).
+RAVATEX-DOCUMENTS-G12-F-MAPPED-DOCUMENTS-CONSUMER
+Foco: integração opcional do `documentos-mapeados.jsonl` (e/ou `documentos-recebidos.jsonl`) no Controle de Tapetes para exibir a fila de documentos com status, pedido, timestamps por evento e `rejected_reason` (read-only, sem mutação, mesmo contrato JSONL).

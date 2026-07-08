@@ -12,7 +12,7 @@ import { linkDocumentToPedido } from './core/link.js';
 import { acceptDocument, rejectDocument } from './core/acceptance.js';
 import { normalizePedido } from './core/pedido.js';
 import { exportManifest, syncManifest } from './core/syncManifest.js';
-import { exportPackage, exportReceivedDocuments } from './core/exportPackage.js';
+import { exportPackage, exportReceivedDocuments, exportMappedDocuments } from './core/exportPackage.js';
 import { closeDb, getDb } from './storage/sqlite.js';
 
 const program = new Command();
@@ -598,6 +598,61 @@ program
     console.log('[export-received] Exported %d received document(s).', result.totalDocuments);
     console.log('[export-received] Output: %s', result.outputPath);
     console.log('[export-received] Local-only — no Google Drive calls performed.');
+    closeDb();
+  });
+
+program
+  .command('export-mapped')
+  .description('Export mapped documents (all statuses) to JSONL (read-only, no Google Drive)')
+  .option('--output <path>', 'Output file path (default: data/exports/documentos-mapeados.jsonl)')
+  .option('--status <status>', 'Filter by status: pending|assigned|accepted|rejected')
+  .option('--days <n>', 'Filter documents created in the last N days')
+  .option('--limit <n>', 'Max documents to export (cap 5000)', '5000')
+  .action((opts) => {
+    const validStatuses = ['pending', 'assigned', 'accepted', 'rejected'] as const;
+    let status: 'pending' | 'assigned' | 'accepted' | 'rejected' | undefined;
+    if (opts.status) {
+      if (!(validStatuses as readonly string[]).includes(opts.status)) {
+        console.error('[export-mapped] --status must be one of: pending, assigned, accepted, rejected. Got:', opts.status);
+        process.exit(1);
+      }
+      status = opts.status as 'pending' | 'assigned' | 'accepted' | 'rejected';
+    }
+
+    let daysBack: number | undefined;
+    if (opts.days !== undefined) {
+      const n = parseInt(opts.days, 10);
+      if (!Number.isFinite(n) || n < 1) {
+        console.error('[export-mapped] --days must be a positive integer. Got:', opts.days);
+        process.exit(1);
+      }
+      daysBack = n;
+    }
+
+    let limit: number | undefined;
+    if (opts.limit !== undefined) {
+      const n = parseInt(opts.limit, 10);
+      if (!Number.isFinite(n) || n < 1) {
+        console.error('[export-mapped] --limit must be a positive integer. Got:', opts.limit);
+        process.exit(1);
+      }
+      if (n > 5000) {
+        console.error(`[export-mapped] --limit capped at 5000 (was ${n})`);
+        limit = 5000;
+      } else {
+        limit = n;
+      }
+    }
+
+    const result = exportMappedDocuments({
+      outputPath: opts.output,
+      status,
+      daysBack,
+      limit,
+    });
+    console.log('[export-mapped] Exported %d mapped document(s).', result.totalDocuments);
+    console.log('[export-mapped] Output: %s', result.outputPath);
+    console.log('[export-mapped] Local-only — no Google Drive calls performed.');
     closeDb();
   });
 
