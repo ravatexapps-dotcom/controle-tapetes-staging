@@ -5754,3 +5754,70 @@ Tecelagem em producao** — `js/screens/op-tecelagem-producao-admin.js` (reescri
 - **Observacao sobre skill:** `.claude/design-skill/README.md` permanece untracked.
   Decisao posterior: (1) manter local/untracked; (2) versionar `.claude/design-skill/`;
   (3) copiar aprendizados para docs versionados do projeto.
+
+---
+
+## RAVATEX-TAPETES-G11-A-DOCUMENTS-CONSUMER-DESIGN (2026-07-07)
+
+**Fase documental.** Diagnosticou como o Controle de Tapetes deve consumir
+documentos do Documents Ingestor (HEAD `956682d`, `master`) sem acoplamento
+direto.
+
+- **Status:** CONCLUIDO — DOCUMENTAL
+- **HEAD base Controle de Tapetes:** `381506c` — `work/app-next`
+- **HEAD base Documents Ingestor:** `956682d` — `master`
+- **Branch:** `work/app-next`
+- **Status inicial:** `?? .claude/` `?? supabase/.temp/`
+
+### Arquivos lidos — Controle de Tapetes
+
+- `js/screens/pedido-detail.js`, `pedido-detail-data.js`, `pedido-detail-progress.js`,
+  `pedido-detail-render.js`, `pedido-detail-events.js`
+- `js/screens/cliente-pedido-detail.js`
+- `js/ui.js`, `js/pedido-ui.js`, `js/badges.js`, `js/op-display.js`
+- `docs/architecture/PEDIDO_OP_MOVIMENTACAO_DOCUMENTOS_PLANO.md`
+- `docs/architecture/PEDIDO_OP_SCHEMA_CONTRACT.md`
+- `PROJECT_STATE.md`, `AGENT_HANDOFF.md`
+
+### Arquivos lidos — Documents Ingestor
+
+- `docs/CONTROL_TAPETES_DOCUMENTS_CONTRACT.md`
+- `contracts/document-event.schema.json`
+- `contracts/examples/document-events.sample.jsonl`
+- `docs/architecture/G10_CONTROLE_TAPETES_INTEGRATION_DESIGN.md`
+- `PROJECT_STATE.md`, `AGENT_HANDOFF.md`
+
+### Arquivos criados/alterados
+
+- `docs/architecture/DOCUMENTS_INGESTOR_CONSUMER_DESIGN.md` (criado)
+- `PROJECT_STATE.md` (atualizado)
+- `AGENT_HANDOFF.md` (atualizado)
+
+### Decisoes principais
+
+| Decisao | Valor |
+|---------|-------|
+| Onde exibir | Card "Documentos" existente no detalhe do Pedido (`pedido-detail-render.js:994`) |
+| Mapeamento | `PED-{numeroPad2}-{ano}` derivado de `pedido.numero` + `criado_em` |
+| Consumo | Import manual de JSONL (`export:package`) — sem rede, sem schema |
+| Estado | Cache em `window.RAVATEX_DOCUMENTS_CACHE`, sem Supabase |
+| Idempotencia | `ingestion_event_id` como chave unica |
+| Visualizacao | `drive_web_view_link` em `window.open()` |
+| Supabase indice | Rejeitado |
+| Accept/reject no app | Deferido |
+
+### Proxima fase
+
+`RAVATEX-TAPETES-G11-B-DOCUMENTS-CONSUMER-PATCH`:
+1. `js/documents-ingestor.js` (novo)
+2. `data/fixtures/document-events-sample.jsonl` (novo)
+3. `pedido-detail-progress.js` (modificar — computeViewModel)
+4. `pedido-detail-render.js` (modificar — buildDocuments)
+5. `tests/documents-ingestor.test.js` (novo)
+6. `tests/pedido-detail.smoke.js` (atualizar)
+7. Agente recomendado: DeepSeek Pro (3+ arquivos funcionais)
+
+### Detalhamento completo
+
+Ver `docs/architecture/DOCUMENTS_INGESTOR_CONSUMER_DESIGN.md` para matriz de
+decisao, riscos, UI minima, e ordem pronta para o proximo IAExecutor.

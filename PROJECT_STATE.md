@@ -6109,3 +6109,85 @@ Senhas de teste antigas em `docs/qa/fase1-checklist.md` e
 > A retroalimentacao em `.claude/design-skill/README.md` permanece untracked.
 > Decisao posterior necessaria: (1) manter skill local/untracked; (2) versionar
 > `.claude/design-skill/`; (3) ou copiar aprendizados para docs versionados.
+
+---
+
+## Fase: RAVATEX-TAPETES-G11-A-DOCUMENTS-CONSUMER-DESIGN
+
+> **Status:** CONCLUIDO — DOCUMENTAL
+> **Tipo:** Diagnostico + design de consumo read-only em Controle de Tapetes.
+> **HEAD base:** `381506c` — `work/app-next`
+> **Data:** 2026-07-07
+> **Documentos Ingestor HEAD:** `956682d` — `master`
+
+### Escopo
+
+Diagnosticar como o Controle de Tapetes deve consumir documentos do Documents
+Ingestor por pedido, sem implementar patch funcional, sem alterar Supabase,
+sem alterar Documents Ingestor.
+
+### Arquivos lidos — Controle de Tapetes
+
+- `js/screens/pedido-detail.js`
+- `js/screens/pedido-detail-data.js`
+- `js/screens/pedido-detail-progress.js`
+- `js/screens/pedido-detail-render.js`
+- `js/screens/pedido-detail-events.js`
+- `js/screens/cliente-pedido-detail.js`
+- `js/ui.js`
+- `js/pedido-ui.js`
+- `js/badges.js`
+- `js/op-display.js`
+- `docs/architecture/PEDIDO_OP_MOVIMENTACAO_DOCUMENTOS_PLANO.md`
+- `docs/architecture/PEDIDO_OP_SCHEMA_CONTRACT.md`
+- `docs/architecture/DOCUMENTS_INGESTOR_CONSUMER_DESIGN.md` (criado nesta fase)
+- `PROJECT_STATE.md`
+- `AGENT_HANDOFF.md`
+
+### Arquivos lidos — Documents Ingestor
+
+- `docs/CONTROL_TAPETES_DOCUMENTS_CONTRACT.md`
+- `contracts/document-event.schema.json`
+- `contracts/examples/document-events.sample.jsonl`
+- `docs/architecture/G10_CONTROLE_TAPETES_INTEGRATION_DESIGN.md`
+- `PROJECT_STATE.md`
+- `AGENT_HANDOFF.md`
+
+### Arquivos criados
+
+- `docs/architecture/DOCUMENTS_INGESTOR_CONSUMER_DESIGN.md` — design completo
+  com matriz de decisao, ordem para G11-B, riscos, UI minima
+
+### Decisoes
+
+| # | Decisao | Fundamentacao |
+|---|---------|--------------|
+| D-G11A-01 | Card "Documentos" existente no detalhe do Pedido recebe secao "Documentos Recebidos" do Ingestor | Card ja existe (`pedido-detail-render.js:994`); alteracao minima |
+| D-G11A-02 | Mapeamento Pedido → Ingestor: `PED-{numeroPad2}-{ano}` derivado de `pedido.numero` + `criado_em.getFullYear()` | Independe de input manual; ano desambigua |
+| D-G11A-03 | Consumo por import manual de JSONL gerado por `export:package` | Opcao 1 da matriz; sem rede, sem schema, sem watcher |
+| D-G11A-04 | Cache em `window.RAVATEX_DOCUMENTS_CACHE` opcional | Nao requer Supabase; padrao do app |
+| D-G11A-05 | Idempotencia por `ingestion_event_id` | Contrato §6; Map de deduplicacao |
+| D-G11A-06 | Visualizacao via `drive_web_view_link` em `window.open()` | Contrato §2.3; sem iframe, sem download |
+| D-G11A-07 | Supabase como indice: **Rejeitado** | Acoplamento direto ao banco do Ingestor |
+| D-G11A-08 | Accept/reject no Controle de Tapetes: **Deferido** | Funil continua no Ingestor CLI |
+
+### Garantias
+
+- Nenhum Supabase tocado
+- Nenhuma chamada Google/Drive
+- Nenhum export real executado
+- Controle de Tapetes sem patch funcional
+- Documents Ingestor inalterado
+- Nenhum dado real commitado
+- Leitura 100% read-only em ambos os repos
+
+### Proxima fase
+
+`RAVATEX-TAPETES-G11-B-DOCUMENTS-CONSUMER-PATCH`
+
+Patch funcional minimo com:
+1. `js/documents-ingestor.js` — parser JSONL + filtro por pedido + consolidacao
+2. `data/fixtures/document-events-sample.jsonl`
+3. Modificacao em `pedido-detail-progress.js` (computeViewModel)
+4. Modificacao em `pedido-detail-render.js` (buildDocuments)
+5. Testes: `tests/documents-ingestor.test.js` + smoke
