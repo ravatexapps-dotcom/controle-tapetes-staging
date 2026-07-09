@@ -1226,3 +1226,36 @@ test('G20-B: botao legado Importar eventos segue ausente com statusOverrides ati
   const legacyBtns = findAll(result, (n) => n._attrs && n._attrs['data-action'] === 'importar-eventos');
   assert.equal(legacyBtns.length, 0, 'Importar eventos ausente');
 });
+
+// G20-B-R1: guarda document_id nas ações
+test('G20-B-R1: doc sem document_id NAO mostra botoes Aceitar/Rejeitar', function () {
+  const sb = makeScreenSandbox([{ filename_original: 'no-id.pdf', status: 'pending' }]);
+  const container = new FakeNode('div');
+  sb.container = container;
+  const result = vm.runInContext('window.screenDocumentosRecebidos(container)', sb);
+  const rows = findAll(result, (n) => n._attrs && n._attrs['data-row'] === 'documento-recebido');
+  assert.equal(rows.length, 1, '1 row');
+  const rowText = textOf(rows[0]);
+  assert.ok(rowText.indexOf('Pendente') >= 0, 'mostra Pendente');
+  assert.strictEqual(rowText.indexOf('Aceitar'), -1, 'sem botao Aceitar');
+  assert.strictEqual(rowText.indexOf('Rejeitar'), -1, 'sem botao Rejeitar');
+});
+
+test('G20-B-R1: doc com document_id mostra botoes Aceitar/Rejeitar', function () {
+  const sb = makeScreenSandbox([{ document_id: 'cda18ef9-d1d9-4f5a-8956-74875cd60b05', filename_original: 'ok.pdf', status: 'pending' }]);
+  const container = new FakeNode('div');
+  sb.container = container;
+  const result = vm.runInContext('window.screenDocumentosRecebidos(container)', sb);
+  const acceptBtns = findAll(result, (n) => n._attrs && n._attrs['data-action'] === 'aceitar-documento');
+  const rejectBtns = findAll(result, (n) => n._attrs && n._attrs['data-action'] === 'rejeitar-documento');
+  assert.ok(acceptBtns.length > 0 || rejectBtns.length > 0, 'pelo menos um botao deve aparecer');
+});
+
+test('G20-B-R1: doc sem document_id NAO mostra botao Desfazer', function () {
+  const sb = makeScreenSandbox([{ filename_original: 'no-id.pdf', status: 'pending' }]);
+  const container = new FakeNode('div');
+  sb.container = container;
+  const result = vm.runInContext('window.screenDocumentosRecebidos(container)', sb);
+  const undos = findAll(result, (n) => n._attrs && n._attrs['data-action'] === 'desfazer-decisao-documento');
+  assert.equal(undos.length, 0, 'sem botao Desfazer');
+});

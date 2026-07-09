@@ -276,11 +276,12 @@
 
   function decorateDoc(doc, index) {
     var filename = doc && (doc.filename_original || doc.name || doc.filename) ? (doc.filename_original || doc.name || doc.filename) : 'Documento';
+    var hasRealId = doc && typeof doc.document_id === 'string' && doc.document_id.length >= 32 && doc.document_id.indexOf('-') >= 0;
     var id = doc && (doc.document_id || doc.id) ? (doc.document_id || doc.id) : 'doc-' + index;
     var formato = inferFormato(doc, filename);
     var tipo = inferTipo(doc, filename);
     var direcao = inferDirecao(doc, filename);
-    var effective = typeof window.RAVATEX_DOCUMENTS !== 'undefined'
+    var effective = hasRealId && typeof window.RAVATEX_DOCUMENTS !== 'undefined'
       && typeof window.RAVATEX_DOCUMENTS.getEffectiveDocumentStatus === 'function'
       ? window.RAVATEX_DOCUMENTS.getEffectiveDocumentStatus(doc) : null;
     var importedStatus = normalizeStatus(doc && doc.status);
@@ -290,6 +291,7 @@
     var when = receivedAt(doc);
     return {
       id: id,
+      hasRealId: hasRealId,
       raw: doc || {},
       filename: filename,
       from: doc && (doc.gmail_from || doc.from || doc.sender || doc.email_from || doc.origem_email) || '',
@@ -472,7 +474,7 @@
       }, 'Sem link'));
     }
 
-    if (doc.status === 'pending') {
+    if (doc.status === 'pending' && doc.hasRealId) {
       wrap.appendChild(iconButton('Rejeitar', SVG_X, function () {
         var motivo = typeof window.prompt === 'function' ? window.prompt('Motivo da rejeição:') : '';
         if (motivo === null) return;
@@ -513,7 +515,7 @@
       }));
     }
 
-    if (doc.hasLocalDecision) {
+    if (doc.hasLocalDecision && doc.hasRealId) {
       wrap.appendChild(iconButton('Desfazer', null, function () {
         if (typeof window.RAVATEX_DOCUMENTS !== 'undefined'
             && typeof window.RAVATEX_DOCUMENTS.removeDocumentDecision === 'function') {

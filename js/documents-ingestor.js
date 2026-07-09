@@ -430,6 +430,7 @@
 
   ns.saveDocumentDecision = function saveDocumentDecision(documentId, decision) {
     if (typeof documentId !== 'string' || !documentId) return { ok: false, error: 'document_id obrigatorio' };
+    if (documentId.indexOf('doc-') === 0) return { ok: false, error: 'document_id invalido (fallback)' };
     if (!decision || typeof decision !== 'object') return { ok: false, error: 'decision invalida' };
     var st = decision.status;
     if (st !== 'accepted' && st !== 'rejected') return { ok: false, error: 'status deve ser accepted ou rejected' };
@@ -491,7 +492,7 @@
       effectiveStatus: effSt,
       decision: decision,
       isLocalDecision: !!decision,
-      isDivergent: decision && decision.status !== impSt,
+      isDivergent: decision ? (decision.status !== impSt) : false,
     };
   };
 

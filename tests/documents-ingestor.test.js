@@ -1034,3 +1034,55 @@ test('G14-B: mapReceivedDocToEventShape reason usa rejected_reason com prioridad
   assert.strictEqual(ev.document.reason, 'prioritario',
     'rejected_reason deve ter prioridade sobre reason');
 });
+
+// G20-B-R1: guardas de document_id
+test('G20-B-R1: saveDocumentDecision rejeita document_id ausente', function () {
+  var R = loadModule();
+  var r1 = R.saveDocumentDecision('', { status: 'accepted' });
+  assert.strictEqual(r1.ok, false, 'vazio rejeitado');
+  var r2 = R.saveDocumentDecision(null, { status: 'accepted' });
+  assert.strictEqual(r2.ok, false, 'null rejeitado');
+  var r3 = R.saveDocumentDecision(undefined, { status: 'accepted' });
+  assert.strictEqual(r3.ok, false, 'undefined rejeitado');
+});
+
+test('G20-B-R1: saveDocumentDecision rejeita document_id fallback doc-X', function () {
+  var R = loadModule();
+  var r1 = R.saveDocumentDecision('doc-0', { status: 'accepted' });
+  assert.strictEqual(r1.ok, false, 'doc-0 rejeitado');
+  assert.ok(r1.error.indexOf('fallback') >= 0, 'mensagem de erro cita fallback');
+  var r2 = R.saveDocumentDecision('doc-123', { status: 'accepted' });
+  assert.strictEqual(r2.ok, false, 'doc-123 rejeitado');
+});
+
+test('G20-B-R1: saveDocumentDecision rejeita status invalido', function () {
+  var R = loadModule();
+  var r = R.saveDocumentDecision('abc-def-ghi', { status: 'invalid' });
+  assert.strictEqual(r.ok, false, 'status invalido rejeitado');
+});
+
+test('G20-B-R1: saveDocumentDecision rejeita rejeicao sem motivo', function () {
+  var R = loadModule();
+  var r1 = R.saveDocumentDecision('abc-def-ghi', { status: 'rejected' });
+  assert.strictEqual(r1.ok, false, 'sem motivo rejeitado');
+  var r2 = R.saveDocumentDecision('abc-def-ghi', { status: 'rejected', motivo: '' });
+  assert.strictEqual(r2.ok, false, 'motivo vazio rejeitado');
+  var r3 = R.saveDocumentDecision('abc-def-ghi', { status: 'rejected', motivo: '   ' });
+  assert.strictEqual(r3.ok, false, 'motivo whitespace rejeitado');
+});
+
+test('G20-B-R1: getEffectiveDocumentStatus gera isDivergent boolean false sem decisao', function () {
+  var R = loadModule();
+  var r = R.getEffectiveDocumentStatus('abc-def-ghi', 'accepted');
+  assert.strictEqual(r.isDivergent, false, 'isDivergent deve ser false');
+  assert.strictEqual(r.isLocalDecision, false, 'isLocalDecision deve ser false');
+  assert.strictEqual(r.effectiveStatus, 'accepted', 'efetivo = importado');
+});
+
+test('G20-B-R1: getEffectiveDocumentStatus retorna null para doc sem id', function () {
+  var R = loadModule();
+  var r1 = R.getEffectiveDocumentStatus({ status: 'pending' });
+  assert.strictEqual(r1, null, 'doc sem document_id retorna null');
+  var r2 = R.getEffectiveDocumentStatus('');
+  assert.strictEqual(r2, null, 'string vazia retorna null');
+});
