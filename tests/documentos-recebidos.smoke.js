@@ -566,7 +566,7 @@ test('G12-R1: tela contem section data-section="documentos-recebidos-import-acti
   // No redesign, o botao fica no header, antes da strip e do empty state.
   var allText = JSON.stringify(findAll(result, () => true).map(textOf));
   var importIdx = allText.indexOf('Importar documentos');
-  var scanIdx = allText.indexOf('Varredura ativa');
+  var scanIdx = allText.indexOf('Varredura');
   var emptyIdx = allText.indexOf('Nenhum documento recebido');
   assert.ok(importIdx >= 0 && scanIdx >= 0 && emptyIdx >= 0, 'textos principais presentes');
   assert.ok(importIdx < scanIdx, 'botao de import fica no header, antes da strip');
@@ -624,13 +624,16 @@ test('redesign: strip alterna varredura e tipos mapeados ativos/inativos', funct
   sb.container = container;
   let result = vm.runInContext('window.screenDocumentosRecebidos(container)', sb);
   let strip = findAll(result, (n) => n._attrs && n._attrs['data-section'] === 'documentos-scan-strip')[0];
-  assert.ok(textOf(strip).indexOf('Varredura ativa') >= 0, 'comeca ativa');
+  assert.ok(textOf(strip).indexOf('Varredura') >= 0, 'mostra rotulo Varredura');
+  assert.equal(
+    findAll(strip, (n) => n._attrs && n._attrs['data-icon'] === 'lucide-pause').length,
+    1, 'comeca ativa (icone pause)');
 
   const scanToggle = findAll(result, findAction('toggle-varredura'))[0];
   scanToggle._listeners.click[0]();
   result = vm.runInContext('window.screenDocumentosRecebidos(container)', sb);
   strip = findAll(result, (n) => n._attrs && n._attrs['data-section'] === 'documentos-scan-strip')[0];
-  assert.ok(textOf(strip).indexOf('Varredura inativa') >= 0, 'pausar muda texto para inativa');
+  assert.ok(textOf(strip).indexOf('Varredura') >= 0, 'rotulo Varredura permanece ao pausar');
   const playIcons = findAll(strip, (n) => n._attrs && n._attrs['data-icon'] === 'lucide-play');
   assert.equal(playIcons.length, 1, 'varredura inativa usa icone Lucide play');
 
@@ -639,9 +642,9 @@ test('redesign: strip alterna varredura e tipos mapeados ativos/inativos', funct
   const pdfBtn = typeButtons.filter((n) => n._attrs && n._attrs['data-mapped-type'] === 'pdf')[0];
   assert.ok(pdfBtn, 'botao PDF presente');
   assert.equal(pdfBtn._attrs['aria-pressed'], 'true', 'PDF comeca ativo');
-  assert.equal(textOf(pdfBtn), '', 'botao PDF nao duplica texto alem do proprio icone Tabler');
-  const pdfIcon = findAll(pdfBtn, (n) => n._attrs && n._attrs['data-icon'] === 'mapped-type-pdf')[0];
-  assert.ok(pdfIcon && pdfIcon.className.indexOf('ti ti-pdf') >= 0, 'PDF usa Tabler ti-pdf');
+  assert.equal(textOf(pdfBtn), 'PDF', 'botao PDF mostra apenas o rotulo de texto');
+  const pdfTablerIcons = findAll(pdfBtn, (n) => n.className && n.className.indexOf('ti ') >= 0);
+  assert.equal(pdfTablerIcons.length, 0, 'tipos mapeados usam so texto, sem icone Tabler');
 
   pdfBtn._listeners.click[0]();
   result = vm.runInContext('window.screenDocumentosRecebidos(container)', sb);

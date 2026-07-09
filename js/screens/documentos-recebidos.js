@@ -52,16 +52,16 @@
   ];
 
   var MAPPED_SCAN_TYPES = [
-    { key: 'pdf', label: 'PDF', icon: 'ti-pdf' },
-    { key: 'xml', label: 'XML', icon: 'ti-file-type-xml' },
-    { key: 'json', label: 'JSON', icon: 'ti-json' },
-    { key: 'csv', label: 'CSV', icon: 'ti-csv' },
-    { key: 'xls', label: 'XLS', icon: 'ti-file-type-xls' },
-    { key: 'doc', label: 'DOC', icon: 'ti-file-type-doc' },
-    { key: 'txt', label: 'TXT', icon: 'ti-file-type-txt' },
-    { key: 'png', label: 'PNG', icon: 'ti-file-type-png' },
-    { key: 'jpg', label: 'JPG', icon: 'ti-file-type-jpg' },
-    { key: 'zip', label: 'ZIP', icon: 'ti-file-type-zip' },
+    { key: 'pdf', label: 'PDF' },
+    { key: 'xml', label: 'XML' },
+    { key: 'json', label: 'JSON' },
+    { key: 'csv', label: 'CSV' },
+    { key: 'xls', label: 'XLS' },
+    { key: 'doc', label: 'DOC' },
+    { key: 'txt', label: 'TXT' },
+    { key: 'png', label: 'PNG' },
+    { key: 'jpg', label: 'JPG' },
+    { key: 'zip', label: 'ZIP' },
   ];
 
   var SVG_REFRESH = '<polyline points="23 4 23 10 17 10"></polyline>'
@@ -567,12 +567,13 @@
 
   function mappedTypeButton(type) {
     var active = isMappedTypeActive(type.key);
-    var style = 'height:24px;min-width:44px;display:inline-flex;align-items:center;justify-content:center;'
-      + 'border-radius:999px;padding:0 9px;font-family:inherit;cursor:pointer;white-space:nowrap;'
-      + 'flex-shrink:0;transition:background .12s ease,border-color .12s ease,color .12s ease,opacity .12s ease;'
+    var style = 'display:inline-flex;align-items:center;background:transparent;border:none;'
+      + 'padding:0 3px;font-family:inherit;font-size:11.5px;font-weight:700;letter-spacing:.04em;'
+      + 'cursor:pointer;white-space:nowrap;flex-shrink:0;'
+      + 'transition:color .12s ease,opacity .12s ease;'
       + (active
-        ? 'background:#eef6ff;border:1px solid #cfe4ff;color:#2563eb;'
-        : 'background:transparent;border:1px dashed #d6dbe4;color:#9aa2af;opacity:.62;');
+        ? 'color:#3f4757;'
+        : 'color:#aeb6c2;opacity:.62;');
     return window.el('button', {
       type: 'button',
       'data-action': 'toggle-tipo-mapeado',
@@ -584,8 +585,7 @@
         ui.mappedTypes[type.key] = !active;
         rerender();
       },
-    },
-      tablerIcon(type.icon, 'mapped-type-' + type.key, 18, active ? '' : 'filter:grayscale(1);'));
+    }, type.label);
   }
 
   function buildMappedTypesControls() {
@@ -639,12 +639,12 @@
       window.el('span', {
         style: 'display:inline-flex;align-items:center;gap:8px;font-size:13px;'
           + 'font-weight:600;color:#16203a;white-space:nowrap;',
-      }, dot, ui.scanPlaying ? 'Varredura ativa' : 'Varredura inativa', playBtn),
+      }, dot, 'Varredura', playBtn),
       divider(),
       buildMappedTypesControls(),
-      divider(),
       window.el('span', {
-        style: 'display:inline-flex;align-items:center;gap:7px;font-size:13px;color:#8a93a3;white-space:nowrap;',
+        style: 'display:inline-flex;align-items:center;gap:7px;font-size:13px;color:#8a93a3;'
+          + 'white-space:nowrap;margin-left:auto;',
       }, 'Origem:',
         window.el('span', {
           style: 'display:inline-flex;align-items:center;gap:5px;background:#f6f7f9;'
@@ -653,7 +653,7 @@
         }, svgEl(SVG_MAIL, 12, 'Gmail'), 'Gmail')),
       divider(),
       window.el('span', {
-        style: 'font-size:13px;color:#8a93a3;white-space:nowrap;margin-left:auto;',
+        style: 'font-size:13px;color:#8a93a3;white-space:nowrap;',
       }, 'Última execução: ', window.el('span', {
         style: 'color:#3f4757;font-weight:500;',
       }, latestRunLabel(docs))));
