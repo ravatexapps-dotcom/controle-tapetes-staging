@@ -63,6 +63,7 @@ O disco local é usado **apenas** para:
 | `npm run assign -- --id X --pedido Y --confirm-real-google` | **REAL** — move/copia no Drive. |
 | `npm run sync:mapped` (sem flag) | **DRY-RUN** — orquestra scan → export mapped → report sem chamadas reais. |
 | `npm run sync:mapped -- --confirm-real-google` | **REAL** — scan real + export mapped + report. |
+| `npm run write:latest` | **LOCAL** — gera `data/exports/latest.json` com metadados do export mapped. |
 | `npm run list:pending` | Apenas leitura local. |
 | `npm run export:events` | Apenas leitura/escrita local. |
 | `npm run export:mapped` | Apenas leitura/escrita local (gera `data/exports/documentos-mapeados.jsonl`). |
@@ -215,6 +216,44 @@ Após `sync:mapped`, você pode usar:
 - **Não** altera schema SQLite, **não** cria migrations.
 - **Consumo automático pelo Controle de Tapetes é fase posterior.** Hoje, o JSONL é apenas snapshot local. Veja `docs/CONTROL_TAPETES_DOCUMENTS_CONTRACT.md` §4.4 e §9 para o estado atual do contrato.
 
+#### 7.8 Manifest `latest.json` (`write:latest`)
+
+O comando `npm run write:latest` gera um arquivo `data/exports/latest.json` com **metadados do último export mapped**. É uma operação puramente local — não faz chamadas Gmail/Drive.
+
+**Formato do manifest:**
+
+```json
+{
+  "schema_version": 1,
+  "kind": "documents-mapped-latest",
+  "generated_at": "2026-07-09T17:00:00.000Z",
+  "exported_at": "2026-07-09T16:55:00.000Z",
+  "jsonl_path": "data/exports/documentos-mapeados.jsonl",
+  "jsonl_filename": "documentos-mapeados.jsonl",
+  "count": 2,
+  "hash": "a1b2c3d4e5f67890",
+  "bytes": 1234,
+  "last_error": null
+}
+```
+
+**Uso:**
+```bash
+npm run write:latest
+
+# Caminhos customizados (opcional):
+npm run write:latest -- --jsonl data/exports/documentos-mapeados.jsonl --output data/exports/latest.json
+```
+
+**Com `sync:mapped`:**
+```bash
+# Gera latest.json junto com o scan/export/report:
+npm run sync:mapped -- --write-latest
+npm run sync:mapped -- --confirm-real-google --days 3 --write-latest
+```
+
+**Objetivo:** O Controle de Tapetes consumirá `latest.json` para detectar quando há novos documentos exportados, sem precisar de file picker manual (fase G22+). O scheduler (Task Scheduler) rodará `sync:mapped --write-latest` diariamente.
+
 ## Estrutura de armazenamento
 
 ### Google Drive (canônico)
@@ -366,6 +405,7 @@ Comandos para inspecionar, reportar e reprocessar documentos sem fazer chamadas 
 | `npm run assign -- --id <id> --pedido <p> --confirm-real-google` | real Google | Atribui Pedido + move Drive | sim |
 | `npm run sync:mapped` | dry-run (padrão) ou real | scan + export mapped + report em um comando | sim (apenas para o scan) |
 | `npm run export:mapped` | read + write local | Gera `data/exports/documentos-mapeados.jsonl` (snapshot) | não |
+| `npm run write:latest` | read + write local | Gera `data/exports/latest.json` com metadados count/hash/bytes/timestamp | não |
 
 ### Exemplos
 
@@ -406,6 +446,10 @@ npm run sync:mapped -- --status pending --export-days 7 --json-report
 # Retry narrow de uma mensagem específica (nunca dispara scan amplo)
 npm run sync:mapped -- --retry-message <MESSAGE_ID>
 npm run sync:mapped -- --confirm-real-google --retry-message <MESSAGE_ID> --max-attachments 1
+
+# Manifest do último export (metadados count/hash/bytes/timestamp)
+npm run write:latest
+npm run sync:mapped -- --write-latest
 ```
 
 ### Segurança de saída

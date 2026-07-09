@@ -19,7 +19,8 @@ D:\OneDrive\Programação\Ravatex\documents-ingestor
 - `contracts/manifest.schema.json` — schema do manifest de Pedido
 
 ## Status atual
-- HEAD (documents-ingestor): `bedbe909` (fechamento G13-D, produtor `sync:mapped` pronto)
+- HEAD (documents-ingestor): `fa54b09` (G21-B latest manifest producer patch)
+- HEAD anterior: `bedbe909` (fechamento G13-D, produtor `sync:mapped` pronto)
 - HEAD canônico staging/work/app-next (Controle de Tapetes): `fff052b` (consumidor bridge G14-D pronto)
 - Push staging: `a6574fd..fff052b` via G14-D (produção/origin oficial intocados)
 - 340+17+23=380 testes passando (29 suites) — incluindo integração mockada completa
@@ -54,7 +55,8 @@ D:\OneDrive\Programação\Ravatex\documents-ingestor
 - `npm run reject -- --id <id> --reason "<motivo>"` — rejeita documento vinculado (local-only)
 - `npm run export:events` — exporta eventos para JSONL
 - `npm run export:mapped` — exporta `data/exports/documentos-mapeados.jsonl` (snapshot read-only)
-- `npm run sync:mapped` — scan + export mapped + report em um comando (dry-run padrão; suporta `--retry-message` narrow)
+- `npm run sync:mapped` — scan + export mapped + report em um comando (dry-run padrão; suporta `--retry-message` narrow e `--write-latest`)
+- `npm run write:latest` — gera `data/exports/latest.json` com metadados (count, hash, bytes, timestamp) do export mapped (local-only)
 - `npm run login` — OAuth interativo (gera `data/google-token.json`)
 - `npm test` — roda testes herméticos
 - `npm run test:ci` — alias para CI
@@ -300,9 +302,53 @@ Não integrar Supabase nesta fase. O outbox JSONL é o contrato de integração.
 - **Não alterado**: nenhum arquivo (smoke read-only).
 - **Próxima fase**: G18 — consumo no Controle de Tapetes.
 
+## Fase G21-A: Basic Auto Scan Flow Design (read-only)
+- **HEAD inicial**: `e6b135d` (fechamento G17)
+- **Objetivo**: definir o menor caminho real para entregar o básico: email → scan automático → documentos candidatos → tela do usuário.
+- **Diagnóstico**:
+  - Ingestor: CLI pronta com `sync:mapped`, SQLite local, Gmail/Drive OAuth. Zero HTTP/daemon/endpoint.
+  - Controle: File picker manual (botão "Importar documentos") → `window.RAVATEX_DOCUMENTS_RECEIVED`. Sem HTTP fetch, sem auto-load, sem detecção de atualização.
+  - Bloqueio: sem trigger automático, sem transporte entre os dois módulos, sem detecção de novos dados no Controle.
+- **Arquitetura recomendada**: Task Scheduler → `sync:mapped` → `write:latest` → manifest `latest.json` → Controle `fetch` + timestamp.
+- **Não alterado**: nenhum arquivo (read-only).
+
+## Fase G21-B: Latest Manifest Producer Patch
+- **HEAD inicial**: `fa54b09`
+- **Objetivo**: implementar geração de `data/exports/latest.json` com metadados (count, hash, bytes, timestamp) do último export mapped, sem tocar Gmail/Drive.
+- **Arquivos alterados (5) + 1 novo**:
+  - `src/core/latestManifest.ts` (**novo**, 140 linhas) — `buildLatestManifestFromJsonl(jsonlPath, options)`, `writeLatestManifest(opts)`. Lê JSONL, conta, hash SHA256, escreve manifest.
+  - `src/cli.ts` (+~2 imports, +~25 linhas para `write-latest`, +~1 option `--write-latest` em `sync-mapped`, +~15 linhas de integração no body).
+  - `src/index.ts` (+2 exports).
+  - `package.json` (+1 script `write:latest`).
+  - `tests/latest-manifest.test.ts` (**novo**, 25 testes) — buildLatestManifestFromJsonl (18) + writeLatestManifest (7).
+  - `README.md` (+~55 linhas) — seção 7.8, tabelas de segurança e operação, quick reference.
+  - `PROJECT_STATE.md` (+~30 linhas) — este registro G21.
+  - `AGENT_HANDOFF.md` (+~50 linhas) — registro G21-A/B.
+- **Manifest esperado**:
+  ```json
+  {
+    "schema_version": 1,
+    "kind": "documents-mapped-latest",
+    "generated_at": "ISO",
+    "exported_at": "ISO (file mtime)",
+    "jsonl_path": "data/exports/documentos-mapeados.jsonl",
+    "jsonl_filename": "documentos-mapeados.jsonl",
+    "count": 2,
+    "hash": "sha256 hex 16 chars",
+    "bytes": 1234,
+    "last_error": null
+  }
+  ```
+- **Integração com sync:mapped**: flag `--write-latest` gera `latest.json` após o step 2 (export). Warning logado se JSONL ausente/inválido, sem quebrar fluxo.
+- **Não alterado**: Controle de Tapetes, schema.sql, sqlite migrations, Gmail/Drive connectors, realScan.ts, syncManifest.ts, exportPackage.ts, DB, backups.
+- **Não executado**: Gmail/Drive real, push, `git add .`, `reset/rebase/stash/clean`.
+- **Testes**: 25/25 latest-manifest, regressão verificada em export-mapped (17/17), sync-mapped (23/23). Total suite: 399/399 (30 files).
+
 ## Próxima fase recomendada
-RAVATEX-DOCUMENTS-G18-CLOSEOUT (concluída no Controle de Tapetes)
-- Produtor `sync:mapped` pronto (HEAD `e6b135d`, master)
+RAVATEX-DOCUMENTS-G22-A-AUTO-LOADER-DESIGN (Controle de Tapetes, read-only)
+- Produtor `sync:mapped` pronto (HEAD fa54b09, master)
+- `latest.json` gerado com metadados count/hash/bytes/timestamp (G21-B)
 - `ingestion_event_id` exportado (5 campos opcionais, `schema_version: 1`)
-- Consumidor bridge implementado no Controle (G18-B), staging publicado (G18-D), smoke validado (G18-C/E)
+- Controle precisa de `documents-auto-loader.js` para ler `latest.json` via fetch e carregar automaticamente
+- Task Scheduler: `sync:mapped --confirm-real-google --write-latest` diário
 - Próximo roadmap: UX de aceite/rejeição no Controle; dedup por `event_id`; telemetria de import

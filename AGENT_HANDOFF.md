@@ -3,16 +3,16 @@
 ## Branch/HEAD/Status
 ### documentos-ingestor (este repositório)
 - Branch: master
-- HEAD: `e6b135d` (G17-B/C fechado — `ingestion_event_id` no mapped export + smoke validado)
+- HEAD: `fa54b09` (G21-B fechado — latest.json manifest producer patch)
 
 ### Controle de Tapetes (staging/work/app-next)
 - HEAD canônico: `19d83bb` (G18-E fechado — bridge preserva `ingestion_event_id`, staging publicado)
 
 ## Fase concluída
-RAVATEX-DOCUMENTS-G17-B/C-CLOSEOUT — produtor `ingestion_event_id` exportado + smoke validado. Consumidor bridge G18 implementado no Controle, staging publicado e smoke cross-repo validado.
+**RAVATEX-DOCUMENTS-G21-B-LATEST-MANIFEST-PRODUCER-PATCH** — geração de `data/exports/latest.json` com metadados (count, hash, bytes, timestamp) do último export mapped. Comando `write:latest` + flag `--write-latest` no `sync:mapped`. 25 testes. Zero Gmail/Drive.
 
 ## Fase anterior
-G17-A — Ingestion Event ID Export Design (read-only)
+G21-A — Basic Auto Scan Flow Design (read-only)
 
 ## Objetivo da fase G13-B
 Implementar comando único local `npm run sync:mapped` que orquestra `scan → export mapped → report` em sequência. Dry-run por padrão. Guards rígidos para `--retry-message` (forçar `days=1` quando não fornecido; falhar com `days > 1`, `--wide-scan` ou `--query`).
@@ -604,4 +604,37 @@ Foco: integrar `documentos-mapeados.jsonl` no Controle de Tapetes para exibir a 
   - `schema_version` permanece `1`.
   - Tie-breaker por `id` garante resultado determinístico.
 - **Riscos**: nenhum.
-- **Próxima fase recomendada**: G18 fechado — bridge no Controle preserva `ingestion_event_id`, staging `19d83bb`, smoke cross-repo validado. Próximo roadmap: UX de aceite/rejeição no Controle; dedup por `event_id`; telemetria de import.
+- **Próxima fase recomendada**: G22 — auto-loader no Controle de Tapetes (consumir `latest.json` via fetch).
+
+---
+
+## Fase G21-A: Basic Auto Scan Flow Design (read-only)
+- **HEAD inicial**: `e6b135d` (fechamento G17)
+- **Objetivo**: definir o menor caminho real para entregar o básico: email → scan automático → documentos candidatos → tela do usuário.
+- **Decisão**: Task Scheduler → `sync:mapped --confirm-real-google --query "has:attachment newer_than:1d" --max-attachments 10 --write-latest` → Controle lê `latest.json` via fetch.
+- **Fora de escopo**: daemon, polling contínuo, REST endpoint, backend, evento cross-repo.
+- **Não alterado**: nenhum arquivo (read-only).
+- **Próxima fase recomendada**: G21-B — implementar `write:latest` no Ingestor.
+
+## Fase G21-B: Latest Manifest Producer Patch
+- **HEAD inicial**: `fa54b09`
+- **Objetivo**: implementar geração de `data/exports/latest.json` com metadados do último export mapped. Operação puramente local.
+- **Arquivos alterados (5) + 1 novo**:
+  - `src/core/latestManifest.ts` (**novo**) — `buildLatestManifestFromJsonl(jsonlPath, options?)`, `writeLatestManifest(opts)`.
+  - `src/cli.ts` — comando `write-latest` + flag `--write-latest` em `sync-mapped`.
+  - `src/index.ts` — exports.
+  - `package.json` — script `write:latest`.
+  - `tests/latest-manifest.test.ts` (**novo**, 25 testes).
+  - `README.md`, `PROJECT_STATE.md`, `AGENT_HANDOFF.md` — docs.
+- **Manifest** (`data/exports/latest.json`):
+  - `schema_version: 1`, `kind: "documents-mapped-latest"`, `generated_at`, `exported_at` (file mtime), `jsonl_path`, `jsonl_filename`, `count`, `hash` (SHA256 16 hex), `bytes`, `last_error`.
+- **Erros**:
+  - JSONL ausente → `ok: false, error: "JSONL file not found: ..."`.
+  - JSONL com linha inválida → `ok: false, error: "Invalid JSONL line: ..."`.
+  - Não sobrescreve manifest válido anterior sem decisão explícita.
+- **Não alterado**: Controle de Tapetes, schema.sql, sqlite migrations, Gmail/Drive connectors, realScan.ts, syncManifest.ts, exportPackage.ts, DB, backups.
+- **Não executado**: Gmail/Drive real, push, `git add .`, `reset/rebase/stash/clean`.
+- **Testes**: 25/25 latest-manifest, regressão em export-mapped (17/17), sync-mapped (23/23). Suíte completa: 399/399 (30 files).
+- **Garantias**: zero chamadas Gmail/Drive, zero schema/migrations, zero Controle.
+- **Riscos**: nenhum. `latest.json` é read-only sobre o JSONL.
+- **Próxima fase recomendada**: G22-A — auto-loader no Controle de Tapetes (design read-only de `documents-auto-loader.js` que lê `latest.json` via fetch).

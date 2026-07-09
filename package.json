@@ -16,6 +16,7 @@
     "export:package": "tsx src/cli.ts export-package",
     "export:mapped": "tsx src/cli.ts export-mapped",
     "sync:mapped": "tsx src/cli.ts sync-mapped",
+    "write:latest": "tsx src/cli.ts write-latest",
     "report": "tsx src/cli.ts report",
     "inspect": "tsx src/cli.ts inspect",
     "reprocess": "tsx src/cli.ts reprocess",

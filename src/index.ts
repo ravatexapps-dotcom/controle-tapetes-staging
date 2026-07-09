@@ -16,3 +16,5 @@ export { exportReceivedDocuments, listReceivedDocuments } from './core/exportPac
 export type { ExportReceivedResult, ExportReceivedOptions, ReceivedDocumentRow } from './core/exportPackage.js';
 export { exportMappedDocuments, listMappedDocuments } from './core/exportPackage.js';
 export type { ExportMappedResult, ExportMappedOptions, MappedDocumentRow } from './core/exportPackage.js';
+export { buildLatestManifestFromJsonl, writeLatestManifest } from './core/latestManifest.js';
+export type { LatestManifest, LatestManifestResult, WriteLatestManifestOptions, WriteLatestManifestResult } from './core/latestManifest.js';

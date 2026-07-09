@@ -15,6 +15,7 @@ import { exportManifest, syncManifest } from './core/syncManifest.js';
 import { exportPackage, exportReceivedDocuments, exportMappedDocuments } from './core/exportPackage.js';
 import { closeDb, getDb } from './storage/sqlite.js';
 import { runSyncMapped, validateSyncMappedOptions } from './core/syncMapped.js';
+import { writeLatestManifest } from './core/latestManifest.js';
 
 const program = new Command();
 
@@ -658,6 +659,28 @@ program
   });
 
 program
+  .command('write-latest')
+  .description('Write latest.json manifest for the mapped documents JSONL export (local-only, no Google Drive)')
+  .option('--jsonl <path>', 'Path to the mapped JSONL file (default: data/exports/documentos-mapeados.jsonl)')
+  .option('--output <path>', 'Output path for latest.json (default: data/exports/latest.json)')
+  .action((opts) => {
+    const jsonlPath = opts.jsonl ?? 'data/exports/documentos-mapeados.jsonl';
+    const manifestPath = opts.output ?? 'data/exports/latest.json';
+
+    const result = writeLatestManifest({ jsonlPath, manifestPath });
+
+    if (!result.ok) {
+      console.error(`[write-latest] ${result.error}`);
+      process.exit(1);
+    }
+
+    const m = result.manifest!;
+    console.log(`[write-latest] Wrote latest manifest: ${result.manifestPath}`);
+    console.log(`[write-latest] count=${m.count} hash=${m.hash} bytes=${m.bytes}`);
+    console.log('[write-latest] Local-only — no Gmail/Drive calls performed.');
+  });
+
+program
   .command('sync-mapped')
   .description('Run scan → export mapped → report in a single local command (dry-run by default)')
   .option('-d, --days <number>', 'Days back for scan (1-30; >7 requires --wide-scan)', String(config.scanDaysBack))
@@ -671,6 +694,7 @@ program
   .option('--limit <n>', 'Max documents to export (cap 5000)', '5000')
   .option('--output <path>', 'Output file path (default: data/exports/documentos-mapeados.jsonl)')
   .option('--json-report', 'Print report as JSON instead of human-readable text', false)
+  .option('--write-latest', 'Write latest.json manifest after export (default: data/exports/latest.json)', false)
   .action(async (opts) => {
     const days = parseInt(opts.days, 10);
     if (!Number.isFinite(days) || days < 1 || days > 30) {
@@ -784,6 +808,18 @@ program
 
     console.log('[sync-mapped] Step 2/3: export mapped documents');
     console.log(`[sync-mapped] exported ${result.export.totalDocuments} mapped document(s) → ${result.export.outputPath}`);
+
+    if (opts.writeLatest) {
+      const latestJsonlPath = opts.output ?? 'data/exports/documentos-mapeados.jsonl';
+      const latestManifestPath = 'data/exports/latest.json';
+      const latestResult = writeLatestManifest({ jsonlPath: latestJsonlPath, manifestPath: latestManifestPath });
+      if (!latestResult.ok) {
+        console.log(`[sync-mapped] write-latest: WARNING — ${latestResult.error}`);
+      } else {
+        const lm = latestResult.manifest!;
+        console.log(`[sync-mapped] write-latest: wrote ${latestManifestPath} (count=${lm.count} hash=${lm.hash} bytes=${lm.bytes})`);
+      }
+    }
 
     console.log('[sync-mapped] Step 3/3: report');
     const r = result.report;
