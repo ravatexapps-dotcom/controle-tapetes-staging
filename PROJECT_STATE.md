@@ -48,7 +48,8 @@ D:\OneDrive\Programação\Ravatex\documents-ingestor
 - `npm run accept -- --id <id>` — aceita documento vinculado (local-only)
 - `npm run reject -- --id <id> --reason "<motivo>"` — rejeita documento vinculado (local-only)
 - `npm run export:events` — exporta eventos para JSONL
-- `npm run sync:mapped` — scan + export mapped + report em um comando (dry-run padrão)
+- `npm run export:mapped` — exporta `data/exports/documentos-mapeados.jsonl` (snapshot read-only)
+- `npm run sync:mapped` — scan + export mapped + report em um comando (dry-run padrão; suporta `--retry-message` narrow)
 - `npm run login` — OAuth interativo (gera `data/google-token.json`)
 - `npm test` — roda testes herméticos
 - `npm run test:ci` — alias para CI
@@ -124,6 +125,8 @@ Não integrar Supabase nesta fase. O outbox JSONL é o contrato de integração.
 - G12-E5 — Correção `/dev/null` cross-platform em realAssign (os.devNull, 1 linha + 1 import)
 - G13-A — Design do comando `sync:mapped` (mapeamento read-only de scan/export/report)
 - G13-B — Comando `sync:mapped` (CLI + script npm + 23 testes focados; dry-run padrão; retry-message narrow)
+- G13-C-R1 — Smoke real-lite do `sync:mapped` com MESSAGE_ID autorizado (1 doc duplicado detectado, isolamento confirmado, 0 mutação)
+- G13-D — Documentação operacional do `sync:mapped` (README + PROJECT_STATE + AGENT_HANDOFF + contrato)
 - G/H — UI Backlog (Controle de Tapetes — staging/work/app-next)
 
 ## Fase G1: Taxonomia de Documentos (3 eixos)
@@ -209,6 +212,51 @@ Não integrar Supabase nesta fase. O outbox JSONL é o contrato de integração.
 - **Riscos remanescentes**: nenhum. Implementação é integração de blocos já validados (scan, export-mapped, report) sem alteração de semântica.
 - **Próxima fase recomendada**: G13-C — smoke real-lite do `sync:mapped` em uma mensagem real (similar a C2 do G12).
 
+## Fase G13-C-R1: Sync Mapped Smoke Real-Lite
+- **HEAD inicial**: `7cc673f` (em fechamento G13-B)
+- **Objetivo**: validar `npm run sync:mapped -- --confirm-real-google --retry-message <MESSAGE_ID> --max-attachments 1` em ambiente real-lite, sem scan amplo.
+- **MESSAGE_ID autorizado pelo operador**: `19f3c813e8d45be1` (do smoke G5 R4-R1 / C2).
+- **Sequência executada**:
+  1. Dry-run: `npm run sync:mapped -- --retry-message 19f3c813e8d45be1 --max-attachments 1` → 25ms, mode=dry-run, banner narrow.
+  2. Real-lite: `npm run sync:mapped -- --confirm-real-google --retry-message 19f3c813e8d45be1 --max-attachments 1` → 1934ms, `emailsScanned=1 newDocuments=0 duplicates=1 crossMessageDuplicates=0 skippedByCap=0 errors=0`.
+  3. Validações pós-smoke: `export-mapped` (2 docs), `report --days 1` (9 emails, 2 docs, 0 erros), `list-pending --limit 20` (mesmos 2 docs).
+- **Run log gerado**: `data/runs/run-2026-07-09T13-25-28-394Z.jsonl` (6 eventos: run.start, retry.direct_fetch, retry.start, attachment.processed, email.scanned, run.end).
+- **Verificações de segurança**:
+  - Scan amplo ocorreu? **NÃO** — `fetchMessageById` direto, sem `after:YYYY/MM/DD`.
+  - retry-message isolou uma mensagem? **SIM** — `emailsScanned=1`.
+  - Documento duplicado criado? **NÃO** — `newDocuments=0`, dedupe `duplicate_same_message` detectado.
+  - Backup local `data/app.db.backup-g12-e4-20260708-210928` preservado? **SIM**.
+  - DB inalterado em conteúdo? **SIM** — 65536 bytes (mesmo do pré-smoke); nenhum INSERT novo.
+  - Controle de Tapetes tocado? **NÃO**.
+  - Schema alterado? **NÃO** (apenas UPDATE trivial em `emails_processados.attachments_count`, esperado pelo fluxo retry).
+  - Push realizado? **NÃO**.
+  - `git add .` / `reset` / `rebase` / `stash` / `clean`? **NENHUM**.
+- **Não executado**: nenhuma chamada ampla, nenhuma deleção, nenhuma migration.
+- **Testes**: suíte completa não rodada neste smoke (read-only + real-lite). Suíte hermética prévia: 370/29 suites passando.
+- **Riscos remanescentes**: nenhum. Smoke validou isolamento, dedupe, persistência e geração de JSONL.
+- **Próxima fase recomendada**: G13-D — documentação operacional do `sync:mapped` (README + PROJECT_STATE + AGENT_HANDOFF + contrato).
+
+## Fase G13-D: Sync Mapped Operational Documentation
+- **HEAD inicial**: `7cc673f` (inalterado desde G13-B; G13-C-R1 não fez commit)
+- **Objetivo**: documentar o fluxo operacional do `npm run sync:mapped` para futuros operadores e para a próxima fase de integração com o Controle de Tapetes.
+- **Arquivos alterados (4)**:
+  - `README.md` (+~70 linhas) — nova seção 7 "Sincronização local em um comando (`sync:mapped`)" com 7 sub-seções: dry-run, real mode, retry narrow, guardas de segurança, saída/contrato, relação com outros comandos, limites fora de escopo. Tabela de "Segurança operacional" e "Operação diária" atualizadas. Exemplos atualizados.
+  - `PROJECT_STATE.md` (+~30 linhas) — registro das fases G13-C-R1 e G13-D; nova seção dedicada a G13-C-R1 (smoke real-lite).
+  - `AGENT_HANDOFF.md` (+~80 linhas) — registro das fases G13-C-R1 e G13-D; nova seção G13-C-R1 (smoke) e G13-D (docs) com `Fase concluída = G13-D`.
+  - `docs/CONTROL_TAPETES_DOCUMENTS_CONTRACT.md` (+~45 linhas) — nova subseção 4.4 "Sincronização local em um comando (`sync:mapped`)" + entradas em "Fases concluídas" (G13-A/B/C-R1/D) e em "Comandos úteis" + nota explícita em "O que NÃO será feito" sobre não consumir automaticamente o JSONL.
+- **Não alterado**: `src/**` (zero alterações de código), `tests/**` (zero alterações), `schema.sql`, `data/**` (zero mutações), `package.json` (zero alterações). Controle de Tapetes não tocado.
+- **Não executado**: nenhuma chamada Gmail/Drive, nenhum scan real, nenhum assign/accept/reject, nenhuma migration, nenhum push, nenhum `git add .`, nenhum `reset/rebase/stash/clean`. Backup local preservado.
+- **Documentação do contrato**:
+  - Dry-run padrão com saída esperada (banner + 3 steps + DONE).
+  - Real-lite com `--confirm-real-google` (gate duplo: flag CLI + env `INGEST_REAL_GOOGLE`).
+  - Retry narrow com `--retry-message <id>` — `days=1` automático, sem query amplo.
+  - 4 guardas de segurança de `--retry-message` (com `--days > 1`, `--wide-scan`, `--query`, ou sem flag → narrow).
+  - Saída `data/exports/documentos-mapeados.jsonl` (JSONL, `schema_version: 1`, timestamps por evento).
+  - Relação com `export:mapped`, `report`, `list-pending` (equivalência de comandos).
+  - Limites: não toca Controle, não cria scheduler, consumo automático é fase posterior.
+- **Riscos remanescentes**: nenhum. Documentação é apenas textual.
+- **Próxima fase recomendada**: G14-A — design de integração `sync:mapped` ↔ Controle de Tapetes (fase futura, não implementar nesta rodada).
+
 ## Próxima fase recomendada
-RAVATEX-DOCUMENTS-G13-C-SYNC-MAPPED-SMOKE
-Foco: smoke real-lite do `npm run sync:mapped` em uma mensagem real conhecida, validando que o pipeline executa scan real (com `--confirm-real-google --retry-message <msg>`), export mapeado é gerado, e report é impresso. Sem tocar Controle de Tapetes.
+RAVATEX-DOCUMENTS-G14-A-SYNC-MAPPED-CONSUMER-DESIGN
+Foco: design (read-only) de como o Controle de Tapetes consumirá o `documentos-mapeados.jsonl` gerado pelo `sync:mapped` — frequência de polling, formato de consumo, idempotência, fallback se arquivo não existir. Não implementar nesta fase; apenas entregar documento de design.

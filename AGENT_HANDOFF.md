@@ -3,16 +3,16 @@
 ## Branch/HEAD/Status
 ### documentos-ingestor (este repositório)
 - Branch: master
-- HEAD: `c2f89b4` (em fechamento G13-B)
+- HEAD: `7cc673f` (em fechamento G13-D)
 
 ### Controle de Tapetes (staging/work/app-next)
 - HEAD canônico: `997486a`
 
 ## Fase concluída
-RAVATEX-DOCUMENTS-G13-SYNC-MAPPED-CLI-B
+RAVATEX-DOCUMENTS-G13-D-SYNC-MAPPED-DOCS
 
 ## Fase anterior
-G13-A — Design do comando `sync:mapped` (read-only, mapeamento de blocos)
+G13-C-R1 — Sync Mapped Smoke Real-Lite (1 doc, isolamento confirmado, 0 mutação)
 
 ## Objetivo da fase G13-B
 Implementar comando único local `npm run sync:mapped` que orquestra `scan → export mapped → report` em sequência. Dry-run por padrão. Guards rígidos para `--retry-message` (forçar `days=1` quando não fornecido; falhar com `days > 1`, `--wide-scan` ou `--query`).
@@ -96,6 +96,12 @@ npm run sync:mapped -- --json-report
 
 ### Riscos remanescentes
 Nenhum. Implementação é integração de blocos já validados (scan, export-mapped, report) sem alteração de semântica. Os guards de retry-message são testados unitariamente e end-to-end via CLI.
+
+## Fase anterior
+G13-C-R1 — Sync Mapped Smoke Real-Lite (MESSAGE_ID 19f3c813e8d45be1, isolamento confirmado)
+
+## Fase anterior
+G13-B — Sync Mapped Command Implementation (CLI + script + 23 testes)
 
 ## Fase anterior
 G13-A — Design do comando `sync:mapped` (read-only, mapeamento de blocos)
@@ -486,3 +492,48 @@ Corrigir `realAssign.ts:117` que usava o path literal `'/dev/null'`, o qual falh
 ### Próxima fase recomendada
 RAVATEX-DOCUMENTS-G12-F-MAPPED-DOCUMENTS-CONSUMER
 Foco: integrar `documentos-mapeados.jsonl` no Controle de Tapetes para exibir a fila de documentos com status, pedido_manual, timestamps por evento e `rejected_reason` (read-only, mesmo contrato JSONL).
+
+## Fase G13-C-R1: Sync Mapped Smoke Real-Lite (não commitada)
+- **HEAD inicial**: `7cc673f` (em fechamento G13-B)
+- **Objetivo**: validar `npm run sync:mapped -- --confirm-real-google --retry-message <MESSAGE_ID> --max-attachments 1` em ambiente real-lite, sem scan amplo.
+- **MESSAGE_ID autorizado**: `19f3c813e8d45be1` (do smoke G5 R4-R1 / C2).
+- **Sequência**:
+  1. `git branch --show-current; git rev-parse HEAD; git status --short` → `master`, `7cc673f`, limpo.
+  2. Dry-run: `npm run sync:mapped -- --retry-message 19f3c813e8d45be1 --max-attachments 1` → OK em 25ms, mode=dry-run, banner narrow.
+  3. Real-lite: `npm run sync:mapped -- --confirm-real-google --retry-message 19f3c813e8d45be1 --max-attachments 1` → OK em 1934ms, `emailsScanned=1 new=0 duplicates=1 crossMessageDuplicates=0 skippedByCap=0 errors=0`.
+  4. Validações: `export-mapped` (2 docs), `report --days 1` (9 emails, 2 docs, 0 erros), `list-pending --limit 20` (2 docs).
+- **Run log**: `data/runs/run-2026-07-09T13-25-28-394Z.jsonl` (6 eventos: run.start, retry.direct_fetch, retry.start, attachment.processed [status=duplicate_same_message], email.scanned, run.end).
+- **Verificações de segurança**:
+  - Scan amplo? **NÃO** — `fetchMessageById` direto, sem `after:YYYY/MM/DD`.
+  - retry isolou uma mensagem? **SIM** — `emailsScanned=1`.
+  - Documento duplicado criado? **NÃO** — `newDocuments=0`, dedupe `duplicate_same_message` detectado.
+  - Backup local `data/app.db.backup-g12-e4-20260708-210928` preservado? **SIM**.
+  - DB inalterado em conteúdo? **SIM** — 65536 bytes (mesmo do pré-smoke); nenhum INSERT novo.
+  - Controle de Tapetes tocado? **NÃO**.
+  - Schema alterado? **NÃO** (apenas UPDATE trivial em `emails_processados.attachments_count`).
+  - Push realizado? **NÃO**.
+  - `git add .` / `reset` / `rebase` / `stash` / `clean`? **NENHUM**.
+- **Não executado**: scan amplo, deleção, migration, push, modificação de código/testes.
+- **Riscos**: nenhum.
+- **Próxima fase**: G13-D — documentação operacional do `sync:mapped`.
+
+## Fase G13-D: Sync Mapped Operational Documentation
+- **HEAD inicial**: `7cc673f` (inalterado desde G13-B; G13-C-R1 não commitou)
+- **Objetivo**: documentar `npm run sync:mapped` para operadores e para a próxima fase de integração com o Controle de Tapetes.
+- **Arquivos alterados (4)**:
+  - `README.md` — nova seção 7 "Sincronização local em um comando (`sync:mapped`)" com 7 sub-seções (dry-run, real mode, retry narrow, guardas de segurança, saída/contrato, relação com outros comandos, limites fora de escopo). Tabela "Segurança operacional" e "Operação diária" atualizadas. Exemplos atualizados.
+  - `PROJECT_STATE.md` — registro das fases G13-C-R1 e G13-D; nova seção G13-C-R1.
+  - `AGENT_HANDOFF.md` (este arquivo) — `Fase concluída = G13-D`, chain de "Fase anterior" até G12-C1, nova seção G13-C-R1 e G13-D.
+  - `docs/CONTROL_TAPETES_DOCUMENTS_CONTRACT.md` — nova subseção 4.4 "Sincronização local em um comando (`sync:mapped`)" + entradas em "Fases concluídas" (G13-A/B/C-R1/D) e em "Comandos úteis" + nota em "O que NÃO será feito".
+- **Não alterado**: `src/**`, `tests/**`, `schema.sql`, `data/**`, `package.json`. Controle de Tapetes não tocado.
+- **Não executado**: nenhuma chamada Gmail/Drive, nenhum scan real, nenhum assign/accept/reject, nenhuma migration, nenhum push, nenhum `git add .`, nenhum `reset/rebase/stash/clean`. Backup local preservado.
+- **Conteúdo documental**:
+  - Dry-run padrão com saída esperada (banner + 3 steps + DONE em ms).
+  - Real-lite com `--confirm-real-google` (gate duplo: flag CLI + env `INGEST_REAL_GOOGLE`).
+  - Retry narrow com `--retry-message <id>` — `days=1` automático, sem query amplo.
+  - 4 guardas de segurança de `--retry-message` (com `--days > 1`, `--wide-scan`, `--query`, ou sem flag → narrow).
+  - Saída `data/exports/documentos-mapeados.jsonl` (JSONL, `schema_version: 1`, timestamps por evento: `detected_at`, `linked_at`, `accepted_at`, `rejected_at`).
+  - Relação com `export:mapped`, `report`, `list-pending` (equivalência: `sync:mapped` é atalho que executa 3 comandos em sequência).
+  - Limites: não toca Controle, não cria scheduler/daemon/watcher, consumo automático é fase posterior.
+- **Riscos**: nenhum. Documentação é apenas textual.
+- **Próxima fase recomendada**: G14-A — design de integração `sync:mapped` ↔ Controle de Tapetes (read-only, sem implementação).

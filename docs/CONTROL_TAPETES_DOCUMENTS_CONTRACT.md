@@ -124,6 +124,21 @@ document.detected → link → document.linked → accept/reject → document.ac
 
 **Importante:** assign real e link local-only são **rotas alternativas**. Não devem ser usadas no mesmo documento. Assign real exige documento `pending` e faz Drive move + manifest. Link é vínculo lógico sem Drive.
 
+### 4.4 Sincronização local em um comando (`sync:mapped`)
+
+`npm run sync:mapped` é um atalho operacional que executa em sequência, em um único processo:
+
+```
+sync:mapped → scan (Gmail) → export mapped (JSONL) → report (stdout)
+```
+
+- **Dry-run por padrão.** Sem `--confirm-real-google`, zero chamadas reais ao Gmail/Drive.
+- **Real mode** requer `--confirm-real-google` explícito (gate duplo com `INGEST_REAL_GOOGLE` no `.env`).
+- **Retry narrow** com `--retry-message <MESSAGE_ID>` força `days=1` e usa `fetchMessageById` direto (sem scan amplo).
+- **Saída:** `data/exports/documentos-mapeados.jsonl` (JSONL, `schema_version: 1`).
+
+**Importante:** `sync:mapped` é um **produtor** de `documentos-mapeados.jsonl`. **Não toca o Controle de Tapetes** — é apenas geração local sob demanda do operador. O **consumo automático** desse JSONL pelo Controle é **fase posterior** (G14+) e não está implementado nesta versão. Hoje, o JSONL é gerado apenas como snapshot local para inspeção manual ou polling externo.
+
 ---
 
 ## 5. Decision points
@@ -182,6 +197,17 @@ Notas:
 | G8-B | Atualização de contrato (JSON schema + docs) |
 | G8-C | Polish operacional (filtros, export, inspect) |
 | G8-D | Smoke real-lite (link+accept validados em documento real) |
+| G12-C1 | Evento `document.detected` no scan + `document.linked` no assign (sem schema novo) |
+| G12-D1 | `export-received` (pending sem pedido) |
+| G12-E1 | Design do export de documentos mapeados |
+| G12-E2 | `export:mapped` + CLI `export-mapped` (snapshot JSONL) |
+| G12-E3 | Diagnóstico de data quality no export mapeado |
+| G12-E4 | Hardening dedup + cleanup local |
+| G12-E5 | Correção `/dev/null` cross-platform (realAssign) |
+| G13-A | Design do comando `sync:mapped` (read-only) |
+| G13-B | Comando `sync:mapped` (CLI + script + 23 testes) |
+| G13-C-R1 | Smoke real-lite do `sync:mapped` (MESSAGE_ID autorizado, isolamento confirmado) |
+| G13-D | Documentação operacional do `sync:mapped` (README + contrato) |
 
 ---
 
@@ -193,6 +219,8 @@ Notas:
 - Nenhuma autenticação compartilhada entre os dois apps
 - Nenhum mapeamento automático de email → Pedido (atribuição é manual)
 - Nenhuma deleção automática de arquivo no Drive
+- **Nenhum consumo automático de `documentos-mapeados.jsonl` pelo Controle** — o JSONL gerado por `sync:mapped` / `export:mapped` é snapshot local. Integração automática é fase G14+ (não implementada).
+- **Nenhum scheduler/daemon/watcher** — `sync:mapped` é uma única execução sob demanda do operador.
 
 ---
 
@@ -221,4 +249,21 @@ npm run export:events -- --event-type document.linked
 
 # Exportar eventos pendentes (com side-effect)
 npm run export:events -- --mark-exported
+
+# Sincronização local em um comando (scan + export mapped + report)
+# Dry-run padrão — seguro, zero chamadas reais
+npm run sync:mapped
+
+# Real mode — requer --confirm-real-google explícito
+npm run sync:mapped -- --confirm-real-google --days 3
+
+# Retry narrow — processa UMA mensagem específica sem scan amplo
+npm run sync:mapped -- --retry-message <MESSAGE_ID>
+npm run sync:mapped -- --confirm-real-google --retry-message <MESSAGE_ID> --max-attachments 1
+
+# Gera o JSONL que este contrato descreve (snapshot local)
+# Formato: schema_version=1, com detected_at/linked_at/accepted_at/rejected_at por documento
+npm run export:mapped
 ```
+
+**Nota sobre `sync:mapped` e este contrato:** O JSONL gerado por `sync:mapped` (via `export:mapped`) é um **snapshot** local, não um stream. **Não há polling automático pelo Controle de Tapetes** nesta fase. O consumo automático do JSONL pelo Controle é fase posterior (G14+). Hoje, o arquivo é apenas referência local para inspeção manual ou integração futura.

@@ -61,8 +61,11 @@ O disco local é usado **apenas** para:
 | `npm run scan -- --dry-run` | Força DRY-RUN mesmo se flag estiver ativa. |
 | `npm run assign -- --id X --pedido Y` | DRY-RUN (apenas valida). |
 | `npm run assign -- --id X --pedido Y --confirm-real-google` | **REAL** — move/copia no Drive. |
+| `npm run sync:mapped` (sem flag) | **DRY-RUN** — orquestra scan → export mapped → report sem chamadas reais. |
+| `npm run sync:mapped -- --confirm-real-google` | **REAL** — scan real + export mapped + report. |
 | `npm run list:pending` | Apenas leitura local. |
 | `npm run export:events` | Apenas leitura/escrita local. |
+| `npm run export:mapped` | Apenas leitura/escrita local (gera `data/exports/documentos-mapeados.jsonl`). |
 
 Quando `INGEST_REAL_GOOGLE=false` (padrão no `.env.example`), o `confirmReal: true` ainda é exigido pela CLI — ambos os gates são necessários.
 
@@ -121,6 +124,96 @@ npm run assign -- --id <document_id_ou_email_id> --pedido 25/2026 --confirm-real
 ```bash
 npm run export:events
 ```
+
+### 7. Sincronização local em um comando (`sync:mapped`)
+
+`npm run sync:mapped` é um **atalho operacional** que executa em sequência, em um único processo:
+
+1. **scan** — varre Gmail (ou dry-run)
+2. **export mapped** — gera `data/exports/documentos-mapeados.jsonl`
+3. **report** — imprime o relatório agregado do SQLite no stdout
+
+Tudo local. **Não toca o Controle de Tapetes**, **não envia nada por HTTP**, **não cria scheduler/daemon/watcher** — é uma única execução sob demanda do operador.
+
+#### 7.1 Dry-run (padrão, seguro)
+```bash
+npm run sync:mapped
+```
+Saída esperada (sem chamadas reais ao Google):
+```
+[sync-mapped] DRY-RUN — no real Gmail/Drive calls performed.
+[sync-mapped] Pass --confirm-real-google to perform real processing.
+[sync-mapped] Step 1/3: scan
+[sync-mapped] scan: dry-run (no Gmail calls).
+[sync-mapped] Step 2/3: export mapped documents
+[sync-mapped] exported N mapped document(s) → .../data/exports/documentos-mapeados.jsonl
+[sync-mapped] Step 3/3: report
+--- import report ---
+  totalDocuments:        N
+  ...
+[sync-mapped] DONE in <ms>ms — sequence: scan → export → report.
+```
+
+#### 7.2 Real mode (requer OAuth + confirmação explícita)
+```bash
+npm run sync:mapped -- --confirm-real-google --days 3
+```
+- Sem `--confirm-real-google`, o scan é dry-run mesmo se outras flags sugerirem operação real.
+- REAL + `--max-attachments > 5` exige `--query` (ou `--retry-message`) para segurança.
+- `--days > 7` exige `--wide-scan` (mesma proteção do `npm run scan`).
+
+#### 7.3 Retry de uma mensagem específica (narrow, seguro)
+```bash
+# Dry-run: apenas mostra o que faria
+npm run sync:mapped -- --retry-message <MESSAGE_ID> --max-attachments 1
+
+# Real: processa a mensagem específica (sem scan amplo)
+npm run sync:mapped -- --confirm-real-google --retry-message <MESSAGE_ID> --max-attachments 1
+```
+- O comando **força `days=1` internamente** quando `--retry-message` é fornecido sem `--days`.
+- O scan usa `fetchMessageById` direto (sem query `after:YYYY/MM/DD`), isolando a mensagem.
+- O dedupe existente (`isDuplicate` + `isDuplicateInSameMessage`) bloqueia criação de duplicata se a mensagem já foi processada.
+
+#### 7.4 Guardas de segurança de `--retry-message`
+
+| Combinação | Resultado |
+|------------|-----------|
+| `--retry-message <id>` (sem `--days`) | OK — `days=1` automático, modo narrow |
+| `--retry-message <id> --days 1` | OK — modo narrow |
+| `--retry-message <id> --days > 1` | **FALHA** com `[sync-mapped] --retry-message requires --days <= 1` |
+| `--retry-message <id> --wide-scan` | **FALHA** com `[sync-mapped] --retry-message cannot be combined with --wide-scan` |
+| `--retry-message <id> --query "..."` | **FALHA** com `[sync-mapped] --retry-message cannot be combined with --query` |
+
+Essas guardas **impedem scan amplo acidental** quando o operador quer reprocessar uma mensagem específica.
+
+#### 7.5 Saída esperada e contrato
+
+O comando gera/atualiza **`data/exports/documentos-mapeados.jsonl`** no formato JSONL com `schema_version: 1`, contendo um registro por documento, com timestamps por evento (`detected_at`, `linked_at`, `accepted_at`, `rejected_at`) e `pedido_manual` quando aplicável. Cada linha pode ser consumida independentemente.
+
+O **report** impresso no stdout segue o mesmo formato do `npm run report` (modo texto ou `--json-report`).
+
+#### 7.6 Relação com outros comandos
+
+`sync:mapped` é um **atalho** que combina três comandos já existentes. Executar `sync:mapped` equivale a rodar em sequência:
+
+| Etapa | Comando equivalente | Tipo |
+|-------|---------------------|------|
+| 1. Scan | `npm run scan -- [flags]` | real (com `--confirm-real-google`) ou dry-run |
+| 2. Export | `npm run export:mapped` | sempre local (read + write JSONL) |
+| 3. Report | `npm run report` | sempre read-only |
+
+Após `sync:mapped`, você pode usar:
+- `npm run list:pending -- --limit 20` para ver a tabela atualizada
+- `npm run report -- --json` para extrair o mesmo report em JSON
+- `npm run export:mapped` para re-gerar o JSONL a qualquer momento
+
+#### 7.7 Limites e fora de escopo
+
+- **Não** toca o Controle de Tapetes (sem HTTP, sem Supabase, sem outbox cross-app).
+- **Não** cria scheduler, daemon ou watcher — é uma única execução sob demanda.
+- **Não** envia notificações, e-mails, webhooks.
+- **Não** altera schema SQLite, **não** cria migrations.
+- **Consumo automático pelo Controle de Tapetes é fase posterior.** Hoje, o JSONL é apenas snapshot local. Veja `docs/CONTROL_TAPETES_DOCUMENTS_CONTRACT.md` §4.4 e §9 para o estado atual do contrato.
 
 ## Estrutura de armazenamento
 
@@ -271,6 +364,8 @@ Comandos para inspecionar, reportar e reprocessar documentos sem fazer chamadas 
 | `npm run reprocess -- --id <id> --confirm` | write local | Aplica ações locais idempotentes | não |
 | `npm run scan -- --confirm-real-google` | real Google | Scan + upload Drive | sim |
 | `npm run assign -- --id <id> --pedido <p> --confirm-real-google` | real Google | Atribui Pedido + move Drive | sim |
+| `npm run sync:mapped` | dry-run (padrão) ou real | scan + export mapped + report em um comando | sim (apenas para o scan) |
+| `npm run export:mapped` | read + write local | Gera `data/exports/documentos-mapeados.jsonl` (snapshot) | não |
 
 ### Exemplos
 
@@ -302,13 +397,22 @@ npm run inspect -- --id msg-gmail-id --json
 npm run report
 npm run report -- --days 30 --pedido PED-25-2026
 npm run report -- --json
+
+# Sincronização local em um comando (scan + export mapped + report)
+npm run sync:mapped                                    # dry-run padrão
+npm run sync:mapped -- --confirm-real-google --days 3  # real (3 dias)
+npm run sync:mapped -- --status pending --export-days 7 --json-report
+
+# Retry narrow de uma mensagem específica (nunca dispara scan amplo)
+npm run sync:mapped -- --retry-message <MESSAGE_ID>
+npm run sync:mapped -- --confirm-real-google --retry-message <MESSAGE_ID> --max-attachments 1
 ```
 
 ### Segurança de saída
 
 - Modo texto: IDs longos são mascarados (ex: `1a2b****c3d4`). Emails têm parte local mascarada. Assuntos são truncados. Links Drive mostram apenas o ID do arquivo mascarado.
 - Modo JSON: mesma política de mascaramento. Nenhum token, secret ou credencial é incluído.
-- Nenhum comando (exceto `scan --confirm-real-google` e `assign --confirm-real-google`) faz chamadas reais ao Google.
+- Nenhum comando (exceto `scan --confirm-real-google`, `assign --confirm-real-google` e `sync:mapped --confirm-real-google`) faz chamadas reais ao Google.
 
 ### O que nunca commitar
 
