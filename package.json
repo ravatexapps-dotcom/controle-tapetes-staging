@@ -15,6 +15,7 @@
     "sync:manifest": "tsx src/cli.ts sync-manifest",
     "export:package": "tsx src/cli.ts export-package",
     "export:mapped": "tsx src/cli.ts export-mapped",
+    "export:ingestion-events": "tsx src/cli.ts export-ingestion-events",
     "sync:mapped": "tsx src/cli.ts sync-mapped",
     "sync:supabase": "tsx src/cli.ts sync-supabase",
     "write:latest": "tsx src/cli.ts write-latest",

@@ -1,5 +1,12 @@
 # AGENT HANDOFF
 
+## G23-B-F-R2 Canonical Ingestion Events Export
+
+- Added `npm run export:ingestion-events`, producing `data/exports/ingestion-events.jsonl` from SQLite `ingestion_events` only.
+- `ingestion_events.id` is the exported `ingestion_event_id`; the legacy outbox is intentionally not a Supabase writer source.
+- Status normalization: `pending_app_acceptance` to `pending`; `document.linked` to `assigned`.
+- The canonical JSONL is accepted by `sync:supabase` dry-run. See `docs/SUPABASE_WRITER_RUNBOOK.md`.
+
 ## Branch/HEAD/Status
 ### documentos-ingestor (este repositório)
 - Branch: master

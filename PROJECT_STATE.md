@@ -1,5 +1,13 @@
 # PROJECT STATE
 
+## G23-B-F-R2 Canonical Ingestion Events Export
+
+- `npm run export:ingestion-events` creates `data/exports/ingestion-events.jsonl` exclusively from SQLite `ingestion_events`.
+- Each line preserves `ingestion_events.id` as `ingestion_event_id`; no synthetic IDs and no legacy `event_id` fallback exist.
+- The export normalizes `pending_app_acceptance` to `pending` and forces `document.linked` to `assigned`.
+- `sync:supabase --events` must use this file, never `data/outbox/document-events.jsonl`.
+- The writer remains server-side and staging-only; Gmail, Drive, production, and frontend service-role usage remain out of scope.
+
 ## Objetivo
 Ingerir documentos (XML/PDF) recebidos por email (Gmail), classificar, permitir atribuição manual a Pedido e gerar eventos para integração futura com o app principal (Controle de Tapetes).
 

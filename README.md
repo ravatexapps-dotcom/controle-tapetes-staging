@@ -70,6 +70,12 @@ O disco local é usado **apenas** para:
 
 Quando `INGEST_REAL_GOOGLE=false` (padrão no `.env.example`), o `confirmReal: true` ainda é exigido pela CLI — ambos os gates são necessários.
 
+## Canonical Events for Supabase
+
+Run `npm run export:ingestion-events` to generate `data/exports/ingestion-events.jsonl` from SQLite `ingestion_events`. The file preserves each database ID as `ingestion_event_id` and is the only supported `--events` input for `sync:supabase`.
+
+Do not use `data/outbox/document-events.jsonl` for Supabase. It is a legacy transport and can lack canonical event IDs.
+
 ## Escopos OAuth (preferenciais)
 
 - `https://www.googleapis.com/auth/gmail.readonly` — leitura da caixa (read-only)

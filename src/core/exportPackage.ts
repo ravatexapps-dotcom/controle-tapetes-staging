@@ -266,6 +266,150 @@ export function exportMappedDocuments(
   };
 }
 
+export type CanonicalIngestionEventType =
+  | 'document.detected'
+  | 'document.linked'
+  | 'document.accepted'
+  | 'document.rejected';
+
+export type CanonicalIngestionEventStatus = 'pending' | 'assigned' | 'accepted' | 'rejected' | null;
+
+export interface CanonicalIngestionEvent {
+  schema_version: 1;
+  ingestion_event_id: string;
+  document_id: string;
+  event_type: CanonicalIngestionEventType;
+  status: CanonicalIngestionEventStatus;
+  pedido_manual: string | null;
+  pedido_id: null;
+  payload: Record<string, unknown>;
+  created_at: string;
+}
+
+export interface ExportIngestionEventsOptions {
+  outputPath?: string;
+}
+
+export interface ExportIngestionEventsResult {
+  outputPath: string;
+  totalEvents: number;
+  files: string[];
+}
+
+const CANONICAL_EVENT_TYPES = new Set<CanonicalIngestionEventType>([
+  'document.detected',
+  'document.linked',
+  'document.accepted',
+  'document.rejected',
+]);
+
+function normalizeIngestionEventStatus(value: unknown): CanonicalIngestionEventStatus {
+  if (value == null || String(value).trim() === '') return null;
+  const status = String(value).trim().toLowerCase();
+  if (status === 'pending_app_acceptance') return 'pending';
+  if (status === 'pending' || status === 'assigned' || status === 'accepted' || status === 'rejected') {
+    return status;
+  }
+  throw new Error(`Invalid ingestion event status: ${status}`);
+}
+
+function toIsoTimestamp(value: unknown, eventId: string): string {
+  if (typeof value !== 'string' || !value.trim()) {
+    throw new Error(`ingestion_events.created_at is required for ${eventId}`);
+  }
+  const raw = value.trim();
+  const date = new Date(raw.includes('T') ? raw : `${raw.replace(' ', 'T')}Z`);
+  if (Number.isNaN(date.getTime())) {
+    throw new Error(`Invalid ingestion_events.created_at for ${eventId}: ${raw}`);
+  }
+  return date.toISOString();
+}
+
+export function listIngestionEvents(): CanonicalIngestionEvent[] {
+  const database = getDb();
+  const rows = database.prepare(`
+    SELECT
+      id,
+      event_type,
+      pedido_manual,
+      document_id,
+      storage_backend,
+      storage_uri,
+      drive_file_id,
+      drive_web_view_link,
+      manifest_storage_uri,
+      manifest_drive_file_id,
+      status,
+      created_at,
+      reason
+    FROM ingestion_events
+    ORDER BY created_at ASC, id ASC
+  `).all() as Array<Record<string, unknown>>;
+
+  return rows.map((row) => {
+    const ingestionEventId = typeof row.id === 'string' ? row.id.trim() : '';
+    if (!ingestionEventId) {
+      throw new Error('ingestion_events.id is required; canonical export does not generate synthetic IDs.');
+    }
+    const documentId = typeof row.document_id === 'string' ? row.document_id.trim() : '';
+    if (!documentId) {
+      throw new Error(`ingestion_events.document_id is required for ${ingestionEventId}`);
+    }
+    const eventType = row.event_type as CanonicalIngestionEventType;
+    if (!CANONICAL_EVENT_TYPES.has(eventType)) {
+      throw new Error(`Invalid ingestion event type for ${ingestionEventId}: ${String(row.event_type)}`);
+    }
+    const normalizedStatus = normalizeIngestionEventStatus(row.status);
+    const status = eventType === 'document.linked' ? 'assigned' : normalizedStatus;
+    const pedidoManual = typeof row.pedido_manual === 'string' && row.pedido_manual.trim()
+      ? row.pedido_manual.trim()
+      : null;
+
+    return {
+      schema_version: 1,
+      ingestion_event_id: ingestionEventId,
+      document_id: documentId,
+      event_type: eventType,
+      status,
+      pedido_manual: pedidoManual,
+      pedido_id: null,
+      payload: {
+        source: 'sqlite.ingestion_events',
+        storage_backend: row.storage_backend ?? null,
+        storage_uri: row.storage_uri ?? null,
+        drive_file_id: row.drive_file_id ?? null,
+        drive_web_view_link: row.drive_web_view_link ?? null,
+        manifest_storage_uri: row.manifest_storage_uri ?? null,
+        manifest_drive_file_id: row.manifest_drive_file_id ?? null,
+        reason: row.reason ?? null,
+      },
+      created_at: toIsoTimestamp(row.created_at, ingestionEventId),
+    };
+  });
+}
+
+export function exportIngestionEvents(
+  opts: ExportIngestionEventsOptions = {},
+): ExportIngestionEventsResult {
+  const outputPath = opts.outputPath && opts.outputPath.trim()
+    ? resolve(process.cwd(), opts.outputPath)
+    : resolve(process.cwd(), 'data', 'exports', 'ingestion-events.jsonl');
+  const dir = dirname(outputPath);
+  if (!existsSync(dir)) {
+    mkdirSync(dir, { recursive: true });
+  }
+
+  const events = listIngestionEvents();
+  const content = events.map((event) => JSON.stringify(event)).join('\n') + (events.length > 0 ? '\n' : '');
+  writeFileSync(outputPath, content, 'utf-8');
+
+  return {
+    outputPath,
+    totalEvents: events.length,
+    files: [outputPath],
+  };
+}
+
 export interface ExportReceivedResult {
   outputPath: string;
   totalDocuments: number;

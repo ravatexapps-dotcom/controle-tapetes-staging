@@ -12,7 +12,7 @@ import { linkDocumentToPedido } from './core/link.js';
 import { acceptDocument, rejectDocument } from './core/acceptance.js';
 import { normalizePedido } from './core/pedido.js';
 import { exportManifest, syncManifest } from './core/syncManifest.js';
-import { exportPackage, exportReceivedDocuments, exportMappedDocuments } from './core/exportPackage.js';
+import { exportIngestionEvents, exportPackage, exportReceivedDocuments, exportMappedDocuments } from './core/exportPackage.js';
 import { closeDb, getDb } from './storage/sqlite.js';
 import { runSyncMapped, validateSyncMappedOptions } from './core/syncMapped.js';
 import { writeLatestManifest } from './core/latestManifest.js';
@@ -603,6 +603,24 @@ program
     console.log('[export-received] Output: %s', result.outputPath);
     console.log('[export-received] Local-only — no Google Drive calls performed.');
     closeDb();
+  });
+
+program
+  .command('export-ingestion-events')
+  .description('Export canonical ingestion_events JSONL for the Supabase writer (local-only)')
+  .option('--output <path>', 'Output file path (default: data/exports/ingestion-events.jsonl)')
+  .action((opts) => {
+    try {
+      const result = exportIngestionEvents({ outputPath: opts.output });
+      console.log('[export-ingestion-events] Exported %d canonical event(s).', result.totalEvents);
+      console.log('[export-ingestion-events] Output: %s', result.outputPath);
+      console.log('[export-ingestion-events] Local-only - no Gmail, Drive, or Supabase calls performed.');
+    } catch (error: any) {
+      console.error(`[export-ingestion-events] ${error?.message ?? String(error)}`);
+      process.exitCode = 1;
+    } finally {
+      closeDb();
+    }
   });
 
 program

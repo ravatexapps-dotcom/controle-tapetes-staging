@@ -136,8 +136,9 @@ function normalizeEvent(row: Record<string, unknown>): DocumentEventWrite {
   if (!EVENT_TYPES.has(eventType)) {
     throw new SyncSupabaseInputError(`Invalid event_type: ${eventType}.`);
   }
-  const document = asRecord(row.document, 'event document');
-  const documentId = requiredText(document.document_id, 'event document.document_id');
+  const documentId = typeof row.document_id === 'string' && row.document_id.trim()
+    ? requiredText(row.document_id, 'event document_id')
+    : requiredText(asRecord(row.document, 'event document').document_id, 'event document.document_id');
   const ingestionEventId = requiredText(row.ingestion_event_id, 'ingestion_event_id');
   const status = eventType === 'document.linked' ? 'assigned' : normalizeDocumentStatus(row.status);
 
