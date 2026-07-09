@@ -1,3 +1,53 @@
+> **Atualizacao 2026-07-09 — fase
+> `RAVATEX-DOCUMENTS-G14-D-CLOSEOUT-AND-STAGING-PUSH`.**
+> Status: **PRONTO — CONSUMIDOR BRIDGE DOCUMENTOS-MAPEADOS.JSONL NO CONTROLE**.
+> Branch/HEAD `work/app-next`, `fff052b`.
+>
+> Escopo G14 (fases A a D):
+> - **G14-A**: Design da bridge — consumo manual sem polling, sem endpoint, sem backend.
+> - **G14-B**: `mapReceivedDocToEventShape(flatDoc)` + fallback `RAVATEX_DOCUMENTS_RECEIVED` no `computeViewModel` do Pedido Detail.
+> - **G14-C**: Smoke real com `documentos-mapeados.jsonl` real (2 linhas, 2 repos, 6 suites, 426 testes).
+> - **G14-D**: Closeout + staging push (`fff052b` → `staging main`). Producao/origin intocados.
+>
+> Fluxo entregue:
+> 1. Operador clica "Importar documentos" na tela `#/documentos/recebidos`
+> 2. `loadReceivedDocumentsFromText` popula `window.RAVATEX_DOCUMENTS_RECEIVED`
+> 3. Pedido Detail: `computeViewModel` le `RAVATEX_DOCUMENTS_RECEIVED` como fallback quando `RAVATEX_DOCUMENTS_LOADED_EVENTS` vazio
+> 4. Filtro por `pedido_manual` (exato + fallback por prefixo numerico se ano divergir)
+> 5. `mapReceivedDocToEventShape` converte flat → event shape
+> 6. Render: badges (tipo/formato/direcao), status pill, botao "Ver" (Drive link)
+> 7. Idempotencia: dedup por `document_id` no loop de montagem
+> 8. Precedencia: eventos legados (`LOADED_EVENTS`) vencem; flat e fallback puro
+>
+> Garantias:
+> - Botao "Importar documentos" na tela `#/documentos/recebidos` preservado (inline, verde)
+> - Botao legado "Importar eventos" ausente (sem `RAVATEX_ENABLE_DOCUMENTS_EVENTS_IMPORT_UI`)
+> - `mapReceivedDocToEventShape` nao inventa `ingestion_event_id` ou `event_id`
+> - Documentos sem `pedido_manual` (ex: L.pdf) viaveis na tela Documentos, NAO no Pedido Detail
+> - Reimport nao duplica (`document_id` dedup)
+> - Sem timeline (flat JSONL nao tem eventos historicos)
+> - Documents Ingestor nao alterado
+> - Sem Supabase, sem Google/Drive, sem polling, sem backend, sem persistencia
+>
+> Arquivos alterados (G14-B + G14-C):
+> - `js/documents-ingestor.js` — `+mapReceivedDocToEventShape` (89 linhas)
+> - `js/screens/pedido-detail-progress.js` — fallback `RAVATEX_DOCUMENTS_RECEIVED` (98 linhas)
+> - `tests/documents-ingestor.test.js` — 16 testes mapper (199 linhas)
+> - `tests/documents-ingestor-loader.test.js` — 5 testes bridge (237 linhas)
+> - `tests/pedido-detail.smoke.js` — 5 testes smoke (30 linhas)
+> - `tests/g14-c-bridge-smoke.test.js` — 22 testes smoke com JSONL real (588 linhas, novo)
+>
+> Testes: 426 pass (6 suites)
+>
+> Staging: `fff052b` publicado em `ravatexapps-dotcom/controle-tapetes-staging:main`
+> Origin/producao: `grupoterrabranca/controle-tapetes:main` intocado
+>
+> Proximo roadmap:
+> - UX de ultimo import/timestamp/hash no Controle
+> - `ingestion_event_id` no JSONL (melhoria futura no produtor)
+> - Aceite/rejeicao dentro do Controle (feature posterior)
+> - Sem polling/scheduler/daemon por enquanto
+
 > **Atualizacao 2026-07-08 - fase
 > `RAVATEX-TAPETES-G12-F2-MAPPED-DOCUMENTS-CONSUMER-PATCH`.**
 > Status: **PRONTO — SUPORTE A documentos-mapeados.jsonl NO CONTROLE**.
@@ -7066,7 +7116,10 @@ sem fetch real.
 
 ### Proxima fase
 
-`RAVATEX-TAPETES-G11-C-DOCUMENTS-WATCHER` (opcional/deferido):
-- Watcher persistente para outbox JSONL
-- Recarregar eventos ao abrir Pedido Detail
-- Ou manter consumo manual via `export:package` ate definicao de produto
+`RAVATEX-DOCUMENTS-G15-CONSUMER-EVOLUTION`:
+- UX de ultimo import/timestamp/hash no Controle (registrar `ingestion_event_id` ou data do ultimo import)
+- `ingestion_event_id` no JSONL como melhoria futura no produtor (Documents Ingestor)
+- Aceite/rejeicao dentro do Controle como feature posterior (hoje e feito no Ingestor CLI)
+- Sem polling/scheduler/daemon por enquanto
+- Produtor `sync:mapped` estavel em `bedbe909` (master)
+- Consumidor bridge publicado em staging `fff052b`

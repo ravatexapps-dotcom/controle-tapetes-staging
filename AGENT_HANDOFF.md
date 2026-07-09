@@ -1,4 +1,53 @@
-﻿# Estado pos-fase - Mapped Documents Consumer Patch (G12-F2)
+﻿# Estado pos-fase - G14-D Closeout and Staging Push
+
+- Fase: `RAVATEX-DOCUMENTS-G14-D-CLOSEOUT-AND-STAGING-PUSH`.
+- Status: **PRONTO**.
+- Branch/HEAD base: `work/app-next`, `fff052b`.
+- Escopo geral (G14-A a G14-D):
+  - Bridge `RAVATEX_DOCUMENTS_RECEIVED` → Pedido Detail via `mapReceivedDocToEventShape`
+  - Smoke real com JSONL do Documents Ingestor
+  - Staging push (`fff052b` → `staging main`)
+  - Origin/producao intocados
+- Commits:
+  - `624d064` — Bridge received documents into pedido detail (G14-B)
+  - `fff052b` — Add G14-C smoke test for received bridge end-to-end flow (G14-C)
+- Push staging: `a6574fd..fff052b` (G14-D)
+- Documents Ingestor nao alterado (HEAD `bedbe909`)
+
+## Estado pos-fase - G14-C Pedido Detail Received Bridge Smoke
+
+- Fase: `RAVATEX-DOCUMENTS-G14-C-PEDIDO-DETAIL-RECEIVED-BRIDGE-SMOKE`.
+- Status: **PRONTO**.
+- Branch/HEAD: `work/app-next`, `fff052b` (22/22 testes, smoke com JSONL real)
+- Arquivo: `tests/g14-c-bridge-smoke.test.js` (588 linhas, 22 testes)
+- Valida: parser JSONL real, tela Documentos Mapeados (2 rows), Pedido Detail bridge (1 doc), ausencia do botao legado, dedup reimport, scope filtering
+
+## Estado pos-fase - G14-B Pedido Detail Received Bridge
+
+- Fase: `RAVATEX-DOCUMENTS-G14-B-PEDIDO-DETAIL-RECEIVED-BRIDGE`.
+- Status: **PRONTO**.
+- Branch/HEAD: `work/app-next`, `624d064`.
+- Patch:
+  - `js/documents-ingestor.js` — `mapReceivedDocToEventShape(flatDoc)`: converte `{ document_id, status, pedido_manual, timestamps }` para `{ document, status, event_type, created_at, pedido_manual }`
+  - `js/screens/pedido-detail-progress.js` — fallback bridge no `computeViewModel`: quando `RAVATEX_DOCUMENTS_LOADED_EVENTS` vazio, le `RAVATEX_DOCUMENTS_RECEIVED`, filtra por `pedido_manual`, dedup por `document_id`
+  - Precedencia: `LOADED_EVENTS` > `RECEIVED`
+  - Sem timeline (flat JSONL nao tem historico de eventos)
+  - Sem `ingestion_event_id` ou `event_id` fabricados
+- Testes:
+  - `tests/documents-ingestor.test.js` — 16 testes G14-B
+  - `tests/documents-ingestor-loader.test.js` — 5 testes bridge
+  - `tests/pedido-detail.smoke.js` — 5 testes smoke
+- Garantias: botao legado ausente, reimport nao duplica, doc sem pedido_manual nao aparece no Pedido Detail
+
+## Estado pos-fase - G14-A Sync Mapped Consumer Design
+
+- Fase: `RAVATEX-DOCUMENTS-G14-A-SYNC-MAPPED-CONSUMER-DESIGN`.
+- Status: **PRONTO**.
+- Modo: read-only design.
+- Decisao: import manual mantido, bridge no Pedido Detail, sem polling/endpoint/backend.
+- Documento: `docs/architecture/DOCUMENTS_INGESTOR_CONSUMER_DESIGN.md` (ja existente, atualizado mentalmente).
+
+# Estado pos-fase - Mapped Documents Consumer Patch (G12-F2)
 
 - Fase: `RAVATEX-TAPETES-G12-F2-MAPPED-DOCUMENTS-CONSUMER-PATCH`.
 - Status: **PRONTO**.
@@ -6454,7 +6503,10 @@ Pedido usando fixture JSONL local. Sem Supabase, sem Google/Drive, sem fetch.
 
 ### Proxima fase
 
-`RAVATEX-TAPETES-G11-C-DOCUMENTS-WATCHER` (deferido):
-- Watcher de outbox ou loader que popula a global com eventos reais
-  gerados por `export:package --pedido <PED-XX-YYYY>`
-- Alternativa: consumo manual via import ate definicao de produto
+`RAVATEX-DOCUMENTS-G15-CONSUMER-EVOLUTION`:
+- UX de ultimo import/timestamp/hash no Controle (registrar data/hash do ultimo JSONL importado)
+- `ingestion_event_id` no JSONL como melhoria futura no produtor (Documents Ingestor)
+- Aceite/rejeicao dentro do Controle como feature posterior (hoje e feito no Ingestor CLI)
+- Sem polling/scheduler/daemon por enquanto
+- Produtor `sync:mapped` estavel em `bedbe909` (master)
+- Consumidor bridge publicado em staging `fff052b`

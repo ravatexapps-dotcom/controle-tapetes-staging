@@ -5,6 +5,10 @@
 > **HEAD base Controle de Tapetes:** `381506c` — `work/app-next`
 > **HEAD base Documents Ingestor:** `956682d` — `master`
 > **Data:** 2026-07-07
+>
+> **Status atual (2026-07-09):** Este design foi **implementado** em G14 (HEAD Controle `fff052b`, HEAD Ingestor `bedbe909`).
+> O consumo do JSONL flat (`documentos-mapeados.jsonl`) ocorre via bridge `RAVATEX_DOCUMENTS_RECEIVED` → Pedido Detail,
+> conforme decisão de import manual sem polling. Ver `PROJECT_STATE.md` e `AGENT_HANDOFF.md` para o registro completo de G14.
 
 ---
 
