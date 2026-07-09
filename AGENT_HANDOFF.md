@@ -1,4 +1,44 @@
-﻿# Estado pos-fase - G22-B Documents Auto Load Patch
+﻿# Estado pos-fase - G23-E-G Canonical Undo Closeout
+
+- Fase: `RAVATEX-DOCUMENTS-G23-E-G-CANONICAL-UNDO-CLOSEOUT`.
+- Status: **PRONTO — CLOSEOUT MULTI-REPO DA TRILHA G23-E**.
+- Base Controle: `work/app-next` em `d7e71071e7c5bc673c4a0efe79c021c642742cd7`.
+- Base Ingestor: `master` em `20b9cf1d726a1d3669352937f62b21b9c77d59e8`.
+
+- Trilha G23-E:
+  - G23-E-C migration patch: `d5c9951` — `39_documentos_ingestor_state_undo.sql`
+  - G23-E-C-R1: migration aplicada em staging (`ucrjtfswnfdlxwtmxnoo`)
+  - G23-E-D writer patch: `20b9cf1` — Ingestor com canonical state writer
+  - G23-E-E UI undo patch: `d7e7107` — Controle com undo RPC + reader ingestor_*
+  - G23-E-F: staging E2E validado (writer, reader, decidir, desfazer, idempotencia)
+  - G23-E-G: closeout docs multi-repo (este arquivo + PROJECT_STATE.md)
+
+- O que foi entregue:
+  - Migration 39: base canonica `ingestor_*` em `document_candidates`, auditoria de
+    revogacao em `document_decisions`, RPCs `desfazer_decisao_documento` (admin-only)
+    e `upsert_document_candidate_ingestor_state` (service_role-only).
+  - Writer: `sync:supabase` chama a RPC canonica, reporta skips para candidatos
+    sem base completa.
+  - UI undo: `undoDocumentDecisionInCloud` + reader le `ingestor_*` + botoes
+    Desfazer/Aceitar/Rejeitar na tela Documentos.
+  - Staging E2E smoke: writer real, reader authenticated, decidir/desfazer via RPC,
+    idempotencia writer confirmada, cleanup 0 residuos.
+
+- Confirmacoes:
+  - Producao intocada.
+  - Browser visual real nao executado (harness programatico usado no E2E).
+  - Nao-admin logado nao testado end-to-end (guarda `is_admin()` provada).
+  - Cleanup remoto 0 residuos (candidates=0, decisions=0, events=0, scan_runs=0).
+  - Sem push, sem migration nova, sem `git add .`.
+
+- Arquivos alterados nesta fase:
+  - `PROJECT_STATE.md` (registro closeout)
+  - `AGENT_HANDOFF.md` (este arquivo)
+
+- Proximo: fechamento da trilha G23-E. Nenhuma fase obrigatoria remanescente.
+  Evolucoes futuras (G24+) podem incluir browser visual real via Playwright.
+
+# Estado pos-fase - G22-B Documents Auto Load Patch
 
 # Estado pos-fase - G23-D-B Cloud Document Decisions Patch
 

@@ -1,7 +1,45 @@
-> **Atualizacao 2026-07-09 - fase
-> `RAVATEX-DOCUMENTS-G23-D-B-CLOUD-DOCUMENT-DECISIONS-PATCH`.**
-> Status: **PRONTO - DECISOES EM NUVEM VIA RPC decidir_documento**.
-> Branch/HEAD base: `work/app-next` em `72402ee`.
+> **Atualizacao 2026-07-09 — fase
+> `RAVATEX-DOCUMENTS-G23-E-G-CANONICAL-UNDO-CLOSEOUT`.**
+> Status: **PRONTO — CLOSEOUT MULTI-REPO DA TRILHA G23-E**.
+> Branch/HEAD base: `work/app-next` em `d7e7107`.
+>
+> Trilha G23-E completa:
+> - **G23-E-C** (migration patch `d5c9951`): SQL `39_documentos_ingestor_state_undo.sql`
+>   — base canonica (`ingestor_status`, `ingestor_state_at`, `ingestor_event_id`,
+>   `ingestor_rejected_reason`) em `document_candidates`; auditoria de revogacao
+>   em `document_decisions`; RPC `desfazer_decisao_documento` (admin-only, SECURITY
+>   DEFINER); RPC `upsert_document_candidate_ingestor_state` (service_role-only);
+>   grants e backfill conservador diagnostico.
+> - **G23-E-C-R1**: migration 39 aplicada em staging (`ucrjtfswnfdlxwtmxnoo`), RPCs
+>   disponiveis, schema cache recarregado via `NOTIFY pgrst`.
+> - **G23-E-D** (writer patch `20b9cf1` no Documents Ingestor): `export:mapped`
+>   inclui `latest_ingestion_event_at`; `sync:supabase` deriva base canonica completa,
+>   chama RPC `upsert_document_candidate_ingestor_state` via service_role, reporta
+>   skips para candidatos incompletos.
+> - **G23-E-E** (UI undo patch `d7e7107`): `js/documents-supabase-decisions.js`
+>   expoe `undoDocumentDecisionInCloud(documentId, motivo)`; reader le colunas
+>   `ingestor_*` e calcula `_ravatex_can_undo_server_decision`; tela Documentos
+>   exibe botoes Desfazer/Aceitar/Rejeitar conforme estado.
+> - **G23-E-F**: staging E2E smoke validado — writer real contra staging
+>   (service_role), reader authenticated, decidir/desfazer via RPC, idempotencia
+>   writer, cleanup 0 residuos. 37/37 ingestor + 291/291 controle.
+> - **G23-E-G** (closeout): registro documental multi-repo.
+>
+> Confirmacoes G23-E:
+> - Producao nao usada.
+> - Browser visual real nao executado (testado via harness programatico authenticated).
+> - Nao-admin logado nao testado end-to-end (guarda `is_admin()` provada).
+> - Cleanup remoto 0 residuos (candidates=0, decisions=0, events=0, scan_runs=0).
+> - Sem push, sem migration nova, sem `git add .`.
+>
+> Arquivos alterados nesta fase:
+> - `PROJECT_STATE.md` (este arquivo, registro closeout)
+> - `AGENT_HANDOFF.md` (registro closeout)
+>
+> > **Atualizacao 2026-07-09 - fase
+> > `RAVATEX-DOCUMENTS-G23-D-B-CLOUD-DOCUMENT-DECISIONS-PATCH`.**
+> > Status: **PRONTO - DECISOES EM NUVEM VIA RPC decidir_documento**.
+> > Branch/HEAD base: `work/app-next` em `72402ee`.
 >
 > Escopo G23-D-B:
 > - Novo `js/documents-supabase-decisions.js`: expoe
