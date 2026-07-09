@@ -1,8 +1,7 @@
 import { readFileSync } from 'node:fs';
 import {
-  type ActiveDocumentDecision,
   type CanonicalDocumentStatus,
-  type DocumentCandidateMetadata,
+  type CanonicalIngestorStateWrite,
   type DocumentCandidateWrite,
   type DocumentEventWrite,
   type SupabaseWriterClient,
@@ -23,8 +22,14 @@ export interface SyncSupabaseOptions {
   source?: string;
 }
 
+export interface PreparedCanonicalCandidate {
+  candidate: DocumentCandidateWrite;
+  canonical: CanonicalIngestorStateWrite | null;
+  skip_reason: string | null;
+}
+
 export interface PreparedSyncSupabaseInput {
-  candidates: DocumentCandidateWrite[];
+  candidates: PreparedCanonicalCandidate[];
   events: DocumentEventWrite[];
   duplicateEventIds: number;
 }
@@ -33,7 +38,10 @@ export interface SyncSupabaseResult {
   ok: boolean;
   dry_run: boolean;
   source: string;
+  candidates_total: number;
   candidates_upserted: number;
+  canonical_base_complete: number;
+  canonical_base_skipped: Array<{ document_id: string; reason: string }>;
   events_inserted: number;
   events_skipped: number;
   scan_run: { status: 'dry_run' | 'running' | 'completed' | 'failed' | 'scan_already_running'; id: string | null };
@@ -58,6 +66,13 @@ function requiredText(value: unknown, field: string): string {
 
 function optionalText(value: unknown): string | null {
   return typeof value === 'string' && value.trim() ? value.trim() : null;
+}
+
+function canonicalTimestamp(value: unknown): string | null {
+  const raw = optionalText(value);
+  if (!raw) return null;
+  const date = new Date(raw);
+  return Number.isNaN(date.getTime()) ? null : date.toISOString();
 }
 
 export function normalizeDocumentStatus(value: unknown): CanonicalDocumentStatus {
@@ -93,16 +108,10 @@ function readJsonl(path: string, label: string): Array<Record<string, unknown>> 
 function normalizeCandidate(row: Record<string, unknown>): DocumentCandidateWrite {
   const documentId = requiredText(row.document_id, 'mapped document_id');
   const status = normalizeDocumentStatus(row.status);
-  const rejectedReason = optionalText(row.rejected_reason);
-  if (status === 'rejected' && !rejectedReason) {
-    throw new SyncSupabaseInputError(`mapped document ${documentId} is rejected but has no rejected_reason.`);
-  }
-
   const schemaVersion = typeof row.schema_version === 'number' && Number.isInteger(row.schema_version)
     ? row.schema_version
     : 1;
   const rawPayload = { ...row, document_id: documentId, status };
-  const now = new Date().toISOString();
 
   return {
     document_id: documentId,
@@ -126,8 +135,31 @@ function normalizeCandidate(row: Record<string, unknown>): DocumentCandidateWrit
     linked_at: optionalText(row.linked_at),
     accepted_at: optionalText(row.accepted_at),
     rejected_at: optionalText(row.rejected_at),
-    rejected_reason: rejectedReason,
-    atualizado_em: now,
+    rejected_reason: optionalText(row.rejected_reason),
+    atualizado_em: new Date().toISOString(),
+  };
+}
+
+function deriveCanonicalState(candidate: DocumentCandidateWrite, row: Record<string, unknown>): PreparedCanonicalCandidate {
+  const eventId = optionalText(row.latest_ingestion_event_id);
+  const stateAt = canonicalTimestamp(row.latest_ingestion_event_at);
+  const rejectedReason = candidate.status === 'rejected' ? candidate.rejected_reason : null;
+  if (!eventId) return { candidate, canonical: null, skip_reason: 'missing_latest_ingestion_event_id' };
+  if (!stateAt) return { candidate, canonical: null, skip_reason: 'missing_latest_ingestion_event_at' };
+  if (candidate.status === 'rejected' && !rejectedReason) {
+    return { candidate, canonical: null, skip_reason: 'ingestor_rejected_reason_required' };
+  }
+
+  return {
+    candidate,
+    canonical: {
+      candidate,
+      ingestor_status: candidate.status,
+      ingestor_state_at: stateAt,
+      ingestor_event_id: eventId,
+      ingestor_rejected_reason: rejectedReason,
+    },
+    skip_reason: null,
   };
 }
 
@@ -158,10 +190,10 @@ export function prepareSyncSupabaseInput(options: Pick<SyncSupabaseOptions, 'map
     throw new SyncSupabaseInputError('mappedPath is required.');
   }
 
-  const candidatesById = new Map<string, DocumentCandidateWrite>();
+  const candidatesById = new Map<string, PreparedCanonicalCandidate>();
   for (const row of readJsonl(options.mappedPath, 'mapped')) {
     const candidate = normalizeCandidate(row);
-    candidatesById.set(candidate.document_id, candidate);
+    candidatesById.set(candidate.document_id, deriveCanonicalState(candidate, row));
   }
 
   const eventsById = new Map<string, DocumentEventWrite>();
@@ -184,39 +216,6 @@ export function prepareSyncSupabaseInput(options: Pick<SyncSupabaseOptions, 'map
   };
 }
 
-function candidateMetadata(candidate: DocumentCandidateWrite): DocumentCandidateMetadata {
-  const {
-    document_id: _documentId,
-    status: _status,
-    pedido_id: _pedidoId,
-    fornecedor_id: _fornecedorId,
-    received_at: _receivedAt,
-    detected_at: _detectedAt,
-    linked_at: _linkedAt,
-    accepted_at: _acceptedAt,
-    rejected_at: _rejectedAt,
-    rejected_reason: _rejectedReason,
-    ...metadata
-  } = candidate;
-  return metadata;
-}
-
-function candidateFromActiveDecision(
-  candidate: DocumentCandidateWrite,
-  decision: ActiveDocumentDecision,
-): DocumentCandidateWrite {
-  if (decision.status === 'rejected' && !optionalText(decision.motivo)) {
-    throw new Error(`Active rejected decision for ${candidate.document_id} has no motivo.`);
-  }
-  return {
-    ...candidate,
-    status: decision.status,
-    accepted_at: decision.status === 'accepted' ? decision.decidido_em : null,
-    rejected_at: decision.status === 'rejected' ? decision.decidido_em : null,
-    rejected_reason: decision.status === 'rejected' ? decision.motivo : null,
-  };
-}
-
 function errorMessage(error: unknown): string {
   const message = error instanceof Error ? error.message : String(error);
   return message.slice(0, 1000);
@@ -229,11 +228,18 @@ export async function runSyncSupabase(
   const prepared = prepareSyncSupabaseInput(options);
   const source = options.source?.trim() || 'documents_ingestor';
   const dryRun = options.dryRun || !options.confirmWrite;
+  const complete = prepared.candidates.filter((item) => item.canonical);
+  const skipped = prepared.candidates
+    .filter((item) => item.skip_reason)
+    .map((item) => ({ document_id: item.candidate.document_id, reason: item.skip_reason! }));
   const initialResult: SyncSupabaseResult = {
     ok: true,
     dry_run: dryRun,
     source,
+    candidates_total: prepared.candidates.length,
     candidates_upserted: 0,
+    canonical_base_complete: complete.length,
+    canonical_base_skipped: skipped,
     events_inserted: 0,
     events_skipped: prepared.duplicateEventIds,
     scan_run: { status: dryRun ? 'dry_run' : 'running', id: null },
@@ -243,7 +249,7 @@ export async function runSyncSupabase(
   if (dryRun) {
     return {
       ...initialResult,
-      candidates_upserted: prepared.candidates.length,
+      candidates_upserted: complete.length,
       events_inserted: prepared.events.length,
     };
   }
@@ -267,28 +273,8 @@ export async function runSyncSupabase(
   };
 
   try {
-    const decisions = await client.getActiveDecisions(prepared.candidates.map((candidate) => candidate.document_id));
-    const decisionsByDocumentId = new Map(decisions.map((decision) => [decision.document_id, decision]));
-    const protectedIds = [...decisionsByDocumentId.keys()];
-    const existingProtectedIds = await client.getExistingCandidateIds(protectedIds);
-
-    const candidatesToUpsert: DocumentCandidateWrite[] = [];
-    const protectedExistingCandidates: DocumentCandidateWrite[] = [];
-    for (const candidate of prepared.candidates) {
-      const decision = decisionsByDocumentId.get(candidate.document_id);
-      if (!decision) {
-        candidatesToUpsert.push(candidate);
-      } else if (existingProtectedIds.has(candidate.document_id)) {
-        protectedExistingCandidates.push(candidate);
-      } else {
-        candidatesToUpsert.push(candidateFromActiveDecision(candidate, decision));
-      }
-    }
-
-    await client.upsertCandidates(candidatesToUpsert);
-    result.candidates_upserted += candidatesToUpsert.length;
-    for (const candidate of protectedExistingCandidates) {
-      await client.updateCandidateMetadata(candidate.document_id, candidateMetadata(candidate));
+    for (const item of complete) {
+      await client.upsertCanonicalCandidateState(item.canonical!);
       result.candidates_upserted++;
     }
 

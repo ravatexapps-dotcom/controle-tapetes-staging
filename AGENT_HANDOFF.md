@@ -645,3 +645,8 @@ Foco: integrar `documentos-mapeados.jsonl` no Controle de Tapetes para exibir a 
 - **Garantias**: zero chamadas Gmail/Drive, zero schema/migrations, zero Controle.
 - **Riscos**: nenhum. `latest.json` é read-only sobre o JSONL.
 - **Próxima fase recomendada**: G22-A — auto-loader no Controle de Tapetes (design read-only de `documents-auto-loader.js` que lê `latest.json` via fetch).
+## RAVATEX-DOCUMENTS-G23-E-D-INGESTOR-WRITER-CANONICAL-STATE-PATCH (2026-07-09)
+
+O writer service-role passa a chamar somente `upsert_document_candidate_ingestor_state`, RPC backend ja aplicada em staging pelo Controle. O export mapped fornece `latest_ingestion_event_at` do mesmo evento de `latest_ingestion_event_id`; o sync so envia base quando ID, timestamp, status e motivo rejected forem comprovaveis.
+
+Bases incompletas sao retornadas em `canonical_base_skipped`, sem inventar pending/timestamp e sem chamada de candidate RPC. Eventos continuam no caminho idempotente por `ingestion_event_id`. Nao houve sync real, Gmail/Drive, alteracao no Controle, producao ou uso de credencial no browser.

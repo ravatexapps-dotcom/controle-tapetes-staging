@@ -360,3 +360,9 @@ RAVATEX-DOCUMENTS-G22-A-AUTO-LOADER-DESIGN (Controle de Tapetes, read-only)
 - Controle precisa de `documents-auto-loader.js` para ler `latest.json` via fetch e carregar automaticamente
 - Task Scheduler: `sync:mapped --confirm-real-google --write-latest` diário
 - Próximo roadmap: UX de aceite/rejeição no Controle; dedup por `event_id`; telemetria de import
+## RAVATEX-DOCUMENTS-G23-E-D-INGESTOR-WRITER-CANONICAL-STATE-PATCH (2026-07-09)
+
+- `export:mapped` inclui `latest_ingestion_event_at`, derivado do mesmo ultimo evento canonico de `latest_ingestion_event_id`, sem fallback para hora atual.
+- `sync:supabase` deriva base completa somente com status valido, event ID real, timestamp real e motivo para rejected; candidatos incompletos sao reportados como skipped e nao recebem base falsa.
+- Escrita de candidate agora usa exclusivamente a RPC backend `upsert_document_candidate_ingestor_state`; nao consulta/escreve `document_decisions`, nao chama RPCs de decisao e preserva eventos por `ingestion_event_id`.
+- Dry-run permanece sem cliente/conexao/write e retorna totais, bases completas e lista de skips. Nenhum sync real foi executado nesta fase.

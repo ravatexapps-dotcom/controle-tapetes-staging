@@ -3,14 +3,8 @@ import { config } from '../config.js';
 
 export type CanonicalDocumentStatus = 'pending' | 'assigned' | 'accepted' | 'rejected';
 
-export interface ActiveDocumentDecision {
+export interface DocumentCandidateWrite {
   document_id: string;
-  status: 'accepted' | 'rejected';
-  motivo: string | null;
-  decidido_em: string;
-}
-
-export interface DocumentCandidateMetadata {
   gmail_message_id: string | null;
   attachment_id: string | null;
   sha256: string | null;
@@ -20,23 +14,27 @@ export interface DocumentCandidateMetadata {
   direcao_nf: string | null;
   drive_file_id: string | null;
   drive_web_view_link: string | null;
-  pedido_manual: string | null;
-  schema_version: number;
-  raw_payload: Record<string, unknown>;
-  atualizado_em: string;
-}
-
-export interface DocumentCandidateWrite extends DocumentCandidateMetadata {
-  document_id: string;
   status: CanonicalDocumentStatus;
+  pedido_manual: string | null;
   pedido_id: null;
   fornecedor_id: null;
+  schema_version: number;
+  raw_payload: Record<string, unknown>;
   received_at: string | null;
   detected_at: string | null;
   linked_at: string | null;
   accepted_at: string | null;
   rejected_at: string | null;
   rejected_reason: string | null;
+  atualizado_em: string;
+}
+
+export interface CanonicalIngestorStateWrite {
+  candidate: DocumentCandidateWrite;
+  ingestor_status: CanonicalDocumentStatus;
+  ingestor_state_at: string;
+  ingestor_event_id: string;
+  ingestor_rejected_reason: string | null;
 }
 
 export interface DocumentEventWrite {
@@ -55,10 +53,7 @@ export interface DocumentScanRunWrite {
 }
 
 export interface SupabaseWriterClient {
-  getActiveDecisions(documentIds: string[]): Promise<ActiveDocumentDecision[]>;
-  getExistingCandidateIds(documentIds: string[]): Promise<Set<string>>;
-  upsertCandidates(rows: DocumentCandidateWrite[]): Promise<void>;
-  updateCandidateMetadata(documentId: string, metadata: DocumentCandidateMetadata): Promise<void>;
+  upsertCanonicalCandidateState(params: CanonicalIngestorStateWrite): Promise<void>;
   insertEventsIgnoreConflict(rows: DocumentEventWrite[]): Promise<{ inserted: number; skipped: number }>;
   startScanRun(run: DocumentScanRunWrite): Promise<{ kind: 'started'; id: string } | { kind: 'already_running' }>;
   finishScanRun(params: {
@@ -104,47 +99,35 @@ function throwOnError(error: { message: string } | null): void {
   if (error) throw new Error(error.message);
 }
 
+function canonicalWriterError(error: { message?: string; code?: string } | null): Error {
+  const message = error?.message || 'Supabase canonical writer RPC failed.';
+  if (error?.code === 'PGRST202' || error?.code === '42883'
+    || /upsert_document_candidate_ingestor_state|schema cache|does not exist/i.test(message)) {
+    return new Error('migration_39_required');
+  }
+  return new Error(`canonical_writer_rpc_failed: ${message}`);
+}
+
 export function createServiceRoleWriterClient(config: ServiceRoleConfig): SupabaseWriterClient {
   const client = createClient(config.url, config.serviceRoleKey, {
     auth: { autoRefreshToken: false, persistSession: false },
   });
 
   return {
-    async getActiveDecisions(documentIds) {
-      if (documentIds.length === 0) return [];
-      const { data, error } = await client
-        .from('document_decisions')
-        .select('document_id,status,motivo,decidido_em')
-        .eq('ativo', true)
-        .in('document_id', documentIds);
-      throwOnError(error);
-      return (data ?? []) as ActiveDocumentDecision[];
-    },
-
-    async getExistingCandidateIds(documentIds) {
-      if (documentIds.length === 0) return new Set<string>();
-      const { data, error } = await client
-        .from('document_candidates')
-        .select('document_id')
-        .in('document_id', documentIds);
-      throwOnError(error);
-      return new Set((data ?? []).map((row: { document_id: string }) => row.document_id));
-    },
-
-    async upsertCandidates(rows) {
-      if (rows.length === 0) return;
-      const { error } = await client
-        .from('document_candidates')
-        .upsert(rows, { onConflict: 'document_id' });
-      throwOnError(error);
-    },
-
-    async updateCandidateMetadata(documentId, metadata) {
-      const { error } = await client
-        .from('document_candidates')
-        .update(metadata)
-        .eq('document_id', documentId);
-      throwOnError(error);
+    async upsertCanonicalCandidateState(params) {
+      const { data, error } = await client.rpc('upsert_document_candidate_ingestor_state', {
+        p_candidate: params.candidate,
+        p_ingestor_status: params.ingestor_status,
+        p_ingestor_state_at: params.ingestor_state_at,
+        p_ingestor_event_id: params.ingestor_event_id,
+        p_ingestor_rejected_reason: params.ingestor_rejected_reason,
+      });
+      if (error) throw canonicalWriterError(error);
+      if (!data || typeof data !== 'object' || data.ok !== true) {
+        const rpcError = data && typeof data === 'object' && typeof data.error === 'string'
+          ? data.error : 'Supabase canonical writer RPC returned an invalid result.';
+        throw new Error(`canonical_writer_rpc_failed: ${rpcError}`);
+      }
     },
 
     async insertEventsIgnoreConflict(rows) {

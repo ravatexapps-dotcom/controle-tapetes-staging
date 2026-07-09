@@ -76,6 +76,11 @@ Run `npm run export:ingestion-events` to generate `data/exports/ingestion-events
 
 Do not use `data/outbox/document-events.jsonl` for Supabase. It is a legacy transport and can lack canonical event IDs.
 
+`export:mapped` also emits `latest_ingestion_event_id` with its matching
+`latest_ingestion_event_at`. The service-role Supabase writer sends a candidate
+only when this canonical base is complete; incomplete rows are reported as
+skipped and never receive an invented status or timestamp.
+
 ## Escopos OAuth (preferenciais)
 
 - `https://www.googleapis.com/auth/gmail.readonly` — leitura da caixa (read-only)

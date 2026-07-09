@@ -131,6 +131,7 @@ describe('export mapped documents (G12-E2)', () => {
     expect(parsed.accepted_at).toBeNull();
     expect(parsed.rejected_at).toBeNull();
     expect(parsed.latest_ingestion_event_id).toBeTruthy();
+    expect(parsed.latest_ingestion_event_at).toBeTruthy();
     expect(parsed.latest_ingestion_event_id).toMatch(/^[a-f0-9-]{36}$/);
     expect(parsed.detected_ingestion_event_id).toBeTruthy();
     expect(parsed.linked_ingestion_event_id).toBeNull();
@@ -420,6 +421,20 @@ describe('export mapped documents (G12-E2)', () => {
     expect(latestId).toBe(row.accepted_ingestion_event_id);
     expect(latestId).not.toBe(row.detected_ingestion_event_id);
     expect(latestId).not.toBe(row.linked_ingestion_event_id);
+    expect(row.latest_ingestion_event_at).toBe('2026-07-01T10:02:00.000Z');
+  });
+
+  it('uses the latest rejected event reason for a rejected canonical state', () => {
+    const db = getDb();
+    const docId = seedDoc(db, { gmailMessageId: 'msg-em-latest-rejected-reason', status: 'rejected' });
+    seedEvent(db, docId, 'document.detected', { createdAt: '2026-07-01 10:00:00' });
+    seedEvent(db, docId, 'document.rejected', { reason: 'old reason', createdAt: '2026-07-01 10:01:00' });
+    const latestId = seedEvent(db, docId, 'document.rejected', { reason: 'latest reason', createdAt: '2026-07-01 10:02:00' });
+
+    const row = listMappedDocuments()[0];
+    expect(row.latest_ingestion_event_id).toBe(latestId);
+    expect(row.latest_ingestion_event_at).toBe('2026-07-01T10:02:00.000Z');
+    expect(row.rejected_reason).toBe('latest reason');
   });
 
   it('ingestion event IDs are null when no events exist for a document', () => {
@@ -430,6 +445,7 @@ describe('export mapped documents (G12-E2)', () => {
     expect(rows).toHaveLength(1);
     const row = rows[0];
     expect(row.latest_ingestion_event_id).toBeNull();
+    expect(row.latest_ingestion_event_at).toBeNull();
     expect(row.detected_ingestion_event_id).toBeNull();
     expect(row.linked_ingestion_event_id).toBeNull();
     expect(row.accepted_ingestion_event_id).toBeNull();
