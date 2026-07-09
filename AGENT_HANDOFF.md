@@ -1,5 +1,34 @@
 ﻿# Estado pos-fase - G22-B Documents Auto Load Patch
 
+# Estado pos-fase - G23-C-B Control Supabase Documents Reader Patch
+
+- Fase: `RAVATEX-DOCUMENTS-G23-C-B-CONTROL-SUPABASE-DOCUMENTS-READER-PATCH`.
+- Status: **PRONTO - READER-ONLY COM SUPABASE PRIMARIO E FALLBACK PRESERVADO**.
+- Base: `work/app-next` em `03c49db104fbe9aa5e9914f996f0d69d4b6a1010`.
+- Patch:
+  - `js/documents-supabase-reader.js` faz somente SELECT autenticado em
+    `document_candidates` e `document_decisions` (`ativo = true`), sem expor
+    `raw_payload`, sem RPC, sem service_role e sem writes.
+  - Mapeia para `window.RAVATEX_DOCUMENTS_RECEIVED`; `document_id`, pedido,
+    fornecedor, links e timestamps sao preservados. Decisao ativa do servidor
+    vence status e motivo de rejeicao.
+  - `RAVATEX_DOCUMENTS_RECEIVED_SOURCE = 'supabase'` impede o G22-B de buscar
+    ou substituir JSONL depois de uma leitura primaria bem-sucedida, mesmo vazia.
+  - A tela tenta o reader primeiro no carregamento e no Atualizar; em falha,
+    usa o fallback G22-B somente quando permitido. Import manual permanece.
+  - Pedido Detail prioriza received Supabase; fora dessa origem, eventos e
+    decisoes locais existentes preservam a precedencia anterior.
+  - Aceitar/rejeitar/desfazer ficam indisponiveis para documentos Supabase ate
+    G23-D chamar `decidir_documento`.
+- Testes: reader 9/9; documentos recebidos 70/70; auto-load 35/35; Pedido
+  Detail 181/181; import received 36/36; loader 71/71.
+- Confirmacoes: nenhum Supabase remoto, producao, Documents Ingestor,
+  Gmail/Drive, migration, commit ou push foi tocado nesta fase.
+- Proximo passo: G23-C-C staging reader smoke com sessao admin; depois G23-D
+  para decisoes via RPC, se autorizado.
+
+# Estado pos-fase - G22-B Documents Auto Load Patch
+
 - Fase: `RAVATEX-DOCUMENTS-G22-B-DOCUMENTS-AUTO-LOAD-PATCH`.
 - Status: **PRONTO — AUTO-LOAD DE DOCUMENTOS MAPEADOS VIA FETCH RELATIVO**.
 - Branch/HEAD base: `work/app-next` (apos commit G22-B).

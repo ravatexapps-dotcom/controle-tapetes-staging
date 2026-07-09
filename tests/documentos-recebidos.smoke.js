@@ -67,6 +67,8 @@ const IMPORT_RECEIVED = path.join(ROOT, 'js', 'documents-ingestor-import-receive
 const importReceivedSrc = readOrFail(IMPORT_RECEIVED);
 const AUTO_LOAD = path.join(ROOT, 'js', 'documents-ingestor-auto-load.js');
 const autoLoadSrc = readOrFail(AUTO_LOAD);
+const READER = path.join(ROOT, 'js', 'documents-supabase-reader.js');
+const readerSrc = readOrFail(READER);
 const common = readOrFail(COMMON);
 const boot = readOrFail(BOOT);
 const ui = readOrFail(UI);
@@ -114,15 +116,19 @@ test('index.html: carrega webfont Tabler Icons para icones de arquivos', functio
 test('index.html: ordem documents-ingestor + loader < common < documentos-recebidos < boot', function () {
   const idxIngestor = index.indexOf('js/documents-ingestor.js');
   const idxLoader = index.indexOf('js/documents-ingestor-loader.js');
+  const idxReader = index.indexOf('js/documents-supabase-reader.js');
   const idxCommon = index.indexOf('js/screens/common.js');
   const idxScreen = index.indexOf('js/screens/documentos-recebidos.js');
   const idxBoot = index.indexOf('js/boot.js');
   assert.ok(idxIngestor > 0, 'ingestor ausente');
   assert.ok(idxLoader > 0, 'loader ausente');
+  assert.ok(idxReader > 0, 'reader Supabase ausente');
   assert.ok(idxCommon > 0, 'common ausente');
   assert.ok(idxScreen > 0, 'documentos-recebidos ausente');
   assert.ok(idxBoot > 0, 'boot ausente');
   assert.ok(idxIngestor < idxLoader, 'ingestor antes do loader');
+  assert.ok(idxLoader < idxReader, 'loader antes do reader');
+  assert.ok(idxReader < idxCommon, 'reader antes do common');
   assert.ok(idxLoader < idxCommon, 'loader antes do common');
   assert.ok(idxCommon < idxScreen, 'common antes da tela');
   assert.ok(idxScreen < idxBoot, 'tela antes do boot');
@@ -153,9 +159,8 @@ test('common.js: ADMIN_MENU contem entrada Documentos -> #/documentos/recebidos'
 // 5. Garantias: sem Supabase/Drive/fetch/persist
 // ---------------------------------------------------------------------
 
-test('documentos-recebidos: NAO referencia Supabase', function () {
+test('documentos-recebidos: nao cria query Supabase diretamente', function () {
   assert.equal(/supa\.from\s*\(/.test(screen), false, 'supa.from em documentos-recebidos');
-  assert.equal(/supabase/.test(screen), false, 'supabase em documentos-recebidos');
   assert.equal(/window\.supa/.test(screen), false, 'window.supa em documentos-recebidos');
 });
 
@@ -257,6 +262,7 @@ function makeScreenSandbox(received) {
   // Carrega ingestor + loader (para garantir que RAVATEX_DOCUMENTS existe)
   vm.runInContext(ingestor, sandbox, { filename: 'js/documents-ingestor.js' });
   vm.runInContext(loader, sandbox, { filename: 'js/documents-ingestor-loader.js' });
+  vm.runInContext(readerSrc, sandbox, { filename: 'js/documents-supabase-reader.js' });
   // Carrega auto-load (G22-B)
   vm.runInContext(autoLoadSrc, sandbox, { filename: 'js/documents-ingestor-auto-load.js' });
   // Carrega import-received (G12-R1: expoe createReceivedImportButton)
@@ -1368,6 +1374,27 @@ test('G22-B: header subtitulo mantido apos alteracoes G22-B', function () {
   var allText = JSON.stringify(findAll(result, function () { return true; }).map(textOf));
   assert.ok(allText.indexOf('Importe a lista gerada pelo Documents Ingestor') >= 0,
     'subtitulo enxuto preservado');
+});
+
+test('G23-C-B: tela tenta o reader Supabase antes do fallback delegado', function () {
+  assert.ok(screen.indexOf('loadReceivedDocumentsFromSupabase') >= 0,
+    'tela deve usar o reader no namespace');
+  assert.equal(/window\.supa/.test(screen), false,
+    'a tela nao deve criar query Supabase diretamente');
+});
+
+test('G23-C-B: documento Supabase nao expoe acoes locais', function () {
+  var sb = makeScreenSandbox([{
+    document_id: '96ed4f0e-26b2-4c2f-9186-65f72bf5fb18',
+    filename_original: 'NF-cloud.xml', tipo_documento: 'nf', formato: 'xml',
+    status: 'pending', pedido_manual: 'PED-99-2026', _ravatex_source: 'supabase',
+  }]);
+  var container = new FakeNode('div');
+  sb.container = container;
+  var result = vm.runInContext('window.screenDocumentosRecebidos(container)', sb);
+  assert.equal(findAll(result, findAction('aceitar-documento')).length, 0);
+  assert.equal(findAll(result, findAction('rejeitar-documento')).length, 0);
+  assert.equal(findAll(result, findAction('decisao-nuvem-pendente')).length, 1);
 });
 
 test('G22-B: botao Atualizar agora presente e funcional', function () {

@@ -484,6 +484,17 @@
       return null;
     }
     if (!docId) return null;
+    if (docOrId && typeof docOrId === 'object' && docOrId._ravatex_source === 'supabase') {
+      return {
+        document_id: docId,
+        importedStatus: impSt,
+        effectiveStatus: impSt,
+        decision: docOrId._ravatex_server_decision || null,
+        isLocalDecision: false,
+        isServerDecision: !!docOrId._ravatex_server_decision,
+        isDivergent: false,
+      };
+    }
     var decision = ns.getDocumentDecision(docId);
     var effSt = decision ? decision.status : impSt;
     return {

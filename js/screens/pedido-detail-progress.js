@@ -719,7 +719,8 @@
       var loadedEvents = (typeof window.RAVATEX_DOCUMENTS_LOADED_EVENTS !== 'undefined'
         && Array.isArray(window.RAVATEX_DOCUMENTS_LOADED_EVENTS))
         ? window.RAVATEX_DOCUMENTS_LOADED_EVENTS : [];
-      if (loadedEvents.length > 0 && pedidoKey) {
+      var receivedSupabasePrimary = window.RAVATEX_DOCUMENTS_RECEIVED_SOURCE === 'supabase';
+      if (!receivedSupabasePrimary && loadedEvents.length > 0 && pedidoKey) {
         var result = window.RAVATEX_DOCUMENTS.buildDocumentsForPedido(loadedEvents, pedidoKey);
 
         // Fallback: se nao encontrou eventos pelo pedidoKey exato (ano do

@@ -133,6 +133,10 @@
   // -------------------------------------------------------------------
 
   ns.autoLoadDocuments = function autoLoadDocuments() {
+    if (window.RAVATEX_DOCUMENTS_RECEIVED_SOURCE === 'supabase') {
+      return Promise.resolve({ ok: true, skipped: true, reason: 'supabase-primary' });
+    }
+
     if (!shouldAutoLoad()) {
       return Promise.resolve({ ok: false, reason: 'not-allowed' });
     }
@@ -166,7 +170,7 @@
             if (typeof jsonlText !== 'string' || !jsonlText.trim()) {
               throw new Error('documentos-mapeados.jsonl esta vazio');
             }
-            return ns.loadReceivedDocumentsFromText(jsonlText);
+            return ns.loadReceivedDocumentsFromText(jsonlText, { source: 'g22-auto' });
           })
           .then(function (loadResult) {
             if (!loadResult || !loadResult.ok) {

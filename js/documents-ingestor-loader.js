@@ -214,13 +214,23 @@
     return deduped;
   }
 
-  ns.setReceivedDocuments = function setReceivedDocuments(docs) {
+  function setReceivedSource(source) {
+    var normalized = typeof source === 'string' && source ? source : 'manual';
+    window.RAVATEX_DOCUMENTS_RECEIVED_SOURCE = normalized;
+    window.RAVATEX_DOCUMENTS_RECEIVED_SOURCE_METADATA = {
+      source: normalized,
+      loadedAt: new Date().toISOString(),
+    };
+  }
+
+  ns.setReceivedDocuments = function setReceivedDocuments(docs, options) {
     if (!Array.isArray(docs)) {
       return { ok: false, count: 0, error: '{docs} deve ser um array.' };
     }
 
     if (docs.length === 0) {
       window.RAVATEX_DOCUMENTS_RECEIVED = [];
+      setReceivedSource(options && options.source);
       return { ok: true, count: 0 };
     }
 
@@ -231,11 +241,12 @@
 
     var deduped = dedupeReceivedDocuments(docs);
     window.RAVATEX_DOCUMENTS_RECEIVED = deduped;
+    setReceivedSource(options && options.source);
 
     return { ok: true, count: deduped.length };
   };
 
-  ns.loadReceivedDocumentsFromText = function loadReceivedDocumentsFromText(jsonlText) {
+  ns.loadReceivedDocumentsFromText = function loadReceivedDocumentsFromText(jsonlText, options) {
     if (typeof jsonlText !== 'string' || !jsonlText.trim()) {
       return { ok: false, count: 0, error: '{input} deve ser uma string JSONL nao vazia.' };
     }
@@ -256,10 +267,7 @@
       return { ok: false, count: 0, error: validation.error };
     }
 
-    var deduped = dedupeReceivedDocuments(docs);
-    window.RAVATEX_DOCUMENTS_RECEIVED = deduped;
-
-    return { ok: true, count: deduped.length };
+    return ns.setReceivedDocuments(docs, options || { source: 'manual' });
   };
 
   ns.loadReceivedDocumentsFromUrl = function loadReceivedDocumentsFromUrl(url) {

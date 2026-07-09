@@ -2885,6 +2885,53 @@ test('G20-B-bridge-smoke: pedido-detail-progress usa effectiveStatus para status
     'pedido-detail-progress deve usar effectiveStatus');
 });
 
+test('G23-C-B: Pedido Detail prioriza received Supabase sobre eventos legados', function () {
+  var sandbox = { window: {}, console: {} };
+  sandbox.window.el = function (tag, attrs) {
+    return { tag: tag, attrs: attrs || {}, children: Array.prototype.slice.call(arguments, 2), appendChild: function () {} };
+  };
+  vm.createContext(sandbox);
+  vm.runInContext(readOrFail(path.join(ROOT, 'js', 'documents-ingestor.js')), sandbox);
+
+  sandbox.window.RAVATEX_DOCUMENTS_RECEIVED_SOURCE = 'supabase';
+  sandbox.window.RAVATEX_DOCUMENTS_LOADED_EVENTS = [{
+    ingestion_event_id: 'legacy-event-99', event_type: 'document.accepted', status: 'accepted',
+    pedido_manual: 'PED-25-2026', created_at: '2026-07-09T10:00:00.000Z',
+    document: { document_id: 'legacy-doc-99', filename_original: 'legado.xml', tipo_documento: 'nf', formato: 'xml' },
+  }];
+  sandbox.window.RAVATEX_DOCUMENTS_RECEIVED = [{
+    document_id: 'cloud-doc-99', filename_original: 'nuvem.xml', tipo_documento: 'nf', formato: 'xml',
+    status: 'pending', pedido_manual: 'PED-25-2026', received_at: '2026-07-09T11:00:00.000Z',
+    _ravatex_source: 'supabase',
+  }];
+
+  var opDisplaySrc = readOrFail(path.join(ROOT, 'js', 'op-display.js'));
+  var chainStateSrc = readOrFail(path.join(ROOT, 'js', 'screens', 'pedido-chain-state.js'));
+  var screenSrc = readOrFail(path.join(ROOT, 'js', 'screens', 'pedido-detail.js'));
+  var detailDataSrc = detailData;
+  var detailEventsSrc = readOrFail(path.join(ROOT, 'js', 'screens', 'pedido-detail-events.js'));
+  var detailRenderSrc = readOrFail(DETAIL_RENDER);
+  vm.runInContext([opDisplaySrc, chainStateSrc, screenSrc, detailDataSrc, detailProgress, detailEventsSrc, detailRenderSrc].join('\n\n'), sandbox);
+
+  var ns = sandbox.window.RAVATEX_SCREENS.pedidoDetail;
+  var state = ns.createInitialState();
+  state.pedido = { id: 'ped-cloud-25', numero: 25, status: 'recebido', metros_total: 0, criado_em: '2026-01-15T10:00:00.000Z' };
+  state.itens = [];
+  state.ops = [];
+  state.entregaItens = [];
+  state.entregasById = {};
+  state.opLatexEntregas = [];
+  state.expedicoes = [];
+  state.expedicaoItens = [];
+  state.modelosById = {};
+  state.coresById = {};
+
+  var view = ns.computeViewModel(state);
+  assert.equal(view.ingestorDocumentRows.length, 1);
+  assert.equal(view.ingestorDocumentRows[0].label, 'nuvem.xml');
+  assert.equal(view.ingestorDocumentRows[0].status, 'pending');
+});
+
 test('G20-B-bridge-smoke: pedido-detail-progress nao referencia ingestion_event_id como chave de decisao', () => {
   const decisionSection = (detailProgress.match(/isLocalDecision[\s\S]{0,300}/) || [''])[0];
   assert.doesNotMatch(decisionSection || '', /ingestion_event_id\s*[:=]/,

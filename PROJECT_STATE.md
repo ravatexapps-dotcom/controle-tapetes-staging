@@ -1,3 +1,23 @@
+> **Atualizacao 2026-07-09 - fase
+> `RAVATEX-DOCUMENTS-G23-C-B-CONTROL-SUPABASE-DOCUMENTS-READER-PATCH`.**
+> Status: **PRONTO - READER SUPABASE ADMIN-ONLY COM FALLBACK G22-B**.
+> Branch/HEAD base: `work/app-next` em `03c49db`.
+>
+> Escopo G23-C-B:
+> - Novo `js/documents-supabase-reader.js`: SELECT autenticado em
+>   `document_candidates` e `document_decisions` ativos, sem `raw_payload`,
+>   writes, RPC ou service_role.
+> - Converte candidates para `RAVATEX_DOCUMENTS_RECEIVED`; decisao server ativa
+>   vence o status e motivo do candidate. A origem fica marcada como `supabase`.
+> - Tela Documentos tenta Supabase primeiro; G22-B so executa em falha do
+>   primario e nao pode sobrescrever uma carga Supabase, inclusive vazias.
+> - Pedido Detail passa a priorizar received Supabase sobre eventos legados.
+>   Documentos manuais/G22-B preservam decisoes em localStorage; documentos
+>   Supabase ficam read-only ate a fase G23-D.
+> - Testes: reader 9/9, documentos recebidos 70/70, auto-load 35/35,
+>   Pedido Detail 181/181, import received 36/36 e loader 71/71.
+> - Nenhuma escrita Supabase, Gmail/Drive, migration, producao ou push.
+>
 > **Atualizacao 2026-07-09 — fase
 > `RAVATEX-DOCUMENTS-G22-B-DOCUMENTS-AUTO-LOAD-PATCH`.**
 > Status: **PRONTO — AUTO-LOAD DE DOCUMENTOS MAPEADOS VIA FETCH RELATIVO**.

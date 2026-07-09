@@ -174,6 +174,16 @@ test('auto-load: expoe autoLoadDocumentsReset no namespace', function () {
     'autoLoadDocumentsReset ausente');
 });
 
+test('auto-load: nao busca JSONL quando Supabase ja e a fonte primaria', async function () {
+  var ctx = makeAutoLoadSandbox();
+  ctx.sandbox.window.RAVATEX_DOCUMENTS_RECEIVED_SOURCE = 'supabase';
+  var result = await ctx.ns.autoLoadDocuments();
+  assert.equal(result.ok, true);
+  assert.equal(result.skipped, true);
+  assert.equal(result.reason, 'supabase-primary');
+  assert.equal(ctx.fetchCalls.length, 0);
+});
+
 // -------------------------------------------------------------------
 // 2. Gate: bloqueio em producao
 // -------------------------------------------------------------------
@@ -369,9 +379,9 @@ test('auto-load: flag NAO setada no skip', async function () {
 // 10. Seguranca: sem Supabase, Drive, Gmail
 // -------------------------------------------------------------------
 
-test('auto-load: NAO referencia Supabase', function () {
-  assert.equal(autoLoadSrc.indexOf('supabase'), -1, 'referencia supabase');
+test('auto-load: nao consulta Supabase', function () {
   assert.equal(autoLoadSrc.indexOf('window.supa'), -1, 'referencia window.supa');
+  assert.equal(/\.from\s*\(/.test(autoLoadSrc), false, 'query Supabase no auto-load');
 });
 
 test('auto-load: NAO referencia Google/Drive', function () {

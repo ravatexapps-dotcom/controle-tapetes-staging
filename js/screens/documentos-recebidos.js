@@ -42,6 +42,8 @@
     searchCursorPos: 0,
     autoLoadAttempted: false,
     autoLoadRunning: false,
+    sourceLoadAttempted: false,
+    sourceLoadRunning: false,
   };
 
   var FILE_TYPE_ICONS = [
@@ -283,6 +285,7 @@
     var formato = inferFormato(doc, filename);
     var tipo = inferTipo(doc, filename);
     var direcao = inferDirecao(doc, filename);
+    var isSupabaseSource = !!(doc && doc._ravatex_source === 'supabase');
     var effective = hasRealId && typeof window.RAVATEX_DOCUMENTS !== 'undefined'
       && typeof window.RAVATEX_DOCUMENTS.getEffectiveDocumentStatus === 'function'
       ? window.RAVATEX_DOCUMENTS.getEffectiveDocumentStatus(doc) : null;
@@ -304,6 +307,7 @@
       importedStatus: importedStatus,
       hasLocalDecision: hasLocalDecision,
       isDivergent: isDivergent,
+      isSupabaseSource: isSupabaseSource,
       pedido: doc && (doc.pedido_manual || doc.pedido || doc.pedido_key) || '',
       when: when,
       driveId: doc && doc.drive_file_id ? doc.drive_file_id : '',
@@ -367,6 +371,51 @@
 
   function rerenderSoon(delay) {
     setTimeout(rerender, delay || 0);
+  }
+
+  function loadDocumentsPrimaryThenFallback() {
+    var docsApi = window.RAVATEX_DOCUMENTS;
+    var primary = docsApi && typeof docsApi.loadReceivedDocumentsFromSupabase === 'function'
+      ? docsApi.loadReceivedDocumentsFromSupabase()
+      : Promise.resolve({ ok: false, source: 'supabase', error: 'reader_unavailable' });
+
+    return primary.then(function (primaryResult) {
+      if (primaryResult && primaryResult.ok) return primaryResult;
+      if (!docsApi || typeof docsApi.autoLoadDocuments !== 'function') {
+        return primaryResult || { ok: false, source: 'supabase', error: 'reader_failed' };
+      }
+      return docsApi.autoLoadDocuments().then(function (fallbackResult) {
+        if (fallbackResult && fallbackResult.skipped && fallbackResult.reason === 'supabase-primary') {
+          return {
+            ok: true,
+            source: 'supabase',
+            count: Array.isArray(window.RAVATEX_DOCUMENTS_RECEIVED)
+              ? window.RAVATEX_DOCUMENTS_RECEIVED.length : 0,
+          };
+        }
+        if (fallbackResult && fallbackResult.ok) {
+          return {
+            ok: true,
+            source: 'g22-auto',
+            fallback: true,
+            count: fallbackResult.count || 0,
+            primaryError: primaryResult && primaryResult.error || '',
+          };
+        }
+        return primaryResult || fallbackResult || { ok: false, source: 'supabase', error: 'reader_failed' };
+      });
+    });
+  }
+
+  function showRefreshResult(result) {
+    if (typeof window.toast !== 'function') return;
+    if (result && result.ok && result.source === 'supabase') {
+      window.toast(result.count ? 'Documentos atualizados pelo Supabase.' : 'Nenhum documento encontrado no Supabase.', 'success');
+    } else if (result && result.ok && result.fallback) {
+      window.toast('Supabase indisponivel; usando fallback do Ingestor.', 'info');
+    } else {
+      window.toast('Supabase indisponivel. Importar documentos continua disponivel.', 'info');
+    }
   }
 
   function restoreSearchFocus() {
@@ -476,7 +525,13 @@
       }, 'Sem link'));
     }
 
-    if (doc.status === 'pending' && doc.hasRealId) {
+    if (doc.isSupabaseSource) {
+      wrap.appendChild(window.el('span', {
+        'data-action': 'decisao-nuvem-pendente',
+        title: 'Decisao em nuvem sera habilitada na proxima fase.',
+        style: 'color:#8a93a3;font-size:10.5px;line-height:1.25;text-align:center;max-width:108px;',
+      }, 'Decisao em nuvem sera habilitada na proxima fase.'));
+    } else if (doc.status === 'pending' && doc.hasRealId) {
       wrap.appendChild(iconButton('Rejeitar', SVG_X, function () {
         var motivo = typeof window.prompt === 'function' ? window.prompt('Motivo da rejeição:') : '';
         if (motivo === null) return;
@@ -517,7 +572,7 @@
       }));
     }
 
-    if (doc.hasLocalDecision && doc.hasRealId) {
+    if (!doc.isSupabaseSource && doc.hasLocalDecision && doc.hasRealId) {
       wrap.appendChild(iconButton('Desfazer', null, function () {
         if (typeof window.RAVATEX_DOCUMENTS !== 'undefined'
             && typeof window.RAVATEX_DOCUMENTS.removeDocumentDecision === 'function') {
@@ -550,24 +605,10 @@
         ui.lastRun = new Date();
         rerender();
 
-        var autoLoad = window.RAVATEX_DOCUMENTS && typeof window.RAVATEX_DOCUMENTS.autoLoadDocuments === 'function'
-          ? window.RAVATEX_DOCUMENTS.autoLoadDocuments()
-          : Promise.resolve({ ok: false, error: 'autoLoadDocuments indisponivel' });
-
-        autoLoad.then(function (result) {
+        loadDocumentsPrimaryThenFallback().then(function (result) {
           ui.refreshing = false;
           ui.lastRun = new Date();
-          if (result && result.ok) {
-            if (!result.skipped && typeof window.toast === 'function') {
-              window.toast(result.count + ' documento(s) atualizado(s) via auto-sync.', 'success');
-            } else if (result.skipped && typeof window.toast === 'function') {
-              window.toast('Dados ja estao em dia com o Ingestor.', 'info');
-            }
-          } else {
-            if (typeof window.toast === 'function') {
-              window.toast('Auto-sync indisponivel. Use Importar documentos como fallback.', 'info');
-            }
-          }
+          showRefreshResult(result);
           rerender();
         });
       },
@@ -1158,18 +1199,15 @@
     container.appendChild(page);
     setTimeout(restoreSearchFocus, 0);
 
-    if (!ui.autoLoadAttempted
-        && window.RAVATEX_DOCUMENTS && typeof window.RAVATEX_DOCUMENTS.autoLoadDocuments === 'function'
-        && typeof window.fetch === 'function') {
-      ui.autoLoadAttempted = true;
+    if (!ui.sourceLoadAttempted && window.RAVATEX_DOCUMENTS
+        && (window.RAVATEX_SUPABASE_CLIENT || typeof window.fetch === 'function')) {
+      ui.sourceLoadAttempted = true;
       setTimeout(function () {
-        if (ui.autoLoadRunning) return;
-        ui.autoLoadRunning = true;
-        window.RAVATEX_DOCUMENTS.autoLoadDocuments().then(function () {
-          ui.autoLoadRunning = false;
-          if (window.RAVATEX_DOCUMENTS_AUTO_LOADED_SESSION === true) {
-            rerender();
-          }
+        if (ui.sourceLoadRunning) return;
+        ui.sourceLoadRunning = true;
+        loadDocumentsPrimaryThenFallback().then(function () {
+          ui.sourceLoadRunning = false;
+          rerender();
         });
       }, 300);
     }
