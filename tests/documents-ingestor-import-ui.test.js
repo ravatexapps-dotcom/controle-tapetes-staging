@@ -133,6 +133,8 @@ function makeImportUISandbox(opts) {
   }
 
   sandbox.window.RAVATEX_ENABLE_DOCUMENTS_IMPORT_UI = opts.enableFlag === true ? true : undefined;
+  sandbox.window.RAVATEX_ENABLE_DOCUMENTS_EVENTS_IMPORT_UI =
+    (opts.enableEventsFlag !== undefined ? opts.enableEventsFlag : true) === true ? true : undefined;
 
   sandbox.window.toast = function (msg, type) {
     toasts.push({ msg: msg, type: type || 'info' });
@@ -372,14 +374,26 @@ test('import-ui-scope: producao + cliente => NAO aparece', function () {
   assert.equal(importBtn, undefined, 'botao nao deve existir em producao para cliente');
 });
 
-test('import-ui-scope: staging + admin => aparece', function () {
+test('import-ui-scope: staging + admin sem flag de eventos => NAO aparece', function () {
   var rt = makeImportUISandbox({
     appEnv: 'staging',
     currentUser: { tipo: 'admin' },
+    enableEventsFlag: false,
   });
   var buttons = rt.domElements['button'] || [];
   var importBtn = buttons.find(function (b) { return b.id === 'rv-docs-import-btn'; });
-  assert.ok(importBtn, 'botao deve existir em staging para admin');
+  assert.equal(importBtn, undefined, 'botao legado nao deve existir sem flag explicita');
+});
+
+test('import-ui-scope: staging + flag de eventos => aparece', function () {
+  var rt = makeImportUISandbox({
+    appEnv: 'staging',
+    currentUser: { tipo: 'admin' },
+    enableEventsFlag: true,
+  });
+  var buttons = rt.domElements['button'] || [];
+  var importBtn = buttons.find(function (b) { return b.id === 'rv-docs-import-btn'; });
+  assert.ok(importBtn, 'botao deve existir com flag de eventos');
   assert.ok(rt.fileInputEl, 'file input deve existir');
 });
 
@@ -387,6 +401,7 @@ test('import-ui-scope: staging + cliente => NAO aparece', function () {
   var rt = makeImportUISandbox({
     appEnv: 'staging',
     currentUser: { tipo: 'cliente' },
+    enableEventsFlag: false,
   });
   var buttons = rt.domElements['button'] || [];
   var importBtn = buttons.find(function (b) { return b.id === 'rv-docs-import-btn'; });
@@ -397,38 +412,41 @@ test('import-ui-scope: staging + fornecedor => NAO aparece', function () {
   var rt = makeImportUISandbox({
     appEnv: 'staging',
     currentUser: { tipo: 'fornecedor' },
+    enableEventsFlag: false,
   });
   var buttons = rt.domElements['button'] || [];
   var importBtn = buttons.find(function (b) { return b.id === 'rv-docs-import-btn'; });
   assert.equal(importBtn, undefined, 'botao nao deve existir para fornecedor');
 });
 
-test('import-ui-scope: staging + flag=true (sem admin) => aparece', function () {
+test('import-ui-scope: staging + flag de eventos=true (sem admin) => aparece', function () {
   var rt = makeImportUISandbox({
     appEnv: 'staging',
     currentUser: null,
-    enableFlag: true,
+    enableEventsFlag: true,
   });
   var buttons = rt.domElements['button'] || [];
   var importBtn = buttons.find(function (b) { return b.id === 'rv-docs-import-btn'; });
   assert.ok(importBtn, 'botao deve existir com flag=true mesmo sem admin logado');
 });
 
-test('import-ui-scope: staging + admin + flag=false => aparece (admin prevalece)', function () {
+test('import-ui-scope: staging + admin + flag antiga=true => NAO aparece', function () {
   var rt = makeImportUISandbox({
     appEnv: 'staging',
     currentUser: { tipo: 'admin' },
-    enableFlag: false,
+    enableFlag: true,
+    enableEventsFlag: false,
   });
   var buttons = rt.domElements['button'] || [];
   var importBtn = buttons.find(function (b) { return b.id === 'rv-docs-import-btn'; });
-  assert.ok(importBtn, 'botao deve existir para admin em staging (flag irrelevante)');
+  assert.equal(importBtn, undefined, 'flag antiga nao deve habilitar botao legado azul');
 });
 
 test('import-ui-scope: staging + admin => import funciona', function () {
   var rt = makeImportUISandbox({
     appEnv: 'staging',
     currentUser: { tipo: 'admin' },
+    enableEventsFlag: true,
     mockFileContent: fixtureText,
   });
 
@@ -443,39 +461,36 @@ test('import-ui-scope: staging + admin => import funciona', function () {
   assert.ok(successToast, 'deve haver toast de sucesso');
 });
 
-test('import-ui-scope: admin tardio via SPA — comeca null, dps vira admin', function () {
-  // Simula SPA login: CURRENT_USER comeca null, depois vira admin.
-  // O fast poll deve detectar na proxima iteracao (200 ms).
+test('import-ui-scope: flag de eventos tardia via SPA — comeca desativada, dps ativa', function () {
   var rt = makeImportUISandbox({
     appEnv: 'staging',
     currentUser: null, // usuario ainda nao logado
+    enableEventsFlag: false,
   });
-  // Neste momento, fast poll esta rodando. CURRENT_USER e null.
   var buttons = rt.domElements['button'] || [];
   var importBtn = buttons.find(function (b) { return b.id === 'rv-docs-import-btn'; });
-  assert.equal(importBtn, undefined, 'botao nao deve existir com CURRENT_USER null');
+  assert.equal(importBtn, undefined, 'botao nao deve existir com flag desativada');
 
-  // Simula login: CURRENT_USER vira admin
-  rt.sandbox.window.CURRENT_USER = { tipo: 'admin' };
-  // Dispara recheck manual (equivalente a proxima iteracao do slow poll)
+  rt.sandbox.window.RAVATEX_ENABLE_DOCUMENTS_EVENTS_IMPORT_UI = true;
   rt.sandbox.window.RAVATEX_DOCUMENTS._importUIRecheck();
 
   buttons = rt.domElements['button'] || [];
   importBtn = buttons.find(function (b) { return b.id === 'rv-docs-import-btn'; });
-  assert.ok(importBtn, 'botao deve aparecer apos admin ser detectado via recheck');
+  assert.ok(importBtn, 'botao deve aparecer apos flag explicita ser ativada');
 });
 
-test('import-ui-scope: admin tardio — _importUIHasButton confirma estado', function () {
+test('import-ui-scope: flag de eventos tardia — _importUIHasButton confirma estado', function () {
   var rt = makeImportUISandbox({
     appEnv: 'staging',
     currentUser: null,
+    enableEventsFlag: false,
   });
   assert.equal(rt.sandbox.window.RAVATEX_DOCUMENTS._importUIHasButton(), false,
-    'sem admin, sem botao');
-  rt.sandbox.window.CURRENT_USER = { tipo: 'admin' };
+    'sem flag, sem botao');
+  rt.sandbox.window.RAVATEX_ENABLE_DOCUMENTS_EVENTS_IMPORT_UI = true;
   rt.sandbox.window.RAVATEX_DOCUMENTS._importUIRecheck();
   assert.equal(rt.sandbox.window.RAVATEX_DOCUMENTS._importUIHasButton(), true,
-    'com admin, botao criado');
+    'com flag explicita, botao criado');
 });
 
 test('import-ui-scope: loader globals ausentes — erro controlado, sem crash', function () {
@@ -558,6 +573,7 @@ test('import-ui (G12-R3): comeca OCULTO quando hash === #/documentos/recebidos',
   sandbox.window = sandbox;
   sandbox.window.APP_ENV = 'staging';
   sandbox.window.CURRENT_USER = { tipo: 'admin' };
+  sandbox.window.RAVATEX_ENABLE_DOCUMENTS_EVENTS_IMPORT_UI = true;
   sandbox.window.toast = function (m, t) { toasts.push({ msg: m, type: t || 'info' }); };
   sandbox.window.document = mockDocument;
   sandbox.window.FileReader = sandbox.FileReader;

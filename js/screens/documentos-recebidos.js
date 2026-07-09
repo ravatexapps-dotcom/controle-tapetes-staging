@@ -9,7 +9,8 @@
 (function (window) {
   'use strict';
 
-  var TABLE_GRID = 'minmax(220px,1.6fr) 148px 112px 136px 104px 116px';
+  var TABLE_GRID = 'minmax(280px,1.7fr) minmax(220px,1.25fr) minmax(112px,.75fr) minmax(140px,.85fr) minmax(120px,.75fr) 112px';
+  var TABLE_MIN_WIDTH = '1080px';
   var CARD = 'background:#fff;border:1px solid #eceef1;border-radius:6px;';
   var BTN_PRIMARY = 'height:34px;display:inline-flex;align-items:center;gap:7px;'
     + 'background:#2563eb;color:#fff;border:none;border-radius:4px;padding:0 14px;'
@@ -383,7 +384,7 @@
 
   function buildActionButtons(doc) {
     var wrap = window.el('div', {
-      style: 'display:flex;align-items:center;justify-content:flex-end;gap:6px;',
+      style: 'display:flex;align-items:center;justify-content:center;gap:6px;',
     });
 
     if (doc.driveLink) {
@@ -463,8 +464,8 @@
       pair.button.style.cssText = BTN_SECONDARY;
       pair.button.title = 'Selecionar JSONL exportado do Documents Ingestor';
       pair.button.textContent = '';
-      pair.button.appendChild(svgEl(SVG_UPLOAD, 14, 'Importar JSONL'));
-      pair.button.appendChild(document.createTextNode('Importar JSONL'));
+      pair.button.appendChild(svgEl(SVG_UPLOAD, 14, 'Importar documentos'));
+      pair.button.appendChild(document.createTextNode('Importar documentos'));
       pair.fileInput.addEventListener('change', function () {
         ui.lastRun = new Date();
         rerenderSoon(80);
@@ -476,7 +477,7 @@
         type: 'button',
         disabled: 'disabled',
         style: BTN_SECONDARY + 'opacity:.65;cursor:not-allowed;',
-      }, 'Importar JSONL'));
+      }, 'Importar documentos'));
     }
     actions.appendChild(importWrap);
 
@@ -720,7 +721,7 @@
       head('Status'),
       head('Pedido'),
       head('Recebido em'),
-      head('Ação', 'right'));
+      head('Ações', 'center'));
   }
 
   function buildDocumentRow(doc, isLast) {
@@ -787,11 +788,11 @@
       window.el('div', {
         style: 'font-size:13px;color:#9aa2af;',
       }, total ? 'Ajuste os filtros ou aguarde a próxima varredura.'
-        : 'Use o botão Importar JSONL acima para carregar o export do Documents Ingestor.'));
+        : 'Use o botão Importar documentos acima para carregar o export do Documents Ingestor.'));
   }
 
   function buildTable(docs, visible) {
-    var inner = window.el('div', { style: 'min-width:900px;' });
+    var inner = window.el('div', { style: 'min-width:' + TABLE_MIN_WIDTH + ';' });
     inner.appendChild(buildColumnsLegend());
     if (!visible.length) {
       inner.appendChild(buildEmptyState(docs.length));

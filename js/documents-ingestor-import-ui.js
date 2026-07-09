@@ -8,13 +8,12 @@
 // Escopo: UX manual, local, read-only. Sem rede, sem Supabase, sem
 //   Google/Drive, sem persistencia, sem watcher.
 //
-// Restricao de superficie (G11-E-R1 + G11-E-R2):
+// Restricao de superficie (G11-E-R1 + G11-E-R2 + G12-F4):
 //   - Nunca visivel em producao (APP_ENV === 'production').
-//   - Em staging/dev/local, visivel apenas quando:
-//     * usuario e admin (CURRENT_USER.tipo === 'admin'), OU
-//     * flag RAVATEX_ENABLE_DOCUMENTS_IMPORT_UI === true.
-//   - CURRENT_USER e populado assincronamente; um poll curto aguarda
-//     ate ~10 s apos o carregamento da pagina.
+//   - Em staging/dev/local, visivel apenas com a flag explicita de
+//     diagnostico RAVATEX_ENABLE_DOCUMENTS_EVENTS_IMPORT_UI === true.
+//   - RAVATEX_ENABLE_DOCUMENTS_IMPORT_UI fica reservada para o import
+//     de documentos mapeados, nao para o botao legado azul.
 //
 // Depende de:
 //   - js/documents-ingestor-loader.js (RAVATEX_DOCUMENTS.loadFromText)
@@ -89,14 +88,8 @@
   function shouldShowImportUI() {
     // Nunca em producao
     if (window.APP_ENV === 'production') return false;
-    // Flag explicita (dev/local override)
-    if (window.RAVATEX_ENABLE_DOCUMENTS_IMPORT_UI === true) return true;
-    // Admin logado
-    var user = window.CURRENT_USER;
-    if (user && user.tipo === 'admin') return true;
-    // CURRENT_USER ainda nao foi populado — pode ser admin
-    if (!user) return null;
-    // Usuario nao-admin
+    // Import legado de eventos: somente por flag de diagnostico explicita.
+    if (window.RAVATEX_ENABLE_DOCUMENTS_EVENTS_IMPORT_UI === true) return true;
     return false;
   }
 

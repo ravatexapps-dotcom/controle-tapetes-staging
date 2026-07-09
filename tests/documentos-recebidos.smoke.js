@@ -20,7 +20,7 @@
 //   - ADMIN_MENU contem entrada "Documentos" -> '#/documentos/recebidos';
 //   - tela renderiza empty state se RAVATEX_DOCUMENTS_RECEIVED ausente
 //     ou vazio, no layout "Documentos Mapeados";
-//   - acoes "Atualizar agora" e "Importar JSONL" ficam no header;
+//   - acoes "Atualizar agora" e "Importar documentos" ficam no header;
 //   - strip de varredura e compacta e tem toggle play/pause;
 //   - rows usam icones especificos por formato (xml/pdf/etc.) antes do nome;
 //   - tela renderiza card com 1+ documentos quando o estado esta
@@ -513,7 +513,7 @@ test('G12-R1: tela contem section data-section="documentos-recebidos-import-acti
   assert.equal(sections.length, 1, 'section de import action presente');
   // No redesign, o botao fica no header, antes da strip e do empty state.
   var allText = JSON.stringify(findAll(result, () => true).map(textOf));
-  var importIdx = allText.indexOf('Importar JSONL');
+  var importIdx = allText.indexOf('Importar documentos');
   var scanIdx = allText.indexOf('Varredura ativa');
   var emptyIdx = allText.indexOf('Nenhum documento recebido');
   assert.ok(importIdx >= 0 && scanIdx >= 0 && emptyIdx >= 0, 'textos principais presentes');
@@ -530,7 +530,7 @@ test('redesign: acoes ficam no header e strip de varredura e compacta com play/p
   const refreshBtns = findAll(result, findAction('atualizar-documentos'));
   assert.equal(refreshBtns.length, 1, 'botao Atualizar agora presente no header');
   const importBtns = findAll(result, (n) => n.tagName === 'BUTTON' && n.id === 'rv-docs-received-import-btn-inline');
-  assert.equal(importBtns.length, 1, 'botao Importar JSONL presente no header');
+  assert.equal(importBtns.length, 1, 'botao Importar documentos presente no header');
 
   const strips = findAll(result, (n) => n._attrs && n._attrs['data-section'] === 'documentos-scan-strip');
   assert.equal(strips.length, 1, 'strip de varredura presente');
@@ -640,6 +640,9 @@ test('G12-R3: card exibe colunas Status, Pedido e Recebido em', function () {
   assert.ok(colsText.indexOf('STATUS') >= 0, 'cabecalho tem STATUS');
   assert.ok(colsText.indexOf('PEDIDO') >= 0, 'cabecalho tem PEDIDO');
   assert.ok(colsText.indexOf('RECEBIDO EM') >= 0, 'cabecalho tem RECEBIDO EM');
+  assert.ok(colsText.indexOf('AÇÕES') >= 0, 'cabecalho tem AÇÕES');
+  assert.ok((colsHeader[0]._attrs.style || '').indexOf('minmax(220px,1.25fr)') >= 0,
+    'coluna Tipo deve ser mais larga no grid: ' + (colsHeader[0]._attrs.style || ''));
 
   // Cada row exibe os tres campos
   const rows = findAll(result, findRow);
@@ -706,8 +709,8 @@ test('G12-R1: empty state instrui a usar o botao acima', function () {
   sb.container = container;
   const result = vm.runInContext('window.screenDocumentosRecebidos(container)', sb);
   const allText = JSON.stringify(findAll(result, () => true).map(textOf));
-  assert.ok(allText.indexOf('Use o botão Importar JSONL acima para carregar') >= 0,
-    'empty state instrui a usar o botao Importar JSONL acima');
+  assert.ok(allText.indexOf('Use o botão Importar documentos acima para carregar') >= 0,
+    'empty state instrui a usar o botao Importar documentos acima');
 });
 
 // ---------------------------------------------------------------------

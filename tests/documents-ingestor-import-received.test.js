@@ -178,6 +178,7 @@ function makeImportReceivedSandbox(opts) {
   }
 
   sandbox.window.RAVATEX_ENABLE_DOCUMENTS_IMPORT_UI = opts.enableFlag === true ? true : undefined;
+  sandbox.window.RAVATEX_ENABLE_DOCUMENTS_EVENTS_IMPORT_UI = opts.enableEventsFlag === true ? true : undefined;
   sandbox.window.RAVATEX_ENABLE_FLOATING_RECEIVED_IMPORT = opts.floatingFlag === true ? true : undefined;
 
   sandbox.window.toast = function (msg, type) {
@@ -454,12 +455,11 @@ test('import-received (G12-R1): sem arquivo selecionado nao faz nada', function 
 // 4. Coexistência com o botao legado
 // -------------------------------------------------------------------
 
-test('import-received (G12-R1): coexistencia - botao legado segue flutuando, novo e inline', function () {
+test('import-received (G12-F4): botao legado azul NAO aparece por padrao', function () {
   var rt = makeImportReceivedSandbox();
-  // Legado segue auto-bootstrapando
   var buttons = rt.domElements['button'] || [];
   var legacyBtn = buttons.find(function (b) { return b.id === 'rv-docs-import-btn'; });
-  assert.ok(legacyBtn, 'botao legado segue flutuando (sua politica inalterada)');
+  assert.equal(legacyBtn, undefined, 'botao legado nao deve aparecer sem flag de eventos');
 
   // Novo e inline: precisa ser criado explicitamente
   var inlineBtn = buttons.find(function (b) { return b.id === 'rv-docs-received-import-btn' });
@@ -470,11 +470,10 @@ test('import-received (G12-R1): coexistencia - botao legado segue flutuando, nov
   var container = makeContainer();
   pair.mount(container);
   assert.equal(container.children.length, 2, 'botao novo + input anexados ao container');
-  assert.notStrictEqual(legacyBtn, pair.button, 'botoes sao instancias distintas');
 });
 
-test('import-received (G12-R1): botao inline nao conflita com legado (IDs distintos)', function () {
-  var rt = makeImportReceivedSandbox();
+test('import-received (G12-F4): botao inline nao conflita com legado quando flag de eventos esta ativa', function () {
+  var rt = makeImportReceivedSandbox({ enableEventsFlag: true });
   var pair = rt.RAVATEX_DOCUMENTS.createReceivedImportButton({ buttonId: 'inline-distinct' });
   var container = makeContainer();
   pair.mount(container);
