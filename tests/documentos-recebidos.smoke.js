@@ -104,6 +104,11 @@ test('index.html: documentos-recebidos.js carregado EXATAMENTE UMA VEZ', functio
   assert.equal(matches.length, 1, 'documentos-recebidos.js deve ser carregado 1 vez');
 });
 
+test('index.html: carrega webfont Tabler Icons para icones de arquivos', function () {
+  assert.ok(index.indexOf('@tabler/icons-webfont@3.44.0/dist/tabler-icons.min.css') >= 0,
+    'index deve carregar Tabler Icons webfont');
+});
+
 test('index.html: ordem documents-ingestor + loader < common < documentos-recebidos < boot', function () {
   const idxIngestor = index.indexOf('js/documents-ingestor.js');
   const idxLoader = index.indexOf('js/documents-ingestor-loader.js');
@@ -521,6 +526,16 @@ test('G12-R1: tela contem section data-section="documentos-recebidos-import-acti
   assert.ok(scanIdx < emptyIdx, 'strip vem antes da tabela/empty state');
 });
 
+test('redesign: nao renderiza faixa de arquivos aceitos no topo', function () {
+  const sb = makeScreenSandbox([]);
+  const container = new FakeNode('div');
+  sb.container = container;
+  const result = vm.runInContext('window.screenDocumentosRecebidos(container)', sb);
+
+  const lists = findAll(result, (n) => n._attrs && n._attrs['data-section'] === 'documentos-importable-files');
+  assert.equal(lists.length, 0, 'nao deve haver faixa/lista visual de arquivos aceitos');
+});
+
 test('redesign: acoes ficam no header e strip de varredura e compacta com play/pause', function () {
   const sb = makeScreenSandbox([]);
   const container = new FakeNode('div');
@@ -577,11 +592,19 @@ test('redesign: rows usam icones especificos por formato antes do nome do arquiv
     },
     {
       document_id: 'doc-pdf',
-      filename_original: 'Romaneio.pdf',
+      filename_original: 'L.pdf',
       tipo_documento: 'romaneio',
-      formato: 'pdf',
+      formato: 'desconhecido',
       drive_web_view_link: 'https://drive/y',
     },
+    { document_id: 'doc-jsonl', filename_original: 'documentos-mapeados.jsonl', formato: 'jsonl' },
+    { document_id: 'doc-csv', filename_original: 'planilha.csv', formato: 'csv' },
+    { document_id: 'doc-xls', filename_original: 'planilha.xlsx', formato: 'xlsx' },
+    { document_id: 'doc-doc', filename_original: 'contrato.docx', formato: 'docx' },
+    { document_id: 'doc-txt', filename_original: 'notas.txt', formato: 'txt' },
+    { document_id: 'doc-png', filename_original: 'imagem.png', formato: 'png' },
+    { document_id: 'doc-jpg', filename_original: 'foto.jpg', formato: 'jpg' },
+    { document_id: 'doc-zip', filename_original: 'pacote.zip', formato: 'zip' },
   ]);
   const container = new FakeNode('div');
   sb.container = container;
@@ -589,13 +612,33 @@ test('redesign: rows usam icones especificos por formato antes do nome do arquiv
 
   const xmlIcons = findAll(result, (n) => n._attrs && n._attrs['data-icon'] === 'arquivo-xml');
   const pdfIcons = findAll(result, (n) => n._attrs && n._attrs['data-icon'] === 'arquivo-pdf');
+  const jsonIcons = findAll(result, (n) => n._attrs && n._attrs['data-icon'] === 'arquivo-json');
+  const csvIcons = findAll(result, (n) => n._attrs && n._attrs['data-icon'] === 'arquivo-csv');
+  const xlsIcons = findAll(result, (n) => n._attrs && n._attrs['data-icon'] === 'arquivo-xls');
+  const docIcons = findAll(result, (n) => n._attrs && n._attrs['data-icon'] === 'arquivo-doc');
+  const txtIcons = findAll(result, (n) => n._attrs && n._attrs['data-icon'] === 'arquivo-txt');
+  const pngIcons = findAll(result, (n) => n._attrs && n._attrs['data-icon'] === 'arquivo-png');
+  const jpgIcons = findAll(result, (n) => n._attrs && n._attrs['data-icon'] === 'arquivo-jpg');
+  const zipIcons = findAll(result, (n) => n._attrs && n._attrs['data-icon'] === 'arquivo-zip');
   assert.equal(xmlIcons.length, 1, 'icone XML especifico presente');
-  assert.equal(pdfIcons.length, 1, 'icone PDF especifico presente');
+  assert.equal(pdfIcons.length, 1, 'icone PDF especifico presente mesmo com formato desconhecido');
+  assert.ok(xmlIcons[0].className.indexOf('ti ti-file-type-xml') >= 0,
+    'icone XML usa Tabler file-type-xml: ' + xmlIcons[0].className);
+  assert.ok(pdfIcons[0].className.indexOf('ti ti-file-type-pdf') >= 0,
+    'icone PDF usa Tabler file-type-pdf: ' + pdfIcons[0].className);
+  assert.ok(jsonIcons[0].className.indexOf('ti ti-json') >= 0, 'JSONL usa Tabler JSON');
+  assert.ok(csvIcons[0].className.indexOf('ti ti-file-type-csv') >= 0, 'CSV usa Tabler file-type-csv');
+  assert.ok(xlsIcons[0].className.indexOf('ti ti-file-type-xls') >= 0, 'XLS usa Tabler file-type-xls');
+  assert.ok(docIcons[0].className.indexOf('ti ti-file-type-doc') >= 0, 'DOC usa Tabler file-type-doc');
+  assert.ok(txtIcons[0].className.indexOf('ti ti-file-type-txt') >= 0, 'TXT usa Tabler file-type-txt');
+  assert.ok(pngIcons[0].className.indexOf('ti ti-file-type-png') >= 0, 'PNG usa Tabler file-type-png');
+  assert.ok(jpgIcons[0].className.indexOf('ti ti-file-type-jpg') >= 0, 'JPG usa Tabler file-type-jpg');
+  assert.ok(zipIcons[0].className.indexOf('ti ti-file-type-zip') >= 0, 'ZIP usa Tabler file-type-zip');
 
   const rows = findAll(result, findRow);
-  assert.equal(rows.length, 2, 'duas rows renderizadas');
+  assert.equal(rows.length, 10, 'dez rows renderizadas');
   assert.ok(textOf(rows[0]).indexOf('NF-001.xml') >= 0, 'row XML mantem filename');
-  assert.ok(textOf(rows[1]).indexOf('Romaneio.pdf') >= 0, 'row PDF mantem filename');
+  assert.ok(textOf(rows[1]).indexOf('L.pdf') >= 0, 'row PDF mantem filename');
 });
 
 test('G12-R3: header instrui a importar a lista do Documents Ingestor', function () {

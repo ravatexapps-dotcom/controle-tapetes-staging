@@ -37,6 +37,19 @@
     searchCursorPos: 0,
   };
 
+  var FILE_TYPE_ICONS = [
+    { extensions: ['pdf'], kind: 'pdf', icon: 'ti-file-type-pdf' },
+    { extensions: ['xml'], kind: 'xml', icon: 'ti-file-type-xml' },
+    { extensions: ['json', 'jsonl'], kind: 'json', icon: 'ti-json' },
+    { extensions: ['csv'], kind: 'csv', icon: 'ti-file-type-csv' },
+    { extensions: ['xls', 'xlsx'], kind: 'xls', icon: 'ti-file-type-xls' },
+    { extensions: ['doc', 'docx'], kind: 'doc', icon: 'ti-file-type-doc' },
+    { extensions: ['txt'], kind: 'txt', icon: 'ti-file-type-txt' },
+    { extensions: ['png'], kind: 'png', icon: 'ti-file-type-png' },
+    { extensions: ['jpg', 'jpeg'], kind: 'jpg', icon: 'ti-file-type-jpg' },
+    { extensions: ['zip'], kind: 'zip', icon: 'ti-file-type-zip' },
+  ];
+
   var SVG_REFRESH = '<polyline points="23 4 23 10 17 10"></polyline>'
     + '<path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>';
   var SVG_UPLOAD = '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>'
@@ -51,24 +64,6 @@
   var SVG_INBOX = '<polyline points="22 12 16 12 14 15 10 15 8 12 2 12"></polyline>'
     + '<path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"></path>';
   var SVG_CHEVRON = '<polyline points="6 9 12 15 18 9"></polyline>';
-
-  var FILE_ICONS = {
-    pdf: '<path d="M14 2H7a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7z"></path>'
-      + '<polyline points="14 2 14 7 19 7"></polyline><path d="M8 17h8"></path><path d="M8 13h8"></path><path d="M8 9h3"></path>',
-    xml: '<path d="M14 2H7a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7z"></path>'
-      + '<polyline points="14 2 14 7 19 7"></polyline><path d="m10 12-2 2 2 2"></path><path d="m14 12 2 2-2 2"></path>',
-    json: '<path d="M14 2H7a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7z"></path>'
-      + '<polyline points="14 2 14 7 19 7"></polyline><path d="M10 11c-1 0-1.5.6-1.5 1.6v.8c0 1-.5 1.6-1.5 1.6"></path>'
-      + '<path d="M14 11c1 0 1.5.6 1.5 1.6v.8c0 1 .5 1.6 1.5 1.6"></path>',
-    csv: '<path d="M14 2H7a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7z"></path>'
-      + '<polyline points="14 2 14 7 19 7"></polyline><path d="M8 12h8"></path><path d="M8 16h8"></path><path d="M11 9v10"></path>',
-    image: '<path d="M14 2H7a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7z"></path>'
-      + '<polyline points="14 2 14 7 19 7"></polyline><circle cx="10" cy="12" r="1.4"></circle><path d="m8 18 3-3 2 2 2-3 2 4"></path>',
-    doc: '<path d="M14 2H7a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7z"></path>'
-      + '<polyline points="14 2 14 7 19 7"></polyline><path d="M8 11h8"></path><path d="M8 15h8"></path><path d="M8 18h5"></path>',
-    file: '<path d="M14 2H7a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7z"></path>'
-      + '<polyline points="14 2 14 7 19 7"></polyline>',
-  };
 
   function ensureStyles() {
     try {
@@ -127,21 +122,33 @@
     return ext || 'desconhecido';
   }
 
-  function iconKind(formato, filename) {
+  function fileTypeIconMeta(formato, filename) {
     var ext = extFromFilename(filename);
-    var f = String(formato || ext || '').toLowerCase();
-    if (f === 'pdf') return 'pdf';
-    if (f === 'xml') return 'xml';
-    if (f === 'json' || f === 'jsonl') return 'json';
-    if (f === 'csv' || f === 'xlsx' || f === 'xls') return 'csv';
-    if (f === 'png' || f === 'jpg' || f === 'jpeg' || f === 'webp') return 'image';
-    if (f === 'doc' || f === 'docx' || f === 'txt') return 'doc';
-    return 'file';
+    var normalizedFormato = String(formato || '').toLowerCase();
+    var candidates = [ext, normalizedFormato].filter(function (item) {
+      return item && item !== 'desconhecido' && item !== 'unknown';
+    });
+    for (var i = 0; i < candidates.length; i += 1) {
+      for (var j = 0; j < FILE_TYPE_ICONS.length; j += 1) {
+        if (FILE_TYPE_ICONS[j].extensions.indexOf(candidates[i]) >= 0) return FILE_TYPE_ICONS[j];
+      }
+    }
+    return { kind: 'file', icon: 'ti-file' };
+  }
+
+  function tablerIcon(iconClass, dataIcon, size, extraStyle) {
+    return window.el('i', {
+      class: 'ti ' + iconClass,
+      'data-icon': dataIcon || iconClass,
+      'aria-hidden': 'true',
+      style: 'font-size:' + (size || 18) + 'px;line-height:1;display:inline-flex;'
+        + 'align-items:center;justify-content:center;flex-shrink:0;' + (extraStyle || ''),
+    });
   }
 
   function fileIcon(formato, filename) {
-    var kind = iconKind(formato, filename);
-    return svgEl(FILE_ICONS[kind] || FILE_ICONS.file, 18, 'arquivo-' + kind, 'color:#8a93a3;');
+    var meta = fileTypeIconMeta(formato, filename);
+    return tablerIcon(meta.icon, 'arquivo-' + meta.kind, 20, 'color:#8a93a3;');
   }
 
   function inferTipo(doc, filename) {
