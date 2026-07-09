@@ -1,8 +1,10 @@
-﻿# Estado pos-fase - G18-B Ingestion Event ID Consumer Patch
+﻿# Estado pos-fase - G18-E Staging UI Smoke (closeout G17/G18)
 
-- Fase: `RAVATEX-DOCUMENTS-G18-B-INGESTION-EVENT-ID-CONSUMER-PATCH`.
-- Status: **PRONTO**.
-- Branch/HEAD base: `work/app-next`, `9aa264e`.
+- Fase: `RAVATEX-DOCUMENTS-G18-E-STAGING-UI-SMOKE`.
+- Status: **PRONTO — G18 COMPLETO: bridge + staging + smoke validados**.
+- Branch/HEAD base: `work/app-next`, `19d83bb`.
+- staging/main: `19d83bb` (push G18-D publicado).
+- origin/main: `1047181` (intocado).
 - Escopo geral (G16-A a G16-B):
   - G16-A: Design read-only da metadata de import
   - G16-B: Implementacao do helper `simpleHash` + persistencia em `localStorage` + card na tela
@@ -6559,10 +6561,11 @@ Pedido usando fixture JSONL local. Sem Supabase, sem Google/Drive, sem fetch.
 
 ### Proxima fase
 
-`RAVATEX-DOCUMENTS-G15-CONSUMER-EVOLUTION`:
-- UX de ultimo import/timestamp/hash no Controle (registrar data/hash do ultimo JSONL importado)
-- `ingestion_event_id` no JSONL como melhoria futura no produtor (Documents Ingestor)
-- Aceite/rejeicao dentro do Controle como feature posterior (hoje e feito no Ingestor CLI)
-- Sem polling/scheduler/daemon por enquanto
-- Produtor `sync:mapped` estavel em `bedbe909` (master)
-- Consumidor bridge publicado em staging `fff052b`
+`RAVATEX-DOCUMENTS-G18-CLOSEOUT`:
+- `ingestion_event_id` entregue: produtor G17-B (HEAD `e6b135d`, fields: `latest/detected/linked/accepted/rejected_ingestion_event_id`, `schema_version: 1`)
+- Consumidor G18-B bridge `mapReceivedDocToEventShape` preserva ID por status com fallback
+- Cross-repo smoke G18-C validado com JSONL real (355/355 testes)
+- Push staging G18-D: `9aa264e..19d83bb`
+- Staging UI smoke G18-E: 374/374 testes (5 suites), botão import, render, metadata card, dedup, pluralização, Pedido Detail
+- origin/main intocado (`1047181`), produção não tocada
+- Próximo roadmap: UX de aceite/rejeição no Controle; dedup por `event_id`; telemetria de import

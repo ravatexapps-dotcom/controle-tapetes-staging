@@ -1,8 +1,18 @@
 > **Atualizacao 2026-07-09 — fase
-> `RAVATEX-DOCUMENTS-G18-B-INGESTION-EVENT-ID-CONSUMER-PATCH`.**
-> Status: **PRONTO — BRIDGE PRESERVA ingestion_event_id DO JSONL**.
-> Branch/HEAD: `work/app-next`, pendente commit (a partir de `a646a92`).
+> `RAVATEX-DOCUMENTS-G18-E-STAGING-UI-SMOKE`.**
+> Status: **PRONTO — G18 COMPLETO: BRIDGE + STAGING + SMOKE VALIDADOS**.
+> Branch/HEAD: `work/app-next`, `19d83bb` (push staging publicado).
 >
+> HEADs:
+> - staging/main: `19d83bb` — G18 bridge + smoke
+> - origin/main: `1047181` — intocado (produção não tocada)
+>
+> Escopo G18:
+> - **G18-A**: Design da preservacao de `ingestion_event_id` no bridge.
+> - **G18-B**: Patch `mapReceivedDocToEventShape` seleciona ID por status (accepted/accepted_ingestion_event_id, assigned/linked_ingestion_event_id, rejected/rejected_ingestion_event_id, pending/detected_ingestion_event_id) com fallback para `latest_ingestion_event_id`. Testes: 7 novos + 2 atualizados.
+> - **G18-C**: Cross-repo smoke com JSONL real do Ingestor (2 linhas, 355/355 testes).
+> - **G18-D**: Push staging (`9aa264e..19d83bb`). origin/main preservado.
+> - **G18-E**: Smoke staging automatizado (374/374 testes, 5 suites).
 > Escopo G16 (fases A e B):
 > - **G16-A**: Design read-only da metadata de import (10 perguntas respondidas).
 > - **G16-B**: Implementacao do helper `simpleHash` + persistencia de metadata em
@@ -99,9 +109,8 @@
 > Origin/producao: `grupoterrabranca/controle-tapetes:main` intocado
 >
 > Proximo roadmap:
-> - `ingestion_event_id` entregue no produtor (G17-B) e bridge (G18-B)
-> - consumo futuro de `ingestion_event_id` como chave de dedupe na bridge
-> - Aceite/rejeicao dentro do Controle (feature posterior)
+> - `ingestion_event_id` entregue no produtor (G17) e bridge (G18), staging publicado, smoke validado
+> - UX de aceite/rejeicao dentro do Controle (feature posterior)
 > - Sem polling/scheduler/daemon por enquanto
 
 > **Atualizacao 2026-07-08 - fase
