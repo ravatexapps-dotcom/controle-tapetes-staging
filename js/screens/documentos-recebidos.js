@@ -567,9 +567,9 @@
 
   function mappedTypeButton(type) {
     var active = isMappedTypeActive(type.key);
-    var style = 'height:24px;display:inline-flex;align-items:center;gap:5px;border-radius:999px;'
-      + 'padding:0 8px;font-size:11.5px;font-weight:700;font-family:inherit;'
-      + 'cursor:pointer;white-space:nowrap;transition:background .12s ease,border-color .12s ease,color .12s ease,opacity .12s ease;'
+    var style = 'height:24px;min-width:44px;display:inline-flex;align-items:center;justify-content:center;'
+      + 'border-radius:999px;padding:0 9px;font-family:inherit;cursor:pointer;white-space:nowrap;'
+      + 'flex-shrink:0;transition:background .12s ease,border-color .12s ease,color .12s ease,opacity .12s ease;'
       + (active
         ? 'background:#eef6ff;border:1px solid #cfe4ff;color:#2563eb;'
         : 'background:transparent;border:1px dashed #d6dbe4;color:#9aa2af;opacity:.62;');
@@ -585,14 +585,13 @@
         rerender();
       },
     },
-      tablerIcon(type.icon, 'mapped-type-' + type.key, 15, active ? '' : 'filter:grayscale(1);'),
-      window.el('span', {}, type.label));
+      tablerIcon(type.icon, 'mapped-type-' + type.key, 18, active ? '' : 'filter:grayscale(1);'));
   }
 
   function buildMappedTypesControls() {
     return window.el('span', {
       'data-section': 'tipos-mapeados',
-      style: 'display:inline-flex;align-items:center;gap:7px;min-width:0;flex:1 1 auto;flex-wrap:wrap;',
+      style: 'display:inline-flex;align-items:center;gap:6px;min-width:0;flex:0 0 auto;flex-wrap:nowrap;',
     },
       window.el('span', {
         style: 'font-size:12.5px;color:#8a93a3;font-weight:600;white-space:nowrap;',
@@ -613,8 +612,8 @@
       },
     });
     playBtn.appendChild(ui.scanPlaying
-      ? lucideEl('circle-pause', '<circle cx="12" cy="12" r="10"></circle><line x1="10" x2="10" y1="15" y2="9"></line><line x1="14" x2="14" y1="15" y2="9"></line>', 15)
-      : lucideEl('circle-play', '<circle cx="12" cy="12" r="10"></circle><polygon points="10 8 16 12 10 16 10 8"></polygon>', 15));
+      ? lucideEl('pause', '<rect x="14" y="3" width="5" height="18" rx="1"></rect><rect x="5" y="3" width="5" height="18" rx="1"></rect>', 15)
+      : lucideEl('play', '<path d="M5 5a2 2 0 0 1 3.008-1.728l11.997 6.998a2 2 0 0 1 .003 3.458l-12 7A2 2 0 0 1 5 19z"></path>', 15));
 
     var dot = window.el('span', {
       style: 'position:relative;display:inline-flex;width:8px;height:8px;flex-shrink:0;',
@@ -635,7 +634,7 @@
     return window.el('div', {
       'data-section': 'documentos-scan-strip',
       style: 'min-height:34px;display:flex;align-items:center;gap:14px;'
-        + 'padding:2px 2px 10px;margin-bottom:8px;flex-wrap:wrap;',
+        + 'padding:2px 2px 10px;margin-bottom:8px;flex-wrap:nowrap;overflow-x:auto;',
     },
       window.el('span', {
         style: 'display:inline-flex;align-items:center;gap:8px;font-size:13px;'
