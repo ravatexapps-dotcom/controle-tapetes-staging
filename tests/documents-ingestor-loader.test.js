@@ -526,6 +526,367 @@ test('loader-integracao: view model sem loader nao quebra', function () {
 });
 
 // -------------------------------------------------------------------
+// G14-B: Bridge RAVATEX_DOCUMENTS_RECEIVED -> Pedido Detail view model
+// -------------------------------------------------------------------
+
+test('G14-B-bridge: view model renderiza docs via RECEIVED quando LOADED_EVENTS vazio', function () {
+  var sandbox = { window: {}, console: {} };
+  sandbox.window.el = function (tag, attrs) {
+    var children = [];
+    for (var i = 2; i < arguments.length; i++) {
+      if (arguments[i] === null || arguments[i] === undefined) continue;
+      children.push(arguments[i]);
+    }
+    return {
+      tag: tag,
+      attrs: attrs || {},
+      children: children,
+      textContent: children.filter(function (c) { return typeof c === 'string'; }).join(''),
+      appendChild: function (child) {
+        if (child === null || child === undefined) return;
+        children.push(child);
+        this.children = children;
+      },
+    };
+  };
+
+  var opDisplaySrc = readOrFail(path.join(ROOT, 'js', 'op-display.js'));
+  var chainStateSrc = readOrFail(path.join(ROOT, 'js', 'screens', 'pedido-chain-state.js'));
+  var screenSrc = readOrFail(path.join(ROOT, 'js', 'screens', 'pedido-detail.js'));
+  var detailDataSrc = readOrFail(path.join(ROOT, 'js', 'screens', 'pedido-detail-data.js'));
+  var detailEventsSrc = readOrFail(path.join(ROOT, 'js', 'screens', 'pedido-detail-events.js'));
+  var detailRenderSrc = readOrFail(DETAIL_RENDER);
+
+  vm.createContext(sandbox);
+
+  // Carrega ingestor (sem loader — nao popula LOADED_EVENTS)
+  vm.runInContext(documentsIngestorSrc, sandbox);
+
+  // Popula RAVATEX_DOCUMENTS_RECEIVED diretamente (simula import do JSONL)
+  sandbox.window.RAVATEX_DOCUMENTS_RECEIVED = [
+    {
+      document_id: 'bridge-doc-1',
+      filename_original: 'NF-25.xml',
+      tipo_documento: 'nf',
+      formato: 'xml',
+      direcao_nf: 'entrada',
+      drive_web_view_link: 'https://drive.google.com/file/d/bridge-1/view',
+      status: 'accepted',
+      pedido_manual: 'PED-25-2026',
+      received_at: '2026-07-08T10:00:00.000Z',
+      accepted_at: '2026-07-08T10:30:00.000Z',
+    },
+    {
+      document_id: 'bridge-doc-2',
+      filename_original: 'romaneio-25.pdf',
+      tipo_documento: 'romaneio',
+      formato: 'pdf',
+      status: 'pending',
+      pedido_manual: 'PED-25-2026',
+      received_at: '2026-07-08T11:00:00.000Z',
+    },
+    {
+      document_id: 'bridge-doc-3',
+      filename_original: 'NF-99.xml',
+      tipo_documento: 'nf',
+      formato: 'xml',
+      status: 'rejected',
+      pedido_manual: 'PED-99-2026',
+      rejected_reason: 'Pedido errado',
+      received_at: '2026-07-08T12:00:00.000Z',
+      rejected_at: '2026-07-08T12:15:00.000Z',
+    },
+  ];
+
+  var bundle = [opDisplaySrc, chainStateSrc, screenSrc, detailDataSrc, detailProgressSrc, detailEventsSrc, detailRenderSrc].join('\n\n');
+  vm.runInContext(bundle, sandbox);
+
+  var ns = sandbox.window.RAVATEX_SCREENS.pedidoDetail;
+  var s = ns.createInitialState();
+  s.pedido = { id: 'ped-bridge-25', numero: 25, status: 'recebido', metros_total: 0 };
+  s.pedido.criado_em = '2026-01-15T10:00:00.000Z';
+  s.itens = [];
+  s.ops = [];
+  s.entregaItens = [];
+  s.entregasById = {};
+  s.opLatexEntregas = [];
+  s.expedicoes = [];
+  s.expedicaoItens = [];
+  s.modelosById = {};
+  s.coresById = {};
+
+  var view = ns.computeViewModel(s);
+  assert.equal(view.ingestorDocsLoaded, true, 'ingestorDocsLoaded deve ser true via bridge RECEIVED');
+  assert.equal(view.ingestorDocumentRows.length, 2, '2 docs do PED-25-2026 via bridge');
+  assert.equal(view.ingestorDocumentRows[0].label, 'NF-25.xml',
+    'primeiro doc deve ser NF-25.xml');
+  assert.equal(view.ingestorDocumentRows[0].status, 'accepted',
+    'status do doc aceito');
+  assert.equal(view.ingestorDocumentRows[1].label, 'romaneio-25.pdf',
+    'segundo doc deve ser romaneio-25.pdf');
+  assert.equal(view.ingestorDocumentRows[1].status, 'pending',
+    'status do doc pendente');
+  // Nenhum evento de timeline — bridge flat nao cria timeline
+  assert.equal(view.ingestorTimeline.length, 0, 'timeline deve estar vazia (bridge flat)');
+});
+
+test('G14-B-bridge: view model nao mostra docs de outro pedido', function () {
+  var sandbox = { window: {}, console: {} };
+  sandbox.window.el = function (tag, attrs) {
+    var children = [];
+    for (var i = 2; i < arguments.length; i++) {
+      if (arguments[i] === null || arguments[i] === undefined) continue;
+      children.push(arguments[i]);
+    }
+    return { tag: tag, attrs: attrs || {}, children: children };
+  };
+
+  var opDisplaySrc = readOrFail(path.join(ROOT, 'js', 'op-display.js'));
+  var chainStateSrc = readOrFail(path.join(ROOT, 'js', 'screens', 'pedido-chain-state.js'));
+  var screenSrc = readOrFail(path.join(ROOT, 'js', 'screens', 'pedido-detail.js'));
+  var detailDataSrc = readOrFail(path.join(ROOT, 'js', 'screens', 'pedido-detail-data.js'));
+  var detailEventsSrc = readOrFail(path.join(ROOT, 'js', 'screens', 'pedido-detail-events.js'));
+  var detailRenderSrc = readOrFail(DETAIL_RENDER);
+
+  vm.createContext(sandbox);
+  vm.runInContext(documentsIngestorSrc, sandbox);
+
+  sandbox.window.RAVATEX_DOCUMENTS_RECEIVED = [
+    {
+      document_id: 'other-doc',
+      filename_original: 'NF-outro.pdf',
+      tipo_documento: 'nf',
+      formato: 'pdf',
+      status: 'accepted',
+      pedido_manual: 'PED-99-2026',
+      received_at: '2026-07-08T10:00:00.000Z',
+    },
+  ];
+
+  var bundle = [opDisplaySrc, chainStateSrc, screenSrc, detailDataSrc, detailProgressSrc, detailEventsSrc, detailRenderSrc].join('\n\n');
+  vm.runInContext(bundle, sandbox);
+
+  var ns = sandbox.window.RAVATEX_SCREENS.pedidoDetail;
+  var s = ns.createInitialState();
+  s.pedido = { id: 'ped-25', numero: 25, status: 'recebido', metros_total: 0 };
+  s.pedido.criado_em = '2026-01-15T10:00:00.000Z';
+  s.itens = [];
+  s.ops = [];
+  s.entregaItens = [];
+  s.entregasById = {};
+  s.opLatexEntregas = [];
+  s.expedicoes = [];
+  s.expedicaoItens = [];
+  s.modelosById = {};
+  s.coresById = {};
+
+  var view = ns.computeViewModel(s);
+  assert.equal(view.ingestorDocumentRows.length, 0,
+    'doc de outro pedido nao deve aparecer');
+});
+
+test('G14-B-bridge: view model nao mostra doc sem pedido_manual', function () {
+  var sandbox = { window: {}, console: {} };
+  sandbox.window.el = function (tag, attrs) {
+    var children = [];
+    for (var i = 2; i < arguments.length; i++) {
+      if (arguments[i] === null || arguments[i] === undefined) continue;
+      children.push(arguments[i]);
+    }
+    return { tag: tag, attrs: attrs || {}, children: children };
+  };
+
+  var opDisplaySrc = readOrFail(path.join(ROOT, 'js', 'op-display.js'));
+  var chainStateSrc = readOrFail(path.join(ROOT, 'js', 'screens', 'pedido-chain-state.js'));
+  var screenSrc = readOrFail(path.join(ROOT, 'js', 'screens', 'pedido-detail.js'));
+  var detailDataSrc = readOrFail(path.join(ROOT, 'js', 'screens', 'pedido-detail-data.js'));
+  var detailEventsSrc = readOrFail(path.join(ROOT, 'js', 'screens', 'pedido-detail-events.js'));
+  var detailRenderSrc = readOrFail(DETAIL_RENDER);
+
+  vm.createContext(sandbox);
+  vm.runInContext(documentsIngestorSrc, sandbox);
+
+  sandbox.window.RAVATEX_DOCUMENTS_RECEIVED = [
+    {
+      document_id: 'no-pedido-doc',
+      filename_original: 'sem-pedido.pdf',
+      tipo_documento: 'desconhecido',
+      formato: 'desconhecido',
+      status: 'pending',
+      pedido_manual: null,
+      received_at: '2026-07-08T10:00:00.000Z',
+    },
+  ];
+
+  var bundle = [opDisplaySrc, chainStateSrc, screenSrc, detailDataSrc, detailProgressSrc, detailEventsSrc, detailRenderSrc].join('\n\n');
+  vm.runInContext(bundle, sandbox);
+
+  var ns = sandbox.window.RAVATEX_SCREENS.pedidoDetail;
+  var s = ns.createInitialState();
+  s.pedido = { id: 'ped-25-2', numero: 25, status: 'recebido', metros_total: 0 };
+  s.pedido.criado_em = '2026-01-15T10:00:00.000Z';
+  s.itens = [];
+  s.ops = [];
+  s.entregaItens = [];
+  s.entregasById = {};
+  s.opLatexEntregas = [];
+  s.expedicoes = [];
+  s.expedicaoItens = [];
+  s.modelosById = {};
+  s.coresById = {};
+
+  var view = ns.computeViewModel(s);
+  assert.equal(view.ingestorDocumentRows.length, 0,
+    'doc sem pedido_manual nao deve aparecer no Pedido Detail');
+  assert.equal(view.ingestorDocsLoaded, false, 'ingestorDocsLoaded deve ser false');
+});
+
+test('G14-B-bridge: duplicatas por document_id nao geram linhas extras', function () {
+  var sandbox = { window: {}, console: {} };
+  sandbox.window.el = function (tag, attrs) {
+    var children = [];
+    for (var i = 2; i < arguments.length; i++) {
+      if (arguments[i] === null || arguments[i] === undefined) continue;
+      children.push(arguments[i]);
+    }
+    return { tag: tag, attrs: attrs || {}, children: children };
+  };
+
+  var opDisplaySrc = readOrFail(path.join(ROOT, 'js', 'op-display.js'));
+  var chainStateSrc = readOrFail(path.join(ROOT, 'js', 'screens', 'pedido-chain-state.js'));
+  var screenSrc = readOrFail(path.join(ROOT, 'js', 'screens', 'pedido-detail.js'));
+  var detailDataSrc = readOrFail(path.join(ROOT, 'js', 'screens', 'pedido-detail-data.js'));
+  var detailEventsSrc = readOrFail(path.join(ROOT, 'js', 'screens', 'pedido-detail-events.js'));
+  var detailRenderSrc = readOrFail(DETAIL_RENDER);
+
+  vm.createContext(sandbox);
+  vm.runInContext(documentsIngestorSrc, sandbox);
+
+  // Mesmo document_id repetido propositalmente (simula reimport ou dados sujos)
+  sandbox.window.RAVATEX_DOCUMENTS_RECEIVED = [
+    {
+      document_id: 'dup-doc-1',
+      filename_original: 'NF-dup.xml',
+      tipo_documento: 'nf',
+      formato: 'xml',
+      status: 'pending',
+      pedido_manual: 'PED-25-2026',
+      received_at: '2026-07-08T10:00:00.000Z',
+    },
+    {
+      document_id: 'dup-doc-1',
+      filename_original: 'NF-dup.xml',
+      tipo_documento: 'nf',
+      formato: 'xml',
+      status: 'accepted',
+      pedido_manual: 'PED-25-2026',
+      received_at: '2026-07-08T11:00:00.000Z',
+      accepted_at: '2026-07-08T11:30:00.000Z',
+    },
+  ];
+
+  var bundle = [opDisplaySrc, chainStateSrc, screenSrc, detailDataSrc, detailProgressSrc, detailEventsSrc, detailRenderSrc].join('\n\n');
+  vm.runInContext(bundle, sandbox);
+
+  var ns = sandbox.window.RAVATEX_SCREENS.pedidoDetail;
+  var s = ns.createInitialState();
+  s.pedido = { id: 'ped-dup', numero: 25, status: 'recebido', metros_total: 0 };
+  s.pedido.criado_em = '2026-07-08T12:00:00.000Z';
+  s.itens = [];
+  s.ops = [];
+  s.entregaItens = [];
+  s.entregasById = {};
+  s.opLatexEntregas = [];
+  s.expedicoes = [];
+  s.expedicaoItens = [];
+  s.modelosById = {};
+  s.coresById = {};
+
+  var view = ns.computeViewModel(s);
+  assert.equal(view.ingestorDocumentRows.length, 1,
+    'document_id duplicado deve gerar apenas 1 linha');
+  assert.equal(view.ingestorDocumentRows[0].status, 'pending',
+    'primeiro registro vence (o segundo e ignorado)');
+});
+
+test('G14-B-bridge: precedencia — LOADED_EVENTS vence sobre RECEIVED', function () {
+  var sandbox = { window: {}, console: {} };
+  sandbox.window.el = function (tag, attrs) {
+    var children = [];
+    for (var i = 2; i < arguments.length; i++) {
+      if (arguments[i] === null || arguments[i] === undefined) continue;
+      children.push(arguments[i]);
+    }
+    return { tag: tag, attrs: attrs || {}, children: children };
+  };
+
+  var opDisplaySrc = readOrFail(path.join(ROOT, 'js', 'op-display.js'));
+  var chainStateSrc = readOrFail(path.join(ROOT, 'js', 'screens', 'pedido-chain-state.js'));
+  var screenSrc = readOrFail(path.join(ROOT, 'js', 'screens', 'pedido-detail.js'));
+  var detailDataSrc = readOrFail(path.join(ROOT, 'js', 'screens', 'pedido-detail-data.js'));
+  var detailEventsSrc = readOrFail(path.join(ROOT, 'js', 'screens', 'pedido-detail-events.js'));
+  var detailRenderSrc = readOrFail(DETAIL_RENDER);
+
+  vm.createContext(sandbox);
+  vm.runInContext(documentsIngestorSrc, sandbox);
+
+  // POPULA AMBOS: LOADED_EVENTS (eventos legados) e RECEIVED (bridge flat)
+  sandbox.window.RAVATEX_DOCUMENTS_LOADED_EVENTS = [
+    {
+      event_type: 'document.detected',
+      event_id: 'ev-leg-1',
+      pedido_manual: 'PED-25-2026',
+      created_at: '2026-07-08T10:00:00.000Z',
+      status: 'pending_app_acceptance',
+      document: {
+        document_id: 'doc-legacy',
+        tipo_documento: 'nf',
+        filename_original: 'legacy-doc.xml',
+        drive_web_view_link: 'https://drive.google.com/file/d/legacy/view',
+      },
+    },
+  ];
+
+  sandbox.window.RAVATEX_DOCUMENTS_RECEIVED = [
+    {
+      document_id: 'bridge-ignored',
+      filename_original: 'ignored-doc.pdf',
+      tipo_documento: 'romaneio',
+      formato: 'pdf',
+      status: 'accepted',
+      pedido_manual: 'PED-25-2026',
+      received_at: '2026-07-08T11:00:00.000Z',
+    },
+  ];
+
+  var bundle = [opDisplaySrc, chainStateSrc, screenSrc, detailDataSrc, detailProgressSrc, detailEventsSrc, detailRenderSrc].join('\n\n');
+  vm.runInContext(bundle, sandbox);
+
+  var ns = sandbox.window.RAVATEX_SCREENS.pedidoDetail;
+  var s = ns.createInitialState();
+  s.pedido = { id: 'ped-prec', numero: 25, status: 'recebido', metros_total: 0 };
+  s.pedido.criado_em = '2026-07-08T12:00:00.000Z';
+  s.itens = [];
+  s.ops = [];
+  s.entregaItens = [];
+  s.entregasById = {};
+  s.opLatexEntregas = [];
+  s.expedicoes = [];
+  s.expedicaoItens = [];
+  s.modelosById = {};
+  s.coresById = {};
+
+  var view = ns.computeViewModel(s);
+  assert.equal(view.ingestorDocsLoaded, true, 'LOADED_EVENTS deve prevalecer');
+  assert.equal(view.ingestorDocumentRows.length, 1,
+    'apenas o doc do LOADED_EVENTS aparece, nao o do RECEIVED');
+  assert.equal(view.ingestorDocumentRows[0].label, 'legacy-doc.xml',
+    'deve ser o doc do LOADED_EVENTS');
+  assert.equal(view.ingestorTimeline.length, 1,
+    'timeline do LOADED_EVENTS preservada');
+});
+
+// -------------------------------------------------------------------
 // 7. Teste de regressao: index.html carrega scripts na ordem correta
 // -------------------------------------------------------------------
 

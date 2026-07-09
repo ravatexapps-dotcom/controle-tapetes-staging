@@ -299,6 +299,89 @@
   };
 
   // -------------------------------------------------------------------
+  // G14-B: Bridge flat received doc -> event shape para Pedido Detail
+  //
+  // Converte um documento do formato flat (window.RAVATEX_DOCUMENTS_RECEIVED,
+  // schema_version=1, sem event_type, sem wrapper document{}) para o shape
+  // esperado pelo codigo de renderizacao do Pedido Detail:
+  //   { document: {...}, status, created_at, event_type, pedido_manual }
+  //
+  // Regras:
+  //   - created_at usa o timestamp mais recente entre:
+  //       rejected_at > accepted_at > linked_at > detected_at >
+  //       received_at > created_at
+  //   - event_type inferido do status:
+  //       accepted  -> document.accepted
+  //       assigned  -> document.linked
+  //       rejected  -> document.rejected
+  //       pending/default -> document.detected
+  //   - NAO inventa ingestion_event_id.
+  //   - Campos parciais sao tolerados (fallback para string vazia).
+  // -------------------------------------------------------------------
+  ns.mapReceivedDocToEventShape = function mapReceivedDocToEventShape(receivedDoc) {
+    if (!receivedDoc || typeof receivedDoc !== 'object') return null;
+
+    var doc = {
+      document_id: typeof receivedDoc.document_id === 'string' ? receivedDoc.document_id : '',
+      tipo_documento: typeof receivedDoc.tipo_documento === 'string'
+        ? receivedDoc.tipo_documento
+        : (typeof receivedDoc.tipo === 'string' ? receivedDoc.tipo : ''),
+      formato: typeof receivedDoc.formato === 'string' ? receivedDoc.formato : '',
+      direcao_nf: typeof receivedDoc.direcao_nf === 'string'
+        ? receivedDoc.direcao_nf
+        : (typeof receivedDoc.direcao === 'string' ? receivedDoc.direcao : ''),
+      filename_original: typeof receivedDoc.filename_original === 'string'
+        ? receivedDoc.filename_original
+        : (typeof receivedDoc.filename === 'string' ? receivedDoc.filename : 'Documento'),
+      drive_web_view_link: typeof receivedDoc.drive_web_view_link === 'string'
+        ? receivedDoc.drive_web_view_link : '',
+      reason: typeof receivedDoc.rejected_reason === 'string'
+        ? receivedDoc.rejected_reason
+        : (typeof receivedDoc.reason === 'string' ? receivedDoc.reason : ''),
+    };
+
+    var status = typeof receivedDoc.status === 'string'
+      ? receivedDoc.status.toLowerCase() : 'pending';
+
+    var eventType;
+    if (status === 'accepted' || status === 'aceito') {
+      eventType = 'document.accepted';
+    } else if (status === 'assigned' || status === 'atrelado' || status === 'vinculado') {
+      eventType = 'document.linked';
+    } else if (status === 'rejected' || status === 'rejeitado') {
+      eventType = 'document.rejected';
+    } else {
+      eventType = 'document.detected';
+    }
+
+    var timestamps = [
+      receivedDoc.rejected_at,
+      receivedDoc.accepted_at,
+      receivedDoc.linked_at,
+      receivedDoc.detected_at,
+      receivedDoc.received_at,
+      receivedDoc.created_at,
+    ];
+    var bestTs = '';
+    for (var ti = 0; ti < timestamps.length; ti++) {
+      if (typeof timestamps[ti] === 'string' && timestamps[ti]) {
+        if (!bestTs || timestamps[ti] > bestTs) {
+          bestTs = timestamps[ti];
+        }
+      }
+    }
+
+    return {
+      document: doc,
+      status: status,
+      created_at: bestTs,
+      event_type: eventType,
+      pedido_manual: typeof receivedDoc.pedido_manual === 'string'
+        ? receivedDoc.pedido_manual : '',
+    };
+  };
+
+  // -------------------------------------------------------------------
   // Namespace
   // -------------------------------------------------------------------
 

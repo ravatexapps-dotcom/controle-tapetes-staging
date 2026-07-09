@@ -803,6 +803,91 @@
           }
         }
       }
+
+      // Fallback G14-B: bridge RAVATEX_DOCUMENTS_RECEIVED (JSONL flat)
+      // quando nao ha eventos carregados pela rota legada.
+      if (ingestorDocumentRows.length === 0 && pedidoKey
+          && typeof window.RAVATEX_DOCUMENTS_RECEIVED !== 'undefined'
+          && Array.isArray(window.RAVATEX_DOCUMENTS_RECEIVED)
+          && typeof window.RAVATEX_DOCUMENTS.mapReceivedDocToEventShape === 'function') {
+        var receivedDocs = window.RAVATEX_DOCUMENTS_RECEIVED;
+        // Filtra por pedido_manual exato do pedidoKey.
+        // Se nenhum doc corresponder, tenta fallback por prefixo do numero.
+        var matchingReceived = [];
+        for (var ri = 0; ri < receivedDocs.length; ri++) {
+          var rd = receivedDocs[ri];
+          if (rd && rd.pedido_manual === pedidoKey) {
+            matchingReceived.push(rd);
+          }
+        }
+
+        // Fallback: prefixo do numero do pedido (ano do criado_em pode divergir).
+        if (matchingReceived.length === 0 && pedido.numero != null) {
+          var recvNumeroPad = String(pedido.numero).padStart(2, '0');
+          var recvPrefixo = 'PED-' + recvNumeroPad + '-';
+          var recvByKey = {};
+          for (var rj = 0; rj < receivedDocs.length; rj++) {
+            var rd2 = receivedDocs[rj];
+            if (rd2 && typeof rd2.pedido_manual === 'string'
+                && rd2.pedido_manual.indexOf(recvPrefixo) === 0) {
+              var k = rd2.pedido_manual;
+              if (!recvByKey[k]) {
+                recvByKey[k] = [];
+              }
+              recvByKey[k].push(rd2);
+            }
+          }
+          var recvUniqueKeys = Object.keys(recvByKey);
+          if (recvUniqueKeys.length === 1) {
+            matchingReceived = recvByKey[recvUniqueKeys[0]];
+          }
+        }
+
+        // Deduplica por document_id antes de montar as linhas.
+        var seenRecvIds = {};
+        for (var rk = 0; rk < matchingReceived.length; rk++) {
+          var rdoc = matchingReceived[rk];
+          var rdocId = rdoc && rdoc.document_id;
+          if (!rdocId || seenRecvIds[rdocId]) continue;
+          seenRecvIds[rdocId] = true;
+
+          var rev = window.RAVATEX_DOCUMENTS.mapReceivedDocToEventShape(rdoc);
+          if (!rev) continue;
+
+          var rdocDoc = rev.document;
+          var rstatusMeta = window.RAVATEX_DOCUMENTS.getDocumentStatusBadgeMeta(rev.status || 'pending');
+          var rtipoMeta = window.RAVATEX_DOCUMENTS.getDocumentTipoBadgeMeta(rdocDoc && rdocDoc.tipo_documento);
+          var rformatoMeta = window.RAVATEX_DOCUMENTS.getDocumentFormatoBadgeMeta(rdocDoc && rdocDoc.formato);
+          var rdirecaoMeta = window.RAVATEX_DOCUMENTS.getDocumentDirecaoBadgeMeta(rdocDoc && rdocDoc.direcao_nf);
+          var rreason = rdocDoc && rdocDoc.reason ? rdocDoc.reason : null;
+          var rdriveLink = rdocDoc && rdocDoc.drive_web_view_link ? rdocDoc.drive_web_view_link : null;
+
+          var rbadges = [];
+          rbadges.push({ bg: rtipoMeta.bg, text: rtipoMeta.text, label: rtipoMeta.label });
+          if (rformatoMeta) {
+            rbadges.push({ bg: rformatoMeta.bg, text: rformatoMeta.text, label: rformatoMeta.label });
+          }
+          if (rdirecaoMeta) {
+            rbadges.push({ bg: rdirecaoMeta.bg, text: rdirecaoMeta.text, label: rdirecaoMeta.label });
+          }
+
+          ingestorDocumentRows.push({
+            label: rdocDoc && rdocDoc.filename_original ? rdocDoc.filename_original : 'Documento',
+            status: rev.status || 'pending',
+            statusMeta: rstatusMeta,
+            badges: rbadges,
+            reason: rreason,
+            driveLink: rdriveLink,
+            meta: 'Ingestor · ' + (typeof window.RAVATEX_DOCUMENTS.fmtTimestamp === 'function'
+              ? window.RAVATEX_DOCUMENTS.fmtTimestamp(rev.created_at)
+              : String(rev.created_at || '')),
+          });
+
+          if (ingestorDocumentRows.length > 0) {
+            ingestorDocsLoaded = true;
+          }
+        }
+      }
     }
 
     return {

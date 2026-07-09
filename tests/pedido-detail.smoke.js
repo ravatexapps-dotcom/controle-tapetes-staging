@@ -2839,3 +2839,40 @@ test('NO-PARALLEL-LOAD-B: acabamento OP nao mostra Carregar no modal Tecelagem>A
   assert.doesNotMatch(text, /Sem saldo disponivel para carregar nesta movimentacao/,
     'nao deve exibir mensagem enganosa de saldo quando a acao foi bloqueada por contexto');
 });
+
+// -------------------------------------------------------------------
+// G14-B: Bridge RAVATEX_DOCUMENTS_RECEIVED smoke
+// -------------------------------------------------------------------
+
+test('G14-B-bridge-smoke: pedido-detail-progress referencia RAVATEX_DOCUMENTS_RECEIVED', () => {
+  assert.match(detailProgress, /RAVATEX_DOCUMENTS_RECEIVED/,
+    'pedido-detail-progress deve referenciar RAVATEX_DOCUMENTS_RECEIVED');
+});
+
+test('G14-B-bridge-smoke: pedido-detail-progress referencia mapReceivedDocToEventShape', () => {
+  assert.match(detailProgress, /mapReceivedDocToEventShape/,
+    'pedido-detail-progress deve chamar mapReceivedDocToEventShape');
+});
+
+test('G14-B-bridge-smoke: pedido-detail-progress nao referencia botao legado de eventos', () => {
+  assert.doesNotMatch(detailProgress, /RAVATEX_ENABLE_DOCUMENTS_EVENTS_IMPORT_UI/,
+    'bridge nao deve reintroduzir botao legado de eventos');
+});
+
+test('G14-B-bridge-smoke: documents-ingestor.js exporta mapReceivedDocToEventShape', () => {
+  const ingestorSrc = readOrFail(path.join(ROOT, 'js', 'documents-ingestor.js'));
+  assert.match(ingestorSrc, /mapReceivedDocToEventShape\s*[=:]\s*function/,
+    'documents-ingestor.js deve exportar mapReceivedDocToEventShape');
+});
+
+test('G14-B-bridge-smoke: documents-ingestor.js nao inventa ingestion_event_id', () => {
+  const ingestorSrc = readOrFail(path.join(ROOT, 'js', 'documents-ingestor.js'));
+  // ingestion_event_id so aparece nos comentarios/blocos legados, nunca no mapper
+  const mapperSlice = (ingestorSrc.match(/ns\.mapReceivedDocToEventShape[\s\S]*?\n  \};/) || [''])[0];
+  if (mapperSlice) {
+    assert.doesNotMatch(mapperSlice, /ingestion_event_id\s*:/,
+      'mapReceivedDocToEventShape nao deve atribuir ingestion_event_id');
+    assert.doesNotMatch(mapperSlice, /event_id\s*:/,
+      'mapReceivedDocToEventShape nao deve atribuir event_id');
+  }
+});

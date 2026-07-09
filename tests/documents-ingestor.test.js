@@ -732,3 +732,230 @@ test('G12-F2: isValidReceivedDocument ainda exige document_id (rejeita mapeado s
   assert.strictEqual(RAVATEX_DOCUMENTS.isValidReceivedDocument(mappedSemId), false,
     'sem document_id, mesmo com campos do mapeados, deve falhar');
 });
+
+// -------------------------------------------------------------------
+// G14-B: mapReceivedDocToEventShape — bridge flat doc -> event shape
+// -------------------------------------------------------------------
+
+test('G14-B: mapReceivedDocToEventShape expoe funcao', function () {
+  var RAVATEX_DOCUMENTS = loadModule();
+  assert.equal(typeof RAVATEX_DOCUMENTS.mapReceivedDocToEventShape, 'function',
+    'mapReceivedDocToEventShape ausente');
+});
+
+test('G14-B: mapReceivedDocToEventShape accepted -> document.accepted', function () {
+  var RAVATEX_DOCUMENTS = loadModule();
+  var doc = {
+    document_id: 'doc-acc-1',
+    filename_original: 'NF-e.xml',
+    tipo_documento: 'nf',
+    formato: 'xml',
+    direcao_nf: 'entrada',
+    drive_web_view_link: 'https://drive.google.com/file/d/1/view',
+    status: 'accepted',
+    pedido_manual: 'PED-25-2026',
+    received_at: '2026-07-08T10:00:00.000Z',
+    accepted_at: '2026-07-08T10:30:00.000Z',
+  };
+  var ev = RAVATEX_DOCUMENTS.mapReceivedDocToEventShape(doc);
+  assert.ok(ev, 'nao retornou null');
+  assert.strictEqual(ev.event_type, 'document.accepted');
+  assert.strictEqual(ev.status, 'accepted');
+  assert.strictEqual(ev.pedido_manual, 'PED-25-2026');
+  assert.strictEqual(ev.created_at, '2026-07-08T10:30:00.000Z',
+    'created_at deve ser o timestamp mais recente');
+  assert.ok(ev.document, 'deve ter document wrapper');
+  assert.strictEqual(ev.document.document_id, 'doc-acc-1');
+  assert.strictEqual(ev.document.tipo_documento, 'nf');
+  assert.strictEqual(ev.document.formato, 'xml');
+  assert.strictEqual(ev.document.direcao_nf, 'entrada');
+  assert.strictEqual(ev.document.filename_original, 'NF-e.xml');
+  assert.strictEqual(ev.document.drive_web_view_link, 'https://drive.google.com/file/d/1/view');
+});
+
+test('G14-B: mapReceivedDocToEventShape assigned -> document.linked', function () {
+  var RAVATEX_DOCUMENTS = loadModule();
+  var doc = {
+    document_id: 'doc-assign-1',
+    filename_original: 'romaneio.pdf',
+    tipo_documento: 'romaneio',
+    formato: 'pdf',
+    status: 'assigned',
+    pedido_manual: 'PED-26-2026',
+    detected_at: '2026-07-08T11:00:00.000Z',
+    linked_at: '2026-07-08T11:05:00.000Z',
+  };
+  var ev = RAVATEX_DOCUMENTS.mapReceivedDocToEventShape(doc);
+  assert.strictEqual(ev.event_type, 'document.linked');
+  assert.strictEqual(ev.status, 'assigned');
+  assert.strictEqual(ev.created_at, '2026-07-08T11:05:00.000Z');
+});
+
+test('G14-B: mapReceivedDocToEventShape rejected -> document.rejected', function () {
+  var RAVATEX_DOCUMENTS = loadModule();
+  var doc = {
+    document_id: 'doc-rej-1',
+    filename_original: 'NF-duplicada.xml',
+    tipo_documento: 'nf',
+    formato: 'xml',
+    status: 'rejected',
+    pedido_manual: 'PED-27-2026',
+    received_at: '2026-07-08T12:00:00.000Z',
+    rejected_at: '2026-07-08T12:15:00.000Z',
+    rejected_reason: 'Duplicado',
+  };
+  var ev = RAVATEX_DOCUMENTS.mapReceivedDocToEventShape(doc);
+  assert.strictEqual(ev.event_type, 'document.rejected');
+  assert.strictEqual(ev.status, 'rejected');
+  assert.strictEqual(ev.created_at, '2026-07-08T12:15:00.000Z');
+  assert.strictEqual(ev.document.reason, 'Duplicado');
+});
+
+test('G14-B: mapReceivedDocToEventShape pending/default -> document.detected', function () {
+  var RAVATEX_DOCUMENTS = loadModule();
+  var doc = {
+    document_id: 'doc-pend-1',
+    filename_original: 'L.pdf',
+    tipo_documento: 'desconhecido',
+    formato: 'desconhecido',
+    status: 'pending',
+    pedido_manual: null,
+    received_at: '2026-07-08T13:00:00.000Z',
+    detected_at: null,
+  };
+  var ev = RAVATEX_DOCUMENTS.mapReceivedDocToEventShape(doc);
+  assert.strictEqual(ev.event_type, 'document.detected');
+  assert.strictEqual(ev.status, 'pending');
+  assert.strictEqual(ev.pedido_manual, '');
+  assert.strictEqual(ev.created_at, '2026-07-08T13:00:00.000Z');
+});
+
+test('G14-B: mapReceivedDocToEventShape status desconhecido mapeia para detected', function () {
+  var RAVATEX_DOCUMENTS = loadModule();
+  var doc = { document_id: 'doc-x', status: 'desconhecido', filename_original: 'x.txt' };
+  var ev = RAVATEX_DOCUMENTS.mapReceivedDocToEventShape(doc);
+  assert.strictEqual(ev.event_type, 'document.detected');
+});
+
+test('G14-B: mapReceivedDocToEventShape status vazio mapeia para detected', function () {
+  var RAVATEX_DOCUMENTS = loadModule();
+  var doc = { document_id: 'doc-empty-status' };
+  var ev = RAVATEX_DOCUMENTS.mapReceivedDocToEventShape(doc);
+  assert.strictEqual(ev.event_type, 'document.detected');
+  assert.strictEqual(ev.status, 'pending');
+});
+
+test('G14-B: mapReceivedDocToEventShape pedido_manual null preservado como string vazia', function () {
+  var RAVATEX_DOCUMENTS = loadModule();
+  var doc = {
+    document_id: 'doc-no-pedido',
+    filename_original: 'sem-pedido.pdf',
+    status: 'pending',
+    pedido_manual: null,
+  };
+  var ev = RAVATEX_DOCUMENTS.mapReceivedDocToEventShape(doc);
+  assert.strictEqual(ev.pedido_manual, '');
+});
+
+test('G14-B: mapReceivedDocToEventShape campos parciais nao quebram', function () {
+  var RAVATEX_DOCUMENTS = loadModule();
+  var doc = { document_id: 'doc-min' };
+  var ev = RAVATEX_DOCUMENTS.mapReceivedDocToEventShape(doc);
+  assert.ok(ev, 'nao deve retornar null');
+  assert.strictEqual(ev.document.document_id, 'doc-min');
+  assert.strictEqual(ev.document.filename_original, 'Documento');
+  assert.strictEqual(ev.document.tipo_documento, '');
+  assert.strictEqual(ev.document.formato, '');
+  assert.strictEqual(ev.document.drive_web_view_link, '');
+  assert.strictEqual(ev.document.reason, '');
+  assert.strictEqual(ev.status, 'pending');
+  assert.strictEqual(ev.event_type, 'document.detected');
+  assert.strictEqual(ev.created_at, '');
+});
+
+test('G14-B: mapReceivedDocToEventShape created_at usa timestamp mais recente disponivel', function () {
+  var RAVATEX_DOCUMENTS = loadModule();
+  var doc = {
+    document_id: 'doc-ts',
+    received_at: '2026-07-08T08:00:00.000Z',
+    detected_at: '2026-07-08T08:10:00.000Z',
+    linked_at: '2026-07-08T08:20:00.000Z',
+    accepted_at: '2026-07-08T08:30:00.000Z',
+    rejected_at: null,
+    created_at: '2026-07-08T07:00:00.000Z',
+    status: 'accepted',
+  };
+  var ev = RAVATEX_DOCUMENTS.mapReceivedDocToEventShape(doc);
+  assert.strictEqual(ev.created_at, '2026-07-08T08:30:00.000Z',
+    'deve usar accepted_at (mais recente)');
+});
+
+test('G14-B: mapReceivedDocToEventShape rejected_at vence accepted_at', function () {
+  var RAVATEX_DOCUMENTS = loadModule();
+  var doc = {
+    document_id: 'doc-rej-late',
+    accepted_at: '2026-07-08T09:00:00.000Z',
+    rejected_at: '2026-07-08T09:30:00.000Z',
+    status: 'rejected',
+  };
+  var ev = RAVATEX_DOCUMENTS.mapReceivedDocToEventShape(doc);
+  assert.strictEqual(ev.created_at, '2026-07-08T09:30:00.000Z');
+});
+
+test('G14-B: mapReceivedDocToEventShape sem timestamps usa string vazia', function () {
+  var RAVATEX_DOCUMENTS = loadModule();
+  var doc = { document_id: 'doc-sem-ts', status: 'pending' };
+  var ev = RAVATEX_DOCUMENTS.mapReceivedDocToEventShape(doc);
+  assert.strictEqual(ev.created_at, '');
+});
+
+test('G14-B: mapReceivedDocToEventShape nao cria ingestion_event_id falso', function () {
+  var RAVATEX_DOCUMENTS = loadModule();
+  var doc = {
+    document_id: 'doc-no-ingestion',
+    filename_original: 'test.pdf',
+    status: 'accepted',
+    received_at: '2026-07-08T10:00:00.000Z',
+  };
+  var ev = RAVATEX_DOCUMENTS.mapReceivedDocToEventShape(doc);
+  assert.strictEqual(ev.ingestion_event_id, undefined,
+    'nao deve conter ingestion_event_id');
+  assert.strictEqual(ev.event_id, undefined,
+    'nao deve conter event_id');
+});
+
+test('G14-B: mapReceivedDocToEventShape null/undefined retorna null', function () {
+  var RAVATEX_DOCUMENTS = loadModule();
+  assert.strictEqual(RAVATEX_DOCUMENTS.mapReceivedDocToEventShape(null), null);
+  assert.strictEqual(RAVATEX_DOCUMENTS.mapReceivedDocToEventShape(undefined), null);
+  assert.strictEqual(RAVATEX_DOCUMENTS.mapReceivedDocToEventShape('string'), null);
+  assert.strictEqual(RAVATEX_DOCUMENTS.mapReceivedDocToEventShape(42), null);
+});
+
+test('G14-B: mapReceivedDocToEventShape usa alias campos (tipo, direcao, filename)', function () {
+  var RAVATEX_DOCUMENTS = loadModule();
+  var doc = {
+    document_id: 'doc-alias',
+    tipo: 'nf',
+    direcao: 'saida',
+    filename: 'alias-file.xml',
+    status: 'accepted',
+  };
+  var ev = RAVATEX_DOCUMENTS.mapReceivedDocToEventShape(doc);
+  assert.strictEqual(ev.document.tipo_documento, 'nf');
+  assert.strictEqual(ev.document.direcao_nf, 'saida');
+  assert.strictEqual(ev.document.filename_original, 'alias-file.xml');
+});
+
+test('G14-B: mapReceivedDocToEventShape reason usa rejected_reason com prioridade', function () {
+  var RAVATEX_DOCUMENTS = loadModule();
+  var doc = {
+    document_id: 'doc-reason',
+    status: 'rejected',
+    rejected_reason: 'prioritario',
+    reason: 'secundario',
+  };
+  var ev = RAVATEX_DOCUMENTS.mapReceivedDocToEventShape(doc);
+  assert.strictEqual(ev.document.reason, 'prioritario',
+    'rejected_reason deve ter prioridade sobre reason');
+});
