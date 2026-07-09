@@ -7297,3 +7297,16 @@ sem fetch real.
 - Sem polling/scheduler/daemon por enquanto
 - Produtor `sync:mapped` estavel em `bedbe909` (master)
 - Consumidor bridge publicado em staging `fff052b`
+## RAVATEX-DOCUMENTS-G23-D-D-CLOUD-DECISIONS-CLOSEOUT-DOCS (2026-07-09)
+
+Closeout tecnico de G23-D registrado no HEAD `d33dc29bbcd7a733825c70f98ac736f0b121c4f3` (G23-D-B).
+
+- G23-D-C: smoke de staging aprovado via harness com Supabase real (`ucrjtfswnfdlxwtmxnoo.supabase.co`).
+- Admin real autenticado no staging utilizado; RPC `public.decidir_documento` validada.
+- Aceitar e rejeitar atualizaram `document_decisions` e `document_candidates`; a decisao anterior foi desativada, a decisao ativa nova ficou correta e o reader recarregou a UI.
+- Cancelamento do prompt e motivo vazio nao chamaram a RPC; motivo valido chamou a RPC e persistiu `rejected_reason`.
+- Cleanup remoto concluido com zero residuos do prefixo de smoke nas tabelas verificadas.
+- Nao-admin nao testado e browser real nao testado; a evidencia de UI foi obtida pelo harness.
+- Producao ficou fora de escopo (`bhgifjrfagkzubpyqpew`); nenhum push foi realizado.
+
+Debitos: repetir validacao visual em browser real e obter sessao segura nao-admin para confirmar `admin_required`.

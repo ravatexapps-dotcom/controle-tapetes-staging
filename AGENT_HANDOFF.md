@@ -6696,3 +6696,12 @@ Pedido usando fixture JSONL local. Sem Supabase, sem Google/Drive, sem fetch.
 - Staging UI smoke G18-E: 374/374 testes (5 suites), botão import, render, metadata card, dedup, pluralização, Pedido Detail
 - origin/main intocado (`1047181`), produção não tocada
 - Próximo roadmap: UX de aceite/rejeição no Controle; dedup por `event_id`; telemetria de import
+## RAVATEX-DOCUMENTS-G23-D-D-CLOUD-DECISIONS-CLOSEOUT-DOCS (2026-07-09)
+
+G23-D fechado documentalmente no commit-base `d33dc29bbcd7a733825c70f98ac736f0b121c4f3` (G23-D-B). O G23-D-C foi aprovado em smoke de staging via harness usando Supabase real e admin autenticado.
+
+Evidencias: `public.decidir_documento` validada; aceitar/rejeitar persistiram a decisao e atualizaram o candidate; cancelamento e motivo vazio nao chamaram RPC; motivo valido desativou a decisao anterior e criou a decisao ativa rejeitada; reader reload e reflexo da UI confirmados; cleanup remoto deixou zero residuos do prefixo de smoke.
+
+Ressalvas: nao-admin nao testado; browser real nao testado, pois a UI foi exercitada pelo harness; producao permaneceu fora de escopo. Nenhum push realizado.
+
+Proximos debitos: validar browser visual real e executar smoke com sessao segura nao-admin para confirmar `admin_required`.
