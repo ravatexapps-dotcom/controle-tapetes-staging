@@ -3,13 +3,13 @@
 ## Branch/HEAD/Status
 ### documentos-ingestor (este repositório)
 - Branch: master
-- HEAD: `61841b2` (em fechamento G12-E4)
+- HEAD: `800d4af` (em fechamento G12-E5)
 
 ### Controle de Tapetes (staging/work/app-next)
 - HEAD canônico: `997486a`
 
 ## Fase concluída
-RAVATEX-DOCUMENTS-G12-E4-DOCUMENT-DEDUPE-HARDENING
+RAVATEX-DOCUMENTS-G12-E5-DEV-NULL-CROSS-PLATFORM
 
 ## Fase anterior
 G12-C1 — Evento document.detected no scan (sem schema novo)
@@ -349,10 +349,48 @@ Endurecer o dedup no pipeline de scan para bloquear inserção de documento dupl
 - Demais suites: 298/298 (regressão verde)
 
 ### Riscos remanescentes
-- **Pré-existente (não introduzido por este patch)**: `src/core/realAssign.ts:117` chama `addDocumentToManifest('/dev/null', ...)`, que falha em Windows porque `/dev/null` aponta para um arquivo com lixo (provavelmente conteúdo residual de sessão PowerShell anterior). Os testes `assign-real.test.ts`, `cli-ops.test.ts` e `integration-mock-flow.test.ts` falham por esse motivo em Windows. Deveria usar `os.devNull` cross-platform — endereçável em fase futura (G12-E5).
+- **Pré-existente (corrigido em G12-E5)**: ~~`src/core/realAssign.ts:117` chama `addDocumentToManifest('/dev/null', ...)`, que falha em Windows porque `/dev/null` aponta para um arquivo com lixo.~~ Resolvido: substituído por `os.devNull`.
 - **Reenvio cross-email**: a nova regra NÃO bloqueia reenvio do mesmo arquivo em outro `gmail_message_id` — esse caso ainda cria cross-message duplicate (reuso do Drive file), que é o comportamento operacional desejado.
 - **Colisão de sha256**: se dois arquivos logicamente diferentes tiverem o mesmo `sha256` no mesmo email (improvável mas possível), a nova regra trata como duplicata. Aceitável dado que o `sha256` é o identificador físico do arquivo.
 
 ### Próxima fase recomendada
-RAVATEX-DOCUMENTS-G12-E5-DEV-NULL-CROSS-PLATFORM
-Foco: corrigir `realAssign.ts:117` para usar `os.devNull` (cross-platform), eliminando falha pré-existente nos testes de assign em Windows. Patch de 1 linha + ajuste de teste.
+RAVATEX-DOCUMENTS-G12-F-MAPPED-DOCUMENTS-CONSUMER
+Foco: integrar `documentos-mapeados.jsonl` no Controle de Tapetes para exibir a fila de documentos com status, pedido_manual, timestamps por evento e `rejected_reason` (read-only, mesmo contrato JSONL).
+
+---
+
+## Fase G12-E5: Dev Null Cross-Platform Fix (patch 1 linha)
+
+### Objetivo
+Corrigir `realAssign.ts:117` que usava o path literal `'/dev/null'`, o qual falha em Windows por não ser um dispositivo nulo real (aponta para um arquivo comum com lixo residual). Substituir por `os.devNull`, que funciona cross-platform (Linux, macOS, Windows).
+
+### Patch aplicado (a partir de `800d4af`)
+
+**src/core/realAssign.ts:**
+- Adicionado `import os from 'node:os'` (linha 11)
+- Linha 117 (antiga): `addDocumentToManifest('/dev/null', normalized, {`
+- Linha 117 (nova): `addDocumentToManifest(os.devNull, normalized, {`
+
+### Garantias
+- Nenhuma alteração de schema
+- Nenhuma migration
+- Nenhuma chamada Gmail/Drive real
+- Nenhum scan real
+- DB, outbox, export não alterados
+- Controle de Tapetes não tocado
+- Backup (data/app.db.backup-g12-e4-*) preservado em disco
+
+### Testes corrigidos
+- `tests/assign-real.test.ts` — 8/8 passando (eram 5/8 falhando por `loadManifest('/dev/null')` → `SyntaxError: is not valid JSON`)
+- `tests/integration-mock-flow.test.ts` — 3/3 passando (eram 2/3 falhando pelo mesmo motivo)
+
+### Testes regressão
+- `tests/export-mapped.test.ts` — 13/13 ✓
+- `tests/dedupe.test.ts` — 10/10 ✓
+
+### Risco residual
+- Nenhum introduzido. `os.devNull` é suportado em Node.js desde a versão 0.x em todas as plataformas. O projeto usa Node.js 22, sem risco de incompatibilidade.
+
+### Próxima fase recomendada
+RAVATEX-DOCUMENTS-G12-F-MAPPED-DOCUMENTS-CONSUMER
+Foco: integrar `documentos-mapeados.jsonl` no Controle de Tapetes para exibir a fila de documentos com status, pedido_manual, timestamps por evento e `rejected_reason` (read-only, mesmo contrato JSONL).

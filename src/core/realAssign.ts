@@ -8,6 +8,7 @@ import { appendEvent, isEventDuplicate } from './outbox.js';
 import { addDocumentToManifest } from './manifest.js';
 import { join } from 'node:path';
 import { mkdirSync, existsSync } from 'node:fs';
+import os from 'node:os';
 import { fromLegacyTipo } from '../types/document.js';
 import type { TipoDocumento } from '../types/document.js';
 
@@ -114,7 +115,7 @@ export function createAssignPedido(deps: AssignDeps = defaultDeps) {
       },
     });
 
-    addDocumentToManifest('/dev/null', normalized, {
+    addDocumentToManifest(os.devNull, normalized, {
       document_id: doc.id,
       tipo_documento: tipo,
       filename_original: doc.filename_original,

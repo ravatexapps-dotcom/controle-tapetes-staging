@@ -19,7 +19,7 @@ D:\OneDrive\Programação\Ravatex\documents-ingestor
 - `contracts/manifest.schema.json` — schema do manifest de Pedido
 
 ## Status atual
-- HEAD (documents-ingestor): `61841b2` (em fechamento G12-E4)
+- HEAD (documents-ingestor): `800d4af` (em fechamento G12-E5)
 - HEAD canônico staging/work/app-next (Controle de Tapetes): `997486a`
 - Push staging: `af919a2..997486a` (produção/origin oficial intocados)
 - 340+17=357 testes passando (28 suites) — incluindo integração mockada completa
@@ -37,6 +37,7 @@ D:\OneDrive\Programação\Ravatex\documents-ingestor
 - G12-E2: exportMappedDocuments + CLI export-mapped (13 testes herméticos)
 - G12-E3: diagnóstico de duplicata no export mapeado (causa raiz + queries before/after)
 - G12-E4: hardening de dedup dentro do mesmo email + cleanup local da duplicata 5c3074bb
+- G12-E5: correção cross-platform do `/dev/null` em realAssign (os.devNull)
 
 ## Comandos disponíveis
 - `npm run dev` — tsx watch
@@ -119,6 +120,7 @@ Não integrar Supabase nesta fase. O outbox JSONL é o contrato de integração.
 - G12-E2 — exportMappedDocuments + CLI `export-mapped` (read-only, sem Drive, sem scan, sem schema, 13 testes)
 - G12-E3 — Diagnóstico de data quality no export mapeado (causa raiz + queries before/after)
 - G12-E4 — Hardening dedup dentro do mesmo email + cleanup local (5c3074bb removido após backup)
+- G12-E5 — Correção `/dev/null` cross-platform em realAssign (os.devNull, 1 linha + 1 import)
 - G/H — UI Backlog (Controle de Tapetes — staging/work/app-next)
 
 ## Fase G1: Taxonomia de Documentos (3 eixos)
@@ -154,9 +156,22 @@ Não integrar Supabase nesta fase. O outbox JSONL é o contrato de integração.
   - `tests/scan.test.ts` — 27/27 (2 novos G12-E4 + 1 existente ajustado)
   - `tests/export-mapped.test.ts` — 13/13
   - `tests/export-received.test.ts` — 9/9
-- **Riscos remanescentes**: pré-existente (não introduzido por este patch) — `src/core/realAssign.ts:117` chama `addDocumentToManifest('/dev/null', ...)`, que falha em Windows porque `/dev/null` aponta para um arquivo com lixo. Testes `assign-real.test.ts`, `cli-ops.test.ts`, `integration-mock-flow.test.ts` falham por isso em Windows; deveriam usar `os.devNull` (fase futura).
+- **Riscos remanescentes**: ~~`src/core/realAssign.ts:117` usava `/dev/null` (falhava em Windows).~~ Corrigido em G12-E5 (substituído por `os.devNull`).
 - **Próxima fase recomendada**: G12-E5 — corrigir `realAssign.ts:117` para usar `os.devNull` cross-platform (eliminar falha pré-existente nos testes de assign em Windows).
 
+## Fase G12-E5: Dev Null Cross-Platform Fix (patch 1 linha)
+- **HEAD inicial**: `800d4af`
+- **Causa raiz**: `realAssign.ts:117` usava path literal `'/dev/null'` que não é um dispositivo nulo real em Windows (aponta para arquivo comum com lixo residual de sessões PowerShell anteriores). `loadManifest('/dev/null')` fazia `JSON.parse()` sobre conteúdo binário randômico → `SyntaxError: is not valid JSON`.
+- **Correção**: importado `os` de `node:os`; substituído `'/dev/null'` por `os.devNull` (dispositivo nulo cross-platform, suportado desde Node.js 0.x).
+- **Arquivo alterado**: `src/core/realAssign.ts` (+1 import, -1 string literal).
+- **Não alterado**: `schema.sql`, `sqlite.ts`, `outbox.jsonl`, `cli.ts`, `exportPackage.ts`, `manifest.ts`, DB, backup. Controle de Tapetes não tocado.
+- **Não executado**: nenhuma chamada Gmail/Drive, nenhum scan real, nenhum assign/accept/reject.
+- **Testes corrigidos**:
+  - `tests/assign-real.test.ts` — 8/8 passando (eram 5/8 falhando por `loadManifest('/dev/null')`)
+  - `tests/integration-mock-flow.test.ts` — 3/3 passando (eram 2/3 falhando pelo mesmo motivo)
+- **Regressão verificada**: `tests/export-mapped.test.ts` 13/13, `tests/dedupe.test.ts` 10/10.
+- **Risco residual**: nenhum. `os.devNull` é suportado em todas as plataformas desde Node.js 0.x.
+
 ## Próxima fase recomendada
-RAVATEX-DOCUMENTS-G12-F-MAPPED-DOCUMENTS-CONSUMER (G12-E4 primeiro fecha o hardening de dedup; a integração no Controle de Tapetes continua opcional e read-only).
-Foco: integração opcional do `documentos-mapeados.jsonl` (e/ou `documentos-recebidos.jsonl`) no Controle de Tapetes para exibir a fila de documentos com status, pedido, timestamps por evento e `rejected_reason` (read-only, sem mutação, mesmo contrato JSONL).
+RAVATEX-DOCUMENTS-G12-F-MAPPED-DOCUMENTS-CONSUMER
+Foco: integrar `documentos-mapeados.jsonl` (e/ou `documentos-recebidos.jsonl`) no Controle de Tapetes para exibir a fila de documentos com status, pedido_manual, timestamps por evento e `rejected_reason` (read-only, sem mutação, mesmo contrato JSONL).
