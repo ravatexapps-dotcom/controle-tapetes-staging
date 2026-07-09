@@ -589,7 +589,8 @@
 
     var statusPills = [];
     var statusOrder = ['pending', 'assigned', 'accepted', 'rejected', 'unknown'];
-    var statusLabels = { pending: 'Pendentes', assigned: 'Atrelados', accepted: 'Aceitos', rejected: 'Rejeitados', unknown: 'Outros' };
+    var statusLabelSingle = { pending: 'Pendente', assigned: 'Atribuído', accepted: 'Aceito', rejected: 'Rejeitado', unknown: 'Desconhecido' };
+    var statusLabelPlural = { pending: 'Pendentes', assigned: 'Atribuídos', accepted: 'Aceitos', rejected: 'Rejeitados', unknown: 'Desconhecidos' };
     var statusColors = { pending: '#c2610c', assigned: '#2563eb', accepted: '#18794a', rejected: '#d6403a', unknown: '#8a93a3' };
     var statusBg = { pending: '#fff4e6', assigned: '#eaf1fd', accepted: '#e6f4ec', rejected: '#fdecec', unknown: '#f1f3f6' };
     for (var si = 0; si < statusOrder.length; si++) {
@@ -600,7 +601,7 @@
         style: 'display:inline-flex;align-items:center;gap:3px;font-size:11px;font-weight:600;'
           + 'padding:1px 7px;border-radius:3px;white-space:nowrap;'
           + 'background:' + statusBg[key] + ';color:' + statusColors[key] + ';',
-      }, String(val) + ' ' + statusLabels[key]));
+      }, String(val) + ' ' + (val === 1 ? statusLabelSingle[key] : statusLabelPlural[key])));
     }
 
     var chipBg = isStale ? '#fdf0e6' : '#eaf1fd';

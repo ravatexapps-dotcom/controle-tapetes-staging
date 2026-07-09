@@ -1093,9 +1093,9 @@ test('G16-B: metadata card aparece com metadata valida no window', function () {
   assert.ok(cardText.indexOf('3 documento') >= 0, 'mostra count');
   assert.ok(cardText.indexOf('Snapshot manual') >= 0, 'mostra aviso de snapshot manual');
   assert.ok(cardText.indexOf('1a2b3c4d') >= 0, 'mostra hash curto');
-  assert.ok(cardText.indexOf('1 Aceitos') >= 0, 'mostra accepted count');
-  assert.ok(cardText.indexOf('1 Atrelados') >= 0, 'mostra assigned count');
-  assert.ok(cardText.indexOf('1 Pendentes') >= 0, 'mostra pending count');
+  assert.ok(cardText.indexOf('1 Aceito') >= 0, 'mostra accepted count singular');
+  assert.ok(cardText.indexOf('1 Atribuído') >= 0, 'mostra assigned count singular');
+  assert.ok(cardText.indexOf('1 Pendente') >= 0, 'mostra pending count singular');
 });
 
 test('G16-B: metadata card mostra chip "Defasado" para import >24h', function () {
@@ -1199,6 +1199,6 @@ test('G16-B: metadata card exibe status Rejeitados quando existem', function () 
   assert.equal(cards.length, 1);
   const cardText = textOf(cards[0]);
   assert.ok(cardText.indexOf('2 Rejeitados') >= 0, 'mostra Rejeitados count');
-  assert.ok(cardText.indexOf('1 Aceitos') >= 0, 'mostra Aceitos count');
-  assert.ok(cardText.indexOf('1 Pendentes') >= 0, 'mostra Pendentes count');
+  assert.ok(cardText.indexOf('1 Aceito') >= 0, 'mostra Aceitos count singular');
+  assert.ok(cardText.indexOf('1 Pendente') >= 0, 'mostra Pendentes count singular');
 });
