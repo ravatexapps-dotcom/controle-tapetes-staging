@@ -1,8 +1,8 @@
-﻿# Estado pos-fase - G16-B Last Import Metadata Patch
+﻿# Estado pos-fase - G18-B Ingestion Event ID Consumer Patch
 
-- Fase: `RAVATEX-DOCUMENTS-G16-B-LAST-IMPORT-METADATA-PATCH`.
+- Fase: `RAVATEX-DOCUMENTS-G18-B-INGESTION-EVENT-ID-CONSUMER-PATCH`.
 - Status: **PRONTO**.
-- Branch/HEAD base: `work/app-next`, pendente commit (a partir de `a646a92`).
+- Branch/HEAD base: `work/app-next`, `9aa264e`.
 - Escopo geral (G16-A a G16-B):
   - G16-A: Design read-only da metadata de import
   - G16-B: Implementacao do helper `simpleHash` + persistencia em `localStorage` + card na tela

@@ -304,7 +304,8 @@
   // Converte um documento do formato flat (window.RAVATEX_DOCUMENTS_RECEIVED,
   // schema_version=1, sem event_type, sem wrapper document{}) para o shape
   // esperado pelo codigo de renderizacao do Pedido Detail:
-  //   { document: {...}, status, created_at, event_type, pedido_manual }
+  //   { document: {...}, status, created_at, event_type, pedido_manual
+  //     [, ingestion_event_id] }
   //
   // Regras:
   //   - created_at usa o timestamp mais recente entre:
@@ -315,9 +316,27 @@
   //       assigned  -> document.linked
   //       rejected  -> document.rejected
   //       pending/default -> document.detected
-  //   - NAO inventa ingestion_event_id.
+  //   - ingestion_event_id selecionado por status (G18-B):
+  //       accepted  -> accepted_ingestion_event_id
+  //       assigned  -> linked_ingestion_event_id
+  //       rejected  -> rejected_ingestion_event_id
+  //       pending   -> detected_ingestion_event_id
+  //       fallback  -> latest_ingestion_event_id
+  //   - NAO inventa ingestion_event_id (null/ausente = campo omisso).
+  //   - NAO fabrica event_id.
   //   - Campos parciais sao tolerados (fallback para string vazia).
   // -------------------------------------------------------------------
+  ns.pickReceivedDocIngestionEventId = function pickReceivedDocIngestionEventId(receivedDoc, status) {
+    if (!receivedDoc || typeof receivedDoc !== 'object') return undefined;
+    var id;
+    if (status === 'accepted') id = receivedDoc.accepted_ingestion_event_id;
+    else if (status === 'assigned') id = receivedDoc.linked_ingestion_event_id;
+    else if (status === 'rejected') id = receivedDoc.rejected_ingestion_event_id;
+    else id = receivedDoc.detected_ingestion_event_id;
+    if (!(typeof id === 'string' && id)) id = receivedDoc.latest_ingestion_event_id;
+    return (typeof id === 'string' && id) ? id : undefined;
+  };
+
   ns.mapReceivedDocToEventShape = function mapReceivedDocToEventShape(receivedDoc) {
     if (!receivedDoc || typeof receivedDoc !== 'object') return null;
 
@@ -371,7 +390,9 @@
       }
     }
 
-    return {
+    var pickedIngestionId = ns.pickReceivedDocIngestionEventId(receivedDoc, status);
+
+    var result = {
       document: doc,
       status: status,
       created_at: bestTs,
@@ -379,6 +400,12 @@
       pedido_manual: typeof receivedDoc.pedido_manual === 'string'
         ? receivedDoc.pedido_manual : '',
     };
+
+    if (typeof pickedIngestionId === 'string' && pickedIngestionId) {
+      result.ingestion_event_id = pickedIngestionId;
+    }
+
+    return result;
   };
 
   // -------------------------------------------------------------------

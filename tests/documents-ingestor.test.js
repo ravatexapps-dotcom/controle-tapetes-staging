@@ -909,17 +909,92 @@ test('G14-B: mapReceivedDocToEventShape sem timestamps usa string vazia', functi
   assert.strictEqual(ev.created_at, '');
 });
 
-test('G14-B: mapReceivedDocToEventShape nao cria ingestion_event_id falso', function () {
+test('G18-B: mapReceivedDocToEventShape usa accepted_ingestion_event_id para status accepted', function () {
   var RAVATEX_DOCUMENTS = loadModule();
   var doc = {
-    document_id: 'doc-no-ingestion',
+    document_id: 'doc-accepted-id',
+    status: 'accepted',
+    accepted_ingestion_event_id: 'aaaaaaaa-bbbb-4ccc-dddd-111111111111',
+    latest_ingestion_event_id: 'zzzzzzzz-yyyy-4xxx-wwww-999999999999',
+  };
+  var ev = RAVATEX_DOCUMENTS.mapReceivedDocToEventShape(doc);
+  assert.strictEqual(ev.ingestion_event_id, 'aaaaaaaa-bbbb-4ccc-dddd-111111111111',
+    'accepted status usa accepted_ingestion_event_id');
+});
+
+test('G18-B: mapReceivedDocToEventShape usa linked_ingestion_event_id para status assigned', function () {
+  var RAVATEX_DOCUMENTS = loadModule();
+  var doc = {
+    document_id: 'doc-assigned-id',
+    status: 'assigned',
+    linked_ingestion_event_id: 'bbbbbbbb-cccc-4ddd-eeee-222222222222',
+    latest_ingestion_event_id: 'zzzzzzzz-yyyy-4xxx-wwww-999999999999',
+  };
+  var ev = RAVATEX_DOCUMENTS.mapReceivedDocToEventShape(doc);
+  assert.strictEqual(ev.ingestion_event_id, 'bbbbbbbb-cccc-4ddd-eeee-222222222222',
+    'assigned status usa linked_ingestion_event_id');
+});
+
+test('G18-B: mapReceivedDocToEventShape usa rejected_ingestion_event_id para status rejected', function () {
+  var RAVATEX_DOCUMENTS = loadModule();
+  var doc = {
+    document_id: 'doc-rejected-id',
+    status: 'rejected',
+    rejected_ingestion_event_id: 'cccccccc-dddd-4eee-ffff-333333333333',
+    latest_ingestion_event_id: 'zzzzzzzz-yyyy-4xxx-wwww-999999999999',
+  };
+  var ev = RAVATEX_DOCUMENTS.mapReceivedDocToEventShape(doc);
+  assert.strictEqual(ev.ingestion_event_id, 'cccccccc-dddd-4eee-ffff-333333333333',
+    'rejected status usa rejected_ingestion_event_id');
+});
+
+test('G18-B: mapReceivedDocToEventShape usa detected_ingestion_event_id para status pending', function () {
+  var RAVATEX_DOCUMENTS = loadModule();
+  var doc = {
+    document_id: 'doc-pending-id',
+    status: 'pending',
+    detected_ingestion_event_id: 'dddddddd-eeee-4fff-aaaa-444444444444',
+    latest_ingestion_event_id: 'zzzzzzzz-yyyy-4xxx-wwww-999999999999',
+  };
+  var ev = RAVATEX_DOCUMENTS.mapReceivedDocToEventShape(doc);
+  assert.strictEqual(ev.ingestion_event_id, 'dddddddd-eeee-4fff-aaaa-444444444444',
+    'pending status usa detected_ingestion_event_id');
+});
+
+test('G18-B: mapReceivedDocToEventShape fallback para latest_ingestion_event_id', function () {
+  var RAVATEX_DOCUMENTS = loadModule();
+  var doc = {
+    document_id: 'doc-fallback-id',
+    status: 'accepted',
+    latest_ingestion_event_id: 'zzzzzzzz-yyyy-4xxx-wwww-999999999999',
+  };
+  var ev = RAVATEX_DOCUMENTS.mapReceivedDocToEventShape(doc);
+  assert.strictEqual(ev.ingestion_event_id, 'zzzzzzzz-yyyy-4xxx-wwww-999999999999',
+    'fallback para latest_ingestion_event_id quando especifico ausente');
+});
+
+test('G18-B: mapReceivedDocToEventShape null/ausente deixa ingestion_event_id undefined', function () {
+  var RAVATEX_DOCUMENTS = loadModule();
+  var doc = {
+    document_id: 'doc-no-id',
     filename_original: 'test.pdf',
     status: 'accepted',
     received_at: '2026-07-08T10:00:00.000Z',
   };
   var ev = RAVATEX_DOCUMENTS.mapReceivedDocToEventShape(doc);
   assert.strictEqual(ev.ingestion_event_id, undefined,
-    'nao deve conter ingestion_event_id');
+    'sem ingestion_event_ids = undefined');
+});
+
+test('G18-B: mapReceivedDocToEventShape nao cria event_id falso', function () {
+  var RAVATEX_DOCUMENTS = loadModule();
+  var doc = {
+    document_id: 'doc-no-event',
+    filename_original: 'test.pdf',
+    status: 'accepted',
+    received_at: '2026-07-08T10:00:00.000Z',
+  };
+  var ev = RAVATEX_DOCUMENTS.mapReceivedDocToEventShape(doc);
   assert.strictEqual(ev.event_id, undefined,
     'nao deve conter event_id');
 });

@@ -2865,13 +2865,11 @@ test('G14-B-bridge-smoke: documents-ingestor.js exporta mapReceivedDocToEventSha
     'documents-ingestor.js deve exportar mapReceivedDocToEventShape');
 });
 
-test('G14-B-bridge-smoke: documents-ingestor.js nao inventa ingestion_event_id', () => {
+test('G18-B-bridge-smoke: documents-ingestor.js nao inventa event_id no mapper (permite ingestion_event_id)', () => {
   const ingestorSrc = readOrFail(path.join(ROOT, 'js', 'documents-ingestor.js'));
-  // ingestion_event_id so aparece nos comentarios/blocos legados, nunca no mapper
+  // ingestion_event_id agora e preservado do JSONL (G18-B), apenas event_id nao deve ser fabricado
   const mapperSlice = (ingestorSrc.match(/ns\.mapReceivedDocToEventShape[\s\S]*?\n  \};/) || [''])[0];
   if (mapperSlice) {
-    assert.doesNotMatch(mapperSlice, /ingestion_event_id\s*:/,
-      'mapReceivedDocToEventShape nao deve atribuir ingestion_event_id');
     assert.doesNotMatch(mapperSlice, /event_id\s*:/,
       'mapReceivedDocToEventShape nao deve atribuir event_id');
   }

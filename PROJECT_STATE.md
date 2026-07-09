@@ -1,6 +1,6 @@
 > **Atualizacao 2026-07-09 — fase
-> `RAVATEX-DOCUMENTS-G16-B-LAST-IMPORT-METADATA-PATCH`.**
-> Status: **PRONTO — METADATA DO ULTIMO IMPORT NO LOCALSTORAGE + CARD VISUAL**.
+> `RAVATEX-DOCUMENTS-G18-B-INGESTION-EVENT-ID-CONSUMER-PATCH`.**
+> Status: **PRONTO — BRIDGE PRESERVA ingestion_event_id DO JSONL**.
 > Branch/HEAD: `work/app-next`, pendente commit (a partir de `a646a92`).
 >
 > Escopo G16 (fases A e B):
@@ -99,8 +99,8 @@
 > Origin/producao: `grupoterrabranca/controle-tapetes:main` intocado
 >
 > Proximo roadmap:
-> - UX de ultimo import/timestamp/hash no Controle
-> - `ingestion_event_id` no JSONL (melhoria futura no produtor)
+> - `ingestion_event_id` entregue no produtor (G17-B) e bridge (G18-B)
+> - consumo futuro de `ingestion_event_id` como chave de dedupe na bridge
 > - Aceite/rejeicao dentro do Controle (feature posterior)
 > - Sem polling/scheduler/daemon por enquanto
 
