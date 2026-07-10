@@ -741,7 +741,6 @@ program
         projectRef = serviceRoleConfig.projectRef;
       } catch (error: any) {
         console.error(error?.message ?? String(error));
-        watcherLock?.release();
         process.exitCode = 1;
         return;
       }
@@ -984,6 +983,7 @@ program
         client = createServiceRoleWriterClient(serviceRoleConfig);
       } catch (error: any) {
         console.error(error?.message ?? String(error));
+        watcherLock?.release();
         process.exitCode = 1;
         return;
       }
