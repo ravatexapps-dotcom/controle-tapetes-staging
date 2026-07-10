@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { isAttachmentCandidate, buildQuery } from '../src/connectors/gmail.js';
+import { isAttachmentCandidate, buildQuery, normalizeEmailReceivedAt } from '../src/connectors/gmail.js';
 
 describe('gmail attachment filter', () => {
   it('accepts PDF by mime', () => {
@@ -65,5 +65,31 @@ describe('buildQuery', () => {
   it('extra query is appended to the end of the base query', () => {
     const q = buildQuery(7, 'subject:"SMOKE TEST"');
     expect(q.endsWith('subject:"SMOKE TEST"')).toBe(true);
+  });
+});
+
+describe('Gmail received timestamp normalization', () => {
+  it('uses internalDate epoch milliseconds as the authoritative UTC value', () => {
+    expect(normalizeEmailReceivedAt('1783708245123', 'Mon, 01 Jan 2024 00:00:00 +0000')).toEqual({
+      emailReceivedAt: '2026-07-10T18:30:45.123Z',
+      emailReceivedAtSource: 'gmail_internal_date',
+      emailReceivedAtEstimated: false,
+    });
+  });
+
+  it('uses Date header only when internalDate is absent or invalid', () => {
+    expect(normalizeEmailReceivedAt('invalid', 'Thu, 09 Jul 2026 10:00:00 -0300')).toEqual({
+      emailReceivedAt: '2026-07-09T13:00:00.000Z',
+      emailReceivedAtSource: 'header_date',
+      emailReceivedAtEstimated: true,
+    });
+  });
+
+  it('returns null rather than an ingestion-time fallback when neither source is usable', () => {
+    expect(normalizeEmailReceivedAt(undefined, 'not a date')).toEqual({
+      emailReceivedAt: null,
+      emailReceivedAtSource: null,
+      emailReceivedAtEstimated: false,
+    });
   });
 });

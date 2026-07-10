@@ -32,6 +32,10 @@ function mappedRow(overrides: Record<string, unknown> = {}): Record<string, unkn
     status: 'pending',
     pedido_manual: 'PED-25-2026',
     gmail_message_id: 'gmail-001',
+    email_message_id: 'gmail-001',
+    email_received_at: '2026-07-09T09:00:00.000Z',
+    email_received_at_source: 'gmail_internal_date',
+    email_received_at_estimated: false,
     drive_file_id: 'drive-001',
     drive_web_view_link: 'https://drive.example/doc-001',
     received_at: '2026-07-09T10:00:00.000Z',
@@ -153,6 +157,8 @@ describe('sync:supabase canonical writer', () => {
       ingestor_rejected_reason: null,
     });
     expect(client.canonicalWrites[0].candidate.document_id).toBe('doc-001');
+    expect(client.canonicalWrites[0].candidate.email_received_at).toBe('2026-07-09T09:00:00.000Z');
+    expect(client.canonicalWrites[0].candidate.email_received_at_source).toBe('gmail_internal_date');
   });
 
   it.each(['pending', 'assigned', 'accepted', 'rejected'] as const)(

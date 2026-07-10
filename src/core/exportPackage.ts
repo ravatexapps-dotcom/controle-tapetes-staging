@@ -112,6 +112,10 @@ export interface ReceivedDocumentRow {
   direcao_nf: string | null;
   drive_file_id: string | null;
   drive_web_view_link: string | null;
+  email_message_id: string | null;
+  email_received_at: string | null;
+  email_received_at_source: 'gmail_internal_date' | 'header_date' | null;
+  email_received_at_estimated: boolean;
   created_at: string;
   updated_at: string;
   detected_event_id: string;
@@ -137,7 +141,13 @@ export interface MappedDocumentRow {
   thread_id: string;
   drive_file_id: string | null;
   drive_web_view_link: string | null;
-  received_at: string;
+  /** @deprecated Processing timestamp retained only for old consumers. */
+  received_at: string | null;
+  processed_at: string;
+  email_message_id: string | null;
+  email_received_at: string | null;
+  email_received_at_source: 'gmail_internal_date' | 'header_date' | null;
+  email_received_at_estimated: boolean;
   detected_at: string | null;
   linked_at: string | null;
   accepted_at: string | null;
@@ -190,7 +200,7 @@ export function listMappedDocuments(
     const since = new Date();
     since.setDate(since.getDate() - opts.daysBack);
     const sinceIso = since.toISOString().replace('T', ' ').slice(0, 19);
-    where.push('d.created_at >= ?');
+    where.push('COALESCE(d.email_received_at, d.created_at) >= ?');
     params.push(sinceIso);
   }
 
@@ -208,7 +218,12 @@ export function listMappedDocuments(
       d.thread_id,
       d.drive_file_id,
       d.drive_web_view_link,
-      d.created_at AS received_at,
+      d.email_message_id,
+      d.email_received_at,
+      d.email_received_at_source,
+      CAST(d.email_received_at_estimated AS INTEGER) AS email_received_at_estimated,
+      NULL AS received_at,
+      d.created_at AS processed_at,
       (SELECT MIN(e.created_at) FROM ingestion_events e
         WHERE e.document_id = d.id AND e.event_type = 'document.detected') AS detected_at,
       (SELECT MIN(e.created_at) FROM ingestion_events e
@@ -240,7 +255,7 @@ export function listMappedDocuments(
         ORDER BY e.created_at ASC, e.id ASC LIMIT 1) AS rejected_ingestion_event_id
     FROM documentos d
     ${whereClause}
-    ORDER BY d.created_at DESC
+    ORDER BY COALESCE(d.email_received_at, d.created_at) DESC
     LIMIT ?
   `;
   params.push(limit);
@@ -248,6 +263,7 @@ export function listMappedDocuments(
   const rows = database.prepare(sql).all(...params) as Array<Omit<MappedDocumentRow, 'schema_version'>>;
   return rows.map((r) => ({
     ...r,
+    email_received_at_estimated: Boolean(r.email_received_at_estimated),
     latest_ingestion_event_at: normalizeOptionalEventTimestamp(r.latest_ingestion_event_at),
     schema_version: 1 as const,
   }));
@@ -449,7 +465,7 @@ export function listReceivedDocuments(
     const since = new Date();
     since.setDate(since.getDate() - opts.daysBack);
     const sinceIso = since.toISOString().replace('T', ' ').slice(0, 19);
-    where.push('d.created_at >= ?');
+    where.push('COALESCE(d.email_received_at, d.created_at) >= ?');
     params.push(sinceIso);
   }
 
@@ -466,6 +482,10 @@ export function listReceivedDocuments(
       d.direcao_nf,
       d.drive_file_id,
       d.drive_web_view_link,
+      d.email_message_id,
+      d.email_received_at,
+      d.email_received_at_source,
+      CAST(d.email_received_at_estimated AS INTEGER) AS email_received_at_estimated,
       d.created_at,
       d.updated_at,
       det.id AS detected_event_id,
@@ -477,11 +497,14 @@ export function listReceivedDocuments(
       WHERE e.event_type = 'document.detected'
     ) det ON det.document_id = d.id
     ${whereClause}
-    ORDER BY d.created_at DESC
+    ORDER BY COALESCE(d.email_received_at, d.created_at) DESC
     LIMIT ?
   `;
   params.push(limit);
-  return database.prepare(sql).all(...params) as ReceivedDocumentRow[];
+  return (database.prepare(sql).all(...params) as ReceivedDocumentRow[]).map((row) => ({
+    ...row,
+    email_received_at_estimated: Boolean(row.email_received_at_estimated),
+  }));
 }
 
 export function exportReceivedDocuments(

@@ -22,6 +22,12 @@ CREATE TABLE IF NOT EXISTS documentos (
   attachment_id TEXT NOT NULL,
   filename_original TEXT NOT NULL,
   sha256 TEXT NOT NULL,
+  email_message_id TEXT,
+  email_received_at TEXT,
+  email_received_at_source TEXT
+    CHECK (email_received_at_source IS NULL OR email_received_at_source IN ('gmail_internal_date', 'header_date')),
+  email_received_at_estimated INTEGER NOT NULL DEFAULT 0
+    CHECK (email_received_at_estimated IN (0, 1)),
   tipo_documento TEXT NOT NULL DEFAULT 'desconhecido'
     CHECK (tipo_documento IN ('nf', 'romaneio', 'desconhecido', 'nf_xml', 'nf_pdf')),
 
@@ -57,6 +63,9 @@ CREATE UNIQUE INDEX IF NOT EXISTS idx_documentos_dedup
 
 CREATE INDEX IF NOT EXISTS idx_documentos_drive_file_id
   ON documentos(drive_file_id);
+
+CREATE INDEX IF NOT EXISTS idx_documentos_email_received_at
+  ON documentos(email_received_at DESC);
 
 -- ingestion_events: eventos gerados no outbox JSONL.
 -- Carregam referências Drive (storage_uri, drive_file_id, manifest_storage_uri).

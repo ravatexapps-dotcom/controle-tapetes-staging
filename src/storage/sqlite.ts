@@ -36,6 +36,19 @@ export function ensureLocalMigrations(database: Database.Database): void {
   if (!colNames.has('direcao_nf')) {
     database.exec(`ALTER TABLE documentos ADD COLUMN direcao_nf TEXT`);
   }
+  if (!colNames.has('email_message_id')) {
+    database.exec(`ALTER TABLE documentos ADD COLUMN email_message_id TEXT`);
+  }
+  if (!colNames.has('email_received_at')) {
+    database.exec(`ALTER TABLE documentos ADD COLUMN email_received_at TEXT`);
+  }
+  if (!colNames.has('email_received_at_source')) {
+    database.exec(`ALTER TABLE documentos ADD COLUMN email_received_at_source TEXT`);
+  }
+  if (!colNames.has('email_received_at_estimated')) {
+    database.exec(`ALTER TABLE documentos ADD COLUMN email_received_at_estimated INTEGER NOT NULL DEFAULT 0`);
+  }
+  database.exec(`CREATE INDEX IF NOT EXISTS idx_documentos_email_received_at ON documentos(email_received_at DESC)`);
 
   database.exec(`
     UPDATE documentos SET formato = 'xml', direcao_nf = 'desconhecida'
@@ -81,6 +94,10 @@ export function ensureCheckMigration(database: Database.Database): void {
     attachment_id TEXT NOT NULL,
     filename_original TEXT NOT NULL,
     sha256 TEXT NOT NULL,
+    email_message_id TEXT,
+    email_received_at TEXT,
+    email_received_at_source TEXT,
+    email_received_at_estimated INTEGER NOT NULL DEFAULT 0,
     tipo_documento TEXT NOT NULL DEFAULT 'desconhecido'
       CHECK (tipo_documento IN ('nf', 'romaneio', 'desconhecido', 'nf_xml', 'nf_pdf')),
     formato TEXT NOT NULL DEFAULT 'desconhecido'

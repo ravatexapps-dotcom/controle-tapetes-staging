@@ -15,7 +15,50 @@ export interface GmailMessageMeta {
   from: string;
   subject: string;
   date: string;
+  emailReceivedAt: string | null;
+  emailReceivedAtSource: 'gmail_internal_date' | 'header_date' | null;
+  emailReceivedAtEstimated: boolean;
   attachmentCount: number;
+}
+
+export interface NormalizedEmailReceivedAt {
+  emailReceivedAt: string | null;
+  emailReceivedAtSource: 'gmail_internal_date' | 'header_date' | null;
+  emailReceivedAtEstimated: boolean;
+}
+
+/**
+ * Normalizes Gmail's authoritative internalDate (epoch milliseconds) to UTC.
+ * The Date header is deliberately only a marked fallback; ingestion time is
+ * never used as a substitute for the email's received time.
+ */
+export function normalizeEmailReceivedAt(internalDate: unknown, headerDate: unknown): NormalizedEmailReceivedAt {
+  const internalMs = typeof internalDate === 'string' && /^\d+$/.test(internalDate.trim())
+    ? Number(internalDate)
+    : typeof internalDate === 'number' ? internalDate : NaN;
+  if (Number.isFinite(internalMs) && internalMs >= 0) {
+    const date = new Date(internalMs);
+    if (!Number.isNaN(date.getTime())) {
+      return {
+        emailReceivedAt: date.toISOString(),
+        emailReceivedAtSource: 'gmail_internal_date',
+        emailReceivedAtEstimated: false,
+      };
+    }
+  }
+
+  if (typeof headerDate === 'string' && headerDate.trim()) {
+    const date = new Date(headerDate.trim());
+    if (!Number.isNaN(date.getTime())) {
+      return {
+        emailReceivedAt: date.toISOString(),
+        emailReceivedAtSource: 'header_date',
+        emailReceivedAtEstimated: true,
+      };
+    }
+  }
+
+  return { emailReceivedAt: null, emailReceivedAtSource: null, emailReceivedAtEstimated: false };
 }
 
 export interface GmailAttachmentRef {
@@ -119,6 +162,7 @@ export async function fetchRecentEmails(
     const from = headers.find(h => h.name === 'From')?.value ?? '';
     const subject = headers.find(h => h.name === 'Subject')?.value ?? '';
     const date = headers.find(h => h.name === 'Date')?.value ?? '';
+    const emailReceived = normalizeEmailReceivedAt(meta.data.internalDate, date);
     const attachmentCount = countAttachments(meta.data.payload);
 
     metas.push({
@@ -127,6 +171,7 @@ export async function fetchRecentEmails(
       from,
       subject,
       date,
+      ...emailReceived,
       attachmentCount,
     });
   }
@@ -154,6 +199,7 @@ export async function fetchMessageById(
   const from = headers.find(h => h.name === 'From')?.value ?? '';
   const subject = headers.find(h => h.name === 'Subject')?.value ?? '';
   const date = headers.find(h => h.name === 'Date')?.value ?? '';
+  const emailReceived = normalizeEmailReceivedAt(meta.data.internalDate, date);
   const attachmentCount = countAttachments(meta.data.payload);
 
   return {
@@ -162,6 +208,7 @@ export async function fetchMessageById(
     from,
     subject,
     date,
+    ...emailReceived,
     attachmentCount,
   };
 }

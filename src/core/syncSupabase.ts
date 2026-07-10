@@ -86,6 +86,10 @@ function canonicalTimestamp(value: unknown): string | null {
   return Number.isNaN(date.getTime()) ? null : date.toISOString();
 }
 
+function normalizeEmailReceivedAtSource(value: unknown): 'gmail_internal_date' | 'header_date' | null {
+  return value === 'gmail_internal_date' || value === 'header_date' ? value : null;
+}
+
 export function normalizeDocumentStatus(value: unknown): CanonicalDocumentStatus {
   const status = requiredText(value, 'status').toLowerCase();
   if (status === 'pending_app_acceptance') return 'pending';
@@ -123,6 +127,8 @@ function normalizeCandidate(row: Record<string, unknown>): DocumentCandidateWrit
     ? row.schema_version
     : 1;
   const rawPayload = { ...row, document_id: documentId, status };
+  const emailReceivedAt = canonicalTimestamp(row.email_received_at);
+  const emailReceivedAtSource = emailReceivedAt ? normalizeEmailReceivedAtSource(row.email_received_at_source) : null;
 
   return {
     document_id: documentId,
@@ -141,6 +147,10 @@ function normalizeCandidate(row: Record<string, unknown>): DocumentCandidateWrit
     fornecedor_id: null,
     schema_version: schemaVersion,
     raw_payload: rawPayload,
+    email_message_id: optionalText(row.email_message_id),
+    email_received_at: emailReceivedAt,
+    email_received_at_source: emailReceivedAtSource,
+    email_received_at_estimated: emailReceivedAtSource === 'header_date' && row.email_received_at_estimated === true,
     received_at: optionalText(row.received_at),
     detected_at: optionalText(row.detected_at),
     linked_at: optionalText(row.linked_at),

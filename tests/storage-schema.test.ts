@@ -37,6 +37,28 @@ describe('SQLite schema carries Drive-first contract', () => {
     expect(names).toContain('local_cache_path');
   });
 
+  it('persists canonical Gmail email timestamp fields separately from created_at', () => {
+    const db = getDb();
+    const columns = db.prepare(`PRAGMA table_info(documentos)`).all() as any[];
+    const names = columns.map((column) => column.name);
+    expect(names).toEqual(expect.arrayContaining([
+      'email_message_id', 'email_received_at', 'email_received_at_source', 'email_received_at_estimated',
+    ]));
+    db.prepare(`INSERT INTO emails_processados (gmail_message_id) VALUES (?)`).run('email-ts-message');
+    db.prepare(`INSERT INTO documentos (
+      id, gmail_message_id, attachment_id, filename_original, sha256,
+      email_message_id, email_received_at, email_received_at_source, email_received_at_estimated, created_at
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
+      .run('email-ts-doc', 'email-ts-message', 'attachment', 'nota.pdf', 'sha-email-ts',
+        'email-ts-message', '2026-07-09T09:00:00.000Z', 'gmail_internal_date', 0, '2026-07-09 12:00:00');
+    const row = db.prepare(`SELECT email_received_at, email_received_at_source, email_received_at_estimated, created_at
+      FROM documentos WHERE id = ?`).get('email-ts-doc') as any;
+    expect(row).toMatchObject({
+      email_received_at: '2026-07-09T09:00:00.000Z', email_received_at_source: 'gmail_internal_date',
+      email_received_at_estimated: 0, created_at: '2026-07-09 12:00:00',
+    });
+  });
+
   it('documentos table has taxonomia G1 columns', () => {
     const db = getDb();
     const cols = db.prepare(`PRAGMA table_info(documentos)`).all() as any[];

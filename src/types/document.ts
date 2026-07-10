@@ -62,6 +62,10 @@ export interface DocumentRecord {
   attachmentId: string;
   filenameOriginal: string;
   sha256: string;
+  emailMessageId: string | null;
+  emailReceivedAt: string | null;
+  emailReceivedAtSource: 'gmail_internal_date' | 'header_date' | null;
+  emailReceivedAtEstimated: boolean;
   tipoDocumento: TipoDocumento;
   formato?: FormatoDocumento;
   direcaoNf?: DirecaoNF | null;

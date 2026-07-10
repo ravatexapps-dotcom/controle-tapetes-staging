@@ -232,7 +232,8 @@ describe('export mapped documents (G12-E2)', () => {
     expect(row.accepted_at).toBeNull();
     expect(row.rejected_at).toBeNull();
     expect(row.rejected_reason).toBeNull();
-    expect(row.received_at).toBeTruthy();
+    expect(row.received_at).toBeNull();
+    expect(row.processed_at).toBeTruthy();
     expect(row.detected_at).toBeTruthy();
     expect(row.linked_ingestion_event_id).toBeNull();
     expect(row.accepted_ingestion_event_id).toBeNull();
