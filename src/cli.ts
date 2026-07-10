@@ -16,7 +16,13 @@ import { exportIngestionEvents, exportPackage, exportReceivedDocuments, exportMa
 import { closeDb, getDb } from './storage/sqlite.js';
 import { runSyncMapped, validateSyncMappedOptions } from './core/syncMapped.js';
 import { writeLatestManifest } from './core/latestManifest.js';
-import { runSyncSupabase } from './core/syncSupabase.js';
+import { runSyncSupabase, prepareSyncSupabaseInput } from './core/syncSupabase.js';
+import {
+  runWatchDocumentScanRequests,
+  type WatchDocumentScanRequestsDeps,
+  type WatchEvent,
+  type WatchScanCycleResult,
+} from './core/watchDocumentScanRequests.js';
 import { createServiceRoleWriterClient, loadServiceRoleConfig } from './supabase/serviceRoleClient.js';
 
 const program = new Command();
@@ -922,5 +928,184 @@ program
 
     closeDb();
   });
+
+program
+  .command('watch:scan-requests')
+  .description('Claim document_scan_requests from the queue, run the scan, sync to Supabase (mock-first; requires --confirm-* for real)')
+  .requiredOption('--source <source>', 'Logical scan source (e.g. gmail). Default in the queue is gmail.')
+  .option('--poll-seconds <n>', 'Seconds to wait between empty polls when not in --once mode (1-3600)', '30')
+  .option('--once', 'Process at most one cycle and exit (default)', true)
+  .option('--no-once', 'Process cycles continuously until interrupted')
+  .option('--recover-stale', 'Call recuperar_document_scan_runs_travados before each new run (requires migration 40)')
+  .option('--stale-after-minutes <n>', 'Stale window in minutes when --recover-stale is set (default 30, floor 5)', '30')
+  .option('--confirm-real-google', 'Process real Gmail/Drive (otherwise dry-run)')
+  .option('--confirm-supabase-write', 'Allow service-role writes (otherwise dry-run)')
+  .option('--json', 'Print the result as JSON (default human-readable)', false)
+  .action(async (opts) => {
+    const source = String(opts.source ?? '').trim();
+    if (!source) {
+      console.error('[watch:scan-requests] --source is required.');
+      process.exit(1);
+    }
+    const pollSeconds = Number.parseInt(String(opts.pollSeconds), 10);
+    if (!Number.isInteger(pollSeconds) || pollSeconds < 1 || pollSeconds > 3600) {
+      console.error('[watch:scan-requests] --poll-seconds must be an integer between 1 and 3600.');
+      process.exit(1);
+    }
+    const staleAfterMinutes = Number.parseInt(String(opts.staleAfterMinutes), 10);
+    if (!Number.isInteger(staleAfterMinutes) || staleAfterMinutes < 1) {
+      console.error('[watch:scan-requests] --stale-after-minutes must be a positive integer.');
+      process.exit(1);
+    }
+    const confirmRealGoogle = Boolean(opts.confirmRealGoogle);
+    const confirmSupabaseWrite = Boolean(opts.confirmSupabaseWrite);
+    const once = opts.once !== false;
+    const recoverStale = Boolean(opts.recoverStale);
+
+    // The watcher needs a real Supabase client to operate outside dry-run.
+    // In dry-run mode, no client is constructed (no secrets touched).
+    let client: ReturnType<typeof createServiceRoleWriterClient> | null = null;
+    if (confirmRealGoogle && confirmSupabaseWrite) {
+      try {
+        const serviceRoleConfig = loadServiceRoleConfig();
+        client = createServiceRoleWriterClient(serviceRoleConfig);
+      } catch (error: any) {
+        console.error(error?.message ?? String(error));
+        process.exitCode = 1;
+        return;
+      }
+    }
+
+    const events: WatchEvent[] = [];
+    const deps: WatchDocumentScanRequestsDeps = {
+      client: client ?? makeDryRunClient(),
+      runScanCycle: async ({ request, scanRunId }): Promise<WatchScanCycleResult> => {
+        // Real scan: scanGmail (with confirm flag) + export:mapped + sync:supabase
+        // with the watcher's scanRunId. In dry-run, we skip the scan entirely
+        // and return a placeholder result (the watcher only calls runScanCycle
+        // in confirmed mode, but we still guard defensively).
+        if (!confirmRealGoogle || !confirmSupabaseWrite) {
+          return { documentsProcessed: 0, documentsNew: 0 };
+        }
+        await scanGmail({
+          daysBack: config.scanDaysBack,
+          confirmReal: true,
+          maxAttachments: 25,
+        });
+        const exportOut = exportMappedDocuments({});
+        const prepared = prepareSyncSupabaseInput({ mappedPath: exportOut.outputPath });
+        if (prepared.candidates.length === 0) {
+          return { documentsProcessed: 0, documentsNew: 0 };
+        }
+        // Hand the watcher's scanRunId to runSyncSupabase so the sync
+        // flow does not create a new run (it respects the external
+        // scanRunId contract and lets the watcher finalize the run).
+        await runSyncSupabase({
+          mappedPath: exportOut.outputPath,
+          eventsPath: undefined,
+          confirmWrite: true,
+          dryRun: false,
+          source: request.source,
+          scanRunId,
+        }, client!);
+        return {
+          documentsProcessed: prepared.candidates.length,
+          documentsNew: prepared.candidates.filter((c) => c.candidate.detected_at && !c.candidate.linked_at).length,
+        };
+      },
+      sleep: async (seconds) => {
+        await new Promise((resolve) => setTimeout(resolve, seconds * 1000));
+      },
+      onEvent: (e) => events.push(e),
+    };
+
+    try {
+      const result = await runWatchDocumentScanRequests(
+        {
+          source,
+          pollSeconds,
+          once,
+          confirmRealGoogle,
+          confirmSupabaseWrite,
+          recoverStale,
+          staleAfterMinutes,
+        },
+        deps,
+      );
+
+      if (opts.json) {
+        console.log(JSON.stringify({ ...result, events }, null, 2));
+      } else {
+        printWatchResult(result, events, {
+          confirmRealGoogle,
+          confirmSupabaseWrite,
+          once,
+          recoverStale,
+          source,
+          pollSeconds,
+          staleAfterMinutes,
+        });
+      }
+      if (!result.ok) process.exitCode = 1;
+    } catch (error: any) {
+      console.error(`[watch:scan-requests] ${error?.message ?? String(error)}`);
+      process.exitCode = 1;
+    } finally {
+      closeDb();
+    }
+  });
+
+function makeDryRunClient(): ReturnType<typeof createServiceRoleWriterClient> {
+  // Minimal stub that never actually fires any RPC. The watcher treats
+  // dry-run mode at the option level (does not call the client at all),
+  // but TypeScript requires the client to be present in deps.
+  const noop = async () => undefined;
+  return {
+    recoverStaleRuns: async () => ({ recoveredCount: 0 }),
+    upsertCanonicalCandidateState: noop,
+    insertEventsIgnoreConflict: async () => ({ inserted: 0, skipped: 0 }),
+    startScanRun: async () => ({ kind: 'started', id: '__dry_run__' }),
+    finishScanRun: noop,
+    claimNextDocumentScanRequest: async () => ({ empty: true, request: null }),
+    markDocumentScanRequestRunning: noop,
+    finishDocumentScanRequest: noop,
+  } as unknown as ReturnType<typeof createServiceRoleWriterClient>;
+}
+
+function printWatchResult(
+  result: Awaited<ReturnType<typeof runWatchDocumentScanRequests>>,
+  events: WatchEvent[],
+  meta: {
+    confirmRealGoogle: boolean;
+    confirmSupabaseWrite: boolean;
+    once: boolean;
+    recoverStale: boolean;
+    source: string;
+    pollSeconds: number;
+    staleAfterMinutes: number;
+  },
+): void {
+  const mode = meta.confirmRealGoogle && meta.confirmSupabaseWrite ? 'REAL' : 'DRY-RUN';
+  console.log(`[watch:scan-requests] mode=${mode} once=${meta.once} recoverStale=${meta.recoverStale} source=${meta.source} pollSeconds=${meta.pollSeconds} staleAfterMinutes=${meta.staleAfterMinutes}`);
+  console.log(`  cycles:               ${result.cycles}`);
+  console.log(`  requests_processed:   ${result.requests_processed}`);
+  console.log(`  requests_completed:   ${result.requests_completed}`);
+  console.log(`  requests_failed:      ${result.requests_failed}`);
+  console.log(`  empty_polls:          ${result.empty_polls}`);
+  if (result.errors.length) {
+    console.log(`  errors:`);
+    for (const e of result.errors) console.log(`    - ${e}`);
+  }
+  if (events.length) {
+    console.log(`  events:`);
+    for (const e of events) console.log(`    - ${e.kind}`);
+  }
+  if (result.dry_run) {
+    console.log('[watch:scan-requests] DRY-RUN — no Gmail/Drive/Supabase calls performed.');
+    console.log('[watch:scan-requests] Pass --confirm-real-google AND --confirm-supabase-write to consume a real request.');
+  } else {
+    console.log('[watch:scan-requests] done.');
+  }
+}
 
 program.parse(process.argv);

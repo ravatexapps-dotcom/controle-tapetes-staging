@@ -22,6 +22,14 @@ export interface SyncSupabaseOptions {
   source?: string;
   recoverStale?: boolean;
   staleAfterMinutes?: number;
+  /**
+   * If provided, the sync flow uses this existing document_scan_runs.id
+   * instead of creating a new one via startScanRun. The caller becomes
+   * responsible for calling startScanRun and finishScanRun. Used by the
+   * document scan request watcher (G24-B2) so the request owns the
+   * scan_run lifecycle end-to-end.
+   */
+  scanRunId?: string;
 }
 
 export interface PreparedCanonicalCandidate {
@@ -46,7 +54,7 @@ export interface SyncSupabaseResult {
   canonical_base_skipped: Array<{ document_id: string; reason: string }>;
   events_inserted: number;
   events_skipped: number;
-  scan_run: { status: 'dry_run' | 'running' | 'completed' | 'failed' | 'scan_already_running'; id: string | null };
+  scan_run: { status: 'dry_run' | 'running' | 'completed' | 'failed' | 'scan_already_running' | 'external_owner' | 'external_owner_failed'; id: string | null };
   stale_recovery: { attempted: boolean; recovered_count: number };
   errors: string[];
 }
@@ -273,15 +281,28 @@ export async function runSyncSupabase(
     staleRecovery = { attempted: true, recovered_count: recovered.recoveredCount };
   }
 
-  const startedRun = await client.startScanRun({ source, triggered_by: 'service_role_cli' });
-  if (startedRun.kind === 'already_running') {
-    return {
-      ...initialResult,
-      ok: false,
-      stale_recovery: staleRecovery,
-      scan_run: { status: 'scan_already_running', id: null },
-      errors: ['scan_already_running'],
-    };
+  // Two ownership paths for the document_scan_runs row:
+  //   1. Default (no scanRunId): this function owns the run lifecycle
+  //      (startScanRun + finishScanRun). Used by sync:supabase.
+  //   2. External (scanRunId provided): the caller (e.g. the document
+  //      scan request watcher) owns the run lifecycle. This function
+  //      only does the candidate upserts + event inserts and reports
+  //      progress. The caller will finalize the run.
+  let startedRun: { id: string };
+  if (options.scanRunId) {
+    startedRun = { id: options.scanRunId };
+  } else {
+    const startResult = await client.startScanRun({ source, triggered_by: 'service_role_cli' });
+    if (startResult.kind === 'already_running') {
+      return {
+        ...initialResult,
+        ok: false,
+        stale_recovery: staleRecovery,
+        scan_run: { status: 'scan_already_running', id: null },
+        errors: ['scan_already_running'],
+      };
+    }
+    startedRun = { id: startResult.id };
   }
 
   const result: SyncSupabaseResult = {
@@ -300,30 +321,41 @@ export async function runSyncSupabase(
     result.events_inserted = eventResult.inserted;
     result.events_skipped += eventResult.skipped;
 
-    await client.finishScanRun({
-      id: startedRun.id,
-      status: 'completed',
-      documentsProcessed: prepared.candidates.length,
-      documentsNew: 0,
-      errorMessage: null,
-    });
-    result.scan_run.status = 'completed';
+    // When the run is externally owned, the caller is responsible for
+    // calling finishScanRun; do not finalize it here.
+    if (!options.scanRunId) {
+      await client.finishScanRun({
+        id: startedRun.id,
+        status: 'completed',
+        documentsProcessed: prepared.candidates.length,
+        documentsNew: 0,
+        errorMessage: null,
+      });
+      result.scan_run.status = 'completed';
+    } else {
+      result.scan_run.status = 'external_owner';
+    }
     return result;
   } catch (error) {
     const message = errorMessage(error);
     result.ok = false;
     result.errors.push(message);
-    try {
-      await client.finishScanRun({
-        id: startedRun.id,
-        status: 'failed',
-        documentsProcessed: result.candidates_upserted,
-        documentsNew: 0,
-        errorMessage: message,
-      });
-      result.scan_run.status = 'failed';
-    } catch (finishError) {
-      result.errors.push(`Failed to finalize scan run: ${errorMessage(finishError)}`);
+    // On the external ownership path, leave finishScanRun to the caller.
+    if (!options.scanRunId) {
+      try {
+        await client.finishScanRun({
+          id: startedRun.id,
+          status: 'failed',
+          documentsProcessed: result.candidates_upserted,
+          documentsNew: 0,
+          errorMessage: message,
+        });
+        result.scan_run.status = 'failed';
+      } catch (finishError) {
+        result.errors.push(`Failed to finalize scan run: ${errorMessage(finishError)}`);
+      }
+    } else {
+      result.scan_run.status = 'external_owner_failed';
     }
     return result;
   }

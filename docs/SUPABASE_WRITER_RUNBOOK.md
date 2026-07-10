@@ -57,3 +57,77 @@ npm run sync:supabase -- \
 - The result envelope reports `stale_recovery: { attempted, recovered_count }`. A repeatedly non-zero `recovered_count` means runs keep dying before finalizing — investigate the crash, do not just keep recovering.
 - Requires migration `db/40_document_scan_runs_stale_recovery.sql` applied to staging. If the RPC is missing, the writer aborts with `migration_40_required` **before** creating any scan run (no blind write).
 - Authorization: the RPC accepts `service_role` (writer self-heal) or an authenticated `is_admin()` session (manual unstick from the UI).
+
+## Document Scan Request Watcher (G24-B2)
+
+`watch:scan-requests` is the worker process that consumes `public.document_scan_requests` (G24-B1) and runs the real scan flow end-to-end. It is the recommended operator entrypoint: it never starts automatically, never installs a daemon, and never opens an HTTP server. Tests and manual runs use `--once` (the default) to bound the run to a single cycle.
+
+**Required gates.** Without BOTH `--confirm-real-google` AND `--confirm-supabase-write`, the watcher runs in **dry-run / mock mode**: it never instantiates the Gmail client, never constructs the service-role writer, and never consumes a real request. The dry-run is what tests, manual operator probes, and CI exercise.
+
+```bash
+# dry-run (mock-first; no Gmail, no Supabase, no service-role client)
+npm run watch:scan-requests -- --source gmail
+
+# confirmed staging run (a single cycle; default --once)
+npm run watch:scan-requests -- \
+  --source gmail \
+  --confirm-real-google \
+  --confirm-supabase-write
+
+# confirmed staging run with optional stale-recovery
+npm run watch:scan-requests -- \
+  --source gmail \
+  --confirm-real-google \
+  --confirm-supabase-write \
+  --recover-stale \
+  --stale-after-minutes 30
+```
+
+**Flags.**
+
+- `--source <name>` (required): logical source (e.g. `gmail`). Matches the queue's `source` and the run's `source`.
+- `--once` (default) / `--no-once`: bound the watcher to a single cycle vs. loop with `--poll-seconds`.
+- `--poll-seconds <n>` (1-3600; default `30`): idle wait between empty polls when `--no-once` is set.
+- `--recover-stale` (boolean): opt into `recuperar_document_scan_runs_travados` before the new run.
+- `--stale-after-minutes <n>` (default `30`; floor `5` via the RPC).
+- `--confirm-real-google` / `--confirm-supabase-write`: required for a real cycle. Missing either → dry-run.
+- `--json`: render the result envelope as JSON instead of human-readable text.
+
+**Lifecycle of a confirmed cycle.**
+
+1. (optional) recover stale `document_scan_runs` older than the window.
+2. `claim_next_document_scan_request` (service_role, `FOR UPDATE SKIP LOCKED`); empty queue → exit (in `--once`) or sleep.
+3. `startScanRun` → `scan_run_id`; on `already_running`, finish request as `failed` with `scan_already_running` and skip the cycle.
+4. `mark_document_scan_request_running` (claimed → running + `scan_run_id`); on failure, finish the run as `failed` and the request as `failed`.
+5. Run the scan cycle: `scanGmail(confirmReal)` → `exportMappedDocuments` → `runSyncSupabase(scanRunId)`. `runSyncSupabase` is told to skip the run lifecycle via the new `scanRunId` option; the watcher owns the run.
+6. `finishScanRun` (`completed` or `failed`).
+7. `finish_document_scan_request` (`completed` or `failed`); `error_message` sanitized to 1000 chars and only set on `failed`.
+
+**Concurrency.** Two watchers are safe: `FOR UPDATE SKIP LOCKED` on the queue + the partial unique index on `document_scan_runs` ensure that the second instance never receives the same request, never opens a parallel run, and only sees the empty result.
+
+**Required migration.** G24-B1 — `db/41_document_scan_requests_queue.sql` — must be applied to staging. If the queue RPCs are missing, the writer aborts with `migration_41_required` **before** claiming or starting anything (no blind write). The watcher never creates requests; only the operator (admin) creates them via the UI's `solicitar_document_scan`.
+
+**Result envelope.**
+
+```json
+{
+  "ok": true,
+  "dry_run": false,
+  "source": "gmail",
+  "cycles": 1,
+  "requests_processed": 1,
+  "requests_completed": 1,
+  "requests_failed": 0,
+  "empty_polls": 0,
+  "errors": [],
+  "events": [
+    { "kind": "cycle.start", "requestId": "…", "source": "gmail" },
+    { "kind": "cycle.start_run", "scanRunId": "…" },
+    { "kind": "cycle.mark_running", "requestId": "…", "scanRunId": "…" },
+    { "kind": "cycle.scan", "mode": "real", "documentsProcessed": 3, "documentsNew": 2 },
+    { "kind": "cycle.finish_run", "scanRunId": "…", "status": "completed", "errorMessage": null },
+    { "kind": "cycle.finish_request", "requestId": "…", "status": "completed", "errorMessage": null },
+    { "kind": "watch.done", "reason": "once_completed" }
+  ]
+}
+```

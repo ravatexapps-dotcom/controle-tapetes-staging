@@ -18,6 +18,7 @@
     "export:ingestion-events": "tsx src/cli.ts export-ingestion-events",
     "sync:mapped": "tsx src/cli.ts sync-mapped",
     "sync:supabase": "tsx src/cli.ts sync-supabase",
+    "watch:scan-requests": "tsx src/cli.ts watch:scan-requests",
     "write:latest": "tsx src/cli.ts write-latest",
     "report": "tsx src/cli.ts report",
     "inspect": "tsx src/cli.ts inspect",

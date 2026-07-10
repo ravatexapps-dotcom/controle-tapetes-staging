@@ -6,6 +6,7 @@ import { runSyncSupabase, type SyncSupabaseOptions } from '../src/core/syncSupab
 import {
   loadServiceRoleConfig,
   type CanonicalIngestorStateWrite,
+  type ClaimedDocumentScanRequest,
   type DocumentEventWrite,
   type SupabaseWriterClient,
 } from '../src/supabase/serviceRoleClient.js';
@@ -104,6 +105,18 @@ class WriterClientMock implements SupabaseWriterClient {
 
   async finishScanRun(params: { id: string; status: 'completed' | 'failed'; documentsProcessed: number; documentsNew: number; errorMessage: string | null }): Promise<void> {
     this.finishedRuns.push(params);
+  }
+
+  async claimNextDocumentScanRequest(_params: { source: string | null }): Promise<{ empty: boolean; request: ClaimedDocumentScanRequest | null }> {
+    return { empty: true, request: null };
+  }
+
+  async markDocumentScanRequestRunning(_params: { requestId: string; scanRunId: string }): Promise<void> {
+    // no-op: the sync:supabase path does not consume the scan request queue.
+  }
+
+  async finishDocumentScanRequest(_params: { requestId: string; status: 'completed' | 'failed'; errorMessage: string | null }): Promise<void> {
+    // no-op: the sync:supabase path does not consume the scan request queue.
   }
 }
 

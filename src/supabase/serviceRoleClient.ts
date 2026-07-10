@@ -64,6 +64,13 @@ export interface SupabaseWriterClient {
     documentsNew: number;
     errorMessage: string | null;
   }): Promise<void>;
+  claimNextDocumentScanRequest(params: { source: string | null }): Promise<{ empty: boolean; request: ClaimedDocumentScanRequest | null }>;
+  markDocumentScanRequestRunning(params: { requestId: string; scanRunId: string }): Promise<void>;
+  finishDocumentScanRequest(params: {
+    requestId: string;
+    status: 'completed' | 'failed';
+    errorMessage: string | null;
+  }): Promise<void>;
 }
 
 function requiredEnv(env: NodeJS.ProcessEnv, name: string, configuredValue: string): string {
@@ -142,6 +149,25 @@ function staleRecoveryError(error: { message?: string; code?: string } | null): 
   return new Error(`stale_recovery_rpc_failed: ${message}`);
 }
 
+function scanRequestError(error: { message?: string; code?: string } | null, op: 'claim' | 'mark_running' | 'finish'): Error {
+  const opLabel = op === 'claim'
+    ? 'claim_next_document_scan_request'
+    : op === 'mark_running'
+      ? 'mark_document_scan_request_running'
+      : 'finish_document_scan_request';
+  const message = error?.message || `Supabase scan request RPC (${op}) failed.`;
+  if (error?.code === 'PGRST202' || error?.code === '42883'
+    || new RegExp(`${opLabel}|schema cache|does not exist`, 'i').test(message)) {
+    return new Error('migration_41_required');
+  }
+  return new Error(`scan_request_rpc_failed (${op}): ${message}`);
+}
+
+export interface ClaimedDocumentScanRequest {
+  requestId: string;
+  source: string;
+}
+
 export function createServiceRoleWriterClient(config: ServiceRoleConfig): SupabaseWriterClient {
   const client = createClient(config.url, config.serviceRoleKey, {
     auth: { autoRefreshToken: false, persistSession: false },
@@ -217,6 +243,61 @@ export function createServiceRoleWriterClient(config: ServiceRoleConfig): Supaba
         .eq('id', params.id)
         .eq('status', 'running');
       throwOnError(error);
+    },
+
+    async claimNextDocumentScanRequest({ source }) {
+      const { data, error } = await client.rpc('claim_next_document_scan_request', {
+        p_source: source,
+      });
+      if (error) throw scanRequestError(error, 'claim');
+      const result = (data ?? {}) as {
+        ok?: boolean;
+        empty?: boolean;
+        request_id?: string | null;
+        source?: string | null;
+        error?: string;
+      };
+      if (!result || result.ok !== true) {
+        const err = typeof result.error === 'string' ? result.error : 'invalid_claim_response';
+        throw new Error(`scan_request_rpc_failed (claim): ${err}`);
+      }
+      if (result.empty === true) {
+        return { empty: true, request: null };
+      }
+      if (!result.request_id || !result.source) {
+        throw new Error('scan_request_rpc_failed (claim): empty result without empty flag');
+      }
+      return {
+        empty: false,
+        request: { requestId: result.request_id, source: result.source },
+      };
+    },
+
+    async markDocumentScanRequestRunning({ requestId, scanRunId }) {
+      const { data, error } = await client.rpc('mark_document_scan_request_running', {
+        p_request_id: requestId,
+        p_scan_run_id: scanRunId,
+      });
+      if (error) throw scanRequestError(error, 'mark_running');
+      const result = (data ?? {}) as { ok?: boolean; error?: string };
+      if (!result || result.ok !== true) {
+        const err = typeof result.error === 'string' ? result.error : 'invalid_mark_running_response';
+        throw new Error(`scan_request_rpc_failed (mark_running): ${err}`);
+      }
+    },
+
+    async finishDocumentScanRequest({ requestId, status, errorMessage }) {
+      const { data, error } = await client.rpc('finish_document_scan_request', {
+        p_request_id: requestId,
+        p_status: status,
+        p_error_message: status === 'failed' ? errorMessage : null,
+      });
+      if (error) throw scanRequestError(error, 'finish');
+      const result = (data ?? {}) as { ok?: boolean; error?: string };
+      if (!result || result.ok !== true) {
+        const err = typeof result.error === 'string' ? result.error : 'invalid_finish_response';
+        throw new Error(`scan_request_rpc_failed (finish): ${err}`);
+      }
     },
   };
 }
