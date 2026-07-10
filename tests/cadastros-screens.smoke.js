@@ -745,9 +745,9 @@ test('23. setRoutes: as globais legadas resolvem (não há ReferenceError em run
     'render.name deve ser screenCadastrosCores');
 });
 
-test('24. screenPainel (módulo) renderiza via shellLayout com 9 itens do ADMIN_MENU (regressão common)', () => {
+test('24. screenPainel (módulo) renderiza via shellLayout com os itens do ADMIN_MENU (regressão common)', () => {
   // Regressão: garante que a extração de cadastros.js não quebrou o
-  // boot de common.js / painel.js nem o ADMIN_MENU com 9 itens.
+  // boot de common.js / painel.js nem o ADMIN_MENU.
   const toastsNode = new FakeNode('div');
   const document = {
     createElement: (t) => new FakeNode(t),
@@ -781,6 +781,8 @@ test('24. screenPainel (módulo) renderiza via shellLayout com 9 itens do ADMIN_
   const flex = root.children.find((c) => c.tagName === 'DIV');
   const aside = flex && flex.children.find((c) => c.tagName === 'ASIDE');
   const links = aside && aside.children.filter((c) => c.tagName === 'A');
-  assert.ok(links && links.length === 9,
-    `screenPainel não renderizou 9 itens do ADMIN_MENU (renderizou ${links ? links.length : 0})`);
+  // O ADMIN_MENU tem 12 itens (Painel, OPs, Pedidos, Documentos, Cores,
+  // Modelos, Parâmetros, Fornecedores, Clientes, Parceiros, Preços, Usuários).
+  assert.ok(links && links.length === 12,
+    `screenPainel não renderizou 12 itens do ADMIN_MENU (renderizou ${links ? links.length : 0})`);
 });

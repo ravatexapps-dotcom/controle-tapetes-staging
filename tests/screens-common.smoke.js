@@ -97,6 +97,7 @@ const EXPECTED_ADMIN_MENU = [
   { href: '#/cadastros/parametros',    label: 'Parâmetros' },
   { href: '#/cadastros/fornecedores',  label: 'Fornecedores' },
   { href: '#/cadastros/clientes',      label: 'Clientes' },
+  { href: '#/cadastros/parceiros',     label: 'Parceiros' },
   { href: '#/cadastros/precos',        label: 'Preços' },
   { href: '#/cadastros/usuarios',      label: 'Usuários' },
 ];
@@ -305,7 +306,7 @@ test('18. runtime: globais legados window.ADMIN_MENU e window.shellLayout existe
   assert.equal(typeof vm.runInContext('window.shellLayout', sandbox), 'function', 'window.shellLayout ausente');
 });
 
-test('19. runtime: ADMIN_MENU tem exatamente os 9 itens esperados, na ordem original', () => {
+test('19. runtime: ADMIN_MENU tem exatamente os itens esperados, na ordem original', () => {
   const { sandbox } = makeCommonSandbox();
   const menu = vm.runInContext('window.ADMIN_MENU', sandbox);
   // Serializa para sair do realm da vm (objetos cross-realm não são
