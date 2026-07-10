@@ -1,5 +1,14 @@
 # PROJECT STATE
 
+## RAVATEX-DOCUMENTS-G24-B2-SCAN-REQUEST-WATCHER-CLOSEOUT (2026-07-10)
+
+- Status: **PRONTO - WATCHER DE SOLICITACOES DE SCAN**.
+- HEAD inicial: `dfc2e648554e7ea987bca34a14263f5344c92b8e`; commit tecnico: `6886354` (`Add document scan request watcher`).
+- Entrega: comando `watch:scan-requests` com `--once` para operacao manual controlada, gates explicitos de Gmail e Supabase, claim atomico, associacao request->run e finalizacao da solicitacao em sucesso ou falha.
+- Seguranca operacional: nenhum Gmail, Drive ou Supabase real foi usado. A migration 41 permanece versionada, mas **nao aplicada**.
+- Evidencia: suites focadas verdes - watcher 22/22, CLI 7/7, sync Supabase 24/24, export/sync mapped 48/48 (101 testes).
+- Proximo passo: G24-B3 - frontend para disparar a RPC autenticada, acompanhar a request por polling e recarregar a lista de documentos.
+
 ## RAVATEX-DOCUMENTS-G23-F-D-SCAN-RUN-STALE-LOCK-RECOVERY-PATCH (2026-07-09)
 
 - Status: **PRONTO — RECOVERY RPC + FLAGS DO WRITER PARA STALE LOCKS EM document_scan_runs**.
