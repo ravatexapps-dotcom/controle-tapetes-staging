@@ -46,6 +46,7 @@
     sourceLoadRunning: false,
     scanRequest: null,
     scanFeedback: null,
+    scanHydrationAttempted: false,
     logoutWrapped: false,
   };
 
@@ -473,28 +474,20 @@
     ui.logoutWrapped = true;
   }
 
-  function startDocumentScan() {
-    if (!isAdminUser()) {
-      setScanFeedback('error', 'Sessao expirada. Entre novamente.');
-      rerender();
-      return;
-    }
-    if (isActiveScanRequest()) {
-      setScanFeedback('info', 'Verificacao ja esta sendo acompanhada.');
-      rerender();
-      return;
-    }
-    var docsApi = window.RAVATEX_DOCUMENTS;
-    if (!docsApi || typeof docsApi.requestDocumentScan !== 'function') {
-      setScanFeedback('error', scanErrorMessage('migration_unavailable'));
-      rerender();
-      return;
-    }
-    ui.scanRequest = { status: 'requested', pending: true };
-    setScanFeedback('info', 'Solicitacao enviada. Aguardando executor.');
-    rerender();
+  // Handlers de acompanhamento compartilhados entre iniciar (start) e hidratar
+  // (resume). Cada sessao tem seu proprio guard `completed`, entao chamar
+  // makeScanTrackingHandlers() a cada disparo evita colisao entre uma request
+  // concluida e outra retomada. onUpdate NAO escreve feedback: o botao ja
+  // exibe scanStatusLabel(status) durante os estados ativos, portanto espelhar
+  // o mesmo texto no feedback duplicaria visualmente o status (G24-B5).
+  function makeScanTrackingHandlers() {
     var completed = false;
-    function handleScanComplete(result) {
+    function onUpdate(request) {
+      ui.scanRequest = request;
+      ui.scanFeedback = null;
+      rerender();
+    }
+    function onComplete(result) {
       if (completed) return;
       completed = true;
       if (result && result.status === 'completed') {
@@ -516,19 +509,82 @@
       }
       rerender();
     }
+    return { onUpdate: onUpdate, onComplete: onComplete };
+  }
+
+  function startDocumentScan() {
+    if (!isAdminUser()) {
+      setScanFeedback('error', 'Sessao expirada. Entre novamente.');
+      rerender();
+      return;
+    }
+    if (isActiveScanRequest()) {
+      setScanFeedback('info', 'Verificacao ja esta sendo acompanhada.');
+      rerender();
+      return;
+    }
+    var docsApi = window.RAVATEX_DOCUMENTS;
+    if (!docsApi || typeof docsApi.requestDocumentScan !== 'function') {
+      setScanFeedback('error', scanErrorMessage('migration_unavailable'));
+      rerender();
+      return;
+    }
+    ui.scanRequest = { status: 'requested', pending: true };
+    setScanFeedback('info', 'Solicitacao enviada. Aguardando executor.');
+    rerender();
+    var handlers = makeScanTrackingHandlers();
     var requestPromise = docsApi.requestDocumentScan({
-      onUpdate: function (request) {
-        ui.scanRequest = request;
-        setScanFeedback('info', scanStatusLabel(request.status));
-        rerender();
-      },
-      onComplete: handleScanComplete,
+      onUpdate: handlers.onUpdate,
+      onComplete: handlers.onComplete,
     });
     if (requestPromise && typeof requestPromise.then === 'function') {
       requestPromise.then(function (result) {
-        if (result && result.error && !result.status) handleScanComplete(result);
+        if (result && result.error && !result.status) handlers.onComplete(result);
       });
     }
+  }
+
+  // Retoma o acompanhamento de uma request ja ativa (requested/claimed/running)
+  // via polling puro — NAO chama solicitar_document_scan. Reusa os handlers
+  // compartilhados, entao o refresh automatico em completed e o cancelamento
+  // por rota/logout continuam valendo. O trigger deduplica polling por id.
+  function resumeScanTracking(request) {
+    if (!request || !request.id) return;
+    var docsApi = window.RAVATEX_DOCUMENTS;
+    if (!docsApi || typeof docsApi.pollDocumentScanRequest !== 'function') return;
+    ui.scanRequest = request;
+    ui.scanFeedback = null;
+    rerender();
+    var handlers = makeScanTrackingHandlers();
+    var pollPromise = docsApi.pollDocumentScanRequest(request.id, {
+      onUpdate: handlers.onUpdate,
+      onComplete: handlers.onComplete,
+    });
+    if (pollPromise && typeof pollPromise.then === 'function') {
+      pollPromise.then(function (result) {
+        if (result && result.error && !result.status) handlers.onComplete(result);
+      });
+    }
+  }
+
+  // Hidratacao (G24-B5): ao abrir/recarregar a tela, consulta a request ativa
+  // e retoma o acompanhamento. O flag so e marcado quando ha admin + modulo
+  // disponiveis, para nao "queimar" a tentativa antes da sessao carregar. Faz
+  // uma unica leitura e, dai, no maximo um polling.
+  function hydrateActiveScanRequest() {
+    if (ui.scanHydrationAttempted) return;
+    if (!isAdminUser()) return;
+    var docsApi = window.RAVATEX_DOCUMENTS;
+    if (!docsApi || typeof docsApi.getActiveDocumentScanRequest !== 'function') return;
+    ui.scanHydrationAttempted = true;
+    if (isActiveScanRequest()) return;
+    var lookup = docsApi.getActiveDocumentScanRequest('gmail');
+    if (!lookup || typeof lookup.then !== 'function') return;
+    lookup.then(function (result) {
+      if (!result || !result.ok || !result.request) return;
+      if (isActiveScanRequest()) return;
+      resumeScanTracking(result.request);
+    });
   }
 
   function restoreSearchFocus() {
@@ -1440,6 +1496,8 @@
 
     container.appendChild(page);
     setTimeout(restoreSearchFocus, 0);
+
+    hydrateActiveScanRequest();
 
     if (!ui.sourceLoadAttempted && window.RAVATEX_DOCUMENTS
         && (window.RAVATEX_SUPABASE_CLIENT || typeof window.fetch === 'function')) {

@@ -72,6 +72,35 @@
     }
   }
 
+  // Hidratacao (G24-B5): leitura pura da request ativa por source, sem criar
+  // nada. NAO chama solicitar_document_scan e NAO cria document_scan_run — a
+  // tela usa isso para retomar o acompanhamento apos abrir/recarregar. Devolve
+  // { ok:true, request:null } quando nao ha request ativa.
+  function getActiveDocumentScanRequest(source) {
+    var src = source || 'gmail';
+    if (!isAdmin() || !window.supa || typeof window.supa.from !== 'function') {
+      return Promise.resolve({ ok: false, error: isAdmin() ? 'executor_unavailable' : 'session_expired' });
+    }
+
+    try {
+      return window.supa.from('document_scan_requests')
+        .select(REQUEST_FIELDS)
+        .eq('source', src)
+        .in('status', ['requested', 'claimed', 'running'])
+        .order('requested_at', { ascending: false })
+        .limit(1)
+        .then(function (result) {
+          if (!result || result.error) return { ok: false, error: controlledError(result && result.error) };
+          var rows = Array.isArray(result.data) ? result.data : (result.data ? [result.data] : []);
+          if (!rows.length) return { ok: true, request: null };
+          return { ok: true, request: rows[0] };
+        })
+        .catch(function (error) { return { ok: false, error: controlledError(error) }; });
+    } catch (error) {
+      return Promise.resolve({ ok: false, error: controlledError(error) });
+    }
+  }
+
   function finishPoll(entry, result) {
     if (!entry || entry.finished) return;
     entry.finished = true;
@@ -191,6 +220,7 @@
   window.RAVATEX_DOCUMENTS = window.RAVATEX_DOCUMENTS || {};
   window.RAVATEX_DOCUMENTS.requestDocumentScan = requestDocumentScan;
   window.RAVATEX_DOCUMENTS.getDocumentScanRequestStatus = getDocumentScanRequestStatus;
+  window.RAVATEX_DOCUMENTS.getActiveDocumentScanRequest = getActiveDocumentScanRequest;
   window.RAVATEX_DOCUMENTS.pollDocumentScanRequest = pollDocumentScanRequest;
   window.RAVATEX_DOCUMENTS.cancelDocumentScanPolling = cancelDocumentScanPolling;
 })(window);

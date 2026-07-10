@@ -36,9 +36,18 @@ function makeSandbox(options) {
       return {
         select(fields) { calls.push({ kind: 'select', fields }); return this; },
         eq(field, value) { calls.push({ kind: 'eq', field, value }); return this; },
+        in(field, values) { calls.push({ kind: 'in', field, values }); return this; },
+        order(field, opts) { calls.push({ kind: 'order', field, opts }); return this; },
+        limit(n) { calls.push({ kind: 'limit', n }); return this; },
         single() {
           const next = statuses.length ? statuses.shift() : { id: 'req-1', source: 'gmail', status: 'completed' };
           return Promise.resolve(next && next.error ? { error: next.error } : { data: next, error: null });
+        },
+        // Query de lista (hidratacao): a builder do supabase-js e thenable.
+        // Somente getActiveDocumentScanRequest a consome desta forma.
+        then(resolve, reject) {
+          const payload = options.activeResult || { data: (options.activeRows || []), error: null };
+          return Promise.resolve(payload).then(resolve, reject);
         },
       };
     },
@@ -52,7 +61,7 @@ test('scan trigger: arquivo existe, sintaxe valida e expoe API minima', () => {
   assert.ok(fs.existsSync(MODULE_PATH));
   require('node:child_process').execFileSync(process.execPath, ['--check', MODULE_PATH], { stdio: 'pipe' });
   const rt = makeSandbox();
-  for (const name of ['requestDocumentScan', 'getDocumentScanRequestStatus', 'pollDocumentScanRequest', 'cancelDocumentScanPolling']) {
+  for (const name of ['requestDocumentScan', 'getDocumentScanRequestStatus', 'pollDocumentScanRequest', 'cancelDocumentScanPolling', 'getActiveDocumentScanRequest']) {
     assert.equal(typeof rt.sandbox.RAVATEX_DOCUMENTS[name], 'function');
   }
 });
@@ -154,4 +163,37 @@ test('index: carrega o trigger antes da tela de documentos', () => {
   const trigger = index.indexOf('js/documents-scan-trigger.js');
   const screen = index.indexOf('js/screens/documentos-recebidos.js');
   assert.ok(trigger > 0 && trigger < screen);
+});
+
+test('G24-B5: getActiveDocumentScanRequest le a request ativa sem solicitar novo scan', async () => {
+  const rt = makeSandbox({ activeRows: [{ id: 'req-9', source: 'gmail', status: 'claimed', requested_at: '2026-07-10T00:00:00Z' }] });
+  const result = await rt.sandbox.RAVATEX_DOCUMENTS.getActiveDocumentScanRequest('gmail');
+  assert.equal(result.ok, true);
+  assert.equal(result.request.id, 'req-9');
+  assert.equal(result.request.status, 'claimed');
+  // Hidratacao nao pode chamar a RPC de solicitacao.
+  assert.equal(rt.calls.filter((c) => c.kind === 'rpc').length, 0);
+  // Consulta a fila com os campos permitidos e filtra apenas estados ativos.
+  assert.ok(rt.calls.some((c) => c.kind === 'from' && c.table === 'document_scan_requests'));
+  assert.equal(rt.calls.find((c) => c.kind === 'select').fields,
+    'id,source,status,scan_run_id,requested_at,claimed_at,started_at,finished_at,error_message');
+  const inCall = rt.calls.find((c) => c.kind === 'in');
+  assert.equal(inCall.field, 'status');
+  // inCall.values e criado dentro do contexto vm (realm diferente), entao
+  // normaliza via JSON antes de comparar (mesmo padrao do resto do arquivo).
+  assert.deepEqual(JSON.parse(JSON.stringify(inCall.values)), ['requested', 'claimed', 'running']);
+  assert.deepEqual(JSON.parse(JSON.stringify(rt.calls.find((c) => c.kind === 'eq'))), { kind: 'eq', field: 'source', value: 'gmail' });
+});
+
+test('G24-B5: getActiveDocumentScanRequest sem fila ativa devolve request null', async () => {
+  const rt = makeSandbox({ activeRows: [] });
+  const result = await rt.sandbox.RAVATEX_DOCUMENTS.getActiveDocumentScanRequest('gmail');
+  assert.deepEqual(JSON.parse(JSON.stringify(result)), { ok: true, request: null });
+  assert.equal(rt.calls.filter((c) => c.kind === 'rpc').length, 0);
+});
+
+test('G24-B5: getActiveDocumentScanRequest exige sessao admin', async () => {
+  const nonAdmin = makeSandbox({ user: { tipo: 'cliente' } });
+  assert.equal((await nonAdmin.sandbox.RAVATEX_DOCUMENTS.getActiveDocumentScanRequest('gmail')).error, 'session_expired');
+  assert.equal(nonAdmin.calls.filter((c) => c.kind === 'from').length, 0);
 });

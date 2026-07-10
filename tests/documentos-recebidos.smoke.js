@@ -1753,3 +1753,74 @@ test('G24-B4-R1: falha da RPC aparece no DOM sem depender de toast', async funct
   assert.ok(textOf(feedback[0]).indexOf('ainda nao foi aplicada') >= 0,
     'falha da RPC deve ficar visivel no DOM');
 });
+
+test('G24-B5: hidratacao retoma request ativa via polling, sem solicitar novo scan', async function () {
+  var sb = makeScreenSandbox([]);
+  var solicitarCalls = 0;
+  var pollCalls = [];
+  var lookupCalls = 0;
+  var latestTree = null;
+  sb.window.RAVATEX_DOCUMENTS.requestDocumentScan = function () { solicitarCalls += 1; return new Promise(function () {}); };
+  sb.window.RAVATEX_DOCUMENTS.getActiveDocumentScanRequest = function (source) {
+    lookupCalls += 1;
+    return Promise.resolve({ ok: true, request: { id: 'req-hydra', source: source, status: 'running' } });
+  };
+  sb.window.RAVATEX_DOCUMENTS.pollDocumentScanRequest = function (id, options) {
+    pollCalls.push({ id: id, options: options });
+    return new Promise(function () {});
+  };
+  sb.window.setApp = function (tree) { latestTree = tree; };
+  vm.runInContext('window.screenDocumentosRecebidos()', sb);
+  await flushAsync();
+  assert.equal(lookupCalls, 1, 'consulta a request ativa exatamente uma vez');
+  assert.equal(solicitarCalls, 0, 'hidratacao nao chama requestDocumentScan (solicitar_document_scan)');
+  assert.equal(pollCalls.length, 1, 'inicia no maximo um polling');
+  assert.equal(pollCalls[0].id, 'req-hydra', 'polling usa o id da request ativa');
+  assert.equal(typeof pollCalls[0].options.onUpdate, 'function');
+  assert.equal(typeof pollCalls[0].options.onComplete, 'function');
+  var button = findAll(latestTree, findAction('verificar-novos-documentos'))[0];
+  assert.ok(Object.prototype.hasOwnProperty.call(button._attrs, 'disabled'),
+    'botao fica desabilitado enquanto a request ativa e acompanhada');
+  assert.ok(textOf(button).indexOf('Verificando e-mails') >= 0,
+    'botao reflete o status ativo retomado (running)');
+});
+
+test('G24-B5: hidratacao sem request ativa nao inicia polling nem altera o botao', async function () {
+  var sb = makeScreenSandbox([]);
+  var pollCalls = 0;
+  sb.window.RAVATEX_DOCUMENTS.getActiveDocumentScanRequest = function () {
+    return Promise.resolve({ ok: true, request: null });
+  };
+  sb.window.RAVATEX_DOCUMENTS.pollDocumentScanRequest = function () { pollCalls += 1; return new Promise(function () {}); };
+  sb.window.setApp = function () {};
+  var result = vm.runInContext('window.screenDocumentosRecebidos()', sb);
+  await flushAsync();
+  assert.equal(pollCalls, 0, 'sem request ativa nao inicia polling');
+  var button = findAll(result, findAction('verificar-novos-documentos'))[0];
+  assert.equal(Object.prototype.hasOwnProperty.call(button._attrs, 'disabled'), false,
+    'botao permanece habilitado');
+  assert.ok(textOf(button).indexOf('Verificar novos documentos') >= 0,
+    'botao mantem o rotulo padrao');
+});
+
+test('G24-B5: status ativo nao e duplicado entre botao e feedback', function () {
+  var sb = makeScreenSandbox([]);
+  var latestTree = null;
+  sb.window.RAVATEX_DOCUMENTS.requestDocumentScan = function (options) {
+    // Simula o trigger emitindo o primeiro update de status ativo.
+    options.onUpdate({ id: 'req-1', source: 'gmail', status: 'requested' });
+    return new Promise(function () {});
+  };
+  sb.window.toast = undefined;
+  sb.window.setApp = function (tree) { latestTree = tree; };
+  var result = vm.runInContext('window.screenDocumentosRecebidos()', sb);
+  findAll(result, findAction('verificar-novos-documentos'))[0]._listeners.click[0]();
+  // Apos o onUpdate, o feedback nao pode espelhar o status ja exibido no botao.
+  var feedback = findAll(latestTree, function (node) {
+    return node._attrs && node._attrs['data-section'] === 'document-scan-feedback';
+  });
+  assert.equal(feedback.length, 0, 'feedback nao deve repetir o status ativo (fonte unica: o botao)');
+  var button = findAll(latestTree, findAction('verificar-novos-documentos'))[0];
+  assert.ok(textOf(button).indexOf('Solicitacao aguardando executor') >= 0,
+    'botao exibe o status ativo como fonte unica');
+});
