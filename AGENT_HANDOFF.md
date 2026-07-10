@@ -1,4 +1,53 @@
-﻿# Estado pos-fase - G23-E-G Canonical Undo Closeout
+﻿# Estado pos-fase - G23-F-D Scan Run Stale Lock Recovery Patch
+
+- Fase: `RAVATEX-DOCUMENTS-G23-F-D-SCAN-RUN-STALE-LOCK-RECOVERY-PATCH`.
+- Status: **PRONTO — RECOVERY RPC PARA STALE LOCKS EM document_scan_runs**.
+- Branch/HEAD tecnico Controle: `work/app-next` em `aa62793f251e4643037f421cd8ec419406ea9911` (HEAD inicial `2ae80d9f165cae9b926e2a1fcffae17979cb5eba`).
+- Branch/HEAD canonico de referencia Ingestor: `master` em `ea4f1d2ced154194358fe90df714bfba41d74ae3` (HEAD inicial `b573b9958bb5c1a219ee057d423d6563968f2dd0`).
+
+- O que foi entregue:
+  - Migration 40: `db/40_document_scan_runs_stale_recovery.sql` (novo, 117 linhas), `CREATE OR REPLACE`, idempotente.
+  - RPC `public.recuperar_document_scan_runs_travados(p_source TEXT DEFAULT NULL, p_stale_after INTERVAL DEFAULT INTERVAL '30 minutes')`.
+  - Compare-and-swap `running` -> `failed` com `FOR UPDATE SKIP LOCKED` + reconfirmacao `status = 'running'`, preservando `started_at`, `source`, `triggered_by` e demais dados.
+  - Auditoria preservada: reusa `status = 'failed'`; sentinela em `error_message` no formato `stale_recovered: exceeded <stale_after>, started_at=<ISO Z>`. Nunca apaga a linha.
+  - Grants: `REVOKE ALL` de `PUBLIC`/`anon`; `GRANT EXECUTE` para `service_role` e `authenticated`. `NOTIFY pgrst, 'reload schema'` + `NOTIFY pgrst, 'reload config'` no final.
+  - Retorno JSONB: `{ ok, source, stale_after, recovered_count, recovered[] }`.
+
+- Contrato com o writer (registrado no Ingestor):
+  - `--recover-stale` (boolean): habilita a chamada da RPC antes de cada tentativa de scan.
+  - `--stale-after-minutes <N>` (int): minutos de tolerancia. Default canonico `30`. Piso `5`. Valores abaixo de 5 sao coercidos a 5 dentro da RPC.
+  - Autorizacao: `service_role` (self-heal) **OU** `public.is_admin()` (destrave manual pela UI). Mesmo padrao de `db/38` e `db/39`.
+
+- Causa raiz:
+  - O writer cria `status='running'` e depende do indice unico parcial `document_scan_runs_running_source_uidx` (`db/38`) para impedir concorrencia por source. Se o processo cair entre o INSERT e a finalizacao, a linha fica `running` para sempre e bloqueia todo scan futuro daquela source. A RPC entrega destravamento self-heal sem intervencao manual.
+
+- Migration 40: **VERSIONADA, MAS NAO APLICADA** nesta fase. Aplicar **somente em staging** no G23-F-E.
+
+- Arquivos alterados nesta fase (Controle):
+  - `db/40_document_scan_runs_stale_recovery.sql` (novo).
+
+- Arquivos alterados nesta fase (Ingestor, registro sincrono):
+  - `docs/SUPABASE_WRITER_RUNBOOK.md`
+  - `src/cli.ts`
+  - `src/core/syncSupabase.ts`
+  - `src/supabase/serviceRoleClient.ts`
+  - `tests/sync-supabase.test.ts`
+
+- Testes:
+  - Ingestor `tests/sync-supabase.test.ts`: **24/24**.
+  - Controle suite acumulada: **431/431** (sem regressao).
+
+- Confirmacoes:
+  - Producao intocada.
+  - Gmail, Drive e Supabase real **nao utilizados** (RPC nao aplicada, nenhuma chamada remota, nenhuma credencial real).
+  - Sem push, sem `git add .`, sem `git add -A`.
+  - Untracked preservados no Controle: `.claude/`, `data/fixtures/document-events-pedido-02.jsonl`, `supabase/.temp/`.
+
+- Ressalva obrigatoria: a RPC foi especificada e versionada (definicao + grants + NOTIFY), mas a **concorrencia real ainda depende do smoke staging** a ser executado no G23-F-E. O piso de 5 minutos e a protecao `FOR UPDATE SKIP LOCKED` sao contratos logicos, nao verificados contra carga real ate G23-F-E.
+
+- Proximo passo: G23-F-E — STAGING SMOKE. Aplicar a migration 40 no projeto staging do Supabase e exercitar `--recover-stale` + `--stale-after-minutes` em cenario real com run orfao simulado, validando destravamento e idempotencia concorrente.
+
+# Estado pos-fase - G23-E-G Canonical Undo Closeout
 
 - Fase: `RAVATEX-DOCUMENTS-G23-E-G-CANONICAL-UNDO-CLOSEOUT`.
 - Status: **PRONTO — CLOSEOUT MULTI-REPO DA TRILHA G23-E**.

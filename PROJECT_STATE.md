@@ -1,4 +1,50 @@
 > **Atualizacao 2026-07-09 — fase
+> `RAVATEX-DOCUMENTS-G23-F-D-SCAN-RUN-STALE-LOCK-RECOVERY-PATCH`.**
+> Status: **PRONTO — RPC DE RECOVERY PARA STALE LOCKS EM document_scan_runs**.
+> Branch/HEAD tecnico Controle: `work/app-next` em `aa62793f251e4643037f421cd8ec419406ea9911` (HEAD inicial `2ae80d9f165cae9b926e2a1fcffae17979cb5eba`).
+> HEAD canonico de referencia no Ingestor: `master` em `ea4f1d2ced154194358fe90df714bfba41d74ae3` (HEAD inicial `b573b9958bb5c1a219ee057d423d6563968f2dd0`).
+>
+> Escopo G23-F-D (Controle):
+> - Migration 40: `db/40_document_scan_runs_stale_recovery.sql` (novo, 117 linhas).
+>   RPC canonica `public.recuperar_document_scan_runs_travados(p_source TEXT DEFAULT NULL, p_stale_after INTERVAL DEFAULT INTERVAL '30 minutes')` — `CREATE OR REPLACE`, idempotente.
+> - Semantica: compare-and-swap `running` -> `failed`, somente para runs com `started_at < now() - p_stale_after`, usando `FOR UPDATE SKIP LOCKED` + reconfirmacao `status = 'running'` (impede dupla recuperacao concorrente). O indice unico parcial `document_scan_runs_running_source_uidx` de `db/38` continua garantindo um unico run `running` ativo por source.
+> - Piso rigido de 5 minutos via `GREATEST(COALESCE(p_stale_after, INTERVAL '30 minutes'), INTERVAL '5 minutes')`. Default canonico: **30 minutos**. Piso: **5 minutos**. Nenhum valor abaixo de 5 e aceito.
+> - Autorizacao: `auth.role() = 'service_role'` (self-heal do writer) **OU** `public.is_admin()` (destrave manual pela UI). Mesmo padrao das migrations 38 e 39.
+> - Auditoria preservada: reusa `status = 'failed'` (sem mexer no CHECK de `db/38`). Grava sentinela em `error_message` no formato `stale_recovered: exceeded <stale_after>, started_at=<ISO Z>`. Nunca apaga a linha.
+> - Grants: `REVOKE ALL` de `PUBLIC` e `anon`; `GRANT EXECUTE` para `service_role` e `authenticated`. Finaliza com `NOTIFY pgrst, 'reload schema'` e `NOTIFY pgrst, 'reload config'`.
+> - Retorno: JSONB `{ ok, source, stale_after, recovered_count, recovered[] }`.
+>
+> Contrato operacional com o writer (registrado no Ingestor):
+> - Flag `--recover-stale` (boolean): habilita a chamada da RPC `recuperar_document_scan_runs_travados` antes de cada tentativa de scan.
+> - Flag `--stale-after-minutes <N>` (int): minutos de tolerancia para considerar um run como travado. Default canonico `30`. Piso `5`. Valores menores que 5 sao coercidos a 5 dentro da RPC.
+>
+> Causa raiz:
+> - O writer (service_role) cria uma linha `status='running'` e depende do indice unico parcial `document_scan_runs_running_source_uidx` (criado em `db/38`) para impedir concorrencia por source. Se o processo cair entre o INSERT e a finalizacao, a linha fica `running` para sempre e bloqueia todo scan futuro daquela source. A RPC entrega um destravamento self-heal que nao depende de intervencao manual.
+>
+> Migration 40: **VERSIONADA, MAS NAO APLICADA** nesta fase. `CREATE OR REPLACE` garante idempotencia no apply futuro. Aplicar **somente em staging** no G23-F-E.
+>
+> Arquivos alterados nesta fase (Controle):
+> - `db/40_document_scan_runs_stale_recovery.sql` (novo, 117 linhas).
+>
+> Arquivos alterados nesta fase (Ingestor, registro sincrono):
+> - `docs/SUPABASE_WRITER_RUNBOOK.md`
+> - `src/cli.ts`
+> - `src/core/syncSupabase.ts`
+> - `src/supabase/serviceRoleClient.ts`
+> - `tests/sync-supabase.test.ts`
+>
+> Confirmacoes:
+> - Producao intocada. Gmail, Drive e Supabase real **nao utilizados** nesta fase (RPC nao aplicada, nenhuma chamada remota, nenhuma credencial real).
+> - Migration 40 versionada mas **nao aplicada** (apply somente em staging, no G23-F-E).
+> - Testes: Ingestor `tests/sync-supabase.test.ts` 24/24; Controle suite acumulada 431/431 (sem regressao).
+> - Sem push, sem `git add .`, sem `git add -A`.
+> - Untracked preservados no Controle: `.claude/`, `data/fixtures/document-events-pedido-02.jsonl`, `supabase/.temp/`.
+>
+> Ressalva obrigatoria: a RPC foi especificada e versionada (definicao + grants + NOTIFY), mas a **concorrencia real ainda depende do smoke staging** a ser executado no G23-F-E. O piso de 5 minutos e a protecao `FOR UPDATE SKIP LOCKED` sao contratos logicos, nao verificados contra carga real ate G23-F-E.
+>
+> Proximo passo: G23-F-E — STAGING SMOKE. Aplicar a migration 40 no projeto staging do Supabase e exercitar `--recover-stale` + `--stale-after-minutes` em um cenario real com run orfao simulado, validando destravamento e idempotencia concorrente.
+>
+> **Atualizacao 2026-07-09 — fase
 > `RAVATEX-DOCUMENTS-G23-E-G-CANONICAL-UNDO-CLOSEOUT`.**
 > Status: **PRONTO — CLOSEOUT MULTI-REPO DA TRILHA G23-E**.
 > Branch/HEAD base: `work/app-next` em `d7e7107`.
