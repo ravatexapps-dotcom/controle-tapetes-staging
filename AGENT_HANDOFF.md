@@ -769,7 +769,7 @@ Bases incompletas sao retornadas em `canonical_base_skipped`, sem inventar pendi
 
 - Status: **PARTIAL — AMBIGUOUS OR UNRECOVERABLE ROWS DOCUMENTED**. Não há ambiguidade de match; a parcial decorre exclusivamente da row local `ec07577a...` / `L.pdf` (`gmail_message_id=m-log`), que não existe no Gmail e foi preservada sem alteração.
 - Ingestor: `master`, commits `145f1c3` e `4995ba6`; Controle: `work/app-next`, sem alteração técnica nesta fase. Push e produção não realizados.
-- Janela Gmail: desde `2026-06-19T03:00:00.000Z`, query iniciada um dia antes. Inventário: 24 mensagens, 40 anexos PDF/XML. Escrita controlada: 17 reconciliações de metadata e 20 documentos ausentes criados pelo pipeline canônico; nenhum INSERT paralelo.
+- Janela Gmail: desde `2026-06-19T03:00:00.000Z`, query iniciada um dia antes. Inventário: 24 mensagens, 40 anexos PDF/XML. Escrita controlada: 17 reconciliações de metadata e 20 anexos ausentes processados pelo pipeline canônico, resultando em 21 candidates por uma referência cross-message com Drive reutilizado; nenhum par mensagem/anexo duplicado e nenhum INSERT paralelo.
 - Idempotência: segundo dry-run retornou 40 matches, zero candidatos ausentes, `WOULD_UPDATE_SQLITE=0`, `WOULD_UPDATE_SUPABASE=0`, `WOULD_CREATE_DOCUMENTS=0`, zero mudança protegida.
 - Test candidates preservados e somente reportados: `TESTE-G25-B1-20260710-1536.pdf`, `teste-nfe-entrada.xml`, `pdf143429.pdf`. Nenhuma exclusão.
 - Staging: `ucrjtfswnfdlxwtmxnoo`, 40 candidates; watcher oficial com uma instância e `active_gmail_requests=0`. Produção `bhgifjrfagkzubpyqpew` intocada.
