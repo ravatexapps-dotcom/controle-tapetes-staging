@@ -87,6 +87,16 @@
       return;
     }
 
+    // G24-C: one non-blocking, authenticated-admin bootstrap per browser
+    // session. The trigger first hydrates an active request and only creates
+    // one when none exists; failures are rendered by the trigger and never
+    // prevent normal routing.
+    if (window.CURRENT_USER.tipo === 'admin'
+        && window.RAVATEX_DOCUMENTS
+        && typeof window.RAVATEX_DOCUMENTS.autoStartDocumentScanOnAdminBootstrap === 'function') {
+      window.RAVATEX_DOCUMENTS.autoStartDocumentScanOnAdminBootstrap();
+    }
+
     if (window.location.hash && window.location.hash !== '#/login') {
       window.handleRoute();
     } else {

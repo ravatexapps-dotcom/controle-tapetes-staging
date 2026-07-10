@@ -61,9 +61,48 @@ test('scan trigger: arquivo existe, sintaxe valida e expoe API minima', () => {
   assert.ok(fs.existsSync(MODULE_PATH));
   require('node:child_process').execFileSync(process.execPath, ['--check', MODULE_PATH], { stdio: 'pipe' });
   const rt = makeSandbox();
-  for (const name of ['requestDocumentScan', 'getDocumentScanRequestStatus', 'pollDocumentScanRequest', 'cancelDocumentScanPolling', 'getActiveDocumentScanRequest']) {
+  for (const name of ['requestDocumentScan', 'getDocumentScanRequestStatus', 'pollDocumentScanRequest', 'cancelDocumentScanPolling', 'getActiveDocumentScanRequest', 'autoStartDocumentScanOnAdminBootstrap']) {
     assert.equal(typeof rt.sandbox.RAVATEX_DOCUMENTS[name], 'function');
   }
+});
+
+test('G24-C: bootstrap admin sem request ativa cria uma request automaticamente uma unica vez', async () => {
+  const rt = makeSandbox({
+    activeRows: [],
+    statuses: [{ id: 'req-1', source: 'gmail', status: 'requested' }, { id: 'req-1', source: 'gmail', status: 'completed' }],
+  });
+  const first = await rt.sandbox.RAVATEX_DOCUMENTS.autoStartDocumentScanOnAdminBootstrap();
+  const second = await rt.sandbox.RAVATEX_DOCUMENTS.autoStartDocumentScanOnAdminBootstrap();
+  assert.equal(first.status, 'completed');
+  assert.equal(second.skipped, 'already_bootstrapped');
+  assert.equal(rt.calls.filter((c) => c.kind === 'rpc').length, 1);
+});
+
+test('G24-C: bootstrap admin com request ativa apenas hidrata e acompanha', async () => {
+  const rt = makeSandbox({
+    activeRows: [{ id: 'req-active', source: 'gmail', status: 'claimed', requested_at: '2026-07-10T00:00:00Z' }],
+    statuses: [{ id: 'req-active', source: 'gmail', status: 'running' }, { id: 'req-active', source: 'gmail', status: 'completed' }],
+  });
+  const result = await rt.sandbox.RAVATEX_DOCUMENTS.autoStartDocumentScanOnAdminBootstrap();
+  assert.equal(result.status, 'completed');
+  assert.equal(rt.calls.filter((c) => c.kind === 'rpc').length, 0);
+});
+
+test('G24-C: bootstrap nao-admin nao le nem cria request', async () => {
+  const rt = makeSandbox({ user: { tipo: 'cliente' } });
+  const result = await rt.sandbox.RAVATEX_DOCUMENTS.autoStartDocumentScanOnAdminBootstrap();
+  assert.equal(result.skipped, 'not_admin');
+  assert.equal(rt.calls.length, 0);
+});
+
+test('G24-C: segundo assinante de polling recebe conclusao sem criar outro polling', async () => {
+  const rt = makeSandbox({ statuses: [{ id: 'req-1', source: 'gmail', status: 'running' }, { id: 'req-1', source: 'gmail', status: 'completed' }] });
+  const completed = [];
+  const first = rt.sandbox.RAVATEX_DOCUMENTS.pollDocumentScanRequest('req-1');
+  const second = rt.sandbox.RAVATEX_DOCUMENTS.pollDocumentScanRequest('req-1', { onComplete(result) { completed.push(result.status); } });
+  assert.equal(first, second);
+  await first;
+  assert.deepEqual(completed, ['completed']);
 });
 
 test('scan trigger: chama somente a RPC esperada com source gmail', async () => {

@@ -15,6 +15,7 @@
   var TERMINAL_STATUSES = { completed: true, failed: true, cancelled: true };
   var polls = {};
   var requestInFlight = null;
+  var bootstrapFallback = {};
 
   function isAdmin() {
     return !!(window.CURRENT_USER && window.CURRENT_USER.tipo === 'admin');
@@ -106,25 +107,36 @@
     entry.finished = true;
     if (entry.timer) window.clearTimeout(entry.timer);
     delete polls[entry.requestId];
-    if (typeof entry.onComplete === 'function') entry.onComplete(result);
+    entry.listeners.forEach(function (listener) {
+      if (typeof listener.onComplete === 'function') listener.onComplete(result);
+    });
     entry.resolve(result);
+  }
+
+  function addPollListener(entry, options) {
+    if (!entry || !options) return;
+    if (typeof options.onUpdate !== 'function' && typeof options.onComplete !== 'function') return;
+    entry.listeners.push({ onUpdate: options.onUpdate, onComplete: options.onComplete });
   }
 
   function pollDocumentScanRequest(requestId, options) {
     options = options || {};
     if (!requestId) return Promise.resolve({ ok: false, error: 'request_not_found' });
-    if (polls[requestId]) return polls[requestId].promise;
+    if (polls[requestId]) {
+      addPollListener(polls[requestId], options);
+      return polls[requestId].promise;
+    }
 
     var entry = {
       requestId: requestId,
       startedAt: Date.now(),
       timer: null,
       finished: false,
-      onUpdate: options.onUpdate,
-      onComplete: options.onComplete,
+      listeners: [],
       resolve: null,
       promise: null,
     };
+    addPollListener(entry, options);
     entry.promise = new Promise(function (resolve) { entry.resolve = resolve; });
     polls[requestId] = entry;
 
@@ -146,7 +158,9 @@
           return;
         }
         var request = result.request;
-        if (typeof entry.onUpdate === 'function') entry.onUpdate(request);
+        entry.listeners.forEach(function (listener) {
+          if (typeof listener.onUpdate === 'function') listener.onUpdate(request);
+        });
         if (TERMINAL_STATUSES[request.status]) {
           finishPoll(entry, {
             ok: request.status === 'completed',
@@ -209,6 +223,79 @@
     return requestInFlight;
   }
 
+  function bootstrapStorageKey() {
+    var user = window.CURRENT_USER || {};
+    return 'ravatex.documentScan.bootstrap.v1.' + String(user.id || user.email || 'admin');
+  }
+
+  function wasBootstrapped(key) {
+    try {
+      if (window.sessionStorage && window.sessionStorage.getItem(key) === '1') return true;
+    } catch (error) {
+      // Privacy modes can deny storage; the per-page fallback still prevents
+      // route/rerender duplication without blocking the application.
+    }
+    return bootstrapFallback[key] === true;
+  }
+
+  function markBootstrapped(key) {
+    bootstrapFallback[key] = true;
+    try {
+      if (window.sessionStorage) window.sessionStorage.setItem(key, '1');
+    } catch (error) {
+      // The in-memory fallback above is sufficient for this page lifetime.
+    }
+  }
+
+  function renderBootstrapFailure(errorCode) {
+    if (!window.document || !window.document.createElement || !window.document.body) return;
+    var id = 'ravatex-document-scan-bootstrap-status';
+    var node = window.document.getElementById ? window.document.getElementById(id) : null;
+    if (!node) {
+      node = window.document.createElement('div');
+      node.id = id;
+      node.setAttribute('role', 'status');
+      node.setAttribute('aria-live', 'polite');
+      node.style.cssText = 'margin:8px 16px;color:#b42318;font-size:13px;';
+      window.document.body.appendChild(node);
+    }
+    node.textContent = errorCode === 'session_expired'
+      ? 'A verificacao automatica de documentos nao foi iniciada: sessao expirada.'
+      : 'A verificacao automatica de documentos nao foi iniciada. Use o botao de verificacao como alternativa.';
+  }
+
+  // Canonical entry hook: called once after the authenticated admin bootstrap.
+  // It is deliberately independent of a screen render and always reads the
+  // active request before it can call the creation RPC.
+  function autoStartDocumentScanOnAdminBootstrap() {
+    if (!isAdmin()) return Promise.resolve({ ok: true, skipped: 'not_admin' });
+    var key = bootstrapStorageKey();
+    if (wasBootstrapped(key)) return Promise.resolve({ ok: true, skipped: 'already_bootstrapped' });
+    markBootstrapped(key);
+
+    return getActiveDocumentScanRequest('gmail').then(function (active) {
+      if (!active || !active.ok) {
+        var activeError = active && active.error ? active.error : 'executor_unavailable';
+        renderBootstrapFailure(activeError);
+        return { ok: false, error: activeError };
+      }
+      if (active.request) {
+        return pollDocumentScanRequest(active.request.id).then(function (result) {
+          if (!result.ok && result.error) renderBootstrapFailure(result.error);
+          return result;
+        });
+      }
+      return requestDocumentScan().then(function (result) {
+        if (!result.ok && result.error) renderBootstrapFailure(result.error);
+        return result;
+      });
+    }).catch(function (error) {
+      var code = controlledError(error);
+      renderBootstrapFailure(code);
+      return { ok: false, error: code };
+    });
+  }
+
   function cancelOnRouteChange() {
     if (window.location && window.location.hash !== '#/documentos/recebidos') cancelDocumentScanPolling();
   }
@@ -223,4 +310,5 @@
   window.RAVATEX_DOCUMENTS.getActiveDocumentScanRequest = getActiveDocumentScanRequest;
   window.RAVATEX_DOCUMENTS.pollDocumentScanRequest = pollDocumentScanRequest;
   window.RAVATEX_DOCUMENTS.cancelDocumentScanPolling = cancelDocumentScanPolling;
+  window.RAVATEX_DOCUMENTS.autoStartDocumentScanOnAdminBootstrap = autoStartDocumentScanOnAdminBootstrap;
 })(window);
