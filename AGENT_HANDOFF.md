@@ -1,7 +1,7 @@
 ﻿# Estado pos-fase - G25-B2-A-R2 Shared Partner CNPJ Registry
 
 - Fase: `RAVATEX-DOCUMENTS-G25-B2-A-R2-SHARED-PARTNER-CNPJ-REGISTRY`.
-- Status: **MIGRATION COMMITTED — AGUARDANDO APLICACAO EM STAGING E VERIFICACAO**.
+- Status: **CLOSED — G25-B2-A-R2**.
 - Branch/HEAD: `work/app-next` em `f89dcc6`.
 
 - O que foi entregue (schema aditivo MODELO C, staging-only):
@@ -13,31 +13,34 @@
     - RLS admin-only (`parceiros_admin`, `parceiro_cnpjs_admin`); triggers `atualizado_em`; indices unicos global e parcial.
   - Companion verify: `db/44_partner_cnpj_registry.verify.sql` (78 linhas, transacional BEGIN..ROLLBACK).
 
-- Estado local/Git:
-  - Commit `f89dcc6` adiciona migration + verify (274 linhas).
-  - `git diff --check HEAD~1 HEAD`: OK.
-  - Untracked esperados preservados: `.claude/`, `data/fixtures/document-events-pedido-02.jsonl`, `supabase/.temp/`.
-
-- Verificacao em staging (`ucrjtfswnfdlxwtmxnoo`) — PENDENTE DE EXECUCAO:
-  - Aplicar `db/44_partner_cnpj_registry.sql` via SQL editor do Supabase staging.
-  - Rodar `db/44_partner_cnpj_registry.verify.sql` e confirmar `ALL VERIFY ASSERTIONS PASSED`.
-  - Re-rodar a migration para confirmar idempotencia (sem erro, sem efeitos adicionais).
-  - Validar RLS estrutural e comportamental: admin le/escreve; nao-admin nao ve/nao escreve.
-  - Confirmar contagens legadas inalteradas (5/3/5/7).
-  - Confirmar `parceiros` = 0, `parceiro_cnpjs` = 0, todos `parceiro_id` NULL.
+- Aplicacao e verificacao em staging (`ucrjtfswnfdlxwtmxnoo`):
+  - Migration 44 aplicada via conexao direta ao PostgreSQL do projeto staging.
+  - `db/44_partner_cnpj_registry.verify.sql` executado com `NOTICE: ALL VERIFY ASSERTIONS PASSED`.
+  - Re-aplicacao da migration executada sem erro e sem efeitos adicionais (idempotencia confirmada).
+  - RLS estrutural: `parceiros` e `parceiro_cnpjs` com `ROW LEVEL SECURITY = true`; policies `parceiros_admin` e `parceiro_cnpjs_admin` (`FOR ALL USING (is_admin()) WITH CHECK (is_admin())`).
+  - RLS comportamental (testado com `SET LOCAL ROLE authenticated` + JWT claims dentro de transacao):
+    - Nao-admin (`tipo = 'fornecedor'`): SELECT retorna 0 linhas; INSERT e bloqueado.
+    - Admin (`tipo = 'admin'`): SELECT retorna todas as linhas; INSERT e permitido e cleanup removido.
+  - Contagens legadas inalteradas: `fornecedores=5`, `clientes=3`, `pedidos=5`, `ops=7`.
+  - Tabelas novas vazias: `parceiros=0`, `parceiro_cnpjs=0`.
+  - Todos `parceiro_id` NULL: `fornecedores` 5/5, `clientes` 3/3.
   - Producao (`bhgifjrfagkzubpyqpew`) intocada.
 
-- Ressalva obrigatoria:
-  - A migration 44 foi especificada, versionada e commitada, mas **ainda nao foi aplicada em staging** neste ambiente.
-  - A verificacao real (apply + verify + RLS + contagens) requer credenciais de acesso ao Supabase staging/CLI, indisponiveis no workspace atual.
-  - Nao declarar G25-B2-A-R2 CLOSED antes de todos os gates verdes com outputs reais do Supabase.
-  - Nao declarar o schema valido usando apenas uma sessao privilegiada que contorne RLS.
+- Estado local/Git:
+  - Commit `f89dcc6` adiciona migration + verify (274 linhas).
+  - Commit `bfc3a58` anterior registrou pre-apply handoff (docs-only).
+  - `git diff --check`: OK.
+  - Untracked esperados preservados: `.claude/`, `data/fixtures/document-events-pedido-02.jsonl`, `supabase/.temp/`.
+  - Nenhum push realizado.
 
-- Proximo passo:
-  - ENTREGAR AO OPERADOR para aplicacao em staging `ucrjtfswnfdlxwtmxnoo`.
-  - Depois ENTREGAR AO IAEXECUTOR para verificacao e closeout documental.
+- Confirmacoes:
+  - Migration aplicada apenas em `ucrjtfswnfdlxwtmxnoo`.
+  - Producao nao contatada.
+  - Nenhum registro legado alterado.
+  - Nenhum CNPJ/parceiro preenchido.
 
-- STATUS ATUAL: **NAO FECHADO — PENDING OPERATOR APPLY + IAEXECUTOR VERIFY**.
+- STATUS FINAL: **G25-B2-A-R2 CLOSED**. ENTREGAR AO ARQUITETO.
+- Proximo passo: **G25-B2-A-R3 — PARTNER CNPJ ADMIN UI**.
 
 # Estado pos-fase - G25-B1-UX-C-B Test Cleanup Closeout
 
