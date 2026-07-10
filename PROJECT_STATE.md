@@ -7447,3 +7447,17 @@ Debitos: repetir validacao visual em browser real e obter sessao segura nao-admi
 - Reader expõe `_ravatex_can_undo_server_decision` apenas com decisão server ativa e base canonica completa (`ingestor_status`, timestamp, event ID e motivo em rejected).
 - Documentos Supabase elegiveis mostram o icone `Desfazer decisão`; sucesso recarrega o reader e renderiza a verdade do servidor. Erros controlados nao mutam estado local.
 - Fluxos manual/G22 e Pedido Detail permanecem inalterados.
+
+## RAVATEX-DOCUMENTS-G24-B3-FRONTEND-SCAN-TRIGGER-POLLING-CLOSEOUT (2026-07-10)
+
+- Status: **CLOSED - FRONTEND SCAN TRIGGER + POLLING**.
+- Branch: `work/app-next`. HEAD inicial: `1ae625b56c2d3b225edece6afebbad52a0376a01`; commit tecnico: `ce7c052d501af1448a2056f1188b1b9febdef6dc` (`Add frontend document scan trigger`).
+- Arquivos tecnicos: `js/documents-scan-trigger.js` (novo), `js/screens/documentos-recebidos.js`, `index.html`, `tests/documents-scan-trigger.test.js` (novo) e `tests/documentos-recebidos.smoke.js`.
+- Contrato: o browser admin chama apenas `solicitar_document_scan` com `p_source='gmail'`. Ele nao cria `document_scan_run`; acompanha somente `document_scan_requests` com o JWT authenticated existente.
+- UX: botao admin-only **Verificar novos documentos**. Estados exibidos: requested, claimed, running, completed, failed e cancelled. Cliques duplicados e polling duplicado sao bloqueados.
+- Polling: cadencia de 5 segundos e timeout de 10 minutos. Para em completed, failed, cancelled, timeout, troca de rota, logout ou sessao invalida. No completed chama `loadDocumentsPrimaryThenFallback()` e rerenderiza a tela.
+- Fonte de dados: Supabase continua primario; JSONL permanece fallback.
+- Testes: 267/267 verdes - scan trigger 13/13; documentos recebidos 82/82; reader/decisions 30/30; auto-load, loader e importacao 142/142. `git diff --check`: OK antes do commit.
+- Confirmacoes: nenhum Gmail, Drive ou Supabase real foi acessado; migration 41 ainda nao aplicada; nenhum push; producao intocada.
+- Risco residual: fila, RLS, watcher e refresh ainda requerem validacao integrada em staging apos aplicar exclusivamente a migration 41.
+- Proxima fase: G24-B4 - STAGING MIGRATION + E2E APP -> REQUEST -> WATCHER -> DOCUMENTS. Esta fase ainda esta pendente.

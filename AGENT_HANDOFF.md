@@ -6859,3 +6859,28 @@ Backfill permanece diagnostico/manual verificado por `document_id`, `ingestion_e
 UI de undo cloud entregue para documentos Supabase com base canonica segura. O wrapper usa somente `desfazer_decisao_documento`; reader marca elegibilidade a partir da decisao ativa e dos campos `ingestor_*`; tela mostra a acao apenas nesse caso e recarrega o reader apos sucesso.
 
 Nao ha localStorage, write direto, service_role no frontend, alteracao de Documents Ingestor, migration ou Supabase remoto nesta fase. Documentos manuais continuam no undo local existente.
+
+## RAVATEX-DOCUMENTS-G24-B3-CLOSEOUT (2026-07-10)
+
+### 1. ESTADO DO CONTROLE DE TAPETES
+
+- Branch `work/app-next`; HEAD inicial `1ae625b56c2d3b225edece6afebbad52a0376a01`; commit tecnico B3 `ce7c052d501af1448a2056f1188b1b9febdef6dc` (`Add frontend document scan trigger`).
+- Entrega: botao admin-only **Verificar novos documentos**, RPC autenticada `solicitar_document_scan(p_source='gmail')`, polling unico por request a cada 5 segundos, timeout de 10 minutos e cancelamento em rota, logout e sessao invalida.
+- A request reutilizada entra em polling; o frontend nunca cria `document_scan_run`. Em completed, a tela chama `loadDocumentsPrimaryThenFallback()` e rerenderiza. Supabase e fonte primaria; JSONL, fallback.
+- Testes locais: 267/267 verdes. Nenhum Gmail, Drive ou Supabase real foi acessado. Migration 41 permanece nao aplicada; push nao realizado; producao intocada.
+
+### 2. ESTADO DO DOCUMENTS INGESTOR
+
+- Branch `master`; HEAD `c48e14678c7f4564790a57e6f3829551dcddbb34`.
+- G24-B2 fechado pelos commits `6886354` e `c48e146`; working tree limpo.
+- Nenhuma alteracao do Ingestor nesta fase B3.
+
+### 3. PROXIMA ACAO
+
+G24-B4 - STAGING MIGRATION + E2E. Iniciar explicitamente com:
+
+```powershell
+cd /d "D:\OneDrive\Programação\Ravatex\controle-tapetes"
+```
+
+Aplicar exclusivamente a migration 41 em staging e somente apos gate do arquiteto executar o E2E app -> request -> watcher -> documents. Nao afirmar que B4 foi executado.
