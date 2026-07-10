@@ -53,6 +53,7 @@ export interface DocumentScanRunWrite {
 }
 
 export interface SupabaseWriterClient {
+  recoverStaleRuns(params: { source: string; staleAfterMinutes?: number }): Promise<{ recoveredCount: number }>;
   upsertCanonicalCandidateState(params: CanonicalIngestorStateWrite): Promise<void>;
   insertEventsIgnoreConflict(rows: DocumentEventWrite[]): Promise<{ inserted: number; skipped: number }>;
   startScanRun(run: DocumentScanRunWrite): Promise<{ kind: 'started'; id: string } | { kind: 'already_running' }>;
@@ -132,12 +133,39 @@ function canonicalWriterError(error: { message?: string; code?: string } | null)
   return new Error(`canonical_writer_rpc_failed: ${message}`);
 }
 
+function staleRecoveryError(error: { message?: string; code?: string } | null): Error {
+  const message = error?.message || 'Supabase stale recovery RPC failed.';
+  if (error?.code === 'PGRST202' || error?.code === '42883'
+    || /recuperar_document_scan_runs_travados|schema cache|does not exist/i.test(message)) {
+    return new Error('migration_40_required');
+  }
+  return new Error(`stale_recovery_rpc_failed: ${message}`);
+}
+
 export function createServiceRoleWriterClient(config: ServiceRoleConfig): SupabaseWriterClient {
   const client = createClient(config.url, config.serviceRoleKey, {
     auth: { autoRefreshToken: false, persistSession: false },
   });
 
   return {
+    async recoverStaleRuns({ source, staleAfterMinutes = 30 }) {
+      // Floor of 5 minutes so a live run is never recovered; the SQL RPC
+      // clamps identically via GREATEST(..., INTERVAL '5 minutes').
+      const requested = Number.isFinite(staleAfterMinutes) ? Math.floor(staleAfterMinutes) : 30;
+      const minutes = Math.max(requested, 5);
+      const { data, error } = await client.rpc('recuperar_document_scan_runs_travados', {
+        p_source: source,
+        p_stale_after: `${minutes} minutes`,
+      });
+      if (error) throw staleRecoveryError(error);
+      if (!data || typeof data !== 'object' || data.ok !== true) {
+        const rpcError = data && typeof data === 'object' && typeof data.error === 'string'
+          ? data.error : 'Supabase stale recovery RPC returned an invalid result.';
+        throw new Error(`stale_recovery_rpc_failed: ${rpcError}`);
+      }
+      return { recoveredCount: typeof data.recovered_count === 'number' ? data.recovered_count : 0 };
+    },
+
     async upsertCanonicalCandidateState(params) {
       const { data, error } = await client.rpc('upsert_document_candidate_ingestor_state', {
         p_candidate: params.candidate,

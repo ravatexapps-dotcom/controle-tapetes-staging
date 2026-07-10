@@ -20,6 +20,8 @@ export interface SyncSupabaseOptions {
   confirmWrite?: boolean;
   dryRun?: boolean;
   source?: string;
+  recoverStale?: boolean;
+  staleAfterMinutes?: number;
 }
 
 export interface PreparedCanonicalCandidate {
@@ -45,6 +47,7 @@ export interface SyncSupabaseResult {
   events_inserted: number;
   events_skipped: number;
   scan_run: { status: 'dry_run' | 'running' | 'completed' | 'failed' | 'scan_already_running'; id: string | null };
+  stale_recovery: { attempted: boolean; recovered_count: number };
   errors: string[];
 }
 
@@ -243,10 +246,12 @@ export async function runSyncSupabase(
     events_inserted: 0,
     events_skipped: prepared.duplicateEventIds,
     scan_run: { status: dryRun ? 'dry_run' : 'running', id: null },
+    stale_recovery: { attempted: false, recovered_count: 0 },
     errors: [],
   };
 
   if (dryRun) {
+    // Dry-run never touches the client (no recovery, no scan run, no writes).
     return {
       ...initialResult,
       candidates_upserted: complete.length,
@@ -257,11 +262,23 @@ export async function runSyncSupabase(
     throw new Error('[sync:supabase] A service-role client is required for a confirmed write.');
   }
 
+  // Opt-in stale lock recovery runs BEFORE startScanRun so a recovered
+  // source frees the partial unique index in time for the insert below.
+  // A live run (younger than the timeout) is left untouched and still
+  // surfaces as scan_already_running. A recovery RPC failure throws here,
+  // before any scan run is created — no blind write can follow.
+  let staleRecovery = { attempted: false, recovered_count: 0 };
+  if (options.recoverStale) {
+    const recovered = await client.recoverStaleRuns({ source, staleAfterMinutes: options.staleAfterMinutes });
+    staleRecovery = { attempted: true, recovered_count: recovered.recoveredCount };
+  }
+
   const startedRun = await client.startScanRun({ source, triggered_by: 'service_role_cli' });
   if (startedRun.kind === 'already_running') {
     return {
       ...initialResult,
       ok: false,
+      stale_recovery: staleRecovery,
       scan_run: { status: 'scan_already_running', id: null },
       errors: ['scan_already_running'],
     };
@@ -269,6 +286,7 @@ export async function runSyncSupabase(
 
   const result: SyncSupabaseResult = {
     ...initialResult,
+    stale_recovery: staleRecovery,
     scan_run: { status: 'running', id: startedRun.id },
   };
 

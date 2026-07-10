@@ -71,8 +71,20 @@ class WriterClientMock implements SupabaseWriterClient {
   eventInserts: DocumentEventWrite[][] = [];
   startedRuns: Array<{ source: string; triggered_by: string }> = [];
   finishedRuns: Array<{ id: string; status: 'completed' | 'failed'; documentsProcessed: number; documentsNew: number; errorMessage: string | null }> = [];
+  recoveredCalls: Array<{ source: string; staleAfterMinutes?: number }> = [];
+  callSequence: string[] = [];
   eventResult = { inserted: 1, skipped: 0 };
   canonicalError: Error | null = null;
+  recoverResult: { recoveredCount: number } = { recoveredCount: 0 };
+  recoverError: Error | null = null;
+  startScanResult: { kind: 'started'; id: string } | { kind: 'already_running' } = { kind: 'started', id: 'run-001' };
+
+  async recoverStaleRuns(params: { source: string; staleAfterMinutes?: number }): Promise<{ recoveredCount: number }> {
+    this.callSequence.push('recover');
+    this.recoveredCalls.push(params);
+    if (this.recoverError) throw this.recoverError;
+    return this.recoverResult;
+  }
 
   async upsertCanonicalCandidateState(params: CanonicalIngestorStateWrite): Promise<void> {
     if (this.canonicalError) throw this.canonicalError;
@@ -85,8 +97,9 @@ class WriterClientMock implements SupabaseWriterClient {
   }
 
   async startScanRun(run: { source: string; triggered_by: string }): Promise<{ kind: 'started'; id: string } | { kind: 'already_running' }> {
+    this.callSequence.push('start');
     this.startedRuns.push(run);
-    return { kind: 'started', id: 'run-001' };
+    return this.startScanResult;
   }
 
   async finishScanRun(params: { id: string; status: 'completed' | 'failed'; documentsProcessed: number; documentsNew: number; errorMessage: string | null }): Promise<void> {
@@ -111,6 +124,8 @@ describe('sync:supabase canonical writer', () => {
     expect(result.candidates_upserted).toBe(1);
     expect(client.startedRuns).toHaveLength(0);
     expect(client.canonicalWrites).toHaveLength(0);
+    expect(client.recoveredCalls).toHaveLength(0);
+    expect(result.stale_recovery).toEqual({ attempted: false, recovered_count: 0 });
   });
 
   it('calls the canonical writer RPC contract with all ingestor fields', async () => {
@@ -285,5 +300,75 @@ describe('sync:supabase canonical writer', () => {
     expect(core + client).not.toMatch(/\.from\('document_decisions'\)/);
     expect(core + client).not.toMatch(/decidir_documento|desfazer_decisao_documento/);
     expect(core + client).not.toMatch(/SUPABASE_ANON_KEY|controle-tapetes/i);
+  });
+
+  describe('stale lock recovery (G23-F-D)', () => {
+    it('recovers stale runs strictly before startScanRun when --recover-stale is set', async () => {
+      const client = new WriterClientMock();
+      client.recoverResult = { recoveredCount: 1 };
+      const result = await runSyncSupabase({ ...options([mappedRow()]), recoverStale: true, staleAfterMinutes: 30 }, client);
+
+      expect(result.ok).toBe(true);
+      expect(client.callSequence).toEqual(['recover', 'start']);
+      expect(client.recoveredCalls).toEqual([{ source: 'documents_ingestor', staleAfterMinutes: 30 }]);
+      expect(result.stale_recovery).toEqual({ attempted: true, recovered_count: 1 });
+    });
+
+    it('does not recover when --recover-stale is absent (behavior unchanged)', async () => {
+      const client = new WriterClientMock();
+      const result = await runSyncSupabase(options([mappedRow()]), client);
+
+      expect(result.ok).toBe(true);
+      expect(client.recoveredCalls).toHaveLength(0);
+      expect(client.callSequence).toEqual(['start']);
+      expect(result.stale_recovery).toEqual({ attempted: false, recovered_count: 0 });
+    });
+
+    it('dry-run performs no recovery and needs no client even with --recover-stale', async () => {
+      const result = await runSyncSupabase(
+        { ...options([mappedRow()]), confirmWrite: false, recoverStale: true },
+        undefined,
+      );
+
+      expect(result.ok).toBe(true);
+      expect(result.dry_run).toBe(true);
+      expect(result.stale_recovery).toEqual({ attempted: false, recovered_count: 0 });
+    });
+
+    it('leaves a live run untouched: recovery frees nothing and scan stays already_running', async () => {
+      const client = new WriterClientMock();
+      client.recoverResult = { recoveredCount: 0 };
+      client.startScanResult = { kind: 'already_running' };
+      const result = await runSyncSupabase({ ...options([mappedRow()]), recoverStale: true }, client);
+
+      expect(result.ok).toBe(false);
+      expect(result.scan_run.status).toBe('scan_already_running');
+      expect(result.stale_recovery).toEqual({ attempted: true, recovered_count: 0 });
+      expect(client.callSequence).toEqual(['recover', 'start']);
+      expect(client.canonicalWrites).toHaveLength(0);
+    });
+
+    it('recovery RPC failure is controlled and never proceeds to a scan run or write', async () => {
+      const client = new WriterClientMock();
+      client.recoverError = new Error('migration_40_required');
+      await expect(
+        runSyncSupabase({ ...options([mappedRow()]), recoverStale: true }, client),
+      ).rejects.toThrow('migration_40_required');
+
+      expect(client.callSequence).toEqual(['recover']);
+      expect(client.startedRuns).toHaveLength(0);
+      expect(client.canonicalWrites).toHaveLength(0);
+      expect(client.finishedRuns).toHaveLength(0);
+    });
+
+    it('binds recovery to the dedicated RPC without touching decision tables', () => {
+      const core = readFileSync(join(process.cwd(), 'src/core/syncSupabase.ts'), 'utf-8');
+      const client = readFileSync(join(process.cwd(), 'src/supabase/serviceRoleClient.ts'), 'utf-8');
+
+      expect(client).toMatch(/rpc\('recuperar_document_scan_runs_travados'/);
+      expect(client).toMatch(/migration_40_required/);
+      expect(core + client).not.toMatch(/\.from\('document_candidates'\)/);
+      expect(core + client).not.toMatch(/\.from\('document_decisions'\)/);
+    });
   });
 });

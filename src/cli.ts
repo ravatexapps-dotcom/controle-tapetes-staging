@@ -708,8 +708,22 @@ program
   .option('--confirm-supabase-write', 'Allow service-role writes (otherwise dry-run)')
   .option('--dry-run', 'Force dry-run even if --confirm-supabase-write is set')
   .option('--source <source>', 'Logical scan source', 'documents_ingestor')
+  .option('--recover-stale', 'Recover abandoned running scan locks before starting (requires migration 40)')
+  .option('--stale-after-minutes <n>', 'Minutes before a running scan is considered stale (default 30, floor 5)', '30')
   .action(async (opts) => {
     const confirmWrite = Boolean(opts.confirmSupabaseWrite) && !Boolean(opts.dryRun);
+    const recoverStale = Boolean(opts.recoverStale);
+    const staleAfterMinutes = Number.parseInt(opts.staleAfterMinutes, 10);
+    if (recoverStale && (!Number.isInteger(staleAfterMinutes) || staleAfterMinutes < 1)) {
+      console.error('[sync:supabase] --stale-after-minutes must be a positive integer (minutes).');
+      process.exitCode = 1;
+      return;
+    }
+    if (recoverStale && !confirmWrite) {
+      // Recovery needs the service-role client, which only exists on a confirmed write.
+      console.error('[sync:supabase] --recover-stale has no effect in dry-run (no service-role client).');
+    }
+
     let client;
     let projectRef: string | null = null;
 
@@ -732,6 +746,8 @@ program
         confirmWrite,
         dryRun: Boolean(opts.dryRun),
         source: opts.source,
+        recoverStale,
+        staleAfterMinutes,
       }, client);
       console.log(JSON.stringify({ ...result, project_ref: projectRef }, null, 2));
       if (!result.ok) process.exitCode = 1;
