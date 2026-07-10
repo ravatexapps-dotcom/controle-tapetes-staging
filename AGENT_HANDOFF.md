@@ -1,4 +1,33 @@
-﻿# Estado pos-fase - G24-B5-V Visual Gate Closeout
+﻿# Estado pos-fase - G25-B1-UX-C-B Test Cleanup Closeout
+
+- Fase: `RAVATEX-DOCUMENTS-G25-B1-UX-C-B-TEST-CLEANUP-CLOSEOUT`.
+- Status: **CLOSED — G25-B1-UX-C-B**.
+- Branch/HEAD: `work/app-next` em `4c852bd` (HEAD inicial `4c852bd`).
+
+- O que foi executado (limpeza de dados de teste; sem alteracao de schema/codigo):
+  - Exclusao escopada de 3 documentos de teste (allowlist exclusiva), autorizada pelo operador.
+  - Supabase staging (`ucrjtfswnfdlxwtmxnoo`): -3 `document_candidates`, -2 `document_events`. Producao (`bhgifjrfagkzubpyqpew`) bloqueada por guarda de ref; nunca contatada.
+  - Ingestor SQLite: -3 `documentos`, -4 `ingestion_events`. Ambos os bancos 40 -> 37.
+  - IDs removidos: `cda18ef9…` (teste-nfe-entrada.xml, era accepted), `6c871580…` (pdf143429.pdf), `40ed90ab…` (TESTE-G25-B1-20260710-1536.pdf).
+
+- Decisao operacional:
+  - `desfazer_decisao_documento` nao aplicavel/nao alcancavel (`admin_required` via service_role; 0 decisao ativa; aceite ingestor-side; `pedido_id` null). Operador autorizou exclusao direta escopada; estado accepted removido pela exclusao, sem afetar Pedido/OP.
+  - Nenhuma RPC de exclusao (`desfazer_decisao_documento`, `remover_pedido`, `remover_op`) invocada.
+
+- Preservado e verificado:
+  - `e9c0922c…` / `cce-001_000006192-1_S_1.pdf` (Drive `1v7KQ2…`, sha256 compartilhado `efa7f31f13…`).
+  - `L.pdf` (pending). `pedidos`=5, `ops`=7 inalterados. 0 eventos orfaos.
+
+- Confirmacoes:
+  - Google Drive: nenhuma chamada; nenhum arquivo fisico removido. Gmail: nenhuma chamada. Nenhum novo scan.
+  - Watcher parado/retomado pelo script oficial (`watcher_instances` 0 -> 1); `active_gmail_requests` 0.
+  - Producao intocada. Nenhum push. `git add` restrito aos dois arquivos de documentacao.
+
+- Encerramento: G25-B1-UX-A e G25-B1-UX-C (A + B) encerrados.
+- Proximo passo: G25-B2 - RELEVANCE CLASSIFIER V1.
+- STATUS FINAL: G25-B1-UX-C-B CLOSED. ENTREGAR AO ARQUITETO.
+
+# Estado pos-fase - G24-B5-V Visual Gate Closeout
 
 - Fase: `RAVATEX-DOCUMENTS-G24-B5-V-VISUAL-GATE-CLOSEOUT`.
 - Status: **CLOSED — G24-B5-V VISUAL_GATE_OK**.

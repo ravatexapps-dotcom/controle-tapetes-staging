@@ -1,4 +1,28 @@
 > **Atualizacao 2026-07-10 — fase
+> `RAVATEX-DOCUMENTS-G25-B1-UX-C-B-TEST-CLEANUP-CLOSEOUT`.**
+> Status: **CLOSED — G25-B1-UX-C-B**.
+> Branch/HEAD: `work/app-next` em `4c852bd` (HEAD inicial `4c852bd`).
+>
+> Escopo (limpeza de dados de teste em staging; sem alteracao de schema/codigo):
+> - Exclusao escopada de 3 documentos de teste autorizada pelo operador (allowlist exclusiva).
+> - Supabase staging (`ucrjtfswnfdlxwtmxnoo`): removidas 3 `document_candidates` + 2 `document_events` (5 linhas), keyed por `document_id`. Producao (`bhgifjrfagkzubpyqpew`) bloqueada por guarda; nunca contatada.
+> - Ingestor SQLite (registro sincrono): removidas 3 `documentos` + 4 `ingestion_events` (7 linhas). Ambos os bancos 40 -> 37.
+> - IDs: `cda18ef9…` (teste-nfe-entrada.xml, era accepted), `6c871580…` (pdf143429.pdf), `40ed90ab…` (TESTE-G25-B1-20260710-1536.pdf).
+> - Reversao do aceite: `desfazer_decisao_documento` diagnosticado nao aplicavel/nao alcancavel (`admin_required` via service_role; 0 decisao ativa; aceite ingestor-side; `pedido_id` null). Operador autorizou exclusao direta; estado accepted removido pela propria exclusao, sem tocar Pedido/OP. Nenhuma RPC de exclusao (`desfazer_decisao_documento`, `remover_pedido`, `remover_op`) foi invocada.
+> - Preservado: doc legitimo `e9c0922c…` / `cce-001_000006192-1_S_1.pdf` (Drive `1v7KQ2…`, sha256 compartilhado `efa7f31f13…`); `L.pdf`. `pedidos`=5 e `ops`=7 inalterados. 0 eventos orfaos.
+> - Google Drive: nenhuma chamada; nenhum arquivo fisico removido. Gmail: nenhuma chamada. Nenhum novo scan.
+> - Watcher (Ingestor) parado pelo script oficial antes e retomado depois (`watcher_instances` 0 -> 1); `active_gmail_requests` 0 antes e depois.
+> - Producao intocada. Nenhum push. `git add` restrito a `PROJECT_STATE.md` e `AGENT_HANDOFF.md`.
+>
+> Arquivos alterados nesta fase:
+> - `PROJECT_STATE.md` (registro closeout)
+> - `AGENT_HANDOFF.md` (registro closeout)
+>
+> Encerramento: G25-B1-UX-A e G25-B1-UX-C (A + B) encerrados. Proximo passo: G25-B2 - RELEVANCE CLASSIFIER V1.
+>
+> STATUS FINAL: G25-B1-UX-C-B CLOSED. ENTREGAR AO ARQUITETO.
+
+> **Atualizacao 2026-07-10 — fase
 > `RAVATEX-DOCUMENTS-G24-B5-V-VISUAL-GATE-CLOSEOUT`.**
 > Status: **CLOSED — G24-B5-V VISUAL_GATE_OK**.
 > Branch/HEAD: `work/app-next` em `9aacfe2` (HEAD inicial `9aacfe2`).
