@@ -6884,3 +6884,20 @@ cd /d "D:\OneDrive\Programação\Ravatex\controle-tapetes"
 ```
 
 Aplicar exclusivamente a migration 41 em staging e somente apos gate do arquiteto executar o E2E app -> request -> watcher -> documents. Nao afirmar que B4 foi executado.
+
+## RAVATEX-DOCUMENTS-G24-B4-STAGING-E2E-BLOCKED (2026-07-10)
+
+### 1. ESTADO DO CONTROLE DE TAPETES
+
+- Migration 41 aplicada manualmente somente no staging `ucrjtfswnfdlxwtmxnoo` (SHA-256 `E789D1BB23997859D79E26D5956D26192FAEBD791C0759D61644C024668C683B`). Producao intocada.
+- Request real `41a6506e...` permanece `requested`; exatamente uma ativa para gmail. Nenhum run foi criado.
+- Frontend corrigido no commit `f6185f0` (`Fix frontend document scan request trigger`): remove `disabled=\"null\"` e mostra feedback persistente. Reteste criou a request. Duplicidade visual residual da mesma mensagem permanece para acompanhamento posterior.
+
+### 2. ESTADO DO DOCUMENTS INGESTOR
+
+- Branch `master`, HEAD tecnico `c48e146`; ambiente staging comprovado.
+- A unica tentativa do watcher abortou antes de qualquer operacao externa: `required option '--source <source>' not specified`. Nenhuma alteracao tecnica no Ingestor e nenhum run/Gmail/Drive/sync.
+
+### 3. PROXIMA ACAO
+
+**G24-B4-R2 REQUIRED.** Em nova ordem, primeiro confirmar que `41a6506e...` ainda esta `requested`, depois autorizar uma unica execucao do watcher com `--source gmail` explicito. Nao repetir o watcher nesta ordem.

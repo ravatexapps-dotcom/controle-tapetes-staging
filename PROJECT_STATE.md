@@ -7461,3 +7461,14 @@ Debitos: repetir validacao visual em browser real e obter sessao segura nao-admi
 - Confirmacoes: nenhum Gmail, Drive ou Supabase real foi acessado; migration 41 ainda nao aplicada; nenhum push; producao intocada.
 - Risco residual: fila, RLS, watcher e refresh ainda requerem validacao integrada em staging apos aplicar exclusivamente a migration 41.
 - Proxima fase: G24-B4 - STAGING MIGRATION + E2E APP -> REQUEST -> WATCHER -> DOCUMENTS. Esta fase ainda esta pendente.
+
+## RAVATEX-DOCUMENTS-G24-B4-STAGING-E2E-BLOCKED (2026-07-10)
+
+- Status: **BLOCKED - B4-R2 REQUIRED**.
+- Staging: `ucrjtfswnfdlxwtmxnoo`; producao `bhgifjrfagkzubpyqpew` nao foi acessada. Migration 41 aplicada manualmente no SQL Editor isolado, com SHA-256 `E789D1BB23997859D79E26D5956D26192FAEBD791C0759D61644C024668C683B`.
+- Evidencia de schema: policy `document_scan_requests_admin_all` retornou `ALL`, `is_admin()` em `qual` e `with_check`; o app admin criou uma request real pela RPC da migration.
+- Frontend R1: causa raiz era o atributo booleano `disabled` presente como `disabled=\"null\"` no botao, que bloqueava o evento mesmo com listener anexado. Commit `f6185f0` remove o atributo quando inativo e adiciona feedback persistente no DOM para clique, sessao, request ativa e falha.
+- Reteste: app mostrou `Solicitacao aguardando executor`; request `41a6506e...` criada em `requested` em `2026-07-10T13:36:40.936656+00:00`, sem timestamps de claim/start/finish ou scan run. Exatamente uma request ativa para gmail.
+- Watcher: a unica execucao autorizada abortou antes de qualquer acesso externo por `error: required option '--source <source>' not specified`. Request preservada. Gmail, Drive, scan run, sync e refresh automatico nao ocorreram.
+- Resultado de documentos: antes 2; depois nao comprovado; documento novo nao comprovado. Duplicidade visual residual de `Solicitacao aguardando executor` foi observada e preservada para B4-R2.
+- Risco residual: B4-R2 deve validar a request ainda ativa e autorizar uma unica execucao com source explicita; nao repetir nesta ordem. Push nao realizado.
