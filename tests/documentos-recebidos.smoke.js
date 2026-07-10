@@ -69,6 +69,8 @@ const AUTO_LOAD = path.join(ROOT, 'js', 'documents-ingestor-auto-load.js');
 const autoLoadSrc = readOrFail(AUTO_LOAD);
 const READER = path.join(ROOT, 'js', 'documents-supabase-reader.js');
 const readerSrc = readOrFail(READER);
+const SCAN_TRIGGER = path.join(ROOT, 'js', 'documents-scan-trigger.js');
+const scanTriggerSrc = readOrFail(SCAN_TRIGGER);
 const common = readOrFail(COMMON);
 const boot = readOrFail(BOOT);
 const ui = readOrFail(UI);
@@ -162,6 +164,25 @@ test('common.js: ADMIN_MENU contem entrada Documentos -> #/documentos/recebidos'
 test('documentos-recebidos: nao cria query Supabase diretamente', function () {
   assert.equal(/supa\.from\s*\(/.test(screen), false, 'supa.from em documentos-recebidos');
   assert.equal(/window\.supa/.test(screen), false, 'window.supa em documentos-recebidos');
+});
+
+test('documentos-recebidos: conecta o trigger sem chamar RPC diretamente', function () {
+  assert.match(screen, /requestDocumentScan/);
+  assert.equal(/window\.supa\s*\.rpc/.test(screen), false, 'a tela delega a RPC ao modulo dedicado');
+  assert.match(scanTriggerSrc, /solicitar_document_scan/);
+});
+
+test('documentos-recebidos: botao de verificacao e exclusivo de admin', function () {
+  const admin = makeScreenSandbox([]);
+  const adminTree = vm.runInContext('window.screenDocumentosRecebidos()', admin);
+  assert.ok(findAll(adminTree, findAction('verificar-novos-documentos')).length === 1,
+    'admin deve ver o botao de verificacao');
+
+  const nonAdmin = makeScreenSandbox([]);
+  nonAdmin.CURRENT_USER = { nome: 'Cliente', tipo: 'cliente' };
+  const nonAdminTree = vm.runInContext('window.screenDocumentosRecebidos()', nonAdmin);
+  assert.equal(findAll(nonAdminTree, findAction('verificar-novos-documentos')).length, 0,
+    'nao-admin nao deve ver o botao de verificacao');
 });
 
 test('documentos-recebidos: NAO referencia Google/Drive API', function () {
