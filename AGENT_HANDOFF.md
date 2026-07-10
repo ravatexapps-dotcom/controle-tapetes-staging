@@ -739,3 +739,11 @@ Bases incompletas sao retornadas em `canonical_base_skipped`, sem inventar pendi
 - Request `41a6506e...` permanece `requested`. A unica chamada real do watcher abortou antes de qualquer efeito externo porque o CLI exige `--source <source>`.
 - Nao houve claim, run, Gmail, Drive, export ou sync. Request preservada para diagnostico.
 - Proxima acao: **G24-B4-R2 REQUIRED**; em nova ordem, validar a request e autorizar somente `watch:scan-requests --source gmail ...` uma vez.
+
+## G24-B4 CLOSEOUT (2026-07-10)
+
+- G24-B4 CLOSED. Branch baseline `master`, HEAD anterior `603d016`; somente estes arquivos de estado/handoff sao atualizados nesta ordem.
+- Staging `ucrjtfswnfdlxwtmxnoo`, migration 41 hash `E789D1BB23997859D79E26D5956D26192FAEBD791C0759D61644C024668C683B`; request `41a6506e...` concluida com run `d7b90a68...`, erro nulo e zero requests Gmail ativas.
+- Watcher executado uma vez com source explicita; contagens `1/1/1/0/0` (cycles/processed/completed/failed/empty), transicao `requested -> claimed -> running -> completed`, sem retry/recover-stale.
+- E2E confirmou scan Gmail, export/sync/finalizacao e refresh automatico da tela, com cinco documentos novos visiveis. Producao intocada, sem novas requests, sem alteracoes tecnicas e sem push.
+- Dividas nao bloqueantes: feedback duplicado visualmente e hidratacao de request ativa apos hard reload; proximo recomendado apenas B5 (`SCAN STATUS UI DEDUP + ACTIVE REQUEST HYDRATION`).

@@ -456,3 +456,12 @@ RAVATEX-DOCUMENTS-G22-A-AUTO-LOADER-DESIGN (Controle de Tapetes, read-only)
 - Comando real tentado uma unica vez: `npm.cmd run watch:scan-requests -- --once --poll-seconds 5 --confirm-real-google --confirm-supabase-write`.
 - Resultado: abortou antes de claim, Gmail, Drive, scan run ou sync com `error: required option '--source <source>' not specified`. Nenhum run foi criado; request preservada.
 - Nenhuma alteracao tecnica no Ingestor. Proximo passo: B4-R2 deve, em nova autorizacao, confirmar a request e executar uma unica vez com `--source gmail` explicito.
+
+## RAVATEX-DOCUMENTS-G24-B4-STAGING-E2E-CLOSED (2026-07-10)
+
+- STATUS: G24-B4 CLOSED. Staging `ucrjtfswnfdlxwtmxnoo`; migration 41 SHA-256 `E789D1BB23997859D79E26D5956D26192FAEBD791C0759D61644C024668C683B`.
+- Request sanitizada `41a6506e...`, source `gmail`, terminou `completed`; requested/claimed/started/finished preenchidos; `scan_run_id` `d7b90a68...`; erro nulo; `active_gmail_requests=0`.
+- Execucao unica autorizada: `npm.cmd run watch:scan-requests -- --source gmail --once --poll-seconds 5 --confirm-real-google --confirm-supabase-write`. Resultado: `cycles=1`, `requests_processed=1`, `requests_completed=1`, `requests_failed=0`, `empty_polls=0`; `requested -> claimed -> running -> completed`; eventos `cycle.start`, `cycle.start_run`, `cycle.mark_running`, `cycle.scan`, `cycle.finish_run`, `cycle.finish_request`, `watch.done`.
+- Gmail/scan/export/sync/finalizacao concluidos conforme evidencia E2E; a UI atualizou a lista automaticamente e exibiu pelo menos cinco documentos novos.
+- Producao nao acessada; nenhum retry ou `--recover-stale`; nenhuma migration/codigo tecnico alterado nesta ordem; nenhuma nova request e nenhum push.
+- Dividas nao bloqueantes ficam para B5: duplicidade visual do feedback e ausencia de reidratacao automatica apos hard reload. Proximo recomendado: `G24-B5 - SCAN STATUS UI DEDUP + ACTIVE REQUEST HYDRATION`.
