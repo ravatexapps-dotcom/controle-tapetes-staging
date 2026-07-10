@@ -1,3 +1,39 @@
+> **Atualizacao 2026-07-10 — fase
+> `RAVATEX-DOCUMENTS-G24-B1-R1-DOCUMENT-SCAN-REQUEST-QUEUE-HARDENING-CLOSEOUT`.**
+> Status: **PRONTO — FILA DE SOLICITACOES DE SCAN (REQUEST × RUN DESACOPLADOS) COM ESTADO `cancelled`**.
+> Branch/HEAD tecnico Controle: `work/app-next` em `7847bbc597eb8558ad2d3bea7c8323889ef65ea0` (HEAD inicial `eed680ed322bc1ad2496d6fa316e242100f29709`).
+> HEAD canonico de referencia no Ingestor: `master` em `dfc2e648554e7ea987bca34a14263f5344c92b8e`.
+>
+> Escopo G24-B1 (Controle):
+> - Migration 41: `db/41_document_scan_requests_queue.sql` (novo, 617 linhas).
+>   Cria a fila canonica `public.document_scan_requests` separada da execucao real em `document_scan_runs`. Separa `request` (intencao do operador) de `run` (execucao real do Ingestor), impedindo que a UI acople a um INSERT dependente do indice unico parcial `document_scan_runs_running_source_uidx` de `db/38`.
+> - Estados completos: `requested | claimed | running | completed | failed | cancelled`. Em R1 foi adicionado `cancelled` como estado terminal (exige `finished_at`, nao exige `error_message`, nao permanece no indice de requests ativas). RPC de cancelamento NAO e criada nesta fase — o estado fica preparado no schema para uma RPC futura ou para um UPDATE de `is_admin()`.
+> - Claim atomico: `claim_next_document_scan_request(p_source TEXT DEFAULT NULL)` via `FOR UPDATE SKIP LOCKED` + reconfirmacao `status = 'requested'`. Fila vazia devolve `{ ok: true, empty: true }`. Duas instancias do runner nunca pegam a mesma request.
+> - Unicidade ativa por source: `UNIQUE INDEX PARCIAL` sobre `(source)` restrito a `status IN ('requested','claimed','running')`. Impede duas requests ativas para a mesma source sem depender de `SELECT` previo + `INSERT` (TOCTOU).
+> - Transicoes estritas: `mark_document_scan_request_running` faz SOMENTE `claimed` -> `running` + associa `scan_run_id` real. `finish_document_scan_request` aceita apenas `completed` ou `failed` (cancelamento nao entra nesta RPC nesta fase), transita a partir de `claimed`/`running`, preenche `finished_at`, grava `error_message` quando `failed`, idempotente em estado terminal.
+> - Renomeacao R1: `requested_by` -> `requested_by_user_id` na tabela, no `INSERT` de `solicitar_document_scan`, em todos os `COMMENT ON COLUMN` e na documentacao. Alinha com a convencao de outras tabelas de auditoria (`decided_by_user_id`, `synced_by_user_id`).
+> - `scan_run_id` sem foreign key intencionalmente: a request e a execucao possuem ciclos de vida desacoplados e a auditoria da request deve sobreviver a cleanup manual de runs. Comentario explicito no schema.
+> - Grants/RLS: RLS admin-only (`public.is_admin()` com `USING` e `WITH CHECK`); `REVOKE ALL` de `PUBLIC`/`anon`/`authenticated`; `GRANT SELECT` para `authenticated` para acompanhamento admin. RPCs: `solicitar_document_scan` -> `authenticated` (gate `is_admin()`); `claim_next_document_scan_request`, `mark_document_scan_request_running`, `finish_document_scan_request` -> `service_role` apenas. Finaliza com `NOTIFY pgrst, 'reload schema'` + `NOTIFY pgrst, 'reload config'`.
+> - Sem FK em `scan_run_id`, sem escrita em `document_scan_runs`, `document_candidates`, `document_decisions`, sem scheduler, sem daemon, sem service_role no frontend, sem alteracao em `db/38`, `db/39` ou `db/40`.
+>
+> Migration 41: **VERSIONADA, MAS NAO APLICADA** nesta fase. `CREATE OR REPLACE` garante idempotencia no apply futuro. Aplicar **somente em staging** em fase posterior, apos smoke do watcher B2.
+>
+> Arquivos alterados nesta fase (Controle):
+> - `db/41_document_scan_requests_queue.sql` (novo, 617 linhas).
+> - `tests/documentos-scan-requests-queue-schema.test.js` (novo, 14 testes).
+>
+> Confirmacoes:
+> - Producao intocada. Gmail, Drive e Supabase real **nao utilizados** nesta fase (migration nao aplicada, nenhuma chamada remota, nenhuma credencial real).
+> - Migration 41 versionada mas **nao aplicada** (apply somente em staging, em fase posterior).
+> - Testes: `tests/documentos-scan-requests-queue-schema.test.js` 14/14; regressao verificada em `tests/documentos-schema.smoke.js` 15/15 e `tests/documentos-ingestor-state-undo-schema.test.js` 6/6.
+> - Sem push, sem `git add .`, sem `git add -A`.
+> - Untracked preservados no Controle: `.claude/`, `data/fixtures/document-events-pedido-02.jsonl`, `supabase/.temp/`.
+> - `git diff --check`: OK.
+>
+> Ressalva obrigatoria: a migration 41 foi especificada e versionada (definicao + grants + NOTIFY), mas a **fila real ainda depende do smoke staging** a ser executado em fase posterior (G24-B2/B3). O claim atomico, o indice parcial e a protecao `FOR UPDATE SKIP LOCKED` sao contratos logicos, nao verificados contra carga real.
+>
+> Proximo passo: G24-B2 — REQUEST WATCHER PATCH. Implementar no Documents Ingestor o processo que recebe `document_scan_requests`, executa o fluxo real do ingestor e atualiza request e run, com `--once` obrigatorio para testes e modo mock/dry-run por padrao.
+
 > **Atualizacao 2026-07-09 — fase
 > `RAVATEX-DOCUMENTS-G23-F-D-SCAN-RUN-STALE-LOCK-RECOVERY-PATCH`.**
 > Status: **PRONTO — RPC DE RECOVERY PARA STALE LOCKS EM document_scan_runs**.
