@@ -6964,3 +6964,12 @@ Aplicar exclusivamente a migration 41 em staging e somente apos gate do arquitet
 ### 3. PROXIMA ACAO
 
 - Nenhuma fase dependente. As duas dividas nao bloqueantes do G24-B4 (duplicidade visual + hidratacao apos hard reload) estao resolvidas no frontend. Revalidacao visual em staging fica a criterio do arquiteto — esta ordem nao acessou staging.
+## RAVATEX-DOCUMENTS-G24-C-AUTO-SCAN-ENTRY-GMAIL-COVERAGE (2026-07-10)
+
+- **Status**: `G24-C BLOCKED — R1 REQUIRED`; nao fechar como CLOSED.
+- **Baseline**: Controle `work/app-next` / `e72d966`; Ingestor `master` / `62b4e10`. Os untracked explicitamente preservados no Controle continuam intactos.
+- **Implementado no Controle**: o bootstrap autenticado admin chama `RAVATEX_DOCUMENTS.autoStartDocumentScanOnAdminBootstrap()` uma vez por sessao/usuario. O fluxo consulta a request ativa antes da RPC; request ativa e hidratada/pollada, ausencia chama `solicitar_document_scan`. Falha controlada aparece no DOM e nao bloqueia o roteamento. A API de polling agora permite assinantes adicionais na mesma request, mantendo um unico polling e permitindo que a tela atualize ao completar.
+- **Testes Controle**: `node --check js/documents-scan-trigger.js`, `node --check js/boot.js` e `node --test tests/documents-scan-trigger.test.js`: 20/20 pass.
+- **Diagnostico Gmail somente leitura**: na janela `after:2026/07/03`, query atual e query-controle ampla retornaram as mesmas 10 mensagens/18 anexos. Houve 17 candidatos PDF/XML e 1 anexo irrelevante; zero candidatos omitidos pela query atual. Ledger foi mantido apenas sanitizado em memoria/saida operacional; nenhum corpo ou anexo foi baixado.
+- **Decisao de gate**: nenhum patch de filtro e permitido ainda. Nao foi comprovada causa em query, data, label, cap, MIME/extensao, dedup ou classificacao. R1 requer um documento ausente conhecido (ou uma janela delimitada que o contenha) para repetir a comparacao e adicionar teste causal.
+- **E2E**: nao executado. Watcher persistente nao estava ativo (task `Ravatex-DocumentScanWatcher-Staging` ainda nao instalada) e nao existe evidencia de documento antes ausente para o criterio de aceite. Producao, push, Gmail/Drive writes foram preservados.

@@ -7524,3 +7524,21 @@ Debitos: repetir validacao visual em browser real e obter sessao segura nao-admi
 - Testes: suites afetadas verdes **105/105** (`tests/documents-scan-trigger.test.js` + `tests/documentos-recebidos.smoke.js`), sendo +6 novos (3 trigger + 3 tela). Baseline provado no mesmo diretorio: revertendo apenas os dois fontes para `df18061`, a suite suspeita (`import-received` + `g14-c-bridge`) mantem `60/49/11` identicos — as 11 falhas restantes sao pre-existentes (JSONL real do Ingestor externo + bridge localStorage do Pedido Detail), nao introduzidas por esta ordem.
 - `node --check` OK nos dois fontes; `git status` limpo exceto untracked preservados (`.claude/`, `data/fixtures/document-events-pedido-02.jsonl`, `supabase/.temp/`).
 - Proxima fase: nenhuma dependente. As dividas do closeout G24-B4 estao resolvidas no frontend; revalidacao visual em staging fica a criterio do arquiteto (esta ordem nao acessou staging).
+> **Atualizacao 2026-07-10 — fase `RAVATEX-DOCUMENTS-G24-C-AUTO-SCAN-ENTRY-GMAIL-COVERAGE`.**
+> Status: **G24-C BLOCKED — R1 REQUIRED** (gate do filtro Gmail sem causa comprovada; auto-trigger e testes locais implementados).
+>
+> Sem compactacao deste arquivo. Baseline confirmado: `work/app-next` em `e72d966`; untracked preservados: `.claude/`, `data/fixtures/document-events-pedido-02.jsonl`, `supabase/.temp/`.
+>
+> Controle:
+> - `js/boot.js` chama, sem bloquear o roteamento, `autoStartDocumentScanOnAdminBootstrap()` apos a sessao admin estar disponivel.
+> - `js/documents-scan-trigger.js` consulta primeiro a request Gmail ativa; se existir, somente retoma o polling; se nao existir, solicita uma request. O guard e por sessao/usuario (com fallback por pagina), nao por render ou rota.
+> - Polling conserva uma unica execucao por request, mas agora aceita assinantes adicionais; assim a tela de documentos recebe o refresh automatico mesmo quando o bootstrap iniciou o acompanhamento antes da rota renderizar.
+> - Falhas controladas do bootstrap sao expostas em um status DOM sem impedir o app; nao-admin nao consulta nem cria request. O botao manual permanece.
+> - Testes focados: `node --test tests/documents-scan-trigger.test.js` — 20/20 pass; `node --check` dos dois modulos — OK; `git diff --check` — OK.
+>
+> Gate Gmail/Ingestor:
+> - Comparacao read-only, limitada a 7 dias: query atual `has:attachment (filename:pdf OR filename:xml) after:2026/07/03` versus controle `has:attachment after:2026/07/03`.
+> - Ambas retornaram 10 mensagens e 18 anexos; 17 candidatos PDF/XML e 1 rejeicao nao relevante. Nenhuma mensagem ou anexo candidato ficou fora da query atual. IDs, assuntos e nomes foram sanitizados; nenhum conteudo de e-mail foi baixado.
+> - Consequentemente, o filtro permanece inalterado: nao ha evidencia para atribuir documento omitido a query, MIME/extensao, cap, deduplicacao ou classificacao nesta janela. R1 precisa de um documento ausente identificavel ou de uma janela temporal autorizada que o contenha.
+>
+> E2E staging nao executado: nao havia watcher persistente nem task instalada, e o criterio de “documento antes omitido agora ingerido” nao pode ser demonstrado sem satisfazer o gate acima. Producao, push, Gmail writes e Drive writes permanecem intocados.
