@@ -1,4 +1,42 @@
 > **Atualizacao 2026-07-10 — fase
+> `RAVATEX-DOCUMENTS-G25-B2-A-R2-SHARED-PARTNER-CNPJ-REGISTRY`.**
+> Status: **MIGRATION COMMITTED — AGUARDANDO APLICACAO EM STAGING E VERIFICACAO**.
+> Branch/HEAD: `work/app-next` em `f89dcc6`.
+>
+> Escopo (schema aditivo MODELO C, staging-only, nao destrutivo):
+> - Migration 44: `db/44_partner_cnpj_registry.sql` (196 linhas) + `db/44_partner_cnpj_registry.verify.sql` (78 linhas).
+> - Cria `public.parceiros`, `public.parceiro_cnpjs` e a funcao imutavel `public.is_valid_cnpj(text)` (14 digitos + DV, rejeita sequencia repetida e pontuacao).
+> - Adiciona links aditivos e NULLABLE `fornecedores.parceiro_id` / `clientes.parceiro_id` com `ON DELETE RESTRICT`.
+> - RLS admin-only (`parceiros_admin`, `parceiro_cnpjs_admin`); triggers de `atualizado_em`; indice unico global de CNPJ (`parceiro_cnpjs_cnpj_uidx`) e indice parcial de um principal ativo por parceiro (`parceiro_cnpjs_um_principal_ativo_uidx`).
+> - Idempotente (`CREATE OR REPLACE`, `IF NOT EXISTS`, `DROP POLICY IF EXISTS`); sem preenchimento de CNPJ; sem vinculacao automatica; sem alterar registros legados.
+>
+> Estado local/Git:
+> - Commit `f89dcc6` adiciona os dois arquivos (274 linhas).
+> - `git diff --check HEAD~1 HEAD`: OK.
+> - Working tree limpa exceto por untracked esperados: `.claude/`, `data/fixtures/document-events-pedido-02.jsonl`, `supabase/.temp/`.
+>
+> Verificacao em staging (`ucrjtfswnfdlxwtmxnoo`) — PENDENTE DE EXECUCAO:
+> - Aplicar `db/44_partner_cnpj_registry.sql` no SQL editor do Supabase staging.
+> - Rodar `db/44_partner_cnpj_registry.verify.sql` (transacional, BEGIN..ROLLBACK; esperado `ALL VERIFY ASSERTIONS PASSED`).
+> - Re-rodar a migration para confirmar idempotencia (sem erro, sem efeitos cumulativos).
+> - Validar RLS estrutural (`policies` `parceiros_admin` / `parceiro_cnpjs_admin`) e comportamental (admin le/escreve; nao-admin nao ve linhas e nao consegue escrever).
+> - Confirmar contagens legadas inalteradas (5/3/5/7).
+> - Confirmar `parceiros` = 0, `parceiro_cnpjs` = 0, todos `parceiro_id` NULL em `fornecedores` e `clientes`.
+> - Producao (`bhgifjrfagkzubpyqpew`) nao deve ser tocada.
+>
+> Arquivos alterados nesta fase (ate o momento):
+> - `db/44_partner_cnpj_registry.sql` (novo)
+> - `db/44_partner_cnpj_registry.verify.sql` (novo)
+> - `PROJECT_STATE.md` (registro)
+> - `AGENT_HANDOFF.md` (registro)
+>
+> Ressalva obrigatoria: a verificacao real em Supabase staging nao pode ser executada neste ambiente porque nao ha credenciais de acesso ao banco/Supabase CLI disponiveis no workspace. O operator deve aplicar a migration e o IAEXECUTOR deve rodar o verify e confirmar todos os gates antes de declarar G25-B2-A-R2 CLOSED. Nao declarar o schema valido usando apenas sessao privilegiada que contorne RLS.
+>
+> Proximo passo: ENTREGAR AO OPERADOR para aplicacao em staging `ucrjtfswnfdlxwtmxnoo`; depois ENTREGAR AO IAEXECUTOR para verificacao e closeout.
+>
+> STATUS ATUAL: **NAO FECHADO — PENDING OPERATOR APPLY + IAEXECUTOR VERIFY**.
+
+> **Atualizacao 2026-07-10 — fase
 > `RAVATEX-DOCUMENTS-G25-B1-UX-C-B-TEST-CLEANUP-CLOSEOUT`.**
 > Status: **CLOSED — G25-B1-UX-C-B**.
 > Branch/HEAD: `work/app-next` em `4c852bd` (HEAD inicial `4c852bd`).

@@ -1,4 +1,45 @@
-﻿# Estado pos-fase - G25-B1-UX-C-B Test Cleanup Closeout
+﻿# Estado pos-fase - G25-B2-A-R2 Shared Partner CNPJ Registry
+
+- Fase: `RAVATEX-DOCUMENTS-G25-B2-A-R2-SHARED-PARTNER-CNPJ-REGISTRY`.
+- Status: **MIGRATION COMMITTED — AGUARDANDO APLICACAO EM STAGING E VERIFICACAO**.
+- Branch/HEAD: `work/app-next` em `f89dcc6`.
+
+- O que foi entregue (schema aditivo MODELO C, staging-only):
+  - Migration 44: `db/44_partner_cnpj_registry.sql` (196 linhas).
+    - `public.parceiros`: entidade empresarial compartilhada.
+    - `public.parceiro_cnpjs`: um ou varios CNPJs/estabelecimentos por parceiro.
+    - `public.is_valid_cnpj(text)`: validacao imutavel (14 digitos + DV; rejeita sequencia repetida e pontuacao).
+    - Colunas aditivas e NULLABLE `fornecedores.parceiro_id` / `clientes.parceiro_id` (`ON DELETE RESTRICT`).
+    - RLS admin-only (`parceiros_admin`, `parceiro_cnpjs_admin`); triggers `atualizado_em`; indices unicos global e parcial.
+  - Companion verify: `db/44_partner_cnpj_registry.verify.sql` (78 linhas, transacional BEGIN..ROLLBACK).
+
+- Estado local/Git:
+  - Commit `f89dcc6` adiciona migration + verify (274 linhas).
+  - `git diff --check HEAD~1 HEAD`: OK.
+  - Untracked esperados preservados: `.claude/`, `data/fixtures/document-events-pedido-02.jsonl`, `supabase/.temp/`.
+
+- Verificacao em staging (`ucrjtfswnfdlxwtmxnoo`) — PENDENTE DE EXECUCAO:
+  - Aplicar `db/44_partner_cnpj_registry.sql` via SQL editor do Supabase staging.
+  - Rodar `db/44_partner_cnpj_registry.verify.sql` e confirmar `ALL VERIFY ASSERTIONS PASSED`.
+  - Re-rodar a migration para confirmar idempotencia (sem erro, sem efeitos adicionais).
+  - Validar RLS estrutural e comportamental: admin le/escreve; nao-admin nao ve/nao escreve.
+  - Confirmar contagens legadas inalteradas (5/3/5/7).
+  - Confirmar `parceiros` = 0, `parceiro_cnpjs` = 0, todos `parceiro_id` NULL.
+  - Producao (`bhgifjrfagkzubpyqpew`) intocada.
+
+- Ressalva obrigatoria:
+  - A migration 44 foi especificada, versionada e commitada, mas **ainda nao foi aplicada em staging** neste ambiente.
+  - A verificacao real (apply + verify + RLS + contagens) requer credenciais de acesso ao Supabase staging/CLI, indisponiveis no workspace atual.
+  - Nao declarar G25-B2-A-R2 CLOSED antes de todos os gates verdes com outputs reais do Supabase.
+  - Nao declarar o schema valido usando apenas uma sessao privilegiada que contorne RLS.
+
+- Proximo passo:
+  - ENTREGAR AO OPERADOR para aplicacao em staging `ucrjtfswnfdlxwtmxnoo`.
+  - Depois ENTREGAR AO IAEXECUTOR para verificacao e closeout documental.
+
+- STATUS ATUAL: **NAO FECHADO — PENDING OPERATOR APPLY + IAEXECUTOR VERIFY**.
+
+# Estado pos-fase - G25-B1-UX-C-B Test Cleanup Closeout
 
 - Fase: `RAVATEX-DOCUMENTS-G25-B1-UX-C-B-TEST-CLEANUP-CLOSEOUT`.
 - Status: **CLOSED — G25-B1-UX-C-B**.
