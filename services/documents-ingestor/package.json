@@ -36,6 +36,7 @@
     "@supabase/supabase-js": "^2.57.4",
     "better-sqlite3": "^11.7.0",
     "commander": "^13.1.0",
+    "fast-xml-parser": "^5.2.5",
     "googleapis": "^144.0.0",
     "uuid": "^11.1.0"
   },
