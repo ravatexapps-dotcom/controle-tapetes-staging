@@ -168,7 +168,7 @@ describe('real scan flow (mocked Google)', () => {
   });
 
   it('real scan: XML with NF-e structure is classified as nf + formato xml', async () => {
-    const xml = Buffer.from('<nfeProc xmlns="http://www.portalfiscal.inf.br/nfe"><NFe>...</NFe></nfeProc>');
+    const xml = Buffer.from('<nfeProc xmlns="http://www.portalfiscal.inf.br/nfe"><NFe><infNFe><emit><CNPJ>11222333000181</CNPJ></emit><dest><CNPJ>11444777000161</CNPJ></dest></infNFe></NFe></nfeProc>');
     const deps = mkDeps({
       fetchEmails: async () => [
         { gmailMessageId: 'm', threadId: 't', from: '', subject: '', date: '', attachmentCount: 1 },
@@ -1055,7 +1055,7 @@ describe('entity CnpjRegistry integration', () => {
   });
 
   it('new classifier CNPJ columns are now persisted to SQLite', async () => {
-    const xml = Buffer.from('<nfeProc xmlns="http://www.portalfiscal.inf.br/nfe"><NFe><infNFe><emit><CNPJ>11222333000181</CNPJ></emit><dest><CNPJ>22222333000172</CNPJ></dest></infNFe></NFe></nfeProc>');
+    const xml = Buffer.from('<nfeProc xmlns="http://www.portalfiscal.inf.br/nfe"><NFe><infNFe><emit><CNPJ>11222333000181</CNPJ></emit><dest><CNPJ>11444777000161</CNPJ></dest></infNFe></NFe></nfeProc>');
     const deps = registryDeps({
       fetchEmails: async () => [
         { gmailMessageId: 'm-col', threadId: 't', from: '', subject: 'NF', date: '', attachmentCount: 1 },
@@ -1079,7 +1079,7 @@ describe('entity CnpjRegistry integration', () => {
     expect(colNames.has('cnpj_destinatario')).toBe(true);
     const doc = db.prepare(`SELECT cnpj_emitente, cnpj_destinatario FROM documentos LIMIT 1`).get() as any;
     expect(doc.cnpj_emitente).toBe('11222333000181');
-    expect(doc.cnpj_destinatario).toBe('22222333000172');
+    expect(doc.cnpj_destinatario).toBe('11444777000161');
   });
 
   it('dry-run does not load registry', async () => {
@@ -1150,25 +1150,25 @@ describe('document party CNPJ persistence', () => {
   }
 
   it('XML with emitente and destinatario saves both', async () => {
-    const xml = nfXml('11222333000181', '22222333000172');
+    const xml = nfXml('11222333000181', '11444777000161');
     const deps = mkCnpjDeps({ downloadAtt: async () => xml });
     const scan = createScan(deps);
     await scan({ confirmReal: true });
     const db = getDb();
     const doc = db.prepare(`SELECT cnpj_emitente, cnpj_destinatario FROM documentos LIMIT 1`).get() as any;
     expect(doc.cnpj_emitente).toBe('11222333000181');
-    expect(doc.cnpj_destinatario).toBe('22222333000172');
+    expect(doc.cnpj_destinatario).toBe('11444777000161');
   });
 
   it('values are stored as 14 digits without punctuation', async () => {
-    const xml = nfXml('11.222.333/0001-81', '22.222.333/0001-72');
+    const xml = nfXml('11.222.333/0001-81', '11.444.777/0001-61');
     const deps = mkCnpjDeps({ downloadAtt: async () => xml });
     const scan = createScan(deps);
     await scan({ confirmReal: true });
     const db = getDb();
     const doc = db.prepare(`SELECT cnpj_emitente, cnpj_destinatario FROM documentos LIMIT 1`).get() as any;
     expect(doc.cnpj_emitente).toBe('11222333000181');
-    expect(doc.cnpj_destinatario).toBe('22222333000172');
+    expect(doc.cnpj_destinatario).toBe('11444777000161');
   });
 
   it('XML with only emitente saves destinatario as NULL', async () => {
@@ -1183,14 +1183,14 @@ describe('document party CNPJ persistence', () => {
   });
 
   it('XML with only destinatario saves emitente as NULL', async () => {
-    const xml = nfXml(null, '22222333000172');
+    const xml = nfXml(null, '11444777000161');
     const deps = mkCnpjDeps({ downloadAtt: async () => xml });
     const scan = createScan(deps);
     await scan({ confirmReal: true });
     const db = getDb();
     const doc = db.prepare(`SELECT cnpj_emitente, cnpj_destinatario FROM documentos LIMIT 1`).get() as any;
     expect(doc.cnpj_emitente).toBeNull();
-    expect(doc.cnpj_destinatario).toBe('22222333000172');
+    expect(doc.cnpj_destinatario).toBe('11444777000161');
   });
 
   it('XML without party CNPJs saves both as NULL', async () => {
@@ -1205,14 +1205,14 @@ describe('document party CNPJ persistence', () => {
   });
 
   it('invalid emitente CNPJ saves NULL', async () => {
-    const xml = nfXml('abc', '22222333000172');
+    const xml = nfXml('abc', '11444777000161');
     const deps = mkCnpjDeps({ downloadAtt: async () => xml });
     const scan = createScan(deps);
     await scan({ confirmReal: true });
     const db = getDb();
     const doc = db.prepare(`SELECT cnpj_emitente, cnpj_destinatario FROM documentos LIMIT 1`).get() as any;
     expect(doc.cnpj_emitente).toBeNull();
-    expect(doc.cnpj_destinatario).toBe('22222333000172');
+    expect(doc.cnpj_destinatario).toBe('11444777000161');
   });
 
   it('PDF saves both CNPJs as NULL', async () => {
@@ -1255,14 +1255,14 @@ describe('document party CNPJ persistence', () => {
   });
 
   it('direction does not change persisted CNPJs', async () => {
-    const xml = nfXml('11222333000181', '22222333000172');
+    const xml = nfXml('11222333000181', '11444777000161');
     const deps = mkCnpjDeps({ downloadAtt: async () => xml });
     const scan = createScan(deps);
     await scan({ confirmReal: true });
     const db = getDb();
     const doc = db.prepare(`SELECT cnpj_emitente, cnpj_destinatario FROM documentos LIMIT 1`).get() as any;
     expect(doc.cnpj_emitente).toBe('11222333000181');
-    expect(doc.cnpj_destinatario).toBe('22222333000172');
+    expect(doc.cnpj_destinatario).toBe('11444777000161');
   });
 
   it('entityMatch is not persisted to SQLite', async () => {
@@ -1314,5 +1314,166 @@ describe('document party CNPJ persistence', () => {
     const db = getDb();
     const docs = db.prepare(`SELECT cnpj_emitente FROM documentos`).all() as any;
     expect(docs).toHaveLength(1);
+  });
+});
+
+describe('B2 real scan: sample collection by MIME + extension (fast-xml-parser classification)', () => {
+  beforeEach(() => {
+    if (existsSync(DB_DIR)) rmSync(DB_DIR, { recursive: true });
+    mkdirSync(DB_DIR, { recursive: true });
+    process.env.DATABASE_PATH = join(DB_DIR, 'app.db');
+    process.env.OUTBOX_PATH = join(DB_DIR, 'outbox.jsonl');
+    process.env.LOCAL_CACHE_PATH = join(DB_DIR, 'cache');
+    process.env.GOOGLE_DRIVE_ROOT_FOLDER_NAME = 'Ravatex Documents Ingestor';
+    closeDb();
+    const db = getDb();
+    db.exec('DELETE FROM ingestion_events; DELETE FROM documentos; DELETE FROM emails_processados;');
+  });
+
+  afterEach(() => {
+    closeDb();
+    if (existsSync(DB_DIR)) rmSync(DB_DIR, { recursive: true });
+  });
+
+  const VALID_XML = Buffer.from(
+    '<nfeProc xmlns="http://www.portalfiscal.inf.br/nfe"><NFe><infNFe><emit><CNPJ>11222333000181</CNPJ></emit><dest><CNPJ>11444777000161</CNPJ></dest></infNFe></NFe></nfeProc>'
+  );
+  const MALFORMED_XML = Buffer.from('not even valid <<<xml>>>');
+  const EVENT_XML = Buffer.from(
+    '<nfeEvento xmlns="http://www.portalfiscal.inf.br/nfe"><evento><CNPJ>11222333000181</CNPJ></evento></nfeEvento>'
+  );
+
+  function makeScanDeps(overrides: Partial<ScanDeps> = {}): ScanDeps {
+    return mkDeps({
+      fetchEmails: async () => [
+        { gmailMessageId: 'm-b2', threadId: 't', from: '', subject: 'B2', date: '', attachmentCount: 1 },
+      ],
+      listAtts: async () => [
+        { gmailMessageId: 'm-b2', threadId: 't', attachmentId: 'a-b2', filename: 'nfe.xml', mimeType: 'application/octet-stream', size: 0 },
+      ],
+      downloadAtt: async () => VALID_XML,
+      createEntityCnpjReaderClient: () => ({ from: () => ({ select: () => ({ not: () => Promise.resolve({ data: [], error: null }) }) }) } as any),
+      loadEntityCnpjRegistry: async () => ({ loaded: true, loadedAt: new Date().toISOString(), entries: [], error: null }),
+      ...overrides,
+    });
+  }
+
+  it('scan collects sample for generic MIME (application/octet-stream) with .xml extension and classifies as nf + xml', async () => {
+    const deps = makeScanDeps({
+      listAtts: async () => [
+        { gmailMessageId: 'm-b2', threadId: 't', attachmentId: 'a-b2', filename: 'nfe.xml', mimeType: 'application/octet-stream', size: VALID_XML.length },
+      ],
+    });
+    const scan = createScan(deps);
+    const r = await scan({ confirmReal: true });
+    expect(r.newDocuments).toBe(1);
+    const db = getDb();
+    const doc = db.prepare(`SELECT tipo_documento, formato, cnpj_emitente, cnpj_destinatario FROM documentos LIMIT 1`).get() as any;
+    expect(doc.tipo_documento).toBe('nf');
+    expect(doc.formato).toBe('xml');
+    expect(doc.cnpj_emitente).toBe('11222333000181');
+    expect(doc.cnpj_destinatario).toBe('11444777000161');
+  });
+
+  it('scan does not collect sample for non-XML generic MIME without .xml extension', async () => {
+    let downloadCalled = false;
+    const deps = mkDeps({
+      fetchEmails: async () => [
+        { gmailMessageId: 'm-nonscan', threadId: 't', from: '', subject: '', date: '', attachmentCount: 1 },
+      ],
+      listAtts: async () => [
+        { gmailMessageId: 'm-nonscan', threadId: 't', attachmentId: 'a', filename: 'something.bin', mimeType: 'application/octet-stream', size: 0 },
+      ],
+      downloadAtt: async () => { downloadCalled = true; return Buffer.from('whatever'); },
+    });
+    const scan = createScan(deps);
+    const r = await scan({ confirmReal: true });
+    expect(r.attachmentsFound).toBe(0);
+    expect(downloadCalled).toBe(false);
+  });
+
+  it('scan classifies MIME text/xml with .pdf extension as formato xml (MIME wins for formato)', async () => {
+    const deps = mkDeps({
+      fetchEmails: async () => [
+        { gmailMessageId: 'm-pdfext', threadId: 't', from: '', subject: '', date: '', attachmentCount: 1 },
+      ],
+      listAtts: async () => [
+        { gmailMessageId: 'm-pdfext', threadId: 't', attachmentId: 'a', filename: 'nota.pdf', mimeType: 'text/xml', size: VALID_XML.length },
+      ],
+      downloadAtt: async () => VALID_XML,
+      createEntityCnpjReaderClient: () => ({ from: () => ({ select: () => ({ not: () => Promise.resolve({ data: [], error: null }) }) }) } as any),
+      loadEntityCnpjRegistry: async () => ({ loaded: true, loadedAt: new Date().toISOString(), entries: [], error: null }),
+    });
+    const scan = createScan(deps);
+    const r = await scan({ confirmReal: true });
+    expect(r.newDocuments).toBe(1);
+    const db = getDb();
+    const doc = db.prepare(`SELECT tipo_documento, formato FROM documentos LIMIT 1`).get() as any;
+    expect(doc.tipo_documento).toBe('nf');
+    expect(doc.formato).toBe('xml');
+  });
+
+  it('scan classifies generic nfeEvento (fiscal event) as desconhecido when MIME generic + .xml', async () => {
+    const deps = mkDeps({
+      fetchEmails: async () => [
+        { gmailMessageId: 'm-evt', threadId: 't', from: '', subject: '', date: '', attachmentCount: 1 },
+      ],
+      listAtts: async () => [
+        { gmailMessageId: 'm-evt', threadId: 't', attachmentId: 'a', filename: 'evento.xml', mimeType: 'application/octet-stream', size: EVENT_XML.length },
+      ],
+      downloadAtt: async () => EVENT_XML,
+      createEntityCnpjReaderClient: () => ({ from: () => ({ select: () => ({ not: () => Promise.resolve({ data: [], error: null }) }) }) } as any),
+      loadEntityCnpjRegistry: async () => ({ loaded: true, loadedAt: new Date().toISOString(), entries: [], error: null }),
+    });
+    const scan = createScan(deps);
+    const r = await scan({ confirmReal: true });
+    expect(r.newDocuments).toBe(1);
+    const db = getDb();
+    const doc = db.prepare(`SELECT tipo_documento, formato FROM documentos LIMIT 1`).get() as any;
+    expect(doc.tipo_documento).toBe('desconhecido');
+    expect(doc.formato).toBe('xml');
+  });
+
+  it('scan classifies malformed XML payload as desconhecido + formato xml when MIME generic + .xml', async () => {
+    const deps = mkDeps({
+      fetchEmails: async () => [
+        { gmailMessageId: 'm-mal', threadId: 't', from: '', subject: '', date: '', attachmentCount: 1 },
+      ],
+      listAtts: async () => [
+        { gmailMessageId: 'm-mal', threadId: 't', attachmentId: 'a', filename: 'corrupt.xml', mimeType: 'application/octet-stream', size: MALFORMED_XML.length },
+      ],
+      downloadAtt: async () => MALFORMED_XML,
+      createEntityCnpjReaderClient: () => ({ from: () => ({ select: () => ({ not: () => Promise.resolve({ data: [], error: null }) }) }) } as any),
+      loadEntityCnpjRegistry: async () => ({ loaded: true, loadedAt: new Date().toISOString(), entries: [], error: null }),
+    });
+    const scan = createScan(deps);
+    const r = await scan({ confirmReal: true });
+    expect(r.newDocuments).toBe(1);
+    const db = getDb();
+    const doc = db.prepare(`SELECT tipo_documento, formato FROM documentos LIMIT 1`).get() as any;
+    expect(doc.tipo_documento).toBe('desconhecido');
+    expect(doc.formato).toBe('xml');
+  });
+
+  it('scan does not enlarge payload beyond fixed sample size (2048 bytes)', async () => {
+    const big = Buffer.concat([VALID_XML, Buffer.alloc(5000, 0x20)]);
+    const deps = mkDeps({
+      fetchEmails: async () => [
+        { gmailMessageId: 'm-big', threadId: 't', from: '', subject: '', date: '', attachmentCount: 1 },
+      ],
+      listAtts: async () => [
+        { gmailMessageId: 'm-big', threadId: 't', attachmentId: 'a', filename: 'nfe.xml', mimeType: 'application/octet-stream', size: big.length },
+      ],
+      downloadAtt: async () => big,
+      createEntityCnpjReaderClient: () => ({ from: () => ({ select: () => ({ not: () => Promise.resolve({ data: [], error: null }) }) }) } as any),
+      loadEntityCnpjRegistry: async () => ({ loaded: true, loadedAt: new Date().toISOString(), entries: [], error: null }),
+    });
+    const scan = createScan(deps);
+    const r = await scan({ confirmReal: true });
+    expect(r.newDocuments).toBe(1);
+    const db = getDb();
+    const doc = db.prepare(`SELECT tipo_documento, formato, cnpj_emitente, cnpj_destinatario FROM documentos LIMIT 1`).get() as any;
+    expect(doc.tipo_documento).toBe('nf');
+    expect(doc.cnpj_emitente).toBe('11222333000181');
   });
 });

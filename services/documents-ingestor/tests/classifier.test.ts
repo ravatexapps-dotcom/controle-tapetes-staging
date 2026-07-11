@@ -24,7 +24,10 @@ function makeNFeXml(destCnpj?: string | null, emitCnpj?: string | null, useNsPre
   const emitBlock = emitCnpj
     ? `<${ns}emit><${ns}CNPJ>${emitCnpj}</${ns}CNPJ></${ns}emit>`
     : `<${ns}emit><${ns}xNome>Fornecedor</${ns}xNome></${ns}emit>`;
-  return `<${ns}nfeProc xmlns${ns ? ':' + ns.replace(':', '') + '=' : ''}"http://www.portalfiscal.inf.br/nfe"><${ns}NFe><${ns}infNFe>${destBlock}${emitBlock}</${ns}infNFe></${ns}NFe></${ns}nfeProc>`;
+  const xmlnsDecl = useNsPrefix
+    ? `xmlns:nfe="http://www.portalfiscal.inf.br/nfe"`
+    : `xmlns="http://www.portalfiscal.inf.br/nfe"`;
+  return `<${ns}nfeProc ${xmlnsDecl}><${ns}NFe><${ns}infNFe>${destBlock}${emitBlock}</${ns}infNFe></${ns}NFe></${ns}nfeProc>`;
 }
 
 function fornecedor(id: number, nome: string, cnpj: string, tipo?: string): RegisteredEntityCnpj {
@@ -52,7 +55,7 @@ describe('classifier', () => {
     const result = classifyAttachment({
       filename: 'nota.xml',
       mimeType: 'text/xml',
-      contentSample: '<nfeProc xmlns="http://www.portalfiscal.inf.br/nfe"><NFe>...</NFe></nfeProc>',
+      contentSample: '<nfeProc xmlns="http://www.portalfiscal.inf.br/nfe"><NFe><infNFe><emit><CNPJ>11222333000181</CNPJ></emit><dest><CNPJ>11444777000161</CNPJ></dest></infNFe></NFe></nfeProc>',
     });
     expect(result.tipoDocumento).toBe('nf');
     expect(result.formato).toBe('xml');
@@ -806,5 +809,213 @@ describe('structural NF-e party extraction (G25-B2-A-R4-B7-R1)', () => {
     const r = extrairPartesNFe(xml);
     expect(r.emitenteCnpj).toBeNull();
     expect(r.destinatarioCnpj).toBe(DEST_CNPJ);
+  });
+});
+
+describe('B2 structural NF-e validation (fast-xml-parser)', () => {
+  const EMIT_CNPJ = '11222333000181';
+  const DEST_CNPJ = '11444777000161';
+
+  function nfeProcXml(opts: { emitCnpj?: string | null; destCnpj?: string | null; ns?: 'default' | 'prefix' | 'none'; includeInfNFe?: boolean } = {}): string {
+    const ns = opts.ns ?? 'default';
+    const includeInf = opts.includeInfNFe !== false;
+    const prefix = ns === 'prefix' ? 'nfe:' : '';
+    const xmlns = ns === 'default'
+      ? ` xmlns="http://www.portalfiscal.inf.br/nfe"`
+      : ns === 'prefix'
+        ? ` xmlns:nfe="http://www.portalfiscal.inf.br/nfe"`
+        : '';
+    const emitBlock = includeInf && opts.emitCnpj !== null
+      ? `<${prefix}emit><${prefix}CNPJ>${opts.emitCnpj ?? EMIT_CNPJ}</${prefix}CNPJ></${prefix}emit>`
+      : '';
+    const destBlock = includeInf && opts.destCnpj !== null
+      ? `<${prefix}dest><${prefix}CNPJ>${opts.destCnpj ?? DEST_CNPJ}</${prefix}CNPJ></${prefix}dest>`
+      : '';
+    const infNFeBlock = includeInf ? `<${prefix}infNFe>${emitBlock}${destBlock}</${prefix}infNFe>` : '';
+    return `<${prefix}nfeProc${xmlns}><${prefix}NFe>${infNFeBlock}</${prefix}NFe></${prefix}nfeProc>`;
+  }
+
+  function nfeRootXml(opts: { emitCnpj?: string | null; destCnpj?: string | null; ns?: 'default' | 'prefix' } = {}): string {
+    const ns = opts.ns ?? 'default';
+    const prefix = ns === 'prefix' ? 'nfe:' : '';
+    const xmlns = ns === 'default'
+      ? ` xmlns="http://www.portalfiscal.inf.br/nfe"`
+      : ` xmlns:nfe="http://www.portalfiscal.inf.br/nfe"`;
+    const emitBlock = opts.emitCnpj !== null
+      ? `<${prefix}emit><${prefix}CNPJ>${opts.emitCnpj ?? EMIT_CNPJ}</${prefix}CNPJ></${prefix}emit>`
+      : '';
+    const destBlock = opts.destCnpj !== null
+      ? `<${prefix}dest><${prefix}CNPJ>${opts.destCnpj ?? DEST_CNPJ}</${prefix}CNPJ></${prefix}dest>`
+      : '';
+    return `<${prefix}NFe${xmlns}><${prefix}infNFe>${emitBlock}${destBlock}</${prefix}infNFe></${prefix}NFe>`;
+  }
+
+  it('valid nfeProc with infNFe and default namespace is classified as nf + formato xml', () => {
+    const result = classifyAttachment({
+      filename: 'nfe.xml',
+      mimeType: 'text/xml',
+      contentSample: nfeProcXml(),
+    });
+    expect(result.tipoDocumento).toBe('nf');
+    expect(result.formato).toBe('xml');
+    expect(result.cnpjEmitente).toBe(EMIT_CNPJ);
+    expect(result.cnpjDestinatario).toBe(DEST_CNPJ);
+  });
+
+  it('valid NFe (no nfeProc envelope) with infNFe is classified as nf + formato xml', () => {
+    const result = classifyAttachment({
+      filename: 'nfe.xml',
+      mimeType: 'text/xml',
+      contentSample: nfeRootXml(),
+    });
+    expect(result.tipoDocumento).toBe('nf');
+    expect(result.formato).toBe('xml');
+    expect(result.cnpjEmitente).toBe(EMIT_CNPJ);
+    expect(result.cnpjDestinatario).toBe(DEST_CNPJ);
+  });
+
+  it('valid nfeProc with default namespace (xmlns) extracts CNPJs from infNFe only', () => {
+    const r = extrairPartesNFe(nfeProcXml({ ns: 'default' }));
+    expect(r.emitenteCnpj).toBe(EMIT_CNPJ);
+    expect(r.destinatarioCnpj).toBe(DEST_CNPJ);
+  });
+
+  it('valid nfeProc with prefixed namespace (nfe:) extracts CNPJs via removeNSPrefix', () => {
+    const r = extrairPartesNFe(nfeProcXml({ ns: 'prefix' }));
+    expect(r.emitenteCnpj).toBe(EMIT_CNPJ);
+    expect(r.destinatarioCnpj).toBe(DEST_CNPJ);
+  });
+
+  it('malformed XML does not throw and returns null parts', () => {
+    expect(() => extrairPartesNFe('not even valid <<<xml>>>')).not.toThrow();
+    const r = extrairPartesNFe('not even valid <<<xml>>>');
+    expect(r.emitenteCnpj).toBeNull();
+    expect(r.destinatarioCnpj).toBeNull();
+  });
+
+  it('malformed XML is classified as desconhecido + formato xml', () => {
+    const result = classifyAttachment({
+      filename: 'corrupt.xml',
+      mimeType: 'text/xml',
+      contentSample: 'not even valid <<<xml>>>',
+    });
+    expect(result.tipoDocumento).toBe('desconhecido');
+    expect(result.formato).toBe('xml');
+  });
+
+  it('HTML content renamed to .xml is unknown (root is html, not NFe/nfeProc)', () => {
+    const html = '<!DOCTYPE html><html><head><title>nfe</title></head><body>nfeProc</body></html>';
+    const result = classifyAttachment({
+      filename: 'trick.html.xml',
+      mimeType: 'text/xml',
+      contentSample: html,
+    });
+    expect(result.tipoDocumento).toBe('desconhecido');
+    expect(result.formato).toBe('xml');
+    expect(result.cnpjEmitente).toBeNull();
+    expect(result.cnpjDestinatario).toBeNull();
+  });
+
+  it('generic XML with nfeEvento root (fiscal event, not NF-e) is unknown', () => {
+    const eventXml = '<nfeEvento xmlns="http://www.portalfiscal.inf.br/nfe"><evento><CNPJ>11222333000181</CNPJ></evento></nfeEvento>';
+    const result = classifyAttachment({
+      filename: 'evento.xml',
+      mimeType: 'text/xml',
+      contentSample: eventXml,
+    });
+    expect(result.tipoDocumento).toBe('desconhecido');
+    expect(result.formato).toBe('xml');
+  });
+
+  it('nfeProc without infNFe is unknown', () => {
+    const noInf = '<nfeProc xmlns="http://www.portalfiscal.inf.br/nfe"><NFe><other/></NFe></nfeProc>';
+    const result = classifyAttachment({
+      filename: 'broken.xml',
+      mimeType: 'text/xml',
+      contentSample: noInf,
+    });
+    expect(result.tipoDocumento).toBe('desconhecido');
+    expect(result.formato).toBe('xml');
+  });
+
+  it('NFe without infNFe is unknown', () => {
+    const noInf = '<NFe xmlns="http://www.portalfiscal.inf.br/nfe"><other/></NFe>';
+    const result = classifyAttachment({
+      filename: 'broken.xml',
+      mimeType: 'text/xml',
+      contentSample: noInf,
+    });
+    expect(result.tipoDocumento).toBe('desconhecido');
+    expect(result.formato).toBe('xml');
+  });
+
+  it('extracts valid CNPJ and returns null for invalid CNPJ in infNFe', () => {
+    const r = extrairPartesNFe(nfeProcXml({ emitCnpj: EMIT_CNPJ, destCnpj: 'abc' }));
+    expect(r.emitenteCnpj).toBe(EMIT_CNPJ);
+    expect(r.destinatarioCnpj).toBeNull();
+  });
+
+  it('extracts null when both CNPJs are invalid in infNFe', () => {
+    const r = extrairPartesNFe(nfeProcXml({ emitCnpj: 'abc', destCnpj: '12' }));
+    expect(r.emitenteCnpj).toBeNull();
+    expect(r.destinatarioCnpj).toBeNull();
+  });
+
+  it('CNPJ with leading zeros in infNFe is normalized', () => {
+    const r = extrairPartesNFe(nfeProcXml({ destCnpj: '02194703529779' }));
+    expect(r.destinatarioCnpj).toBe('02194703529779');
+  });
+
+  it('CNPJ with punctuation in infNFe is normalized to 14 digits', () => {
+    const r = extrairPartesNFe(nfeProcXml({ destCnpj: '11.444.777/0001-61' }));
+    expect(r.destinatarioCnpj).toBe('11444777000161');
+  });
+
+  it('CNPJ value comes from infNFe (not from sibling blocks like transporta)', () => {
+    const xml = [
+      '<?xml version="1.0"?>',
+      '<nfeProc xmlns="http://www.portalfiscal.inf.br/nfe">',
+      '  <NFe>',
+      '    <infNFe>',
+      `      <emit><CNPJ>${EMIT_CNPJ}</CNPJ></emit>`,
+      `      <dest><CNPJ>${DEST_CNPJ}</CNPJ></dest>`,
+      '    </infNFe>',
+      '    <transp><transporta><CNPJ>99999999000199</CNPJ></transporta></transp>',
+      '  </NFe>',
+      '</nfeProc>',
+    ].join('\n');
+    const r = extrairPartesNFe(xml);
+    expect(r.emitenteCnpj).toBe(EMIT_CNPJ);
+    expect(r.destinatarioCnpj).toBe(DEST_CNPJ);
+  });
+
+  it('MIME generic (application/octet-stream) with .xml extension produces formato xml', () => {
+    const result = classifyAttachment({
+      filename: 'nfe.xml',
+      mimeType: 'application/octet-stream',
+      contentSample: nfeProcXml(),
+    });
+    expect(result.formato).toBe('xml');
+    expect(result.tipoDocumento).toBe('nf');
+  });
+
+  it('MIME text/xml with .pdf extension produces formato xml (MIME wins) and not nf without infNFe', () => {
+    const result = classifyAttachment({
+      filename: 'nota.pdf',
+      mimeType: 'text/xml',
+      contentSample: nfeProcXml(),
+    });
+    expect(result.formato).toBe('xml');
+    expect(result.tipoDocumento).toBe('nf');
+  });
+
+  it('preserves extrairPartesNFe public API: returns ExtractedNfeParties with emitenteCnpj/destinatarioCnpj keys', () => {
+    const r = extrairPartesNFe(nfeProcXml());
+    expect(Object.keys(r).sort()).toEqual(['destinatarioCnpj', 'emitenteCnpj']);
+  });
+
+  it('does not persist parsed XML tree or payload via classifier API', () => {
+    const src = String(extrairPartesNFe);
+    expect(src).not.toMatch(/writeFile|writeFileSync|appendFile/);
   });
 });

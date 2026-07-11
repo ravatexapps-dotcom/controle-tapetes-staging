@@ -1,10 +1,10 @@
 import type { TipoDocumento, FormatoDocumento, DirecaoNF } from '../types/document.js';
-import { formatoFromMimeType } from '../types/document.js';
 import { config } from '../config.js';
 import type { EntityCnpjRegistry } from '../types/entityCnpj.js';
 import type { DocumentEntityMatchResult } from '../types/documentEntityMatch.js';
 import { matchDocumentEntityCnpjs } from './documentEntityMatch.js';
 import { extractValidCnpj } from './cnpj.js';
+import { XMLParser, XMLValidator } from 'fast-xml-parser';
 
 export interface ExtractedNfeParties {
   emitenteCnpj: string | null;
@@ -29,14 +29,109 @@ export interface ClassifyInput {
   entityRegistry?: EntityCnpjRegistry;
 }
 
+const nfeParser = new XMLParser({
+  ignoreAttributes: true,
+  parseTagValue: false,
+  removeNSPrefix: true,
+  trimValues: true,
+  processEntities: true,
+  htmlEntities: false,
+});
+
+const XML_SAMPLE_CAP_BYTES = 2048;
+
+function computeFormato(mimeType: string, filenameLower: string): FormatoDocumento {
+  if (mimeType === 'text/xml' || mimeType === 'application/xml') return 'xml';
+  if (mimeType === 'application/pdf') return 'pdf';
+  if (filenameLower.endsWith('.xml')) return 'xml';
+  if (filenameLower.endsWith('.pdf')) return 'pdf';
+  return 'desconhecido';
+}
+
+function isXmlCandidate(mimeType: string, filenameLower: string): boolean {
+  if (mimeType === 'text/xml' || mimeType === 'application/xml') return true;
+  if (filenameLower.endsWith('.xml')) return true;
+  return false;
+}
+
+function validateXmlWellFormed(content: string): boolean {
+  if (!content || typeof content !== 'string') return false;
+  const result = XMLValidator.validate(content);
+  return result === true;
+}
+
+interface InfNFeContainer {
+  emit?: { CNPJ?: unknown };
+  dest?: { CNPJ?: unknown };
+}
+
+function findInfNFeNode(parsed: unknown): InfNFeContainer | null {
+  if (!parsed || typeof parsed !== 'object' || parsed === null) return null;
+  const root = parsed as Record<string, unknown>;
+  if (root.nfeProc && typeof root.nfeProc === 'object' && root.nfeProc !== null) {
+    const proc = root.nfeProc as Record<string, unknown>;
+    if (proc.NFe && typeof proc.NFe === 'object' && proc.NFe !== null) {
+      const nfe = proc.NFe as Record<string, unknown>;
+      if (nfe.infNFe && typeof nfe.infNFe === 'object' && nfe.infNFe !== null) {
+        return nfe.infNFe as InfNFeContainer;
+      }
+    }
+  }
+  if (root.NFe && typeof root.NFe === 'object' && root.NFe !== null) {
+    const nfe = root.NFe as Record<string, unknown>;
+    if (nfe.infNFe && typeof nfe.infNFe === 'object' && nfe.infNFe !== null) {
+      return nfe.infNFe as InfNFeContainer;
+    }
+  }
+  return null;
+}
+
+function isNfeStructure(content: string): boolean {
+  if (!validateXmlWellFormed(content)) return false;
+  let parsed: unknown;
+  try {
+    parsed = nfeParser.parse(content);
+  } catch {
+    return false;
+  }
+  return findInfNFeNode(parsed) !== null;
+}
+
+export function extrairPartesNFe(xmlContent: string): ExtractedNfeParties {
+  if (!validateXmlWellFormed(xmlContent)) {
+    return { emitenteCnpj: null, destinatarioCnpj: null };
+  }
+  let parsed: unknown;
+  try {
+    parsed = nfeParser.parse(xmlContent);
+  } catch {
+    return { emitenteCnpj: null, destinatarioCnpj: null };
+  }
+  const infNFe = findInfNFeNode(parsed);
+  if (!infNFe) {
+    return { emitenteCnpj: null, destinatarioCnpj: null };
+  }
+  const emitCnpjRaw = infNFe.emit && typeof infNFe.emit === 'object'
+    ? (infNFe.emit as { CNPJ?: unknown }).CNPJ
+    : undefined;
+  const destCnpjRaw = infNFe.dest && typeof infNFe.dest === 'object'
+    ? (infNFe.dest as { CNPJ?: unknown }).CNPJ
+    : undefined;
+  return {
+    emitenteCnpj: extractValidCnpj(typeof emitCnpjRaw === 'string' ? emitCnpjRaw : null),
+    destinatarioCnpj: extractValidCnpj(typeof destCnpjRaw === 'string' ? destCnpjRaw : null),
+  };
+}
+
 export function classifyAttachment(input: ClassifyInput): ClassifyOutput {
   const name = input.filename.toLowerCase();
   const subj = (input.subject ?? '').toLowerCase();
-  const formato = formatoFromMimeType(input.mimeType);
-  const parties = extrairPartesNFe(input.contentSample ?? '');
+  const formato = computeFormato(input.mimeType, name);
 
-  if (input.mimeType === 'text/xml' || name.endsWith('.xml')) {
-    if (hasNfeStructure(input.contentSample ?? '')) {
+  if (isXmlCandidate(input.mimeType, name)) {
+    const sample = input.contentSample ?? '';
+    if (isNfeStructure(sample)) {
+      const parties = extrairPartesNFe(sample);
       const cnpjs = input.ravatexCnpjs ?? config.ravatexCnpjs;
       const direcao = lerDirecaoNFe(parties, cnpjs);
       const entityMatch = buildEntityMatch(parties, input.entityRegistry);
@@ -56,9 +151,9 @@ export function classifyAttachment(input: ClassifyInput): ClassifyOutput {
       tipoDocumento: 'romaneio',
       formato,
       direcaoNf: null,
-      cnpjEmitente: parties.emitenteCnpj,
-      cnpjDestinatario: parties.destinatarioCnpj,
-      entityMatch: buildEntityMatch(parties, input.entityRegistry),
+      cnpjEmitente: null,
+      cnpjDestinatario: null,
+      entityMatch: buildEntityMatch({ emitenteCnpj: null, destinatarioCnpj: null }, input.entityRegistry),
     };
   }
 
@@ -89,21 +184,6 @@ export function classifyAttachment(input: ClassifyInput): ClassifyOutput {
   };
 }
 
-function hasNfeStructure(content: string): boolean {
-  const lower = content.toLowerCase();
-  return lower.includes('nfe') || lower.includes('nfe');
-}
-
-export function extrairPartesNFe(xmlContent: string): ExtractedNfeParties {
-  const rawEmitente = extrairCNPJdeElemento(xmlContent, 'emit');
-  const rawDestinatario = extrairCNPJdeElemento(xmlContent, 'dest');
-
-  return {
-    emitenteCnpj: extractValidCnpj(rawEmitente),
-    destinatarioCnpj: extractValidCnpj(rawDestinatario),
-  };
-}
-
 export function lerDirecaoNFe(parties: ExtractedNfeParties, ravatexCnpjs: string[]): DirecaoNF {
   if (parties.destinatarioCnpj) {
     if (ravatexCnpjs.some(c => c === parties.destinatarioCnpj)) return 'entrada';
@@ -114,19 +194,6 @@ export function lerDirecaoNFe(parties: ExtractedNfeParties, ravatexCnpjs: string
   }
 
   return 'desconhecida';
-}
-
-function extrairCNPJdeElemento(xml: string, parentElement: string): string | null {
-  const parentRegex = new RegExp(
-    `<(\\w+:)?${parentElement}(\\s[^>]*)?>[\\s\\S]*?<\\/(\\w+:)?${parentElement}\\s*>`,
-    'i'
-  );
-  const parentMatch = xml.match(parentRegex);
-  if (!parentMatch) return null;
-
-  const fieldRegex = /<(\w+:)?CNPJ(\s[^>]*)?>([\d.\/-]*)<\/(\w+:)?CNPJ\s*>/i;
-  const fieldMatch = parentMatch[0].match(fieldRegex);
-  return fieldMatch ? fieldMatch[3].trim() : null;
 }
 
 function buildEntityMatch(

@@ -233,7 +233,7 @@ export function createScan(deps: ScanDeps = defaultDeps) {
             filename: att.filename,
             mimeType: att.mimeType,
             subject: email.subject,
-            contentSample: sampleXml(buffer, att.mimeType),
+            contentSample: sampleXml(buffer, att.mimeType, att.filename),
             entityRegistry,
           });
 
@@ -357,7 +357,9 @@ export function createScan(deps: ScanDeps = defaultDeps) {
   };
 }
 
-function sampleXml(buffer: Buffer, mimeType: string): string {
-  if (mimeType !== 'text/xml' && mimeType !== 'application/xml') return '';
+function sampleXml(buffer: Buffer, mimeType: string, filename: string): string {
+  const isXmlMime = mimeType === 'text/xml' || mimeType === 'application/xml';
+  const isXmlExt = filename.toLowerCase().endsWith('.xml');
+  if (!isXmlMime && !isXmlExt) return '';
   return buffer.toString('utf-8', 0, Math.min(buffer.length, 2048));
 }
