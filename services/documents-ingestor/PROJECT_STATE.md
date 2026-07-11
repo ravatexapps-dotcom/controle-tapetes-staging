@@ -1,14 +1,15 @@
 # PROJECT STATE
 
-> **Atualizacao 2026-07-11 — G27-B-CORE — DOCUMENT RECOGNITION INPUT SAFETY HARDENING.**
-> Status: **CONCLUIDA EM BRANCH ISOLADA; AINDA NAO INTEGRADA EM `work/app-next`.**
+> **Atualizacao 2026-07-11 — G27-B2-R1 + G27-B-CORE-GATE-R1 — XML INTEGRAL E GATE DE EVIDENCIA.**
+> Status: **evidencia tecnica coletada em branch isolada; decisao arquitetural e integracao em `work/app-next` pendentes.**
 >
 > - Execucao exclusiva no worktree `D:\\OneDrive\\Programação\\Ravatex\\controle-tapetes-g27`, branch `work/g27-document-recognition-safety`, a partir de `26111e04ab185dc1f484567cc48f3516cd6012a1`; workspace original ficou em quarentena e intocado.
 > - CNPJ: normalizacao restrita de pontuacao e validacao de 14 digitos/checksum antes de persistencia, direcao e matching de registro; valores invalidos falham fechados como `null`.
-> - XML: `fast-xml-parser` 5.2.5 (MIT; unico transitive pequeno `strnum`) valida XML bem formado, raiz NF-e/nfeProc e `infNFe`; XML semelhante/eventos/malformado ficam `desconhecido`; amostra limitada a 2048 bytes e nunca persistida.
+> - XML: `fast-xml-parser` 5.2.5 (MIT; unico transitive pequeno `strnum`) valida o texto integral do Buffer ja baixado, incluindo raiz NF-e/nfeProc e `infNFe`; nao ha nova transferencia, limite de tamanho nem persistencia de XML bruto. XML semelhante/eventos/truncado/malformado fica `desconhecido`. Entidades internas nao sao expandidas (`processEntities: false`), e CNPJ nao expandido falha fechado como `null`.
 > - PDF: NF exige assinatura inicial `%PDF-` e token explicito (NF/NF-e/NFe/DANFE/nota fiscal); remove falsos positivos como `info.pdf` e `conferencia.pdf`; romaneio por nome/assunto preservado; sem autoaceite.
-> - Commits: `5b012a0`, `3cc3999`, `09b45f8`, `8b3f9fd`, `aac06be`. Suite: **40 arquivos / 788 testes** verde. Nenhum push; integracao/cherry-pick posterior em `work/app-next` permanece pendente.
-> - Risco residual: `npm run build` ainda reporta erros TypeScript preexistentes em `drive.ts`, tipos historicos de `realScan.ts` e `syncMapped.ts`, nao introduzidos pela G27.
+> - PDF: continua limitado ao prefixo inicial de 2048 bytes; token NF apenas apos esse prefixo nao classifica como NF. XML grande cobre `NFe`/`nfeProc`, namespaces padrao/prefixado, tags e CNPJ apos 2048, fechamento tardio, no-persistencia e falha fechada.
+> - Commits: `5b012a0`, `3cc3999`, `09b45f8`, `8b3f9fd`, `aac06be`, `ab1e85e`, `a06fa62`. Focados: **4 arquivos / 250 testes**; suite: **40 arquivos / 812 testes** verde. Nenhum push; integracao/cherry-pick posterior em `work/app-next` permanece pendente.
+> - Risco residual: `npm run build` reporta 8 erros TypeScript identicos no baseline `26111e04` e na G27 (`drive.ts`, eventos historicos em `realScan.ts`, `syncMapped.ts`); debt preexistente, nao introduzido pela G27.
 >
 > **Atualizacao 2026-07-11
 > `G26-C-D — FINAL MONOREPO CLOSEOUT DOCUMENTATION`.**

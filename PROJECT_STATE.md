@@ -1,11 +1,13 @@
-> **Atualizacao 2026-07-11 — G27-B0 + G27-B-CORE — ISOLATED DOCUMENT RECOGNITION SAFETY HARDENING.**
-> Status: **TECNICAMENTE CONCLUIDA EM WORKTREE ISOLADO; INTEGRACAO EM `work/app-next` PENDENTE.**
+> **Atualizacao 2026-07-11 — G27-B2-R1 + G27-B-CORE-GATE-R1 — FULL XML INPUT CORRECTION.**
+> Status: **evidencia tecnica coletada em worktree isolado; decisao arquitetural de B-CORE e integracao em `work/app-next` permanecem pendentes.**
 >
 > - Workspace original preservado em quarentena, sem alteracao pela cadeia: `D:\\OneDrive\\Programação\\Ravatex\\controle-tapetes` (`work/app-next`, HEAD `26111e04ab185dc1f484567cc48f3516cd6012a1`).
 > - Workspace G27 isolado: `D:\\OneDrive\\Programação\\Ravatex\\controle-tapetes-g27`; branch local `work/g27-document-recognition-safety`, criada do HEAD canonico `26111e04ab185dc1f484567cc48f3516cd6012a1`.
-> - Commits G27 locais: `5b012a0` (validacao CNPJ), `3cc3999` (fast-xml-parser MIT 5.2.5 + transitive `strnum`), `09b45f8` (estrutura NF-e XML), `8b3f9fd` (assinatura/heuristica PDF), `aac06be` (fixtures CNPJ validos).
-> - Verificacao: suite Documents Ingestor completa **40 arquivos / 788 testes** verde; focadas CNPJ, XML e PDF/scan verdes. `npm run build` continua falhando por erros TypeScript preexistentes fora da G27 (`drive.ts`, tipos historicos de `realScan.ts`, `syncMapped.ts`).
-> - Nenhum push, merge, cherry-pick ou alteracao em `work/app-next`; remotos nao publicados. Metadata orfa `baseline-worktree` continuou intocada.
+> - Commits G27 locais: `5b012a0` (CNPJ), `3cc3999` (fast-xml-parser MIT 5.2.5 + `strnum`), `09b45f8` (estrutura NF-e), `8b3f9fd` (PDF), `aac06be` (fixtures), `ab1e85e` (parse XML integral) e `a06fa62` (entidades XML internas desabilitadas).
+> - B2-R1: XML candidato e convertido do Buffer integral ja baixado, sem novo download ou limite artificial; somente PDF usa prefixo limitado a 2048 bytes. XML bruto nao e persistido em SQLite, outbox/JSONL, logs ou Supabase. XML malformado/truncado e estrutura nao fiscal continuam `desconhecido`.
+> - Regressao: NF-e grande com raiz `NFe`/`nfeProc`, namespaces padrao/prefixado, `infNFe`/emit/dest/CNPJ/fechamento apos 2048, XML malformado/generico e sentinela de nao-persistencia; PDF com token NF somente apos 2048 confirma o limite PDF. Entidades internas nao expandem CNPJ.
+> - Verificacao: focados **4 arquivos / 250 testes** verdes; suite completa **40 arquivos / 812 testes** verde. Baseline detached em `26111e04` e G27 retornaram o mesmo build `tsc` (exit 2; 8 erros TypeScript identicos), portanto build debt e preexistente.
+> - Nenhum push, merge, cherry-pick ou alteracao em `work/app-next`; remotos nao publicados. Nenhum `prune` explicito foi executado; a metadata orfa `baseline-worktree` permanece debito conhecido.
 >
 > **Atualizacao 2026-07-11 — fase
 > `G26-C-D — FINAL MONOREPO CLOSEOUT DOCUMENTATION`.**
