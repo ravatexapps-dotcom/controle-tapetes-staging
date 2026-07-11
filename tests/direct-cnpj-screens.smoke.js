@@ -24,6 +24,12 @@ class Node {
     this._attrs = {};
     this._listeners = {};
     this._text = '';
+    this.selectionStart = 0;
+    this.selectionEnd = 0;
+  }
+  setSelectionRange(start, end) {
+    this.selectionStart = start;
+    this.selectionEnd = end;
   }
   appendChild(node) { this.children.push(node); return node; }
   replaceChildren(...nodes) { this.children = nodes.flat().filter(Boolean); }
@@ -135,6 +141,72 @@ test('helpers normalizam, formatam e validam CNPJ', () => {
   assert.equal(helpers.formatarCnpj('11222333000181'), '11.222.333/0001-81');
   assert.equal(helpers.validarCnpjDv('11222333000181').ok, true);
   assert.equal(helpers.validarCnpjDv('11222333000180').ok, false);
+});
+
+test('formatarCnpj aplica mascara progressiva durante a digitacao', () => {
+  const { sandbox } = createHarness();
+  const f = sandbox.RAVATEX_SCREENS.cadastros.formatarCnpj;
+  assert.equal(f(''), '');
+  assert.equal(f('1'), '1');
+  assert.equal(f('12'), '12');
+  assert.equal(f('123'), '12.3');
+  assert.equal(f('12345'), '12.345');
+  assert.equal(f('123456'), '12.345.6');
+  assert.equal(f('12345678'), '12.345.678');
+  assert.equal(f('123456789'), '12.345.678/9');
+  assert.equal(f('123456789012'), '12.345.678/9012');
+  assert.equal(f('1234567890123'), '12.345.678/9012-3');
+  assert.equal(f('12345678901234'), '12.345.678/9012-34');
+});
+
+test('formatarCnpj filtra nao numericos e trunca a 14 digitos', () => {
+  const { sandbox } = createHarness();
+  const f = sandbox.RAVATEX_SCREENS.cadastros.formatarCnpj;
+  assert.equal(f('12abc345@678/0001-90'), '12.345.678/0001-90');
+  assert.equal(f('abc'), '');
+  assert.equal(f('0000000000000012345678'), '00.000.000/0000-00');
+});
+
+test('input event de cliente aplica mascara e filtra nao numericos', async () => {
+  const harness = createHarness();
+  await openForm(harness, 'screenCadastrosClientes', 'Novo cliente');
+  const cnpjInput = inputByPlaceholder(findAll(harness.document.body, (node) => node.tagName === 'INPUT'), '00.000.000/0000-00');
+  assert.ok(cnpjInput, 'input CNPJ encontrado');
+
+  cnpjInput.value = '123';
+  cnpjInput._listeners.input();
+  assert.equal(cnpjInput.value, '12.3');
+
+  cnpjInput.value = '12345678';
+  cnpjInput._listeners.input();
+  assert.equal(cnpjInput.value, '12.345.678');
+
+  cnpjInput.value = '12345678901234';
+  cnpjInput._listeners.input();
+  assert.equal(cnpjInput.value, '12.345.678/9012-34');
+
+  cnpjInput.value = 'abc';
+  cnpjInput._listeners.input();
+  assert.equal(cnpjInput.value, '');
+
+  cnpjInput.value = '12345678901234567890';
+  cnpjInput._listeners.input();
+  assert.equal(cnpjInput.value, '12.345.678/9012-34');
+});
+
+test('input event de fornecedor aplica mascara e filtra nao numericos', async () => {
+  const harness = createHarness();
+  await openForm(harness, 'screenCadastrosFornecedores', 'Novo fornecedor');
+  const cnpjInput = inputByPlaceholder(findAll(harness.document.body, (node) => node.tagName === 'INPUT'), '00.000.000/0000-00');
+  assert.ok(cnpjInput, 'input CNPJ encontrado no fornecedor');
+
+  cnpjInput.value = '11444777000161';
+  cnpjInput._listeners.input();
+  assert.equal(cnpjInput.value, '11.444.777/0001-61');
+
+  cnpjInput.value = 'abc123';
+  cnpjInput._listeners.input();
+  assert.equal(cnpjInput.value, '12.3');
 });
 
 test('cliente cria e edita usando somente clientes.cnpj', async () => {

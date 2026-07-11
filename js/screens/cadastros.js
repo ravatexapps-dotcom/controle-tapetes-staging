@@ -144,11 +144,19 @@
     return String(valor == null ? '' : valor).replace(/\D/g, '').slice(0, 14);
   }
 
-  // Formata 14 digitos -> XX.XXX.XXX/XXXX-XX para exibicao. Valores
-  // menores que 14 sao exibidos como-estao (legado/parcial).
+  // Formata CNPJ progressivamente enquanto digita:
+  //   12 -> 12
+  //   123 -> 12.3
+  //   12345 -> 12.345
+  //   12345678 -> 12.345.678
+  //   123456789012 -> 12.345.678/9012
+  //   12345678901234 -> 12.345.678/9012-34
   function formatarCnpj(valor) {
     const d = normalizarCnpj(valor);
-    if (d.length !== 14) return d;
+    if (d.length <= 2) return d;
+    if (d.length <= 5) return d.slice(0, 2) + '.' + d.slice(2);
+    if (d.length <= 8) return d.slice(0, 2) + '.' + d.slice(2, 5) + '.' + d.slice(5);
+    if (d.length <= 12) return d.slice(0, 2) + '.' + d.slice(2, 5) + '.' + d.slice(5, 8) + '/' + d.slice(8);
     return d.slice(0, 2) + '.' + d.slice(2, 5) + '.' + d.slice(5, 8) + '/' + d.slice(8, 12) + '-' + d.slice(12, 14);
   }
 
@@ -933,8 +941,13 @@
       const nomeInput = window.textInput({ value: cli?.nome || '', placeholder: 'Ex: LOJA CENTRAL', required: true });
       const cnpjInput = window.textInput({ value: formatarCnpj(cli?.cnpj || ''), placeholder: '00.000.000/0000-00' });
       cnpjInput.addEventListener('input', function () {
+        const start = cnpjInput.selectionStart;
+        const before = cnpjInput.value;
         const normalizado = normalizarCnpj(cnpjInput.value);
         cnpjInput.value = normalizado.length > 1 ? formatarCnpj(normalizado) : normalizado;
+        const delta = cnpjInput.value.length - before.length;
+        const pos = Math.max(0, (start || 0) + (delta > 0 ? 1 : 0));
+        try { cnpjInput.setSelectionRange(pos, pos); } catch (_) {}
       });
       const bodyRows = [
         cadastrosModalField({ label: 'Nome', input: nomeInput, fullWidth: true }),
@@ -1918,8 +1931,13 @@
       const tipoSel = window.selectInput({ options: FORNECEDOR_TIPOS, value: forn?.tipo });
       const cnpjInput = window.textInput({ value: formatarCnpj(forn?.cnpj || ''), placeholder: '00.000.000/0000-00' });
       cnpjInput.addEventListener('input', function () {
+        const start = cnpjInput.selectionStart;
+        const before = cnpjInput.value;
         const normalizado = normalizarCnpj(cnpjInput.value);
         cnpjInput.value = normalizado.length > 1 ? formatarCnpj(normalizado) : normalizado;
+        const delta = cnpjInput.value.length - before.length;
+        const pos = Math.max(0, (start || 0) + (delta > 0 ? 1 : 0));
+        try { cnpjInput.setSelectionRange(pos, pos); } catch (_) {}
       });
       let emailInput = null;
       let telefoneInput = null;
