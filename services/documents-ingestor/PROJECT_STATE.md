@@ -1,17 +1,17 @@
 # PROJECT STATE
 
 > **Atualizacao 2026-07-11 — fase
-> `G26-B-D — MONOREPO DOCUMENTATION CONSOLIDATION`.**
-> Status: **G26-B-D — CONSOLIDATION OK**.
-> Branch/HEAD: `work/documents-ingestor-monorepo` (HEAD `9e68160`).
+> `G26-C-D — FINAL MONOREPO CLOSEOUT DOCUMENTATION`.**
+> Status: **G26-C CLOSED — INTEGRADO E VALIDADO EM STAGING**.
+> Branch/HEAD final local e remoto: `work/app-next` (`8f1df9b6d9e80444b31ed69f3187fa52183023fb`).
 >
 > **Monorepo Incorporation:**
 > - O Documents Ingestor agora pertence ao monorepo `controle-tapetes` no path
 >   `services/documents-ingestor`.
 > - O repositorio antigo (`D:\OneDrive\Programação\Ravatex\documents-ingestor`)
 >   permanece preservado apenas para consulta/transicao.
-> - Branch ativa: `work/documents-ingestor-monorepo`.
-> - HEAD documental anterior a esta atualizacao: `9e68160`.
+> - Branch integrada: `work/app-next`.
+> - HEAD final local/remoto: `8f1df9b`.
 > - Runtimes continuam separados (Node.js 22.22.3 independente dentro do servico).
 > - `.env` do worker permanece dentro do servico (`services/documents-ingestor/.env`).
 > - Nao existem npm workspaces.
@@ -22,11 +22,20 @@
 > **Debitos pendentes:**
 > - 4 vulnerabilidades moderadas do npm audit.
 > - Metadata orfa `.git/worktrees/baseline-worktree`.
-> - Execucao real do GitHub Actions.
 > - Projecao futura de sha256 e attachment_id.
 > - Repositorio antigo ainda preservado.
+> - Acumulacao do manifest remoto continua debito separado; `8f1df9b` eliminou
+>   `os.devNull` e inclui o documento no payload enviado.
+> - Aviso de deprecacao interno das actions v4 (Node 20) nao bloqueou o CI.
 >
-> **Proximo passo:** G26-C — FINAL VALIDATION, MERGE TO work/app-next AND STAGING PUSH.
+> **Evidencia remota:**
+> - Run `29157931768` falhou por `tsx.cmd` hardcoded e `/dev/null` vazio via
+>   `os.devNull` no Linux.
+> - Commit `8f1df9b` corrigiu ambos; run `29158174870` (push) concluiu
+>   `success` com 39 arquivos / 673 testes para o SHA final.
+> - Push somente para `staging/work/app-next`, sem `origin` e sem force push.
+>
+> **Proximo passo:** G26 closed; manter o repositorio antigo preservado para transicao.
 
 ## RAVATEX-DOCUMENTS-G25-B1-UX-C-B-TEST-CLEANUP-CLOSEOUT (2026-07-10)
 

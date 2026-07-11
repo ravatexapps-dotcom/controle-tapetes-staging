@@ -1,7 +1,7 @@
 > **Atualizacao 2026-07-11 — fase
-> `G26-B-D — MONOREPO DOCUMENTATION CONSOLIDATION`.**
-> Status: **G26-B-D — CONSOLIDATION OK**.
-> Branch/HEAD: `work/documents-ingestor-monorepo` (HEAD `9e68160`).
+> `G26-C-D — FINAL MONOREPO CLOSEOUT DOCUMENTATION`.**
+> Status: **G26-C CLOSED — INTEGRADO E VALIDADO EM STAGING**.
+> Branch/HEAD final local e remoto: `work/app-next` (`8f1df9b6d9e80444b31ed69f3187fa52183023fb`).
 >
 > **Incorporacao do Documents Ingestor ao monorepo — cadeia G26 concluida:**
 >
@@ -34,32 +34,35 @@
 > - `b8334d9` Add documents ingestor command wrapper
 > - `9e68160` Move ingestor tests to monorepo workflow
 >
-> **Nao afirmar:**
-> - merge em `work/app-next`;
-> - push;
-> - execucao remota do Actions;
-> - remocao do repositorio antigo;
-> - operacao validada em staging.
+> **Evidencia de staging:**
+> - Primeiro run `29157931768` falhou: `tsx.cmd` hardcoded nos testes CLI e
+>   `os.devNull` leu `/dev/null` vazio no Linux.
+> - Correcao `8f1df9b`: binario `tsx` por plataforma e documento incluido no
+>   payload do manifest, sem dispositivo nulo.
+> - Run `29158174870`, evento `push`, concluiu `success` para o SHA final;
+>   39 arquivos / 673 testes executados remotamente.
+> - Sem uso de `origin` para publicar e sem force push; repositorio antigo preservado.
 >
 > **Debitos pendentes:**
 > - 4 vulnerabilidades moderadas do npm audit;
 > - metadata orfa `.git/worktrees/baseline-worktree`;
-> - execucao real do GitHub Actions;
 > - projecao futura de sha256 e attachment_id;
 > - repositorio antigo ainda preservado.
+> - Acumulacao do manifest remoto permanece debito separado; o patch de CI
+>   garante o payload de um documento, nao implementa acumulacao remota.
+> - Aviso de deprecacao do Node 20 interno de actions v4 nao bloqueou o CI.
 >
 > **Services/documents-ingestor:**
 > - Workspace canonico: `D:\OneDrive\Programação\Ravatex\controle-tapetes\services\documents-ingestor`.
 > - Repositorio antigo preservado para consulta/transicao.
-> - Branch ativa: `work/documents-ingestor-monorepo`.
-> - HEAD documental: `9e68160`.
+> - Branch integrada: `work/app-next`.
+> - HEAD final local/remoto: `8f1df9b`.
 > - Runtimes separados; `.env` dentro do servico; sem npm workspaces.
 > - Wrapper: `scripts/ingestor.bat`.
 > - Workflow: `.github/workflows/documents-ingestor-test.yml`.
 > - Suite completa: 673/673.
 >
-> **Proximo passo:** G26-C — FINAL VALIDATION, MERGE TO `work/app-next` AND
-> STAGING PUSH.
+> **Proximo passo:** G26 closed; tratar debitos separados por prioridade.
 
 > **Atualizacao 2026-07-10 — fase
 > `G25-B2-A-R3-R2-B4 — DIRECT CNPJ DOCUMENTATION CLOSEOUT`.**
