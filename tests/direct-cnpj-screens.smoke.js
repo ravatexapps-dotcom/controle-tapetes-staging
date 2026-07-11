@@ -209,6 +209,124 @@ test('input event de fornecedor aplica mascara e filtra nao numericos', async ()
   assert.equal(cnpjInput.value, '12.3');
 });
 
+test('cnpjInput aceita colagem de valor cru sem pontuacao', async () => {
+  const harness = createHarness();
+  await openForm(harness, 'screenCadastrosClientes', 'Novo cliente');
+  const cnpjInput = inputByPlaceholder(findAll(harness.document.body, (node) => node.tagName === 'INPUT'), '00.000.000/0000-00');
+  assert.ok(cnpjInput, 'input CNPJ encontrado');
+
+  cnpjInput.value = '12345678000190';
+  cnpjInput._listeners.input();
+  assert.equal(cnpjInput.value, '12.345.678/0001-90');
+});
+
+test('cnpjInput aceita colagem de valor ja pontuado', async () => {
+  const harness = createHarness();
+  await openForm(harness, 'screenCadastrosClientes', 'Novo cliente');
+  const cnpjInput = inputByPlaceholder(findAll(harness.document.body, (node) => node.tagName === 'INPUT'), '00.000.000/0000-00');
+  assert.ok(cnpjInput, 'input CNPJ encontrado');
+
+  cnpjInput.value = '12.345.678/0001-90';
+  cnpjInput._listeners.input();
+  assert.equal(cnpjInput.value, '12.345.678/0001-90');
+});
+
+test('cnpjInput filtra letras e simbolos mantendo digitos', async () => {
+  const harness = createHarness();
+  await openForm(harness, 'screenCadastrosClientes', 'Novo cliente');
+  const cnpjInput = inputByPlaceholder(findAll(harness.document.body, (node) => node.tagName === 'INPUT'), '00.000.000/0000-00');
+  assert.ok(cnpjInput, 'input CNPJ encontrado');
+
+  cnpjInput.value = '12abc345-678/0001XX90!!!!';
+  cnpjInput._listeners.input();
+  assert.equal(cnpjInput.value, '12.345.678/0001-90');
+
+  cnpjInput.value = 'abc';
+  cnpjInput._listeners.input();
+  assert.equal(cnpjInput.value, '');
+});
+
+test('cnpjInput trunca apos 14 digitos na colagem', async () => {
+  const harness = createHarness();
+  await openForm(harness, 'screenCadastrosClientes', 'Novo cliente');
+  const cnpjInput = inputByPlaceholder(findAll(harness.document.body, (node) => node.tagName === 'INPUT'), '00.000.000/0000-00');
+  assert.ok(cnpjInput, 'input CNPJ encontrado');
+
+  cnpjInput.value = '12345678901234567890';
+  cnpjInput._listeners.input();
+  assert.equal(cnpjInput.value, '12.345.678/9012-34');
+});
+
+test('cnpjInput backspace mantem mascara corretamente', async () => {
+  const harness = createHarness();
+  await openForm(harness, 'screenCadastrosClientes', 'Novo cliente');
+  const cnpjInput = inputByPlaceholder(findAll(harness.document.body, (node) => node.tagName === 'INPUT'), '00.000.000/0000-00');
+  assert.ok(cnpjInput, 'input CNPJ encontrado');
+
+  cnpjInput.value = '12345678901234';
+  cnpjInput._listeners.input();
+  assert.equal(cnpjInput.value, '12.345.678/9012-34');
+
+  cnpjInput.value = '1234567890123';
+  cnpjInput._listeners.input();
+  assert.equal(cnpjInput.value, '12.345.678/9012-3');
+
+  cnpjInput.value = '12345678901';
+  cnpjInput._listeners.input();
+  assert.equal(cnpjInput.value, '12.345.678/901');
+
+  cnpjInput.value = '12345678';
+  cnpjInput._listeners.input();
+  assert.equal(cnpjInput.value, '12.345.678');
+
+  cnpjInput.value = '12';
+  cnpjInput._listeners.input();
+  assert.equal(cnpjInput.value, '12');
+
+  cnpjInput.value = '';
+  cnpjInput._listeners.input();
+  assert.equal(cnpjInput.value, '');
+});
+
+test('cnpjInput reposiciona cursor apos mascara', async () => {
+  const harness = createHarness();
+  await openForm(harness, 'screenCadastrosClientes', 'Novo cliente');
+  const cnpjInput = inputByPlaceholder(findAll(harness.document.body, (node) => node.tagName === 'INPUT'), '00.000.000/0000-00');
+  assert.ok(cnpjInput, 'input CNPJ encontrado');
+
+  cnpjInput.value = '12345678901234';
+  cnpjInput.selectionStart = 14;
+  cnpjInput.selectionEnd = 14;
+  cnpjInput._listeners.input();
+  assert.equal(cnpjInput.value, '12.345.678/9012-34');
+  assert.ok(cnpjInput.selectionStart >= 14, 'cursor deve avancar com insercao de pontuacao');
+
+  cnpjInput.value = '123';
+  cnpjInput.selectionStart = 3;
+  cnpjInput.selectionEnd = 3;
+  cnpjInput._listeners.input();
+  assert.equal(cnpjInput.value, '12.3');
+  assert.ok(cnpjInput.selectionStart >= 3, 'cursor deve ser ajustado apos mascara');
+});
+
+test('cnpjInput edicao no meio preserva digitos', async () => {
+  const harness = createHarness();
+  await openForm(harness, 'screenCadastrosClientes', 'Novo cliente');
+  const cnpjInput = inputByPlaceholder(findAll(harness.document.body, (node) => node.tagName === 'INPUT'), '00.000.000/0000-00');
+  assert.ok(cnpjInput, 'input CNPJ encontrado');
+
+  cnpjInput.value = '12345678901234';
+  cnpjInput._listeners.input();
+  assert.equal(cnpjInput.value, '12.345.678/9012-34');
+
+  cnpjInput.value = '12.345.999/9012-34';
+  cnpjInput._listeners.input();
+  assert.equal(cnpjInput.value, '12.345.999/9012-34');
+
+  const clean = harness.sandbox.RAVATEX_SCREENS.cadastros.normalizarCnpj(cnpjInput.value);
+  assert.equal(clean, '12345999901234');
+});
+
 test('cliente cria e edita usando somente clientes.cnpj', async () => {
   const createHarnessResult = createHarness();
   const create = await openForm(createHarnessResult, 'screenCadastrosClientes', 'Novo cliente');
