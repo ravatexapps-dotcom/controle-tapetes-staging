@@ -5,7 +5,8 @@ import { randomUUID } from 'node:crypto';
 import { getDb, closeDb } from '../src/storage/sqlite.js';
 import { linkDocumentToPedido } from '../src/core/link.js';
 import { acceptDocument, rejectDocument } from '../src/core/acceptance.js';
-import { exportPackage } from '../src/core/exportPackage.js';
+import { exportPackage, exportMappedDocuments, exportIngestionEvents, exportReceivedDocuments } from '../src/core/exportPackage.js';
+import { packageRoot, resolveFromPackageRoot } from '../src/packagePaths.js';
 import { HERMETIC_TEST_ROOT } from './setup.js';
 
 const SCENARIO_DIR = join(HERMETIC_TEST_ROOT, `export-package-test-${randomUUID()}`);
@@ -224,5 +225,39 @@ describe('export package for Controle de Tapetes', () => {
     const parsed = JSON.parse(lines[0]);
     expect(parsed.event_type).toBe('document.linked');
     expect(parsed.pedido_manual).toBe('PED-25-2026');
+  });
+
+  describe('default output paths anchor to packageRoot (G26-B-B2)', () => {
+    const realExportsDir = resolveFromPackageRoot('data', 'exports');
+
+    afterEach(() => {
+      if (existsSync(realExportsDir)) rmSync(realExportsDir, { recursive: true, force: true });
+    });
+
+    it('exportPackage default outputDir anchors under packageRoot', () => {
+      const pedido = 'PED-97-2026';
+      const expected = resolveFromPackageRoot('data', 'exports', 'packages', pedido);
+      const result = exportPackage(pedido);
+      expect(result.outputDir).toBe(expected);
+      expect(result.outputDir.startsWith(packageRoot)).toBe(true);
+    });
+
+    it('exportMappedDocuments default outputPath anchors under packageRoot', () => {
+      const expected = resolveFromPackageRoot('data', 'exports', 'documentos-mapeados.jsonl');
+      const result = exportMappedDocuments();
+      expect(result.outputPath).toBe(expected);
+    });
+
+    it('exportIngestionEvents default outputPath anchors under packageRoot', () => {
+      const expected = resolveFromPackageRoot('data', 'exports', 'ingestion-events.jsonl');
+      const result = exportIngestionEvents();
+      expect(result.outputPath).toBe(expected);
+    });
+
+    it('exportReceivedDocuments default outputPath anchors under packageRoot', () => {
+      const expected = resolveFromPackageRoot('data', 'exports', 'documentos-recebidos.jsonl');
+      const result = exportReceivedDocuments();
+      expect(result.outputPath).toBe(expected);
+    });
   });
 });

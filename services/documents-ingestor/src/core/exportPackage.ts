@@ -1,8 +1,9 @@
 import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
-import { dirname, join, resolve } from 'node:path';
+import { dirname, join } from 'node:path';
 import { queryAndExportEvents } from './outbox.js';
 import { buildManifestFromDb } from './syncManifest.js';
 import { getDb } from '../storage/sqlite.js';
+import { resolveFromPackageRoot } from '../packagePaths.js';
 import type { DocumentEvent } from '../types/event.js';
 
 export interface PackageResult {
@@ -49,8 +50,8 @@ export function exportPackage(
   opts: { outputDir?: string } = {},
 ): ExportPackageResult {
   const baseDir = opts.outputDir && opts.outputDir.trim()
-    ? resolve(process.cwd(), opts.outputDir)
-    : resolve(process.cwd(), 'data', 'exports', 'packages', pedido);
+    ? resolveFromPackageRoot(opts.outputDir)
+    : resolveFromPackageRoot('data', 'exports', 'packages', pedido);
 
   if (!existsSync(baseDir)) {
     mkdirSync(baseDir, { recursive: true });
@@ -280,8 +281,8 @@ export function exportMappedDocuments(
   opts: ExportMappedOptions = {},
 ): ExportMappedResult {
   const baseDir = opts.outputPath && opts.outputPath.trim()
-    ? resolve(process.cwd(), opts.outputPath)
-    : resolve(process.cwd(), 'data', 'exports', 'documentos-mapeados.jsonl');
+    ? resolveFromPackageRoot(opts.outputPath)
+    : resolveFromPackageRoot('data', 'exports', 'documentos-mapeados.jsonl');
 
   const dir = dirname(baseDir);
   if (!existsSync(dir)) {
@@ -430,8 +431,8 @@ export function exportIngestionEvents(
   opts: ExportIngestionEventsOptions = {},
 ): ExportIngestionEventsResult {
   const outputPath = opts.outputPath && opts.outputPath.trim()
-    ? resolve(process.cwd(), opts.outputPath)
-    : resolve(process.cwd(), 'data', 'exports', 'ingestion-events.jsonl');
+    ? resolveFromPackageRoot(opts.outputPath)
+    : resolveFromPackageRoot('data', 'exports', 'ingestion-events.jsonl');
   const dir = dirname(outputPath);
   if (!existsSync(dir)) {
     mkdirSync(dir, { recursive: true });
@@ -519,8 +520,8 @@ export function exportReceivedDocuments(
   opts: ExportReceivedOptions = {},
 ): ExportReceivedResult {
   const baseDir = opts.outputPath && opts.outputPath.trim()
-    ? resolve(process.cwd(), opts.outputPath)
-    : resolve(process.cwd(), 'data', 'exports', 'documentos-recebidos.jsonl');
+    ? resolveFromPackageRoot(opts.outputPath)
+    : resolveFromPackageRoot('data', 'exports', 'documentos-recebidos.jsonl');
 
   const dir = dirname(baseDir);
   if (!existsSync(dir)) {
