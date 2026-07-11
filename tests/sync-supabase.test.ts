@@ -32,6 +32,8 @@ function mappedRow(overrides: Record<string, unknown> = {}): Record<string, unkn
     status: 'pending',
     pedido_manual: 'PED-25-2026',
     sender_email: 'fornecedor@empresa.com.br',
+    cnpj_emitente: '12345678000199',
+    cnpj_destinatario: '98765432000100',
     gmail_message_id: 'gmail-001',
     email_message_id: 'gmail-001',
     email_received_at: '2026-07-09T09:00:00.000Z',
@@ -388,7 +390,168 @@ describe('sync:supabase canonical writer', () => {
       expect(client.finishedRuns).toHaveLength(0);
     });
 
-    it('binds recovery to the dedicated RPC without touching decision tables', () => {
+    describe('document party CNPJs in canonical payload', () => {
+    it('both CNPJs enter the payload as explicit strings', async () => {
+      const client = new WriterClientMock();
+      await runSyncSupabase(options([mappedRow()]), client);
+      const candidate = client.canonicalWrites[0].candidate;
+      expect(candidate.cnpj_emitente).toBe('12345678000199');
+      expect(candidate.cnpj_destinatario).toBe('98765432000100');
+    });
+
+    it('only emitente enters as string and destinatario as null', async () => {
+      const client = new WriterClientMock();
+      await runSyncSupabase(options([mappedRow({ cnpj_destinatario: null })]), client);
+      const candidate = client.canonicalWrites[0].candidate;
+      expect(candidate.cnpj_emitente).toBe('12345678000199');
+      expect(candidate.cnpj_destinatario).toBeNull();
+    });
+
+    it('only destinatario enters as string and emitente as null', async () => {
+      const client = new WriterClientMock();
+      await runSyncSupabase(options([mappedRow({ cnpj_emitente: null })]), client);
+      const candidate = client.canonicalWrites[0].candidate;
+      expect(candidate.cnpj_emitente).toBeNull();
+      expect(candidate.cnpj_destinatario).toBe('98765432000100');
+    });
+
+    it('both absent enter explicitly as null', async () => {
+      const client = new WriterClientMock();
+      await runSyncSupabase(options([mappedRow({ cnpj_emitente: null, cnpj_destinatario: null })]), client);
+      const candidate = client.canonicalWrites[0].candidate;
+      expect(candidate.cnpj_emitente).toBeNull();
+      expect(candidate.cnpj_destinatario).toBeNull();
+    });
+
+    it('preserves 14-digit CNPJ values without punctuation', async () => {
+      const client = new WriterClientMock();
+      await runSyncSupabase(options([mappedRow({ cnpj_emitente: '99999999000199', cnpj_destinatario: '00000000000191' })]), client);
+      const candidate = client.canonicalWrites[0].candidate;
+      expect(candidate.cnpj_emitente).toBe('99999999000199');
+      expect(candidate.cnpj_destinatario).toBe('00000000000191');
+    });
+
+    it('payload has exactly cnpj_emitente and cnpj_destinatario keys', async () => {
+      const client = new WriterClientMock();
+      await runSyncSupabase(options([mappedRow()]), client);
+      const candidate = client.canonicalWrites[0].candidate;
+      expect(Object.keys(candidate)).toContain('cnpj_emitente');
+      expect(Object.keys(candidate)).toContain('cnpj_destinatario');
+    });
+
+    it('does not use camelCase property names in remote payload', async () => {
+      const client = new WriterClientMock();
+      await runSyncSupabase(options([mappedRow()]), client);
+      const candidate = client.canonicalWrites[0].candidate;
+      expect(candidate).not.toHaveProperty('cnpjEmitente');
+      expect(candidate).not.toHaveProperty('cnpjDestinatario');
+    });
+
+    it('entityMatch is not sent in payload', async () => {
+      const client = new WriterClientMock();
+      await runSyncSupabase(options([mappedRow()]), client);
+      const candidate = client.canonicalWrites[0].candidate as Record<string, unknown>;
+      expect(candidate).not.toHaveProperty('entityMatch');
+    });
+
+    it('fornecedor_id remains null as before', async () => {
+      const client = new WriterClientMock();
+      await runSyncSupabase(options([mappedRow()]), client);
+      expect(client.canonicalWrites[0].candidate.fornecedor_id).toBeNull();
+    });
+
+    it('schema_version remains unchanged', async () => {
+      const client = new WriterClientMock();
+      await runSyncSupabase(options([mappedRow()]), client);
+      expect(client.canonicalWrites[0].candidate.schema_version).toBe(1);
+    });
+
+    it('remaining fields are unaltered', async () => {
+      const client = new WriterClientMock();
+      await runSyncSupabase(options([mappedRow()]), client);
+      const candidate = client.canonicalWrites[0].candidate;
+      expect(candidate.document_id).toBe('doc-001');
+      expect(candidate.filename_original).toBe('nota.xml');
+      expect(candidate.tipo_documento).toBe('nf');
+      expect(candidate.sender_email).toBe('fornecedor@empresa.com.br');
+    });
+
+    it('dry-run does not create writer client nor execute write', async () => {
+      const client = new WriterClientMock();
+      const result = await runSyncSupabase({ ...options([mappedRow()]), confirmWrite: false }, client);
+      expect(result.dry_run).toBe(true);
+      expect(client.canonicalWrites).toHaveLength(0);
+      expect(client.startedRuns).toHaveLength(0);
+    });
+
+    it('confirmed write mock contains the new CNPJ fields', async () => {
+      const client = new WriterClientMock();
+      await runSyncSupabase(options([mappedRow()]), client);
+      expect(client.canonicalWrites).toHaveLength(1);
+      expect(client.canonicalWrites[0].candidate.cnpj_emitente).toBe('12345678000199');
+      expect(client.canonicalWrites[0].candidate.cnpj_destinatario).toBe('98765432000100');
+    });
+
+    it('project ref absent continues to fail', () => {
+      expect(() => loadServiceRoleConfig({
+        SUPABASE_WRITER_ENABLED: 'true',
+        SUPABASE_URL: 'https://abc123def456.supabase.co',
+        SUPABASE_SERVICE_ROLE_KEY: 'sk-test-key',
+      })).toThrow('supabase_project_ref_required');
+    });
+
+    it('project ref mismatch continues to fail', () => {
+      expect(() => loadServiceRoleConfig({
+        SUPABASE_WRITER_ENABLED: 'true',
+        SUPABASE_URL: 'https://abc123def456.supabase.co',
+        SUPABASE_SERVICE_ROLE_KEY: 'sk-test-key',
+        SUPABASE_PROJECT_REF: 'differentref000000',
+      })).toThrow('supabase_project_ref_mismatch');
+    });
+
+    it('invalid URL continues to fail', () => {
+      expect(() => loadServiceRoleConfig({
+        SUPABASE_WRITER_ENABLED: 'true',
+        SUPABASE_URL: 'not-a-valid-url',
+        SUPABASE_SERVICE_ROLE_KEY: 'sk-test-key',
+        SUPABASE_PROJECT_REF: 'some-ref',
+      })).toThrow('supabase_url_invalid');
+    });
+
+    it('secret does not appear in error message', () => {
+      const key = 'sk-sensitive-secret-key-12345';
+      try {
+        loadServiceRoleConfig({
+          SUPABASE_WRITER_ENABLED: 'true',
+          SUPABASE_URL: 'https://abc.supabase.co',
+          SUPABASE_SERVICE_ROLE_KEY: key,
+          SUPABASE_PROJECT_REF: 'abc',
+        });
+      } catch (error: any) {
+        expect(error.message).not.toContain(key);
+      }
+    });
+
+    it('writer error preserves previous behavior', async () => {
+      const client = new WriterClientMock();
+      client.canonicalError = new Error('migration_39_required');
+      const result = await runSyncSupabase(options([mappedRow()]), client);
+      expect(result.ok).toBe(false);
+      expect(result.errors).toEqual(['migration_39_required']);
+    });
+
+    it('null values are not omitted from payload keys', async () => {
+      const client = new WriterClientMock();
+      await runSyncSupabase(options([mappedRow({ cnpj_emitente: null, cnpj_destinatario: null })]), client);
+      const candidate = client.canonicalWrites[0].candidate;
+      expect('cnpj_emitente' in candidate).toBe(true);
+      expect('cnpj_destinatario' in candidate).toBe(true);
+      expect(candidate.cnpj_emitente).toBeNull();
+      expect(candidate.cnpj_destinatario).toBeNull();
+    });
+  });
+
+  it('binds recovery to the dedicated RPC without touching decision tables', () => {
       const core = readFileSync(join(process.cwd(), 'src/core/syncSupabase.ts'), 'utf-8');
       const client = readFileSync(join(process.cwd(), 'src/supabase/serviceRoleClient.ts'), 'utf-8');
 

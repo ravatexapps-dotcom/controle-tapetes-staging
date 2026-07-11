@@ -158,6 +158,8 @@ function normalizeCandidate(row: Record<string, unknown>): DocumentCandidateWrit
     accepted_at: optionalText(row.accepted_at),
     rejected_at: optionalText(row.rejected_at),
     rejected_reason: optionalText(row.rejected_reason),
+    cnpj_emitente: optionalText(row.cnpj_emitente),
+    cnpj_destinatario: optionalText(row.cnpj_destinatario),
     atualizado_em: new Date().toISOString(),
   };
 }

@@ -31,6 +31,8 @@ export interface DocumentCandidateWrite {
   accepted_at: string | null;
   rejected_at: string | null;
   rejected_reason: string | null;
+  cnpj_emitente: string | null;
+  cnpj_destinatario: string | null;
   atualizado_em: string;
 }
 
