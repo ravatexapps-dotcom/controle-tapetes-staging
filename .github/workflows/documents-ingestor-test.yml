@@ -1,0 +1,33 @@
+name: Documents Ingestor Tests
+
+on:
+  push:
+    branches: [master, main]
+    paths:
+      - 'services/documents-ingestor/**'
+      - '.github/workflows/documents-ingestor-test.yml'
+  pull_request:
+    branches: [master, main]
+    paths:
+      - 'services/documents-ingestor/**'
+      - '.github/workflows/documents-ingestor-test.yml'
+
+jobs:
+  test:
+    name: Hermetic mock integration
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: services/documents-ingestor
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: services/documents-ingestor/package-lock.json
+      - name: Install dependencies
+        run: npm ci
+      - name: Run hermetic test suite
+        run: npm test
