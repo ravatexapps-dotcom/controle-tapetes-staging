@@ -614,6 +614,10 @@ describe('real scan flow (mocked Google)', () => {
         fetchEmailsCalled = true;
         return [{ gmailMessageId: 'msg-failclosed', threadId: 't', from: '', subject: 'FC', date: '', attachmentCount: 1 }];
       },
+      // Isolate from the real Supabase-backed default so this test never needs
+      // .env / real credentials and never performs network I/O (G26-A-R1).
+      createEntityCnpjReaderClient: () => ({ from: () => ({ select: () => ({ not: () => Promise.resolve({ data: [], error: null }) }) }) } as any),
+      loadEntityCnpjRegistry: async () => ({ loaded: true, loadedAt: new Date().toISOString(), entries: [], error: null }),
     });
     delete (deps as any).fetchMessageById;
 
