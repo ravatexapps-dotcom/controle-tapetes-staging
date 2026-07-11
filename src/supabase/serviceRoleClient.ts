@@ -92,7 +92,7 @@ export interface ServiceRoleConfig {
   projectRef: string;
 }
 
-function extractProjectRefFromUrl(urlString: string): string {
+export function extractProjectRefFromUrl(urlString: string): string {
   let parsed: URL;
   try {
     parsed = new URL(urlString);
