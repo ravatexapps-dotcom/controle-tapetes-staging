@@ -1,13 +1,14 @@
 import { appendFileSync, existsSync, mkdirSync } from 'node:fs';
-import { dirname, resolve } from 'node:path';
+import { dirname } from 'node:path';
 import { config } from '../config.js';
 import type { DocumentEvent } from '../types/event.js';
 import { getDb } from '../storage/sqlite.js';
 import { buildStorageUri } from '../types/document.js';
+import { resolveFromPackageRoot } from '../packagePaths.js';
 
 function resolveOutboxPath(): string {
   const envPath = process.env.OUTBOX_PATH;
-  if (envPath) return resolve(process.cwd(), envPath);
+  if (envPath) return resolveFromPackageRoot(envPath);
   return config.outboxPath;
 }
 
