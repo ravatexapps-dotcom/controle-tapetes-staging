@@ -138,15 +138,15 @@ describe('createServiceRoleEntityCnpjReaderClient', () => {
 
   it('maps normalized registry rows from fake Supabase responses', async () => {
     const client = createServiceRoleEntityCnpjReaderClient(makeOptions(makeFakeInner({
-      clientes: { data: [{ id: 1, nome: 'Cliente', cnpj: '12.345.678/0001-90' }], error: null },
-      fornecedores: { data: [{ id: 2, nome: 'Fornecedor', tipo: 'tecidos', cnpj: '98.765.432/0001-10' }], error: null },
+      clientes: { data: [{ id: 1, nome: 'Cliente', cnpj: '11.222.333/0001-81' }], error: null },
+      fornecedores: { data: [{ id: 2, nome: 'Fornecedor', tipo: 'tecidos', cnpj: '11.444.777/0001-61' }], error: null },
     })));
 
     const registry = await loadRegisteredEntityCnpjs(client);
 
     expect(registry.entries).toEqual([
-      { entityType: 'cliente', entityId: 1, entityName: 'Cliente', cnpj: '12345678000190' },
-      { entityType: 'fornecedor', entityId: 2, entityName: 'Fornecedor', cnpj: '98765432000110', supplierType: 'tecidos' },
+      { entityType: 'cliente', entityId: 1, entityName: 'Cliente', cnpj: '11222333000181' },
+      { entityType: 'fornecedor', entityId: 2, entityName: 'Fornecedor', cnpj: '11444777000161', supplierType: 'tecidos' },
     ]);
   });
 
