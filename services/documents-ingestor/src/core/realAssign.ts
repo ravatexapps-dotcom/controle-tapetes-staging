@@ -5,10 +5,8 @@ import { pedidoSubfolderDrivePath, manifestDrivePath, localCacheRoot } from './p
 import { moveOrCopyDocumentToPedido, uploadManifest } from '../connectors/drive.js';
 import { createDocumentEvent } from '../types/event.js';
 import { appendEvent, isEventDuplicate } from './outbox.js';
-import { addDocumentToManifest } from './manifest.js';
 import { join } from 'node:path';
 import { mkdirSync, existsSync } from 'node:fs';
-import os from 'node:os';
 import { fromLegacyTipo } from '../types/document.js';
 import type { TipoDocumento } from '../types/document.js';
 
@@ -104,23 +102,12 @@ export function createAssignPedido(deps: AssignDeps = defaultDeps) {
     ensureLocalCacheDir(localCacheFilePath);
 
     const eventId = randomUUID();
-    const manifestRef = await deps.uploadManifest({
-      pedido: normalized,
-      payload: {
-        schema_version: 1,
-        pedido: normalized,
-        storage_backend: 'google_drive',
-        manifest_storage_uri: undefined,
-        documents: [],
-      },
-    });
-
-    addDocumentToManifest(os.devNull, normalized, {
+    const manifestDocument = {
       document_id: doc.id,
       tipo_documento: tipo,
       filename_original: doc.filename_original,
       sha256: doc.sha256,
-      storage_backend: 'google_drive',
+      storage_backend: 'google_drive' as const,
       storage_uri: moveResult.storageUri,
       drive_file_id: moveResult.driveFileId,
       drive_folder_id: moveResult.driveFolderId,
@@ -129,7 +116,17 @@ export function createAssignPedido(deps: AssignDeps = defaultDeps) {
       local_cache_path: localCacheFilePath,
       ingested_at: new Date().toISOString(),
       event_id: eventId,
-      status: 'pending_app_acceptance',
+      status: 'pending_app_acceptance' as const,
+    };
+    const manifestRef = await deps.uploadManifest({
+      pedido: normalized,
+      payload: {
+        schema_version: 1,
+        pedido: normalized,
+        storage_backend: 'google_drive',
+        manifest_storage_uri: undefined,
+        documents: [manifestDocument],
+      },
     });
 
     database.prepare(

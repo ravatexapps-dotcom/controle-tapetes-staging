@@ -104,12 +104,23 @@ describe('real assign flow (mocked Google)', () => {
   it('real assign: moves in Drive, updates SQLite, appends outbox event', async () => {
     const database = getDb();
     const docId = seedPendingDoc(database);
-    const assign = createAssignPedido(mkDeps());
+    let manifestPayload: any;
+    const assign = createAssignPedido(mkDeps({
+      uploadManifest: async ({ pedido, payload }) => {
+        manifestPayload = payload;
+        return {
+          storageUri: `gdrive://file/manifest-${pedido}`,
+          driveFileId: `manifest-${pedido}`,
+          driveWebViewLink: `https://drive.google.com/file/d/manifest-${pedido}/view`,
+        };
+      },
+    }));
     const r = await assign(docId, '25/2026', { confirmReal: true });
     expect(r).not.toBeNull();
     expect(r!.pedidoManual).toBe('PED-25-2026');
     expect(r!.storageUri).toMatch(/^gdrive:\/\/file\//);
     expect(r!.manifestStorageUri).toMatch(/^gdrive:\/\/file\//);
+    expect(manifestPayload.documents).toMatchObject([{ document_id: docId, storage_uri: r!.storageUri }]);
 
     const doc = database.prepare(`SELECT * FROM documentos WHERE id = ?`).get(docId) as any;
     expect(doc.status).toBe('assigned');

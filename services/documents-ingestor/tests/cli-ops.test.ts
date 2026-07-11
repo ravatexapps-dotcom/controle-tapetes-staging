@@ -7,7 +7,7 @@ import { execSync } from 'node:child_process';
 import { HERMETIC_TEST_ROOT } from './setup.js';
 
 const SCENARIO_DIR = join(HERMETIC_TEST_ROOT, `cli-ops-${randomUUID()}`);
-const CLI = join(process.cwd(), 'node_modules', '.bin', 'tsx.cmd');
+const CLI = join(process.cwd(), 'node_modules', '.bin', process.platform === 'win32' ? 'tsx.cmd' : 'tsx');
 
 function env(): NodeJS.ProcessEnv {
   return {

@@ -3,7 +3,7 @@ import { execSync } from 'node:child_process';
 import { join } from 'node:path';
 import { HERMETIC_TEST_ROOT } from './setup.js';
 
-const CLI = join(process.cwd(), 'node_modules', '.bin', 'tsx.cmd');
+const CLI = join(process.cwd(), 'node_modules', '.bin', process.platform === 'win32' ? 'tsx.cmd' : 'tsx');
 
 function env(): NodeJS.ProcessEnv {
   return {
