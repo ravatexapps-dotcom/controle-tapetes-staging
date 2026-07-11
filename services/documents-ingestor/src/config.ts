@@ -1,8 +1,8 @@
 import { readFileSync, existsSync } from 'node:fs';
-import { resolve } from 'node:path';
+import { resolveFromPackageRoot } from './packagePaths.js';
 
 function loadEnv(): Record<string, string> {
-  const envPath = resolve(process.cwd(), '.env');
+  const envPath = resolveFromPackageRoot('.env');
   const vars: Record<string, string> = {};
 
   if (existsSync(envPath)) {
@@ -31,7 +31,7 @@ export const config = {
   googleClientId: env.GOOGLE_CLIENT_ID ?? '',
   googleClientSecret: env.GOOGLE_CLIENT_SECRET ?? '',
   googleRedirectUri: env.GOOGLE_REDIRECT_URI ?? '',
-  googleTokenPath: resolve(process.cwd(), env.GOOGLE_TOKEN_PATH ?? './data/google-token.json'),
+  googleTokenPath: resolveFromPackageRoot(env.GOOGLE_TOKEN_PATH ?? './data/google-token.json'),
 
   googleOAuthScopes: (env.GOOGLE_OAUTH_SCOPES
     ? env.GOOGLE_OAUTH_SCOPES.split(',').map(s => s.trim()).filter(Boolean)
@@ -44,10 +44,10 @@ export const config = {
   googleDriveRootFolderId: env.GOOGLE_DRIVE_ROOT_FOLDER_ID ?? '',
   googleDriveCreateMissingFolders: (env.GOOGLE_DRIVE_CREATE_MISSING_FOLDERS ?? 'true').toLowerCase() === 'true',
 
-  localCachePath: resolve(process.cwd(), env.LOCAL_CACHE_PATH ?? './data/cache'),
+  localCachePath: resolveFromPackageRoot(env.LOCAL_CACHE_PATH ?? './data/cache'),
 
-  databasePath: resolve(process.cwd(), env.DATABASE_PATH ?? './data/app.db'),
-  outboxPath: resolve(process.cwd(), env.OUTBOX_PATH ?? './data/outbox/document-events.jsonl'),
+  databasePath: resolveFromPackageRoot(env.DATABASE_PATH ?? './data/app.db'),
+  outboxPath: resolveFromPackageRoot(env.OUTBOX_PATH ?? './data/outbox/document-events.jsonl'),
   scanDaysBack: parseInt(env.SCAN_DAYS_BACK ?? '7', 10),
 
   ingestRealGoogle: (env.INGEST_REAL_GOOGLE ?? 'false').toLowerCase() === 'true',
