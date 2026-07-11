@@ -1,12 +1,24 @@
-import { describe, it, expect } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
+// Keep the service-role factory independent from the package .env loaded by src/config.ts.
+vi.mock('../src/config.js', () => ({
+  config: {
+    supabaseUrl: '',
+    supabaseServiceRoleKey: '',
+    supabaseProjectRef: '',
+    supabaseWriterEnabled: false,
+  },
+}));
+
 import {
   createServiceRoleEntityCnpjReaderClient,
   loadServiceRoleReaderConfig,
   type CreateReaderClientOptions,
-  type ServiceRoleReaderConfig,
 } from '../src/supabase/serviceRoleReaderClient.js';
-import type { SupabaseReaderClient } from '../src/core/entityCnpjReader.js';
+import { loadRegisteredEntityCnpjs, type SupabaseReaderClient } from '../src/core/entityCnpjReader.js';
 import { loadServiceRoleConfig } from '../src/supabase/serviceRoleClient.js';
+
+const SUPABASE_ENV_KEYS = ['SUPABASE_URL', 'SUPABASE_SERVICE_ROLE_KEY', 'SUPABASE_PROJECT_REF'] as const;
 
 function mockEnv(base: string, key: string, ref: string): Record<string, string> {
   return {
@@ -16,17 +28,37 @@ function mockEnv(base: string, key: string, ref: string): Record<string, string>
   };
 }
 
-const VALID_ENV = mockEnv('ucrjtfswnfdlxwtmxnoo', 'sb-test-key-123', 'ucrjtfswnfdlxwtmxnoo');
+const VALID_ENV = mockEnv('testproject', 'not-a-real-service-role-key', 'testproject');
+const originalEnv = new Map<string, string | undefined>();
 
-function makeFakeInner() {
+beforeEach(() => {
+  for (const key of SUPABASE_ENV_KEYS) originalEnv.set(key, process.env[key]);
+  Object.assign(process.env, VALID_ENV);
+  vi.stubGlobal('fetch', vi.fn(() => {
+    throw new Error('Network access is forbidden in service-role reader tests.');
+  }));
+});
+
+afterEach(() => {
+  for (const key of SUPABASE_ENV_KEYS) {
+    const value = originalEnv.get(key);
+    if (value === undefined) delete process.env[key];
+    else process.env[key] = value;
+  }
+  originalEnv.clear();
+  vi.unstubAllGlobals();
+});
+
+type FakeResult = { data: unknown[] | null; error: { message: string } | null };
+
+function makeFakeInner(results: Partial<Record<string, FakeResult>> = {}) {
   const calls: Array<{ table: string; columns: string; notCol: string; notOp: string; notVal: unknown }> = [];
-  const fakeData: unknown[] = [];
   const from = (table: string) => ({
     select(columns: string) {
       return {
         not(column: string, operator: string, value: unknown) {
           calls.push({ table, columns, notCol: column, notOp: operator, notVal: value });
-          return Promise.resolve({ data: fakeData, error: null });
+          return Promise.resolve(results[table] ?? { data: [], error: null });
         },
       };
     },
@@ -34,241 +66,116 @@ function makeFakeInner() {
   return { from, calls };
 }
 
-function makeOptions(fakeInner?: ReturnType<typeof makeFakeInner>): CreateReaderClientOptions {
-  return {
-    _createClient: () => {
-      return fakeInner ?? makeFakeInner();
-    },
-  };
+function makeOptions(fakeInner = makeFakeInner()): CreateReaderClientOptions {
+  return { _createClient: () => fakeInner };
 }
 
 describe('loadServiceRoleReaderConfig', () => {
-  it('valid env returns config', () => {
-    const cfg = loadServiceRoleReaderConfig(VALID_ENV);
-    expect(cfg.url).toBe('https://ucrjtfswnfdlxwtmxnoo.supabase.co');
-    expect(cfg.serviceRoleKey).toBe('sb-test-key-123');
-    expect(cfg.projectRef).toBe('ucrjtfswnfdlxwtmxnoo');
+  it('validates an explicit valid environment', () => {
+    expect(loadServiceRoleReaderConfig(VALID_ENV)).toEqual({
+      url: 'https://testproject.supabase.co',
+      serviceRoleKey: 'not-a-real-service-role-key',
+      projectRef: 'testproject',
+    });
   });
 
-  it('missing project ref fails', () => {
-    const env = { ...VALID_ENV, SUPABASE_PROJECT_REF: '' };
-    expect(() => loadServiceRoleReaderConfig(env)).toThrow('supabase_project_ref_required');
-  });
-
-  it('mismatched project ref fails', () => {
-    const env = { ...VALID_ENV, SUPABASE_PROJECT_REF: 'differentref' };
-    expect(() => loadServiceRoleReaderConfig(env)).toThrow('supabase_project_ref_mismatch');
-  });
-
-  it('invalid URL fails', () => {
-    const env = { ...VALID_ENV, SUPABASE_URL: 'not-a-url' };
-    expect(() => loadServiceRoleReaderConfig(env)).toThrow('supabase_url_invalid');
-  });
-
-  it('missing service-role key fails', () => {
-    const env = { ...VALID_ENV, SUPABASE_SERVICE_ROLE_KEY: '' };
-    expect(() => loadServiceRoleReaderConfig(env)).toThrow('[entityCnpjReader] SUPABASE_SERVICE_ROLE_KEY is required');
-  });
-
-  it('failure occurs before any network call', () => {
-    expect(() => loadServiceRoleReaderConfig({ ...VALID_ENV, SUPABASE_PROJECT_REF: '' })).toThrow();
+  it.each([
+    ['missing project ref', { SUPABASE_PROJECT_REF: '' }, 'supabase_project_ref_required'],
+    ['mismatched project ref', { SUPABASE_PROJECT_REF: 'differentref' }, 'supabase_project_ref_mismatch'],
+    ['invalid URL', { SUPABASE_URL: 'not-a-url' }, 'supabase_url_invalid'],
+    ['missing service-role key', { SUPABASE_SERVICE_ROLE_KEY: '' }, '[entityCnpjReader] SUPABASE_SERVICE_ROLE_KEY is required'],
+  ])('fails closed for %s', (_name, override, message) => {
+    expect(() => loadServiceRoleReaderConfig({ ...VALID_ENV, ...override })).toThrow(message);
   });
 });
 
 describe('createServiceRoleEntityCnpjReaderClient', () => {
-  it('valid config creates facade', () => {
+  it('creates a read-only facade with the configured URL and key', () => {
     const fakeInner = makeFakeInner();
+    let captured: [string, string] | undefined;
     const client = createServiceRoleEntityCnpjReaderClient({
-      _createClient: () => fakeInner,
-    });
-    expect(client).toBeDefined();
-    expect(typeof client.from).toBe('function');
-  });
-
-  it('correct URL and key are passed to createClient', () => {
-    let capturedUrl = '';
-    let capturedKey = '';
-    createServiceRoleEntityCnpjReaderClient({
       _createClient: (url, key) => {
-        capturedUrl = url;
-        capturedKey = key;
-        return makeFakeInner();
+        captured = [url, key];
+        return fakeInner;
       },
     });
-    expect(capturedUrl).toContain('supabase.co');
-    expect(capturedKey).toBeTruthy();
+
+    expect(typeof client.from).toBe('function');
+    expect(captured).toEqual([VALID_ENV.SUPABASE_URL, VALID_ENV.SUPABASE_SERVICE_ROLE_KEY]);
+    expect(Object.keys(client)).not.toContain('serviceRoleKey');
   });
 
-  it('service-role key is not exposed on return object', () => {
-    const client = createServiceRoleEntityCnpjReaderClient(makeOptions());
-    const keys = Object.keys(client);
-    expect(keys).not.toContain('serviceRoleKey');
-    expect(keys).not.toContain('service_role_key');
-    expect(keys).not.toContain('SUPABASE_SERVICE_ROLE_KEY');
-  });
-
-  it('facade accepts clientes', async () => {
+  it('delegates allowed cliente and fornecedor reads to the fake client', async () => {
     const fakeInner = makeFakeInner();
-    const client = createServiceRoleEntityCnpjReaderClient({ _createClient: () => fakeInner });
+    const client = createServiceRoleEntityCnpjReaderClient(makeOptions(fakeInner));
 
-    const result = await client.from('clientes').select('id, nome, cnpj').not('cnpj', 'is', null);
+    await client.from('clientes').select('id, nome, cnpj').not('cnpj', 'is', null);
+    await client.from('fornecedores').select('id, nome, tipo, cnpj').not('cnpj', 'is', null);
 
-    expect(result.error).toBeNull();
-    expect(fakeInner.calls[0].table).toBe('clientes');
+    expect(fakeInner.calls).toEqual([
+      { table: 'clientes', columns: 'id, nome, cnpj', notCol: 'cnpj', notOp: 'is', notVal: null },
+      { table: 'fornecedores', columns: 'id, nome, tipo, cnpj', notCol: 'cnpj', notOp: 'is', notVal: null },
+    ]);
   });
 
-  it('facade accepts fornecedores', async () => {
+  it('rejects non-registry tables before the fake client is called', () => {
     const fakeInner = makeFakeInner();
-    const client = createServiceRoleEntityCnpjReaderClient({ _createClient: () => fakeInner });
-
-    const result = await client.from('fornecedores').select('id, nome, tipo, cnpj').not('cnpj', 'is', null);
-
-    expect(result.error).toBeNull();
-    expect(fakeInner.calls[0].table).toBe('fornecedores');
-  });
-
-  it('other table is rejected before inner call', () => {
-    const fakeInner = makeFakeInner();
-    const client = createServiceRoleEntityCnpjReaderClient({ _createClient: () => fakeInner });
+    const client = createServiceRoleEntityCnpjReaderClient(makeOptions(fakeInner));
 
     expect(() => client.from('pedidos')).toThrow('Table is not allowed for entity CNPJ registry reads');
-    expect(() => client.from('document_candidates')).toThrow();
-    expect(() => client.from('')).toThrow();
+    expect(fakeInner.calls).toHaveLength(0);
   });
 
-  it('select columns are delegated', async () => {
-    const fakeInner = makeFakeInner();
-    const client = createServiceRoleEntityCnpjReaderClient({ _createClient: () => fakeInner });
+  it('fails before client construction when process env is absent', () => {
+    for (const key of SUPABASE_ENV_KEYS) delete process.env[key];
+    const createClient = vi.fn(() => makeFakeInner());
 
-    await client.from('clientes').select('id, nome, cnpj').not('cnpj', 'is', null);
-
-    expect(fakeInner.calls[0].columns).toBe('id, nome, cnpj');
+    expect(() => createServiceRoleEntityCnpjReaderClient({ _createClient: createClient })).toThrow(
+      '[entityCnpjReader] SUPABASE_URL is required',
+    );
+    expect(createClient).not.toHaveBeenCalled();
   });
 
-  it('not filter is delegated', async () => {
-    const fakeInner = makeFakeInner();
-    const client = createServiceRoleEntityCnpjReaderClient({ _createClient: () => fakeInner });
+  it('maps normalized registry rows from fake Supabase responses', async () => {
+    const client = createServiceRoleEntityCnpjReaderClient(makeOptions(makeFakeInner({
+      clientes: { data: [{ id: 1, nome: 'Cliente', cnpj: '12.345.678/0001-90' }], error: null },
+      fornecedores: { data: [{ id: 2, nome: 'Fornecedor', tipo: 'tecidos', cnpj: '98.765.432/0001-10' }], error: null },
+    })));
 
-    await client.from('clientes').select('id, nome, cnpj').not('cnpj', 'is', null);
+    const registry = await loadRegisteredEntityCnpjs(client);
 
-    expect(fakeInner.calls[0].notCol).toBe('cnpj');
-    expect(fakeInner.calls[0].notOp).toBe('is');
+    expect(registry.entries).toEqual([
+      { entityType: 'cliente', entityId: 1, entityName: 'Cliente', cnpj: '12345678000190' },
+      { entityType: 'fornecedor', entityId: 2, entityName: 'Fornecedor', cnpj: '98765432000110', supplierType: 'tecidos' },
+    ]);
   });
 
-  it('PromiseLike result is preserved', async () => {
-    const fakeInner = makeFakeInner();
-    const client = createServiceRoleEntityCnpjReaderClient({ _createClient: () => fakeInner });
+  it('returns fake client errors without making a network request', async () => {
+    const client = createServiceRoleEntityCnpjReaderClient(makeOptions(makeFakeInner({
+      clientes: { data: null, error: { message: 'reader unavailable 12345678901234' } },
+    })));
 
-    const result = await client.from('clientes').select('id, nome, cnpj').not('cnpj', 'is', null);
+    const registry = await loadRegisteredEntityCnpjs(client);
 
-    expect(result).toBeDefined();
-    expect(result).toHaveProperty('data');
-    expect(result).toHaveProperty('error');
-    expect(Array.isArray(result.data)).toBe(true);
-  });
-
-  it('no error exposes the service-role key', async () => {
-    process.env.SUPABASE_URL = VALID_ENV.SUPABASE_URL;
-    process.env.SUPABASE_SERVICE_ROLE_KEY = VALID_ENV.SUPABASE_SERVICE_ROLE_KEY;
-    process.env.SUPABASE_PROJECT_REF = VALID_ENV.SUPABASE_PROJECT_REF;
-    try {
-      const fakeInner = makeFakeInner();
-      const client = createServiceRoleEntityCnpjReaderClient({ _createClient: () => fakeInner });
-      const result = await client.from('clientes').select('id, nome, cnpj').not('cnpj', 'is', null);
-      expect(result.error).toBeNull();
-    } finally {
-      delete process.env.SUPABASE_URL;
-      delete process.env.SUPABASE_SERVICE_ROLE_KEY;
-      delete process.env.SUPABASE_PROJECT_REF;
-    }
-  });
-
-  it('no network connection occurs in tests', async () => {
-    const fakeInner = makeFakeInner();
-    const client = createServiceRoleEntityCnpjReaderClient({ _createClient: () => fakeInner });
-    const result = await client.from('clientes').select('id, nome, cnpj').not('cnpj', 'is', null);
-    expect(result).toBeDefined();
-    expect(fakeInner.calls).toHaveLength(1);
-  });
-
-  it('throw on invalid config occurs before createClient', () => {
-    let createCalled = false;
-    try {
-      createServiceRoleEntityCnpjReaderClient({
-        _createClient: () => {
-          createCalled = true;
-          return makeFakeInner();
-        },
-      });
-    } catch (_) {
-      // expected if env not set
-    }
-    // _createClient is only called if config passes; if env is missing, createCalled stays false
+    expect(registry).toMatchObject({ loaded: false, entries: [], error: 'entityCnpjReader: reader unavailable **************' });
+    expect(fetch).not.toHaveBeenCalled();
   });
 });
 
 describe('public facade has no mutation methods', () => {
-  function getPublicMethods(obj: SupabaseReaderClient): string[] {
-    const methods: string[] = [];
-    for (const key of Object.getOwnPropertyNames(obj)) {
-      if (key !== 'from') methods.push(key);
+  it('exposes only from', () => {
+    const client: SupabaseReaderClient = createServiceRoleEntityCnpjReaderClient(makeOptions());
+    expect(Object.keys(client)).toEqual(['from']);
+    for (const method of ['insert', 'update', 'delete', 'upsert', 'rpc', 'auth', 'storage']) {
+      expect((client as Record<string, unknown>)[method]).toBeUndefined();
     }
-    if (typeof (obj as any).insert === 'function') methods.push('insert');
-    if (typeof (obj as any).update === 'function') methods.push('update');
-    if (typeof (obj as any).delete === 'function') methods.push('delete');
-    if (typeof (obj as any).upsert === 'function') methods.push('upsert');
-    if (typeof (obj as any).rpc === 'function') methods.push('rpc');
-    if (typeof (obj as any).auth === 'function') methods.push('auth');
-    if (typeof (obj as any).storage === 'function') methods.push('storage');
-    return methods;
-  }
-
-  let client: SupabaseReaderClient;
-
-  try {
-    process.env.SUPABASE_URL = VALID_ENV.SUPABASE_URL;
-    process.env.SUPABASE_SERVICE_ROLE_KEY = VALID_ENV.SUPABASE_SERVICE_ROLE_KEY;
-    process.env.SUPABASE_PROJECT_REF = VALID_ENV.SUPABASE_PROJECT_REF;
-    client = createServiceRoleEntityCnpjReaderClient(makeOptions());
-  } catch (_) {
-    // config may fail if env is not set
-  } finally {
-    delete process.env.SUPABASE_URL;
-    delete process.env.SUPABASE_SERVICE_ROLE_KEY;
-    delete process.env.SUPABASE_PROJECT_REF;
-  }
-
-  const methods = client ? getPublicMethods(client) : [];
-
-  it('no insert', () => { expect(methods).not.toContain('insert'); });
-  it('no update', () => { expect(methods).not.toContain('update'); });
-  it('no delete', () => { expect(methods).not.toContain('delete'); });
-  it('no upsert', () => { expect(methods).not.toContain('upsert'); });
-  it('no rpc', () => { expect(methods).not.toContain('rpc'); });
-  it('no auth', () => { expect(methods).not.toContain('auth'); });
-  it('no storage', () => { expect(methods).not.toContain('storage'); });
-});
-
-describe('writer guards are unchanged', () => {
-  it('loadServiceRoleConfig still requires SUPABASE_WRITER_ENABLED', () => {
-    expect(() => loadServiceRoleConfig(VALID_ENV)).toThrow('SUPABASE_WRITER_ENABLED');
-  });
-
-  it('loadServiceRoleConfig works with writer enabled', () => {
-    const cfg = loadServiceRoleConfig({ ...VALID_ENV, SUPABASE_WRITER_ENABLED: 'true' });
-    expect(cfg.projectRef).toBe('ucrjtfswnfdlxwtmxnoo');
   });
 });
 
 describe('reader config vs writer config', () => {
-  it('reader does NOT require SUPABASE_WRITER_ENABLED', () => {
-    const cfg = loadServiceRoleReaderConfig(VALID_ENV);
-    expect(cfg.projectRef).toBe('ucrjtfswnfdlxwtmxnoo');
-  });
-
-  it('reader config has same guards except writer flag', () => {
-    expect(() => loadServiceRoleReaderConfig({ ...VALID_ENV, SUPABASE_PROJECT_REF: '' })).toThrow();
-    expect(() => loadServiceRoleReaderConfig({ ...VALID_ENV, SUPABASE_URL: 'bad' })).toThrow();
-    expect(() => loadServiceRoleReaderConfig({ ...VALID_ENV, SUPABASE_SERVICE_ROLE_KEY: '' })).toThrow();
+  it('does not require the writer flag', () => {
+    expect(loadServiceRoleReaderConfig(VALID_ENV).projectRef).toBe('testproject');
+    expect(() => loadServiceRoleConfig(VALID_ENV)).toThrow('SUPABASE_WRITER_ENABLED');
+    expect(loadServiceRoleConfig({ ...VALID_ENV, SUPABASE_WRITER_ENABLED: 'true' }).projectRef).toBe('testproject');
   });
 });
