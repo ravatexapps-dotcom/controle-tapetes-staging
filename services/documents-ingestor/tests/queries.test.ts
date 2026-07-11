@@ -5,6 +5,7 @@ import { join } from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { getDb, closeDb } from '../src/storage/sqlite.js';
 import { listPendingDocuments, inspectByDocumentOrEmail, generateReport, planReprocess } from '../src/core/queries.js';
+import { resolveFromPackageRoot } from '../src/packagePaths.js';
 import { HERMETIC_TEST_ROOT } from './setup.js';
 
 const SCENARIO_DIR = join(HERMETIC_TEST_ROOT, `queries-test-${randomUUID()}`);
@@ -177,5 +178,30 @@ describe('operational queries (hermetic)', () => {
     const rows = listPendingDocuments({ pedido: 'PED-01-2026', status: 'assigned' });
     expect(rows.length).toBe(1);
     expect(rows[0].id).toBe('doc-2');
+  });
+
+  it('generateReport resolves relative OUTBOX_PATH anchored to package root', () => {
+    const saved = process.env.OUTBOX_PATH;
+    const relativePath = './data/test-artifacts/queries-relative-outbox.jsonl';
+    process.env.OUTBOX_PATH = relativePath;
+    try {
+      const report = generateReport();
+      const expected = resolveFromPackageRoot(relativePath);
+      expect(report.outboxPath).toBe(expected);
+    } finally {
+      process.env.OUTBOX_PATH = saved;
+    }
+  });
+
+  it('generateReport default outboxPath is anchored to package root', () => {
+    const saved = process.env.OUTBOX_PATH;
+    delete process.env.OUTBOX_PATH;
+    try {
+      const report = generateReport();
+      const expected = resolveFromPackageRoot('./data/outbox/document-events.jsonl');
+      expect(report.outboxPath).toBe(expected);
+    } finally {
+      if (saved !== undefined) process.env.OUTBOX_PATH = saved;
+    }
   });
 });
