@@ -1,5 +1,33 @@
 # PROJECT STATE
 
+> **Atualizacao 2026-07-11 — fase
+> `G26-B-D — MONOREPO DOCUMENTATION CONSOLIDATION`.**
+> Status: **G26-B-D — CONSOLIDATION OK**.
+> Branch/HEAD: `work/documents-ingestor-monorepo` (HEAD `9e68160`).
+>
+> **Monorepo Incorporation:**
+> - O Documents Ingestor agora pertence ao monorepo `controle-tapetes` no path
+>   `services/documents-ingestor`.
+> - O repositorio antigo (`D:\OneDrive\Programação\Ravatex\documents-ingestor`)
+>   permanece preservado apenas para consulta/transicao.
+> - Branch ativa: `work/documents-ingestor-monorepo`.
+> - HEAD documental anterior a esta atualizacao: `9e68160`.
+> - Runtimes continuam separados (Node.js 22.22.3 independente dentro do servico).
+> - `.env` do worker permanece dentro do servico (`services/documents-ingestor/.env`).
+> - Nao existem npm workspaces.
+> - Wrapper: `scripts/ingestor.bat`.
+> - Workflow: `.github/workflows/documents-ingestor-test.yml`.
+> - Suite completa atual: 673/673.
+>
+> **Debitos pendentes:**
+> - 4 vulnerabilidades moderadas do npm audit.
+> - Metadata orfa `.git/worktrees/baseline-worktree`.
+> - Execucao real do GitHub Actions.
+> - Projecao futura de sha256 e attachment_id.
+> - Repositorio antigo ainda preservado.
+>
+> **Proximo passo:** G26-C — FINAL VALIDATION, MERGE TO work/app-next AND STAGING PUSH.
+
 ## RAVATEX-DOCUMENTS-G25-B1-UX-C-B-TEST-CLEANUP-CLOSEOUT (2026-07-10)
 
 - Status: **CONCLUIDO - LIMPEZA DE DOCUMENTOS DE TESTE (STAGING) AUTORIZADA E EXECUTADA**.
@@ -88,7 +116,7 @@
 Ingerir documentos (XML/PDF) recebidos por email (Gmail), classificar, permitir atribuição manual a Pedido e gerar eventos para integração futura com o app principal (Controle de Tapetes).
 
 ## Workspace
-D:\OneDrive\Programação\Ravatex\documents-ingestor
+D:\OneDrive\Programação\Ravatex\controle-tapetes\services\documents-ingestor
 
 ## Stack
 - Node.js 22.22.3 / npm 10.9.8

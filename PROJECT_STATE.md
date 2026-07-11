@@ -1,3 +1,66 @@
+> **Atualizacao 2026-07-11 — fase
+> `G26-B-D — MONOREPO DOCUMENTATION CONSOLIDATION`.**
+> Status: **G26-B-D — CONSOLIDATION OK**.
+> Branch/HEAD: `work/documents-ingestor-monorepo` (HEAD `9e68160`).
+>
+> **Incorporacao do Documents Ingestor ao monorepo — cadeia G26 concluida:**
+>
+> - **G26-A** — Design de incorporacao do Documents Ingestor ao monorepo
+>   `controle-tapetes`.
+> - **G26-A-R1** — Revisao e ajuste do plano de incorporacao.
+> - **G26-B-B1** — Import do Documents Ingestor para
+>   `services/documents-ingestor`.
+> - **G26-B-B2** — Ancoragem de paths de configuracao para a raiz do pacote.
+> - **G26-B-B3** — Ancoragem de paths de export para a raiz do pacote.
+> - **G26-B-B4 / R1 / R2** — Ancoragem de paths de manifest, outbox e query
+>   outbox, com testes de regressao.
+> - **G26-B-B5** — Ancoragem de paths de export do CLI para a raiz do pacote.
+> - **G26-B-C1** — Isolamento de testes do service role reader de env local.
+> - **G26-B-C2** — Isolamento de testes de retry do registro Supabase.
+> - **G26-B-C3** — Adicao do wrapper `scripts/ingestor.bat` e workflow
+>   `.github/workflows/documents-ingestor-test.yml`.
+>
+> **Commits relevantes:**
+> - `d01fced` Import documents ingestor into monorepo
+> - `17e0e46` Anchor ingestor config paths to package root
+> - `abfee7d` Anchor ingestor export paths to package root
+> - `ac5494f` Anchor ingestor manifest paths to package root
+> - `11b3144` Anchor ingestor outbox path to package root
+> - `76d3b57` Anchor query outbox path to package root
+> - `64fb283` Add relative query outbox path regression test
+> - `16eff84` Anchor ingestor CLI export paths to package root
+> - `c28ba7e` Isolate service role reader tests from local env
+> - `9b73fa1` Isolate ingestor retry test from Supabase registry
+> - `b8334d9` Add documents ingestor command wrapper
+> - `9e68160` Move ingestor tests to monorepo workflow
+>
+> **Nao afirmar:**
+> - merge em `work/app-next`;
+> - push;
+> - execucao remota do Actions;
+> - remocao do repositorio antigo;
+> - operacao validada em staging.
+>
+> **Debitos pendentes:**
+> - 4 vulnerabilidades moderadas do npm audit;
+> - metadata orfa `.git/worktrees/baseline-worktree`;
+> - execucao real do GitHub Actions;
+> - projecao futura de sha256 e attachment_id;
+> - repositorio antigo ainda preservado.
+>
+> **Services/documents-ingestor:**
+> - Workspace canonico: `D:\OneDrive\Programação\Ravatex\controle-tapetes\services\documents-ingestor`.
+> - Repositorio antigo preservado para consulta/transicao.
+> - Branch ativa: `work/documents-ingestor-monorepo`.
+> - HEAD documental: `9e68160`.
+> - Runtimes separados; `.env` dentro do servico; sem npm workspaces.
+> - Wrapper: `scripts/ingestor.bat`.
+> - Workflow: `.github/workflows/documents-ingestor-test.yml`.
+> - Suite completa: 673/673.
+>
+> **Proximo passo:** G26-C — FINAL VALIDATION, MERGE TO `work/app-next` AND
+> STAGING PUSH.
+
 > **Atualizacao 2026-07-10 — fase
 > `G25-B2-A-R3-R2-B4 — DIRECT CNPJ DOCUMENTATION CLOSEOUT`.**
 > Status: **G25-B2-A-R3-R2-B4 — DOCUMENTATION CLOSEOUT OK**
