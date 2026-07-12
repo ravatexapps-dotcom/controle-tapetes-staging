@@ -1,3 +1,56 @@
+# G28-B1-R1 — DOCUMENT CLOSEOUT
+
+PROJETO: Ravatex — Controle de Tapetes (monorepo)
+WORKSPACE G28: `D:\OneDrive\Programação\Ravatex\controle-tapetes-g28`
+BRANCH: `work/g28-document-qualification`
+HEAD INICIAL: `c73c6b074cb618a2bdbe37022c7f26738aceea37`
+HEAD TÉCNICO FINAL: `c65fa41eff52d84a6ede2e31cd2f74580c143f20`
+COMMIT: `c65fa41` — `Define document review domain contract`
+FASE: G28-B1-R1 `CLOSED / ACCEPTED`
+
+## RESULTADO
+
+- **G28-B1-R1:** `CLOSED / ACCEPTED` — contrato puro de domínio para evidência, sugestão, revisão e decisão humana.
+- **Push:** não realizado.
+- **G28-B2:** não iniciado.
+
+### Evidência técnica
+
+- 3 arquivos alterados, 1130 insertions.
+- Test Files: 3 passed, Tests: 187 passed.
+- Revisão independente Kimi: `APPROVE`.
+- `git diff --cached --check`: OK.
+- staging final: vazio; working tree final: limpo.
+
+### Contrato de domínio (B1)
+
+1. Contrato puro para evidência, sugestão, revisão e decisão humana.
+2. Direção e contraparte estruturalmente protegidas.
+3. Cliente e Fornecedor mantidos independentes.
+4. CNPJ preservado por lado com estados `unavailable`, `missing`, `invalid` e `valid`.
+5. PDF fiscal provável mantido apenas como sugestão.
+6. Duplicidade modelada como relação.
+7. Vínculos Pedido/OP separados entre sugeridos e confirmados.
+8. Ausência de IO, persistência, Supabase, Gmail, Drive, UI ou autoaceite.
+9. Persistência de ignore deferida para G28-B5.
+10. Testes 187/187 e revisão Kimi `APPROVE`.
+11. Commit técnico `c65fa41`; nenhum push.
+12. G28-B2 ainda não iniciado.
+
+### Débito não bloqueante (administrativo)
+
+Git emitiu avisos de `permission denied` ao tentar podar metadata de
+`baseline-worktree` e `controle-tapetes-g27-build-baseline`.
+Nenhuma limpeza foi autorizada ou executada.
+Investigar em fase administrativa própria.
+
+## PROXIMO CHECKPOINT
+
+G28-B2 — fase futura. NÃO iniciar implementação. Persistência de ignore segue
+deferida para G28-B5. Nenhum push, migration, Supabase ou UI autorizados.
+
+---
+
 # G28-P0 — CLOSEOUT MECÂNICO
 
 - Status: `CLOSED / ACCEPTED`.

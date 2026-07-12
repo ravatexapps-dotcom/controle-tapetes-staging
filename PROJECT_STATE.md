@@ -1,4 +1,41 @@
-> **Atualizacao 2026-07-11 — G28-P0 CLOSEOUT MECÂNICO.**
+> **Atualizacao 2026-07-12 — G28-B1-R1 — DOCUMENT CLOSEOUT.**
+> Status: **G28-B1-R1 `CLOSED / ACCEPTED`.**
+>
+> - Branch: `work/g28-document-qualification`.
+> - HEAD inicial: `c73c6b074cb618a2bdbe37022c7f26738aceea37`.
+> - HEAD técnico final: `c65fa41eff52d84a6ede2e31cd2f74580c143f20`.
+> - Commit: `c65fa41` — `Define document review domain contract`.
+> - Push: não realizado.
+> - G28-B2: não iniciado.
+>
+> - 3 arquivos alterados, 1130 insertions.
+> - Test Files: 3 passed, Tests: 187 passed.
+> - Revisão independente Kimi: `APPROVE`.
+> - `git diff --cached --check`: OK.
+> - staging final: vazio; working tree final: limpo.
+>
+> **Escopo entregue (contrato puro de domínio):**
+> 1. contrato puro introduzido para evidência, sugestão, revisão e decisão humana;
+> 2. direção e contraparte estruturalmente protegidas;
+> 3. Cliente e Fornecedor mantidos independentes;
+> 4. CNPJ preservado por lado com estados `unavailable`, `missing`, `invalid` e `valid`;
+> 5. PDF fiscal provável mantido apenas como sugestão;
+> 6. duplicidade modelada como relação;
+> 7. vínculos Pedido/OP separados entre sugeridos e confirmados;
+> 8. ausência de IO, persistência, Supabase, Gmail, Drive, UI ou autoaceite;
+> 9. persistência de ignore deferida para G28-B5;
+> 10. testes 187/187 e revisão Kimi `APPROVE`;
+> 11. commit técnico `c65fa41`;
+> 12. nenhum push;
+> 13. G28-B2 ainda não iniciado.
+>
+> **Débito não bloqueante (administrativo):**
+> Git emitiu avisos de `permission denied` ao tentar podar metadata de
+> `baseline-worktree` e `controle-tapetes-g27-build-baseline`.
+> Nenhuma limpeza foi autorizada ou executada.
+> Investigar em fase administrativa própria.
+>
+> > **Atualizacao 2026-07-11 — G28-P0 CLOSEOUT MECÂNICO.**
 > Status: **G28-P0 `CLOSED / ACCEPTED`; G28-B1 `AUTHORIZED`.**
 >
 > - HEAD de fechamento: `383db586e70852fba3c5ae5d5ac5312ab1b49284`.

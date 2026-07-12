@@ -1,6 +1,9 @@
 # PROJECT STATE
 
-> **Atualizacao 2026-07-11 — G28-P0 CLOSEOUT MECÂNICO.**
+> **Atualizacao 2026-07-12 — G28-B1-R1 CLOSED (Controle).**
+> Status: **G28-B1-R1 `CLOSED / ACCEPTED`** — contrato de domínio entregue no Controle (commit `c65fa41`). Ingestor permanece inalterado. G28-B2 não iniciado.
+>
+> > **Atualizacao 2026-07-11 — G28-P0 CLOSEOUT MECÂNICO.**
 > Status: **G28-P0 `CLOSED / ACCEPTED`; G28-B1 `AUTHORIZED`.**
 >
 > - HEAD de fechamento: `383db586e70852fba3c5ae5d5ac5312ab1b49284`.
