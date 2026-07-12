@@ -1,4 +1,16 @@
-# G28-B3-B4-C — TECHNICAL EVIDENCE WRITER — B3-B4 DOCUMENT CLOSEOUT
+# G28-B3-B5-A-C — TECHNICAL EVIDENCE SYNC DIAGNOSTIC DOCUMENTARY CLOSEOUT
+
+- Status: **`G28-B3-B5-A — CLOSED / ACCEPTED`**. O diagnóstico foi exclusivamente read-only: sem implementação, alteração de arquivos, commit, push, acesso ao Supabase real ou migration apply.
+- Workspace: `D:\OneDrive\Programação\Ravatex\controle-tapetes-g28`. Branch: `work/g28-document-qualification`. HEAD canônico atual: `410951f7817809c57de7fb8f7071750789c92dd8` (`Reconcile G28 master plan status`), último closeout documental anterior; o diagnóstico read-only não produziu novo commit.
+- Gate: **`READY FOR SLICED IMPLEMENTATION`**. Isto não conclui G28-B3-B5, não integra o writer, não altera CLI, não implementa retry e não autoriza apply da migration.
+- Diagnóstico aceito: a fonte é `export-technical-evidence JSONL`; `runSyncSupabase()` continua consumidor de artefatos JSONL e não abre SQLite. Ordem futura: `recover stale run → start scan run → document candidates → technical evidence → document events → finish scan run`; o conteúdo é `candidate → technical evidence → events` pela FK para `document_candidates.document_id`.
+- Não há transação global entre candidate, evidence, events e scan run; a RPC de evidência é idempotente somente por `(document_id, evidence_version)`. A futura integração reutiliza a mesma instância autenticada service-role por adapter compatível com `TechnicalEvidenceRpcClient`, sem segunda configuração, credencial ou fallback. Dry-run não cria client, RPC ou scan run e não exige migration aplicada. Legado sem evidência não gera linha sintética, `unavailable`, evidência negativa ou decisão.
+- Estado atual: **G28-B3-B5 `IN PROGRESS`**. **G28-B3-B5-B — Technical Evidence Sync Input Contract and Dry-Run `NOT STARTED`, aguardando nova autorização do arquiteto.** Slices futuros somente registrados: B5-C adapter/ordem, B5-D erros/retomada, B5-E CLI/relatório.
+- Migration 49: `VERSIONED / NOT APPLIED`. Supabase real: `NOT ACCESSED`. Push: `NOT EXECUTED`. Preservar `clientes.cnpj`/`fornecedores.cnpj`; não introduzir `parceiros`, dupla escrita, fallback ou fonte paralela. Fila humana, UI, `document_decisions`, ignore/reject/revoke, vínculos confirmados, autoaceite e score como decisão continuam fora de B3-B5.
+
+---
+
+# HISTÓRICO / SUPERADO PELO CLOSEOUT B3-B5-A-C — G28-B3-B4-C — TECHNICAL EVIDENCE WRITER — B3-B4 DOCUMENT CLOSEOUT
 
 - Status: **`G28-B3-B4 — CLOSED / ACCEPTED`**. Fase exclusivamente documental; nenhum código, teste, schema ou migration alterado nesta fase de closeout.
 - Workspace: `D:\OneDrive\Programação\Ravatex\controle-tapetes-g28`. Branch: `work/g28-document-qualification`. HEAD técnico final: `96f2d4de5034891e2d2f520459bb2317d437b4f1`.
@@ -41,7 +53,7 @@
 - G28-B3-B2: `CLOSED / ACCEPTED`.
 - G28-B3-B3: `CLOSED / ACCEPTED`.
 - G28-B3-B4: `CLOSED / ACCEPTED` (inclui hardening R1).
-- **G28-B3-B5: NOT STARTED.**
+- **G28-B3-B5: NOT STARTED (estado histórico, superado pelo closeout B3-B5-A-C).**
 - Migration 49: `VERSIONED / NOT APPLIED`.
 - Supabase real: `NOT ACCESSED`.
 - Push: `NOT EXECUTED`.
@@ -49,7 +61,7 @@
 
 ## Próxima fase
 
-`G28-B3-B5-A — TECHNICAL EVIDENCE SYNC INTEGRATION DIAGNOSTIC` — **READ-ONLY**.
+`G28-B3-B5-A — TECHNICAL EVIDENCE SYNC INTEGRATION DIAGNOSTIC` — **READ-ONLY** (próxima fase histórica, superada pelo closeout B3-B5-A-C).
 Diagnóstico de integração do writer e do export JSONL ao fluxo de sincronização;
 não implementar o sync nesta próxima fase. Nenhuma arquitetura humana de B4/B5
 (decisão, vínculos Pedido/OP, modal) é antecipada.

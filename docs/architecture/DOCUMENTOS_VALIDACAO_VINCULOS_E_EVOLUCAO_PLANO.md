@@ -18,7 +18,7 @@
 **G28-P0:** `ARCHITECTURAL CORRECTION IN PROGRESS` — não `CLOSED`, não `PUBLISHED`; o fechamento depende de revisão do IAlead
 **G28-B1:** `CLOSED / ACCEPTED` — contrato puro de domínio documental; commit `c65fa41` (`Define document review domain contract`); testes 187/187
 **G28-B2:** `CLOSED / ACCEPTED` — persistência local da evidência técnica e histórico versionado; closeout documental `G28-B2-B5`; testes finais 299/299
-**G28-B3:** `IN PROGRESS` — bloco eventos/exportação/Supabase/reader **ainda não encerrado**; subfases `G28-B3-B1` a `G28-B3-B4` já `CLOSED / ACCEPTED` (contrato de exportação, exportação JSONL, schema remoto/RPC `db/49`, writer service-role com hardening R1); `G28-B3-B5` (integração ao reader) permanece `NOT STARTED`, sem autorização de implementação nesta fase; ver `### G28-B3 — Progresso das subfases` na matriz abaixo. Migration 49: `VERSIONED / NOT APPLIED`. Supabase real: `NOT ACCESSED`. Push: `NOT EXECUTED`. Próximo passo: `G28-B3-B5-A — TECHNICAL EVIDENCE SYNC INTEGRATION DIAGNOSTIC` (**READ-ONLY**)
+**G28-B3:** `IN PROGRESS` — bloco eventos/exportação/Supabase/reader **ainda não encerrado**; subfases `G28-B3-B1` a `G28-B3-B4` e `G28-B3-B5-A` já `CLOSED / ACCEPTED`. B3-B5-A foi diagnóstico `READ-ONLY`, sem implementação, alteração de arquivos, commit, push, Supabase real ou migration apply; seu gate é `READY FOR SLICED IMPLEMENTATION`, não fechamento de B3-B5. O próximo candidato é `G28-B3-B5-B — TECHNICAL EVIDENCE SYNC INPUT CONTRACT AND DRY-RUN`, `NOT STARTED`, aguardando nova autorização do arquiteto; ver `### G28-B3 — Progresso das subfases` na matriz abaixo. HEAD canônico atual `410951f7817809c57de7fb8f7071750789c92dd8` é o último closeout documental anterior ao diagnóstico read-only. Migration 49: `VERSIONED / NOT APPLIED`. Supabase real: `NOT ACCESSED`. Push: `NOT EXECUTED`.
 
 ---
 
@@ -976,7 +976,7 @@ Qualificadores compostos podem detalhar um estado base — por exemplo
 | G28-A | Diagnóstico de schema/domínio documental | `REJECTED AS CONTRACT / RETAINED AS DIAGNOSTIC INPUT` | G28-P0 | — | — | Schema, `db/49`, `qualified` como estado final, `duplicate` como estado principal e regra de "duas partes externas" **não aprovados**; evidências aproveitáveis | Insumo diagnóstico para G28-B1; não é contrato |
 | G28-B1 | Contrato de domínio documental | `CLOSED / ACCEPTED` | G28-P0-R1 aceito | `work/g28-document-qualification` @ `controle-tapetes-g28` | `c65fa41` | Contrato puro de domínio para evidência, sugestão, revisão e decisão humana; testes 187/187 | G28-B2 |
 | G28-B2 | Persistência local da evidência e histórico técnico | `CLOSED / ACCEPTED` | G28-B1 | `work/g28-document-qualification` @ `controle-tapetes-g28` | `cb496ad` (closeout documental `G28-B2-B5`) | Evidência técnica persistida localmente; histórico versionado; classifier e builder puros; integração atômica no scan; testes finais 299/299 | G28-B3 |
-| G28-B3 | Eventos, exportação, Supabase e reader | `IN PROGRESS` — bloco não encerrado; ver subfases abaixo | G28-B2 | `work/g28-document-qualification` @ `controle-tapetes-g28` | `96f2d4d` (B3-B4-R1, HEAD corrente da cadeia) | B3-B1 a B3-B4 `CLOSED / ACCEPTED`; B3-B5 `NOT STARTED`; migration `db/49` `VERSIONED / NOT APPLIED` | G28-B3-B5-A — diagnóstico read-only (ver subfases abaixo) |
+| G28-B3 | Eventos, exportação, Supabase e reader | `IN PROGRESS` — bloco não encerrado; ver subfases abaixo | G28-B2 | `work/g28-document-qualification` @ `controle-tapetes-g28` | `410951f` (`Reconcile G28 master plan status`, último closeout documental anterior; B3-B5-A read-only não gerou commit) | B3-B1 a B3-B4 e B3-B5-A `CLOSED / ACCEPTED`; B3-B5-B `NOT STARTED`; migration `db/49` `VERSIONED / NOT APPLIED`; gate A `READY FOR SLICED IMPLEMENTATION` | G28-B3-B5-B — contrato de entrada JSONL e dry-run local, aguardando nova autorização |
 | G28-B4 | Fila / read model de revisão documental | PLANNED | G28-B3 | a definir | — | — | Não persiste decisão humana |
 | G28-B5 | Persistência da decisão humana e dos vínculos canônicos Pedido/OP | PLANNED | G28-B4 | a definir | — | — | Reutilizar fonte canônica; sem UI |
 | G28-B6 | Modal funcional "Validar e vincular" (backend real) | PLANNED | G28-B5 | a definir | — | — | Não pode anteceder G28-B5 |
@@ -990,9 +990,9 @@ Qualificadores compostos podem detalhar um estado base — por exemplo
 
 ### G28-B3 — Progresso das subfases
 
-O bloco `G28-B3` permanece `IN PROGRESS`: nenhuma subfase fechada autoriza
-marcar o bloco inteiro como `CLOSED`, e nenhuma subfase abaixo autoriza
-implementação de `G28-B3-B5`.
+O bloco `G28-B3` permanece `IN PROGRESS`: B3-B5-A foi aceito apenas como
+diagnóstico read-only e não autoriza marcar o bloco como `CLOSED` nem iniciar
+B3-B5-B sem nova autorização do arquiteto.
 
 | Subfase | Descrição | Estado | Commit(s) |
 |---|---|---|---|
@@ -1000,12 +1000,30 @@ implementação de `G28-B3-B5`.
 | G28-B3-B2 | Exportação da evidência corrente como JSONL | `CLOSED / ACCEPTED` | `812433d` |
 | G28-B3-B3 | Schema remoto e RPC (`db/49_document_technical_evidences.sql`) | `CLOSED / ACCEPTED` | `7abafbb` |
 | G28-B3-B4 | Writer service-role sobre a RPC, com hardening de classificação de erros | `CLOSED / ACCEPTED` | `abe49f1`; `96f2d4d` (R1) |
-| G28-B3-B5 | Integração do writer/export ao sync e ao reader do Controle | `NOT STARTED` | — |
+| G28-B3-B5 | Integração de evidência técnica ao sync, em slices | `IN PROGRESS` — não concluída | B3-B5-A fechado; B3-B5-B não iniciado |
+| G28-B3-B5-A | Diagnóstico de integração sync de evidência técnica | `CLOSED / ACCEPTED` — read-only; gate `READY FOR SLICED IMPLEMENTATION` | —; HEAD canônico `410951f` é closeout documental anterior, sem commit do diagnóstico |
+| G28-B3-B5-B | Contrato de entrada JSONL e dry-run local | `NOT STARTED` — aguardando nova autorização do arquiteto | — |
+
+Diagnóstico B3-B5-A aceito: a fonte futura é `export-technical-evidence JSONL`
+no fluxo `SQLite → export-technical-evidence → JSONL de evidência corrente →
+sync-supabase → Supabase`; `runSyncSupabase()` permanece consumidor de JSONL e
+não abre SQLite. A ordem futura é `recover stale run → start scan run → document
+candidates → technical evidence → document events → finish scan run`, com
+conteúdo `candidate → technical evidence → events` pela FK para
+`document_candidates.document_id`. Não há transação global entre candidate,
+evidence, events e scan run; a RPC é idempotente somente por
+`(document_id, evidence_version)`. A futura integração reutiliza a mesma
+instância autenticada service-role por adapter compatível com
+`TechnicalEvidenceRpcClient`, sem segunda credencial/configuração ou fallback.
+Dry-run não cria client remoto, RPC ou scan run e não exige migration aplicada;
+legado não recebe linha sintética, `unavailable`, evidência negativa ou decisão.
 
 Migration 49: `VERSIONED / NOT APPLIED` — nenhum apply, nenhum acesso real ao
-Supabase. Push: `NOT EXECUTED`. Próximo passo autorizado: exclusivamente
-`G28-B3-B5-A — TECHNICAL EVIDENCE SYNC INTEGRATION DIAGNOSTIC` (**READ-ONLY**);
-nenhuma implementação de `G28-B3-B5` autorizada nesta fase.
+Supabase. Push: `NOT EXECUTED`. Slices somente planejados: B3-B5-C
+adapter/ordem de persistência, B3-B5-D política de erros/retomada e B3-B5-E
+CLI/relatório. Próximo candidato: exclusivamente `G28-B3-B5-B`, ainda `NOT
+STARTED` e aguardando nova autorização; nenhuma implementação está autorizada
+por este registro.
 
 ## Governança de atualização (regra permanente)
 

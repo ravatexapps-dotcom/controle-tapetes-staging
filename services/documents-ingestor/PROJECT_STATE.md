@@ -1,5 +1,15 @@
 # PROJECT STATE
 
+> **Atualização 2026-07-12 — G28-B3-B5-A-C — TECHNICAL EVIDENCE SYNC DIAGNOSTIC DOCUMENTARY CLOSEOUT.**
+> Status: **G28-B3-B5-A `CLOSED / ACCEPTED`**. Diagnóstico read-only, sem implementação, alteração de arquivos, commit, push, acesso ao Supabase real ou migration apply. HEAD canônico atual `410951f7817809c57de7fb8f7071750789c92dd8` (`Reconcile G28 master plan status`) é o último closeout documental anterior; o diagnóstico não produziu commit.
+>
+> - Gate: `READY FOR SLICED IMPLEMENTATION`, apenas para slices futuros; não conclui B3-B5, não conecta writer, não altera CLI, não implementa retry e não autoriza migration apply.
+> - Fonte/fluxo: `SQLite → export-technical-evidence → JSONL de evidência corrente → sync-supabase → Supabase`; `runSyncSupabase()` continua consumidor de JSONL, sem SQLite.
+> - Ordem futura: `recover stale run → start scan run → document candidates → technical evidence → document events → finish scan run`; conteúdo `candidate → technical evidence → events` pela FK. Não existe transação global entre candidate, evidence, events e scan run; RPC idempotente somente por `(document_id, evidence_version)`.
+> - Client/dry-run/legado: futuro adapter reutiliza a mesma instância service-role compatível com `TechnicalEvidenceRpcClient`, sem segunda credencial/configuração ou fallback. Dry-run não cria client, RPC ou scan run e não exige migration aplicada. Legado não recebe linha sintética, `unavailable`, evidência negativa ou decisão.
+> - Estado: **G28-B3-B5 `IN PROGRESS`**; **G28-B3-B5-B — Technical Evidence Sync Input Contract and Dry-Run `NOT STARTED`, aguardando nova autorização do arquiteto**. B5-C adapter/ordem, B5-D erros/retomada e B5-E CLI/relatório somente planejados.
+> - Migration 49: `VERSIONED / NOT APPLIED`. Supabase real: `NOT ACCESSED`. Push: `NOT EXECUTED`. Sem `parceiros`, dupla escrita, fallback/fonte paralela, fila humana, UI, `document_decisions`, ignore/reject/revoke, vínculos confirmados, autoaceite ou score como decisão.
+>
 > **Atualizacao 2026-07-12 — G28-B3-B4 — TECHNICAL EVIDENCE WRITER — CLOSED / ACCEPTED.**
 > Status: **G28-B3-B4 `CLOSED / ACCEPTED`** (inclui hardening G28-B3-B4-R1). Branch `work/g28-document-qualification`; HEAD técnico final `96f2d4de5034891e2d2f520459bb2317d437b4f1`.
 >
@@ -7,8 +17,8 @@
 > - **B3-B2 — exportação JSONL:** `812433d` — `Export current technical evidence as JSONL`.
 > - **B3-B3 — schema remoto e RPC:** `7abafbb` — `Add Supabase technical evidence storage`; `db/49_document_technical_evidences.sql` versionada, **não aplicada**; tabela `document_technical_evidences` (PK composta `document_id + evidence_version`; FK `document_id → document_candidates(document_id)` `ON DELETE CASCADE`); RLS admin-only; RPC `upsert_document_technical_evidence_ingestor_state` restrita a `service_role`; testes 92/92.
 > - **B3-B4 — writer service-role:** técnico `abe49f1` — `Add Supabase technical evidence writer`; hardening `96f2d4d` — `Harden technical evidence writer errors`. `src/supabase/technicalEvidenceWriter.ts`; client RPC injetado (`TechnicalEvidenceRpcClient`); sem criação de client, ambiente ou credencial; uma chamada RPC por invocação; sem retry, backoff ou log; sem integração com sync. Mapeamento exato dos cinco parâmetros (`p_document_id`, `p_evidence_version`, `p_technical_evidence`, `p_origin`, `p_created_at`); `schemaVersion` nunca enviado. Resultados válidos `inserted`/`unchanged`; erros tipados `conflict`/`writer_required`/`migration_required`/`invalid_response`/`remote_error`. Hardening R1: nome isolado da RPC e "does not exist" não relacionado não implicam `migration_required`; `permission denied` vira `remote_error`; `migration_required` exige sinal concreto (`PGRST202` ou `42883`/mensagem de ausência referenciando a RPC esperada); rejeições de `client.rpc()` convertidas em erro tipado sem retry; `cause` preservada; mensagens sem payload técnico. Testes finais: 91/91, duas execuções. Typecheck global vermelho por falhas **preexistentes** em `src/connectors/drive.ts`, `src/core/realScan.ts` e `src/core/syncMapped.ts`; nenhuma falha em `technicalEvidenceWriter.ts`.
-> - **Estado da cadeia:** B3-B1/B3-B2/B3-B3/B3-B4 `CLOSED/ACCEPTED`; **B3-B5 — NOT STARTED**. Migration 49: `VERSIONED / NOT APPLIED`. Supabase real: `NOT ACCESSED`. Push: `NOT EXECUTED`.
-> - Próxima fase: G28-B3-B5-A — Technical Evidence Sync Integration Diagnostic — **READ-ONLY**; sem implementação de sync nesta próxima fase.
+> - **Estado da cadeia à época (histórico; superado pelo closeout B3-B5-A-C):** B3-B1/B3-B2/B3-B3/B3-B4 `CLOSED/ACCEPTED`; **B3-B5 — NOT STARTED**. Migration 49: `VERSIONED / NOT APPLIED`. Supabase real: `NOT ACCESSED`. Push: `NOT EXECUTED`.
+> - Próxima fase à época (histórico; superada pelo closeout B3-B5-A-C): G28-B3-B5-A — Technical Evidence Sync Integration Diagnostic — **READ-ONLY**; sem implementação de sync nesta próxima fase.
 
 > **Atualizacao 2026-07-12 — G28-B2 — TECHNICAL EVIDENCE PERSISTENCE — CLOSED / ACCEPTED.**
 > Status: **G28-B2 `CLOSED / ACCEPTED`** (closeout documental G28-B2-B5). Cadeia B2 integral entregue dentro do Ingestor; branch `work/g28-document-qualification`; HEAD técnico `cb496ade5aa69d66b435409ba55745373a01ae30`.
