@@ -1,3 +1,85 @@
+# G28-B2-B5 — TECHNICAL EVIDENCE PERSISTENCE — B2 DOCUMENT CLOSEOUT
+
+- Status: **`G28-B2 — CLOSED / ACCEPTED`**. Fase exclusivamente documental; nenhum código, teste, schema, migration ou persistência alterado.
+- Workspace: `D:\OneDrive\Programação\Ravatex\controle-tapetes-g28`. Branch: `work/g28-document-qualification`. HEAD técnico de entrada: `cb496ade5aa69d66b435409ba55745373a01ae30`.
+
+## Cadeia G28-B2 — fases e evidência
+
+### G28-B2-B1 — schema local — CLOSED / ACCEPTED
+
+- Commit: `db02d6d` — `Add technical evidence history schema`.
+- Tabela: `document_technical_evidences`; PK composta: `document_id + evidence_version`; FK: `document_id → documentos(id)`.
+- Banco novo, banco legado, idempotência e constraints validados.
+- Testes: 42/42.
+
+### G28-B2-B2 — evidence store — CLOSED / ACCEPTED
+
+- Commit técnico: `82baee3` — `Add local technical evidence store`; closeout documental: `ed2ef9c` — `Close G28 B2 evidence store phase`.
+- Conexão SQLite injetada; versão gerada internamente pelo store; transação `immediate()` quando invocado fora de transação; participação em transação externa; sincronização entre a coluna `evidence_version` e `origin.evidenceVersion`; rejeição de JSON inválido; legado sem evidência retorna `null` e histórico vazio.
+- Testes: 48/48.
+
+### G28-B2-B3-A — observações do classifier — CLOSED / ACCEPTED
+
+- Commit: `f46fb21` — `Expose classifier technical observations`.
+- Observações XML, PDF, MIME/extensão e CNPJ por lado; nenhuma duplicação de parsing; compatibilidade dos campos anteriores preservada; nenhuma persistência ou autoaceite.
+- Testes: 208/208.
+
+### G28-B2-B3-B — builder puro — CLOSED / ACCEPTED
+
+- Commit: `b521509` — `Build technical evidence snapshots`.
+- Builder puro; direção e contraparte estruturais; registry separado de matching; duplicidade relacional; origem sem versão; nenhum IO, SQLite, parsing ou decisão humana.
+- Testes: 225/225.
+
+### G28-B2-B4 — integração atômica — CLOSED / ACCEPTED
+
+- Commit: `cb496ad` — `Persist scan technical evidence atomically`. Auditoria: G28-B2-B4-R1.
+- `documentos`, `ingestion_events` e `document_technical_evidences` atômicos no caminho normal; caminho cross-message preserva a ausência histórica de `document.detected`, com documento e evidência atômicos; IO externo fora da transação; builder e store consumidos sem alteração contratual; rollback integral comprovado; dedupe, contadores e retornos legados preservados; nenhum payload de evidência em `ingestion_events`; nenhum autoaceite ou decisão humana.
+- Testes finais: 299/299.
+
+## Anomalia de processo (B2-B4)
+
+O commit cb496ad já estava presente quando a execução formal de B2-B4
+foi iniciada, embora ainda não estivesse registrado no acompanhamento.
+
+Havia também um resíduo unstaged em classifier.ts que invertia a ordem
+dos ramos unavailable/insufficient_evidence.
+
+O resíduo foi documentado e restaurado exclusivamente para o estado do
+HEAD. O commit cb496ad foi então auditado integralmente no working tree
+limpo e aprovado com 299/299 testes focados.
+
+Nenhum reset, revert, amend ou novo commit técnico foi realizado.
+
+A anomalia é de processo e não constitui alteração técnica do contrato.
+
+## Estado final do B2
+
+`G28-B2 — CLOSED / ACCEPTED`
+
+- Evidência técnica persistida localmente.
+- Histórico versionado.
+- Leitura da versão corrente e do histórico.
+- Classifier expondo observações canônicas.
+- Builder puro.
+- Integração atômica no scan.
+- Documentos legados permanecem sem evidência sintética.
+- Decisão humana continua fora do SQLite.
+- Supabase, exportação e reader ainda não iniciados.
+
+## Próxima fase
+
+`G28-B3 — eventos, exportação, Supabase e reader` — STATUS: NOT STARTED.
+Implementação, migration e manifesto do B3 não definidos nesta fase.
+
+## Débito administrativo não bloqueante (worktrees)
+
+O Git continua emitindo permission denied ao tentar remover metadata
+dos worktrees baseline-worktree e controle-tapetes-g27-build-baseline.
+
+Nenhuma limpeza, prune ou manipulação de .git/worktrees foi executada.
+
+---
+
 # G28-B2-B2 — LOCAL TECHNICAL EVIDENCE STORE — CLOSEOUT
 
 - Status: `G28-B2-B2 — CLOSED / ACCEPTED`; a aceitação técnica precedeu o fechamento documental. G28-B2-B1 `CLOSED / ACCEPTED`.

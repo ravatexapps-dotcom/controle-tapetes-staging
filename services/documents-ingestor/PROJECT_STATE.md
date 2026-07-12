@@ -1,5 +1,18 @@
 # PROJECT STATE
 
+> **Atualizacao 2026-07-12 — G28-B2 — TECHNICAL EVIDENCE PERSISTENCE — CLOSED / ACCEPTED.**
+> Status: **G28-B2 `CLOSED / ACCEPTED`** (closeout documental G28-B2-B5). Cadeia B2 integral entregue dentro do Ingestor; branch `work/g28-document-qualification`; HEAD técnico `cb496ade5aa69d66b435409ba55745373a01ae30`.
+>
+> - **B2-B1 — schema local:** `db02d6d` — `Add technical evidence history schema`; tabela `document_technical_evidences` (PK composta `document_id + evidence_version`; FK `document_id → documentos(id)`); banco novo, banco legado, idempotência e constraints validados; testes 42/42.
+> - **B2-B2 — evidence store:** técnico `82baee3` — `Add local technical evidence store`; closeout `ed2ef9c` — `Close G28 B2 evidence store phase`; conexão SQLite injetada; versão gerada internamente; `immediate()` quando necessário; participação em transação externa; sincronização coluna ↔ `origin.evidenceVersion`; rejeição de JSON inválido; legado sem evidência retorna `null` e histórico vazio; testes 48/48.
+> - **B2-B3-A — observações do classifier:** `f46fb21` — `Expose classifier technical observations`; observações XML, PDF, MIME/extensão e CNPJ por lado; nenhuma duplicação de parsing; compatibilidade preservada; nenhuma persistência ou autoaceite; testes 208/208.
+> - **B2-B3-B — builder puro:** `b521509` — `Build technical evidence snapshots`; builder puro; direção e contraparte estruturais; registry separado de matching; duplicidade relacional; origem sem versão; nenhum IO, SQLite, parsing ou decisão humana; testes 225/225.
+> - **B2-B4 — integração atômica:** `cb496ad` — `Persist scan technical evidence atomically`; auditoria G28-B2-B4-R1; `documentos`, `ingestion_events` e `document_technical_evidences` atômicos no caminho normal; cross-message preserva a ausência histórica de `document.detected`, com documento e evidência atômicos; IO externo fora da transação; builder e store sem alteração contratual; rollback integral comprovado; dedupe, contadores e retornos legados preservados; nenhum payload de evidência em `ingestion_events`; nenhum autoaceite ou decisão humana; testes finais 299/299.
+> - **Anomalia de processo (B2-B4):** o commit `cb496ad` já estava presente quando a execução formal de B2-B4 foi iniciada, ainda não registrado no acompanhamento; havia resíduo unstaged em `classifier.ts` invertendo os ramos `unavailable`/`insufficient_evidence`; o resíduo foi documentado e restaurado exclusivamente para o estado do HEAD; `cb496ad` foi auditado integralmente no working tree limpo e aprovado com 299/299 testes focados; nenhum reset, revert, amend ou novo commit técnico. Anomalia de processo, não alteração técnica do contrato.
+> - **Resultado do B2:** evidência técnica persistida localmente; histórico versionado; leitura da versão corrente e do histórico; classifier expondo observações canônicas; builder puro; integração atômica no scan; documentos legados permanecem sem evidência sintética; decisão humana continua fora do SQLite; Supabase, exportação e reader ainda não iniciados.
+> - **Próxima fase:** G28-B3 — eventos, exportação, Supabase e reader — **NOT STARTED**; implementação, migration e manifesto não definidos.
+> - Débito administrativo não bloqueante: `permission denied` na metadata dos worktrees `baseline-worktree` e `controle-tapetes-g27-build-baseline`; nenhuma limpeza, prune ou manipulação de `.git/worktrees` executada.
+
 > **Atualizacao 2026-07-12 — G28-B1-R1 CLOSED (Controle).**
 > Status: **G28-B1-R1 `CLOSED / ACCEPTED`** — contrato de domínio entregue no Controle (commit `c65fa41`). Ingestor permanece inalterado. G28-B2 não iniciado.
 >
