@@ -1,3 +1,11 @@
+> **Atualizacao 2026-07-11 — G28-P0 CLOSEOUT MECÂNICO.**
+> Status: **G28-P0 `CLOSED / ACCEPTED`; G28-B1 `AUTHORIZED`.**
+>
+> - HEAD de fechamento: `383db586e70852fba3c5ae5d5ac5312ab1b49284`.
+> - G28-A: `REJECTED AS CONTRACT / RETAINED AS DIAGNOSTIC INPUT`.
+> - No instante do closeout, não existia implementação G28-B1.
+> - Próxima fase: contrato puro de domínio; migration, persistência, Supabase e UI continuam proibidos.
+>
 > **Atualizacao 2026-07-11 — G28-P0-R1 — CORRECAO ARQUITETURAL DOS DOCUMENTOS (DOCS-ONLY).**
 > Status: **G28-P0 `ARCHITECTURAL CORRECTION IN PROGRESS`; correcao documental concluida tecnicamente, aguardando aceite do IAlead.**
 >

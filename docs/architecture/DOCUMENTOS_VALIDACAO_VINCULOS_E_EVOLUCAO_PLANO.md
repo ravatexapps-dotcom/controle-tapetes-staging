@@ -1,3 +1,13 @@
+# G28-P0 — CLOSEOUT MECÂNICO
+
+- **Status:** `CLOSED / ACCEPTED`.
+- **HEAD de fechamento:** `383db586e70852fba3c5ae5d5ac5312ab1b49284`.
+- **G28-A:** `REJECTED AS CONTRACT / RETAINED AS DIAGNOSTIC INPUT`.
+- **G28-B1:** `AUTHORIZED`; no instante deste closeout não existia implementação G28-B1.
+- **Próxima fase:** contrato puro de domínio; migration, persistência, Supabase e UI continuam proibidos.
+
+---
+
 # PLANO MESTRE — DOCUMENTOS, VALIDAÇÃO HUMANA, VÍNCULOS E EVOLUÇÃO
 
 **Projeto:** Ravatex — Controle de Tapetes / Documents Ingestor  
