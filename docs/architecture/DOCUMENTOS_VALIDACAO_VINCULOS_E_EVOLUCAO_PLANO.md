@@ -16,7 +16,9 @@
 **Último marco técnico aceito:** G27 — reconhecimento documental endurecido, publicado em `staging/work/app-next`, CI verde  
 **G28-A:** `REJECTED AS CONTRACT / RETAINED AS DIAGNOSTIC INPUT` — schema proposto, migration `db/49`, `qualified` como estado final, `duplicate` como estado principal e a regra de "duas partes externas resolvidas" **não aprovados**; evidências e problemas descobertos no diagnóstico permanecem aproveitáveis
 **G28-P0:** `ARCHITECTURAL CORRECTION IN PROGRESS` — não `CLOSED`, não `PUBLISHED`; o fechamento depende de revisão do IAlead
-**G28-B1:** `PLANNED / NOT AUTHORIZED`
+**G28-B1:** `CLOSED / ACCEPTED` — contrato puro de domínio documental; commit `c65fa41` (`Define document review domain contract`); testes 187/187
+**G28-B2:** `CLOSED / ACCEPTED` — persistência local da evidência técnica e histórico versionado; closeout documental `G28-B2-B5`; testes finais 299/299
+**G28-B3:** `IN PROGRESS` — bloco eventos/exportação/Supabase/reader **ainda não encerrado**; subfases `G28-B3-B1` a `G28-B3-B4` já `CLOSED / ACCEPTED` (contrato de exportação, exportação JSONL, schema remoto/RPC `db/49`, writer service-role com hardening R1); `G28-B3-B5` (integração ao reader) permanece `NOT STARTED`, sem autorização de implementação nesta fase; ver `### G28-B3 — Progresso das subfases` na matriz abaixo. Migration 49: `VERSIONED / NOT APPLIED`. Supabase real: `NOT ACCESSED`. Push: `NOT EXECUTED`. Próximo passo: `G28-B3-B5-A — TECHNICAL EVIDENCE SYNC INTEGRATION DIAGNOSTIC` (**READ-ONLY**)
 
 ---
 
@@ -972,9 +974,9 @@ Qualificadores compostos podem detalhar um estado base — por exemplo
 |---|---|---|---|---|---|---|---|
 | G28-P0 | Consolidação do plano, mapa de ativos e gates (+ correção R1) | `ARCHITECTURAL CORRECTION IN PROGRESS` | G27 CLOSED/publicado | `work/g28-document-qualification` @ `controle-tapetes-g28` | `bdb2fa3` (registro inicial); R1 sobre este HEAD | Registro inicial + correção R1 do plano, mapa e contrato visual; aguardando aceite | Aceite do IAlead a G28-P0-R1 |
 | G28-A | Diagnóstico de schema/domínio documental | `REJECTED AS CONTRACT / RETAINED AS DIAGNOSTIC INPUT` | G28-P0 | — | — | Schema, `db/49`, `qualified` como estado final, `duplicate` como estado principal e regra de "duas partes externas" **não aprovados**; evidências aproveitáveis | Insumo diagnóstico para G28-B1; não é contrato |
-| G28-B1 | Contrato de domínio documental | `PLANNED / NOT AUTHORIZED` | G28-P0-R1 aceito | a definir | — | — | Mapear fontes canônicas existentes antes de nova persistência |
-| G28-B2 | Persistência local da evidência e histórico técnico | PLANNED | G28-B1 | a definir | — | — | Aguarda G28-B1 |
-| G28-B3 | Eventos, exportação, Supabase e reader | PLANNED | G28-B2 | a definir | — | — | Migration apenas aditiva, validada em staging |
+| G28-B1 | Contrato de domínio documental | `CLOSED / ACCEPTED` | G28-P0-R1 aceito | `work/g28-document-qualification` @ `controle-tapetes-g28` | `c65fa41` | Contrato puro de domínio para evidência, sugestão, revisão e decisão humana; testes 187/187 | G28-B2 |
+| G28-B2 | Persistência local da evidência e histórico técnico | `CLOSED / ACCEPTED` | G28-B1 | `work/g28-document-qualification` @ `controle-tapetes-g28` | `cb496ad` (closeout documental `G28-B2-B5`) | Evidência técnica persistida localmente; histórico versionado; classifier e builder puros; integração atômica no scan; testes finais 299/299 | G28-B3 |
+| G28-B3 | Eventos, exportação, Supabase e reader | `IN PROGRESS` — bloco não encerrado; ver subfases abaixo | G28-B2 | `work/g28-document-qualification` @ `controle-tapetes-g28` | `96f2d4d` (B3-B4-R1, HEAD corrente da cadeia) | B3-B1 a B3-B4 `CLOSED / ACCEPTED`; B3-B5 `NOT STARTED`; migration `db/49` `VERSIONED / NOT APPLIED` | G28-B3-B5-A — diagnóstico read-only (ver subfases abaixo) |
 | G28-B4 | Fila / read model de revisão documental | PLANNED | G28-B3 | a definir | — | — | Não persiste decisão humana |
 | G28-B5 | Persistência da decisão humana e dos vínculos canônicos Pedido/OP | PLANNED | G28-B4 | a definir | — | — | Reutilizar fonte canônica; sem UI |
 | G28-B6 | Modal funcional "Validar e vincular" (backend real) | PLANNED | G28-B5 | a definir | — | — | Não pode anteceder G28-B5 |
@@ -985,6 +987,25 @@ Qualificadores compostos podem detalhar um estado base — por exemplo
 | CAMADA 2 (A1–A7) | Administração de usuários e acessos | DEFERRED | Documentos estabilizado | — | — | — | Só após Camada 1 publicada |
 | CAMADA 3 (BK1–BK8) | Backup em nuvem e restauração testada | DEFERRED | Frente independente | — | — | — | Auditoria do app de origem |
 | CAMADA 4 (F0–F5) | Participação futura de fornecedores | DEFERRED | Documentos publicado | — | — | — | Operação interna nunca depende do fornecedor |
+
+### G28-B3 — Progresso das subfases
+
+O bloco `G28-B3` permanece `IN PROGRESS`: nenhuma subfase fechada autoriza
+marcar o bloco inteiro como `CLOSED`, e nenhuma subfase abaixo autoriza
+implementação de `G28-B3-B5`.
+
+| Subfase | Descrição | Estado | Commit(s) |
+|---|---|---|---|
+| G28-B3-B1 | Contrato de exportação da evidência técnica | `CLOSED / ACCEPTED` | `b794bb7` |
+| G28-B3-B2 | Exportação da evidência corrente como JSONL | `CLOSED / ACCEPTED` | `812433d` |
+| G28-B3-B3 | Schema remoto e RPC (`db/49_document_technical_evidences.sql`) | `CLOSED / ACCEPTED` | `7abafbb` |
+| G28-B3-B4 | Writer service-role sobre a RPC, com hardening de classificação de erros | `CLOSED / ACCEPTED` | `abe49f1`; `96f2d4d` (R1) |
+| G28-B3-B5 | Integração do writer/export ao sync e ao reader do Controle | `NOT STARTED` | — |
+
+Migration 49: `VERSIONED / NOT APPLIED` — nenhum apply, nenhum acesso real ao
+Supabase. Push: `NOT EXECUTED`. Próximo passo autorizado: exclusivamente
+`G28-B3-B5-A — TECHNICAL EVIDENCE SYNC INTEGRATION DIAGNOSTIC` (**READ-ONLY**);
+nenhuma implementação de `G28-B3-B5` autorizada nesta fase.
 
 ## Governança de atualização (regra permanente)
 
@@ -1024,4 +1045,7 @@ Após o aceite de `G28-P0-R1`:
 - emitir `G28-B1`, exclusivamente contrato de domínio documental;
 - sem migration, sem runtime e sem UI.
 
-`G28-B1` permanece `PLANNED / NOT AUTHORIZED` até esse aceite.
+Essa condição de disparo já ocorreu: `G28-B1` foi aceito e fechado
+(`CLOSED / ACCEPTED`, commit `c65fa41`). Este trecho permanece como registro
+histórico da condição original; o estado corrente de `G28-B1`, `G28-B2` e
+`G28-B3` está na matriz de fases e no cabeçalho do plano mestre acima.
