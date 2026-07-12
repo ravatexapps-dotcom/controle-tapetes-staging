@@ -1,5 +1,16 @@
 # PROJECT STATE
 
+> **Atualizacao 2026-07-11 — G28-P0 — REGISTRO DO PLANO DOCUMENTAL (DOCS-ONLY).**
+> Status: **G27 tecnico concluido; G28-P0 IN_PROGRESS; G28-A em HOLD.**
+>
+> - G27 CLOSED/ACCEPTED TECHNICALLY; nenhuma mudanca de runtime do servico em G28-P0.
+> - **Nenhuma alteracao** em `services/documents-ingestor/src/**` ou `tests/**` nesta fase; suite e contratos inalterados.
+> - **G28-A em HOLD / DIAGNOSTIC INPUT ONLY:** schema proposto, `db/49`, estados `qualified`/`duplicate` como estado principal e matriz de qualificacao **nao aprovados**.
+> - Fase atual G28-P0 registra apenas documentacao/governanca no monorepo (plano mestre, mapa de ativos, contrato visual, matriz de fases).
+> - Plano mestre da frente documental: `docs/architecture/DOCUMENTOS_VALIDACAO_VINCULOS_E_EVOLUCAO_PLANO.md`.
+> - Contrato Ingestor↔Controle vigente: `services/documents-ingestor/docs/CONTROL_TAPETES_DOCUMENTS_CONTRACT.md`; consumer/reader: `docs/architecture/DOCUMENTS_INGESTOR_CONSUMER_DESIGN.md`.
+> - Proximo passo depende de **aceite arquitetural** do IAlead sobre G28-A antes de qualquer contrato de dominio (G28-B1). Migration futura somente aditiva e validada primeiro em staging.
+
 > **Atualizacao 2026-07-11 — G27-D3 — DOCUMENTATION-ONLY PATCH — G27-B-CORE CLOSED/ACCEPTED TECHNICALLY.**
 > Status: **arquitetura G27-B2-R1 e G27-B-CORE-GATE-R1 aceitas; G27-B-CORE CLOSED/ACCEPTED TECHNICALLY.**
 >

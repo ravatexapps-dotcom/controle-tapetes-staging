@@ -1,3 +1,67 @@
+# G28-P0 — REGISTRO DO PLANO DOCUMENTAL, MAPA DE ATIVOS E GOVERNANCA
+
+PROJETO: Ravatex — Controle de Tapetes (monorepo)
+WORKSPACE G28: `D:\OneDrive\Programação\Ravatex\controle-tapetes-g28`
+WORKSPACE ORIGINAL EM QUARENTENA (somente leitura): `D:\OneDrive\Programação\Ravatex\controle-tapetes`
+BRANCH: `work/g28-document-qualification`
+HEAD: `247345c8b4d63d9b4c871f55109fe39af244f40f` (closeout G27; G27 CLOSED/ACCEPTED TECHNICALLY, staging CI verde)
+FASE: G28-P0 IN_PROGRESS — docs-only. **G28-A em HOLD.**
+
+## ARQUIVOS CANONICOS OBRIGATORIOS (ler antes de qualquer acao)
+
+- `PROJECT_STATE.md` (raiz) e `AGENT_HANDOFF.md` (raiz).
+- `services/documents-ingestor/PROJECT_STATE.md`.
+- `docs/architecture/DOCUMENTOS_VALIDACAO_VINCULOS_E_EVOLUCAO_PLANO.md` (plano mestre).
+- `docs/architecture/PEDIDO_OP_MOVIMENTACAO_DOCUMENTOS_PLANO.md`.
+- `docs/architecture/CLAUDE_PROJECT_ASSET_MAP.md` (mapa de ativos + precedencia).
+- `docs/architecture/UI_VISUAL_CONTRACT.md` (contrato visual versionado).
+
+## GATE ESTRUTURAL
+
+Preservar: CNPJ direto em `clientes.cnpj`/`fornecedores.cnpj`; Cliente e Fornecedor
+independentes (mesmo CNPJ permitido nos dois); **proibido** `parceiros`/`parceiro_id`/
+`parceiro_cnpjs`, dupla escrita, fallback silencioso, fonte paralela. Pedido e OP
+canonicos; documento vinculado direto as entidades reais; deteccao ≠ decisao humana ≠
+vinculo ≠ movimentacao. Sem autoaceite. Validar documento NAO movimenta estoque, NAO
+conclui transferencia, NAO aceita OP. Operacao independe do fornecedor.
+
+## GATE VISUAL
+
+Antes de UI/modal/lista/tabela/card/navegacao, consultar `UI_VISUAL_CONTRACT.md`,
+`css/tokens.css` (`--rv-*`) e a skill `.claude/design-skill` **quando presente**.
+Cantos baixos (card 6px / controle 4px); pilula so em badge; cards flat; regra de
+ouro das tabelas; uma acao primaria por tela; destrutivo com icone+texto; sem
+solucoes simplificadas que nao cumpram o requisito real.
+
+## LEITURA OBRIGATORIA DE `.claude` EM UI
+
+`.claude` e untracked e **ausente do worktree G28** (existe so no original). Antes
+de fase de UI, consultar a skill visual no original OU o `UI_VISUAL_CONTRACT.md`
+versionado (que a consolida). Regras permanentes de UI nunca podem viver so em `.claude`.
+
+## PROIBICOES NESTA FASE (G28-P0)
+
+Sem migration, sem Supabase, sem UI funcional, sem tocar `.claude`, `js/**`,
+`tests/**`, `db/**`, `supabase/**`, `services/documents-ingestor/src|tests`,
+workflows, `package*.json`, `.env` ou fixtures. Sem push. G28-A permanece HOLD:
+`db/49`, `qualified`, `duplicate` como estado principal e matriz de qualificacao
+**nao aprovados**.
+
+## HARD STOPS
+
+Parar e retornar ao arquiteto se: proposta contrariar fonte canonica; surgir
+entidade intermediaria; houver dupla escrita/fallback; misturar validacao com
+movimentacao; UI esconder arquitetura incorreta; migration preceder contrato
+aprovado; fornecedor virar dependencia; autoaceite introduzido; `.claude`/contrato
+visual nao consultados em UI; conflito entre documentos canonicos.
+
+## PROXIMO CHECKPOINT
+
+Aceite do IAlead ao plano mestre, mapa de ativos e contrato visual; decisao
+arquitetural sobre G28-A antes de iniciar G28-B1. Nao iniciar implementacao.
+
+---
+
 # G27-D3 — DOCUMENTATION-ONLY PATCH — G27-B-CORE CLOSED/ACCEPTED TECHNICALLY
 
 PROJETO: Ravatex — Controle de Tapetes (monorepo)

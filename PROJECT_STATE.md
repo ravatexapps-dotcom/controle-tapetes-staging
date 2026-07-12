@@ -1,3 +1,18 @@
+> **Atualizacao 2026-07-11 — G28-P0 — REGISTRO DO PLANO DOCUMENTAL E GOVERNANCA (DOCS-ONLY).**
+> Status: **G28-P0 IN_PROGRESS; nenhuma implementacao G28 autorizada.**
+>
+> - G27 CLOSED/ACCEPTED TECHNICALLY, publicado em `staging/work/app-next`, CI verde.
+> - Workspace G28 isolado: `D:\OneDrive\Programação\Ravatex\controle-tapetes-g28`; branch `work/g28-document-qualification`; HEAD `247345c8b4d63d9b4c871f55109fe39af244f40f` (closeout G27 `Close G27 recognition hardening integration`).
+> - Workspace original `controle-tapetes` permanece em quarentena, inalterado (somente leitura para mapear `.claude`).
+> - **G28-A em HOLD / DIAGNOSTIC INPUT ONLY:** schema proposto, `db/49`, estados `qualified`/`duplicate` como estado principal e matriz de qualificacao **nao aprovados**; nao sao arquitetura vigente.
+> - **G28-P0 (fase atual):** registro versionado do plano mestre, mapa de ativos, contrato visual, gates e matriz de acompanhamento. Sem codigo, migration, Supabase ou UI funcional.
+> - Plano mestre: `docs/architecture/DOCUMENTOS_VALIDACAO_VINCULOS_E_EVOLUCAO_PLANO.md`.
+> - Mapa de ativos: `docs/architecture/CLAUDE_PROJECT_ASSET_MAP.md`.
+> - Contrato visual versionado: `docs/architecture/UI_VISUAL_CONTRACT.md` (consolida a skill `.claude/design-skill`; `.claude` ausente do worktree G28).
+> - Sequencia macro: G28-P0 (consolidacao) → G28-A resolvido pelo IAlead → G28-B1..B8 (dominio, persistencia, eventos/Supabase, fila, modal, vinculos, exibicao, auditoria) → G28-C (staging) → G28-D (publicacao para o cliente acompanhar). Administracao de usuarios, backup e portal de fornecedor DEFERRED.
+> - Invariantes estruturais preservadas: CNPJ direto em `clientes.cnpj`/`fornecedores.cnpj`; nenhum `parceiros`/`parceiro_id`; sem dupla escrita/fallback; sem autoaceite; validar documento nao movimenta estoque/OP; operacao independe do fornecedor.
+> - Proximo checkpoint: aceite do IAlead ao plano, mapa e contrato; decisao arquitetural sobre G28-A antes de G28-B1.
+
 > **Atualizacao 2026-07-11 — G27-D3 — DOCUMENTATION-ONLY PATCH — G27-B-CORE CLOSED/ACCEPTED TECHNICALLY.**
 > Status: **arquitetura G27-B2-R1 e G27-B-CORE-GATE-R1 aceitas; G27-B-CORE CLOSED/ACCEPTED TECHNICALLY.**
 >
