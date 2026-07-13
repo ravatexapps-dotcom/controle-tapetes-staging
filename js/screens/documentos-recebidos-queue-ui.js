@@ -327,6 +327,77 @@
     return null;
   }
 
+  // ===================================================================
+  // G28-B4-B3: Presentation functions — pure semantic state -> PT-BR
+  // labels/tones/accessibility. Consume queueItem fields only.
+  // ===================================================================
+
+  function getEvidencePresentation(queueItem) {
+    var ev = queueItem && queueItem.technical_evidence;
+    var state = ev && ev.state;
+    if (state === 'available') return { label: 'Evidência disponível', tone: 'neutral', ariaLabel: 'Evidência técnica disponível' };
+    if (state === 'missing') return { label: 'Evidência ausente', tone: 'info', ariaLabel: 'Evidência técnica ausente' };
+    if (state === 'invalid') return { label: 'Evidência inválida', tone: 'warning', ariaLabel: 'Evidência técnica inválida' };
+    if (state === 'remote_unavailable') return { label: 'Consulta indisponível', tone: 'warning', ariaLabel: 'Consulta de evidência remota indisponível' };
+    if (state === 'unavailable') return { label: 'Não disponível nesta origem', tone: 'neutral', ariaLabel: 'Evidência não disponível nesta origem' };
+    return { label: '', tone: 'neutral', ariaLabel: '' };
+  }
+
+  function getReviewPresentation(queueItem) {
+    var rv = queueItem && queueItem.review;
+    var state = rv && rv.state;
+    if (state === 'pending') return { label: 'Pendente de revisão', ariaLabel: 'Revisão pendente' };
+    if (state === 'accepted') return { label: 'Aceito', ariaLabel: 'Revisão aceita' };
+    if (state === 'rejected') return { label: 'Rejeitado', ariaLabel: 'Revisão rejeitada' };
+    if (state === 'unknown') return { label: 'Estado desconhecido', ariaLabel: 'Estado de revisão desconhecido' };
+    if (state === 'unavailable') return { label: 'Revisão indisponível', ariaLabel: 'Revisão indisponível' };
+    return { label: '', ariaLabel: '' };
+  }
+
+  function getPedidoPresentation(queueItem) {
+    var ped = queueItem && queueItem.pedido;
+    var state = ped && ped.state;
+    if (state === 'confirmed_pedido_reference') return { label: 'Pedido referenciado', ariaLabel: 'Pedido referenciado confirmado', pedidoId: (ped && ped.pedido_id) || null };
+    if (state === 'suggested_pedido') return { label: 'Pedido sugerido', ariaLabel: 'Pedido sugerido', pedidoId: null };
+    if (state === 'no_confirmed_link') return { label: 'Sem vínculo confirmado', ariaLabel: 'Sem vínculo confirmado com pedido', pedidoId: null };
+    if (state === 'unavailable') return { label: 'Vínculo indisponível', ariaLabel: 'Vínculo com pedido indisponível', pedidoId: null };
+    return { label: '', ariaLabel: '', pedidoId: null };
+  }
+
+  function getSourcePresentation(queueItem) {
+    var src = queueItem && queueItem.source;
+    var cs = src && src.collection_source;
+    if (cs === 'supabase') return { label: 'Supabase', ariaLabel: 'Origem: Supabase' };
+    if (cs === 'legacy_fallback' || cs === 'legacy') return { label: 'Fallback legado', ariaLabel: 'Origem: fallback legado' };
+    if (cs === 'unknown') return { label: 'Origem desconhecida', ariaLabel: 'Origem desconhecida' };
+    return { label: '', ariaLabel: '' };
+  }
+
+  function getAlertPresentation(queueItem) {
+    var alerts = (queueItem && queueItem.alerts) || [];
+    var codeMap = {
+      invalid_evidence: { text: 'Evidência inválida', severity: 'warning' },
+      missing_evidence: { text: 'Evidência ausente', severity: 'info' },
+      remote_unavailable: { text: 'Consulta remota indisponível', severity: 'warning' },
+      unknown_document_type: { text: 'Tipo de documento desconhecido', severity: 'warning' },
+      legacy_fallback: { text: 'Dados de fallback legado', severity: 'info' },
+      suggested_pedido: { text: 'Pedido sugerido', severity: 'info' },
+      unsupported_source_file: { text: 'Arquivo sem suporte a link', severity: 'info' },
+    };
+    var seen = {};
+    var result = [];
+    for (var i = 0; i < alerts.length; i++) {
+      var code = alerts[i].code;
+      if (seen[code]) continue;
+      seen[code] = true;
+      var mapping = codeMap[code];
+      if (mapping) {
+        result.push({ code: code, text: mapping.text, severity: mapping.severity, ariaLabel: mapping.text });
+      }
+    }
+    return result;
+  }
+
   window.RAVATEX_DOCUMENTOS_RECEBIDOS_QUEUE_UI = {
     buildQueue: buildQueue,
     getFilterOptions: getFilterOptions,
@@ -335,5 +406,10 @@
     getPedidoOptions: getPedidoOptions,
     countByStatus: countByStatus,
     getUIState: getUIState,
+    getEvidencePresentation: getEvidencePresentation,
+    getReviewPresentation: getReviewPresentation,
+    getPedidoPresentation: getPedidoPresentation,
+    getSourcePresentation: getSourcePresentation,
+    getAlertPresentation: getAlertPresentation,
   };
 })(window);

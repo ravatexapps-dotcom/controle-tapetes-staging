@@ -2203,3 +2203,201 @@ test('G28-B4-B2: tela nao reintroduz filtragem por raw record no caminho princip
   assert.ok(docStatusCheck >= 0 || filteredBody.indexOf("doc.status") === -1,
     'filteredDocs tem fallback legado mas o caminho principal usa queue UI');
 });
+
+// =====================================================================
+// 11. G28-B4-B3: Row state indicators (evidence, review, pedido, source, alerts)
+// =====================================================================
+
+test('G28-B4-B3: row renderiza indicadores de evidencia, revisao, pedido e origem', function () {
+  var sb = makeScreenSandboxWithQueueUI([
+    {
+      document_id: '96ed4f0e-26b2-4c2f-9186-65f72bf5fb18',
+      filename_original: 'NF-99.xml', tipo_documento: 'nf', formato: 'xml',
+      direcao_nf: 'entrada', drive_file_id: 'drive-99',
+      drive_web_view_link: 'https://drive.example/99',
+      status: 'pending', pedido_manual: 'PED-99-2026', pedido_id: null,
+      _ravatex_technical_evidence: null, _ravatex_server_decision: null,
+      _ravatex_source: 'supabase',
+    },
+  ]);
+  var container = new FakeNode('div');
+  sb.container = container;
+  var result = vm.runInContext('window.screenDocumentosRecebidos(container)', sb);
+  var row = findAll(result, findRow)[0];
+  assert.ok(row, 'row existe');
+  var rowText = textOf(row);
+
+  assert.ok(rowText.indexOf('Evidência ausente') >= 0, 'evidencia ausente: ' + rowText.slice(0, 600));
+  assert.ok(rowText.indexOf('Pendente de revisão') >= 0, 'revisao pendente: ' + rowText.slice(0, 600));
+  assert.ok(rowText.indexOf('Pedido sugerido') >= 0, 'pedido sugerido: ' + rowText.slice(0, 600));
+  assert.ok(rowText.indexOf('Supabase') >= 0, 'origem supabase: ' + rowText.slice(0, 600));
+});
+
+test('G28-B4-B3: row com evidencia invalida mostra alerta e indicador', function () {
+  var sb = makeScreenSandboxWithQueueUI([
+    {
+      document_id: '96ed4f0e-26b2-4c2f-9186-65f72bf5fb19',
+      filename_original: 'NF-inv.xml', tipo_documento: 'nf', formato: 'xml',
+      drive_web_view_link: null, status: 'pending',
+      _ravatex_technical_evidence: { state: 'invalid' },
+      _ravatex_source: 'supabase',
+    },
+  ]);
+  var container = new FakeNode('div');
+  sb.container = container;
+  var result = vm.runInContext('window.screenDocumentosRecebidos(container)', sb);
+  var rowText = JSON.stringify(findAll(result, function () { return true; }).map(textOf));
+  assert.ok(rowText.indexOf('Evidência inválida') >= 0, 'indicador evidencia invalida: ' + rowText.slice(0, 600));
+});
+
+test('G28-B4-B3: row com revisao rejected mostra Rejeitado', function () {
+  var sb = makeScreenSandboxWithQueueUI([
+    {
+      document_id: '96ed4f0e-26b2-4c2f-9186-65f72bf5fb20',
+      filename_original: 'rej.pdf', tipo_documento: 'nf', formato: 'pdf',
+      drive_web_view_link: null, status: 'rejected',
+      _ravatex_source: 'supabase',
+    },
+  ]);
+  var container = new FakeNode('div');
+  sb.container = container;
+  var result = vm.runInContext('window.screenDocumentosRecebidos(container)', sb);
+  var rowText = JSON.stringify(findAll(result, function () { return true; }).map(textOf));
+  assert.ok(rowText.indexOf('Rejeitado') >= 0, 'revisao rejected: ' + rowText.slice(0, 400));
+});
+
+test('G28-B4-B3: row legacy mostra Revisao indisponivel e Fallback legado', function () {
+  var sb = makeScreenSandboxWithQueueUI([
+    {
+      document_id: '96ed4f0e-26b2-4c2f-9186-65f72bf5fb21',
+      filename_original: 'legacy.pdf', tipo_documento: 'nf', formato: 'pdf',
+      status: 'pending', _ravatex_source: 'manual',
+    },
+  ]);
+  var container = new FakeNode('div');
+  sb.container = container;
+  var result = vm.runInContext('window.screenDocumentosRecebidos(container)', sb);
+  var rowText = JSON.stringify(findAll(result, function () { return true; }).map(textOf));
+  assert.ok(rowText.indexOf('Revisão indisponível') >= 0, 'legacy review: ' + rowText.slice(0, 400));
+  assert.ok(rowText.indexOf('Fallback legado') >= 0, 'legado source: ' + rowText.slice(0, 400));
+  assert.ok(rowText.indexOf('Vínculo indisponível') >= 0, 'pedido unavailable: ' + rowText.slice(0, 400));
+  assert.ok(rowText.indexOf('Evidência ausente') === -1, 'legacy nao tem missing evidence: ' + rowText.slice(0, 400));
+});
+
+test('G28-B4-B3: legacy evidencia unavailable e nunca missing', function () {
+  var sb = makeScreenSandboxWithQueueUI([
+    {
+      document_id: '96ed4f0e-26b2-4c2f-9186-65f72bf5fb22',
+      filename_original: 'legacy-ev.pdf', tipo_documento: 'nf', formato: 'pdf',
+      status: 'accepted', _ravatex_source: 'manual',
+    },
+  ]);
+  var container = new FakeNode('div');
+  sb.container = container;
+  var result = vm.runInContext('window.screenDocumentosRecebidos(container)', sb);
+  var rowText = JSON.stringify(findAll(result, function () { return true; }).map(textOf));
+  assert.ok(rowText.indexOf('Não disponível nesta origem') >= 0, 'legacy evidence: ' + rowText.slice(0, 400));
+  assert.equal(rowText.indexOf('Evidência ausente'), -1, 'legacy nao e missing');
+});
+
+test('G28-B4-B3: indicadores sao spans nao botoes', function () {
+  var docs = [
+    { document_id: 'ev-avail', filename_original: 'ev-avail.pdf', _ravatex_source: 'supabase', status: 'pending',
+      _ravatex_technical_evidence: { state: 'available', evidenceVersion: 1, createdAt: '2026-07-10T10:00:00.000Z' } },
+    { document_id: 'ev-miss', filename_original: 'ev-miss.pdf', _ravatex_source: 'supabase', status: 'pending' },
+    { document_id: 'ev-inv', filename_original: 'ev-inv.pdf', _ravatex_source: 'supabase', status: 'pending',
+      _ravatex_technical_evidence: { state: 'invalid' } },
+    { document_id: 'ev-unav', filename_original: 'ev-unav.pdf', _ravatex_source: 'manual' },
+    { document_id: 'rv-acc', filename_original: 'rv-acc.pdf', _ravatex_source: 'supabase', status: 'accepted' },
+    { document_id: 'rv-rej', filename_original: 'rv-rej.pdf', _ravatex_source: 'supabase', status: 'rejected' },
+    { document_id: 'rv-unk', filename_original: 'rv-unk.pdf', _ravatex_source: 'supabase', _ravatex_server_decision: { status: 'weird' } },
+    { document_id: 'ped-conf', filename_original: 'ped-conf.pdf', _ravatex_source: 'supabase', status: 'pending', pedido_id: 'PED-42-2026' },
+    { document_id: 'ped-sug', filename_original: 'ped-sug.pdf', _ravatex_source: 'supabase', status: 'pending', pedido_manual: 'PED-99-2026', pedido_id: null },
+    { document_id: 'src-unk', filename_original: 'src-unk.pdf', _ravatex_source: 'bogus' },
+  ];
+  var sb = makeScreenSandboxWithQueueUI(docs);
+  sb.window.setApp = function () {};
+  var tree = vm.runInContext('window.screenDocumentosRecebidos()', sb);
+  var allSpans = findAll(tree, function (n) { return n.tagName === 'SPAN'; });
+  var buttons = findAll(tree, function (n) { return n.tagName === 'BUTTON'; });
+  var rowText = JSON.stringify(findAll(tree, findRow).map(textOf));
+
+  var indicators = [
+    'Evidência disponível', 'Evidência ausente', 'Evidência inválida', 'Não disponível nesta origem',
+    'Pendente de revisão', 'Aceito', 'Rejeitado', 'Estado desconhecido', 'Revisão indisponível',
+    'Pedido referenciado', 'Pedido sugerido', 'Sem vínculo confirmado', 'Vínculo indisponível',
+    'Supabase', 'Fallback legado', 'Origem desconhecida',
+  ];
+  indicators.forEach(function (label) {
+    assert.ok(rowText.indexOf(label) >= 0, 'indicator "' + label + '" in row text');
+    var labelInButton = buttons.some(function (b) { return textOf(b).trim() === label; });
+    assert.ok(!labelInButton, 'indicator "' + label + '" NOT in any button text');
+    var matching = allSpans.filter(function (s) { return textOf(s) === label; });
+    assert.ok(matching.length >= 1, 'indicator "' + label + '" in at least one SPAN');
+    var withA11y = matching.filter(function (s) {
+      return s._attrs && s._attrs.title && s._attrs.title.length > 0
+        && s._attrs['aria-label'] && s._attrs['aria-label'].length > 0;
+    });
+    assert.ok(withA11y.length >= 1, 'SPAN for "' + label + '" has nonempty title and aria-label');
+  });
+
+  var sbRu = makeScreenSandboxWithQueueUI([
+    { document_id: 'ru', filename_original: 'ru.pdf', _ravatex_source: 'supabase' },
+  ]);
+  sbRu.window.RAVATEX_DOCUMENTS_RECEIVED_REMOTE_AVAILABILITY = 'unavailable';
+  sbRu.window.setApp = function () {};
+  var ruTree = vm.runInContext('window.screenDocumentosRecebidos()', sbRu);
+  var ruText = JSON.stringify(findAll(ruTree, function () { return true; }).map(textOf));
+  assert.ok(ruText.indexOf('Consulta indisponível') >= 0, 'remote_unavailable shows "Consulta indisponível"');
+  assert.equal(ruText.indexOf('Evidência ausente'), -1, 'remote_unavailable NOT "Evidência ausente"');
+});
+
+test('G28-B4-B3: acoes Drive e decisao preservadas', function () {
+  var sb = makeScreenSandboxWithQueueUI([
+    {
+      document_id: '96ed4f0e-26b2-4c2f-9186-65f72bf5fb24',
+      filename_original: 'drive-actions.xml', tipo_documento: 'nf', formato: 'xml',
+      drive_file_id: 'drive-x', drive_web_view_link: 'https://drive.example/x',
+      status: 'pending', _ravatex_source: 'supabase',
+    },
+  ]);
+  var container = new FakeNode('div');
+  sb.container = container;
+  var result = vm.runInContext('window.screenDocumentosRecebidos(container)', sb);
+  var ver = findAll(result, findAction('ver-documento-drive'));
+  var baixar = findAll(result, findAction('baixar-documento-drive'));
+  assert.equal(ver.length, 1, 'botao Ver preservado');
+  assert.equal(baixar.length, 1, 'botao Baixar preservado');
+});
+
+test('G28-B4-B3: source desconhecida com pedido indisponivel', function () {
+  var sb = makeScreenSandboxWithQueueUI([
+    {
+      document_id: '96ed4f0e-26b2-4c2f-9186-65f72bf5fb25',
+      filename_original: 'unknown.pdf', tipo_documento: 'nf', formato: 'pdf',
+      status: 'pending', _ravatex_source: 'bogus',
+    },
+  ]);
+  var container = new FakeNode('div');
+  sb.container = container;
+  var result = vm.runInContext('window.screenDocumentosRecebidos(container)', sb);
+  var rowText = JSON.stringify(findAll(result, function () { return true; }).map(textOf));
+  assert.ok(rowText.indexOf('Origem desconhecida') >= 0, 'origem desconhecida: ' + rowText.slice(0, 400));
+  assert.ok(rowText.indexOf('Vínculo indisponível') >= 0, 'vinculo indisponivel: ' + rowText.slice(0, 400));
+});
+
+test('G28-B4-B3: pedido no_confirmed_link com supabase disponivel', function () {
+  var sb = makeScreenSandboxWithQueueUI([
+    {
+      document_id: '96ed4f0e-26b2-4c2f-9186-65f72bf5fb26',
+      filename_original: 'noconfirm.pdf', tipo_documento: 'nf', formato: 'pdf',
+      status: 'pending', pedido_manual: null, pedido_id: null,
+      _ravatex_source: 'supabase',
+    },
+  ]);
+  var container = new FakeNode('div');
+  sb.container = container;
+  var result = vm.runInContext('window.screenDocumentosRecebidos(container)', sb);
+  var rowText = JSON.stringify(findAll(result, function () { return true; }).map(textOf));
+  assert.ok(rowText.indexOf('Sem vínculo confirmado') >= 0, 'no_confirmed_link: ' + rowText.slice(0, 400));
+});

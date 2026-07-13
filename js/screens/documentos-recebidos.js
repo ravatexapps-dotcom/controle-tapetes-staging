@@ -1522,6 +1522,19 @@
   }
 
   function buildDocumentRow(doc, isLast) {
+    var q = getQueueUI();
+    var pres = null;
+    if (q && doc.queueItem) {
+      var qi = doc.queueItem;
+      pres = {
+        evidence: q.getEvidencePresentation(qi),
+        review: q.getReviewPresentation(qi),
+        pedido: q.getPedidoPresentation(qi),
+        source: q.getSourcePresentation(qi),
+        alerts: q.getAlertPresentation(qi),
+      };
+    }
+
     var badges = window.el('div', {
       style: 'display:flex;align-items:center;gap:6px;flex-wrap:wrap;',
     });
@@ -1546,19 +1559,43 @@
       }, 'Remetente: indisponível'));
     }
 
-    return window.el('div', {
-      'data-document-id': doc.id,
-      'data-row': 'documento-recebido',
-      style: 'display:grid;grid-template-columns:' + TABLE_GRID + ';align-items:center;'
-        + 'gap:12px;padding:10px 16px;border-bottom:' + (isLast ? 'none' : '1px solid #f1f3f6') + ';',
-    },
+    function stateSpan(label, ariaLabel, color) {
+      return window.el('span', {
+        style: 'font-size:10.5px;color:' + (color || '#8a93a3') + ';white-space:nowrap;',
+        title: ariaLabel || label,
+        'aria-label': ariaLabel || label,
+      }, label);
+    }
+
+    function toneColor(tone) {
+      if (tone === 'warning') return '#b65630';
+      if (tone === 'info') return '#2563eb';
+      return '#8a93a3';
+    }
+
+    var col1 = window.el('div', { style: 'display:flex;flex-direction:column;gap:4px;min-width:0;' },
       window.el('div', { style: 'display:flex;align-items:center;gap:10px;min-width:0;' },
         fileIcon(doc.formato, doc.filename),
-        nameBlock),
-      badges,
-      window.el('div', {
-        style: 'display:flex;align-items:center;gap:6px;',
-      },
+        nameBlock));
+    if (pres && pres.alerts.length) {
+      var alertsEl = window.el('div', { style: 'display:flex;align-items:center;gap:4px;flex-wrap:wrap;' });
+      for (var ai = 0; ai < pres.alerts.length; ai++) {
+        var a = pres.alerts[ai];
+        var alertBg = a.severity === 'warning' ? '#fdf0e6' : '#eaf1fd';
+        var alertFg = a.severity === 'warning' ? '#b65630' : '#2563eb';
+        alertsEl.appendChild(window.el('span', {
+          style: 'display:inline-flex;align-items:center;border-radius:3px;padding:1px 5px;'
+            + 'font-size:10px;font-weight:600;white-space:nowrap;'
+            + 'background:' + alertBg + ';color:' + alertFg + ';',
+          title: a.ariaLabel || a.text,
+          'aria-label': a.ariaLabel || a.text,
+        }, a.text));
+      }
+      col1.appendChild(alertsEl);
+    }
+
+    var statusCol = window.el('div', { style: 'display:flex;flex-direction:column;gap:2px;' },
+      window.el('div', { style: 'display:flex;align-items:center;gap:6px;' },
         statusPill(doc.status),
         doc.isDivergent ? window.el('span', {
           'data-field': 'decisao-local',
@@ -1573,21 +1610,50 @@
           style: 'display:inline-flex;align-items:center;border-radius:3px;padding:1px 6px;'
             + 'font-size:10px;font-weight:700;white-space:nowrap;'
             + 'background:#eaf1fd;color:#2563eb;letter-spacing:.03em;text-transform:uppercase;',
-        }, 'Decisão local') : null),
-      window.el('div', {
-        style: 'min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;',
-      }, pedidoCell(doc)),
-      window.el('div', { style: 'display:flex;flex-direction:column;gap:3px;min-width:0;' },
-        window.el('div', { 'data-field': 'recebido-no-email', style: 'font-size:11.5px;color:#5b6472;white-space:nowrap;' },
-          'Recebido: ', doc.emailReceivedAt ? fmtDataHoraCurta(doc.emailReceivedAt) : 'indisponível',
-          doc.raw.email_received_at_estimated === true ? window.el('span', {
-            'data-badge': 'data-estimada', style: 'margin-left:5px;font-size:10px;font-weight:700;color:#a16207;',
-          }, 'data estimada') : null,
-          !doc.emailReceivedAt ? window.el('span', {
-            'data-badge': 'documento-legado', style: 'margin-left:5px;font-size:10px;font-weight:700;color:#7c3aed;',
-          }, 'documento legado') : null),
-        window.el('div', { 'data-field': 'processado-pelo-ingestor', style: 'font-size:11.5px;color:#7b8492;white-space:nowrap;' },
-          'Processado: ', doc.processedAt ? fmtDataHoraCurta(doc.processedAt) : 'indisponível')),
+        }, 'Decisão local') : null));
+    if (pres) {
+      if (pres.review.label) {
+        statusCol.appendChild(stateSpan(pres.review.label, pres.review.ariaLabel, '#5b6472'));
+      }
+      if (pres.evidence.label) {
+        statusCol.appendChild(stateSpan(pres.evidence.label, pres.evidence.ariaLabel, toneColor(pres.evidence.tone)));
+      }
+    }
+
+    var pedidoCol = window.el('div', { style: 'display:flex;flex-direction:column;gap:2px;min-width:0;' });
+    pedidoCol.appendChild(pedidoCell(doc));
+    if (pres) {
+      if (pres.pedido.label) {
+        pedidoCol.appendChild(stateSpan(pres.pedido.label, pres.pedido.ariaLabel, '#8a93a3'));
+      }
+      if (pres.source.label) {
+        pedidoCol.appendChild(stateSpan(pres.source.label, pres.source.ariaLabel, '#9aa2af'));
+      }
+    }
+
+    var datesCol = window.el('div', { style: 'display:flex;flex-direction:column;gap:3px;min-width:0;' },
+      window.el('div', { 'data-field': 'recebido-no-email', style: 'font-size:11.5px;color:#5b6472;white-space:nowrap;' },
+        'Recebido: ', doc.emailReceivedAt ? fmtDataHoraCurta(doc.emailReceivedAt) : 'indisponível',
+        doc.raw.email_received_at_estimated === true ? window.el('span', {
+          'data-badge': 'data-estimada', style: 'margin-left:5px;font-size:10px;font-weight:700;color:#a16207;',
+        }, 'data estimada') : null,
+        !doc.emailReceivedAt ? window.el('span', {
+          'data-badge': 'documento-legado', style: 'margin-left:5px;font-size:10px;font-weight:700;color:#7c3aed;',
+        }, 'documento legado') : null),
+      window.el('div', { 'data-field': 'processado-pelo-ingestor', style: 'font-size:11.5px;color:#7b8492;white-space:nowrap;' },
+        'Processado: ', doc.processedAt ? fmtDataHoraCurta(doc.processedAt) : 'indisponível'));
+
+    return window.el('div', {
+      'data-document-id': doc.id,
+      'data-row': 'documento-recebido',
+      style: 'display:grid;grid-template-columns:' + TABLE_GRID + ';align-items:start;'
+        + 'gap:12px;padding:10px 16px;border-bottom:' + (isLast ? 'none' : '1px solid #f1f3f6') + ';',
+    },
+      col1,
+      badges,
+      statusCol,
+      pedidoCol,
+      datesCol,
       buildActionButtons(doc));
   }
 

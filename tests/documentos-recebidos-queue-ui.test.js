@@ -605,6 +605,153 @@ test('queue-ui: getUIState nao referencia Supabase/DOM/fetch/RPC/storage', funct
 });
 
 // =====================================================================
+// 10. G28-B4-B3: Presentation functions (pure, domain-state-only)
+// =====================================================================
+
+test('queue-ui: expoe funcoes de apresentacao', function () {
+  assert.equal(typeof queueUI.getEvidencePresentation, 'function');
+  assert.equal(typeof queueUI.getReviewPresentation, 'function');
+  assert.equal(typeof queueUI.getPedidoPresentation, 'function');
+  assert.equal(typeof queueUI.getSourcePresentation, 'function');
+  assert.equal(typeof queueUI.getAlertPresentation, 'function');
+});
+
+test('queue-ui: getEvidencePresentation cobre todos os 5 estados', function () {
+  function qi(s) { return { technical_evidence: { state: s } }; }
+
+  var av = queueUI.getEvidencePresentation(qi('available'));
+  assert.equal(av.label, 'Evidência disponível', 'available label');
+  assert.equal(av.tone, 'neutral', 'available tone');
+
+  var ms = queueUI.getEvidencePresentation(qi('missing'));
+  assert.equal(ms.label, 'Evidência ausente', 'missing label');
+  assert.equal(ms.tone, 'info', 'missing tone');
+
+  var inv = queueUI.getEvidencePresentation(qi('invalid'));
+  assert.equal(inv.label, 'Evidência inválida', 'invalid label');
+  assert.equal(inv.tone, 'warning', 'invalid tone');
+
+  var ru = queueUI.getEvidencePresentation(qi('remote_unavailable'));
+  assert.equal(ru.label, 'Consulta indisponível', 'remote_unavailable label');
+  assert.equal(ru.tone, 'warning', 'remote_unavailable tone');
+
+  var una = queueUI.getEvidencePresentation(qi('unavailable'));
+  assert.equal(una.label, 'Não disponível nesta origem', 'unavailable label');
+  assert.equal(una.tone, 'neutral', 'unavailable tone');
+});
+
+test('queue-ui: getEvidencePresentation retorna vazio para estado desconhecido e ausente', function () {
+  assert.equal(queueUI.getEvidencePresentation({ technical_evidence: { state: 'bogus' } }).label, '');
+  assert.equal(queueUI.getEvidencePresentation({}).label, '');
+  assert.equal(queueUI.getEvidencePresentation(null).label, '');
+});
+
+test('queue-ui: getReviewPresentation cobre todos os 5 estados', function () {
+  function qi(s) { return { review: { state: s } }; }
+
+  assert.equal(queueUI.getReviewPresentation(qi('pending')).label, 'Pendente de revisão', 'pending');
+  assert.equal(queueUI.getReviewPresentation(qi('accepted')).label, 'Aceito', 'accepted');
+  assert.equal(queueUI.getReviewPresentation(qi('rejected')).label, 'Rejeitado', 'rejected');
+  assert.equal(queueUI.getReviewPresentation(qi('unknown')).label, 'Estado desconhecido', 'unknown');
+  assert.equal(queueUI.getReviewPresentation(qi('unavailable')).label, 'Revisão indisponível', 'unavailable');
+});
+
+test('queue-ui: getReviewPresentation retorna vazio para estado desconhecido', function () {
+  assert.equal(queueUI.getReviewPresentation({ review: { state: 'bogus' } }).label, '');
+});
+
+test('queue-ui: getPedidoPresentation cobre todos os 4 estados', function () {
+  function qi(s, o) {
+    var p = { state: s };
+    if (o) { for (var k in o) p[k] = o[k]; }
+    return { pedido: p };
+  }
+
+  assert.equal(queueUI.getPedidoPresentation(qi('confirmed_pedido_reference', { pedido_id: 'uuid-123' })).label, 'Pedido referenciado', 'confirmed');
+  assert.equal(queueUI.getPedidoPresentation(qi('suggested_pedido')).label, 'Pedido sugerido', 'suggested');
+  assert.equal(queueUI.getPedidoPresentation(qi('no_confirmed_link')).label, 'Sem vínculo confirmado', 'no_confirmed_link');
+  assert.equal(queueUI.getPedidoPresentation(qi('unavailable')).label, 'Vínculo indisponível', 'unavailable');
+});
+
+test('queue-ui: getPedidoPresentation confirmed retorna pedidoId, suggested nao', function () {
+  var conf = queueUI.getPedidoPresentation({ pedido: { state: 'confirmed_pedido_reference', pedido_id: 'uuid-c' } });
+  assert.equal(conf.pedidoId, 'uuid-c', 'confirmed carrega pedidoId');
+  var sug = queueUI.getPedidoPresentation({ pedido: { state: 'suggested_pedido' } });
+  assert.equal(sug.pedidoId, null, 'suggested sem pedidoId');
+});
+
+test('queue-ui: getSourcePresentation cobre todas as origens', function () {
+  function qi(cs) { return { source: { collection_source: cs } }; }
+
+  assert.equal(queueUI.getSourcePresentation(qi('supabase')).label, 'Supabase', 'supabase');
+  assert.equal(queueUI.getSourcePresentation(qi('legacy_fallback')).label, 'Fallback legado', 'legacy_fallback');
+  assert.equal(queueUI.getSourcePresentation(qi('legacy')).label, 'Fallback legado', 'legacy');
+  assert.equal(queueUI.getSourcePresentation(qi('unknown')).label, 'Origem desconhecida', 'unknown');
+});
+
+test('queue-ui: getSourcePresentation retorna vazio para source ausente', function () {
+  assert.equal(queueUI.getSourcePresentation({}).label, '');
+  assert.equal(queueUI.getSourcePresentation(null).label, '');
+});
+
+test('queue-ui: getAlertPresentation mapeia todos os 7 codigos', function () {
+  var codes = ['invalid_evidence', 'missing_evidence', 'remote_unavailable',
+    'unknown_document_type', 'legacy_fallback', 'suggested_pedido', 'unsupported_source_file'];
+  var qi = { alerts: codes.map(function (c) { return { code: c, severity: 'info' }; }) };
+  var result = queueUI.getAlertPresentation(qi);
+  assert.equal(result.length, 7, 'todos os 7 codigos retornados');
+  var texts = result.map(function (a) { return a.text; });
+  assert.ok(texts.indexOf('Evidência inválida') >= 0);
+  assert.ok(texts.indexOf('Evidência ausente') >= 0);
+  assert.ok(texts.indexOf('Consulta remota indisponível') >= 0);
+  assert.ok(texts.indexOf('Tipo de documento desconhecido') >= 0);
+  assert.ok(texts.indexOf('Dados de fallback legado') >= 0);
+  assert.ok(texts.indexOf('Pedido sugerido') >= 0);
+  assert.ok(texts.indexOf('Arquivo sem suporte a link') >= 0);
+});
+
+test('queue-ui: getAlertPresentation deduplica codigos repetidos', function () {
+  var qi = { alerts: [
+    { code: 'invalid_evidence', severity: 'warning' },
+    { code: 'invalid_evidence', severity: 'warning' },
+    { code: 'missing_evidence', severity: 'info' },
+  ]};
+  var result = queueUI.getAlertPresentation(qi);
+  assert.equal(result.length, 2, 'apenas 2 apos dedup');
+  assert.equal(result[0].code, 'invalid_evidence');
+  assert.equal(result[1].code, 'missing_evidence');
+});
+
+test('queue-ui: getAlertPresentation nao fabrica alerta para no_confirmed_link', function () {
+  var qi = { pedido: { state: 'no_confirmed_link' }, alerts: [] };
+  var result = queueUI.getAlertPresentation(qi);
+  var nc = result.filter(function (a) { return a.code === 'no_confirmed_link'; });
+  assert.equal(nc.length, 0, 'no_confirmed_link nao produz alerta');
+});
+
+test('queue-ui: apresentacao nao contem funcoes/acoes/callbacks', function () {
+  var qi = { technical_evidence: { state: 'missing' }, review: { state: 'pending' }, pedido: { state: 'no_confirmed_link', pedido_id: null, pedido_manual: null }, source: { collection_source: 'supabase' }, alerts: [{ code: 'missing_evidence', severity: 'info' }] };
+  var fns = ['getEvidencePresentation', 'getReviewPresentation', 'getPedidoPresentation', 'getSourcePresentation', 'getAlertPresentation'];
+  fns.forEach(function (fnName) {
+    var result = queueUI[fnName](qi);
+    assert.ok(result, fnName + ' retorna valor');
+    function walk(obj, path) {
+      for (var k in obj) {
+        if (!Object.prototype.hasOwnProperty.call(obj, k)) continue;
+        if (['onClick', 'onclick', 'callback', 'handler', 'action', 'fn'].indexOf(k) >= 0) {
+          assert.fail(fnName + ':' + path + '.' + k + ' e chave de acao');
+        }
+        if (typeof obj[k] === 'function') {
+          assert.fail(fnName + ':' + path + '.' + k + ' e funcao');
+        }
+        if (obj[k] && typeof obj[k] === 'object') walk(obj[k], path + '.' + k);
+      }
+    }
+    walk(result, fnName);
+  });
+});
+
+// =====================================================================
 // Helpers
 // =====================================================================
 
