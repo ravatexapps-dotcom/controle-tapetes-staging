@@ -12,9 +12,12 @@ O conteúdo histórico abaixo não determina o estado atual.
 - **Workspace:** `D:\OneDrive\Programação\Ravatex\controle-tapetes-g28`
 - **Branch:** `work/g28-document-qualification`
 - **Remoto permitido:** nenhum push sem autorização expressa nesta cadeia
-- **Última fase aceita:** `G28-DOCS-B1` — `CLOSED / ACCEPTED`
-- **Fase em curso:** `G28-DOCS-B2` — `PATCH DOCUMENTAL EM EXECUÇÃO / AGUARDANDO GATE`
-- **Próxima ação:** gate do arquiteto para `G28-DOCS-B2`
+- **Última fase aceita:** `G28-DOCS-B2` — `CLOSED / ACCEPTED`
+- **Correção vinculada:** `G28-DOCS-B2-R1` — `CLOSED / ACCEPTED`
+- **Fase em curso:** nenhuma fase de implementação em execução
+- **Próxima ação:** `G28-DOCS-B3-A` — `HISTORY PARTITION DIAGNOSTIC`
+  Diagnóstico read-only para separar ledger estruturado, arquivo legado
+  verbatim e conteúdo técnico permanente.
 - **Fase técnica suspensa:** `G28-B3-B5-C` — `NOT STARTED / SUSPENDED`
 
 ### Débitos relevantes

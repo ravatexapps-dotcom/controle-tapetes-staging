@@ -3,13 +3,14 @@
 - **Frente ativa:** G28 — Documentation Source-of-Truth Refactor
 - **Workspace:** `D:\OneDrive\Programação\Ravatex\controle-tapetes-g28`
 - **Branch:** `work/g28-document-qualification`
-- **Objetivo imediato:** concluir o gate de `G28-DOCS-B2` e, após aceite,
-  abrir `G28-DOCS-B3` para criação dos ledgers e extração controlada do
-  histórico.
+- **Objetivo imediato:** executar `G28-DOCS-B3-A`, diagnóstico read-only
+  de partição do histórico, sem criar ledgers, mover conteúdo ou
+  alterar documentos.
 - **Estado de entrada:**
   - `G28-DOCS-A` — `CLOSED / ACCEPTED`
   - `G28-DOCS-B1` — `CLOSED / ACCEPTED`
-  - `G28-DOCS-B2` — `PATCH DOCUMENTAL EM EXECUÇÃO / AGUARDANDO GATE`
+  - `G28-DOCS-B2` — `CLOSED / ACCEPTED`
+  - `G28-DOCS-B2-R1` — `CLOSED / ACCEPTED`
   - `G28-B3-B5-C` — `SUSPENDED`
 - **Arquivos obrigatórios:**
   - `docs/governance/DOCUMENTATION_MODEL.md`
@@ -18,14 +19,19 @@
   - `AGENT_HANDOFF.md`
   - `services/documents-ingestor/PROJECT_STATE.md`
 - **Restrições:**
+  - não iniciar a extração histórica;
+  - não criar ledger;
+  - não remover conteúdo congelado;
   - não retomar `G28-B3-B5-C`;
   - não aplicar migration 49;
   - não acessar Supabase real;
-  - não fazer push;
-  - não migrar nem excluir histórico antes do slice de ledger.
-- **Próxima entrega:** gate do arquiteto para `G28-DOCS-B2`; em caso de
-  aceite, autorização para abrir `G28-DOCS-B3` (closeout de ledgers e
-  extração de histórico).
+  - não fazer push.
+- **Próxima entrega:** relatório de `G28-DOCS-B3-A` ao arquiteto com
+  mapa exato de:
+  - entradas estruturadas de ledger;
+  - conteúdo verbatim destinado a arquivo legado;
+  - decisões permanentes que pertencem a planos ou contratos;
+  - duplicações entre os três históricos congelados.
 - **Links canônicos:**
   - estado atual → `PROJECT_STATE.md`
   - modelo documental → `docs/governance/DOCUMENTATION_MODEL.md`
