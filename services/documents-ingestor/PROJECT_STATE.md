@@ -45,6 +45,19 @@ Não copiar números de versão para o state.
 O estado de versionamento, aplicação e verificação por ambiente pertence
 ao `PROJECT_STATE.md` da raiz e ao ledger da frente.
 
+## Sync de evidência técnica
+
+- `sync-supabase` aceita `--technical-evidence <path>` de forma opcional,
+  paralela a `--mapped` e `--events`.
+- O JSONL de evidência é validado localmente antes de qualquer efeito remoto;
+  cada evidência deve referenciar um candidate elegível no mesmo recorte.
+- Em escrita confirmada, a ordem é candidate → technical evidence → events →
+  finalização da scan run. A ausência da opção preserva o fluxo anterior.
+- A persistência é multichamada e não oferece atomicidade global; execuções
+  posteriores convergem pela idempotência dos contratos remotos.
+- Referências operacionais: `../../PROJECT_STATE.md` e
+  `../../docs/ledgers/G28_LEDGER.md`.
+
 ## Testes e comandos estáveis
 
 A lista efetiva de scripts pertence a `package.json` (e lockfile);

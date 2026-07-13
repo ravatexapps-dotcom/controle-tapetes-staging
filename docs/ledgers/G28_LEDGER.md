@@ -182,3 +182,50 @@ risco residual e próxima fase indicada no fechamento.
 - **Risco residual:** listas documentais legadas ainda concorrem parcialmente
   com o modelo de autoridade; nenhum ledger de outra frente foi criado.
 - **Próxima fase indicada no fechamento:** `G28-DOCS-B3-E1 — DOCUMENTATION AUTHORITY LIST RECONCILIATION`.
+
+---
+
+## 2026-07-13 — G28-DOCS-B3-E1 — Documentation authority list reconciliation
+
+- **Gate:** CLOSED / ACCEPTED
+- **Commit aceito:** `793185701a4c09917354330f2596e2991e8b1dfc` — `Reconcile documentation authority references`
+- **Arquivos principais:**
+  - `Guide-and-governance-rules.stxt`
+  - `docs/DOCUMENTATION_INDEX.md`
+  - `docs/architecture/CLAUDE_PROJECT_ASSET_MAP.md`
+- **Validação:** lista única de autoridade consolidada em
+  `docs/DOCUMENTATION_INDEX.md`; asset map e guia redirecionados ao modelo
+  canônico; `git diff --check` limpo.
+- **Risco residual:** inventário de migrations permanece volumoso e deve ser
+  consultado diretamente no repositório, não reconstruído neste ledger.
+- **Próxima fase indicada no fechamento:** retomada técnica
+  `G28-B3-B5-C`.
+
+---
+
+## 2026-07-13 — G28-B3-B5-C — Complete technical evidence sync integration
+
+- **Gate:** LOCAL IMPLEMENTATION ACCEPTED / STAGING BLOCKED
+- **Commit técnico:** `3465405db42bfedd0c1f2c479f9be61c46078d87` —
+  `Integrate technical evidence into Supabase sync`
+- **Arquivos principais:**
+  - `services/documents-ingestor/src/core/syncSupabase.ts`
+  - `services/documents-ingestor/src/supabase/serviceRoleClient.ts`
+  - `services/documents-ingestor/src/cli.ts`
+  - `services/documents-ingestor/tests/sync-supabase.test.ts`
+  - `services/documents-ingestor/tests/sync-supabase-cli.test.ts`
+- **Validação local:** revisão independente aprovada após correção; testes
+  focados repetidos após a revisão: 223 testes em cinco arquivos e quatro
+  testes de CLI em arquivo adicional, todos aprovados; `git diff --check`
+  limpo. Um único client service-role é reutilizado; a ordem é candidate →
+  evidence → events; não há retry automático.
+- **Staging:** bloqueado antes de SQL/RPC. A identidade do endpoint MCP aponta
+  para `ucrjtfswnfdlxwtmxnoo`, mas a configuração local do writer não contém
+  `SUPABASE_PROJECT_REF`, URL, service-role key nem writer habilitado; portanto
+  a guarda obrigatória da CLI não pode ser comprovada e migration 49, smoke e
+  cleanup não foram executados.
+- **Risco residual:** a persistência confirmada é multichamada, sem atomicidade
+  global; além disso, falta resolver a configuração local exclusiva de staging
+  antes do apply e do smoke controlado.
+- **Próxima ação indicada:** resolver o gate de staging e retomar somente
+  migration 49 + smoke controlado, preservando produção intocada.

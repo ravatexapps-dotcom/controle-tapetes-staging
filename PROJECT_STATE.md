@@ -12,21 +12,28 @@ O conteúdo histórico abaixo não determina o estado atual.
 - **Workspace:** `D:\OneDrive\Programação\Ravatex\controle-tapetes-g28`
 - **Branch:** `work/g28-document-qualification`
 - **Remoto permitido:** nenhum push sem autorização expressa nesta cadeia
-- **Última fase aceita:** `G28-DOCS-B3-D1` — `CLOSED / ACCEPTED`
-- **Correção vinculada:** `G28-DOCS-B2-R1` — `CLOSED / ACCEPTED`
-- **Fase em curso:** nenhuma fase de implementação documental em execução
-- **Próxima ação:** `G28-DOCS-B3-E1` — `DOCUMENTATION AUTHORITY LIST RECONCILIATION`
-  Reconciliar as listas documentais legadas que ainda concorrem com
-  `docs/DOCUMENTATION_INDEX.md` e `docs/governance/DOCUMENTATION_MODEL.md`,
-  sem alterar estado técnico, snapshots ou histórico preservado.
-- **Fase técnica suspensa:** `G28-B3-B5-C` — `NOT STARTED / SUSPENDED`
+- **Última fase aceita:** `G28-DOCS-B3-E1` — `CLOSED / ACCEPTED`
+- **Commit documental de E1:** `793185701a4c09917354330f2596e2991e8b1dfc`
+- **Fase técnica:** `G28-B3-B5-C` — `LOCAL IMPLEMENTATION ACCEPTED / STAGING BLOCKED`
+- **Commit técnico:** `3465405db42bfedd0c1f2c479f9be61c46078d87`
+- **Gate de staging bloqueado:** a identidade do endpoint MCP é
+  `ucrjtfswnfdlxwtmxnoo`, porém a configuração local do writer está sem
+  project ref, URL, service-role key e writer habilitado. A guarda
+  `SUPABASE_PROJECT_REF == ucrjtfswnfdlxwtmxnoo` não pode ser comprovada na
+  CLI; nenhum SQL, RPC, apply ou smoke foi iniciado.
+- **Migration 49:** versionada; `NOT APPLIED IN STAGING`; `NOT APPLIED IN PRODUCTION`.
+- **Supabase:** identidade do endpoint de staging verificada sem SQL/RPC;
+  produção não acessada.
+- **Próxima ação:** resolver exclusivamente o gate de configuração de staging e
+  então retomar `G28-B3-B5-C` a partir do apply isolado da migration 49 e do
+  smoke controlado. Não iniciar `G28-B3-B6` antes dessa validação.
 
 ### Débitos relevantes
 
-- Listas documentais legadas de autoridade ainda aguardam reconciliação.
-- `G28-B3-B5-C` — `NOT STARTED / SUSPENDED`.
-- Migration 49 — versionada, não aplicada.
-- Supabase real — não acessado.
+- Gate de configuração local exclusiva de staging para o writer ainda precisa
+  ser resolvido antes de qualquer SQL/RPC.
+- Migration 49 — versionada; não aplicada em staging nem em produção.
+- Apply isolado, smoke idempotente e cleanup de staging permanecem pendentes.
 - Push — não autorizado nesta cadeia.
 
 ### Referência histórica

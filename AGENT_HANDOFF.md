@@ -1,50 +1,28 @@
 # HANDOFF OPERACIONAL ATIVO
 
-- **Frente ativa:** G28 — Documentation Source-of-Truth Refactor
+- **Frente ativa:** G28 — evidence sync / gate de staging
 - **Workspace:** `D:\OneDrive\Programação\Ravatex\controle-tapetes-g28`
 - **Branch:** `work/g28-document-qualification`
-- **Objetivo imediato:** executar `G28-DOCS-B3-E1` para eliminar listas
-  concorrentes de autoridade documental e fazer os documentos legados
-  referenciarem o modelo e o índice canônicos, sem alterar o estado técnico
-  ou os snapshots.
-- **Estado de entrada:**
-  - `G28-DOCS-B1` — `CLOSED / ACCEPTED`
-  - `G28-DOCS-B2` — `CLOSED / ACCEPTED`
-  - `G28-DOCS-B2-R1` — `CLOSED / ACCEPTED`
-  - `G28-DOCS-B2-CLOSEOUT` — `CLOSED / ACCEPTED`
-  - `G28-DOCS-B3-B0` — `CLOSED / ACCEPTED`
-  - `G28-DOCS-B3-C` — `CLOSED / ACCEPTED`
-  - `G28-DOCS-B3-D1` — `CLOSED / ACCEPTED`
-  - `G28-B3-B5-B` — `CLOSED / ACCEPTED`
-  - `G28-B3-B5-C` — `SUSPENDED`
-  - Os diagnósticos `G28-DOCS-B3-A` e `G28-DOCS-B3-A-R1` foram rejeitados e
-    substituídos pela estratégia de snapshots integrais.
-- **Arquivos obrigatórios:**
-  - `docs/governance/DOCUMENTATION_MODEL.md`
-  - `docs/DOCUMENTATION_INDEX.md`
-  - `PROJECT_STATE.md`
-  - `AGENT_HANDOFF.md`
-  - `services/documents-ingestor/PROJECT_STATE.md`
-- **Restrições:**
-  - não editar snapshots;
-  - não reconstruir automaticamente o histórico pré-modelo;
-  - não usar os mapas `B3-A`/`B3-A-R1` como fonte de verdade;
-  - não criar ledgers de outras frentes nesta fase;
-  - não retomar `G28-B3-B5-C`;
-  - não aplicar migration 49;
-  - não acessar Supabase real;
-  - não fazer push.
-- **Próxima entrega:**
-  - patch documental de `G28-DOCS-B3-E1` com as listas de autoridade
-    reconciliadas, sem ampliar o escopo para compactação de planos, ledgers
-    de outras frentes ou retomada de `G28-B3-B5-C`.
-- **Links canônicos:**
-  - estado atual → `PROJECT_STATE.md`
-  - modelo documental → `docs/governance/DOCUMENTATION_MODEL.md`
-  - autoridade documental → `docs/DOCUMENTATION_INDEX.md`
-  - plano G28 → `docs/architecture/DOCUMENTOS_VALIDACAO_VINCULOS_E_EVOLUCAO_PLANO.md`
-  - preservação pré-modelo → `docs/legacy/pre-model/MANIFEST.md`
-  - ledger G28 → `docs/ledgers/G28_LEDGER.md`
+- **Estado aceito:**
+  - `G28-DOCS-B3-E1` — `CLOSED / ACCEPTED`;
+    commit `793185701a4c09917354330f2596e2991e8b1dfc`.
+  - `G28-B3-B5-C` — implementação local aceita;
+    commit técnico `3465405db42bfedd0c1f2c479f9be61c46078d87`.
+  - revisão independente aprovada; testes focados repetidos após revisão.
+- **Bloqueio ativo:** staging não pode ser operado pela CLI porque a
+  configuração local do writer não contém project ref, URL, service-role key
+  nem writer habilitado. O endpoint MCP identificado é
+  `ucrjtfswnfdlxwtmxnoo`, mas a guarda local obrigatória não foi satisfeita;
+  nenhum SQL/RPC, apply da migration 49 ou smoke foi executado.
+- **Produção:** intocada.
+- **Próxima fase substantiva:** resolver o gate de staging e retomar
+  `G28-B3-B5-C` exclusivamente no apply isolado de migration 49 e smoke com
+  cleanup comprovado. `G28-B3-B6` permanece bloqueada.
+- **Restrições:** não editar snapshots; não aplicar migrations pendentes em
+  lote; não acessar produção/origin; não fazer push.
+- **Links canônicos:** estado → `PROJECT_STATE.md`; ledger →
+  `docs/ledgers/G28_LEDGER.md`; contexto do componente →
+  `services/documents-ingestor/PROJECT_STATE.md`.
 
 # HISTÓRICO DE HANDOFFS — ARQUIVADO
 
