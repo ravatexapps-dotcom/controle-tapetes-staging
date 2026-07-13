@@ -278,7 +278,7 @@ runTable('pedido: maps pedido state', [
   [{ pedido_id: 'uuid-12345', pedido_manual: null }, { state: 'confirmed_pedido_reference', pedido_id: 'uuid-12345', pedido_manual: null }],
   [{ pedido_id: 'uuid-12345', pedido_manual: 'PED-99-2026' }, { state: 'confirmed_pedido_reference', pedido_id: 'uuid-12345', pedido_manual: 'PED-99-2026' }],
   [{ pedido_id: null, pedido_manual: 'PED-99-2026' }, { state: 'suggested_pedido', pedido_manual: 'PED-99-2026', pedido_id: null }],
-  [{ pedido_id: null, pedido_manual: null }, { state: 'unavailable', pedido_manual: null, pedido_id: null }],
+  [{ pedido_id: null, pedido_manual: null }, { state: 'no_confirmed_link', pedido_manual: null, pedido_id: null }],
 ], function (row) {
   var rec = makeRecord(row[0]);
   var item = createItem(rec, baseCtx);
@@ -290,6 +290,33 @@ test('pedido: does not fetch or validate pedido', function () {
   assert.equal(item.pedido.state, 'confirmed_pedido_reference');
   assert.equal(Object.prototype.hasOwnProperty.call(item.pedido, 'valid'), false);
   assert.equal(Object.prototype.hasOwnProperty.call(item.pedido, 'fetch'), false);
+});
+
+test('pedido: no_confirmed_link for absent values in canonical context', function () {
+  var rec = makeRecord({ pedido_manual: null, pedido_id: null });
+  var item = createItem(rec, baseCtx);
+  assert.deepStrictEqual(item.pedido, { state: 'no_confirmed_link', pedido_manual: null, pedido_id: null });
+});
+
+test('pedido: no_confirmed_link for whitespace-only pedido_manual in canonical context', function () {
+  var rec = makeRecord({ pedido_manual: '   ', pedido_id: null });
+  var item = createItem(rec, baseCtx);
+  assert.deepStrictEqual(item.pedido, { state: 'no_confirmed_link', pedido_manual: null, pedido_id: null });
+});
+
+runTable('pedido: unavailable for non-canonical contexts', [
+  ['legacy_fallback + not_applicable', ctx('legacy_fallback', 'not_applicable'), { pedido_id: 'uuid', pedido_manual: null }],
+  ['legacy_fallback + available', ctx('legacy_fallback', 'available'), { pedido_id: null, pedido_manual: 'PED-99' }],
+  ['legacy + not_applicable', ctx('legacy', 'not_applicable'), { pedido_id: 'uuid', pedido_manual: 'PED-99' }],
+  ['unknown + available', ctx('unknown', 'available'), { pedido_id: null, pedido_manual: 'PED-99' }],
+  ['supabase + unavailable', ctx('supabase', 'unavailable'), { pedido_id: 'uuid', pedido_manual: 'PED-99' }],
+  ['supabase + not_applicable', ctx('supabase', 'not_applicable'), { pedido_id: null, pedido_manual: null }],
+], function (row) {
+  var rec = makeRecord(row[2]);
+  var item = createItem(rec, row[1]);
+  assert.equal(item.pedido.state, 'unavailable', row[0]);
+  assert.ok(Object.prototype.hasOwnProperty.call(item.pedido, 'pedido_manual'), 'pedido_manual key preserved ' + row[0]);
+  assert.ok(Object.prototype.hasOwnProperty.call(item.pedido, 'pedido_id'), 'pedido_id key preserved ' + row[0]);
 });
 
 // ============================================================================
@@ -381,6 +408,38 @@ test('alerts: deterministic and payload-free', function () {
     assert.ok(keys.indexOf('code') >= 0);
     assert.ok(keys.indexOf('severity') >= 0);
   }
+});
+
+test('alerts: no_confirmed_link does not create suggested_pedido alert', function () {
+  var rec = makeRecord({ pedido_manual: null, pedido_id: null });
+  var item = createItem(rec, baseCtx);
+  assertNoAlert('no_confirmed_link', item, 'suggested_pedido');
+});
+
+test('alerts: no_confirmed_link does not create any new alert code', function () {
+  var rec = makeRecord({ pedido_manual: null, pedido_id: null });
+  var item = createItem(rec, baseCtx);
+  item.alerts.forEach(function (a) {
+    assert.notEqual(a.code, 'no_confirmed_link', 'no_confirmed_link must not produce an alert');
+  });
+});
+
+test('alerts: suggested_pedido alert only in canonical available context', function () {
+  var recCanonical = makeRecord({ pedido_manual: 'PED-99', pedido_id: null });
+  var itemCanonical = createItem(recCanonical, baseCtx);
+  assertAlert('canonical suggested', itemCanonical, 'suggested_pedido', 'info');
+
+  var recLegacy = makeRecord({ pedido_manual: 'PED-99', pedido_id: 'uuid' });
+  var itemLegacy = createItem(recLegacy, ctx('legacy_fallback', 'not_applicable'));
+  assertNoAlert('legacy suggested', itemLegacy, 'suggested_pedido');
+
+  var recUnknown = makeRecord({ pedido_manual: 'PED-99', pedido_id: null });
+  var itemUnknown = createItem(recUnknown, ctx('unknown', 'available'));
+  assertNoAlert('unknown suggested', itemUnknown, 'suggested_pedido');
+
+  var recRemoteUnavail = makeRecord({ pedido_manual: 'PED-99', pedido_id: null });
+  var itemRemoteUnavail = createItem(recRemoteUnavail, ctx('supabase', 'unavailable'));
+  assertNoAlert('remote_unavailable suggested', itemRemoteUnavail, 'suggested_pedido');
 });
 
 test('alerts: no success alert', function () {
@@ -480,7 +539,7 @@ runTable('filters: axis values', [
   ['collection_source', ['supabase', 'legacy_fallback', 'legacy', 'unknown']],
   ['evidence_state', ['available', 'missing', 'invalid', 'remote_unavailable', 'unavailable']],
   ['review_state', ['pending', 'accepted', 'rejected', 'unknown', 'unavailable']],
-  ['pedido_state', ['confirmed_pedido_reference', 'suggested_pedido', 'unavailable']],
+  ['pedido_state', ['confirmed_pedido_reference', 'no_confirmed_link', 'suggested_pedido', 'unavailable']],
   ['source_capability', ['drive_available', 'unsupported', 'missing']],
   ['validation_review', ['review_available', 'review_pending', 'review_unavailable']],
 ], function (row) {
@@ -536,6 +595,7 @@ test('constants: distinct values', function () {
   assert.deepStrictEqual(vals(C.REVIEW_STATE).sort(), ['accepted', 'pending', 'rejected', 'unavailable', 'unknown'].sort());
   assert.deepStrictEqual(vals(C.SOURCE_CAPABILITY).sort(), ['drive_available', 'missing', 'unsupported'].sort());
   assert.deepStrictEqual(vals(C.VALIDATION_INDICATION).sort(), ['review_available', 'review_pending', 'review_unavailable'].sort());
+  assert.deepStrictEqual(vals(C.PEDIDO_STATE).sort(), ['confirmed_pedido_reference', 'no_confirmed_link', 'suggested_pedido', 'unavailable'].sort());
 });
 
 // ============================================================================
@@ -547,7 +607,7 @@ test('edge: minimal record', function () {
   assert.equal(item.identity.document_id, 'doc-minimal');
   assert.deepStrictEqual(item.technical_evidence, { state: 'missing' });
   assert.deepStrictEqual(item.review, { state: 'unknown' });
-  assert.deepStrictEqual(item.pedido, { state: 'unavailable', pedido_manual: null, pedido_id: null });
+  assert.deepStrictEqual(item.pedido, { state: 'no_confirmed_link', pedido_manual: null, pedido_id: null });
   assert.deepStrictEqual(item.source_file, { state: 'missing' });
 });
 

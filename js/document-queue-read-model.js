@@ -25,6 +25,7 @@ var SOURCE_CAPABILITY = {
 var PEDIDO_STATE = {
   SUGGESTED_PEDIDO: 'suggested_pedido',
   CONFIRMED_PEDIDO_REFERENCE: 'confirmed_pedido_reference',
+  NO_CONFIRMED_LINK: 'no_confirmed_link',
   UNAVAILABLE: 'unavailable',
 };
 
@@ -140,9 +141,19 @@ function computeEvidence(documentRecord, collectionSource, remoteAvailability) {
   return { state: EVIDENCE_STATE.MISSING };
 }
 
-function computePedido(documentRecord) {
-  var pedidoManual = asString(documentRecord.pedido_manual);
+function computePedido(documentRecord, collectionSource, remoteAvailability) {
+  var isCanonicalAvailable = collectionSource === 'supabase' && remoteAvailability === 'available';
+
+  if (!isCanonicalAvailable) {
+    return {
+      state: PEDIDO_STATE.UNAVAILABLE,
+      pedido_manual: asString(documentRecord.pedido_manual) || null,
+      pedido_id: asString(documentRecord.pedido_id) || null,
+    };
+  }
+
   var pedidoId = asString(documentRecord.pedido_id);
+  var pedidoManual = asString(documentRecord.pedido_manual);
 
   if (pedidoId) {
     return {
@@ -152,7 +163,7 @@ function computePedido(documentRecord) {
     };
   }
 
-  if (pedidoManual) {
+  if (pedidoManual && pedidoManual.trim() !== '') {
     return {
       state: PEDIDO_STATE.SUGGESTED_PEDIDO,
       pedido_manual: pedidoManual,
@@ -161,7 +172,7 @@ function computePedido(documentRecord) {
   }
 
   return {
-    state: PEDIDO_STATE.UNAVAILABLE,
+    state: PEDIDO_STATE.NO_CONFIRMED_LINK,
     pedido_manual: null,
     pedido_id: null,
   };
@@ -193,7 +204,7 @@ function computeSourceFileCapability(documentRecord) {
   return { state: SOURCE_CAPABILITY.MISSING };
 }
 
-function computeAlerts(documentRecord, collectionSource, evidenceState, sourceCapability) {
+function computeAlerts(documentRecord, collectionSource, evidenceState, sourceCapability, pedidoState) {
   var alerts = [];
 
   if (evidenceState === EVIDENCE_STATE.INVALID) {
@@ -217,9 +228,7 @@ function computeAlerts(documentRecord, collectionSource, evidenceState, sourceCa
     alerts.push({ code: ALERT_CODE.LEGACY_FALLBACK, severity: ALERT_SEVERITY.INFO });
   }
 
-  var pedidoManual = asString(documentRecord.pedido_manual);
-  var pedidoId = asString(documentRecord.pedido_id);
-  if (pedidoManual && !pedidoId) {
+  if (pedidoState === PEDIDO_STATE.SUGGESTED_PEDIDO) {
     alerts.push({ code: ALERT_CODE.SUGGESTED_PEDIDO, severity: ALERT_SEVERITY.INFO });
   }
 
@@ -284,6 +293,7 @@ function getAuthorizedFilters() {
     ] },
     { axis: 'pedido_state', values: [
       PEDIDO_STATE.CONFIRMED_PEDIDO_REFERENCE,
+      PEDIDO_STATE.NO_CONFIRMED_LINK,
       PEDIDO_STATE.SUGGESTED_PEDIDO,
       PEDIDO_STATE.UNAVAILABLE,
     ] },
@@ -316,11 +326,11 @@ function createDocumentQueueItem(documentRecord, context) {
   var source = computeSource(collectionSource);
   var review = computeReview(documentRecord, collectionSource);
   var evidence = computeEvidence(documentRecord, collectionSource, remoteAvailability);
-  var pedido = computePedido(documentRecord);
+  var pedido = computePedido(documentRecord, collectionSource, remoteAvailability);
   var op = computeOP();
   var duplicate = computeDuplicate();
   var sourceFile = computeSourceFileCapability(documentRecord);
-  var alerts = computeAlerts(documentRecord, collectionSource, evidence.state, sourceFile.state);
+  var alerts = computeAlerts(documentRecord, collectionSource, evidence.state, sourceFile.state, pedido.state);
   var validation = computeValidationIndication(collectionSource, remoteAvailability, review.state);
   var display = computeDisplay(documentRecord);
   var filterValues = computeFilterValues(

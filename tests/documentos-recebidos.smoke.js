@@ -2042,7 +2042,7 @@ test('G28-B4-B2: screen NAO duplica status/pedido derivacao (usa queue UI como f
   var entry = queueUI.buildQueue()[0];
   // A tela deve usar queueItem.review e queueItem.pedido, nao o doc.status/doc.pedido raw
   assert.equal(entry.queueItem.review.state, 'pending', 'review state via queue item');
-  assert.equal(entry.queueItem.pedido.state, 'unavailable', 'pedido state via queue item');
+  assert.equal(entry.queueItem.pedido.state, 'no_confirmed_link', 'pedido state via queue item');
 });
 
 test('G28-B4-B2: legacy fallback mantem acoes locais e nao vira pending', function () {
