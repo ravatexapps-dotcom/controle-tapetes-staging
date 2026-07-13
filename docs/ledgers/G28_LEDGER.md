@@ -261,3 +261,31 @@ risco residual e próxima fase indicada no fechamento.
   atomicidade global; a convergência depende da idempotência dos contratos
   remotos.
 - **Próxima fase indicada:** `G28-B3-B6 — TECHNICAL EVIDENCE READER`.
+
+---
+
+## 2026-07-13 — G28-B3-B6-B — Current technical evidence admin reader
+
+- **Gate:** CLOSED / ACCEPTED
+- **Commit técnico:** `6ade74fd6b8584320dbf12df1dbf334aeabbc8b6` — `Read current technical evidence in document reader`
+- **Arquivos principais:**
+  - `js/documents-supabase-reader.js`
+  - `tests/documents-supabase-reader.test.js`
+- **Contrato público preservado:** `window.RAVATEX_DOCUMENTS.loadReceivedDocumentsFromSupabase()`
+- **Campo interno de attachment:** `_ravatex_technical_evidence`
+- **Fonte remota:** `public.document_technical_evidences`
+- **Acesso:** admin autenticado direto, sob RLS existente
+- **Versão carregada:** versão corrente (highest valid positive numeric `evidence_version`)
+- **Estados:** `available`, `missing`, `invalid`
+- **Falha remota:** distinta de `missing`; não há fallback silencioso
+- **Versão inválida:** a versão corrente é rejeitada como `invalid`; não há fallback para evidência mais antiga
+- **Evidência histórica:** diferida; não carregada
+- **UI:** inalterada; sem renderização
+- **Database:** inalterada; Documents Ingestor inalterado
+- **Writes/RPC:** nenhum; sem segundo client Supabase; sem fonte paralela
+- **Validação:** `node --check` passou; 39 reader tests aprovados; 91 screen smoke tests aprovados; diff checks passaram
+- **Revisão independente:** APPROVE
+- **Produção:** não acessada
+- **Push:** não executado
+- **Risco residual:** reader 268 linhas; reader test 618 linhas; qualquer expansão funcional substancial exige nova revisão de coesão antes de adicionar lógica substancial a qualquer um dos dois arquivos; isto não é um defeito ou bloqueador.
+- **Próxima fase indicada no fechamento:** `NEXT SUBSTANTIVE PHASE: REQUIRES ARCHITECT DECISION`. O plano mestre autoritativo (`DOCUMENTOS_VALIDACAO_VINCULOS_E_EVOLUCAO_PLANO.md`) está inconsistente com a baseline aceita B3-B5-C e B6-B (ainda nomeia B3-B5-B como `NOT STARTED` e posiciona diferentemente os estágios genéricos posteriores), enquanto os demais planos/backlogs obrigatórios cobrem preocupações separadas de Pedido/OP e produção. Portanto os planos/backlogs autoritativos não sequenciam univocamente um sucessor após a baseline B6-B aceita; um arquiteto deve reconciliar o plano/backlog G28 antes de uma nova fase de implementação.
