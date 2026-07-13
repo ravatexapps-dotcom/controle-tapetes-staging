@@ -33,6 +33,8 @@
     tipo: 'todos',
     pedido: 'todos',
     periodo: 'todos',
+    collectionSource: 'all',
+    technicalEvidence: 'all',
     scanPlaying: true,
     refreshing: false,
     lastRun: null,
@@ -138,6 +140,14 @@
       'data-icon': 'lucide-' + name,
       style: 'display:inline-flex;width:' + s + 'px;height:' + s + 'px;flex-shrink:0;' + (extraStyle || ''),
     });
+  }
+
+  function getQueueUI() {
+    var ns = window.RAVATEX_DOCUMENTOS_RECEBIDOS_QUEUE_UI;
+    if (!ns || typeof ns.buildQueue !== 'function' || typeof ns.filterQueue !== 'function') {
+      return null;
+    }
+    return ns;
   }
 
   function getReceived() {
@@ -332,7 +342,22 @@
   }
 
   function allDocs() {
-    return getReceived().map(decorateDoc);
+    var received = getReceived();
+    var docs = received.map(decorateDoc);
+    var queueUI = getQueueUI();
+    if (queueUI) {
+      var entries = queueUI.buildQueue();
+      var byIndex = {};
+      entries.forEach(function (entry) {
+        if (entry && typeof entry.index === 'number') byIndex[entry.index] = entry;
+      });
+      docs.forEach(function (doc, index) {
+        doc._queueIndex = index;
+        var entry = byIndex[index];
+        if (entry) doc.queueItem = entry.queueItem;
+      });
+    }
+    return docs;
   }
 
   function matchesPeriod(doc) {
@@ -350,6 +375,29 @@
   }
 
   function filteredDocs(docs) {
+    var queueUI = getQueueUI();
+    if (queueUI && docs.length > 0 && docs[0].queueItem) {
+      var entries = docs.map(function (doc) {
+        return { index: doc._queueIndex, queueItem: doc.queueItem, raw: null };
+      });
+      var result = queueUI.filterQueue(entries, {
+        search: ui.busca,
+        status: ui.tab,
+        tipo: ui.tipo,
+        periodo: ui.periodo,
+        collectionSource: ui.collectionSource,
+        technicalEvidence: ui.technicalEvidence,
+        pedido: ui.pedido,
+      });
+      var byIndex = {};
+      docs.forEach(function (doc) {
+        byIndex[doc._queueIndex] = doc;
+      });
+      return result.visible.map(function (e) {
+        return byIndex[e.index];
+      }).filter(Boolean);
+    }
+
     var termo = normalizeKey(ui.busca);
     return docs.filter(function (doc) {
       if (ui.tab !== 'todos' && doc.status !== ui.tab) return false;
@@ -371,9 +419,18 @@
   }
 
   function countsByStatus(docs) {
+    var queueUI = getQueueUI();
+    if (queueUI && docs.length > 0 && docs[0].queueItem) {
+      var entries = docs.map(function (doc) {
+        return { index: doc._queueIndex, queueItem: doc.queueItem, raw: null };
+      });
+      return queueUI.countByStatus(entries);
+    }
     var c = { todos: docs.length, pending: 0, assigned: 0, accepted: 0, rejected: 0 };
     docs.forEach(function (doc) {
-      if (c[doc.status] != null) c[doc.status]++;
+      if (c[doc.status] != null) {
+        c[doc.status]++;
+      }
     });
     return c;
   }
@@ -394,12 +451,17 @@
       : Promise.resolve({ ok: false, source: 'supabase', error: 'reader_unavailable' });
 
     return primary.then(function (primaryResult) {
-      if (primaryResult && primaryResult.ok) return primaryResult;
+      if (primaryResult && primaryResult.ok) {
+        window.RAVATEX_DOCUMENTS_RECEIVED_REMOTE_AVAILABILITY = 'available';
+        return primaryResult;
+      }
       if (!docsApi || typeof docsApi.autoLoadDocuments !== 'function') {
+        window.RAVATEX_DOCUMENTS_RECEIVED_REMOTE_AVAILABILITY = 'unavailable';
         return primaryResult || { ok: false, source: 'supabase', error: 'reader_failed' };
       }
       return docsApi.autoLoadDocuments().then(function (fallbackResult) {
         if (fallbackResult && fallbackResult.skipped && fallbackResult.reason === 'supabase-primary') {
+          window.RAVATEX_DOCUMENTS_RECEIVED_REMOTE_AVAILABILITY = 'available';
           return {
             ok: true,
             source: 'supabase',
@@ -408,6 +470,7 @@
           };
         }
         if (fallbackResult && fallbackResult.ok) {
+          window.RAVATEX_DOCUMENTS_RECEIVED_REMOTE_AVAILABILITY = 'unavailable';
           return {
             ok: true,
             source: 'g22-auto',
@@ -416,6 +479,7 @@
             primaryError: primaryResult && primaryResult.error || '',
           };
         }
+        window.RAVATEX_DOCUMENTS_RECEIVED_REMOTE_AVAILABILITY = 'unavailable';
         return primaryResult || fallbackResult || { ok: false, source: 'supabase', error: 'reader_failed' };
       });
     });
@@ -1317,6 +1381,13 @@
   }
 
   function uniquePedidos(docs) {
+    var queueUI = getQueueUI();
+    if (queueUI && docs.length > 0 && docs[0].queueItem) {
+      var entries = docs.map(function (doc) {
+        return { index: doc._queueIndex, queueItem: doc.queueItem, raw: null };
+      });
+      return queueUI.getPedidoOptions(entries);
+    }
     var seen = {};
     var out = [];
     docs.forEach(function (doc) {
@@ -1342,12 +1413,35 @@
       { value: '30d', label: 'Ultimos 30 dias' },
     ];
 
+    var queueUI = getQueueUI();
+    var filterOptions = queueUI ? queueUI.getFilterOptions() : null;
+    var sourceOptions = filterOptions && filterOptions.collectionSource
+      ? filterOptions.collectionSource.map(function (o) { return { value: o.code, label: o.label }; })
+      : [
+          { value: 'all', label: 'Todas as origens' },
+          { value: 'canonical_remote', label: 'Remoto canônico' },
+          { value: 'legacy_fallback', label: 'Fallback legado' },
+          { value: 'unknown', label: 'Desconhecida' },
+        ];
+    var evidenceOptions = filterOptions && filterOptions.technicalEvidence
+      ? filterOptions.technicalEvidence.map(function (o) { return { value: o.code, label: o.label }; })
+      : [
+          { value: 'all', label: 'Todas as evidencias' },
+          { value: 'available', label: 'Disponível' },
+          { value: 'missing', label: 'Ausente' },
+          { value: 'invalid', label: 'Inválida' },
+          { value: 'remote_unavailable', label: 'Remota indisponível' },
+          { value: 'unavailable', label: 'Indisponível' },
+        ];
+
     return window.el('div', {
       style: 'display:flex;align-items:stretch;gap:8px;margin-bottom:16px;flex-wrap:wrap;',
     },
       selectControl('Tipo', ui.tipo, tipoOptions, function (v) { ui.tipo = v; }),
       selectControl('Pedido', ui.pedido, pedidoOptions, function (v) { ui.pedido = v; }),
       selectControl('Período (e-mail; processamento em legado)', ui.periodo, periodoOptions, function (v) { ui.periodo = v; }),
+      selectControl('Origem', ui.collectionSource, sourceOptions, function (v) { ui.collectionSource = v; }),
+      selectControl('Evidencia tecnica', ui.technicalEvidence, evidenceOptions, function (v) { ui.technicalEvidence = v; }),
       window.el('button', {
         type: 'button',
         'data-action': 'limpar-filtros',
@@ -1357,10 +1451,54 @@
           ui.tipo = 'todos';
           ui.pedido = 'todos';
           ui.periodo = 'todos';
+          ui.collectionSource = 'all';
+          ui.technicalEvidence = 'all';
           ui.tab = 'todos';
           rerender();
         },
       }, 'Limpar', svgEl(SVG_X, 13, 'Limpar')));
+  }
+
+  function buildQueueUIStateBar() {
+    var queueUI = getQueueUI();
+    if (!queueUI || typeof queueUI.getUIState !== 'function') return null;
+
+    var entries = queueUI.buildQueue();
+    var filterResult = queueUI.filterQueue(entries, {
+      search: ui.busca,
+      status: ui.tab,
+      tipo: ui.tipo,
+      periodo: ui.periodo,
+      collectionSource: ui.collectionSource,
+      technicalEvidence: ui.technicalEvidence,
+      pedido: ui.pedido,
+    });
+
+    var state = queueUI.getUIState(entries, filterResult, {
+      loading: ui.refreshing || ui.sourceLoadRunning || ui.autoLoadRunning,
+    });
+
+    if (!state) return null;
+
+    var isRemote = state.state.indexOf('remote-unavailable') === 0;
+    var isError = state.state === 'remote-unavailable';
+    var isWarning = isRemote && !isError;
+
+    var bg = isError ? '#fdecec' : (isWarning ? '#fdf0e6' : (state.state === 'loading' ? '#f1f3f6' : '#eaf1fd'));
+    var fg = isError ? '#d6403a' : (isWarning ? '#b65630' : (state.state === 'loading' ? '#5b6472' : '#2563eb'));
+    var border = isError ? '#f0cfcd' : (isWarning ? '#ebc8a6' : '#d8dce2');
+
+    return window.el('div', {
+      'data-section': 'queue-ui-state',
+      'data-marker': state.marker,
+      role: 'status',
+      'aria-live': 'polite',
+      'aria-label': state.ariaLabel,
+      style: 'display:flex;align-items:center;gap:8px;padding:8px 14px;margin-bottom:10px;'
+        + 'border-radius:6px;font-size:13px;font-weight:500;background:' + bg + ';color:' + fg + ';'
+        + 'border:1px solid ' + border + ';',
+    },
+      state.label);
   }
 
   function buildColumnsLegend() {
@@ -1512,6 +1650,8 @@
     page.appendChild(buildScanStrip(docs));
     page.appendChild(buildSearchTabs(docs));
     page.appendChild(buildFilters(docs));
+    var stateBar = buildQueueUIStateBar();
+    if (stateBar) page.appendChild(stateBar);
     page.appendChild(buildTable(docs, visible));
 
     container.appendChild(page);

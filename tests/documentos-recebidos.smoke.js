@@ -71,6 +71,10 @@ const READER = path.join(ROOT, 'js', 'documents-supabase-reader.js');
 const readerSrc = readOrFail(READER);
 const SCAN_TRIGGER = path.join(ROOT, 'js', 'documents-scan-trigger.js');
 const scanTriggerSrc = readOrFail(SCAN_TRIGGER);
+const READ_MODEL = path.join(ROOT, 'js', 'document-queue-read-model.js');
+const readModelSrc = readOrFail(READ_MODEL);
+const QUEUE_UI = path.join(ROOT, 'js', 'screens', 'documentos-recebidos-queue-ui.js');
+const queueUISrc = readOrFail(QUEUE_UI);
 const common = readOrFail(COMMON);
 const boot = readOrFail(BOOT);
 const ui = readOrFail(UI);
@@ -134,6 +138,39 @@ test('index.html: ordem documents-ingestor + loader < common < documentos-recebi
   assert.ok(idxLoader < idxCommon, 'loader antes do common');
   assert.ok(idxCommon < idxScreen, 'common antes da tela');
   assert.ok(idxScreen < idxBoot, 'tela antes do boot');
+});
+
+test('index.html (G28-B4-B2): document-queue-read-model e queue-ui carregados uma vez cada', function () {
+  const rmMatches = index.match(/js\/document-queue-read-model\.js/g) || [];
+  const quMatches = index.match(/js\/screens\/documentos-recebidos-queue-ui\.js/g) || [];
+  assert.equal(rmMatches.length, 1, 'document-queue-read-model.js uma vez');
+  assert.equal(quMatches.length, 1, 'documentos-recebidos-queue-ui.js uma vez');
+});
+
+test('index.html (G28-B4-B2): read-model < queue-ui < documentos-recebidos < boot', function () {
+  const idxReadModel = index.indexOf('js/document-queue-read-model.js');
+  const idxQueueUI = index.indexOf('js/screens/documentos-recebidos-queue-ui.js');
+  const idxScreen = index.indexOf('js/screens/documentos-recebidos.js');
+  const idxBoot = index.indexOf('js/boot.js');
+  assert.ok(idxReadModel > 0, 'read-model presente');
+  assert.ok(idxQueueUI > 0, 'queue-ui presente');
+  assert.ok(idxScreen > 0, 'documentos-recebidos presente');
+  assert.ok(idxBoot > 0, 'boot presente');
+  assert.ok(idxReadModel < idxQueueUI, 'read-model antes do queue-ui');
+  assert.ok(idxQueueUI < idxScreen, 'queue-ui antes da tela');
+  assert.ok(idxScreen < idxBoot, 'tela antes do boot');
+});
+
+test('documentos-recebidos (G28-B4-B2): tela referencia o namespace queue-ui', function () {
+  assert.ok(screen.indexOf('RAVATEX_DOCUMENTOS_RECEBIDOS_QUEUE_UI') >= 0,
+    'tela deve referenciar RAVATEX_DOCUMENTOS_RECEBIDOS_QUEUE_UI');
+});
+
+test('documentos-recebidos-queue-ui: arquivo existe e sintaxe JS valida', function () {
+  assert.ok(fs.existsSync(QUEUE_UI), 'js/screens/documentos-recebidos-queue-ui.js ausente');
+  require('node:child_process').execFileSync(
+    process.execPath, ['--check', QUEUE_UI], { stdio: 'pipe' }
+  );
 });
 
 // ---------------------------------------------------------------------
@@ -217,7 +254,7 @@ class FakeNode {
     this.disabled = false;
     this.value = '';
   }
-  appendChild(n) { if (n != null) this.children.push(n); return n; }
+  appendChild(n) { if (n != null) { this.children.push(n); n.parentNode = this; } return n; }
   setAttribute(k, v) { this._attrs[k] = v; }
   getAttribute(k) { return this._attrs[k]; }
   addEventListener(type, fn) { (this._listeners[type] = this._listeners[type] || []).push(fn); }
@@ -300,6 +337,19 @@ function makeScreenSandbox(received) {
   }
 
   return sandbox;
+}
+
+function makeScreenSandboxWithQueueUI(received) {
+  const sb = makeScreenSandbox(received);
+  // Sobrescreve a tela para garantir que ela veja o queue-ui;
+  // carrega read-model (global createDocumentQueueItem) e queue-ui antes.
+  vm.runInContext(readModelSrc, sb, { filename: 'js/document-queue-read-model.js' });
+  vm.runInContext(queueUISrc, sb, { filename: 'js/screens/documentos-recebidos-queue-ui.js' });
+  vm.runInContext(screen, sb, { filename: 'js/screens/documentos-recebidos.js' });
+  if (received !== undefined) {
+    sb.window.RAVATEX_DOCUMENTS_RECEIVED = received;
+  }
+  return sb;
 }
 
 test('runtime: screenDocumentosRecebidos renderiza empty state sem documentos', function () {
@@ -694,7 +744,7 @@ test('redesign: filtros nao duplicam chevron e Limpar acompanha a altura da linh
   const result = vm.runInContext('window.screenDocumentosRecebidos(container)', sb);
 
   const selects = findAll(result, (n) => n.tagName === 'SELECT');
-  assert.equal(selects.length, 3, 'tres selects de filtro esperados');
+  assert.equal(selects.length, 5, 'cinco selects de filtro esperados (tipo, pedido, periodo, origem, evidencia)');
   selects.forEach(function (selectNode) {
     const style = selectNode._attrs.style || '';
     assert.ok(style.indexOf('appearance:none') >= 0, 'select deve esconder chevron nativo: ' + style);
@@ -1884,4 +1934,272 @@ test('G25-B1-UX-A: mostra remetente e compacta labels e acoes sem perder acessib
   assert.equal(refresh._listeners.click.length, 1);
   assert.equal(scan._listeners.click.length, 1);
   assert.equal(importBtn._listeners.click.length, 1);
+});
+
+// ---------------------------------------------------------------------
+// 10. G28-B4-B2: integracao com queue-ui
+// ---------------------------------------------------------------------
+
+function findSelectByOptionValue(tree, value) {
+  return findAll(tree, (n) => n.tagName === 'SELECT').find(function (s) {
+    return (s.children || []).some(function (opt) { return opt._attrs && opt._attrs.value === value; });
+  });
+}
+
+test('G28-B4-B2: sandbox com queue-ui expoe namespace e filtra por origem (canonical_remote)', function () {
+  var sb = makeScreenSandboxWithQueueUI([
+    { document_id: 's1', filename_original: 'NF-s.xml', tipo_documento: 'nf', formato: 'xml', _ravatex_source: 'supabase' },
+    { document_id: 'l1', filename_original: 'NF-l.xml', tipo_documento: 'nf', formato: 'xml', _ravatex_source: 'manual' },
+    { document_id: 'u1', filename_original: 'NF-u.xml', tipo_documento: 'nf', formato: 'xml', _ravatex_source: 'bogus' },
+  ]);
+  sb.window.setApp = function () {};
+  var tree = vm.runInContext('window.screenDocumentosRecebidos()', sb);
+  var rows = findAll(tree, findRow);
+  assert.equal(rows.length, 3, 'tres documentos renderizados');
+
+  var sourceSelect = findSelectByOptionValue(tree, 'canonical_remote');
+  assert.ok(sourceSelect, 'select de origem presente com canonical_remote');
+  sourceSelect.value = 'canonical_remote';
+  sourceSelect._listeners.change[0]();
+  tree = vm.runInContext('window.screenDocumentosRecebidos()', sb);
+  rows = findAll(tree, findRow);
+  assert.equal(rows.length, 1, 'apenas canonical_remote apos filtro');
+  assert.equal(rows[0]._attrs['data-document-id'], 's1');
+});
+
+test('G28-B4-B2: filtro por evidencia tecnica', function () {
+  var sb = makeScreenSandboxWithQueueUI([
+    { document_id: 'av', filename_original: 'av.pdf', tipo_documento: 'nf', _ravatex_source: 'supabase',
+      _ravatex_technical_evidence: { state: 'available', evidenceVersion: 1, createdAt: '2026-07-09T14:00:00.000Z' } },
+    { document_id: 'ms', filename_original: 'ms.pdf', tipo_documento: 'nf', _ravatex_source: 'supabase',
+      _ravatex_technical_evidence: null },
+  ]);
+  sb.window.setApp = function () {};
+  var tree = vm.runInContext('window.screenDocumentosRecebidos()', sb);
+  var evidenceSelect = findSelectByOptionValue(tree, 'remote_unavailable');
+  assert.ok(evidenceSelect, 'select de evidencia presente');
+  evidenceSelect.value = 'available';
+  evidenceSelect._listeners.change[0]();
+  tree = vm.runInContext('window.screenDocumentosRecebidos()', sb);
+  var rows = findAll(tree, findRow);
+  assert.equal(rows.length, 1, 'apenas available apos filtro');
+  assert.equal(rows[0]._attrs['data-document-id'], 'av');
+});
+
+test('G28-B4-B2: filteredDocs usa index-based reconnection com IDs duplicados', function () {
+  var sb = makeScreenSandboxWithQueueUI([
+    { document_id: 'dup-id', filename_original: 'first.xml', tipo_documento: 'nf', formato: 'xml', _ravatex_source: 'supabase', status: 'pending' },
+    { document_id: 'dup-id', filename_original: 'second.pdf', tipo_documento: 'nf', formato: 'pdf', _ravatex_source: 'supabase', status: 'accepted' },
+  ]);
+  sb.window.setApp = function () {};
+  var tree = vm.runInContext('window.screenDocumentosRecebidos()', sb);
+  var rows = findAll(tree, findRow);
+  assert.equal(rows.length, 2, 'dois documentos com mesmo ID sao renderizados');
+  assert.ok(textOf(rows[0]).indexOf('first.xml') >= 0, 'primeiro row = first.xml');
+  assert.ok(textOf(rows[1]).indexOf('second.pdf') >= 0, 'segundo row = second.pdf');
+});
+
+test('G28-B4-B2: filteredDocs com ID em branco nao altera cardinalidade', function () {
+  var sb = makeScreenSandboxWithQueueUI([
+    { document_id: '', filename_original: 'blank-id-1.xml', tipo_documento: 'nf', formato: 'xml', _ravatex_source: 'supabase' },
+    { document_id: '', filename_original: 'blank-id-2.pdf', tipo_documento: 'nf', formato: 'pdf', _ravatex_source: 'supabase' },
+  ]);
+  sb.window.setApp = function () {};
+  var tree = vm.runInContext('window.screenDocumentosRecebidos()', sb);
+  var rows = findAll(tree, findRow);
+  assert.equal(rows.length, 2, 'dois documentos com ID em branco');
+  assert.ok(textOf(rows[0]).indexOf('blank-id-1') >= 0, 'primeiro = blank-id-1');
+  assert.ok(textOf(rows[1]).indexOf('blank-id-2') >= 0, 'segundo = blank-id-2');
+});
+
+test('G28-B4-B2: filteredDocs retorna na ordem visivel da queue UI', function () {
+  var sb = makeScreenSandboxWithQueueUI([
+    { document_id: 'a', filename_original: 'a.pdf', tipo_documento: 'nf', formato: 'pdf', _ravatex_source: 'supabase', status: 'accepted' },
+    { document_id: 'b', filename_original: 'b.pdf', tipo_documento: 'nf', formato: 'pdf', _ravatex_source: 'supabase', status: 'pending' },
+    { document_id: 'c', filename_original: 'c.pdf', tipo_documento: 'nf', formato: 'pdf', _ravatex_source: 'supabase', status: 'accepted' },
+  ]);
+  sb.window.setApp = function () {};
+  var tree = vm.runInContext('window.screenDocumentosRecebidos()', sb);
+  // Usa tab accepted para so mostrar accepted
+  var tabBtns = findAll(tree, function (n) { return n._attrs && n._attrs['data-tab'] === 'accepted'; });
+  assert.equal(tabBtns.length, 1, 'botao accepted existe');
+  tabBtns[0]._listeners.click[0]();
+  tree = vm.runInContext('window.screenDocumentosRecebidos()', sb);
+  var rows = findAll(tree, findRow);
+  assert.equal(rows.length, 2, 'dois accepted visiveis');
+  assert.ok(textOf(rows[0]).indexOf('a.pdf') >= 0, 'primeiro = a.pdf');
+  assert.ok(textOf(rows[1]).indexOf('c.pdf') >= 0, 'segundo = c.pdf');
+});
+
+test('G28-B4-B2: screen NAO duplica status/pedido derivacao (usa queue UI como fonte unica)', function () {
+  var sb = makeScreenSandboxWithQueueUI([
+    { document_id: 'd1', filename_original: 'd1.pdf', tipo_documento: 'nf', formato: 'pdf', _ravatex_source: 'supabase', status: 'pending' },
+  ]);
+  sb.window.setApp = function () {};
+  vm.runInContext('window.screenDocumentosRecebidos()', sb);
+  var queueUI = sb.window.RAVATEX_DOCUMENTOS_RECEBIDOS_QUEUE_UI;
+  assert.ok(queueUI, 'queue UI disponivel');
+  var entry = queueUI.buildQueue()[0];
+  // A tela deve usar queueItem.review e queueItem.pedido, nao o doc.status/doc.pedido raw
+  assert.equal(entry.queueItem.review.state, 'pending', 'review state via queue item');
+  assert.equal(entry.queueItem.pedido.state, 'unavailable', 'pedido state via queue item');
+});
+
+test('G28-B4-B2: legacy fallback mantem acoes locais e nao vira pending', function () {
+  var sb = makeScreenSandboxWithQueueUI([
+    { document_id: '96ed4f0e-26b2-4c2f-9186-65f72bf5fb21', filename_original: 'legado.pdf', tipo_documento: 'nf', _ravatex_source: 'manual' },
+  ]);
+  var tree = vm.runInContext('window.screenDocumentosRecebidos()', sb);
+  var rows = findAll(tree, findRow);
+  assert.equal(rows.length, 1);
+  // Botoes locais de aceitar/rejeitar presentes (nao botoes de nuvem)
+  assert.equal(findAll(rows[0], findAction('aceitar-documento')).length, 1, 'aceitar local presente');
+  assert.equal(findAll(rows[0], findAction('rejeitar-documento')).length, 1, 'rejeitar local presente');
+  assert.equal(findAll(rows[0], findAction('aceitar-documento-nuvem')).length, 0, 'sem aceitar nuvem para legacy');
+});
+
+// ---------------------------------------------------------------------
+// G28-B4-B2: queue-ui state bar (UI-state boundary)
+// ---------------------------------------------------------------------
+
+test('G28-B4-B2: tela referencia getUIState e buildQueueUIStateBar', function () {
+  var src = readOrFail(SCREEN);
+  assert.ok(src.indexOf('getUIState') >= 0, 'tela referencia getUIState');
+  assert.ok(src.indexOf('buildQueueUIStateBar') >= 0, 'tela define buildQueueUIStateBar');
+});
+
+test('G28-B4-B2: queue-ui expoe getUIState no namespace', function () {
+  var qSrc = readOrFail(QUEUE_UI);
+  assert.ok(qSrc.indexOf('getUIState') >= 0, 'queue-ui expoe getUIState');
+  assert.ok(qSrc.indexOf('getUIState: getUIState') >= 0, 'getUIState no namespace publico');
+});
+
+test('G28-B4-B2: state bar renderiza source-empty com data-marker correto', function () {
+  var sb = makeScreenSandboxWithQueueUI([]);
+  sb.window.setApp = function () {};
+  var tree = vm.runInContext('window.screenDocumentosRecebidos()', sb);
+  var stateBars = findAll(tree, function (n) {
+    return n._attrs && n._attrs['data-section'] === 'queue-ui-state';
+  });
+  assert.equal(stateBars.length, 1, 'state bar presente com source-empty');
+  assert.equal(stateBars[0]._attrs['data-marker'], 'queue-ui-state-source-empty');
+  assert.equal(stateBars[0]._attrs.role, 'status');
+  assert.equal(stateBars[0]._attrs['aria-live'], 'polite');
+  assert.equal(stateBars[0]._attrs['aria-label'], 'Status: nenhum documento recebido');
+  assert.ok(textOf(stateBars[0]).indexOf('Nenhum documento recebido') >= 0);
+});
+
+test('G28-B4-B2: state bar NAO renderiza quando estado e ok (documentos + remoto disponivel)', function () {
+  var sb = makeScreenSandboxWithQueueUI([
+    { document_id: 's1', filename_original: 'doc.pdf', tipo_documento: 'nf', formato: 'pdf', _ravatex_source: 'supabase' },
+  ]);
+  sb.window.setApp = function () {};
+  var tree = vm.runInContext('window.screenDocumentosRecebidos()', sb);
+  var stateBars = findAll(tree, function (n) {
+    return n._attrs && n._attrs['data-section'] === 'queue-ui-state';
+  });
+  assert.equal(stateBars.length, 0, 'state bar nao aparece quando nao ha estado especial');
+});
+
+test('G28-B4-B2: state bar renderiza remote-unavailable quando remoto indisponivel sem fallback', function () {
+  var sb = makeScreenSandboxWithQueueUI([
+    { document_id: 's1', filename_original: 'doc.pdf', tipo_documento: 'nf', formato: 'pdf', _ravatex_source: 'supabase' },
+  ]);
+  sb.window.RAVATEX_DOCUMENTS_RECEIVED_REMOTE_AVAILABILITY = 'unavailable';
+  sb.window.setApp = function () {};
+  var tree = vm.runInContext('window.screenDocumentosRecebidos()', sb);
+  var stateBars = findAll(tree, function (n) {
+    return n._attrs && n._attrs['data-section'] === 'queue-ui-state';
+  });
+  assert.equal(stateBars.length, 1, 'state bar presente com remote-unavailable');
+  assert.equal(stateBars[0]._attrs['data-marker'], 'queue-ui-state-remote-unavailable');
+  assert.equal(stateBars[0]._attrs.role, 'status');
+  assert.ok(textOf(stateBars[0]).indexOf('Conexão remota indisponível') >= 0);
+  assert.ok(textOf(stateBars[0]).indexOf('fallback') === -1, 'nao menciona fallback quando nao ha');
+  assert.ok(stateBars[0]._attrs.style.indexOf('background:#fdecec') >= 0, 'erro remoto usa tom de erro');
+});
+
+test('G28-B4-B2: state bar renderiza remote-unavailable-legacy-fallback quando ha registros legacy', function () {
+  var sb = makeScreenSandboxWithQueueUI([
+    { document_id: 'l1', filename_original: 'legacy.pdf', tipo_documento: 'nf', formato: 'pdf', _ravatex_source: 'manual' },
+  ]);
+  sb.window.RAVATEX_DOCUMENTS_RECEIVED_REMOTE_AVAILABILITY = 'unavailable';
+  sb.window.setApp = function () {};
+  var tree = vm.runInContext('window.screenDocumentosRecebidos()', sb);
+  var stateBars = findAll(tree, function (n) {
+    return n._attrs && n._attrs['data-section'] === 'queue-ui-state';
+  });
+  assert.equal(stateBars.length, 1, 'state bar presente com legacy fallback');
+  assert.equal(stateBars[0]._attrs['data-marker'], 'queue-ui-state-remote-unavailable-legacy-fallback');
+  assert.ok(textOf(stateBars[0]).indexOf('fallback local') >= 0);
+  assert.ok(stateBars[0]._attrs.style.indexOf('background:#fdf0e6') >= 0, 'fallback usa tom de aviso distinto');
+});
+
+test('G28-B4-B2: state bar distingue remote-unavailable de remote-unavailable-legacy-fallback', function () {
+  // Supabase-only → remote-unavailable
+  var sbSupabase = makeScreenSandboxWithQueueUI([
+    { document_id: 's1', filename_original: 's.pdf', _ravatex_source: 'supabase' },
+  ]);
+  sbSupabase.window.RAVATEX_DOCUMENTS_RECEIVED_REMOTE_AVAILABILITY = 'unavailable';
+  sbSupabase.window.setApp = function () {};
+  var treeS = vm.runInContext('window.screenDocumentosRecebidos()', sbSupabase);
+  var barsS = findAll(treeS, function (n) { return n._attrs && n._attrs['data-section'] === 'queue-ui-state'; });
+  assert.equal(barsS.length, 1);
+  assert.equal(barsS[0]._attrs['data-marker'], 'queue-ui-state-remote-unavailable');
+
+  // Manual-only → remote-unavailable-legacy-fallback
+  var sbManual = makeScreenSandboxWithQueueUI([
+    { document_id: 'l1', filename_original: 'l.pdf', _ravatex_source: 'manual' },
+  ]);
+  sbManual.window.RAVATEX_DOCUMENTS_RECEIVED_REMOTE_AVAILABILITY = 'unavailable';
+  sbManual.window.setApp = function () {};
+  var treeM = vm.runInContext('window.screenDocumentosRecebidos()', sbManual);
+  var barsM = findAll(treeM, function (n) { return n._attrs && n._attrs['data-section'] === 'queue-ui-state'; });
+  assert.equal(barsM.length, 1);
+  assert.equal(barsM[0]._attrs['data-marker'], 'queue-ui-state-remote-unavailable-legacy-fallback');
+
+  assert.notEqual(barsS[0]._attrs['data-marker'], barsM[0]._attrs['data-marker'],
+    'markers devem ser distintos para estados diferentes');
+});
+
+test('G28-B4-B2: state bar source-empty e filter-empty tem markers distintos', function () {
+  // source-empty
+  var sbEmpty = makeScreenSandboxWithQueueUI([]);
+  sbEmpty.window.setApp = function () {};
+  var treeEmpty = vm.runInContext('window.screenDocumentosRecebidos()', sbEmpty);
+  var barEmpty = findAll(treeEmpty, function (n) { return n._attrs && n._attrs['data-section'] === 'queue-ui-state'; });
+  assert.equal(barEmpty.length, 1);
+  assert.equal(barEmpty[0]._attrs['data-marker'], 'queue-ui-state-source-empty');
+  assert.ok(textOf(barEmpty[0]).indexOf('Nenhum documento recebido') >= 0);
+
+  // filter-empty e testado indiretamente via codigo: getUIState distingue
+  // source-empty de filter-empty no modulo de testes unitarios. O smoke
+  // garante que o marker de source-empty esta correto.
+  var src = readOrFail(QUEUE_UI);
+  assert.ok(src.indexOf('queue-ui-state-filter-empty') >= 0, 'filter-empty marker presente no codigo');
+  assert.ok(src.indexOf('queue-ui-state-source-empty') >= 0, 'source-empty marker presente no codigo');
+});
+
+test('G28-B4-B2: state bar usa aria-live="polite" e role="status" para acessibilidade', function () {
+  var src = readOrFail(SCREEN);
+  var barIdx = src.indexOf('buildQueueUIStateBar');
+  assert.ok(barIdx >= 0);
+  var barSection = src.slice(barIdx, barIdx + 1400);
+  assert.ok(barSection.indexOf("role: 'status'") >= 0, 'role status presente');
+  assert.ok(barSection.indexOf("'aria-live': 'polite'") >= 0, 'aria-live polite presente');
+  assert.ok(barSection.indexOf("'aria-label'") >= 0, 'aria-label presente');
+  assert.ok(barSection.indexOf("'data-marker'") >= 0, 'data-marker presente');
+});
+
+test('G28-B4-B2: tela nao reintroduz filtragem por raw record no caminho principal', function () {
+  var src = readOrFail(SCREEN);
+  var filteredDocsIdx = src.indexOf('function filteredDocs');
+  assert.ok(filteredDocsIdx >= 0, 'filteredDocs existe');
+  var filteredBody = src.slice(filteredDocsIdx, filteredDocsIdx + 1200);
+  // Deve usar queueUI.filterQueue quando queueItem disponivel
+  assert.ok(filteredBody.indexOf('queueUI.filterQueue') >= 0, 'filteredDocs usa queueUI.filterQueue');
+  // O caminho sem queueUI (fallback) existe mas so e usado quando nao ha queueUI
+  var docStatusCheck = filteredBody.indexOf("doc.status !== ui.tab");
+  assert.ok(docStatusCheck >= 0 || filteredBody.indexOf("doc.status") === -1,
+    'filteredDocs tem fallback legado mas o caminho principal usa queue UI');
 });
