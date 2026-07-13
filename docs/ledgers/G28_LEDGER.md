@@ -167,3 +167,18 @@ risco residual e próxima fase indicada no fechamento.
   Git final limpo.
 - **Risco residual:** criação do ledger G28 pendente.
 - **Próxima fase indicada no fechamento:** `G28-DOCS-B3-D1`.
+
+---
+
+## 2026-07-12 — G28-DOCS-B3-D1 — Bootstrap prospective G28 phase ledger
+
+- **Gate:** CLOSED / ACCEPTED
+- **Commit aceito:** `dcd9823a73d6846e40ff0112543b3c9fe194309b` — `Bootstrap prospective G28 phase ledger`
+- **Arquivos principais:** `docs/ledgers/G28_LEDGER.md`; `docs/DOCUMENTATION_INDEX.md`
+- **Validação:** oito commits de origem verificados como existentes e ancestrais
+  da cadeia; ledger criado com exatamente oito entradas iniciais; somente
+  `G28-B3-B5-B` importado como baseline técnico pré-modelo; diagnósticos
+  rejeitados excluídos como fontes; `git diff --check` limpo; Git final limpo.
+- **Risco residual:** listas documentais legadas ainda concorrem parcialmente
+  com o modelo de autoridade; nenhum ledger de outra frente foi criado.
+- **Próxima fase indicada no fechamento:** `G28-DOCS-B3-E1 — DOCUMENTATION AUTHORITY LIST RECONCILIATION`.

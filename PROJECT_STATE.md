@@ -12,18 +12,18 @@ O conteúdo histórico abaixo não determina o estado atual.
 - **Workspace:** `D:\OneDrive\Programação\Ravatex\controle-tapetes-g28`
 - **Branch:** `work/g28-document-qualification`
 - **Remoto permitido:** nenhum push sem autorização expressa nesta cadeia
-- **Última fase aceita:** `G28-DOCS-B3-C` — `CLOSED / ACCEPTED`
+- **Última fase aceita:** `G28-DOCS-B3-D1` — `CLOSED / ACCEPTED`
 - **Correção vinculada:** `G28-DOCS-B2-R1` — `CLOSED / ACCEPTED`
 - **Fase em curso:** nenhuma fase de implementação documental em execução
-- **Próxima ação:** `G28-DOCS-B3-D1` — `G28 PROSPECTIVE LEDGER BOOTSTRAP`
-  Criar o primeiro ledger por frente para G28, sem reconstrução automática
-  do histórico pré-modelo e sem usar os mapas rejeitados de `G28-DOCS-B3-A`
-  ou `G28-DOCS-B3-A-R1` como fonte de verdade.
+- **Próxima ação:** `G28-DOCS-B3-E1` — `DOCUMENTATION AUTHORITY LIST RECONCILIATION`
+  Reconciliar as listas documentais legadas que ainda concorrem com
+  `docs/DOCUMENTATION_INDEX.md` e `docs/governance/DOCUMENTATION_MODEL.md`,
+  sem alterar estado técnico, snapshots ou histórico preservado.
 - **Fase técnica suspensa:** `G28-B3-B5-C` — `NOT STARTED / SUSPENDED`
 
 ### Débitos relevantes
 
-- Ledger estruturado da frente G28 ainda não criado.
+- Listas documentais legadas de autoridade ainda aguardam reconciliação.
 - `G28-B3-B5-C` — `NOT STARTED / SUSPENDED`.
 - Migration 49 — versionada, não aplicada.
 - Supabase real — não acessado.
@@ -32,6 +32,7 @@ O conteúdo histórico abaixo não determina o estado atual.
 ### Referência histórica
 
 - Preservação pré-modelo: `docs/legacy/pre-model/MANIFEST.md`
+- Ledger da frente G28: `docs/ledgers/G28_LEDGER.md`
 
 ### Links obrigatórios
 

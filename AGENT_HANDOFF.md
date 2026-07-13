@@ -3,10 +3,10 @@
 - **Frente ativa:** G28 — Documentation Source-of-Truth Refactor
 - **Workspace:** `D:\OneDrive\Programação\Ravatex\controle-tapetes-g28`
 - **Branch:** `work/g28-document-qualification`
-- **Objetivo imediato:** abrir `G28-DOCS-B3-D1` para criar o ledger
-  prospectivo da frente G28, usando commits e gates aceitos como fontes e
-  mantendo todo o conteúdo pré-modelo exclusivamente preservado nos
-  snapshots imutáveis.
+- **Objetivo imediato:** executar `G28-DOCS-B3-E1` para eliminar listas
+  concorrentes de autoridade documental e fazer os documentos legados
+  referenciarem o modelo e o índice canônicos, sem alterar o estado técnico
+  ou os snapshots.
 - **Estado de entrada:**
   - `G28-DOCS-B1` — `CLOSED / ACCEPTED`
   - `G28-DOCS-B2` — `CLOSED / ACCEPTED`
@@ -14,6 +14,7 @@
   - `G28-DOCS-B2-CLOSEOUT` — `CLOSED / ACCEPTED`
   - `G28-DOCS-B3-B0` — `CLOSED / ACCEPTED`
   - `G28-DOCS-B3-C` — `CLOSED / ACCEPTED`
+  - `G28-DOCS-B3-D1` — `CLOSED / ACCEPTED`
   - `G28-B3-B5-B` — `CLOSED / ACCEPTED`
   - `G28-B3-B5-C` — `SUSPENDED`
   - Os diagnósticos `G28-DOCS-B3-A` e `G28-DOCS-B3-A-R1` foram rejeitados e
@@ -34,14 +35,16 @@
   - não acessar Supabase real;
   - não fazer push.
 - **Próxima entrega:**
-  - patch de `G28-DOCS-B3-D1` com o ledger da frente G28 criado,
-    sem backfill especulativo de fases antigas e sem alterar os snapshots.
+  - patch documental de `G28-DOCS-B3-E1` com as listas de autoridade
+    reconciliadas, sem ampliar o escopo para compactação de planos, ledgers
+    de outras frentes ou retomada de `G28-B3-B5-C`.
 - **Links canônicos:**
   - estado atual → `PROJECT_STATE.md`
   - modelo documental → `docs/governance/DOCUMENTATION_MODEL.md`
   - autoridade documental → `docs/DOCUMENTATION_INDEX.md`
   - plano G28 → `docs/architecture/DOCUMENTOS_VALIDACAO_VINCULOS_E_EVOLUCAO_PLANO.md`
   - preservação pré-modelo → `docs/legacy/pre-model/MANIFEST.md`
+  - ledger G28 → `docs/ledgers/G28_LEDGER.md`
 
 # HISTÓRICO DE HANDOFFS — ARQUIVADO
 
