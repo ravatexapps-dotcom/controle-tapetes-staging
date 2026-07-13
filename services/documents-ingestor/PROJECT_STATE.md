@@ -10,14 +10,17 @@ Ingestão de documentos (XML/PDF) recebidos por Gmail, com classificação,
 atribuição manual a Pedido e geração de eventos para integração com o
 Controle de Tapetes.
 
-## Arquitetura local
+## Runtime e ferramentas
 
-- Node.js 22.22.3 / npm 10.9.8
-- TypeScript 5.7 (ESM strict)
-- better-sqlite3 (SQLite local)
-- googleapis (Gmail API + Drive API — preparado, validado em smoke real C2)
-- Vitest 3.0
-- Commander 13.1
+O serviço utiliza Node.js, TypeScript, SQLite, Google APIs e Vitest.
+
+As versões efetivas e os scripts disponíveis devem ser consultados diretamente em:
+
+- `package.json`
+- `package-lock.json`
+- `tsconfig.json`
+
+Não copiar números de versão para o state.
 
 ## Bancos e artefatos usados
 
@@ -35,16 +38,18 @@ Controle de Tapetes.
 - `services/documents-ingestor/docs/CONTROL_TAPETES_DOCUMENTS_CONTRACT.md`
 - `services/documents-ingestor/docs/SUPABASE_WRITER_RUNBOOK.md`
 
-## Migrations versionadas relacionadas
+## Migration relacionada
 
-- Migrations de Supabase (`db/NN_*.sql`) vivem no repositório do Controle
-  de Tapetes; este serviço as consome por RPC, não mantém SQL próprio.
-- `db/49_document_technical_evidences.sql` está versionada e permanece
-  `NOT APPLIED` em qualquer ambiente.
-- Nenhuma migration nova deve ser criada dentro de
-  `services/documents-ingestor/`.
+- `../../db/49_document_technical_evidences.sql`
+
+O estado de versionamento, aplicação e verificação por ambiente pertence
+ao `PROJECT_STATE.md` da raiz e ao ledger da frente.
 
 ## Testes e comandos estáveis
+
+A lista efetiva de scripts pertence a `package.json` (e lockfile);
+as entradas abaixo são apenas orientação resumida dos comandos
+mais usados pela frente.
 
 - `npm test` — suíte hermética do Ingestor.
 - `npm run test:ci` — alias para CI.
