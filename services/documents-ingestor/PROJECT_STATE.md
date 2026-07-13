@@ -1,3 +1,80 @@
+# CONTEXTO TÉCNICO DO COMPONENTE
+
+Este arquivo não é fonte do estado operacional atual da frente.
+Fase atual, próxima ação, workspace ativo e status canônico pertencem ao
+`PROJECT_STATE.md` da raiz.
+
+## Responsabilidade do serviço
+
+Ingestão de documentos (XML/PDF) recebidos por Gmail, com classificação,
+atribuição manual a Pedido e geração de eventos para integração com o
+Controle de Tapetes.
+
+## Arquitetura local
+
+- Node.js 22.22.3 / npm 10.9.8
+- TypeScript 5.7 (ESM strict)
+- better-sqlite3 (SQLite local)
+- googleapis (Gmail API + Drive API — preparado, validado em smoke real C2)
+- Vitest 3.0
+- Commander 13.1
+
+## Bancos e artefatos usados
+
+- SQLite local: `data/app.db` (com backups `data/*.backup-*`, ignorados
+  por `.gitignore`).
+- Outbox: `data/outbox/`
+- Exports: `data/exports/`
+- Run logs: `data/runs/`
+- `.env` permanece dentro do serviço.
+
+## Contratos relevantes
+
+- `services/documents-ingestor/contracts/document-event.schema.json`
+- `services/documents-ingestor/contracts/manifest.schema.json`
+- `services/documents-ingestor/docs/CONTROL_TAPETES_DOCUMENTS_CONTRACT.md`
+- `services/documents-ingestor/docs/SUPABASE_WRITER_RUNBOOK.md`
+
+## Migrations versionadas relacionadas
+
+- Migrations de Supabase (`db/NN_*.sql`) vivem no repositório do Controle
+  de Tapetes; este serviço as consome por RPC, não mantém SQL próprio.
+- `db/49_document_technical_evidences.sql` está versionada e permanece
+  `NOT APPLIED` em qualquer ambiente.
+- Nenhuma migration nova deve ser criada dentro de
+  `services/documents-ingestor/`.
+
+## Testes e comandos estáveis
+
+- `npm test` — suíte hermética do Ingestor.
+- `npm run test:ci` — alias para CI.
+- `npm run sync:mapped` — `scan → export mapped → report` (dry-run padrão).
+- `npm run export:ingestion-events` — exporta `ingestion-events.jsonl`.
+- `npm run watch:scan-requests` — watcher da fila de solicitações
+  (`--once` para operação manual controlada).
+- `npm run write:latest` — gera `latest.json` (manifest do último export).
+
+## Links canônicos
+
+- Estado canônico: `../../PROJECT_STATE.md`
+- Handoff ativo: `../../AGENT_HANDOFF.md`
+- Modelo documental: `../../docs/governance/DOCUMENTATION_MODEL.md`
+- Plano G28: `../../docs/architecture/DOCUMENTOS_VALIDACAO_VINCULOS_E_EVOLUCAO_PLANO.md`
+- Plano Pedido/OP/Movimentação/Documentos:
+  `../../docs/architecture/PEDIDO_OP_MOVIMENTACAO_DOCUMENTOS_PLANO.md`
+- Consumer design (Controle ↔ Ingestor):
+  `../../docs/architecture/DOCUMENTS_INGESTOR_CONSUMER_DESIGN.md`
+
+# REGISTROS HISTÓRICOS DO COMPONENTE — CONGELADOS
+
+O conteúdo abaixo é histórico pré-modelo e pode conter estados operacionais
+superados.
+Não usar para determinar fase atual ou próxima ação.
+Não atualizar com novos closeouts.
+A migração para ledger ocorrerá em slice posterior.
+
+---
+
 # PROJECT STATE
 
 > **Atualização 2026-07-12 — G28-B3-B5-A-C — TECHNICAL EVIDENCE SYNC DIAGNOSTIC DOCUMENTARY CLOSEOUT.**

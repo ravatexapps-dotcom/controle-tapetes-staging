@@ -1,3 +1,45 @@
+# ESTADO ATUAL CANÔNICO
+
+Este bloco é a única fonte de estado operacional atual por frente.
+HEAD, working tree, staging e divergência devem ser consultados diretamente no Git.
+O conteúdo histórico abaixo não determina o estado atual.
+
+## Bloco da frente ativa
+
+### Document Qualification / Documents Ingestor — G28
+
+- **Frente:** Document Qualification / Documents Ingestor — G28
+- **Workspace:** `D:\OneDrive\Programação\Ravatex\controle-tapetes-g28`
+- **Branch:** `work/g28-document-qualification`
+- **Remoto permitido:** nenhum push sem autorização expressa nesta cadeia
+- **Última fase aceita:** `G28-DOCS-B1` — `CLOSED / ACCEPTED`
+- **Fase em curso:** `G28-DOCS-B2` — `PATCH DOCUMENTAL EM EXECUÇÃO / AGUARDANDO GATE`
+- **Próxima ação:** gate do arquiteto para `G28-DOCS-B2`
+- **Fase técnica suspensa:** `G28-B3-B5-C` — `NOT STARTED / SUSPENDED`
+
+### Débitos relevantes
+
+- Migration 49 versionada, mas não aplicada.
+- Supabase real não acessado nesta cadeia.
+- Histórico documental ainda não migrado para ledger.
+
+### Links obrigatórios
+
+- Modelo de governança documental: `docs/governance/DOCUMENTATION_MODEL.md`
+- Árbitro de autoridade documental: `docs/DOCUMENTATION_INDEX.md`
+- Plano mestre G28: `docs/architecture/DOCUMENTOS_VALIDACAO_VINCULOS_E_EVOLUCAO_PLANO.md`
+- Plano Pedido/OP/Movimentação/Documentos: `docs/architecture/PEDIDO_OP_MOVIMENTACAO_DOCUMENTOS_PLANO.md`
+- Estado local do Ingestor (contexto técnico): `services/documents-ingestor/PROJECT_STATE.md`
+
+# HISTÓRICO LEGADO PRÉ-MODELO — CONGELADO
+
+O conteúdo abaixo é preservado para rastreabilidade até sua migração para ledgers.
+Não é fonte de estado atual.
+Não deve ser atualizado por novas fases.
+Não usar HEAD, branch, próxima fase ou status abaixo para rotear trabalho atual.
+
+---
+
 > **Atualização 2026-07-12 — G28-B3-B5-A-C — TECHNICAL EVIDENCE SYNC DIAGNOSTIC DOCUMENTARY CLOSEOUT.**
 > Status: **G28-B3-B5-A `CLOSED / ACCEPTED`**. Diagnóstico read-only concluído no branch `work/g28-document-qualification`; HEAD canônico atual `410951f7817809c57de7fb8f7071750789c92dd8` (`Reconcile G28 master plan status`), último closeout documental anterior. O diagnóstico não alterou arquivos, não gerou commit, não executou push, não acessou Supabase real e não aplicou migration.
 >

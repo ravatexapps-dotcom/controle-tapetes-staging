@@ -1,3 +1,46 @@
+# HANDOFF OPERACIONAL ATIVO
+
+- **Frente ativa:** G28 — Documentation Source-of-Truth Refactor
+- **Workspace:** `D:\OneDrive\Programação\Ravatex\controle-tapetes-g28`
+- **Branch:** `work/g28-document-qualification`
+- **Objetivo imediato:** concluir o gate de `G28-DOCS-B2` e, após aceite,
+  abrir `G28-DOCS-B3` para criação dos ledgers e extração controlada do
+  histórico.
+- **Estado de entrada:**
+  - `G28-DOCS-A` — `CLOSED / ACCEPTED`
+  - `G28-DOCS-B1` — `CLOSED / ACCEPTED`
+  - `G28-DOCS-B2` — `PATCH DOCUMENTAL EM EXECUÇÃO / AGUARDANDO GATE`
+  - `G28-B3-B5-C` — `SUSPENDED`
+- **Arquivos obrigatórios:**
+  - `docs/governance/DOCUMENTATION_MODEL.md`
+  - `docs/DOCUMENTATION_INDEX.md`
+  - `PROJECT_STATE.md`
+  - `AGENT_HANDOFF.md`
+  - `services/documents-ingestor/PROJECT_STATE.md`
+- **Restrições:**
+  - não retomar `G28-B3-B5-C`;
+  - não aplicar migration 49;
+  - não acessar Supabase real;
+  - não fazer push;
+  - não migrar nem excluir histórico antes do slice de ledger.
+- **Próxima entrega:** gate do arquiteto para `G28-DOCS-B2`; em caso de
+  aceite, autorização para abrir `G28-DOCS-B3` (closeout de ledgers e
+  extração de histórico).
+- **Links canônicos:**
+  - estado atual → `PROJECT_STATE.md`
+  - modelo documental → `docs/governance/DOCUMENTATION_MODEL.md`
+  - autoridade documental → `docs/DOCUMENTATION_INDEX.md`
+  - plano G28 → `docs/architecture/DOCUMENTOS_VALIDACAO_VINCULOS_E_EVOLUCAO_PLANO.md`
+
+# HISTÓRICO DE HANDOFFS — CONGELADO
+
+O conteúdo abaixo é histórico pré-modelo.
+Não representa o handoff operacional ativo.
+Não deve receber novos closeouts.
+Será migrado ou arquivado em slice posterior.
+
+---
+
 # G28-B3-B5-A-C — TECHNICAL EVIDENCE SYNC DIAGNOSTIC DOCUMENTARY CLOSEOUT
 
 - Status: **`G28-B3-B5-A — CLOSED / ACCEPTED`**. O diagnóstico foi exclusivamente read-only: sem implementação, alteração de arquivos, commit, push, acesso ao Supabase real ou migration apply.
