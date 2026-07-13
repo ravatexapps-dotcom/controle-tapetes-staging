@@ -1,26 +1,37 @@
 # HANDOFF OPERACIONAL ATIVO
 
-- **Frente ativa:** G28 — technical evidence reader aceito; próxima fase requer decisão de arquiteto
+- **Frente ativa:** G28 — G28-B4 closed and accepted; próxima fase B5 — human validation contract and modal
 - **Workspace:** `D:\OneDrive\Programação\Ravatex\controle-tapetes-g28`
 - **Branch:** `work/g28-document-qualification`
-- **Fase aceita mais recente:** `G28-B3-B6-B — CURRENT TECHNICAL EVIDENCE ADMIN READER` — `CLOSED / ACCEPTED`
-- **Commit técnico:** `6ade74fd6b8584320dbf12df1dbf334aeabbc8b6` — `Read current technical evidence in document reader`
-- **Arquivos alterados:** somente `js/documents-supabase-reader.js` e `tests/documents-supabase-reader.test.js`
-- **Contrato reader estável:**
-  - interface pública: `window.RAVATEX_DOCUMENTS.loadReceivedDocumentsFromSupabase()` (preservada)
-  - attachment interno: `_ravatex_technical_evidence`
-  - fonte remota: `public.document_technical_evidences`
-  - acesso: admin autenticado direto, RLS existente
-  - versão: corrente (`evidence_version` highest valid positive numeric)
-  - estados: `available`, `missing`, `invalid` distintos; falha remota ≠ `missing`
-  - sem fallback para evidência mais antiga; sem evidência histórica
-- **Validação:** `node --check` passou; 39 reader tests aprovados; 91 screen smoke tests aprovados; `git diff --check` limpo
-- **Revisão independente:** APPROVE
-- **Baseline Git pré-closeout:** `6ade74fd6b8584320dbf12df1dbf334aeabbc8b6`; worktree/staging limpos; zero untracked
-- **Produção:** não acessada.
-- **Push:** não executado.
-- **Code-health watch:** reader 268 linhas; reader test 618 linhas; qualquer expansão funcional substancial exige nova revisão de coesão antes de adicionar lógica substancial a qualquer um dos dois arquivos.
-- **Arquivos autoritativos obrigatórios antes de qualquer próxima implementação:**
+- **Fase aceita mais recente:** `G28-B4 — DOCUMENT QUEUE` — `CLOSED / ACCEPTED`
+- **Commit técnico aceito:** `f007ab3c733d584e9da57c8436294d9b42ea9652` — `Consolidate document queue file access`
+- **Cadeia B4 aceita:**
+  - `50f543ff8c6917599cf35768e9e84531532bf177` — Add pure document queue read model
+  - `d0f0424924b57b3754fe87a0be0336292f5c2b74` — Bind received documents queue filters
+  - `948213885506fdb6e41cfe10451af21e006ce441` — Distinguish missing Pedido link availability
+  - `2958e6451b49986ac1af414e62cd31df698dcaa5` — Show document queue state indicators
+  - `f007ab3c733d584e9da57c8436294d9b42ea9652` — Consolidate document queue file access
+- **Contratos estáveis:** queue read model puro, sem Supabase/DOM/network/write; binding/filtros aceitos; indicadores; drive action gate; sem action/modal/write/RPC/backend/Gmail/filesystem
+- **Validação:** model 48, queue UI 58, decisions 20, reader 39, screen smoke 133, import received 36, import UI 40, router 43; 3 node checks; diff check limpo (apenas avisos pré-existentes LF→CRLF)
+- **Baseline Git pré-closeout:** `f007ab3c733d584e9da57c8436294d9b42ea9652`; worktree/staging limpos; zero untracked
+- **Produção:** não acessada
+- **Push:** não executado
+- **Próxima fase:** `G28-B5 — HUMAN VALIDATION CONTRACT AND MODAL`
+- **Próxima ação autorizada:** `G28-B5-A — Human validation, persistence, and linking boundary diagnosis`
+- **Diagnóstico B5-A — perguntas obrigatórias:**
+  - Quais writes remotos de decisão existem hoje e qual o contrato de cada um?
+  - Quais as responsabilidades do modal de validação humana (escopo vs. B5 writes)?
+  - Quais writes B5 persistirão (decisão, vínculo, justificativa)?
+  - Qual o linking canônico Pedido/OP em B6 e como B5 o prepara?
+  - Quais os limites entre accepted/rejected/justification/correction/revocation?
+  - Quais ações de decisão legadas devem ser preservadas, migradas ou retiradas?
+  - Qual a exata propriedade de UI/persistence/RPC/audit entre as camadas?
+- **Hard prohibitions:**
+  - `Do not implement B5.`
+  - `Do not modify code, UI, tests, schema, Supabase, or production.`
+  - `Do not reopen G28-B4.`
+  - `Do not push.`
+- **Arquivos autoritativos obrigatórios antes da próxima implementação:**
   - `PROJECT_STATE.md`
   - `AGENT_HANDOFF.md`
   - `docs/DOCUMENTATION_INDEX.md`
@@ -29,16 +40,7 @@
   - `docs/architecture/DOCUMENTOS_VALIDACAO_VINCULOS_E_EVOLUCAO_PLANO.md`
   - `docs/architecture/DOCUMENTS_INGESTOR_CONSUMER_DESIGN.md`
   - `docs/architecture/CODE_HEALTH_RULES.md`
-  - `docs/architecture/PEDIDO_OP_MOVIMENTACAO_DOCUMENTOS_PLANO.md`
-  - `docs/architecture/PEDIDO_PRODUCTION_FLOW_BACKLOG.md`
-  - `services/documents-ingestor/PROJECT_STATE.md`
-- **Próxima fase substantiva:** `NEXT SUBSTANTIVE PHASE: REQUIRES ARCHITECT DECISION`.
-  O plano mestre autoritativo (`DOCUMENTOS_VALIDACAO_VINCULOS_E_EVOLUCAO_PLANO.md`) está inconsistente com a baseline aceita B3-B5-C e B6-B (ainda nomeia B3-B5-B como `NOT STARTED` e posiciona diferentemente os estágios genéricos posteriores), enquanto os demais planos/backlogs obrigatórios cobrem preocupações separadas de Pedido/OP e produção. Os planos/backlogs autoritativos não sequenciam univocamente um sucessor após a baseline B6-B aceita; um arquiteto deve reconciliar o plano/backlog G28 antes de uma nova fase de implementação.
-- **Restrições explícitas:**
-  - `Do not reopen G28-B3-B6-B.`
-  - `Do not add UI, historical evidence, human decisions, database changes, or Documents Ingestor changes without a new explicit phase.`
-  - Não editar snapshots; não aplicar migrations pendentes em lote; não acessar produção/origin; não fazer push.
-- **Links canônicos:** estado → `PROJECT_STATE.md`; ledger → `docs/ledgers/G28_LEDGER.md`; contexto do componente → `services/documents-ingestor/PROJECT_STATE.md`.
+- **Links canônicos:** estado → `PROJECT_STATE.md`; ledger → `docs/ledgers/G28_LEDGER.md`
 
 # HISTÓRICO DE HANDOFFS — ARQUIVADO
 
