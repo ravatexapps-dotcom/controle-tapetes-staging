@@ -22,6 +22,7 @@
     'ingestor_event_id', 'ingestor_rejected_reason', 'schema_version', 'criado_em'
   ].join(', ');
   var DECISION_FIELDS = 'document_id, status, motivo, decidido_em, source';
+  var EVIDENCE_FIELDS = 'document_id, evidence_version, technical_evidence, origin, created_at';
 
   function asString(value) {
     return typeof value === 'string' ? value : null;
@@ -49,6 +50,92 @@
         && !!candidate.ingestor_rejected_reason.trim();
     }
     return true;
+  }
+
+  function validateEvidenceEnvelope(row) {
+    var docId = row && row.document_id;
+    if (typeof docId !== 'string' || !docId.trim()) {
+      return { valid: false, reason: 'invalid_document_id' };
+    }
+
+    var version = row.evidence_version;
+    if (typeof version !== 'number' || !Number.isInteger(version) || version < 1) {
+      return { valid: false, reason: 'invalid_evidence_version' };
+    }
+
+    var te = row.technical_evidence;
+    if (!te || typeof te !== 'object' || Array.isArray(te)) {
+      return { valid: false, reason: 'invalid_technical_evidence' };
+    }
+
+    var origin = row.origin;
+    if (!origin || typeof origin !== 'object' || Array.isArray(origin)) {
+      return { valid: false, reason: 'invalid_origin' };
+    }
+
+    var originVersion = origin.evidenceVersion;
+    if (typeof originVersion !== 'number' || !Number.isInteger(originVersion) || originVersion < 1) {
+      return { valid: false, reason: 'invalid_origin_evidence_version' };
+    }
+
+    if (originVersion !== version) {
+      return { valid: false, reason: 'origin_evidence_version_mismatch' };
+    }
+
+    return { valid: true };
+  }
+
+  function attachTechnicalEvidences(documents, evidenceRows) {
+    var evidenceByDocId = {};
+    (evidenceRows || []).forEach(function (row) {
+      if (!row || typeof row.document_id !== 'string' || !row.document_id) return;
+      var docId = row.document_id;
+      if (!evidenceByDocId[docId]) evidenceByDocId[docId] = [];
+      evidenceByDocId[docId].push(row);
+    });
+
+    documents.forEach(function (doc) {
+      var rows = evidenceByDocId[doc.document_id] || [];
+
+      if (rows.length === 0) {
+        doc._ravatex_technical_evidence = { state: 'missing' };
+        return;
+      }
+
+      var maxVersion = -1;
+      var maxRow = null;
+      for (var i = 0; i < rows.length; i++) {
+        var row = rows[i];
+        var version = row.evidence_version;
+        if (typeof version === 'number' && Number.isInteger(version) && version >= 1 && version > maxVersion) {
+          maxVersion = version;
+          maxRow = row;
+        }
+      }
+
+      if (!maxRow) {
+        doc._ravatex_technical_evidence = { state: 'invalid', evidenceVersion: null, reason: 'invalid_evidence_version' };
+        return;
+      }
+
+      var validation = validateEvidenceEnvelope(maxRow);
+      if (!validation.valid) {
+        doc._ravatex_technical_evidence = {
+          state: 'invalid',
+          evidenceVersion: maxVersion,
+          reason: validation.reason,
+        };
+        return;
+      }
+
+      doc._ravatex_technical_evidence = {
+        state: 'available',
+        evidenceVersion: maxVersion,
+        technicalEvidence: maxRow.technical_evidence,
+        origin: maxRow.origin,
+        createdAt: maxRow.created_at,
+      };
+    });
   }
 
   function mapCandidate(candidate, decisionsByDocumentId) {
@@ -131,14 +218,48 @@
         }
 
         var decisionsByDocumentId = mapDecisions(decisionsResult.data || []);
-        var documents = (candidatesResult.data || []).map(function (candidate) {
+        var candidates = candidatesResult.data || [];
+        var documents = candidates.map(function (candidate) {
           return mapCandidate(candidate, decisionsByDocumentId);
         });
-        var setResult = ns.setReceivedDocuments(documents, { source: 'supabase' });
-        if (!setResult || !setResult.ok) {
-          return { ok: false, source: 'supabase', error: setResult && setResult.error || 'received_set_failed' };
+
+        var candidateDocIds = [];
+        for (var i = 0; i < candidates.length; i++) {
+          if (candidates[i] && candidates[i].document_id) {
+            candidateDocIds.push(candidates[i].document_id);
+          }
         }
-        return { ok: true, source: 'supabase', count: setResult.count, documents: window.RAVATEX_DOCUMENTS_RECEIVED };
+
+        if (candidateDocIds.length === 0) {
+          var setResultEmpty = ns.setReceivedDocuments(documents, { source: 'supabase' });
+          if (!setResultEmpty || !setResultEmpty.ok) {
+            return { ok: false, source: 'supabase', error: setResultEmpty && setResultEmpty.error || 'received_set_failed' };
+          }
+          return { ok: true, source: 'supabase', count: setResultEmpty.count, documents: window.RAVATEX_DOCUMENTS_RECEIVED };
+        }
+
+        var evidenceQuery;
+        try {
+          evidenceQuery = window.supa.from('document_technical_evidences')
+            .select(EVIDENCE_FIELDS)
+            .in('document_id', candidateDocIds);
+        } catch (err) {
+          return { ok: false, source: 'supabase', error: String(err) };
+        }
+
+        return evidenceQuery.then(function (evidenceResult) {
+          if (evidenceResult && evidenceResult.error) {
+            return { ok: false, source: 'supabase', error: String(evidenceResult.error) };
+          }
+
+          attachTechnicalEvidences(documents, evidenceResult && evidenceResult.data);
+
+          var setResult = ns.setReceivedDocuments(documents, { source: 'supabase' });
+          if (!setResult || !setResult.ok) {
+            return { ok: false, source: 'supabase', error: setResult && setResult.error || 'received_set_failed' };
+          }
+          return { ok: true, source: 'supabase', count: setResult.count, documents: window.RAVATEX_DOCUMENTS_RECEIVED };
+        });
       })
       .catch(function (err) {
         return { ok: false, source: 'supabase', error: String(err) };

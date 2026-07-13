@@ -16,6 +16,7 @@ function makeQuery(result, calls, table) {
   return {
     select: function (fields) { calls.push({ table: table, method: 'select', fields: fields }); return this; },
     eq: function (field, value) { calls.push({ table: table, method: 'eq', field: field, value: value }); return this; },
+    in: function (field, values) { calls.push({ table: table, method: 'in', field: field, values: values }); return this; },
     order: function (field) { calls.push({ table: table, method: 'order', field: field }); return this; },
     then: function (resolve, reject) { return Promise.resolve(result).then(resolve, reject); },
   };
@@ -30,7 +31,17 @@ function makeSandbox(options) {
     sandbox.supa = {
       from: function (table) {
         calls.push({ table: table, method: 'from' });
-        return makeQuery(table === 'document_candidates' ? options.candidatesResult : options.decisionsResult, calls, table);
+        var result;
+        if (table === 'document_candidates') {
+          result = options.candidatesResult;
+        } else if (table === 'document_decisions') {
+          result = options.decisionsResult;
+        } else if (table === 'document_technical_evidences') {
+          result = options.evidenceResult || { data: [] };
+        } else {
+          result = { data: [] };
+        }
+        return makeQuery(result, calls, table);
       },
     };
   }
@@ -164,4 +175,444 @@ test('reader: nao contem writes nem RPCs', function () {
   assert.equal(/\.delete\s*\(/.test(READER), false);
   assert.equal(/\.upsert\s*\(/.test(READER), false);
   assert.equal(/\.rpc\s*\(/.test(READER), false);
+});
+
+// =====================================================================
+// G28-B3-B6 — Technical Evidence Reader Tests (RED phase)
+// =====================================================================
+
+function makeEvidenceRow(docId, version, technicalEvidence, origin, createdAt) {
+  return {
+    document_id: docId,
+    evidence_version: version,
+    technical_evidence: technicalEvidence,
+    origin: origin,
+    created_at: createdAt,
+  };
+}
+
+var defaultOrigin = { source: 'ingestor', evidenceVersion: 1, runId: 'run-01' };
+var defaultEvidence = { hash: 'abc123', payload: { v: 1 } };
+var defaultCreatedAt = '2026-07-09T14:00:00.000Z';
+
+// 1. One evidence attached as available
+test('evidence: um documento com evidencia valida recebe state=available', async function () {
+  var evidence = makeEvidenceRow(candidate.document_id, 1, defaultEvidence, defaultOrigin, defaultCreatedAt);
+  var rt = makeSandbox({
+    candidatesResult: { data: [candidate] },
+    decisionsResult: { data: [] },
+    evidenceResult: { data: [evidence] },
+  });
+  var result = await rt.ns.loadReceivedDocumentsFromSupabase();
+  assert.equal(result.ok, true);
+  var doc = rt.sandbox.RAVATEX_DOCUMENTS_RECEIVED[0];
+  assert.ok(doc._ravatex_technical_evidence, 'doc deve ter evidencia');
+  assert.equal(doc._ravatex_technical_evidence.state, 'available');
+  assert.equal(doc._ravatex_technical_evidence.evidenceVersion, 1);
+  assert.deepStrictEqual(doc._ravatex_technical_evidence.technicalEvidence, defaultEvidence);
+  assert.deepStrictEqual(doc._ravatex_technical_evidence.origin, defaultOrigin);
+  assert.equal(doc._ravatex_technical_evidence.createdAt, defaultCreatedAt);
+});
+
+// 2. evidence query uses in filter restricted to candidate doc_ids
+test('evidence: consulta evidencia restrita aos document_ids dos candidatos', async function () {
+  var rt = makeSandbox({
+    candidatesResult: { data: [candidate] },
+    decisionsResult: { data: [] },
+    evidenceResult: { data: [] },
+  });
+  await rt.ns.loadReceivedDocumentsFromSupabase();
+  var evidenceFrom = rt.calls.find(function (c) { return c.table === 'document_technical_evidences' && c.method === 'from'; });
+  assert.ok(evidenceFrom, 'evidence from chamado');
+  var evidenceIn = rt.calls.find(function (c) { return c.table === 'document_technical_evidences' && c.method === 'in'; });
+  assert.ok(evidenceIn, 'evidence in chamado');
+  assert.equal(evidenceIn.field, 'document_id');
+  assert.ok(Array.isArray(evidenceIn.values));
+  assert.ok(evidenceIn.values.indexOf(candidate.document_id) >= 0);
+  var evidenceSelect = rt.calls.find(function (c) { return c.table === 'document_technical_evidences' && c.method === 'select'; });
+  assert.ok(evidenceSelect, 'evidence select chamado');
+  assert.equal(evidenceSelect.fields, 'document_id, evidence_version, technical_evidence, origin, created_at',
+    'evidence select contem exatamente os campos do contrato e na ordem especificada');
+});
+
+// 3. Multiple unordered versions — highest numeric selected
+test('evidence: seleciona a maior versao numerica dentre multiplas linhas desordenadas', async function () {
+  var originV2 = { source: 'ingestor', evidenceVersion: 2, runId: 'run-02' };
+  var evidenceV2 = { hash: 'def456', payload: { v: 2 } };
+  var rows = [
+    makeEvidenceRow(candidate.document_id, 2, evidenceV2, originV2, '2026-07-10T10:00:00.000Z'),
+    makeEvidenceRow(candidate.document_id, 1, defaultEvidence, defaultOrigin, defaultCreatedAt),
+  ];
+  var rt = makeSandbox({
+    candidatesResult: { data: [candidate] },
+    decisionsResult: { data: [] },
+    evidenceResult: { data: rows },
+  });
+  var result = await rt.ns.loadReceivedDocumentsFromSupabase();
+  assert.equal(result.ok, true);
+  var ev = rt.sandbox.RAVATEX_DOCUMENTS_RECEIVED[0]._ravatex_technical_evidence;
+  assert.equal(ev.state, 'available');
+  assert.equal(ev.evidenceVersion, 2);
+  assert.deepStrictEqual(ev.technicalEvidence, evidenceV2);
+});
+
+// 4. created_at is audit only — older version with later timestamp does NOT win
+test('evidence: created_at e dado de auditoria — versao menor com created_at posterior nao vence', async function () {
+  var originV2 = { source: 'ingestor', evidenceVersion: 2, runId: 'run-02' };
+  var evidenceV2 = { hash: 'v2', payload: { v: 2 } };
+  var laterTimestamp = '2026-07-11T10:00:00.000Z';
+  var earlierTimestamp = '2026-07-10T10:00:00.000Z';
+  var rows = [
+    makeEvidenceRow(candidate.document_id, 1, defaultEvidence, defaultOrigin, laterTimestamp),
+    makeEvidenceRow(candidate.document_id, 2, evidenceV2, originV2, earlierTimestamp),
+  ];
+  var rt = makeSandbox({
+    candidatesResult: { data: [candidate] },
+    decisionsResult: { data: [] },
+    evidenceResult: { data: rows },
+  });
+  await rt.ns.loadReceivedDocumentsFromSupabase();
+  var ev = rt.sandbox.RAVATEX_DOCUMENTS_RECEIVED[0]._ravatex_technical_evidence;
+  assert.equal(ev.state, 'available');
+  assert.equal(ev.evidenceVersion, 2, 'evidence_version 2 deve vencer apesar de created_at anterior');
+  assert.deepStrictEqual(ev.technicalEvidence, evidenceV2);
+  assert.strictEqual(ev.createdAt, earlierTimestamp);
+});
+
+// 5. Missing — no evidence row for candidate
+test('evidence: candidate sem evidencia recebe state=missing', async function () {
+  var rt = makeSandbox({
+    candidatesResult: { data: [candidate] },
+    decisionsResult: { data: [] },
+    evidenceResult: { data: [] },
+  });
+  var result = await rt.ns.loadReceivedDocumentsFromSupabase();
+  assert.equal(result.ok, true);
+  assert.equal(rt.sandbox.RAVATEX_DOCUMENTS_RECEIVED[0]._ravatex_technical_evidence.state, 'missing');
+});
+
+// 6. Unknown/outside candidate ignored (evidence for doc not in candidates)
+test('evidence: evidencia de documento fora dos candidatos e ignorada', async function () {
+  var evidence = makeEvidenceRow('outside-doc-id', 1, defaultEvidence, defaultOrigin, defaultCreatedAt);
+  var rt = makeSandbox({
+    candidatesResult: { data: [candidate] },
+    decisionsResult: { data: [] },
+    evidenceResult: { data: [evidence] },
+  });
+  var result = await rt.ns.loadReceivedDocumentsFromSupabase();
+  assert.equal(result.ok, true);
+  assert.equal(rt.sandbox.RAVATEX_DOCUMENTS_RECEIVED.length, 1);
+  assert.equal(rt.sandbox.RAVATEX_DOCUMENTS_RECEIVED[0].document_id, candidate.document_id);
+  assert.equal(rt.sandbox.RAVATEX_DOCUMENTS_RECEIVED[0]._ravatex_technical_evidence.state, 'missing');
+});
+
+// 7. Non-object technical_evidence → invalid
+test('evidence: technical_evidence string retorna state=invalid', async function () {
+  var evidence = makeEvidenceRow(candidate.document_id, 1, 'nao-sou-objeto', defaultOrigin, defaultCreatedAt);
+  var rt = makeSandbox({
+    candidatesResult: { data: [candidate] },
+    decisionsResult: { data: [] },
+    evidenceResult: { data: [evidence] },
+  });
+  await rt.ns.loadReceivedDocumentsFromSupabase();
+  var ev = rt.sandbox.RAVATEX_DOCUMENTS_RECEIVED[0]._ravatex_technical_evidence;
+  assert.equal(ev.state, 'invalid');
+  assert.equal(ev.evidenceVersion, 1);
+  assert.equal(ev.reason, 'invalid_technical_evidence');
+});
+
+test('evidence: technical_evidence null retorna state=invalid', async function () {
+  var evidence = makeEvidenceRow(candidate.document_id, 1, null, defaultOrigin, defaultCreatedAt);
+  var rt = makeSandbox({
+    candidatesResult: { data: [candidate] },
+    decisionsResult: { data: [] },
+    evidenceResult: { data: [evidence] },
+  });
+  await rt.ns.loadReceivedDocumentsFromSupabase();
+  var ev = rt.sandbox.RAVATEX_DOCUMENTS_RECEIVED[0]._ravatex_technical_evidence;
+  assert.equal(ev.state, 'invalid');
+  assert.equal(ev.reason, 'invalid_technical_evidence');
+});
+
+test('evidence: technical_evidence number retorna state=invalid', async function () {
+  var evidence = makeEvidenceRow(candidate.document_id, 1, 42, defaultOrigin, defaultCreatedAt);
+  var rt = makeSandbox({
+    candidatesResult: { data: [candidate] },
+    decisionsResult: { data: [] },
+    evidenceResult: { data: [evidence] },
+  });
+  await rt.ns.loadReceivedDocumentsFromSupabase();
+  var ev = rt.sandbox.RAVATEX_DOCUMENTS_RECEIVED[0]._ravatex_technical_evidence;
+  assert.equal(ev.state, 'invalid');
+  assert.equal(ev.reason, 'invalid_technical_evidence');
+});
+
+// 8. Array technical_evidence → invalid
+test('evidence: technical_evidence array retorna state=invalid', async function () {
+  var evidence = makeEvidenceRow(candidate.document_id, 1, [1, 2, 3], defaultOrigin, defaultCreatedAt);
+  var rt = makeSandbox({
+    candidatesResult: { data: [candidate] },
+    decisionsResult: { data: [] },
+    evidenceResult: { data: [evidence] },
+  });
+  await rt.ns.loadReceivedDocumentsFromSupabase();
+  var ev = rt.sandbox.RAVATEX_DOCUMENTS_RECEIVED[0]._ravatex_technical_evidence;
+  assert.equal(ev.state, 'invalid');
+  assert.equal(ev.reason, 'invalid_technical_evidence');
+});
+
+// 9. Non-object origin → invalid
+test('evidence: origin string retorna state=invalid', async function () {
+  var evidence = makeEvidenceRow(candidate.document_id, 1, defaultEvidence, 'nao-sou-objeto', defaultCreatedAt);
+  var rt = makeSandbox({
+    candidatesResult: { data: [candidate] },
+    decisionsResult: { data: [] },
+    evidenceResult: { data: [evidence] },
+  });
+  await rt.ns.loadReceivedDocumentsFromSupabase();
+  var ev = rt.sandbox.RAVATEX_DOCUMENTS_RECEIVED[0]._ravatex_technical_evidence;
+  assert.equal(ev.state, 'invalid');
+  assert.equal(ev.reason, 'invalid_origin');
+});
+
+test('evidence: origin null retorna state=invalid', async function () {
+  var evidence = makeEvidenceRow(candidate.document_id, 1, defaultEvidence, null, defaultCreatedAt);
+  var rt = makeSandbox({
+    candidatesResult: { data: [candidate] },
+    decisionsResult: { data: [] },
+    evidenceResult: { data: [evidence] },
+  });
+  await rt.ns.loadReceivedDocumentsFromSupabase();
+  var ev = rt.sandbox.RAVATEX_DOCUMENTS_RECEIVED[0]._ravatex_technical_evidence;
+  assert.equal(ev.state, 'invalid');
+  assert.equal(ev.reason, 'invalid_origin');
+});
+
+test('evidence: origin array retorna state=invalid', async function () {
+  var evidence = makeEvidenceRow(candidate.document_id, 1, defaultEvidence, [1, 2, 3], defaultCreatedAt);
+  var rt = makeSandbox({
+    candidatesResult: { data: [candidate] },
+    decisionsResult: { data: [] },
+    evidenceResult: { data: [evidence] },
+  });
+  await rt.ns.loadReceivedDocumentsFromSupabase();
+  var ev = rt.sandbox.RAVATEX_DOCUMENTS_RECEIVED[0]._ravatex_technical_evidence;
+  assert.equal(ev.state, 'invalid');
+  assert.equal(ev.reason, 'invalid_origin');
+});
+
+// 10. Invalid origin version (not integer or < 1)
+test('evidence: origin.evidenceVersion string retorna state=invalid', async function () {
+  var badOrigin = { source: 'ingestor', evidenceVersion: '1' };
+  var evidence = makeEvidenceRow(candidate.document_id, 1, defaultEvidence, badOrigin, defaultCreatedAt);
+  var rt = makeSandbox({
+    candidatesResult: { data: [candidate] },
+    decisionsResult: { data: [] },
+    evidenceResult: { data: [evidence] },
+  });
+  await rt.ns.loadReceivedDocumentsFromSupabase();
+  var ev = rt.sandbox.RAVATEX_DOCUMENTS_RECEIVED[0]._ravatex_technical_evidence;
+  assert.equal(ev.state, 'invalid');
+  assert.equal(ev.reason, 'invalid_origin_evidence_version');
+});
+
+test('evidence: origin.evidenceVersion < 1 retorna state=invalid', async function () {
+  var badOrigin = { source: 'ingestor', evidenceVersion: 0 };
+  var evidence = makeEvidenceRow(candidate.document_id, 1, defaultEvidence, badOrigin, defaultCreatedAt);
+  var rt = makeSandbox({
+    candidatesResult: { data: [candidate] },
+    decisionsResult: { data: [] },
+    evidenceResult: { data: [evidence] },
+  });
+  await rt.ns.loadReceivedDocumentsFromSupabase();
+  var ev = rt.sandbox.RAVATEX_DOCUMENTS_RECEIVED[0]._ravatex_technical_evidence;
+  assert.equal(ev.state, 'invalid');
+  assert.equal(ev.reason, 'invalid_origin_evidence_version');
+});
+
+test('evidence: origin.evidenceVersion float retorna state=invalid', async function () {
+  var badOrigin = { source: 'ingestor', evidenceVersion: 1.5 };
+  var evidence = makeEvidenceRow(candidate.document_id, 1, defaultEvidence, badOrigin, defaultCreatedAt);
+  var rt = makeSandbox({
+    candidatesResult: { data: [candidate] },
+    decisionsResult: { data: [] },
+    evidenceResult: { data: [evidence] },
+  });
+  await rt.ns.loadReceivedDocumentsFromSupabase();
+  var ev = rt.sandbox.RAVATEX_DOCUMENTS_RECEIVED[0]._ravatex_technical_evidence;
+  assert.equal(ev.state, 'invalid');
+  assert.equal(ev.reason, 'invalid_origin_evidence_version');
+});
+
+// 11. Version mismatch (origin.evidenceVersion !== evidence_version)
+test('evidence: versao do origin divergente da linha retorna state=invalid', async function () {
+  var mismatchedOrigin = { source: 'ingestor', evidenceVersion: 99 };
+  var evidence = makeEvidenceRow(candidate.document_id, 1, defaultEvidence, mismatchedOrigin, defaultCreatedAt);
+  var rt = makeSandbox({
+    candidatesResult: { data: [candidate] },
+    decisionsResult: { data: [] },
+    evidenceResult: { data: [evidence] },
+  });
+  await rt.ns.loadReceivedDocumentsFromSupabase();
+  var ev = rt.sandbox.RAVATEX_DOCUMENTS_RECEIVED[0]._ravatex_technical_evidence;
+  assert.equal(ev.state, 'invalid');
+  assert.equal(ev.evidenceVersion, 1);
+  assert.equal(ev.reason, 'origin_evidence_version_mismatch');
+});
+
+// 12. Invalid highest version — no fallback to older valid version
+test('evidence: maior versao numerica invalida nao faz fallback para versao anterior valida', async function () {
+  var rows = [
+    makeEvidenceRow(candidate.document_id, 1, defaultEvidence, defaultOrigin, defaultCreatedAt),
+    makeEvidenceRow(candidate.document_id, 2, 'nao-objeto', defaultOrigin, '2026-07-10T10:00:00.000Z'),
+  ];
+  var rt = makeSandbox({
+    candidatesResult: { data: [candidate] },
+    decisionsResult: { data: [] },
+    evidenceResult: { data: rows },
+  });
+  await rt.ns.loadReceivedDocumentsFromSupabase();
+  var ev = rt.sandbox.RAVATEX_DOCUMENTS_RECEIVED[0]._ravatex_technical_evidence;
+  assert.equal(ev.state, 'invalid');
+  assert.equal(ev.evidenceVersion, 2, 'deve reportar a maior versao (2), nao fallback para 1');
+});
+
+// 13. Evidence query failure → ok:false, documents preserved
+test('evidence: falha na consulta de evidencia retorna ok false e nao substitui documentos', async function () {
+  var rt = makeSandbox({
+    candidatesResult: { data: [candidate] },
+    decisionsResult: { data: [] },
+    evidenceResult: { error: { message: 'evidence table not found' } },
+  });
+  rt.sandbox.RAVATEX_DOCUMENTS_RECEIVED = [{ document_id: 'manual-doc' }];
+  var result = await rt.ns.loadReceivedDocumentsFromSupabase();
+  assert.equal(result.ok, false);
+  assert.equal(result.source, 'supabase');
+  assert.ok(typeof result.error === 'string');
+  assert.equal(rt.sandbox.RAVATEX_DOCUMENTS_RECEIVED[0].document_id, 'manual-doc');
+  assert.equal(rt.sandbox.RAVATEX_DOCUMENTS_RECEIVED.length, 1);
+});
+
+// 14. Authorization-style error → ok:false
+test('evidence: erro de autorizacao na evidencia retorna ok false', async function () {
+  var rt = makeSandbox({
+    candidatesResult: { data: [candidate] },
+    decisionsResult: { data: [] },
+    evidenceResult: { error: { message: 'permission denied for table document_technical_evidences', code: '42501' } },
+  });
+  var result = await rt.ns.loadReceivedDocumentsFromSupabase();
+  assert.equal(result.ok, false);
+  assert.equal(result.source, 'supabase');
+});
+
+// 15. Decisions unchanged — decision overlay still works with evidence
+test('evidence: decisao ativa continua funcionando com evidencia anexada', async function () {
+  var decision = { document_id: candidate.document_id, status: 'rejected', motivo: 'Arquivo ilegivel', decidido_em: '2026-07-09T12:00:00.000Z', source: 'manual', ativo: true };
+  var candidateWithBase = Object.assign({}, candidate, {
+    ingestor_status: 'assigned',
+    ingestor_state_at: '2026-07-09T10:02:00.000Z',
+    ingestor_event_id: 'ingevt-assigned-99',
+    ingestor_rejected_reason: null,
+  });
+  var evidence = makeEvidenceRow(candidate.document_id, 1, defaultEvidence, defaultOrigin, defaultCreatedAt);
+  var rt = makeSandbox({
+    candidatesResult: { data: [candidateWithBase] },
+    decisionsResult: { data: [decision] },
+    evidenceResult: { data: [evidence] },
+  });
+  await rt.ns.loadReceivedDocumentsFromSupabase();
+  var doc = rt.sandbox.RAVATEX_DOCUMENTS_RECEIVED[0];
+  assert.equal(doc.status, 'rejected');
+  assert.equal(doc.rejected_reason, 'Arquivo ilegivel');
+  assert.equal(doc._ravatex_decision_source, 'server');
+  assert.equal(doc._ravatex_can_undo_server_decision, true);
+  assert.equal(doc._ravatex_technical_evidence.state, 'available');
+});
+
+// 16. Evidence and origin objects not mutated
+test('evidence: nao muta objetos de technical_evidence nem origin', async function () {
+  var originalEvidence = JSON.parse(JSON.stringify(defaultEvidence));
+  var originalOrigin = JSON.parse(JSON.stringify(defaultOrigin));
+  var evidence = makeEvidenceRow(candidate.document_id, 1, defaultEvidence, defaultOrigin, defaultCreatedAt);
+  var rt = makeSandbox({
+    candidatesResult: { data: [candidate] },
+    decisionsResult: { data: [] },
+    evidenceResult: { data: [evidence] },
+  });
+  await rt.ns.loadReceivedDocumentsFromSupabase();
+  assert.deepStrictEqual(defaultEvidence, originalEvidence, 'technical_evidence nao foi mutado');
+  assert.deepStrictEqual(defaultOrigin, originalOrigin, 'origin nao foi mutado');
+});
+
+// 17. No writes or RPCs (including evidence table)
+test('evidence: nenhuma escrita ou RPC mesmo com tabela de evidencia', function () {
+  assert.equal(/\.insert\s*\(/.test(READER), false);
+  assert.equal(/\.update\s*\(/.test(READER), false);
+  assert.equal(/\.delete\s*\(/.test(READER), false);
+  assert.equal(/\.upsert\s*\(/.test(READER), false);
+  assert.equal(/\.rpc\s*\(/.test(READER), false);
+});
+
+// 18. Screen fallback compatibility — tela referencia loadReceivedDocumentsFromSupabase
+test('evidence: tela documentoS-recebidos referencia loadReceivedDocumentsFromSupabase para fallback', function () {
+  var screenPath = path.join(ROOT, 'js', 'screens', 'documentos-recebidos.js');
+  var screenSource = fs.readFileSync(screenPath, 'utf8');
+  assert.ok(screenSource.indexOf('loadReceivedDocumentsFromSupabase') >= 0,
+    'tela deve referenciar o reader');
+  assert.equal(/window\.supa/.test(screenSource), false,
+    'tela nao deve criar query Supabase diretamente');
+});
+
+// 19. Non-integer evidence_version (string) → invalid, not missing
+test('evidence: evidence_version string nao numerica retorna state=invalid com version null', async function () {
+  var row = makeEvidenceRow(candidate.document_id, 'abc', defaultEvidence, defaultOrigin, defaultCreatedAt);
+  var rt = makeSandbox({
+    candidatesResult: { data: [candidate] },
+    decisionsResult: { data: [] },
+    evidenceResult: { data: [row] },
+  });
+  await rt.ns.loadReceivedDocumentsFromSupabase();
+  var ev = rt.sandbox.RAVATEX_DOCUMENTS_RECEIVED[0]._ravatex_technical_evidence;
+  assert.equal(ev.state, 'invalid');
+  assert.equal(ev.evidenceVersion, null);
+  assert.equal(ev.reason, 'invalid_evidence_version');
+});
+
+test('evidence: evidence_version float retorna invalid com version null', async function () {
+  var row = makeEvidenceRow(candidate.document_id, 1.5, defaultEvidence, defaultOrigin, defaultCreatedAt);
+  var rt = makeSandbox({
+    candidatesResult: { data: [candidate] },
+    decisionsResult: { data: [] },
+    evidenceResult: { data: [row] },
+  });
+  await rt.ns.loadReceivedDocumentsFromSupabase();
+  var ev = rt.sandbox.RAVATEX_DOCUMENTS_RECEIVED[0]._ravatex_technical_evidence;
+  assert.equal(ev.state, 'invalid');
+  assert.equal(ev.evidenceVersion, null);
+  assert.equal(ev.reason, 'invalid_evidence_version');
+});
+
+// 19b. Malformed version row does not override a valid numeric-current row
+test('evidence: linha com versao invalida nao contamina candidato com versao valida', async function () {
+  var rows = [
+    makeEvidenceRow(candidate.document_id, 'abc', defaultEvidence, defaultOrigin, defaultCreatedAt),
+    makeEvidenceRow(candidate.document_id, 2, { hash: 'valid' }, { source: 'ingestor', evidenceVersion: 2 }, '2026-07-10T10:00:00.000Z'),
+  ];
+  var rt = makeSandbox({
+    candidatesResult: { data: [candidate] },
+    decisionsResult: { data: [] },
+    evidenceResult: { data: rows },
+  });
+  await rt.ns.loadReceivedDocumentsFromSupabase();
+  var ev = rt.sandbox.RAVATEX_DOCUMENTS_RECEIVED[0]._ravatex_technical_evidence;
+  assert.equal(ev.state, 'available');
+  assert.equal(ev.evidenceVersion, 2);
+});
+
+// 20. No second client or production reference
+test('evidence: nao cria segundo cliente Supabase nem referencia producao', function () {
+  var supabaseFromCount = (READER.match(/window\.supa\.from/g) || []).length;
+  assert.equal(supabaseFromCount, 4, 'reader usa apenas window.supa.from (availability guard + candidates + decisions + evidence)');
+  assert.equal(/createClient/.test(READER), false);
+  assert.equal(/production/.test(READER) || /PRODUCTION/.test(READER), false);
 });
