@@ -12,14 +12,15 @@ O conteúdo histórico abaixo não determina o estado atual.
 - **Workspace:** `D:\OneDrive\Programação\Ravatex\controle-tapetes-g28`
 - **Branch:** `work/g28-document-qualification`
 - **Remoto permitido:** nenhum push sem autorização expressa nesta cadeia
-- **Última fase aceita:** `G28-B5-D4 — CONTROLLED CANONICAL DECISION RUNTIME INTEGRATION` — `CLOSED / ACCEPTED`
+- **Última fase aceita:** `G28-B5-D4-R1 — CONTROLLED CANONICAL DECISION RUNTIME INTEGRATION` — `CLOSED / ACCEPTED`
 - **G28-B5-B1:** `CLOSED / ACCEPTED`; commit técnico `b247e43504c0afcc0d25e95f8012f93a09eb0692` — `Add idempotent document decision command contract`
 - **G28-B5-B2:** `CLOSED / ACCEPTED`; migration `20260714012641 document_decision_command` aplicada e verificada no staging `ucrjtfswnfdlxwtmxnoo`
-- **G28-D4:** `CLOSED / ACCEPTED`; commit técnico `ae907b82613c87c5a9f2cd37031186ef94047db7` — `Wire canonical document decision runtime`
+- **G28-D4-V1:** `PATCH COMMITTED / NOT ACCEPTED`; commit `ae907b82613c87c5a9f2cd37031186ef94047db7` — `Wire canonical document decision runtime`; auditoria read-only detectou módulos `documents-decision-command.js`, `documentos-recebidos-decision-modal.js` e `documents-decision-controller.js` ausentes no index.html.
+- **G28-D4-R1:** `CLOSED / ACCEPTED`; commit `425172a95cbf2b340aa5f72110d317917a79e1f6` — `Load canonical document decision runtime modules`; carrega os três módulos no index.html e reordena adapter/reader.
 - **Produção:** projeto `bhgifjrfagkzubpyqpew` não acessado
 - **Contrato aceito:** coluna nullable `document_decisions.command_id`, índice único parcial `document_decisions_command_id_uidx` e RPC canônica `registrar_decisao_documento(...)`; validações estrutural, de autorização, idempotência, atomicidade e concorrência A/B/C aprovadas
-- **Runtime D4:** somente documentos de origem `_ravatex_source === 'supabase'` em `#/documentos/recebidos` usam controller D3, lifecycle D2, adapter D1 e modal; `restorePending(activeDecision)` preserva pending `uncertain` e o retry reusa `commandId`. O legado `saveDocumentDecision`/`statusOverrides` permanece independente.
-- **Validação D4:** TDD RED/GREEN e gate final local: `node --check`, sete suítes focadas, `454 pass, 0 fail`; revisão independente OpenCode `opencode-go/deepseek-v4-flash` retornou `APPROVE`; nenhuma operação de rede/Supabase/push nesta fase.
+- **Runtime aceito:** somente documentos `_ravatex_source === 'supabase'` em `#/documentos/recebidos` usam módulos na ordem `documents-supabase-decisions → documents-supabase-reader → documents-decision-command → documentos-recebidos-decision-modal → documents-decision-controller → documentos-recebidos`; carregados estaticamente no index.html; sem import dinâmico; `restorePending(activeDecision)` preserva pending `uncertain` e retry reusa `commandId`. Legado `saveDocumentDecision`/`statusOverrides` permanece independente.
+- **Validação D4-R1:** auditoria read-only confirmou módulos ausentes no V1; R1 carrega e reordena; `node --check` em 4 arquivos; 11 integration, 135 screen smoke, 58 queue UI, 68 controller, 41 modal, 96 lifecycle, 59 adapter, 46 reader, 23 migration contract, 48 queue read model = 585 pass/0 fail; `git diff --check` aprovado com aviso LF→CRLF não bloqueante; revisão independente OpenCode `opencode-go/deepseek-v4-flash` retornou `APPROVE` sem mutação.
 - **Push:** não executado
 - **Próxima decisão:** D5 e quaisquer mudanças remotas, de banco, linking, undo/revogação ou ampliação de UI permanecem sem autorização.
 

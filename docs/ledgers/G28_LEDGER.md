@@ -330,3 +330,23 @@ risco residual e próxima fase indicada no fechamento.
 - **Push:** não executado
 - **Risco residual:** nenhum consumidor runtime foi redirecionado; a RPC canônica ainda não está integrada à UI; `decidir_documento` permanece ativa e não idempotente; modal, B6-A, B6-B e B8 continuam separados
 - **Próxima decisão indicada:** decisão arquitetural explícita antes de qualquer implementação de integração runtime, UI/modal, linking ou correção/revogação
+
+---
+
+## 2026-07-14 — G28-B5-D4-R1 — Load canonical document decision runtime modules
+
+- **Gate:** CLOSED / ACCEPTED
+- **Antecedente:** G28-B5-D4-V1 — `PATCH COMMITTED / NOT ACCEPTED`. Auditoria read-only confirmou que index.html não carregava `documents-decision-command.js`, `documentos-recebidos-decision-modal.js` nem `documents-decision-controller.js`, tornando o runtime D4 inoperante.
+- **Commit técnico aceito:** `425172a95cbf2b340aa5f72110d317917a79e1f6` — `Load canonical document decision runtime modules`
+- **Arquivos alterados:** `index.html` e `tests/documentos-recebidos.smoke.js`.
+- **Mudança efetiva:** index.html passou a carregar os três módulos runtime estaticamente; ordem efetiva: `documents-supabase-decisions → documents-supabase-reader → documents-decision-command → documentos-recebidos-decision-modal → documents-decision-controller → documentos-recebidos`. Sem import dinâmico; smoke test inspeciona index.html real para exactly-once e ordem.
+- **Validação local:** `node --check` em 4 arquivos; 11 integration, 135 screen smoke, 58 queue UI, 68 controller, 41 modal, 96 lifecycle, 59 adapter, 46 reader, 23 migration contract, 48 queue read model — 585 pass/0 fail.
+- **Git diff check:** aprovado com aviso LF→CRLF informacional não bloqueante.
+- **Revisão independente:** OpenCode `opencode-go/deepseek-v4-flash`, read-only, retornou `APPROVE` sem mutação.
+- **Staging:** não acessado.
+- **Produção:** projeto `bhgifjrfagkzubpyqpew` não acessado.
+- **Push:** não executado.
+- **D4 aceito:** D4-V1 rejeitado; D4-R1 aceita como a integração runtime canônica corrigida. D4 e R1 agora CLOSED / ACCEPTED.
+- **Risco residual:** aviso LF→CRLF não bloqueante; nenhuma pendência técnica identificada.
+- **D5:** não iniciado e não autorizado. D5 e quaisquer mudanças remotas, de banco, linking, undo/revogação ou ampliação de UI requerem nova decisão arquitetural explícita.
+- **Próxima decisão indicada:** D5 — indeferido e não autorizado.

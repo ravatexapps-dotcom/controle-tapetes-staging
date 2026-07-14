@@ -1,16 +1,16 @@
 # HANDOFF OPERACIONAL ATIVO
 
-- **Frente:** G28 — D4 canonical decision wiring para `#/documentos/recebidos` — `CLOSED / ACCEPTED`
+- **Frente:** G28 — D4-R1 canonical decision runtime modules correction — `CLOSED / ACCEPTED`
 - **Workspace:** `D:\OneDrive\Programação\Ravatex\controle-tapetes-g28`
 - **Branch:** `work/g28-document-qualification`
-- **HEAD final D4:** `ae907b82613c87c5a9f2cd37031186ef94047db7` — `Wire canonical document decision runtime`
-- **Arquivos do commit técnico:** `js/screens/documentos-recebidos.js`, `tests/documentos-recebidos.smoke.js`, `tests/documentos-recebidos-decision-integration.test.js` e este handoff.
-- **Implementação aceita:** a tela envia somente `doc.raw._ravatex_source === 'supabase'` ao controller D3 → lifecycle D2 → adapter D1; `raw._ravatex_server_decision` alimenta `activeDecision`; `restorePending()` ocorre uma vez na montagem; pending `uncertain` do mesmo documento abre o modal sem `open()` e confirma com `retry()` preservando command ID. O caminho legado `saveDocumentDecision`/`statusOverrides` não foi alterado.
-- **Agentes/modelos:** diagnóstico, gate e correção mínima por IAsup `gpt-5.6-terra`; implementação inicial rejeitada por OpenCode `opencode/deepseek-v4-flash-free` (violação de allowlist/timeout); Pro e Kimi indisponíveis por `UnknownError`; revisão independente read-only por OpenCode `opencode-go/deepseek-v4-flash`, `exit 0`, `APPROVE`, sem mutação.
-- **Evidências:** TDD RED falhou em `reconcileCalls 0 !== 1`; GREEN e gate final: `node --check` + sete suítes D4, `454 pass, 0 fail`; `git diff --check` e check do arquivo novo limpos; revisão externa aprovada.
-- **Git final técnico:** commit local criado; nenhum push, rede, Supabase, migration ou produção acessados em D4.
-- **Riscos residuais:** somente o aviso não bloqueante Git LF→CRLF para o novo teste; nenhuma pendência técnica D4 identificada.
-- **Próximo passo:** não iniciar D5 nem qualquer mudança remota/DB/UI adicional sem nova autorização explícita.
+- **HEAD:** `425172a95cbf2b340aa5f72110d317917a79e1f6` — `Load canonical document decision runtime modules`
+- **Correção técnica:** D4-V1 (`ae907b8`) foi PATCH COMMITTED / NOT ACCEPTED — auditoria read-only detectou `documents-decision-command.js`, `documentos-recebidos-decision-modal.js` e `documents-decision-controller.js` ausentes no index.html. R1 (`425172a9`) carrega os três módulos estaticamente no index.html e reordena adapter/reader: `documents-supabase-decisions → documents-supabase-reader → documents-decision-command → documentos-recebidos-decision-modal → documents-decision-controller → documentos-recebidos`.
+- **Smoke test:** inspeciona index.html real para presença exactly-once e ordem; sem import dinâmico.
+- **Arquivos do commit técnico:** `index.html` e `tests/documentos-recebidos.smoke.js`.
+- **Validação:** `node --check` em 4 arquivos; 11 integration, 135 screen smoke, 58 queue UI, 68 controller, 41 modal, 96 lifecycle, 59 adapter, 46 reader, 23 migration contract, 48 queue read model = 585 pass/0 fail; `git diff --check` aprovado com aviso LF→CRLF não bloqueante; revisão independente read-only OpenCode `opencode-go/deepseek-v4-flash` retornou `APPROVE`, sem mutação.
+- **Nenhum acesso remoto:** staging não acessado, produção não acessada, push não executado.
+- **Riscos residuais:** aviso Git LF→CRLF não bloqueante; D5 não iniciado e não autorizado.
+- **Próximo passo:** D5 e quaisquer mudanças remotas, de banco, linking, undo/revogação ou ampliação de UI permanecem sem autorização — não iniciar sem nova decisão explícita.
 
 # HISTÓRICO DE HANDOFFS — ARQUIVADO
 
