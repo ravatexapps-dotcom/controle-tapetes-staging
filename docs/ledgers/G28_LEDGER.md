@@ -437,3 +437,14 @@ risco residual e próxima fase indicada no fechamento.
 - **Telemetry:** unavailable and non-blocking.
 - **Residual risk:** external consumers of `decidir_documento` outside this repository may exist.
 - **Next phases:** `G28-B5-D5-B5` and `G28-B8` remain unauthorized and not started.
+
+---
+
+## 2026-07-14 — G28-B5-D5-B4-C-R1 — Documentary closeout correction
+
+- **Corrected phase identifier:** `G28-B5-D5-B4-C` (the prior entry was imprecisely named).
+- **Canonical documentary HEAD** (before this correction): `18afe021f54e422b7fe54ed60f26e49e402f41db` — `G28-B5-D5-B4-C: record legacy decision RPC runtime removal closeout`.
+- **Technical HEAD** remains: `3d64b62f25516ef0d18e2613fc50298e2faee16a` — `G28-B5-D5-B4: remove legacy document decision RPC runtime`.
+- **Corrected residual risk:** external consumers of `window.RAVATEX_DOCUMENTS.decideDocumentInCloud` may exist and will no longer find that export. The prior residual risk statement incorrectly described the risk as concerning SQL `decidir_documento`.
+- **SQL `decidir_documento`** remains preserved.
+- **Nature of prior entry:** the prior entry was not a technical-state change; it contained phase identifier imprecision and residual risk scope imprecision only. No code, tests, SQL, or package files were modified by this correction.

@@ -1,17 +1,18 @@
 # HANDOFF OPERACIONAL ATIVO
 
-- **Frente:** G28 — D5-B4 record legacy decision RPC runtime removal — `CLOSED / ACCEPTED`
+- **Frente ativa:** `G28-B5-D5-B4-C — CLOSED / ACCEPTED`.
 - **Workspace:** `D:\OneDrive\Programação\Ravatex\controle-tapetes-g28`
 - **Branch:** `work/g28-document-qualification`
-- **HEAD:** `3d64b62f25516ef0d18e2613fc50298e2faee16a` — `G28-B5-D5-B4: remove legacy document decision RPC runtime`
-- **Estado:** `G28-B5-D5-B4 — CLOSED / ACCEPTED`.
+- **Canonical / documentary HEAD:** `18afe021f54e422b7fe54ed60f26e49e402f41db` — `G28-B5-D5-B4-C: record legacy decision RPC runtime removal closeout`
+- **Technical HEAD:** `3d64b62f25516ef0d18e2613fc50298e2faee16a` — `G28-B5-D5-B4: remove legacy document decision RPC runtime`
+- **Estado:** `G28-B5-D5-B4 — technical phase — CLOSED / ACCEPTED`; `G28-B5-D5-B4-C — documentary closeout — CLOSED / ACCEPTED`.
 - **Manifesto técnico:** `js/documents-supabase-decisions.js`, `tests/documents-supabase-decisions.test.js`, `tests/documentos-recebidos.smoke.js`, `tests/document-legacy-decision-rpc-runtime-boundary.test.js`.
 - **Remoção:** `decideDocumentInCloud` e `window.RAVATEX_DOCUMENTS.decideDocumentInCloud` removidos; zero chamadas JavaScript runtime a `decidir_documento`.
 - **Preservado:** `registerDocumentDecisionInCloud`/`registrar_decisao_documento` (adapter canônico) e `undoDocumentDecisionInCloud`/`desfazer_decisao_documento` (undo adapter) permanecem. SQL `decidir_documento` não foi removido.
 - **Validação:** gates focados verdes; revisão independente `APPROVE`.
 - **Nenhum acesso remoto:** sem external, database, staging, produção, Supabase, SQL, migration ou push.
 - **Telemetria:** indisponível e não bloqueante.
-- **Risco residual:** consumidores externos de `decidir_documento` fora deste repositório podem existir.
+- **Risco residual:** External consumers outside this repository of `window.RAVATEX_DOCUMENTS.decideDocumentInCloud` may exist and will no longer find that export.
 - **D5-B5 e B8:** permanecem não autorizados e não iniciados.
 
 # HISTÓRICO DE HANDOFFS — ARQUIVADO
