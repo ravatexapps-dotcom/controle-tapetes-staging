@@ -200,7 +200,7 @@
       var reader = new FileReader();
       reader.onload = function () {
         var text = typeof reader.result === 'string' ? reader.result : '';
-        var result = docs.loadReceivedDocumentsFromText(text);
+        var result = docs.loadReceivedDocumentsFromText(text, { source: 'manual' });
 
         if (result && result.ok) {
           toast(result.count + ' documento(s) carregado(s). '

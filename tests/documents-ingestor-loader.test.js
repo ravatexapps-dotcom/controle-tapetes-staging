@@ -397,10 +397,23 @@ test('loader-url-guard: bloqueia protocolo relativo //evil.example', async funct
 // 5. Testes de garantia (seguranca)
 // -------------------------------------------------------------------
 
-test('loader: nao referencia Supabase', function () {
+test('loader: nao referencia Supabase (apenas string literal de provenance)', function () {
   var src = readOrFail(DOC_LOADER);
-  assert.ok(src.indexOf('supabase') === -1, 'loader referencia supabase');
+  // G28-B5-D5-B2: o loader deve reconhecer 'supabase' como proveniencia
+  // canonica (string literal em deriveDocumentSource), mas NUNCA pode
+  // integrar diretamente com Supabase (sem window.supabase, sem fetch
+  // para Supabase, sem localStorage/sessionStorage).
+  assert.ok(src.indexOf('window.supabase') === -1, 'loader referencia window.supabase');
   assert.ok(src.indexOf('window.supa') === -1, 'loader referencia window.supa');
+  assert.ok(src.indexOf('.supabase') === -1, 'loader referencia .supabase');
+  assert.ok(src.indexOf('supabase.') === -1, 'loader referencia supabase.');
+  // A string literal 'supabase' em deriveDocumentSource e permitida
+  var deriveLine = src.indexOf('deriveDocumentSource');
+  var supabaseInDerive = src.indexOf("'supabase'");
+  if (supabaseInDerive >= 0) {
+    assert.ok(supabaseInDerive > deriveLine && supabaseInDerive < deriveLine + 200,
+      "'supabase' string literal permitida apenas em deriveDocumentSource");
+  }
 });
 
 test('loader: nao referencia Google/Drive', function () {
@@ -1218,6 +1231,95 @@ test('received-loader: integracao com Pedido Detail NAO quebra', function () {
   // Documentos recebidos NAO vazam para o Pedido Detail
   assert.ok(!('receivedDocumentRows' in view),
     'Pedido Detail NAO deve ter coluna de received');
+});
+
+// =====================================================================
+// G28-B5-D5-B2: Provenance projection (_ravatex_source via setReceivedDocuments)
+// =====================================================================
+
+test('G28-B5-D5-B2: setReceivedDocuments nao muta o array de entrada', function () {
+  var sandbox = makeLoaderSandbox();
+  var ns = sandbox.window.RAVATEX_DOCUMENTS;
+  var input = [
+    { document_id: 'no-mut-1', filename_original: 'a.xml' },
+    { document_id: 'no-mut-2', filename_original: 'b.pdf' },
+  ];
+  var inputCopy = JSON.parse(JSON.stringify(input));
+  ns.setReceivedDocuments(input, { source: 'manual' });
+  assert.deepStrictEqual(input, inputCopy, 'array original nao pode ser alterado');
+  assert.equal(input[0]._ravatex_source, undefined,
+    'item original nao pode receber _ravatex_source');
+});
+
+test('G28-B5-D5-B2: setReceivedDocuments com source legacy projeta legacy nos docs', function () {
+  var sandbox = makeLoaderSandbox();
+  var ns = sandbox.window.RAVATEX_DOCUMENTS;
+  ns.setReceivedDocuments([
+    { document_id: 'leg-test-1', filename_original: 'legacy.xml' }
+  ], { source: 'legacy' });
+  var stored = sandbox.window.RAVATEX_DOCUMENTS_RECEIVED;
+  assert.equal(stored.length, 1);
+  assert.equal(stored[0]._ravatex_source, 'legacy');
+  assert.equal(sandbox.window.RAVATEX_DOCUMENTS_RECEIVED_SOURCE, 'legacy');
+});
+
+test('G28-B5-D5-B2: setReceivedDocuments com source manual projeta manual nos docs', function () {
+  var sandbox = makeLoaderSandbox();
+  var ns = sandbox.window.RAVATEX_DOCUMENTS;
+  ns.setReceivedDocuments([
+    { document_id: 'man-test-1', filename_original: 'manual.xml' }
+  ], { source: 'manual' });
+  var stored = sandbox.window.RAVATEX_DOCUMENTS_RECEIVED;
+  assert.equal(stored.length, 1);
+  assert.equal(stored[0]._ravatex_source, 'manual');
+});
+
+test('G28-B5-D5-B2: setReceivedDocuments com source g22-auto projeta unknown nos docs', function () {
+  var sandbox = makeLoaderSandbox();
+  var ns = sandbox.window.RAVATEX_DOCUMENTS;
+  ns.setReceivedDocuments([
+    { document_id: 'g22-test-1', filename_original: 'g22.xml' }
+  ], { source: 'g22-auto' });
+  var stored = sandbox.window.RAVATEX_DOCUMENTS_RECEIVED;
+  assert.equal(stored.length, 1);
+  assert.equal(stored[0]._ravatex_source, 'unknown');
+  assert.equal(sandbox.window.RAVATEX_DOCUMENTS_RECEIVED_SOURCE, 'g22-auto');
+});
+
+test('G28-B5-D5-B2: loadReceivedDocumentsFromText sem source projeta unknown (nao manual)', function () {
+  var sandbox = makeLoaderSandbox();
+  var ns = sandbox.window.RAVATEX_DOCUMENTS;
+  var dummyJsonl = JSON.stringify({
+    document_id: 'no-source-test-1',
+    filename_original: 'test.xml',
+  });
+  var result = ns.loadReceivedDocumentsFromText(dummyJsonl);
+  assert.equal(result.ok, true);
+  assert.equal(result.count, 1);
+  var stored = sandbox.window.RAVATEX_DOCUMENTS_RECEIVED;
+  assert.equal(stored.length, 1);
+  assert.equal(stored[0]._ravatex_source, 'unknown',
+    'documento sem provenance deve ter _ravatex_source === unknown');
+  assert.equal(sandbox.window.RAVATEX_DOCUMENTS_RECEIVED_SOURCE, 'unknown',
+    'batch source sem provenance deve ser unknown, nao manual');
+});
+
+test('G28-B5-D5-B2: loadReceivedDocumentsFromText com source manual explicito permanece manual', function () {
+  var sandbox = makeLoaderSandbox();
+  var ns = sandbox.window.RAVATEX_DOCUMENTS;
+  var dummyJsonl = JSON.stringify({
+    document_id: 'explicit-manual-test-1',
+    filename_original: 'manual.xml',
+  });
+  var result = ns.loadReceivedDocumentsFromText(dummyJsonl, { source: 'manual' });
+  assert.equal(result.ok, true);
+  assert.equal(result.count, 1);
+  var stored = sandbox.window.RAVATEX_DOCUMENTS_RECEIVED;
+  assert.equal(stored.length, 1);
+  assert.equal(stored[0]._ravatex_source, 'manual',
+    'documento com source manual explicito deve ter _ravatex_source === manual');
+  assert.equal(sandbox.window.RAVATEX_DOCUMENTS_RECEIVED_SOURCE, 'manual',
+    'batch source com source manual explicito deve ser manual');
 });
 
 // =====================================================================

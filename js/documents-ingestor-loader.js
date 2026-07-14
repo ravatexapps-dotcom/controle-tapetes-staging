@@ -215,12 +215,32 @@
   }
 
   function setReceivedSource(source) {
-    var normalized = typeof source === 'string' && source ? source : 'manual';
+    var normalized = typeof source === 'string' && source ? source : 'unknown';
     window.RAVATEX_DOCUMENTS_RECEIVED_SOURCE = normalized;
     window.RAVATEX_DOCUMENTS_RECEIVED_SOURCE_METADATA = {
       source: normalized,
       loadedAt: new Date().toISOString(),
     };
+  }
+
+  function deriveDocumentSource(batchSource) {
+    if (batchSource === 'manual' || batchSource === 'legacy' || batchSource === 'supabase') {
+      return batchSource;
+    }
+    return 'unknown';
+  }
+
+  function projectSourceOntoDocs(docs, source) {
+    var out = [];
+    for (var i = 0; i < docs.length; i++) {
+      var doc = {};
+      for (var key in docs[i]) {
+        doc[key] = docs[i][key];
+      }
+      doc._ravatex_source = source;
+      out.push(doc);
+    }
+    return out;
   }
 
   ns.setReceivedDocuments = function setReceivedDocuments(docs, options) {
@@ -239,9 +259,12 @@
       return { ok: false, count: 0, error: validation.error };
     }
 
-    var deduped = dedupeReceivedDocuments(docs);
+    var batchSource = options && options.source;
+    var docSource = deriveDocumentSource(batchSource);
+    var projected = projectSourceOntoDocs(docs, docSource);
+    var deduped = dedupeReceivedDocuments(projected);
     window.RAVATEX_DOCUMENTS_RECEIVED = deduped;
-    setReceivedSource(options && options.source);
+    setReceivedSource(batchSource);
 
     return { ok: true, count: deduped.length };
   };
@@ -267,7 +290,7 @@
       return { ok: false, count: 0, error: validation.error };
     }
 
-    return ns.setReceivedDocuments(docs, options || { source: 'manual' });
+    return ns.setReceivedDocuments(docs, options);
   };
 
   ns.loadReceivedDocumentsFromUrl = function loadReceivedDocumentsFromUrl(url) {
@@ -297,7 +320,7 @@
         if (typeof text !== 'string' || !text.trim()) {
           return { ok: false, count: 0, error: 'Resposta da URL esta vazia.' };
         }
-        return ns.loadReceivedDocumentsFromText(text);
+        return ns.loadReceivedDocumentsFromText(text, { source: 'manual' });
       })
       .catch(function (err) {
         return { ok: false, count: 0, error: 'Erro ao carregar documentos da URL: ' + String(err) };

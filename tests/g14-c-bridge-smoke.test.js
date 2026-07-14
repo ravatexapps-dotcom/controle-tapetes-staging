@@ -635,3 +635,59 @@ test('G20-B: Pedido Detail bridge mantem status importado quando nao ha decisao 
   assert.equal(row.status, 'accepted', 'status importado accepted preservado');
   assert.strictEqual(row.isLocalDecision, undefined, 'sem isLocalDecision');
 });
+
+// ---------------------------------------------------------------------
+// G28-B5-D5-B2: explicit provenance projection + Pedido Detail bridge
+// ---------------------------------------------------------------------
+
+test('G28-B5-D5-B2: Pedido Detail bridge reflete decisao local rejection com source legacy', function () {
+  const jsonl = JSON.stringify({
+    document_id: 'g28-b5-d5-b2-doc',
+    filename_original: 'NF-g28.xml',
+    tipo_documento: 'nf',
+    formato: 'xml',
+    status: 'accepted',
+    pedido_manual: 'PED-99-2026',
+    received_at: '2026-07-08T10:00:00.000Z',
+    accepted_at: '2026-07-08T10:30:00.000Z',
+  });
+
+  const ls = { data: {} };
+  ls.getItem = function (k) { return this.data[k] != null ? String(this.data[k]) : null; };
+  ls.setItem = function (k, v) { this.data[k] = String(v); };
+  ls.removeItem = function (k) { delete this.data[k]; };
+
+  const sb = makePedidoDetailSandbox();
+  sb.localStorage = ls;
+
+  // Load with explicit legacy source
+  const loadResult = sb.window.RAVATEX_DOCUMENTS.loadReceivedDocumentsFromText(jsonl, { source: 'legacy' });
+  assert.equal(loadResult.ok, true, 'load com source legacy');
+
+  // Verify _ravatex_source projected
+  const received = sb.window.RAVATEX_DOCUMENTS_RECEIVED;
+  assert.equal(received.length, 1);
+  assert.equal(received[0]._ravatex_source, 'legacy',
+    'doc deve ter _ravatex_source legacy');
+  assert.equal(received[0].document_id, 'g28-b5-d5-b2-doc');
+
+  // Save local rejection passing legacy
+  const saveR = sb.window.RAVATEX_DOCUMENTS.saveDocumentDecision(
+    'g28-b5-d5-b2-doc',
+    { status: 'rejected', motivo: 'G28 test rejection' },
+    'legacy'
+  );
+  assert.ok(saveR && saveR.ok, 'decisao local rejection salva com source legacy');
+
+  // Pedido Detail bridge must display effective local rejection
+  const ns = sb.window.RAVATEX_SCREENS.pedidoDetail;
+  const s = makePedidoState(ns, 99, 2026);
+  const view = ns.computeViewModel(s);
+
+  assert.equal(view.ingestorDocsLoaded, true, 'ingestorDocsLoaded true');
+  assert.equal(view.ingestorDocumentRows.length, 1, '1 doc no Pedido Detail');
+  const row = view.ingestorDocumentRows[0];
+  assert.equal(row.label, 'NF-g28.xml', 'label correto');
+  assert.equal(row.status, 'rejected', 'status reflete decisao local rejected');
+  assert.ok(row.isLocalDecision, 'isLocalDecision true');
+});

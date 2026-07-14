@@ -3,11 +3,14 @@
 // Source-boundary test: tri-state decisionSourceKind classification
 // (supabase / legacy / unknown) with explicit _ravatex_source values.
 //
-// Fase: G28-B5-D5-B1
+// Fase: G28-B5-D5-B1 (+ G28-B5-D5-B2 stronger provenance assertion)
 // Escopo: prova que _ravatex_source === 'supabase' → cloud only;
 //   manual/legacy → local save/remove + statusOverrides fallback;
 //   undefined/null/empty/whitespace/bogus/G22 → fail-closed:
 //   no decision buttons, original status, informative message.
+//
+//   G28-B5-D5-B2: local accept/reject/undo handlers pass explicit
+//   'manual' or 'legacy' as the third/second provenance argument.
 // =====================================================================
 
 'use strict';
@@ -241,12 +244,17 @@ test('G28-B5-D5-B1: supabase doc shows cloud decision buttons, no local buttons'
   assert.equal(hasSourceUnknownMsg(result), false, 'supabase: NO unknown message');
 });
 
-test('G28-B5-D5-B1: manual source doc shows local decision buttons and save/remove', function () {
+test('G28-B5-D5-B1: manual source doc shows local decision buttons and save/remove with exact provenance', function () {
   var sb = makeSandbox([makeDoc({ _ravatex_source: 'manual' })]);
-  var saveCalls = 0;
-  var removeCalls = 0;
-  sb.window.RAVATEX_DOCUMENTS.saveDocumentDecision = function () { saveCalls++; return { ok: true }; };
-  sb.window.RAVATEX_DOCUMENTS.removeDocumentDecision = function () { removeCalls++; };
+  var saveArgs = [];
+  var removeArgs = [];
+  sb.window.RAVATEX_DOCUMENTS.saveDocumentDecision = function () {
+    saveArgs.push(Array.prototype.slice.call(arguments));
+    return { ok: true };
+  };
+  sb.window.RAVATEX_DOCUMENTS.removeDocumentDecision = function () {
+    removeArgs.push(Array.prototype.slice.call(arguments));
+  };
   sb.window.RAVATEX_DOCUMENTS.registerDocumentDecisionInCloud = function () {
     return Promise.resolve({ ok: true });
   };
@@ -259,18 +267,23 @@ test('G28-B5-D5-B1: manual source doc shows local decision buttons and save/remo
 
   var acceptBtn = findAll(result, findAction('aceitar-documento'))[0];
   acceptBtn._listeners.click[0]();
-  assert.equal(saveCalls, 1, 'manual accept: saveDocumentDecision called');
+  assert.equal(saveArgs.length, 1, 'manual accept: saveDocumentDecision called');
+  assert.equal(saveArgs[0][2], 'manual', 'manual accept: third arg is "manual"');
 
   var rejectBtn = findAll(result, findAction('rejeitar-documento'))[0];
   sb.window.prompt = function () { return 'motivo qualquer'; };
   rejectBtn._listeners.click[0]();
-  assert.equal(saveCalls, 2, 'manual reject: saveDocumentDecision called');
+  assert.equal(saveArgs.length, 2, 'manual reject: saveDocumentDecision called');
+  assert.equal(saveArgs[1][2], 'manual', 'manual reject: third arg is "manual"');
 });
 
-test('G28-B5-D5-B1: legacy source doc shows local buttons and save/remove', function () {
+test('G28-B5-D5-B1: legacy source doc shows local buttons and save/remove with exact provenance', function () {
   var sb = makeSandbox([makeDoc({ _ravatex_source: 'legacy' })]);
-  var saveCalls = 0;
-  sb.window.RAVATEX_DOCUMENTS.saveDocumentDecision = function () { saveCalls++; return { ok: true }; };
+  var saveArgs = [];
+  sb.window.RAVATEX_DOCUMENTS.saveDocumentDecision = function () {
+    saveArgs.push(Array.prototype.slice.call(arguments));
+    return { ok: true };
+  };
   sb.window.RAVATEX_DOCUMENTS.registerDocumentDecisionInCloud = function () {
     return Promise.resolve({ ok: true });
   };
@@ -281,14 +294,18 @@ test('G28-B5-D5-B1: legacy source doc shows local buttons and save/remove', func
 
   var acceptBtn = findAll(result, findAction('aceitar-documento'))[0];
   acceptBtn._listeners.click[0]();
-  assert.equal(saveCalls, 1, 'legacy accept: saveDocumentDecision called');
+  assert.equal(saveArgs.length, 1, 'legacy accept: saveDocumentDecision called');
+  assert.equal(saveArgs[0][2], 'legacy', 'legacy accept: third arg is "legacy"');
 });
 
 test('G28-B5-D5-B1: manual doc fallback to statusOverrides when save fails', function () {
   var sb = makeSandbox([makeDoc({ _ravatex_source: 'manual' })]);
-  var saveCalls = 0;
+  var saveArgs = [];
   var toastMessages = [];
-  sb.window.RAVATEX_DOCUMENTS.saveDocumentDecision = function () { saveCalls++; return { ok: false }; };
+  sb.window.RAVATEX_DOCUMENTS.saveDocumentDecision = function () {
+    saveArgs.push(Array.prototype.slice.call(arguments));
+    return { ok: false };
+  };
   sb.window.RAVATEX_DOCUMENTS.registerDocumentDecisionInCloud = function () {
     return Promise.resolve({ ok: true });
   };
@@ -297,7 +314,8 @@ test('G28-B5-D5-B1: manual doc fallback to statusOverrides when save fails', fun
   var result = sb.window.screenDocumentosRecebidos();
   var acceptBtn = findAll(result, findAction('aceitar-documento'))[0];
   assert.doesNotThrow(function () { acceptBtn._listeners.click[0](); }, 'handler does not throw');
-  assert.equal(saveCalls, 1, 'saveDocumentDecision was called');
+  assert.equal(saveArgs.length, 1, 'saveDocumentDecision was called');
+  assert.equal(saveArgs[0][2], 'manual', 'saveDocumentDecision third arg is "manual"');
   // Fallback toast: "sem persistencia" signals statusOverrides path was taken
   var hasFallbackToast = toastMessages.some(function (t) {
     return t.msg.indexOf('sem persistencia') >= 0;
@@ -305,12 +323,12 @@ test('G28-B5-D5-B1: manual doc fallback to statusOverrides when save fails', fun
   assert.ok(hasFallbackToast, 'fallback toast shows sem persistencia (statusOverrides path)');
 });
 
-test('G28-B5-D5-B1: manual doc local undo calls removeDocumentDecision', function () {
+test('G28-B5-D5-B1: manual doc local undo calls removeDocumentDecision with exact provenance', function () {
   var sb = makeSandbox([makeDoc({ _ravatex_source: 'manual' })]);
-  var removeCalls = 0;
+  var removeArgs = [];
   var origRemove = sb.window.RAVATEX_DOCUMENTS.removeDocumentDecision;
   sb.window.RAVATEX_DOCUMENTS.removeDocumentDecision = function () {
-    removeCalls++;
+    removeArgs.push(Array.prototype.slice.call(arguments));
     return origRemove.apply(this, arguments);
   };
   sb.window.RAVATEX_DOCUMENTS.registerDocumentDecisionInCloud = function () {
@@ -323,14 +341,15 @@ test('G28-B5-D5-B1: manual doc local undo calls removeDocumentDecision', functio
   var result = sb.window.screenDocumentosRecebidos();
   var acceptBtn = findAll(result, findAction('aceitar-documento'))[0];
   sb.window.RAVATEX_DOCUMENTS.saveDocumentDecision(
-    LEGACY_DOC_ID, { status: 'accepted' }
+    LEGACY_DOC_ID, { status: 'accepted' }, 'manual'
   );
   // Re-render to see undo button (hasLocalDecision now true via getEffectiveDocumentStatus)
   result = sb.window.screenDocumentosRecebidos();
   assert.ok(hasActionButton(result, 'desfazer-decisao-documento'), 'manual: undo button visible after local decision');
   var undoBtn = findAll(result, findAction('desfazer-decisao-documento'))[0];
   undoBtn._listeners.click[0]();
-  assert.equal(removeCalls, 1, 'manual undo: removeDocumentDecision called');
+  assert.equal(removeArgs.length, 1, 'manual undo: removeDocumentDecision called');
+  assert.equal(removeArgs[0][1], 'manual', 'manual undo: second arg (source) is "manual"');
 });
 
 // ---------------------------------------------------------------------
@@ -383,6 +402,36 @@ UNKNOWN_CASES.forEach(function (tc) {
     });
     assert.ok(statusPills.length > 0, tc.name + ': status pill present');
   });
+});
+
+// ---------------------------------------------------------------------
+// Legacy undo with exact provenance check
+// ---------------------------------------------------------------------
+
+test('G28-B5-D5-B2: legacy doc undo passes "legacy" as second arg to removeDocumentDecision', function () {
+  var sb = makeSandbox([makeDoc({ _ravatex_source: 'legacy' })]);
+  var removeArgs = [];
+  var origRemove = sb.window.RAVATEX_DOCUMENTS.removeDocumentDecision;
+  sb.window.RAVATEX_DOCUMENTS.removeDocumentDecision = function () {
+    removeArgs.push(Array.prototype.slice.call(arguments));
+    return origRemove.apply(this, arguments);
+  };
+  sb.window.RAVATEX_DOCUMENTS.registerDocumentDecisionInCloud = function () {
+    return Promise.resolve({ ok: true });
+  };
+  sb.window.RAVATEX_DOCUMENTS.loadReceivedDocumentsFromSupabase = function () {
+    return Promise.resolve({ ok: true });
+  };
+  var result = sb.window.screenDocumentosRecebidos();
+  sb.window.RAVATEX_DOCUMENTS.saveDocumentDecision(
+    LEGACY_DOC_ID, { status: 'accepted' }, 'legacy'
+  );
+  result = sb.window.screenDocumentosRecebidos();
+  assert.ok(hasActionButton(result, 'desfazer-decisao-documento'), 'legacy: undo button visible');
+  var undoBtn = findAll(result, findAction('desfazer-decisao-documento'))[0];
+  undoBtn._listeners.click[0]();
+  assert.equal(removeArgs.length, 1, 'legacy undo: removeDocumentDecision called');
+  assert.equal(removeArgs[0][1], 'legacy', 'legacy undo: second arg is "legacy"');
 });
 
 // ---------------------------------------------------------------------

@@ -412,11 +412,22 @@
   // G20-B: Decisão local de documento (aceitar/rejeitar/desfazer)
   // Persistida em localStorage por document_id. O JSONL importado
   // continua sendo snapshot externo — a decisão local vence na UI.
+  //
+  // G28-B5-D5-B2 (IAexec): Todas as APIs locais exigem proveniência
+  // explícita (source). Somente 'manual' ou 'legacy' autorizam
+  // leitura/escrita no mapa local. 'supabase', 'unknown', ausente,
+  // null, vazio, whitespace ou qualquer valor inválido fecham
+  // em fail-closed sem acessar RAVATEX_DOCUMENTS_DECISIONS.
   // -------------------------------------------------------------------
 
   ns.DECISIONS_KEY = 'RAVATEX_DOCUMENTS_DECISIONS';
 
-  ns.loadDocumentDecisions = function loadDocumentDecisions() {
+  function _isLocalSource(source) {
+    return source === 'manual' || source === 'legacy';
+  }
+
+  ns.loadDocumentDecisions = function loadDocumentDecisions(source) {
+    if (!_isLocalSource(source)) return {};
     try {
       var raw = localStorage.getItem(ns.DECISIONS_KEY);
       if (!raw) return {};
@@ -428,16 +439,19 @@
     }
   };
 
-  ns.saveDocumentDecision = function saveDocumentDecision(documentId, decision) {
+  ns.saveDocumentDecision = function saveDocumentDecision(documentId, decision, source) {
     if (typeof documentId !== 'string' || !documentId) return { ok: false, error: 'document_id obrigatorio' };
     if (documentId.indexOf('doc-') === 0) return { ok: false, error: 'document_id invalido (fallback)' };
+    if (!_isLocalSource(source)) {
+      return { ok: false, error: 'legacy_source_required' };
+    }
     if (!decision || typeof decision !== 'object') return { ok: false, error: 'decision invalida' };
     var st = decision.status;
     if (st !== 'accepted' && st !== 'rejected') return { ok: false, error: 'status deve ser accepted ou rejected' };
     if (st === 'rejected' && !(typeof decision.motivo === 'string' && decision.motivo.trim())) {
       return { ok: false, error: 'rejeicao exige motivo' };
     }
-    var decisions = ns.loadDocumentDecisions();
+    var decisions = ns.loadDocumentDecisions(source);
     decisions[documentId] = {
       status: st,
       motivo: (typeof decision.motivo === 'string' ? decision.motivo.trim() : ''),
@@ -453,9 +467,12 @@
     }
   };
 
-  ns.removeDocumentDecision = function removeDocumentDecision(documentId) {
+  ns.removeDocumentDecision = function removeDocumentDecision(documentId, source) {
+    if (!_isLocalSource(source)) {
+      return { ok: false, error: 'legacy_source_required' };
+    }
     if (typeof documentId !== 'string' || !documentId) return { ok: false };
-    var decisions = ns.loadDocumentDecisions();
+    var decisions = ns.loadDocumentDecisions(source);
     if (!decisions[documentId]) return { ok: true };
     delete decisions[documentId];
     try {
@@ -466,13 +483,14 @@
     }
   };
 
-  ns.getDocumentDecision = function getDocumentDecision(documentId) {
+  ns.getDocumentDecision = function getDocumentDecision(documentId, source) {
+    if (!_isLocalSource(source)) return null;
     if (typeof documentId !== 'string' || !documentId) return null;
-    var decisions = ns.loadDocumentDecisions();
+    var decisions = ns.loadDocumentDecisions(source);
     return decisions[documentId] || null;
   };
 
-  ns.getEffectiveDocumentStatus = function getEffectiveDocumentStatus(docOrId, importedStatus) {
+  ns.getEffectiveDocumentStatus = function getEffectiveDocumentStatus(docOrId, importedStatus, source) {
     var docId, impSt;
     if (typeof docOrId === 'string') {
       docId = docOrId;
@@ -484,6 +502,14 @@
       return null;
     }
     if (!docId) return null;
+
+    var localSource;
+    if (docOrId && typeof docOrId === 'object') {
+      localSource = docOrId._ravatex_source;
+    } else {
+      localSource = source;
+    }
+
     if (docOrId && typeof docOrId === 'object' && docOrId._ravatex_source === 'supabase') {
       return {
         document_id: docId,
@@ -495,15 +521,28 @@
         isDivergent: false,
       };
     }
-    var decision = ns.getDocumentDecision(docId);
-    var effSt = decision ? decision.status : impSt;
+
+    if (_isLocalSource(localSource)) {
+      var decisions = ns.loadDocumentDecisions(localSource);
+      var decision = decisions[docId] || null;
+      var effSt = decision ? decision.status : impSt;
+      return {
+        document_id: docId,
+        importedStatus: impSt,
+        effectiveStatus: effSt,
+        decision: decision,
+        isLocalDecision: !!decision,
+        isDivergent: decision ? (decision.status !== impSt) : false,
+      };
+    }
+
     return {
       document_id: docId,
       importedStatus: impSt,
-      effectiveStatus: effSt,
-      decision: decision,
-      isLocalDecision: !!decision,
-      isDivergent: decision ? (decision.status !== impSt) : false,
+      effectiveStatus: impSt,
+      decision: null,
+      isLocalDecision: false,
+      isDivergent: false,
     };
   };
 

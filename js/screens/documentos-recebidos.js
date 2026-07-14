@@ -1006,6 +1006,7 @@
         wrap.appendChild(aceitarNuvemBtn);
       }
     } else if (doc.decisionSourceKind === 'legacy' && doc.status === 'pending' && doc.hasRealId) {
+      var localSource = doc.raw && doc.raw._ravatex_source;
       wrap.appendChild(iconButton('Rejeitar', SVG_X, function () {
         var motivo = typeof window.prompt === 'function' ? window.prompt('Motivo da rejeição:') : '';
         if (motivo === null) return;
@@ -1015,7 +1016,7 @@
         }
         var result = typeof window.RAVATEX_DOCUMENTS !== 'undefined'
           && typeof window.RAVATEX_DOCUMENTS.saveDocumentDecision === 'function'
-          ? window.RAVATEX_DOCUMENTS.saveDocumentDecision(doc.id, { status: 'rejected', motivo: motivo })
+          ? window.RAVATEX_DOCUMENTS.saveDocumentDecision(doc.id, { status: 'rejected', motivo: motivo }, localSource)
           : null;
         if (result && result.ok) {
           if (typeof window.toast === 'function') window.toast('Documento rejeitado.', 'info');
@@ -1031,7 +1032,7 @@
       wrap.appendChild(iconButton('Aceitar', SVG_CHECK, function () {
         var result = typeof window.RAVATEX_DOCUMENTS !== 'undefined'
           && typeof window.RAVATEX_DOCUMENTS.saveDocumentDecision === 'function'
-          ? window.RAVATEX_DOCUMENTS.saveDocumentDecision(doc.id, { status: 'accepted' })
+          ? window.RAVATEX_DOCUMENTS.saveDocumentDecision(doc.id, { status: 'accepted' }, localSource)
           : null;
         if (result && result.ok) {
           if (typeof window.toast === 'function') window.toast('Documento aceito.', 'success');
@@ -1055,10 +1056,11 @@
     }
 
     if (doc.decisionSourceKind === 'legacy' && doc.hasLocalDecision && doc.hasRealId) {
+      var undoSource = doc.raw && doc.raw._ravatex_source;
       wrap.appendChild(iconButton('Desfazer', null, function () {
         if (typeof window.RAVATEX_DOCUMENTS !== 'undefined'
             && typeof window.RAVATEX_DOCUMENTS.removeDocumentDecision === 'function') {
-          window.RAVATEX_DOCUMENTS.removeDocumentDecision(doc.id);
+          window.RAVATEX_DOCUMENTS.removeDocumentDecision(doc.id, undoSource);
         }
         delete ui.statusOverrides[doc.id];
         if (typeof window.toast === 'function') window.toast('Decisão local removida.', 'info');
