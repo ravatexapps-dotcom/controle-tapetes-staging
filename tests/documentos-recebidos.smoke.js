@@ -167,6 +167,46 @@ test('index.html (G28-B4-B2): read-model < queue-ui < documentos-recebidos < boo
   assert.ok(idxScreen < idxBoot, 'tela antes do boot');
 });
 
+// ---------------------------------------------------------------------
+// G28-B5-D4-R1: document decision wiring script-tag checks
+// ---------------------------------------------------------------------
+
+test('index.html (G28-B5-D4-R1): modulos de decisao carregados EXATAMENTE UMA VEZ', function () {
+  const reCmd = /<script\s+src="js\/documents-decision-command\.js(?:\?[^"]*)?"\s*><\/script>/g;
+  const matchesCmd = index.match(reCmd) || [];
+  assert.equal(matchesCmd.length, 1, 'documents-decision-command.js deve ser carregado 1 vez');
+
+  const reModal = /<script\s+src="js\/screens\/documentos-recebidos-decision-modal\.js(?:\?[^"]*)?"\s*><\/script>/g;
+  const matchesModal = index.match(reModal) || [];
+  assert.equal(matchesModal.length, 1, 'documentos-recebidos-decision-modal.js deve ser carregado 1 vez');
+
+  const reCtrl = /<script\s+src="js\/documents-decision-controller\.js(?:\?[^"]*)?"\s*><\/script>/g;
+  const matchesCtrl = index.match(reCtrl) || [];
+  assert.equal(matchesCtrl.length, 1, 'documents-decision-controller.js deve ser carregado 1 vez');
+});
+
+test('index.html (G28-B5-D4-R1): ordem decisions < reader < command < modal < controller < screen', function () {
+  const idxDecisions = index.indexOf('js/documents-supabase-decisions.js');
+  const idxReader = index.indexOf('js/documents-supabase-reader.js');
+  const idxCmd = index.indexOf('js/documents-decision-command.js');
+  const idxModal = index.indexOf('js/screens/documentos-recebidos-decision-modal.js');
+  const idxCtrl = index.indexOf('js/documents-decision-controller.js');
+  const idxScreen = index.indexOf('js/screens/documentos-recebidos.js');
+
+  assert.ok(idxDecisions > 0, 'decisions presente');
+  assert.ok(idxReader > 0, 'reader presente');
+  assert.ok(idxCmd > 0, 'command presente');
+  assert.ok(idxModal > 0, 'modal presente');
+  assert.ok(idxCtrl > 0, 'controller presente');
+  assert.ok(idxScreen > 0, 'screen presente');
+
+  assert.ok(idxDecisions < idxReader, 'decisions antes do reader');
+  assert.ok(idxReader < idxCmd, 'reader antes do command');
+  assert.ok(idxCmd < idxModal, 'command antes do modal');
+  assert.ok(idxModal < idxCtrl, 'modal antes do controller');
+  assert.ok(idxCtrl < idxScreen, 'controller antes da tela');
+});
+
 test('documentos-recebidos (G28-B4-B2): tela referencia o namespace queue-ui', function () {
   assert.ok(screen.indexOf('RAVATEX_DOCUMENTOS_RECEBIDOS_QUEUE_UI') >= 0,
     'tela deve referenciar RAVATEX_DOCUMENTOS_RECEBIDOS_QUEUE_UI');
