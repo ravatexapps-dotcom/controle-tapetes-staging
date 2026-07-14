@@ -2,17 +2,10 @@
 
 // =====================================================================
 // === tests/documents-supabase-decisions.test.js ======================
-// Unit do wrapper RAVATEX_DOCUMENTS.decideDocumentInCloud
-// (js/documents-supabase-decisions.js).
-//
-// Fase: RAVATEX-DOCUMENTS-G23-D-B-CLOUD-DOCUMENT-DECISIONS-PATCH
-// Garante o contrato da RPC public.decidir_documento sem Supabase real:
-//   - guards (supabase_unavailable / document_id_required /
-//     invalid_status / motivo_required);
-//   - chamada rpc('decidir_documento', {p_document_id,p_status,p_motivo});
-//   - r.data preservado (le r.data.error, chave `error` nao `erro`);
-//   - r.error PostgREST vira ok:false; throw vira network;
-//   - sem .from()/writes diretos/service_role; so rpc('decidir_documento').
+// Unit do adapter RAVATEX_DOCUMENTS (js/documents-supabase-decisions.js).
+// Legacy decideDocumentInCloud removed in G28-B5-D5-B4.
+// Preserved: registerDocumentDecisionInCloud (canonical command adapter)
+// and undoDocumentDecisionInCloud (independent undo adapter).
 // =====================================================================
 
 const test = require('node:test');
@@ -57,70 +50,23 @@ test('decisions: arquivo existe e sintaxe valida', function () {
   require('node:child_process').execFileSync(process.execPath, ['--check', DECISIONS_PATH], { stdio: 'pipe' });
 });
 
-test('decisions: expoe decideDocumentInCloud no namespace', function () {
+test('decisions: decideDocumentInCloud is absent (undefined)', function () {
   const rt = makeSandbox({ withSupa: false });
-  assert.equal(typeof rt.ns.decideDocumentInCloud, 'function');
+  assert.equal(rt.ns.decideDocumentInCloud, undefined);
+});
+
+test('decisions: register and undo are the only decision entry points beyond namespace bootstrap', function () {
+  const rt = makeSandbox({ withSupa: false });
+  const exportedFunctions = Object.keys(rt.ns).filter(function (k) {
+    return typeof rt.ns[k] === 'function';
+  });
+  assert.equal(exportedFunctions.length, 2, 'exactly 2 exported functions');
+  assert.ok(exportedFunctions.includes('registerDocumentDecisionInCloud'));
+  assert.ok(exportedFunctions.includes('undoDocumentDecisionInCloud'));
   assert.equal(typeof rt.ns.undoDocumentDecisionInCloud, 'function');
 });
 
-test('decisions: sem supa retorna supabase_unavailable', async function () {
-  const rt = makeSandbox({ withSupa: false });
-  const result = await rt.ns.decideDocumentInCloud(DOC_ID, 'accepted', null);
-  assert.deepEqual(plain(result), { ok: false, error: 'supabase_unavailable' });
-});
 
-test('decisions: supa sem rpc retorna supabase_unavailable', async function () {
-  const rt = makeSandbox({ withSupa: false });
-  rt.sandbox.supa = { from: function () {} };
-  const result = await rt.ns.decideDocumentInCloud(DOC_ID, 'accepted', null);
-  assert.deepEqual(plain(result), { ok: false, error: 'supabase_unavailable' });
-});
-
-test('decisions: documentId ausente retorna document_id_required e nao chama rpc', async function () {
-  const rt = makeSandbox({});
-  const result = await rt.ns.decideDocumentInCloud('   ', 'accepted', null);
-  assert.deepEqual(plain(result), { ok: false, error: 'document_id_required' });
-  assert.equal(rt.calls.length, 0);
-});
-
-test('decisions: status invalido retorna invalid_status e nao chama rpc', async function () {
-  const rt = makeSandbox({});
-  const result = await rt.ns.decideDocumentInCloud(DOC_ID, 'foo', null);
-  assert.deepEqual(plain(result), { ok: false, error: 'invalid_status' });
-  assert.equal(rt.calls.length, 0);
-});
-
-test('decisions: rejected sem motivo retorna motivo_required e nao chama rpc', async function () {
-  const rt = makeSandbox({});
-  const vazio = await rt.ns.decideDocumentInCloud(DOC_ID, 'rejected', '   ');
-  assert.deepEqual(plain(vazio), { ok: false, error: 'motivo_required' });
-  const nulo = await rt.ns.decideDocumentInCloud(DOC_ID, 'rejected', null);
-  assert.deepEqual(plain(nulo), { ok: false, error: 'motivo_required' });
-  assert.equal(rt.calls.length, 0);
-});
-
-test('decisions: accepted usa rpc decidir_documento com p_motivo null', async function () {
-  const rt = makeSandbox({
-    rpcResult: { data: { ok: true, status: 'accepted', decision_id: 'd1', candidate_updated: true } },
-  });
-  const result = await rt.ns.decideDocumentInCloud(DOC_ID, 'accepted', null);
-  assert.equal(result.ok, true);
-  assert.equal(result.candidate_updated, true);
-  assert.equal(rt.calls.length, 1);
-  assert.equal(rt.calls[0].fn, 'decidir_documento');
-  assert.deepEqual(plain(rt.calls[0].params), {
-    p_document_id: DOC_ID, p_status: 'accepted', p_motivo: null,
-  });
-});
-
-test('decisions: rejected envia motivo trimmed', async function () {
-  const rt = makeSandbox({ rpcResult: { data: { ok: true, status: 'rejected' } } });
-  const result = await rt.ns.decideDocumentInCloud(DOC_ID, 'rejected', '  Arquivo ilegivel  ');
-  assert.equal(result.ok, true);
-  assert.deepEqual(plain(rt.calls[0].params), {
-    p_document_id: DOC_ID, p_status: 'rejected', p_motivo: 'Arquivo ilegivel',
-  });
-});
 
 test('decisions: undo usa rpc desfazer_decisao_documento com motivo trimmed', async function () {
   const rt = makeSandbox({ rpcResult: { data: { ok: true, restored_status: 'assigned' } } });
@@ -148,46 +94,7 @@ test('decisions: undo preserva erros retornados pela RPC', async function () {
   assert.equal(result.error, 'base_status_unavailable');
 });
 
-test('decisions: admin_required em r.data.error e preservado', async function () {
-  const rt = makeSandbox({ rpcResult: { data: { ok: false, error: 'admin_required' } } });
-  const result = await rt.ns.decideDocumentInCloud(DOC_ID, 'accepted', null);
-  assert.equal(result.ok, false);
-  assert.equal(result.error, 'admin_required');
-});
 
-test('decisions: motivo_required do servidor em r.data.error e preservado (rpc chamada)', async function () {
-  const rt = makeSandbox({ rpcResult: { data: { ok: false, error: 'motivo_required' } } });
-  const result = await rt.ns.decideDocumentInCloud(DOC_ID, 'rejected', 'motivo enviado');
-  assert.equal(result.ok, false);
-  assert.equal(result.error, 'motivo_required');
-  assert.equal(rt.calls.length, 1);
-});
-
-test('decisions: r.error PostgREST vira ok:false com message', async function () {
-  const rt = makeSandbox({ rpcResult: { error: { message: 'permission denied for function decidir_documento' } } });
-  const result = await rt.ns.decideDocumentInCloud(DOC_ID, 'accepted', null);
-  assert.equal(result.ok, false);
-  assert.equal(result.error, 'permission denied for function decidir_documento');
-});
-
-test('decisions: r.error sem message cai em supabase_error', async function () {
-  const rt = makeSandbox({ rpcResult: { error: {} } });
-  const result = await rt.ns.decideDocumentInCloud(DOC_ID, 'accepted', null);
-  assert.equal(result.ok, false);
-  assert.equal(result.error, 'supabase_error');
-});
-
-test('decisions: promise rejeitada vira network', async function () {
-  const rt = makeSandbox({ rpcImpl: function () { return Promise.reject(new Error('boom')); } });
-  const result = await rt.ns.decideDocumentInCloud(DOC_ID, 'accepted', null);
-  assert.deepEqual(plain(result), { ok: false, error: 'network' });
-});
-
-test('decisions: throw sincrono na rpc vira network', async function () {
-  const rt = makeSandbox({ rpcImpl: function () { throw new Error('sync boom'); } });
-  const result = await rt.ns.decideDocumentInCloud(DOC_ID, 'accepted', null);
-  assert.deepEqual(plain(result), { ok: false, error: 'network' });
-});
 
 test('decisions: nao contem .from(), writes diretos nem service_role', function () {
   assert.equal(/\.from\s*\(/.test(DECISIONS), false, '.from( presente');
@@ -199,11 +106,12 @@ test('decisions: nao contem .from(), writes diretos nem service_role', function 
   assert.equal(/localStorage/.test(DECISIONS), false, 'localStorage presente');
 });
 
-test('decisions: usa RPCs decidir_documento, desfazer_decisao_documento e registrar_decisao_documento', function () {
+test('decisions: only canonical registration and undo RPCs are present (no legacy RPC)', function () {
   const rpcNames = Array.from(DECISIONS.matchAll(/\.rpc\s*\(\s*['"]([^'"]+)['"]/g)).map((m) => m[1]);
-  assert.ok(rpcNames.includes('decidir_documento'));
-  assert.ok(rpcNames.includes('desfazer_decisao_documento'));
   assert.ok(rpcNames.includes('registrar_decisao_documento'));
+  assert.ok(rpcNames.includes('desfazer_decisao_documento'));
+  assert.equal(rpcNames.length, 2, 'exactly 2 RPCs with no legacy RPC');
+  assert.equal(rpcNames.includes('decidir_documento'), false, 'legacy RPC removed');
 });
 
 // =====================================================================

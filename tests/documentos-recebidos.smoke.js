@@ -1690,11 +1690,9 @@ test('G23-D-B: doc manual continua usando saveDocumentDecision (localStorage), s
     filename_original: 'manual.pdf', tipo_documento: 'nf', formato: 'pdf', status: 'pending',
   }]);
   var saveCalls = [];
-  var cloudCalls = 0;
   sb.window.RAVATEX_DOCUMENTS.saveDocumentDecision = function (id, decision) {
     saveCalls.push({ id: id, decision: decision }); return { ok: true };
   };
-  sb.window.RAVATEX_DOCUMENTS.decideDocumentInCloud = function () { cloudCalls++; return Promise.resolve({ ok: true }); };
   sb.window.setApp = function () {};
   var container = new FakeNode('div');
   sb.container = container;
@@ -1706,7 +1704,6 @@ test('G23-D-B: doc manual continua usando saveDocumentDecision (localStorage), s
   acc._listeners.click[0]();
   assert.equal(saveCalls.length, 1, 'usou saveDocumentDecision (localStorage)');
   assert.equal(saveCalls[0].decision.status, 'accepted', 'decisao local accepted');
-  assert.equal(cloudCalls, 0, 'nao usou decisao em nuvem para doc manual');
 });
 
 // ---------------------------------------------------------------------
