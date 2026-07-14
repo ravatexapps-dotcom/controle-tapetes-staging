@@ -38,7 +38,7 @@
     scanPlaying: true,
     refreshing: false,
     lastRun: null,
-    statusOverrides: {},
+
     mappedTypes: {},
     searchHasFocus: false,
     searchCursorPos: 0,
@@ -315,7 +315,7 @@
       ? window.RAVATEX_DOCUMENTS.getEffectiveDocumentStatus(doc) : null;
     var importedStatus = normalizeStatus(doc && doc.status);
     var status = decisionSourceKind !== 'unknown'
-      ? (effective ? effective.effectiveStatus : (ui.statusOverrides[id] || importedStatus))
+      ? (effective ? effective.effectiveStatus : importedStatus)
       : importedStatus;
     var hasLocalDecision = effective ? effective.isLocalDecision : false;
     var isDivergent = effective ? effective.isDivergent : false;
@@ -756,7 +756,7 @@
   }
 
   // Cloud decision via canonical controller + modal + adapter.
-  // NAO usa localStorage, statusOverrides, window.prompt, nem
+  // NAO usa localStorage, window.prompt, nem
   // decideDocumentInCloud diretamente.
   var _cloudDecisionController = null;
   var _cloudDecisionModal = null;
@@ -1021,8 +1021,7 @@
         if (result && result.ok) {
           if (typeof window.toast === 'function') window.toast('Documento rejeitado.', 'info');
         } else {
-          ui.statusOverrides[doc.id] = 'rejected';
-          if (typeof window.toast === 'function') window.toast('Documento marcado como rejeitado nesta sessao (sem persistencia).', 'info');
+          if (typeof window.toast === 'function') window.toast('Não foi possível salvar a decisão local. O status do documento não foi alterado.', 'error');
         }
         rerender();
       }, 'color:#d6403a;border-color:#f0cfcd;', {
@@ -1037,8 +1036,7 @@
         if (result && result.ok) {
           if (typeof window.toast === 'function') window.toast('Documento aceito.', 'success');
         } else {
-          ui.statusOverrides[doc.id] = 'accepted';
-          if (typeof window.toast === 'function') window.toast('Documento marcado como aceito nesta sessao (sem persistencia).', 'success');
+          if (typeof window.toast === 'function') window.toast('Não foi possível salvar a decisão local. O status do documento não foi alterado.', 'error');
         }
         rerender();
       }, 'color:#18794a;border-color:#a7d8bd;', {
@@ -1058,12 +1056,15 @@
     if (doc.decisionSourceKind === 'legacy' && doc.hasLocalDecision && doc.hasRealId) {
       var undoSource = doc.raw && doc.raw._ravatex_source;
       wrap.appendChild(iconButton('Desfazer', null, function () {
-        if (typeof window.RAVATEX_DOCUMENTS !== 'undefined'
-            && typeof window.RAVATEX_DOCUMENTS.removeDocumentDecision === 'function') {
-          window.RAVATEX_DOCUMENTS.removeDocumentDecision(doc.id, undoSource);
+        var removeResult = typeof window.RAVATEX_DOCUMENTS !== 'undefined'
+          && typeof window.RAVATEX_DOCUMENTS.removeDocumentDecision === 'function'
+          ? window.RAVATEX_DOCUMENTS.removeDocumentDecision(doc.id, undoSource)
+          : null;
+        if (removeResult && removeResult.ok) {
+          if (typeof window.toast === 'function') window.toast('Decisão local removida.', 'info');
+        } else {
+          if (typeof window.toast === 'function') window.toast('Não foi possível desfazer a decisão local. O estado persistido foi mantido.', 'error');
         }
-        delete ui.statusOverrides[doc.id];
-        if (typeof window.toast === 'function') window.toast('Decisão local removida.', 'info');
         rerender();
       }, 'color:#8a93a3;border-color:#d0d3d8;font-size:11px;', {
         'data-action': 'desfazer-decisao-documento',

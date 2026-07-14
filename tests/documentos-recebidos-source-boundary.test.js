@@ -298,7 +298,7 @@ test('G28-B5-D5-B1: legacy source doc shows local buttons and save/remove with e
   assert.equal(saveArgs[0][2], 'legacy', 'legacy accept: third arg is "legacy"');
 });
 
-test('G28-B5-D5-B1: manual doc fallback to statusOverrides when save fails', function () {
+test('G28-B5-D5-B1: manual doc save failure shows error, no statusOverrides fallback', function () {
   var sb = makeSandbox([makeDoc({ _ravatex_source: 'manual' })]);
   var saveArgs = [];
   var toastMessages = [];
@@ -316,11 +316,21 @@ test('G28-B5-D5-B1: manual doc fallback to statusOverrides when save fails', fun
   assert.doesNotThrow(function () { acceptBtn._listeners.click[0](); }, 'handler does not throw');
   assert.equal(saveArgs.length, 1, 'saveDocumentDecision was called');
   assert.equal(saveArgs[0][2], 'manual', 'saveDocumentDecision third arg is "manual"');
-  // Fallback toast: "sem persistencia" signals statusOverrides path was taken
+  // Error toast: no fake visual accepted status
+  var hasErrorToast = toastMessages.some(function (t) {
+    return t.type === 'error' && t.msg.indexOf('Não foi possível salvar a decisão local') >= 0;
+  });
+  assert.ok(hasErrorToast, 'error toast shown on save failure, no fake status');
+  // No sem persistencia / statusOverrides toast
   var hasFallbackToast = toastMessages.some(function (t) {
     return t.msg.indexOf('sem persistencia') >= 0;
   });
-  assert.ok(hasFallbackToast, 'fallback toast shows sem persistencia (statusOverrides path)');
+  assert.equal(hasFallbackToast, false, 'no fallback toast (statusOverrides removed)');
+  // Status remains pending (no fake accepted)
+  var statusPills = findAll(result, function (n) {
+    return n._attrs && n._attrs['data-field'] === 'status';
+  });
+  assert.ok(statusPills.length > 0, 'status pill present');
 });
 
 test('G28-B5-D5-B1: manual doc local undo calls removeDocumentDecision with exact provenance', function () {
@@ -462,28 +472,11 @@ test('G28-B5-D5-B1: static check — no generic !isSupabaseSource authorizing lo
   assert.ok(screenContent.indexOf('decisionSourceKind') >= 0,
     'screen must reference decisionSourceKind');
 
-  // Every ui.statusOverrides use must be guarded by a decisionSourceKind check
-  // that prevents execution for unknown source.
-  var guardOverridePat = /decisionSourceKind\s*!==\s*['"]unknown['"]/;
-  var guardLegacyPat = /doc\.decisionSourceKind\s*===\s*['"]legacy['"]/;
-  var soHits = [];
-  for (var si = 0; si < lines.length; si++) {
-    if (lines[si].indexOf('ui.statusOverrides') >= 0) {
-      soHits.push(si);
-    }
-  }
-  soHits.forEach(function (soLine) {
-    var inBuildActions = lines[soLine].indexOf('ui.statusOverrides[doc.id]') >= 0;
-    var needPat = inBuildActions ? guardLegacyPat : guardOverridePat;
-    var found = false;
-    for (var sj = soLine - 1; sj >= Math.max(0, soLine - 60); sj--) {
-      if (needPat.test(lines[sj])) {
-        found = true;
-        break;
-      }
-    }
-    assert.ok(found, 'Line ' + (soLine + 1) + ': ui.statusOverrides must be guarded by decisionSourceKind check');
-  });
+  // statusOverrides must be completely absent from the source
+  assert.equal(screenContent.indexOf('ui.statusOverrides'), -1,
+    'ui.statusOverrides must be completely removed from source');
+  assert.equal(screenContent.indexOf('statusOverrides'), -1,
+    'statusOverrides must be completely removed from source');
 });
 
 test('G28-B5-D5-B1: static check — buildActionButtons uses explicit source kind tri-state', function () {
