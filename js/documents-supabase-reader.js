@@ -21,7 +21,7 @@
     'rejected_at', 'rejected_reason', 'ingestor_status', 'ingestor_state_at',
     'ingestor_event_id', 'ingestor_rejected_reason', 'schema_version', 'criado_em'
   ].join(', ');
-  var DECISION_FIELDS = 'document_id, status, motivo, decidido_em, source';
+  var DECISION_FIELDS = 'id, document_id, status, motivo, decidido_em, source, command_id';
   var EVIDENCE_FIELDS = 'document_id, evidence_version, technical_evidence, origin, created_at';
 
   function asString(value) {
@@ -178,10 +178,12 @@
       _ravatex_decision_source: decision ? 'server' : null,
       _ravatex_can_undo_server_decision: !!decision && hasCompleteCanonicalBase(candidate),
       _ravatex_server_decision: decision ? {
+        id: typeof decision.id === 'string' ? decision.id : null,
         status: decision.status,
         motivo: decision.motivo || '',
         decidido_em: decision.decidido_em || '',
         source: decision.source || '',
+        command_id: typeof decision.command_id === 'string' ? decision.command_id : null,
       } : null,
     };
   }

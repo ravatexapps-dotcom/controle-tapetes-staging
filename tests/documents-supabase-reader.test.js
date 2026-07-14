@@ -544,6 +544,140 @@ test('evidence: nao muta objetos de technical_evidence nem origin', async functi
   assert.deepStrictEqual(defaultOrigin, originalOrigin, 'origin nao foi mutado');
 });
 
+// =====================================================================
+// G28-B5-D1 — Active Decision Projection Tests
+// =====================================================================
+
+test('reader: DECISION_FIELDS inclui id e command_id', async function () {
+  var decision = {
+    id: 'dec-001', document_id: candidate.document_id, status: 'accepted',
+    motivo: null, decidido_em: '2026-07-09T12:00:00.000Z', source: 'manual',
+    command_id: 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee', ativo: true,
+  };
+  var rt = makeSandbox({ candidatesResult: { data: [candidate] }, decisionsResult: { data: [decision] } });
+  await rt.ns.loadReceivedDocumentsFromSupabase();
+  var decisionsSelect = rt.calls.find(function (c) {
+    return c.table === 'document_decisions' && c.method === 'select';
+  });
+  assert.ok(decisionsSelect, 'decision select chamado');
+  assert.ok(decisionsSelect.fields.includes('id'), 'id em DECISION_FIELDS');
+  assert.ok(decisionsSelect.fields.includes('command_id'), 'command_id em DECISION_FIELDS');
+  assert.ok(decisionsSelect.fields.includes('document_id'), 'document_id em DECISION_FIELDS');
+  assert.ok(decisionsSelect.fields.includes('status'), 'status em DECISION_FIELDS');
+  assert.ok(decisionsSelect.fields.includes('motivo'), 'motivo em DECISION_FIELDS');
+  assert.ok(decisionsSelect.fields.includes('decidido_em'), 'decidido_em em DECISION_FIELDS');
+  assert.ok(decisionsSelect.fields.includes('source'), 'source em DECISION_FIELDS');
+});
+
+test('reader: _ravatex_server_decision contem id e command_id', async function () {
+  var decision = {
+    id: 'dec-001', document_id: candidate.document_id, status: 'accepted',
+    motivo: null, decidido_em: '2026-07-09T12:00:00.000Z', source: 'manual',
+    command_id: 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee', ativo: true,
+  };
+  var candidateWithBase = Object.assign({}, candidate, {
+    ingestor_status: 'assigned', ingestor_state_at: '2026-07-09T10:02:00.000Z',
+    ingestor_event_id: 'ingevt-assigned-99',
+  });
+  var rt = makeSandbox({ candidatesResult: { data: [candidateWithBase] }, decisionsResult: { data: [decision] } });
+  await rt.ns.loadReceivedDocumentsFromSupabase();
+  var doc = rt.sandbox.RAVATEX_DOCUMENTS_RECEIVED[0];
+  assert.ok(doc._ravatex_server_decision, 'server decision presente');
+  assert.equal(doc._ravatex_server_decision.id, 'dec-001');
+  assert.equal(doc._ravatex_server_decision.command_id, 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee');
+  assert.equal(doc._ravatex_server_decision.status, 'accepted');
+  assert.equal(doc._ravatex_server_decision.motivo, '');
+  assert.ok(doc._ravatex_server_decision.decidido_em);
+  assert.equal(doc._ravatex_server_decision.source, 'manual');
+});
+
+test('reader: command_id null permanece null na projecao', async function () {
+  var decision = {
+    id: 'dec-002', document_id: candidate.document_id, status: 'accepted',
+    motivo: null, decidido_em: '2026-07-09T12:00:00.000Z', source: 'manual',
+    command_id: null, ativo: true,
+  };
+  var candidateWithBase = Object.assign({}, candidate, {
+    ingestor_status: 'assigned', ingestor_state_at: '2026-07-09T10:02:00.000Z',
+    ingestor_event_id: 'ingevt-assigned-99',
+  });
+  var rt = makeSandbox({ candidatesResult: { data: [candidateWithBase] }, decisionsResult: { data: [decision] } });
+  await rt.ns.loadReceivedDocumentsFromSupabase();
+  var doc = rt.sandbox.RAVATEX_DOCUMENTS_RECEIVED[0];
+  assert.equal(doc._ravatex_server_decision.command_id, null);
+});
+
+test('reader: decisao sem id (legado) retorna id null na projecao', async function () {
+  var decision = {
+    document_id: candidate.document_id, status: 'accepted',
+    motivo: null, decidido_em: '2026-07-09T12:00:00.000Z', source: 'manual',
+    command_id: null, ativo: true,
+  };
+  var candidateWithBase = Object.assign({}, candidate, {
+    ingestor_status: 'assigned', ingestor_state_at: '2026-07-09T10:02:00.000Z',
+    ingestor_event_id: 'ingevt-assigned-99',
+  });
+  var rt = makeSandbox({ candidatesResult: { data: [candidateWithBase] }, decisionsResult: { data: [decision] } });
+  await rt.ns.loadReceivedDocumentsFromSupabase();
+  var doc = rt.sandbox.RAVATEX_DOCUMENTS_RECEIVED[0];
+  assert.equal(doc._ravatex_server_decision.id, null);
+});
+
+test('reader: linha historica inativa nao e projetada', async function () {
+  var activeDecision = {
+    id: 'dec-active', document_id: candidate.document_id, status: 'accepted',
+    motivo: null, decidido_em: '2026-07-09T12:00:00.000Z', source: 'manual',
+    command_id: 'cmd-active', ativo: true,
+  };
+  var inactiveDecision = {
+    id: 'dec-old', document_id: candidate.document_id, status: 'rejected',
+    motivo: 'Versao anterior', decidido_em: '2026-07-08T12:00:00.000Z', source: 'manual',
+    command_id: 'cmd-old', ativo: false,
+  };
+  var candidateWithBase = Object.assign({}, candidate, {
+    ingestor_status: 'assigned', ingestor_state_at: '2026-07-09T10:02:00.000Z',
+    ingestor_event_id: 'ingevt-assigned-99',
+  });
+  var rt = makeSandbox({
+    candidatesResult: { data: [candidateWithBase] },
+    decisionsResult: { data: [activeDecision, inactiveDecision] },
+  });
+  await rt.ns.loadReceivedDocumentsFromSupabase();
+  var doc = rt.sandbox.RAVATEX_DOCUMENTS_RECEIVED[0];
+  assert.equal(doc._ravatex_server_decision.id, 'dec-active');
+  assert.equal(doc._ravatex_decision_source, 'server');
+});
+
+test('reader: sem decisao ativa _ravatex_server_decision e null', async function () {
+  var rt = makeSandbox({ candidatesResult: { data: [candidate] }, decisionsResult: { data: [] } });
+  await rt.ns.loadReceivedDocumentsFromSupabase();
+  var doc = rt.sandbox.RAVATEX_DOCUMENTS_RECEIVED[0];
+  assert.equal(doc._ravatex_server_decision, null);
+  assert.equal(doc._ravatex_decision_source, null);
+});
+
+test('reader: shape antigo permanece intacto com novos campos', async function () {
+  var decision = {
+    id: 'dec-003', document_id: candidate.document_id, status: 'rejected',
+    motivo: 'Documento duplicado', decidido_em: '2026-07-09T12:00:00.000Z', source: 'email',
+    command_id: 'cmd-003', ativo: true,
+  };
+  var candidateWithBase = Object.assign({}, candidate, {
+    ingestor_status: 'assigned', ingestor_state_at: '2026-07-09T10:02:00.000Z',
+    ingestor_event_id: 'ingevt-assigned-99', ingestor_rejected_reason: null,
+  });
+  var rt = makeSandbox({ candidatesResult: { data: [candidateWithBase] }, decisionsResult: { data: [decision] } });
+  await rt.ns.loadReceivedDocumentsFromSupabase();
+  var doc = rt.sandbox.RAVATEX_DOCUMENTS_RECEIVED[0];
+  assert.equal(doc.status, 'rejected');
+  assert.equal(doc.rejected_reason, 'Documento duplicado');
+  assert.equal(doc._ravatex_decision_source, 'server');
+  assert.equal(doc._ravatex_can_undo_server_decision, true);
+  assert.equal(doc._ravatex_server_decision.status, 'rejected');
+  assert.equal(doc._ravatex_server_decision.motivo, 'Documento duplicado');
+  assert.equal(doc._ravatex_server_decision.source, 'email');
+});
+
 // 17. No writes or RPCs (including evidence table)
 test('evidence: nenhuma escrita ou RPC mesmo com tabela de evidencia', function () {
   assert.equal(/\.insert\s*\(/.test(READER), false);
