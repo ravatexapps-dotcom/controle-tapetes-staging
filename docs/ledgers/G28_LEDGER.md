@@ -367,3 +367,27 @@ risco residual e próxima fase indicada no fechamento.
 - **Validação:** gates verdes; revisão independente `APPROVE`; telemetria partial e não bloqueante.
 - **Acessos remotos:** sem staging; sem produção; sem push.
 - **Próxima fase:** D5-B2, D5-B3 e D5-B4 não iniciadas.
+
+---
+
+## 2026-07-14 — G28-B5-D5-B2 — Harden local decision helpers and explicit legacy call sites
+
+- **Gate:** `CLOSED / ACCEPTED_WITH_PREEXISTING_TEST_DEBT`; auditoria V1 `VERIFIED`.
+- **Baseline técnico:** `ff15d0c`.
+- **Commit técnico final:** `c51542244ab6e3c683a1a0a54fcc634df6f7478d` — `G28-B5-D5-B2: require explicit legacy source for local decisions`.
+- **Amend excepcional:** somente correção de mensagem do commit `b483620c5248665614e576b2f7c742c9fcd08dea`; tree preservada `66cad0f089e56b94c4c0471d442e33fa162d3443`.
+- **Manifesto literal:**
+  - `js/documents-ingestor-import-received.js`
+  - `js/documents-ingestor-loader.js`
+  - `js/documents-ingestor.js`
+  - `js/screens/documentos-recebidos.js`
+  - `tests/documentos-recebidos-source-boundary.test.js`
+  - `tests/documents-ingestor-loader.test.js`
+  - `tests/documents-ingestor-local-decision-boundary.test.js`
+  - `tests/g14-c-bridge-smoke.test.js`
+- **Mudança funcional:** helpers locais endurecidos; somente provenance explícita `manual`/`legacy` permite decisão local. Provenance explícita foi materializada no loader/bridge por documento; source ausente e `g22-auto` são `unknown`; Pedido Detail foi preservado e recebe o documento materializado.
+- **Proporção:** 87 inserções e 23 remoções em produção; 804 inserções e 22 remoções em testes; classificação `SCOPE_PROPORTIONATE`.
+- **Validação:** gates obrigatórios verdes; revisão independente read-only `APPROVE`; nenhuma regressão nova.
+- **Dívida preexistente:** 2 falhas em `tests/documents-ingestor.test.js` e 15 falhas em `tests/g14-c-bridge-smoke.test.js`, idênticas ao baseline.
+- **Acessos:** sem staging, produção, Supabase ou push.
+- **Próxima fase indicada:** `G28-B5-D5-B3 — REMOVE STATUSOVERRIDES`; D5-B3/D5-B4 não iniciadas.
