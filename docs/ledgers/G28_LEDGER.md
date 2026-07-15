@@ -601,3 +601,32 @@ risco residual e próxima fase indicada no fechamento.
 - **Access:** no push; no production; no Supabase; no migration; no network.
 - **Commit:** single local commit `G28-B7: display canonical document links on Pedido detail` (resolve final HEAD with `git rev-parse HEAD` after commit).
 - **Next indicated (not authorized):** architect acceptance of this B7 increment and/or explicit authorization to continue the remaining B7 surfaces. `G28-B8` remains unauthorized.
+
+---
+
+## 2026-07-14 — G28-B7 — Complete canonical link display surfaces (continuation)
+
+- **Gate:** `IMPLEMENTED / TESTED (local) / READY FOR ARCHITECT ACCEPTANCE`. Same-phase continuation of the entry above; not a new phase, not `CLOSED`, not `ACCEPTED` (IAexec does not self-close). `G28-B8` remains unauthorized.
+- **Antecedent:** partial Pedido-detail B7 commit `ed35f049397af4061ed6e8bb2d9ec3056c543724` (Pedido detail only). A prior session exhausted credits after implementing the remaining B7 surfaces and running tests, before documentation closeout and commit. This continuation recovers, audits, verifies and commits that work without redesign.
+- **Surfaces completed in this continuation:**
+  - **OP detail:** `js/screens/op-latex-admin.js` and `js/screens/op-tecelagem-producao-admin.js` now render `Documentos vinculados` (confirmed canonical links via `buildLinkedDocumentsForOp`) and append canonical document-link timeline entries. The pre-existing Drive-attachment slots are preserved as the visual-only attachment layer, unchanged.
+  - **Pedido / OP canonical timeline:** `js/document-surface-links-read-model.js` gains `buildDocumentLinkTimelineForPedido` / `buildDocumentLinkTimelineForOp` and `TIMELINE_KIND` (`linked`/`replaced`/`unlinked`). Ordered newest-first; confirmed-only by default; an OP entry is included ONLY when the OP is explicitly in the revision's typed OP children — never inferred via Pedido membership. Pedido detail renders a `LINHA DO TEMPO DOS VINCULOS` block; `js/screens/pedido-detail-progress.js` exposes `linkedDocumentTimeline` in the view model.
+  - **Global canonical search/filtering:** `js/screens/documentos-recebidos-queue-ui.js` adds `matchesConfirmedPedido`, `matchesConfirmedOp`, `matchesLinkAvailability` (filter axis `all`/`available`/`unavailable`), `getConfirmedOpOptions`, and the `confirmedPedidoId` / `confirmedOpId` / `linkAvailability` criteria wired into `filterQueue`. A confirmed Pedido filter matches ONLY the active canonical revision's `pedido_id`; a confirmed OP filter matches ONLY OPs explicitly present in the active revision's typed OP children; `pedido_manual` and `candidate.pedido_id` never satisfy a confirmed filter; unavailable link source is fail-closed.
+  - **Shared surface UI helper:** new `js/document-links-surface-ui.js` (`window.RAVATEX_DOCUMENT_LINKS_UI`) — pure, dependency-injected DOM builders `buildLinkedDocumentNodes` and `buildLinkTimelineNodes` consumed by the OP surfaces and the Pedido-detail timeline. No Supabase, no writes, no globals beyond injected `el`/`svgEl`. `index.html` loads it statically.
+- **Contract preserved (B6/B7):** confirmed links read only from the active canonical revision (`_ravatex_link_revision`); `document_candidates.pedido_id` and `pedido_manual` remain Ingestor-owned suggestions; no writers, no localStorage, no parallel state, no OP/Pedido/inventory/production/financial lifecycle change, no B8 correction/revocation UI.
+- **Tests (LF, exit 0):**
+  - `node --check` on every changed JS (10 files) — all OK.
+  - New focused `tests/document-links-surface.test.js`: **14/14** (timeline pedido/op projection + shared UI helper, incl. pedido_manual/candidate.pedido_id never confirmed, OP-not-present not inferred).
+  - `tests/documentos-recebidos-queue-ui.test.js`: **69/69** (added 11 canonical search/filter cases; existing 58 preserved).
+  - `tests/pedido-detail-linked-documents.smoke.js`: **7/7** (added canonical-timeline render case).
+  - B4–B7 document battery (19 files): **616/616**.
+  - OP + ingestor UI battery: **670 pass / 15 pre-existing** (see pre-existing comparison below). `op-latex-admin.smoke.js` (the OP file modified by this increment): **55/0**.
+- **Pre-existing failure comparison (verified against baseline `ed35f04`):**
+  - `tests/ops-list-screen.smoke.js` 11 fail, `tests/op-form-helpers.smoke.js` 3 fail, `tests/op-writes.smoke.js` 1 fail: stale-regex expectations that read `index.html` with a strict `<script\s+src="js/screens/cadastros\.js"\s*></script>` pattern ignoring the `?v=` cache-buster suffix; proven identical on baseline HEAD (`findScriptIdx` returns `-1` on both worktree and baseline). None of these files are modified by this increment. Classification: `STALE EXPECTATION` / `PRE-EXISTING`.
+  - `tests/pedido-detail.smoke.js`: 140 pass / 41 fail (CRLF `\n`-anchored regexes over untouched files) — identical to the figure reported by the prior session and to baseline. Classification: `ENVIRONMENT / CRLF ARTIFACT` / `PRE-EXISTING`.
+  - `tests/documents-ingestor.test.js`: 2 fail; `tests/g14-c-bridge-smoke.test.js`: 15 fail — unchanged from the B5-D5 ledger debt. Classification: `PRE-EXISTING`.
+- **No corrections required:** the audited diff satisfies all 10 B7-contract review points; no working code was rewritten for style.
+- **Remote verification required (not performed — Supabase access prohibited for Claude):** authenticated admin rendering of the new sections (Pedido-detail `DOCUMENTOS VINCULADOS` + timeline; OP-detail `Documentos vinculados` + timeline; queue canonical filters) against staging `ucrjtfswnfdlxwtmxnoo`. No new remote queries were introduced.
+- **Access:** no push; no production; no Supabase; no migration; no network.
+- **Commit:** single local commit `G28-B7: complete canonical link display surfaces` (resolve final HEAD with `git rev-parse HEAD` after commit).
+- **Next indicated (not authorized):** architect acceptance of `G28-B7` (all surfaces implemented and tested locally). `G28-B8` remains unauthorized.

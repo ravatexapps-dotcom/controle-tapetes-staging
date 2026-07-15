@@ -199,6 +199,40 @@
     return val === pedido;
   }
 
+  // G28-B7 canonical filters. A CONFIRMED Pedido filter matches ONLY the active
+  // canonical revision's pedido_id — never a pedido_manual suggestion and never
+  // the Ingestor-owned candidate.pedido_id.
+  function matchesConfirmedPedido(entry, pedidoId) {
+    if (!pedidoId || pedidoId === 'todos') return true;
+    var p = entry.queueItem.pedido;
+    return p.state === 'confirmed_pedido_reference' && p.pedido_id === pedidoId;
+  }
+
+  // A CONFIRMED OP filter matches only when the OP is explicitly in the active
+  // revision's typed OP children.
+  function matchesConfirmedOp(entry, opId) {
+    if (opId === null || opId === undefined || opId === '' || opId === 'todos') return true;
+    var op = entry.queueItem.op;
+    if (!op || op.state !== 'confirmed_op' || !Array.isArray(op.op_ids)) return false;
+    var target = Number(opId);
+    for (var i = 0; i < op.op_ids.length; i++) {
+      if (Number(op.op_ids[i]) === target) return true;
+    }
+    return false;
+  }
+
+  // Link-availability axis: canonical link source available vs fail-closed
+  // unavailable. Unavailable must never silently read as "no links".
+  function matchesLinkAvailability(entry, avail) {
+    if (!avail || avail === 'all') return true;
+    var p = entry.queueItem.pedido;
+    var op = entry.queueItem.op;
+    var unavailable = (p && p.state === 'unavailable') || (op && op.state === 'unavailable');
+    if (avail === 'unavailable') return unavailable;
+    if (avail === 'available') return !unavailable;
+    return true;
+  }
+
   function matchesTechnicalEvidence(entry, evidence) {
     if (evidence === 'all' || !evidence) return true;
     return entry.queueItem.filter_values.evidence_state === evidence;
@@ -215,6 +249,9 @@
       if (!matchesCollectionSource(entry, criteria.collectionSource)) return false;
       if (!matchesTechnicalEvidence(entry, criteria.technicalEvidence)) return false;
       if (!matchesPedido(entry, criteria.pedido)) return false;
+      if (!matchesConfirmedPedido(entry, criteria.confirmedPedidoId)) return false;
+      if (!matchesConfirmedOp(entry, criteria.confirmedOpId)) return false;
+      if (!matchesLinkAvailability(entry, criteria.linkAvailability)) return false;
       if (!matchesSearch(entry, termo)) return false;
       return true;
     });
@@ -428,12 +465,33 @@
     return { label: '', ariaLabel: '' };
   }
 
+  // Confirmed OP options for a canonical OP filter dropdown, derived only from
+  // the active canonical revision (queueItem.op confirmed_op op_ids).
+  function getConfirmedOpOptions(entries) {
+    entries = Array.isArray(entries) ? entries : [];
+    var seen = {};
+    var out = [];
+    entries.forEach(function (entry) {
+      var op = entry.queueItem.op;
+      if (!op || op.state !== 'confirmed_op' || !Array.isArray(op.op_ids)) return;
+      op.op_ids.forEach(function (id) {
+        var val = String(id);
+        if (val && !seen[val]) {
+          seen[val] = true;
+          out.push({ value: val, label: 'OP ' + val });
+        }
+      });
+    });
+    return out;
+  }
+
   window.RAVATEX_DOCUMENTOS_RECEBIDOS_QUEUE_UI = {
     buildQueue: buildQueue,
     getFilterOptions: getFilterOptions,
     filterQueue: filterQueue,
     isSourceEmpty: isSourceEmpty,
     getPedidoOptions: getPedidoOptions,
+    getConfirmedOpOptions: getConfirmedOpOptions,
     countByStatus: countByStatus,
     getUIState: getUIState,
     getEvidencePresentation: getEvidencePresentation,

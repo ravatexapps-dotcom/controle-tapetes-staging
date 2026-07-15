@@ -20,6 +20,7 @@ function readOrFail(p) {
 const BUNDLE = [
   readOrFail(path.join(ROOT, 'js', 'documents-ingestor.js')),
   readOrFail(path.join(ROOT, 'js', 'document-surface-links-read-model.js')),
+  readOrFail(path.join(ROOT, 'js', 'document-links-surface-ui.js')),
   readOrFail(path.join(ROOT, 'js', 'op-display.js')),
   readOrFail(path.join(ROOT, 'js', 'screens', 'pedido-chain-state.js')),
   readOrFail(path.join(ROOT, 'js', 'screens', 'pedido-detail.js')),
@@ -191,6 +192,20 @@ test('render: DOCUMENTOS VINCULADOS section shows confirmed doc with confirmed p
   assert.ok(findTextInNode(card, 'NF-vinculada.xml'), 'confirmed filename rendered');
   assert.ok(findTextInNode(card, 'Vinculo confirmado'), 'confirmed pill rendered');
   assert.ok(findTextInNode(card, 'Revisao v2'), 'link revision version rendered');
+});
+
+test('render: canonical link timeline renders for a confirmed document', function () {
+  var sandbox = makeRuntime();
+  sandbox.window.RAVATEX_DOCUMENTS_RECEIVED = [confirmedDoc()];
+  sandbox.window.RAVATEX_DOCUMENTS_RECEIVED_SOURCE = 'supabase';
+  sandbox.window.RAVATEX_DOCUMENTS_RECEIVED_REMOTE_AVAILABILITY = 'available';
+  var ns = sandbox.window.RAVATEX_SCREENS.pedidoDetail;
+  var view = ns.computeViewModel(baseState(ns));
+  assert.equal(view.linkedDocumentTimeline.state, 'available');
+  assert.equal(view.linkedDocumentTimeline.entries.length, 1);
+  var card = ns.buildDocuments(view);
+  assert.ok(findTextInNode(card, 'LINHA DO TEMPO DOS VINCULOS'), 'canonical timeline title');
+  assert.ok(findTextInNode(card, 'Documento vinculado'), 'timeline entry label');
 });
 
 test('render: empty canonical state shows explicit empty message', function () {

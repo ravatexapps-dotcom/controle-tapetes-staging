@@ -36,6 +36,9 @@ var queueUI = global.window.RAVATEX_DOCUMENTOS_RECEBIDOS_QUEUE_UI;
 
 function clone(o) { return JSON.parse(JSON.stringify(o)); }
 
+var PED_A = '11111111-1111-4111-8111-111111111111';
+var PED_B = '22222222-2222-4222-8222-222222222222';
+
 function makeDoc(overrides) {
   var doc = {
     document_id: '96ed4f0e-26b2-4c2f-9186-65f72bf5fb18',
@@ -831,3 +834,106 @@ function runTable(name, rows, fn) {
     }
   });
 }
+
+// =====================================================================
+// G28-B7 — global canonical document search (confirmed Pedido/OP + link state)
+// =====================================================================
+
+function linkedDoc(documentId, pedidoId, opIds) {
+  return makeDoc({
+    document_id: documentId,
+    filename_original: documentId + '.xml',
+    pedido_manual: null,
+    pedido_id: null,
+    _ravatex_source: 'supabase',
+    _ravatex_link_revision: {
+      state: 'available', revision_id: 'rev-' + documentId, version: 1,
+      pedido_id: pedidoId || null, pedido_status: null,
+      op_links: (opIds || []).map(function (id) { return { op_id: id, op_status: 'aberta' }; }),
+    },
+  });
+}
+
+test('search: filename/identity search matches document filename', function () {
+  setReceived([linkedDoc('alpha', PED_A, [10]), linkedDoc('beta', PED_A, [10])].map(function (d) { return d; }), 'supabase');
+  var entries = queueUI.buildQueue();
+  assert.deepStrictEqual(ids(queueUI.filterQueue(entries, { search: 'alpha' })), ['alpha']);
+});
+
+test('search: confirmed Pedido filter matches only the active canonical revision', function () {
+  setReceived([linkedDoc('a', PED_A, [10]), linkedDoc('b', PED_B, [20])], 'supabase');
+  var entries = queueUI.buildQueue();
+  assert.deepStrictEqual(ids(queueUI.filterQueue(entries, { confirmedPedidoId: PED_A })), ['a']);
+});
+
+test('search: confirmed OP filter matches only OPs in the active revision', function () {
+  setReceived([linkedDoc('a', PED_A, [10]), linkedDoc('b', PED_A, [20])], 'supabase');
+  var entries = queueUI.buildQueue();
+  assert.deepStrictEqual(ids(queueUI.filterQueue(entries, { confirmedOpId: 20 })), ['b']);
+  assert.deepStrictEqual(ids(queueUI.filterQueue(entries, { confirmedOpId: '10' })), ['a']);
+});
+
+test('search: multiple-OP membership matches each linked OP', function () {
+  setReceived([linkedDoc('multi', PED_A, [10, 20, 30])], 'supabase');
+  var entries = queueUI.buildQueue();
+  assert.deepStrictEqual(ids(queueUI.filterQueue(entries, { confirmedOpId: 10 })), ['multi']);
+  assert.deepStrictEqual(ids(queueUI.filterQueue(entries, { confirmedOpId: 30 })), ['multi']);
+  assert.deepStrictEqual(ids(queueUI.filterQueue(entries, { confirmedOpId: 999 })), []);
+});
+
+test('search: pedido_manual suggestion does NOT satisfy a confirmed Pedido filter', function () {
+  var suggestion = makeDoc({ document_id: 's', pedido_manual: 'PED-A', pedido_id: null, _ravatex_source: 'supabase' });
+  setReceived([suggestion], 'supabase');
+  var entries = queueUI.buildQueue();
+  assert.deepStrictEqual(ids(queueUI.filterQueue(entries, { confirmedPedidoId: PED_A })), []);
+});
+
+test('search: candidate.pedido_id does NOT satisfy a confirmed Pedido filter', function () {
+  var candidateOnly = makeDoc({ document_id: 'c', pedido_manual: null, pedido_id: PED_A, _ravatex_source: 'supabase' });
+  setReceived([candidateOnly], 'supabase');
+  var entries = queueUI.buildQueue();
+  assert.deepStrictEqual(ids(queueUI.filterQueue(entries, { confirmedPedidoId: PED_A })), []);
+});
+
+test('search: empty result is explicit (isFilterEmpty)', function () {
+  setReceived([linkedDoc('a', PED_A, [10])], 'supabase');
+  var entries = queueUI.buildQueue();
+  var res = queueUI.filterQueue(entries, { confirmedPedidoId: PED_B });
+  assert.equal(res.visible.length, 0);
+  assert.equal(res.isFilterEmpty, true);
+  assert.equal(res.isSourceEmpty, false);
+});
+
+test('search: unavailable link source is fail-closed via linkAvailability filter', function () {
+  global.window.RAVATEX_DOCUMENTS_RECEIVED_REMOTE_AVAILABILITY = 'unavailable';
+  setReceived([linkedDoc('a', PED_A, [10])], 'supabase');
+  var entries = queueUI.buildQueue();
+  // remote unavailable -> pedido/op projected unavailable
+  assert.deepStrictEqual(ids(queueUI.filterQueue(entries, { linkAvailability: 'unavailable' })), ['a']);
+  assert.deepStrictEqual(ids(queueUI.filterQueue(entries, { linkAvailability: 'available' })), []);
+  // confirmed filters cannot match when the canonical source is unavailable
+  assert.deepStrictEqual(ids(queueUI.filterQueue(entries, { confirmedPedidoId: PED_A })), []);
+  delete global.window.RAVATEX_DOCUMENTS_RECEIVED_REMOTE_AVAILABILITY;
+});
+
+test('search: combined confirmed Pedido + confirmed OP filters', function () {
+  setReceived([linkedDoc('a', PED_A, [10]), linkedDoc('b', PED_A, [20]), linkedDoc('c', PED_B, [10])], 'supabase');
+  var entries = queueUI.buildQueue();
+  assert.deepStrictEqual(ids(queueUI.filterQueue(entries, { confirmedPedidoId: PED_A, confirmedOpId: 10 })), ['a']);
+});
+
+test('search: filterQueue performs no writes on inputs', function () {
+  var docs = [linkedDoc('a', PED_A, [10])];
+  setReceived(docs, 'supabase');
+  var entries = queueUI.buildQueue();
+  var snapshot = JSON.stringify(entries);
+  queueUI.filterQueue(entries, { confirmedPedidoId: PED_A, confirmedOpId: 10, search: 'a' });
+  assert.equal(JSON.stringify(entries), snapshot, 'entries must not be mutated by filtering');
+});
+
+test('search: getConfirmedOpOptions lists confirmed OP ids from the active revision', function () {
+  setReceived([linkedDoc('a', PED_A, [10, 20]), linkedDoc('b', PED_A, [20])], 'supabase');
+  var entries = queueUI.buildQueue();
+  var opts = queueUI.getConfirmedOpOptions(entries).map(function (o) { return o.value; });
+  assert.deepStrictEqual(opts, ['10', '20']);
+});

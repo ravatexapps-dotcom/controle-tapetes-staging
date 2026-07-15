@@ -17,7 +17,7 @@
 **Última fase aceita:** `G28-B6 — CLOSED / ACCEPTED_WITH_NONBLOCKING_TEST_DEBT` (aceite arquitetural explícito em 2026-07-14; supersede intencionalmente o checkpoint que descrevia B6 como READY FOR ARCHITECT ACCEPTANCE).
 **Próxima ação autorizável:** aceite arquitetural do incremento G28-B7 e/ou autorização para continuar as superfícies restantes de B7; não inferir autorização de fase posterior pela numeração.
 **G28-B6:** `DECIDED / IMPLEMENTED / TESTED / STAGING FUNCTIONALLY VERIFIED / ACCEPTED_WITH_NONBLOCKING_TEST_DEBT` — commit técnico `b2f180ed0e6f1c2ee6c02881d0199d1bfaf29366`; closeout de verificação em staging `b130db44d32718ddf6d3e2bffb1439dac3a1948f`; `db/51` aplicado em `ucrjtfswnfdlxwtmxnoo`; matriz RPC 20/20, prova de dupla propriedade e rollback PostgreSQL do wrapper. Contrato: Documento→Pedido 0..1, Documento→OP 0..N; revisão dedicada, tipada/versionada; campos do Ingestor não promovidos. Débitos não bloqueantes aceitos: smoke autenticado de browser pendente; duas expectativas obsoletas em `tests/documentos-recebidos-queue-ui.test.js`; grafo sintético de auditoria em staging preservado sob `ON DELETE RESTRICT`. Ver ledger G28 (closeout B6 e aceite).
-**G28-B7:** `IMPLEMENTED / TESTED (local)` — read model canônico de projeção reversa (`js/document-surface-links-read-model.js`) + seção `DOCUMENTOS VINCULADOS` no detalhe do Pedido, confirmados via revisão canônica ativa e distintos de sugestões `pedido_manual`. Superfícies restantes (detalhe da OP, timeline, busca global) com mecanismo pronto e verificação de render autenticado pendente em staging. Ver ledger G28 (B7).
+**G28-B7:** `IMPLEMENTED / TESTED (local)` — read model canônico de projeção reversa (`js/document-surface-links-read-model.js`) + seção `DOCUMENTOS VINCULADOS` no detalhe do Pedido, confirmados via revisão canônica ativa e distintos de sugestões `pedido_manual`. Commit parcial Pedido-detail B7: `ed35f049397af4061ed6e8bb2d9ec3056c543724`. Continuação same-phase completou as superfícies restantes: detalhe da OP (`op-latex-admin` + `op-tecelagem-producao-admin`), timeline canônica de Pedido/OP, busca global canônica na fila central, helper UI compartilhado `js/document-links-surface-ui.js`. Verificação de render autenticado pendente em staging. Ver ledger G28 (B7).
 **G28-B8:** `PLANNED / NOT AUTHORIZED` — correção, revogação, restauração e auditoria; aguarda aceite de B7.
 **G28-C/D:** `PLANNED / DEFERRED`.
 **Decisões de arquiteto em aberto:** nenhuma bloqueante; G28-B6 aceito e G28-B7 autorizado; permanecem em aberto as decisões de cardinalidade/compatibilidade herdadas de G28-PLAN-R1 (não bloqueiam B7).
@@ -35,11 +35,11 @@
 
 **Fase ativa:** `G28-B7 — exibição nas superfícies — IMPLEMENTED / TESTED (local) / READY FOR ARCHITECT ACCEPTANCE`.
 
-**Incremento G28-B7:** read model canônico de projeção reversa (Pedido e OP) + exibição dos vínculos confirmados no detalhe do Pedido (seção `DOCUMENTOS VINCULADOS`), distintos das sugestões `pedido_manual`; débito B6 obsoleto de teste resolvido. Superfícies restantes (detalhe da OP, timeline, busca global) com mecanismo pronto; render autenticado em staging pendente (Supabase proibido para o Claude).
+**Incremento G28-B7:** read model canônico de projeção reversa (Pedido e OP) + exibição dos vínculos confirmados no detalhe do Pedido (seção `DOCUMENTOS VINCULADOS`), distintos das sugestões `pedido_manual`; débito B6 obsoleto de teste resolvido. Commit parcial Pedido-detail B7: `ed35f049397af4061ed6e8bb2d9ec3056c543724`. Continuação same-phase (este checkpoint) completou as superfícies restantes: detalhe da OP (`op-latex-admin` + `op-tecelagem-producao-admin`), timeline canônica de Pedido/OP (`buildDocumentLinkTimelineForPedido`/`buildDocumentLinkTimelineForOp`), busca global canônica na fila central (`confirmedPedidoId`/`confirmedOpId`/`linkAvailability` + `getConfirmedOpOptions`) e helper UI compartilhado (`js/document-links-surface-ui.js`). Render autenticado em staging pendente (Supabase proibido para o Claude).
 
 **Evidência de staging (B6):** projeto `ucrjtfswnfdlxwtmxnoo`, sem acesso a produção; migration 51 já aplicada. Matriz funcional RPC 20/20 aprovada, links canônicos não tocaram campos Ingestor e a falha de decisão após link válido retornou `decision_failed` com `no_new_revision`, `no_new_decision`, estado ativo e linhas OP prévios preservados.
 
-**Próxima ação autorizável:** aceite arquitetural do incremento G28-B7 e/ou autorização para continuar as superfícies restantes de B7. Nenhuma fase posterior é autorizada por este checkpoint.
+**Próxima ação autorizável:** aceite arquitetural de `G28-B7` (todas as superfícies B7 implementadas e testadas localmente). Nenhuma fase posterior é autorizada por este checkpoint.
 
 **Decisões de arquiteto em aberto:** nenhuma bloqueante; B6 aceito e B7 autorizado. Decisões de cardinalidade/compatibilidade herdadas de G28-PLAN-R1 permanecem abertas e não bloqueiam B7.
 
@@ -1020,7 +1020,7 @@ Qualificadores compostos podem detalhar um estado base — por exemplo
 | G28-B4 | Fila / read model de revisão documental | `PLANNED / DIAGNOSED / DECIDED / IMPLEMENTED / TESTED / ACCEPTED` | G28-B3 | `work/g28-document-qualification` @ `controle-tapetes-g28` | Conforme ledger G28 | Subfases B4-A a B4-B4 aceitas; queue read model, filtros, indicadores de estado e acesso a arquivos implementados | — |
 | G28-B5 | Persistência da decisão humana e dos vínculos canônicos Pedido/OP | `PLANNED / DIAGNOSED / DECIDED / IMPLEMENTED / TESTED / ACCEPTED` (B5-D5 consolidated: B1–B5) | G28-B4 | `work/g28-document-qualification` @ `controle-tapetes-g28` | `7d3e0261b668a46a80208198352039dc1f352010` | Decisão-comando canônica, boundary de source explícito, remoção de statusOverrides e legacy RPC runtime aceitos; linking canônico não implementado | — |
 | G28-B6 | Vínculos canônicos Documento↔Pedido/OP + modal "Validar e vincular" | `DECIDED / IMPLEMENTED / TESTED / STAGING FUNCTIONALLY VERIFIED / ACCEPTED_WITH_NONBLOCKING_TEST_DEBT` | G28-B5 | `work/g28-document-qualification` @ `controle-tapetes-g28` | técnico `b2f180ed0e6f1c2ee6c02881d0199d1bfaf29366`; closeout staging `b130db44d32718ddf6d3e2bffb1439dac3a1948f` | staging `ucrjtfswnfdlxwtmxnoo`: matriz RPC 20/20, dupla propriedade e rollback do wrapper provados; modal autenticado bloqueado por tooling; sem correção | Aceito 2026-07-14; G28-B7 autorizado |
-| G28-B7 | Exibição nas superfícies (Documentos/Pedido/OP/timeline/buscas) | `IMPLEMENTED / TESTED (local) / READY FOR ARCHITECT ACCEPTANCE` | G28-B6 | `work/g28-document-qualification` @ `controle-tapetes-g28` | commit B7 local (resolver com `git rev-parse HEAD`) | read model canônico + `DOCUMENTOS VINCULADOS` no detalhe do Pedido; testes locais verdes; render autenticado em staging pendente | Aceite do incremento; OP/timeline/busca restantes |
+| G28-B7 | Exibição nas superfícies (Documentos/Pedido/OP/timeline/buscas) | `IMPLEMENTED / TESTED (local) / READY FOR ARCHITECT ACCEPTANCE` | G28-B6 | `work/g28-document-qualification` @ `controle-tapetes-g28` | parcial Pedido-detail `ed35f049397af4061ed6e8bb2d9ec3056c543724`; continuação same-phase (resolver com `git rev-parse HEAD`) | read model canônico + `DOCUMENTOS VINCULADOS` no detalhe do Pedido; detalhe da OP (`op-latex-admin` + `op-tecelagem-producao-admin`); timeline canônica Pedido/OP; busca global canônica (`confirmedPedidoId`/`confirmedOpId`/`linkAvailability`); helper UI compartilhado `js/document-links-surface-ui.js`; testes locais verdes; render autenticado em staging pendente | Aceite arquitetural de B7 |
 | G28-B8 | Correção, revogação, restauração e auditoria | `PLANNED / NOT STARTED` | G28-B7 | a definir | — | — | Aguarda G28-B7 |
 | G28-C | Validação real em staging | `PLANNED / DEFERRED` | G28-B8 | a definir | — | — | Aguarda B8 |
 | G28-D | Publicação para o cliente acompanhar | `PLANNED / DEFERRED` | G28-C | a definir | — | — | Aguarda C |
@@ -1086,11 +1086,13 @@ será considerado totalmente fechado quando:
 G28-B6 foram aceitos** (G28-B6 em 2026-07-14, `ACCEPTED_WITH_NONBLOCKING_TEST_DEBT`).
 A fase ativa é **G28-B7 (exibição nas superfícies)**, `IMPLEMENTED / TESTED (local)`:
 read model canônico de projeção reversa + seção `DOCUMENTOS VINCULADOS` no detalhe
-do Pedido; superfícies restantes (detalhe da OP, timeline, busca global) com
-mecanismo pronto e render autenticado em staging pendente. A próxima ação
-autorizável é **aceite arquitetural do incremento G28-B7** e/ou autorização para
-continuar as superfícies restantes; nenhuma fase posterior (ex.: B8) está
-autorizada e não deve ser inferida pela numeração do plano.
+do Pedido (commit parcial `ed35f04`); continuação same-phase completou as
+superfícies restantes — detalhe da OP (`op-latex-admin` + `op-tecelagem-producao-admin`),
+timeline canônica de Pedido/OP, busca global canônica na fila central e helper
+UI compartilhado `js/document-links-surface-ui.js`. Render autenticado em staging
+permanece pendente. A próxima ação autorizável é **aceite arquitetural de G28-B7**
+(todas as superfícies implementadas e testadas localmente); nenhuma fase posterior
+(ex.: B8) está autorizada e não deve ser inferida pela numeração do plano.
 
 Estado operacional atual: `PROJECT_STATE.md`.
 Continuidade: `AGENT_HANDOFF.md`.

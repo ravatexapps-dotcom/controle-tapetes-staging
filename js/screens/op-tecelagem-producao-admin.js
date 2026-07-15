@@ -473,6 +473,7 @@
       rvSectionPill('Histórico', IC_HIST));
     if (!ctx.opEventos.length) {
       box.appendChild(el('div', { style: 'font-size:12.5px;color:#a2aab6;' }, 'Nenhum evento registrado para esta OP.'));
+      appendOpLinkTimeline(box, ctx && ctx.op);
       return box;
     }
     ctx.opEventos.forEach(function (ev, idx) {
@@ -489,7 +490,24 @@
         ev.observacao ? el('div', { style: 'font-size:13px;color:#7b8494;margin-top:1px;' }, ev.observacao) : '');
       box.appendChild(el('div', { style: 'display:flex;gap:12px;' }, trilha, conteudo));
     });
+    appendOpLinkTimeline(box, ctx && ctx.op);
     return box;
+  }
+
+  // G28-B7: canonical document-link entries appended to the OP timeline.
+  function appendOpLinkTimeline(box, op) {
+    if (typeof window.RAVATEX_DOCUMENT_SURFACE_LINKS === 'undefined'
+        || typeof window.RAVATEX_DOCUMENT_LINKS_UI === 'undefined'
+        || !op || op.id == null) {
+      return;
+    }
+    var tl = window.RAVATEX_DOCUMENT_SURFACE_LINKS.buildDocumentLinkTimelineForOp(op.id);
+    var built = window.RAVATEX_DOCUMENT_LINKS_UI.buildLinkTimelineNodes({ el: el }, tl, {});
+    if (built.nodes.length === 0) return;
+    box.appendChild(el('div', {
+      style: 'font-size:11px;font-weight:700;color:#18794a;letter-spacing:.04em;text-transform:uppercase;margin:12px 0 8px;border-top:1px solid var(--rv-color-line-100);padding-top:12px;',
+    }, 'Documentos vinculados'));
+    built.nodes.forEach(function (n) { box.appendChild(n); });
   }
 
   // ---------------------------------------------------------------------
@@ -536,7 +554,7 @@
         'Registre a transferência como uma nova entrega no bloco “Entregas de tecelagem”.'));
   }
 
-  function buildDocumentos() {
+  function buildDocumentos(ctx) {
     // Camada VISUAL (slots por tipo + Anexar full-width). Backend de anexo via
     // Google Drive entra depois — sem arquivos fabricados; Anexar só sinaliza.
     var SVG_CLIP = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path></svg>';
@@ -544,6 +562,25 @@
     var tipos = ['Romaneio', 'NF de entrada', 'NF de saida'];
     var card = el('div', { id: 'documentos-op', style: CARD + 'padding:15px 17px;' },
       rvSectionPill('Documentos', IC_DOC));
+
+    // G28-B7: CONFIRMED canonical linked documents for this OP (Documento ->
+    // OP) from the active canonical revision. Separate from the Drive-
+    // attachment slots below; fail-closed explicit states.
+    var opForLinks = ctx && ctx.op;
+    if (typeof window.RAVATEX_DOCUMENT_SURFACE_LINKS !== 'undefined'
+        && typeof window.RAVATEX_DOCUMENT_LINKS_UI !== 'undefined'
+        && opForLinks && opForLinks.id != null) {
+      card.appendChild(el('div', {
+        style: 'font-size:11px;font-weight:700;color:#18794a;letter-spacing:.04em;text-transform:uppercase;margin-bottom:6px;',
+      }, 'Documentos vinculados'));
+      var opLinkRes = window.RAVATEX_DOCUMENT_SURFACE_LINKS.buildLinkedDocumentsForOp(opForLinks.id);
+      var opLinkBuilt = window.RAVATEX_DOCUMENT_LINKS_UI.buildLinkedDocumentNodes(
+        { el: el, svgEl: svgEl, openDoc: function (url) { window.open(url, '_blank', 'noopener,noreferrer'); } },
+        opLinkRes, { emptyText: 'Nenhum documento vinculado a esta OP.', showPedido: true });
+      opLinkBuilt.nodes.forEach(function (n) { card.appendChild(n); });
+      card.appendChild(el('div', { style: 'border-top:1px solid var(--rv-color-line-100);margin:13px 0 4px;' }));
+    }
+
     tipos.forEach(function (tipo, i) {
       card.appendChild(el('div', { style: (i > 0 ? 'border-top:1px solid var(--rv-color-line-100);margin-top:13px;padding-top:13px;' : '') },
         el('div', { style: 'display:flex;align-items:center;gap:7px;margin-bottom:8px;' },
@@ -575,7 +612,7 @@
 
     var railKids = [buildResumo(totais)];
     if (ctx.cimaFornecedorId) railKids.push(buildEnviarAcabamento(ctx, totais));
-    railKids.push(buildDocumentos());
+    railKids.push(buildDocumentos(ctx));
     var right = el('div', { style: 'min-width:0;position:sticky;top:0;display:flex;flex-direction:column;gap:14px;' }, railKids);
 
     var wrap = el('div', { style: 'display:block;' });

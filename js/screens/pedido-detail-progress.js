@@ -911,10 +911,14 @@
     var linkedDocumentRows = [];
     var linkedDocumentsState = 'unavailable';
     var linkedDocumentsReason = 'read_model_unavailable';
+    var linkedDocumentTimeline = { state: 'unavailable', entries: [] };
     if (pedido && pedido.id
         && typeof window.RAVATEX_DOCUMENT_SURFACE_LINKS !== 'undefined'
         && typeof window.RAVATEX_DOCUMENT_SURFACE_LINKS.buildLinkedDocumentsForPedido === 'function'
         && typeof window.RAVATEX_DOCUMENTS !== 'undefined') {
+      if (typeof window.RAVATEX_DOCUMENT_SURFACE_LINKS.buildDocumentLinkTimelineForPedido === 'function') {
+        linkedDocumentTimeline = window.RAVATEX_DOCUMENT_SURFACE_LINKS.buildDocumentLinkTimelineForPedido(pedido.id);
+      }
       var linkResult = window.RAVATEX_DOCUMENT_SURFACE_LINKS.buildLinkedDocumentsForPedido(pedido.id);
       linkedDocumentsState = (linkResult && linkResult.state) ? linkResult.state : 'unavailable';
       linkedDocumentsReason = (linkResult && linkResult.reason) ? linkResult.reason : null;
@@ -968,6 +972,7 @@
       linkedDocumentRows: linkedDocumentRows,
       linkedDocumentsState: linkedDocumentsState,
       linkedDocumentsReason: linkedDocumentsReason,
+      linkedDocumentTimeline: linkedDocumentTimeline,
       linkedOpCount: linkedOpCount,
       pedidoConclusao: pedidoConclusao,
     };

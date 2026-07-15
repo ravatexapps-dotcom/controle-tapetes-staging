@@ -757,6 +757,24 @@
           var tipos = ['Romaneio', 'NF de entrada', 'NF de saida'];
           var card = el('div', { id: 'documentos-op', style: CARD_PROD + 'padding:15px 17px;' },
             rvSectionPill('Documentos', IC_DOC));
+
+          // G28-B7: CONFIRMED canonical linked documents for this OP (Documento
+          // -> OP), derived only from the active canonical revision. Separate
+          // from the Drive-attachment slots below; fail-closed explicit states.
+          if (typeof window.RAVATEX_DOCUMENT_SURFACE_LINKS !== 'undefined'
+              && typeof window.RAVATEX_DOCUMENT_LINKS_UI !== 'undefined'
+              && op && op.id != null) {
+            card.appendChild(el('div', {
+              style: 'font-size:11px;font-weight:700;color:#18794a;letter-spacing:.04em;text-transform:uppercase;margin-bottom:6px;',
+            }, 'Documentos vinculados'));
+            var opLinkRes = window.RAVATEX_DOCUMENT_SURFACE_LINKS.buildLinkedDocumentsForOp(op.id);
+            var opLinkBuilt = window.RAVATEX_DOCUMENT_LINKS_UI.buildLinkedDocumentNodes(
+              { el: el, svgEl: svgEl, openDoc: function (url) { window.open(url, '_blank', 'noopener,noreferrer'); } },
+              opLinkRes, { emptyText: 'Nenhum documento vinculado a esta OP.', showPedido: true });
+            opLinkBuilt.nodes.forEach(function (n) { card.appendChild(n); });
+            card.appendChild(el('div', { style: 'border-top:1px solid var(--rv-color-line-100);margin:13px 0 4px;' }));
+          }
+
           tipos.forEach(function (tipo, i) {
             card.appendChild(el('div', { style: (i > 0 ? 'border-top:1px solid var(--rv-color-line-100);margin-top:13px;padding-top:13px;' : '') },
               el('div', { style: 'display:flex;align-items:center;gap:7px;margin-bottom:8px;' },
@@ -776,7 +794,7 @@
           var resumoOrigem = origemEntregas.length
             ? String(origemEntregas.length) + ' entrega' + (origemEntregas.length === 1 ? '' : 's') + ' de Tecelagem vinculada' + (origemEntregas.length === 1 ? '' : 's')
             : 'Entrada consolidada sem vinculo detalhado';
-          return el('div', { id: 'historico-op', style: CARD_PROD + 'padding:15px 17px;' },
+          var histCard = el('div', { id: 'historico-op', style: CARD_PROD + 'padding:15px 17px;' },
             rvSectionPill('Histórico', IC_HIST),
             el('div', { style: 'display:flex;gap:12px;align-items:flex-start;' },
               el('div', { style: 'display:flex;flex-direction:column;align-items:center;' },
@@ -792,6 +810,25 @@
                 el('div', { style: 'font-size:14px;font-weight:600;color:#475065;margin-top:2px;' }, 'OP aberta'),
                 el('div', { style: 'font-size:12px;color:#9aa2af;' }, dataBase),
                 el('div', { style: 'font-size:13px;color:#7b8494;margin-top:1px;' }, formatOpDisplay(op, opDisplayContext) + ' acompanha a origem consolidada da ' + origemProdLabel + '.'))));
+
+          // G28-B7: canonical document-link entries for this OP timeline.
+          appendOpLinkTimeline(histCard, op);
+          return histCard;
+        }
+
+        function appendOpLinkTimeline(histCard, op) {
+          if (typeof window.RAVATEX_DOCUMENT_SURFACE_LINKS === 'undefined'
+              || typeof window.RAVATEX_DOCUMENT_LINKS_UI === 'undefined'
+              || !op || op.id == null) {
+            return;
+          }
+          var tl = window.RAVATEX_DOCUMENT_SURFACE_LINKS.buildDocumentLinkTimelineForOp(op.id);
+          var built = window.RAVATEX_DOCUMENT_LINKS_UI.buildLinkTimelineNodes({ el: el }, tl, {});
+          if (built.nodes.length === 0) return;
+          histCard.appendChild(el('div', {
+            style: 'font-size:11px;font-weight:700;color:#18794a;letter-spacing:.04em;text-transform:uppercase;margin:12px 0 8px;border-top:1px solid var(--rv-color-line-100);padding-top:12px;',
+          }, 'Documentos vinculados'));
+          built.nodes.forEach(function (n) { histCard.appendChild(n); });
         }
 
         return el('div', { style: 'display:block;' },

@@ -1120,6 +1120,19 @@
       }, 'Vinculos canonicos de documentos indisponiveis nesta sessao.'));
     }
 
+    // G28-B7: canonical document-link timeline for this Pedido (same canonical
+    // projection; confirmed links only). Rendered via the shared surface UI.
+    if (typeof window.RAVATEX_DOCUMENT_LINKS_UI !== 'undefined' && view.linkedDocumentTimeline) {
+      var tlBuilt = window.RAVATEX_DOCUMENT_LINKS_UI.buildLinkTimelineNodes(
+        { el: window.el }, view.linkedDocumentTimeline, {});
+      if (tlBuilt.nodes.length > 0) {
+        card.appendChild(window.el('div', {
+          style: 'font-size:11px;font-weight:700;color:#18794a;letter-spacing:.04em;margin:14px 0 8px;',
+        }, 'LINHA DO TEMPO DOS VINCULOS'));
+        tlBuilt.nodes.forEach(function (n) { card.appendChild(n); });
+      }
+    }
+
     if (view.ingestorDocsLoaded && view.ingestorDocumentRows && view.ingestorDocumentRows.length > 0) {
       card.appendChild(window.el('div', {
         style: 'font-size:11px;font-weight:700;color:#2563eb;letter-spacing:.04em;margin:14px 0 8px;',
