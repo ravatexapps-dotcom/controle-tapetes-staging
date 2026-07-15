@@ -46,6 +46,19 @@
 - **Próxima ação autorizável:** `CLIENTE-ORDER-SUMMARY-READMODEL-APPLY-STAGING-A` — `READY FOR EXPLICIT ARCHITECT AUTHORIZATION` / `NOT STARTED`. Esta entrada não autoriza sua execução.
 - **Detalhe completo:** `PROJECT_STATE.md` (seção "Admin/Pedido — Resíduo Estático do Botão de Conclusão") e `docs/ledgers/G28_LEDGER.md` (entrada append-only).
 
+## Portal Cliente — Read Model do Detalhe do Pedido — CLOSED / ACCEPTED_WITH_NONBLOCKING_DEBTS
+
+- **Fase:** `CLIENTE-ORDER-SUMMARY-READMODEL-APPLY-STAGING-A`. **Commit documental:** este closeout (`Close client order summary read model staging validation`). Sem commit técnico — a fase não alterou arquivos (verificação-somente). O HEAD atual deve ser consultado com `git rev-parse HEAD`.
+- **Resultado:** `db/30_cliente_pedido_summary_readmodel.sql` **já estava aplicada** em staging (`ucrjtfswnfdlxwtmxnoo`); a função `public.cliente_pedido_summary(uuid)` existe com corpo equivalente byte a byte ao `db/30` (**sem drift**), assinatura/`SECURITY DEFINER`/`STABLE`/`search_path=public`/owner `postgres` conforme contrato; as 16 tabelas de dependência existem.
+- **Contrato validado:** RPC real chamada por papel — cliente dono `ok=true` (DTO completo), `anon` `ok=false` **fail-closed** (executa, sem dados), cross-tenant `ok=false`, admin `ok=true`. Todos os campos consumidos por `js/screens/cliente-pedido-detail.js` presentes e tipados; coleções vazias `[]`; nulos tratados; sem dependência de fallback silencioso.
+- **Divergências registradas (não normalizadas):** ACL ao vivo concede `EXECUTE` a `PUBLIC`/`anon`/`authenticated`/`service_role` (o `db/30` pretende só `authenticated`); `db/30` não registrada em `supabase_migrations.schema_migrations`.
+- **Débitos não bloqueantes:** `ACL_GRANTS_BROADER_THAN_CANONICAL_CONTRACT` (anon fail-closed, sem exposição confirmada); `DB30_NOT_RECORDED_IN_SUPABASE_MIGRATION_HISTORY`; `AUTHENTICATED_BROWSER_SMOKE_NOT_EXECUTED` (sem senha de cliente de teste).
+- **Candidato de remediação (não autorizado, não iniciado):** `CLIENTE-ORDER-SUMMARY-READMODEL-ACL-GRANTS-R1` — `ARCHITECT DECISION REQUIRED`; escopo pretendido = migration grants-only análoga ao `db/54` (`REVOKE EXECUTE … FROM PUBLIC, anon`, preservando `authenticated`).
+- **Acessos:** Supabase MCP não exposto na sessão; fallback direto PostgreSQL autorizado usado só para verificação (read-only, `BEGIN … ROLLBACK`, zero mutação); tooling temporário fora do repo removido; nenhum segredo ecoado. Produção (`bhgifjrfagkzubpyqpew`) não acessada; sem push.
+- **Estado final do worktree:** limpo; staging vazio; zero untracked.
+- **Próxima ação autorizável:** `ARCHITECT DECISION REQUIRED AFTER BACKLOG RECONCILIATION` — sem próxima ação única inequívoca; o candidato de remediação de ACL não deve ser autosselecionado.
+- **Detalhe completo:** `PROJECT_STATE.md` (seção "Portal Cliente — Read Model do Detalhe do Pedido") e `docs/ledgers/G28_LEDGER.md` (entrada append-only).
+
 # HISTÓRICO DE HANDOFFS — ARQUIVADO
 
 O conteúdo histórico completo dos handoffs anteriores foi preservado,

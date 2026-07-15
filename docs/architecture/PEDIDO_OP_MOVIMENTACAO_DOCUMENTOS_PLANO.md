@@ -226,6 +226,7 @@ Sempre que houver evolução, decisão, bloqueio, conclusão parcial ou fechamen
 | D-COS03 | O payload publico nao inclui chaves internas como OP, lote, fornecedor, NF, romaneio, custo, margem, split ou IDs de catalogo. | Cumpre a regra de evolucao simplificada da tela Cliente. |
 | D-COS04 | `pedido_parciais` e `pedido_cliente_eventos` entram no resumo apenas quando `visivel_cliente IS TRUE`. | Preserva o papel comercial/cliente das parciais e evita publicar eventos administrativos. |
 | D-COS05 | Dashboard Cliente permaneceu fora da alteracao porque ja lia dados publicos; Admin/Pedido Detail tambem ficou fora do escopo. | Limita o blast radius da fase ao P1 de leitura interna no detalhe Cliente. |
+| D-COS06 | Verificacao de staging 2026-07-15 (`CLIENTE-ORDER-SUMMARY-READMODEL-APPLY-STAGING-A`): `db/30` encontrada ja aplicada em `ucrjtfswnfdlxwtmxnoo` sem drift; contrato validado por RPC real (cliente dono `ok`, `anon` fail-closed, cross-tenant negado, admin `ok`). ACL ao vivo concede `EXECUTE` tambem a `PUBLIC`/`anon`/`service_role` alem de `authenticated` (divergindo de D-COS02); `db/30` nao registrada em `supabase_migrations.schema_migrations`. Divergencias retidas como divida (anon fail-closed, sem exposicao confirmada); remediacao candidata `CLIENTE-ORDER-SUMMARY-READMODEL-ACL-GRANTS-R1` (grants-only analoga a `db/54`) fica como `ARCHITECT DECISION REQUIRED`, nao autorizada. | Registra a validacao de staging sem normalizar silenciosamente a ACL nem reaplicar a migration. |
 
 ---
 
@@ -265,13 +266,28 @@ Toda fase desta frente deve registrar ao fechar:
 
 ## 9. Próximo passo
 
-**`CLIENTE-ORDER-SUMMARY-READMODEL-APPLY-STAGING-A`**.
+**`CLIENTE-ORDER-SUMMARY-READMODEL-APPLY-STAGING-A` — `CLOSED / ACCEPTED_WITH_NONBLOCKING_DEBTS` (2026-07-15).**
 
-Aplicar `db/30_cliente_pedido_summary_readmodel.sql` em staging
-(`ucrjtfswnfdlxwtmxnoo`) e validar o Portal Cliente real lendo o detalhe
-do pedido por `cliente_pedido_summary`, sem reabrir leituras diretas de
-OP/lote/fornecedor/documentos internos no frontend. Producao so deve ser
-discutida em fase separada, com autorizacao explicita.
+A `db/30_cliente_pedido_summary_readmodel.sql` foi encontrada **ja aplicada** em
+staging (`ucrjtfswnfdlxwtmxnoo`), sem drift: `public.cliente_pedido_summary(uuid)`
+existe com corpo equivalente byte a byte ao `db/30`. O Portal Cliente le o
+detalhe por `cliente_pedido_summary` com contrato validado por RPC real (cliente
+dono `ok`, `anon` fail-closed, cross-tenant negado, admin `ok`) e sem leituras
+diretas de OP/lote/fornecedor/documentos internos no frontend.
+
+Debitos nao bloqueantes: ACL ao vivo mais ampla que o contrato canonico
+(`PUBLIC`/`anon` com `EXECUTE`, anon fail-closed, sem exposicao confirmada),
+`db/30` nao registrada em `supabase_migrations.schema_migrations`, e smoke
+autenticado de browser nao executado. Ver `D-COS06`, `PROJECT_STATE.md` e
+`docs/ledgers/G28_LEDGER.md`.
+
+**Proximo passo: `ARCHITECT DECISION REQUIRED AFTER BACKLOG RECONCILIATION`.**
+
+Candidato de remediacao registrado mas **nao autorizado**:
+`CLIENTE-ORDER-SUMMARY-READMODEL-ACL-GRANTS-R1` (migration grants-only forward
+analoga a `db/54`, revogando `EXECUTE` de `PUBLIC`/`anon` e preservando
+`authenticated`). Nao deve ser autosselecionado. Producao so deve ser discutida
+em fase separada, com autorizacao explicita.
 
 ---
 

@@ -1232,3 +1232,54 @@ button state`.
   `DELETE-PROD-GUARD-A`, `DELETE-AUDIT-LOG-A`, `G28-CAMADA-2`, `G28-CAMADA-3`
   ou `G28-CAMADA-4`, que permanecem inalterados.
 - Ver `docs/ledgers/G28_LEDGER.md` para evidencia completa.
+
+# Atualizacao 2026-07-15 - Cliente Order Summary Read Model Staging Validation
+
+Fase `CLIENTE-ORDER-SUMMARY-READMODEL-APPLY-STAGING-A`. Sem commit tecnico -- a
+fase nao alterou arquivos (verificacao-somente). Closeout documental.
+
+- Objetivo: aplicar `db/30_cliente_pedido_summary_readmodel.sql` em staging
+  (`ucrjtfswnfdlxwtmxnoo`) somente se ainda nao aplicada, e validar o contrato
+  do read model publico `public.cliente_pedido_summary(uuid)` consumido por
+  `js/screens/cliente-pedido-detail.js` (~linha 180).
+- Achado central: a `db/30` **ja estava aplicada**. A funcao existe com
+  assinatura `cliente_pedido_summary(p_pedido_id uuid)`, `RETURNS jsonb`,
+  `SECURITY DEFINER`, `STABLE`, `search_path=public`, owner `postgres`; o corpo
+  (`pg_get_functiondef`) e equivalente byte a byte ao `db/30` (so diferem finais
+  de linha CRLF vs LF) -- **sem drift**. As 16 tabelas de dependencia existem.
+  Modo mudou para `VERIFICATION-ONLY`; nada foi reaplicado.
+- Proveniencia: `db/30` **nao registrada** em
+  `supabase_migrations.schema_migrations` (objeto existe sem linha de historico).
+- ACL ao vivo: `EXECUTE` concedido a `PUBLIC`, `anon`, `authenticated` e
+  `service_role`; o `db/30` pretende apenas `authenticated`. Divergencia retida
+  como divida de higiene (nao normalizada neste closeout).
+- Comportamento empirico (read-only, cada RPC em `BEGIN ... ROLLBACK`, zero
+  mutacao): cliente dono `ok=true` (DTO completo); `anon` no mesmo Pedido
+  `ok=false` **fail-closed** (executa, sem dados -- sem exposicao confirmada);
+  cross-tenant `ok=false`; admin `ok=true`.
+- Contrato com o frontend: todos os campos consumidos presentes e tipados;
+  colecoes vazias `[]` (COALESCE); nulos (`tipo_recebimento`, `observacao`)
+  tratados; ramos `loadingError` fora do caminho feliz -- sem dependencia de
+  fallback silencioso.
+- Nivel de validacao do portal: `STATIC_CONTRACT_WITH_REAL_RPC_PAYLOAD`. Smoke
+  autenticado no browser nao executado (sem senha de cliente de teste) -- divida
+  nao bloqueante.
+- Gates locais: `node --check js/screens/cliente-pedido-detail.js` PASS;
+  `git diff --check` limpo; `git status --short` vazio.
+- Acessos: Supabase MCP nao exposto na sessao; fallback direto PostgreSQL
+  autorizado usado so para verificacao; tooling temporario fora do repo
+  removido; nenhum segredo ecoado. Producao (`bhgifjrfagkzubpyqpew`) nao
+  acessada; sem push.
+- **Status: `CLOSED / ACCEPTED_WITH_NONBLOCKING_DEBTS`.** Debitos:
+  `ACL_GRANTS_BROADER_THAN_CANONICAL_CONTRACT` (anon fail-closed, sem exposicao
+  confirmada), `DB30_NOT_RECORDED_IN_SUPABASE_MIGRATION_HISTORY`,
+  `AUTHENTICATED_BROWSER_SMOKE_NOT_EXECUTED`.
+- Candidato de remediacao (nao autorizado, nao iniciado):
+  `CLIENTE-ORDER-SUMMARY-READMODEL-ACL-GRANTS-R1` -- `ARCHITECT DECISION
+  REQUIRED`; escopo pretendido = migration grants-only analoga ao `db/54`
+  (`REVOKE EXECUTE ... FROM PUBLIC, anon`, preservando `authenticated`).
+- Proxima acao autorizavel: `ARCHITECT DECISION REQUIRED AFTER BACKLOG
+  RECONCILIATION`; o candidato de ACL nao deve ser autosselecionado. Nao encerra
+  o backlog geral, nao e publicacao, nao e readiness de producao e nao aceita
+  G28-D.
+- Ver `docs/ledgers/G28_LEDGER.md` para evidencia completa.
