@@ -941,3 +941,21 @@ risco residual e próxima fase indicada no fechamento.
 - **Produção:** `bhgifjrfagkzubpyqpew` não acessada. **Push:** não executado.
 - **Estado final do worktree:** limpo; staging vazio; zero untracked.
 - **Próxima fase indicada no fechamento:** nenhuma — este registro não autoriza fase técnica alguma.
+
+---
+
+## 2026-07-15 — CAMADA2-USUARIOS-SPEC-MATERIALIZE-R1 — Add Camada 2 user administration spec
+
+- **Gate:** DOCUMENTARY / PROPOSED. Docs-only; sem código, teste, SQL, migration, Supabase, MCP, staging, produção ou Vercel acessados/alterados.
+- **Commit:** `Add Camada 2 user administration spec` (HEAD a consultar com `git rev-parse HEAD`).
+- **Antecedente:** `CAMADA2-USUARIOS-SPEC-DIAGNOSTIC-R1` — diagnóstico read-only cross-repo (Tapetes × `D:\OneDrive\Programação\SGAA_clean_baseline`, projeto Flask/SQLite não relacionado, lido em modo estritamente read-only via dois agentes de exploração), cujo conteúdo foi incorporado com decisões do arquiteto e 5 ajustes de revisão.
+- **Arquivo criado:** `docs/architecture/CAMADA2_USUARIOS_SPEC_PROPOSED.md` — spec `A1-A7` + política de senha, cada item com: o que o SGAA faz, o que já existe no Tapetes (evidência file:line), o que falta, proposta adaptada, módulos/arquivos previstos, riscos de Auth, subfase/gate.
+- **Decisões do arquiteto incorporadas:** `nivel_acesso` com 2 níveis (`completo`/`somente_leitura`); tabela de overrides de permissões **não construída** (opção futura condicionada); A4 = caminho único senha-temporária-com-troca-forçada, e-mail/SMTP `NOT AUTHORIZED`; bulk actions (A3.3) `DEFERRED`.
+- **Ajustes de revisão aplicados:** (1) cutover de rota antecipado para A3.1 (troca do handler em `js/boot.js` + validação visual do arquiteto), A3.4 vira remoção isolada do código legado; (2) "último acesso" incluído em A3.2 (leitura de `auth.users.last_sign_in_at`, sem write) e revogação explícita de sessão declarada fora de escopo; (3) gate de mockup obrigatório antes de A3.2; (4) plano de módulos e gates atualizados com edições pontuais de `index.html`/cache-busting (§2/§12/§17) e smoke de rota/boot (§13) nas subfases que tocam `index.html`/`boot.js`; (5) `docs/refactor/ARCHITECTURE_REFACTOR_LEDGER.md` adicionado aos artefatos de closeout de A3.1/A3.4, e a localização de `js/admin-usuarios-writes.js`/`js/admin-usuarios-audit-read-model.js` na raiz de `js/` justificada como precedente consciente do trio `document-link-*`.
+- **Caveat de segurança preservado:** a spec rejeita explicitamente 4 práticas do SGAA (senhas padrão em texto puro exibidas na UI, ausência de política de complexidade, ausência de auditoria, confirmação via `window.confirm()` nativo) — usado apenas como referência de arquitetura de informação/organização de tela, nunca de política de segurança.
+- **Arquivos principais:** `docs/architecture/CAMADA2_USUARIOS_SPEC_PROPOSED.md` (novo); `docs/DOCUMENTATION_INDEX.md` (nova entrada, classificação "Spec proposta (design)", autoridade condicionada a aceite); `PROJECT_STATE.md` (bloco de estado — spec criada, `PROPOSED`); `AGENT_HANDOFF.md` (continuidade); este ledger.
+- **Não alterado:** nenhum código, teste, SQL, migration, runtime tocado; nenhuma subfase autorizada; nenhum arquivo do repositório SGAA_clean_baseline tocado (leitura estritamente read-only, confirmada por dois agentes de exploração independentes).
+- **Produção:** `bhgifjrfagkzubpyqpew` não acessada. **Push:** não executado.
+- **Estado final do worktree:** limpo; staging vazio; zero untracked.
+- **Risco residual:** nenhum novo — a spec em si não muda nenhum estado de código/dado; débitos preexistentes preservados.
+- **Próxima fase indicada no fechamento:** `A3.1` — `READY FOR EXPLICIT ARCHITECT AUTHORIZATION / NOT STARTED`. Este registro não autoriza sua execução.

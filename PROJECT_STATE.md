@@ -176,6 +176,45 @@ Higiene do worktree `work/app-next` — read-only, ordem separada
 - **Ledger:** `docs/ledgers/G28_LEDGER.md` (entrada append-only desta
   decisão).
 
+## Camada 2 — Administração de Usuários — Spec Proposta — CAMADA2-USUARIOS-SPEC-MATERIALIZE-R1
+
+- **Frente:** `G28-CAMADA-2`, selecionada como próxima frente em
+  `G28-RECONCILIATION-DECISIONS-A` (ver seção acima).
+- **Fase:** `CAMADA2-USUARIOS-SPEC-MATERIALIZE-R1`. Docs-only — sem
+  código, teste, SQL, migration, Supabase, staging, produção ou Vercel
+  acessados/alterados. **Status: `PROPOSED`.**
+- **Documento criado:** `docs/architecture/CAMADA2_USUARIOS_SPEC_PROPOSED.md`
+  — spec `A1-A7` + política de senha, com comparação evidenciada
+  Tapetes × `D:\OneDrive\Programação\SGAA_clean_baseline` (referência
+  externa read-only, projeto Flask/SQLite não relacionado), plano de
+  módulos consolidado, classificação de risco Auth por item e ordem de
+  subfases com gates.
+- **Decisões do arquiteto incorporadas na spec:** `nivel_acesso` com 2
+  níveis (`completo`/`somente_leitura`); tabela de overrides de
+  permissões **não construída** (opção futura condicionada a necessidade
+  real); A4 = caminho único senha-temporária-com-troca-forçada,
+  convite por e-mail/SMTP `NOT AUTHORIZED`; bulk actions (A3.3)
+  `DEFERRED`.
+- **Ajustes de revisão aplicados:** cutover de rota antecipado para A3.1
+  (com validação visual do arquiteto); A3.4 restrito a remoção isolada
+  do código legado; "último acesso" incluído em A3.2; revogação
+  explícita de sessão fora de escopo; gate de mockup obrigatório antes
+  de A3.2; edições de `index.html`/cache-busting e smokes de rota/boot
+  endereçados por subfase; `docs/refactor/ARCHITECTURE_REFACTOR_LEDGER.md`
+  incluído no closeout de A3.1/A3.4.
+- **Caveat de segurança:** a spec rejeita explicitamente 4 práticas do
+  SGAA usadas como referência (senhas padrão em texto puro na UI,
+  ausência de política de complexidade, ausência de auditoria,
+  confirmação via `window.confirm()` nativo) — usado apenas para
+  arquitetura de informação/organização de tela.
+- **Produção:** `bhgifjrfagkzubpyqpew` não acessada. **Push:** não
+  executado.
+- **Próxima ação autorizável:** `A3.1` — `READY FOR EXPLICIT ARCHITECT
+  AUTHORIZATION / NOT STARTED`. Nenhuma subfase autorizada por este
+  registro; cada uma exige autorização explícita e individual.
+- **Ledger:** `docs/ledgers/G28_LEDGER.md` (entrada append-only desta
+  fase).
+
 ## Bloco da frente ativa
 
 ### Document Qualification / Documents Ingestor — G28
