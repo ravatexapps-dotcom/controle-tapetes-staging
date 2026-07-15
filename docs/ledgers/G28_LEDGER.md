@@ -566,3 +566,19 @@ risco residual e próxima fase indicada no fechamento.
 - **Local validation:** B6 affected source battery (10 files) `374 pass / 0 fail`. Extended 14-file document battery `641 pass / 2 fail`: two pre-existing stale expectations in `tests/documentos-recebidos-queue-ui.test.js` expect candidate-based Pedido/OP presentation contradicted by B6 canonical revision behavior (`candidate.pedido_id` ignored; no active OP projects `no_confirmed_op`). No JS changed during this closeout and no correction was authorized.
 - **Files changed in closeout:** `PROJECT_STATE.md`, `AGENT_HANDOFF.md`, `docs/architecture/DOCUMENTOS_VALIDACAO_VINCULOS_E_EVOLUCAO_PLANO.md`, this ledger.
 - **Residual risks:** authenticated live-modal smoke pending browser admin auth; two stale queue-ui assertions as above; architect acceptance pending. Next step is architect acceptance only; no B7 work, migration, backfill, repair or push.
+
+---
+
+## 2026-07-14 — G28-B6 — Architect acceptance and G28-B7 authorization
+
+- **Gate:** `CLOSED / ACCEPTED_WITH_NONBLOCKING_TEST_DEBT`. Explicit architect decision recorded in this session; it intentionally supersedes the prior checkpoint that still described G28-B6 as `READY FOR ARCHITECT ACCEPTANCE`. Not an inference from phase numbering.
+- **Technical implementation commit:** `b2f180ed0e6f1c2ee6c02881d0199d1bfaf29366` — `G28-B6: implement canonical document links`.
+- **Staging verification closeout commit:** `b130db44d32718ddf6d3e2bffb1439dac3a1948f` — `docs(G28-B6): record staging verification closeout`.
+- **Staging project:** `ucrjtfswnfdlxwtmxnoo`. Production `bhgifjrfagkzubpyqpew` not accessed. No push.
+- **Accepted non-blocking debts:**
+  1. authenticated browser smoke remains pending;
+  2. two stale expectations remain in `tests/documentos-recebidos-queue-ui.test.js`;
+  3. the synthetic staging audit graph remains preserved under `ON DELETE RESTRICT` and is documented.
+- **Accepted B6 contract (unchanged):** Documento→Pedido `0..1` confirmed; Documento→OP `0..N` confirmed; canonical source `document_link_revisions` / `document_link_revision_ops`; `document_candidates.pedido_id` / `document_events.pedido_id` remain Ingestor-owned; `pedido_manual` remains suggestion only.
+- **Authorization:** `G28-B7` (exibição nas superfícies) is explicitly authorized. No later phase (`G28-B8`+) is authorized.
+- **Next authorizable action:** implement `G28-B7` per master plan §CAMADA 1 / §SEQUÊNCIA DE IMPLEMENTAÇÃO — G28-B7.
