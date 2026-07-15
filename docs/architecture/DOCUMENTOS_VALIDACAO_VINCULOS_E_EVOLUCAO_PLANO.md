@@ -13,15 +13,15 @@
 
 **Projeto:** Ravatex — Controle de Tapetes / Documents Ingestor  
 **Status do plano:** reconciliado (G28-PLAN-R1 em 2026-07-14); este plano é o backlog arquitetural do G28 e `PROJECT_STATE.md` detém o estado operacional atual.
-**Fase ativa:** Nenhuma fase funcional está ativa. G28-C está `CLOSED / ACCEPTED_WITH_NONBLOCKING_AUTHENTICATED_BROWSER_SMOKE_DEBT`. G28-D discovery/preparation está `RELEASE CONTRACT DISCOVERY COMPLETE / BLOCKED BY SPECIFIC MISSING DEPLOYMENT DEFINITION`. Publicação permanece `NOT STARTED / NOT ACCEPTED / NOT AUTHORIZED`.
+**Fase ativa:** Nenhuma fase funcional está ativa. G28-C está `CLOSED / ACCEPTED_WITH_NONBLOCKING_AUTHENTICATED_BROWSER_SMOKE_DEBT`. G28-D discovery/preparation permanece `RELEASE CONTRACT DISCOVERY COMPLETE` (evidência preservada em `docs/releases/G28_D_RELEASE_CANDIDATE.md`); por decisão explícita do arquiteto (`STAGING-ONLY-EXECUTION-BOUNDARY-A`, 2026-07-15) sua publicação está `DEFERRED BY ARCHITECT UNTIL GLOBAL BACKLOG COMPLETION` e não constitui bloqueio atual do trabalho em staging. Publicação permanece `NOT STARTED / NOT ACCEPTED / NOT AUTHORIZED`.
 **Última fase aceita:** `G28-C — CLOSED / ACCEPTED_WITH_NONBLOCKING_AUTHENTICATED_BROWSER_SMOKE_DEBT`.
-**G28-D:** `RELEASE CONTRACT DISCOVERY COMPLETE / BLOCKED BY SPECIFIC MISSING DEPLOYMENT DEFINITION`; falta mapeamento canônico atual de publicação e procedimento autorizado de migrations de produção. Sem publicação, push, produção ou aceite; ver `docs/releases/G28_D_RELEASE_CANDIDATE.md`.
+**G28-D:** discovery `RELEASE CONTRACT DISCOVERY COMPLETE`; publicação `DEFERRED BY ARCHITECT / NOT A CURRENT BLOCKER / NOT AUTHORIZED` (decisão explícita `STAGING-ONLY-EXECUTION-BOUNDARY-A`, 2026-07-15 — postergada até a conclusão do backlog canônico completo, não descoberta/definida/testada/concluída). Sem publicação, push, produção ou aceite; evidência de descoberta preservada em `docs/releases/G28_D_RELEASE_CANDIDATE.md`.
 **G28-B6:** `DECIDED / IMPLEMENTED / TESTED / STAGING FUNCTIONALLY VERIFIED / ACCEPTED_WITH_NONBLOCKING_TEST_DEBT` — commit técnico `b2f180ed0e6f1c2ee6c02881d0199d1bfaf29366`; closeout de verificação em staging `b130db44d32718ddf6d3e2bffb1439dac3a1948f`; `db/51` aplicado em `ucrjtfswnfdlxwtmxnoo`; matriz RPC 20/20, prova de dupla propriedade e rollback PostgreSQL do wrapper. Contrato: Documento→Pedido 0..1, Documento→OP 0..N; revisão dedicada, tipada/versionada; campos do Ingestor não promovidos. Débitos não bloqueantes aceitos: smoke autenticado de browser pendente; duas expectativas obsoletas em `tests/documentos-recebidos-queue-ui.test.js`; grafo sintético de auditoria em staging preservado sob `ON DELETE RESTRICT`. Ver ledger G28 (closeout B6 e aceite).
 **G28-B7:** `CLOSED / ACCEPTED_WITH_NONBLOCKING_REMOTE_SMOKE_DEBT` — aceite arquitetural explícito em 2026-07-14. Read model canônico de projeção reversa (`js/document-surface-links-read-model.js`) + seção `DOCUMENTOS VINCULADOS` no detalhe do Pedido, confirmados via revisão canônica ativa e distintos de sugestões `pedido_manual`. Commit parcial Pedido-detail B7: `ed35f049397af4061ed6e8bb2d9ec3056c543724`; conclusão `9ef61e1896af631bc5aeeced4af93c77051f4de4`. Superfícies restantes completas: detalhe da OP (`op-latex-admin` + `op-tecelagem-producao-admin`), timeline canônica de Pedido/OP, busca global canônica na fila central, helper UI compartilhado `js/document-links-surface-ui.js`. Débito não bloqueante: smoke autenticado B7 em staging. Ver ledger G28 (B7).
 **G28-B8:** `TECHNICALLY COMPLETED / ACCEPTANCE SUBSUMED BY G28-C` — `db/52` aplicada uma vez em `ucrjtfswnfdlxwtmxnoo` (registry `20260715024449`), estrutura/RPC/grants verificados e matriz sintética autenticada 18/18 aprovada, inclusive wrapper B6 de cinco argumentos e fronteira de propriedade. As capacidades de correção, revogação, restauração e auditoria de B8 foram explicitamente validadas e aceitas na matriz de staging/projeções de G28-C (16/16 PASS). B8 não está pendente; sua aceitação foi subsumida pelo gate e aceite arquitetural de G28-C. O smoke autenticado do modal permanece `LIVE_B8_MODAL_SMOKE_BLOCKED_BY_TOOLING`; ver ledger G28 (B8).
 **G28-C:** `CLOSED / ACCEPTED_WITH_NONBLOCKING_AUTHENTICATED_BROWSER_SMOKE_DEBT`; matriz staging/projeções `16/16 PASS`; browser autenticado permanece dívida de tooling. **G28-D:** `RELEASE CONTRACT DISCOVERY COMPLETE / BLOCKED BY SPECIFIC MISSING DEPLOYMENT DEFINITION`; não aceito e não publicado.
 **Controlled Delete × histórico documental (cross-cutting, fora da sequência numerada G28-A..D):** `CLOSED / ACCEPTED` — commit técnico `707a37bd1d2c4728ab2a17433b6441049bd88062`. O vínculo documental canônico (`document_link_revisions` / `document_link_revision_ops`) agora também protege a exclusão física de teste de Pedido/OP (`db/34`–`db/37`): a exclusão é bloqueada de forma controlada quando existe histórico documental vinculado, sem apagar, alterar ou reativar nenhuma revisão; na ausência de histórico, a política de exclusão anterior permanece inalterada. O contrato `Documento→Pedido 0..1` / `Documento→OP 0..N` e as duas tabelas canônicas (`document_link_revisions`, `document_link_revision_ops`) são preservados sem alteração de cardinalidade ou de propriedade. Não constitui aceitação de G28-D, publicação, nem fase G28 posterior. Ver `PROJECT_STATE.md`, `docs/architecture/PEDIDO_OP_SCHEMA_CONTRACT.md` e `docs/ledgers/G28_LEDGER.md`.
-**Decisões de arquiteto em aberto:** `OPEN_ARCHITECT_DECISIONS: DEPLOYMENT_MAPPING_AND_PRODUCTION_MIGRATION_PROCEDURE`.
+**Decisões de arquiteto em aberto:** `OPEN_ARCHITECT_DECISIONS: NONE` para o ciclo atual de staging. `DEPLOYMENT_MAPPING_AND_PRODUCTION_MIGRATION_PROCEDURE` foi reclassificada por decisão explícita do arquiteto (`STAGING-ONLY-EXECUTION-BOUNDARY-A`, 2026-07-15) como `DEFERRED UNTIL GLOBAL BACKLOG COMPLETION / NOT A CURRENT STAGING BLOCKER / NOT STARTED` — não descoberta, definida, testada ou concluída; apenas postergada. Ambiente operacional atual: staging (`ucrjtfswnfdlxwtmxnoo`) exclusivamente; o projeto Supabase protegido está fora de escopo. Próximo candidato técnico autorizável (não iniciado): `CLIENTE-ORDER-SUMMARY-READMODEL-ACL-GRANTS-R1` — `READY FOR EXPLICIT ARCHITECT AUTHORIZATION`.
 **Última reconciliação:** 2026-07-14 (G28-PLAN-R1; checkpoint B6 atualizado após verificação direta).
 **Regras de autoridade:** Git comprova branch/HEAD/index/worktree vivos; `PROJECT_STATE.md` detém estado operacional atual; `AGENT_HANDOFF.md` detém continuidade; G28 ledger detém histórico append-only de closeouts; este plano mestre detém arquitetura/backlog; planos sozinhos não autorizam execução.
 
@@ -1021,7 +1021,7 @@ Qualificadores compostos podem detalhar um estado base — por exemplo
 | G28-B7 | Exibição nas superfícies (Documentos/Pedido/OP/timeline/buscas) | `CLOSED / ACCEPTED_WITH_NONBLOCKING_REMOTE_SMOKE_DEBT` | G28-B6 | `work/g28-document-qualification` @ `controle-tapetes-g28` | parcial `ed35f049397af4061ed6e8bb2d9ec3056c543724`; conclusão `9ef61e1896af631bc5aeeced4af93c77051f4de4` | read model canônico + superfícies Pedido/OP/timeline/busca; débito não bloqueante: smoke autenticado B7 em staging | Aceito 2026-07-14; G28-B8 autorizado |
 | G28-B8 | Correção, revogação, restauração e auditoria | `TECHNICALLY COMPLETED / ACCEPTANCE SUBSUMED BY G28-C` | G28-B7 | `work/g28-document-qualification` @ `controle-tapetes-g28` | commit técnico `f985f8b857f83d977936eae47ea830a5cb6ba4c3` | `db/52` aplicada e verificada em staging (`ucrjtfswnfdlxwtmxnoo`, registry `20260715024449`); matriz RPC 18/18; bateria B4–B8 831/831. As capacidades de correção, revogação, restauração e auditoria foram explicitamente validadas e aceitas na matriz de staging/projeções de G28-C (16/16 PASS). B8 não está pendente; sua aceitação foi subsumida pelo gate e aceite arquitetural de G28-C. | — (subsumido por G28-C) |
 | G28-C | Validação real em staging | `CLOSED / ACCEPTED_WITH_NONBLOCKING_AUTHENTICATED_BROWSER_SMOKE_DEBT` | G28-B8 | `work/g28-document-qualification` @ `controle-tapetes-g28` | closeout `a7d7caa8984e56b44c0302bff5d578a8be5ff536`; aceite `d5ec09f803c2c64697ee3605b7d4ecfee168a66a` | matriz staging/projeções 16/16 PASS; zero defeito material; sem alteração de produto, schema, RPC, migration ou arquitetura. Dívida não bloqueante: `AUTHENTICATED_BROWSER_SMOKE_BLOCKED_BY_TOOLING`. | — |
-| G28-D | Publicação para o cliente acompanhar | `RELEASE CONTRACT DISCOVERY COMPLETE / BLOCKED BY SPECIFIC MISSING DEPLOYMENT DEFINITION` (publicação: `NOT STARTED / NOT ACCEPTED / NOT AUTHORIZED`) | G28-C | `work/g28-document-qualification` @ `controle-tapetes-g28` | discovery/preparation commit `b27e79fdba1ed8fb8a6232d8e0b8ca4b37ac3a2c` | descoberta contratual concluída e registrada em `docs/releases/G28_D_RELEASE_CANDIDATE.md`. Bloqueio: falta mapeamento canônico de publicação e procedimento autorizado de migrations 51/52 em produção. Publicação, push, produção, tag e release não autorizados. | Definir contrato de publicação/produção (decisão de arquiteto) |
+| G28-D | Publicação para o cliente acompanhar | `RELEASE CONTRACT DISCOVERY COMPLETE / DEFERRED BY ARCHITECT UNTIL GLOBAL BACKLOG COMPLETION` (publicação: `NOT STARTED / NOT ACCEPTED / NOT AUTHORIZED`) | G28-C | `work/g28-document-qualification` @ `controle-tapetes-g28` | discovery/preparation commit `b27e79fdba1ed8fb8a6232d8e0b8ca4b37ac3a2c` | descoberta contratual concluída e registrada em `docs/releases/G28_D_RELEASE_CANDIDATE.md` (evidência preservada, não reescrita). Por decisão explícita do arquiteto (`STAGING-ONLY-EXECUTION-BOUNDARY-A`, 2026-07-15), o mapeamento de publicação/produção e o procedimento de migrations 51/52 em produção ficam postergados até a conclusão do backlog canônico completo — não é bloqueio atual do trabalho em staging. Publicação, push, produção, tag e release não autorizados. | Retomar a definição do contrato de publicação/produção somente após a conclusão do backlog canônico completo (decisão de arquiteto já registrada como deferral, não como bloqueio) |
 | CAMADA 2 (A1–A7) | Administração de usuários e acessos | DEFERRED | Documentos estabilizado | — | — | — | Só após Camada 1 publicada |
 | CAMADA 3 (BK1–BK8) | Backup em nuvem e restauração testada | DEFERRED | Frente independente | — | — | — | Auditoria do app de origem |
 | CAMADA 4 (F0–F5) | Participação futura de fornecedores | DEFERRED | Documentos publicado | — | — | — | Operação interna nunca depende do fornecedor |
@@ -1066,11 +1066,17 @@ Registrar o estado durante a execução não antecipa aceite: o fechamento
 
 # CRITÉRIO DE FECHAMENTO DO PLANO
 
-Este plano foi reconciliado em 2026-07-14 (G28-PLAN-R1). A única decisão de
-arquiteto atualmente em aberto é `DEPLOYMENT_MAPPING_AND_PRODUCTION_MIGRATION_PROCEDURE`,
-registrada no cabeçalho deste plano e em `PROJECT_STATE.md`. As decisões históricas
-de cardinalidade Documento↔Pedido, Documento↔OP, vínculos por tipo e compatibilidade
-foram resolvidas nas fases aceitas G28-B1 a G28-B8 e G28-C, e não estão mais abertas.
+Este plano foi reconciliado em 2026-07-14 (G28-PLAN-R1) e atualizado em
+2026-07-15 (`STAGING-ONLY-EXECUTION-BOUNDARY-A`). Não há decisão de arquiteto
+atualmente em aberto para o ciclo de staging: `DEPLOYMENT_MAPPING_AND_
+PRODUCTION_MIGRATION_PROCEDURE`, antes registrada como a única decisão em
+aberto, foi explicitamente reclassificada pelo arquiteto como `DEFERRED UNTIL
+GLOBAL BACKLOG COMPLETION / NOT A CURRENT STAGING BLOCKER / NOT STARTED` —
+não descoberta, definida, testada ou concluída, apenas postergada até o
+backlog canônico completo estar reconciliado. Ver cabeçalho deste plano e
+`PROJECT_STATE.md`. As decisões históricas de cardinalidade Documento↔Pedido,
+Documento↔OP, vínculos por tipo e compatibilidade foram resolvidas nas fases
+aceitas G28-B1 a G28-B8 e G28-C, e não estão mais abertas.
 O plano será considerado totalmente fechado quando:
 
 - arquiteto fechar a decisão de publicação/produção em aberto;
@@ -1091,11 +1097,20 @@ arquitetural de C. B8 não possui aceitação independente. **Nenhuma fase funci
 reconciliação documental (`G28-STATE-RECONCILIATION-R1`). Após o fechamento desta
 reconciliação, uma nova reconciliação read-only do backlog geral (`PEDIDO_PRODUCTION_FLOW_BACKLOG.md`
 e demais frentes) escolherá a próxima frente funcional. **Publicação não é a próxima
-ação e nenhuma implementação automática se segue.** `OPEN_ARCHITECT_DECISIONS: DEPLOYMENT_MAPPING_AND_PRODUCTION_MIGRATION_PROCEDURE`.
+ação e nenhuma implementação automática se segue.** A reconciliação read-only do
+backlog geral e o backfill documental `DOCS-CANONICAL-CONSISTENCY-BACKFILL-A` já
+foram concluídos (2026-07-15). Por decisão explícita do arquiteto
+(`STAGING-ONLY-EXECUTION-BOUNDARY-A`, 2026-07-15): `OPEN_ARCHITECT_DECISIONS: NONE`
+para o ciclo atual de staging; `DEPLOYMENT_MAPPING_AND_PRODUCTION_MIGRATION_PROCEDURE`
+está `DEFERRED UNTIL GLOBAL BACKLOG COMPLETION / NOT A CURRENT STAGING BLOCKER`.
+Próximo candidato técnico autorizável (não iniciado, staging-only):
+`CLIENTE-ORDER-SUMMARY-READMODEL-ACL-GRANTS-R1` — `READY FOR EXPLICIT ARCHITECT
+AUTHORIZATION`.
 
 Fases aceitas: G28-P0, G28-A (rejeitado como contrato / retido como insumo diagnóstico), G28-B1, G28-B2,
 G28-B3 (subfases aceitas), G28-B4, G28-B5-D5, G28-B6, G28-B7, G28-B8 (subsumido por C), G28-C.
-G28-D discovery: `COMPLETED / BLOCKED_BY_MISSING_DEPLOYMENT_DEFINITION`. G28-D publicação: `NOT STARTED / NOT ACCEPTED / NOT AUTHORIZED`.
+G28-D discovery: `COMPLETED` (evidência preservada em `docs/releases/G28_D_RELEASE_CANDIDATE.md`, não
+reescrita). G28-D publicação: `DEFERRED BY ARCHITECT / NOT A CURRENT BLOCKER / NOT AUTHORIZED`.
 Fases posteriores: `DEFERRED / NOT AUTHORIZED`.
 
 Estado operacional atual: `PROJECT_STATE.md`.

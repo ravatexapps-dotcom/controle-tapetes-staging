@@ -1,9 +1,10 @@
 # HANDOFF OPERACIONAL ATIVO
 
-- **Nenhuma fase funcional ativa.** G28-C está `CLOSED / ACCEPTED_WITH_NONBLOCKING_AUTHENTICATED_BROWSER_SMOKE_DEBT`. G28-D discovery está `RELEASE CONTRACT DISCOVERY COMPLETE / BLOCKED BY SPECIFIC MISSING DEPLOYMENT DEFINITION`; sua publicação está `NOT STARTED / NOT ACCEPTED / NOT AUTHORIZED` e não constitui fase ativa. A definição canônica atual do mapeamento de publicação e o procedimento autorizado para migrations 51/52 não existem no repositório; ver `docs/releases/G28_D_RELEASE_CANDIDATE.md`.
+- **Fronteira de execução staging-only vigente (`STAGING-ONLY-EXECUTION-BOUNDARY-A`, 2026-07-15):** decisão explícita do arquiteto — ambiente operacional corrente é exclusivamente staging `ucrjtfswnfdlxwtmxnoo`; o projeto Supabase protegido/outro está fora de escopo; migração/promoção de schema em produção fica postergada até o backlog canônico completo estar concluído; `DEPLOYMENT_MAPPING_AND_PRODUCTION_MIGRATION_PROCEDURE` não é mais bloqueador material corrente, está `DEFERRED UNTIL GLOBAL BACKLOG COMPLETION / NOT A CURRENT STAGING BLOCKER`; G28-D publicação está `DEFERRED / NOT AUTHORIZED / NOT A CURRENT BLOCKER`; Vercel é candidato futuro apenas, sem decisão nem autorização. Ver `PROJECT_STATE.md` ("Decisão de Arquiteto — Fronteira de Execução Staging-Only") e seção própria abaixo.
+- **Nenhuma fase funcional ativa.** G28-C está `CLOSED / ACCEPTED_WITH_NONBLOCKING_AUTHENTICATED_BROWSER_SMOKE_DEBT`. G28-D discovery permanece `RELEASE CONTRACT DISCOVERY COMPLETE` (evidência preservada); sua publicação está `DEFERRED BY ARCHITECT / NOT A CURRENT BLOCKER / NOT AUTHORIZED` e não constitui fase ativa. A definição canônica do mapeamento de publicação e do procedimento autorizado para migrations 51/52 continua ausente do repositório, mas isso deixou de ser um bloqueio corrente por decisão explícita; ver `docs/releases/G28_D_RELEASE_CANDIDATE.md`.
 - **Última fase aceita:** `G28-C — CLOSED / ACCEPTED_WITH_NONBLOCKING_AUTHENTICATED_BROWSER_SMOKE_DEBT` (decisão arquitetural explícita em 2026-07-15; matriz staging/projeções 16/16 PASS; closeout `a7d7caa`, aceite `d5ec09f`). G28-B8 está `TECHNICALLY COMPLETED / ACCEPTANCE SUBSUMED BY G28-C`: suas capacidades de correção, revogação, restauração e auditoria foram explicitamente validadas e aceitas no gate de G28-C.
 - **Commits R1 concluídos:** `271761c3de20427b2cc9059d5ff7cc3727545e6d` — `G28: reconcile canonical phase state` (closeout documental inicial R1); `edaf0b4d36f24aa7b9490e51a42624cc70d45963` — `G28: correct canonical reconciliation state` (correção de defeitos textuais do R1). O HEAD atual deve ser consultado diretamente com `git rev-parse HEAD`.
-- **Próxima ação:** a reconciliação read-only do backlog geral e o backfill documental `DOCS-CANONICAL-CONSISTENCY-BACKFILL-A` (docs-only, ver seção própria abaixo) já foram concluídos. Nenhuma fase funcional/técnica está autorizada. `OPEN_ARCHITECT_DECISIONS: DEPLOYMENT_MAPPING_AND_PRODUCTION_MIGRATION_PROCEDURE` permanece o único gate material do backlog; publicação não é a próxima ação e nenhuma implementação automática se segue.
+- **Próxima ação:** a reconciliação read-only do backlog geral, o backfill documental `DOCS-CANONICAL-CONSISTENCY-BACKFILL-A` e o registro da fronteira `STAGING-ONLY-EXECUTION-BOUNDARY-A` já foram concluídos. Nenhuma fase técnica está autorizada por este registro. `OPEN_ARCHITECT_DECISIONS: NONE` para o ciclo atual de staging. Próximo candidato técnico autorizável (não iniciado): `CLIENTE-ORDER-SUMMARY-READMODEL-ACL-GRANTS-R1` — `READY FOR EXPLICIT ARCHITECT AUTHORIZATION` / `NOT STARTED` / staging-only. Publicação não é a próxima ação e nenhuma implementação automática se segue.
 - **Workspace / branch / HEAD anterior:** `D:\OneDrive\Programação\Ravatex\controle-tapetes-g28` / `work/g28-document-qualification`. HEAD técnico/documental anterior: `b27e79fdba1ed8fb8a6232d8e0b8ca4b37ac3a2c` (linha de base histórica de descoberta G28-D; este registro documental a sucede).
 - **Leitura obrigatória antes de rotear qualquer ordem:** `PROJECT_STATE.md`, este handoff, plano mestre G28 (`docs/architecture/DOCUMENTOS_VALIDACAO_VINCULOS_E_EVOLUCAO_PLANO.md`), `docs/architecture/PEDIDO_PRODUCTION_FLOW_BACKLOG.md`, ledger G28 (`docs/ledgers/G28_LEDGER.md`) e contratos/runtime aplicáveis.
 - **Continuidade documental — caminhos obrigatórios:**
@@ -68,6 +69,27 @@
 - **Estado final do worktree:** limpo; staging vazio; zero untracked.
 - **Próxima ação autorizável:** `ARCHITECT DECISION REQUIRED` — `DEPLOYMENT_MAPPING_AND_PRODUCTION_MIGRATION_PROCEDURE`. Este backfill não autoriza nenhuma fase técnica.
 - **Detalhe completo:** `PROJECT_STATE.md` (seção "Documentação Canônica — Backfill de Consistência") e `docs/ledgers/G28_LEDGER.md` (entrada append-only).
+- **Continuidade documental obrigatória — retransmitir em todo handoff futuro:**
+  1. `docs/architecture/PEDIDO_OP_MOVIMENTACAO_DOCUMENTOS_PLANO.md`
+  2. `docs/architecture/PEDIDO_PRODUCTION_FLOW_BACKLOG.md`
+  3. `docs/architecture/DOCUMENTOS_VALIDACAO_VINCULOS_E_EVOLUCAO_PLANO.md`
+  4. `docs/architecture/PEDIDO_OP_SCHEMA_CONTRACT.md`
+  5. `PROJECT_STATE.md`
+  6. `AGENT_HANDOFF.md`
+  7. `docs/ledgers/G28_LEDGER.md`
+  8. `docs/DOCUMENTATION_INDEX.md`
+  9. `docs/governance/DOCUMENTATION_MODEL.md`
+  Todo chat ou agente futuro deve retransmitir estes nove caminhos e instruir expressamente a próxima continuidade a retransmiti-los novamente. A cadeia de continuidade do plano e do backlog não pode ser interrompida.
+
+## Decisão de Arquiteto — Fronteira de Execução Staging-Only — STAGING-ONLY-EXECUTION-BOUNDARY-A
+
+- **Fase:** `STAGING-ONLY-EXECUTION-BOUNDARY-A`. **Commit documental:** este registro (`Record staging-only execution boundary`). Docs-only — sem código, teste, SQL, migration, Supabase, staging, produção ou Vercel acessados/alterados. O HEAD atual deve ser consultado com `git rev-parse HEAD`.
+- **Decisão vinculante registrada:** ambiente operacional corrente é exclusivamente staging `ucrjtfswnfdlxwtmxnoo`; o projeto Supabase protegido/outro está fora de escopo; migração/promoção de schema em produção postergada até o backlog canônico completo estar concluído; mapeamento de publicação em produção não é exigido para o trabalho atual em staging; publicação de G28-D permanece postergada, não autorizada e não constitui bloqueio corrente; provedor de publicação (incl. Vercel) não selecionado — candidato futuro apenas.
+- **Reclassificação:** `DEPLOYMENT_MAPPING_AND_PRODUCTION_MIGRATION_PROCEDURE` deixa de ser registrada como bloqueador material corrente ou próxima decisão de arquiteto exigida; passa a `DEFERRED BY ARCHITECT UNTIL GLOBAL BACKLOG COMPLETION / NOT A CURRENT STAGING BLOCKER / NOT STARTED`. Não foi descoberta, definida, testada ou concluída — apenas postergada intencionalmente. Evidência de descoberta preservada, não reescrita, em `docs/releases/G28_D_RELEASE_CANDIDATE.md`.
+- **Próximo candidato técnico (não iniciado, não autorizado por este registro):** `CLIENTE-ORDER-SUMMARY-READMODEL-ACL-GRANTS-R1` — `READY FOR EXPLICIT ARCHITECT AUTHORIZATION` / `NOT STARTED` / staging-only.
+- **Acessos:** nenhum acesso Supabase/MCP/staging/produção/Vercel nesta fase; sem push.
+- **Estado final do worktree:** limpo; staging vazio; zero untracked.
+- **Detalhe completo:** `PROJECT_STATE.md` (seção "Decisão de Arquiteto — Fronteira de Execução Staging-Only") e `docs/ledgers/G28_LEDGER.md` (entrada append-only).
 - **Continuidade documental obrigatória — retransmitir em todo handoff futuro:**
   1. `docs/architecture/PEDIDO_OP_MOVIMENTACAO_DOCUMENTOS_PLANO.md`
   2. `docs/architecture/PEDIDO_PRODUCTION_FLOW_BACKLOG.md`

@@ -1,6 +1,7 @@
 # G28-D release candidate — contract discovery
 
-**Status:** `RELEASE CONTRACT DISCOVERY COMPLETE / BLOCKED BY SPECIFIC MISSING DEPLOYMENT DEFINITION`
+**Status:** `RELEASE CONTRACT DISCOVERY COMPLETE / DEFERRED BY ARCHITECT / NOT A CURRENT BLOCKER / NOT AUTHORIZED`
+**Deferred by:** explicit architect decision `STAGING-ONLY-EXECUTION-BOUNDARY-A` (2026-07-15) — publication and the production deployment/migration mapping below are intentionally postponed until the full canonical backlog is reconciled and completed. This is a deferral, not a claim that the mapping has been discovered, defined, tested, or completed. All discovery evidence below is preserved unchanged from the original discovery pass; nothing in this document was rewritten to make the prior "blocked" characterization disappear.
 **Candidate commit at preparation:** `d5ec09f803c2c64697ee3605b7d4ecfee168a66a`
 **Authority:** preparation only; no publication, production access, push, tag, or release creation is authorized or performed.
 

@@ -4,6 +4,82 @@ Este bloco é a única fonte de estado operacional atual por frente.
 HEAD, working tree, staging e divergência devem ser consultados diretamente no Git.
 O conteúdo histórico abaixo não determina o estado atual.
 
+## Decisão de Arquiteto — Fronteira de Execução Staging-Only — STAGING-ONLY-EXECUTION-BOUNDARY-A
+
+Registro vivo e permanente do ciclo atual do projeto (2026-07-15). Este bloco
+prevalece sobre qualquer menção anterior a `DEPLOYMENT_MAPPING_AND_
+PRODUCTION_MIGRATION_PROCEDURE` como bloqueador material corrente em
+qualquer seção histórica abaixo.
+
+```text
+ACTIVE FUNCTIONAL PHASE:
+NONE
+
+CURRENT ENVIRONMENT POLICY:
+STAGING ONLY
+
+AUTHORIZED SUPABASE PROJECT:
+ucrjtfswnfdlxwtmxnoo
+
+PRODUCTION / OTHER SUPABASE:
+OUT OF SCOPE
+
+DEPLOYMENT_MAPPING_AND_PRODUCTION_MIGRATION_PROCEDURE:
+DEFERRED UNTIL GLOBAL BACKLOG COMPLETION
+
+G28-D:
+DEFERRED / NOT AUTHORIZED / NOT A CURRENT BLOCKER
+
+NEXT AUTHORIZABLE TECHNICAL CANDIDATE:
+CLIENTE-ORDER-SUMMARY-READMODEL-ACL-GRANTS-R1
+READY FOR EXPLICIT ARCHITECT AUTHORIZATION
+NOT STARTED
+STAGING ONLY
+```
+
+- **Decisão vinculante do arquiteto:** o ambiente operacional corrente é
+  exclusivamente o Supabase de staging `ucrjtfswnfdlxwtmxnoo`. O projeto
+  Supabase protegido/outro (`bhgifjrfagkzubpyqpew`) permanece fora de escopo
+  e não deve ser acessado.
+- **Migração ou promoção de schema em produção:** postergada até a
+  conclusão do backlog canônico completo. Mapeamento de publicação em
+  produção não é exigido para o trabalho atual em staging.
+- **`DEPLOYMENT_MAPPING_AND_PRODUCTION_MIGRATION_PROCEDURE`:** deixa de ser
+  registrada como bloqueador material corrente ou como próxima decisão de
+  arquiteto exigida. Reclassificada como `DEFERRED BY ARCHITECT UNTIL
+  GLOBAL BACKLOG COMPLETION / NOT A CURRENT STAGING BLOCKER / NOT STARTED`.
+  Não descoberta, definida, testada ou concluída — apenas postergada
+  intencionalmente. Evidência de descoberta preservada, não reescrita, em
+  `docs/releases/G28_D_RELEASE_CANDIDATE.md`.
+- **G28-D:** publicação `DEFERRED, NOT AUTHORIZED, NOT A CURRENT BLOCKER`.
+- **Frontend/publicação:** provedor de publicação não selecionado. Vercel
+  permanece candidato futuro apenas; isto não é uma decisão nem uma
+  autorização.
+- **Política de execução corrente (permanente para este ciclo):**
+  1. continuar implementando e validando o backlog canônico remanescente
+     exclusivamente contra staging;
+  2. não acessar o projeto Supabase protegido;
+  3. não planejar, preparar, simular ou executar migrations de produção;
+  4. não deixar o mapeamento de produção ausente bloquear o trabalho em
+     staging;
+  5. não autorizar a publicação de G28-D;
+  6. revisitar migração e publicação somente após o backlog canônico
+     completo estar reconciliado e concluído;
+  7. Vercel pode ser avaliado depois, mas não está selecionado atualmente.
+- **Próximo candidato técnico (não iniciado, não autorizado por este
+  registro):** `CLIENTE-ORDER-SUMMARY-READMODEL-ACL-GRANTS-R1` —
+  `READY FOR EXPLICIT ARCHITECT AUTHORIZATION` / `NOT STARTED` / staging-only.
+  Motivo: o backfill documental está fechado; a ambiguidade de escopo
+  staging-vs-produção foi resolvida por esta decisão; a ACL ao vivo em
+  staging permanece mais ampla que o contrato canônico; comportamento
+  anônimo é fail-closed sem exposição confirmada; a remediação segue
+  sendo uma migration grants-only separada; este registro documental não
+  autoriza nem cria essa migration.
+- **Produção:** `bhgifjrfagkzubpyqpew` não acessada. **Push:** não
+  executado. **Vercel:** não acessado.
+- **Ledger:** `docs/ledgers/G28_LEDGER.md` (entrada append-only desta
+  decisão).
+
 ## Bloco da frente ativa
 
 ### Document Qualification / Documents Ingestor — G28
@@ -25,7 +101,7 @@ O conteúdo histórico abaixo não determina o estado atual.
 - **Débitos pré-existentes inalterados vs baseline B7:** `pedido-detail.smoke.js` 140/41 (CRLF); `ops-list-screen.smoke.js` 19/11, `op-form-helpers.smoke.js` 33/3, `op-writes.smoke.js` 48/1 (regex estrito de index.html sobre arquivos não tocados); `documents-ingestor.test.js` 2; `g14-c-bridge-smoke.test.js` 15.
 - **Estado G28-D:** `RELEASE CONTRACT DISCOVERY COMPLETE / BLOCKED BY SPECIFIC MISSING DEPLOYMENT DEFINITION`. Falta uma definição canônica atual do mapeamento de publicação de produção e do procedimento autorizado para migrations 51/52; ver `docs/releases/G28_D_RELEASE_CANDIDATE.md`. Sem push; produção proibida. Débito não bloqueante: `AUTHENTICATED_BROWSER_SMOKE_BLOCKED_BY_TOOLING`.
 - **Contrato B6/B8 preservado:** Documento→Pedido 0..1; Documento→OP 0..N; revisão canônica append-only tipada/versionada; `document_candidates.pedido_id`/`document_events.pedido_id` sob propriedade do Ingestor; `pedido_manual` permanece sugestão; correção/revogação/restauração nunca apagam histórico nem tocam decisão/sugestão.
-- **OPEN_ARCHITECT_DECISIONS:** `DEPLOYMENT_MAPPING_AND_PRODUCTION_MIGRATION_PROCEDURE`.
+- **OPEN_ARCHITECT_DECISIONS:** `NONE` para o ciclo atual de staging (ver "Decisão de Arquiteto — Fronteira de Execução Staging-Only" no topo deste arquivo). `DEPLOYMENT_MAPPING_AND_PRODUCTION_MIGRATION_PROCEDURE` está `DEFERRED UNTIL GLOBAL BACKLOG COMPLETION / NOT A CURRENT STAGING BLOCKER`.
 - **Fases posteriores:** não autorizadas. G28-D não foi aceito nem publicado; esta autorização limitada não autoriza publicação nem fases posteriores.
 - **Plano mestre reconciliado:** `docs/architecture/DOCUMENTOS_VALIDACAO_VINCULOS_E_EVOLUCAO_PLANO.md` (G28-PLAN-R1 2026-07-14)
 - **Subfases B5-D5 aceitas:** B5-B1 (idempotent decision command contract), B5-B2 (migration applied/verified staging), D4-R1 (canonical runtime modules loaded), D5-A (source boundary diagnosis), D5-B1 (explicit source classification), D5-B2 (source-gated local decision helpers), D5-B3 (statusOverrides removal), D5-B4 (legacy decision RPC runtime removal), D5 (consolidated regression GREEN). Ver ledger G28 para detalhes de commits e validação.

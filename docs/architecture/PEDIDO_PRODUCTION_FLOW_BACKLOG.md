@@ -1311,3 +1311,40 @@ SQL, migration, staging ou producao alterados.
   nao autoriza nenhuma fase tecnica posterior.
 - Producao (`bhgifjrfagkzubpyqpew`) nao acessada; sem push. Ver
   `docs/ledgers/G28_LEDGER.md` para a entrada append-only desta fase.
+
+# Atualizacao 2026-07-15 - Staging-Only Execution Boundary A: ARCHITECT DECISION RECORDED
+
+Fase `STAGING-ONLY-EXECUTION-BOUNDARY-A`. Docs-only; sem codigo, teste, SQL,
+migration, Supabase, staging, producao ou Vercel acessados/alterados.
+
+- Decisao vinculante do arquiteto: ambiente operacional corrente e
+  exclusivamente staging `ucrjtfswnfdlxwtmxnoo`; o projeto Supabase
+  protegido/outro esta fora de escopo; migracao/promocao de schema em
+  producao fica postergada ate o backlog canonico completo estar
+  concluido; mapeamento de publicacao em producao nao e exigido para o
+  trabalho atual em staging; publicacao de G28-D permanece postergada,
+  nao autorizada e nao constitui bloqueio corrente; provedor de
+  publicacao (incl. Vercel) nao selecionado -- candidato futuro apenas.
+- `DEPLOYMENT_MAPPING_AND_PRODUCTION_MIGRATION_PROCEDURE` deixa de ser
+  registrada como bloqueador material corrente ou proxima decisao de
+  arquiteto exigida; reclassificada como `DEFERRED BY ARCHITECT UNTIL
+  GLOBAL BACKLOG COMPLETION / NOT A CURRENT STAGING BLOCKER / NOT
+  STARTED`. Nao foi descoberta, definida, testada ou concluida --
+  apenas postergada intencionalmente.
+- Proximo candidato tecnico staging-only (nao iniciado, nao autorizado
+  por este registro): `CLIENTE-ORDER-SUMMARY-READMODEL-ACL-GRANTS-R1` --
+  `READY FOR EXPLICIT ARCHITECT AUTHORIZATION`. Motivo: o backfill
+  documental esta fechado; a ambiguidade de escopo staging-vs-producao
+  foi resolvida por esta decisao; a ACL ao vivo em staging permanece
+  mais ampla que o contrato canonico (`D-COS02`); comportamento anonimo
+  e fail-closed sem exposicao confirmada; a remediacao segue sendo uma
+  migration grants-only separada (analoga a `db/54`); este registro nao
+  autoriza nem cria essa migration.
+- Nenhuma entrada historica deste backlog foi reescrita; os itens
+  anteriores que descreviam `DEPLOYMENT_MAPPING_AND_PRODUCTION_
+  MIGRATION_PROCEDURE` como gate material permanecem registrados como
+  ocorreram, com esta secao anexada como correcao/atualizacao de
+  estado corrente.
+- Producao (`bhgifjrfagkzubpyqpew`) nao acessada; Supabase protegido nao
+  acessado; Vercel nao acessado; sem push. Ver `docs/ledgers/G28_LEDGER.md`
+  para a entrada append-only desta decisao.
