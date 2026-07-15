@@ -4,7 +4,7 @@
 - **HEAD de fechamento:** `383db586e70852fba3c5ae5d5ac5312ab1b49284`.
 - **G28-A:** `REJECTED AS CONTRACT / RETAINED AS DIAGNOSTIC INPUT`.
 - **G28-B1:** `AUTHORIZED` no instante deste closeout; desde então G28-B1, B2, B3, B4 e B5-D5 foram aceitos.
-- **Estado atual:** ver CURRENT EXECUTION CHECKPOINT acima e `PROJECT_STATE.md`.
+- **Estado atual (histórico):** ver HISTORICAL EXECUTION CHECKPOINT — SUPERSEDED acima. O estado operacional atual está em `PROJECT_STATE.md`.
 - **Registro histórico apenas:** a fase ativa, o último bloco aceito e a próxima ação autorizável estão no checkpoint e em `PROJECT_STATE.md`.
 
 ---
@@ -1020,7 +1020,7 @@ Qualificadores compostos podem detalhar um estado base — por exemplo
 | G28-B7 | Exibição nas superfícies (Documentos/Pedido/OP/timeline/buscas) | `CLOSED / ACCEPTED_WITH_NONBLOCKING_REMOTE_SMOKE_DEBT` | G28-B6 | `work/g28-document-qualification` @ `controle-tapetes-g28` | parcial `ed35f049397af4061ed6e8bb2d9ec3056c543724`; conclusão `9ef61e1896af631bc5aeeced4af93c77051f4de4` | read model canônico + superfícies Pedido/OP/timeline/busca; débito não bloqueante: smoke autenticado B7 em staging | Aceito 2026-07-14; G28-B8 autorizado |
 | G28-B8 | Correção, revogação, restauração e auditoria | `TECHNICALLY COMPLETED / ACCEPTANCE SUBSUMED BY G28-C` | G28-B7 | `work/g28-document-qualification` @ `controle-tapetes-g28` | commit técnico `f985f8b857f83d977936eae47ea830a5cb6ba4c3` | `db/52` aplicada e verificada em staging (`ucrjtfswnfdlxwtmxnoo`, registry `20260715024449`); matriz RPC 18/18; bateria B4–B8 831/831. As capacidades de correção, revogação, restauração e auditoria foram explicitamente validadas e aceitas na matriz de staging/projeções de G28-C (16/16 PASS). B8 não está pendente; sua aceitação foi subsumida pelo gate e aceite arquitetural de G28-C. | — (subsumido por G28-C) |
 | G28-C | Validação real em staging | `CLOSED / ACCEPTED_WITH_NONBLOCKING_AUTHENTICATED_BROWSER_SMOKE_DEBT` | G28-B8 | `work/g28-document-qualification` @ `controle-tapetes-g28` | closeout `a7d7caa8984e56b44c0302bff5d578a8be5ff536`; aceite `d5ec09f803c2c64697ee3605b7d4ecfee168a66a` | matriz staging/projeções 16/16 PASS; zero defeito material; sem alteração de produto, schema, RPC, migration ou arquitetura. Dívida não bloqueante: `AUTHENTICATED_BROWSER_SMOKE_BLOCKED_BY_TOOLING`. | — |
-| G28-D | Publicação para o cliente acompanhar | `RELEASE CONTRACT DISCOVERY COMPLETE / BLOCKED BY SPECIFIC MISSING DEPLOYMENT DEFINITION` (publicação: `NOT STARTED / NOT AUTHORIZED`) | G28-C | `work/g28-document-qualification` @ `controle-tapetes-g28` | discovery/preparation commit `b27e79fdba1ed8fb8a6232d8e0b8ca4b37ac3a2c` | descoberta contratual concluída e registrada em `docs/releases/G28_D_RELEASE_CANDIDATE.md`. Bloqueio: falta mapeamento canônico de publicação e procedimento autorizado de migrations 51/52 em produção. Publicação, push, produção, tag e release não autorizados. | Definir contrato de publicação/produção (decisão de arquiteto) |
+| G28-D | Publicação para o cliente acompanhar | `RELEASE CONTRACT DISCOVERY COMPLETE / BLOCKED BY SPECIFIC MISSING DEPLOYMENT DEFINITION` (publicação: `NOT STARTED / NOT ACCEPTED / NOT AUTHORIZED`) | G28-C | `work/g28-document-qualification` @ `controle-tapetes-g28` | discovery/preparation commit `b27e79fdba1ed8fb8a6232d8e0b8ca4b37ac3a2c` | descoberta contratual concluída e registrada em `docs/releases/G28_D_RELEASE_CANDIDATE.md`. Bloqueio: falta mapeamento canônico de publicação e procedimento autorizado de migrations 51/52 em produção. Publicação, push, produção, tag e release não autorizados. | Definir contrato de publicação/produção (decisão de arquiteto) |
 | CAMADA 2 (A1–A7) | Administração de usuários e acessos | DEFERRED | Documentos estabilizado | — | — | — | Só após Camada 1 publicada |
 | CAMADA 3 (BK1–BK8) | Backup em nuvem e restauração testada | DEFERRED | Frente independente | — | — | — | Auditoria do app de origem |
 | CAMADA 4 (F0–F5) | Participação futura de fornecedores | DEFERRED | Documentos publicado | — | — | — | Operação interna nunca depende do fornecedor |
@@ -1065,12 +1065,14 @@ Registrar o estado durante a execução não antecipa aceite: o fechamento
 
 # CRITÉRIO DE FECHAMENTO DO PLANO
 
-Este plano foi reconciliado em 2026-07-14 (G28-PLAN-R1). As decisões de arquiteto
-em aberto (cardinalidade Documento↔Pedido, Documento↔OP, vínculos por tipo e
-compatibilidade) permanecem listadas no CURRENT EXECUTION CHECKPOINT. O plano
-será considerado totalmente fechado quando:
+Este plano foi reconciliado em 2026-07-14 (G28-PLAN-R1). A única decisão de
+arquiteto atualmente em aberto é `DEPLOYMENT_MAPPING_AND_PRODUCTION_MIGRATION_PROCEDURE`,
+registrada no cabeçalho deste plano e em `PROJECT_STATE.md`. As decisões históricas
+de cardinalidade Documento↔Pedido, Documento↔OP, vínculos por tipo e compatibilidade
+foram resolvidas nas fases aceitas G28-B1 a G28-B8 e G28-C, e não estão mais abertas.
+O plano será considerado totalmente fechado quando:
 
-- arquiteto fechar as decisões em aberto;
+- arquiteto fechar a decisão de publicação/produção em aberto;
 - backlog estiver ordenado e reconciliado com o estado operacional;
 - nenhum item futuro tiver sido confundido com escopo ativo;
 - não houver contradição com `PEDIDO_OP_MOVIMENTACAO_DOCUMENTOS_PLANO.md`.
@@ -1092,7 +1094,7 @@ ação e nenhuma implementação automática se segue.** `OPEN_ARCHITECT_DECISIO
 
 Fases aceitas: G28-P0, G28-A (rejeitado como contrato / retido como insumo diagnóstico), G28-B1, G28-B2,
 G28-B3 (subfases aceitas), G28-B4, G28-B5-D5, G28-B6, G28-B7, G28-B8 (subsumido por C), G28-C.
-G28-D discovery: `COMPLETED / BLOCKED_BY_MISSING_DEPLOYMENT_DEFINITION`. G28-D publicação: `NOT STARTED / NOT AUTHORIZED`.
+G28-D discovery: `COMPLETED / BLOCKED_BY_MISSING_DEPLOYMENT_DEFINITION`. G28-D publicação: `NOT STARTED / NOT ACCEPTED / NOT AUTHORIZED`.
 Fases posteriores: `DEFERRED / NOT AUTHORIZED`.
 
 Estado operacional atual: `PROJECT_STATE.md`.

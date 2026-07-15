@@ -746,3 +746,13 @@ risco residual e próxima fase indicada no fechamento.
   5. **PROJECT_STATE.md and AGENT_HANDOFF.md SHA recording:** recorded the already-created R1 commit SHA `271761c3de20427b2cc9059d5ff7cc3727545e6d`; removed forward-looking "resolve after commit" language for R1; instructed next chat to resolve current Git HEAD directly.
 - **No technical state changed:** no code, tests, SQL, migration, runtime, staging, production, Supabase, network, MCP, or push was executed. This is strictly a documentary correction.
 - **Corrective commit:** resolve final HEAD with `git rev-parse HEAD` after commit.
+
+---
+## 2026-07-15 — G28-STATE-RECONCILIATION-R1 — Superseded-checkpoint reference addendum
+
+- **Gate:** CORRECTIVE ADDENDUM (docs-only; no code, SQL, migration, test, staging, production, push, remote)
+- **Prior corrective commit:** `edaf0b4d36f24aa7b9490e51a42624cc70d45963` — `G28: correct canonical reconciliation state`
+- **Cause:** the prior R1 corrective commit missed two live non-historical references to the renamed CURRENT EXECUTION CHECKPOINT in the master plan: (1) the P0 historical record line `Estado atual: ver CURRENT EXECUTION CHECKPOINT acima` still pointed to a superseded label as if current; (2) the `CRITÉRIO DE FECHAMENTO DO PLANO` section still asserted that historical cardinality/type/compatibility decisions remained listed in CURRENT EXECUTION CHECKPOINT. Additionally, the G28-D publication triple was incomplete at several summary points (`NOT STARTED / NOT AUTHORIZED` instead of `NOT STARTED / NOT ACCEPTED / NOT AUTHORIZED`).
+- **Resulting canonical state:** zero occurrences of the token CURRENT EXECUTION CHECKPOINT remain in the live master plan. The historical checkpoint title `HISTORICAL EXECUTION CHECKPOINT — SUPERSEDED` is preserved. The G28-D publication triple is normalized to `NOT STARTED / NOT ACCEPTED / NOT AUTHORIZED` across the master plan, PROJECT_STATE.md and AGENT_HANDOFF.md. The prior corrective commit `edaf0b4d36f24aa7b9490e51a42624cc70d45963` is recorded in PROJECT_STATE.md and AGENT_HANDOFF.md. The ledger entry `G28-STATE-RECONCILIATION-R1 — Corrective documentary addendum` is not altered.
+- **Files changed (this addendum):** `docs/architecture/DOCUMENTOS_VALIDACAO_VINCULOS_E_EVOLUCAO_PLANO.md`, `PROJECT_STATE.md`, `AGENT_HANDOFF.md`, `docs/ledgers/G28_LEDGER.md` (this entry).
+- **No code, tests, remotes, production, or push.**
