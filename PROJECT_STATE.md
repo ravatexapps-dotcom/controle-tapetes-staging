@@ -209,9 +209,75 @@ Higiene do worktree `work/app-next` — read-only, ordem separada
   arquitetura de informação/organização de tela.
 - **Produção:** `bhgifjrfagkzubpyqpew` não acessada. **Push:** não
   executado.
-- **Próxima ação autorizável:** `A3.1` — `READY FOR EXPLICIT ARCHITECT
-  AUTHORIZATION / NOT STARTED`. Nenhuma subfase autorizada por este
-  registro; cada uma exige autorização explícita e individual.
+- **Próxima ação autorizável:** `A3.1` foi autorizada e concluída — ver
+  seção própria abaixo. Próxima subfase: `A3.2`, sob gate de mockup
+  (ver `CAMADA2_USUARIOS_SPEC_PROPOSED.md`), **não autorizada**.
+- **Ledger:** `docs/ledgers/G28_LEDGER.md` (entrada append-only desta
+  fase).
+
+## Camada 2 — Extração da Tela de Usuários — CAMADA2-USUARIOS-A3-1
+
+- **Frente:** `G28-CAMADA-2`, subfase `A3.1` de
+  `docs/architecture/CAMADA2_USUARIOS_SPEC_PROPOSED.md`.
+- **Fase:** `CAMADA2-USUARIOS-A3-1`. Refactor puro (§14
+  `CODE_HEALTH_RULES.md`) — sem feature nova, sem mudança de
+  comportamento visual ou funcional. **Classificação: `CLOSED /
+  ACCEPTED`** (autorização explícita do arquiteto + validação visual
+  manual confirmada na tela real em app local staging).
+- **Technical HEAD:** `4f01101143a512c8018d58ce9e523064c38a145f` —
+  `Extract user administration screen modules`.
+- **Escopo:** extração 1:1 de `screenCadastrosUsuarios`
+  (`js/screens/cadastros.js:2226-2713`, arquivo de 2.750 linhas com 7
+  telas embutidas — violação ativa do limite de tamanho §7) para 3
+  módulos próprios: `js/admin-usuarios-writes.js` (I/O puro, sem toast/
+  DOM, padrão `op-writes.js`/`entrega-writes.js`), `js/screens/
+  admin-usuarios-modal.js` (3 modais: criar/editar, desativar,
+  excluir), `js/screens/admin-usuarios.js` (orquestração/render).
+  Cutover de rota antecipado (ajuste de revisão da spec): `js/boot.js`
+  recableado (`#/cadastros/usuarios` → `window.screenAdminUsuarios`);
+  `index.html` com os 3 scripts novos (ordem writes→modal→screen,
+  cache-busting `?v=20260715-camada2-a31`).
+- **Acoplamento resolvido:** `cadastros.js` é uma IIFE que não expõe em
+  `window.*` os 8 helpers de formulário usados pela tela (só
+  `window.labelFornecedorTipo` é global). Como a ordem proibia tocar
+  `cadastros.js`, os helpers (funções puras, dependem só de `window.el`/
+  `window.supa`) foram duplicados localmente em `admin-usuarios-modal.js`,
+  renomeados com prefixo `adminUsuarios` e comentário de origem.
+- **Decisão de escopo registrada:** a função `render()` original
+  (`cadastros.js:2266-2317`, dataTable genérico) nunca era chamada —
+  `reload()` só chamava `renderStandalone()`. Código morto/inalcançável,
+  **não portado**: omiti-lo não altera nenhum comportamento observável.
+- **Não alterado:** `js/screens/cadastros.js`, `js/ui.js`, `js/auth.js`
+  — intocados, confirmado por `git status`.
+  `screenCadastrosUsuarios`/`window.screenCadastrosUsuarios` permanecem
+  em `cadastros.js`, como código morto, até remoção isolada em `A3.4`
+  (fase própria, refactor puro, sem mistura com feature).
+- **Testes (gate §13):** `node --check` nos 3 arquivos novos + `boot.js`
+  PASS; `tests/admin-usuarios.smoke.js` (novo) **13/13**; `tests/
+  boot.smoke.js` **32/32** (2 testes novos: cutover de rota, ordem/
+  cache-busting); `tests/cadastros-screens.smoke.js` **32/32** (sandbox
+  de boot ajustado para carregar os 3 módulos novos — sem essa correção
+  o teste 22 quebrava por consequência indireta da troca de rota, não
+  por alteração em `cadastros.js`); regressão ampla de 28 suítes
+  adicionais: **1207 pass / 89 fail — contagem idêntica ao baseline
+  antes da fase**, confirmado via `git stash`/`stash pop` (as 89
+  falhas são débito pré-existente, servidor `:8765` não rodando e
+  extração de inline-script antiga; nenhuma nova). `git diff --check`
+  limpo.
+- **Validação visual:** confirmada pelo arquiteto na rota
+  `#/cadastros/usuarios` em app local (`http://localhost:8765`,
+  `.claude/launch.json` criado nesta fase), staging `ucrjtfswnfdlxwtmxnoo`
+  — paridade 1:1 aceita.
+- **Produção:** `bhgifjrfagkzubpyqpew` não acessada. **Push:** não
+  executado.
+- **Documentação atualizada:** `docs/refactor/ARCHITECTURE_REFACTOR_LEDGER.md`
+  (§16 — novo módulo estrutural + mudança de rota; nova linha na
+  tabela de fases §4 e na lista canônica de módulos §6).
+- **Próxima ação autorizável:** `A3.2` — sob **gate de mockup**
+  (aprovação do arquiteto dos cards-resumo + toolbar antes de
+  implementar; ver spec). `A3.3` (bulk actions) permanece `DEFERRED`.
+  `A3.4` (remoção do código legado) depende de todas as subfases A3.x
+  aceitas. Nenhuma subfase autorizada por este registro.
 - **Ledger:** `docs/ledgers/G28_LEDGER.md` (entrada append-only desta
   fase).
 

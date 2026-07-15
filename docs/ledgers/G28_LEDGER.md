@@ -959,3 +959,31 @@ risco residual e próxima fase indicada no fechamento.
 - **Estado final do worktree:** limpo; staging vazio; zero untracked.
 - **Risco residual:** nenhum novo — a spec em si não muda nenhum estado de código/dado; débitos preexistentes preservados.
 - **Próxima fase indicada no fechamento:** `A3.1` — `READY FOR EXPLICIT ARCHITECT AUTHORIZATION / NOT STARTED`. Este registro não autoriza sua execução.
+
+---
+
+## 2026-07-15 — CAMADA2-USUARIOS-A3-1 — Extract user administration screen modules
+
+- **Gate:** `CLOSED / ACCEPTED`. Refactor puro (§14 `CODE_HEALTH_RULES.md`) — sem feature nova, sem mudança de comportamento visual/funcional.
+- **Commit técnico:** `4f01101143a512c8018d58ce9e523064c38a145f` — `Extract user administration screen modules`.
+- **Commit documental:** este closeout (`Close Camada 2 user administration screen extraction`). O HEAD atual deve ser consultado com `git rev-parse HEAD`.
+- **Autorização:** ordem do arquiteto explícita, escopo restrito a A3.1 (sem encadeamento automático de subfases seguintes), conforme `docs/architecture/CAMADA2_USUARIOS_SPEC_PROPOSED.md`.
+- **Arquivos principais:**
+  - `js/admin-usuarios-writes.js` (novo, 196L) — camada de I/O pura (sem toast/DOM), reads de usuarios/fornecedores/clientes, writes via Edge Functions `admin-create-user`/`admin-disable-user`/`admin-delete-user` + PostgREST update, mapeamento de erro consolidado. Padrão `op-writes.js`/`entrega-writes.js`/`document-link-admin-controller.js`.
+  - `js/screens/admin-usuarios-modal.js` (novo, 500L) — 3 modais (criar/editar, desativar, excluir). Helpers de formulário (`adminUsuariosModalField`, `openAdminUsuariosFormModal` etc.) duplicados localmente de `cadastros.js:204-449`, renomeados com prefixo `adminUsuarios` — necessário porque `cadastros.js` é uma IIFE que não expõe esses helpers em `window.*` e a ordem proibia alterá-lo.
+  - `js/screens/admin-usuarios.js` (novo, 188L) — orquestração/render, extração 1:1 de `screenCadastrosUsuarios` (`cadastros.js:2226-2713`).
+  - `index.html` — +3 `<script>` (writes → modal → screen), cache-busting `?v=20260715-camada2-a31`, inseridos logo após `cadastros.js`, antes de `ops-list.js`.
+  - `js/boot.js` — rota `#/cadastros/usuarios` recableada de `window.screenCadastrosUsuarios` para `window.screenAdminUsuarios` (1 linha); comentário de dependências do cabeçalho corrigido.
+  - `tests/admin-usuarios.smoke.js` (novo, 402L, 13 testes) — paridade visual (grid/badges/busca/toggle/botões), guardas de auto-proteção, wiring de escrita (spies sobre `RAVATEX_ADMIN_USUARIOS_MODAL`), unit dos writes (`RAVATEX_ADMIN_USUARIOS_WRITES` chamando `supa` corretamente), não-regressão (`cadastros.js` intocado).
+  - `tests/boot.smoke.js` — +2 testes: cutover de rota (`render.name === 'screenAdminUsuarios'`), ordem/cache-busting dos 3 scripts novos.
+  - `tests/cadastros-screens.smoke.js` — sandboxes de boot completo (testes 22/23) ajustados para carregar os 3 módulos novos (sem isso, teste 22 quebrava por consequência indireta da troca de rota, não por alteração em `cadastros.js`); nova asserção `routes['#/cadastros/usuarios'].render.name === 'screenAdminUsuarios'`.
+- **Acoplamento oculto encontrado e resolvido (não constituiu HARD STOP):** os 8 helpers de formulário usados por `screenCadastrosUsuarios` são privados à IIFE de `cadastros.js` (só `window.labelFornecedorTipo` é global). Duplicados como funções puras (dependem só de `window.el`/`window.supa`, sem estado privado de `cadastros.js`), preservando comportamento idêntico sem tocar o arquivo proibido.
+- **Decisão de escopo registrada:** a função `render()` original (`cadastros.js:2266-2317`, dataTable genérico) nunca era chamada — `reload()` só chamava `renderStandalone()`. Código morto/inalcançável, **não portado**: omissão não altera nenhum comportamento observável.
+- **Não alterado:** `js/screens/cadastros.js`, `js/ui.js`, `js/auth.js` — intocados, confirmado por `git status`. `screenCadastrosUsuarios`/`window.screenCadastrosUsuarios` permanecem em `cadastros.js` como código morto até remoção isolada em `A3.4`.
+- **Testes:** `node --check` nos 3 arquivos novos + `boot.js` PASS; `tests/admin-usuarios.smoke.js` **13/13**; `tests/boot.smoke.js` **32/32**; `tests/cadastros-screens.smoke.js` **32/32**; regressão ampla de 28 suítes adicionais referenciando `boot.js`/rotas: **1207 pass / 89 fail — contagem idêntica ao baseline pré-fase**, confirmado via `git stash`/`stash pop` (89 falhas são débito pré-existente — servidor `:8765` não rodando, extração de inline-script antiga — nenhuma nova). `git diff --check` limpo.
+- **Validação visual:** confirmada explicitamente pelo arquiteto na rota `#/cadastros/usuarios`, app local (`http://localhost:8765`, `.claude/launch.json` criado nesta fase para o preview) apontando para staging `ucrjtfswnfdlxwtmxnoo` — paridade 1:1 aceita antes deste closeout, conforme gate de aceite da ordem.
+- **Produção:** `bhgifjrfagkzubpyqpew` não acessada. **Push:** não executado.
+- **Estado final do worktree:** limpo; staging vazio; zero untracked.
+- **Documentação atualizada:** `docs/refactor/ARCHITECTURE_REFACTOR_LEDGER.md` (§16 — novo módulo estrutural + mudança de rota; nova linha em §4 "Tabela de fases" e 3 novas linhas em §6 "Módulos extraídos"); `PROJECT_STATE.md` (nova seção "Camada 2 — Extração da Tela de Usuários"); `AGENT_HANDOFF.md` (novo closeout + continuidade).
+- **Risco residual:** nenhum novo introduzido. Débitos preexistentes preservados (`AUTHENTICATED_BROWSER_SMOKE_NOT_EXECUTED`, `DB30_NOT_RECORDED_IN_SUPABASE_MIGRATION_HISTORY`, worktree `app-next` divergente/sujo).
+- **Próxima fase indicada no fechamento:** `A3.2` — sob **gate de mockup** (cards-resumo + toolbar exigem aprovação de mockup do arquiteto antes de implementar). `A3.3` (bulk actions) permanece `DEFERRED`. `A3.4` (remoção do código legado) depende das demais subfases A3.x aceitas. Nenhuma subfase autorizada por esta entrada.

@@ -1,8 +1,13 @@
 # Architecture Refactor Ledger — Ravatex Controle de Tapetes
 
 > Ledger de fases do refactor arquitetural de
-> `D:\OneDrive\Programação\Ravatex\controle-tapetes`.
-> Última atualização: 2026-06-24 (HEAD `83344f5`, fase
+> `D:\OneDrive\Programação\Ravatex\controle-tapetes-g28`.
+> Última atualização: 2026-07-15 (HEAD `4f01101`, fase
+> `CAMADA2-USUARIOS-A3-1` — extração 1:1 de `screenCadastrosUsuarios`
+> (`js/screens/cadastros.js`) para 3 módulos próprios, sem alteração de
+> comportamento; primeira subfase técnica de `G28-CAMADA-2`, ver
+> `docs/architecture/CAMADA2_USUARIOS_SPEC_PROPOSED.md`).
+> Entrada anterior: 2026-06-24 (HEAD `83344f5`, fase
 > `RAVATEX-TAPETES-AUTH-DISABLE-USER-UI-A` — integração da tela
 > `#/cadastros/usuarios` com a Edge Function `admin-disable-user`
 > deployada em staging `ucrjtfswnfdlxwtmxnoo`).
@@ -109,6 +114,7 @@
 | AUTH-DISABLE-USER-EDGE-STAGING-DEPLOY-A | (realizado antes da fase UI-A) | Deploy controlado de `admin-disable-user` em staging `ucrjtfswnfdlxwtmxnoo` via `supabase functions deploy`; status **ACTIVE**; validação manual via Edge Function URL confirmada. O E2E real do runner (fase `...-E2E-RUNNER-FIX-A` aplicada em staging) passou com `result: PASS` em staging (ver §5k). Não versionado em commit desta fase; a entrada de fase foi inserida retroativamente para refletir o estado real pós-deploy. | — | aceito (deploy ACTIVE em staging) |
 | AUTH-DISABLE-USER-E2E-RUNNER-FIX-A | `b25b67e` | `scripts/staging/admin-disable-user-e2e.mjs` (helpers `loginExpectSuccess`/`loginExpectFailure`/`postSupabaseLogin`; mensagem hardcoded "Login admin falhou" removida), `tests/admin-disable-user-e2e-runner.smoke.js` (4 testes novos: login bloqueado esperado, fluxo continua, loginExpectSuccess nos 3 logins, loginExpectFailure aceita variações de banned, loginExpectFailure retorna controle), `PROJECT_STATE.md`, `AGENT_HANDOFF.md`, `docs/refactor/ARCHITECTURE_REFACTOR_LEDGER.md` (correção do bug do runner no passo `login_blocked`: `HTTP 400 User is banned` agora tratado como SUCESSO esperado do teste via `loginExpectFailure`; runner continua para `idempotency` e `self_disable_blocked`; **sem Supabase real, sem SQL, sem deploy, sem UI, sem produção, sem origin/main, sem PR #2**; **E2E real não rerodado nesta fase**) | 32/32 smoke + 39/39 regressão | aceito (local-only; E2E real rerun em fase futura) |
 | AUTH-DISABLE-USER-UI-A | `83344f5` | `js/screens/cadastros.js` (botão `Desativar` substitui placeholder `Em breve`; modal com motivo opcional; chamada `window.supa.functions.invoke('admin-disable-user', { body: { user_id, reason } })`; helper `friendlyDisableMessage`; guarda de UX para self/inativos; coluna `Status` na listagem), `tests/cadastros-usuarios-auth-ui.smoke.js` (7 testes novos para a fase), `tests/cadastros-screens.smoke.js` (test 20a atualizado: `Desativar` em vez de `Em breve`), `tests/admin-disable-user.smoke.js` (test 37 atualizado: UI agora chama `admin-disable-user`), `PROJECT_STATE.md`, `AGENT_HANDOFF.md`, `docs/refactor/ARCHITECTURE_REFACTOR_LEDGER.md`, `docs/DOCUMENTATION_INDEX.md` (integração da tela `#/cadastros/usuarios` com a Edge Function `admin-disable-user` deployada em staging `ucrjtfswnfdlxwtmxnoo`; **sem Supabase real, sem SQL, sem deploy, sem produção, sem origin/main, sem PR #2, sem E2E real nesta fase**; E2E real do runner já havia passado em `result: PASS` em staging ANTES desta fase — ver §5k para evidência sanitizada) | 23/23 + 32/32 + 39/39 + 17/17 (regressões focais) | aceito (local-only; validação manual/automatizada da UI em staging em fase futura) |
+| CAMADA2-USUARIOS-A3-1 | `4f01101` | `js/admin-usuarios-writes.js` (criado — I/O puro: reads de usuarios/fornecedores/clientes, writes via `admin-create-user`/`admin-disable-user`/`admin-delete-user` + PostgREST update, sem toast/DOM, padrão `op-writes.js`/`entrega-writes.js`), `js/screens/admin-usuarios-modal.js` (criado — 3 modais: criar/editar, desativar, excluir; helpers de formulário duplicados localmente de `cadastros.js:204-449`, já que `cadastros.js` é uma IIFE que não os expõe em `window.*` e não pôde ser tocado nesta fase), `js/screens/admin-usuarios.js` (criado — orquestração/render, extração 1:1 de `screenCadastrosUsuarios`), `index.html` (+3 `<script>` na ordem writes→modal→screen, cache-busting `?v=20260715-camada2-a31`), `js/boot.js` (rota `#/cadastros/usuarios` recablada de `window.screenCadastrosUsuarios` para `window.screenAdminUsuarios`; comentário de dependências corrigido), `tests/admin-usuarios.smoke.js` (criado, 13 testes de paridade visual + wiring), `tests/boot.smoke.js` (+2 testes: cutover de rota, ordem/cache-busting dos 3 scripts novos), `tests/cadastros-screens.smoke.js` (sandboxes de boot completo ajustados para carregar os 3 módulos novos; nova asserção `render.name === 'screenAdminUsuarios'`) (extração 1:1 de `screenCadastrosUsuarios`, `js/screens/cadastros.js:2226-2713`, sem alteração de comportamento/visual; função `render()` original não portada por ser código morto/inalcançável — decisão registrada no closeout; `cadastros.js`/`js/ui.js`/`js/auth.js` intocados; `screenCadastrosUsuarios` permanece em `cadastros.js` até remoção isolada em A3.4; validação visual manual do arquiteto confirmada em app local staging) | 13/13 (novo) + 32/32 + 32/32 (regressões ajustadas) + 1207/1296 (regressão ampla de 28 suítes, contagem idêntica ao baseline pré-fase via `git stash`) | aceito |
 
 ## 5. Ressalvas processuais aceitas em `FORNECEDOR-SCREENS-MODULE-A` (commit `4b9ca12`)
 
@@ -879,6 +885,9 @@ reais.
 | `js/screens/op-nova.js` | `ce3dd14` | SCREENNOVAOP-MODULE-A |
 | `js/boot.js` | `4c18fe7` | ROUTES-BOOT-MODULE-A |
 | `js/screens/op-pdf.js` | `7f3c6da` | RAVATEX-TAPETES-OP-NOVA-PDF-MODULE-A |
+| `js/admin-usuarios-writes.js` | `4f01101` | CAMADA2-USUARIOS-A3-1 |
+| `js/screens/admin-usuarios-modal.js` | `4f01101` | CAMADA2-USUARIOS-A3-1 |
+| `js/screens/admin-usuarios.js` | `4f01101` | CAMADA2-USUARIOS-A3-1 |
 
 ## 7. Inline remanescente em `index.html` (após `7f3c6da`)
 
