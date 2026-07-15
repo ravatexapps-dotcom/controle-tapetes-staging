@@ -690,3 +690,11 @@ risco residual e próxima fase indicada no fechamento.
 - **Proof / safety:** confirmed links derived only from `document_link_revisions` and `document_link_revision_ops`; Ingestor-owned candidate/event suggestion fields and Pedido/OP operational snapshots remained unchanged. No product, schema, RPC, migration or architecture defect was proven.
 - **Cleanup / debt:** `G28-C-VERIFY` residue is zero in candidates, technical evidence, events, decisions, revisions, revision ops, pedidos, lotes, ops, clientes and fornecedores. `AUTHENTICATED_BROWSER_SMOKE_BLOCKED_BY_TOOLING`: no staging administrative application/session was available.
 - **Gate:** `G28-C — READY FOR ARCHITECT ACCEPTANCE`, not closed or accepted. No later phase, including G28-D, is authorized.
+
+---
+
+## 2026-07-15 — G28-C — Architect acceptance recording
+
+- **Decision:** `G28-C — CLOSED / ACCEPTED_WITH_NONBLOCKING_AUTHENTICATED_BROWSER_SMOKE_DEBT`.
+- **Basis:** staging database/canonical projection matrix 16/16 PASS; no product, schema, RPC, migration, ownership or architectural defect; harness-only corrections; zero fixture residue; prior append-only ledger proof and canonical closeout commit `a7d7caa8984e56b44c0302bff5d578a8be5ff536`.
+- **Residual / authority:** authenticated administrative browser smoke remains a non-blocking tooling debt. G28-D and later phases remain not authorized; no push and no production access.
