@@ -294,8 +294,23 @@ controlada de limpeza para dados de teste sem alterar o contrato produtivo:
 | D-DEL07 | Em staging/teste, OP numerada sem bloqueadores reais pode ser removida pela RPC controlada. | A `db/34` remove/bypassa o trigger legado `ops_numeradas_no_delete`; o numero nao e reciclado porque `op_numeros` permanece high-water. |
 | D-DEL08 | Em staging/teste, cadeia com entrega/OP filha sem expedicao exige `EXCLUIR TUDO` e pode ser removida em cascata transacional. | A `db/35` diferencia `requires_cascade_confirmation` de `blocked`; expedicao segue bloqueador e producao futura exige auditoria/soft-delete. |
 | D-DEL09 | Antes de apagar OP, a cascata deve zerar `entrega_itens` por `op_id` e por `op_item_id`, e guards de DELETE devem retornar `OLD`. | A `db/36` corrige a ordem FK e evita cancelamento silencioso por trigger `BEFORE DELETE`; teste sintetico real validou Pedido #29/OPs 45-46 em staging sem alterar `op_numeros`. |
+| D-DEL10 | Exclusao fisica de Pedido/OP e bloqueada quando existe historico documental canonico vinculado (`document_link_revisions`/`document_link_revision_ops`); a logica destrutiva legada e isolada em funcoes `_pre53` sem API publica. | A `db/53` renomeia as quatro RPCs legadas para `*_pre53` (revoga `EXECUTE` de todos os papeis) e recria wrappers `SECURITY DEFINER` que diagnosticam historico documental e bloqueiam antes de delegar; nunca apaga `document_link_revisions`/`document_link_revision_ops`/`op_numeros`. |
+| D-DEL11 | As quatro RPCs publicas mantem `EXECUTE` somente para `authenticated`. | Inspecao pos-`db/53` encontrou `anon_execute = true` nas RPCs publicas (achado de seguranca emergencial); a `db/54` revoga `PUBLIC`/`anon` mantendo `authenticated`, sem alterar corpo/cascata. |
+| D-DEL12 | O literal de politica documental no JSON de diagnostico usa cast explicito `::TEXT`. | Primeiro smoke de staging da `db/53` falhou com `could not determine polymorphic type` por `to_jsonb(<literal>)` sem cast; a `db/55` corrige via patch forward-only nas duas diagnosticas ja aplicadas. |
+| D-DEL13 | O diagnostico publico nunca retorna `NULL` bruto; `reason` ausente e serializado como `null` JSON. | `jsonb_set` e `STRICT` e colapsava todo o retorno para `NULL` em qualquer alvo elegivel (nao bloqueado); a `db/56` corrige com `COALESCE(to_jsonb(v_reason), 'null'::jsonb)` nas duas diagnosticas, sem alterar `remover_*`/`*_pre53`/grants. |
 
 Botao/fluxo adicionado nas telas principais de Pedido e OP por
 `window.RAVATEX_DELETE`. O antigo `excluirOpLatex` direto foi substituido pelo
 helper central. Senha admin, soft-delete e auditoria permanente ficam para a
 fase futura de producao.
+
+Fase `RAVATEX-TAPETES-CONTROLLED-DELETE-DOCUMENT-LINK-GUARD-B` (+ `-GRANTS-54`,
+`-POLICY-CAST-55`, `-DIAGNOSTICS-NULL-SAFE-56`, decisoes D-DEL10-D-DEL13
+acima): `CLOSED / ACCEPTED`, commit tecnico
+`707a37bd1d2c4728ab2a17433b6441049bd88062`. Validado em staging
+`ucrjtfswnfdlxwtmxnoo` com fixtures sinteticas (casos elegivel-OP,
+elegivel-Pedido e bloqueado-por-historico), cleanup zero e `op_numeros`
+preservado; producao nao acessada; sem push. Ver
+`docs/ledgers/G28_LEDGER.md`. Nota: `db/37_controlled_delete_expedicao_
+cascade.sql` (Expedicao Cascade) nunca recebeu entrada `D-DEL` propria
+(lacuna pre-existente, fora do escopo deste closeout).

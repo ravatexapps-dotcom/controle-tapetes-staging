@@ -1158,3 +1158,34 @@ Fase: `RAVATEX-TAPETES-PEDIDO-OP-CONTROLLED-DELETE-FK-ORDER-FIX-E`
   removidos pela RPC com `EXCLUIR TUDO`, sem alterar `op_numeros`.
 - Backlog de producao continua: substituir exclusao fisica por fluxo auditado,
   autorizacao forte e politica permanente antes de qualquer producao.
+
+## Atualizacao 2026-07-15 - Controlled Delete Document Link Guard: CLOSED / ACCEPTED
+
+Fase `RAVATEX-TAPETES-CONTROLLED-DELETE-DOCUMENT-LINK-GUARD-B` (+ `-GRANTS-54`,
+`-POLICY-CAST-55`, `-DIAGNOSTICS-NULL-SAFE-56`). Commit tecnico
+`707a37bd1d2c4728ab2a17433b6441049bd88062`.
+
+- Defeito original: exclusao fisica de OP referenciada por historico
+  documental canonico (`document_link_revisions` / `document_link_revision_
+  ops`) falhava com violacao de FK crua (`document_link_revision_ops_op_id_
+  fkey`).
+- `db/53` adiciona guard documental via wrappers que bloqueiam a exclusao
+  fisica quando ha historico canonico, preservando integralmente a logica
+  destrutiva anterior (renomeada `*_pre53`, sem API publica). `db/54`
+  corrige ACL emergencial (`anon` tinha `EXECUTE`). `db/55` corrige cast
+  polimorfico. `db/56` corrige diagnostico que colapsava para `NULL` em
+  alvos elegiveis.
+- Validado em staging `ucrjtfswnfdlxwtmxnoo`: OP/Pedido elegiveis com
+  dependencia real (sem historico documental) continuam removiveis; OP/
+  Pedido com historico documental sao bloqueados de forma controlada, sem
+  excecao de FK e sem mutacao parcial; historico documental preservado em
+  100% dos casos; `op_numeros` inalterado; fixtures sinteticas com cleanup
+  zero.
+- **Status: `CLOSED / ACCEPTED`** para o guard documental especifico.
+  Nao encerra o backlog de producao geral desta secao: `DELETE-PROD-GUARD-A`
+  (trocar exclusao fisica temporaria por fluxo produtivo com senha admin,
+  soft-delete e auditoria permanente) e `DELETE-AUDIT-LOG-A` (trilha
+  auditavel de solicitante/impacto/resultado) permanecem `P1 futuro` /
+  `P2 futuro`, nao iniciados.
+- Producao (`bhgifjrfagkzubpyqpew`) nao acessada; sem push. Ver
+  `docs/ledgers/G28_LEDGER.md` para evidencia completa.

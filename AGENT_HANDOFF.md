@@ -20,6 +20,20 @@
 - **Runtime boundaries:** contrato Documento→Pedido 0..1 e Documento→OP 0..N; tabelas de revisão dedicadas; Ingestor retém campos candidate/event; B5 preservado; sem `statusOverrides`, dupla escrita, backfill ou produção.
 - **Dívida não bloqueante:** `AUTHENTICATED_BROWSER_SMOKE_BLOCKED_BY_TOOLING` (browser não possui aplicação/sessão admin de staging).
 
+## Controlled Delete × Histórico Documental (Pedido/OP) — CLOSED / ACCEPTED
+
+- **Commit técnico:** `707a37bd1d2c4728ab2a17433b6441049bd88062` — `Guard controlled delete against document link history` (`js/delete-helpers.js`, `tests/controlled-delete.smoke.js`, `db/53`–`db/56`).
+- **Commit documental:** este closeout (`Close controlled delete document history guard`). O HEAD atual deve ser consultado diretamente com `git rev-parse HEAD`.
+- **Problema original:** exclusão física controlada de Pedido/OP (`db/34`–`db/37`) violava a FK `document_link_revision_ops_op_id_fkey` ao tentar remover OP ainda referenciada por histórico documental canônico append-only.
+- **Causa raiz e correções:** `db/53` adiciona guard documental via wrappers `SECURITY DEFINER` que bloqueiam exclusão física quando há histórico canônico (`document_link_revisions`/`document_link_revision_ops`), renomeando a lógica destrutiva legada para `*_pre53` (inacessível externamente); `db/54` corrige achado de segurança emergencial (`anon_execute = true` nas RPCs públicas), restringindo `EXECUTE` a `authenticated`; `db/55` corrige `to_jsonb(<literal>)` sem cast explícito (`could not determine polymorphic type`) via patch forward-only; `db/56` corrige regressão de `jsonb_set` `STRICT` que colapsava o diagnóstico para `NULL` em alvos elegíveis, usando `COALESCE(to_jsonb(v_reason), 'null'::jsonb)`.
+- **Testes locais:** `node --check js/delete-helpers.js` PASS; `tests/controlled-delete.smoke.js` **53/53**; `tests/document-canonical-links-contract.test.js` **21/21**; `git diff --check` PASS.
+- **Smokes de staging (`ucrjtfswnfdlxwtmxnoo`, fixtures sintéticas, cleanup zero):** Caso A1 (OP elegível com dependência, sem histórico) — diagnóstico não nulo, remoção concluída; Caso A2 (Pedido elegível com dependência, sem histórico) — diagnóstico não nulo, remoção concluída; Caso B (com histórico documental) — diagnóstico bloqueado, `remover_op`/`remover_pedido` bloqueados de forma controlada, todo o histórico documental preservado sem alteração. `op_numeros` preservado em todos os casos.
+- **ACL final (verificada em catálogo ao vivo):** as 4 RPCs públicas — `authenticated`-only (`PUBLIC`/`anon` sem `EXECUTE`); as 4 funções `*_pre53` — `postgres`-only (`PUBLIC`/`anon`/`authenticated` sem `EXECUTE`).
+- **Produção:** `bhgifjrfagkzubpyqpew` não acessada. **Push:** não executado.
+- **Estado final do worktree:** limpo; staging vazio; zero untracked.
+- **Próxima ação autorizável (conforme `PROJECT_STATE.md`):** `ARCHITECT DECISION REQUIRED AFTER BACKLOG RECONCILIATION`.
+- **Detalhe completo:** `PROJECT_STATE.md` (seção "Controlled Delete × Histórico Documental") e `docs/ledgers/G28_LEDGER.md` (entrada append-only).
+
 # HISTÓRICO DE HANDOFFS — ARQUIVADO
 
 O conteúdo histórico completo dos handoffs anteriores foi preservado,

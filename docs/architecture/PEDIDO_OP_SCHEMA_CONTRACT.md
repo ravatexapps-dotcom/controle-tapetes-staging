@@ -703,3 +703,44 @@ A `db/36_controlled_delete_fk_order_fix.sql` tambem corrige os guards de
 entrega para retornar `OLD` em `DELETE` autorizado. Sem isso, um `BEFORE
 DELETE` que retorna `NEW` cancela silenciosamente a remocao. Expedicao segue
 bloqueador; `op_numeros` segue intocado.
+
+### Atualizacao 2026-07-15 - Controlled Delete Document Link Guard (CLOSED / ACCEPTED)
+
+Fase `RAVATEX-TAPETES-CONTROLLED-DELETE-DOCUMENT-LINK-GUARD-B` (+ `-GRANTS-54`,
+`-POLICY-CAST-55`, `-DIAGNOSTICS-NULL-SAFE-56`). Commit tecnico `707a37bd...`.
+Registra o contrato permanente entre a exclusao fisica controlada de teste
+(Pedido/OP, `db/34`-`db/37`) e o historico documental canonico G28
+(`document_link_revisions` / `document_link_revision_ops`):
+
+- Exclusao fisica de Pedido/OP e bloqueada quando existir historico
+  documental canonico vinculado a alguma OP da cadeia alvo (`document_link_
+  revision_ops.op_id`) ou, no caso de Pedido, vinculado diretamente ao Pedido
+  (`document_link_revisions.pedido_id`).
+- `document_link_revisions` e `document_link_revision_ops` nunca sao
+  apagados, alterados ou reativados pelo Controlled Delete, em nenhum
+  cenario, bloqueado ou nao.
+- As RPCs publicas (`diagnosticar_impacto_pedido`, `diagnosticar_impacto_op`,
+  `remover_pedido`, `remover_op`) sempre chamam a diagnostica documental
+  antes de qualquer delegacao destrutiva; a delegacao so ocorre quando o
+  diagnostico classifica como elegivel (`blocked=false`).
+- A logica destrutiva legada de `db/34`-`db/37` foi renomeada para
+  `diagnosticar_impacto_pedido_pre53`, `diagnosticar_impacto_op_pre53`,
+  `remover_pedido_pre53`, `remover_op_pre53`. Essas quatro funcoes nao
+  constituem API publica: `EXECUTE` e revogado de `PUBLIC`, `anon` e
+  `authenticated` (somente `postgres`/owner).
+- As quatro RPCs publicas mantem `EXECUTE` apenas para `authenticated`
+  (`PUBLIC` e `anon` sem `EXECUTE`).
+- Na ausencia de historico documental, a politica de exclusao fisica
+  anterior (`db/34`-`db/37`: bloqueio por entrega/expedicao/OP filha,
+  cascata com `EXCLUIR`/`EXCLUIR TUDO`, `op_numeros` intocado) permanece
+  vigente e inalterada.
+- Historico documental e append-only; este guard nao introduz nenhum
+  mecanismo de desvinculo automatico. Correcao de vinculo, quando
+  necessaria, ocorre pelo fluxo documental humano (`js/document-link-
+  admin-controller.js` / `document-link-admin-modal.js`), nunca pela
+  exclusao fisica de teste.
+
+Validado em staging `ucrjtfswnfdlxwtmxnoo` com fixtures sinteticas
+(casos elegivel-OP, elegivel-Pedido e bloqueado-por-historico), cleanup
+zero e `op_numeros` preservado. Producao nao acessada; sem push. Ver
+`docs/ledgers/G28_LEDGER.md` para evidencia completa.

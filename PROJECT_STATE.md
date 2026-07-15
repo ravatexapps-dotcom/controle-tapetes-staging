@@ -33,6 +33,30 @@ O conteúdo histórico abaixo não determina o estado atual.
 - **Produção:** projeto `bhgifjrfagkzubpyqpew` não acessado
 - **Runtime boundaries:** canonical register/undo adapters and RPCs preserved; SQL `decidir_documento` preserved (not removed, not migrated); no `statusOverrides` or parallel state; no `decideDocumentInCloud`; explicit manual/legacy local domain temporarily supported; Supabase/unknown/absent/null/invalid/g22-auto fail-closed; no migration, conversion, or removal of legacy domain authorized.
 
+### Controlled Delete × Histórico Documental (Pedido/OP) — RAVATEX-TAPETES-CONTROLLED-DELETE-DOCUMENT-LINK-GUARD
+
+- **Frente:** Controlled Delete (Pedido/OP, teste/staging) × histórico documental canônico G28.
+- **Branch:** `work/g28-document-qualification`.
+- **Technical HEAD:** `707a37bd1d2c4728ab2a17433b6441049bd88062` — `Guard controlled delete against document link history`.
+- **Classificação:** `CLOSED / ACCEPTED`.
+- **Problema original:** a exclusão física controlada de Pedido/OP (`db/34`–`db/37`) falhava com violação de FK (`document_link_revision_ops_op_id_fkey`) ao tentar remover OP ainda referenciada por histórico documental canônico (`document_link_revisions` / `document_link_revision_ops`), que é append-only e não pode ser apagado só para permitir a exclusão.
+- **Causa raiz e correção (migrations `db/53`–`db/56`, aplicadas e verificadas em staging `ucrjtfswnfdlxwtmxnoo`):**
+  - `db/53_controlled_delete_document_link_guard.sql` — renomeia as quatro RPCs legadas de `db/37` para `*_pre53` (revoga `EXECUTE` de todos os papéis) e recria as assinaturas públicas (`diagnosticar_impacto_pedido`, `diagnosticar_impacto_op`, `remover_pedido`, `remover_op`) como wrappers `SECURITY DEFINER`: diagnosticam e enriquecem com contagens documentais, bloqueiam quando há histórico canônico e delegam a `*_pre53` somente quando elegível.
+  - `db/54_controlled_delete_document_link_grants.sql` — corrige achado de segurança emergencial (`anon_execute = true` nas 4 RPCs públicas pós-53); revoga `PUBLIC`/`anon`, mantém `authenticated`.
+  - `db/55_controlled_delete_document_link_policy_cast.sql` — corrige `to_jsonb(<literal>)` sem cast explícito (erro `could not determine polymorphic type`) via `DO` forward-only que localiza e substitui o literal de política nas duas diagnósticas já aplicadas.
+  - `db/56_controlled_delete_document_link_diagnostics_null_safe.sql` — corrige regressão introduzida por `db/53`: `jsonb_set(...)` é `STRICT` e colapsava o retorno inteiro para `NULL` sempre que o alvo não estava bloqueado por histórico documental (`reason` nulo). Corrigido com `COALESCE(to_jsonb(v_reason), 'null'::jsonb)`, preservando o schema JSON.
+- **Validação funcional em staging (fixtures sintéticas, cleanup zero, `op_numeros` preservado):**
+  - Caso A1 (OP elegível, com dependência real, sem histórico documental): diagnóstico não nulo, `remover_op(...)` concluiu a remoção.
+  - Caso A2 (Pedido elegível, com dependência real, sem histórico documental): diagnóstico não nulo, `remover_pedido(...)` concluiu a remoção da cadeia completa.
+  - Caso B (com histórico documental em `document_link_revisions`/`document_link_revision_ops`): diagnóstico bloqueado (`classification=blocked`, `documentary_history_blocker=true`); `remover_op`/`remover_pedido` retornaram bloqueio controlado (`ok=false`); Pedido, OP, `document_candidates`, `document_link_revisions` e `document_link_revision_ops` preservados sem nenhuma alteração.
+- **ACL final (catálogo verificado ao vivo):** as 4 RPCs públicas — `PUBLIC` sem `EXECUTE`, `anon` sem `EXECUTE`, `authenticated` com `EXECUTE`. As 4 funções `*_pre53` — `PUBLIC`/`anon`/`authenticated` sem `EXECUTE` (só `postgres`).
+- **Testes locais finais:** `node --check js/delete-helpers.js` PASS; `tests/controlled-delete.smoke.js` **53/53**; `tests/document-canonical-links-contract.test.js` **21/21**; `git diff --check` PASS.
+- **Contrato permanente registrado:** exclusão física de Pedido/OP é bloqueada quando existir histórico documental canônico; `document_link_revisions`/`document_link_revision_ops` nunca são apagados pelo Controlled Delete; wrappers públicos sempre diagnosticam antes de delegar; funções destrutivas internas (`*_pre53`) não constituem API pública; na ausência de histórico documental, a política de exclusão anterior (`db/34`–`db/37`) segue vigente inalterada; histórico documental permanece append-only. Ver `docs/architecture/PEDIDO_OP_SCHEMA_CONTRACT.md`.
+- **Produção:** projeto `bhgifjrfagkzubpyqpew` não acessado.
+- **Push:** não executado.
+- **Ledger:** `docs/ledgers/G28_LEDGER.md` (entrada append-only desta correção).
+- **Próxima ação autorizável:** `ARCHITECT DECISION REQUIRED AFTER BACKLOG RECONCILIATION` — múltiplas frentes candidatas sem prioridade inequívoca (G28-D publicação bloqueada por `OPEN_ARCHITECT_DECISIONS: DEPLOYMENT_MAPPING_AND_PRODUCTION_MIGRATION_PROCEDURE`; backlog geral de produção ainda não reconciliado). Esta reconciliação read-only permanece pendente e não é assumida automaticamente por este closeout.
+
 ### Débitos relevantes
 
 - Migrations 49 e 50 — aplicadas e verificadas em staging; não aplicadas em produção por esta cadeia.
