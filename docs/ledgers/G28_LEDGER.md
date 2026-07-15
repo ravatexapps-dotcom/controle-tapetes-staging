@@ -927,3 +927,17 @@ risco residual e próxima fase indicada no fechamento.
 - **Estado final do worktree:** limpo; staging vazio; zero untracked.
 - **Risco residual:** nenhum novo introduzido; débitos preexistentes preservados (`AUTHENTICATED_BROWSER_SMOKE_NOT_EXECUTED`, `DB30_NOT_RECORDED_IN_SUPABASE_MIGRATION_HISTORY`, worktree `app-next` divergente/sujo, worktree detached órfão em `2a492f0`).
 - **Próxima fase indicada no fechamento:** diagnóstico read-only comparativo de `G28-CAMADA-2` (ordem própria, não autorizada por esta entrada); higiene read-only de `work/app-next` (tarefa paralela autorizada, ordem separada).
+
+---
+
+## 2026-07-15 — Add CLAUDE.md agent entrypoint
+
+- **Gate:** DOCUMENTARY / HARNESS CONFIG. Docs-only; sem código, teste, SQL, migration, Supabase, MCP, staging, produção ou Vercel acessados/alterados.
+- **Commit:** `Add CLAUDE.md agent entrypoint` (HEAD a consultar com `git rev-parse HEAD`).
+- **Arquivo criado:** `CLAUDE.md` (raiz) — ponteiro de harness, carregado automaticamente por agentes Claude Code neste diretório.
+- **Conteúdo:** lista de leitura obrigatória (`PROJECT_STATE.md`, `AGENT_HANDOFF.md`, `docs/architecture/CODE_HEALTH_RULES.md`, `docs/governance/DOCUMENTATION_MODEL.md`, `docs/DOCUMENTATION_INDEX.md`) e resumo-ponteiro de regras operacionais (fase por autorização explícita, staging-only, restrições de Git, closeout documental obrigatório). Não duplica regra nenhuma em detalhe — aponta para os canônicos.
+- **Autoridade:** `CLAUDE.md` **não é fonte canônica**. Em conflito com qualquer documento canônico, os canônicos prevalecem; divergência exige interromper e reportar, não seguir o resumo.
+- **Não alterado:** nenhuma regra canônica reescrita ou duplicada; nenhum código/teste/SQL/migration/runtime tocado.
+- **Produção:** `bhgifjrfagkzubpyqpew` não acessada. **Push:** não executado.
+- **Estado final do worktree:** limpo; staging vazio; zero untracked.
+- **Próxima fase indicada no fechamento:** nenhuma — este registro não autoriza fase técnica alguma.
