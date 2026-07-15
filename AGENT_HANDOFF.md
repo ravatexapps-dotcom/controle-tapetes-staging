@@ -34,6 +34,18 @@
 - **Próxima ação autorizável (conforme `PROJECT_STATE.md`):** `ARCHITECT DECISION REQUIRED AFTER BACKLOG RECONCILIATION`.
 - **Detalhe completo:** `PROJECT_STATE.md` (seção "Controlled Delete × Histórico Documental") e `docs/ledgers/G28_LEDGER.md` (entrada append-only).
 
+## Admin/Pedido — Resíduo Estático do Botão de Conclusão (Expedição) — CLOSED / ACCEPTED
+
+- **Commit técnico:** `7978e0a4fe021467cc23e0aeed63ac87ba738f1b` — `Fix admin order completion button state` (`js/screens/expedicao-admin.js`, `tests/expedicao-flow.smoke.js`).
+- **Commit documental:** este closeout (`Close admin order completion button residue`). O HEAD atual deve ser consultado diretamente com `git rev-parse HEAD`.
+- **Problema original:** `js/screens/expedicao-admin.js:405` construía `disabled: ready ? null : 'disabled'`; o helper compartilhado `js/ui.js` `el()` chama `setAttribute(k, v)` para todo atributo sem omitir `null`, materializando `disabled="null"` no DOM real — atributo booleano presente, desabilitando o botão "Concluir pedido" mesmo quando `ready === true`.
+- **Causa raiz e correção:** ocorrência única no repositório; correção localizada inteiramente no call site (`buildConclusao`), sem alterar `js/ui.js`. `buttonAttrs` construído como variável antes do `return`; `disabled` só entra no objeto quando `!ready`. `onclick`, texto, estilos e estrutura preservados sem mudança semântica.
+- **Testes locais:** `node --check js/screens/expedicao-admin.js` PASS; `tests/expedicao-flow.smoke.js` **9/9**; `tests/expedicao-partial-flow.smoke.js` **12/12**; `git diff --check` PASS.
+- **Acessos:** sem staging; sem produção (`bhgifjrfagkzubpyqpew` não acessada); sem push.
+- **Estado final do worktree:** limpo; staging vazio; zero untracked.
+- **Próxima ação autorizável:** `CLIENTE-ORDER-SUMMARY-READMODEL-APPLY-STAGING-A` — `READY FOR EXPLICIT ARCHITECT AUTHORIZATION` / `NOT STARTED`. Esta entrada não autoriza sua execução.
+- **Detalhe completo:** `PROJECT_STATE.md` (seção "Admin/Pedido — Resíduo Estático do Botão de Conclusão") e `docs/ledgers/G28_LEDGER.md` (entrada append-only).
+
 # HISTÓRICO DE HANDOFFS — ARQUIVADO
 
 O conteúdo histórico completo dos handoffs anteriores foi preservado,

@@ -1189,3 +1189,46 @@ Fase `RAVATEX-TAPETES-CONTROLLED-DELETE-DOCUMENT-LINK-GUARD-B` (+ `-GRANTS-54`,
   `P2 futuro`, nao iniciados.
 - Producao (`bhgifjrfagkzubpyqpew`) nao acessada; sem push. Ver
   `docs/ledgers/G28_LEDGER.md` para evidencia completa.
+
+## Atualizacao 2026-07-15 - Admin Pedido Static Residue: CLOSED / ACCEPTED
+
+Fase `RAVATEX-TAPETES-ADMIN-PEDIDO-STATIC-RESIDUE-A`. Commit tecnico
+`7978e0a4fe021467cc23e0aeed63ac87ba738f1b` -- `Fix admin order completion
+button state`.
+
+- Item fechado: `ADMIN-PEDIDO-STATIC-RESIDUE`, identificado pela auditoria
+  visual de `2026-07-05` (SS9.6/9.7 acima) e reconfirmado como o unico item
+  ainda aberto do backlog Admin/Pedido/Producao na reconciliacao read-only
+  de `2026-07-15`.
+- Defeito original: `js/screens/expedicao-admin.js:405` (`buildConclusao`)
+  construia `disabled: ready ? null : 'disabled'`. O helper compartilhado
+  `el()` (`js/ui.js:10-22`) chama `setAttribute(k, v)` para todo atributo
+  sem omitir `null` (diferente do tratamento de filhos, que pula
+  `null`/`false`); o DOM real materializava isso como `disabled="null"` --
+  atributo booleano presente -- desabilitando o botao "Concluir pedido" da
+  tela Expedicao Admin mesmo quando `ready === true`.
+- Ocorrencia unica no repositorio (confirmada por `git grep`); nenhuma outra
+  tela reproduzia o mesmo padrao.
+- Correcao localizada inteiramente no call site: `buttonAttrs` passou a ser
+  construido como variavel antes do `return`; a chave `disabled` so entra no
+  objeto quando `!ready`, nunca como `null`. `onclick`, texto, estilos e
+  estrutura do botao preservados sem mudanca semantica; o guard
+  `if (!ready) return;` dentro do `onclick` foi mantido. O helper global
+  `js/ui.js` nao foi alterado.
+- Teste regressivo: `tests/expedicao-flow.smoke.js` ganhou um novo teste
+  estatico que proibe o padrao original, proibe a variante invertida
+  (`disabled: !ready ? 'disabled' : null`) e exige o padrao condicional
+  correto.
+- Testes locais: `node --check js/screens/expedicao-admin.js` PASS;
+  `tests/expedicao-flow.smoke.js` **9/9**; `tests/expedicao-partial-flow.smoke.js`
+  **12/12** (sem regressao); `git diff --check` PASS.
+- Producao (`bhgifjrfagkzubpyqpew`) nao acessada; staging nao acessado; sem
+  push.
+- **Status: `CLOSED / ACCEPTED`** para este residuo estatico especifico. O
+  bloco Admin/Pedido reconciliado pela auditoria de `2026-07-05` (SS9.6/9.7)
+  nao possui mais item aberto conhecido. Isto nao encerra o backlog geral de
+  producao, nao constitui publicacao, nao e readiness de producao, nao
+  aceita G28-D e nao conclui `CLIENTE-ORDER-SUMMARY-READMODEL-APPLY-STAGING-A`,
+  `DELETE-PROD-GUARD-A`, `DELETE-AUDIT-LOG-A`, `G28-CAMADA-2`, `G28-CAMADA-3`
+  ou `G28-CAMADA-4`, que permanecem inalterados.
+- Ver `docs/ledgers/G28_LEDGER.md` para evidencia completa.

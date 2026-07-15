@@ -57,6 +57,24 @@ O conteúdo histórico abaixo não determina o estado atual.
 - **Ledger:** `docs/ledgers/G28_LEDGER.md` (entrada append-only desta correção).
 - **Próxima ação autorizável:** `ARCHITECT DECISION REQUIRED AFTER BACKLOG RECONCILIATION` — múltiplas frentes candidatas sem prioridade inequívoca (G28-D publicação bloqueada por `OPEN_ARCHITECT_DECISIONS: DEPLOYMENT_MAPPING_AND_PRODUCTION_MIGRATION_PROCEDURE`; backlog geral de produção ainda não reconciliado). Esta reconciliação read-only permanece pendente e não é assumida automaticamente por este closeout.
 
+### Admin/Pedido — Resíduo Estático do Botão de Conclusão (Expedição) — ADMIN-PEDIDO-STATIC-RESIDUE
+
+- **Frente:** resíduo estático identificado pela auditoria visual Admin/Pedido de `2026-07-05` (`PEDIDO_PRODUCTION_FLOW_BACKLOG.md` §9.6/§9.7) e reconfirmado como único item aberto na reconciliação read-only do backlog geral de `2026-07-15`.
+- **Branch:** `work/g28-document-qualification`.
+- **Technical HEAD:** `7978e0a4fe021467cc23e0aeed63ac87ba738f1b` — `Fix admin order completion button state`.
+- **Classificação:** `CLOSED / ACCEPTED`.
+- **Problema original:** `js/screens/expedicao-admin.js:405` (`buildConclusao`) construía `disabled: ready ? null : 'disabled'`. O helper compartilhado `el()` (`js/ui.js:10-22`) chama `setAttribute(k, v)` para todo atributo do objeto sem omitir `null` (diferente do tratamento de filhos, que pula `null`/`false`); o DOM real materializava isso como `disabled="null"` — atributo booleano presente — desabilitando o botão "Concluir pedido" mesmo quando `ready === true`.
+- **Causa raiz confirmada:** comportamento do `el()`, não alterado por esta correção; ocorrência única no repositório (confirmada por `git grep`), sem outra tela reproduzindo o mesmo padrão.
+- **Correção aplicada:** localizada inteiramente no call site. `buttonAttrs` passou a ser construído como variável antes do `return`; a chave `disabled` só é adicionada ao objeto quando `!ready` (`buttonAttrs.disabled = 'disabled'`), nunca como `null`. `onclick` (incluindo o guard `if (!ready) return;`), texto, estilos e estrutura do botão preservados sem mudança semântica. O helper global `js/ui.js` não foi alterado.
+- **Teste regressivo:** `tests/expedicao-flow.smoke.js` ganhou um novo teste estático que proíbe o padrão original, proíbe a variante invertida (`disabled: !ready ? 'disabled' : null`) e exige o padrão condicional correto.
+- **Testes locais:** `node --check js/screens/expedicao-admin.js` PASS; `tests/expedicao-flow.smoke.js` **9/9**; `tests/expedicao-partial-flow.smoke.js` **12/12** (sem regressão); `git diff --check` PASS.
+- **Produção:** projeto `bhgifjrfagkzubpyqpew` não acessado.
+- **Staging:** não acessado; patch validado apenas localmente.
+- **Push:** não executado.
+- **Escopo do encerramento:** este closeout encerra especificamente o resíduo estático acima. Não encerra o Controle de Tapetes globalmente, não constitui publicação, não é readiness de produção, não aceita G28-D e não conclui `CLIENTE-ORDER-SUMMARY-READMODEL-APPLY-STAGING-A`, `DELETE-PROD-GUARD-A`, `DELETE-AUDIT-LOG-A`, `G28-CAMADA-2`, `G28-CAMADA-3` ou `G28-CAMADA-4`, que permanecem inalterados.
+- **Próxima ação autorizável:** `CLIENTE-ORDER-SUMMARY-READMODEL-APPLY-STAGING-A` — `READY FOR EXPLICIT ARCHITECT AUTHORIZATION` / `NOT STARTED`. Este registro não autoriza sua execução.
+- **Ledger:** `docs/ledgers/G28_LEDGER.md` (entrada append-only deste closeout).
+
 ### Débitos relevantes
 
 - Migrations 49 e 50 — aplicadas e verificadas em staging; não aplicadas em produção por esta cadeia.
