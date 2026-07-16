@@ -167,6 +167,23 @@ decisions (verbatim) are in `docs/closeouts/PROJECT_STATE_ARCHIVE_2026-07.md`
   render buttons with no inline style, deferred to external CSS classes
   not found in the repo); `fornecedor.js` visual redesign (separate
   future track, out of this one).
+- **`UI-GRID-TEXT-OVERFLOW` track:** contract amendment (`UI_VISUAL_CONTRACT.md`
+  §7.1, grid/list text-cell overflow rule — variable-length identifier-style
+  fields single-line ellipsis + `title` tooltip, explicitly exempting
+  free-text notes/badges/dates/numerics) ratified and applied this commit
+  (docs-only). Helper promotion (`truncatedCell` → `js/ui.js`), Lot A
+  (`cadastros.js` Clientes + Fornecedores grids), Lot B (`pedidos-list.js` /
+  `ops-list.js` CLIENTE column), and Lot C (`painel.js` `.rv-adm-ref`/
+  `.rv-adm-mini`) are all `NOT AUTHORIZED`, each pending its own order.
+  **Finding registered:** the read-only diagnosis found the legacy
+  `screenCadastrosUsuarios` duplicate in `cadastros.js` (lines ~2226-2381)
+  carries the identical unconstrained-text-cell defect (NOME/FORNECEDOR/
+  CLIENTE, no ellipsis/tooltip) that this fix track deliberately excludes
+  from scope — the architect ruled it out of Lot A because the route
+  already points to `admin-usuarios.js` since `A3.1`, making this screen
+  dead code pending removal. This confirms `A3.4` (legacy code removal in
+  `cadastros.js`) is overdue: live defects are accumulating in code no
+  longer reachable by routing but not yet deleted.
 
 ## Environment and worktree standing facts
 

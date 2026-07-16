@@ -169,6 +169,16 @@ between the header and all rows. Numeric columns `text-right` in the
 header and in the values; `.tnum` on every number; `overflow-x:auto` wrapper on tables
 with fixed px columns so the last column never disappears.
 
+### 7.1 Grid/list text-cell overflow
+
+Grid/list text cells holding free-form, variable-length values (names,
+emails, contact fields) that share a column with fixed-width siblings MUST
+render single-line with ellipsis overflow (`white-space:nowrap;
+overflow:hidden; text-overflow:ellipsis; min-width:0;`) and a `title`
+tooltip carrying the untruncated value, omitted when the displayed value
+is a fallback placeholder (`—`). Does not apply to multi-line free-text
+note fields (observação, mensagem), which should wrap.
+
 ## 8. Buttons
 
 - **One dominant action per decision scope**, filled (`bg-accent text-white`,

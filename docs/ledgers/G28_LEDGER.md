@@ -1328,3 +1328,17 @@ risco residual e próxima fase indicada no fechamento.
 - **Production:** `bhgifjrfagkzubpyqpew` not accessed. **Push:** not executed.
 - **Final worktree state:** clean; staging by literal path only; `supabase/.temp/` remains pre-existing untracked (not staged).
 - **Next phase indicated at closeout:** `ARCHITECT DECISION` — no single unambiguous candidate; `UI-ACTION-BUTTON` lot `3` (`cadastros.js`), `A2.1`, `A6.1` remain on the table, none authorized by this record.
+
+## 2026-07-16 — UI-GRID-TEXT-CONTRACT-AMENDMENT — Amend UI visual contract with grid text overflow rule
+
+- **Gate:** `CLOSED / ACCEPTED`. Docs-only phase (§14 — no code change).
+- **Front:** follow-up to a read-only diagnosis order (`UI-GRID-TEXT-OVERFLOW-DIAGNOSIS`) that inventoried every list/grid screen for text-column overflow behavior, using the ratified `UI-USERS-GRID-TEXT-OVERFLOW` fix (`admin-usuarios.js`, commit `3e95e86`) as the candidate pattern.
+- **Authorization:** explicit architect ruling ("ARCHITECT RULINGS — UI-GRID-TEXT-OVERFLOW", item 1) adopting the diagnosis report's PROPOSED contract wording verbatim, followed by explicit order ("ORDER — UI-GRID-TEXT-CONTRACT-AMENDMENT"), session model / low effort.
+- **Diagnosis findings (read-only, no changes):** `UI_VISUAL_CONTRACT.md` §7 was `SILENT` on per-cell text truncation (only covered header/value column-width alignment and `overflow-x:auto` on the table wrapper). Inventory found the ellipsis+tooltip pattern already applied in `admin-usuarios.js`, `cadastros.js` (Cores, Modelos grids), `painel.js` (several KPI/stage labels), and `documentos-recebidos.js` (filename); still missing/unconstrained in `cadastros.js` Clientes (nome/contato) and Fornecedores (nome/email) grids, `pedidos-list.js`/`ops-list.js` CLIENTE column, `painel.js` `.rv-adm-ref`/`.rv-adm-mini` (has `nowrap` but no `overflow`/`text-overflow`), and the legacy `screenCadastrosUsuarios` duplicate in `cadastros.js`.
+- **Architect ruling (scope correction):** the legacy `cadastros.js` Usuarios duplicate (~lines 2226-2381) was explicitly removed from the fix track's scope — that screen is dead code since routing moved to `admin-usuarios.js` at `A3.1`; its defect is registered as a finding confirming `A3.4` (legacy removal) is overdue, not fixed here.
+- **Technical + documentation commit (this entry):** contract §7.1 added verbatim to `docs/architecture/UI_VISUAL_CONTRACT.md`; `PROJECT_STATE.md` updated to register the `UI-GRID-TEXT-OVERFLOW` track (helper promotion + Lots A/B/C all `NOT AUTHORIZED`, pending their own orders) and the `A3.4`-overdue finding; this ledger entry.
+- **Phasing ratified:** contract amendment (this phase, docs-only) → helper promotion (`truncatedCell` → `js/ui.js`) → Lot A (`cadastros.js` Clientes + Fornecedores only) → Lot B (`pedidos-list.js`/`ops-list.js` CLIENTE) → Lot C (`painel.js` cosmetic). Each its own order, each with its own visual gate.
+- **No code touched, no tests affected.**
+- **Production:** `bhgifjrfagkzubpyqpew` not accessed. **Push:** not executed.
+- **Final worktree state:** clean after commit; staging by literal path only; `supabase/.temp/` remains pre-existing untracked (not staged).
+- **Next phase indicated at closeout:** `UI-GRID-TEXT-HELPER` (helper promotion), already separately ordered by the architect; awaiting its own execution and closeout.
