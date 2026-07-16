@@ -33,9 +33,11 @@
   var ICON_SEARCH = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#9aa2af" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>';
   var ICON_CHEVRON = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#9aa2af" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>';
   var ICON_X = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>';
-  var ICON_EYE = '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"></path><circle cx="12" cy="12" r="3"></circle></svg>';
+  // UI-ACTION-BUTTON-MIGRATION-1: 14px per UI_VISUAL_CONTRACT.md §8.1
+  // (was 17px before conformance).
+  var ICON_EYE = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"></path><circle cx="12" cy="12" r="3"></circle></svg>';
   var ICON_MORE = '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="5" r="1.2"></circle><circle cx="12" cy="12" r="1.2"></circle><circle cx="12" cy="19" r="1.2"></circle></svg>';
-  var ICON_TRASH = '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path><path d="M10 11v6M14 11v6"></path><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"></path></svg>';
+  var ICON_TRASH = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path><path d="M10 11v6M14 11v6"></path><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"></path></svg>';
   var ICON_LEFT = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>';
   var ICON_RIGHT = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>';
   var ICON_DOC = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"></path><polyline points="14 3 14 8 19 8"></polyline></svg>';
@@ -215,14 +217,17 @@
     svgEl(ICON_CHEVRON));
   }
 
-  function navBtn(svgMarkup, disabled, onclick) {
-    var attrs = {
-      type: 'button',
-      style: 'width:30px;height:30px;display:flex;align-items:center;justify-content:center;border:1px solid #d8dce2;border-radius:4px;background:#fff;color:' + (disabled ? '#d8dce2' : '#9aa2af') + ';cursor:' + (disabled ? 'default' : 'pointer') + ';font-family:inherit;'
-    };
-    if (disabled) attrs.disabled = 'disabled';
-    else attrs.onclick = onclick;
-    return window.el('button', attrs, svgEl(svgMarkup));
+  // UI-ACTION-BUTTON-MIGRATION-1: pagination nav button, now built via
+  // the shared actionButton() primitive (UI_VISUAL_CONTRACT.md §8.1).
+  // `title` is new — the previous inline button had no accessible name
+  // at all; this is a conformance gain (sr-only label), not a feature.
+  function navBtn(svgMarkup, disabled, onclick, title) {
+    return window.actionButton({
+      title: title,
+      icon: svgEl(svgMarkup),
+      disabled: disabled,
+      onclick: onclick
+    });
   }
 
   async function screenPedidosLista() {
@@ -618,40 +623,28 @@
         });
       }
 
-      var eyeBtn = window.el('button', {
-        type: 'button',
+      // UI-ACTION-BUTTON-MIGRATION-1: both row actions now built via the
+      // shared actionButton() primitive (UI_VISUAL_CONTRACT.md §8.1).
+      // Excluir keeps the exact same handler — excluirPedidoComFluxo()
+      // already gates the destructive action behind its own confirmation
+      // flow (js/delete-helpers.js showDeleteConfirmation), which
+      // satisfies the §8.1 confirmDialog guard; no extra confirmation
+      // wrapper added here.
+      var eyeBtn = window.actionButton({
         title: 'Visualizar',
-        style: 'background:none;border:none;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;color:#8a93a3;padding:4px;border-radius:3px;',
+        icon: svgEl(ICON_EYE),
         onclick: function () { window.navigate('#/pedidos/' + row.id); }
-      }, svgEl(ICON_EYE));
-      eyeBtn.addEventListener('mouseenter', function () {
-        eyeBtn.style.color = '#2563eb';
-        eyeBtn.style.background = '#eaf1fd';
-      });
-      eyeBtn.addEventListener('mouseleave', function () {
-        eyeBtn.style.color = '#8a93a3';
-        eyeBtn.style.background = 'none';
       });
 
-      var deleteBtn = window.el('button', {
-        type: 'button',
-        title: 'Mais ações',
-        style: 'background:none;border:none;cursor:default;display:inline-flex;align-items:center;justify-content:center;color:#c2c9d4;padding:4px;border-radius:3px;'
-      }, svgEl(ICON_TRASH));
-      deleteBtn.title = 'Excluir Pedido';
-      deleteBtn.style.cursor = 'pointer';
-      deleteBtn.style.color = '#d6403a';
-      deleteBtn.disabled = false;
-      deleteBtn.addEventListener('click', excluirPedido);
-      deleteBtn.addEventListener('mouseenter', function () {
-        deleteBtn.style.background = '#fdecec';
-      });
-      deleteBtn.addEventListener('mouseleave', function () {
-        deleteBtn.style.background = 'none';
+      var deleteBtn = window.actionButton({
+        title: 'Excluir Pedido',
+        icon: svgEl(ICON_TRASH),
+        danger: true,
+        onclick: excluirPedido
       });
 
       return window.el('div', {
-        style: 'display:flex;align-items:center;justify-content:center;gap:8px;'
+        style: 'display:flex;align-items:center;justify-content:center;gap:6px;'
       }, eyeBtn, deleteBtn);
     }
 
@@ -747,7 +740,7 @@
         navBtn(ICON_LEFT, ui.pagina <= 1, function () {
           ui.pagina -= 1;
           render();
-        }),
+        }, 'Página anterior'),
         window.el('button', {
           type: 'button',
           style: 'width:30px;height:30px;display:flex;align-items:center;justify-content:center;border:none;border-radius:4px;background:#2563eb;color:#fff;font-size:13px;font-weight:700;cursor:default;font-family:inherit;'
@@ -755,7 +748,7 @@
         navBtn(ICON_RIGHT, ui.pagina >= totalPaginas, function () {
           ui.pagina += 1;
           render();
-        })));
+        }, 'Próxima página')));
     }
 
     function render() {

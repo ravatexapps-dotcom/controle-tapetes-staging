@@ -279,3 +279,44 @@ test('cliente-pedidos-list: usa window.clienteShellLayout, não shellLayout com 
   assert.match(screen, /window\.clienteShellLayout/);
   assert.equal(/window\.ADMIN_MENU/.test(screen), false, 'não deve usar ADMIN_MENU');
 });
+
+// ---------------------------------------------------------------------
+// 12. UI-ACTION-BUTTON-MIGRATION-1 — conformance with
+//     UI_VISUAL_CONTRACT.md §8.1 (dimensions/sr-only/safe-disabled are
+//     unit-proven in tests/ui-action-button.smoke.js; these tests verify
+//     the call sites are correctly wired to the primitive and that the
+//     pre-migration divergent inline styles are gone).
+// ---------------------------------------------------------------------
+
+test('eyeBtn ("Ver pedido") built via window.actionButton (neutral, no danger key)', () => {
+  const idx = screen.indexOf('var eyeBtn');
+  assert.ok(idx > 0, 'eyeBtn declaration not found');
+  const slice = screen.slice(idx, idx + 300);
+  assert.match(slice, /window\.actionButton\(/, 'eyeBtn should be built via window.actionButton');
+  assert.match(slice, /title:\s*['"]Ver pedido['"]/);
+  assert.doesNotMatch(slice, /danger\s*:/, 'eyeBtn should not pass danger (neutral action)');
+});
+
+test('navBtn: delegates to window.actionButton with disabled/onclick/title wired (pagination-control disable logic preserved)', () => {
+  const idx = screen.indexOf('function navBtn');
+  assert.ok(idx > 0, 'navBtn definition not found');
+  const slice = screen.slice(idx, idx + 400);
+  assert.match(slice, /window\.actionButton\(\s*\{/);
+  assert.match(slice, /disabled:\s*disabled/);
+  assert.match(slice, /onclick:\s*onclick/);
+  assert.match(slice, /title:\s*title/);
+});
+
+test('navBtn call sites: pass an accessible title (conformance gain — the pre-migration button had none)', () => {
+  assert.match(screen, /navBtn\(ICON_CHEVRON_LEFT,\s*ui\.pagina\s*<=\s*1,[\s\S]{0,120}'Página anterior'\)/);
+  assert.match(screen, /navBtn\(ICON_CHEVRON_RIGHT,\s*ui\.pagina\s*>=\s*totalPaginas,[\s\S]{0,120}'Próxima página'\)/);
+});
+
+test('pre-migration divergent inline styles are gone from row/nav actions (§8.1 conformance)', () => {
+  assert.doesNotMatch(screen, /border-radius:3px/, 'the old 3px radius (should be the shared 4px via actionButton) must be gone');
+  assert.doesNotMatch(screen, /width="17"\s+height="17"/, 'row-action icon must be 14px, not 17px, per §8.1');
+});
+
+test('ICON_OLHO is 14px (§8.1 icon size)', () => {
+  assert.match(screen, /var ICON_OLHO = '<svg width="14" height="14"/);
+});

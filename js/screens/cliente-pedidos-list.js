@@ -200,7 +200,9 @@
     + ' stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'
     + '<circle cx="11" cy="11" r="7"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>';
 
-  var ICON_OLHO = '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor"'
+  // UI-ACTION-BUTTON-MIGRATION-1: 14px per UI_VISUAL_CONTRACT.md §8.1
+  // (was 17px before conformance).
+  var ICON_OLHO = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"'
     + ' stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">'
     + '<path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"></path>'
     + '<circle cx="12" cy="12" r="3"></circle></svg>';
@@ -433,20 +435,12 @@
       var atualizado = fmtDataHoraCurta(pedido.status_cliente_atualizado_em)
         || fmtDataHoraCurta(pedido.criado_em);
 
-      var eyeBtn = window.el('button', {
-        type: 'button',
-        style: 'background:none;border:none;cursor:pointer;display:inline-flex;align-items:center;'
-          + 'justify-content:center;color:#8a93a3;padding:4px;border-radius:3px;',
+      // UI-ACTION-BUTTON-MIGRATION-1: built via the shared actionButton()
+      // primitive (UI_VISUAL_CONTRACT.md §8.1).
+      var eyeBtn = window.actionButton({
         title: 'Ver pedido',
+        icon: svgEl(ICON_OLHO),
         onclick: function () { window.navigate('#/cliente/pedidos/' + pedido.id); },
-      }, svgEl(ICON_OLHO));
-      eyeBtn.addEventListener('mouseenter', function () {
-        eyeBtn.style.color = '#2563eb';
-        eyeBtn.style.background = '#eaf1fd';
-      });
-      eyeBtn.addEventListener('mouseleave', function () {
-        eyeBtn.style.color = '#8a93a3';
-        eyeBtn.style.background = 'none';
       });
 
       return window.el('div', {
@@ -512,17 +506,17 @@
     // -----------------------------------------------------------------
     // Paginação
     // -----------------------------------------------------------------
-    function navBtn(svgMarkup, disabled, onclick) {
-      var attrs = {
-        type: 'button',
-        style: 'width:30px;height:30px;display:flex;align-items:center;justify-content:center;'
-          + 'border:1px solid #d8dce2;border-radius:4px;background:#fff;'
-          + 'color:' + (disabled ? '#d8dce2' : '#9aa2af') + ';'
-          + 'cursor:' + (disabled ? 'default' : 'pointer') + ';font-family:inherit;',
-      };
-      if (disabled) attrs.disabled = 'disabled';
-      else attrs.onclick = onclick;
-      return window.el('button', attrs, svgEl(svgMarkup));
+    // UI-ACTION-BUTTON-MIGRATION-1: pagination nav button, now built via
+    // the shared actionButton() primitive (UI_VISUAL_CONTRACT.md §8.1).
+    // `title` is new — the previous inline button had no accessible name
+    // at all; this is a conformance gain (sr-only label), not a feature.
+    function navBtn(svgMarkup, disabled, onclick, title) {
+      return window.actionButton({
+        title: title,
+        icon: svgEl(svgMarkup),
+        disabled: disabled,
+        onclick: onclick
+      });
     }
 
     function buildPaginacao(totalFiltrado) {
@@ -531,8 +525,8 @@
       var inicio = totalFiltrado === 0 ? 0 : (ui.pagina - 1) * PAGE_SIZE + 1;
       var fim = Math.min(ui.pagina * PAGE_SIZE, totalFiltrado);
 
-      var prev = navBtn(ICON_CHEVRON_LEFT, ui.pagina <= 1, function () { ui.pagina -= 1; render(); });
-      var next = navBtn(ICON_CHEVRON_RIGHT, ui.pagina >= totalPaginas, function () { ui.pagina += 1; render(); });
+      var prev = navBtn(ICON_CHEVRON_LEFT, ui.pagina <= 1, function () { ui.pagina -= 1; render(); }, 'Página anterior');
+      var next = navBtn(ICON_CHEVRON_RIGHT, ui.pagina >= totalPaginas, function () { ui.pagina += 1; render(); }, 'Próxima página');
       var pageNum = window.el('button', {
         type: 'button',
         style: 'width:30px;height:30px;display:flex;align-items:center;justify-content:center;'

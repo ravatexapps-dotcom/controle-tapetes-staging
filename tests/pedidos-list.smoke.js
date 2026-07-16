@@ -313,3 +313,63 @@ test('schema 13_*: não foi alterado pela fase C1', () => {
   // RLS admin-only continua
   assert.match(schema, /ENABLE\s+ROW\s+LEVEL\s+SECURITY/i);
 });
+
+// ---------------------------------------------------------------------
+// 13. UI-ACTION-BUTTON-MIGRATION-1 — conformance with
+//     UI_VISUAL_CONTRACT.md §8.1 (dimensions/sr-only/safe-disabled are
+//     unit-proven in tests/ui-action-button.smoke.js; these tests verify
+//     the call sites are correctly wired to the primitive and that the
+//     pre-migration divergent inline styles are gone).
+// ---------------------------------------------------------------------
+
+test('rowActions: Visualizar built via window.actionButton (neutral, no danger key)', () => {
+  const idx = screen.indexOf('var eyeBtn');
+  assert.ok(idx > 0, 'eyeBtn declaration not found');
+  const slice = screen.slice(idx, idx + 300);
+  assert.match(slice, /window\.actionButton\(/, 'eyeBtn should be built via window.actionButton');
+  assert.match(slice, /title:\s*['"]Visualizar['"]/);
+  assert.doesNotMatch(slice, /danger\s*:/, 'eyeBtn should not pass danger (neutral action)');
+});
+
+test('rowActions: Excluir Pedido built via window.actionButton (danger:true), same handler preserved', () => {
+  const idx = screen.indexOf('var deleteBtn');
+  assert.ok(idx > 0, 'deleteBtn declaration not found');
+  const slice = screen.slice(idx, idx + 300);
+  assert.match(slice, /window\.actionButton\(/, 'deleteBtn should be built via window.actionButton');
+  assert.match(slice, /title:\s*['"]Excluir Pedido['"]/);
+  assert.match(slice, /danger:\s*true/);
+  assert.match(slice, /onclick:\s*excluirPedido/, 'deleteBtn must keep calling excluirPedido() — excluirPedidoComFluxo already gates the destructive action via its own confirmation flow');
+});
+
+test('rowActions: destructive gating unchanged — still routes through RAVATEX_DELETE.excluirPedidoComFluxo (own confirmation flow, no ad-hoc window.confirm)', () => {
+  assert.match(screen, /window\.RAVATEX_DELETE\.excluirPedidoComFluxo\(\s*row\.id/);
+  assert.doesNotMatch(screen, /window\.confirm\s*\(/);
+});
+
+test('navBtn: delegates to window.actionButton with disabled/onclick/title wired', () => {
+  const idx = screen.indexOf('function navBtn');
+  assert.ok(idx > 0, 'navBtn definition not found');
+  const slice = screen.slice(idx, idx + 400);
+  assert.match(slice, /window\.actionButton\(\s*\{/);
+  assert.match(slice, /disabled:\s*disabled/);
+  assert.match(slice, /onclick:\s*onclick/);
+  assert.match(slice, /title:\s*title/);
+});
+
+test('navBtn call sites: pass an accessible title (conformance gain — the pre-migration button had none)', () => {
+  assert.match(screen, /navBtn\(ICON_LEFT,\s*ui\.pagina\s*<=\s*1,[\s\S]{0,120}'Página anterior'\)/);
+  assert.match(screen, /navBtn\(ICON_RIGHT,\s*ui\.pagina\s*>=\s*totalPaginas,[\s\S]{0,120}'Próxima página'\)/);
+});
+
+test('pre-migration divergent inline styles are gone from row/nav actions (§8.1 conformance)', () => {
+  // Note: ICON_MORE stays 17px — it's a pre-existing unused constant,
+  // out of this migration's scope (not a row-action icon).
+  assert.doesNotMatch(screen, /border-radius:3px/, 'the old 3px radius (should be the shared 4px via actionButton) must be gone');
+  assert.doesNotMatch(screen, /deleteBtn\.style\.cursor/, 'the old imperative style-override dance on deleteBtn must be gone');
+  assert.doesNotMatch(screen, /deleteBtn\.disabled\s*=\s*false/, 'the old imperative .disabled = false residue must be gone');
+});
+
+test('ICON_EYE / ICON_TRASH are 14px (§8.1 icon size)', () => {
+  assert.match(screen, /var ICON_EYE = '<svg width="14" height="14"/);
+  assert.match(screen, /var ICON_TRASH = '<svg width="14" height="14"/);
+});
