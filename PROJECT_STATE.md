@@ -205,15 +205,22 @@ decisions (verbatim) are in `docs/closeouts/PROJECT_STATE_ARCHIVE_2026-07.md`
      length. This is a §7 golden-rule sizing defect, not a §7.1
      truncation gap. Candidate scope: audit every fixed-format column
      (CNPJ, CPF, dates, phone) app-wide for wrap, size to content.
-  2. `UI-DOCUMENTOS-RECEBIDOS-LAYOUT-FIX` — **HIGH SEVERITY.** The Lot A
-     diagnosis (`UI-GRID-TEXT-OVERFLOW-DIAGNOSIS`) classified
-     `documentos-recebidos.js` as already-compliant (filename ellipsis-
-     protected, remetente intentionally wraps); the architect's live
-     visual inspection found this wrong — on `#/documentos-recebidos`
-     the PEDIDO cell's link overflows across the DATAS column, and
-     "Arquivo não disponível" collides with AÇÕES. Candidate scope:
-     read-only diagnosis first (what overflows, why the grid tracks
-     don't contain it), then a scoped fix — do not fix blind.
+  2. `UI-DOCUMENTOS-RECEBIDOS-LAYOUT-FIX` — **HIGH SEVERITY.** `CLOSED /
+     ACCEPTED` (commit `90726dd`). Read-only diagnosis
+     (`UI-DOCUMENTOS-RECEBIDOS-LAYOUT-DIAGNOSIS`) found the mechanism:
+     `pedidoCell()` rendered `doc.pedido` (a raw, unbounded identifier)
+     as a direct flex item with only `white-space:nowrap` — its
+     automatic min-content width was never capped, so long tokens
+     painted past the PEDIDO column into DATAS; `buildActionButtons()`'s
+     `wrap` div could hold both the source-file-unavailable label and up
+     to 3 decision icon buttons (two independently-gated branches) with
+     no `flex-wrap`, overflowing the fixed 148px AÇÕES column. Fix:
+     `pedidoCell()` (both branches) and the defensive `stateSpan()`
+     gained the full §7.1 bundle (`overflow:hidden;text-overflow:
+     ellipsis;min-width:0`) plus a `title` tooltip on the linked branch;
+     `buildActionButtons()`'s `wrap` gained `flex-wrap:wrap` (a §7
+     column-sizing fix, not truncation — nothing there should ever be
+     cut). Architect visual gate pending.
   3. `TEST-MOCK-FIDELITY-AUDIT` — suites that hand-mock `js/ui.js`
      primitives instead of loading the real module are structurally
      blind to primitive-level defects. Precedent: the
