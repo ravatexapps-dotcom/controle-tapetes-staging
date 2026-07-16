@@ -81,7 +81,7 @@ divergência com a §1, resolve-se pelo papel de cada um.
 
 | Documento | Categoria | Propósito |
 |---|---|---|
-| `docs/architecture/CODE_HEALTH_RULES.md` | Contrato arquitetural | 18 regras vinculantes de saúde arquitetural (modularização). Toda nova fase deve respeitar. Conteúdo em inglês desde `DOC-LANGUAGE-MIGRATION-L1`, que também acrescentou a regra 19 (idioma); original pt-BR arquivado em `docs/archive/pt-BR/` (ver §7). |
+| `docs/architecture/CODE_HEALTH_RULES.md` | Contrato arquitetural | 19 regras vinculantes de saúde arquitetural (18 de modularização + a regra 19, de idioma). Toda nova fase deve respeitar. Conteúdo em inglês desde `DOC-LANGUAGE-MIGRATION-L1`; original pt-BR arquivado em `docs/archive/pt-BR/` (ver §7). |
 | `docs/architecture/PORTAL_B2B_ARCHITECTURE_RULES.md` | Contrato arquitetural | Regras da frente Portal B2B/Pedidos: separa cliente/admin/fornecedor, status operacional vs. visual, componentes comuns, decomposição de fases. |
 | `docs/architecture/PEDIDO_OP_MOVIMENTACAO_DOCUMENTOS_PLANO.md` | Plano persistente | Plano da frente Pedido ↔ OP ↔ Movimentação ↔ Documentos: estado de entrada, decisões, modelo alvo, papéis das telas, fases futuras (B a J), template de evidência. |
 | `docs/architecture/PEDIDO_OP_SCHEMA_CONTRACT.md` | Contrato técnico | Contrato de schema para Pedido ↔ OP ↔ Movimentação ↔ Documentos: valida tabelas, FKs, RPCs, triggers, RLS; estabelece vínculo Pedido→OP, movimentação canônica, stepper, saldo por etapa. |

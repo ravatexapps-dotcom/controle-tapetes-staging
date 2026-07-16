@@ -4,6 +4,40 @@ Este bloco é a única fonte de estado operacional atual por frente.
 HEAD, working tree, staging e divergência devem ser consultados diretamente no Git.
 O conteúdo histórico abaixo não determina o estado atual.
 
+## DOC-LANGUAGE-MIGRATION-L1 — Governance Documents Translated to English — CLOSED / ACCEPTED
+
+- **Front:** `DOC-LANGUAGE-MIGRATION`, batch `L1` (governance and rules) —
+  docs-only translation slice. First English-authored state block of the new
+  language era.
+- **Classification: `CLOSED / ACCEPTED`** (architect acceptance, 2026-07-16).
+- **Scope:** translated to English, content only (file names, anchors, paths
+  and cross-references unchanged): `docs/architecture/CODE_HEALTH_RULES.md`,
+  `docs/governance/SUPERVISION_PROTOCOL.md`,
+  `docs/governance/DOCUMENTATION_MODEL.md`, `CLAUDE.md`. Each pt-BR original was
+  moved, in the same commit, to `docs/archive/pt-BR/<original-path>`
+  (byte-for-byte). The language policy is recorded in the canonical homes
+  (`DOCUMENTATION_MODEL.md` §18, `CODE_HEALTH_RULES.md` §19,
+  `SUPERVISION_PROTOCOL.md` §3; `CLAUDE.md` pointer-summary). Canonical status
+  vocabulary, the architect verbatim handoff block, the gate marker
+  `IMPLEMENTAÇÃO VALIDADA / AGUARDANDO VALIDAÇÃO VISUAL DO ARQUITETO`, and
+  `DOCUMENTATION_MODEL.md` §17 were preserved verbatim.
+- **Audit (separate high-effort pass):** 2 divergences found and corrected —
+  `DOCUMENTATION_MODEL.md` H1 title left in Portuguese (audit pass);
+  `CLAUDE.md` `**PROIBIDA**` → `**FORBIDDEN**` (resident-executor final
+  review). No `[pt: ...]` pending items.
+- **Runtime note (accepted by architect):** Sonnet 5 was unavailable in this
+  environment; the translate and audit passes ran on the session model — the
+  two-pass structure and the medium/high effort split were preserved.
+- **Commits:** `cab741c` — `Translate governance documents to English (L1)`;
+  plus the follow-up `Record L1 in project state and fix rule counts` (this
+  block + CODE_HEALTH rule count 18→19 in `DOCUMENTATION_MODEL.md` §2,
+  `CLAUDE.md` and `docs/DOCUMENTATION_INDEX.md`). Consult HEAD with
+  `git rev-parse HEAD`.
+- **Production:** `bhgifjrfagkzubpyqpew` not accessed. **Push:** not executed.
+- **Next authorizable action:** `ARCHITECT DECISION` — batches `L2`/`L3`
+  (further canonical-doc translation) are not authorized by this record.
+- **Ledger:** `docs/ledgers/G28_LEDGER.md` (append-only entry for L1).
+
 ## Camada 2 — Reset de Senha Administrativo — A5.1-A5.2
 
 - **Frente:** `G28-CAMADA-2`, subfase `A5.1-A5.2` de

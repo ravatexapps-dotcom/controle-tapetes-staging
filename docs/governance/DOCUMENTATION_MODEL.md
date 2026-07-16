@@ -56,7 +56,7 @@ Direct consequences:
 | **Architectural plan** | `docs/architecture/PLANO_*.md` | Target architecture, requirements, permanent decisions, dependencies, planned phases, acceptance criteria, backlog. |
 | **Domain / API contract** | `docs/architecture/*_CONTRACT.md` and `services/documents-ingestor/contracts/*` | Technical contract of an area (schema, RLS, RPCs, events, JSON schemas). |
 | **Visual contract** | `docs/architecture/UI_VISUAL_CONTRACT.md` | Versioned visual rules. |
-| **Architectural health / modularization contract** | `docs/architecture/CODE_HEALTH_RULES.md` | 18 binding rules of modularization, file structure, responsibility limits per module/screen and what `index.html` can and cannot contain. Every new phase must respect it. |
+| **Architectural health / modularization contract** | `docs/architecture/CODE_HEALTH_RULES.md` | 19 binding rules covering modularization, file structure, responsibility limits per module/screen, what `index.html` can and cannot contain, and language (§19). Every new phase must respect it. |
 | **Operational runbook** | `docs/operations/*` | How to execute already approved procedures. |
 | **Documentary governance** | `docs/governance/DOCUMENTATION_MODEL.md` (this file) | Rules of how the documentation is organized and updated. |
 
