@@ -219,6 +219,8 @@ isso é registrado explicitamente no header do arquivo e em
 | `db/55_controlled_delete_document_link_policy_cast.sql` | Correcao emergencial staging-only para `db/53` ja aplicada: `to_jsonb(<literal>)` sem cast explicito falhava com `could not determine polymorphic type`. Patch forward-only (`DO $repair$`) localiza e substitui o literal de politica documental por `to_jsonb(<literal>::TEXT)` nas duas diagnosticas publicas ja aplicadas. Nao altera regras, grants ou cascatas. | `RAVATEX-TAPETES-CONTROLLED-DELETE-DOCUMENT-LINK-POLICY-CAST-55` | **Aplicada e validada em staging** (`ucrjtfswnfdlxwtmxnoo`), parte do mesmo commit tecnico `707a37bd...`. `CLOSED / ACCEPTED`. Producao intocada. |
 | `db/56_controlled_delete_document_link_diagnostics_null_safe.sql` | Correcao emergencial staging-only para regressao de `db/53`: `jsonb_set(...)` e `STRICT`, entao o retorno inteiro das diagnosticas publicas colapsava para `NULL` sempre que o alvo nao estava bloqueado por historico documental (`reason` nulo). Corrigido com `COALESCE(to_jsonb(v_reason), 'null'::jsonb)` no `jsonb_set` final de cada diagnostica, preservando o schema JSON e sem alterar guard/ACL/`remover_*`/`*_pre53`. | `RAVATEX-TAPETES-CONTROLLED-DELETE-DOCUMENT-LINK-DIAGNOSTICS-NULL-SAFE-56` | **Aplicada e validada em staging** (`ucrjtfswnfdlxwtmxnoo`), parte do mesmo commit tecnico `707a37bd...`. `CLOSED / ACCEPTED`. Producao intocada. |
 | `db/57_cliente_pedido_summary_acl_grants.sql` | Migration grants-only, forward-only e idempotente para `public.cliente_pedido_summary(UUID)`: `REVOKE EXECUTE ... FROM PUBLIC, anon, service_role; GRANT EXECUTE ... TO authenticated`. Nao recria nem altera corpo, `SECURITY DEFINER`, volatilidade, `search_path`, owner, assinatura ou tipo de retorno da funcao. Resolve a divergencia de ACL registrada em `D-COS06` (`docs/architecture/PEDIDO_OP_MOVIMENTACAO_DOCUMENTOS_PLANO.md`), fechando-a em `D-COS07`. | `CLIENTE-ORDER-SUMMARY-READMODEL-ACL-GRANTS-R1` | **Aplicada e verificada somente em staging** (`ucrjtfswnfdlxwtmxnoo`), `2026-07-15`, via operacao de migration rastreada do Supabase MCP; registro `20260715190627 / 57_cliente_pedido_summary_acl_grants` confirmado no catalogo. `CLOSED / ACCEPTED`. ACL final verificada ao vivo: `PUBLIC` sem `EXECUTE`, `anon` sem `EXECUTE`, `authenticated` com `EXECUTE`, `service_role` sem `EXECUTE` explicito (owner `postgres` retem privilegio inerente). Contrato da funcao (assinatura `cliente_pedido_summary(uuid)`, retorno `jsonb`, `SECURITY DEFINER`, `STABLE`, `search_path=public`, owner `postgres`, corpo) confirmado byte a byte inalterado (hash de definicao identico antes/depois). Producao (`bhgifjrfagkzubpyqpew`) intocada; sem push. |
+| `db/58_admin_usuarios_senha_temporaria.sql` | Migration aditiva, forward-only, idempotente (`ADD COLUMN IF NOT EXISTS`) para a fase `A4.1` (`docs/architecture/CAMADA2_USUARIOS_SPEC_PROPOSED.md`): `usuarios.senha_temporaria BOOLEAN NOT NULL DEFAULT FALSE` + `usuarios.senha_gerada_em TIMESTAMPTZ NULL`. Base do caminho unico decidido para A4 (senha temporaria + troca forcada no primeiro login, A4.2 ainda `NOT AUTHORIZED`). | `A4.1` | **Aplicada e verificada em staging** (`ucrjtfswnfdlxwtmxnoo`), `2026-07-16`, via Supabase MCP; registro `20260716014338 / 58_admin_usuarios_senha_temporaria` confirmado no catalogo. `CLOSED / ACCEPTED`. Colunas confirmadas ao vivo com o tipo/nullability/default do arquivo; os 10 usuarios existentes preservados sem efeito retroativo (`senha_temporaria=false`, `senha_gerada_em=NULL` em todos). Producao intocada; sem push. |
+| `db/59_admin_last_sign_in_readmodel.sql` | RPC `public.admin_usuarios_last_sign_in()` — read model admin-only (`SECURITY DEFINER`, `STABLE`, `search_path=public,auth`), guarda `is_admin()` (padrao `db/12`) com `RAISE EXCEPTION ... ERRCODE 42501` para chamador nao-admin. Retorna apenas `id`+`last_sign_in_at` de `auth.users` para os usuarios visiveis em `public.usuarios` — nao expoe email/senha/metadata. Grants explicitos: `REVOKE FROM PUBLIC, anon, service_role; GRANT TO authenticated`. Fecha o HARD STOP da coluna "Ultimo acesso" registrado no closeout de `A3.2`. | `CAMADA2-LAST-ACCESS-RPC` | **Aplicada e verificada em staging** (`ucrjtfswnfdlxwtmxnoo`), `2026-07-16`, via Supabase MCP; registro `20260716014358 / 59_admin_last_sign_in_readmodel` confirmado no catalogo. `CLOSED / ACCEPTED`. Matriz de papeis empirica (`BEGIN...ROLLBACK`): `anon` → `42501` no limite de ACL (antes de executar); `authenticated` nao-admin → `42501` de negocio (RAISE EXCEPTION dentro da funcao); `authenticated` admin → `ok`, DTO minimo confirmado (so `id`+`last_sign_in_at`). Consumo na UI (coluna "Ultimo acesso" em `js/screens/admin-usuarios.js`) e micro-fase futura propria, `NOT AUTHORIZED` por este registro. Producao intocada; sem push. |
 
 ### Smoke tests estáticos de schema versionado
 
@@ -283,6 +285,29 @@ isso é registrado explicitamente no header do arquivo e em
 > `origin/main` intocados.** Próxima etapa: decisão de
 > release para `origin/main`/produção, somente com
 > autorização explícita do HMNlead (em fase separada).
+
+> **A4.1 + `CAMADA2-LAST-ACCESS-RPC` (`2026-07-16`):** a Edge
+> Function `admin-create-user` foi estendida — política de senha
+> 6→8 caracteres + exigência de ≥1 dígito (`PASSWORD_MIN_LENGTH`,
+> `PASSWORD_DIGIT_RE`) e o insert em `public.usuarios` passou a
+> setar `senha_temporaria: true` / `senha_gerada_em: now()` (ver
+> `supabase/functions/admin-create-user/README.md`). **Deploy em
+> staging (`ucrjtfswnfdlxwtmxnoo`) executado pelo arquiteto.** Um
+> **runner local automatizado de E2E**, mesmo esqueleto e mesmas
+> garantias de segurança do `admin-disable-user-e2e.mjs` (login com
+> senha real feito por humano, nunca pelo agente IA; sanitização de
+> segredos; guarda de staging-only; config local gitignored), foi
+> criado em `scripts/staging/admin-create-user-password-policy-e2e.mjs`.
+> **E2E real em staging passou com `result: PASS` (9/9 passos)**,
+> cobrindo: senha de 7 caracteres rejeitada (mensagem de
+> comprimento), senha de 8 caracteres sem dígito rejeitada (mensagem
+> de dígito), senha válida aceita com `senha_temporaria=true` e
+> `senha_gerada_em` preenchido confirmados via REST, cleanup via
+> `admin-delete-user` (fluxo existente) com cleanup zero verificado.
+> Consumo da coluna "Último acesso" na UI (`js/screens/admin-usuarios.js`,
+> via `db/59`) e `A4.2` (guarda de boot + tela de troca obrigatória)
+> permanecem `NOT AUTHORIZED`, candidatas a `ARCHITECT DECISION`.
+> Produção `bhgifjrfagkzubpyqpew` não acessada; sem push.
 
 ## 4. Docs legadas (NÃO GUIAM EXECUÇÃO)
 
