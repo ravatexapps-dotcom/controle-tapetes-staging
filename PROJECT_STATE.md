@@ -4,6 +4,120 @@ Este bloco é a única fonte de estado operacional atual por frente.
 HEAD, working tree, staging e divergência devem ser consultados diretamente no Git.
 O conteúdo histórico abaixo não determina o estado atual.
 
+## Camada 2 — Guarda de Troca de Senha Obrigatória — A4.2
+
+- **Frente:** `G28-CAMADA-2`, subfase `A4.2` de
+  `docs/architecture/CAMADA2_USUARIOS_SPEC_PROPOSED.md`, autorizada após
+  `A4.1` + `CAMADA2-LAST-ACCESS-RPC`.
+- **Classificação: `CLOSED / ACCEPTED`** (gate de mockup satisfeito +
+  validação manual do arquiteto confirmada em staging com usuário
+  sintético).
+- **Technical HEAD:** `6c624ef` — `Add mandatory password change gate`
+  (`js/auth.js`, `js/boot.js`, `js/trocar-senha-writes.js` (novo),
+  `js/screens/trocar-senha-obrigatoria.js` (novo),
+  `scripts/staging/trocar-senha-obrigatoria-e2e.mjs` (novo, tooling),
+  `index.html`, `tests/auth.smoke.js`, `tests/boot.smoke.js`,
+  `tests/trocar-senha-obrigatoria.smoke.js` (novo)). **Commit
+  documental:** este closeout (`Close mandatory password change
+  phase`). O HEAD atual deve ser consultado com `git rev-parse HEAD`.
+- **Hard stop resolvido nesta fase (decisão explícita do arquiteto —
+  Opção A):** a guarda projetada (`CURRENT_USER.senha_temporaria`) não
+  funcionava porque `js/auth.js` (`loadCurrentUser()`) não selecionava
+  `senha_temporaria`/`senha_gerada_em` — campos adicionados por `db/58`
+  em `A4.1`, mas nunca lidos em lugar nenhum do repositório
+  (confirmado por grep antes do stop). `js/auth.js` não estava no
+  manifesto original desta ordem; o arquiteto ampliou o manifesto em 1
+  arquivo, exclusivamente para o `select` de `loadCurrentUser()` — mais
+  nenhuma linha de `auth.js` tocada (`§11` preservado, mecanismo de
+  Auth intocado).
+- **Guarda (`js/boot.js`):** `isSenhaTemporariaExpirada(geradaEm)`
+  (pura, 7 dias, testável isoladamente) + `guardedHandleRoute()`
+  (envolve `window.handleRoute` de `js/router.js` **sem alterá-lo** —
+  `router.js` continua intocado) usado tanto no listener de
+  `hashchange` quanto na decisão inicial de `main()`, pós-
+  `loadCurrentUser()` e pré-bootstrap G24-C. Exportado só para teste em
+  `window.RAVATEX_BOOT_GUARD`.
+- **Write self-service (`js/trocar-senha-writes.js`, novo módulo):**
+  `trocarSenhaObrigatoria(userId, novaSenha)` — `supabase.auth.
+  updateUser({password})` (self-service, sem Admin API) e, em
+  sucesso, `UPDATE usuarios SET senha_temporaria=false WHERE id=userId`
+  via PostgREST. Retorna `{ok:false, stage:'auth'|'flag', error}` para
+  distinguir estado parcial real (senha trocada mas flag não zerada) —
+  reportado explicitamente pela tela, nunca silencioso.
+- **RLS/grants verificados em staging antes de codar (read-only,
+  catálogo ao vivo):** policy `usuarios_self_update` em
+  `public.usuarios` (`USING id=auth.uid() AND ativo IS TRUE`,
+  `WITH CHECK` preserva `tipo`) + `authenticated` com `UPDATE`
+  explícito em `senha_temporaria`/`senha_gerada_em` — sem policy nova,
+  sem afrouxamento.
+- **Tela (`js/screens/trocar-senha-obrigatoria.js`, novo, 243 linhas):**
+  card centrado sem shell, ícone cadeado, checklist vivo (mínimo 8
+  caracteres / 1 dígito / senhas coincidem — cinza `#8a93a3` pendente,
+  verde `#18794a` satisfeito), botão habilitado só com os 3 critérios,
+  toggle de olho nos 2 campos, link "Sair da conta" (logout real). Modo
+  `expired` (`senha_gerada_em` > 7 dias): sem campos, mensagem de
+  expiração + "Sair da conta" como botão primário. Mockup aprovado pelo
+  arquiteto em 2026-07-16.
+- **Testes locais:** `node --check` PASS nos 5 arquivos JS/`.mjs`
+  tocados/novos; `tests/trocar-senha-obrigatoria.smoke.js` (novo)
+  **14/14**; `tests/boot.smoke.js` estendido **44/44** (13 testes
+  novos, incl. integração real via `main()` com sessão autenticada
+  mockada, flag true/false/expirada); `tests/auth.smoke.js` estendido
+  **37/43** (3 testes novos + 1 corrigido; os 6 que falham são débito
+  pré-existente confirmado idêntico via `git stash`, não relacionado a
+  esta fase — ver débito registrado abaixo); regressão consolidada
+  (`boot`+`auth`+`trocar-senha-obrigatoria`+`admin-usuarios`+
+  `cadastros-screens`) **150/156**, mesma contagem de débito
+  pré-existente. `git diff --check` limpo.
+- **Verificação visual sem credenciais (preview local, sem login):**
+  tela real renderizada via overlay de diagnóstico — checklist reage a
+  tecla real com cores computadas corretas (`rgb(24,121,74)`=`#18794a`
+  satisfeito / `rgb(138,147,163)`=`#8a93a3` pendente), botão desabilita/
+  habilita corretamente, toggle de olho `password↔text` confirmado,
+  modo `expired` sem campos/formulário. Console sem erros.
+- **Validação da perna autenticada — confirmada pelo arquiteto
+  (validação manual em staging, `ucrjtfswnfdlxwtmxnoo`):** usuário
+  sintético criado pelo fluxo novo (senha temporária), gate exibido no
+  primeiro login, checklist reagiu, troca efetuada, flag
+  `senha_temporaria` zerada, segundo login entrou direto sem o gate.
+  Usuário de teste removido. Runner automatizado equivalente
+  disponível em `scripts/staging/trocar-senha-obrigatoria-e2e.mjs`
+  (mesmo esqueleto/garantias de `admin-create-user-password-policy-
+  e2e.mjs` — login com senha real só por humano, nunca pelo agente IA;
+  senha sintética gerada pelo próprio script) para reexecução futura,
+  não executado nesta fase (a validação usada foi a manual).
+- **Débito registrado nesta fase (não bloqueante, candidato a
+  `CODE-HEALTH-AUDIT-§18-R1`):** os 6 testes pré-existentes em
+  `tests/auth.smoke.js` que falham checando tags `<script src="js/
+  auth.js">` sem `?v=` (regex desatualizado desde que cache-busting foi
+  adicionado a `auth.js`, anterior a esta fase) — confirmado idêntico
+  ao baseline via `git stash`, não corrigido aqui (fora de escopo desta
+  ordem). Ver seção "Frente candidata `CODE-HEALTH-AUDIT-§18-R1`"
+  abaixo.
+- **Débito de continuidade documental (não fechado por esta fase):** a
+  micro-fase `CAMADA2-LAST-ACCESS-UI` (consumo da RPC `db/59` — coluna
+  "Último acesso" em `js/screens/admin-usuarios.js`, technical commit
+  `0aff22f` — `Add last sign-in column to user admin`) teve seu
+  relatório de implementação entregue (`IMPLEMENTAÇÃO VALIDADA /
+  AGUARDANDO VALIDAÇÃO VISUAL DO ARQUITETO`) mas a sessão prosseguiu
+  diretamente para a autorização de `A4.2` sem um `OK` explícito nem
+  ordem de closeout registrada para essa micro-fase especificamente.
+  O commit técnico já está no histórico e a funcionalidade está
+  implementada; falta apenas o registro documental formal (`CLOSED /
+  ACCEPTED`) — pendente de ordem própria do arquiteto.
+- **Não implementado (fora de escopo, não iniciado):** `A4.3` (convite
+  por e-mail, `NOT AUTHORIZED`); `A2.1` (schema `nivel_acesso`); `A6.1`
+  (schema/trigger de auditoria); `A5.1-A5.2` (reset de senha por
+  admin).
+- **Produção:** `bhgifjrfagkzubpyqpew` não acessada. **Push:** não
+  executado.
+- **Próxima ação autorizável:** `ARCHITECT DECISION` — candidatas:
+  `A5.1-A5.2` (reset de senha — Edge Function + staging verify); `A2.1`
+  (schema `nivel_acesso`); `A6.1` (schema/trigger de auditoria).
+  Nenhuma subfase autorizada por este registro.
+- **Ledger:** `docs/ledgers/G28_LEDGER.md` (entrada append-only desta
+  fase).
+
 ## Camada 2 — Senha Temporária e Read Model de Último Acesso — A4.1 + CAMADA2-LAST-ACCESS-RPC
 
 - **Frente:** `G28-CAMADA-2`, subfase `A4.1` (schema `senha_temporaria`/política
@@ -107,7 +221,12 @@ UNCHANGED / REMAINS IN FORCE
   §18), insumo para decomposição incremental de `cadastros.js` (~2.200
   linhas, 6 telas embutidas remanescentes após a extração de `A3.1`) e
   triagem dos débitos de teste de baseline. Não iniciada; nenhuma
-  implementação autorizada por este registro.
+  implementação autorizada por este registro. **Débito concreto
+  registrado na fase `A4.2` (2026-07-16):** os 6 testes em
+  `tests/auth.smoke.js` que checam `<script src="js/auth.js">` sem
+  considerar `?v=` de cache-busting (regex desatualizado desde antes
+  de `A4.2`, confirmado idêntico ao baseline via `git stash`) — candidato
+  de correção quando esta auditoria for autorizada.
 - **Frente condicionada `NOT AUTHORIZED`: `PUBLICATION-TRACK-REVIEW`** —
   revisão da fronteira staging-only + `DEPLOYMENT_MAPPING_AND_PRODUCTION_
   MIGRATION_PROCEDURE` + G28-D + aplicação em produção das migrations hoje

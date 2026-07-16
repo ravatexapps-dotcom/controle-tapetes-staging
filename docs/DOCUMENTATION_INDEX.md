@@ -308,6 +308,37 @@ isso é registrado explicitamente no header do arquivo e em
 > via `db/59`) e `A4.2` (guarda de boot + tela de troca obrigatória)
 > permanecem `NOT AUTHORIZED`, candidatas a `ARCHITECT DECISION`.
 > Produção `bhgifjrfagkzubpyqpew` não acessada; sem push.
+>
+> **Atualização (`2026-07-16`, superada acima):** o consumo da coluna
+> "Último acesso" foi implementado (technical commit `0aff22f` — `Add
+> last sign-in column to user admin`), ainda sem registro documental
+> formal de closeout (`CAMADA2-LAST-ACCESS-UI` — pendente de
+> confirmação/ordem própria do arquiteto). **`A4.2` (guarda de troca de
+> senha obrigatória) — `CLOSED / ACCEPTED` (2026-07-16).** `js/auth.js`
+> ganhou `senha_temporaria`/`senha_gerada_em` no `select` de
+> `loadCurrentUser()` (única mudança, decisão explícita do arquiteto —
+> Opção A de um hard stop levantado em sessão); `js/boot.js` ganhou a
+> guarda (`isSenhaTemporariaExpirada` + `guardedHandleRoute`, sem tocar
+> `js/router.js`); `js/trocar-senha-writes.js` (novo) faz o self-service
+> `auth.updateUser({password})` + `UPDATE usuarios SET
+> senha_temporaria=false`; `js/screens/trocar-senha-obrigatoria.js`
+> (novo) é a tela (card sem shell, checklist vivo, modo `expired` após
+> 7 dias). Um **runner local automatizado de E2E**, mesmo esqueleto e
+> mesmas garantias de segurança dos runners anteriores (login com senha
+> real só por humano, nunca pelo agente IA; senha sintética gerada pelo
+> próprio script; sanitização de segredos; guarda de staging-only;
+> config local gitignored), foi criado em
+> `scripts/staging/trocar-senha-obrigatoria-e2e.mjs` — **não executado
+> nesta fase**; a evidência usada para o closeout foi a **validação
+> manual do arquiteto em staging**: usuário sintético criado, gate
+> exibido, checklist reagiu, troca efetuada, `senha_temporaria` zerada,
+> segundo login entrou direto sem gate, usuário removido. Débito
+> registrado (candidato a `CODE-HEALTH-AUDIT-§18-R1`, não corrigido
+> nesta fase): 6 testes pré-existentes de `tests/auth.smoke.js` com
+> regex desatualizado quanto a `?v=` de cache-busting em
+> `<script src="js/auth.js">`. `A4.3` (convite por e-mail) permanece
+> `NOT AUTHORIZED`. Produção `bhgifjrfagkzubpyqpew` não acessada; sem
+> push.
 
 ## 4. Docs legadas (NÃO GUIAM EXECUÇÃO)
 
