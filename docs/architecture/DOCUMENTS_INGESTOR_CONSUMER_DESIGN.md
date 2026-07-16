@@ -246,52 +246,54 @@ Definition of the minimal UI for G11-B:
 
 ## 5. Ready-to-issue order for G11-B (next IAExecutor)
 
-```
-FASE: RAVATEX-TAPETES-G11-B-DOCUMENTS-CONSUMER-PATCH
-Agente: DeepSeek Pro (3+ arquivos funcionais)
-HEAD base Controle de Tapetes: 381506c (work/app-next)
-HEAD base Documents Ingestor: 956682d (master, não alterar)
+*(translated from the architect's original Portuguese; original in docs/archive/pt-BR/)*
 
-Escopo:
-1. js/documents-ingestor.js (novo)
+```
+PHASE: RAVATEX-TAPETES-G11-B-DOCUMENTS-CONSUMER-PATCH
+Agent: DeepSeek Pro (3+ functional files)
+Controle de Tapetes base HEAD: 381506c (work/app-next)
+Documents Ingestor base HEAD: 956682d (master, do not modify)
+
+Scope:
+1. js/documents-ingestor.js (new)
    - parseDocumentEvents(jsonlText)
    - filterEventsByPedido(events, pedidoNumero, ano)
    - consolidateDocumentState(events)
    - buildIngestorDocumentRows(docs)
    - Namespace: window.RAVATEX_DOCUMENTS
 
-2. data/fixtures/document-events-sample.jsonl (novo)
-   - Cópia do sample do Ingestor + adaptação para pedido real
+2. data/fixtures/document-events-sample.jsonl (new)
+   - Copy of the Ingestor sample + adaptation for a real pedido
 
-3. js/screens/pedido-detail-progress.js (modificar)
-   - computeViewModel() adiciona ingestorDocumentRows ao view
+3. js/screens/pedido-detail-progress.js (modify)
+   - computeViewModel() adds ingestorDocumentRows to the view
 
-4. js/screens/pedido-detail-render.js (modificar)
-   - buildDocuments() inclui seção "Documentos Recebidos" com:
-     * Badges: tipo (NF/Romaneio) + formato (XML/PDF) + direção (Entrada/Saída)
-     * Status: Aceito (verde) / Pendente (âmbar) / Rejeitado (vermelho + reason)
-     * Botão "Ver" → window.open(drive_web_view_link, '_blank')
-     * Timeline de eventos abaixo dos documentos
+4. js/screens/pedido-detail-render.js (modify)
+   - buildDocuments() includes a "Documentos Recebidos" section with:
+     * Badges: type (NF/Romaneio) + format (XML/PDF) + direction (Entrada/Saída)
+     * Status: Aceito (green) / Pendente (amber) / Rejeitado (red + reason)
+     * "Ver" button → window.open(drive_web_view_link, '_blank')
+     * Event timeline below the documents
 
-5. tests/documents-ingestor.test.js (novo)
-   - parseDocumentEvents com JSONL válido, vazio, malformado
-   - filterEventsByPedido com match e não-match
-   - consolidateDocumentState com eventos duplicados e fora de ordem
+5. tests/documents-ingestor.test.js (new)
+   - parseDocumentEvents with valid, empty, malformed JSONL
+   - filterEventsByPedido with match and no-match
+   - consolidateDocumentState with duplicate and out-of-order events
 
-6. tests/pedido-detail.smoke.js (atualizar)
-   - Verificar que 155+ testes continuam passando
+6. tests/pedido-detail.smoke.js (update)
+   - Verify that 155+ tests continue passing
 
-Não fazer:
-- Não tocar Supabase
-- Não alterar Documents Ingestor
-- Não criar watcher
-- Não implementar accept/reject no app
-- Não criar schema novo
-- Não executar migrations
-- Não chamar Google/Drive real (links mockados na fixture)
-- Não fazer push para origin
+Do not:
+- Do not touch Supabase
+- Do not modify Documents Ingestor
+- Do not create a watcher
+- Do not implement accept/reject in the app
+- Do not create a new schema
+- Do not run migrations
+- Do not call real Google/Drive (mocked links in the fixture)
+- Do not push to origin
 
-Testes obrigatórios antes do commit:
+Mandatory tests before commit:
 node --test tests/documents-ingestor.test.js
 node --test tests/pedido-detail.smoke.js
 node --check js/documents-ingestor.js

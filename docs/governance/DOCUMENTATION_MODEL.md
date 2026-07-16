@@ -549,3 +549,12 @@ MATERIAL_DIVERGENCES:
 - Phase IDs and the terms embedded in them are never translated — e.g. the
   label `Camada N` is fused to the `G28-CAMADA-N` phase IDs; translating it
   would break grep across ledgers, commits and archived reports.
+- Permanent exclusions from translation, alongside ledgers, `docs/handoffs/`,
+  and `docs/archive/`: `docs/legacy/pre-model/*` (byte-immutable snapshots
+  anchored by a recorded SHA-256 hash — translating would violate their own
+  immutability guarantee); `docs/qa/*` and `docs/superpowers/*` (historical,
+  self-classified as not guiding execution, quarantined by design); the
+  root `docs/*.md` legacy files listed in `docs/DOCUMENTATION_INDEX.md` §4
+  (`DEPLOYMENT.md`, `AI_AGENT_RULES.md`, `BACKUP_AND_RESTORE.md`,
+  `HANDOFF.md`, `STAGING_BASELINE.md`). Ratified by the architect,
+  `DOC-LANGUAGE-MIGRATION-L3`, 2026-07-16.
