@@ -564,6 +564,33 @@
   }
 
   // -------------------------------------------------------------------
+  // Modal: confirmar reativação (A5.3-A5.4)
+  // -------------------------------------------------------------------
+
+  function openReativarModal(usr, options) {
+    var onDone = (options && options.onDone) || function () {};
+    var W = window.RAVATEX_ADMIN_USUARIOS_WRITES;
+    window.confirmDialog({
+      title: 'Reativar usuário',
+      message: 'Reativar "' + usr.email + '"? O perfil voltará a ficar ativo e o login no Auth será liberado.',
+      confirmLabel: 'Reativar',
+      danger: false,
+      onConfirm: async () => {
+        var { error } = await W.reativarUsuario(usr.id);
+        if (error) {
+          var parsed = await W.parseEdgeFunctionError(error, 'Erro ao reativar usuário');
+          var friendly = W.friendlyReactivateMessage(parsed.code, parsed.message);
+          window.toast(friendly, 'error');
+          console.error('admin-reactivate-user error', parsed.code, error);
+          return;
+        }
+        window.toast('Usuário reativado', 'success');
+        onDone();
+      },
+    });
+  }
+
+  // -------------------------------------------------------------------
   // Namespace
   // -------------------------------------------------------------------
 
@@ -573,4 +600,5 @@
   window.RAVATEX_ADMIN_USUARIOS_MODAL.openExcluirModal = openExcluirModal;
   window.RAVATEX_ADMIN_USUARIOS_MODAL.openResetarSenhaModal = openResetarSenhaModal;
   window.RAVATEX_ADMIN_USUARIOS_MODAL.openSenhaGeradaModal = openSenhaGeradaModal;
+  window.RAVATEX_ADMIN_USUARIOS_MODAL.openReativarModal = openReativarModal;
 })(window);

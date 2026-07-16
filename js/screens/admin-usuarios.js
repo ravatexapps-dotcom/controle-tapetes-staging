@@ -64,6 +64,9 @@
     var ICON_TRASH = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path><path d="M10 11v6M14 11v6"></path><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"></path></svg>';
     // A5.1-A5.2 — ícone de reset de senha.
     var ICON_KEY = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"></path></svg>';
+    // A5.3-A5.4 — ícone de reativação (linhas inativas), substitui o
+    // ícone de ban (proibido) na mesma posição de ação.
+    var ICON_REFRESH = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>';
     // A3.2 — ícones dos cards-resumo (KPI).
     var ICON_SHIELD = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#8a93a3" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>';
     var ICON_FACTORY = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#8a93a3" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M2 20h20"></path><path d="M4 20V10l5 3V10l5 3V10l5 3v7"></path><path d="M4 10V6l2-2"></path></svg>';
@@ -300,7 +303,17 @@
         };
         if (resetSelf) resetAttrs.disabled = 'disabled';
         actions.appendChild(window.el('button', resetAttrs, svgIcon(ICON_KEY)));
-        actions.appendChild(window.el('button', { type: 'button', onclick: user.ativo === false ? undefined : () => handleDesativarClick(user, meId), disabled: user.ativo === false, title: user.ativo === false ? 'Usuario inativo' : 'Desativar usuario', 'aria-label': user.ativo === false ? 'Usuario inativo' : 'Desativar usuario', style: `width:30px; height:30px; display:inline-flex; align-items:center; justify-content:center; border:1px solid #eceef1; border-radius:4px; background:#fff; color:#8a93a3; cursor:${user.ativo === false ? 'default' : 'pointer'}; opacity:${user.ativo === false ? '0.45' : '1'};` }, svgIcon(ICON_BAN)));
+        // A5.3-A5.4 — linhas inativas trocam a ação "Desativar" (ícone
+        // ban) por "Reativar" (ícone refresh) na mesma posição; ambas
+        // sempre acionáveis (sem `disabled`) nesta coluna.
+        const statusButtonAttrs = {
+          type: 'button',
+          onclick: inativo ? () => handleReativarClick(user) : () => handleDesativarClick(user, meId),
+          title: inativo ? 'Reativar usuario' : 'Desativar usuario',
+          'aria-label': inativo ? 'Reativar usuario' : 'Desativar usuario',
+          style: 'width:30px; height:30px; display:inline-flex; align-items:center; justify-content:center; border:1px solid #eceef1; border-radius:4px; background:#fff; color:#8a93a3; cursor:pointer; opacity:1;',
+        };
+        actions.appendChild(window.el('button', statusButtonAttrs, svgIcon(inativo ? ICON_REFRESH : ICON_BAN)));
         actions.appendChild(window.el('button', { type: 'button', onclick: meId && user.id === meId ? undefined : () => handleExcluirClick(user, meId), disabled: !!(meId && user.id === meId), title: meId && user.id === meId ? 'Nao pode excluir o proprio usuario' : 'Excluir usuario', 'aria-label': meId && user.id === meId ? 'Nao pode excluir o proprio usuario' : 'Excluir usuario', style: `width:30px; height:30px; display:inline-flex; align-items:center; justify-content:center; border:1px solid #eceef1; border-radius:4px; background:#fff; color:#d6403a; cursor:${meId && user.id === meId ? 'default' : 'pointer'}; opacity:${meId && user.id === meId ? '0.45' : '1'};` }, svgIcon(ICON_TRASH)));
         line.appendChild(actions);
         card.appendChild(line);
@@ -341,6 +354,15 @@
         return;
       }
       M.openExcluirModal(r, { onDone: reload });
+    }
+
+    function handleReativarClick(r) {
+      // Guarda de UX (não substitui a checagem server-side).
+      if (r.ativo !== false) {
+        window.toast('Usuário já está ativo.', 'info');
+        return;
+      }
+      M.openReativarModal(r, { onDone: reload });
     }
 
     await reload();

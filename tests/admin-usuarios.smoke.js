@@ -751,6 +751,125 @@ test('31. write: resetarSenha(userId) invoca admin-reset-user-password com { use
 });
 
 // -----------------------------------------------------------------------------
+// Runtime — A5.3-A5.4: reativação administrativa (ícone trocado em linhas
+// inativas, confirmDialog, wiring de escrita)
+// -----------------------------------------------------------------------------
+
+test('32. namespaces: reativarUsuario/friendlyReactivateMessage (writes) e openReativarModal (modal) são funções', () => {
+  const { sandbox } = makeAdminUsuariosSandbox({ tableData: USERS_FIXTURE });
+  assert.equal(typeof vm.runInContext('window.RAVATEX_ADMIN_USUARIOS_WRITES.reativarUsuario', sandbox), 'function');
+  assert.equal(typeof vm.runInContext('window.RAVATEX_ADMIN_USUARIOS_WRITES.friendlyReactivateMessage', sandbox), 'function');
+  assert.equal(typeof vm.runInContext('window.RAVATEX_ADMIN_USUARIOS_MODAL.openReativarModal', sandbox), 'function');
+});
+
+test('33. linha inativa (Carla, com "Mostrar inativos" ligado): botão "Reativar usuario" no lugar de "Desativar usuario"', async () => {
+  const { sandbox } = makeAdminUsuariosSandbox({ tableData: USERS_FIXTURE });
+  const node = await vm.runInContext('window.screenAdminUsuarios()', sandbox);
+  const flex = node.children.find((c) => c.tagName === 'DIV');
+  let main = flex.children.find((c) => c.tagName === 'MAIN');
+  const toggleInput = findAll(main, (n) => n.tagName === 'INPUT' && n._attrs && n._attrs.type === 'checkbox')[0];
+  toggleInput.checked = true;
+  toggleInput._listeners.change({ target: toggleInput });
+  main = flex.children.find((c) => c.tagName === 'MAIN');
+  const carlaRow = findRowByText(main, 'c@c.c');
+  assert.ok(carlaRow, 'linha da Carla (inativa) não encontrada');
+  const reativarBtn = findAll(carlaRow, (n) => n.tagName === 'BUTTON' && n._attrs && n._attrs.title === 'Reativar usuario')[0];
+  const desativarBtn = findAll(carlaRow, (n) => n.tagName === 'BUTTON' && n._attrs && n._attrs.title === 'Desativar usuario')[0];
+  assert.ok(reativarBtn, 'botão "Reativar usuario" ausente na linha inativa');
+  assert.ok(!reativarBtn.disabled, 'botão "Reativar usuario" não deveria estar desabilitado');
+  assert.equal(desativarBtn, undefined, 'linha inativa não deveria mostrar o botão "Desativar usuario"');
+
+  const biaRow = findRowByText(main, 'b@b.c');
+  const biaDesativar = findAll(biaRow, (n) => n.tagName === 'BUTTON' && n._attrs && n._attrs.title === 'Desativar usuario')[0];
+  const biaReativar = findAll(biaRow, (n) => n.tagName === 'BUTTON' && n._attrs && n._attrs.title === 'Reativar usuario')[0];
+  assert.ok(biaDesativar, 'linha ativa (Bia) deveria continuar mostrando "Desativar usuario"');
+  assert.equal(biaReativar, undefined, 'linha ativa não deveria mostrar o botão "Reativar usuario"');
+});
+
+test('34. clicar em "Reativar usuario" abre confirmDialog citando o e-mail do alvo', async () => {
+  const { sandbox } = makeAdminUsuariosSandbox({ tableData: USERS_FIXTURE });
+  const node = await vm.runInContext('window.screenAdminUsuarios()', sandbox);
+  const flex = node.children.find((c) => c.tagName === 'DIV');
+  let main = flex.children.find((c) => c.tagName === 'MAIN');
+  const toggleInput = findAll(main, (n) => n.tagName === 'INPUT' && n._attrs && n._attrs.type === 'checkbox')[0];
+  toggleInput.checked = true;
+  toggleInput._listeners.change({ target: toggleInput });
+  main = flex.children.find((c) => c.tagName === 'MAIN');
+  const carlaRow = findRowByText(main, 'c@c.c');
+  const reativarBtn = findAll(carlaRow, (n) => n.tagName === 'BUTTON' && n._attrs && n._attrs.title === 'Reativar usuario')[0];
+  reativarBtn._listeners.click();
+  const overlays = sandbox.document.body.children;
+  const lastOverlay = overlays[overlays.length - 1];
+  assert.ok(lastOverlay, 'nenhum modal foi montado em document.body');
+  const h2 = findAll(lastOverlay, (n) => n.tagName === 'H2')[0];
+  assert.equal(textOf(h2), 'Reativar usuário', 'título do modal de confirmação deveria ser "Reativar usuário"');
+  assert.match(textOf(lastOverlay), /c@c\.c/, 'mensagem de confirmação deveria citar o e-mail do usuário-alvo');
+});
+
+test('35. sucesso: confirma a reativação, chama reativarUsuario(userId) e dispara toast de sucesso', async () => {
+  const { sandbox, fakeSupa, toasts } = makeAdminUsuariosSandbox({
+    tableData: USERS_FIXTURE,
+    invokeImpl: {
+      'admin-reactivate-user': async (body) => ({
+        data: { user_id: body.user_id, email: 'c@c.c', tipo: 'admin', ativo: true, auth_banned: false },
+        error: null,
+      }),
+    },
+  });
+  const node = await vm.runInContext('window.screenAdminUsuarios()', sandbox);
+  const flex = node.children.find((c) => c.tagName === 'DIV');
+  let main = flex.children.find((c) => c.tagName === 'MAIN');
+  const toggleInput = findAll(main, (n) => n.tagName === 'INPUT' && n._attrs && n._attrs.type === 'checkbox')[0];
+  toggleInput.checked = true;
+  toggleInput._listeners.change({ target: toggleInput });
+  main = flex.children.find((c) => c.tagName === 'MAIN');
+  const carlaRow = findRowByText(main, 'c@c.c');
+  const reativarBtn = findAll(carlaRow, (n) => n.tagName === 'BUTTON' && n._attrs && n._attrs.title === 'Reativar usuario')[0];
+  reativarBtn._listeners.click();
+
+  const confirmOverlay = sandbox.document.body.children[sandbox.document.body.children.length - 1];
+  const confirmBtn = findAll(confirmOverlay, (n) => n.tagName === 'BUTTON' && textOf(n) === 'Reativar')[0];
+  assert.ok(confirmBtn, 'botão de confirmação "Reativar" não encontrado no modal');
+  await confirmBtn._listeners.click();
+
+  const invokeCall = fakeSupa._calls.find((c) => c.op === 'invoke' && c.name === 'admin-reactivate-user');
+  assert.ok(invokeCall, 'reativarUsuario não invocou admin-reactivate-user');
+  assert.equal(invokeCall.body.user_id, 'u-3', 'invoke deveria ser chamado com o user_id da Carla');
+  assert.ok(toasts.some((t) => t.type === 'success'), 'toast de sucesso não disparado');
+});
+
+test('36. falha: toast de erro amigável (código mapeado por friendlyReactivateMessage)', async () => {
+  const { sandbox, toasts } = makeAdminUsuariosSandbox({
+    tableData: USERS_FIXTURE,
+    invokeImpl: {
+      'admin-reactivate-user': async () => ({ data: null, error: { message: 'Usuário não está inativo.' } }),
+    },
+  });
+  const node = await vm.runInContext('window.screenAdminUsuarios()', sandbox);
+  const flex = node.children.find((c) => c.tagName === 'DIV');
+  let main = flex.children.find((c) => c.tagName === 'MAIN');
+  const toggleInput = findAll(main, (n) => n.tagName === 'INPUT' && n._attrs && n._attrs.type === 'checkbox')[0];
+  toggleInput.checked = true;
+  toggleInput._listeners.change({ target: toggleInput });
+  main = flex.children.find((c) => c.tagName === 'MAIN');
+  const carlaRow = findRowByText(main, 'c@c.c');
+  const reativarBtn = findAll(carlaRow, (n) => n.tagName === 'BUTTON' && n._attrs && n._attrs.title === 'Reativar usuario')[0];
+  reativarBtn._listeners.click();
+  const confirmOverlay = sandbox.document.body.children[sandbox.document.body.children.length - 1];
+  const confirmBtn = findAll(confirmOverlay, (n) => n.tagName === 'BUTTON' && textOf(n) === 'Reativar')[0];
+  await confirmBtn._listeners.click();
+  assert.ok(toasts.some((t) => t.type === 'error'), 'toast de erro não disparado');
+});
+
+test('37. write: reativarUsuario(userId) invoca admin-reactivate-user com { user_id }', async () => {
+  const { sandbox, fakeSupa } = makeAdminUsuariosSandbox({ tableData: USERS_FIXTURE });
+  await vm.runInContext(`window.RAVATEX_ADMIN_USUARIOS_WRITES.reativarUsuario('u-3')`, sandbox);
+  const invokeCall = fakeSupa._calls.find((c) => c.op === 'invoke' && c.name === 'admin-reactivate-user');
+  assert.ok(invokeCall, 'reativarUsuario não invocou admin-reactivate-user');
+  assert.equal(invokeCall.body.user_id, 'u-3');
+});
+
+// -----------------------------------------------------------------------------
 // Não-regressão
 // -----------------------------------------------------------------------------
 

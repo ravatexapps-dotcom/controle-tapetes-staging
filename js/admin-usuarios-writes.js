@@ -117,6 +117,12 @@
     return window.supa.functions.invoke('admin-reset-user-password', { body: { user_id } });
   }
 
+  // A5.3-A5.4 — reativação administrativa. Contraparte simétrica de
+  // disableUsuario: reverte ativo/ban no Auth via Edge Function própria.
+  async function reativarUsuario(user_id) {
+    return window.supa.functions.invoke('admin-reactivate-user', { body: { user_id } });
+  }
+
   // -------------------------------------------------------------------
   // Normalização de erro de Edge Function — extrai {code, message} do
   // corpo estruturado da resposta, com fallback seguro. Mesma lógica
@@ -218,6 +224,34 @@
     }
   }
 
+  // Mapeia códigos de erro da Edge Function `admin-reactivate-user`
+  // para mensagens amigáveis em PT-BR. Mesmo padrão de
+  // friendlyDisableMessage/friendlyDeleteMessage/friendlyResetMessage.
+  function friendlyReactivateMessage(code, fallback) {
+    switch (code) {
+      case 'FORBIDDEN':
+        return 'Usuário atual não tem permissão para reativar usuários.';
+      case 'SELF_REACTIVATE_FORBIDDEN':
+        return 'Você não pode reativar seu próprio usuário.';
+      case 'NOT_FOUND':
+        return 'Usuário não encontrado.';
+      case 'REACTIVATE_NOT_INACTIVE':
+        return 'Usuário já está ativo.';
+      case 'AUTH_UNBAN_FAILED':
+        return 'Falha operacional ao remover o bloqueio no Auth. O perfil foi revertido.';
+      case 'COMPENSATION_FAILED':
+        return 'Falha operacional grave. A reversão do perfil também falhou — reporte ao suporte.';
+      case 'PROFILE_UPDATE_FAILED':
+        return 'Falha ao reativar o perfil. Tente novamente.';
+      case 'VALIDATION_ERROR':
+        return 'Dados inválidos para reativação.';
+      case 'UNAUTHORIZED':
+        return 'Sessão expirada. Faça login novamente.';
+      default:
+        return fallback || 'Erro ao reativar usuário';
+    }
+  }
+
   // -------------------------------------------------------------------
   // Namespace
   // -------------------------------------------------------------------
@@ -232,8 +266,10 @@
   window.RAVATEX_ADMIN_USUARIOS_WRITES.disableUsuario = disableUsuario;
   window.RAVATEX_ADMIN_USUARIOS_WRITES.deleteUsuario = deleteUsuario;
   window.RAVATEX_ADMIN_USUARIOS_WRITES.resetarSenha = resetarSenha;
+  window.RAVATEX_ADMIN_USUARIOS_WRITES.reativarUsuario = reativarUsuario;
   window.RAVATEX_ADMIN_USUARIOS_WRITES.parseEdgeFunctionError = parseEdgeFunctionError;
   window.RAVATEX_ADMIN_USUARIOS_WRITES.friendlyDisableMessage = friendlyDisableMessage;
   window.RAVATEX_ADMIN_USUARIOS_WRITES.friendlyDeleteMessage = friendlyDeleteMessage;
   window.RAVATEX_ADMIN_USUARIOS_WRITES.friendlyResetMessage = friendlyResetMessage;
+  window.RAVATEX_ADMIN_USUARIOS_WRITES.friendlyReactivateMessage = friendlyReactivateMessage;
 })(window);
