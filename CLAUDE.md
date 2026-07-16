@@ -1,29 +1,43 @@
 # Controle de Tapetes — Ravatex
 
-## Leitura obrigatória ANTES de qualquer implementação
+## Mandatory reading BEFORE any implementation
 
-- `PROJECT_STATE.md` — estado vigente; único dono do estado operacional atual.
-- `AGENT_HANDOFF.md` — continuidade da próxima sessão.
-- `docs/architecture/CODE_HEALTH_RULES.md` — 18 regras vinculantes de saúde
-  arquitetural (modularização); nenhum código novo pode violá-las.
-- `docs/governance/DOCUMENTATION_MODEL.md` e `docs/DOCUMENTATION_INDEX.md` —
-  modelo de governança documental e árbitro de autoridade/classificação.
+- `PROJECT_STATE.md` — current state; sole owner of the present operational state.
+- `AGENT_HANDOFF.md` — continuity for the next session.
+- `docs/architecture/CODE_HEALTH_RULES.md` — 18 binding architectural health
+  rules (modularization); no new code may violate them.
+- `docs/governance/DOCUMENTATION_MODEL.md` and `docs/DOCUMENTATION_INDEX.md` —
+  documental governance model and arbiter of authority/classification.
 
-## Regras operacionais (resumo-ponteiro; detalhe nos canônicos)
+## Operational rules (pointer summary; detail in the canonical docs)
 
-- Toda fase exige autorização explícita do arquiteto; fases não se encadeiam
-  automaticamente.
-- Ambiente staging-only: Supabase `ucrjtfswnfdlxwtmxnoo`; produção **PROIBIDA**
-  sem autorização explícita separada.
-- Git: staging seletivo por caminho literal; sem push sem autorização
-  explícita; proibidos sem autorização: `add -A`/`add .`, `reset`, `rebase`,
+- Every phase requires explicit authorization from the architect; phases do not
+  chain automatically.
+- Staging-only environment: Supabase `ucrjtfswnfdlxwtmxnoo`; production **FORBIDDEN**
+  without separate explicit authorization.
+- Git: selective staging by literal path; no push without explicit
+  authorization; forbidden without authorization: `add -A`/`add .`, `reset`, `rebase`,
   force push, `merge`, `tag`, `amend`.
-- Toda fase fecha com closeout documental (`PROJECT_STATE.md`,
-  `AGENT_HANDOFF.md`, ledger da frente).
-- Tarefa sem documentação atualizada é tarefa não concluída.
+- Every phase closes with a documental closeout (`PROJECT_STATE.md`,
+  `AGENT_HANDOFF.md`, front ledger).
+- A task without updated documentation is a task not completed.
 
-## Em caso de conflito
+## Language policy
 
-Este arquivo **não é autoridade** — é um ponteiro. Em divergência entre este
-resumo e os documentos canônicos, os canônicos prevalecem: interromper e
-reportar, não seguir este resumo.
+- New code, comments, and commit messages: English
+- Canonical state documents and reports: English
+- Ledger entries: language of original entry, immutable
+- Architect orders and recorded decisions: Portuguese
+- User-facing UI text: Portuguese (pt-BR)
+- No retroactive translation outside the DOC-LANGUAGE-MIGRATION track
+
+Canonical homes for this policy: `docs/governance/DOCUMENTATION_MODEL.md` (§18,
+Language policy), `docs/architecture/CODE_HEALTH_RULES.md` (§19),
+`docs/governance/SUPERVISION_PROTOCOL.md` (§3, order format). This section is a
+pointer summary; in divergence, those canonical homes prevail.
+
+## In case of conflict
+
+This file **is not authority** — it is a pointer. In divergence between this
+summary and the canonical documents, the canonical ones prevail: stop and
+report, do not follow this summary.

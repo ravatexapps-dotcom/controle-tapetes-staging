@@ -1,123 +1,124 @@
-# Protocolo de Supervisão — Ravatex Controle de Tapetes
+# Supervision Protocol — Ravatex Controle de Tapetes
 
-> Registrado em 2026-07-15 (fase `CAMADA2-USUARIOS-A3-2-CLOSEOUT`), a
-> partir da reconciliação de governança de `G28-RECONCILIATION-DECISIONS-A`
-> (ver `PROJECT_STATE.md`), que já havia transferido o acompanhamento de
-> progresso para Claude (chat) + Claude Code (residente) e reduzido o
-> ChatGPT a consultor sem custódia de estado.
-> Este documento formaliza os papéis e o formato de ordem para qualquer
-> parecerista (humano ou IA) que participe da supervisão do projeto.
-> **Não é fonte de estado.** Estado operacional vive em `PROJECT_STATE.md`;
-> continuidade em `AGENT_HANDOFF.md`; histórico em ledgers por frente.
+> Recorded on 2026-07-15 (phase `CAMADA2-USUARIOS-A3-2-CLOSEOUT`), from
+> the governance reconciliation of `G28-RECONCILIATION-DECISIONS-A`
+> (see `PROJECT_STATE.md`), which had already transferred progress
+> tracking to Claude (chat) + Claude Code (resident) and reduced
+> ChatGPT to a consultant without state custody.
+> This document formalizes the roles and the order format for any
+> reviewer (human or AI) that participates in the supervision of the project.
+> **It is not a source of state.** Operational state lives in `PROJECT_STATE.md`;
+> continuity in `AGENT_HANDOFF.md`; history in per-front ledgers.
 
 ---
 
-## 1. Papéis
+## 1. Roles
 
-### ARQUITETO
+### ARCHITECT
 
-- Único que **decide, autoriza, valida e aceita**.
-- Emite ordens com autorização explícita por subfase.
-- Executa validação visual manual quando UI nova está envolvida.
-- Decide micro-decisões bloqueadas por HARD STOP (ex.: necessidade de
+- The only one who **decides, authorizes, validates and accepts**.
+- Issues orders with explicit authorization per subphase.
+- Executes manual visual validation when new UI is involved.
+- Decides micro-decisions blocked by HARD STOP (e.g.: need for a
   migration).
 
-### PARECERISTA
+### REVIEWER
 
-- Revisa relatórios, redige ordens, ajuda a formular decisões.
-- **Substituível** — qualquer parecerista (ChatGPT, outro chat, outro
-  modelo) pode ocupar esse papel.
-- **Nunca custodia estado.** Uma afirmação do parecerista sobre o
-  projeto não vira fato até ser verificada e registrada pelo executor
-  residente nos arquivos canônicos.
-- Em caso de dúvida sobre o estado real, deve pedir verificação no
-  código/repositório ao executor residente — nunca inferir de memória
-  de conversa ou de documentação não confirmada.
+- Reviews reports, drafts orders, helps formulate decisions.
+- **Replaceable** — any reviewer (ChatGPT, another chat, another
+  model) can occupy this role.
+- **Never holds state custody.** A statement by the reviewer about the
+  project does not become fact until it is verified and recorded by the resident
+  executor in the canonical files.
+- In case of doubt about the real state, must request verification in the
+  code/repository from the resident executor — never infer from conversation
+  memory or from unconfirmed documentation.
 
-### EXECUTOR RESIDENTE
+### RESIDENT EXECUTOR
 
-- (Claude Code, Codex ou equivalente com acesso direto ao repositório.)
-- Executa o que foi autorizado, dentro do escopo exato da ordem.
-- Roda testes, valida sintaxe, confirma manifesto de arquivos antes de
-  commitar.
-- Atualiza os documentos canônicos (`PROJECT_STATE.md`,
-  `AGENT_HANDOFF.md`, ledgers) no closeout de cada fase.
-- Reporta qualidade técnica, inspeção de repositório e resultado de
-  testes — o parecerista não assume essas informações sem essa
-  verificação.
+- (Claude Code, Codex or equivalent with direct access to the repository.)
+- Executes what was authorized, within the exact scope of the order.
+- Runs tests, validates syntax, confirms the file manifest before
+  committing.
+- Updates the canonical documents (`PROJECT_STATE.md`,
+  `AGENT_HANDOFF.md`, ledgers) at the closeout of each phase.
+- Reports technical quality, repository inspection and test result — the reviewer
+  does not assume this information without such
+  verification.
 
-## 2. Onboarding de um parecerista novo
+## 2. Onboarding of a new reviewer
 
-Antes de opinar sobre estado, backlog ou próxima ação, um parecerista
-novo (ou uma sessão nova de um parecerista existente) deve ler, nesta
-ordem:
+Before opining on state, backlog or next action, a new reviewer
+(or a new session of an existing reviewer) must read, in this
+order:
 
-1. `AGENT_HANDOFF.md` — continuidade e caminhos obrigatórios.
-2. `PROJECT_STATE.md` — estado operacional atual por frente.
-3. O plano/spec da frente ativa (ex.: `docs/architecture/CAMADA2_USUARIOS_SPEC_PROPOSED.md`
-   para `G28-CAMADA-2`).
-4. O ledger da frente (ex.: `docs/ledgers/G28_LEDGER.md`).
+1. `AGENT_HANDOFF.md` — continuity and mandatory paths.
+2. `PROJECT_STATE.md` — current operational state per front.
+3. The plan/spec of the active front (e.g.: `docs/architecture/CAMADA2_USUARIOS_SPEC_PROPOSED.md`
+   for `G28-CAMADA-2`).
+4. The front ledger (e.g.: `docs/ledgers/G28_LEDGER.md`).
 
-Nada que um parecerista disser sobre o estado do projeto vira estado
-até passar pelos documentos canônicos, atualizados pelo executor
-residente após verificação real.
+Nothing a reviewer says about the state of the project becomes state
+until it passes through the canonical documents, updated by the resident
+executor after real verification.
 
-## 3. Formato de ordem
+## 3. Order format
 
-Toda ordem emitida ao executor residente deve conter:
+Every order issued to the resident executor must contain:
 
-- **Bloco de configuração:** modelo, esforço, motivo da escolha (e
-  critério de quando escalar esforço/modelo).
-- **Fase:** identificador da subfase, tipo (refactor puro / feature
-  aditiva / docs-only / diagnóstico read-only).
-- **Escopo:** o que fazer, item por item.
-- **Arquivos permitidos:** lista explícita — nada fora dela sem parar
-  e reportar.
-- **Proibições:** o que não fazer (ex.: sem write novo, sem Auth, sem
+- **Configuration block:** model, effort, reason for the choice (and
+  criterion for when to escalate effort/model).
+- **Phase:** identifier of the subphase, type (pure refactor / additive
+  feature / docs-only / read-only diagnostic).
+- **Scope:** what to do, item by item.
+- **Allowed files:** explicit list — nothing outside it without stopping
+  and reporting.
+- **Prohibitions:** what not to do (e.g.: no new write, no Auth, no
   push).
-- **Testes:** gate mínimo exigido antes do relatório.
-- **Hard stops:** condições que exigem parar e reportar em vez de
-  decidir sozinho (ex.: necessidade de migration, acoplamento que
-  exija tocar arquivo fora do manifesto, ambiguidade entre spec e
-  código real).
-- **Relatório obrigatório:** formato esperado da resposta. Toda fase de
-  implementação (não docs-only) inclui seção própria `STRUCTURAL POLICY
-  COMPLIANCE`: regras aplicáveis de `docs/architecture/CODE_HEALTH_RULES.md`
-  citadas por número, evidência de conformidade item a item e tamanho em
-  linhas de cada arquivo tocado (novo ou modificado).
+- **Tests:** minimum gate required before the report.
+- **Hard stops:** conditions that require stopping and reporting instead of
+  deciding alone (e.g.: need for a migration, coupling that
+  requires touching a file outside the manifest, ambiguity between spec and
+  real code).
+- **Mandatory report:** expected format of the response. Every
+  implementation phase (not docs-only) includes its own section `STRUCTURAL POLICY
+  COMPLIANCE`: applicable rules of `docs/architecture/CODE_HEALTH_RULES.md`
+  cited by number, evidence of conformance item by item and size in
+  lines of each touched file (new or modified).
+- **Language:** architect orders and decisions are written in Portuguese.
 
-**Autorização é explícita por subfase — fases não se encadeiam
-automaticamente.** Uma ordem cobre exclusivamente o que autoriza.
+**Authorization is explicit per subphase — phases do not chain
+automatically.** An order covers exclusively what it authorizes.
 
 ## 4. Gates
 
-- **Validação visual do arquiteto** é obrigatória para qualquer UI
-  nova ou alterada — o relatório do executor para em
+- **Architect visual validation** is mandatory for any new or altered
+  UI — the executor's report stops at
   `IMPLEMENTAÇÃO VALIDADA / AGUARDANDO VALIDAÇÃO VISUAL DO ARQUITETO`
-  e só fecha após o OK explícito.
-- **Mockup aprovado** é pré-requisito antes de implementar elemento
-  visual novo (não apenas ajuste de dado sobre elemento já existente).
-- **Migration é gate próprio.** Necessidade de schema novo interrompe
-  a subfase corrente; a migration em si exige autorização separada,
-  mesmo que a subfase que a revelou já esteja autorizada.
-- **Auth é risco à parte.** Qualquer mudança que toque
-  `auth.admin.*` novo ou configuração de Auth do projeto Supabase é
-  classificada e reportada separadamente de schema/RPC/Edge comuns
-  (ver `docs/architecture/CAMADA2_USUARIOS_SPEC_PROPOSED.md`, tabela
-  de risco Auth).
+  and only closes after the explicit OK.
+- **Approved mockup** is a prerequisite before implementing a new visual
+  element (not merely a data adjustment over an already existing element).
+- **Migration is its own gate.** The need for new schema interrupts
+  the current subphase; the migration itself requires separate authorization,
+  even if the subphase that revealed it is already authorized.
+- **Auth is a separate risk.** Any change that touches
+  new `auth.admin.*` or Auth configuration of the Supabase project is
+  classified and reported separately from ordinary schema/RPC/Edge
+  (see `docs/architecture/CAMADA2_USUARIOS_SPEC_PROPOSED.md`, Auth risk
+  table).
 
 ---
 
-> Em conflito com qualquer documento canônico listado em
-> `docs/DOCUMENTATION_INDEX.md` §1, o canônico prevalece — este
-> protocolo rege o processo de supervisão, não o estado do projeto.
+> In conflict with any canonical document listed in
+> `docs/DOCUMENTATION_INDEX.md` §1, the canonical prevails — this
+> protocol governs the supervision process, not the state of the project.
 
 ---
 
-## Apêndice — Handoff de supervisão — bloco padrão
+## Appendix — Supervision handoff — standard block
 
-Bloco genérico, sem contexto imediato, para abrir qualquer sessão nova de
-parecerista/supervisor (humano ou IA). Registrado verbatim pelo arquiteto em
+Generic block, without immediate context, to open any new session of
+reviewer/supervisor (human or AI). Recorded verbatim by the architect on
 2026-07-15.
 
 ```text

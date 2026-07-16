@@ -1,129 +1,129 @@
-# Ravatex Controle de Tapetes — Regras de Saúde Arquitetural
+# Ravatex Controle de Tapetes — Architectural Health Rules
 
-## 1. Princípio central
+## 1. Central principle
 
-O app deve continuar simples, estático e modular.
+The app must remain simple, static and modular.
 
-A arquitetura atual aceita:
+The current architecture accepts:
 
-* `index.html` declarativo;
-* scripts clássicos com `window.*`;
-* módulos por tela ou domínio;
-* smoke tests em Node;
-* Supabase acessado pelo cliente quando apropriado;
-* push de desenvolvimento apenas para `staging`.
+* declarative `index.html`;
+* classic scripts with `window.*`;
+* modules per screen or domain;
+* smoke tests in Node;
+* Supabase accessed by the client when appropriate;
+* development push only to `staging`.
 
-A arquitetura não aceita:
+The architecture does not accept:
 
-* retorno de lógica pesada para `index.html`;
-* criação de telas gigantes sem costura;
-* writes Supabase espalhados em funções de render;
-* refactor amplo misturado com feature;
-* alteração de produção sem autorização explícita;
-* remoção de cache-busting dos assets locais.
+* moving heavy logic back into `index.html`;
+* creation of giant screens without seams;
+* Supabase writes scattered across render functions;
+* broad refactor mixed with feature;
+* production change without explicit authorization;
+* removal of cache-busting from local assets.
 
-## 2. Regra para `index.html`
+## 2. Rule for `index.html`
 
-`index.html` deve permanecer declarativo.
+`index.html` must remain declarative.
 
-Permitido:
+Allowed:
 
-* estrutura HTML base;
-* carregamento de CSS/CDNs;
-* carregamento ordenado dos scripts;
-* container raiz do app;
-* query string de cache-busting nos assets locais.
+* base HTML structure;
+* CSS/CDN loading;
+* ordered loading of scripts;
+* app root container;
+* cache-busting query string on local assets.
 
-Proibido:
+Forbidden:
 
-* lógica de negócio;
-* funções de tela;
-* funções de persistência;
-* handlers complexos;
+* business logic;
+* screen functions;
+* persistence functions;
+* complex handlers;
 * Supabase reads/writes;
-* scripts inline novos, salvo emergência justificada.
+* new inline scripts, except for justified emergency.
 
-Qualquer novo script local em `index.html` deve usar o cache-busting vigente:
+Any new local script in `index.html` must use the current cache-busting:
 
 ```html
 <script src="js/algum-arquivo.js?v=20260623-asset1"></script>
 ```
 
-CDNs externos não devem receber `?v=`.
+External CDNs must not receive `?v=`.
 
-## 3. Regra para `js/boot.js`
+## 3. Rule for `js/boot.js`
 
-`js/boot.js` é o entrypoint do app.
+`js/boot.js` is the app entrypoint.
 
-Ele pode conter:
+It may contain:
 
-* definição das rotas;
-* bootstrap inicial;
-* chamada de `loadCurrentUser`;
-* decisão de navegar para login ou rota atual;
-* listener de `hashchange`;
-* proteção de `DOMContentLoaded`.
+* route definition;
+* initial bootstrap;
+* call to `loadCurrentUser`;
+* decision to navigate to login or current route;
+* `hashchange` listener;
+* `DOMContentLoaded` protection.
 
-Ele não deve conter:
+It must not contain:
 
-* renderização de tela;
-* lógica de OP;
-* lógica de entrega;
+* screen rendering;
+* OP logic;
+* delivery logic;
 * Supabase write;
-* funções de cadastro;
-* helpers de domínio.
+* registration functions;
+* domain helpers.
 
-`main()` não deve ser chamado diretamente antes do DOM estar pronto.
+`main()` must not be called directly before the DOM is ready.
 
-## 4. Regra para `js/router.js`
+## 4. Rule for `js/router.js`
 
-`js/router.js` é engine genérica de roteamento.
+`js/router.js` is a generic routing engine.
 
-Ele pode conter:
+It may contain:
 
-* registro de rotas;
-* matching de hash;
-* navegação;
-* fallback de rota;
-* chamada de handlers.
+* route registration;
+* hash matching;
+* navigation;
+* route fallback;
+* handler calls.
 
-Ele não deve conter:
+It must not contain:
 
-* lista específica de telas do app;
-* lógica de autenticação;
-* lógica de OP;
+* specific list of app screens;
+* authentication logic;
+* OP logic;
 * Supabase;
-* HTML de tela.
+* screen HTML.
 
-## 5. Regra para `js/ui.js`
+## 5. Rule for `js/ui.js`
 
-`js/ui.js` contém primitives de UI genéricas.
+`js/ui.js` contains generic UI primitives.
 
-Ele pode conter:
+It may contain:
 
 * `setApp`;
-* helpers de elemento;
+* element helpers;
 * modal;
 * toast;
 * shell layout;
-* tabela genérica;
-* inputs genéricos.
+* generic table;
+* generic inputs.
 
-Ele não deve conter:
+It must not contain:
 
-* regra de negócio;
-* chamada Supabase;
-* lógica específica de OP;
-* lógica específica de fornecedor;
-* lógica específica de entrega.
+* business rule;
+* Supabase call;
+* OP-specific logic;
+* supplier-specific logic;
+* delivery-specific logic.
 
-O root `#app` deve ser buscado em tempo de uso, não capturado cedo demais antes do DOM existir.
+The `#app` root must be fetched at time of use, not captured too early before the DOM exists.
 
-## 6. Regra para screens
+## 6. Rule for screens
 
-Arquivos em `js/screens/` devem representar telas, blocos de tela ou domínios coesos.
+Files in `js/screens/` must represent screens, screen blocks or cohesive domains.
 
-Exemplos aceitos:
+Accepted examples:
 
 * `op-nova.js`;
 * `op-pdf.js`;
@@ -134,92 +134,92 @@ Exemplos aceitos:
 * `painel.js`;
 * `fornecedor.js`.
 
-Uma screen pode orquestrar estado local e renderização.
+A screen may orchestrate local state and rendering.
 
-Uma screen não deve virar depósito indiscriminado de:
+A screen must not become an indiscriminate dump of:
 
 * writes;
-* helpers puros;
+* pure helpers;
 * PDF;
-* regras de cálculo;
-* formatação genérica;
-* funções de outras telas.
+* calculation rules;
+* generic formatting;
+* functions from other screens.
 
-## 7. Regra de tamanho
+## 7. Size rule
 
-Limites de referência:
+Reference limits:
 
-* arquivo ideal: até 250 linhas;
-* arquivo aceitável: até 500 linhas;
-* arquivo excepcional: até 900 linhas, somente se for uma tela coesa com closure local;
-* função ideal: até 80 linhas;
-* função aceitável: até 150 linhas;
-* função excepcional: acima de 150 linhas somente com justificativa.
+* ideal file: up to 250 lines;
+* acceptable file: up to 500 lines;
+* exceptional file: up to 900 lines, only if it is a cohesive screen with local closure;
+* ideal function: up to 80 lines;
+* acceptable function: up to 150 lines;
+* exceptional function: above 150 lines only with justification.
 
-`op-nova.js` é exceção aceita e congelada. Não usar `op-nova.js` como precedente para criar novas telas grandes.
+`op-nova.js` is an accepted and frozen exception. Do not use `op-nova.js` as precedent to create new large screens.
 
-Se um novo arquivo passar de 500 linhas, o IAexec deve justificar por que não foi dividido.
+If a new file exceeds 500 lines, IAexec must justify why it was not split.
 
-Se uma nova função passar de 150 linhas, o IAexec deve justificar por que não foi dividida.
+If a new function exceeds 150 lines, IAexec must justify why it was not split.
 
-## 8. Regra para helpers puros
+## 8. Rule for pure helpers
 
-Helpers puros devem ser extraídos quando:
+Pure helpers must be extracted when:
 
-* não dependem de DOM;
-* não dependem de Supabase;
-* não dependem de estado de closure;
-* recebem dados por argumento;
-* retornam valor previsível;
-* são testáveis isoladamente.
+* they do not depend on DOM;
+* they do not depend on Supabase;
+* they do not depend on closure state;
+* they receive data by argument;
+* they return a predictable value;
+* they are testable in isolation.
 
-Helpers puros não devem acessar `window.supa`.
+Pure helpers must not access `window.supa`.
 
-## 9. Regra para writes Supabase
+## 9. Rule for Supabase writes
 
-Writes Supabase devem ficar em módulos explícitos de escrita, como:
+Supabase writes must stay in explicit write modules, such as:
 
 * `op-writes.js`;
 * `op-persistir.js`;
 * `op-recalculo.js`;
 * `entrega-writes.js`.
 
-Funções de render não devem fazer `insert`, `update`, `delete` ou `upsert`.
+Render functions must not do `insert`, `update`, `delete` or `upsert`.
 
-Qualquer novo write deve declarar:
+Any new write must declare:
 
-* tabela afetada;
-* tipo de operação;
+* affected table;
+* operation type;
 * payload;
-* comportamento de erro;
-* se há risco de estado parcial;
-* teste smoke correspondente.
+* error behavior;
+* whether there is risk of partial state;
+* corresponding smoke test.
 
-Se um fluxo escrever em múltiplas tabelas, deve haver nota explícita sobre atomicidade ou risco de operação parcial.
+If a flow writes to multiple tables, there must be an explicit note about atomicity or risk of partial operation.
 
-## 10. Regra para reads Supabase
+## 10. Rule for Supabase reads
 
-Reads podem permanecer em screens quando forem simples e ligados à montagem da tela.
+Reads may remain in screens when they are simple and tied to screen mounting.
 
-Reads devem ser extraídos quando:
+Reads must be extracted when:
 
-* forem reutilizados por mais de uma tela;
-* tiverem joins complexos;
-* tiverem filtros de permissão;
-* virarem fonte de bugs recorrentes;
-* excederem a responsabilidade da tela.
+* they are reused by more than one screen;
+* they have complex joins;
+* they have permission filters;
+* they become a source of recurring bugs;
+* they exceed the screen's responsibility.
 
-## 11. Regra para autenticação e perfil
+## 11. Rule for authentication and profile
 
-O app depende de:
+The app depends on:
 
 ```text
 auth.users.id = public.usuarios.id
 ```
 
-Nenhum patch deve alterar essa regra sem decisão explícita.
+No patch must alter this rule without explicit decision.
 
-Se login Auth funcionar, mas o app voltar para login, verificar primeiro:
+If Auth login works, but the app returns to login, check first:
 
 ```sql
 select id, email, nome, tipo, fornecedor_id
@@ -227,57 +227,57 @@ from public.usuarios
 where id = '<auth-user-id>';
 ```
 
-Não alterar `auth.js` para mascarar ausência de perfil.
+Do not alter `auth.js` to mask the absence of a profile.
 
-## 12. Regra para cache-busting
+## 12. Rule for cache-busting
 
-Todos os assets locais carregados por `index.html` devem manter query string de versão.
+All local assets loaded by `index.html` must keep a version query string.
 
-Exemplo:
+Example:
 
 ```html
 <script src="js/screens/op-pdf.js?v=20260623-asset1"></script>
 ```
 
-Ao adicionar novo JS local:
+When adding new local JS:
 
-* inserir na ordem correta;
-* aplicar a versão vigente;
-* atualizar smoke tests para aceitar `?v=`;
-* não aplicar `?v=` em CDNs externos.
+* insert in the correct order;
+* apply the current version;
+* update smoke tests to accept `?v=`;
+* do not apply `?v=` to external CDNs.
 
-## 13. Regra para testes
+## 13. Rule for tests
 
-Todo patch deve ter teste proporcional ao risco.
+Every patch must have a test proportional to the risk.
 
-Padrão mínimo:
+Minimum standard:
 
-* `node --check` nos arquivos JS alterados;
-* smoke test do módulo alterado;
-* smoke test da rota/boot se alterar `index.html`, `boot.js` ou ordem de scripts;
-* smoke test de writes se alterar persistência;
-* teste local manual quando alterar boot, UI, auth ou tela crítica.
+* `node --check` on the changed JS files;
+* smoke test of the changed module;
+* smoke test of the route/boot if `index.html`, `boot.js` or script order is changed;
+* smoke test of writes if persistence is changed;
+* manual local test when changing boot, UI, auth or a critical screen.
 
-Não rodar suíte completa por padrão se a fase não exigir.
+Do not run the full suite by default if the phase does not require it.
 
-## 14. Regra para fases
+## 14. Rule for phases
 
-Cada fase deve ter escopo único.
+Each phase must have a single scope.
 
-Não misturar:
+Do not mix:
 
-* diagnóstico com patch;
-* refactor com feature;
-* docs com código;
-* Supabase com frontend;
-* produção com staging;
-* correção de teste com mudança funcional ampla.
+* diagnosis with patch;
+* refactor with feature;
+* docs with code;
+* Supabase with frontend;
+* production with staging;
+* test fix with broad functional change.
 
-Se a fase tocar mais de 3 domínios, deve ser quebrada.
+If the phase touches more than 3 domains, it must be broken up.
 
-## 15. Regra para Git
+## 15. Rule for Git
 
-Antes de qualquer patch:
+Before any patch:
 
 ```powershell
 git status --short
@@ -287,69 +287,76 @@ git ls-remote --heads staging main
 git ls-remote --heads origin main
 ```
 
-Proibido:
+Forbidden:
 
 * `git add .`;
 * `git reset --hard`;
 * `git rebase`;
 * `git push --force`;
-* push para `origin` sem autorização explícita.
+* push to `origin` without explicit authorization.
 
-Permitido:
+Allowed:
 
-* staging seletivo;
-* commit pequeno;
-* push para `staging work/app-next:main` quando autorizado.
+* selective staging;
+* small commit;
+* push to `staging work/app-next:main` when authorized.
 
-## 16. Regra para documentação
+## 16. Rule for documentation
 
-Atualizar docs quando houver:
+Update docs when there is:
 
-* novo módulo estrutural;
-* mudança de entrypoint;
-* mudança de rota;
-* mudança de write helper;
-* mudança de contrato Supabase;
-* congelamento ou descongelamento de refactor;
-* decisão arquitetural relevante.
+* new structural module;
+* entrypoint change;
+* route change;
+* write helper change;
+* Supabase contract change;
+* freezing or unfreezing of refactor;
+* relevant architectural decision.
 
-Docs principais:
+Main docs:
 
 * `PROJECT_STATE.md`;
 * `AGENT_HANDOFF.md`;
 * `docs/refactor/ARCHITECTURE_REFACTOR_LEDGER.md`;
 * `docs/architecture/CODE_HEALTH_RULES.md`.
 
-## 17. Critérios de bloqueio arquitetural
+## 17. Architectural blocking criteria
 
-Um patch deve ser bloqueado se:
+A patch must be blocked if it:
 
-* recolocar lógica pesada em `index.html`;
-* adicionar write Supabase dentro de render;
-* remover cache-busting sem substituto;
-* alterar `auth.js` para esconder ausência de perfil;
-* tocar `origin/main` sem autorização;
-* misturar refactor amplo com feature;
-* criar tela grande sem justificativa;
-* alterar ordem de scripts sem teste;
-* quebrar smoke tests e tratar como irrelevante sem prova.
+* puts heavy logic back into `index.html`;
+* adds a Supabase write inside render;
+* removes cache-busting without a substitute;
+* alters `auth.js` to hide the absence of a profile;
+* touches `origin/main` without authorization;
+* mixes broad refactor with feature;
+* creates a large screen without justification;
+* changes script order without a test;
+* breaks smoke tests and treats it as irrelevant without proof.
 
-## 18. Auditoria periódica
+## 18. Periodic audit
 
-A cada conjunto relevante de features, rodar uma auditoria read-only:
+At each relevant set of features, run a read-only audit:
 
-* maiores arquivos;
-* maiores funções;
-* novos writes Supabase;
-* scripts em `index.html`;
-* rotas novas;
-* testes existentes;
-* riscos de atomicidade;
-* pendências de documentação.
+* largest files;
+* largest functions;
+* new Supabase writes;
+* scripts in `index.html`;
+* new routes;
+* existing tests;
+* atomicity risks;
+* documentation pending items.
 
-A auditoria deve concluir com:
+The audit must conclude with:
 
-* continuar;
-* fazer micro-refactor;
-* congelar;
-* ou abrir fase específica de correção.
+* continue;
+* do a micro-refactor;
+* freeze;
+* or open a specific correction phase.
+
+## 19. Rule for language
+
+- New code, comments, and commit messages: English.
+- User-facing UI strings: Portuguese (pt-BR).
+- Existing comments are not translated retroactively; convergence to English
+  happens only when a file is touched for another reason.

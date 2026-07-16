@@ -56,8 +56,8 @@ apontar para esta seção, não repetir a lista.
 | Documento | Papel |
 |---|---|
 | `docs/DOCUMENTATION_INDEX.md` (este arquivo) | Classifica os documentos e define seus papéis. |
-| `docs/governance/DOCUMENTATION_MODEL.md` | Define o modelo de governança e as regras de atualização documental por fase. |
-| `docs/governance/SUPERVISION_PROTOCOL.md` | Define papéis do processo de supervisão (Arquiteto/Parecerista/Executor Residente), onboarding de parecerista novo, formato de ordem e gates (validação visual, mockup aprovado, migration como gate próprio, risco Auth separado). Não define estado nem regras de organização documental — isso é `DOCUMENTATION_MODEL.md`. |
+| `docs/governance/DOCUMENTATION_MODEL.md` | Define o modelo de governança e as regras de atualização documental por fase. Conteúdo em inglês desde `DOC-LANGUAGE-MIGRATION-L1`; original pt-BR arquivado em `docs/archive/pt-BR/` (ver §7). |
+| `docs/governance/SUPERVISION_PROTOCOL.md` | Define papéis do processo de supervisão (Arquiteto/Parecerista/Executor Residente), onboarding de parecerista novo, formato de ordem e gates (validação visual, mockup aprovado, migration como gate próprio, risco Auth separado). Não define estado nem regras de organização documental — isso é `DOCUMENTATION_MODEL.md`. Conteúdo em inglês desde `DOC-LANGUAGE-MIGRATION-L1`; original pt-BR arquivado em `docs/archive/pt-BR/` (ver §7). |
 | `PROJECT_STATE.md` (raiz) | Único proprietário do estado operacional atual por frente. |
 | `AGENT_HANDOFF.md` (raiz) | Único handoff operacional ativo. |
 | `docs/ledgers/G28_LEDGER.md` | Histórico estruturado append-only da frente G28. |
@@ -81,7 +81,7 @@ divergência com a §1, resolve-se pelo papel de cada um.
 
 | Documento | Categoria | Propósito |
 |---|---|---|
-| `docs/architecture/CODE_HEALTH_RULES.md` | Contrato arquitetural | 18 regras vinculantes de saúde arquitetural. Toda nova fase deve respeitar. |
+| `docs/architecture/CODE_HEALTH_RULES.md` | Contrato arquitetural | 18 regras vinculantes de saúde arquitetural (modularização). Toda nova fase deve respeitar. Conteúdo em inglês desde `DOC-LANGUAGE-MIGRATION-L1`, que também acrescentou a regra 19 (idioma); original pt-BR arquivado em `docs/archive/pt-BR/` (ver §7). |
 | `docs/architecture/PORTAL_B2B_ARCHITECTURE_RULES.md` | Contrato arquitetural | Regras da frente Portal B2B/Pedidos: separa cliente/admin/fornecedor, status operacional vs. visual, componentes comuns, decomposição de fases. |
 | `docs/architecture/PEDIDO_OP_MOVIMENTACAO_DOCUMENTOS_PLANO.md` | Plano persistente | Plano da frente Pedido ↔ OP ↔ Movimentação ↔ Documentos: estado de entrada, decisões, modelo alvo, papéis das telas, fases futuras (B a J), template de evidência. |
 | `docs/architecture/PEDIDO_OP_SCHEMA_CONTRACT.md` | Contrato técnico | Contrato de schema para Pedido ↔ OP ↔ Movimentação ↔ Documentos: valida tabelas, FKs, RPCs, triggers, RLS; estabelece vínculo Pedido→OP, movimentação canônica, stepper, saldo por etapa. |
@@ -142,7 +142,7 @@ decisões do arquiteto derivadas destes documentos são registradas em
 |---|---|---|
 | `docs/reports/BACKLOG_RECONCILIATION_R1_2026-07-15.md` | Diagnóstico read-only do backlog geral: inventário no código real da Camada 2 (administração de usuários) e Camada 3 (backup), auditoria dos worktrees, evidência factual de validação da seção de Documentos (sem classificar aceite), tabela única de backlog remanescente e divergências entre canônicos/código/closeout do ChatGPT. Não altera estado; decisões derivadas registradas em `PROJECT_STATE.md` (`G28-RECONCILIATION-DECISIONS-A`). | `BACKLOG-RECONCILIATION-READONLY-R1` |
 | `docs/handoffs/CHATGPT_CLOSEOUT_2026-07-15.md` | Registro de encerramento da supervisão do ChatGPT: estado segundo seu próprio registro, ordens emitidas não fechadas, decisões discutidas fora dos arquivos canônicos e pendências aguardando decisão do arquiteto. Artefato externo, não canônico; seu relatório `PROJECT-CONTROL-BASELINE-R1` foi avaliado e rejeitado (`REJECTED / NOT RATIFIED`) em `PROJECT_STATE.md` (`G28-RECONCILIATION-DECISIONS-A`). | Handoff externo (ChatGPT), não numerado como fase do projeto |
-| `CLAUDE.md` (raiz) | Ponteiro de harness carregado automaticamente por agentes Claude Code. **Autoridade: NENHUMA** — não é fonte de estado, regra ou classificação; aponta para `PROJECT_STATE.md`, `AGENT_HANDOFF.md`, `docs/architecture/CODE_HEALTH_RULES.md`, `docs/governance/DOCUMENTATION_MODEL.md` e este índice. Em conflito com qualquer canônico, o canônico prevalece. | `Add CLAUDE.md agent entrypoint` |
+| `CLAUDE.md` (raiz) | Ponteiro de harness carregado automaticamente por agentes Claude Code. **Autoridade: NENHUMA** — não é fonte de estado, regra ou classificação; aponta para `PROJECT_STATE.md`, `AGENT_HANDOFF.md`, `docs/architecture/CODE_HEALTH_RULES.md`, `docs/governance/DOCUMENTATION_MODEL.md` e este índice. Em conflito com qualquer canônico, o canônico prevalece. Conteúdo em inglês desde `DOC-LANGUAGE-MIGRATION-L1` (inclui resumo-ponteiro da política de idioma, apontando às casas canônicas); original pt-BR arquivado em `docs/archive/pt-BR/CLAUDE.md` (ver §7). | `Add CLAUDE.md agent entrypoint` |
 | `.claude/launch.json` | Config de harness para subir o servidor estático local (`python -m http.server 8765`) usada nos gates de validação visual do arquiteto (A3.1 e subfases futuras de Camada 2 que tocam UI: A3.2, A4.2, A6.3). **Autoridade: NENHUMA** — não é fonte de estado, regra ou classificação; não contém credencial, URL ou segredo (inspecionado antes do commit). Mesmo tratamento do `CLAUDE.md`: ponteiro de tooling, não canônico. | `Add local preview launch config` |
 
 ## 2. Regra de prevalência
@@ -481,3 +481,37 @@ A regra vigente está em `AGENT_HANDOFF.md` (regras 1, 2, 3, 15) e em
   e em `Guide-and-governance-rules.stxt` foram reconciliadas em
   `G28-DOCS-B3-E1`: passaram a apontar para a §1. O histórico
   dessa reconciliação está no `docs/ledgers/G28_LEDGER.md`.
+
+## 7. Migração de idioma da documentação (DOC-LANGUAGE-MIGRATION) e arquivo pt-BR
+
+A frente `DOC-LANGUAGE-MIGRATION` traduz progressivamente a
+documentação canônica para inglês, em lotes autorizados por ordem
+própria. Cada arquivo traduzido tem seu original pt-BR **movido**, no
+mesmo commit, para `docs/archive/pt-BR/<caminho-original>`
+(preservação byte a byte; não operacional, apenas referência
+histórica). Nomes de arquivos, âncoras, caminhos e referências
+cruzadas permanecem **inalterados** — só o conteúdo é traduzido. O
+vocabulário canônico de status (`CLOSED`, `ACCEPTED`,
+`NOT AUTHORIZED`, `DEFERRED`, `PROPOSED`, `HARD STOP`, `READ-ONLY`
+etc.) e os blocos verbatim do arquiteto permanecem em português
+quando assim registrados. Ledgers e `docs/handoffs/` **não** são
+traduzidos.
+
+A política de idioma vigente está registrada nas casas canônicas:
+`docs/governance/DOCUMENTATION_MODEL.md` (§18, "Language policy"),
+`docs/architecture/CODE_HEALTH_RULES.md` (§19, "Rule for language") e
+`docs/governance/SUPERVISION_PROTOCOL.md` (§3, linha de idioma no
+formato de ordem). `CLAUDE.md` mantém um resumo-ponteiro apontando a
+essas casas.
+
+### Lote `DOC-LANGUAGE-MIGRATION-L1`
+
+| Caminho canônico (agora em inglês) | Original pt-BR arquivado |
+|---|---|
+| `docs/architecture/CODE_HEALTH_RULES.md` | `docs/archive/pt-BR/docs/architecture/CODE_HEALTH_RULES.md` |
+| `docs/governance/SUPERVISION_PROTOCOL.md` | `docs/archive/pt-BR/docs/governance/SUPERVISION_PROTOCOL.md` |
+| `docs/governance/DOCUMENTATION_MODEL.md` | `docs/archive/pt-BR/docs/governance/DOCUMENTATION_MODEL.md` |
+| `CLAUDE.md` | `docs/archive/pt-BR/CLAUDE.md` |
+
+Os arquivos sob `docs/archive/pt-BR/` são preservação imutável (não
+operacional); em divergência, o arquivo canônico em inglês prevalece.
