@@ -219,3 +219,54 @@ test("index.ts: mensagem de erro de tipo menciona 'cliente'", () => {
   assert.ok(tipoErrPattern, "mensagem de erro de tipo não encontrada");
   assert.match(tipoErrPattern[0], /cliente/);
 });
+
+// ---------------------------------------------------------------------
+// A4.1 — CAMADA2-USUARIOS-SPEC-PROPOSED — política de senha 8+dígito
+// e marcação de senha_temporaria/senha_gerada_em
+// ---------------------------------------------------------------------
+
+test("index.ts: PASSWORD_MIN_LENGTH é 8", () => {
+  const m = indexSrc.match(/PASSWORD_MIN_LENGTH\s*=\s*(\d+)/);
+  assert.ok(m, "PASSWORD_MIN_LENGTH não encontrado");
+  assert.strictEqual(Number(m[1]), 8);
+});
+
+test("index.ts: exige ao menos 1 dígito via PASSWORD_DIGIT_RE", () => {
+  assert.match(indexSrc, /PASSWORD_DIGIT_RE\s*=\s*\/\[0-9\]\//);
+  assert.match(indexSrc, /PASSWORD_DIGIT_RE\.test\(password\)/);
+  assert.match(indexSrc, /deve conter ao menos 1 dígito/i);
+});
+
+test("política de senha: payloads inválidos (7 chars, 8 sem dígito) e válido (8+ com dígito)", () => {
+  // Extrai PASSWORD_MIN_LENGTH e PASSWORD_DIGIT_RE reais do source e
+  // aplica a mesma lógica de validação (comprimento então dígito) do
+  // index.ts, sem executar o runtime Deno.
+  const minLenMatch = indexSrc.match(/PASSWORD_MIN_LENGTH\s*=\s*(\d+)/);
+  const digitReMatch = indexSrc.match(/PASSWORD_DIGIT_RE\s*=\s*(\/\[0-9\]\/)/);
+  assert.ok(minLenMatch && digitReMatch, "constantes de política de senha não encontradas");
+
+  const minLength = Number(minLenMatch[1]);
+  const digitRe = new Function(`return ${digitReMatch[1]};`)();
+
+  function validate(password) {
+    if (!password || password.length < minLength) {
+      return "VALIDATION_ERROR:min_length";
+    }
+    if (!digitRe.test(password)) {
+      return "VALIDATION_ERROR:digit";
+    }
+    return "OK";
+  }
+
+  assert.strictEqual(validate("abcdefg"), "VALIDATION_ERROR:min_length", "7 chars deve falhar por comprimento");
+  assert.strictEqual(validate("abcdefgh"), "VALIDATION_ERROR:digit", "8 chars sem dígito deve falhar por dígito");
+  assert.strictEqual(validate("abcdefg1"), "OK", "8 chars com 1 dígito deve passar");
+});
+
+test("index.ts: insert em usuarios marca senha_temporaria=true e senha_gerada_em", () => {
+  const idx = indexSrc.indexOf('.from("usuarios").insert');
+  assert.ok(idx > 0, "insert em usuarios não encontrado");
+  const bloco = indexSrc.slice(idx, idx + 400);
+  assert.match(bloco, /senha_temporaria:\s*true/);
+  assert.match(bloco, /senha_gerada_em:\s*new Date\(\)\.toISOString\(\)/);
+});

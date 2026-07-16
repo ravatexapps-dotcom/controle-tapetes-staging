@@ -47,6 +47,13 @@ Contrato completo: `docs/architecture/AUTH_PROVISIONING_EDGE_DESIGN.md`.
   }
   ```
 
+* **Política de senha:** mínimo 8 caracteres + ao menos 1 dígito
+  (`db/58_admin_usuarios_senha_temporaria.sql`, fase `A4.1`). Todo
+  usuário criado por esta função recebe `senha_temporaria=true` e
+  `senha_gerada_em=now()` em `public.usuarios` — a troca forçada no
+  primeiro login é implementada em fase futura (`A4.2`, não incluída
+  aqui).
+
 ## Variáveis de ambiente esperadas
 
 Configuradas via `supabase secrets` (nunca versionadas):

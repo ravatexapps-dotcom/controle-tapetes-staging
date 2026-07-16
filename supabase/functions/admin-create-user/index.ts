@@ -33,7 +33,8 @@ if (!SUPABASE_URL || !SUPABASE_ANON_KEY || !SUPABASE_SERVICE_ROLE_KEY) {
 
 const ALLOWED_TIPOS = new Set(["admin", "fornecedor", "cliente"]);
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const PASSWORD_MIN_LENGTH = 6;
+const PASSWORD_MIN_LENGTH = 8;
+const PASSWORD_DIGIT_RE = /[0-9]/;
 
 serve(async (req: Request) => {
   // CORS preflight
@@ -128,6 +129,13 @@ serve(async (req: Request) => {
     return errorResponse(
       "VALIDATION_ERROR",
       `Senha temporária obrigatória (mínimo ${PASSWORD_MIN_LENGTH} caracteres).`,
+      400,
+    );
+  }
+  if (!PASSWORD_DIGIT_RE.test(password)) {
+    return errorResponse(
+      "VALIDATION_ERROR",
+      "Senha temporária deve conter ao menos 1 dígito.",
       400,
     );
   }
@@ -290,6 +298,8 @@ serve(async (req: Request) => {
     tipo,
     fornecedor_id: fornecedorId,
     cliente_id: clienteId,
+    senha_temporaria: true,
+    senha_gerada_em: new Date().toISOString(),
   });
 
   if (insertErr) {
