@@ -310,10 +310,12 @@ isso é registrado explicitamente no header do arquivo e em
 > Produção `bhgifjrfagkzubpyqpew` não acessada; sem push.
 >
 > **Atualização (`2026-07-16`, superada acima):** o consumo da coluna
-> "Último acesso" foi implementado (technical commit `0aff22f` — `Add
-> last sign-in column to user admin`), ainda sem registro documental
-> formal de closeout (`CAMADA2-LAST-ACCESS-UI` — pendente de
-> confirmação/ordem própria do arquiteto). **`A4.2` (guarda de troca de
+> "Último acesso" foi implementado e fechado (`CAMADA2-LAST-ACCESS-UI`
+> — `CLOSED / ACCEPTED`, technical commit `0aff22f` — `Add last
+> sign-in column to user admin`; validação visual do arquiteto
+> confirmada em preview: coluna populada com dados reais, formato
+> correto, `"—"` nos nunca-logados, ordenação com nulos por último).
+> **`A4.2` (guarda de troca de
 > senha obrigatória) — `CLOSED / ACCEPTED` (2026-07-16).** `js/auth.js`
 > ganhou `senha_temporaria`/`senha_gerada_em` no `select` de
 > `loadCurrentUser()` (única mudança, decisão explícita do arquiteto —

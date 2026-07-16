@@ -4,6 +4,56 @@ Este bloco é a única fonte de estado operacional atual por frente.
 HEAD, working tree, staging e divergência devem ser consultados diretamente no Git.
 O conteúdo histórico abaixo não determina o estado atual.
 
+## Camada 2 — Consumo da RPC de Último Acesso na UI — CAMADA2-LAST-ACCESS-UI
+
+- **Frente:** `G28-CAMADA-2`, micro-fase de consumo da RPC `db/59`
+  (`admin_usuarios_last_sign_in`) na tela de usuários, autorizada após
+  `A4.1` + `CAMADA2-LAST-ACCESS-RPC`.
+- **Classificação: `CLOSED / ACCEPTED`** (validação visual do
+  arquiteto confirmada em preview local em 2026-07-16: coluna populada
+  com dados reais, formato correto, `"—"` nos nunca-logados, ordenação
+  com nulos por último).
+- **Technical HEAD:** `0aff22f` — `Add last sign-in column to user
+  admin`. **Commit documental:** este closeout (`Close last sign-in
+  column phase`). O HEAD atual deve ser consultado com `git rev-parse
+  HEAD`.
+- **Escopo implementado:** `js/admin-usuarios-writes.js` ganhou
+  `fetchLastSignIn()` (chama `supa.rpc('admin_usuarios_last_sign_in')`,
+  uma chamada por `reload()`, merge client-side por `id`);
+  `js/screens/admin-usuarios.js` ganhou a coluna "ULTIMO ACESSO" no
+  grid (`dd/mm/aaaa hh:mm`; `"—"` para nulo/ausente/inválido), ativou a
+  ordenação "Último acesso" (mais recente primeiro, nulos sempre por
+  último) e trata falha da RPC sem derrubar a tela (coluna inteira em
+  `"—"` + `console.warn`, lista de usuários continua visível).
+- **Não tocado:** nenhum write novo, nenhuma migration, `index.html`
+  intocado, nenhum modal, `js/boot.js` intocado — confirmado por `git
+  status` na fase.
+- **Testes locais:** `node --check` PASS; `tests/admin-usuarios.smoke.js`
+  estendido **23/23** (4 testes novos: coluna/formato/fallback de nulo/
+  ordenação com nulos por último/chamada única da RPC); regressão
+  `tests/boot.smoke.js` + `tests/cadastros-screens.smoke.js` +
+  `tests/admin-*.smoke.js` **298/298**, sem regressão. `git diff
+  --check` limpo.
+- **Verificação em preview local (staging real, sessão já
+  autenticada):** coluna populada com dados reais de staging
+  (`ucrjtfswnfdlxwtmxnoo`) — timestamps formatados corretamente,
+  `"—"` para usuários nunca logados; ordenação "Último acesso" aplicada
+  ao vivo confirmou ordem decrescente correta com todos os `"—"`
+  agrupados por último. Console sem erros/warnings.
+- **Débito de continuidade documental fechado por este registro:** o
+  relatório de implementação desta micro-fase ficou em `AGUARDANDO
+  VALIDAÇÃO VISUAL DO ARQUITETO` enquanto a sessão prosseguiu para a
+  autorização de `A4.2`; a validação visual e a autorização de closeout
+  foram confirmadas explicitamente pelo arquiteto em 2026-07-16, junto
+  com a autorização da frente seguinte (`A5.1-A5.2`).
+- **Produção:** `bhgifjrfagkzubpyqpew` não acessada. **Push:** não
+  executado.
+- **Próxima ação autorizável:** já superada — `A5.1-A5.2` (reset de
+  senha administrativo) autorizada e em andamento; ver seção própria
+  para o estado corrente de "próxima ação".
+- **Ledger:** `docs/ledgers/G28_LEDGER.md` (entrada append-only desta
+  fase).
+
 ## Camada 2 — Guarda de Troca de Senha Obrigatória — A4.2
 
 - **Frente:** `G28-CAMADA-2`, subfase `A4.2` de
