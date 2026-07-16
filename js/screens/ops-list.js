@@ -28,10 +28,12 @@
   var ICON_SEARCH = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#9aa2af" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>';
   var ICON_CHEVRON = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#9aa2af" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>';
   var ICON_X = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>';
-  var ICON_EYE = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"></path><circle cx="12" cy="12" r="3"></circle></svg>';
-  var ICON_EDIT = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>';
+  // UI-ACTION-BUTTON-MIGRATION-2: 14px per UI_VISUAL_CONTRACT.md §8.1
+  // (was 15px before conformance).
+  var ICON_EYE = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"></path><circle cx="12" cy="12" r="3"></circle></svg>';
+  var ICON_EDIT = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>';
   var ICON_MORE = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="5" r="1.2"></circle><circle cx="12" cy="12" r="1.2"></circle><circle cx="12" cy="19" r="1.2"></circle></svg>';
-  var ICON_TRASH = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path><path d="M10 11v6M14 11v6"></path><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"></path></svg>';
+  var ICON_TRASH = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path><path d="M10 11v6M14 11v6"></path><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"></path></svg>';
   var ICON_LEFT = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>';
   var ICON_RIGHT = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>';
   var ICON_TOTAL = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"></path><rect x="9" y="3" width="6" height="4" rx="1"></rect><line x1="9" y1="12" x2="15" y2="12"></line><line x1="9" y1="16" x2="13" y2="16"></line></svg>';
@@ -92,28 +94,35 @@
     svgEl(ICON_CHEVRON));
   }
 
-  function navBtn(svgMarkup, disabled, onclick) {
-    var attrs = {
-      type: 'button',
-      style: 'width:30px;height:30px;display:flex;align-items:center;justify-content:center;border:1px solid #d8dce2;border-radius:4px;background:#fff;color:' + (disabled ? '#d8dce2' : '#9aa2af') + ';cursor:' + (disabled ? 'default' : 'pointer') + ';font-family:inherit;'
-    };
-    if (disabled) attrs.disabled = 'disabled';
-    else attrs.onclick = onclick;
-    return window.el('button', attrs, svgEl(svgMarkup));
+  // UI-ACTION-BUTTON-MIGRATION-2: pagination nav button, now built via
+  // the shared actionButton() primitive (UI_VISUAL_CONTRACT.md §8.1).
+  // `title` is new — the previous inline button had no accessible name
+  // at all; this is a conformance gain (sr-only label), not a feature.
+  function navBtn(svgMarkup, disabled, onclick, title) {
+    return window.actionButton({
+      title: title,
+      icon: svgEl(svgMarkup),
+      disabled: disabled,
+      onclick: onclick
+    });
   }
 
-  function actionIconButton(label, title, iconMarkup, disabled, onclick) {
-    var attrs = {
-      type: 'button',
+  // UI-ACTION-BUTTON-MIGRATION-2: row action button, now built via the
+  // shared actionButton() primitive. Fixes the a11y divergence recorded
+  // during the conformance diagnosis — the sr-only label previously used
+  // display:none (hides it from assistive tech too, defeating the
+  // purpose); actionButton() provides the correct clip-rect pattern
+  // natively. `label`/`title` can still diverge (e.g. label "Ver" vs.
+  // tooltip "Visualizar") via the explicit srLabel param.
+  function actionIconButton(label, title, iconMarkup, disabled, onclick, danger) {
+    return window.actionButton({
       title: title,
-      style: 'width:28px;height:28px;display:inline-flex;align-items:center;justify-content:center;border:1px solid #e2e8f0;border-radius:4px;background:#fff;color:' + (disabled ? '#c4cad4' : '#5b6472') + ';cursor:' + (disabled ? 'default' : 'pointer') + ';font-family:inherit;'
-    };
-    if (disabled) attrs.disabled = 'disabled';
-    else attrs.onclick = onclick;
-    return window.el('button', attrs,
-      svgEl(iconMarkup),
-      window.el('span', { style: 'display:none;' }, label)
-    );
+      srLabel: label,
+      icon: svgEl(iconMarkup),
+      disabled: disabled,
+      danger: !!danger,
+      onclick: onclick
+    });
   }
 
   async function screenListaOPs() {
@@ -450,7 +459,10 @@
         false,
         function () { window.navigate('#/ops/' + row.id); }
       ),
-      actionIconButton('Excluir OP', 'Excluir OP', ICON_TRASH, false, excluirOP));
+      // UI-ACTION-BUTTON-MIGRATION-2: danger=true — matches the §8.1
+      // treatment already applied to every other Excluir action
+      // (previously neutral gray, same as Editar/Ver).
+      actionIconButton('Excluir OP', 'Excluir OP', ICON_TRASH, false, excluirOP, true));
     }
 
     function buildTableHead() {
@@ -533,7 +545,7 @@
         navBtn(ICON_LEFT, ui.pagina <= 1, function () {
           ui.pagina -= 1;
           render();
-        }),
+        }, 'Página anterior'),
         window.el('button', {
           type: 'button',
           style: 'width:30px;height:30px;display:flex;align-items:center;justify-content:center;border:none;border-radius:4px;background:#2563eb;color:#fff;font-size:13px;font-weight:700;cursor:default;font-family:inherit;'
@@ -541,7 +553,7 @@
         navBtn(ICON_RIGHT, ui.pagina >= totalPaginas, function () {
           ui.pagina += 1;
           render();
-        })));
+        }, 'Próxima página')));
     }
 
     function render() {

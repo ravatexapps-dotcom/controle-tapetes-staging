@@ -264,7 +264,11 @@
 
       const tableWrap = window.el('div', { style: 'display:flex; flex-direction:column;' });
       const card = window.el('div', { style: 'background:#fff; border:1px solid #eceef1; border-radius:6px 6px 0 0; overflow:hidden;' });
-      const gridTemplate = '1.3fr 1fr 110px 1fr 1fr 90px 130px 102px';
+      // UI-ACTION-BUTTON-MIGRATION-2: ACOES holds 4 actionButton()s
+      // (30px) + 3 gaps (6px) = 138px. The previous 102px undersized the
+      // column (architect-reported); widened to the exact math, one
+      // grid-template value, no other layout change.
+      const gridTemplate = '1.3fr 1fr 110px 1fr 1fr 90px 130px 138px';
       const headRow = window.el('div', { style: `display:grid; grid-template-columns:${gridTemplate}; align-items:center; gap:16px; padding:10px 18px; background:#f8f9fb; border-bottom:1px solid #eceef1;` });
       ['E-MAIL', 'NOME', 'TIPO', 'FORNECEDOR', 'CLIENTE', 'STATUS', 'ULTIMO ACESSO'].forEach((label) => {
         headRow.appendChild(window.el('div', { style: 'font-size:11px; font-weight:700; color:#8a93a3; letter-spacing:.04em; white-space:nowrap;' }, label));
@@ -286,35 +290,42 @@
           }, inativo ? 'Inativo' : 'Ativo')
         ));
         line.appendChild(window.el('div', { style: 'font-size:13.5px; color:#8a93a3;' }, formatLastSignIn(lastSignInById[user.id])));
+        // UI-ACTION-BUTTON-MIGRATION-2: all 4 row actions now built via
+        // the shared actionButton() primitive (UI_VISUAL_CONTRACT.md
+        // §8.1) — same handlers, same confirmDialog/modal gating, same
+        // disabled conditions and icon-swap logic; only the button
+        // rendering changes.
         const actions = window.el('div', { style: 'display:flex; align-items:center; justify-content:center; gap:6px;' });
-        actions.appendChild(window.el('button', { type: 'button', onclick: () => M.openUsuarioModal(user, allForns, allClients, columnSupport, { onSaved: reload }), title: 'Editar usuario', 'aria-label': 'Editar usuario', style: 'width:30px; height:30px; display:inline-flex; align-items:center; justify-content:center; border:1px solid #eceef1; border-radius:4px; background:#fff; color:#8a93a3; cursor:pointer;' }, svgIcon(ICON_SQUARE_PEN)));
-        // A5.1-A5.2 — reset de senha. `disabled` só entra no objeto
-        // quando true: window.el() faz setAttribute(k, v) sem checagem
-        // de falsy, e setAttribute('disabled', false) marca o atributo
-        // presente (disabled=true) em qualquer navegador real — mesma
-        // causa raiz do residuo estatico corrigido em expedicao-admin.js.
+        actions.appendChild(window.actionButton({
+          title: 'Editar usuario',
+          icon: svgIcon(ICON_SQUARE_PEN),
+          onclick: () => M.openUsuarioModal(user, allForns, allClients, columnSupport, { onSaved: reload }),
+        }));
+        // A5.1-A5.2 — reset de senha.
         const resetSelf = !!(meId && user.id === meId);
-        const resetAttrs = {
-          type: 'button',
-          onclick: resetSelf ? undefined : () => M.openResetarSenhaModal(user, { onDone: reload }),
+        actions.appendChild(window.actionButton({
           title: resetSelf ? 'Nao pode resetar a propria senha' : 'Resetar senha',
-          'aria-label': resetSelf ? 'Nao pode resetar a propria senha' : 'Resetar senha',
-          style: `width:30px; height:30px; display:inline-flex; align-items:center; justify-content:center; border:1px solid #eceef1; border-radius:4px; background:#fff; color:#8a93a3; cursor:${resetSelf ? 'default' : 'pointer'}; opacity:${resetSelf ? '0.45' : '1'};`,
-        };
-        if (resetSelf) resetAttrs.disabled = 'disabled';
-        actions.appendChild(window.el('button', resetAttrs, svgIcon(ICON_KEY)));
+          icon: svgIcon(ICON_KEY),
+          disabled: resetSelf,
+          onclick: resetSelf ? undefined : () => M.openResetarSenhaModal(user, { onDone: reload }),
+        }));
         // A5.3-A5.4 — linhas inativas trocam a ação "Desativar" (ícone
         // ban) por "Reativar" (ícone refresh) na mesma posição; ambas
-        // sempre acionáveis (sem `disabled`) nesta coluna.
-        const statusButtonAttrs = {
-          type: 'button',
-          onclick: inativo ? () => handleReativarClick(user) : () => handleDesativarClick(user, meId),
+        // sempre acionáveis (sem `disabled`) nesta coluna. Neutral color
+        // (not danger) — matches the pre-migration behavior verbatim.
+        actions.appendChild(window.actionButton({
           title: inativo ? 'Reativar usuario' : 'Desativar usuario',
-          'aria-label': inativo ? 'Reativar usuario' : 'Desativar usuario',
-          style: 'width:30px; height:30px; display:inline-flex; align-items:center; justify-content:center; border:1px solid #eceef1; border-radius:4px; background:#fff; color:#8a93a3; cursor:pointer; opacity:1;',
-        };
-        actions.appendChild(window.el('button', statusButtonAttrs, svgIcon(inativo ? ICON_REFRESH : ICON_BAN)));
-        actions.appendChild(window.el('button', { type: 'button', onclick: meId && user.id === meId ? undefined : () => handleExcluirClick(user, meId), disabled: !!(meId && user.id === meId), title: meId && user.id === meId ? 'Nao pode excluir o proprio usuario' : 'Excluir usuario', 'aria-label': meId && user.id === meId ? 'Nao pode excluir o proprio usuario' : 'Excluir usuario', style: `width:30px; height:30px; display:inline-flex; align-items:center; justify-content:center; border:1px solid #eceef1; border-radius:4px; background:#fff; color:#d6403a; cursor:${meId && user.id === meId ? 'default' : 'pointer'}; opacity:${meId && user.id === meId ? '0.45' : '1'};` }, svgIcon(ICON_TRASH)));
+          icon: svgIcon(inativo ? ICON_REFRESH : ICON_BAN),
+          onclick: inativo ? () => handleReativarClick(user) : () => handleDesativarClick(user, meId),
+        }));
+        const excluirSelf = !!(meId && user.id === meId);
+        actions.appendChild(window.actionButton({
+          title: excluirSelf ? 'Nao pode excluir o proprio usuario' : 'Excluir usuario',
+          icon: svgIcon(ICON_TRASH),
+          danger: true,
+          disabled: excluirSelf,
+          onclick: excluirSelf ? undefined : () => handleExcluirClick(user, meId),
+        }));
         line.appendChild(actions);
         card.appendChild(line);
       });

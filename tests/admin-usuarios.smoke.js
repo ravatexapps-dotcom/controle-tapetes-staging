@@ -948,6 +948,55 @@ test('41. botão "Excluir usuario": carrega o atributo disabled apenas na própr
 });
 
 // -----------------------------------------------------------------------------
+// Runtime — UI-ACTION-BUTTON-MIGRATION-2: all 4 row actions now built via
+// window.actionButton() (UI_VISUAL_CONTRACT.md §8.1). Dimensions/hover/
+// safe-disabled are unit-proven in tests/ui-action-button.smoke.js; these
+// tests verify the sr-only label is actually present per row button (the
+// concrete proof the migration happened, since window.el() alone never
+// produced one) and the ACOES column was widened to fit 4 buttons.
+// -----------------------------------------------------------------------------
+
+test('42. todos os 4 botões de ação da linha (Editar/Resetar/Desativar/Excluir) têm rótulo sr-only via padrão clip-rect', async () => {
+  const { sandbox } = makeAdminUsuariosSandbox({ tableData: USERS_FIXTURE });
+  const node = await vm.runInContext('window.screenAdminUsuarios()', sandbox);
+  const flex = node.children.find((c) => c.tagName === 'DIV');
+  const main = flex.children.find((c) => c.tagName === 'MAIN');
+  const biaRow = findRowByText(main, 'b@b.c');
+  const rowButtons = findAll(biaRow, (n) => n.tagName === 'BUTTON');
+  assert.equal(rowButtons.length, 4, 'linha da Bia deveria ter exatamente 4 botões de ação');
+  for (const btn of rowButtons) {
+    const srSpan = btn.children[btn.children.length - 1];
+    assert.ok(srSpan && srSpan.tagName === 'SPAN', `botão "${btn._attrs.title}" deveria ter um SPAN sr-only como último filho`);
+    assert.match(srSpan._attrs.style || '', /clip:rect\(0,0,0,0\)/, `sr-only do botão "${btn._attrs.title}" deveria usar o padrão clip-rect`);
+  }
+});
+
+test('43. botão Excluir usuario usa danger (cor #d6403a); botão Desativar/Reativar permanece neutro (#8a93a3, sem mudança de comportamento)', async () => {
+  const { sandbox } = makeAdminUsuariosSandbox({ tableData: USERS_FIXTURE });
+  const node = await vm.runInContext('window.screenAdminUsuarios()', sandbox);
+  const flex = node.children.find((c) => c.tagName === 'DIV');
+  const main = flex.children.find((c) => c.tagName === 'MAIN');
+  const biaRow = findRowByText(main, 'b@b.c');
+  const excluirBtn = findAll(biaRow, (n) => n.tagName === 'BUTTON' && n._attrs.title === 'Excluir usuario')[0];
+  const desativarBtn = findAll(biaRow, (n) => n.tagName === 'BUTTON' && n._attrs.title === 'Desativar usuario')[0];
+  assert.match(excluirBtn._attrs.style, /color:#d6403a/, 'Excluir deveria manter a cor danger');
+  assert.match(desativarBtn._attrs.style, /color:#8a93a3/, 'Desativar deveria permanecer neutro (mesmo comportamento pré-migração)');
+});
+
+test('44. coluna ACOES: grid-template widened to 138px (4 buttons × 30px + 3 gaps × 6px)', async () => {
+  const { sandbox } = makeAdminUsuariosSandbox({ tableData: USERS_FIXTURE });
+  const node = await vm.runInContext('window.screenAdminUsuarios()', sandbox);
+  const flex = node.children.find((c) => c.tagName === 'DIV');
+  const main = flex.children.find((c) => c.tagName === 'MAIN');
+  const gridUsers = findAll(main, (n) => n._attrs && n._attrs.style && /grid-template-columns:1\.3fr/.test(n._attrs.style));
+  assert.ok(gridUsers.length > 0, 'nenhum elemento com grid-template-columns encontrado');
+  for (const el of gridUsers) {
+    assert.match(el._attrs.style, /138px/, 'grid-template-columns deveria terminar em 138px (coluna ACOES)');
+    assert.doesNotMatch(el._attrs.style, /102px/, 'a largura antiga (102px, insuficiente para 4 botões) não deveria mais aparecer');
+  }
+});
+
+// -----------------------------------------------------------------------------
 // Não-regressão
 // -----------------------------------------------------------------------------
 

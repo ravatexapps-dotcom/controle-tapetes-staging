@@ -134,6 +134,13 @@ class FakeNode {
   }
   appendChild(n) { this.children.push(n); return n; }
   setAttribute(k, v) { this['_attr_' + k] = v; }
+  // js/ui.js's el() calls this for a falsy boolean attr (UI-EL-BOOLEAN-ATTR-FIX)
+  // — defense-in-depth, matching the fix applied to the other FakeNode
+  // mocks; the current actionButton() call sites in ops-list.js never
+  // pass disabled:true→false across a re-render of the same node, so
+  // this path isn't exercised today, but keeps the double accurate.
+  removeAttribute(k) { delete this['_attr_' + k]; }
+  hasAttribute(k) { return Object.prototype.hasOwnProperty.call(this, '_attr_' + k); }
   addEventListener(type, fn) { this._listeners[type] = fn; }
   removeEventListener(type) { delete this._listeners[type]; }
   replaceChildren(...ns) {
@@ -818,4 +825,72 @@ test('30. screenCadastrosCores (cadastros) ainda renderiza (regressão cadastros
   assert.ok(node && node.tagName === 'DIV', 'screenCadastrosCores não devolveu <div>');
   const header = node.children.find((c) => c.tagName === 'HEADER');
   assert.ok(header, 'header ausente em screenCadastrosCores');
+});
+
+// -----------------------------------------------------------------------------
+// UI-ACTION-BUTTON-MIGRATION-2: row actions now built via window.actionButton()
+// (UI_VISUAL_CONTRACT.md §8.1). Dimensions/hover/safe-disabled are unit-proven
+// in tests/ui-action-button.smoke.js; these tests verify the a11y fix (sr-only
+// label present via the clip-rect pattern, never display:none — the recorded
+// defect) and the danger styling on Excluir OP.
+// -----------------------------------------------------------------------------
+
+test('31. botões de ação da linha (Editar/Ver + Excluir OP) têm rótulo sr-only via padrão clip-rect, nunca display:none', async () => {
+  const { sandbox } = makeOpsSandbox({
+    tableData: {
+      ops: [
+        { id: 42, numero: 7, ano: 2026, status: 'simulada', tipo: 'tecelagem', criado_em: '2026-06-01T00:00:00Z',
+          lote: null, op_itens: [] },
+      ],
+      entrega_itens: [],
+    },
+  });
+  const node = await vm.runInContext('window.screenListaOPs()', sandbox);
+  const main = node.children.find((c) => c.tagName === 'DIV')
+    .children.find((c) => c.tagName === 'MAIN');
+  const rowButtons = findAll(main, (n) => n.tagName === 'BUTTON' && (n._attr_title === 'Editar' || n._attr_title === 'Excluir OP'));
+  assert.equal(rowButtons.length, 2, 'deveria haver 2 botões de ação na linha (Editar + Excluir OP)');
+  for (const btn of rowButtons) {
+    const srSpan = btn.children[btn.children.length - 1];
+    assert.ok(srSpan && srSpan.tagName === 'SPAN', `botão "${btn._attr_title}" deveria ter um SPAN sr-only como último filho`);
+    assert.match(srSpan._attr_style || '', /clip:rect\(0,0,0,0\)/, `sr-only do botão "${btn._attr_title}" deveria usar o padrão clip-rect`);
+    assert.doesNotMatch(srSpan._attr_style || '', /display:\s*none/, `sr-only do botão "${btn._attr_title}" NÃO deveria usar display:none (defeito corrigido nesta fase)`);
+  }
+});
+
+test('32. botão "Excluir OP" usa danger (cor vermelha); botão "Editar" permanece neutro', async () => {
+  const { sandbox } = makeOpsSandbox({
+    tableData: {
+      ops: [
+        { id: 42, numero: 7, ano: 2026, status: 'simulada', tipo: 'tecelagem', criado_em: '2026-06-01T00:00:00Z',
+          lote: null, op_itens: [] },
+      ],
+      entrega_itens: [],
+    },
+  });
+  const node = await vm.runInContext('window.screenListaOPs()', sandbox);
+  const main = node.children.find((c) => c.tagName === 'DIV')
+    .children.find((c) => c.tagName === 'MAIN');
+  const excluirBtn = findAll(main, (n) => n.tagName === 'BUTTON' && n._attr_title === 'Excluir OP')[0];
+  const editBtn = findAll(main, (n) => n.tagName === 'BUTTON' && n._attr_title === 'Editar')[0];
+  assert.ok(excluirBtn, 'botão Excluir OP não encontrado');
+  assert.ok(editBtn, 'botão Editar não encontrado');
+  assert.match(excluirBtn._attr_style, /color:#d6403a/, 'Excluir OP deveria usar a cor danger (era neutro antes desta fase)');
+  assert.match(editBtn._attr_style, /color:#8a93a3/, 'Editar deveria permanecer neutro');
+});
+
+test('33. botão "Excluir OP" ainda chama excluirOPComFluxo (mesma gating de confirmação, sem confirmDialog redundante)', () => {
+  assert.match(opsSrc, /window\.RAVATEX_DELETE\.excluirOPComFluxo\(\s*row\.id/);
+  assert.doesNotMatch(opsSrc, /window\.confirm\s*\(/);
+});
+
+test('34. pagination navBtn: título acessível adicionado (ganho de conformidade, não recurso novo)', () => {
+  assert.match(opsSrc, /navBtn\(ICON_LEFT,\s*ui\.pagina\s*<=\s*1,[\s\S]{0,120}'Página anterior'\)/);
+  assert.match(opsSrc, /navBtn\(ICON_RIGHT,\s*ui\.pagina\s*>=\s*totalPaginas,[\s\S]{0,120}'Próxima página'\)/);
+});
+
+test('ICON_EYE / ICON_EDIT / ICON_TRASH são 14px (§8.1 icon size)', () => {
+  assert.match(opsSrc, /var ICON_EYE = '<svg width="14" height="14"/);
+  assert.match(opsSrc, /var ICON_EDIT = '<svg width="14" height="14"/);
+  assert.match(opsSrc, /var ICON_TRASH = '<svg width="14" height="14"/);
 });
