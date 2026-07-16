@@ -1,6 +1,6 @@
 # Documentation Model — Ravatex Controle de Tapetes
 
-> **Phase:** `G28-DOCS-B1` — permanent documentary governance contract
+> **Phase:** `G28-DOCS-B1` — permanent documentation governance contract
 > (additive; no migration, no compaction, no file movement).
 > **Status:** `AUTHORIZED` for reference; concrete migration of
 > states/handoffs/ledgers in later slices.
@@ -25,7 +25,7 @@ revised in an authorized phase and recorded in `docs/DOCUMENTATION_INDEX.md`.
 
 ## 1. Central principle
 
-**Each fact has exactly one documentary owner. The remaining
+**Each fact has exactly one documentation owner. The remaining
 files reference the owner; they do not copy the fact.**
 
 Direct consequences:
@@ -49,7 +49,7 @@ Direct consequences:
 
 | Role | File | Fact it owns |
 |---|---|---|
-| **Documentary arbiter** | `docs/DOCUMENTATION_INDEX.md` | Order of authority, document classification, canonical paths, legacy mapping, responsibility by category. |
+| **Documentation arbiter** | `docs/DOCUMENTATION_INDEX.md` | Order of authority, document classification, canonical paths, legacy mapping, responsibility by category. |
 | **Permanent state per front** | `PROJECT_STATE.md` (root) and `services/*/PROJECT_STATE.md` (when applicable) | Current operational state of each front (phase, next action, blocker, context links). |
 | **Active operational handoff** | `AGENT_HANDOFF.md` (root) | Continuity of the next session: immediate objective, mandatory files, constraints, links. |
 | **Historical ledger (append-only)** | `docs/refactor/ARCHITECTURE_REFACTOR_LEDGER.md` (refactor) and front-specific ledgers (to be created) | Auditable history of closed phases, accepted commits, tests, residual risk and next phase. |
@@ -58,7 +58,7 @@ Direct consequences:
 | **Visual contract** | `docs/architecture/UI_VISUAL_CONTRACT.md` | Versioned visual rules. |
 | **Architectural health / modularization contract** | `docs/architecture/CODE_HEALTH_RULES.md` | 19 binding rules covering modularization, file structure, responsibility limits per module/screen, what `index.html` can and cannot contain, and language (§19). Every new phase must respect it. |
 | **Operational runbook** | `docs/operations/*` | How to execute already approved procedures. |
-| **Documentary governance** | `docs/governance/DOCUMENTATION_MODEL.md` (this file) | Rules of how the documentation is organized and updated. |
+| **Documentation governance** | `docs/governance/DOCUMENTATION_MODEL.md` (this file) | Rules of how the documentation is organized and updated. |
 
 These roles **do not overlap**. A single file may exercise
 more than one role **only** if the boundary is explicitly
@@ -66,11 +66,11 @@ declared in the file itself and maintained in the `DOCUMENTATION_INDEX`.
 
 ---
 
-## 3. Documentary arbiter — `docs/DOCUMENTATION_INDEX.md`
+## 3. Documentation arbiter — `docs/DOCUMENTATION_INDEX.md`
 
 `docs/DOCUMENTATION_INDEX.md` is the **only source** for:
 
-- order of documentary authority;
+- order of documentation authority;
 - document classification (canonical, operational, contract,
   runbook, legacy, diagnostic, governance);
 - canonical paths of project files;
@@ -330,7 +330,7 @@ The table below defines, for each phase event, which
 canonical document(s) must be updated. **No technical phase
 must automatically update all documents.**
 
-| Event | Documentary update |
+| Event | Documentation update |
 |---|---|
 | Read-only diagnostic | none |
 | Technical patch not yet accepted | none |
@@ -342,11 +342,11 @@ must automatically update all documents.**
 | Switch of workspace, branch or remote | front block in `PROJECT_STATE.md` |
 | Migration apply | ledger with environment and evidence; state only when this changes the phase |
 | Push | ledger of the phase, when operationally relevant |
-| Documentary compaction | ledger records origin, destination and reduction; index is updated only if paths change |
+| Documentation compaction | ledger records origin, destination and reduction; index is updated only if paths change |
 
 ---
 
-## 12. Minimum documentary transaction
+## 12. Minimum documentation transaction
 
 After an **accepted gate**, the normal update must
 involve at most:
@@ -363,7 +363,7 @@ a change of authority, classification or paths.
 
 > **No technical phase must automatically update all
 > documents.** The temptation of "all-in-one" is the most common
-> symptom of documentary duplication; it must be actively
+> symptom of documentation duplication; it must be actively
 > combated.
 
 ---
@@ -424,7 +424,7 @@ index and to this model.
 | `docs/architecture/CLAUDE_PROJECT_ASSET_MAP.md` §1, §3, §4, §11, §12 | Catalog of "canonical documents", "state files", "handoff files", functional precedence. | Must be rewritten to point to the index and to this model. |
 | `docs/superpowers/STATUS.md`, `docs/superpowers/README.md` | Self-label as "current canonical state" or reference it. | Legacy content (Phases 1–6). Kept as history; **must not** guide execution. |
 | `docs/HANDOFF.md` (root) | "Canonical snapshot" and "canonical refs". | Existing banner already indicates that the current state is in `PROJECT_STATE.md`. Will be revisited in a reconciliation slice. |
-| `Guide-and-governance-rules.stxt` | General governance rules for ChatGPT, not for the internal documentary model. | Remains valid for the agent, but **is not** the arbiter of the project's internal documentation. |
+| `Guide-and-governance-rules.stxt` | General governance rules for ChatGPT, not for the internal documentation model. | Remains valid for the agent, but **is not** the arbiter of the project's internal documentation. |
 
 These points are under the jurisdiction of their own slices. G28-DOCS-B1
 only **declares them as legacy to reconcile**, without moving nor
@@ -432,7 +432,7 @@ rewriting content.
 
 ---
 
-## 15. Mandatory checks when accepting a documentary phase
+## 15. Mandatory checks when accepting a documentation phase
 
 For a phase that touches this model (or its consumers)
 to be accepted:
@@ -492,7 +492,7 @@ of `G28-DOCS-B2` depends on a new order from the architect.
 
 ## 17. PHASE CHECKPOINT RECONCILIATION
 
-A phase checkpoint reconciliation is the mandatory end-of-phase protocol. It applies after any authorized work — technical or documentary — concludes. The protocol is a closeout procedure, not a corrective phase. It does not by itself authorize the next phase.
+A phase checkpoint reconciliation is the mandatory end-of-phase protocol. It applies after any authorized work — technical or documentation — concludes. The protocol is a closeout procedure, not a corrective phase. It does not by itself authorize the next phase.
 
 ### 17.1 Requirements
 
@@ -546,3 +546,6 @@ MATERIAL_DIVERGENCES:
 - Translated originals are archived under `docs/archive/pt-BR/` in the same
   commit as the translation.
 - No retroactive translation outside the DOC-LANGUAGE-MIGRATION track.
+- Phase IDs and the terms embedded in them are never translated — e.g. the
+  label `Camada N` is fused to the `G28-CAMADA-N` phase IDs; translating it
+  would break grep across ledgers, commits and archived reports.
