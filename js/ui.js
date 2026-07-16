@@ -212,6 +212,72 @@ function dataTable({ columns, rows, actions = [] }) {
   return wrap;
 }
 
+// --- Row-level compact icon button (UI_VISUAL_CONTRACT.md §8.1) ---
+// Ratified against the Clients screen reference
+// (js/screens/cadastros.js's screenCadastrosClientes makeIconButton).
+// Renders the 30x30px icon-only button used for table/grid row actions
+// (Editar, Ver, Ativar/Desativar, Resetar, Excluir, ...) — exempt from
+// the destructive-button icon+text rule in §8, which stays binding for
+// entity-level header actions (Finalizar OP / Excluir OP, as in the
+// op-latex-admin.js / op-tecelagem-producao-admin.js pilots).
+//
+// Contract-mandated guards enforced here:
+//   - title tooltip + aria-label (both set from `title`);
+//   - screen-reader label via the clip-rect sr-only pattern (never
+//     display:none, which also hides it from assistive tech).
+// confirmDialog gating on destructive actions is the CALLER's duty —
+// this helper only renders the button; it has no notion of whether
+// `onclick` is destructive.
+//
+// Uso: actionButton({ title, icon, danger, disabled, onclick, srLabel })
+//   - icon: a DOM Node (caller builds the 14px svg icon per §13).
+//   - srLabel: visually-hidden text; defaults to `title`.
+//   - disabled: the safe boolean pattern (UI-EL-BOOLEAN-ATTR-FIX) — the
+//     `disabled` key only enters the attrs object when this is `true`.
+function actionButton({ title, icon, danger = false, disabled = false, onclick, srLabel }) {
+  const restBorder = '#eceef1';
+  const restColor = danger ? '#d6403a' : '#8a93a3';
+  const hoverBorder = danger ? '#fca5a5' : '#d0d5de';
+  const hoverBg = danger ? '#fff1f1' : '#fff';
+  const hoverColor = danger ? '#c53030' : '#3f4757';
+
+  const attrs = {
+    type: 'button',
+    title,
+    'aria-label': title,
+    style: `width:30px; height:30px; display:inline-flex; align-items:center; justify-content:center; `
+      + `border:1px solid ${restBorder}; border-radius:4px; background:#fff; color:${restColor}; `
+      + `cursor:${disabled ? 'default' : 'pointer'}; opacity:${disabled ? '0.45' : '1'}; `
+      + `transition:border-color .18s ease, color .18s ease, background .18s ease;`,
+  };
+  if (disabled) attrs.disabled = true;
+  if (!disabled && typeof onclick === 'function') attrs.onclick = onclick;
+
+  const button = el('button', attrs);
+
+  if (!disabled) {
+    button.addEventListener('mouseenter', () => {
+      button.style.borderColor = hoverBorder;
+      button.style.background = hoverBg;
+      button.style.color = hoverColor;
+    });
+    button.addEventListener('mouseleave', () => {
+      button.style.borderColor = restBorder;
+      button.style.background = '#fff';
+      button.style.color = restColor;
+    });
+  }
+
+  if (icon) button.appendChild(icon);
+
+  button.appendChild(el('span', {
+    style: 'position:absolute; width:1px; height:1px; padding:0; margin:-1px; '
+      + 'overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0;',
+  }, srLabel || title));
+
+  return button;
+}
+
 // --- Page header padrão (título + botão de ação) ---
 function pageHeader(title, actions = []) {
   const wrap = el('div', { class: 'flex justify-between items-center mb-4' });
