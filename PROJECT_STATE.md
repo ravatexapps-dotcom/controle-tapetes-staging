@@ -173,9 +173,12 @@ decisions (verbatim) are in `docs/closeouts/PROJECT_STATE_ARCHIVE_2026-07.md`
   free-text notes/badges/dates/numerics) `CLOSED / ACCEPTED` (docs-only).
   Helper promotion (`truncatedCell`/`TRUNCATE_CELL_STYLE` → `js/ui.js`,
   `admin-usuarios.js` migrated to the shared version, behavior-neutral)
-  `CLOSED / ACCEPTED`. Lot A (`cadastros.js` Clientes + Fornecedores
-  grids only), Lot B (`pedidos-list.js` / `ops-list.js` CLIENTE column),
-  and Lot C (`painel.js` `.rv-adm-ref`/`.rv-adm-mini`) are all
+  `CLOSED / ACCEPTED`. Lot A (`cadastros.js` Clientes NOME/CONTATO +
+  Fornecedores NOME/EMAIL, legacy Usuarios duplicate explicitly excluded)
+  `CLOSED / ACCEPTED` (commit `0a1457b`; Fornecedores EMAIL widened
+  `1fr`→`1.6fr`, Clientes fractions unchanged; architect visual gate
+  pending). Lot B (`pedidos-list.js` / `ops-list.js` CLIENTE column) and
+  Lot C (`painel.js` `.rv-adm-ref`/`.rv-adm-mini`) remain
   `NOT AUTHORIZED`, each pending its own order.
   **Finding registered:** the read-only diagnosis found the legacy
   `screenCadastrosUsuarios` duplicate in `cadastros.js` (lines ~2226-2381)
