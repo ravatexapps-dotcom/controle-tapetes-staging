@@ -4,6 +4,78 @@ Este bloco é a única fonte de estado operacional atual por frente.
 HEAD, working tree, staging e divergência devem ser consultados diretamente no Git.
 O conteúdo histórico abaixo não determina o estado atual.
 
+## Camada 2 — Senha Temporária e Read Model de Último Acesso — A4.1 + CAMADA2-LAST-ACCESS-RPC
+
+- **Frente:** `G28-CAMADA-2`, subfase `A4.1` (schema `senha_temporaria`/política
+  de senha) agrupada com a micro-fase `CAMADA2-LAST-ACCESS-RPC` (RPC de
+  "último acesso"), conforme decisão do arquiteto registrada no closeout
+  de `A3.2` e autorização explícita desta fase.
+- **Classificação: `CLOSED / ACCEPTED`** (deploy da Edge Function
+  executado pelo arquiteto + verificação E2E real em staging `result:
+  PASS` 9/9, evidência abaixo).
+- **Technical HEADs:** `bf0d522` — `Add temporary password schema and
+  last sign-in read model`; `c6289f8` — `Add password-policy E2E
+  verification runner for admin-create-user`. **Commit documental:**
+  este closeout (`Close temporary password schema phase`). O HEAD
+  atual deve ser consultado com `git rev-parse HEAD`.
+- **Schema (`db/58_admin_usuarios_senha_temporaria.sql`, aplicada e
+  verificada em staging `ucrjtfswnfdlxwtmxnoo`, registro
+  `20260716014338 / 58_admin_usuarios_senha_temporaria`):**
+  `usuarios.senha_temporaria BOOLEAN NOT NULL DEFAULT FALSE` +
+  `usuarios.senha_gerada_em TIMESTAMPTZ NULL`. Os 10 usuários
+  pré-existentes preservados sem efeito retroativo.
+- **RPC (`db/59_admin_last_sign_in_readmodel.sql`, aplicada e
+  verificada em staging, registro `20260716014358 /
+  59_admin_last_sign_in_readmodel`):** `public.admin_usuarios_last_sign_in()`
+  — `SECURITY DEFINER`, `STABLE`, `search_path=public,auth`, guarda
+  `is_admin()` (padrão `db/12`), expõe apenas `id`+`last_sign_in_at`.
+  Grants explícitos: `authenticated`-only. Matriz de papéis empírica
+  (`BEGIN…ROLLBACK`): `anon` → `42501` no limite de ACL; `authenticated`
+  não-admin → `42501` de negócio (`RAISE EXCEPTION` dentro da função);
+  `authenticated` admin → `ok`, DTO mínimo confirmado. Fecha o HARD
+  STOP da coluna "Último acesso" registrado no closeout de `A3.2`.
+- **Edge Function `admin-create-user` (extensão pontual):**
+  `PASSWORD_MIN_LENGTH` 6→8 + `PASSWORD_DIGIT_RE` (≥1 dígito); insert em
+  `public.usuarios` passa a setar `senha_temporaria: true`,
+  `senha_gerada_em: now()`.
+- **Deploy:** executado pelo arquiteto diretamente em staging
+  (`ucrjtfswnfdlxwtmxnoo`) — fora do alcance de credenciais/ferramentas
+  desta sessão (agente IA não entra senha/token/API key em nenhum
+  campo, regra permanente).
+- **Verificação pós-deploy — E2E real em staging (`result: PASS`,
+  9/9), executado pelo arquiteto** via
+  `scripts/staging/admin-create-user-password-policy-e2e.mjs` (mesmo
+  esqueleto/garantias do `admin-disable-user-e2e.mjs` aceito):
+  senha de 7 caracteres rejeitada (mensagem de comprimento); senha de
+  8 caracteres sem dígito rejeitada (mensagem de dígito); senha válida
+  aceita com `senha_temporaria=true`/`senha_gerada_em` preenchido
+  confirmados via REST em `public.usuarios`; cleanup via
+  `admin-delete-user` (fluxo existente) com cleanup zero verificado
+  (perfil ausente após delete).
+- **Testes locais:** `admin-usuarios-senha-temporaria-schema.smoke.js`
+  7/7; `admin-last-sign-in-readmodel.smoke.js` 9/9; `admin-create-user.smoke.js`
+  estendido (política de senha com validação real extraída do source)
+  25/25; allow-list de `db/` em `document-decision-command-contract.test.js`
+  estendida para `db/58`/`db/59`; regressão `tests/admin-*.smoke.js` +
+  `boot.smoke.js` 263/263, sem regressão. `git diff --check` limpo.
+- **Documentação corrigida nesta fase:**
+  `docs/operations/AUTH_USER_PROVISIONING_RUNBOOK.md` (política de
+  senha desatualizada corrigida para 8+dígito, nota sobre
+  `senha_temporaria`/troca obrigatória prevista em `A4.2`).
+- **Não implementado (fora de escopo, não iniciado):** consumo da RPC
+  `db/59` na UI (coluna "Último acesso" em
+  `js/screens/admin-usuarios.js`); `A4.2` (guarda de boot + tela de
+  troca obrigatória); `A4.3` (convite por e-mail, `NOT AUTHORIZED`).
+- **Produção:** `bhgifjrfagkzubpyqpew` não acessada. **Push:** não
+  executado.
+- **Próxima ação autorizável:** `ARCHITECT DECISION` — candidatas:
+  micro-fase de consumo da RPC `db/59` na UI (coluna "Último acesso",
+  sob gate de mockup se envolver elemento visual novo); `A4.2` (guarda
+  de boot + tela de troca obrigatória, gate visual). Nenhuma subfase
+  autorizada por este registro.
+- **Ledger:** `docs/ledgers/G28_LEDGER.md` (entrada append-only desta
+  fase).
+
 ## Decisão de Arquiteto — Critério de Publicação e Frentes Candidatas — G28-GOVERNANCE-CONSOLIDATION-A
 
 Registro vivo e permanente das decisões do arquiteto (2026-07-15) que
@@ -394,15 +466,18 @@ Higiene do worktree `work/app-next` — read-only, ordem separada
   supervisão — papéis Arquiteto/Parecerista/Executor Residente,
   onboarding, formato de ordem, gates); `docs/DOCUMENTATION_INDEX.md`
   (2 entradas novas).
-- **Débito registrado (não bloqueante):** `CAMADA2-LAST-ACCESS-RPC` —
-  `NOT AUTHORIZED`, candidata a agrupar com `A4.1`.
-- **Próxima ação autorizável:** `ARCHITECT DECISION REQUIRED` —
-  candidatas sem prioridade inequívoca: `A4.1` (schema
-  `senha_temporaria`/política de senha, possivelmente agrupada com
-  `CAMADA2-LAST-ACCESS-RPC`), `A2.1` (schema `nivel_acesso`), `A6.1`
-  (schema/trigger de auditoria). `A3.3` (bulk actions) permanece
-  `DEFERRED`. `A3.4` (remoção do código legado) depende das demais
-  subfases A3.x aceitas. Nenhuma subfase autorizada por este registro.
+- **Débito registrado (não bloqueante, à época):** `CAMADA2-LAST-ACCESS-RPC` —
+  `NOT AUTHORIZED`, candidata a agrupar com `A4.1`. **Fechado em
+  2026-07-16** — ver seção "Camada 2 — Senha Temporária e Read Model
+  de Último Acesso — A4.1 + CAMADA2-LAST-ACCESS-RPC" no topo deste
+  arquivo.
+- **Próxima ação autorizável (à época; `A4.1` + `CAMADA2-LAST-ACCESS-RPC`
+  já `CLOSED / ACCEPTED` — ver seção própria no topo deste arquivo):**
+  candidatas remanescentes sem prioridade inequívoca: `A2.1` (schema
+  `nivel_acesso`), `A6.1` (schema/trigger de auditoria). `A3.3` (bulk
+  actions) permanece `DEFERRED`. `A3.4` (remoção do código legado)
+  depende das demais subfases A3.x aceitas. Nenhuma subfase autorizada
+  por este registro.
 - **Ledger:** `docs/ledgers/G28_LEDGER.md` (entrada append-only desta
   fase).
 

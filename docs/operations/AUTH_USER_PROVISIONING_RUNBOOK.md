@@ -65,8 +65,9 @@ Aplicabilidade: **staging** e, após autorização explícita,
    * **Tipo** — `admin` ou `fornecedor`.
    * **Fornecedor (se tipo for "fornecedor")** — selecionar o
      fornecedor correspondente. Deixar vazio se o tipo for `admin`.
-   * **Senha temporária** — mínimo 6 caracteres. Definir conforme
-     procedimento interno; ver seção 6.
+   * **Senha temporária** — mínimo 8 caracteres + ao menos 1 dígito
+     (política vigente desde `A4.1`, `db/58_admin_usuarios_senha_temporaria.sql`).
+     Definir conforme procedimento interno; ver seção 6.
 4. Clicar em **Salvar**.
 5. Aguardar o toast de sucesso (`Usuário criado`) e confirmar que o
    novo usuário aparece na listagem.
@@ -127,7 +128,15 @@ aberto e o toast mostra a mensagem da função (ver seção 7).
 ## 6. Senha temporária
 
 * A senha temporária é definida pelo admin no momento da criação
-  (mínimo 6 caracteres conforme a Edge Function).
+  (mínimo 8 caracteres + ao menos 1 dígito conforme a Edge Function,
+  política vigente desde `A4.1`).
+* Toda criação via `admin-create-user` marca o usuário com
+  `usuarios.senha_temporaria = TRUE` e `usuarios.senha_gerada_em =
+  now()` (`db/58_admin_usuarios_senha_temporaria.sql`). A troca
+  obrigatória no primeiro login (guarda de boot + tela de troca,
+  self-service `auth.updateUser`) é a subfase futura `A4.2` —
+  **não implementada ainda**; a flag hoje só marca o estado, sem
+  bloquear o app.
 * **Não** registrar a senha em nenhum artefato versionado ou
   relatório.
 * O procedimento de comunicação ao usuário e troca da senha é
@@ -138,10 +147,11 @@ aberto e o toast mostra a mensagem da função (ver seção 7).
   criação usa senha digitada pelo admin. A decisão entre
   senha-digitada vs. invite-link é uma pergunta em aberto do
   design (`docs/architecture/AUTH_PROVISIONING_EDGE_DESIGN.md`,
-  seção 12).
+  seção 12); `A4.3` (convite por e-mail/SMTP) permanece `NOT
+  AUTHORIZED`.
 * Recomenda-se orientar o usuário a trocar a senha no primeiro
-  login. O app **não** força essa troca automaticamente nesta
-  versão.
+  login. O app **ainda não** força essa troca automaticamente —
+  ver `A4.2` acima.
 
 ---
 
@@ -155,7 +165,7 @@ A Edge Function retorna JSON padronizado:
 
 | Código | HTTP típico | Causa | Ação do operador |
 |---|---|---|---|
-| `VALIDATION_ERROR` | 400 | Payload inválido (e-mail malformado, senha < 6, tipo não permitido, fornecedor inválido/inexistente, admin com fornecedor_id). | Corrigir os campos conforme mensagem e reenviar. |
+| `VALIDATION_ERROR` | 400 | Payload inválido (e-mail malformado, senha < 8 caracteres ou sem dígito, tipo não permitido, fornecedor inválido/inexistente, admin com fornecedor_id). | Corrigir os campos conforme mensagem e reenviar. |
 | `UNAUTHORIZED` | 401 | Sessão expirada/ausente ou JWT inválido. | Pedir login novamente. |
 | `FORBIDDEN` | 403 | Usuário logado **não** é `admin` em `public.usuarios`. | Confirmar que a conta logada é admin; se necessário, promover via outro admin. |
 | `CONFLICT` | 409 | E-mail já cadastrado em `auth.users`. | Verificar se o usuário já existe; se for duplicata, não recriar. |
