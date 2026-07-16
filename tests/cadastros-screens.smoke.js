@@ -157,6 +157,9 @@ class FakeNode {
   }
   appendChild(n) { this.children.push(n); return n; }
   setAttribute(k, v) { this['_attr_' + k] = v; }
+  // js/ui.js's el() calls this for a falsy boolean attr (UI-EL-BOOLEAN-ATTR-FIX)
+  // — screenCadastrosUsuarios' checked/disabled toggles exercise this path.
+  removeAttribute(k) { delete this['_attr_' + k]; }
   addEventListener(type, fn) { this._listeners[type] = fn; }
   removeEventListener(type) { delete this._listeners[type]; }
   replaceChildren(...ns) {

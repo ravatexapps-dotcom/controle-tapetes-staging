@@ -7,11 +7,31 @@
 const $ = (sel) => document.querySelector(sel);
 const $$ = (sel) => document.querySelectorAll(sel);
 
+// HTML boolean attributes: in any real browser, the attribute's mere
+// presence makes it true, regardless of its string value —
+// setAttribute('disabled', false) still stringifies to "false" and still
+// renders as disabled. This allow-list is where el() must turn a JS-falsy
+// value (false/null/undefined) into attribute REMOVAL instead of a
+// stringified falsy value (UI-EL-BOOLEAN-ATTR-FIX). Deliberately narrow —
+// keys outside this list (including aria-* attributes, which take a
+// literal "true"/"false" string by spec, not a native boolean) keep the
+// original setAttribute(k, v) behavior untouched, so e.g. value="false" as
+// a string still survives as-is.
+const BOOLEAN_ATTRS = new Set([
+  'checked', 'disabled', 'selected', 'readonly', 'required', 'multiple',
+  'hidden', 'open', 'autofocus', 'autoplay', 'controls', 'default',
+  'defer', 'ismap', 'loop', 'muted', 'novalidate', 'reversed',
+]);
+
 function el(tag, attrs = {}, ...children) {
   const node = document.createElement(tag);
   for (const [k, v] of Object.entries(attrs)) {
     if (k === 'class') node.className = v;
     else if (k.startsWith('on') && typeof v === 'function') node.addEventListener(k.slice(2), v);
+    else if (BOOLEAN_ATTRS.has(k)) {
+      if (v) node.setAttribute(k, k);
+      else node.removeAttribute(k);
+    }
     else node.setAttribute(k, v);
   }
   for (const child of children.flat()) {

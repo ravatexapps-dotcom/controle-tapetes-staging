@@ -102,6 +102,14 @@ test('2. node --check passa nos 3 arquivos', () => {
 // mais simples usado pelos testes read-only de cadastros-screens.smoke.js).
 // -----------------------------------------------------------------------------
 
+// Boolean-ish attrs exercised by this screen (disabled/checked). Mirrors
+// real DOM semantics for UI-EL-BOOLEAN-ATTR-FIX: an attribute's mere
+// presence makes it true regardless of its stringified value — only
+// removeAttribute() clears it. A naive el() that still called
+// setAttribute(k, false) would make this._attrs.disabled falsy but the
+// coerced this.disabled below stays true, so a regression is caught.
+const FAKE_NODE_BOOLEAN_ATTRS = new Set(['disabled', 'checked']);
+
 class FakeNode {
   constructor(t) {
     this.tagName = (t + '').toUpperCase();
@@ -110,11 +118,20 @@ class FakeNode {
     this._text = null;
     this._listeners = {};
     this.disabled = false;
+    this.checked = false;
     this.value = '';
     this._attrs = {};
   }
   appendChild(n) { this.children.push(n); return n; }
-  setAttribute(k, v) { this._attrs[k] = v; if (k === 'disabled') this.disabled = v; }
+  setAttribute(k, v) {
+    this._attrs[k] = v;
+    if (FAKE_NODE_BOOLEAN_ATTRS.has(k)) this[k] = true;
+  }
+  removeAttribute(k) {
+    delete this._attrs[k];
+    if (FAKE_NODE_BOOLEAN_ATTRS.has(k)) this[k] = false;
+  }
+  hasAttribute(k) { return Object.prototype.hasOwnProperty.call(this._attrs, k); }
   addEventListener(type, fn) { this._listeners[type] = fn; }
   removeEventListener(type) { delete this._listeners[type]; }
   replaceChildren(...ns) {
@@ -867,6 +884,67 @@ test('37. write: reativarUsuario(userId) invoca admin-reactivate-user com { user
   const invokeCall = fakeSupa._calls.find((c) => c.op === 'invoke' && c.name === 'admin-reactivate-user');
   assert.ok(invokeCall, 'reativarUsuario não invocou admin-reactivate-user');
   assert.equal(invokeCall.body.user_id, 'u-3');
+});
+
+// -----------------------------------------------------------------------------
+// Runtime — UI-EL-BOOLEAN-ATTR-FIX: verified fixes for the two call sites
+// confirmed/suspected by the architect (checkbox "Mostrar inativos" +
+// botão Excluir). Uses hasAttribute() — presence, not raw setAttribute
+// value — to actually exercise the real-DOM boolean-coercion class of bug
+// (see tests/ui-el-boolean-attrs.smoke.js for the primitive-level suite).
+// -----------------------------------------------------------------------------
+
+test('38. checkbox "Mostrar inativos": renders WITHOUT the checked attribute on initial render (mostrarInativos=false)', async () => {
+  const { sandbox } = makeAdminUsuariosSandbox({ tableData: USERS_FIXTURE });
+  const node = await vm.runInContext('window.screenAdminUsuarios()', sandbox);
+  const flex = node.children.find((c) => c.tagName === 'DIV');
+  const main = flex.children.find((c) => c.tagName === 'MAIN');
+  const toggleInput = findAll(main, (n) => n.tagName === 'INPUT' && n._attrs && n._attrs.type === 'checkbox')[0];
+  assert.ok(toggleInput, 'checkbox "Mostrar inativos" não encontrado');
+  assert.equal(toggleInput.hasAttribute('checked'), false,
+    'checkbox deveria renderizar SEM o atributo checked quando mostrarInativos=false (pré-fix: sempre presente, independente do estado)');
+  assert.equal(toggleInput.checked, false);
+});
+
+test('39. checkbox "Mostrar inativos": após ligar, o novo nó renderizado tem o atributo checked presente', async () => {
+  const { sandbox } = makeAdminUsuariosSandbox({ tableData: USERS_FIXTURE });
+  const node = await vm.runInContext('window.screenAdminUsuarios()', sandbox);
+  const flex = node.children.find((c) => c.tagName === 'DIV');
+  let main = flex.children.find((c) => c.tagName === 'MAIN');
+  const toggleInput = findAll(main, (n) => n.tagName === 'INPUT' && n._attrs && n._attrs.type === 'checkbox')[0];
+  toggleInput.checked = true;
+  toggleInput._listeners.change({ target: toggleInput });
+  main = flex.children.find((c) => c.tagName === 'MAIN');
+  const toggleAfter = findAll(main, (n) => n.tagName === 'INPUT' && n._attrs && n._attrs.type === 'checkbox')[0];
+  assert.ok(toggleAfter, 'checkbox re-renderizado não encontrado');
+  assert.equal(toggleAfter.hasAttribute('checked'), true,
+    'checkbox re-renderizado deveria ter o atributo checked presente após ligar (mostrarInativos=true)');
+  assert.equal(toggleAfter.checked, true);
+});
+
+test('40. botão "Excluir usuario": NÃO carrega o atributo disabled para uma linha que não é a própria (regressão do bug confirmado pelo arquiteto)', async () => {
+  const { sandbox } = makeAdminUsuariosSandbox({ tableData: USERS_FIXTURE });
+  const node = await vm.runInContext('window.screenAdminUsuarios()', sandbox);
+  const flex = node.children.find((c) => c.tagName === 'DIV');
+  const main = flex.children.find((c) => c.tagName === 'MAIN');
+  const biaRow = findRowByText(main, 'b@b.c');
+  const excluirBia = findAll(biaRow, (n) => n.tagName === 'BUTTON' && n._attrs && n._attrs.title === 'Excluir usuario')[0];
+  assert.ok(excluirBia, 'botão Excluir da linha da Bia não encontrado');
+  assert.equal(excluirBia.hasAttribute('disabled'), false,
+    'botão Excluir de uma linha que não é a própria NÃO deveria ter o atributo disabled (pré-fix: sempre presente, bloqueando todo mundo)');
+  assert.equal(excluirBia.disabled, false);
+});
+
+test('41. botão "Excluir usuario": carrega o atributo disabled apenas na própria linha (guarda de auto-proteção preservada)', async () => {
+  const { sandbox } = makeAdminUsuariosSandbox({ tableData: USERS_FIXTURE });
+  const node = await vm.runInContext('window.screenAdminUsuarios()', sandbox);
+  const flex = node.children.find((c) => c.tagName === 'DIV');
+  const main = flex.children.find((c) => c.tagName === 'MAIN');
+  const meRow = findRowByText(main, 'me@ravatex.com');
+  const excluirMe = findAll(meRow, (n) => n.tagName === 'BUTTON' && n._attrs && n._attrs.title === 'Nao pode excluir o proprio usuario')[0];
+  assert.ok(excluirMe, 'botão Excluir com guarda de auto-proteção não encontrado na própria linha');
+  assert.equal(excluirMe.hasAttribute('disabled'), true, 'botão Excluir da própria linha deveria ter o atributo disabled presente');
+  assert.equal(excluirMe.disabled, true);
 });
 
 // -----------------------------------------------------------------------------
