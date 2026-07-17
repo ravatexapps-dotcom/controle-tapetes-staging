@@ -38,6 +38,8 @@
 // convention (services/documents-ingestor).
 
 import { createInterface } from 'node:readline/promises';
+import { createServer } from 'node:http';
+import { spawn } from 'node:child_process';
 import { existsSync, readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -79,42 +81,151 @@ function envTrim(name) {
   return typeof v === 'string' ? v.trim() : v;
 }
 
+// Best-effort browser open; the URL is always printed as a fallback.
+// rundll32 takes the URL as a plain argv entry — no cmd.exe quoting
+// hazards with the '&'s inside an OAuth URL.
+function openBrowser(url) {
+  try {
+    if (process.platform === 'win32') {
+      spawn('rundll32', ['url.dll,FileProtocolHandler', url], { detached: true, stdio: 'ignore' }).unref();
+    } else if (process.platform === 'darwin') {
+      spawn('open', [url], { detached: true, stdio: 'ignore' }).unref();
+    } else {
+      spawn('xdg-open', [url], { detached: true, stdio: 'ignore' }).unref();
+    }
+  } catch {
+    // fall through — URL is printed either way
+  }
+}
+
+const LOGIN_SUCCESS_HTML = `<!doctype html><html lang="pt-BR"><meta charset="utf-8">
+<title>Ravatex Backups — autorizado</title>
+<body style="font-family:sans-serif;max-width:34em;margin:4em auto;text-align:center">
+<h2>&#9989; Autoriza&ccedil;&atilde;o conclu&iacute;da</h2>
+<p>Pode fechar esta aba e voltar ao terminal.</p></body></html>`;
+
+function loginErrorHtml(err) {
+  return `<!doctype html><html lang="pt-BR"><meta charset="utf-8">
+<title>Ravatex Backups — erro</title>
+<body style="font-family:sans-serif;max-width:34em;margin:4em auto;text-align:center">
+<h2>&#10060; Autoriza&ccedil;&atilde;o falhou</h2>
+<p>${String(err).replace(/[<>&]/g, '')}</p>
+<p>Volte ao terminal e tente novamente.</p></body></html>`;
+}
+
 async function runLogin() {
   const clientId = envTrim('BACKUP_GOOGLE_CLIENT_ID');
   const clientSecret = envTrim('BACKUP_GOOGLE_CLIENT_SECRET');
-  // "urn:ietf:wg:oauth:2.0:oob" (the old copy-paste flow) is deprecated
-  // and rejected by Google for new OAuth clients. http://localhost matches
-  // the Documents Ingestor's own documented convention (README.md) — the
-  // browser redirect fails to load (nothing is listening), but the code
-  // is still visible in the address bar's ?code= for manual paste.
-  const redirectUri = process.env.BACKUP_GOOGLE_REDIRECT_URI || 'http://localhost';
   const tokenPath = process.env.BACKUP_GOOGLE_TOKEN_PATH || '.ravatex-local/backup-google-token.json';
 
   if (!clientId || !clientSecret) {
     fail(EXIT_CODES.USAGE, 'login requires BACKUP_GOOGLE_CLIENT_ID and BACKUP_GOOGLE_CLIENT_SECRET.');
     return;
   }
+  // The two values are visually similar in the Cloud Console UI and a
+  // swap produces only an opaque invalid_client much later, at token
+  // exchange. Catch the recognizable shapes up front.
+  if (/\.apps\.googleusercontent\.com$/.test(clientSecret)) {
+    fail(EXIT_CODES.USAGE,
+      'BACKUP_GOOGLE_CLIENT_SECRET looks like a CLIENT ID (*.apps.googleusercontent.com). ' +
+      'The client SECRET is the other value in Cloud Console (current format starts with "GOCSPX-").');
+    return;
+  }
+  if (!/\.apps\.googleusercontent\.com$/.test(clientId)) {
+    console.warn('warning: BACKUP_GOOGLE_CLIENT_ID does not end in .apps.googleusercontent.com — is it really the client ID?');
+  }
+  if (!clientSecret.startsWith('GOCSPX-')) {
+    console.warn(`warning: BACKUP_GOOGLE_CLIENT_SECRET does not start with "GOCSPX-" (length=${clientSecret.length}). ` +
+      'Recently created OAuth client secrets always do — double-check you copied the Client secret, not something else.');
+  }
+
+  // Loopback flow (Google's recommended pattern for installed apps): a
+  // local one-shot HTTP server on an ephemeral 127.0.0.1 port receives
+  // the redirect and captures ?code= automatically — the user just
+  // clicks Allow; no manual copy-paste, no dead-end error page. A
+  // manual-paste prompt still runs concurrently as a fallback (headless
+  // machine, browser on another host). BACKUP_GOOGLE_REDIRECT_URI
+  // overrides the redirect and forces the manual-only flow.
+  const manualRedirect = envTrim('BACKUP_GOOGLE_REDIRECT_URI');
+  let redirectUri;
+  let server = null;
+  let codeFromServer = new Promise(() => {});
+
+  if (manualRedirect) {
+    redirectUri = manualRedirect;
+  } else {
+    server = createServer();
+    await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
+    redirectUri = `http://localhost:${server.address().port}`;
+    codeFromServer = new Promise((resolve) => {
+      server.on('request', (req, res) => {
+        const u = new URL(req.url, redirectUri);
+        const code = u.searchParams.get('code');
+        const error = u.searchParams.get('error');
+        if (!code && !error) {
+          res.statusCode = 404;
+          res.end();
+          return;
+        }
+        res.setHeader('Content-Type', 'text/html; charset=utf-8');
+        res.end(code ? LOGIN_SUCCESS_HTML : loginErrorHtml(error));
+        resolve({ code, error });
+      });
+    });
+  }
 
   const url = buildAuthUrl({ clientId, redirectUri });
   console.log('\nThis grants a DEDICATED Drive OAuth token for backups (scope: drive.file),');
-  console.log('separate from the Documents Ingestor\'s grant. Open the following URL:\n');
+  console.log("separate from the Documents Ingestor's grant.\n");
+  console.log('Opening your browser... if it does not open, use this URL:\n');
   console.log('  ' + url + '\n');
-  console.log('Grant access, then paste the authorization code here.\n');
+  if (server) {
+    console.log('After you click "Permitir/Allow", this terminal continues AUTOMATICALLY.');
+    console.log('(Fallback only: you may also paste the ?code= value from the browser below.)\n');
+  } else {
+    console.log('Grant access, then paste the authorization code here.\n');
+  }
+  openBrowser(url);
 
   const rl = createInterface({ input: process.stdin, output: process.stdout });
-  const code = await rl.question('Authorization code: ');
-  rl.close();
+  const codeFromPaste = rl.question('Authorization code (or just wait): ').then((t) => ({ code: t.trim(), error: null }));
 
-  if (!code.trim()) {
-    fail(EXIT_CODES.USAGE, 'No code provided. Aborting.');
+  const { code, error } = await Promise.race([codeFromServer, codeFromPaste]);
+  rl.close();
+  if (server) {
+    server.closeAllConnections?.();
+    server.close();
+  }
+
+  if (error) {
+    fail(EXIT_CODES.USAGE, `Google returned an authorization error: ${error}`);
+    return;
+  }
+  if (!code) {
+    fail(EXIT_CODES.USAGE, 'No code received. Aborting.');
     return;
   }
 
-  const tokens = await exchangeCodeForTokens({ clientId, clientSecret, redirectUri, code: code.trim() });
+  console.log('\nCode received. Exchanging for a token...');
+  let tokens;
+  try {
+    tokens = await exchangeCodeForTokens({ clientId, clientSecret, redirectUri, code });
+  } catch (e) {
+    if (/invalid_client/.test(e.message)) {
+      console.error(
+        '\nGoogle rejected the CLIENT SECRET (not the code). Checklist:\n' +
+        '  1. In Cloud Console > Credentials, open this exact OAuth client\n' +
+        `     (ID ending "...${clientId.slice(-30)}")\n` +
+        '  2. Click "Reset secret" (Redefinir chave secreta), copy the NEW value\n' +
+        '  3. Re-set $env:BACKUP_GOOGLE_CLIENT_SECRET with it and run login again\n' +
+        '  A secret from a DIFFERENT client/project also causes exactly this error.\n');
+    }
+    throw e;
+  }
   const dir = dirname(tokenPath);
   if (dir && !existsSync(dir)) mkdirSync(dir, { recursive: true });
   writeFileSync(tokenPath, JSON.stringify(tokens, null, 2), 'utf-8');
-  console.log(`Token saved to ${tokenPath}. Never commit this file (already covered by .gitignore's .ravatex-local/).`);
+  console.log(`\nSUCCESS. Token saved to ${tokenPath}. Never commit this file (already covered by .gitignore's .ravatex-local/).`);
 }
 
 function assertNotProduction(pgHost, supabaseUrl) {

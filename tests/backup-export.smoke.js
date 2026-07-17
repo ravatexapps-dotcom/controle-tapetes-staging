@@ -125,6 +125,15 @@ test('CLI: production-ref guard still fires when PGHOST has trailing whitespace 
   assert.match(res.stderr, /PRODUCTION ref/);
 });
 
+test('CLI: login with a client ID pasted as the secret fails USAGE with a diagnostic, before any prompt/server', () => {
+  const res = runCli(['login'], {
+    BACKUP_GOOGLE_CLIENT_ID: '12345-abc.apps.googleusercontent.com',
+    BACKUP_GOOGLE_CLIENT_SECRET: '12345-abc.apps.googleusercontent.com',
+  });
+  assert.equal(res.status, 1);
+  assert.match(res.stderr, /looks like a CLIENT ID/);
+});
+
 test('CLI: login without client id/secret fails USAGE (exit 1), no interactive prompt reached', () => {
   const res = runCli(['login']);
   assert.equal(res.status, 1);
