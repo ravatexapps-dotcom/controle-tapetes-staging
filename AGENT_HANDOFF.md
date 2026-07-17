@@ -1,5 +1,47 @@
 # ACTIVE OPERATIONAL HANDOFF
 
+- **`A3.4` (legacy user screen removal) — `CLOSED / ACCEPTED` (2026-07-17):**
+  technical commit `32e466a` — `Remove legacy user screen`; architect
+  ratification "ARCHITECT RATIFICATION — A3.4: ACCEPTED". **This closes
+  `G28-CAMADA-2` — TRACK `COMPLETE` / `CLOSED / ACCEPTED` in staging**, full
+  scope `A1-A7` + password policy (`A1`/`A7` satisfied by the pre-existing
+  architecture; `A2.1`/`A2.1-B`/`A2.2`/`A2.3`, `A3.1`/`A3.2`/`A3.4`,
+  `A4.1`/`A4.2`, `A5.1-A5.2`/`A5.3-A5.4`, `A6.1`/`A6.1-B`/`A6.2`/`A6.3` all
+  `CLOSED / ACCEPTED`). **Reclassification history:** entered this work
+  cycle as `PRE-EXISTING PARTIAL CAPABILITY + FULL SCOPE A1-A7 DEFERRED`
+  (`G28-RECONCILIATION-DECISIONS-A`, 2026-07-15); exits `CLOSED / ACCEPTED`.
+  `screenCadastrosUsuarios` (proven unreachable — zero production call
+  sites repo-wide, route already cut over to `window.screenAdminUsuarios`
+  since `A3.1`) and its 3 orphaned-only private helpers
+  (`friendlyDisableMessage`, `friendlyDeleteMessage`,
+  `setCadastrosModalFieldVisibility`) removed from
+  `js/screens/cadastros.js` (2742→2184 lines); every helper shared with the
+  file's other 6 screens kept untouched.
+  `tests/cadastros-usuarios-auth-ui.smoke.js` deleted entirely (38 tests);
+  3 sibling tests removed from `tests/admin-delete-user.smoke.js`, 4 from
+  `tests/cadastros-screens.smoke.js` (7→6 telas counts corrected
+  throughout); `tests/admin-usuarios.smoke.js` test 15 rewritten to assert
+  the removal. Verification (isolated per-file, since full-suite parallel
+  runs carry unrelated pre-existing flakiness here): exactly -45 tests (all
+  intentional), -1 pre-existing failure eliminated (baked into the deleted
+  file), zero new failures. **Resolved by deletion:** the `admin-create-user`
+  invoke-envelope bug at the legacy `cadastros.js:2659` (identical to the
+  already-fixed `UI-INVOKE-ENVELOPE-FIX`), the `checked: mostrarInativos`
+  boolean-attribute bug at the legacy `:2348` (same class as
+  `UI-EL-BOOLEAN-ATTR-FIX`), and the `TEST-MOCK-FIDELITY-AUDIT` `R3`
+  legacy-dead-code coverage gap. **Registered candidates (`NOT
+  AUTHORIZED`):** `cadastrosModalGrid` (pre-existing dead helper, unrelated
+  to this phase, folded into `CODE-HEALTH-AUDIT-§18-R1`); a second stale
+  git-worktree metadata entry (`baseline-check-a34`, same OneDrive-lock
+  class as `tapetes-baseline-check`). **Publication criterion status:**
+  first half satisfied (`G28-CAMADA-2` `CLOSED / ACCEPTED` in staging) with
+  two `PRE-PUBLICATION` asterisks that must close before production
+  (`A2-SERVER-SIDE-ENFORCEMENT`, `A2-CREATE-NIVEL-ACESSO-WIRING`); second
+  half (`G28-CAMADA-3`, automated backup) remains `NOT STARTED`, no spec.
+  **Next authorizable action: `ARCHITECT DECISION`** — `G28-CAMADA-3`
+  diagnosis (spec `BK1-BK8`), the two pre-publication asterisks, or
+  `A6-GLOBAL-AUDIT-VIEW`/`AUDIT-ACTOR-SNAPSHOT`; no single unambiguous next
+  technical phase.
 - **`A2.2` (modal wiring) + `A2.3` (pilot route enforcement) — `CLOSED /
   ACCEPTED` (2026-07-17):** technical commit `09eb2a0` — `Wire admin access
   level into user admin`; architect visual gate `CONFIRMED`. Closes the

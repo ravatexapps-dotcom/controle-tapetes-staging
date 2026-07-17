@@ -13,9 +13,52 @@ HEAD, working tree, staging and divergence must be consulted directly in Git
 ## Active phase and next action
 
 - **Active functional phase:** `NONE`.
-- **Next authorizable action:** `A3.4` (legacy code removal in `cadastros.js`)
-  — pending its own architect order. `G28-CAMADA-2 / A2` track (`A2.1` +
-  `A2.1-B` + `A2.2` + `A2.3`) is now `COMPLETE`.
+- **Next authorizable action:** `ARCHITECT DECISION` — no single unambiguous
+  next technical phase. Candidates: `G28-CAMADA-3` diagnosis (spec `BK1-BK8`,
+  mirroring the Camada 2 approach — next on the publication critical path);
+  the two `PRE-PUBLICATION` asterisks (`A2-SERVER-SIDE-ENFORCEMENT`,
+  `A2-CREATE-NIVEL-ACESSO-WIRING`); `A6-GLOBAL-AUDIT-VIEW` /
+  `AUDIT-ACTOR-SNAPSHOT`. **`G28-CAMADA-2` — TRACK `COMPLETE` / `CLOSED /
+  ACCEPTED`** (full scope `A1-A7` + password policy): `A1` (auth diagnostic)
+  and `A7` (password policy) satisfied by the existing architecture per
+  `docs/architecture/CAMADA2_USUARIOS_SPEC_PROPOSED.md`;
+  `A2.1`/`A2.1-B`/`A2.2`/`A2.3` (roles/permissions), `A3.1`/`A3.2`/`A3.4`
+  (user administration screen), `A4.1`/`A4.2` (temporary password + forced
+  change), `A5.1-A5.2`/`A5.3-A5.4` (reset + reactivation), `A6.1`/`A6.1-B`/
+  `A6.2`/`A6.3` (audit trail) all `CLOSED / ACCEPTED` — see their own
+  sections/rows below. **Reclassification history:** the layer entered this
+  work cycle classified `PRE-EXISTING PARTIAL CAPABILITY + FULL SCOPE A1-A7
+  DEFERRED` (`G28-RECONCILIATION-DECISIONS-A`, 2026-07-15) and exits `CLOSED
+  / ACCEPTED` in staging (2026-07-17) — see the updated classification note
+  under "Binding decisions in force" below.
+  - **`A3.4` (legacy screen removal) — `CLOSED / ACCEPTED`** (technical
+    commit `32e466a` — `Remove legacy user screen`; architect ratification
+    "ARCHITECT RATIFICATION — A3.4: ACCEPTED"): `screenCadastrosUsuarios`
+    (unreachable since the `A3.1` route cutover — proof: zero production
+    call sites repo-wide, only historical docs/test references) and its 3
+    orphaned-only private helpers (`friendlyDisableMessage`,
+    `friendlyDeleteMessage`, `setCadastrosModalFieldVisibility`) removed
+    from `js/screens/cadastros.js` (2742→2184 lines); every helper shared
+    with the file's other 6 screens (`labelFornecedorTipo`,
+    `detectOptionalColumns`, CNPJ helpers, the `cadastrosModal*` family)
+    kept untouched. `tests/cadastros-usuarios-auth-ui.smoke.js` deleted
+    entirely (38 tests, all targeting the dead screen); 3 sibling tests
+    removed from `tests/admin-delete-user.smoke.js`, 4 from
+    `tests/cadastros-screens.smoke.js` (counts corrected 7→6 telas
+    throughout); `tests/admin-usuarios.smoke.js` test 15 rewritten to
+    assert the removal instead of the prior "untouched" invariant.
+    Verification: isolated per-file comparison against the prior commit
+    (full-suite parallel runs are non-deterministic here due to unrelated
+    pre-existing flakiness) reconciled to exactly **-45 tests (all
+    intentional), -1 pre-existing failure eliminated (baked into the
+    deleted dead-test file), zero new failures**. **This removal also
+    buries three previously-reported-but-frozen defects, now resolved by
+    deletion:** the `admin-create-user` invoke-envelope bug at the legacy
+    `cadastros.js:2659` (identical to `UI-INVOKE-ENVELOPE-FIX`, already
+    fixed in the live code, previously only reported for the frozen legacy
+    copy); the `checked: mostrarInativos` boolean-attribute bug at the
+    legacy `:2348` (same class as `UI-EL-BOOLEAN-ATTR-FIX`); and the
+    `TEST-MOCK-FIDELITY-AUDIT` `R3` legacy-dead-code test-coverage gap.
   - **`A2.2` (modal wiring) + `A2.3` (pilot route enforcement) — `CLOSED /
     ACCEPTED`** (technical commit `09eb2a0` — `Wire admin access level into
     user admin`; architect visual gate `CONFIRMED`): `js/screens/
@@ -189,15 +232,27 @@ decisions (verbatim) are in `docs/closeouts/PROJECT_STATE_ARCHIVE_2026-07.md`
   binding):** the system enters production only after **both** `G28-CAMADA-2`
   (full scope `A1-A7`) and `G28-CAMADA-3` (automated backup) are
   `CLOSED / ACCEPTED` in staging. `PUBLICATION-TRACK-REVIEW` is `CONDITIONED` on
-  this criterion and is not a current candidate.
+  this criterion and is not a current candidate. **Status (2026-07-17):**
+  first half satisfied — `G28-CAMADA-2` `CLOSED / ACCEPTED` in staging (see
+  below) — with **two explicit `PRE-PUBLICATION` asterisks that MUST close
+  before production**: `A2-SERVER-SIDE-ENFORCEMENT` and
+  `A2-CREATE-NIVEL-ACESSO-WIRING` (both registered at the `A2.2`/`A2.3`
+  closeout, listed under "Live debts and candidates"). Second half —
+  `G28-CAMADA-3` (automated backup) — remains `NOT STARTED`, no spec, on the
+  publication critical path.
 - **`G28-CAMADA-3`:** reclassified from `DEFERRED` to `PUBLICATION CRITICAL PATH`
   (after `G28-CAMADA-2`), pending its own spec; the `BK1-BK8` diagnosis is a
   future phase, `NOT AUTHORIZED`.
-- **`G28-CAMADA-2` classification (`G28-RECONCILIATION-DECISIONS-A`,
-  2026-07-15):** `PRE-EXISTING PARTIAL CAPABILITY` (user CRUD, disable/ban,
-  single role `usuarios.tipo`, client/supplier link) `+ FULL SCOPE A1-A7
-  DEFERRED`; `NOT ACCEPTED AS A DEDICATED PHASE`. Functional/visual reference
-  for the full scope, when authorized: `D:\OneDrive\Programação\SGAA_clean_baseline`.
+- **`G28-CAMADA-2` classification — `CLOSED / ACCEPTED`, track `COMPLETE`
+  (2026-07-17, closeout of `A3.4`):** entered this work cycle classified
+  `PRE-EXISTING PARTIAL CAPABILITY` (user CRUD, disable/ban, single role
+  `usuarios.tipo`, client/supplier link) `+ FULL SCOPE A1-A7 DEFERRED`
+  (`G28-RECONCILIATION-DECISIONS-A`, 2026-07-15); exits `CLOSED / ACCEPTED`
+  in staging with full scope `A1-A7` + password policy delivered (`A1`/`A7`
+  satisfied by the pre-existing architecture per the spec; `A2`/`A3`/`A4`/
+  `A5`/`A6` all `CLOSED / ACCEPTED` subphases — see "Active phase and next
+  action" above and "Closed phases" below). Functional/visual reference used
+  during the build: `D:\OneDrive\Programação\SGAA_clean_baseline`.
 - **`G28-C`:** `CLOSED / TECHNICALLY ACCEPTED — ARCHITECT PRODUCT VALIDATION
   PENDING` (technical/staging acceptance separated from the architect's
   functional validation and the authenticated browser smoke, never executed).
@@ -309,6 +364,22 @@ decisions (verbatim) are in `docs/closeouts/PROJECT_STATE_ARCHIVE_2026-07.md`
   regardless of what the (edit-only) modal select would otherwise send;
   setting `somente_leitura` on a newly created admin requires a follow-up
   edit. Wiring the create path requires an Edge Function change.
+- **`cadastrosModalGrid` dead helper — `NOT AUTHORIZED` candidate (registered
+  at the `A3.4` closeout, 2026-07-17):** `js/screens/cadastros.js` still
+  declares `cadastrosModalGrid` with zero call sites anywhere in the file —
+  pre-existing dead code, unrelated to `screenCadastrosUsuarios`/`A3.4`
+  (out of that phase's scope, "refactoring what remains" was forbidden).
+  Folded into `CODE-HEALTH-AUDIT-§18-R1` scope for its eventual read-only
+  audit pass.
+- **Second stale git-worktree metadata entry — `NOT AUTHORIZED` candidate
+  (registered at the `A3.4` closeout, 2026-07-17):** a temporary comparison
+  worktree (`baseline-check-a34`, used to isolate full-suite regression
+  noise from this phase's own changes) left a second stale registration
+  under `controle-tapetes/.git/worktrees/`, failing to auto-prune with the
+  same `Permission denied` (OneDrive/AV lock) already documented for
+  `tapetes-baseline-check`. Harmless, does not affect commits; both await
+  one authorized cleanup pass (`git worktree prune` or manual metadata
+  removal once the lock is released).
 - **`IS-ADMIN-ACL-REVIEW` — `NOT AUTHORIZED` candidate (registered at the `A2.1-B`
   closeout, 2026-07-17):** the RLS anchor `public.is_admin()` grants `EXECUTE`
   to `PUBLIC`/`anon`/`authenticated`/`service_role` — more permissive than the
@@ -482,6 +553,7 @@ HEAD with `git rev-parse HEAD`.
 
 | Phase | Status | Date | Commit(s) |
 |---|---|---|---|
+| Camada 2 — Legacy User Screen Removal — `A3.4` (closes `G28-CAMADA-2` track) | `CLOSED / ACCEPTED` | 2026-07-17 | `32e466a` |
 | Camada 2 — Admin Access Level Modal Wiring + Pilot Enforcement — `A2.2` + `A2.3` | `CLOSED / ACCEPTED` | 2026-07-17 | `09eb2a0` |
 | Camada 2 — Admin Access Level Schema + ACL Correction — `A2.1` + `A2.1-B` | `CLOSED / ACCEPTED` | 2026-07-17 | `f108c45` |
 | Test-Double Shared Module + Stale-Assertion Cleanup — `L1` + `L2` | `CLOSED / ACCEPTED` | 2026-07-17 | `54ee8aa`,`4d2f304`,`520c9a6`,`2c9a4c2` |

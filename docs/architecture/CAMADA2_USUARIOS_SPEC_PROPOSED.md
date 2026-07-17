@@ -1,6 +1,10 @@
 # CAMADA 2 — User Administration — Proposed Spec
 
-> **Status:** `PROPOSED` — no subphase authorized by this document.
+> **Status:** `DELIVERED` — every subphase named below (`A1`-`A7`) was
+> subsequently authorized in its own order and is `CLOSED / ACCEPTED`
+> (`G28-CAMADA-2` track `COMPLETE`, closed at the `A3.4` closeout,
+> 2026-07-17). This document is retained as the historical spec/rationale;
+> it does not itself authorize further work.
 > **Origin phase:** `CAMADA2-USUARIOS-SPEC-DIAGNOSTIC-R1` (read-only
 > cross-repo diagnostic, 2026-07-15), reviewed and incorporated with the
 > architect's decisions in `CAMADA2-USUARIOS-SPEC-MATERIALIZE-R1`.
