@@ -14,17 +14,18 @@ are in `docs/ledgers/G28_LEDGER.md`. HEAD/working tree/divergence: consult Git d
   `PRODUCTION-READINESS-DIAGNOSIS-R1` (`ACCEPTED`, 2026-07-17;
   `docs/reports/PRODUCTION_READINESS_DIAGNOSIS_R1_2026-07-17.md`) and registered as
   the **active track** by the ratification order of the same date. **`M0` — `CLOSED
-  / ACCEPTED`** (new repo landing, 2026-07-17; see "Binding decisions" and
-  "Environment standing facts"). `M1`-`M10` remain `NOT AUTHORIZED`, each pending its
-  own individual order; phases do not chain automatically.
+  / ACCEPTED`** (new repo landing, 2026-07-17) and **`M1` — `CLOSED / ACCEPTED`**
+  (new Supabase project verification + sanction, 2026-07-17; see "Binding decisions"
+  and "Environment standing facts"). `M2`-`M10` remain `NOT AUTHORIZED`, each pending
+  its own individual order; phases do not chain automatically.
 - **`BACKLOG FREEZE` in force (2026-07-17):** **no NEW fronts** until after cutover
   (`M10`). Only the **`M0`-`M10` migration plan** and the **canonical residual risk
   register** (12 items, ranked — see "Live debts and candidates") are authorizable
   work. All pre-existing candidate fronts are frozen-in-place as `POST-LAUNCH DEBT`.
-- **Next authorizable action:** an individual order for `M1` (new Supabase project
-  provisioning) or any other `M2`-`M10` phase. Target coordinates: GitHub
-  `inttexsystem/inttracker` (now the production remote, pushed), Supabase
-  `gqmpsxkxynrjvidfmojk`, Vercel `vercel.com/inttex`.
+- **Next authorizable action:** an individual order for `M2` or any other `M3`-`M10`
+  phase. Target coordinates: GitHub `inttexsystem/inttracker` (now the production
+  remote, pushed), Supabase `gqmpsxkxynrjvidfmojk` (verified virgin and sanctioned at
+  `M1`), Vercel `vercel.com/inttex`.
 - **Post-launch debt pointer (frozen):** the former Camada-3 subphases (`BK5`-`BK8`,
   `CAMADA3-TRIGGER-SELECTION`), the two ex-`PRE-PUBLICATION` asterisks
   (`A2-SERVER-SIDE-ENFORCEMENT`, `A2-CREATE-NIVEL-ACESSO-WIRING`), and
@@ -102,13 +103,39 @@ decisions (verbatim) are in `docs/closeouts/PROJECT_STATE_ARCHIVE_2026-07.md`
   (`grupoterrabranca/controle-tapetes`) and `staging`
   (`ravatexapps-dotcom/controle-tapetes-staging`) **retained, unchanged** — `staging`
   is now historical backup only, no longer a push target.
+- **`M1` (new Supabase project verification + sanction) — `CLOSED / ACCEPTED`
+  (2026-07-17, read-only verification + docs record):** confirmed, via the
+  read-only Supabase MCP pinned to `gqmpsxkxynrjvidfmojk`, the project is virgin:
+  **0 tables in `public`**, **0 rows in the migrations registry**
+  (`list_migrations`), **0 storage buckets** (`storage.buckets` count and row
+  listing both `0`); `auth` scaffolding present and unmodified (**23 base tables**,
+  all `0` rows except `auth.schema_migrations`'s stock seed rows); `storage`
+  schema carries only its own stock scaffolding (8 tables, no buckets/objects).
+  **Identification evidence:** `claude mcp list` shows the configured connection
+  URL as `https://mcp.supabase.com/mcp?project_ref=gqmpsxkxynrjvidfmojk&features=
+  database&read_only=true` — this **directly pins both the project ref and the
+  `read_only=true` flag in the MCP's own connection string**, a stronger
+  confirmation than the order anticipated (the order allowed for config-plus-
+  empty-profile as the only available evidence; the ref is in fact directly
+  readable from the MCP configuration, not just inferred). No write attempted;
+  no table/migration/bucket found — no HARD STOP triggered. **Boundary amendment
+  (this order, binding):** the staging-only boundary below is **amended** —
+  writes to `gqmpsxkxynrjvidfmojk` are authorized **only within explicitly
+  ordered `M`-track phases** (`M2`, `M3`, `M4`, `M9`); `ucrjtfswnfdlxwtmxnoo`
+  becomes **read-only legacy** (the `M3` exporter/export-read path is the
+  named exception); production `bhgifjrfagkzubpyqpew` **remains PROHIBITED**,
+  untouched. **Next authorizable action:** `M2`, own order.
 - **Staging-only execution boundary (`STAGING-ONLY-EXECUTION-BOUNDARY-A`,
   2026-07-15, partially superseded):** operational environment is staging
   `ucrjtfswnfdlxwtmxnoo`; the protected project `bhgifjrfagkzubpyqpew` is `OUT OF
   SCOPE`, **never accessed** — this don't-touch rule stays fully in force. Its
   "Vercel not selected" / production-postponement items are **superseded** by the
   amended criterion + active `M0`-`M10` track (target = the new
-  `gqmpsxkxynrjvidfmojk`, not the protected project). Full original in the archive.
+  `gqmpsxkxynrjvidfmojk`, not the protected project). **Further amended by `M1`
+  (2026-07-17):** `ucrjtfswnfdlxwtmxnoo` is now **read-only legacy** (writes
+  authorized only for the named `M`-track phases against `gqmpsxkxynrjvidfmojk`);
+  the `bhgifjrfagkzubpyqpew` don't-touch rule is unaffected. Full original in the
+  archive.
 
 ### Standing product / process rulings
 
@@ -233,9 +260,12 @@ decisions (verbatim) are in `docs/closeouts/PROJECT_STATE_ARCHIVE_2026-07.md`
   `bhgifjrfagkzubpyqpew` (`OUT OF SCOPE`, never accessed).
 - **Migration targets:** GitHub `inttexsystem/inttracker` — **`M0` pushed**, no longer
   empty (main = the full history, see "Migration governance" `M0` record); Supabase
-  `gqmpsxkxynrjvidfmojk` (empty, new-format publishable key supplied; matching secret
-  key to be obtained out of band); Vercel `vercel.com/inttex` (repo-linked, not wired).
-  Remaining wiring `NOT AUTHORIZED` until the relevant `M1`-`M10` order.
+  `gqmpsxkxynrjvidfmojk` — **`M1` verified virgin and sanctioned** (0 tables in
+  `public`, 0 migrations registry rows, 0 storage buckets, stock `auth`/`storage`
+  scaffolding only; see "Migration governance" `M1` record), new-format publishable
+  key supplied, matching secret key still to be obtained out of band; Vercel
+  `vercel.com/inttex` (repo-linked, not wired). Remaining wiring `NOT AUTHORIZED`
+  until the relevant `M2`-`M10` order.
 - **Remotes:** `production` = `https://github.com/inttexsystem/inttracker.git`
   (fetch+push, added at `M0`); `origin` = `grupoterrabranca/controle-tapetes`;
   `staging` = `ravatexapps-dotcom/controle-tapetes-staging` (historical backup only,
@@ -243,9 +273,12 @@ decisions (verbatim) are in `docs/closeouts/PROJECT_STATE_ARCHIVE_2026-07.md`
   `main` pushed to `production`.
 - **MCP (new project):** Supabase MCP is configured and verified against
   `gqmpsxkxynrjvidfmojk`, **read-only**, its token held **outside the repo**
-  (`PROJECT-STATE-COMPACTION-B`, 2026-07-17). Read-only introspection of the new
-  project is available; no write path is authorized outside a specific `M0`-`M10`
-  order.
+  (`PROJECT-STATE-COMPACTION-B`, 2026-07-17). **`M1` confirmed directly** (not just
+  by profile inference): `claude mcp list` reports the connection URL
+  `https://mcp.supabase.com/mcp?project_ref=gqmpsxkxynrjvidfmojk&features=database&
+  read_only=true`, pinning both the ref and the read-only flag in the MCP's own
+  configuration string. Read-only introspection of the new project is available;
+  no write path is authorized outside a specific `M2`-`M10` order.
 - **Publication provider:** **Vercel selected** (per the amended publication
   criterion, 2026-07-17); GitHub Pages remains the live provider until cutover.
 - **Branch commit count:** `work/g28-document-qualification` = **753** commits
@@ -273,6 +306,7 @@ technical commits; documentation-only phases show `(docs)`. Consult HEAD with
 
 | Phase | Status | Date | Commit(s) |
 |---|---|---|---|
+| Supabase Target Verification + Sanction — `M1` (`gqmpsxkxynrjvidfmojk`) | `CLOSED / ACCEPTED` | 2026-07-17 | (docs, read-only verification) |
 | Repository Migration — `M0` (push to `inttexsystem/inttracker`) | `CLOSED / ACCEPTED` | 2026-07-17 | `7b2ab7d` pushed (git-only) + record commit |
 | Ratify Production Readiness Diagnosis + Backlog Freeze — `PRODUCTION-READINESS-DIAGNOSIS-R1` (ratification) | `CLOSED / ACCEPTED` | 2026-07-17 | `be6f081`, `9566837` (docs) |
 | Production Readiness Diagnosis (read-only) — `PRODUCTION-READINESS-DIAGNOSIS-R1` | `ACCEPTED` | 2026-07-17 | (report) |

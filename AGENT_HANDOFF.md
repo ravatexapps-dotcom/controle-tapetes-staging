@@ -1,5 +1,40 @@
 # ACTIVE OPERATIONAL HANDOFF
 
+- **`M1` (new Supabase project verification + sanction —
+  `gqmpsxkxynrjvidfmojk`) — `CLOSED / ACCEPTED` (2026-07-17):** read-only
+  verification phase (Sonnet 5 / low effort), no writes attempted, one docs
+  commit. **Verified via the Supabase MCP:** `list_tables` across
+  `public`/`auth`/`storage` returned **zero `public` tables**; `auth` carries
+  its stock scaffolding, **23 base tables**, all `0` rows except
+  `auth.schema_migrations` (77 stock seed rows); `storage` carries its own
+  stock scaffolding (8 tables — `migrations`, `buckets`, `objects`,
+  `s3_multipart_uploads(_parts)`, `buckets_analytics`, `buckets_vectors`,
+  `vector_indexes`), `buckets`/`objects` both `0` rows. `list_migrations` →
+  `[]` (0 rows in the migrations registry). `execute_sql
+  select count(*) from storage.buckets` → `0`, cross-checking `list_tables`'s
+  row count. **No table/migration/bucket found → no HARD STOP.**
+  **Identification evidence — stronger than the order anticipated:** the
+  order expected only "config URL pins the ref, profile is consistent" as
+  available evidence, with an honest caveat that the toolset "cannot read
+  the ref directly." That caveat does **not** hold: `claude mcp list` prints
+  the live connection URL, `https://mcp.supabase.com/mcp?
+  project_ref=gqmpsxkxynrjvidfmojk&features=database&read_only=true` —
+  the project ref and the `read_only=true` flag are **both directly visible**
+  in the MCP's own configuration string, not merely inferred from an empty
+  profile. This is recorded as a correction to the order's assumed tooling
+  limit, not a deviation from it. **Record (this commit, per the order):**
+  `PROJECT_STATE.md` — `M1` marked `CLOSED / ACCEPTED` in "Active phase" and
+  given its own entry under "Migration governance"; the staging-only boundary
+  amended (writes to `gqmpsxkxynrjvidfmojk` authorized only within
+  explicitly ordered `M`-track phases — `M2`, `M3`, `M4`, `M9`;
+  `ucrjtfswnfdlxwtmxnoo` becomes read-only legacy, `M3`'s exporter/export-read
+  path excepted; `bhgifjrfagkzubpyqpew` remains PROHIBITED, untouched);
+  environment facts updated (Supabase target line, MCP evidence line); "Closed
+  phases" index gained the `M1` row; next authorizable action advanced to
+  `M2`. This handoff entry. Ledger entry. **No Supabase write; no production
+  access; no push beyond this docs commit to `production/main` (single-track
+  scope authorized by this order).** **Next authorizable action:** an
+  individual order for `M2` or any other `M3`-`M10` phase.
 - **`M0` (repository migration — push to `inttexsystem/inttracker`) — `CLOSED /
   ACCEPTED` (2026-07-17):** single-use explicit push authorization, git-only phase.
   Pre-flight clean (tree clean; HEAD = the Compaction-B commit `7b2ab7d`; sensitive
