@@ -35,6 +35,57 @@ const OTPA = path.join(ROOT, 'js', 'screens', 'op-tecelagem-producao-admin.js');
 
 const ewSrc = fs.readFileSync(EW, 'utf8');
 const otpaSrc = fs.readFileSync(OTPA, 'utf8');
+const UI = path.join(ROOT, 'js', 'ui.js');
+const uiSrc = fs.readFileSync(UI, 'utf8');
+// TEST-MOCK-FIDELITY-AUDIT R1 adoption: the UI sandboxes below render through
+// the REAL js/ui.js el() backed by the shared FaithfulNode (tests/_doubles.js),
+// so this suite is no longer structurally blind to a boolean-attr defect
+// (CODE_HEALTH_RULES.md §20). The old hand-rolled FakeEl stored attributes raw
+// with no boolean coercion and would have masked a disabled/checked regression.
+const { FaithfulNode, createDocument } = require('./_doubles.js');
+
+// Walk the rendered FaithfulNode tree, joining leaf text with a single space
+// (matching the space-separated text the old FakeEl collectText produced).
+function collectText(node) {
+  if (node == null) return '';
+  if (node.children && node.children.length) {
+    return node.children.map(collectText).join(' ');
+  }
+  return (node.textContent != null ? node.textContent : '') || '';
+}
+
+// A node's OWN direct text (its text-node children only) — used to locate the
+// specific element carrying a label, not any ancestor whose aggregated
+// textContent merely includes it.
+function elementDirectText(node) {
+  return (node.children || [])
+    .filter(function (c) { return c && !c.tagName; })
+    .map(function (c) { return c.textContent || ''; })
+    .join('');
+}
+
+// Deepest ELEMENT whose direct text contains substr.
+function findChildByText(parent, substr) {
+  if (!parent || !parent.tagName) return null;
+  var kids = parent.children || [];
+  for (var i = 0; i < kids.length; i++) {
+    if (kids[i] && kids[i].tagName) {
+      var found = findChildByText(kids[i], substr);
+      if (found) return found;
+    }
+  }
+  if (elementDirectText(parent).indexOf(substr) !== -1) return parent;
+  return null;
+}
+
+// Real el() wires on*/addEventListener handlers into node._listeners[type];
+// FaithfulNode has no dispatchEvent, so fire the handler directly — a
+// representation translation of the old FakeEl.dispatchEvent, not a behavior
+// change.
+function dispatch(node, type) {
+  var fn = node && node._listeners && node._listeners[type];
+  if (typeof fn === 'function') fn.call(node);
+}
 
 // ---------------------------------------------------------------------
 // Harness para testes do helper (entrega-writes.js).
@@ -218,51 +269,21 @@ test('D-B caso 5: excluirEntrega latex (não cima) não é bloqueada por esta re
 // Caso 1 — UI OP Tecelagem: gate de render em buildEntregaHistorico
 // =====================================================================
 
-// Harness mínimo de el() que captura texto para inspeção.
+// Sandbox that renders op-tecelagem-producao-admin.js through the REAL
+// js/ui.js el() backed by the shared FaithfulNode.
 function makeUISandbox() {
-  function FakeEl(tag, attrs) {
-    this.tag = tag;
-    this.attrs = attrs || {};
-    this.children = [];
-    this.textContent = '';
-    this.appendChild = function (c) { if (c) this.children.push(c); return c; };
-    this.addEventListener = function () {};
-    this.setAttribute = function (k, v) { this.attrs[k] = v; };
-    this.append = function (...items) { items.forEach(it => { if (it) this.children.push(it); }); };
-    this.replaceChildren = function (...items) { this.children = items.filter(Boolean); };
-  }
-  function el(tag, attrs, ...rest) {
-    const node = new FakeEl(tag, attrs);
-    rest.forEach(child => {
-      if (child == null) return;
-      if (typeof child === 'string' || typeof child === 'number') {
-        node.textContent += String(child);
-      } else if (Array.isArray(child)) {
-        child.forEach(c => { if (c) node.children.push(c); });
-      } else {
-        node.children.push(child);
-      }
-    });
-    return node;
-  }
-  function collectText(node) {
-    if (!node) return '';
-    let t = node.textContent || '';
-    (node.children || []).forEach(c => { t += ' ' + collectText(c); });
-    return t;
-  }
-
-  const sandbox = { console, setTimeout, clearTimeout };
+  const document = createDocument();
+  const sandbox = { console, setTimeout, clearTimeout, document, Node: FaithfulNode };
   sandbox.window = sandbox;
   sandbox.globalThis = sandbox;
-  sandbox.el = el;
-  // Stubs de helpers globais usados pelo módulo.
+  // Non-ui.js collaborators the module reads (unchanged from the old stub).
   sandbox.totalEntregueCimaPorItem = () => ({});
-  sandbox.window.fmtMetros = (n) => String(n) + ' m';
-  sandbox.window.rotuloModelo = (m) => (m && m.nome) || '?';
-  sandbox.window.navigate = () => {};
-  sandbox.window.excluirEntrega = () => {};
+  sandbox.fmtMetros = (n) => String(n) + ' m';
+  sandbox.rotuloModelo = (m) => (m && m.nome) || '?';
+  sandbox.navigate = () => {};
+  sandbox.excluirEntrega = () => {};
   vm.createContext(sandbox);
+  vm.runInContext(uiSrc, sandbox, { filename: 'js/ui.js' });
   vm.runInContext(otpaSrc, sandbox, { filename: 'js/screens/op-tecelagem-producao-admin.js' });
   return { sandbox, collectText };
 }
@@ -340,97 +361,20 @@ test('ADMIN-TEC-FINALIZE-CTA-R1: CTA destacado exige saldo zerado', () => {
 });
 
 function makeEntregaFormSandbox() {
-  function FakeEl(tag, attrs) {
-    this.tag = tag;
-    this.attrs = attrs || {};
-    this.children = [];
-    this.textContent = '';
-    this.value = '';
-    this.style = {};
-    this.disabled = false;
-    this._listeners = {};
-    this.appendChild = function (c) { if (c) this.children.push(c); return c; };
-    this.addEventListener = function (ev, fn) { this._listeners[ev] = fn; };
-    this.dispatchEvent = function (ev) { var fn = this._listeners[ev]; if (fn) fn.call(this); };
-    this.setAttribute = function (k, v) { this.attrs[k] = v; };
-    this.append = function () { for (var i = 0; i < arguments.length; i++) { var it = arguments[i]; if (it) this.children.push(it); } };
-    this.replaceChildren = function () { this.children = []; for (var i = 0; i < arguments.length; i++) { var it = arguments[i]; if (it) this.children.push(it); } };
-    this.querySelectorAll = function () { return []; };
-    this.remove = function () {};
-  }
-
-  function collectText(node) {
-    if (!node) return '';
-    var t = node.textContent || '';
-    (node.children || []).forEach(function (c) { t += ' ' + collectText(c); });
-    return t;
-  }
-
-  function findChildByText(parent, substr) {
-    if (!parent) return null;
-    if (typeof parent.textContent === 'string' && parent.textContent.indexOf(substr) !== -1) return parent;
-    for (var i = 0; i < (parent.children || []).length; i++) {
-      var found = findChildByText(parent.children[i], substr);
-      if (found) return found;
-    }
-    return null;
-  }
-
-  function el(tag, attrs) {
-    var node = new FakeEl(tag, attrs);
-    for (var i = 2; i < arguments.length; i++) {
-      var child = arguments[i];
-      if (child == null) continue;
-      if (typeof child === 'string' || typeof child === 'number') {
-        node.textContent += String(child);
-      } else if (Array.isArray(child)) {
-        child.forEach(function (c) { if (c) node.children.push(c); });
-      } else {
-        node.children.push(child);
-      }
-    }
-    return node;
-  }
-
-  function textInput(opts) {
-    var inp = new FakeEl('input', { type: opts.type || 'text' });
-    inp.value = opts.value || '';
-    inp.placeholder = opts.placeholder || '';
-    if (opts.type) inp.setAttribute('type', opts.type);
-    return inp;
-  }
-
-  function selectInput(opts) {
-    var sel = new FakeEl('select');
-    sel.value = opts.value || '';
-    (opts.options || []).forEach(function (opt) {
-      var optEl = new FakeEl('option', { value: opt.value });
-      optEl.textContent = opt.label;
-      sel.children.push(optEl);
-    });
-    return sel;
-  }
-
-  function formField(opts) {
-    return el('div', { class: 'form-field' },
-      el('label', {}, opts.label || ''),
-      opts.input || el('span', {}));
-  }
-
-  function larguraKey(largura) {
-    return Number(largura).toFixed(2).replace('.', ',');
-  }
-
-  var sandbox = { console, setTimeout, clearTimeout };
+  const document = createDocument();
+  var sandbox = { console, setTimeout, clearTimeout, document, Node: FaithfulNode };
   sandbox.window = sandbox;
   sandbox.globalThis = sandbox;
-  sandbox.el = el;
-  sandbox.textInput = textInput;
-  sandbox.selectInput = selectInput;
-  sandbox.formField = formField;
-  sandbox.larguraKey = larguraKey;
+  // larguraKey is a non-ui.js collaborator the form reads.
+  sandbox.larguraKey = function (largura) {
+    return Number(largura).toFixed(2).replace('.', ',');
+  };
 
   vm.createContext(sandbox);
+  // Real js/ui.js provides el/textInput/selectInput/formField (with the
+  // boolean-attr fix); the form renders through them instead of hand-rolled
+  // boolean-blind stand-ins.
+  vm.runInContext(uiSrc, sandbox, { filename: 'js/ui.js' });
 
   var EF = path.join(ROOT, 'js', 'screens', 'entrega-form.js');
   var efSrc = fs.readFileSync(EF, 'utf8');
@@ -440,7 +384,7 @@ function makeEntregaFormSandbox() {
     sandbox: sandbox,
     collectText: collectText,
     findChildByText: findChildByText,
-    FakeEl: FakeEl,
+    dispatch: dispatch,
   };
 }
 
@@ -553,10 +497,10 @@ test('split-UI-B caso 6: getSplitOption retorna motivo trimado', () => {
     comOpcaoSplit: true,
   });
 
-  // Procura o <select> na árvore (FakeEl com tag contendo 'select')
+  // Procura o <select> na árvore (FaithfulNode com tagName 'SELECT')
   function findSelect(node) {
     if (!node) return null;
-    if (node.tag && typeof node.tag === 'string' && node.tag.toLowerCase() === 'select') return node;
+    if (node.tagName === 'SELECT') return node;
     for (var i = 0; i < (node.children || []).length; i++) {
       var found = findSelect(node.children[i]);
       if (found) return found;
@@ -569,12 +513,12 @@ test('split-UI-B caso 6: getSplitOption retorna motivo trimado', () => {
 
   // Seta para 'split'
   selectEl.value = 'split';
-  selectEl.dispatchEvent('change');
+  h.dispatch(selectEl, 'change');
 
-  // Procura o input de motivo (FakeEl com placeholder especifico)
+  // Procura o input de motivo (placeholder via getAttribute, como no DOM real)
   function findInput(node, placeholder) {
     if (!node) return null;
-    if (typeof node.placeholder === 'string' && node.placeholder === placeholder) return node;
+    if (node.getAttribute && node.getAttribute('placeholder') === placeholder) return node;
     for (var i = 0; i < (node.children || []).length; i++) {
       var found = findInput(node.children[i], placeholder);
       if (found) return found;
@@ -814,7 +758,7 @@ test('MODAL-LAYOUT-R1 caso 5b: stacked com pendência renderiza pill "pendente" 
 
   // Antes de clicar, Metros vazio => sem linhas no payload.
   assert.equal(result.getPayload().linhas.length, 0, 'sem clique, nenhuma linha preenchida');
-  link.dispatchEvent('click');
+  h.dispatch(link, 'click');
   const linhas = result.getPayload().linhas;
   assert.equal(linhas.length, 1, 'após "Preencher restante", a linha com pendência é preenchida');
   assert.equal(linhas[0].metros_entregues, 40, 'Metros deve receber o pendente do produto');
@@ -854,4 +798,26 @@ test('MODAL-LAYOUT-R1 caso 7: estático — outras telas NÃO adotam o layout st
     'op-latex-admin.js não deve mudar de layout (tela já validada)');
   assert.doesNotMatch(fs.readFileSync(FORN, 'utf8'), /layout:\s*['"]stacked['"]/,
     'fornecedor.js não deve mudar de layout (tela já validada)');
+});
+
+// TEST-MOCK-FIDELITY-AUDIT R1 demonstration: proves the faithful adoption
+// catches what the old hand-rolled FakeEl would have masked. The old FakeEl's
+// setAttribute stored the raw value with no boolean coercion, so a
+// disabled/checked bug in the rendered form would have passed green; the real
+// el() + FaithfulNode do not.
+test('tec-to-acabamento: FaithfulNode + real el() catch a boolean-attr regression the old FakeEl masked (R1 demo)', () => {
+  const h = makeEntregaFormSandbox();
+  const el = h.sandbox.window.el;
+  // Fix path: real el() omits a falsy boolean attribute.
+  assert.equal(el('button', { disabled: false }).hasAttribute('disabled'), false,
+    'disabled:false must be ABSENT (the UI-EL-BOOLEAN-ATTR-FIX), verified through the faithful double');
+  assert.equal(el('button', { disabled: true }).hasAttribute('disabled'), true,
+    'disabled:true must be present');
+  // Regression path: a raw setAttribute(k,false) still renders PRESENT in a
+  // real-DOM-faithful node, so the bug class is caught — the old FakeEl stored
+  // the raw value and could not distinguish present from absent.
+  const raw = new FaithfulNode('button');
+  raw.setAttribute('disabled', false);
+  assert.equal(raw.hasAttribute('disabled'), true,
+    'setAttribute(k,false) renders present in the faithful node — the double catches the bug class');
 });
