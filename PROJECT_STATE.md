@@ -220,7 +220,7 @@ decisions (verbatim) are in `docs/closeouts/PROJECT_STATE_ARCHIVE_2026-07.md`
      ellipsis;min-width:0`) plus a `title` tooltip on the linked branch;
      `buildActionButtons()`'s `wrap` gained `flex-wrap:wrap` (a §7
      column-sizing fix, not truncation — nothing there should ever be
-     cut). Architect visual gate pending.
+     cut). Architect visual gate: `CONFIRMED`.
   3. `TEST-MOCK-FIDELITY-AUDIT` — suites that hand-mock `js/ui.js`
      primitives instead of loading the real module are structurally
      blind to primitive-level defects. Precedent: the
