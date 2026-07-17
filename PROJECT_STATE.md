@@ -12,9 +12,28 @@ HEAD, working tree, staging and divergence must be consulted directly in Git
 
 ## Active phase and next action
 
-- **Active functional phase:** `NONE`.
-- **Next authorizable action:** `ARCHITECT DECISION` — no single unambiguous
-  next technical phase. Candidates: `G28-CAMADA-3` subphase `BK5`
+- **Active track:** `PRODUCTION-MIGRATION-M0-M10` — the ordered migration plan
+  (new repo + new Supabase project + Vercel) proposed by
+  `PRODUCTION-READINESS-DIAGNOSIS-R1` (`ACCEPTED`, 2026-07-17;
+  `docs/reports/PRODUCTION_READINESS_DIAGNOSIS_R1_2026-07-17.md`) and registered
+  as the **active track** by the ratification order of the same date. All ten
+  phases (`M0`-`M10`) are `NOT AUTHORIZED`, each pending its own individual order;
+  phases do not chain automatically.
+- **`BACKLOG FREEZE` in force (2026-07-17):** **no NEW fronts** until after cutover
+  (`M10`). The **canonical residual risk register** (12 items, ranked — see the
+  report and "Live debts and candidates" below) and the **`M0`-`M10` migration
+  plan** survive the freeze and are the **only authorizable work**. The previously
+  listed candidate fronts below are frozen-in-place as post-launch debt, not
+  current work.
+- **Next authorizable action:** an individual order for `M0` (new repo landing —
+  full-history push of 749 commits to `inttexsystem/inttracker`), or any other
+  `M0`-`M10` phase the architect elects to authorize next. Target coordinates:
+  GitHub `inttexsystem/inttracker`, Supabase `gqmpsxkxynrjvidfmojk`, Vercel
+  `vercel.com/inttex`.
+- **Frozen candidate index (historical, not current work under the freeze):**
+  the former Camada-3 subphases and pre-publication asterisks are now post-launch
+  debt entries in the canonical residual risk register — `G28-CAMADA-3` subphase
+  `BK5`
   (read-only UI panel — mockup gate first) or `BK6`/`BK7`/`BK8` per
   `docs/architecture/CAMADA3_BACKUP_CONTRACT.md` (`BK4.1` + `BK4.2` both
   `CLOSED / ACCEPTED`, 2026-07-17 — see their own section below, including
@@ -222,6 +241,35 @@ Condensed statements of the rulings that constrain future work. Full recorded
 decisions (verbatim) are in `docs/closeouts/PROJECT_STATE_ARCHIVE_2026-07.md`
 (Architect Decision sections) and in `docs/archive/pt-BR/PROJECT_STATE.md`.
 
+- **`PRODUCTION-READINESS-DIAGNOSIS-R1` — `ACCEPTED` / ratified reference report
+  (2026-07-17):** recorded at
+  `docs/reports/PRODUCTION_READINESS_DIAGNOSIS_R1_2026-07-17.md` (precedent
+  `BACKLOG_RECONCILIATION_R1`). Its **residual risk register (12 items, ranked) is
+  now canonical** (reproduced under "Live debts and candidates" below). Its
+  **`M0`-`M10` migration plan is the active track** (see "Active phase and next
+  action"). Read-only diagnostic — does not itself authorize any implementation.
+- **Amended publication criterion (`PRODUCTION-READINESS-DIAGNOSIS-R1`
+  ratification, 2026-07-17 — amends `G28-GOVERNANCE-CONSOLIDATION-A`):**
+  publication no longer waits on the full `G28-CAMADA-3` (automated backup) track.
+  **Publication proceeds with Camada 3 at `BK4.2`** (exporter proven + restore-smoke
+  passed). The remaining Camada-3 scope (`BK5`/`BK6`/`BK7`/`BK8`,
+  `CAMADA3-TRIGGER-SELECTION`) and the two `PRE-PUBLICATION` asterisks
+  (`A2-SERVER-SIDE-ENFORCEMENT`, `A2-CREATE-NIVEL-ACESSO-WIRING`) become
+  **`POST-LAUNCH DEBT` with production consequences**, tracked in the canonical
+  residual risk register with per-item timing (before-first-user / first-week /
+  deferrable). The reviewer objection (the diagnosis's recommended minimum
+  pre-launch set) is **recorded and overruled** by the architect: the register's
+  before-first-user items are advisory, and the architect decides which close
+  before cutover. The original criterion (`both` Camada-2 and full Camada-3 CLOSED
+  in staging) is superseded by this amendment; its verbatim text is preserved in the
+  bullet below and in the ledger.
+- **`BACKLOG FREEZE` (2026-07-17, binding):** no NEW fronts are authorizable until
+  after cutover (`M10`). Only the `M0`-`M10` migration plan and the canonical
+  residual risk register survive the freeze as authorizable work. `PROJECT-STATE`'s
+  pre-existing candidate fronts are frozen-in-place as post-launch debt.
+- **Canon correction (2026-07-17):** the branch `work/g28-document-qualification`
+  commit count is **749** (`git rev-list --count HEAD`), not the "~555" figure some
+  prior docs cite. The 749 figure governs the `M0` full-history push.
 - **Staging-only execution boundary (`STAGING-ONLY-EXECUTION-BOUNDARY-A`,
   2026-07-15):** the current operational environment is exclusively the staging
   Supabase `ucrjtfswnfdlxwtmxnoo`; the protected/other project
@@ -403,6 +451,24 @@ decisions (verbatim) are in `docs/closeouts/PROJECT_STATE_ARCHIVE_2026-07.md`
 
 ## Live debts and candidates
 
+- **CANONICAL RESIDUAL RISK REGISTER (12 items, ranked by production consequence
+  — `PRODUCTION-READINESS-DIAGNOSIS-R1`, 2026-07-17):** the authoritative ranked
+  list with per-item production consequence and timing lives in
+  `docs/reports/PRODUCTION_READINESS_DIAGNOSIS_R1_2026-07-17.md` §4. Ranked:
+  (1) `A2-SERVER-SIDE-ENFORCEMENT` — before-first-user *if any read-only admin
+  ships*; (2) `DELETE-PROD-GUARD-A` — before-first-user (data-loss);
+  (3) Camada 3 incomplete (`BK5`/`BK6`/`BK7`/`BK8`, no trigger/retention/runbook/
+  drill) — trigger + `BK7` runbook before-first-user, rest first-week;
+  (4) `CAMADA3-OAUTH-GRANT-COUPLING` — first-week; (5) `A2-CREATE-NIVEL-ACESSO-WIRING`
+  — first-week; (6) `IS-ADMIN-ACL-REVIEW` — first-week/deferrable;
+  (7) `A6-GLOBAL-AUDIT-VIEW` — deferrable; (8) `AUDIT-ACTOR-SNAPSHOT` — deferrable;
+  (9) `UI-EL-BOOLEAN-ATTR-FIX` (active regression) — first-week;
+  (10) `CODE-HEALTH-AUDIT-§18-R1` — deferrable; (11) `DELETE-AUDIT-LOG-A` —
+  deferrable/first-month; (12) `G28-CAMADA-4` — deferrable. Under the amended
+  publication criterion these are `POST-LAUNCH DEBT`; the individual entries below
+  retain their full detail. **Minimum pre-launch set** (recommendation, architect
+  decides): items #1 (conditional), #2, the #3 trigger+runbook, and one real
+  auth+restore rehearsal into a throwaway Supabase project (§5 of the report).
 - **`NOT AUTHORIZED` candidate fronts:** `CODE-HEALTH-AUDIT-§18-R1` (read-only
   §18 audit; input for `cadastros.js` decomposition and baseline test-debt
   triage); `PUBLICATION-TRACK-REVIEW` (conditioned on the publication
@@ -638,7 +704,14 @@ decisions (verbatim) are in `docs/closeouts/PROJECT_STATE_ARCHIVE_2026-07.md`
   commits. Cleanup (`git worktree prune`, or manual removal of the metadata
   folder after freeing the OneDrive/AV lock) is a **candidate pending explicit
   authorization** — NOT pruned unilaterally.
-- **Publication provider:** not selected (Vercel a future candidate only).
+- **Publication provider:** **Vercel selected** as the migration target
+  (`vercel.com/inttex`, repo-linked), per the amended publication criterion
+  (2026-07-17). Migration targets (all newly created, empty): GitHub
+  `inttexsystem/inttracker`, Supabase `gqmpsxkxynrjvidfmojk` (new-format
+  publishable key supplied), Vercel `vercel.com/inttex`. Wiring `NOT AUTHORIZED`
+  until the relevant `M0`-`M10` order.
+- **Branch commit count:** `work/g28-document-qualification` = **749** commits
+  (corrects the stale "~555").
 - **Push:** not authorized in this chain. **Production:** never accessed.
 - **`supabase/.temp/`:** local untracked Supabase CLI cache; not part of any
   commit.

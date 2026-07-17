@@ -1,5 +1,30 @@
 # ACTIVE OPERATIONAL HANDOFF
 
+- **`PRODUCTION-READINESS-DIAGNOSIS-R1` ratified + `BACKLOG FREEZE` —
+  `CLOSED / ACCEPTED` (2026-07-17):** the architect authorized a read-only
+  whole-system migration diagnosis (move to a new repo + new Supabase project +
+  Vercel, then deploy) and, on delivery, ratified it. **Docs-only closeout** —
+  no code, no push, no production access. Outcomes recorded in canon:
+  (1) the diagnosis is a **ratified reference report**
+  (`docs/reports/PRODUCTION_READINESS_DIAGNOSIS_R1_2026-07-17.md`, precedent
+  `BACKLOG_RECONCILIATION_R1`); (2) the **publication criterion is amended** —
+  publication proceeds with Camada 3 at `BK4.2`, remaining Camada-3 scope +
+  the two `PRE-PUBLICATION` asterisks become `POST-LAUNCH DEBT` with production
+  consequences, the reviewer objection (minimum pre-launch set) recorded and
+  **overruled**; (3) a **`BACKLOG FREEZE`** is in force — no new fronts until
+  after cutover (`M10`); only the `M0`-`M10` plan and the canonical residual
+  risk register are authorizable; (4) the **residual risk register (12 items,
+  ranked)** is now canonical (report §4, mirrored in `PROJECT_STATE.md`);
+  (5) the **`M0`-`M10` migration plan** is the active track, every phase
+  `NOT AUTHORIZED` pending its own order; (6) canon corrected: branch commit
+  count is **749**, not "~555". **Target coordinates (all new, empty):** GitHub
+  `inttexsystem/inttracker`, Supabase `gqmpsxkxynrjvidfmojk` (new-format
+  `sb_publishable_…` key supplied), Vercel `vercel.com/inttex`. A separate tiny
+  technical commit first added `supabase/.temp/` to `.gitignore` (the 8 untracked
+  CLI-cache files leaked the project ref + pooler URL, and `M0` will push 749
+  commits). **Next authorizable action:** an individual order for `M0` (new repo
+  landing — full-history push) or any `M0`-`M10` phase. Full detail:
+  `docs/reports/PRODUCTION_READINESS_DIAGNOSIS_R1_2026-07-17.md`.
 - **`BK4.2` (the exporter — first real execution + restore-smoke) —
   `CLOSED / ACCEPTED` (2026-07-17):** the exporter's code
   (`scripts/backup/export-db.mjs` + `scripts/backup/lib/*`, commits
