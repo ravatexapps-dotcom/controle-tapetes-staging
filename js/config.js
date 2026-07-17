@@ -20,15 +20,15 @@
     production: {
       name: 'production',
       label: 'PRODUÇÃO',
-      supabaseUrl: 'https://bhgifjrfagkzubpyqpew.supabase.co',
-      supabaseAnonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJoZ2lmanJmYWdrenVicHlxcGV3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkxMTcxMjYsImV4cCI6MjA5NDY5MzEyNn0.5Y94S2QdYNE7Nt5WcvjzkXes1pa3tZgxe3eaWkasya8',
+      supabaseUrl: 'https://gqmpsxkxynrjvidfmojk.supabase.co',
+      supabaseAnonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdxbXBzeGt4eW5yanZpZGZtb2prIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQyOTcxODIsImV4cCI6MjA5OTg3MzE4Mn0.7LvcJ-zkJQGgXLoGn2AMNpj2u6EFETU_8n_GlmY5kC0',
       isProduction: true,
     },
     staging: {
       name: 'staging',
       label: 'STAGING',
-      supabaseUrl: 'https://ucrjtfswnfdlxwtmxnoo.supabase.co',
-      supabaseAnonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVjcmp0ZnN3bmZkbHh3dG14bm9vIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIwNzQ5OTMsImV4cCI6MjA5NzY1MDk5M30.4y41y8w8l4VElfQUQ_QpIp4zOW1n5za-1_ekyv_v6aw',
+      supabaseUrl: 'https://gqmpsxkxynrjvidfmojk.supabase.co',
+      supabaseAnonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdxbXBzeGt4eW5yanZpZGZtb2prIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQyOTcxODIsImV4cCI6MjA5OTg3MzE4Mn0.7LvcJ-zkJQGgXLoGn2AMNpj2u6EFETU_8n_GlmY5kC0',
       isProduction: false,
     },
   };
