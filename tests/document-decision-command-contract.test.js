@@ -243,9 +243,9 @@ test('git baseline: B5-B1 technical-commit manifest (b247e435)', function () {
   const dbStatus = statusOut ? statusOut.split('\n').filter(Boolean) : [];
 
   // B5-B1 introduced db/50; G28-B6 adds db/51; G28-B8 adds db/52; A4.1 +
-  // CAMADA2-LAST-ACCESS-RPC add db/58/db/59; A6.1 adds db/60 as the next
-  // migration. All are allowed working-tree entries; anything else is an
-  // unexpected db/ change.
+  // CAMADA2-LAST-ACCESS-RPC add db/58/db/59; A6.1 adds db/60; A6.1-B adds
+  // db/61 as the next migration. All are allowed working-tree entries;
+  // anything else is an unexpected db/ change.
   const ALLOWED_DB = [
     'db/50_document_decision_command.sql',
     'db/51_document_canonical_links.sql',
@@ -253,6 +253,7 @@ test('git baseline: B5-B1 technical-commit manifest (b247e435)', function () {
     'db/58_admin_usuarios_senha_temporaria.sql',
     'db/59_admin_last_sign_in_readmodel.sql',
     'db/60_usuarios_auditoria_schema.sql',
+    'db/61_usuarios_eventos_preserve_on_delete.sql',
   ];
   for (const line of dbStatus) {
     const file = line.trim().slice(3);
