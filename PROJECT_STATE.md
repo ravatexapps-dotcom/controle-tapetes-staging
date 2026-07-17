@@ -14,18 +14,21 @@ are in `docs/ledgers/G28_LEDGER.md`. HEAD/working tree/divergence: consult Git d
   `PRODUCTION-READINESS-DIAGNOSIS-R1` (`ACCEPTED`, 2026-07-17;
   `docs/reports/PRODUCTION_READINESS_DIAGNOSIS_R1_2026-07-17.md`) and registered as
   the **active track** by the ratification order of the same date. **`M0` — `CLOSED
-  / ACCEPTED`** (new repo landing, 2026-07-17) and **`M1` — `CLOSED / ACCEPTED`**
-  (new Supabase project verification + sanction, 2026-07-17; see "Binding decisions"
-  and "Environment standing facts"). `M2`-`M10` remain `NOT AUTHORIZED`, each pending
-  its own individual order; phases do not chain automatically.
+  / ACCEPTED`** (new repo landing, 2026-07-17), **`M1` — `CLOSED / ACCEPTED`**
+  (new Supabase project verification + sanction, 2026-07-17), and **`M2` — `CLOSED /
+  ACCEPTED`** (schema replay `db/01→db/64` into `gqmpsxkxynrjvidfmojk`, 2026-07-17;
+  see "Migration governance" and `docs/reports/M2_SCHEMA_REPLAY_VERIFICATION_2026-07-17.md`).
+  `M3`-`M10` remain `NOT AUTHORIZED`, each pending its own individual order; phases do
+  not chain automatically.
 - **`BACKLOG FREEZE` in force (2026-07-17):** **no NEW fronts** until after cutover
   (`M10`). Only the **`M0`-`M10` migration plan** and the **canonical residual risk
   register** (12 items, ranked — see "Live debts and candidates") are authorizable
   work. All pre-existing candidate fronts are frozen-in-place as `POST-LAUNCH DEBT`.
-- **Next authorizable action:** an individual order for `M2` or any other `M3`-`M10`
-  phase. Target coordinates: GitHub `inttexsystem/inttracker` (now the production
-  remote, pushed), Supabase `gqmpsxkxynrjvidfmojk` (verified virgin and sanctioned at
-  `M1`), Vercel `vercel.com/inttex`.
+- **Next authorizable action:** an individual order for `M3` or any other `M4`-`M10`
+  phase. Target coordinates: GitHub `inttexsystem/inttracker` (production remote,
+  pushed), Supabase `gqmpsxkxynrjvidfmojk` (schema replayed `db/01→64` at `M2` — 64
+  registry entries, 40 public tables), Vercel `vercel.com/inttex`. **Standing reminder:
+  flip the Supabase MCP back to read-only** now that `M2`'s write window is closed.
 - **Post-launch debt pointer (frozen):** the former Camada-3 subphases (`BK5`-`BK8`,
   `CAMADA3-TRIGGER-SELECTION`), the two ex-`PRE-PUBLICATION` asterisks
   (`A2-SERVER-SIDE-ENFORCEMENT`, `A2-CREATE-NIVEL-ACESSO-WIRING`), and
@@ -125,6 +128,31 @@ decisions (verbatim) are in `docs/closeouts/PROJECT_STATE_ARCHIVE_2026-07.md`
   becomes **read-only legacy** (the `M3` exporter/export-read path is the
   named exception); production `bhgifjrfagkzubpyqpew` **remains PROHIBITED**,
   untouched. **Next authorizable action:** `M2`, own order.
+- **`M2` (schema replay into the sanctioned target) — `CLOSED / ACCEPTED`
+  (2026-07-17):** the ratified authoritative source (repo `db/`, ordered
+  `db/01→db/64`, skip `*.verify.sql`; `setup_completo.sql`/`supabase db push`
+  forbidden) was replayed into `gqmpsxkxynrjvidfmojk` one migration at a time via
+  MCP `apply_migration`, each registered under its canonical file-stem name, verified
+  after each — **64/64 applied, zero errors, no skip/patch/reorder.** **HARD STOP ZERO
+  passed** (ref pinned + virgin 0/0/0 pre-state). **Post-replay gate:** (4a) registry
+  = **64 entries, order `01→64`, canonical names**; (4c) ACL spot-checks faithful —
+  `is_admin_full`/backup-writer RPCs (`db/64`)/evidence-writer (`db/49`) = service_role
+  only, document-scan RPCs (`db/38`) = authenticated (admin-gated internally), and
+  `is_admin()` broad (PUBLIC/anon/authenticated/service_role) is the **pre-existing
+  `IS-ADMIN-ACL-REVIEW` debt reproduced faithfully**, not a new defect; (4d, corrected
+  gate) sole residual = **`parametros_largura`=2** (width-calc **configuration** from
+  `db/04`, kept by `db/10`/`db/11`) — every `db/04` **test** cadastro wiped by `db/10`
+  (confirmed 0), no genuine test data survived, nothing deleted; (4e) storage buckets
+  = 0. **New-project profile:** 40 public tables, 0 views, 53 functions, 67 RLS
+  policies, 9 triggers. **Data-writing ruling (architect):** faithful `01→64`
+  authorized, gate 4d corrected from "all 0" to "residual matches the faithful replay,
+  reported per table with origin" (the classifier initially blocked the `db/04` seed;
+  the architect ruled Option 1). **`M2` verification report:**
+  `docs/reports/M2_SCHEMA_REPLAY_VERIFICATION_2026-07-17.md`. **Open item (4b, parity
+  vs staging): NOT EXECUTABLE** — the reconnected management-scoped MCP credential is
+  permission-denied on `ucrjtfswnfdlxwtmxnoo`; the parity diff must be run out-of-band
+  or the token re-scoped (advisory, non-blocking). **No production access; staging
+  only read-attempted for parity (denied), never written.** Next: `M3`.
 - **Staging-only execution boundary (`STAGING-ONLY-EXECUTION-BOUNDARY-A`,
   2026-07-15, partially superseded):** operational environment is staging
   `ucrjtfswnfdlxwtmxnoo`; the protected project `bhgifjrfagkzubpyqpew` is `OUT OF
@@ -260,12 +288,15 @@ decisions (verbatim) are in `docs/closeouts/PROJECT_STATE_ARCHIVE_2026-07.md`
   `bhgifjrfagkzubpyqpew` (`OUT OF SCOPE`, never accessed).
 - **Migration targets:** GitHub `inttexsystem/inttracker` — **`M0` pushed**, no longer
   empty (main = the full history, see "Migration governance" `M0` record); Supabase
-  `gqmpsxkxynrjvidfmojk` — **`M1` verified virgin and sanctioned** (0 tables in
-  `public`, 0 migrations registry rows, 0 storage buckets, stock `auth`/`storage`
-  scaffolding only; see "Migration governance" `M1` record), new-format publishable
-  key supplied, matching secret key still to be obtained out of band; Vercel
-  `vercel.com/inttex` (repo-linked, not wired). Remaining wiring `NOT AUTHORIZED`
-  until the relevant `M2`-`M10` order.
+  `gqmpsxkxynrjvidfmojk` — **`M2` schema replayed** (`db/01→64`, 64 registry entries,
+  40 public tables / 53 functions / 67 policies / 9 triggers / 0 views / 0 buckets;
+  sole data residual `parametros_largura`=2 configuration; see "Migration governance"
+  `M2` record + `docs/reports/M2_SCHEMA_REPLAY_VERIFICATION_2026-07-17.md`), new-format
+  publishable key supplied, matching secret key still to be obtained out of band;
+  Vercel `vercel.com/inttex` (repo-linked, not wired). Remaining wiring `NOT
+  AUTHORIZED` until the relevant `M3`-`M10` order. **Supabase MCP:** flipped to write
+  for `M2` and now resolves to the **management-scoped** server (explicit `project_id`
+  per call); **to be flipped back to read-only** by the architect — standing reminder.
 - **Remotes:** `production` = `https://github.com/inttexsystem/inttracker.git`
   (fetch+push, added at `M0`); `origin` = `grupoterrabranca/controle-tapetes`;
   `staging` = `ravatexapps-dotcom/controle-tapetes-staging` (historical backup only,
@@ -306,6 +337,7 @@ technical commits; documentation-only phases show `(docs)`. Consult HEAD with
 
 | Phase | Status | Date | Commit(s) |
 |---|---|---|---|
+| Schema Replay into Sanctioned Target — `M2` (`db/01→64` → `gqmpsxkxynrjvidfmojk`) | `CLOSED / ACCEPTED` | 2026-07-17 | (Supabase writes: 64 migrations + docs record) |
 | Supabase Target Verification + Sanction — `M1` (`gqmpsxkxynrjvidfmojk`) | `CLOSED / ACCEPTED` | 2026-07-17 | (docs, read-only verification) |
 | Repository Migration — `M0` (push to `inttexsystem/inttracker`) | `CLOSED / ACCEPTED` | 2026-07-17 | `7b2ab7d` pushed (git-only) + record commit |
 | Ratify Production Readiness Diagnosis + Backlog Freeze — `PRODUCTION-READINESS-DIAGNOSIS-R1` (ratification) | `CLOSED / ACCEPTED` | 2026-07-17 | `be6f081`, `9566837` (docs) |

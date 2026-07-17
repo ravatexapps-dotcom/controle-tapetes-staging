@@ -1,5 +1,56 @@
 # ACTIVE OPERATIONAL HANDOFF
 
+- **`M2` (schema replay `db/01→db/64` into `gqmpsxkxynrjvidfmojk`) —
+  `CLOSED / ACCEPTED` (2026-07-17):** the ratified authoritative source (repo
+  `db/`, ordered `db/01→db/64`, skipping `*.verify.sql`; `setup_completo.sql`
+  and `supabase db push` forbidden) was replayed into the sanctioned target one
+  migration at a time via the Supabase MCP `apply_migration`, each registered in
+  the migrations registry under its canonical file-stem name and verified after
+  each — **64/64 applied, zero errors, nothing skipped/patched/reordered.**
+  **HARD STOP ZERO passed** before any write: `get_project` returned
+  `ref=gqmpsxkxynrjvidfmojk` (name "Inttex"), virgin pre-state `public`=0 tables /
+  registry=`[]` / buckets=0. **MCP surface change:** at `M1` the MCP was a
+  project-scoped read-only server; for `M2` the architect flipped it to write and,
+  on reconnect, it resolved to the **management-scoped** Supabase server (tools
+  now take an explicit `project_id`; toolset includes `create_project`/
+  `deploy_edge_function`) — every `M2` write targeted `project_id=
+  gqmpsxkxynrjvidfmojk` and nothing else. **Data-writing ruling:** mid-replay the
+  auto-mode classifier denied the `db/04` data-seed write; the architect ruled
+  **Option 1 (faithful `01→64`, no file skipped, data-writing applies within
+  `db/01-64` authorized)** and **corrected gate 4d** from "all row counts 0" (a
+  wrong premise — some migrations seed reference/configuration data by design) to
+  "row counts match exactly what the faithful replay produces; report the residual
+  per table with origin; genuine test data that survives is reported, not deleted."
+  **Post-replay gate:** (4a) registry = **64 entries, order `01→64`, canonical
+  names**; (4b) parity vs staging **NOT EXECUTABLE** — the reconnected
+  management-MCP credential is permission-denied on `ucrjtfswnfdlxwtmxnoo`
+  (`execute_sql` → "You do not have permission"); reported as a tooling limitation,
+  the new project's absolute profile (40 public tables / 0 views / 53 functions /
+  67 RLS policies / 9 triggers / 0 buckets) stands, consistent with the R1
+  diagnosis's ~40-public-tables staging finding; (4c) ACL spot-checks **faithful** —
+  `is_admin_full` + backup-writer RPCs (`db/64`) + evidence-writer (`db/49`) =
+  service_role/postgres only (their `REVOKE service_role`/`authenticated` intents
+  landed), document-scan RPCs + `decidir_documento` (`db/38`) = authenticated
+  (admin-gated internally), and `is_admin()` broad
+  (PUBLIC/anon/authenticated/service_role) is the **pre-existing
+  `IS-ADMIN-ACL-REVIEW` debt reproduced faithfully from `db/02`/`db/05`**, not a
+  replay defect; (4d, corrected) **sole residual `parametros_largura`=2** —
+  width-calc **configuration** seeded by `db/04`, kept by `db/10`/`db/11`; every
+  `db/04` **test** cadastro (cores/fornecedores/modelos/precos) was inserted then
+  **wiped by `db/10`** (confirmed 0), `op_numeros`=0 (backfill from empty `ops`),
+  all else 0 — **no genuine test data survived; nothing deleted**; (4e) storage
+  buckets = 0. **Fidelity note:** a handful of very large files had only their
+  leading `--` comment header condensed in the pasted `apply_migration` query; all
+  executable DDL (tables/columns/constraints/indexes/RLS/functions/grants) was
+  byte-faithful — `db/53` kept verbatim because `db/55` repairs it via an exact
+  function-body string match (its precondition matched, proving fidelity).
+  **Report:** `docs/reports/M2_SCHEMA_REPLAY_VERIFICATION_2026-07-17.md`. **No
+  production access** (`bhgifjrfagkzubpyqpew` never touched); staging only
+  read-attempted for parity (denied), never written. Docs record commit pushed to
+  `production/main` under this order's `M`-track authorization. **Standing
+  reminder for the architect: flip the Supabase MCP back to read-only** now that
+  `M2`'s write window is closed. **Next authorizable action:** an individual order
+  for `M3` (or any `M4`-`M10`).
 - **`M1` (new Supabase project verification + sanction —
   `gqmpsxkxynrjvidfmojk`) — `CLOSED / ACCEPTED` (2026-07-17):** read-only
   verification phase (Sonnet 5 / low effort), no writes attempted, one docs
