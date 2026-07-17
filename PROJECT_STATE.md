@@ -13,19 +13,22 @@ HEAD, working tree, staging and divergence must be consulted directly in Git
 ## Active phase and next action
 
 - **Active functional phase:** `NONE`.
-- **Next authorizable action:** `TEST-DOUBLE-SHARED-MODULE` **Lot `L1`** —
-  `AUTHORIZED` (architect ratification of `TEST-MOCK-FIDELITY-AUDIT`,
-  2026-07-17). Introduce `tests/_doubles.js` (a shared `FaithfulNode` with real
-  DOM boolean-attr coercion + presence, and a fake `supa` with `{data,error}`,
-  single-vs-array, double-envelope `invoke`, single-level `rpc`) plus its own
-  meta-tests as commit 1 (additive, zero suites migrated); then adopt it in the
-  `R1` suites (`direct-cnpj-screens`, `pedido-form`, `cliente-pedido-tracking`,
-  `pedido-detail-linked-documents`, `tec-to-acabamento-flow`) and fix the `R2`
-  drift (`fornecedor-screens`, `painel-screen` `removeAttribute`/`hasAttribute`
-  parity) as commit 2, same phase — with a per-`R1`-suite demonstration test
-  proving the old double missed what the new one catches. `TEST-DOUBLE-STALE-
-  ASSERTION-CLEANUP` **Lot `L2`** is `AUTHORIZED` **after** `L1` (delete/rewrite
-  the stale inline-`<script>` assertions in `index-inline`/`config`/
+- **Next authorizable action:** finish `TEST-DOUBLE-SHARED-MODULE` **Lot `L1`** —
+  `IN PROGRESS`. Commit 1 (`54ee8aa` — `tests/_doubles.js` shared `FaithfulNode`
+  + fake `supa` + 15 meta-tests, additive) and commit 2 (`4d2f304` — shared
+  double adopted in **4 of the 5** `R1` suites: `cliente-pedido-tracking`,
+  `pedido-detail-linked-documents`, `direct-cnpj-screens`, `pedido-form`, each
+  +1 demonstration test; `R2` drift fixed in `fornecedor-screens`/
+  `painel-screen`; `FaithfulNode` widened for select→value reflection) are done
+  and verified green (no assertion weakened; pre-existing failures unchanged).
+  **Single remaining `L1` item:** `tec-to-acabamento-flow` `R1` adoption — the
+  most complex of the set (interactive 2-sandbox form, event-dispatch
+  reconciliation, 2 pre-existing static failures to preserve; latent-only
+  blindness, its one boolean assertion already covered statically) — deferred to
+  a follow-up commit in this phase (three migration subagents were killed by a
+  session limit; this suite was not rushed under that constraint). After it,
+  `TEST-DOUBLE-STALE-ASSERTION-CLEANUP` **Lot `L2`** is `AUTHORIZED` (delete/
+  rewrite the stale inline-`<script>` assertions in `index-inline`/`config`/
   `supabase-client`; ephemeral `listen(0)` replacing fixed `:8765`). `A2.1`
   (schema `nivel_acesso`) and `A3.4` (legacy code removal in `cadastros.js`)
   remain the next authorizable candidates **after** the test-double lots.
