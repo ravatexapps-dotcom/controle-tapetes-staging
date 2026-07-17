@@ -40,41 +40,35 @@ const indexSrc   = fs.readFileSync(INDEX, 'utf8');
 // Helpers de validação estática
 // -----------------------------------------------------------------------------
 
-// Extrai o ÚLTIMO <script>...</script> que NÃO tem src (o inline principal).
-// No estado pós-extração, esse script NÃO deve mais conter as definições
-// de config — apenas comentários referenciando js/config.js.
-function extractInlineScript(html) {
+// TEST-DOUBLE-STALE-ASSERTION-CLEANUP (Lot L2, 2026-07-17): index.html is now
+// fully modularized — there is no content-bearing inline <script> left (the
+// config block moved to js/config.js) and every script loads with a ?v=
+// cache-buster (§12). These helpers reflect that post-modularization structure;
+// the previous inline-extraction helpers threw `nenhum <script> inline
+// encontrado` and the script-tag regexes did not tolerate ?v=.
+
+// Content-bearing inline <script> bodies. Empty after full modularization.
+function inlineContent(html) {
   const re = /<script(?![^>]*\bsrc=)[^>]*>([\s\S]*?)<\/script>/g;
-  const matches = [];
   let m;
-  while ((m = re.exec(html)) !== null) matches.push(m[1]);
-  if (matches.length === 0) throw new Error('nenhum <script> inline encontrado');
-  return matches.reduce((a, b) => (a.length >= b.length ? a : b));
+  let out = '';
+  while ((m = re.exec(html)) !== null) out += m[1];
+  return out;
 }
 
-// Extrai o(s) <script src="js/config.js"> do <head>, em ordem de aparição.
+// <script src="js/config.js"> tags (tolerating the ?v= cache-buster).
 function configScriptTags(html) {
-  const re = /<script\s+src="js\/config\.js"\s*><\/script>/g;
+  const re = /<script\s+src="js\/config\.js(?:\?[^"]*)?"\s*><\/script>/g;
   const tags = [];
   let m;
   while ((m = re.exec(html)) !== null) tags.push({ index: m.index, text: m[0] });
   return tags;
 }
 
-// Encontra o índice do PRIMEIRO <script> inline (sem src) em <body>.
-function firstInlineScriptIndex(html) {
-  const re = /<script(?![^>]*\bsrc=)[^>]*>/g;
-  const m = re.exec(html);
-  return m ? m.index : -1;
-}
-
-// Extrai a substring de <script> inline (começa em `<script>` e vai até `</script>`).
-function extractInlineRaw(html) {
-  const start = html.indexOf('<script>');
-  if (start < 0) throw new Error('<script> inline (sem src) não encontrado');
-  const end = html.indexOf('</script>', start);
-  if (end < 0) throw new Error('</script> de fechamento não encontrado');
-  return html.slice(start, end + '</script>'.length);
+// Index of the app entrypoint script (js/boot.js) — the module that replaced
+// the old inline main script as the last-loaded, dependency-consuming script.
+function entrypointIdx(html) {
+  return html.indexOf('js/boot.js');
 }
 
 // Remove todos os comentários `// ...` e `/* ... */` de um trecho de JS
@@ -112,15 +106,15 @@ test('index.html carrega js/config.js EXATAMENTE UMA VEZ no <head>', () => {
     `esperado 1 <script src="js/config.js">, encontrado ${tags.length}`);
 });
 
-test('index.html: <script src="js/config.js"> vem ANTES do <script> inline', () => {
+test('index.html: <script src="js/config.js"> vem ANTES do entrypoint js/boot.js', () => {
   const tags = configScriptTags(indexSrc);
   assert.equal(tags.length, 1);
   const cfgIdx = tags[0].index;
-  const inlineIdx = firstInlineScriptIndex(indexSrc);
+  const bootIdx = entrypointIdx(indexSrc);
   assert.ok(cfgIdx > 0, 'tag de config não encontrada');
-  assert.ok(inlineIdx > 0, 'tag inline não encontrada');
-  assert.ok(cfgIdx < inlineIdx,
-    `js/config.js (idx ${cfgIdx}) deve vir antes do inline (idx ${inlineIdx})`);
+  assert.ok(bootIdx > 0, 'entrypoint js/boot.js não encontrado');
+  assert.ok(cfgIdx < bootIdx,
+    `js/config.js (idx ${cfgIdx}) deve vir antes do entrypoint boot.js (idx ${bootIdx})`);
 });
 
 test('index.html: ordem dos <script> preserva dependências (calculo → ui → badges → config)', () => {
@@ -135,65 +129,25 @@ test('index.html: ordem dos <script> preserva dependências (calculo → ui → 
   assert.ok(badgesIdx  < cfgIdx,    'badges deve vir antes de config');
 });
 
-test('script inline NÃO contém mais `const APP_ENVIRONMENTS =`', () => {
-  const inline = extractInlineScript(indexSrc);
-  // Remove comentários pra não pegar menções em // que apenas documentam
-  // a origem.
-  const noComments = stripComments(inline);
-  assert.equal(/\bconst\s+APP_ENVIRONMENTS\s*=/.test(noComments), false,
-    'script inline ainda declara APP_ENVIRONMENTS — config não foi extraída');
+// Post-modularization invariant (replaces the seven per-symbol "inline NÃO
+// contém X" tests, which asserted against an inline <script> that no longer
+// exists): the config block was fully extracted, so there is no content-bearing
+// inline script, and the definitions now live in js/config.js.
+test('index.html NÃO tem mais <script> inline com conteúdo (config foi extraída)', () => {
+  assert.equal(inlineContent(indexSrc).trim(), '',
+    'index.html ainda tem um <script> inline com conteúdo — a extração de config não está completa');
 });
 
-test('script inline NÃO contém mais `function detectAppEnvironment`', () => {
-  const inline = extractInlineScript(indexSrc);
-  const noComments = stripComments(inline);
-  assert.equal(/\bfunction\s+detectAppEnvironment\s*\(/.test(noComments), false,
-    'script inline ainda define detectAppEnvironment');
-});
-
-test('script inline NÃO contém mais `const APP_ENV` (sem ponto-antes)', () => {
-  // APP_ENV aparece como propriedade (APP_ENV !== 'production') e em
-  // template strings ('APP-ENV ' + APP_CONFIG.label). Mas não deve haver
-  // a DECLARAÇÃO `const APP_ENV = ...` no inline.
-  const inline = extractInlineScript(indexSrc);
-  const noComments = stripComments(inline);
-  assert.equal(/\bconst\s+APP_ENV\s*=/.test(noComments), false,
-    'script inline ainda declara APP_ENV');
-});
-
-test('script inline NÃO contém mais `const APP_CONFIG =`', () => {
-  const inline = extractInlineScript(indexSrc);
-  const noComments = stripComments(inline);
-  assert.equal(/\bconst\s+APP_CONFIG\s*=/.test(noComments), false,
-    'script inline ainda declara APP_CONFIG');
-});
-
-test('script inline NÃO contém mais `const SUPABASE_URL =`', () => {
-  const inline = extractInlineScript(indexSrc);
-  const noComments = stripComments(inline);
-  assert.equal(/\bconst\s+SUPABASE_URL\s*=/.test(noComments), false,
-    'script inline ainda declara SUPABASE_URL');
-});
-
-test('script inline NÃO contém mais `const SUPABASE_ANON_KEY =`', () => {
-  const inline = extractInlineScript(indexSrc);
-  const noComments = stripComments(inline);
-  assert.equal(/\bconst\s+SUPABASE_ANON_KEY\s*=/.test(noComments), false,
-    'script inline ainda declara SUPABASE_ANON_KEY');
-});
-
-test('script inline NÃO contém mais refs canônicos de produção/staging (anon keys saíram)', () => {
-  // As anon keys (eyJ...) e os URLs dos refs DEVEM ter saído do script
-  // inline — agora vivem em js/config.js.
-  const inline = extractInlineScript(indexSrc);
-  assert.equal(inline.includes(PROD_REF), false,
-    `script inline ainda referencia ref de produção ${PROD_REF}`);
-  assert.equal(inline.includes(STAGING_REF), false,
-    `script inline ainda referencia ref de staging ${STAGING_REF}`);
-  assert.equal(inline.includes('supabaseUrl:'), false,
-    'script inline ainda define supabaseUrl');
-  assert.equal(inline.includes('supabaseAnonKey:'), false,
-    'script inline ainda define supabaseAnonKey');
+test('as definições de config vivem em js/config.js (extraídas do inline)', () => {
+  const noComments = stripComments(cfgSrc);
+  assert.match(noComments, /\bconst\s+APP_ENVIRONMENTS\s*=/, 'APP_ENVIRONMENTS deve viver em js/config.js');
+  assert.match(noComments, /\bfunction\s+detectAppEnvironment\s*\(/, 'detectAppEnvironment deve viver em js/config.js');
+  assert.match(noComments, /\bconst\s+APP_ENV\s*=/, 'APP_ENV deve viver em js/config.js');
+  assert.match(noComments, /\bconst\s+APP_CONFIG\s*=/, 'APP_CONFIG deve viver em js/config.js');
+  assert.match(noComments, /\bconst\s+SUPABASE_URL\s*=/, 'SUPABASE_URL deve viver em js/config.js');
+  assert.match(noComments, /\bconst\s+SUPABASE_ANON_KEY\s*=/, 'SUPABASE_ANON_KEY deve viver em js/config.js');
+  assert.ok(cfgSrc.includes(PROD_REF) && cfgSrc.includes(STAGING_REF),
+    'refs canônicos de produção/staging devem viver em js/config.js');
 });
 
 test('js/config.js: produção ref aparece em production config', () => {
@@ -354,7 +308,7 @@ test('runtime: SUPABASE_ANON_KEY é JWT com 3 segmentos (anon, não service_role
 // carrega js/config.js antes do script inline.
 // -----------------------------------------------------------------------------
 
-test('http.server: index.html servido contém js/config.js antes do inline', (t, done) => {
+test('http.server (listen(0)): index.html servido contém js/config.js antes do entrypoint boot.js', (t, done) => {
   const srv = http.createServer((req, res) => {
     if (req.url === '/' || req.url === '/index.html') {
       res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
@@ -375,10 +329,10 @@ test('http.server: index.html servido contém js/config.js antes do inline', (t,
       res.on('end', () => {
         try {
           const cfgIdx = body.indexOf('js/config.js');
-          const inlineIdx = body.indexOf('<script>');
+          const bootIdx = body.indexOf('js/boot.js');
           assert.ok(cfgIdx > 0, 'tag js/config.js não encontrada no body servido');
-          assert.ok(inlineIdx > 0, 'tag inline não encontrada no body servido');
-          assert.ok(cfgIdx < inlineIdx, 'js/config.js deve vir antes do inline');
+          assert.ok(bootIdx > 0, 'entrypoint js/boot.js não encontrado no body servido');
+          assert.ok(cfgIdx < bootIdx, 'js/config.js deve vir antes do entrypoint boot.js');
           srv.close();
           done();
         } catch (e) {

@@ -915,8 +915,14 @@ test('34. screenPainel renderiza via shellLayout com ADMIN_MENU atual', () => {
   const flex = root.children.find((c) => c.tagName === 'DIV');
   const aside = flex && flex.children.find((c) => c.tagName === 'ASIDE');
   const links = aside && aside.children.filter((c) => c.tagName === 'A');
-  assert.ok(links && links.length === 10,
-    `screenPainel nao renderizou 10 itens do ADMIN_MENU (renderizou ${links ? links.length : 0})`);
+  // Dynamic count: assert one link per ADMIN_MENU item rather than a hardcoded
+  // number (was `10`, stale once the menu grew to 11) — same stale-assertion
+  // class cleaned in Lot L2 (TEST-DOUBLE-STALE-ASSERTION-CLEANUP, 2026-07-17).
+  const adminMenu = vm.runInContext('window.ADMIN_MENU', sandbox);
+  assert.ok(Array.isArray(adminMenu) && adminMenu.length > 0,
+    'window.ADMIN_MENU deveria estar definido e não-vazio');
+  assert.ok(links && links.length === adminMenu.length,
+    `screenPainel deveria renderizar um link por item do ADMIN_MENU (esperado ${adminMenu ? adminMenu.length : '?'}, renderizou ${links ? links.length : 0})`);
 });
 
 test('35. screenCadastrosCores (cadastros) ainda renderiza (regressão cadastros)', async () => {

@@ -46,26 +46,31 @@ const indexSrc  = fs.readFileSync(INDEX,'utf8');
 // Helpers de validação estática
 // -----------------------------------------------------------------------------
 
-// Extrai o ÚLTIMO <script>...</script> que NÃO tem src (o inline principal).
-function extractInlineScript(html) {
+// TEST-DOUBLE-STALE-ASSERTION-CLEANUP (Lot L2, 2026-07-17): index.html is fully
+// modularized — no content-bearing inline <script> remains (the SUPA +
+// WRITE-GUARD block moved to js/supabase-client.js) and scripts load with a ?v=
+// cache-buster (§12). Helpers reflect that post-modularization structure; the
+// previous inline extractor threw and findScriptIdx did not tolerate ?v=.
+
+// Content-bearing inline <script> bodies. Empty after full modularization.
+function inlineContent(html) {
   const re = /<script(?![^>]*\bsrc=)[^>]*>([\s\S]*?)<\/script>/g;
-  const matches = [];
   let m;
-  while ((m = re.exec(html)) !== null) matches.push(m[1]);
-  if (matches.length === 0) throw new Error('nenhum <script> inline encontrado');
-  return matches.reduce((a, b) => (a.length >= b.length ? a : b));
+  let out = '';
+  while ((m = re.exec(html)) !== null) out += m[1];
+  return out;
 }
 
 function findScriptIdx(html, src) {
-  const re = new RegExp(`<script\\s+src="${src.replace(/\//g, '\\/')}"\\s*><\\/script>`);
+  const re = new RegExp(`<script\\s+src="${src.replace(/\//g, '\\/')}(?:\\?[^"]*)?"\\s*><\\/script>`);
   const m = re.exec(html);
   return m ? m.index : -1;
 }
 
-function firstInlineScriptIndex(html) {
-  const re = /<script(?![^>]*\bsrc=)[^>]*>/g;
-  const m = re.exec(html);
-  return m ? m.index : -1;
+// App entrypoint (js/boot.js) replaced the inline main script as the last
+// dependency-consuming script.
+function entrypointIdx(html) {
+  return html.indexOf('js/boot.js');
 }
 
 function stripComments(src) {
@@ -166,7 +171,7 @@ test('js/supabase-client.js tem sintaxe JS válida (node --check)', () => {
 });
 
 test('index.html carrega js/supabase-client.js EXATAMENTE UMA VEZ no <head>', () => {
-  const re = /<script\s+src="js\/supabase-client\.js"\s*><\/script>/g;
+  const re = /<script\s+src="js\/supabase-client\.js(?:\?[^"]*)?"\s*><\/script>/g;
   const matches = indexSrc.match(re) || [];
   assert.equal(matches.length, 1,
     `esperado 1 <script src="js/supabase-client.js">, encontrado ${matches.length}`);
@@ -181,49 +186,42 @@ test('index.html: <script src="js/config.js"> vem ANTES de <script src="js/supab
     `config.js (idx ${cfgIdx}) deve vir antes de supabase-client.js (idx ${supaIdx})`);
 });
 
-test('index.html: <script src="js/supabase-client.js"> vem ANTES do <script> inline', () => {
+test('index.html: <script src="js/supabase-client.js"> vem ANTES do entrypoint js/boot.js', () => {
   const supaIdx = findScriptIdx(indexSrc, 'js/supabase-client.js');
-  const inlineIdx = firstInlineScriptIndex(indexSrc);
+  const bootIdx = entrypointIdx(indexSrc);
   assert.ok(supaIdx > 0, 'js/supabase-client.js não encontrado no <head>');
-  assert.ok(inlineIdx > 0, 'tag inline não encontrada');
-  assert.ok(supaIdx < inlineIdx,
-    `supabase-client.js (idx ${supaIdx}) deve vir antes do inline (idx ${inlineIdx})`);
+  assert.ok(bootIdx > 0, 'entrypoint js/boot.js não encontrado');
+  assert.ok(supaIdx < bootIdx,
+    `supabase-client.js (idx ${supaIdx}) deve vir antes do entrypoint boot.js (idx ${bootIdx})`);
 });
 
-test('script inline NÃO contém mais createClient, _supaRaw, _GUARD_BLOCK_WRITES, etc', () => {
-  const inline = extractInlineScript(indexSrc);
-  const noComments = stripComments(inline);
-  assert.equal(/supabase\.createClient\s*\(/.test(noComments), false,
-    'script inline ainda chama supabase.createClient');
-  assert.equal(/\b_supaRaw\b/.test(noComments), false,
-    'script inline ainda referencia _supaRaw');
-  assert.equal(/\b_LOCAL_HOSTS\b/.test(noComments), false,
-    'script inline ainda referencia _LOCAL_HOSTS');
-  assert.equal(/\b_IS_LOCAL\b/.test(noComments), false,
-    'script inline ainda referencia _IS_LOCAL');
-  assert.equal(/\b_IS_PROD_URL\b/.test(noComments), false,
-    'script inline ainda referencia _IS_PROD_URL');
-  assert.equal(/\b_GUARD_BLOCK_WRITES\b/.test(noComments), false,
-    'script inline ainda referencia _GUARD_BLOCK_WRITES');
-  assert.equal(/\b_WG_ERROR\b/.test(noComments), false,
-    'script inline ainda referencia _WG_ERROR');
-  assert.equal(/function\s+_wrapQueryBuilder/.test(noComments), false,
-    'script inline ainda define _wrapQueryBuilder');
-  assert.equal(/\bconst\s+supa\s*=/.test(noComments), false,
-    'script inline ainda define const supa (Proxy)');
+// Post-modularization invariant (replaces the "inline NÃO contém X" test, which
+// asserted against an inline <script> that no longer exists): there is no
+// content-bearing inline script, and the SUPA + WRITE-GUARD logic lives in
+// js/supabase-client.js.
+test('a lógica do client (createClient, _supaRaw, write-guard) vive em js/supabase-client.js, não no inline', () => {
+  assert.equal(inlineContent(indexSrc).trim(), '',
+    'index.html ainda tem um <script> inline com conteúdo');
+  const noComments = stripComments(supaSrc);
+  assert.match(noComments, /supabase\.createClient\s*\(/, 'createClient deve viver em js/supabase-client.js');
+  assert.match(noComments, /\b_supaRaw\b/, '_supaRaw deve viver em js/supabase-client.js');
+  assert.match(noComments, /\b_GUARD_BLOCK_WRITES\b/, '_GUARD_BLOCK_WRITES deve viver em js/supabase-client.js');
+  assert.match(noComments, /\b_WG_ERROR\b/, '_WG_ERROR deve viver em js/supabase-client.js');
+  assert.match(noComments, /function\s+_wrapQueryBuilder/, '_wrapQueryBuilder deve viver em js/supabase-client.js');
+  assert.match(noComments, /\bconst\s+supa\s*=/, 'o Proxy supa deve viver em js/supabase-client.js');
 });
 
-test('script inline NÃO contém mais o env-banner laranja (extraído para js/environment-banner.js)', () => {
-  const inline = extractInlineScript(indexSrc);
-  // Após ROUTER-MODULE-A, o inline começa em === BOOT NOTES ===.
-  // config/client/write-guard/banner/auth/router foram todos extraídos.
-  assert.equal(/=== ENV-BANNER/.test(inline), false,
-    'script inline ainda tem marcador === ENV-BANNER — env-banner não foi extraído');
-  assert.equal(/_envBanner/.test(inline), false,
-    'script inline ainda referencia _envBanner — env-banner não foi extraído');
-  assert.equal(/AMBIENTE STAGING — DADOS DE TESTE/.test(inline), false,
-    'script inline ainda tem texto do env-banner — env-banner não foi extraído');
-  assert.match(inline, /=== BOOT NOTES/);
+// Post-modularization invariant: the env-banner was extracted to
+// js/environment-banner.js; there is no content-bearing inline script, and the
+// banner logic/text lives in the dedicated module.
+test('o env-banner laranja foi extraído para js/environment-banner.js (não está no inline)', () => {
+  assert.equal(inlineContent(indexSrc).trim(), '',
+    'index.html ainda tem um <script> inline com conteúdo');
+  const EB = path.join(ROOT, 'js', 'environment-banner.js');
+  assert.ok(fs.existsSync(EB), 'js/environment-banner.js deve existir');
+  const ebSrc = fs.readFileSync(EB, 'utf8');
+  assert.match(ebSrc, /_envBanner/, '_envBanner deve viver em js/environment-banner.js');
+  assert.match(ebSrc, /AMBIENTE STAGING — DADOS DE TESTE/, 'o texto do env-banner deve viver em js/environment-banner.js');
 });
 
 test('js/supabase-client.js: produção ref aparece em production config (via config.js)', () => {
@@ -501,7 +499,7 @@ test('cénario forçado: auth.getSession NÃO é bloqueado', async () => {
 // carrega js/supabase-client.js antes do script inline.
 // -----------------------------------------------------------------------------
 
-test('http.server: index.html servido contém js/supabase-client.js antes do inline', (t, done) => {
+test('http.server (listen(0)): index.html servido contém js/supabase-client.js antes do entrypoint boot.js', (t, done) => {
   const srv = http.createServer((req, res) => {
     if (req.url === '/' || req.url === '/index.html') {
       res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
@@ -524,12 +522,12 @@ test('http.server: index.html servido contém js/supabase-client.js antes do inl
         try {
           const cfgIdx  = body.indexOf('js/config.js');
           const supaIdx = body.indexOf('js/supabase-client.js');
-          const inlineIdx = body.indexOf('<script>');
+          const bootIdx = body.indexOf('js/boot.js');
           assert.ok(cfgIdx  > 0, 'js/config.js não encontrado no body servido');
           assert.ok(supaIdx > 0, 'js/supabase-client.js não encontrado no body servido');
-          assert.ok(inlineIdx > 0, 'tag inline não encontrada no body servido');
+          assert.ok(bootIdx > 0, 'entrypoint js/boot.js não encontrado no body servido');
           assert.ok(cfgIdx < supaIdx, 'js/config.js deve vir antes de js/supabase-client.js');
-          assert.ok(supaIdx < inlineIdx, 'js/supabase-client.js deve vir antes do inline');
+          assert.ok(supaIdx < bootIdx, 'js/supabase-client.js deve vir antes do entrypoint boot.js');
           srv.close();
           done();
         } catch (e) {

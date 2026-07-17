@@ -1,182 +1,138 @@
-// Smoke D2C-R1: garante que o script inline do index.html não redeclara
-// os identificadores que foram extraídos para js/badges.js.
+// Smoke D2C-R1 — rewritten for the post-modularization structure
+// (TEST-DOUBLE-STALE-ASSERTION-CLEANUP / Lot L2, 2026-07-17).
 //
-// Falha do D2C: o index.html mantinha `const OP_STATUS_BADGE = {...}` e
-// `const OP_STATUS_LABEL = {...}` no script inline. Quando o browser
-// carregava `js/badges.js` (que também declara esses consts no escopo do
-// Script Record) e em seguida executava o script inline, o segundo `const`
-// lançava `SyntaxError: Identifier 'OP_STATUS_BADGE' has already been
-// declared` e a tela ficava branca.
+// Original D2C bug: index.html kept `const OP_STATUS_BADGE = {...}` etc. in an
+// inline <script>; once js/badges.js (which also declares them) loaded, the
+// inline `const` threw `SyntaxError: Identifier ... has already been declared`
+// and the screen went blank.
 //
-// Este teste extrai o <script> inline servido pelo http.server, carrega
-// `js/ui.js`, `js/badges.js` e o script inline num MESMO vm.Context (na
-// mesma ordem dos <script> do <head>), e valida que não há redeclaração
-// dos 6 identificadores extraídos. Antes do fix, este teste falhava com
-// SyntaxError; depois do fix, passa.
+// Post-modularization reality (verified): index.html has NO content-bearing
+// inline <script> at all — every script is an external module loaded with a
+// ?v= cache-buster (§12). The bug is therefore eliminated BY CONSTRUCTION.
+// The previous version of this suite asserted against an inline <script> that
+// no longer exists (extractInlineScript threw `nenhum <script> inline
+// encontrado`) and fetched a fixed dev server on :8765 (ECONNREFUSED when it
+// was down). Both were stale-assertion / environment debt, not mock-fidelity.
+//
+// This rewrite asserts the post-modularization invariant directly, serves the
+// page from an ephemeral listen(0) server (no fixed port), keeps the real
+// coexistence guard (ui.js + badges.js in one context must not throw a
+// duplicate-const error), and adopts the shared createDocument double.
+//
+// Runs with: node --test tests/index-inline.smoke.js
 
 'use strict';
 
-const test   = require('node:test');
+const test = require('node:test');
 const assert = require('node:assert/strict');
-const fs     = require('node:fs');
-const path   = require('node:path');
-const vm     = require('node:vm');
-const http   = require('node:http');
+const fs = require('node:fs');
+const path = require('node:path');
+const vm = require('node:vm');
+const http = require('node:http');
 
-const PORT = 8765;
-const HOST = '127.0.0.1';
+const { createDocument } = require('./_doubles.js');
 
-function fetchIndexHtml() {
-  return new Promise((resolve, reject) => {
-    const req = http.get({ host: HOST, port: PORT, path: '/index.html' }, (res) => {
-      let buf = '';
-      res.setEncoding('utf8');
-      res.on('data', (c) => { buf += c; });
-      res.on('end', () => resolve({ status: res.statusCode, body: buf }));
-    });
-    req.on('error', reject);
-    req.setTimeout(5000, () => req.destroy(new Error('timeout')));
-  });
-}
+const ROOT = path.resolve(__dirname, '..');
+const INDEX = path.join(ROOT, 'index.html');
+const indexSrc = fs.readFileSync(INDEX, 'utf8');
+const uiSrc = fs.readFileSync(path.join(ROOT, 'js', 'ui.js'), 'utf8');
+const badgesSrc = fs.readFileSync(path.join(ROOT, 'js', 'badges.js'), 'utf8');
 
-function extractInlineScript(html) {
-  // Pega o <script>...</script> que NÃO tem src (script inline principal).
-  // É o ÚLTIMO <script>...</script> do <body> na página atual.
+const BADGE_IDENTIFIERS = ['OP_STATUS_BADGE', 'OP_STATUS_LABEL', 'OP_TIPO_LABEL', 'OP_TIPO_BADGE'];
+
+// All non-src <script> bodies with real content (content-bearing inline
+// scripts). Empty after full modularization. Never throws — an empty result IS
+// the expected post-modularization state.
+function inlineScripts(html) {
   const re = /<script(?![^>]*\bsrc=)[^>]*>([\s\S]*?)<\/script>/g;
-  const matches = [];
+  const out = [];
   let m;
-  while ((m = re.exec(html)) !== null) matches.push(m[1]);
-  if (matches.length === 0) throw new Error('nenhum <script> inline encontrado');
-  // Pega o maior (o script principal é tipicamente o maior)
-  return matches.reduce((a, b) => (a.length >= b.length ? a : b));
+  while ((m = re.exec(html)) !== null) {
+    if (m[1].trim() !== '') out.push(m[1]);
+  }
+  return out;
 }
 
-// O script inline do index.html toca Supabase, currentUser, telas, etc.
-// Para isolar APENAS a falha de duplicate-binding, criamos um DOM mock
-// mínimo e cortamos o script inline numa parte que tenta declarar os
-// identificadores extraídos. Se o bug existisse (duplicate const no
-// escopo), vm.runInContext lançaria SyntaxError aqui.
+// Minimal DOM context via the shared double, enough to load ui.js + badges.js.
 function setupSandbox() {
-  class FakeNode {
-    constructor(t){ this.tagName=(t+'').toUpperCase(); this.children=[]; this.className=''; this._text=null; }
-    appendChild(n){ this.children.push(n); return n; }
-    setAttribute(k,v){ if(k==='class') this.className=v; }
-    addEventListener(){} removeEventListener(){}
-    replaceChildren(...ns){ this.children=[]; for(const n of ns.flat()){ if(n==null||n===false) continue; this.children.push(typeof n==='string'?{textContent:n,appendChild:()=>n,setAttribute:()=>{}}:n);} }
-    remove(){ this._removed = true; }
-    get textContent(){ if(this._text!=null) return this._text; return this.children.map(c=>c.textContent||'').join(''); }
-    set textContent(v){ this._text=v; }
-  }
-  // `querySelector('#toasts')` é usado por `toast()` em js/ui.js.
-  // Antes da extração do env-banner, o erro síncrono de Supabase undefined
-  // abortava o main() antes de chegar no catch() que faz o appendChild.
-  // Agora o main() chega ao catch() assíncrono com mais frequência, e
-  // toast() precisa de #toasts. Retornar um FakeNode vazio aqui evita
-  // o unhandledRejection (o sandbox não tem DOM real, então a tolerância
-  // é a melhor opção).
-  const toastsNode = new FakeNode('div');
-  const document = {
-    createElement: (t) => new FakeNode(t),
-    createTextNode: (t) => ({ textContent: t, appendChild(){}, setAttribute(){} }),
-    querySelector: (sel) => (sel === '#toasts' || sel === '#toasts, #toasts') ? toastsNode : new FakeNode('div'),
-    querySelectorAll: () => [],
-    addEventListener: () => {}, removeEventListener: () => {},
-    body: new FakeNode('body'),
-  };
-  const sandbox = { document, setTimeout, clearTimeout, console, URL, URLSearchParams };
+  const sandbox = { document: createDocument(), console, setTimeout, clearTimeout, URL, URLSearchParams };
   sandbox.window = sandbox;
   sandbox.globalThis = sandbox;
   vm.createContext(sandbox);
   return sandbox;
 }
 
-const ROOT = path.resolve(__dirname, '..');
-const uiSrc     = fs.readFileSync(path.join(ROOT, 'js', 'ui.js'),     'utf8');
-const badgesSrc = fs.readFileSync(path.join(ROOT, 'js', 'badges.js'), 'utf8');
+// Serve index.html (+ js/ files) on an ephemeral port and fetch one path.
+// Replaces the old fixed :8765 dependency.
+function serveAndFetch(reqPath) {
+  return new Promise((resolve, reject) => {
+    const srv = http.createServer((req, res) => {
+      const urlPath = (req.url || '').split('?')[0];
+      if (urlPath === '/' || urlPath === '/index.html') {
+        res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+        res.end(indexSrc);
+      } else if (urlPath.startsWith('/js/')) {
+        try {
+          res.writeHead(200, { 'Content-Type': 'application/javascript; charset=utf-8' });
+          res.end(fs.readFileSync(path.join(ROOT, urlPath.replace(/^\//, '')), 'utf8'));
+        } catch (_) { res.writeHead(404); res.end(); }
+      } else { res.writeHead(404); res.end(); }
+    });
+    srv.listen(0, '127.0.0.1', () => {
+      const port = srv.address().port;
+      const req = http.get({ host: '127.0.0.1', port, path: reqPath }, (res) => {
+        let buf = '';
+        res.setEncoding('utf8');
+        res.on('data', (c) => { buf += c; });
+        res.on('end', () => { srv.close(); resolve({ status: res.statusCode, body: buf }); });
+      });
+      req.on('error', (e) => { srv.close(); reject(e); });
+      req.setTimeout(5000, () => req.destroy(new Error('timeout')));
+    });
+  });
+}
 
-test('http.server está respondendo em :8765 e serve index.html', async () => {
-  const { status, body } = await fetchIndexHtml();
-  assert.equal(status, 200);
-  assert.ok(body.length > 1000, 'index.html muito curto');
-  assert.match(body, /<script src="js\/badges\.js"><\/script>/);
-});
-
-test('js/badges.js é carregado EXATAMENTE UMA VEZ no <head>', async () => {
-  const { body } = await fetchIndexHtml();
-  const matches = body.match(/<script\s+src="js\/badges\.js"/g) || [];
+test('index.html carrega js/badges.js EXATAMENTE UMA VEZ (tolera ?v=)', () => {
+  const matches = indexSrc.match(/<script\s+src="js\/badges\.js(?:\?[^"]*)?"\s*><\/script>/g) || [];
   assert.equal(matches.length, 1, `esperado 1 <script src="js/badges.js">, encontrado ${matches.length}`);
 });
 
-test('script inline servido pelo http.server NÃO contém mais OP_STATUS_BADGE / OP_STATUS_LABEL', async () => {
-  const { body } = await fetchIndexHtml();
-  const inline = extractInlineScript(body);
-  assert.equal(inline.includes('OP_STATUS_BADGE'), false,
-    'script inline ainda declara OP_STATUS_BADGE — causaria SyntaxError no browser');
-  assert.equal(inline.includes('OP_STATUS_LABEL'), false,
-    'script inline ainda declara OP_STATUS_LABEL — causaria SyntaxError no browser');
+test('index.html NÃO tem mais nenhum <script> inline com conteúdo (totalmente modularizado)', () => {
+  const inline = inlineScripts(indexSrc);
+  assert.equal(inline.length, 0,
+    `esperado 0 scripts inline (tudo extraído para módulos), encontrado ${inline.length}`);
 });
 
-test('script inline servido pelo http.server NÃO contém mais OP_TIPO_LABEL / OP_TIPO_BADGE', async () => {
-  const { body } = await fetchIndexHtml();
-  const inline = extractInlineScript(body);
-  assert.equal(inline.includes('OP_TIPO_LABEL'), false,
-    'script inline ainda declara OP_TIPO_LABEL');
-  assert.equal(inline.includes('OP_TIPO_BADGE'), false,
-    'script inline ainda declara OP_TIPO_BADGE');
+test('identificadores de badges vivem em js/badges.js e em NENHUM script inline (D2C impossível por construção)', () => {
+  const inlineJoined = inlineScripts(indexSrc).join('\n');
+  for (const id of BADGE_IDENTIFIERS) {
+    assert.ok(badgesSrc.includes(id), `${id} deveria estar declarado em js/badges.js`);
+    assert.equal(inlineJoined.includes(id), false, `${id} não deveria aparecer em nenhum script inline`);
+  }
 });
 
-test('script inline servido pelo http.server NÃO contém mais as funções badgeTipo / badgeStatus', async () => {
-  const { body } = await fetchIndexHtml();
-  const inline = extractInlineScript(body);
-  // Procura por declaração top-level: `function badgeTipo(` ou `function badgeStatus(`
-  // (não em string/comentário). Aqui usamos match simples de substring porque o
-  // script inline é JavaScript real, sem aspas contendo esses nomes em formato
-  // de declaração.
-  assert.equal(/function\s+badgeTipo\s*\(/.test(inline), false,
-    'script inline ainda define function badgeTipo');
-  assert.equal(/function\s+badgeStatus\s*\(/.test(inline), false,
-    'script inline ainda define function badgeStatus');
+test('js/badges.js declara as funções badgeStatus / badgeTipo (fonte única)', () => {
+  assert.match(badgesSrc, /function\s+badgeStatus\s*\(/);
+  assert.match(badgesSrc, /function\s+badgeTipo\s*\(/);
 });
 
-test('coexistência ui.js + badges.js não lança SyntaxError', () => {
+test('coexistência ui.js + badges.js não lança SyntaxError de duplicate-const', () => {
   const sandbox = setupSandbox();
-  // Carrega na mesma ordem do <head>
-  vm.runInContext(uiSrc,     sandbox, { filename: 'js/ui.js' });
+  vm.runInContext(uiSrc, sandbox, { filename: 'js/ui.js' });
   vm.runInContext(badgesSrc, sandbox, { filename: 'js/badges.js' });
-  // Se chegamos aqui, não houve SyntaxError
   assert.equal(typeof vm.runInContext('typeof el', sandbox), 'string');
   assert.equal(typeof vm.runInContext('badgeStatus', sandbox), 'function');
-  assert.equal(typeof vm.runInContext('badgeTipo',   sandbox), 'function');
+  assert.equal(typeof vm.runInContext('badgeTipo', sandbox), 'function');
 });
 
-test('coexistência ui.js + badges.js + script inline não lança SyntaxError', async () => {
-  const { body } = await fetchIndexHtml();
-  const inline = extractInlineScript(body);
-  const sandbox = setupSandbox();
-  vm.runInContext(uiSrc,     sandbox, { filename: 'js/ui.js' });
-  vm.runInContext(badgesSrc, sandbox, { filename: 'js/badges.js' });
-  // Tentar rodar o script inline (que tem 124KB de UI real) num DOM mock
-  // vai falhar em muitas linhas por falta de Supabase/etc, mas o que
-  // importa aqui é: NÃO pode falhar com SyntaxError de duplicate
-  // identifier. Capturamos só esse tipo de erro.
-  let threwSyntax = false;
-  let otherErr = null;
-  try {
-    vm.runInContext(inline, sandbox, { filename: 'index-inline.js' });
-  } catch (e) {
-    if (e instanceof SyntaxError && /already been declared|Identifier .* has already/.test(e.message)) {
-      threwSyntax = true;
-    } else {
-      otherErr = e;
-    }
-  }
-  assert.equal(threwSyntax, false,
-    'coexistência lançou SyntaxError de duplicate identifier (bug D2C não corrigido)');
-  // `otherErr` é esperado (Supabase undefined, etc) — o que NÃO pode
-  // acontecer é SyntaxError de duplicate. Não fazemos assert sobre
-  // otherErr porque a execução completa do app precisa de browser real.
-  if (otherErr) {
-    // Logar para diagnóstico, mas não falhar
-    console.log('(esperado) script inline falhou em runtime, mas NÃO por duplicate identifier:', otherErr.message.slice(0, 120));
-  }
+test('servidor efêmero (listen(0)): index.html servido carrega js/badges.js depois de js/ui.js, sem inline', async () => {
+  const { status, body } = await serveAndFetch('/index.html');
+  assert.equal(status, 200);
+  assert.ok(body.length > 1000, 'index.html muito curto');
+  const uiIdx = body.indexOf('js/ui.js');
+  const badgesIdx = body.indexOf('js/badges.js');
+  assert.ok(uiIdx > 0, 'js/ui.js não encontrado no body servido');
+  assert.ok(badgesIdx > 0, 'js/badges.js não encontrado no body servido');
+  assert.ok(uiIdx < badgesIdx, 'js/ui.js deve vir antes de js/badges.js');
+  assert.equal(inlineScripts(body).length, 0, 'o body servido não deve ter script inline');
 });
