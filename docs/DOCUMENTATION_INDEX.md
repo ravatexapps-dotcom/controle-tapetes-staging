@@ -133,7 +133,10 @@ declared in §1. Not a second authority list.
   audit, not for operational routing.
 - `docs/closeouts/PROJECT_STATE_ARCHIVE_2026-07.md` — closeout narratives
   of phases moved from `PROJECT_STATE.md` by `PROJECT-STATE-COMPACTION-A`
-  (2026-07-16), verbatim and in original order. **Not a source of current
+  (2026-07-16) and `PROJECT-STATE-COMPACTION-B` (2026-07-17, its own
+  batch divider — the 2026-07-17 Camada-2/Camada-3 subphase narratives, the
+  superseded Publication Criterion, and the UI-track closeouts), verbatim and
+  in original order. **Not a source of current
   state** (that is `PROJECT_STATE.md`, now current-state-only); archived
   phases are indexed in the "Closed phases" table of `PROJECT_STATE.md`.
   Append-only for this batch; the architect decisions recorded there

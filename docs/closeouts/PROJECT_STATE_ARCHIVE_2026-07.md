@@ -1080,3 +1080,451 @@ Hygiene of the `work/app-next` worktree — read-only, separate order
 - **Production:** `bhgifjrfagkzubpyqpew` not accessed. **Push:** not executed. **Supabase/MCP/staging/Vercel:** not accessed.
 - **Ledger:** `docs/ledgers/G28_LEDGER.md` (append-only entry for this closeout).
 
+
+---
+
+## Batch: PROJECT-STATE-COMPACTION-B (2026-07-17)
+
+> Historical closeout narratives moved out of `PROJECT_STATE.md` by
+> `PROJECT-STATE-COMPACTION-B` (2026-07-17), verbatim, in their original
+> order. Current-state pointers, the binding decisions in force, the live
+> debts + residual risk register and the "Closed phases" index remain in
+> `PROJECT_STATE.md`. The condensed rulings restated there prevail as the
+> current-state framing; this archive preserves the full narrative.
+> Append-only for this batch: do not edit or add new closeouts here.
+
+### G28-CAMADA-2 — Subphase closeout narratives (A3.4, A2.2/A2.3, A2.1/A2.1-B, L1, L2, TEST-MOCK-FIDELITY-AUDIT, A6 track, UI-INVOKE-ENVELOPE-FIX) and A2/A6 registered candidates
+
+_(Moved verbatim from the former "Active phase and next action" sub-bullets.)_
+
+  - **`A3.4` (legacy screen removal) — `CLOSED / ACCEPTED`** (technical
+    commit `32e466a` — `Remove legacy user screen`; architect ratification
+    "ARCHITECT RATIFICATION — A3.4: ACCEPTED"): `screenCadastrosUsuarios`
+    (unreachable since the `A3.1` route cutover — proof: zero production
+    call sites repo-wide, only historical docs/test references) and its 3
+    orphaned-only private helpers (`friendlyDisableMessage`,
+    `friendlyDeleteMessage`, `setCadastrosModalFieldVisibility`) removed
+    from `js/screens/cadastros.js` (2742→2184 lines); every helper shared
+    with the file's other 6 screens (`labelFornecedorTipo`,
+    `detectOptionalColumns`, CNPJ helpers, the `cadastrosModal*` family)
+    kept untouched. `tests/cadastros-usuarios-auth-ui.smoke.js` deleted
+    entirely (38 tests, all targeting the dead screen); 3 sibling tests
+    removed from `tests/admin-delete-user.smoke.js`, 4 from
+    `tests/cadastros-screens.smoke.js` (counts corrected 7→6 telas
+    throughout); `tests/admin-usuarios.smoke.js` test 15 rewritten to
+    assert the removal instead of the prior "untouched" invariant.
+    Verification: isolated per-file comparison against the prior commit
+    (full-suite parallel runs are non-deterministic here due to unrelated
+    pre-existing flakiness) reconciled to exactly **-45 tests (all
+    intentional), -1 pre-existing failure eliminated (baked into the
+    deleted dead-test file), zero new failures**. **This removal also
+    buries three previously-reported-but-frozen defects, now resolved by
+    deletion:** the `admin-create-user` invoke-envelope bug at the legacy
+    `cadastros.js:2659` (identical to `UI-INVOKE-ENVELOPE-FIX`, already
+    fixed in the live code, previously only reported for the frozen legacy
+    copy); the `checked: mostrarInativos` boolean-attribute bug at the
+    legacy `:2348` (same class as `UI-EL-BOOLEAN-ATTR-FIX`); and the
+    `TEST-MOCK-FIDELITY-AUDIT` `R3` legacy-dead-code test-coverage gap.
+  - **`A2.2` (modal wiring) + `A2.3` (pilot route enforcement) — `CLOSED /
+    ACCEPTED`** (technical commit `09eb2a0` — `Wire admin access level into
+    user admin`; architect visual gate `CONFIRMED`): `js/screens/
+    admin-usuarios-modal.js` gained a "Nível de acesso" select, shown only
+    when editing an existing `tipo='admin'` row (hidden via `display:none`,
+    same convention as the existing `wrapperForn`/`wrapperCli` fields, for
+    fornecedor/cliente — never removed from the DOM, never sent). **HARD
+    STOP confirmed and honored:** `supabase/functions/admin-create-user/
+    index.ts`'s `INSERT` uses a fixed column list that does not carry
+    `nivel_acesso` — the field is never rendered on the create form and the
+    create payload never carries the key (a new admin lands at the schema
+    default `completo`; its level is set via a follow-up edit, which works
+    because `updateUsuario` is a raw PostgREST update, not an Edge Function,
+    and `usuarios_admin_all`/`is_admin()`-based RLS already allows it).
+    Grid badge (`js/screens/admin-usuarios.js`) gained a quiet suffix —
+    `"Admin · leitura"` for `somente_leitura`, plain `"Admin"` for
+    `completo` (no new column). **A2.3 pilot route = the users screen
+    itself:** "Novo usuário" and all 4 row `actionButton()`s render
+    `disabled` (safe boolean pattern) with an explanatory title when the
+    acting admin's own row (`tipo='admin' && nivel_acesso='somente_leitura'`)
+    is found in the already-fetched user list (no new query); every write
+    helper in `js/admin-usuarios-writes.js` also takes a trailing `readOnly`
+    boolean and refuses with `CLIENT_READONLY_FORBIDDEN` before touching
+    `window.supa`, threaded from the screen through the modal's
+    `options.readOnly` — defense-in-depth if a disabled control were ever
+    bypassed. **Explicitly client-side only:** a `somente_leitura` admin
+    whose JWT still says `tipo='admin'` can call the Edge Functions/
+    PostgREST directly — RLS does not check `nivel_acesso` (`is_admin_full()`
+    exists since `db/62` but is not consumed by any policy). Tests: +6 in
+    `tests/admin-usuarios.smoke.js` (56/56); fixed a `FakeNode` fidelity gap
+    in the same suite (`<select>.value` didn't follow a selected `<option>`,
+    `.style` wasn't mirrored) while touching it for this phase, per `§20`.
+    Full regression unchanged (138 pre-existing failures, identical before/
+    after via `git stash`/`pop`, zero new failures, +6 passing).
+  - **Registered candidates (`NOT AUTHORIZED`, both flagged
+    `PRE-PUBLICATION`):** `A2-SERVER-SIDE-ENFORCEMENT` — RLS/Edge Functions
+    still key exclusively on `tipo='admin'`; `somente_leitura` is UI-only and
+    bypassable via direct API calls; `is_admin_full()` (`db/62`) exists and is
+    unused by any policy — required before any real read-only admin is
+    trusted in production. `A2-CREATE-NIVEL-ACESSO-WIRING` —
+    `admin-create-user`'s fixed column list drops `nivel_acesso`; new admins
+    always land at `completo` and require a follow-up edit to set
+    `somente_leitura`.
+  - **`A2.1` (nivel_acesso schema) + `A2.1-B` (ACL correction) — `CLOSED /
+    ACCEPTED`** (technical commit `f108c45`): `db/62` adds
+    `public.usuarios.nivel_acesso` (`TEXT NOT NULL DEFAULT 'completo'`, CHECK
+    `completo`/`somente_leitura`; all 10 existing users defaulted `completo`, no
+    silent privilege change) and the `is_admin_full()` helper (`SECURITY
+    DEFINER STABLE`; `ativo AND tipo='admin' AND nivel_acesso='completo'`).
+    `usuarios.tipo` and `is_admin()` untouched (ratified: `tipo` anchors all RLS).
+    Applied+verified in staging (registry `20260717093122 / 62_admin_nivel_acesso_schema`).
+    Role matrix all green — incl. the critical regression **`is_admin()` stays
+    true for a `somente_leitura` admin** — and the `db/60` trigger records a
+    `nivel_acesso` change with the correct `perfil_alterado` payload.
+    **Hard-stop encountered + ruled:** `db/62`'s ACL left `service_role` with
+    `EXECUTE` (Supabase default privilege), diverging from the db/57
+    authenticated-only standard; architect ruled **Option 3** → forward-only
+    grants-only correction **`db/63`** (registry `20260717101401 /
+    63_is_admin_full_grants`, precedent db/57), which states the complete
+    intended ACL. **Final ACL verified: `EXECUTE` for `authenticated` only;
+    PUBLIC/anon/service_role denied** (`has_function_privilege`: authenticated
+    true, anon/service_role false; service_role runtime call → `42501`
+    unreachable). `A2.2` (modal wiring) and `A2.3` (route enforcement) were
+    separate orders — now `CLOSED / ACCEPTED` (see above).
+  - **`TEST-DOUBLE-SHARED-MODULE` Lot `L1` — `CLOSED / ACCEPTED`:** shared
+    `tests/_doubles.js` (`FaithfulNode` with real DOM boolean coercion + fake
+    `supa` with double-envelope `invoke`/single-level `rpc`/single-vs-array) +
+    16 meta-tests (commit `54ee8aa`); adopted in **all 5** `R1` suites —
+    `cliente-pedido-tracking`, `pedido-detail-linked-documents`,
+    `direct-cnpj-screens`, `pedido-form` (commit `4d2f304`) and
+    `tec-to-acabamento-flow` (commit `520c9a6`) — each with a demonstration test
+    proving the old raw-store double would have masked a boolean-attr
+    regression; `R2` fail-unsafe drift fixed in `fornecedor-screens`/
+    `painel-screen`; `FaithfulNode` widened for select→value reflection. No
+    existing assertion weakened; the 2 pre-existing `tec-to-acabamento-flow`
+    static-slice failures preserved intact.
+  - **`TEST-DOUBLE-STALE-ASSERTION-CLEANUP` Lot `L2` — `CLOSED / ACCEPTED`**
+    (commit `2c9a4c2`): the stale inline-`<script>` assertions in
+    `index-inline`/`config`/`supabase-client` rewritten to the
+    post-modularization structure (no content-bearing inline script; extracted
+    logic asserted in its module; `?v=` cache-buster tolerated; `js/boot.js`
+    entrypoint as the ordering boundary); `index-inline`'s fixed `:8765` fetch
+    replaced by an ephemeral `listen(0)` server; `fornecedor-screens`'s stale
+    hardcoded menu-count (`10` vs the 11-item `ADMIN_MENU`) made dynamic. All
+    four suites green. **The historical "~87 / 11 failures" baseline debt is now
+    resolved.** Registered follow-up (`NOT AUTHORIZED`, same stale class, out of
+    L2's named scope): `tec-to-acabamento-flow`'s 2 static-slice assertions
+    (caso 9, MODAL caso 6) are false-red brittle `buildTecelagemTransferForm`
+    slice regexes — the source content they check (`comOpcaoSplit:true`,
+    `layout:'stacked'`) is present; a trivial regex-anchor fix.
+  - **`TEST-MOCK-FIDELITY-AUDIT` — `CLOSED / ACCEPTED`** (read-only audit,
+    architect ratification 2026-07-17; report
+    `docs/reports/TEST_MOCK_FIDELITY_AUDIT_2026-07-17.md`): all 124 `tests/`
+    suites inventoried; **zero confirmed (c) structurally-blind doubles that
+    mask a live bug** — the three triggering defects were fixed and their
+    doubles corrected into the faithful seed. Substantive finding is
+    structural: fidelity is accidental/per-suite (residual classes `R1`
+    quarantined boolean-blindness, `R2` fail-unsafe copy-drift, `R3` legacy
+    coverage gap) — `R1`/`R2` now closed by `L1`. Shared-double module
+    `APPROVED as proposed` (additive, opt-in, phased, mandatory meta-tests).
+    `§20` (test-double fidelity) added to `CODE_HEALTH_RULES.md`.
+    `UI-EL-BOOLEAN-ATTR-FIX` is subsumed: the live regression it named is
+    already fixed in `el()`; the audit confirms the fix's doubles are faithful
+    and the latent siblings (`R1`) are now converted to the shared faithful
+    double.
+  - **`TEST-MOCK-FIDELITY-AUDIT` — `CLOSED / ACCEPTED`** (read-only audit,
+    architect ratification 2026-07-17; report
+    `docs/reports/TEST_MOCK_FIDELITY_AUDIT_2026-07-17.md`): all 124 `tests/`
+    suites inventoried; **zero confirmed (c) structurally-blind doubles that
+    mask a live bug** — the three triggering defects were fixed and their
+    doubles corrected into the faithful seed. Substantive finding is
+    structural: fidelity is accidental/per-suite (residual classes `R1`
+    quarantined boolean-blindness, `R2` fail-unsafe copy-drift, `R3` legacy
+    coverage gap). Shared-double module `APPROVED as proposed` (additive,
+    opt-in, phased, mandatory meta-tests). `§20` (test-double fidelity) added
+    to `CODE_HEALTH_RULES.md`. `UI-EL-BOOLEAN-ATTR-FIX` is subsumed: the live
+    regression it named is already fixed in `el()`; the audit confirms the
+    fix's doubles are faithful and locates the latent siblings (`R1`).
+  - **`G28-CAMADA-2 / A6` track — COMPLETE** (`A6.1` + `A6.1-B` + `A6.2` +
+    `A6.3`, all `CLOSED / ACCEPTED` — see "Closed phases" below). `A6.3`'s
+    architect visual gate passed. Real E2E in staging
+    (`scripts/staging/usuarios-audit-e2e.mjs`) passed `15/15`,
+    `result: PASS`, `2026-07-17`, against the five Edge Functions deployed
+    by the architect.
+  - **`UI-INVOKE-ENVELOPE-FIX` — `CLOSED / ACCEPTED`** (root-cause fix,
+    `2026-07-17`): the A6.3 visual gate surfaced a live defect (reset
+    succeeded but the generated password wasn't shown) traced to a
+    pre-existing (since `A5.1-A5.2`) client-side double-unwrap of the
+    `functions.invoke()`/`jsonResponse()` envelope, invisible to tests
+    because the fake Supabase client's `invoke()` mock didn't model the
+    real double envelope. Fixed at the single central unwrap point
+    (`invokeAdminFunction()`, `js/admin-usuarios-writes.js`); the identical
+    bug in the frozen legacy `screenCadastrosUsuarios`
+    (`js/screens/cadastros.js`) was reported, not fixed — one more
+    justification for `A3.4`. Architect-confirmed working: reset shows the
+    password, create-with-observações saves correctly.
+  - **Candidates registered, `NOT AUTHORIZED`:** `A6-GLOBAL-AUDIT-VIEW`
+    (`usuario_excluido` events are unreachable from the per-user panel by
+    construction — the panel only opens for an existing profile, and a
+    deleted user has none; an admin-level, cross-user audit view is
+    recommended before publication); `AUDIT-ACTOR-SNAPSHOT` (the audit
+    panel resolves actor identity live via a join to `public.usuarios`; if
+    the acting admin is later deleted, the actor line goes blank while the
+    event subject's own identity snapshot — `db/61` — survives; proposed
+    fix mirrors `db/61`'s pattern onto `ator_email`/`ator_nome` columns).
+
+### Binding decisions — archived narratives (superseded Publication Criterion `G28-GOVERNANCE-CONSOLIDATION-A`, G28-CAMADA-3 BK3/BK4.1/BK4.2 inline narrative, G28-CAMADA-2 classification)
+
+_(Moved verbatim from the former "Binding decisions in force". The Publication Criterion here is SUPERSEDED by the amended criterion restated in `PROJECT_STATE.md`; preserved verbatim for the divergence-authority rule.)_
+
+- **Publication criterion (`G28-GOVERNANCE-CONSOLIDATION-A`, 2026-07-15,
+  binding):** the system enters production only after **both** `G28-CAMADA-2`
+  (full scope `A1-A7`) and `G28-CAMADA-3` (automated backup) are
+  `CLOSED / ACCEPTED` in staging. `PUBLICATION-TRACK-REVIEW` is `CONDITIONED` on
+  this criterion and is not a current candidate. **Status (2026-07-17):**
+  first half satisfied — `G28-CAMADA-2` `CLOSED / ACCEPTED` in staging (see
+  below) — with **two explicit `PRE-PUBLICATION` asterisks that MUST close
+  before production**: `A2-SERVER-SIDE-ENFORCEMENT` and
+  `A2-CREATE-NIVEL-ACESSO-WIRING` (both registered at the `A2.2`/`A2.3`
+  closeout, listed under "Live debts and candidates"). Second half —
+  `G28-CAMADA-3` (automated backup) — diagnosis `ACCEPTED`, backup
+  contract (`BK3`) `CLOSED / ACCEPTED` in docs, `BK4.1` (`backup_runs`
+  schema) and **`BK4.2` (the exporter) both `CLOSED / ACCEPTED` in
+  staging (2026-07-17, see below)** — a real backup was executed and
+  independently restore-verified — but the **automated** mechanism
+  remains `NOT IMPLEMENTED` (`CAMADA3-TRIGGER-SELECTION` still `NOT
+  AUTHORIZED`) and a **live OAuth-grant coupling debt is now
+  registered** (see below) — still on the publication critical path.
+- **`G28-CAMADA-3`:** reclassified from `DEFERRED` to `PUBLICATION CRITICAL PATH`
+  (after `G28-CAMADA-2`). Read-only diagnosis `G28-CAMADA-3-DIAGNOSIS-R1`
+  `ACCEPTED as reported` (2026-07-17); backup contract
+  `docs/architecture/CAMADA3_BACKUP_CONTRACT.md` (`BK3`) `CLOSED / ACCEPTED`
+  as ratified docs (2026-07-17) — states scope (`public` +
+  full `auth` schema; document bytes and Storage explicitly out of scope,
+  Drive-first), cadence/retention (GFS, manual backups never expire),
+  integrity (SHA-256 + row-count manifest), N-destination contract (Drive
+  primary implemented now, OneDrive interface-ready/not configured),
+  trigger-agnostic exporter contract, and the restore-drill contract.
+  **Trigger deferred by architect** — the exporter must be invokable by
+  any future scheduler (GH Actions/Vercel cron/operator), with no
+  scheduling logic inside the exporter itself. **`BK4.1` (`backup_runs`
+  schema) — `CLOSED / ACCEPTED`** (technical commit `d39a848` — `Add
+  backup runs schema`; applied+verified in staging, registry
+  `20260717125153 / 64_backup_runs_schema`; see its own section below).
+  **`BK4.2` (the exporter) — `CLOSED / ACCEPTED`** (code committed
+  `4831ca3` + 4 follow-up fixes, HEAD `e11d05e`; a real
+  `export --confirm` run against staging succeeded —
+  `backup_runs.id = ae55e714-3f58-49b0-957d-7b959de7b630`, bundle
+  `83378` bytes, SHA-256 `dab5bb03422e3662af471d30d77091f98afb7199199897e7f6f1c22a13977c2`
+  — independently verified: the bundle's SHA-256 recomputed from the
+  actual file matched the `backup_runs` record exactly, and every field
+  in the `row_count_manifest` matched a live restore, see next bullet.
+  A prior attempt, `backup_runs.id = 0ab0c04b-...`, failed on a stale
+  copied token — `invalid_grant`, not a client/credential mismatch —
+  retained as legitimate history, not remediated). **Restore-smoke
+  performed and passed** (mechanism proof; not yet `BK8`'s formalized/
+  repeatable drill): the successful bundle was restored into an
+  isolated local scratch PostgreSQL, `auth_full.sql` → `schema_public.sql`
+  → `data_public.sql`, zero errors; **63/63 restored tables matched the
+  manifest exactly, including `auth.identities = 8`**; zero orphaned
+  `auth.identities`/`public.usuarios→auth.users` rows; all 10 users
+  carry a password hash; canonical history (`document_link_revisions=8`,
+  `usuarios_eventos=9`) intact. Scratch cluster and all extracted files
+  (which contained real staging password hashes/tokens) destroyed
+  immediately after verification — nothing persisted on disk or in git.
+  **OAuth client — resolved via Google's own `tokeninfo` endpoint (not
+  guessed):** the successful run's access token introspected to
+  `aud`/`azp` = `334691504707-eh26scjcmgetfrmfsc2ndgi8de6kdb07
+  .apps.googleusercontent.com` — the **Documents Ingestor's own OAuth
+  client**, reused rather than the dedicated grant the contract's §4
+  originally specified. **Registered live debt, `NOT AUTHORIZED`:**
+  rotating/revoking the Ingestor's OAuth grant would also break
+  backups; architect must decide to either formalize the reuse as an
+  accepted contract exception or build a genuinely separate OAuth
+  client (see `docs/architecture/CAMADA3_BACKUP_CONTRACT.md` §4
+  amendment). `BK5` (UI panel) is the next candidate subphase, `NOT
+  AUTHORIZED`, mockup gate first; `BK6` (retention), `BK7` (restore
+  runbook), and `BK8` (the formalized recovery drill) remain `NOT
+  AUTHORIZED`, `BK7`/`BK8` each their own risk gate (data-restore).
+  `CAMADA3-DRIVE-ACTIVATION` registered — **partially exercised** (one
+  real manual upload succeeded) but `NOT AUTHORIZED` as a standing/
+  repeated capability. `CAMADA3-TRIGGER-SELECTION` remains `NOT
+  AUTHORIZED`, blocks the "automated" half of the publication
+  criterion. Full detail: `docs/architecture/CAMADA3_BACKUP_CONTRACT.md`.
+- **`G28-CAMADA-2` classification — `CLOSED / ACCEPTED`, track `COMPLETE`
+  (2026-07-17, closeout of `A3.4`):** entered this work cycle classified
+  `PRE-EXISTING PARTIAL CAPABILITY` (user CRUD, disable/ban, single role
+  `usuarios.tipo`, client/supplier link) `+ FULL SCOPE A1-A7 DEFERRED`
+  (`G28-RECONCILIATION-DECISIONS-A`, 2026-07-15); exits `CLOSED / ACCEPTED`
+  in staging with full scope `A1-A7` + password policy delivered (`A1`/`A7`
+  satisfied by the pre-existing architecture per the spec; `A2`/`A3`/`A4`/
+  `A5`/`A6` all `CLOSED / ACCEPTED` subphases — see "Active phase and next
+  action" above and "Closed phases" below). Functional/visual reference used
+  during the build: `D:\OneDrive\Programação\SGAA_clean_baseline`.
+
+### UI-EL-BOOLEAN-ATTR-FIX confirmed-regression narrative + TEST-MOCK-FIDELITY-AUDIT ruling narrative
+
+_(Moved verbatim from the former "Binding decisions in force". UI-EL-BOOLEAN-ATTR-FIX remains an OPEN active regression — condensed pointer + residual-register entry #9 stay in `PROJECT_STATE.md`.)_
+
+- **`UI-EL-BOOLEAN-ATTR-FIX` — CONFIRMED as an active regression (`A5.3-A5.4`
+  closeout, 2026-07-16):** `js/ui.js`'s `el()` calls `setAttribute(k, v)`
+  unconditionally, including for boolean attrs (`disabled`, `checked`) — the
+  attribute's mere presence makes it true in a real browser regardless of the
+  string value, so `setAttribute('checked', false)`/`setAttribute('disabled',
+  false)` still render as checked/disabled. The architect reproduced this live
+  in staging via the "Mostrar inativos" checkbox in
+  `js/screens/admin-usuarios.js` (`checked: mostrarInativos` passed
+  unconditionally): the checkbox always renders checked after each re-render
+  regardless of the actual toggle state, making inactive users effectively
+  undiscoverable through that control. The `A5.3-A5.4` rewrite of the
+  Desativar/Reativar button incidentally dropped the vulnerable `disabled:
+  <boolean>` pattern for that one control (confirmed working by the architect),
+  but the Excluir button in the same file (`disabled: !!(meId && user.id ===
+  meId)`) still carries the identical pattern and is unconfirmed but suspect.
+  Same root cause as the residue already fixed once in `expedicao-admin.js`.
+  Not fixed in this phase (outside every manifest to date) — recommended as
+  the priority `ARCHITECT DECISION` candidate.
+- **`TEST-MOCK-FIDELITY-AUDIT` — `CLOSED / ACCEPTED` (read-only audit,
+  architect ratification 2026-07-17):** all 124 `tests/` suites inventoried and
+  classified against the real behavior each double imitates (report
+  `docs/reports/TEST_MOCK_FIDELITY_AUDIT_2026-07-17.md`). Result: **zero
+  confirmed (c) structurally-blind doubles that mask a live bug** — the three
+  triggering defects (`UI-EL-BOOLEAN-ATTR-FIX` boolean-`setAttribute`,
+  hand-mocked `js/ui.js` primitives, `UI-INVOKE-ENVELOPE-FIX` flat-`invoke()`)
+  were genuine (c) at the time and are now fixed with their doubles corrected
+  into the faithful seed (`admin-usuarios.smoke.js` is the crown jewel: real
+  `js/ui.js` + double-wrapped `invoke` + presence-tracking `FakeNode`; only that
+  one suite runtime-fakes `functions.invoke`). Substantive finding is
+  **structural** — fidelity is accidental/per-suite: `R1` (quarantined
+  boolean-blind hand-mock `el()` in `direct-cnpj-screens`/`pedido-form`/
+  `cliente-pedido-tracking`/`pedido-detail-linked-documents`/
+  `tec-to-acabamento-flow`, benign only because those screens have no
+  boolean/ternary attr today), `R2` (fail-unsafe raw-store `FakeNode`
+  copy-drift; loads real `el()`, so crashes rather than false-greens),
+  `R3` (legacy-dead-code invoke coverage gap, resolved by `A3.4`). **Ratified
+  rulings:** shared-double `tests/_doubles.js` `APPROVED as proposed` (additive,
+  opt-in, phased, mandatory meta-tests, seeded from the three corrected
+  doubles); `§20` (test-double fidelity) added to `CODE_HEALTH_RULES.md`; lots
+  `L1` (shared module + `R1` adoption + `R2` fix) and `L2` (stale inline-`<script>`
+  cleanup) `AUTHORIZED`; `L3` `NO ACTION` (subsumed by `A3.4`, its fourth
+  justification).
+
+### Test baseline re-grounded then RESOLVED (L0 + L2)
+
+_(Moved verbatim from the former "Live debts and candidates" — resolved, historical.)_
+
+- **Test baseline re-grounded then RESOLVED (`TEST-MOCK-FIDELITY-AUDIT` L0 +
+  `TEST-DOUBLE-STALE-ASSERTION-CLEANUP` L2, 2026-07-17):** the historical
+  "~87 http.server/index.html failures" and "11 index-inline failures" figures
+  were **stale baseline artifacts** resolving into two non-mock-fidelity buckets
+  — (1) fixed-port `:8765` environment dependency; (2) stale inline-`<script>`
+  assertions against a block the modularization removed (`index.html` now 79/79
+  `<script src=…>`, zero inline). **Both are now fixed by `L2`** (commit
+  `2c9a4c2`): `index-inline` 6/6, `config` 28/28, `supabase-client` 26/26,
+  `fornecedor-screens` 30/30. The only remaining pre-existing failures in the
+  touched set are `tec-to-acabamento-flow`'s 2 static-slice assertions
+  (false-red brittle regexes; registered follow-up, `NOT AUTHORIZED`).
+
+### UI-ACTION-BUTTON track + UI-GRID-TEXT-OVERFLOW track (closeout narratives + registered candidates)
+
+_(Moved verbatim from the former "Live debts and candidates". The tracks are CLOSED/ACCEPTED in their authorized scope; condensed pointers + the still-open `UI-FIXED-FORMAT-COLUMN-WIDTHS` / `UI-DOCUMENTOS-RECEBIDOS-LAYOUT-FIX` candidates stay in `PROJECT_STATE.md`, frozen under the backlog freeze.)_
+
+- **`UI-ACTION-BUTTON` track:** phase `i` (contract amendment —
+  `docs/architecture/UI_VISUAL_CONTRACT.md` §8.1 row-level compact icon
+  button carve-out, ratified values) `CLOSED / ACCEPTED` (commit
+  `f30aa0d`). Phase `ii` (`actionButton()` helper in `js/ui.js`,
+  additive, zero screens migrated) `CLOSED / ACCEPTED` (commit
+  `bbfd58c`). Phase `iii` lot `1` (`UI-ACTION-BUTTON-MIGRATION-1` —
+  `pedidos-list.js` + `cliente-pedidos-list.js`) `CLOSED / ACCEPTED`
+  (commit `31b66af`; architect visual validation confirmed both
+  `#/pedidos` and `#/cliente/pedidos` against the Clients reference).
+  Two judgments ratified at this closeout, standing for all remaining
+  lots: existing domain-specific confirmation flows (e.g.
+  `excluirPedidoComFluxo`'s `showDeleteConfirmation`) satisfy the §8.1
+  destructive guard without a redundant `confirmDialog` wrapper; §8.1
+  dimension/sr-only/disabled correctness is proven once at the
+  `actionButton()` primitive level, screen-level tests assert call-site
+  routing only. Phase `iii` lot `2` (`UI-ACTION-BUTTON-MIGRATION-2` —
+  `admin-usuarios.js` users screen + `ops-list.js`) `CLOSED / ACCEPTED`
+  (commit `abfb95e`; architect visual validation confirmed the users
+  screen against the Clients reference — the original complaint's own
+  test — plus a spot-check of `#/ops`). Includes the `ops-list.js`
+  sr-only `display:none` a11y fix (now the correct clip-rect pattern)
+  and the users-screen ACOES column-width fix from the architect's
+  addendum: the column was hardcoded `102px` but 4 `actionButton()`s
+  need `30×4 + 6×3 = 138px` — widened via the one grid-template value.
+  `ops-list.js`'s Excluir OP also gained `danger` (red) styling,
+  matching every other Excluir action (was neutral gray before).
+  Separate follow-up `UI-USERS-GRID-TEXT-OVERFLOW` (users grid text
+  cells — E-MAIL/NOME/FORNECEDOR/CLIENTE — single-line ellipsis +
+  `title` tooltip; E-MAIL widened `1.3fr`→`2fr`) `CLOSED / ACCEPTED`
+  (commit `3e95e86`). Any further lot beyond `2` (`cadastros.js`, lot
+  `3`) — `NOT AUTHORIZED`, pending its own order. Registered
+  candidates, not started:
+  `MODAL-BUTTON-CSS-CHECK` (read-only —
+  `document-link-admin-modal.js`/`documentos-recebidos-decision-modal.js`
+  render buttons with no inline style, deferred to external CSS classes
+  not found in the repo); `fornecedor.js` visual redesign (separate
+  future track, out of this one).
+- **`UI-GRID-TEXT-OVERFLOW` track:** contract amendment (`UI_VISUAL_CONTRACT.md`
+  §7.1, grid/list text-cell overflow rule — variable-length identifier-style
+  fields single-line ellipsis + `title` tooltip, explicitly exempting
+  free-text notes/badges/dates/numerics) `CLOSED / ACCEPTED` (docs-only).
+  Helper promotion (`truncatedCell`/`TRUNCATE_CELL_STYLE` → `js/ui.js`,
+  `admin-usuarios.js` migrated to the shared version, behavior-neutral)
+  `CLOSED / ACCEPTED`. Lot A (`cadastros.js` Clientes NOME/CONTATO +
+  Fornecedores NOME/EMAIL, legacy Usuarios duplicate explicitly excluded)
+  `CLOSED / ACCEPTED` (commit `0a1457b`; Fornecedores EMAIL widened
+  `1fr`→`1.6fr`, Clientes fractions unchanged; architect visual gate
+  `CONFIRMED` — nome/email conformant on both grids). Lot B
+  (`pedidos-list.js` / `ops-list.js` CLIENTE column) and Lot C
+  (`painel.js` `.rv-adm-ref`/`.rv-adm-mini`) `CLOSED / ACCEPTED`
+  (commit `cfa8b4b`; no width change on either grid — both already had
+  a horizontal-scroll fallback, judged not visibly starved; architect
+  visual gate pending). This closes the `UI-GRID-TEXT-OVERFLOW` track's
+  authorized scope; remaining candidates (`UI-FIXED-FORMAT-COLUMN-
+  WIDTHS`, `UI-DOCUMENTOS-RECEBIDOS-LAYOUT-FIX`) are separate fronts,
+  `NOT AUTHORIZED`, registered below.
+  **Finding registered:** the read-only diagnosis found the legacy
+  `screenCadastrosUsuarios` duplicate in `cadastros.js` (lines ~2226-2381)
+  carries the identical unconstrained-text-cell defect (NOME/FORNECEDOR/
+  CLIENTE, no ellipsis/tooltip) that this fix track deliberately excludes
+  from scope — the architect ruled it out of Lot A because the route
+  already points to `admin-usuarios.js` since `A3.1`, making this screen
+  dead code pending removal. This confirms `A3.4` (legacy code removal in
+  `cadastros.js`) is overdue: live defects are accumulating in code no
+  longer reachable by routing but not yet deleted.
+  **New findings from the Lot A architect visual gate (`NOT AUTHORIZED`
+  candidates, registered per architect instruction):**
+  1. `UI-FIXED-FORMAT-COLUMN-WIDTHS` — the Fornecedores grid's CNPJ
+     column (`110px`) wraps an 18-char formatted CNPJ. The diagnosis
+     correctly classified fixed-format fields (CNPJ, dates, numerics) as
+     not overflow-prone (§7.1 does not apply — a CNPJ must never be
+     truncated), but did not check column width against actual content
+     length. This is a §7 golden-rule sizing defect, not a §7.1
+     truncation gap. Candidate scope: audit every fixed-format column
+     (CNPJ, CPF, dates, phone) app-wide for wrap, size to content.
+  2. `UI-DOCUMENTOS-RECEBIDOS-LAYOUT-FIX` — **HIGH SEVERITY.** `CLOSED /
+     ACCEPTED` (commit `90726dd`). Read-only diagnosis
+     (`UI-DOCUMENTOS-RECEBIDOS-LAYOUT-DIAGNOSIS`) found the mechanism:
+     `pedidoCell()` rendered `doc.pedido` (a raw, unbounded identifier)
+     as a direct flex item with only `white-space:nowrap` — its
+     automatic min-content width was never capped, so long tokens
+     painted past the PEDIDO column into DATAS; `buildActionButtons()`'s
+     `wrap` div could hold both the source-file-unavailable label and up
+     to 3 decision icon buttons (two independently-gated branches) with
+     no `flex-wrap`, overflowing the fixed 148px AÇÕES column. Fix:
+     `pedidoCell()` (both branches) and the defensive `stateSpan()`
+     gained the full §7.1 bundle (`overflow:hidden;text-overflow:
+     ellipsis;min-width:0`) plus a `title` tooltip on the linked branch;
+     `buildActionButtons()`'s `wrap` gained `flex-wrap:wrap` (a §7
+     column-sizing fix, not truncation — nothing there should ever be
+     cut). Architect visual gate: `CONFIRMED`.
+  3. `TEST-MOCK-FIDELITY-AUDIT` — suites that hand-mock `js/ui.js`
+     primitives instead of loading the real module are structurally
+     blind to primitive-level defects. Precedent: the
+     `UI-EL-BOOLEAN-ATTR-FIX` regression class, and this chain's own
+     `tests/direct-cnpj-screens.smoke.js`, whose hand-rolled mock had no
+     `truncatedCell` stand-in and broke silently-invisible (would have
+     stayed green with a stale/wrong mock had the gap not surfaced as an
+     immediate crash) until patched during `UI-GRID-TEXT-LOT-A`.
+     Candidate scope: inventory every test file that hand-mocks `ui.js`
+     primitives rather than loading the real source, assess drift risk.
