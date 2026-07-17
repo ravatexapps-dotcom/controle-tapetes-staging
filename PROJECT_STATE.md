@@ -14,12 +14,14 @@ HEAD, working tree, staging and divergence must be consulted directly in Git
 
 - **Active functional phase:** `NONE`.
 - **Next authorizable action:** `ARCHITECT DECISION` — no single unambiguous
-  next technical phase. Candidates: `G28-CAMADA-3` subphase `BK4.2`
-  (the exporter — own risk gate, DB credential/`auth`-schema handling) per
-  `docs/architecture/CAMADA3_BACKUP_CONTRACT.md` (`BK4.1`, `backup_runs`
-  schema, `CLOSED / ACCEPTED` in staging, 2026-07-17 — see its own section
-  below); `CAMADA3-TRIGGER-SELECTION` (blocks the "automated" half of the
-  publication criterion); the two `PRE-PUBLICATION` asterisks
+  next technical phase. Candidates: `G28-CAMADA-3` subphase `BK5`
+  (read-only UI panel — mockup gate first) or `BK6`/`BK7`/`BK8` per
+  `docs/architecture/CAMADA3_BACKUP_CONTRACT.md` (`BK4.1` + `BK4.2` both
+  `CLOSED / ACCEPTED`, 2026-07-17 — see their own section below, including
+  the **unresolved OAuth-grant coupling to the Documents Ingestor's
+  client** flagged at the `BK4.2` closeout); `CAMADA3-TRIGGER-SELECTION`
+  (blocks the "automated" half of the publication criterion); the two
+  `PRE-PUBLICATION` asterisks
   (`A2-SERVER-SIDE-ENFORCEMENT`, `A2-CREATE-NIVEL-ACESSO-WIRING`);
   `A6-GLOBAL-AUDIT-VIEW` / `AUDIT-ACTOR-SNAPSHOT`. **`G28-CAMADA-2` — TRACK
   `COMPLETE` / `CLOSED / ACCEPTED`** (full scope `A1-A7` + password policy): `A1` (auth diagnostic)
@@ -242,16 +244,18 @@ decisions (verbatim) are in `docs/closeouts/PROJECT_STATE_ARCHIVE_2026-07.md`
   `A2-CREATE-NIVEL-ACESSO-WIRING` (both registered at the `A2.2`/`A2.3`
   closeout, listed under "Live debts and candidates"). Second half —
   `G28-CAMADA-3` (automated backup) — diagnosis `ACCEPTED`, backup
-  contract (`BK3`) `CLOSED / ACCEPTED` in docs, and `BK4.1` (`backup_runs`
-  schema) `CLOSED / ACCEPTED` in staging (2026-07-17, see below), but the
-  automated mechanism itself remains `NOT IMPLEMENTED` (`BK4.2`-`BK8` and
-  `CAMADA3-TRIGGER-SELECTION` all `NOT AUTHORIZED`) — still on the
-  publication critical path.
+  contract (`BK3`) `CLOSED / ACCEPTED` in docs, `BK4.1` (`backup_runs`
+  schema) and **`BK4.2` (the exporter) both `CLOSED / ACCEPTED` in
+  staging (2026-07-17, see below)** — a real backup was executed and
+  independently restore-verified — but the **automated** mechanism
+  remains `NOT IMPLEMENTED` (`CAMADA3-TRIGGER-SELECTION` still `NOT
+  AUTHORIZED`) and a **live OAuth-grant coupling debt is now
+  registered** (see below) — still on the publication critical path.
 - **`G28-CAMADA-3`:** reclassified from `DEFERRED` to `PUBLICATION CRITICAL PATH`
   (after `G28-CAMADA-2`). Read-only diagnosis `G28-CAMADA-3-DIAGNOSIS-R1`
   `ACCEPTED as reported` (2026-07-17); backup contract
   `docs/architecture/CAMADA3_BACKUP_CONTRACT.md` (`BK3`) `CLOSED / ACCEPTED`
-  as `PROPOSED`-and-ratified docs (2026-07-17) — states scope (`public` +
+  as ratified docs (2026-07-17) — states scope (`public` +
   full `auth` schema; document bytes and Storage explicitly out of scope,
   Drive-first), cadence/retention (GFS, manual backups never expire),
   integrity (SHA-256 + row-count manifest), N-destination contract (Drive
@@ -263,12 +267,46 @@ decisions (verbatim) are in `docs/closeouts/PROJECT_STATE_ARCHIVE_2026-07.md`
   schema) — `CLOSED / ACCEPTED`** (technical commit `d39a848` — `Add
   backup runs schema`; applied+verified in staging, registry
   `20260717125153 / 64_backup_runs_schema`; see its own section below).
-  `BK4.2` (the exporter) is the next candidate subphase, `NOT AUTHORIZED`;
-  `BK4.2`, `BK7` (restore runbook), and `BK8` (recovery drill) are each
-  their own risk gate (DB credential/`auth`-schema handling; data-restore).
-  `CAMADA3-TRIGGER-SELECTION` registered `NOT AUTHORIZED`, blocks the
-  "automated" half of the publication criterion. Full detail:
-  `docs/architecture/CAMADA3_BACKUP_CONTRACT.md`.
+  **`BK4.2` (the exporter) — `CLOSED / ACCEPTED`** (code committed
+  `4831ca3` + 4 follow-up fixes, HEAD `e11d05e`; a real
+  `export --confirm` run against staging succeeded —
+  `backup_runs.id = ae55e714-3f58-49b0-957d-7b959de7b630`, bundle
+  `83378` bytes, SHA-256 `dab5bb03422e3662af471d30d77091f98afb7199199897e7f6f1c22a13977c2`
+  — independently verified: the bundle's SHA-256 recomputed from the
+  actual file matched the `backup_runs` record exactly, and every field
+  in the `row_count_manifest` matched a live restore, see next bullet.
+  A prior attempt, `backup_runs.id = 0ab0c04b-...`, failed on a stale
+  copied token — `invalid_grant`, not a client/credential mismatch —
+  retained as legitimate history, not remediated). **Restore-smoke
+  performed and passed** (mechanism proof; not yet `BK8`'s formalized/
+  repeatable drill): the successful bundle was restored into an
+  isolated local scratch PostgreSQL, `auth_full.sql` → `schema_public.sql`
+  → `data_public.sql`, zero errors; **63/63 restored tables matched the
+  manifest exactly, including `auth.identities = 8`**; zero orphaned
+  `auth.identities`/`public.usuarios→auth.users` rows; all 10 users
+  carry a password hash; canonical history (`document_link_revisions=8`,
+  `usuarios_eventos=9`) intact. Scratch cluster and all extracted files
+  (which contained real staging password hashes/tokens) destroyed
+  immediately after verification — nothing persisted on disk or in git.
+  **OAuth client — resolved via Google's own `tokeninfo` endpoint (not
+  guessed):** the successful run's access token introspected to
+  `aud`/`azp` = `334691504707-eh26scjcmgetfrmfsc2ndgi8de6kdb07
+  .apps.googleusercontent.com` — the **Documents Ingestor's own OAuth
+  client**, reused rather than the dedicated grant the contract's §4
+  originally specified. **Registered live debt, `NOT AUTHORIZED`:**
+  rotating/revoking the Ingestor's OAuth grant would also break
+  backups; architect must decide to either formalize the reuse as an
+  accepted contract exception or build a genuinely separate OAuth
+  client (see `docs/architecture/CAMADA3_BACKUP_CONTRACT.md` §4
+  amendment). `BK5` (UI panel) is the next candidate subphase, `NOT
+  AUTHORIZED`, mockup gate first; `BK6` (retention), `BK7` (restore
+  runbook), and `BK8` (the formalized recovery drill) remain `NOT
+  AUTHORIZED`, `BK7`/`BK8` each their own risk gate (data-restore).
+  `CAMADA3-DRIVE-ACTIVATION` registered — **partially exercised** (one
+  real manual upload succeeded) but `NOT AUTHORIZED` as a standing/
+  repeated capability. `CAMADA3-TRIGGER-SELECTION` remains `NOT
+  AUTHORIZED`, blocks the "automated" half of the publication
+  criterion. Full detail: `docs/architecture/CAMADA3_BACKUP_CONTRACT.md`.
 - **`G28-CAMADA-2` classification — `CLOSED / ACCEPTED`, track `COMPLETE`
   (2026-07-17, closeout of `A3.4`):** entered this work cycle classified
   `PRE-EXISTING PARTIAL CAPABILITY` (user CRUD, disable/ban, single role
@@ -379,10 +417,37 @@ decisions (verbatim) are in `docs/closeouts/PROJECT_STATE_ARCHIVE_2026-07.md`
   mechanism (GitHub Actions cron vs. Vercel cron vs. other) is explicitly
   deferred by the architect until hosting is decided
   (`docs/architecture/CAMADA3_BACKUP_CONTRACT.md`, "Architect decisions
-  incorporated" item 2). The `BK4.2` exporter must be built trigger-agnostic
-  regardless of which mechanism is eventually selected. Blocks the
+  incorporated" item 2). The `BK4.2` exporter was built trigger-agnostic
+  per the contract, confirmed unchanged by its real execution. Blocks the
   "automated" half of the `G28-GOVERNANCE-CONSOLIDATION-A` publication
   criterion until resolved.
+- **`CAMADA3-OAUTH-GRANT-COUPLING` — `NOT AUTHORIZED` candidate, live debt
+  (registered at the `BK4.2` closeout, 2026-07-17):** the exporter's first
+  real staging run was independently confirmed, via Google's own
+  `tokeninfo` endpoint against the live access token (`aud`/`azp`), to
+  have used the **Documents Ingestor's own OAuth client**
+  (`334691504707-eh26scjcmgetfrmfsc2ndgi8de6kdb07.apps.googleusercontent.com`,
+  confirmed against that project's `.env` at
+  `D:\OneDrive\Programação\Ravatex\documents-ingestor\`, a separate
+  standalone repo) — not the dedicated OAuth grant
+  `docs/architecture/CAMADA3_BACKUP_CONTRACT.md` §4 originally specified.
+  A second, apparently-unused OAuth client JSON exists locally
+  (`...9v4j8gv9...`, dated 2026-07-11, likely a leftover from the
+  original dedicated-grant design, superseded by the reuse decision).
+  **Consequence:** rotating or revoking the Documents Ingestor's OAuth
+  grant would also break backups — an undocumented, unresolved coupling.
+  **Required decision:** either (a) formalize the reuse as an accepted
+  exception in the contract (§4 requires rewriting, not just annotating),
+  or (b) build a genuinely separate OAuth client for backups, removing
+  the coupling. Full finding: `docs/architecture/CAMADA3_BACKUP_CONTRACT.md`
+  §4 amendment.
+- **`CAMADA3-DRIVE-ACTIVATION` — partially exercised, `NOT AUTHORIZED` as
+  a standing capability (registered at the `BK4.2` closeout, 2026-07-17):**
+  one real manual upload to `google_drive` succeeded in staging
+  (`backup_runs.id = ae55e714-3f58-49b0-957d-7b959de7b630`). This is not
+  yet a repeated, scheduled, or production-standing capability — `BK5`
+  (UI), `BK6` (retention), the trigger (`CAMADA3-TRIGGER-SELECTION`), and
+  the OAuth-coupling decision above are all still pending.
 - **`A2-SERVER-SIDE-ENFORCEMENT` — `NOT AUTHORIZED` candidate, flagged
   `PRE-PUBLICATION` (registered at the `A2.2`/`A2.3` closeout, 2026-07-17):**
   RLS and the admin Edge Functions still key exclusively on `usuarios.tipo`;
@@ -588,6 +653,7 @@ HEAD with `git rev-parse HEAD`.
 
 | Phase | Status | Date | Commit(s) |
 |---|---|---|---|
+| Camada 3 — Exporter First Real Run + Restore-Smoke — `BK4.2` | `CLOSED / ACCEPTED` | 2026-07-17 | `4831ca3`, `75f8ff9`, `153b2a2`, `51c4633`, `e11d05e` (verification-only, no new commit) |
 | Camada 3 — Backup Runs Schema — `BK4.1` | `CLOSED / ACCEPTED` | 2026-07-17 | `d39a848` |
 | Camada 3 — Backup Diagnosis (read-only) + Backup Contract — `G28-CAMADA-3-DIAGNOSIS-R1` + `BK3` | `CLOSED / ACCEPTED` | 2026-07-17 | (docs) |
 | Camada 2 — Legacy User Screen Removal — `A3.4` (closes `G28-CAMADA-2` track) | `CLOSED / ACCEPTED` | 2026-07-17 | `32e466a` |

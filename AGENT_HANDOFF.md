@@ -1,5 +1,99 @@
 # ACTIVE OPERATIONAL HANDOFF
 
+- **`BK4.2` (the exporter — first real execution + restore-smoke) —
+  `CLOSED / ACCEPTED` (2026-07-17):** the exporter's code
+  (`scripts/backup/export-db.mjs` + `scripts/backup/lib/*`, commits
+  `4831ca3`/`75f8ff9`/`153b2a2`/`51c4633`/`e11d05e`) was already
+  committed to this branch prior to this closeout. This entry records
+  the architect-authorized order to (1) determine which OAuth client
+  the successful real run actually used, read-only, before closing,
+  and (2) close `BK4.2` with the resolved answer, the restore-smoke
+  evidence, a contract note on bundle secrecy, and the state of
+  `CAMADA3-DRIVE-ACTIVATION`/`CAMADA3-TRIGGER-SELECTION`. **No new code
+  was written in this closeout** — verification-only, followed by a
+  docs-only commit.
+  **Claim verification (a third-party relay via ChatGPT reported
+  success — verified independently before trusting it, per this
+  project's own supervision rule that ChatGPT has no state custody):**
+  bundle `backups/ravatex-backup-20260717T171339Z.tar.gz` on disk, its
+  independently recomputed SHA-256
+  (`dab5bb03422e3662af471d30d77091f98afb7199199897e7f6f1c22a13977c2`),
+  and the live `backup_runs`/`backup_run_destinations` rows in staging
+  (`ucrjtfswnfdlxwtmxnoo`) all matched exactly — `backup_runs.id =
+  ae55e714-3f58-49b0-957d-7b959de7b630`, `status=completed`,
+  `bytes=83378`, `google_drive=ok` (`uploaded_at` recorded),
+  `onedrive=skipped`. The `row_count_manifest` matched the reported
+  highlights exactly (`auth.users=10`, `auth.identities=8`,
+  `public.usuarios=10`, `public.ops=8`, `public.pedidos=4`,
+  `storage_buckets_count=0`). A prior attempt (`backup_runs.id =
+  0ab0c04b-...`) failed with `invalid_grant: Token has been expired or
+  revoked` — a stale previously-copied token, not a client/credential
+  mismatch — retained as legitimate history, not remediated.
+  **Restore-smoke drill performed and passed (mechanism proof; not yet
+  `BK8`'s formalized/repeatable cadence):** a permission check correctly
+  blocked a first attempt to `head` the extracted `auth_full.sql` (which
+  would have printed real password hashes/session data from staging
+  into this transcript) — every subsequent check used structural greps
+  or `count(*)`/boolean queries only, never row content. Spun up an
+  isolated local scratch PostgreSQL 18.4 cluster (ephemeral port, temp
+  data dir, never staging/production); restored `auth_full.sql` →
+  `schema_public.sql` → `data_public.sql`, **zero errors** across all
+  three (no extension/role dependencies — the `--no-owner
+  --no-privileges` dumps are self-contained). Compared **all 63
+  restored tables** (40 `public` + 23 `auth`) against the bundle's own
+  manifest: **63/63 match, 0 mismatches**, `auth.identities=8`
+  explicitly confirmed — this is the concrete resolution, in mechanism,
+  of the `auth.identities` restore-fidelity gap the original diagnosis
+  (`G28-CAMADA-3-DIAGNOSIS-R1`) flagged against the pre-existing
+  `auth.users`-only runbook. Referential integrity: `0` orphaned
+  `auth.identities`, `0` orphaned `public.usuarios`→`auth.users` FK
+  rows (`CODE_HEALTH_RULES.md` §11's invariant, cross-schema);
+  all 10 users carry a non-empty password hash (structural proof a real
+  login is possible — no actual login attempted, since that needs a
+  real password not handled in this pass); canonical history intact
+  (`document_link_revisions=8`, `usuarios_eventos=9`). Scratch cluster
+  stopped and every extracted/temp file (real staging credentials)
+  removed immediately after verification — nothing persisted.
+  **OAuth client — resolved via Google's own infrastructure, not
+  inferred:** two different OAuth client JSON files existed locally in
+  `.ravatex-local/` (the Documents Ingestor's own client,
+  `...eh26scjc...`, and an apparently-unused second one,
+  `...9v4j8gv9...`, dated 2026-07-11, predating today's reuse decision
+  — likely a leftover from `BK4.2`'s originally-designed dedicated
+  grant). The one logged manual `login` attempt used the Ingestor's
+  client but failed ("No code received"); no log captured the
+  successful token's origin. Resolved definitively by calling Google's
+  own `https://oauth2.googleapis.com/tokeninfo` endpoint against the
+  successful run's still-valid access token (a read-only introspection
+  needing only the access token, never a client secret): both `aud` and
+  `azp` resolved to `334691504707-eh26scjcmgetfrmfsc2ndgi8de6kdb07
+  .apps.googleusercontent.com` — confirmed against the Documents
+  Ingestor's own `.env` at the separate, standalone repo
+  `D:\OneDrive\Programação\Ravatex\documents-ingestor\` (unrelated to
+  this repo's `services/documents-ingestor/` copy). **The successful
+  run reused the Ingestor's OAuth client, not a dedicated grant** —
+  contradicting `CAMADA3_BACKUP_CONTRACT.md` §4's original premise.
+  **Registered live debt, `CAMADA3-OAUTH-GRANT-COUPLING`, `NOT
+  AUTHORIZED`:** rotating/revoking the Ingestor's OAuth grant would also
+  break backups; architect must decide to formalize the reuse (rewriting
+  §4) or build a genuinely separate client. **Contract amended**
+  (`docs/architecture/CAMADA3_BACKUP_CONTRACT.md`): §4 now carries a
+  dated amendment recording this finding in full; §6 gained a binding
+  "bundle contents are secrets" rule (drills inspect structure/counts
+  only, never row content; bundles gitignored, never committed); the BK
+  sequence table and status banners updated to `BK4.1`/`BK4.2 = CLOSED /
+  ACCEPTED`; a full "Amendment 2026-07-17" section added before
+  `STRUCTURAL POLICY COMPLIANCE`. **Registered:**
+  `CAMADA3-DRIVE-ACTIVATION` — partially exercised (one real upload
+  succeeded) but `NOT AUTHORIZED` as a standing/repeated capability
+  (`BK5`/`BK6`/trigger/OAuth-coupling all still pending);
+  `CAMADA3-TRIGGER-SELECTION` — still deferred, unchanged. **No
+  Supabase writes beyond the two already-recorded runs; no push; no
+  production access.** Documentation commit only, per the order.
+  **Next authorizable action:** `BK5` (read-only UI panel +
+  manual-trigger write), own order, mockup gate first — or resolution of
+  the OAuth-coupling decision, which several later subphases may want
+  settled first. Full detail: `docs/architecture/CAMADA3_BACKUP_CONTRACT.md`.
 - **`BK4.1` (`backup_runs` schema) — `CLOSED / ACCEPTED` (2026-07-17):**
   per `docs/architecture/CAMADA3_BACKUP_CONTRACT.md`. Technical commit
   `d39a848` — `Add backup runs schema` (`db/64_backup_runs_schema.sql`,

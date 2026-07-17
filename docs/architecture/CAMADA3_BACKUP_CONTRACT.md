@@ -1,11 +1,11 @@
 # CAMADA 3 — Backup Contract (BK3)
 
-> **Status:** `PROPOSED` — this contract states the binding premises for
-> every later `G28-CAMADA-3` subphase (`BK4.1`-`BK8`); it does not itself
-> authorize implementation. Ratification of this document is a distinct
-> act from authorization of any subphase — each subphase still requires
-> its own explicit architect order (permanent project rule: phases do
-> not chain automatically).
+> **Status:** `RATIFIED` — this contract states the binding premises for
+> every `G28-CAMADA-3` subphase. `BK4.1` and `BK4.2` are now `CLOSED /
+> ACCEPTED` against it (see the 2026-07-17 amendment near the end of
+> this document); `BK5`-`BK8` (formalized) remain pending their own
+> orders — each subphase still requires its own explicit architect
+> order (permanent project rule: phases do not chain automatically).
 > **Origin phase:** `G28-CAMADA-3-DIAGNOSIS-R1` (read-only diagnosis,
 > 2026-07-17) — `ACCEPTED as reported` by the architect, together with
 > three scope/trigger/destination decisions incorporated below.
@@ -215,6 +215,30 @@ cadence is a property of whichever trigger is eventually selected
   distinguishable surface from a documents exposure. Folder convention:
   a dedicated root (e.g. `Ravatex Backups`), not nested inside the
   Ingestor's `Ravatex Documents Ingestor` root.
+  **AMENDMENT (`BK4.2` closeout, 2026-07-17) — this premise did NOT
+  hold in the first real execution.** The successful run reused the
+  Documents Ingestor's own OAuth client
+  (`334691504707-eh26scjcmgetfrmfsc2ndgi8de6kdb07.apps.googleusercontent.com`)
+  rather than a dedicated grant — confirmed empirically via Google's
+  `tokeninfo` endpoint against the live access token (`aud`/`azp` both
+  resolved to that client id), not merely inferred. A second,
+  genuinely-separate OAuth client JSON exists locally
+  (`...9v4j8gv9...`, dated 2026-07-11) but evidence indicates it was
+  never actually used — the one logged `login` attempt used the
+  Ingestor's client, and the successful token's introspected `aud`
+  confirms the same client. **Live coupling risk, unresolved:**
+  rotating or revoking the Documents Ingestor's OAuth grant (e.g. for
+  routine credential hygiene, or if the Ingestor's own scope needs ever
+  change) **would also break backups**, since the folder-isolation
+  premise above depends on the token being independently issued.
+  Registered candidate, `NOT AUTHORIZED`: either (a) formalize the
+  reuse as an accepted, permanent exception to this section — the
+  dedicated-grant language above would then need rewriting, not just
+  annotating — or (b) build a genuinely separate OAuth client for
+  backups, removing the coupling. Folder isolation itself (`Ravatex
+  Backups`, not nested in the Ingestor's root) was **not** violated by
+  the reuse — that's an application-level (Drive API `parents`) choice
+  independent of which OAuth client authenticates the call.
 - **OneDrive — second destination, interface-ready, NOT configured.**
   The `backup_runs` schema, the exporter's destination abstraction, and
   this contract itself must not hardcode "Drive" as the only possible
@@ -325,6 +349,18 @@ depend on any one of them.
   here as binding): any backup mechanism whose restore path cannot be
   exercised by this drill in staging is disqualified from being the
   primary mechanism.
+- **Bundle contents are secrets** (added at the `BK4.2` closeout,
+  2026-07-17, first real drill): a bundle's `data_public.sql` and
+  `auth_full.sql` contain real row data — for `auth_full.sql` this
+  includes password hashes, session/refresh tokens, and MFA state for
+  every real user. **Every drill step — this one and `BK8`'s formalized
+  version — inspects structure and row counts only; it must never print,
+  log, or persist actual row content** (no `head`/`cat`/`less` on a
+  data-bearing SQL file's body; row-count and referential-integrity
+  checks use `count(*)` and boolean existence checks, never `SELECT *`
+  echoed to a log). Bundles are `.gitignore`d (`backups/`) and **must
+  never be committed**, matching the same discipline already required
+  for `.ravatex-local/` (§5).
 
 ---
 
@@ -378,18 +414,90 @@ phase, to keep this phase's single scope intact
 | BK1 | Audit existing app | `CLOSED / ACCEPTED` (docs) — delivered by `G28-CAMADA-3-DIAGNOSIS-R1` |
 | BK2 | Map to Ravatex | `CLOSED / ACCEPTED` (docs) — delivered by `G28-CAMADA-3-DIAGNOSIS-R1` |
 | **BK3** | **Backup contract** | **`CLOSED / ACCEPTED` (docs) — this document** |
-| BK4.1 | `backup_runs` schema + service_role writer RPC | `NOT AUTHORIZED` — pending its own order |
-| BK4.2 | The exporter (trigger-agnostic, §5) | `NOT AUTHORIZED` — pending its own order; **own risk gate** (DB credential + `auth` schema handling) |
+| BK4.1 | `backup_runs` schema + service_role writer RPC | `CLOSED / ACCEPTED` (staging, 2026-07-17) |
+| BK4.2 | The exporter (trigger-agnostic, §5) | `CLOSED / ACCEPTED` (2026-07-17) — code committed, one real staging run succeeded (`ae55e714-...`), restore-smoke verified 63/63 tables incl. `auth.identities=8`. **OAuth coupling to the Documents Ingestor's client is a registered, unresolved live debt** (see §4 amendment) |
 | BK5 | Read-only UI panel + manual-trigger write | `NOT AUTHORIZED` — pending its own order; mockup gate before build |
 | BK6 | Retention and history (GFS pruning, §2) | `NOT AUTHORIZED` — pending its own order |
 | BK7 | Controlled-restore runbook + stale-docs refresh (§8) | `NOT AUTHORIZED` — pending its own order; **own risk gate** (data-restore) |
-| BK8 | Real recovery test (the drill, §6) | `NOT AUTHORIZED` — pending its own order; **own risk gate** |
+| BK8 | Real recovery test (the drill, §6) | `NOT AUTHORIZED` (formalized/repeatable version) — one restore drill has already been performed manually as part of the `BK4.2` closeout (63/63 match, referential integrity, canonical history intact) and is retained as its first evidence point, but `BK8` itself (recurring cadence, formal record-keeping per §6) is not yet built |
+| — | `CAMADA3-DRIVE-ACTIVATION` | **Partially exercised, `NOT AUTHORIZED` as a standing capability** — one real manual upload to `google_drive` succeeded in staging (2026-07-17); not yet a repeated/scheduled/production capability (`BK5` UI, `BK6` retention, and the trigger are all still pending) |
 | — | `CAMADA3-TRIGGER-SELECTION` | `NOT AUTHORIZED` — blocks the "automated" half of the publication criterion |
 | — | Production wiring (secrets, schedule, restore rehearsal) | `NOT AUTHORIZED` — **staging-only boundary in force** |
 
-None of `BK4.1`-`BK8` or `CAMADA3-TRIGGER-SELECTION` are authorized by
+None of `BK5`-`BK8` (formalized), `CAMADA3-DRIVE-ACTIVATION` (as a
+standing capability), or `CAMADA3-TRIGGER-SELECTION` are authorized by
 this contract — each requires its own explicit, individual architect
 order (permanent project rule: phases do not chain automatically).
+
+---
+
+## Amendment 2026-07-17 — BK4.2 first real execution (findings)
+
+The exporter's code (`scripts/backup/export-db.mjs` + `scripts/backup/lib/*`)
+was written and committed prior to this amendment (commits `4831ca3`,
+`75f8ff9`, `153b2a2`, `51c4633`, `e11d05e`). This amendment records the
+findings from its **first real execution against staging** and the
+independent verification performed at closeout — it does not
+re-authorize or re-scope any later `BK`.
+
+- **Real run:** `export --confirm --triggered-by manual` executed twice
+  against staging (`ucrjtfswnfdlxwtmxnoo`, confirmed via the
+  `usuarios.nivel_acesso`/`db/62` fingerprint). First attempt
+  (`backup_runs.id = 0ab0c04b-...`) failed uploading to `google_drive`
+  (`invalid_grant: Token has been expired or revoked` — a stale,
+  previously-copied Documents Ingestor token, not a client mismatch).
+  Second attempt (`backup_runs.id = ae55e714-...`), after a fresh
+  token was obtained, **succeeded**: bundle `83378` bytes, SHA-256
+  `dab5bb03422e3662af471d30d77091f98afb7199199897e7f6f1c22a13977c2`,
+  `google_drive=ok`, `onedrive=skipped`. Both the bundle's independently
+  recomputed SHA-256 and the `backup_runs`/`backup_run_destinations`
+  rows were verified directly against live staging (not taken on
+  report alone) and matched exactly.
+- **Restore-smoke performed (mechanism proof, not yet `BK8`'s
+  formalized/repeatable drill):** the successful bundle was restored
+  into an isolated local scratch PostgreSQL 18.4 cluster (ephemeral
+  port, temp data directory, never staging/production) —
+  `auth_full.sql` → `schema_public.sql` → `data_public.sql`, all three
+  with **zero errors**. Every one of **63 restored tables** (40
+  `public` + 23 `auth`) matched the bundle's own row-count manifest
+  exactly — **63/63, 0 mismatches**, including `auth.identities = 8`
+  explicitly. Referential integrity: **0** orphaned `auth.identities`
+  rows, **0** orphaned `public.usuarios → auth.users` FK rows (the
+  invariant `CODE_HEALTH_RULES.md` §11 depends on); all 10 restored
+  users carry a non-empty password hash (structural proof a real login
+  is possible — an actual authenticated login was not attempted, since
+  that requires a real password, which was not available/handled in
+  this pass). Canonical append-only history intact:
+  `document_link_revisions = 8`, `usuarios_eventos = 9`. The scratch
+  cluster and every extracted file were destroyed immediately after
+  verification (`pg_ctl stop` + full temp-directory removal) — nothing
+  from this drill persisted on disk or in git.
+- **This resolves the §6 drill's `auth.identities` requirement in
+  mechanism** — the restore path is proven capable of reproducing
+  `auth.identities`, which is the specific fidelity gap the original
+  diagnosis (`G28-CAMADA-3-DIAGNOSIS-R1`) flagged in the pre-existing
+  runbook (`auth.users`-only dumps). It does **not** yet satisfy `BK8`
+  — that requires the recurring cadence, a live authenticated-login
+  attempt, and formal dated record-keeping per §6, none of which are
+  built.
+- **OAuth client — resolved, not merely inferred:** the successful
+  run's live access token was introspected against Google's own
+  `https://oauth2.googleapis.com/tokeninfo` endpoint (a read-only
+  check requiring only the access token, no client secret). Both `aud`
+  and `azp` resolved to
+  `334691504707-eh26scjcmgetfrmfsc2ndgi8de6kdb07.apps.googleusercontent.com`
+  — the Documents Ingestor's own OAuth client, confirmed independently
+  against that project's `.env`
+  (`D:\OneDrive\Programação\Ravatex\documents-ingestor\`, a separate
+  standalone repo, unrelated to this one's `services/documents-ingestor/`
+  copy). See the §4 amendment above for the full finding and its
+  consequence (unresolved OAuth-grant coupling).
+- **Bundle-secrecy discipline** — see the new §6 bullet above,
+  added at this closeout after a permission check correctly blocked an
+  attempt to `head` a data-bearing dump file (which would have printed
+  real password hashes into a verification transcript). All subsequent
+  verification used structural checks and `count(*)`/boolean queries
+  only.
 
 ---
 
@@ -424,9 +532,16 @@ order (permanent project rule: phases do not chain automatically).
   -`BK8` subphase individually; the mockup gate before `BK5`; the
   trigger selection (`CAMADA3-TRIGGER-SELECTION`); enabling the second
   (OneDrive) destination; any future revision of this contract if
-  Storage usage is introduced (§7).
+  Storage usage is introduced (§7). **Added at the `BK4.2` closeout
+  (2026-07-17):** the OAuth-grant coupling decision (§4 amendment) —
+  formalize the Documents Ingestor client reuse as an accepted
+  exception, or build a genuinely dedicated backup OAuth client.
 
 ---
 
-**PROPOSED — no subphase authorized; each one requires explicit,
-individual architect authorization.**
+**Contract ratified and in force. `BK3`, `BK4.1`, and `BK4.2` are
+`CLOSED / ACCEPTED` (see the BK sequence recap and the 2026-07-17
+amendment above). `BK5`-`BK8` (formalized), `CAMADA3-DRIVE-ACTIVATION`
+(as a standing capability), and `CAMADA3-TRIGGER-SELECTION` remain
+`NOT AUTHORIZED` — each requires its own explicit, individual architect
+authorization.**
