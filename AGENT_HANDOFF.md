@@ -1,5 +1,65 @@
 # ACTIVE OPERATIONAL HANDOFF
 
+- **`G28-CAMADA-3-DIAGNOSIS-R1` (read-only diagnosis) + `BK3` (backup
+  contract) — `CLOSED / ACCEPTED` (2026-07-17):** the architect authorized
+  a read-only diagnosis of `G28-CAMADA-3` (automated backup — the second
+  half of the publication criterion, `G28-GOVERNANCE-CONSOLIDATION-A`),
+  mirroring the `G28-CAMADA-2` diagnosis approach. Sources: the master
+  plan's CAMADA 3 section (`BK1-BK8`), the existing manual runbook
+  (`docs/BACKUP_AND_RESTORE.md`), the live repo/schema state, and
+  `SGAA_clean_baseline`'s backup subsystem (read-only, functional/UX
+  reference only — same caveat discipline as Camada 2: stack-specific
+  engine/scheduler/restore assumptions rejected, only information
+  architecture borrowed). Findings, verified against live staging
+  (`ucrjtfswnfdlxwtmxnoo`, confirmed by the presence of `usuarios.
+  nivel_acesso`/`db/62`): 0 Supabase Storage buckets/objects (document
+  bytes are Drive-first, Postgres holds only pointers); `public` schema
+  now ≈40 tables (38 confirmed live base tables), `auth` schema has 23
+  base tables (not just `auth.users`); `pg_cron`/`pg_net`/`http` are
+  available but not enabled; only 14 of 63 migrations are recorded in
+  `supabase_migrations.schema_migrations` (partial/unreliable — the repo's
+  `db/*.sql` remains the authoritative schema source); append-only
+  canonical history confirmed present (`document_link_revisions`=8,
+  `document_link_revision_ops`=10, `usuarios_eventos`=9). **Architect
+  ratified the diagnosis "as reported"** and issued three scope/trigger/
+  destination decisions (see `docs/architecture/CAMADA3_BACKUP_CONTRACT.md`,
+  "Architect decisions incorporated"): (1) scope = `public` data + the
+  **full `auth` schema** (not just `auth.users` — a restore without
+  `auth.identities` cannot log in), document bytes explicitly out of
+  scope by design (Drive-first), Storage re-verified as 0 buckets every
+  cycle; (2) the automated **trigger is deferred** (GH Actions vs. Vercel
+  cron, decided with hosting) — the exporter must be trigger-agnostic,
+  self-contained, idempotent, parameterized, invokable by any future
+  scheduler or by hand, with zero scheduling logic inside the exporter
+  itself (registered `CAMADA3-TRIGGER-SELECTION`, `NOT AUTHORIZED`, blocks
+  the "automated" half of the publication criterion); (3) **multi-
+  destination by design** (SGAA's per-provider pattern) — Google Drive
+  primary, implemented now (reuses the Ingestor's OAuth pattern); OneDrive
+  interface-ready, not configured, ships disabled with its wiring in
+  place; `backup_runs` and the exporter must never hardcode a single-
+  destination assumption. **Order `BK3` (docs-only)** then produced
+  `docs/architecture/CAMADA3_BACKUP_CONTRACT.md` (`PROPOSED`, ratified as
+  the binding premise for all later subphases): scope (§1), cadence/
+  retention — GFS 4-window model, manual backups never expire (§2);
+  integrity — SHA-256 + per-table row-count manifest as the restore
+  assertion baseline (§3); N-destination contract (§4); the
+  trigger-agnostic exporter contract — inputs/outputs/exit codes/
+  idempotency/secrets-never-in-repo/`backup_runs` recording (§5); the
+  restore SLO + drill contract — monthly + after every migration, scratch
+  target only, proof = row counts match + a real login succeeds (proves
+  `auth.identities` restored) + append-only history intact (§6); explicit
+  limits — production restore never rehearsed against production, account/
+  vendor loss out of scope, trigger deferred (§7); and the stale-docs
+  finding (`docs/BACKUP_AND_RESTORE.md`/`STAGING_BASELINE.md` describe a
+  pre-Documents world — refresh registered as part of `BK7`, not fixed
+  here) (§8). **BK1/BK2 closed by the diagnosis; BK3 closed by this
+  contract; `BK4.1`-`BK8` and `CAMADA3-TRIGGER-SELECTION` remain `NOT
+  AUTHORIZED`, each pending its own order — phases do not chain
+  automatically.** No file changed outside this docs-only commit; no
+  Supabase write; no production access; no push. **Next authorizable
+  action:** `BK4.1` (`backup_runs` schema + service_role writer RPC), own
+  order — or `CAMADA3-TRIGGER-SELECTION` if the architect resolves hosting
+  first. Full detail: `docs/architecture/CAMADA3_BACKUP_CONTRACT.md`.
 - **`A3.4` (legacy user screen removal) — `CLOSED / ACCEPTED` (2026-07-17):**
   technical commit `32e466a` — `Remove legacy user screen`; architect
   ratification "ARCHITECT RATIFICATION — A3.4: ACCEPTED". **This closes
