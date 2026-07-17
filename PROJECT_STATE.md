@@ -15,22 +15,24 @@ HEAD, working tree, staging and divergence must be consulted directly in Git
 - **Active functional phase:** `NONE`.
 - **Next authorizable action:** `ARCHITECT DECISION`. `A5.3-A5.4` (user
   reactivation) is `CLOSED / ACCEPTED` — see "Closed phases" below; the `A5`
-  track (reset + reactivation) is now `COMPLETE`. `A6.1` (audit schema/trigger)
-  and `A6.1-B` (schema correction: `usuario_id` FK `ON DELETE SET NULL` +
-  identity snapshot, resolving the `A6.2` HARD STOP) are both `CLOSED /
-  ACCEPTED` — see "Closed phases" below. `A6.2` (Edge Function wiring) was
-  authorized once, paused by the FK HARD STOP that `A6.1-B` resolves, and
-  requires an explicit resume/re-authorization; `A6.3` (read-only UI panel)
-  remains `NOT AUTHORIZED`. No single, unambiguous technical candidate for the
-  current staging cycle. Candidates on the table (none authorized by this
-  file): `UI-EL-BOOLEAN-ATTR-FIX` (severity `CONFIRMED — ACTIVE REGRESSION`,
-  empirically reproduced by the architect in staging via the "Mostrar
-  inativos" checkbox in `js/screens/admin-usuarios.js` — recommended as the
-  priority candidate); `A2.1` (schema `nivel_acesso`); `A6.2` (resume, Edge
-  Function wiring of `usuarios_eventos`); `DOC-LANGUAGE-MIGRATION-L3` (`NOT
-  AUTHORIZED` pending `PROJECT-STATE-COMPACTION-A`). `A3.4` (legacy code
-  removal in `cadastros.js`) unlocks once the remaining `A2`/`A6` subphases
-  close.
+  track (reset + reactivation) is now `COMPLETE`. `A6.1`, `A6.1-B`, and `A6.2`
+  (audit schema/trigger, delete-survival correction, Edge Function wiring) are
+  all `CLOSED / ACCEPTED` — see "Closed phases" below. Real E2E in staging
+  (`scripts/staging/usuarios-audit-e2e.mjs`) passed `15/15`,
+  `result: PASS`, `2026-07-17`: one event per action across all five admin
+  Edge Functions, no double-entry, password absent from the
+  `senha_resetada` payload, 5/5 accumulated events surviving profile
+  deletion with `usuario_id NULL` and identity snapshot intact. Five
+  functions deployed to staging by the architect. `A6.3` (read-only audit
+  panel) remains `NOT AUTHORIZED`. No single, unambiguous technical candidate
+  for the current staging cycle. Candidates on the table (none authorized by
+  this file): `UI-EL-BOOLEAN-ATTR-FIX` (severity `CONFIRMED — ACTIVE
+  REGRESSION`, empirically reproduced by the architect in staging via the
+  "Mostrar inativos" checkbox in `js/screens/admin-usuarios.js` — recommended
+  as the priority candidate); `A2.1` (schema `nivel_acesso`); `A6.3`
+  (read-only audit panel); `A3.4` (legacy code removal in `cadastros.js`,
+  unlocks once the remaining `A2`/`A6` subphases close); `DOC-LANGUAGE-
+  MIGRATION-L3` (`NOT AUTHORIZED` pending `PROJECT-STATE-COMPACTION-A`).
 - **Open architect decisions:** `NONE` blocking the current staging cycle. Two
   non-blocking naming/consistency points from `DOC-LANGUAGE-MIGRATION-L2` were
   ruled on and applied (documentation-term unification; phase-ID naming rule).
@@ -84,6 +86,19 @@ decisions (verbatim) are in `docs/closeouts/PROJECT_STATE_ARCHIVE_2026-07.md`
 - **Admin password auto-reset BLOCKED (`A5.1-A5.2`):** an admin cannot reset
   their own password (`SELF_RESET_FORBIDDEN`) — they use the normal self-service
   change flow (`A4.2`).
+- **User audit trail design (`A6.1`/`A6.1-B`/`A6.2`, canonical):**
+  `public.usuarios_eventos` has exactly two write paths, mutually exclusive by
+  the `auth.uid()` condition — (1) `trg_usuario_evento` (`db/60`) records
+  direct-`UPDATE` changes to `ativo`/`tipo`/`nivel_acesso`/`senha_temporaria`
+  made by an authenticated admin session (`auth.uid() IS NOT NULL`); (2) each
+  of the five admin Edge Functions records its own action explicitly, since
+  they run under `service_role` where `auth.uid() IS NULL` excludes the
+  trigger by design. Both paths populate the identity snapshot columns
+  (`usuario_email`/`usuario_nome`/`usuario_tipo`, `db/61`) — the trigger from
+  `NEW`, the Edge Functions explicitly. `usuario_id` is `ON DELETE SET NULL`
+  (`db/61`, corrective over `db/60`'s original `CASCADE`) so events survive
+  `admin-delete-user`. Full detail: `docs/DOCUMENTATION_INDEX.md` §4
+  (`db/60`/`db/61` rows and the `A6.1`/`A6.1-B`/`A6.2` narrative entry).
 - **`UI-EL-BOOLEAN-ATTR-FIX` — CONFIRMED as an active regression (`A5.3-A5.4`
   closeout, 2026-07-16):** `js/ui.js`'s `el()` calls `setAttribute(k, v)`
   unconditionally, including for boolean attrs (`disabled`, `checked`) — the
@@ -263,6 +278,7 @@ HEAD with `git rev-parse HEAD`.
 
 | Phase | Status | Date | Commit(s) |
 |---|---|---|---|
+| Camada 2 — Audit Trail Wiring (Edge Functions) — `A6.2` | `CLOSED / ACCEPTED` | 2026-07-17 | `b67b126`, `7309349` |
 | Camada 2 — Preserve User Audit Events on Profile Deletion — `A6.1-B` | `CLOSED / ACCEPTED` | 2026-07-16 | `fa8e1b9` |
 | Camada 2 — User Audit Trail Schema + Trigger — `A6.1` | `CLOSED / ACCEPTED` | 2026-07-16 | `ee0e77b` |
 | Users Grid — Text Overflow Ellipsis — `UI-USERS-GRID-TEXT-OVERFLOW` | `CLOSED / ACCEPTED` | 2026-07-16 | `3e95e86` |

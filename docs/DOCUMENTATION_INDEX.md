@@ -234,6 +234,8 @@ in `PROJECT_STATE.md`.
 | `db/57_cliente_pedido_summary_acl_grants.sql` | Grants-only, forward-only, idempotent migration for `public.cliente_pedido_summary(UUID)`: `REVOKE EXECUTE ... FROM PUBLIC, anon, service_role; GRANT EXECUTE ... TO authenticated`. Does not recreate or alter the function's body, `SECURITY DEFINER`, volatility, `search_path`, owner, signature, or return type. Resolves the ACL divergence recorded in `D-COS06` (`docs/architecture/PEDIDO_OP_MOVIMENTACAO_DOCUMENTOS_PLANO.md`), closing it in `D-COS07`. | `CLIENTE-ORDER-SUMMARY-READMODEL-ACL-GRANTS-R1` | **Applied and verified only in staging** (`ucrjtfswnfdlxwtmxnoo`), `2026-07-15`, via a tracked Supabase MCP migration operation; record `20260715190627 / 57_cliente_pedido_summary_acl_grants` confirmed in the catalog. `CLOSED / ACCEPTED`. Final ACL verified live: `PUBLIC` without `EXECUTE`, `anon` without `EXECUTE`, `authenticated` with `EXECUTE`, `service_role` without explicit `EXECUTE` (owner `postgres` retains inherent privilege). Function contract (signature `cliente_pedido_summary(uuid)`, return `jsonb`, `SECURITY DEFINER`, `STABLE`, `search_path=public`, owner `postgres`, body) confirmed byte-for-byte unchanged (identical definition hash before/after). Production (`bhgifjrfagkzubpyqpew`) untouched; no push. |
 | `db/58_admin_usuarios_senha_temporaria.sql` | Additive, forward-only, idempotent migration (`ADD COLUMN IF NOT EXISTS`) for phase `A4.1` (`docs/architecture/CAMADA2_USUARIOS_SPEC_PROPOSED.md`): `usuarios.senha_temporaria BOOLEAN NOT NULL DEFAULT FALSE` + `usuarios.senha_gerada_em TIMESTAMPTZ NULL`. Basis for the single path decided for A4 (temporary password + forced change on first login, A4.2 still `NOT AUTHORIZED`). | `A4.1` | **Applied and verified in staging** (`ucrjtfswnfdlxwtmxnoo`), `2026-07-16`, via Supabase MCP; record `20260716014338 / 58_admin_usuarios_senha_temporaria` confirmed in the catalog. `CLOSED / ACCEPTED`. Columns confirmed live with the file's type/nullability/default; the 10 existing users preserved with no retroactive effect (`senha_temporaria=false`, `senha_gerada_em=NULL` for all). Production untouched; no push. |
 | `db/59_admin_last_sign_in_readmodel.sql` | RPC `public.admin_usuarios_last_sign_in()` — admin-only read model (`SECURITY DEFINER`, `STABLE`, `search_path=public,auth`), guarded by `is_admin()` (`db/12` pattern) with `RAISE EXCEPTION ... ERRCODE 42501` for a non-admin caller. Returns only `id`+`last_sign_in_at` from `auth.users` for the users visible in `public.usuarios` — does not expose email/password/metadata. Explicit grants: `REVOKE FROM PUBLIC, anon, service_role; GRANT TO authenticated`. Closes the "Last access" column HARD STOP recorded in the `A3.2` closeout. | `CAMADA2-LAST-ACCESS-RPC` | **Applied and verified in staging** (`ucrjtfswnfdlxwtmxnoo`), `2026-07-16`, via Supabase MCP; record `20260716014358 / 59_admin_last_sign_in_readmodel` confirmed in the catalog. `CLOSED / ACCEPTED`. Empirical role matrix (`BEGIN...ROLLBACK`): `anon` → `42501` at the ACL boundary (before execution); non-admin `authenticated` → business `42501` (RAISE EXCEPTION inside the function); admin `authenticated` → `ok`, minimal DTO confirmed (only `id`+`last_sign_in_at`). UI consumption (the "Last access" column in `js/screens/admin-usuarios.js`) is its own future micro-phase, `NOT AUTHORIZED` by this record. Production untouched; no push. |
+| `db/60_usuarios_auditoria_schema.sql` | Append-only audit table `public.usuarios_eventos` (mirrors `op_eventos`, `db/21`) + trigger `trg_usuario_evento` on `public.usuarios` (`AFTER UPDATE`), recording `ativo`/`tipo`/`nivel_acesso`/`senha_temporaria` diffs as `perfil_alterado` events. Admin-only RLS `SELECT`; no client writes (write path is the `SECURITY DEFINER` trigger only). **Canonical audit-trail design (recorded here, binding):** two write paths reach `usuarios_eventos`, mutually exclusive by the `auth.uid()` condition — (1) the trigger records direct-`UPDATE` changes made by an authenticated admin session (`auth.uid() IS NOT NULL`); (2) the five admin Edge Functions (`db/61`-era, `A6.2`) record their own actions explicitly, since they run under `service_role` where `auth.uid() IS NULL` excludes the trigger by design. Both paths populate the identity snapshot columns (`usuario_email`/`usuario_nome`/`usuario_tipo`, added by `db/61`) — the trigger from `NEW`, the Edge Functions explicitly (no automatic path populates them under `service_role`). | `A6.1` | **Applied and verified in staging** (`ucrjtfswnfdlxwtmxnoo`), `2026-07-16`; record `20260717002523 / 60_usuarios_auditoria_schema` confirmed in the catalog. `CLOSED / ACCEPTED`. Role matrix in `BEGIN...ROLLBACK`: trigger fires once per changed watched field, no-op on same-value updates, no double-recording under a simulated `service_role` context; `anon` → `42501`; non-admin `authenticated` → 0 rows (RLS); admin `authenticated` → reads. Production untouched; no push. |
+| `db/61_usuarios_eventos_preserve_on_delete.sql` | Corrective migration over `db/60` (not edited — applied, immutable): `usuarios_eventos.usuario_id` FK changed from `ON DELETE CASCADE` to `ON DELETE SET NULL`; adds identity snapshot columns `usuario_email`/`usuario_nome`/`usuario_tipo`; `trigger_usuario_evento()` updated in place to populate them from `NEW`. Root cause: `admin-delete-user` hard-deletes `public.usuarios`, and the original `CASCADE` would destroy an event in the same statement that deletes its subject — architect ruling rejected both `CASCADE` (destroys the trail) and dropping the FK (loses integrity while the subject lives). | `A6.1-B` | **Applied and verified in staging** (`ucrjtfswnfdlxwtmxnoo`), `2026-07-16`; record `20260717003652 / 61_usuarios_eventos_preserve_on_delete` confirmed in the catalog. `CLOSED / ACCEPTED`. Full `db/60` role matrix re-verified green under the new schema, plus the delete-survival case: a synthetic profile's event survives its own profile's deletion with `usuario_id` NULL and the identity snapshot intact. Production untouched; no push. |
 
 ### Static smoke tests for versioned schema
 
@@ -426,6 +428,43 @@ in `PROJECT_STATE.md`.
 > vulnerable pattern and is unconfirmed but suspect; not fixed in this
 > phase, recorded as the priority `ARCHITECT DECISION` candidate. The
 > `A5` track (reset + reactivation) is now `COMPLETE`. Production
+> `bhgifjrfagkzubpyqpew` not accessed; no push.
+>
+> **`A6.1`/`A6.1-B`/`A6.2` — user audit trail (`db/60`, `db/61`,
+> `CLOSED / ACCEPTED`):** append-only `public.usuarios_eventos` +
+> trigger `trg_usuario_evento` (see `db/60`/`db/61` rows above for
+> the canonical two-write-paths design and the delete-survival fix).
+> `A6.2` wires the five admin Edge Functions
+> (`admin-create-user`/`admin-disable-user`/`admin-reactivate-user`/
+> `admin-reset-user-password`/`admin-delete-user`) with an explicit
+> `usuarios_eventos` insert each (`tipo_evento`:
+> `usuario_criado`/`usuario_desativado`/`usuario_reativado`/
+> `senha_resetada`/`usuario_excluido`), `ator_id` from the caller's
+> validated JWT (never `auth.uid()`, `NULL` under `service_role`),
+> identity snapshot populated explicitly on every insert. Payloads
+> never carry passwords or tokens (`admin-reset-user-password`'s
+> payload is an empty object by design). For
+> create/disable/reactivate/reset-password the insert is the last
+> step, only on the fully-committed success path. `admin-delete-user`
+> is the one exception, by architect ruling: its insert precedes the
+> `public.usuarios` delete (the `db/61` FK is only satisfiable while
+> the row still exists), so `ON DELETE SET NULL` lets the event
+> survive; if the delete subsequently fails or is compensated, the
+> event remains as a recorded but not literally accurate "attempted"
+> entry — an accepted trade-off, no compensation invented for the
+> audit table itself. An **automated local E2E runner**, 6th of the
+> same pattern as the five before it (`admin-disable-user-e2e.mjs`,
+> `admin-create-user-password-policy-e2e.mjs`,
+> `trocar-senha-obrigatoria-e2e.mjs`, `admin-reset-password-e2e.mjs`,
+> `admin-reactivate-e2e.mjs`), was created at
+> `scripts/staging/usuarios-audit-e2e.mjs`. **Real E2E in staging
+> passed with `result: PASS` (15/15 steps)**, `2026-07-17`, synthetic
+> user `c0d5da9c-471c-459f-b0c4-02110fa81709`: one event per action
+> across all five functions, no double-entry, password absent from
+> the `senha_resetada` payload, and 5/5 accumulated events surviving
+> the profile deletion with `usuario_id` NULL and identity snapshot
+> intact. Five functions deployed to staging
+> (`ucrjtfswnfdlxwtmxnoo`) by the architect. Production
 > `bhgifjrfagkzubpyqpew` not accessed; no push.
 ## 4. Legacy docs (DOES NOT GUIDE EXECUTION (NÃO GUIAM EXECUÇÃO))
 
