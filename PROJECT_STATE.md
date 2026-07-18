@@ -9,42 +9,31 @@ are in `docs/ledgers/G28_LEDGER.md`. HEAD/working tree/divergence: consult Git d
 
 ## Active phase and next action
 
-- **Active track:** `PRODUCTION-MIGRATION-M0-M10` — the ordered migration plan
-  (new repo + new Supabase project + Vercel) proposed by
-  `PRODUCTION-READINESS-DIAGNOSIS-R1` (`ACCEPTED`, 2026-07-17;
-  `docs/reports/PRODUCTION_READINESS_DIAGNOSIS_R1_2026-07-17.md`) and registered as
-  the **active track** by the ratification order of the same date. **`M0` — `CLOSED
-  / ACCEPTED`** (new repo landing, 2026-07-17), **`M1` — `CLOSED / ACCEPTED`**
-  (new Supabase project verification + sanction, 2026-07-17), **`M2` — `CLOSED /
-  ACCEPTED`** (schema replay `db/01→db/64` into `gqmpsxkxynrjvidfmojk`, 2026-07-17;
-  see "Migration governance" and `docs/reports/M2_SCHEMA_REPLAY_VERIFICATION_2026-07-17.md`),
-  and **`M3` — `CLOSED / ACCEPTED`** (production data migration into
-  `gqmpsxkxynrjvidfmojk` + `parametros_largura` overwrite from legacy, 2026-07-17;
-  see "Migration governance" and `docs/ledgers/G28_LEDGER.md` `M3-DATA` entry), and
-  **`M8` — `CLOSED / ACCEPTED`** (Documents Ingestor repoint into
-  `gqmpsxkxynrjvidfmojk`, 2026-07-18, executed out of numeric sequence by direct
-  architect order; see "Migration governance" and the `M8` ledger entry).
-  `M4`-`M7`, `M9`, `M10` remain `NOT AUTHORIZED`, each pending its own individual
-  order; phases do not chain automatically.
-- **`BACKLOG FREEZE` in force (2026-07-17):** **no NEW fronts** until after cutover
-  (`M10`). Only the **`M0`-`M10` migration plan** and the **canonical residual risk
-  register** (12 items, ranked — see "Live debts and candidates") are authorizable
-  work. All pre-existing candidate fronts are frozen-in-place as `POST-LAUNCH DEBT`.
-- **Next authorizable action:** an individual order for `M4` or any other `M5`-`M10`
-  phase. Target coordinates: GitHub `inttexsystem/inttracker` (production remote,
-  pushed), Supabase `gqmpsxkxynrjvidfmojk` (schema replayed `db/01→64` at `M2` — 64
-  registry entries, 40 public tables; production data migrated at `M3`, see below),
-  Vercel `vercel.com/inttex`. **Standing reminder: flip the Supabase MCP back to
-  read-only** now that `M3`'s write window is closed.
-- **Post-launch debt pointer (frozen):** the former Camada-3 subphases (`BK5`-`BK8`,
-  `CAMADA3-TRIGGER-SELECTION`), the two ex-`PRE-PUBLICATION` asterisks
-  (`A2-SERVER-SIDE-ENFORCEMENT`, `A2-CREATE-NIVEL-ACESSO-WIRING`), and
-  `A6-GLOBAL-AUDIT-VIEW`/`AUDIT-ACTOR-SNAPSHOT` are now residual-register entries.
-  **`G28-CAMADA-2` — TRACK `COMPLETE` / `CLOSED / ACCEPTED`** in staging (full `A1-A7`
-  + password policy; narratives archived + in the ledger).
-- **Open architect decisions:** `NONE` blocking the active migration track. Part-1
-  decisions of this order (key regime, launch user model, standing pre-launch items)
-  are ruled and recorded under "Binding decisions in force".
+- **`G28-MIGRATION-TRACK` (`PRODUCTION-MIGRATION-M0-M10`) — `COMPLETE / CLOSED`
+  (2026-07-18).** The system is **LIVE IN PRODUCTION** at
+  `inttracker-jade.vercel.app`, served by Vercel from `inttexsystem/inttracker`,
+  running against Supabase `gqmpsxkxynrjvidfmojk` with migrated data, deployed Edge
+  Functions, repointed client config, and a repointed Ingestor. All eleven phases are
+  recorded under "Migration governance": **`M0`-`M6`, `M8`, `M10` — `CLOSED /
+  ACCEPTED`**; **`M7` (formal smoke phase) and `M9` (backup repoint + first real run)
+  — `SUPERSEDED BY REALITY`** (the live-and-serving system is the de-facto smoke; the
+  production backup mechanism was never stood up as scoped — folded into the
+  `CAMADA3 BK5-BK8` post-launch debt). Phase order was not strictly numeric — `M8` ran
+  ahead of `M4`-`M7` by direct order, and `M4`/`M5`/`M6`/`M10` were executed by the
+  architect out-of-band and are recorded here as accomplished facts.
+- **`BACKLOG FREEZE` — `LIFTED` (2026-07-18).** The freeze was scoped "until after
+  cutover (`M10`)"; cutover is done. **New fronts are authorizable again**, each by
+  its own individual order. The consolidated, ranked `POST-LAUNCH DEBT REGISTER`
+  (below) supersedes the former "residual risk register (12 items)".
+- **Next authorizable action:** any new front, by its own order. **The highest-consequence
+  open item is `INGESTOR-DOC-CYCLE-VERIFY-DEFERRED` — an `ACTIVE PRODUCTION BLOCKER`:
+  the Ingestor's Google OAuth token is expired, so no documents are entering the live
+  system.** See the `POST-LAUNCH DEBT REGISTER`. **Standing reminder: flip the Supabase
+  MCP back to read-only** (still management-scoped/write-capable from `M2`/`M3`).
+- **Open architect decisions:** `NONE` blocking. `G28-CAMADA-2` remains `TRACK
+  COMPLETE / CLOSED / ACCEPTED` (full `A1-A7` + password policy). Binding launch
+  constraints (key regime, launch user model, standing pre-launch items) recorded
+  under "Binding decisions in force".
 - **Workspace:** `D:\OneDrive\Programação\Ravatex\controle-tapetes-g28`.
   **Branch:** `work/g28-document-qualification`. **Allowed remote:** none — no push
   without express authorization in this chain.
@@ -93,8 +82,11 @@ decisions (verbatim) are in `docs/closeouts/PROJECT_STATE_ARCHIVE_2026-07.md`
   items close before cutover. The superseded original (`both` Camada-2 and full
   Camada-3 CLOSED in staging) is preserved verbatim in the archive
   (`PROJECT-STATE-COMPACTION-B` batch); in any wording divergence, the archive wins.
-- **`BACKLOG FREEZE` (2026-07-17, binding):** no NEW fronts authorizable until after
-  cutover (`M10`); only the `M0`-`M10` plan and the residual register survive.
+- **`BACKLOG FREEZE` (2026-07-17) — `LIFTED` at `M10` (2026-07-18):** while in force,
+  no NEW fronts were authorizable until after cutover; only the `M0`-`M10` plan and the
+  residual register survived. Cutover (`M10`) is done, so the freeze is **lifted** and
+  new fronts are authorizable again, each by its own order — see "Active phase" and the
+  `POST-LAUNCH DEBT REGISTER`.
 - **Canon correction (2026-07-17):** branch `work/g28-document-qualification` commit
   count was **749** at diagnosis time (not "~555"); **753** at the `M0` push
   (2026-07-17, 4 subsequent docs commits) — see `M0` record below.
@@ -221,6 +213,41 @@ decisions (verbatim) are in `docs/closeouts/PROJECT_STATE_ARCHIVE_2026-07.md`
   the Ingestor's own service_role key; all Claude MCP calls read-only); **no production
   access; no push.** Full detail: `docs/ledgers/G28_LEDGER.md` `M8` entry. Next: `M4`
   (or any `M5`-`M10`), plus the deferred doc-cycle verification.
+- **`M4` (Edge Functions + secrets) — `CLOSED / ACCEPTED` (2026-07-18, recorded at
+  `M10` closeout as an accomplished fact):** the five admin Edge Functions were
+  **deployed to `gqmpsxkxynrjvidfmojk` by the architect**, with the per-function
+  secrets set (new-format key regime). Deploy performed out-of-band (Supabase
+  dashboard / CLI); no repo commit is the deploy artifact. Confirmed working in
+  production reality (the live app exercises them). Not executed by Claude.
+- **`M5` (client config repoint) — `CLOSED / ACCEPTED` (2026-07-18):** `js/config.js`
+  repointed to the new project — commit `75c4ab6` ("Repoint config to new Supabase
+  project"), then the **environment split restored** (commit `1e17087`, "Restore
+  environment split in config") so host detection routes production vs. development
+  correctly, and the environment banner fixed (commit `f369964`). New-format
+  publishable key in committed config (RLS-gated, public by design). On `production/main`.
+- **`M6` (Vercel wiring) — `CLOSED / ACCEPTED` (2026-07-18):** repo linked to Vercel,
+  static deployment configured (commits `5416128` "Trigger first Vercel deploy",
+  `aa77612` "Configure Vercel static deployment"); the app is **live and serving** at
+  `inttracker-jade.vercel.app`. A **Root Directory defect** was found during wiring and
+  **cleared** (the deploy now serves the repo root correctly). Executed by the architect.
+- **`M7` (smoke verification) — `SUPERSEDED BY REALITY` (2026-07-18):** no separate
+  scoped smoke phase was executed. It is superseded by the fact that the system is
+  **live and serving in production** (`inttracker-jade.vercel.app`) — login, pedido
+  load, and the admin surfaces are exercised by real use. Recorded honestly as
+  not-run-as-scoped, replaced by the live-serving reality; **not** a fabricated smoke
+  closeout.
+- **`M9` (backup repoint + first real run) — `SUPERSEDED BY REALITY` /
+  `NOT EXECUTED AS SCOPED` (2026-07-18):** the production backup mechanism (repoint
+  `PG*`/`SUPABASE_*` to the new project + a first real scheduled run) was **never
+  stood up**. The exporter was proven once, manually, against staging at `BK4.2`; no
+  production repoint, no automated trigger, no first production run. Folded into the
+  `CAMADA3 BK5-BK8` post-launch debt — see the debt register (**no proven production
+  backup exists**). Recorded honestly; no fabricated run.
+- **`M10` (cutover) — `CLOSED / ACCEPTED` (2026-07-18):** the primary URL is Vercel
+  (`inttracker-jade.vercel.app`), the system is live against `gqmpsxkxynrjvidfmojk`
+  with real use. This closeout order records the accomplished cutover, marks the
+  `G28-MIGRATION-TRACK` `COMPLETE / CLOSED`, and **lifts the backlog freeze**.
+  Docs-only; the cutover itself was performed by the architect.
 - **Staging-only execution boundary (`STAGING-ONLY-EXECUTION-BOUNDARY-A`,
   2026-07-15, partially superseded):** operational environment is staging
   `ucrjtfswnfdlxwtmxnoo`; the protected project `bhgifjrfagkzubpyqpew` is `OUT OF
@@ -281,27 +308,78 @@ decisions (verbatim) are in `docs/closeouts/PROJECT_STATE_ARCHIVE_2026-07.md`
   `DOCUMENTATION_MODEL.md` §18, `CODE_HEALTH_RULES.md` §19, `SUPERVISION_PROTOCOL.md`
   §3; `CLAUDE.md` pointer-summary.
 
-## Live debts and candidates
+## POST-LAUNCH DEBT REGISTER (consolidated + ranked at `M10`, 2026-07-18)
 
-- **CANONICAL RESIDUAL RISK REGISTER (12 items, ranked — `PRODUCTION-READINESS-
-  DIAGNOSIS-R1` §4, 2026-07-17):** authoritative list with per-item consequence in
-  the report §4. Ranked, timing as amended by this order's Part-1 decisions:
-  (1) `A2-SERVER-SIDE-ENFORCEMENT` — FIRST-WEEK; (2) `DELETE-PROD-GUARD-A` —
-  **BEFORE-FIRST-USER** (data-loss); (3) Camada 3 incomplete (`BK5`-`BK8`, no
-  trigger/retention/runbook/drill) — **trigger (GitHub Actions) + `BK7` runbook
-  BEFORE-FIRST-USER**, rest first-week; (4) `CAMADA3-OAUTH-GRANT-COUPLING` —
-  first-week; (5) `A2-CREATE-NIVEL-ACESSO-WIRING` — FIRST-WEEK;
-  (6) `IS-ADMIN-ACL-REVIEW`; (7) `A6-GLOBAL-AUDIT-VIEW`; (8) `AUDIT-ACTOR-SNAPSHOT`;
-  (9) `UI-EL-BOOLEAN-ATTR-FIX` (active regression) — first-week;
-  (10) `CODE-HEALTH-AUDIT-§18-R1`; (11) `DELETE-AUDIT-LOG-A`; (12) `G28-CAMADA-4`
-  (6-12 deferrable except where noted). All 12 are `POST-LAUNCH DEBT`; the standing
-  before-first-user set is in "Standing PRE-LAUNCH items" above.
-- **`NOT AUTHORIZED` candidate fronts (all frozen by the backlog freeze):**
-  `CODE-HEALTH-AUDIT-§18-R1`; `PUBLICATION-TRACK-REVIEW`; `UI-EL-BOOLEAN-ATTR-FIX`
-  (`ACTIVE REGRESSION`, not fixed); `G28-D` publication;
+The system is live; every item below is `POST-LAUNCH DEBT`, `NOT AUTHORIZED` until its
+own order. Ranked by **production consequence** (1 = most consequential). This single
+list supersedes the former "residual risk register (12 items)" and the scattered
+per-entry debts; the detailed narratives for each remain in their own bullets further
+down this section and in the ledger/archive.
+
+1. **`INGESTOR-DOC-CYCLE-VERIFY-DEFERRED` — `ACTIVE PRODUCTION BLOCKER`.** The
+   Ingestor's Google OAuth token is expired (`invalid_grant`); **no documents are
+   entering the live system.** Fix: refresh the token (interactive Google login —
+   architect action), seed a fresh scan request, run one watcher cycle, confirm a real
+   document lands with its Drive file resolving. Coupled to #7 (same OAuth client).
+2. **`CAMADA3 BK5-BK8` — no proven production backup.** The exporter is manual and was
+   proven only once, in staging (`BK4.2`); `M9` (production backup repoint + first real
+   run) was never executed. No automated trigger, no retention, no restore runbook/drill
+   against production. **A live system with no backup safety net.** Includes the former
+   `CAMADA3-TRIGGER-SELECTION` (mechanism resolved: GitHub Actions).
+3. **`DELETE-PROD-GUARD-A` — destructive-delete guard not deployed to production.**
+   Data-loss exposure: the delete-guard for Pedido/OP was not repointed/installed on the
+   live project.
+4. **`A2-SERVER-SIDE-ENFORCEMENT` — privilege escalation, mitigated by a binding
+   constraint.** RLS/Edge Functions key on `usuarios.tipo` only;
+   `nivel_acesso='somente_leitura'` is client-side, bypassable from a `tipo='admin'`
+   JWT. **Binding mitigation in force: no `somente_leitura` admin may exist in
+   production until this closes** — the constraint IS the mitigation; exposure is zero
+   only while it holds.
+5. **`A2-CREATE-NIVEL-ACESSO-WIRING` — companion to #4.** `admin-create-user`'s fixed
+   column list drops `nivel_acesso` (new admins land `completo`); needs an Edge Function
+   change. Moot at launch only under #4's constraint.
+6. **`ANON-GRANT-DEFENSE-IN-DEPTH` — grants/policies disagree (not a live hole).** 27
+   non-document tables carry raw `anon INSERT/UPDATE/DELETE` grants, inert only because
+   RLS policies evaluate false for anon. No second line of defence. Distinct from #8
+   (table-grant scope vs anchor-function ACL) — not merged.
+7. **`CAMADA3-OAUTH-GRANT-COUPLING` — cross-subsystem SPOF (latent).** The backup
+   exporter reuses the Ingestor's OAuth client; rotating/revoking it silently breaks
+   backups. Interacts directly with #1 (refreshing the token to unblock ingestion
+   touches the shared grant). Decide: formalize the reuse or build a separate client.
+8. **`IS-ADMIN-ACL-REVIEW` — over-broad `EXECUTE` on `public.is_admin()`** (granted to
+   `PUBLIC`/`anon`/`authenticated`/`service_role`). Not a live exposure (`is_admin()` is
+   false for anon); tightening touches every RLS policy that calls it. Needs its own
+   read-only diagnosis.
+9. **`CODE-HEALTH-AUDIT-§18-R1` — accumulated small code-health debts** (dead
+   `cadastrosModalGrid` helper; `tests/auth.smoke.js` stale `<script>` regex;
+   `admin-usuarios-modal.js` at 576 lines; `tec-to-acabamento-flow` 2 stale static-slice
+   assertions; legacy `docs/AI_AGENT_RULES.md` review). Also tracks `UI-EL-BOOLEAN-ATTR-FIX`
+   (active regression in `js/ui.js` `el()`).
+10. **`TEST-MOCK-FIDELITY` — remaining lots** beyond `L1`/`L2` (audit `CLOSED`, `§20`
+    added; residual lots not yet done).
+11. **`UI-FIXED-FORMAT-COLUMN-WIDTHS`** — CNPJ/date/phone column wrap (cosmetic).
+12. **`UI-ACTION-BUTTON` lot 3** — `cadastros.js` action-button pass (cosmetic, frozen).
+13. **`MODAL-BUTTON-CSS-CHECK`** — modal button CSS review (cosmetic, frozen candidate).
+14. **Two stale git-worktree registrations** (`tapetes-baseline-check`,
+    `baseline-check-a34`) — prunable, auto-prune blocked by an OneDrive/AV lock;
+    housekeeping only, no commit impact. Await one authorized `git worktree prune`.
+
+**Registered for review (`M10`, read-only — do not delete):** an unaccounted branch
+`v0/administrativointtex-9166-cf89b1d8` exists on the `production` remote. **Investigated
+read-only:** it points at our own commit `75c4ab6` ("Repoint config to new Supabase
+project"), has **zero commits not already in `production/main`** (`git rev-list
+--left-right --count production/main...` = `5 0`), and is a **strict ancestor of
+`main`** — i.e. an older snapshot of this same branch's history, not foreign content.
+Consistent with a Vercel/v0 import artifact (a branch auto-created at the commit that was
+HEAD when the repo was connected). No code review concern; safe to leave or delete at the
+architect's discretion.
+- **`NOT AUTHORIZED` candidate fronts (freeze `LIFTED` at `M10` — now authorizable by
+  their own orders, still `NOT AUTHORIZED` until ordered):** `CODE-HEALTH-AUDIT-§18-R1`;
+  `PUBLICATION-TRACK-REVIEW`; `UI-EL-BOOLEAN-ATTR-FIX` (`ACTIVE REGRESSION`, not fixed);
+  `G28-D` publication (largely realized by the `M0`-`M10` cutover);
   `DEPLOYMENT_MAPPING_AND_PRODUCTION_MIGRATION_PROCEDURE` (superseded by `M0`-`M10`);
   `DELETE-PROD-GUARD-A`; `DELETE-AUDIT-LOG-A`; `G28-CAMADA-4`; `A4.3` (email/SMTP
-  invites).
+  invites). Ranked items also appear in the `POST-LAUNCH DEBT REGISTER` above.
 - **`CAMADA3-TRIGGER-SELECTION` — `NOT AUTHORIZED` (`BK3`; register #3):** the
   automated-backup scheduler; mechanism resolved — **GitHub Actions, not Vercel cron**
   (the exporter shells out to `pg_dump`/`psql`). Contract:
@@ -390,27 +468,24 @@ decisions (verbatim) are in `docs/closeouts/PROJECT_STATE_ARCHIVE_2026-07.md`
 
 ## Environment and worktree standing facts
 
-- **Staging Supabase:** `ucrjtfswnfdlxwtmxnoo` (authorized). **Protected/other:**
-  `bhgifjrfagkzubpyqpew` (`OUT OF SCOPE`, never accessed).
-- **Migration targets:** GitHub `inttexsystem/inttracker` — **`M0` pushed**, no longer
-  empty (main = the full history, see "Migration governance" `M0` record); Supabase
-  `gqmpsxkxynrjvidfmojk` — **`M2` schema replayed** (`db/01→64`, 64 registry entries,
-  40 public tables / 53 functions / 67 policies / 9 triggers / 0 views / 0 buckets;
-  see "Migration governance" `M2` record +
-  `docs/reports/M2_SCHEMA_REPLAY_VERIFICATION_2026-07-17.md`) and **`M3` production
-  data migrated** (auth remap 24 rows/1 column, FK integrity 76/76 relationships
-  clean, sequences 10/10 resynced, `parametros_largura` overwritten from legacy
-  live values — see "Migration governance" `M3` record) and **`M8` Ingestor
-  repointed** (both `.env` copies + both `.ps1` guards + both runbooks → new project;
-  new-format `sb_secret_` key pasted by the architect; Supabase-layer write verified
-  live, full doc cycle deferred on the expired Google token — see "Migration
-  governance" `M8` record). New-format publishable key supplied; the matching secret
-  key is now in use by the Ingestor (`.env`, gitignored, out of band). Vercel
-  `vercel.com/inttex` (repo-linked, not wired). Remaining wiring (`js/config.js`
-  client repoint, Edge Functions, Vercel) `NOT AUTHORIZED` until the relevant
-  `M4`-`M7`/`M9`/`M10` order. **Supabase MCP:** flipped to write for `M2`/
-  `M3` and now resolves to the **management-scoped** server (explicit `project_id`
-  per call); **to be flipped back to read-only** by the architect — standing reminder.
+- **PRODUCTION (live since `M10`, 2026-07-18):** Supabase `gqmpsxkxynrjvidfmojk`
+  ("Inttex"), served by **Vercel at `inttracker-jade.vercel.app`** from
+  `inttexsystem/inttracker` (`main`). Schema (`db/01→64`), migrated data, deployed Edge
+  Functions, repointed `js/config.js`, and the repointed Ingestor are all in place.
+- **DEVELOPMENT / legacy:** `ucrjtfswnfdlxwtmxnoo` — **retained, now the development
+  database** (formerly "staging"; the historical record for the excluded audit
+  trails/test rows per `M3`). **Protected/other:** `bhgifjrfagkzubpyqpew` remains
+  `PROHIBITED` and **unused — never accessed** in this entire chain.
+- **Migration path (all phases recorded under "Migration governance"):** `M0` full-history
+  push; `M2` schema replay (64 registry entries, 40 public tables / 53 functions / 67
+  policies / 9 triggers / 0 views / 0 buckets); `M3` data migration (auth remap 24
+  rows/1 column, FK 76/76 clean, sequences 10/10, `parametros_largura` from legacy);
+  `M4` Edge Functions deployed; `M5` `js/config.js` repointed + environment split
+  restored (`75c4ab6`/`1e17087`/`f369964`); `M6` Vercel static deploy live
+  (`5416128`/`aa77612`, Root Directory defect cleared); `M8` Ingestor repointed;
+  `M10` cutover. `M7`/`M9` `SUPERSEDED BY REALITY`. **Supabase MCP:** still
+  management-scoped/write-capable from `M2`/`M3` — **standing reminder: flip back to
+  read-only.**
 - **Remotes:** `production` = `https://github.com/inttexsystem/inttracker.git`
   (fetch+push, added at `M0`); `origin` = `grupoterrabranca/controle-tapetes`;
   `staging` = `ravatexapps-dotcom/controle-tapetes-staging` (historical backup only,
@@ -424,8 +499,8 @@ decisions (verbatim) are in `docs/closeouts/PROJECT_STATE_ARCHIVE_2026-07.md`
   read_only=true`, pinning both the ref and the read-only flag in the MCP's own
   configuration string. Read-only introspection of the new project is available;
   no write path is authorized outside a specific `M2`-`M10` order.
-- **Publication provider:** **Vercel selected** (per the amended publication
-  criterion, 2026-07-17); GitHub Pages remains the live provider until cutover.
+- **Publication provider:** **Vercel — LIVE** (`inttracker-jade.vercel.app`) since the
+  `M10` cutover (2026-07-18). GitHub Pages is no longer the production provider.
 - **Branch commit count:** `work/g28-document-qualification` = **753** commits
   (749 at diagnosis time + 4 docs commits; pushed to `production/main` at `M0`).
 - **Migrations 49 and 50 (and the staging-only stack):** applied and verified in
@@ -451,6 +526,13 @@ technical commits; documentation-only phases show `(docs)`. Consult HEAD with
 
 | Phase | Status | Date | Commit(s) |
 |---|---|---|---|
+| Migration Track Closeout — `M10` cutover; `G28-MIGRATION-TRACK` COMPLETE, backlog freeze LIFTED | `CLOSED / ACCEPTED` | 2026-07-18 | (docs: "Close migration track and lift backlog freeze") |
+| Cutover — `M10` (live at `inttracker-jade.vercel.app` against `gqmpsxkxynrjvidfmojk`) | `CLOSED / ACCEPTED` | 2026-07-18 | (architect out-of-band; recorded at closeout) |
+| Vercel Wiring — `M6` (static deploy live; Root Directory defect cleared) | `CLOSED / ACCEPTED` | 2026-07-18 | `5416128`, `aa77612` |
+| Client Config Repoint — `M5` (`js/config.js` → new project + env split restored) | `CLOSED / ACCEPTED` | 2026-07-18 | `75c4ab6`, `1e17087`, `f369964` |
+| Edge Functions + Secrets — `M4` (five admin functions deployed by architect) | `CLOSED / ACCEPTED` | 2026-07-18 | (architect out-of-band deploy; no repo artifact) |
+| Smoke Verification — `M7` | `SUPERSEDED BY REALITY` | 2026-07-18 | (live-serving = de-facto smoke; no scoped phase run) |
+| Backup Repoint + First Real Run — `M9` | `SUPERSEDED BY REALITY` | 2026-07-18 | (not stood up; folded into `CAMADA3 BK5-BK8` debt) |
 | Documents Ingestor Repoint — `M8` (legacy `ucrjtfswnfdlxwtmxnoo` → `gqmpsxkxynrjvidfmojk`; config only, out of sequence) | `CLOSED / ACCEPTED` | 2026-07-18 | (config: 2×`.env` gitignored + 2×`.ps1` + 2×runbook; docs record) |
 | Production Data Migration — `M3` (legacy `ucrjtfswnfdlxwtmxnoo` → `gqmpsxkxynrjvidfmojk` + `parametros_largura` overwrite) | `CLOSED / ACCEPTED` | 2026-07-17 | (Supabase writes: data migration + `parametros_largura` UPDATE + docs record) |
 | Schema Replay into Sanctioned Target — `M2` (`db/01→64` → `gqmpsxkxynrjvidfmojk`) | `CLOSED / ACCEPTED` | 2026-07-17 | (Supabase writes: 64 migrations + docs record) |

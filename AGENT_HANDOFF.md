@@ -1,5 +1,37 @@
 # ACTIVE OPERATIONAL HANDOFF
 
+- **`M10` CUTOVER CLOSEOUT — `G28-MIGRATION-TRACK` (M0-M10) `COMPLETE / CLOSED`,
+  backlog freeze `LIFTED` (2026-07-18):** docs-only closeout recording an
+  already-accomplished cutover. **The system is LIVE IN PRODUCTION** at
+  `inttracker-jade.vercel.app` (Vercel, from `inttexsystem/inttracker`) against
+  Supabase `gqmpsxkxynrjvidfmojk` with migrated data, deployed Edge Functions,
+  repointed client config, and a repointed Ingestor. **Phases recorded:** `M4` (Edge
+  Functions deployed by the architect), `M5` (`js/config.js` repoint + environment
+  split restored, commits `75c4ab6`/`1e17087`/`f369964`), `M6` (Vercel static deploy
+  live, `5416128`/`aa77612`, Root Directory defect cleared), `M10` (cutover) — all
+  `CLOSED / ACCEPTED`; **`M7` (formal smoke) and `M9` (backup repoint + first real
+  run) — `SUPERSEDED BY REALITY`** (live-serving is the de-facto smoke; the production
+  backup was never stood up — folded into `CAMADA3 BK5-BK8`, **no proven production
+  backup exists**). Recorded honestly, no fabricated closeouts. **Final environment:**
+  production = `gqmpsxkxynrjvidfmojk` on `inttexsystem/inttracker` via Vercel;
+  development/legacy = `ucrjtfswnfdlxwtmxnoo` (retained, now the development database +
+  historical record for the `M3`-excluded audit trails/test rows);
+  `bhgifjrfagkzubpyqpew` remains `PROHIBITED` and **never accessed**. **Backlog freeze
+  LIFTED** (was scoped "until after cutover (`M10`)") — new fronts authorizable again,
+  each by its own order. **`POST-LAUNCH DEBT REGISTER` consolidated into a single
+  ranked list** in `PROJECT_STATE.md`; #1 = **`INGESTOR-DOC-CYCLE-VERIFY-DEFERRED`, an
+  ACTIVE PRODUCTION BLOCKER** (expired Google OAuth token → no documents entering the
+  live system; fix = interactive token refresh, coupled to
+  `CAMADA3-OAUTH-GRANT-COUPLING`). **Mystery branch resolved (read-only, not deleted):**
+  `v0/administrativointtex-9166-cf89b1d8` on the `production` remote points at our own
+  commit `75c4ab6`, has zero unique commits (`5 0` vs `main`), is a strict ancestor of
+  `main` — a Vercel/v0 import artifact, not foreign content. **Record (this commit):**
+  `PROJECT_STATE.md` + this handoff entry + `docs/ledgers/G28_LEDGER.md` `M10` entry.
+  **Docs-only; no code/schema/Supabase/Vercel action by Claude; no production access.
+  Push:** authorized + executed to `production/main` ("Close migration track and lift
+  backlog freeze"). **Standing reminder:** flip the Supabase MCP back to read-only.
+  **Next authorizable action:** any new front by its own order — highest-priority
+  standing item is the active ingestion blocker (#1).
 - **`M8` (Documents Ingestor repoint → `gqmpsxkxynrjvidfmojk`) — `CLOSED /
   ACCEPTED` (2026-07-18, out of numeric sequence by direct architect order):**
   the Documents Ingestor was still writing to legacy `ucrjtfswnfdlxwtmxnoo` while
