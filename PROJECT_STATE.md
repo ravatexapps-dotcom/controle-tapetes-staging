@@ -30,7 +30,32 @@ are in `docs/ledgers/G28_LEDGER.md`. HEAD/working tree/divergence: consult Git d
   the Ingestor's Google OAuth token is expired, so no documents are entering the live
   system.** See the `POST-LAUNCH DEBT REGISTER`. **Standing reminder: flip the Supabase
   MCP back to read-only** (still management-scoped/write-capable from `M2`/`M3`).
-- **`ORDEM-COMPRA-LIFECYCLE` track — spec `RATIFIED` (`ORDEM-COMPRA-LIFECYCLE-
+- **`ORDEM-COMPRA REFOUNDATION` — legacy diagnosis committed `de62b16`
+  (accepted evidence); PART 1 refounded spec `PROPOSED / AWAITING ARCHITECT
+  RATIFICATION` (2026-07-18).** The purchase-order model is being refounded from
+  the flat three-dimension `ordens_compra_fio` table into a **four-layer model**
+  (`necessidade_compra_fio → ordem_compra → ordem_compra_item →
+  ordem_compra_item_alocacao`) — governing **Part R** of
+  `docs/architecture/ORDEM_COMPRA_LIFECYCLE_SPEC_PROPOSED.md`, citing
+  `docs/reports/ORDEM_COMPRA_LEGACY_DIAGNOSIS_2026-07-18.md`. **Ratified legacy
+  conversion: 64 needs / 51 headers / 51 items / 51 allocations** — every
+  header-bearing legacy row 1:1, **no auto-merge** (`(pedido,fornecedor)` proves
+  future draft-accumulation, not historical order identity; NULL supplier is never
+  a merge key), Class C → needs-only, Class D received-without-emission provenance
+  preserved. The flat foundation shipped in Phase `A` (`db/65`) and `B1` (`db/66`)
+  is **superseded on the persistence model** by the refoundation; **their
+  historical acceptance is preserved, not erased** (the flat table stays writable
+  through coexistence; both receipt writers operate until Phase C). Rephased track:
+  `REFUND-A → REFUND-B1 → PRE-PROD → B2 → C → D → E`. **`REFUND-A` and every phase
+  are `NOT AUTHORIZED`** pending architect ratification of Part R; **no
+  implementation performed** (docs-only, no DB/schema/production action). **Binding
+  precondition:** a contemporaneous read-only **production** `ordens_compra_fio`
+  diagnosis is mandatory immediately before any production promotion/migration in
+  this track — production is **UNKNOWN for migration** and was **not accessed**.
+  Docs commit: `Propose purchase-order refoundation specification` (diagnosis
+  `de62b16` committed separately, `Add purchase-order legacy diagnosis`).
+- **`ORDEM-COMPRA-LIFECYCLE` track (flat-model history, superseded on persistence
+  by the refoundation above) — spec `RATIFIED` (`ORDEM-COMPRA-LIFECYCLE-
   SPEC-RATIFICATION-R1`, 2026-07-18); Phase `A` (schema + config) `CLOSED /
   ACCEPTED` (2026-07-18).** `db/65_ordem_compra_lifecycle_schema.sql`
   applied and verified in staging (`ucrjtfswnfdlxwtmxnoo`): the three

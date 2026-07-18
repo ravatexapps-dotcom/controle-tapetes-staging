@@ -1,5 +1,42 @@
 # ACTIVE OPERATIONAL HANDOFF
 
+- **`ORDEM-COMPRA REFOUNDATION` — diagnosis committed + PART 1 refounded spec
+  `PROPOSED / AWAITING ARCHITECT RATIFICATION` (2026-07-18, two docs-only commits,
+  branch `dev`):** Two-step order chain (diagnosis correction → PART 1). **(1)
+  Diagnosis** `docs/reports/ORDEM_COMPRA_LEGACY_DIAGNOSIS_2026-07-18.md` corrected
+  to the architect-ratified **51-header 1:1 legacy conversion** (64 needs / 51
+  headers / 51 items / 51 allocations) — committed **alone** as `de62b16` ("Add
+  purchase-order legacy diagnosis"). The 14-header (NULL-supplier merge) and
+  50-header (`(pedido,fornecedor)` merge) models were reviewed and **rejected**;
+  every header-bearing legacy row converts 1:1, Class C → needs-only, Class D
+  received-without-emission preserved, OP36 = 4 legacy headers (vs 3 native). **(2)
+  PART 1** amends `docs/architecture/ORDEM_COMPRA_LIFECYCLE_SPEC_PROPOSED.md` with
+  **Part R** — the four-layer model (`necessidade_compra_fio → ordem_compra →
+  ordem_compra_item → ordem_compra_item_alocacao`), allocation invariants
+  (double-distribution structurally impossible), native accumulator (Rule 1),
+  kg_recebido snapshot→ledger transition (Rule 2), coexistence with
+  `ordens_compra_fio` (both receipt writers live until Phase C), immutable events,
+  legacy 1:1 conversion, over-receipt→`saldo_fios`, UI governance, and the rephased
+  track `REFUND-A → REFUND-B1 → PRE-PROD → B2 → C → D → E`. Part R explicitly
+  verifies against the four structural flaws (CONTEXT SUPPLEMENT) and the two
+  additional rules (§R.18/§R.19). The **CONTEXT SUPPLEMENT blocker** (four flaws
+  absent from session/repo) was hard-stopped twice, then supplied by the architect
+  and resolved. **Canonical reconciliation** (11 docs, §8) found **no material
+  contradiction**; one **follow-up flagged**: `PEDIDO_OP_SCHEMA_CONTRACT.md §6.2`
+  (Insumos source = `ordens_compra_fio`) and `DOCUMENTATION_INDEX.md` (register the
+  new diagnosis report + refounded spec) need updating in a **separate doc phase**
+  (outside this pass's allowed files). **Phase `A`/`B1` historical acceptance
+  preserved, not erased**; their flat foundation superseded on the persistence
+  model. **`REFUND-A` and every phase `NOT AUTHORIZED`** pending ratification of
+  Part R. **No implementation / no DB write / no production access / no push / no
+  `main`** this phase; `.gitignore` left untouched/unstaged. **Binding
+  precondition:** a contemporaneous read-only **production** diagnosis is mandatory
+  before any production migration (production UNKNOWN, not accessed). **Record (2nd
+  commit):** `ORDEM_COMPRA_LIFECYCLE_SPEC_PROPOSED.md`, `PROJECT_STATE.md`, this
+  handoff entry, `docs/ledgers/G28_LEDGER.md` — commit `Propose purchase-order
+  refoundation specification`. **Next authorizable action:** architect review +
+  explicit ratification of Part R; then `REFUND-A`, its own order.
+
 - **`ORDEM-COMPRA-LIFECYCLE` Phase `B1` — `CLOSED / ACCEPTED` (2026-07-18,
   closeout order "CLOSEOUT ORDEM-COMPRA-B1", docs-only, branch `dev`):**
   supersedes the entry below (`ORDEM-COMPRA-B1-BLOCKED-BY-MCP-AUTH` is

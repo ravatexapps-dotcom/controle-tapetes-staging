@@ -1,6 +1,24 @@
 # Purchase Order (Ordem de Compra de Fio) Lifecycle — Proposed Spec
 
-> **Status:** `RATIFIED` (2026-07-18, `ORDEM-COMPRA-LIFECYCLE-SPEC-
+> **REFOUNDATION STATUS (2026-07-18):** `PROPOSED / AWAITING ARCHITECT
+> RATIFICATION`. **Part R (below) is the governing model** — a four-layer
+> refoundation (`necessidade_compra_fio → ordem_compra → ordem_compra_item →
+> ordem_compra_item_alocacao`) that **supersedes the flat three-dimension
+> `ordens_compra_fio` model** in §0–§8 and the shipped foundation of Phase `A`
+> (`db/65`) and Phase `B1` (`db/66`). §0–§11 are **retained for provenance**;
+> where they conflict with Part R, **Part R governs**. The ratified decisions
+> (three dimensions as header properties, config + freeze-at-emission, decisions
+> (a)–(g), per-order supplier, reassignment-blocked, the UI result-check lesson,
+> immutable events, future-requirements alignment) **transfer** into Part R
+> unless amended there. Part R cites the read-only legacy evidence in
+> `docs/reports/ORDEM_COMPRA_LEGACY_DIAGNOSIS_2026-07-18.md` (diagnosis commit
+> `de62b16`, architect-ratified conversion counts). **No implementation is
+> authorized** — `REFUND-A` and every phase remain `NOT AUTHORIZED` pending
+> ratification of this document. The historical acceptance of Phase `A`/`B1` is
+> **preserved, not erased**; their flat foundation is superseded, not deleted.
+>
+> **Status (flat model, superseded on persistence — ratified decisions transfer):**
+> `RATIFIED` (2026-07-18, `ORDEM-COMPRA-LIFECYCLE-SPEC-
 > RATIFICATION-R1`) — the model, Finding 1's correction (§4/§6/§7(e)), and
 > decisions (a)-(g) (§7) are ratified per the architect's ruling recorded in
 > §11. Ratification of the model authorizes **no implementation**: no
@@ -40,10 +58,381 @@
 
 ---
 
-## 0. Current state (evidenced, read-only inventory)
+## Part R — REFOUNDATION (four-layer persistence model) — PROPOSED
 
-This section grounds the proposal in what exists today, so the schema in §3
-is additive against a known baseline, not a guess.
+> Governing model. Cites `docs/reports/ORDEM_COMPRA_LEGACY_DIAGNOSIS_2026-07-18.md`
+> (diagnosis commit `de62b16`) for all legacy facts and the architect-ratified
+> conversion counts (64 needs / 51 headers / 51 items / 51 allocations).
+
+### R.1 Domain ownership (Pedido / purchase order / OP)
+
+- **Pedido owns the purchase order.** A purchase order (`ordem_compra`) belongs
+  to exactly one Pedido and one supplier (`fornecedor`). Resolution stays on the
+  ratified chain — `ordens_compra_fio.op_id → ops.lote_id → lotes.pedido_id`
+  (`PEDIDO_OP_SCHEMA_CONTRACT.md` D-B01) — but the header is keyed on
+  `pedido_id` directly, not on any single OP.
+- **OP does not own the purchase order.** A single OP's yarn requirement is one
+  or more *needs*; a purchase order may satisfy needs originating in **several
+  OPs of the same Pedido**. Therefore **OP origin is item/allocation-level, never
+  header-level** (Flaw 1 / Rule §R.4). Consistent with D-B01 (no `ops.pedido_id`,
+  no `pedidos.op_id`).
+- **No new commercial FK on OP.** The purchase order references `pedido_id` and
+  `fornecedor_id`; OP linkage is carried by the allocation layer.
+
+### R.2 The three internal acts of the Insumos stage
+
+The `insumos` stepper stage (unchanged as a stage) internally comprises three
+acts; each is a distinct responsibility with its own surface:
+
+1. **Assessment (apuração).** Compute the Pedido's consolidated yarn requirement
+   per material/color and **persist it as `necessidade_compra_fio`** (with the
+   per-OP origin breakdown). Source of the requirement is the existing
+   `calcularFiosOP`/`montarOrdensCompraFio` computation — Part R only persists it
+   as a first-class need instead of leaving it implicit.
+2. **Purchase distribution.** Allocate slices of the need to purchase orders per
+   supplier (`ordem_compra_item` + `ordem_compra_item_alocacao`). The
+   distribution screen reads `necessidade_compra_fio` and decrements against it;
+   allocations make double-distribution structurally impossible (§R.4).
+3. **Order lifecycle.** Draft → emit → (accept) → receive → cancel on the
+   `ordem_compra` header (three dimensions, §R.6–R.8), on the purchase order's own
+   detail screen.
+
+### R.3 Four-layer persistence model (PROPOSED)
+
+All four layers are mandatory (Flaw 1). DDL below is PROPOSED; sub-decisions
+flagged `DESIGN` are for architect ratification.
+
+**Layer 1 — `necessidade_compra_fio`** (the Pedido's consolidated requirement):
+
+```sql
+CREATE TABLE public.necessidade_compra_fio (
+  id             BIGSERIAL PRIMARY KEY,
+  pedido_id      UUID REFERENCES public.pedidos(id) ON DELETE CASCADE,   -- NULL only for null-pedido legacy (OP1/OP2)
+  op_id_legado   BIGINT REFERENCES public.ops(id) ON DELETE SET NULL,    -- fallback key for null-pedido legacy needs
+  material       TEXT NOT NULL CHECK (material IN ('algodao','poliester')),
+  cor_id         BIGINT REFERENCES public.cores(id),                     -- cotton
+  cor_poliester  TEXT CHECK (cor_poliester IN ('PRETO','BRANCO')),       -- polyester
+  kg_necessario  NUMERIC(12,3) NOT NULL CHECK (kg_necessario >= 0),
+  legado         BOOLEAN NOT NULL DEFAULT FALSE,
+  criado_em      TIMESTAMPTZ NOT NULL DEFAULT now(),
+  CHECK ((cor_id IS NOT NULL) <> (cor_poliester IS NOT NULL)),           -- exactly one color axis
+  CONSTRAINT necessidade_identity UNIQUE (pedido_id, material, cor_id, cor_poliester)
+);
+-- Per-OP origin breakdown of the requirement (preserves "which OP required which kg"):
+CREATE TABLE public.necessidade_compra_fio_origem (
+  id              BIGSERIAL PRIMARY KEY,
+  necessidade_id  BIGINT NOT NULL REFERENCES public.necessidade_compra_fio(id) ON DELETE CASCADE,
+  op_id           BIGINT NOT NULL REFERENCES public.ops(id) ON DELETE RESTRICT,
+  kg_origem       NUMERIC(12,3) NOT NULL CHECK (kg_origem >= 0)
+);
+```
+`necessidade_compra_fio_origem` is part of the need layer (the "origin trace"),
+not a fifth layer. **DESIGN:** polyester is consolidated pedido-level (ratified);
+cotton is `(pedido, cor)` consolidated across OPs, with the per-OP split in
+`_origem`. Recommend keeping `_origem` as a child table (queryable) over a JSONB
+blob; architect ratifies.
+
+**Layer 2 — `ordem_compra`** (header):
+
+```sql
+CREATE TABLE public.ordem_compra (
+  id                          BIGSERIAL PRIMARY KEY,
+  pedido_id                   UUID REFERENCES public.pedidos(id) ON DELETE CASCADE,   -- NULL only for null-pedido legacy
+  fornecedor_id               BIGINT REFERENCES public.fornecedores(id),             -- NULL only for grandfathered legacy (§R.10.4)
+  status_administrativo       TEXT NOT NULL DEFAULT 'rascunho'
+                                CHECK (status_administrativo IN ('rascunho','emitida','cancelada')),
+  status_aceite               TEXT NOT NULL DEFAULT 'nao_aplicavel'
+                                CHECK (status_aceite IN ('nao_aplicavel','pendente','aceita','rejeitada')),
+  status_recebimento          TEXT NOT NULL DEFAULT 'nao_recebido'
+                                CHECK (status_recebimento IN ('nao_recebido','parcial','recebido')),
+  aceite_exigido_na_emissao   BOOLEAN,                       -- frozen config snapshot at emission
+  legado                      BOOLEAN NOT NULL DEFAULT FALSE,
+  legado_provenance           TEXT,                          -- 'emitido_recebido' | 'emitido_nao_recebido' | 'recebido_sem_emissao' (Class D)
+  emitida_em TIMESTAMPTZ, emitida_por UUID REFERENCES auth.users(id) ON DELETE SET NULL,
+  cancelada_em TIMESTAMPTZ, cancelada_por UUID REFERENCES auth.users(id) ON DELETE SET NULL,
+  aceite_decidida_em TIMESTAMPTZ, aceite_decidida_por UUID REFERENCES auth.users(id) ON DELETE SET NULL,
+  aceite_motivo TEXT,
+  criado_em TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+-- Rule 1 uniqueness — one NATIVE active draft per (pedido, fornecedor); legacy/null-supplier excluded:
+CREATE UNIQUE INDEX ordem_compra_um_rascunho_ativo
+  ON public.ordem_compra (pedido_id, fornecedor_id)
+  WHERE status_administrativo = 'rascunho' AND legado = FALSE AND fornecedor_id IS NOT NULL;
+```
+
+**Layer 3 — `ordem_compra_item`** (a header's material/color line):
+
+```sql
+CREATE TABLE public.ordem_compra_item (
+  id             BIGSERIAL PRIMARY KEY,
+  ordem_id       BIGINT NOT NULL REFERENCES public.ordem_compra(id) ON DELETE CASCADE,
+  material       TEXT NOT NULL CHECK (material IN ('algodao','poliester')),
+  cor_id         BIGINT REFERENCES public.cores(id),
+  cor_poliester  TEXT CHECK (cor_poliester IN ('PRETO','BRANCO')),
+  kg_pedido      NUMERIC(12,3) NOT NULL CHECK (kg_pedido > 0),
+  kg_recebido    NUMERIC(12,3) NOT NULL DEFAULT 0,     -- transitional cache during coexistence; ledger-derived post-Phase C (Rule 2)
+  CHECK ((cor_id IS NOT NULL) <> (cor_poliester IS NOT NULL))
+);
+```
+
+**Layer 4 — `ordem_compra_item_alocacao`** (item-slice → need; mandatory):
+
+```sql
+CREATE TABLE public.ordem_compra_item_alocacao (
+  id              BIGSERIAL PRIMARY KEY,
+  item_id         BIGINT NOT NULL REFERENCES public.ordem_compra_item(id) ON DELETE CASCADE,
+  necessidade_id  BIGINT NOT NULL REFERENCES public.necessidade_compra_fio(id) ON DELETE RESTRICT,
+  op_id           BIGINT REFERENCES public.ops(id) ON DELETE RESTRICT,   -- OP-origin of the satisfied need-share (Flaw 1)
+  kg_alocado      NUMERIC(12,3) NOT NULL CHECK (kg_alocado > 0)
+);
+```
+
+The receipt ledger (`ordem_compra_fio_lancamentos`, ratified §3.2) and the event
+table (`ordem_compra_eventos`, ratified §3.4) are **re-pointed to `ordem_compra`
+in the refoundation** (both are empty in staging — §R.12 — so this is a clean
+re-point of empty tables, not a rewrite of history).
+
+### R.4 Allocation invariants — prevention of double distribution / double purchase
+
+1. **No need is over-allocated:** for every `necessidade_compra_fio` row,
+   `SUM(alocacao.kg_alocado) <= necessidade.kg_necessario`. Enforced by a
+   `SECURITY DEFINER` allocation RPC that re-checks under row lock (a raw CHECK
+   cannot span rows; **DESIGN:** trigger-enforced aggregate + advisory lock, or a
+   `necessidade.kg_alocado` running cache with a `<= kg_necessario` CHECK —
+   recommend the running-cache CHECK for hard structural enforcement; architect
+   ratifies). This makes **double distribution structurally impossible** — the
+   distribution screen decrements available-to-allocate = `kg_necessario −
+   SUM(kg_alocado)` and can never allocate the same kg twice.
+2. **Item integrity:** `item.kg_pedido = SUM(item's allocations.kg_alocado)`
+   (planning identity). Purchase intent equals what it satisfies. Physical
+   **over-receipt** (received > pedido) is a receipt-time event routed to
+   `saldo_fios` (§R.9), never an allocation.
+3. **OP origin at allocation:** every allocation carries `op_id`, so purchased kg
+   trace to the originating OP even when one item satisfies needs from multiple
+   OPs (Flaw 1). Header carries no OP.
+
+### R.5 Native accumulating drafts (Rule 1) + new draft after emission
+
+- **One native active draft per `(pedido, fornecedor)`** (partial unique index,
+  §R.3). New distributed slices for the same `(pedido, fornecedor)` **accumulate
+  as items into that one open draft**.
+- **After emission**, the draft closes; a **new** draft for the same
+  `(pedido, fornecedor)` may then be opened — Rule 1 constrains only the *active
+  draft*, not the historical count (multiple emitted orders for the same
+  `(pedido, fornecedor)` are legitimate).
+- **Native supplier requirement:** a native draft/order **must** have a
+  `fornecedor_id`; emission requires it (carried from the ratified B1 `emitir`
+  precondition). `NULL fornecedor_id` is allowed **only** for grandfathered legacy
+  headers (§R.10.4) and those **do not** participate in this uniqueness rule
+  (index `WHERE … fornecedor_id IS NOT NULL AND legado = FALSE`).
+- **Rule 1 is a draft-accumulation rule, not a historical-identity rule** — it
+  never merges converted legacy headers and never establishes that two legacy
+  rows were one historical order (§R.13, Flaw 2).
+
+### R.6 Issuance freeze + immutable emitted order + cancel-and-replace
+
+- **Emission freezes** the order's `fornecedor_id`, its item set + `kg_pedido`
+  quantities, and the acceptance policy snapshot (`aceite_exigido_na_emissao`
+  ← live `ordem_compra_config.exige_aceite`, ratified freeze rule §2.3).
+- **An emitted order's contents are immutable.** No in-place edit of supplier,
+  items, or quantities after `emitida` (ratified decision (f)).
+- **Correction path = cancel + replace**, never edit: cancel the emitted order
+  and open a new draft (ratified decisions (d)/(f); reassignment-after-emission
+  blocked, ratified B1). This keeps the `ordem_compra_eventos` trail honest.
+
+### R.7 Acceptance lifecycle
+
+Transfers unchanged from ratified §2.2/§4/§7: config-gated at emission
+(`nao_aplicavel` when `exige_aceite=false`; `pendente` when true), then
+`aceita`/`rejeitada` by explicit decision; admin-on-behalf always allowed
+(decision (b)); admin override of a rejection via a distinct
+`aceite_override_admin` event with mandatory motive (decision (c)); no undo
+(decision (d)); receipt blocked until `status_aceite IN ('nao_aplicavel','aceita')`
+(Finding 1). Now attaches to `ordem_compra` (header) instead of the flat row.
+
+### R.8 Item-level receipt + immutable ledger + derived state (Rule 2)
+
+- **Receipt is item-level**, recorded as append-only rows in the immutable
+  ledger `ordem_compra_fio_lancamentos` (ratified §3.2), re-pointed to
+  `ordem_compra_item` (`item_id`), never `UPDATE`/`DELETE`d.
+- **Derived receipt state:** `ordem_compra_item.kg_recebido` and
+  `ordem_compra.status_recebimento` are **derived** from `SUM(ledger)` vs
+  `kg_pedido` by trigger — never written directly (ratified §2.4).
+- **Rule 2 — kg_recebido semantic transition (two explicit periods):**
+  - **Coexistence period (REFUND-A → before Phase C):** the flat
+    `ordens_compra_fio.kg_recebido` remains a **mutable snapshot** written by the
+    two live direct writers (§R.11); the new `ordem_compra_item.kg_recebido` is a
+    transitional cache. Tracked by `ORDEM-COMPRA-B1-KG-RECEBIDO-ACL-GAP`.
+  - **Canonical period (Phase C onward):** receipts flow only through the
+    canonical ledger RPC; `item.kg_recebido` becomes ledger-derived; direct
+    `UPDATE` is revoked **only after both consumers migrate** (§R.11). Imported
+    Class-D physical receipt (§R.10.5) is represented as a **frozen opening
+    balance**, and the migration **must not double-count** an imported snapshot
+    and a ledger entry for the same physical receipt.
+
+### R.9 Over-receipt → saldo_fios
+
+Ratified: an item may physically receive more than `kg_pedido`; the amount
+attributable to needs is allocated without double-counting (§R.4.2); **surplus
+routes to `saldo_fios` as general stock** (decision (g); the diagnosed
++405.98 kg proves the path). `saldo_fios` write-path confirmation remains a
+Phase-C verification step (ratified §7(g)).
+
+### R.10 Legacy conversion (architect-RATIFIED)
+
+**Ratified rule:** every header-bearing legacy source row converts **1:1** into
+its own legacy `ordem_compra` header; **no legacy rows are ever auto-merged**;
+Class C converts to needs only.
+
+**Ratified counts (from diagnosis `de62b16`):** **64 needs / 51 headers /
+51 items / 51 allocations.**
+
+| Class | Rows | Needs | Headers | Items | Alloc | Conversion |
+|---|---:|---:|---:|---:|---:|---|
+| A legacy emitted+received | 27 | 27 | 27 | 27 | 27 | 1:1 header, `emitida`+`recebido`, `legado`, `fornecedor` NULL, received frozen |
+| B legacy emitted, unreceived | 12 | 12 | 12 | 12 | 12 | 1:1 header, `emitida`, `legado`, NULL supplier grandfathered |
+| C clean draft | 13 | 13 | 0 | 0 | 0 | **needs only**, no header |
+| D draft, direct-write received | 12 | 12 | 12 | 12 | 12 | 1:1 header, receipt preserved, provenance `recebido_sem_emissao` |
+| **Total** | **64** | **64** | **51** | **51** | **51** | |
+
+- **R.10.4 Supplier-null legacy exception:** `fornecedor_id` may be NULL **only**
+  for grandfathered converted legacy headers whose source lacked a supplier
+  (60/64 rows). These are excluded from Rule 1's uniqueness. NULL is **never a
+  legacy merge key** (Flaw 2).
+- **R.10.5 Class-D provenance (received-without-emission):** preserve the physical
+  receipt (frozen); preserve the source `rascunho` state as
+  `legado_provenance='recebido_sem_emissao'`; **do not** fabricate an emission or
+  acceptance event; **do not** normalize into a clean native draft. Converted
+  Class-D records are **flagged `legado=TRUE` and are ineligible for native draft
+  accumulation, editing, or emission** (the partial-unique index already excludes
+  `legado=TRUE`; the write RPCs additionally reject `legado` headers for native
+  actions).
+- **R.10.6 OP36 — legacy vs native (kept distinct):** LEGACY conversion → **4
+  headers** (rows 137→f4, 138→f5, 139→f22, 140→f22, each its own header, no shared
+  historical identity). FUTURE NATIVE (same distribution created new) → **3
+  headers** (f4:1 item, f5:1 item, f22: one header, 2 items — Rule-1 accumulation).
+  Migration preserves historical identity; native creation follows the
+  accumulator. The two are never conflated.
+
+### R.11 Coexistence with `ordens_compra_fio` + Phase-C cutover (Flaw 3)
+
+- `ordens_compra_fio` **remains WRITABLE** through REFUND-A/B1/PRE-PROD/B2; the
+  four new structures **coexist** with it (seeded from it at cutover).
+- **Both existing receipt writers stay operational until Phase C:**
+  `registrarRecebimentoOrdemFio` (`op-writes.js:29-43`) **and** the supplier-side
+  `screenFornecedorOrdens` (`fornecedor.js:461-463`). The previous refoundation
+  design wrongly assumed no supplier-side writer existed
+  (`SUPPLIER_RECEIPT_WRITE_PATH_DISCOVERED`).
+- **Phase-C cutover:** both consumers migrate to the canonical ledger RPC
+  `registrar_recebimento_ordem_compra_fio`; **only then** is direct `UPDATE` on
+  `kg_recebido` revoked from `authenticated`. `ORDEM-COMPRA-B1-KG-RECEBIDO-ACL-GAP`
+  **closes only after that migration + revocation, in the same migration.**
+  Neither writer is disabled before Phase C.
+
+### R.12 Immutable events (Flaw 4)
+
+`ordem_compra_eventos` rows are immutable historical facts — never silently
+re-pointed, deleted-and-recreated, rewritten, or synthesized to conceal an
+inconsistent source. Staging currently holds **0 events and 0 ledger rows**
+(diagnosis §1), so the refoundation's re-point of these (empty) tables to
+`ordem_compra`/`ordem_compra_item` converts no history and repoints no live row.
+**This does not weaken the rule** and **must not be generalized to production** —
+a contemporaneous production diagnosis is mandatory (§R.14) before any production
+event/ledger touch.
+
+### R.13 Native vs legacy identity semantics
+
+- **Native identity:** `(pedido, fornecedor)` is the *active-draft accumulation*
+  key (Rule 1) — a forward-looking rule for new orders.
+- **Legacy identity:** each converted legacy header stands alone (1:1). A shared
+  `(pedido, fornecedor)` among legacy rows proves only that they *would* have
+  accumulated natively — **not** that they were one historical order (no shared
+  order id / issuance / receipt / document). The two semantics are never merged
+  (Flaw 2).
+
+### R.14 Production diagnosis precondition (binding)
+
+Production's current `ordens_compra_fio` row-set was **not** revalidated this
+session and is **UNKNOWN for migration purposes**. "Started empty" history
+(M3 exclusion set) **does not** replace a contemporaneous diagnosis. **A complete
+read-only production diagnosis is mandatory immediately before any production
+promotion or migration in this track.** Production access remains prohibited now.
+
+### R.15 Migration safety & rollback boundaries
+
+- **Seed-only, additive:** the refoundation migration creates the four tables and
+  seeds them from `ordens_compra_fio` in one transaction; it **alters no existing
+  column** and drops nothing. `ordens_compra_fio` remains the live source of truth
+  through cutover.
+- **Rollback boundary:** dropping the four new (seeded) tables fully reverts
+  REFUND-A with zero impact on the live flat-table flows (they never depended on
+  the new tables pre-Phase-C).
+- **No production in scope:** every count/rule here derives from the staging
+  corpus; production migration is a separate, later, diagnosis-gated act (§R.14).
+- **No silent merge, no fabricated event, no double-counted receipt** (Flaws 2/4,
+  Rule 2) — enforced by the conversion rules above.
+
+### R.16 Permanent UI governance
+
+- **Transition modals contain actions only** — the `insumos` (and every)
+  transition modal exposes the next canonical action, not entity CRUD.
+- **Every entity lives on its own dedicated screen** — the purchase order's home
+  is its detail screen (route `#/ordens-compra/:id`, Phase B2); receipt
+  registration and event history live there, not in a transition modal. The OP
+  screen keeps the reader + distribution + `Iniciar produção` only.
+
+### R.17 Rephased track (each phase: responsibility + exit gate; none authorized)
+
+| Phase | Responsibility | Exit gate |
+|---|---|---|
+| **REFUND-A** | Create the four layers + ledger/event re-point (schema, additive); seed from `ordens_compra_fio` per the ratified 1:1 conversion (64/51/51/51); Class-D provenance; needs+allocations with the double-distribution invariant. No behavior change to live flat-table flows. | Migration applied to staging; conversion reconciles to 64/51/51/51 exactly; invariants verified; flat flows unchanged. Architect acceptance. |
+| **REFUND-B1** | Re-base the B1 OP-screen reader + `emitir`/`cancelar` on `ordem_compra`; native draft accumulation (Rule 1); native supplier requirement; legacy headers read-only/ineligible. | Reader shows converted headers correctly; native emit/cancel operate on `ordem_compra`; legacy headers inert. Architect visual validation. |
+| **PRE-PROD** | Assessment→`necessidade` persistence (Act 1) + purchase-distribution screen (Act 2) decrementing needs via allocations; over-receipt→`saldo` wiring point. | Distribution cannot over-allocate a need (structural); needs/allocations correct end-to-end. Architect acceptance. |
+| **B2** | Purchase-order detail screen (`#/ordens-compra/:id`): full dimensions, per-order supplier assignment, receipt UI (wired in C), event history. | Screen live; supplier assignment writes header + `op_fornecedores` projection. Architect visual validation. |
+| **C** | Ledger-based `registrar_recebimento_ordem_compra_fio`; migrate **both** writers (`op-writes.js` + `fornecedor.js`); derive `kg_recebido`; **then** revoke direct `UPDATE` → closes `KG-RECEBIDO-ACL-GAP`; Class-D no double-count. | Both writers on the RPC; direct UPDATE revoked; receipt derived; `saldo_fios` confirmation done. Architect acceptance. |
+| **D** | Production gate on "Iniciar produção" (§5), server-side (SECURITY DEFINER), reading availability from allocations/receipts. | Insufficient yarn blocks production start server-side. Architect acceptance. |
+| **E** | Dormant-acceptance verification checkpoint (no code); production migration executed only after a contemporaneous production diagnosis (§R.14). | Acceptance dimension proven dormant-correct; production precondition satisfied. Architect acceptance. |
+
+None of these is authorized or accepted by this document. **REFUND-A remains
+`NOT AUTHORIZED`** pending architect ratification of Part R.
+
+### R.18 Verification against the four structural flaws (CONTEXT SUPPLEMENT)
+
+- **Flaw 1 (missing needs + allocations):** RESOLVED — all four layers present
+  (§R.3); `necessidade_compra_fio(_origem)` preserves which OP required which kg;
+  `ordem_compra_item_alocacao` preserves which purchased kg satisfy which need and
+  from which OP; the `SUM(alocacao) <= kg_necessario` invariant prevents
+  double-distribution/purchase (§R.4); OP-origin is allocation-level so one item
+  satisfying multiple needs keeps Pedido+OP traceability.
+- **Flaw 2 (unsafe legacy grouping):** RESOLVED — 1:1 conversion, no auto-merge,
+  Class C → needs only, ratified 64/51/51/51 (§R.10); NULL supplier never a merge
+  key (§R.10.4); the native accumulator is explicitly *not* a historical-identity
+  rule (§R.13).
+- **Flaw 3 (premature read-only cutover):** RESOLVED — `ordens_compra_fio` stays
+  writable; **both** receipt writers (admin `registrarRecebimentoOrdemFio` **and**
+  supplier `screenFornecedorOrdens`) stay operational until Phase C; consumers
+  migrate to the canonical writer **before** direct UPDATE is revoked;
+  `KG-RECEBIDO-ACL-GAP` closes only then (§R.11).
+- **Flaw 4 (immutable events):** RESOLVED — events never re-pointed/deleted/
+  rewritten/synthesized; staging has 0 events/0 ledger rows so the empty-table
+  re-point converts no history; rule not weakened and not generalized to
+  production; production diagnosis mandatory first (§R.12/§R.14).
+
+### R.19 Verification against the two additional rules
+
+- **Rule 1 (single native active draft per pedido+fornecedor):** modeled by the
+  partial unique index (§R.3/§R.5); applies to native drafts only; excludes
+  legacy and NULL-supplier headers; a new draft is allowed after emission; it does
+  **not** merge legacy headers or establish historical identity.
+- **Rule 2 (kg_recebido semantic transition):** two explicit periods (§R.8) —
+  mutable snapshot during coexistence (tracked by `KG-RECEBIDO-ACL-GAP`) →
+  ledger-derived after all consumers migrate and direct UPDATE is revoked;
+  imported Class-D receipt represented without a fabricated emission/acceptance
+  and without double-counting snapshot + ledger.
+
+---
+
+## 0. Current state (evidenced, read-only inventory) — SUPERSEDED on the persistence model by Part R (retained for provenance)
 
 - **Table `public.ordens_compra_fio`** (`db/01_schema.sql:119-138`): one row
   per fio type/color per OP (`tipo IN ('algodao','poliester')`, `cor_id` for

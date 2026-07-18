@@ -2536,3 +2536,91 @@ risco residual e próxima fase indicada no fechamento.
   `#/ordens-compra/:id`), its own order — scope must include the per-order
   fornecedor-assignment UI per the ratified decision above, and must
   preserve the `op_fornecedores` compatibility-projection write.
+
+## 2026-07-18 — ORDEM-COMPRA REFOUNDATION — Legacy Diagnosis + PART 1 refounded spec — PROPOSED / AWAITING RATIFICATION
+
+- **Gate:** documentation-only phase (Opus 4.8 / high effort). Multi-order chain:
+  (1) "ORDEM-COMPRA REFOUNDATION SPEC" (docs + read-only diagnosis), (2)
+  "HEADER-COUNT RECONCILIATION" (read-only), (3) "RATIFY 51-HEADER LEGACY MODEL"
+  (diagnosis correction + commit), (4) "CONTEXT SUPPLEMENT SUPPLIED / PART 1
+  UNBLOCKED". No implementation, no schema/RPC, no production access, no push,
+  `main` untouched.
+- **Front:** `ORDEM-COMPRA-LIFECYCLE`, refoundation of the purchase-order model.
+- **Read-only legacy diagnosis (staging `ucrjtfswnfdlxwtmxnoo`, HARD STOP ZERO
+  passed — `usuarios_eventos=9`/`document_link_revisions=8`):** full-table
+  classification of all 64 `ordens_compra_fio` rows into four classes (A 27 legacy
+  emitted+received; B 12 legacy emitted-unreceived; C 13 clean drafts; D 12 draft
+  but physically-received via the direct-write path). Facts: `ordem_compra_eventos`
+  and `ordem_compra_fio_lancamentos` both **empty**; 60/64 rows `fornecedor_id`
+  NULL; OP36 splits one OP across suppliers 4/5/22; over-receipt +405.98 kg; 0
+  cancelled, 0 partial receipts. `docs/reports/ORDEM_COMPRA_LEGACY_DIAGNOSIS_
+  2026-07-18.md`.
+- **Header-count reconciliation → architect ruling:** a first preview reported 14
+  headers (grouped NULL suppliers by pedido — **rejected**, fabricates commercial
+  identity); a 50-header alternative merged `(pedido,fornecedor)` (**rejected** —
+  proves future draft-accumulation, not historical order identity). **Architect
+  ratified the 1:1 model:** every header-bearing legacy row → its own legacy
+  header, no auto-merge, Class C → needs-only. **Ratified counts: 64 needs / 51
+  headers / 51 items / 51 allocations** (A 27/27/27/27, B 12/12/12/12, C 13/0/0/0,
+  D 12/12/12/12). OP36 = **4 legacy headers** (vs 3 future-native). Diagnosis
+  corrected to the ratified model and committed **alone** as `de62b16` — "Add
+  purchase-order legacy diagnosis" (1 file, 259 insertions; `.gitignore` not
+  staged).
+- **CONTEXT SUPPLEMENT blocker (four structural flaws):** referenced across orders
+  but absent from the session and the repository (exhaustive search). Executor
+  **hard-stopped twice** rather than fabricate; the architect confirmed the stop
+  correct and supplied the authoritative CONTEXT SUPPLEMENT, unblocking PART 1.
+- **PART 1 — refounded spec (`Part R`, PROPOSED):**
+  `docs/architecture/ORDEM_COMPRA_LIFECYCLE_SPEC_PROPOSED.md` amended (status →
+  `PROPOSED / AWAITING ARCHITECT RATIFICATION`) with the four-layer model
+  (`necessidade_compra_fio → ordem_compra → ordem_compra_item →
+  ordem_compra_item_alocacao`): domain ownership (Pedido owns header, OP-origin at
+  allocation), the three internal acts of the Insumos stage, allocation invariants
+  making **double distribution structurally impossible**, native accumulator
+  (Rule 1: one active draft per pedido+fornecedor; new draft after emission; native
+  supplier required), issuance freeze + immutable emitted order + cancel-and-
+  replace, acceptance lifecycle, item-level immutable receipt ledger + derived
+  state (Rule 2: snapshot→ledger transition), over-receipt→`saldo_fios`, legacy
+  1:1 conversion (A/B/C/D, 64/51/51/51, supplier-null exception, Class-D
+  received-without-emission provenance, OP36 legacy-vs-native), coexistence with
+  `ordens_compra_fio` (**both** receipt writers `registrarRecebimentoOrdemFio` +
+  `screenFornecedorOrdens` live until Phase C; `KG-RECEBIDO-ACL-GAP` closes only
+  after both migrate and direct UPDATE is revoked), immutable events, native-vs-
+  legacy identity semantics, production-diagnosis precondition, migration
+  safety/rollback boundaries, and permanent UI governance. **Explicit verification
+  against the four flaws (§R.18) and the two additional rules (§R.19).** Rephased
+  track `REFUND-A → REFUND-B1 → PRE-PROD → B2 → C → D → E` with per-phase
+  responsibility + exit gate (§R.17). The flat foundation of Phase `A` (`db/65`) /
+  `B1` (`db/66`) is **superseded on the persistence model**; §0–§11 retained for
+  provenance; **historical acceptance of A/B1 preserved, not erased.**
+- **Canonical reconciliation (§8, 11 docs — no material contradiction):**
+  `AGENT_HANDOFF`, `PROJECT_STATE`, `PEDIDO_OP_MOVIMENTACAO_DOCUMENTOS_PLANO`
+  (orthogonal), `PEDIDO_PRODUCTION_FLOW_BACKLOG` (confirms two-writer reality +
+  transition-modal/dedicated-screen UI), `DOCUMENTOS_VALIDACAO_VINCULOS_E_EVOLUCAO`
+  (orthogonal), `PEDIDO_OP_SCHEMA_CONTRACT` (confirms ownership: `lotes.pedido_id`
+  grouping, no `ops.pedido_id`/`pedidos.op_id`, OP-origin chain), the current spec,
+  the ledger (append-only), `DOCUMENTATION_INDEX`, `DOCUMENTATION_MODEL`,
+  `SUPERVISION_PROTOCOL`. **Follow-ups flagged (outside this pass's allowed
+  files):** `PEDIDO_OP_SCHEMA_CONTRACT.md §6.2` (Insumos source names
+  `ordens_compra_fio` — will need the four-layer model post-cutover) and
+  `DOCUMENTATION_INDEX.md` (register the new diagnosis report + refounded spec) —
+  each a separate documentation phase.
+- **STRUCTURAL POLICY COMPLIANCE:** `§14` (single scope) — documentation only, no
+  code/schema/Supabase action; `§15` (Git) — selective staging by literal path,
+  two commits on `dev` (diagnosis alone, then spec + state/continuity), pre-existing
+  `.gitignore` change left untouched/unstaged, no `add -A`/`reset`/`rebase`/
+  force-push/`merge`/`tag`/`amend`; `§16` (documentation) — spec amended, state +
+  ledger updated, `DOCUMENTATION_INDEX` registration deferred as a flagged
+  follow-up (out of allowed-file scope); `§19` — English throughout. Read-only DB
+  access was limited to legacy `ucrjtfswnfdlxwtmxnoo` (fingerprint-confirmed);
+  production `gqmpsxkxynrjvidfmojk` and prohibited `bhgifjrfagkzubpyqpew` **not
+  accessed**.
+- **Production:** UNKNOWN for migration; not accessed. A contemporaneous read-only
+  production diagnosis is a **binding precondition** before any production
+  promotion/migration in this track (§R.14). **Push:** none (prohibited by order).
+- **Record:** diagnosis commit `de62b16` ("Add purchase-order legacy diagnosis");
+  PART 1 commit "Propose purchase-order refoundation specification"
+  (`ORDEM_COMPRA_LIFECYCLE_SPEC_PROPOSED.md`, `PROJECT_STATE.md`,
+  `AGENT_HANDOFF.md`, this ledger entry).
+- **Next authorizable action:** architect review + explicit ratification of Part R.
+  `REFUND-A` and every phase remain `NOT AUTHORIZED`.
