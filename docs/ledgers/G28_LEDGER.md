@@ -2624,3 +2624,78 @@ risco residual e próxima fase indicada no fechamento.
   `AGENT_HANDOFF.md`, this ledger entry).
 - **Next authorizable action:** architect review + explicit ratification of Part R.
   `REFUND-A` and every phase remain `NOT AUTHORIZED`.
+
+## 2026-07-18 — ORDEM-COMPRA REFOUNDATION — Part R DESIGN-GATE PATCH — PROPOSED / AWAITING RATIFICATION
+
+- **Gate:** documentation-only patch (Opus 4.8 / high effort). Order chain: (1)
+  "PART R RATIFICATION AUDIT" (read-only) → verdict
+  `REQUIRES_SPEC_PATCH_BEFORE_RATIFICATION`; (2) "PART R DESIGN-GATE PATCH" —
+  architect accepted the verdict and supplied design rulings 1–7. No
+  implementation, no DB access, no production, no push, `main` untouched.
+- **Front:** `ORDEM-COMPRA-LIFECYCLE` refoundation, Part R design-gate correction.
+- **Audit findings (accepted):** Part R had three flagged `DESIGN` alternatives
+  (need-origin model; double-distribution enforcement; consolidation granularity)
+  plus a UNIQUE-key defect, an opening-balance-vs-ledger contradiction, incomplete
+  concurrency control (write skew), and a coexistence dual-write gap. Active-draft
+  uniqueness and Class-D representability were passed as adequate.
+- **Rulings applied (Part R patched, no alternatives remain):**
+  - **R1 atomic need (Model A):** dropped `necessidade_compra_fio_origem` + rejected
+    JSONB; each `necessidade_compra_fio` row carries its own origin
+    (`origem_tipo`∈{op,pedido}, `op_id` set iff 'op'); no parent/child total
+    invariant.
+  - **R2 identity/granularity:** cotton = one need per (pedido, op, color); shared
+    polyester = one per (pedido, color), `op_id` NULL; **NULL-safe separate partial
+    unique indexes** (not one UNIQUE over nullable columns); recalculation
+    reconciles the same logical need and is rejected if it would drop
+    `kg_necessario` below `kg_alocado`. **64 needs unchanged.**
+  - **R3 double-distribution:** single design — canonical `SECURITY DEFINER`
+    allocation RPCs (direct DML revoked), trigger-maintained
+    `necessidade.kg_alocado` cache with `CHECK (>=0 AND <=kg_necessario)`,
+    `SELECT … FOR UPDATE` on the need row, INSERT/reversal coverage, deterministic
+    lock order; the **T1/T2 write-skew race is documented and defeated**; bare-SUM
+    and app-only designs rejected; drift is a blocking audit invariant.
+  - **R4 Class-D:** constrained `legado_provenance` domain (CHECK) + table invariant
+    `ordem_compra_no_native_anomaly` (native row cannot be rascunho+received);
+    Class C has no header/provenance.
+  - **R5 ledger + opening balance:** single ledger-derived model post-Phase-C, **no
+    `kg_recebido_inicial`**; append-only ledger with `tipo`∈{recebimento,
+    import_saldo_inicial, estorno}, `idempotency_key UNIQUE`, compensating negative
+    `estorno`, no UPDATE/DELETE; no opening entry during REFUND-A (reads flat);
+    8-step Phase-C cutover creates exactly one idempotent import entry per nonzero
+    balance, reconciles, then revokes — no double-count.
+  - **R6 over-receipt:** attributable = min(received, allocations); surplus =
+    max(received − attributable, 0) → `saldo_fios`; idempotency/no-double-count
+    fixed now.
+  - **R7 coexistence authority (per dimension):** authority matrix per phase (admin
+    → new at REFUND-B1; receipt → flat until Phase C; ledger after C); **one-to-one**
+    compatibility mapping; flat admin columns are mirrors, not competing authority —
+    **no equal-authority split-brain**; both flat receipt writers live until Phase C.
+  - **Phase gates (R.17):** each phase states admin/receipt authority, bridge state,
+    writers, rollback, entry/exit gates, migration-auth-required, UI-validation-
+    required; no premature revoke, no unapproved production migration, no
+    auto-authorization.
+  - **Null-Pedido legacy edge (OP1/OP2):** `pedido_id` nullable-for-legacy (CHECK
+    `necessidade_pedido_native`) so the 11 orphan rows import without a Pedido;
+    native needs always have a Pedido (§R.10.7). Analogous to the ratified
+    supplier-null exception; flagged for ratification.
+- **Validation gates (all pass):** no `necessidade_compra_fio_origem`/JSONB origin
+  store (only negated); one concurrency design; T1/T2 addressed; ledger derivation
+  non-contradictory; idempotency + compensation present; coexistence authority per
+  dimension; no REFUND-B1→C split-brain; Class-D representable; active-draft rule
+  intact; **conversion remains 64/51/51/51**. Search for open-alternative language
+  (`TBD`/`TODO`/`to decide`/`alternative`/`option`/`recommend`/`DESIGN:`) → **all
+  matches in the superseded §0–§11** (ratified decisions / historical flat model);
+  **none in Part R.**
+- **Canonical reconciliation:** no material contradiction; the two known follow-ups
+  (`PEDIDO_OP_SCHEMA_CONTRACT.md §6.2`, `DOCUMENTATION_INDEX.md` registration)
+  remain **non-blocking documentation follow-ups**, not edited in this pass.
+- **STRUCTURAL POLICY COMPLIANCE:** `§14` docs-only; `§15` selective staging by
+  literal path, one commit on `dev`, `.gitignore` untouched/unstaged, no
+  `add -A`/`reset`/`rebase`/force/`merge`/`tag`/`amend`; `§16` spec + state + this
+  ledger; `§19` English. No DB access, no production, no prohibited-project access.
+- **Record:** commit "Resolve purchase-order refoundation design gates"
+  (`ORDEM_COMPRA_LIFECYCLE_SPEC_PROPOSED.md`, `PROJECT_STATE.md`,
+  `AGENT_HANDOFF.md`, this ledger entry).
+- **Next authorizable action:** a **final read-only ratification audit** of the
+  patched Part R; then architect ratification; then `REFUND-A`, its own order.
+  `REFUND-A` remains `NOT AUTHORIZED`.

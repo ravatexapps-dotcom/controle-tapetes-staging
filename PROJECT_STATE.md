@@ -52,8 +52,18 @@ are in `docs/ledgers/G28_LEDGER.md`. HEAD/working tree/divergence: consult Git d
   precondition:** a contemporaneous read-only **production** `ordens_compra_fio`
   diagnosis is mandatory immediately before any production promotion/migration in
   this track — production is **UNKNOWN for migration** and was **not accessed**.
-  Docs commit: `Propose purchase-order refoundation specification` (diagnosis
-  `de62b16` committed separately, `Add purchase-order legacy diagnosis`).
+  Docs commits: `Add purchase-order legacy diagnosis` (`de62b16`), `Propose
+  purchase-order refoundation specification` (`c49f369`), then **`Resolve
+  purchase-order refoundation design gates`** — the latter patching Part R after a
+  read-only ratification audit returned `REQUIRES_SPEC_PATCH_BEFORE_RATIFICATION`
+  (accepted): Model A atomic need (no `_origem` child, no JSONB), NULL-safe
+  partial-unique need identity, single locked-cache double-distribution design
+  (T1/T2 write-skew proof), receipt-ledger idempotency + `estorno` compensation,
+  Phase-C opening-balance import (no `kg_recebido_inicial`), and per-dimension
+  coexistence authority (no split-brain). **Every migration-critical design
+  decision is now CLOSED; no open alternatives remain.** Spec still `PROPOSED /
+  AWAITING ARCHITECT RATIFICATION`; next = a final read-only ratification audit of
+  the patched Part R.
 - **`ORDEM-COMPRA-LIFECYCLE` track (flat-model history, superseded on persistence
   by the refoundation above) — spec `RATIFIED` (`ORDEM-COMPRA-LIFECYCLE-
   SPEC-RATIFICATION-R1`, 2026-07-18); Phase `A` (schema + config) `CLOSED /

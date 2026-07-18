@@ -34,8 +34,23 @@
   before any production migration (production UNKNOWN, not accessed). **Record (2nd
   commit):** `ORDEM_COMPRA_LIFECYCLE_SPEC_PROPOSED.md`, `PROJECT_STATE.md`, this
   handoff entry, `docs/ledgers/G28_LEDGER.md` — commit `Propose purchase-order
-  refoundation specification`. **Next authorizable action:** architect review +
-  explicit ratification of Part R; then `REFUND-A`, its own order.
+  refoundation specification`. **DESIGN-GATE PATCH (3rd commit, `Resolve
+  purchase-order refoundation design gates`):** a read-only Part R ratification
+  audit returned `REQUIRES_SPEC_PATCH_BEFORE_RATIFICATION` (accepted); the architect
+  supplied rulings 1–7 and Part R was patched to close every gap — Model A atomic
+  need (dropped `_origem` child + JSONB), NULL-safe partial-unique need identity,
+  single locked-cache allocation design with the T1/T2 write-skew proof,
+  receipt-ledger `idempotency_key` + `estorno` compensation, Phase-C opening-balance
+  import entry (no `kg_recebido_inicial`), per-dimension coexistence authority
+  matrix + one-to-one compatibility mapping (no split-brain), Class-D constrained
+  provenance + native-anomaly CHECK, and per-phase gates. Null-Pedido legacy edge
+  (OP1/OP2) resolved via `pedido_id` nullable-for-legacy (CHECK), analogous to the
+  ratified supplier-null exception. **Validation gates all pass; no open-alternative
+  language remains in Part R** (residual `recommend`/`option` matches are all in the
+  superseded §0–§11). Conversion unchanged 64/51/51/51; A/B1 history preserved. Spec
+  remains `PROPOSED / AWAITING ARCHITECT RATIFICATION`. **Next authorizable action:**
+  a **final read-only ratification audit** of the patched Part R; then architect
+  ratification; then `REFUND-A`, its own order. `REFUND-A` NOT AUTHORIZED.
 
 - **`ORDEM-COMPRA-LIFECYCLE` Phase `B1` — `CLOSED / ACCEPTED` (2026-07-18,
   closeout order "CLOSEOUT ORDEM-COMPRA-B1", docs-only, branch `dev`):**
