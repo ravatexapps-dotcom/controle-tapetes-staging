@@ -1,5 +1,33 @@
 # ACTIVE OPERATIONAL HANDOFF
 
+- **`ORDEM-COMPRA SPEC AMENDMENT` (Part 1) — `CLOSED / ACCEPTED`; Phase `B1`
+  AUTHORIZED but DB-execution `HARD-STOPPED` (2026-07-18):** docs-only Part 1
+  of the order "ORDEM-COMPRA SPEC AMENDMENT + PHASE B1", branch `dev`. **Part 1
+  done:** amended `docs/architecture/ORDEM_COMPRA_LIFECYCLE_SPEC_PROPOSED.md`
+  §6 (UI surface) + §8 (phasing) to record the architect's
+  separation-of-responsibilities ruling — receipt registration lives on the
+  purchase order's own **detail screen**; the OP-screen section becomes a
+  **reader** (badges + available yarn per color, registers nothing);
+  distribution sliders + `Salvar distribuição` + `Iniciar produção` stay on the
+  OP screen. Phase `B` split into **`B1`** (OP reader section + `emitir`/
+  `cancelar` RPCs + RLS revoke `db/66`), **`B2`** (order detail screen, route
+  `#/ordens-compra/:id`), **`B3`** (orders list screen); Phase `C` receipt
+  entry point = the order detail screen. **Ratified §1/§4/§5/§2.3 untouched**
+  (amendment confined to §6/§8; escalate-on-conflict did not trigger).
+  **Part 2 (`B1`) HARD-STOPPED (`ORDEM-COMPRA-B1-BLOCKED-BY-MCP-AUTH`):** the
+  order routes all DB work through the `supabase-legacy` MCP against staging
+  `ucrjtfswnfdlxwtmxnoo` (confirm ref, HARD STOP on mismatch), but that MCP is
+  **unauthenticated** and cannot be OAuth-authorized in this non-interactive
+  session (its tools are absent from the registry, verified via ToolSearch).
+  So the ref-confirm, the `emitir`/`cancelar` RPCs, the `db/66` RLS revoke, the
+  RPC role-matrix, and the ACL catalog verification cannot be executed or
+  verified — the executor stopped rather than commit unapplied, unverifiable
+  RPCs/RLS/UI as a false closeout (Supervision Protocol gate). **To unblock:**
+  authorize the `supabase-legacy` MCP in an interactive session, then resume
+  Part 2. **Record:** spec (3 edits) + `PROJECT_STATE.md` + `G28_LEDGER.md`, one
+  docs commit on `dev`. **No staging/production access; no push authorized by
+  this segment.** **Next authorizable action:** Phase `B1` Part 2 once the MCP
+  is available.
 - **`YARN-BUTTONS-PHASE-1` (+ corrections) — Shared Distribution Builder —
   `CLOSED / ACCEPTED` (2026-07-18):** UI-only, branch `dev`. Architect
   visually validated on staging local — BOTH surfaces (OP screen Preparação

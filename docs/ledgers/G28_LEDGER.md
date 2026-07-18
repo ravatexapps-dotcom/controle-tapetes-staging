@@ -2309,3 +2309,78 @@ risco residual e próxima fase indicada no fechamento.
 - **Next indicated at closeout:** await the architect+s keep/remove ruling on
   `Manter pedido` (the registered product decision). No further YARN-BUTTONS
   work authorized otherwise.
+
+---
+
+## 2026-07-18 — ORDEM-COMPRA SPEC AMENDMENT (Part 1) — CLOSED / ACCEPTED — + PHASE B1 AUTHORIZED, DB-execution HARD-STOPPED
+
+- **Gate:** `CLOSED / ACCEPTED` for **Part 1 (spec amendment, docs-only)** of
+  the order "ARCHITECT ORDER — ORDEM-COMPRA SPEC AMENDMENT + PHASE B1"
+  (Sonnet 5 / medium effort as ordered; executed by the resident executor).
+  **Part 2 (Phase `B1`) is AUTHORIZED but `HARD-STOPPED` this session** — see
+  the hard-stop record below. No code, schema, staging, or production action
+  taken.
+- **Front:** `ORDEM-COMPRA-LIFECYCLE` track. Branch `dev`.
+- **Part 1 — what was amended** (`docs/architecture/ORDEM_COMPRA_LIFECYCLE_
+  SPEC_PROPOSED.md`), recording the architect's 2026-07-18 decision:
+  - **Separation of responsibilities (the ruling):** receipt registration
+    (`lançamentos`: quantity, date, partial) lives on the purchase order's own
+    detail screen (receipt is a fact about the *purchase*, not the production;
+    also future-proofs supplier acceptance and multi-OP/`saldo` sharing). The
+    OP screen's section becomes a **reader** (linked orders + dimension badges +
+    available yarn per color; registers nothing). Distribution sliders +
+    `Salvar distribuição` + `Iniciar produção` stay on the OP screen; the
+    Phase D gate reads availability from the orders' received totals.
+  - **§6 (UI surface):** the single-section description is superseded by a
+    dated amendment block describing **three surfaces** — (a) OP detail screen
+    section (reader + admin-cycle actions) → Phase `B1`; (b) purchase order
+    detail screen (route `#/ordens-compra/:id`, the entity's home) → Phase
+    `B2`, receipt UI present but wired in Phase C; (c) purchase orders list
+    screen (sidebar, filterable) → Phase `B3`. Original bullets retained for
+    provenance; the amendment block governs on conflict.
+  - **§8 (phasing):** the single Phase `B` row is superseded by `B1`/`B2`/`B3`
+    plus a clarified Phase `C` (receipt entry point = the order detail screen;
+    OP section reflects totals automatically). Phases `D`/`E` unchanged.
+    `B1`'s `emitir` carries an additional **fornecedor-assigned precondition**,
+    recorded as *additive* to §4's `status_administrativo = 'rascunho'`
+    precondition, not a change to the ratified §4 contract.
+  - **Ratified content untouched:** the three-dimension model (§1), the
+    write-path contracts (§4), the gate definition (§5), and the freeze rule
+    (§2.3) are unchanged — the order's escalate-on-conflict condition did not
+    trigger (the amendment is confined to §6/§8, which the order authorized).
+- **Part 2 — Phase `B1`: HARD STOP (`ORDEM-COMPRA-B1-BLOCKED-BY-MCP-AUTH`).**
+  The order routes all DB work through the `supabase-legacy` MCP against
+  staging `ucrjtfswnfdlxwtmxnoo`, with "confirm ref, HARD STOP on mismatch" as
+  a pre-step. That MCP is **unauthenticated** this session and its OAuth flow
+  **cannot be completed non-interactively** (session-start notice; its tools
+  are absent from the tool registry, verified via ToolSearch — neither
+  `mcp__supabase-legacy__*` nor `mcp__supabase__*` resolvable). Consequently
+  the mandated ref-confirmation itself cannot run, and neither can: the
+  `emitir_ordem_compra_fio` / `cancelar_ordem_compra_fio` RPCs, the RLS-revoke
+  migration `db/66`, the RPC role-matrix tests, or the final-ACL catalog
+  verification. Per the Supervision Protocol, a phase that cannot meet its
+  test/verification gate is **not** closed with unverified artifacts; the
+  executor stopped and reported rather than commit unapplied RPCs/RLS/UI as a
+  false `B1` closeout. **To unblock:** authorize the `supabase-legacy` MCP in
+  an interactive session, then resume/re-issue Part 2.
+- **Validação:** docs-only Part 1 — `git diff --check` clean; the three spec
+  edits + `PROJECT_STATE.md` + this ledger entry are the whole change set. No
+  schema/RPC/JS file created or modified. MCP unavailability confirmed by
+  ToolSearch returning no `supabase*` tools.
+- **Record (this commit):** `docs/architecture/ORDEM_COMPRA_LIFECYCLE_SPEC_
+  PROPOSED.md` (top-banner amendment pointer, §6 amendment block, §8 amendment
+  block); `PROJECT_STATE.md` (ORDEM-COMPRA track note updated with the
+  amendment + `B1` authorization + hard stop; the ratification-era "all phases
+  NOT AUTHORIZED" sentence cross-referenced; `ORDEM-COMPRA-B1-BLOCKED-BY-MCP-
+  AUTH` live debt added; candidate-fronts line → `B2`-`E`; Closed-phases row
+  added); this ledger entry.
+- **STRUCTURAL POLICY COMPLIANCE:** `§14` (single scope) — docs-only, one
+  coherent amendment; `§15` (Git) — selective staging by literal path, single
+  docs commit on `dev`, the pre-existing uncommitted `.gitignore` change left
+  untouched/unstaged, no `add -A`/`reset`/`rebase`/force-push/`merge`/`tag`/
+  `amend`; `§19` — English throughout (spec is a canonical doc; no UI text
+  touched). No staging/production access; no push authorized by this order
+  segment.
+- **Next indicated at closeout:** resolve `ORDEM-COMPRA-B1-BLOCKED-BY-MCP-AUTH`
+  (authorize the `supabase-legacy` MCP interactively), then execute Phase `B1`
+  Part 2 under its authorization. Amendment Part 1 requires nothing further.

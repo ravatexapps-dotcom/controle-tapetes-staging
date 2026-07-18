@@ -50,7 +50,20 @@ are in `docs/ledgers/G28_LEDGER.md`. HEAD/working tree/divergence: consult Git d
   (binding going forward):** implementation work lands on branch `dev`
   (created from this track's HEAD); `git push production dev` is a
   standing remote-backup authorization — push to `main` remains forbidden.
-  **Phases `B`-`E` remain `NOT AUTHORIZED`, each pending its own order.**
+  **Spec AMENDED 2026-07-18 (`ORDEM-COMPRA SPEC AMENDMENT`): §6 (UI surface) +
+  §8 (phasing) record the architect's separation-of-responsibilities ruling —
+  receipt registration moves to the purchase order's own detail screen, the
+  OP-screen section becomes a READER (registers nothing), and Phase B is split
+  into `B1` (OP reader section + `emitir`/`cancelar` RPCs + RLS revoke `db/66`),
+  `B2` (order detail screen, route `#/ordens-compra/:id`), `B3` (orders list
+  screen). Phase `B1` is AUTHORIZED by this order (`ORDEM-COMPRA SPEC AMENDMENT
+  + PHASE B1`). Part 1 (the docs amendment) executed + committed on `dev`; Part
+  2 (B1 DB + UI) is `HARD-STOPPED` this session — the `supabase-legacy` MCP is
+  unauthenticated and cannot be OAuth-authorized in a non-interactive session,
+  so the order's mandated ref-confirm, RPC application, `db/66` RLS revoke, RPC
+  role-matrix tests, and ACL catalog verification cannot be executed or verified
+  (`ORDEM-COMPRA-B1-BLOCKED-BY-MCP-AUTH`, live debt below). Phases `B2`/`B3`/`C`/
+  `D`/`E` remain `NOT AUTHORIZED`, each pending its own order.**
   `docs/architecture/ORDEM_COMPRA_LIFECYCLE_SPEC_PROPOSED.md`
   (three-dimension model: administrative cycle rascunho/emitida/cancelada,
   acceptance nao_aplicavel/pendente/aceita/rejeitada, receipt derived from a
@@ -75,7 +88,9 @@ are in `docs/ledgers/G28_LEDGER.md`. HEAD/working tree/divergence: consult Git d
   ratification itself.** Phasing (A schema+config → B panel visibility → C
   receipt rework via the single shared writer → D gate activation → E
   dormant acceptance checkpoint) remains each independently authorizable —
-  **all phases `NOT AUTHORIZED`**, pending a separate order per phase.
+  all phases were `NOT AUTHORIZED` at ratification, pending a separate order
+  per phase (**superseded by the `ORDEM-COMPRA SPEC AMENDMENT` above: Phase B
+  is now B1/B2/B3 and `B1` is authorized**).
   **Open governance item, unresolved:** no `PURCHASE-ORDER-FOUNDATION-AUDIT`
   document exists anywhere in this repo or its git history (confirmed by
   exhaustive search); the architect is retrieving the original source for
@@ -84,6 +99,20 @@ are in `docs/ledgers/G28_LEDGER.md`. HEAD/working tree/divergence: consult Git d
   unrecoverable, the citation will be corrected to name the architect's
   in-chat authorization directly. Tracked separately from the ratified
   decisions above.
+- **`ORDEM-COMPRA-B1-BLOCKED-BY-MCP-AUTH` — live blocker (2026-07-18).** Phase
+  `B1` is authorized (spec-amendment order, Part 2), but its entire DB-dependent
+  scope cannot execute this session: the `supabase-legacy` MCP (the sole
+  authorized path to staging `ucrjtfswnfdlxwtmxnoo` per the order) is
+  unauthenticated and its OAuth flow cannot be completed in a non-interactive
+  session — its tools are absent from the tool registry (verified via
+  ToolSearch). Blocked until the MCP is authorized: the mandated ref-confirm
+  (HARD STOP pre-step), the `emitir_ordem_compra_fio` / `cancelar_ordem_compra_
+  fio` RPCs, the RLS-revoke migration `db/66`, the RPC role-matrix tests, and
+  the final-ACL catalog verification. Part 1 (the spec amendment) is unaffected
+  and `CLOSED`. **To unblock:** authorize/refresh the `supabase-legacy` MCP in
+  an interactive session, then re-issue (or resume) Part 2. The B1 UI (OP reader
+  section) can be authored independently but cannot be smoke-verified without the
+  RPCs live in staging.
 - **Open architect decisions:** `NONE` blocking. **One non-blocking product
   decision registered (`YARN-MANTER-PEDIDO-REDUNDANCY`, 2026-07-18):** now that
   `Salvar distribuição` exists (save-only), the `Manter pedido` button — also
@@ -454,8 +483,10 @@ architect's discretion.
   `G28-D` publication (largely realized by the `M0`-`M10` cutover);
   `DEPLOYMENT_MAPPING_AND_PRODUCTION_MIGRATION_PROCEDURE` (superseded by `M0`-`M10`);
   `DELETE-PROD-GUARD-A`; `DELETE-AUDIT-LOG-A`; `G28-CAMADA-4`; `A4.3` (email/SMTP
-  invites); `ORDEM-COMPRA-LIFECYCLE` Phases `B`-`E` (spec `RATIFIED`, Phase `A`
-  `CLOSED / ACCEPTED` 2026-07-18, Phases `B`-`E` still `NOT AUTHORIZED` — see
+  invites); `ORDEM-COMPRA-LIFECYCLE` Phases `B2`-`E` (spec `RATIFIED` + `AMENDED`
+  2026-07-18, Phase `A` `CLOSED / ACCEPTED`, Phase `B1` AUTHORIZED but
+  DB-execution `HARD-STOPPED` — `ORDEM-COMPRA-B1-BLOCKED-BY-MCP-AUTH`; Phases
+  `B2`-`E` still `NOT AUTHORIZED` — see
   `docs/architecture/ORDEM_COMPRA_LIFECYCLE_SPEC_PROPOSED.md`).
   Ranked items also appear in the `POST-LAUNCH DEBT REGISTER` above.
 - **`CAMADA3-TRIGGER-SELECTION` — `NOT AUTHORIZED` (`BK3`; register #3):** the
@@ -605,6 +636,7 @@ technical commits; documentation-only phases show `(docs)`. Consult HEAD with
 | Phase | Status | Date | Commit(s) |
 |---|---|---|---|
 | Yarn Buttons — `YARN-BUTTONS-PHASE-1` (+ corrections) — shared distribution builder (`op-distribuicao-ui.js`) consumed by OP screen + Pedido hub; footer = `[Manter pedido, Salvar distribuição]` save-only, `Iniciar produção` = only production-start; `Aceitar proposta` + dead `aplicarRecalculo` removed | `CLOSED / ACCEPTED` | 2026-07-18 | `02679f9`, `2388d39` (technical, branch `dev`) + docs record |
+| Purchase Order Spec Amendment — `ORDEM-COMPRA SPEC AMENDMENT` (docs-only Part 1: §6 UI surface → three surfaces + reader/writer separation; §8 Phase B → B1/B2/B3; receipt entry point = order detail screen) | `CLOSED / ACCEPTED` | 2026-07-18 | (docs: "Amend purchase order spec: receipt lives on the order", branch `dev`) |
 | Purchase Order Lifecycle — `ORDEM-COMPRA-LIFECYCLE` Phase `A` (schema + config: dimension columns, ledger/events/config tables, legacy backfill, 14/14 verification matrix) | `CLOSED / ACCEPTED` | 2026-07-18 | `fb0e6cb` (technical, branch `dev`) + docs record |
 | Purchase Order Lifecycle Spec Ratification — `ORDEM-COMPRA-LIFECYCLE-SPEC-RATIFICATION-R1` (Finding 1 corrected, decisions a-g ratified, phases `A`-`E` still `NOT AUTHORIZED`) | `RATIFIED` | 2026-07-18 | (docs: "Ratify purchase order lifecycle spec") |
 | Purchase Order Lifecycle Spec — `ORDEM-COMPRA-SPEC` (docs-only, spec delivered `PROPOSED`) | `SPEC DELIVERED` | 2026-07-18 | (docs: "Add purchase order lifecycle spec") |

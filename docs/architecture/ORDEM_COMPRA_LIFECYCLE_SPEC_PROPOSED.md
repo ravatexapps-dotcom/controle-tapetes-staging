@@ -27,6 +27,16 @@
 > `docs/architecture/CAMADA3_BACKUP_CONTRACT.md` and
 > `docs/architecture/CAMADA2_USUARIOS_SPEC_PROPOSED.md`. Subject to
 > `docs/DOCUMENTATION_INDEX.md` §1/§1d classification once registered.
+>
+> **AMENDED 2026-07-18 (`ORDEM-COMPRA SPEC AMENDMENT`, architect decision):**
+> §6 (UI surface) and §8 (phasing) carry an architect amendment — receipt
+> registration moves to the purchase order's own detail screen and the
+> OP-screen section becomes a **reader**; Phase B is split into **B1** (OP
+> reader section + `emitir`/`cancelar` RPCs + RLS revoke), **B2** (order detail
+> screen), and **B3** (orders list screen). See the dated amendment blocks in
+> §6 and §8. The ratified model (§1), the write-path contracts (§4), the gate
+> definition (§5), and the freeze rule (§2.3) are **unchanged** by this
+> amendment.
 
 ---
 
@@ -455,6 +465,52 @@ is not silently dropped when D is authorized.
 
 ## 6. UI surface (conceptual — mockup gate is the architect's reviewer, after ratification)
 
+> **AMENDED 2026-07-18 (`ORDEM-COMPRA SPEC AMENDMENT`, architect decision).**
+> The single-section UI-surface description below is **superseded** on the
+> question of *where receipt registration lives and what the OP screen shows*.
+> The ratified three-dimension model (§1), the write-path contracts (§4), the
+> gate definition (§5), and the freeze rule (§2.3) are **unchanged**. The
+> original bullets are retained below for provenance; where they conflict with
+> this block, **this block governs**.
+>
+> **Separation of responsibilities (the ruling).**
+> - **Receipt registration (`lançamentos`: quantity, date, partial deliveries)
+>   lives on the purchase order's own detail screen** — receipt is a fact about
+>   the *purchase*, not the production. This also future-proofs supplier
+>   acceptance (their own surface) and multi-OP / `saldo` sharing (received
+>   quantity on a shared PRETO/BRANCO order is not owned by any single OP).
+> - **The OP screen's section becomes a reader.** It shows the linked orders
+>   with their administrative/dimension badges and the available yarn per color
+>   (sum of received across the linked orders + `saldo`). **It registers
+>   nothing.**
+> - **Distribution sliders, `Salvar distribuição`, and `Iniciar produção` stay
+>   on the OP screen** (production decisions). The production gate (Phase D)
+>   reads availability from the orders' received totals (§5), not from any input
+>   on the OP screen.
+>
+> **Three surfaces (replacing the single-section description below).**
+> - **(a) OP detail screen section (reader + admin-cycle actions)** — Phase
+>   **B1**. One row per linked order: material—cor, fornecedor (`— não
+>   atribuído` when unset), quantity (received/ordered when partial), the three
+>   dimension badges, and the administrative actions (Emitir on `rascunho`,
+>   Cancelar on `rascunho`/`emitida`; `cancelada`/legacy rows carry no action).
+>   **No receipt registration in this section.** Materials are cotton and
+>   polyester only.
+> - **(b) Purchase order detail screen** (route `#/ordens-compra/:id`) — the
+>   entity's home: full dimensions, emitir/cancelar, receipt registration +
+>   `lançamento` history, event history; future home of supplier acceptance.
+>   Phase **B2** builds the screen (emitir/cancelar actions live there too; the
+>   receipt-registration UI is present but wired in Phase C).
+> - **(c) Purchase orders list screen** (sidebar menu, all orders, filterable)
+>   — Phase **B3**, later.
+>
+> **The single shared writer is unchanged in kind** — receipt registration is
+> still one writer (§4's `registrar_recebimento_ordem_compra_fio`); the
+> amendment only moves its *entry point* from the `insumos` sub-panel to the
+> purchase order detail screen (Phase C). Until Phase C swaps it, the existing
+> `insumos` receipt inputs (`buildOrdemPendenteRow` / `buildInsumosTransferForm`)
+> remain as-is.
+
 No mockup is produced here (Supervision Protocol gate: approved mockup
 precedes new visual elements). This section states *where* and *what*,
 not final visuals.
@@ -592,6 +648,23 @@ Each phase is independently authorizable, per this project's standing rule
 that phases do not chain automatically
 (`docs/governance/SUPERVISION_PROTOCOL.md` §3). Ratification of this
 document authorizes none of them by itself.
+
+### Amendment 2026-07-18 (`ORDEM-COMPRA SPEC AMENDMENT`) — Phase B split into B1/B2/B3; receipt entry point relocated
+
+Per the §6 ruling above, the single **Phase B** row of the table is
+**superseded** by the following breakdown. The ratified per-phase blast-radius
+reasoning is unchanged; only the surface allocation and the receipt entry point
+move. Phases **D** and **E** are **unchanged** from the table above.
+
+| Phase | Content | Notes |
+|---|---|---|
+| **B1 — OP section (reader) + administrative RPCs + RLS revoke** | `emitir_ordem_compra_fio` / `cancelar_ordem_compra_fio` RPCs (§4): `emitir` snapshots `ordem_compra_config.exige_aceite` into `aceite_exigido_na_emissao`, sets `emitida`, writes an `ordem_compra_eventos` row, and carries a **fornecedor-assigned precondition** (an order with no supplier assigned cannot be emitted — additive to §4's `status_administrativo = 'rascunho'` precondition, not a change to it); `cancelar` writes an event row. The OP detail screen section becomes the **reader** described in §6 (badges + Emitir/Cancelar admin actions, no receipt registration). The gap-2 RLS **REVOKE** of direct `UPDATE` on `kg_recebido` / `status_recebimento` / `status_administrativo` / `status_aceite` from `authenticated` (migration `db/66`). The existing `insumos` receipt inputs remain untouched (removed in Phase C). | Carries §8's gap-2 binding requirement (RLS revoke). The receipt precondition guard formerly bundled into "Phase B" moves to the receipt RPC in Phase C. Receipt wording anywhere is `status_aceite IN ('nao_aplicavel','aceita')` (Finding 1). |
+| **B2 — Purchase order detail screen** (route `#/ordens-compra/:id`) | Builds the entity's home screen: full dimensions, emitir/cancelar actions (also available here), the receipt-registration UI **present but wired in Phase C**, and event history; future home of supplier acceptance. | The OP section's "ver ordem" affordance (B1) may navigate here; until B2 the route may 404-stub or be omitted. |
+| **B3 — Purchase orders list screen** | Sidebar-menu screen listing all orders, filterable. | Later; no receipt logic. |
+| **C — Receipt `lançamentos` via the single shared writer** | Unchanged from the table's Phase C, with one clarification: the **entry point** for `registrar_recebimento_ordem_compra_fio` is the **purchase order detail screen** (B2's receipt UI), and the OP section (B1) reflects received totals automatically. The receipt precondition guard (`status_administrativo = 'emitida'` **and** `status_aceite IN ('nao_aplicavel','aceita')`) lives on this RPC. | Also swaps `registrarRecebimentoOrdemFio` to call the RPC and lands the §3.2 trigger, per the table above. |
+
+Phases **D** (gate activation) and **E** (dormant acceptance checkpoint)
+remain exactly as in the table above.
 
 ---
 
