@@ -223,12 +223,18 @@ test('9. op-nova.js contém recompute (NÃO está mais no inline)', () => {
     'op-nova.js não contém recompute');
 });
 
-test('10. op-nova.js contém onAceitar (NÃO está mais no inline)', () => {
+test('10. op-nova.js contém onSalvar / onIniciarProducao (split do antigo onAceitar; NÃO no inline)', () => {
   const inline = extractInlineScript(indexSrc);
+  // YARN-BUTTONS-PHASE-1: onAceitar foi decomposto em onSalvar/onIniciarProducao.
+  // YARN-BUTTONS-PHASE-1-CORRECTION: onIniciarProducao mora no escopo de
+  // screenNovaOP (não mais dentro de buildProposta) — acionado pelo bloco
+  // de Preparação, não pelo footer do modal.
   assert.equal(/function\s+onAceitar\s*\(/.test(inline), false,
-    'inline ainda tem onAceitar — extração incompleta');
-  assert.match(opnSrc, /function\s+onAceitar\s*\(/,
-    'op-nova.js não contém onAceitar');
+    'inline ainda tem onAceitar');
+  assert.match(opnSrc, /function\s+onSalvar\s*\(/,
+    'op-nova.js não contém onSalvar');
+  assert.match(opnSrc, /async function\s+onIniciarProducao\s*\(/,
+    'op-nova.js não contém onIniciarProducao');
 });
 
 test('11. op-nova.js contém aplicarRecalculo wrapper (NÃO está mais no inline)', () => {
@@ -938,6 +944,97 @@ test('42. saldo de poliéster usa is("cor_id", null) + eq("cor_poliester", ...)'
   assert.ok(corPolEq.length >= 1, 'devia ter eq(cor_poliester, PRETO)');
 });
 
+// ---- YARN-BUTTONS-PHASE-1: split salvarDistribuicaoOP / iniciarProducaoOP ----
+
+test('42.1 window.salvarDistribuicaoOP e window.iniciarProducaoOP são funções', () => {
+  const { sandbox } = makeRecalculoSandbox();
+  assert.equal(typeof vm.runInContext('window.salvarDistribuicaoOP', sandbox), 'function',
+    'window.salvarDistribuicaoOP não é função');
+  assert.equal(typeof vm.runInContext('window.iniciarProducaoOP', sandbox), 'function',
+    'window.iniciarProducaoOP não é função');
+});
+
+test('42.2 RAVATEX_SCREENS.opRecalculo expõe salvarDistribuicaoOP e iniciarProducaoOP', () => {
+  const { sandbox } = makeRecalculoSandbox();
+  assert.ok(vm.runInContext('window.RAVATEX_SCREENS.opRecalculo.salvarDistribuicaoOP', sandbox));
+  assert.ok(vm.runInContext('window.RAVATEX_SCREENS.opRecalculo.iniciarProducaoOP', sandbox));
+});
+
+test('42.3 salvarDistribuicaoOP grava APENAS op_itens.metros_ajustados (sem saldo, sem status)', async () => {
+  const { sandbox, calls } = makeRecalculoSandbox();
+  sandbox.itens = [
+    { op_item_id: 100, metros_ajustados: 40 },
+    { op_item_id: 101, metros_ajustados: 48 },
+  ];
+  const result = await vm.runInContext(
+    'window.salvarDistribuicaoOP({ opId: 42, itens: itens })',
+    sandbox
+  );
+  assert.equal(result.error, null);
+  assert.equal(result.step, 'ok');
+  const opItensCalls = calls.filter((c) => c.op === 'op_itens_update');
+  assert.equal(opItensCalls.length, 2, 'devia gravar metros_ajustados dos 2 itens');
+  // NÃO toca saldo nem status
+  assert.equal(calls.filter((c) => c.op === 'saldo_fios_op_insert').length, 0,
+    'salvarDistribuicaoOP NÃO deve inserir saldo_fios_op');
+  assert.equal(calls.filter((c) => c.op === 'ops_update_status').length, 0,
+    'salvarDistribuicaoOP NÃO deve mudar status da OP');
+});
+
+test('42.4 salvarDistribuicaoOP: falha em op_itens.update retorna step "op_itens_update"', async () => {
+  const { sandbox } = makeRecalculoSandbox({ opItensFailAlways: true });
+  sandbox.itens = [{ op_item_id: 100, metros_ajustados: 40 }];
+  const result = await vm.runInContext(
+    'window.salvarDistribuicaoOP({ opId: 42, itens: itens })',
+    sandbox
+  );
+  assert.ok(result.error);
+  assert.equal(result.step, 'op_itens_update');
+  assert.equal(result.partial, true);
+});
+
+test('42.5 iniciarProducaoOP grava saldo + status, mas NÃO grava op_itens (distribuição já salva)', async () => {
+  const { sandbox, calls } = makeRecalculoSandbox();
+  sandbox.sobras = resultadoAceitar().sobras;
+  const result = await vm.runInContext(
+    'window.iniciarProducaoOP({ opId: 42, sobras: sobras })',
+    sandbox
+  );
+  assert.equal(result.error, null);
+  assert.equal(result.step, 'ok');
+  assert.equal(calls.filter((c) => c.op === 'op_itens_update').length, 0,
+    'iniciarProducaoOP NÃO deve gravar op_itens (já salvo por salvarDistribuicaoOP)');
+  assert.ok(calls.filter((c) => c.op === 'saldo_fios_op_insert').length >= 2,
+    'iniciarProducaoOP deve inserir saldo_fios_op');
+  assert.ok(calls.filter((c) => c.op === 'ops_update_status').length >= 1,
+    'iniciarProducaoOP deve mudar status para em_producao');
+});
+
+test('42.6 iniciarProducaoOP: falha em ops.update retorna step "ops_update_status"', async () => {
+  const { sandbox } = makeRecalculoSandbox({ opsStatusError: true });
+  sandbox.sobras = resultadoAceitar().sobras;
+  const result = await vm.runInContext(
+    'window.iniciarProducaoOP({ opId: 42, sobras: sobras })',
+    sandbox
+  );
+  assert.equal(result.step, 'ops_update_status');
+  assert.equal(result.partial, true);
+});
+
+test('42.7 iniciarProducaoOP com sobras vazias: só muda status, sem insert de saldo', async () => {
+  const { sandbox, calls } = makeRecalculoSandbox();
+  const result = await vm.runInContext(
+    'window.iniciarProducaoOP({ opId: 42, sobras: [] })',
+    sandbox
+  );
+  assert.equal(result.error, null);
+  assert.equal(result.step, 'ok');
+  assert.equal(calls.filter((c) => c.op === 'saldo_fios_op_insert').length, 0,
+    'sem sobras, não deve inserir saldo_fios_op');
+  assert.ok(calls.filter((c) => c.op === 'ops_update_status').length >= 1,
+    'ainda deve mudar status para em_producao');
+});
+
 // ---- 17-20: helper usa normalizarChaveSaldo + não chama toast/navigate/DOM
 
 test('43. helper usa normalizarChaveSaldo (chamada presente na source)', () => {
@@ -1049,7 +1146,7 @@ test('55. persistir NÃO está mais inline (extraído para op-persistir.js)', ()
     'inline ainda tem persistir - função deveria ter sido extraída');
 });
 
-test('56. buildProposta/recompute/onAceitar foram extraídos para op-nova.js (NÃO estão mais no inline)', () => {
+test('56. buildProposta/recompute/onSalvar/onIniciarProducao em op-nova.js (NÃO no inline)', () => {
   const inline = extractInlineScript(indexSrc);
   assert.equal(/function\s+buildProposta\s*\(/.test(inline), false,
     'inline ainda tem buildProposta — extração incompleta');
@@ -1057,10 +1154,13 @@ test('56. buildProposta/recompute/onAceitar foram extraídos para op-nova.js (N�
     'inline ainda tem recompute — extração incompleta');
   assert.equal(/function\s+onAceitar\s*\(/.test(inline), false,
     'inline ainda tem onAceitar — extração incompleta');
-  // Funções foram movidas para op-nova.js
+  // Funções vivem em op-nova.js; onAceitar foi decomposto (YARN-BUTTONS-PHASE-1),
+  // e onIniciarProducao foi movida para o escopo de screenNovaOP, fora de
+  // buildProposta (YARN-BUTTONS-PHASE-1-CORRECTION).
   assert.match(opnSrc, /function\s+buildProposta\s*\(/);
   assert.match(opnSrc, /function\s+recompute\s*\(/);
-  assert.match(opnSrc, /function\s+onAceitar\s*\(/);
+  assert.match(opnSrc, /function\s+onSalvar\s*\(/);
+  assert.match(opnSrc, /async function\s+onIniciarProducao\s*\(/);
 });
 
 test('57. screenNovaOP foi extraída para op-nova.js (NÃO está mais no inline)', () => {

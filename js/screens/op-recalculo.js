@@ -65,6 +65,13 @@
   // NÃO chama toast, navigate, saving, ou DOM. NÃO acessa estado
   // de closure de screenNovaOP — recebe tudo por argumento e usa
   // window.supa internamente.
+  //
+  // YARN-BUTTONS-PHASE-1: intacto — segue sendo usado por "Manter
+  // pedido" (op-nova.js) e pelas telas de aceite do Pedido
+  // (pedido-detail-events.js). O fluxo "aceitar" da tela de OP foi
+  // decomposto nos dois writes independentes abaixo
+  // (salvarDistribuicaoOP + iniciarProducaoOP), que reaproveitam o
+  // mesmo tail de snapshot-de-saldo + transição de status.
   async function aplicarRecalculoOP({ opId, resultado, modo, ordens }) {
     const supa = window.supa;
     const round3 = (n) => Math.round(n * 1000) / 1000;
@@ -88,8 +95,22 @@
             : null;
         }).filter(Boolean);
 
-    // 3) grava saldo por OP + atualiza o totalizador
-    for (const s of sobras) {
+    // 3+4) grava saldo (por OP + totalizador) e libera a produção
+    return await snapshotSaldoEIniciarProducao({ opId, sobras });
+  }
+
+  // Snapshot de saldo (saldo_fios_op.insert + saldo_fios
+  // select/update/insert) + transição ops.status -> 'em_producao'.
+  // Extraído de aplicarRecalculoOP para ser reaproveitado por
+  // iniciarProducaoOP (YARN-BUTTONS-PHASE-1) sem duplicar a lógica
+  // do totalizador — preserva exatamente os mesmos steps e a mesma
+  // ordem de escrita do fluxo original. Interno (não exportado).
+  async function snapshotSaldoEIniciarProducao({ opId, sobras }) {
+    const supa = window.supa;
+    const round3 = (n) => Math.round(n * 1000) / 1000;
+
+    // grava saldo por OP + atualiza o totalizador
+    for (const s of (sobras || [])) {
       const insOp = await supa.from('saldo_fios_op').insert({
         op_id: opId, cor_id: s.cor_id, cor_poliester: s.cor_poliester, tipo: s.tipo, kg_sobra: s.kg_sobra,
       });
@@ -138,7 +159,7 @@
       }
     }
 
-    // 4) libera a produção
+    // libera a produção
     const st = await supa.from('ops').update({ status: 'em_producao' }).eq('id', opId);
     if (st.error) {
       return { error: st.error, step: 'ops_update_status', partial: true };
@@ -147,14 +168,47 @@
     return { error: null, step: 'ok', partial: false };
   }
 
+  // YARN-BUTTONS-PHASE-1 — "Salvar distribuição": grava APENAS a
+  // distribuição (op_itens.metros_ajustados) por item. Repetido =
+  // overwrite (UPDATE por id, nunca duplica). NÃO faz snapshot de
+  // saldo, NÃO gera ordem de compra e NÃO muda o status da OP.
+  //   itens: [{ op_item_id, metros_ajustados }]
+  async function salvarDistribuicaoOP({ opId, itens }) {
+    const supa = window.supa;
+    for (const it of (itens || [])) {
+      const r = await supa.from('op_itens')
+        .update({ metros_ajustados: it.metros_ajustados })
+        .eq('id', it.op_item_id);
+      if (r.error) {
+        return { error: r.error, step: 'op_itens_update', partial: true };
+      }
+    }
+    return { error: null, step: 'ok', partial: false };
+  }
+
+  // YARN-BUTTONS-PHASE-1 — "Iniciar produção": carrega o que o antigo
+  // "aceitar" fazia ALÉM da distribuição — snapshot de saldo
+  // (saldo_fios_op + saldo_fios) + transição ops.status ->
+  // 'em_producao'. NÃO grava metros_ajustados (já persistido por
+  // salvarDistribuicaoOP) e NÃO gera ordem de compra (gerada na
+  // abertura da OP, em op-persistir.js).
+  //   sobras: [{ ordem_id, tipo, cor_id, cor_poliester, kg_sobra }]
+  async function iniciarProducaoOP({ opId, sobras }) {
+    return await snapshotSaldoEIniciarProducao({ opId, sobras: sobras || [] });
+  }
+
   window.RAVATEX_SCREENS = window.RAVATEX_SCREENS || {};
   window.RAVATEX_SCREENS.opRecalculo = {
     maxMetrosItem,
     normalizarChaveSaldo,
     aplicarRecalculoOP,
+    salvarDistribuicaoOP,
+    iniciarProducaoOP,
   };
 
   window.maxMetrosItem = maxMetrosItem;
   window.normalizarChaveSaldo = normalizarChaveSaldo;
   window.aplicarRecalculoOP = aplicarRecalculoOP;
+  window.salvarDistribuicaoOP = salvarDistribuicaoOP;
+  window.iniciarProducaoOP = iniciarProducaoOP;
 })(window);

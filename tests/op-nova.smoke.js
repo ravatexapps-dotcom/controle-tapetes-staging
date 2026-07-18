@@ -435,10 +435,22 @@ test('13. op-nova.js NÃO contém mais function gerarPdfCompraFios (extraída pa
     'op-nova.js não chama window.gerarPdfCompraFios — call-site não foi atualizado');
 });
 
-test('14. op-nova.js contém buildProposta / recompute / onAceitar', () => {
+test('14. op-nova.js contém buildProposta / recompute / onSalvar / onIniciarProducao (YARN-BUTTONS-PHASE-1-CORRECTION)', () => {
   assert.match(opnSrc, /function\s+buildProposta\s*\(/);
   assert.match(opnSrc, /function\s+recompute\s*\(/);
-  assert.match(opnSrc, /function\s+onAceitar\s*\(/);
+  // O antigo onAceitar foi decomposto em onSalvar ("Salvar distribuição",
+  // dentro de buildProposta/modal) e onIniciarProducao ("Iniciar produção",
+  // função de escopo de screenNovaOP acionada pelo bloco de Preparação —
+  // YARN-BUTTONS-PHASE-1-CORRECTION moveu a entrada para fora do modal).
+  assert.match(opnSrc, /function\s+onSalvar\s*\(/);
+  assert.match(opnSrc, /async function\s+onIniciarProducao\s*\(/);
+  assert.doesNotMatch(opnSrc, /function\s+onAceitar\s*\(/,
+    'onAceitar deveria ter sido decomposto em onSalvar/onIniciarProducao');
+});
+
+test('14.1 op-nova.js expõe os botões "Salvar distribuição" e "Iniciar produção"', () => {
+  assert.match(opnSrc, /Salvar distribui/i, 'label "Salvar distribuição" não encontrado');
+  assert.match(opnSrc, /Iniciar produ/i, 'label "Iniciar produção" não encontrado');
 });
 
 test('15. op-nova.js mantem preparacao e delega Tecelagem em producao para modulo proprio', () => {
@@ -465,9 +477,16 @@ test('16.1 op-nova.js nao usa MAX(numero)+1 para previa de OP Tecelagem', () => 
     'previa de numero deve ler op_numeros tecelagem');
 });
 
-test('17. op-nova.js chama window.aplicarRecalculoOP', () => {
+test('17. op-nova.js chama window.aplicarRecalculoOP (via "Manter pedido")', () => {
   assert.match(opnSrc, /window\.aplicarRecalculoOP\(/,
     'op-nova.js não referencia window.aplicarRecalculoOP');
+});
+
+test('17.1 op-nova.js chama window.salvarDistribuicaoOP e window.iniciarProducaoOP (split YARN-BUTTONS-PHASE-1)', () => {
+  assert.match(opnSrc, /window\.salvarDistribuicaoOP\(/,
+    'op-nova.js não referencia window.salvarDistribuicaoOP');
+  assert.match(opnSrc, /window\.iniciarProducaoOP\(/,
+    'op-nova.js não referencia window.iniciarProducaoOP');
 });
 
 test('18. op-nova.js chama window.registrarRecebimentoOrdemFio', () => {
@@ -736,6 +755,10 @@ function makeRenderSandbox(db) {
   vm.runInContext(efSrc, sandbox, { filename: 'js/screens/entrega-form.js' });
   vm.runInContext(ofhSrc, sandbox, { filename: 'js/screens/op-form-helpers.js' });
   vm.runInContext(optpSrc, sandbox, { filename: 'js/screens/op-tecelagem-producao-admin.js' });
+  // op-recalculo.js define window.maxMetrosItem / aplicarRecalculoOP /
+  // salvarDistribuicaoOP / iniciarProducaoOP — necessários quando
+  // buildProposta renderiza (OP 'aberta' com todos os fios recebidos).
+  vm.runInContext(oprSrc, sandbox, { filename: 'js/screens/op-recalculo.js' });
   vm.runInContext(opnSrc, sandbox, { filename: 'js/screens/op-nova.js' });
 
   sandbox.ADMIN_MENU = sandbox.ADMIN_MENU || [];
@@ -1385,4 +1408,90 @@ test('66. Nova OP com pedido_id UUID preserva string e mostra erro de pedido nao
   assert.doesNotMatch(pedidoRouteBlock, /Number\s*\(\s*pedidoId\s*\)/);
   assert.doesNotMatch(pedidoRouteBlock, /parseInt\s*\(\s*pedidoId\s*/);
   assert.match(opnSrc, /Pedido não encontrado/);
+});
+
+// -------------------------------------------------------------------------
+// YARN-BUTTONS-PHASE-1 + YARN-BUTTONS-PHASE-1-CORRECTION: proposta com
+// botão "Salvar distribuição" (footer do modal, dentro de buildProposta) e
+// ação primária "Iniciar produção" (bloco de Preparação/buildAcaoAberta,
+// FORA do modal — a correção moveu a entrada de produção para lá).
+// buildProposta só renderiza com OP 'aberta' + todas as ordens recebidas —
+// cenário não coberto pelos fixtures anteriores. Estes testes exercem
+// buildProposta pela primeira vez e travam os estados de habilitação:
+// "Salvar distribuição" habilita só com mudança não salva; "Iniciar
+// produção" (Preparação) habilita só quando existe distribuição salva e o
+// fio recebido cobre o consumo.
+// -------------------------------------------------------------------------
+
+function buildOpAbertaProntaFixture(metrosAjustados) {
+  // OP tecelagem 'aberta' com fator-gargalo 1 (recebido == pedido, sem
+  // excedente). metrosAjustados=null => nada salvo; =120 => distribuição
+  // salva igual à proporcional.
+  return buildOpNovaFixture({
+    ops: [
+      {
+        id: 94, numero: 10, ano: 2026, status: 'aberta', tipo: 'tecelagem',
+        observacao: '', origem_op_id: null, lote_id: 304, criado_em: '2026-06-20T11:00:00Z',
+        lote: { id: 304, numero: 17, pedido_id: 'ped-1', cliente: { id: 501, nome: 'Cliente Atlas' } },
+        op_itens: [
+          { id: 10, modelo_id: 1, metros_pedidos: 120, metros_ajustados: metrosAjustados, pedido_item_id: 'pi-1' },
+        ],
+        op_fornecedores: [{ fornecedor_id: 701, etapa: 'cima' }],
+      },
+    ],
+    ordens_compra_fio: [
+      { id: 601, op_id: 94, tipo: 'algodao', cor_id: 11, cor_poliester: null, kg_pedido: 1.2, kg_recebido: 1.2, status: 'recebido_total', cores: { id: 11, nome: 'PRETO' } },
+      { id: 602, op_id: 94, tipo: 'algodao', cor_id: 12, cor_poliester: null, kg_pedido: 1.2, kg_recebido: 1.2, status: 'recebido_total', cores: { id: 12, nome: 'CRU' } },
+      { id: 603, op_id: 94, tipo: 'poliester', cor_id: null, cor_poliester: 'PRETO', kg_pedido: 2.4, kg_recebido: 2.4, status: 'recebido_total', cores: null },
+      { id: 604, op_id: 94, tipo: 'poliester', cor_id: null, cor_poliester: 'BRANCO', kg_pedido: 2.4, kg_recebido: 2.4, status: 'recebido_total', cores: null },
+    ],
+    entregas: [],
+  });
+}
+
+function findButtons(node, out = []) {
+  if (!node) return out;
+  if (node.tagName === 'BUTTON') out.push(node);
+  for (const child of (node.children || [])) findButtons(child, out);
+  return out;
+}
+
+function buttonByText(view, re) {
+  return findButtons(view).find((b) => re.test(collectNodeText(b)));
+}
+
+test('67. Modal footer tem exatamente Manter+Salvar; "Iniciar produção" mora na Preparação, fora do modal', async () => {
+  const rendered = await renderNovaOpForTest({ opId: 94, db: buildOpAbertaProntaFixture(null) });
+  const insumosBox = findNodeById(rendered.view, 'insumos-open-op');
+  assert.ok(insumosBox, 'bloco de insumos (#insumos-open-op, onde buildProposta é montado) deve existir');
+  const modalButtonTexts = findButtons(insumosBox).map((b) => collectNodeText(b));
+  assert.ok(modalButtonTexts.some((t) => /Manter pedido/i.test(t)), 'modal deve manter "Manter pedido"');
+  assert.ok(modalButtonTexts.some((t) => /Salvar distribui/i.test(t)), 'modal deve manter "Salvar distribuição"');
+  assert.ok(!modalButtonTexts.some((t) => /Iniciar produ/i.test(t)),
+    '"Iniciar produção" não deve mais estar no footer do modal (YARN-BUTTONS-PHASE-1-CORRECTION)');
+  assert.ok(!modalButtonTexts.some((t) => /Aceitar proposta/i.test(t)), '"Aceitar proposta" foi substituído pelo split');
+
+  const iniciarBtn = buttonByText(rendered.view, /Iniciar produ/i);
+  assert.ok(iniciarBtn, '"Iniciar produção" deve existir na tela (bloco de Preparação)');
+  assert.ok(!findButtons(insumosBox).includes(iniciarBtn),
+    '"Iniciar produção" deve estar fora do bloco de insumos/modal — mora na Preparação');
+});
+
+test('68. sem distribuição salva => Salvar (modal) habilitado, Iniciar (Preparação) desabilitado com title', async () => {
+  const rendered = await renderNovaOpForTest({ opId: 94, db: buildOpAbertaProntaFixture(null) });
+  const salvar = buttonByText(rendered.view, /Salvar distribui/i);
+  const iniciar = buttonByText(rendered.view, /Iniciar produ/i);
+  assert.ok(salvar && iniciar, 'botões Salvar/Iniciar devem existir na árvore');
+  assert.equal(salvar.disabled, false, 'Salvar deve estar habilitado quando nada foi salvo');
+  assert.equal(iniciar.disabled, true, 'Iniciar deve estar desabilitado sem distribuição salva');
+  assert.ok(iniciar.getAttribute('title'), 'Iniciar desabilitado deve ter title explicando o motivo');
+});
+
+test('69. distribuição já salva => Iniciar (Preparação) habilitado, Salvar (modal) desabilitado', async () => {
+  const rendered = await renderNovaOpForTest({ opId: 94, db: buildOpAbertaProntaFixture(120) });
+  const salvar = buttonByText(rendered.view, /Salvar distribui/i);
+  const iniciar = buttonByText(rendered.view, /Iniciar produ/i);
+  assert.ok(salvar && iniciar, 'botões Salvar/Iniciar devem existir na árvore');
+  assert.equal(iniciar.disabled, false, 'Iniciar deve habilitar com distribuição salva e fio recebido cobrindo o consumo');
+  assert.equal(salvar.disabled, true, 'Salvar deve desabilitar quando a distribuição atual == última salva');
 });
