@@ -48,9 +48,25 @@
   ratified supplier-null exception. **Validation gates all pass; no open-alternative
   language remains in Part R** (residual `recommend`/`option` matches are all in the
   superseded §0–§11). Conversion unchanged 64/51/51/51; A/B1 history preserved. Spec
-  remains `PROPOSED / AWAITING ARCHITECT RATIFICATION`. **Next authorizable action:**
-  a **final read-only ratification audit** of the patched Part R; then architect
-  ratification; then `REFUND-A`, its own order. `REFUND-A` NOT AUTHORIZED.
+  remains `PROPOSED / AWAITING ARCHITECT RATIFICATION`.
+  **FINAL STRUCTURAL PATCH (4th commit, `Complete purchase-order refoundation
+  structural contract`):** a second (final) read-only ratification audit returned
+  `REQUIRES_SPEC_PATCH_BEFORE_RATIFICATION` (accepted); the architect supplied
+  structural rulings and Part R was patched to close the remaining contracts —
+  legacy source-row identity (`legado_origem_ordem_compra_fio_id` + separate legacy
+  uniqueness), **exactly two native material/origin combinations** (cotton=OP-origin,
+  polyester=Pedido-origin; OP-origin polyester legacy-only; Pedido-origin cotton
+  forbidden) with a DB `op→lote→pedido` ownership guard, direct-DML revoke on the
+  need table, allocation RPC/trigger responsibility split (sole `kg_alocado`
+  maintainer), receipt-ledger sign CHECKs + partial/repeated `estorno` (no
+  over-reversal, no negative cumulative) + two-way append-only enforcement, native
+  receipt lifecycle gate (`emitida`+accepted; receipt-before-issuance prohibited),
+  explicit `ordem_compra_item_compat_fio` one-to-one mapping table, event-derived
+  idempotent `saldo_fios` reconciliation, and the Phase-C maintenance-window +
+  **point-of-no-return**. Validation gates pass; conversion unchanged 64/51/51/51.
+  **Next authorizable action:** one final read-only verification of the patched
+  structural clauses, then architect ratification; then `REFUND-A`, its own order.
+  `REFUND-A` NOT AUTHORIZED.
 
 - **`ORDEM-COMPRA-LIFECYCLE` Phase `B1` — `CLOSED / ACCEPTED` (2026-07-18,
   closeout order "CLOSEOUT ORDEM-COMPRA-B1", docs-only, branch `dev`):**

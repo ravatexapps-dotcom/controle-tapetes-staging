@@ -60,10 +60,18 @@ are in `docs/ledgers/G28_LEDGER.md`. HEAD/working tree/divergence: consult Git d
   partial-unique need identity, single locked-cache double-distribution design
   (T1/T2 write-skew proof), receipt-ledger idempotency + `estorno` compensation,
   Phase-C opening-balance import (no `kg_recebido_inicial`), and per-dimension
-  coexistence authority (no split-brain). **Every migration-critical design
-  decision is now CLOSED; no open alternatives remain.** Spec still `PROPOSED /
-  AWAITING ARCHITECT RATIFICATION`; next = a final read-only ratification audit of
-  the patched Part R.
+  coexistence authority (no split-brain). A **second (final) ratification audit**
+  then returned `REQUIRES_SPEC_PATCH_BEFORE_RATIFICATION` (accepted), and the
+  **structural patch** (`Complete purchase-order refoundation structural contract`)
+  closed the remaining structural contracts: legacy source-row identity
+  (`legado_origem_ordem_compra_fio_id`), exactly two native material/origin
+  combinations + DB ownership guard, separate native/legacy uniqueness, allocation
+  RPC/trigger split, receipt-ledger sign/reversal + append-only, explicit
+  `ordem_compra_item_compat_fio` mapping, event-derived `saldo_fios`, cutover
+  point-of-no-return, and the native receipt lifecycle gate. **Every
+  migration-critical decision is now CLOSED; no open alternatives remain.** Spec
+  still `PROPOSED / AWAITING ARCHITECT RATIFICATION`; next = one final read-only
+  verification of the patched structural clauses, then architect ratification.
 - **`ORDEM-COMPRA-LIFECYCLE` track (flat-model history, superseded on persistence
   by the refoundation above) — spec `RATIFIED` (`ORDEM-COMPRA-LIFECYCLE-
   SPEC-RATIFICATION-R1`, 2026-07-18); Phase `A` (schema + config) `CLOSED /

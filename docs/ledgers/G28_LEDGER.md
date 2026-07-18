@@ -2699,3 +2699,81 @@ risco residual e próxima fase indicada no fechamento.
 - **Next authorizable action:** a **final read-only ratification audit** of the
   patched Part R; then architect ratification; then `REFUND-A`, its own order.
   `REFUND-A` remains `NOT AUTHORIZED`.
+
+## 2026-07-18 — ORDEM-COMPRA REFOUNDATION — Part R FINAL STRUCTURAL PATCH — PROPOSED / AWAITING RATIFICATION
+
+- **Gate:** documentation-only patch (Opus 4.8 / high effort). Order chain: (1)
+  "FINAL PART R RATIFICATION AUDIT" (read-only) → `REQUIRES_SPEC_PATCH_BEFORE_
+  RATIFICATION`; (2) "PART R FINAL STRUCTURAL PATCH" — architect accepted the
+  verdict and supplied structural rulings. No implementation, no DB access, no
+  production, no push, `main` untouched.
+- **Front:** `ORDEM-COMPRA-LIFECYCLE` refoundation, Part R final structural
+  correction.
+- **Audit findings (accepted):** design-gate patch was language-clean but had
+  structural gaps — four material/origin combinations permitted where only two are
+  native-canonical; NULL-pedido legacy uniqueness hole; missing legacy source-row
+  identity; RPC-only OP/Pedido ownership; ledger sign/over-reversal unspecified;
+  compatibility mapping prose-only; saldo stale-after-estorno. Class-D and
+  active-draft uniqueness passed.
+- **Rulings applied (Part R patched):**
+  - **Legacy need identity (§2):** added `legado_origem_ordem_compra_fio_id`
+    (NOT NULL iff legado; UNIQUE among legacy; source-row identity, **not**
+    COALESCE/nullable-Pedido). Two historical rows sharing OP/material/color/
+    supplier/state are not merged.
+  - **Material/origin domain (§3):** `necessidade_material_origem` CHECK — exactly
+    **two native combos** (cotton=OP-origin, polyester=Pedido-origin); **OP-origin
+    polyester = legacy-only**; **Pedido-origin cotton forbidden** (native + legacy).
+  - **Partial uniqueness (§4):** three separate indexes — native cotton
+    `(pedido,op,cor)`, native shared polyester `(pedido,cor_poliester)`, legacy
+    import `(legado_origem_ordem_compra_fio_id)`; no native index for OP-origin
+    polyester / Pedido-origin cotton; legacy dedup by source row, not nullable-Pedido.
+  - **Need write authority + ownership (§5):** revoke direct DML on
+    `necessidade_compra_fio`; sole `SECURITY DEFINER` writers; constraint trigger
+    enforcing `op_id → ops.lote_id → lotes.pedido_id = pedido_id` on every write
+    regardless of caller (RPC-only insufficient); legacy exception carved.
+  - **Allocation writer order (§6):** RPC (lock need `FOR UPDATE` → verify parent
+    native active draft → mutate allocation) vs trigger (sole `kg_alocado`
+    maintainer, does not touch allocation row) — no double-maintenance.
+  - **Receipt ledger (§7-8):** sign CHECKs (`recebimento`/`import` kg>0,
+    `estorno` kg<0 + `estorno_de_id` to a positive same-item entry); two-way
+    append-only (`REVOKE UPDATE/DELETE` + mutation guard); partial/repeated
+    reversals with `SUM(ABS(estornos)) <= original`, over-reversal rejected,
+    cumulative `kg_recebido` cannot go negative; idempotency_key UNIQUE.
+  - **Compatibility mapping (§9):** explicit `ordem_compra_item_compat_fio` table,
+    two `UNIQUE` FKs (one-to-one both directions), immutable, `origem` ∈
+    {imported_legacy, native_bridge}; creation timing per phase; Class C → no
+    mapping; writers locate the flat row via the mapping, not inference.
+  - **Opening import + recovery (§10):** one controlled maintenance window, fence
+    verified by write-denial, one import entry per nonzero mapped balance
+    (idempotency = mapping+item+cutover), **point of no return = first canonical
+    receipt write after read switch**; before = rollback to flat; after =
+    forward-only.
+  - **Saldo reconciliation (§11):** event-derived `surplus_delta` per ledger entry;
+    movement UNIQUE by (ledger entry, movement type); estorno → negative movement
+    (stale surplus corrected); transactional/outbox; reconciles to derived surplus.
+  - **Native receipt gate (§12):** receipt only when `emitida` + `status_aceite IN
+    (nao_aplicavel,aceita)`; **receipt-before-issuance prohibited**; Class-D is a
+    legacy import exception.
+- **Validation gates (all pass):** source-row legacy identity; separate
+  native/legacy uniqueness; two native combos only; OP-origin polyester legacy-only;
+  Pedido-origin cotton forbidden; need DML revoked; ownership DB guard; sole
+  `kg_alocado` maintainer; ledger sign + partial/over-reversal + non-negative
+  cumulative + append-only; explicit mapping table + two-way uniqueness; Class C no
+  mapping; bridge item mapped before receivable; idempotent import; cutover
+  rollback + point-of-no-return; event-derived idempotent saldo; explicit receipt
+  lifecycle states; **conversion remains 64/51/51/51**; **no open-alternative
+  language in Part R** (the one `either` at the mapping-timing bullet is natural
+  language; all other matches are in the superseded §0–§11).
+- **Canonical reconciliation:** no material contradiction; the two documentation
+  follow-ups (`PEDIDO_OP_SCHEMA_CONTRACT.md §6.2`, `DOCUMENTATION_INDEX.md`
+  registration) remain **non-blocking** and untouched.
+- **STRUCTURAL POLICY COMPLIANCE:** `§14` docs-only; `§15` selective staging by
+  literal path, one commit on `dev`, `.gitignore` untouched/unstaged, no
+  `add -A`/`reset`/`rebase`/force/`merge`/`tag`/`amend`; `§16` spec + state + this
+  ledger; `§19` English. No DB access, no production, no prohibited-project access.
+- **Record:** commit "Complete purchase-order refoundation structural contract"
+  (`ORDEM_COMPRA_LIFECYCLE_SPEC_PROPOSED.md`, `PROJECT_STATE.md`,
+  `AGENT_HANDOFF.md`, this ledger entry).
+- **Next authorizable action:** one final read-only verification of the patched
+  structural clauses; then architect ratification; then `REFUND-A`, its own order.
+  `REFUND-A` remains `NOT AUTHORIZED`.

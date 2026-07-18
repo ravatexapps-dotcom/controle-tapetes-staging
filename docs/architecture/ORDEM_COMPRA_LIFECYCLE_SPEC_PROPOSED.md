@@ -1,10 +1,15 @@
 # Purchase Order (Ordem de Compra de Fio) Lifecycle — Proposed Spec
 
 > **REFOUNDATION STATUS (2026-07-18):** `PROPOSED / AWAITING ARCHITECT
-> RATIFICATION`. **Part R (below) is the governing model** — patched per the
-> architect design-gate rulings (audit verdict `REQUIRES_SPEC_PATCH_BEFORE_
-> RATIFICATION`, accepted; every migration-critical design decision now **CLOSED**,
-> **no open alternatives remain**) — a four-layer
+> RATIFICATION`. **Part R (below) is the governing model** — hardened through **two**
+> read-only ratification audits (both `REQUIRES_SPEC_PATCH_BEFORE_RATIFICATION`,
+> accepted): the design-gate patch closed the alternatives, and the final structural
+> patch closed the structural contracts (legacy source-row identity; exactly two
+> native material/origin combinations + DB ownership guard; separate native/legacy
+> uniqueness; allocation RPC/trigger split; ledger sign/reversal + append-only;
+> explicit `ordem_compra_item_compat_fio` mapping; event-derived `saldo_fios`;
+> cutover point-of-no-return; native receipt gate). **Every migration-critical
+> decision is CLOSED; no open alternatives remain.** — a four-layer
 > refoundation (`necessidade_compra_fio → ordem_compra → ordem_compra_item →
 > ordem_compra_item_alocacao`) that **supersedes the flat three-dimension
 > `ordens_compra_fio` model** in §0–§8 and the shipped foundation of Phase `A`
@@ -107,70 +112,94 @@ the architect design-gate rulings (2026-07-18); no alternatives remain.** DDL is
 PROPOSED (this document applies no schema).
 
 **Layer 1 — `necessidade_compra_fio`** (Model A — atomic need per origin;
-Rulings 1 & 2). There is **no** `necessidade_compra_fio_origem` child table and
-**no** JSONB origin store — each need row carries its own single origin:
+Rulings 1–5). There is **no** `necessidade_compra_fio_origem` child table and
+**no** JSONB origin store; each need carries its own single origin, and an
+**imported legacy need is identified by its source row**, never by a native
+logical key:
 
 ```sql
 CREATE TABLE public.necessidade_compra_fio (
   id             BIGSERIAL PRIMARY KEY,
-  pedido_id      UUID REFERENCES public.pedidos(id) ON DELETE CASCADE,      -- NOT NULL for native (CHECK below); NULL only for orphan legacy (OP1/OP2)
+  pedido_id      UUID REFERENCES public.pedidos(id) ON DELETE CASCADE,      -- NOT NULL for native (CHECK); NULL only for orphan legacy (OP1/OP2)
   origem_tipo    TEXT NOT NULL CHECK (origem_tipo IN ('op','pedido')),
-  op_id          BIGINT REFERENCES public.ops(id) ON DELETE RESTRICT,     -- set iff origem_tipo='op'
+  op_id          BIGINT REFERENCES public.ops(id) ON DELETE RESTRICT,       -- set iff origem_tipo='op'
   material       TEXT NOT NULL CHECK (material IN ('algodao','poliester')),
-  cor_id         BIGINT REFERENCES public.cores(id),                      -- cotton axis
-  cor_poliester  TEXT CHECK (cor_poliester IN ('PRETO','BRANCO')),        -- polyester axis
+  cor_id         BIGINT REFERENCES public.cores(id),                        -- cotton axis
+  cor_poliester  TEXT CHECK (cor_poliester IN ('PRETO','BRANCO')),          -- polyester axis
   kg_necessario  NUMERIC(12,3) NOT NULL CHECK (kg_necessario >= 0),
   kg_alocado     NUMERIC(12,3) NOT NULL DEFAULT 0
-                   CHECK (kg_alocado >= 0 AND kg_alocado <= kg_necessario),  -- §R.4 running cache
+                   CHECK (kg_alocado >= 0 AND kg_alocado <= kg_necessario),  -- §R.4 running cache (trigger-maintained)
   legado         BOOLEAN NOT NULL DEFAULT FALSE,
+  legado_origem_ordem_compra_fio_id BIGINT REFERENCES public.ordens_compra_fio(id),  -- Ruling 2: imported-need canonical identity
   criado_em      TIMESTAMPTZ NOT NULL DEFAULT now(),
   CONSTRAINT necessidade_origem_shape CHECK (
        (origem_tipo = 'op'     AND op_id IS NOT NULL)
     OR (origem_tipo = 'pedido' AND op_id IS NULL)),
   CONSTRAINT necessidade_um_eixo_cor CHECK ((cor_id IS NOT NULL) <> (cor_poliester IS NOT NULL)),
-  CONSTRAINT necessidade_pedido_native CHECK (legado = TRUE OR pedido_id IS NOT NULL)   -- native needs always have a Pedido
+  CONSTRAINT necessidade_pedido_native CHECK (legado = TRUE OR pedido_id IS NOT NULL),   -- native always has a Pedido
+  CONSTRAINT necessidade_legado_ref CHECK (                                              -- source-ref present iff legacy (Ruling 2)
+       (legado = FALSE AND legado_origem_ordem_compra_fio_id IS NULL)
+    OR (legado = TRUE  AND legado_origem_ordem_compra_fio_id IS NOT NULL)),
+  CONSTRAINT necessidade_material_origem CHECK (   -- Ruling 3: exactly TWO native combos; Pedido-origin cotton forbidden; OP-origin polyester legacy-only
+       (legado = FALSE AND material = 'algodao'   AND origem_tipo = 'op')       -- native cotton = OP-origin
+    OR (legado = FALSE AND material = 'poliester' AND origem_tipo = 'pedido')   -- native polyester = Pedido-origin (shared)
+    OR (legado = TRUE  AND origem_tipo = 'op')                                  -- legacy import = OP-origin (cotton or polyester)
+    OR (legado = TRUE  AND origem_tipo = 'pedido' AND material = 'poliester'))  -- (legacy Pedido-level polyester, if ever)
 );
 ```
-Every `op_id` must belong to `pedido_id` through the canonical Pedido→lote→OP
-ownership chain — enforced by the import/assessment RPC (a raw FK cannot express
-cross-table ownership). There is **no** parent-total/child-total invariant
-(Ruling 1). `pedido_id` is **NOT NULL for every native need** (CHECK
-`necessidade_pedido_native`); it may be NULL **only** for the orphan null-Pedido
-legacy OPs (OP1/OP2), which the diagnosis showed have no resolvable Pedido —
-§R.10.7 governs that legacy edge (the Pedido-side analog of the supplier-null
-legacy exception, R.10.4).
+**Native persistence permits exactly two material/origin combinations:**
+`(algodao, op)` and `(poliester, pedido)`. **Pedido-origin cotton is forbidden**
+(native and legacy); **OP-origin polyester is legacy-only** (every diagnosed legacy
+polyester row is per-OP). Any future native combination is a separate architect
+decision + schema phase. There is **no** parent-total/child-total invariant
+(Ruling 1). `pedido_id` is NULL **only** for the orphan null-Pedido legacy OPs
+(OP1/OP2) — §R.10.7.
 
-**Need identity (Ruling 2) — NULL-safe partial unique indexes, never one UNIQUE
-over nullable columns** (PostgreSQL NULL≠NULL would admit duplicate logical
-needs):
+**Write authority & ownership (Ruling 5).** `authenticated`/`anon` receive **no**
+direct `INSERT`/`UPDATE`/`DELETE` on `necessidade_compra_fio`; the canonical
+`SECURITY DEFINER` writers (native assessment/recalculation; controlled legacy
+import) are the only application write surface. A **database ownership guard**
+(constraint trigger) verifies transactionally, on every INSERT and relevant UPDATE
+**regardless of caller** (including `service_role`/migration), that a native
+OP-origin need satisfies `op_id → ops.lote_id → lotes.pedido_id =
+necessidade_compra_fio.pedido_id` — **RPC validation alone is insufficient**.
+Legacy exception: `legado=TRUE`, `op_id` present, `legado_origem_ordem_compra_fio_id`
+present, `pedido_id` NULL only when import resolved no Pedido; if a legacy need
+carries a `pedido_id`, its OP/Pedido relationship must also pass the guard.
+
+**Need identity (Rulings 2 & 4) — native and legacy uniqueness are SEPARATE:**
 
 ```sql
--- OP-origin need: one per (pedido, op, color-axis) per material
-CREATE UNIQUE INDEX necessidade_op_algodao   ON public.necessidade_compra_fio
-  (pedido_id, op_id, cor_id)        WHERE origem_tipo='op'     AND material='algodao';
-CREATE UNIQUE INDEX necessidade_op_poliester ON public.necessidade_compra_fio
-  (pedido_id, op_id, cor_poliester) WHERE origem_tipo='op'     AND material='poliester';
--- Pedido-origin shared need: one per (pedido, color-axis) per material, op_id NULL
-CREATE UNIQUE INDEX necessidade_ped_algodao   ON public.necessidade_compra_fio
-  (pedido_id, cor_id)        WHERE origem_tipo='pedido' AND material='algodao';
-CREATE UNIQUE INDEX necessidade_ped_poliester ON public.necessidade_compra_fio
-  (pedido_id, cor_poliester) WHERE origem_tipo='pedido' AND material='poliester';
+-- NATIVE cotton: one per (pedido, op, cor)
+CREATE UNIQUE INDEX necessidade_native_algodao   ON public.necessidade_compra_fio
+  (pedido_id, op_id, cor_id)
+  WHERE legado = FALSE AND material = 'algodao'   AND origem_tipo = 'op';
+-- NATIVE shared polyester: one per (pedido, cor_poliester), op_id NULL
+CREATE UNIQUE INDEX necessidade_native_poliester ON public.necessidade_compra_fio
+  (pedido_id, cor_poliester)
+  WHERE legado = FALSE AND material = 'poliester' AND origem_tipo = 'pedido';
+-- LEGACY import: identity IS the source row (never nullable-Pedido equality)
+CREATE UNIQUE INDEX necessidade_legado_origem    ON public.necessidade_compra_fio
+  (legado_origem_ordem_compra_fio_id)
+  WHERE legado = TRUE;
 ```
-- **Cotton** persists **one need per Pedido + originating OP + color**
-  (`origem_tipo='op'`). Two OPs of the same Pedido needing the same cotton color
-  remain **two** needs (CASE 1); they aggregate only in a read model/view/UI,
-  never in persistence (CASE 2 = one need, two allocations to two suppliers).
-- **Shared polyester** persists **one need per Pedido + color**, `op_id NULL`,
-  `origem_tipo='pedido'` (CASE 3); an additional shared need acquired later is the
-  same logical row reconciled, or a distinct color row (CASE 4).
-- **Recalculation** (repeated apuração) **updates/reconciles the same logical need
-  row** (matched by the identity index) — never an ambiguous duplicate. A
-  recalculation that would set `kg_necessario < kg_alocado` is **rejected**: the
-  assessment RPC HARD-STOPs and requires redistribution or cancellation of the
-  conflicting allocations first (the `kg_alocado <= kg_necessario` CHECK also
-  refuses it structurally).
+- **No native logical-identity index exists for OP-origin polyester or
+  Pedido-origin cotton** (they cannot be created natively). **Legacy duplicate
+  prevention derives from source-row uniqueness**, not nullable-Pedido equality —
+  so the OP1/OP2 null-Pedido rows can neither duplicate nor collapse (each keyed by
+  its unique `ordens_compra_fio` source id), and two historical rows that happen to
+  share OP/material/color/supplier/state are **not** merged.
+- **Cotton** = one native need per (Pedido, OP, color); two OPs of the same Pedido,
+  same cotton color = **two** needs (CASE 1), aggregated only in a read
+  model/view/UI (CASE 2 = one need, two allocations to two suppliers).
+- **Shared polyester** = one native need per (Pedido, color), `op_id NULL` (CASE 3);
+  a later shared acquisition reconciles the same row or a distinct color row (CASE 4).
+- **Recalculation** locates and updates the existing **native** logical need (never
+  a duplicate); `kg_necessario` cannot drop below `kg_alocado` (RPC HARD-STOP + the
+  `kg_alocado <= kg_necessario` CHECK); **imported legacy quantities are not
+  silently recalculated as native requirements.**
 - **Legacy conversion unchanged — 64 needs:** each of the 64 diagnosed source rows
-  imports as exactly one atomic need (Model A is 1:1 with the ratified 64; §R.10).
+  imports as one atomic need keyed by its `ordens_compra_fio` source id (§R.10).
 
 **Layer 2 — `ordem_compra`** (header):
 
@@ -254,21 +283,24 @@ operation** — a quantity change is a controlled remove + insert inside the wri
 Allocation insert/remove are permitted **only while the parent `ordem_compra` is
 an active draft**; **after issuance, allocations are immutable**.
 
-**Running cache + serialization.** `necessidade_compra_fio.kg_alocado` (§R.3) is
-maintained **solely** by the allocation-maintenance trigger/function, guarded by
-`CHECK (kg_alocado >= 0 AND kg_alocado <= kg_necessario)`. On every allocation
-INSERT or controlled removal, the shared trigger function:
-1. **locks the affected `necessidade_compra_fio` row** (`SELECT … FOR UPDATE`,
-   row-level serialization) **before** reading the balance;
-2. computes the delta (`+kg` on insert, `−kg` on removal);
-3. updates `kg_alocado` atomically in the **same transaction** as the allocation
-   mutation;
-4. lets the `CHECK` reject over-allocation (or a negative result);
-5. so a failure — including any failure after the need-row update — rolls back
-   **both** the cache change and the allocation row.
-Covers INSERT, DELETE/controlled reversal, and rollback. If a single operation
-ever touched multiple need rows, needs are locked in **ascending `id` order**
-(deterministic, deadlock-safe).
+**RPC responsibility (Ruling 6), in order.** The canonical `SECURITY DEFINER`
+allocation RPC: (1) `SELECT … FOR UPDATE` on the `necessidade_compra_fio` row;
+(2) locks or verifies the parent `ordem_compra`; (3) confirms it is **native, an
+active draft, and eligible** for allocation mutation; (4) validates the requested
+semantic operation; (5) **inserts or deletes** the allocation row; (6) returns the
+resulting state. Multi-need semantic operations lock needs in **ascending `id`
+order** (deterministic, deadlock-safe).
+
+**Trigger responsibility — sole `kg_alocado` maintainer.**
+`necessidade_compra_fio.kg_alocado` is maintained **solely** by the allocation
+trigger, guarded by `CHECK (kg_alocado >= 0 AND kg_alocado <= kg_necessario)`. On
+each allocation INSERT/DELETE the trigger **does not** create/modify/delete the
+allocation row; it applies the delta (`+kg` insert, `−kg` removal) to `kg_alocado`,
+using the need-row lock the RPC already holds (or acquiring the same row lock
+defensively), lets the CHECK reject over-allocation or a negative result, and runs
+in the **same transaction** as the allocation mutation — so any failure rolls back
+both. **Neither the RPC nor application code writes `kg_alocado` directly** — one
+sole maintainer, no double-maintenance.
 
 **Write-skew rule (the T1/T2 race, explicitly).** T1 and T2 each try to allocate
 the same remaining 50 kg of one need. Both must take that **need row's lock**
@@ -339,58 +371,96 @@ Transfers unchanged from ratified §2.2/§4/§7: config-gated at emission
 the permanent derivation (Ruling 5).
 
 **Canonical receipt ledger contract** (append-only, re-pointed to
-`ordem_compra_item`):
+`ordem_compra_item`), with **structural sign & reversal invariants (Rulings 7–8):**
 - `item_id` FK → `ordem_compra_item`;
-- `tipo` — `'recebimento'` | `'import_saldo_inicial'` | `'estorno'` (compensation);
-- `kg` — positive for receipt/import; a correction is a **compensating negative
-  `estorno`** entry, never an UPDATE/DELETE;
-- **no `UPDATE`, no `DELETE`** on the ledger (append-only, enforced);
-- `estorno_de` — optional FK to the entry being reversed;
-- `idempotency_key TEXT NOT NULL UNIQUE` — deterministic; a duplicate submission
-  with the same key **does not** create a second receipt;
-- `origem_tipo` + `origem_ref` — source type and identifier (mapped flat source
-  row + item at import; UI/RPC submission id for a live receipt);
-- optional document/event reference; `criado_por` (actor); `criado_em`.
+- `tipo ∈ {recebimento, import_saldo_inicial, estorno}`;
+- **sign CHECKs:** `recebimento` ⇒ `kg > 0` and `estorno_de_id IS NULL`;
+  `import_saldo_inicial` ⇒ `kg > 0` and `estorno_de_id IS NULL`; `estorno` ⇒
+  `kg < 0` and `estorno_de_id IS NOT NULL`;
+- `estorno_de_id` FK → the reversed entry, which **must be a positive
+  `recebimento`/`import_saldo_inicial` of the SAME `item_id`** — an estorno may not
+  reference another item's entry, another estorno, or itself;
+- **append-only enforced two ways:** `REVOKE UPDATE, DELETE` **and** a database
+  mutation guard (trigger) rejecting UPDATE/DELETE even from privileged paths;
+- `idempotency_key TEXT NOT NULL UNIQUE` — retrying the same receipt/correction
+  creates no second row;
+- `origem_tipo` + `origem_ref`; optional document/event reference; `criado_por`;
+  `criado_em`.
 `kg_recebido = SUM(ledger.kg)` per item; `status_recebimento` derived (`0` →
 `nao_recebido`, `< kg_pedido` → `parcial`, `>= kg_pedido` → `recebido`).
 
+**Partial & repeated reversals (Ruling 8).** Multiple `estorno` rows may reference
+the same positive entry, provided `SUM(ABS(valid estornos of the entry)) <=
+original positive kg`. Before inserting an estorno the canonical writer: (1) locks
+the referenced positive entry; (2) locks the item receipt-state serialization row;
+(3) computes remaining reversible quantity; (4) **rejects over-reversal**;
+(5) inserts the compensating negative entry. Invariants: cumulative ledger-derived
+`kg_recebido` **cannot go negative**; mutation never replaces compensation; a full
+reversal is where the compensating sum equals the original.
+
+**Native receipt lifecycle gate (Ruling 12).** Canonical native receipt is
+permitted **only** when `status_administrativo = 'emitida'` (**not** `rascunho`,
+**not** `cancelada`) **and** `status_aceite IN ('nao_aplicavel','aceita')`
+(Finding 1) — items, allocations, and supplier are frozen at emission (§R.6).
+**Receipt before issuance is prohibited.** Class-D imported physical receipt is a
+*legacy import* exception (import ledger entry) and does **not** authorize native
+receipt against its historical draft state.
+
 **No opening balance during REFUND-A.** While the old writers are live, **no**
 opening ledger entry is created from a snapshot that may still change (Ruling 5);
-the new model **reads** legacy receipt through the compatibility mapping (§R.11);
-**no** receipt is counted from both the flat snapshot and the ledger.
+the new model **reads** legacy receipt through the compatibility mapping (§R.11); no
+receipt is counted from both the flat snapshot and the ledger.
 
-**Phase-C opening-balance cutover (deterministic, idempotent):**
-1. transactionally **fence** both legacy receipt-writing paths;
-2. take the **final** authoritative receipt snapshot from every mapped
-   `ordens_compra_fio` source row;
-3. create **exactly one** immutable `import_saldo_inicial` ledger entry per nonzero
-   imported balance, keyed by a deterministic `idempotency_key` (mapped legacy
-   source + item), so a re-run inserts nothing new;
-4. migrate **both** consumers (`registrarRecebimentoOrdemFio`,
-   `screenFornecedorOrdens`) to the canonical ledger writer;
-5. **verify** ledger-derived totals against the frozen flat snapshots;
+**Phase-C cutover — one controlled maintenance window (Ruling 10):**
+1. **fence** both legacy receipt writers; the fence is **verified by write-denial
+   evidence** (no new flat receipt mutation accepted);
+2. take the **final** authoritative receipt snapshot from every mapped source row;
+3. create **exactly one** immutable `import_saldo_inicial` entry per **nonzero**
+   mapped balance (zero balances create none), `idempotency_key` derived from
+   **mapping identity + item identity + cutover identifier** (re-run inserts
+   nothing);
+4. migrate **both** consumers to the canonical ledger writer;
+5. **reconcile** ledger-derived totals against the frozen snapshots;
 6. switch receipt **reads** to the ledger;
 7. revoke direct `kg_recebido` `UPDATE`;
 8. close `ORDEM-COMPRA-B1-KG-RECEBIDO-ACL-GAP` **only after** reconciliation passes.
-An `import_saldo_inicial` entry is an explicitly-typed import of an observed
-physical receipt snapshot — **not** a fabricated emission/acceptance event. This
-is how imported Class-A/D received quantities survive the transition **without**
-double-counting (Rule 2): the flat snapshot becomes exactly one import entry, then
-the flat receipt path is retired.
+**Point of no return = the first accepted canonical receipt write after read
+authority switches (step 6).** **Before** it: rollback returns to flat reads with
+legacy writers kept fenced (re-enabled only after proving no canonical receipt
+write was accepted); direct flat `UPDATE` stays unreleased. **After** it: recovery
+is **forward-only** — never silently return to mutable flat authority; keep legacy
+writers fenced; correct via idempotent import completion, reconciliation, and
+compensating ledger entries. An `import_saldo_inicial` entry is an explicitly-typed
+import, **not** a fabricated emission/acceptance; imported Class-A/D receipt
+survives without double-counting (Rule 2).
 
-### R.9 Over-receipt → saldo_fios (Ruling 6)
+### R.9 Over-receipt → saldo_fios (event-derived reconciliation, Ruling 11)
 
 Physical receipt may exceed `kg_pedido`; the ledger records the **full** physical
-quantity. The split is derived, never double-counted:
+quantity. The split is derived per item from the immutable ledger, never
+double-counted:
 - **attributable receipt** = `min( cumulative_received , kg attributable to the
-  item's valid allocations )`;
-- **surplus** = `max( cumulative_received − attributable , 0 )` → routed to
-  `saldo_fios` as general stock.
-The same kilogram is never counted both against a need and as surplus. The exact
-`saldo_fios` writer belongs to its authorized phase, but the **idempotency +
-no-double-count contract is fixed now** — each physical receipt is one ledger
-entry with a unique `idempotency_key`, and surplus routing keys off that entry.
-The diagnosed **+405.98 kg** proves the surplus path is required.
+  item's (immutable, issued) allocations )`;
+- **surplus** = `max( cumulative_received − attributable , 0 )` → `saldo_fios`.
+The same kilogram is never both need-satisfaction and general stock. Because
+allocations are **immutable after issuance** (§R.4) and native receipt is gated to
+post-emission (§R.8), attributable capacity is **stable** during receipt
+processing. **Saldo is credited per ledger EVENT, not by recomputing a mutable
+total:** for each receipt-ledger entry, `surplus_delta = surplus_after_entry −
+surplus_before_entry`, written as one stock movement through the canonical saldo
+writer, with:
+- the source **receipt-ledger entry id** stored on the movement;
+- movement identity **UNIQUE by (source ledger entry, movement type)** — repeated
+  processing of the same entry creates **no duplicate credit**;
+- positive `recebimento`/`import_saldo_inicial` entries → **positive** surplus
+  movement; `estorno` entries → **negative** surplus movement, so **stale surplus
+  after an estorno is corrected**, never left credited;
+- ledger entry and saldo movement written **transactionally**, or via an
+  explicitly-defined **resumable idempotent outbox** in the implementing phase;
+- total stock movements for an item **reconcile** to its current derived surplus.
+The exact `saldo_fios` writer belongs to its authorized phase, but this immutable
+source-event + idempotency + reconciliation contract is fixed now. The diagnosed
+**+405.98 kg** proves the surplus path is required.
 
 ### R.10 Legacy conversion (architect-RATIFIED)
 
@@ -434,16 +504,21 @@ Class C converts to needs only.
   headers** (f4:1 item, f5:1 item, f22: one header, 2 items — Rule-1 accumulation).
   Migration preserves historical identity; native creation follows the
   accumulator. The two are never conflated.
-- **R.10.7 Null-Pedido legacy import (OP1/OP2):** the 11 diagnosed null-Pedido rows
-  (OP1/OP2, all Class A) import as legacy headers (`legado=TRUE`, `fornecedor_id`
-  NULL) with needs `origem_tipo='op'`, `op_id` set. If `ops.lote_id →
-  lotes.pedido_id` resolves a Pedido it is used; the diagnosis showed these two are
-  **orphan test OPs with no Pedido**, so their imported needs carry
+- **R.10.7 Null-Pedido legacy import (OP1/OP2) — Ruling 2:** the 11 diagnosed
+  null-Pedido rows (OP1/OP2, all Class A) import as legacy headers (`legado=TRUE`,
+  `fornecedor_id` NULL) with needs `origem_tipo='op'`, `op_id` set, **each keyed by
+  its unique `legado_origem_ordem_compra_fio_id`** (source-row identity — **not**
+  nullable-Pedido equality), so they can neither duplicate nor collapse. If
+  `ops.lote_id → lotes.pedido_id` resolves a Pedido it is used; the diagnosis showed
+  these two are **orphan test OPs with no Pedido**, so their needs carry
   `pedido_id = NULL` under the `legado=TRUE` exception (CHECK
-  `necessidade_pedido_native`). They never participate in native accumulation.
-  Count unchanged — these 11 remain within Class A's 27 (11 needs / 11 headers /
-  11 items / 11 allocations). A REFUND-A import-migration detail; **no native
-  (non-`legado`) need may have a NULL `pedido_id`.**
+  `necessidade_pedido_native`; the `legado` branch of `necessidade_material_origem`).
+  They never participate in native accumulation. **Reporting:** these rows group
+  under an explicit **legacy-unresolved-Pedido bucket** while retaining OP and
+  source-row identity — they are **never** presented as Pedido-level shared needs.
+  Count unchanged — 11 within Class A's 27 (11 needs / 11 headers / 11 items /
+  11 allocations). A REFUND-A import-migration detail; **no native (non-`legado`)
+  need may have a NULL `pedido_id`.**
 
 ### R.11 Coexistence authority (per dimension) + Phase-C cutover (Ruling 7, Flaw 3)
 
@@ -458,16 +533,36 @@ Authority is **split by dimension and explicitly reconciled** — the two models
 | **C** | `ordem_compra` (new) | **→ canonical ledger** | retiring | Fence flat receipt → import snapshots → migrate both consumers → reconcile → switch reads → revoke flat UPDATE → retire compat receipt path (§R.8). |
 | **after C** | `ordem_compra` (new) | canonical ledger (new) | read-only/temporary | Flat table is **no longer a live receipt authority**; any residual projection is read-only and explicitly temporary. |
 
-**One-to-one compatibility mapping (binding).** For every native item that must
-remain receivable by the two old consumers before Phase C, **exactly one**
-compatibility `ordens_compra_fio` row maps to it, created/kept through **one
-canonical transactional bridge** — **no** two flat rows may ambiguously represent
-one item, and **no** flat row maps to two items. Read models compose
-**administrative state from the new model** and **receipt state from the mapped
-flat source**. Both existing receipt writers (`registrarRecebimentoOrdemFio`,
+**Explicit one-to-one compatibility mapping (Ruling 9)** — a dedicated table, not a
+prose promise:
+
+```sql
+CREATE TABLE public.ordem_compra_item_compat_fio (
+  ordem_compra_item_id  BIGINT NOT NULL UNIQUE REFERENCES public.ordem_compra_item(id),
+  ordens_compra_fio_id  BIGINT NOT NULL UNIQUE REFERENCES public.ordens_compra_fio(id),
+  origem                TEXT NOT NULL CHECK (origem IN ('imported_legacy','native_bridge')),
+  criado_em             TIMESTAMPTZ NOT NULL DEFAULT now(),
+  criado_por            UUID REFERENCES auth.users(id) ON DELETE SET NULL   -- or migration provenance
+);
+```
+The **two `UNIQUE` constraints establish one-to-one in both directions.** The
+mapping is **immutable** — neither id changes, and it is **not** deleted when the
+order is cancelled (historical mappings stay auditable). **Creation timing:**
+- **REFUND-A** — Class A/B/D imported items map to their **exact original**
+  `ordens_compra_fio` source rows (`origem='imported_legacy'`; the same row the item
+  was imported from — deterministic). **Class C creates no item → no mapping.**
+- **REFUND-B1 / PRE-PROD / B2** — before a native item becomes visible to either
+  legacy receipt writer, one canonical transactional bridge (1) creates its flat
+  compatibility row, (2) creates the one-to-one mapping (`origem='native_bridge'`),
+  (3) commits both. **A receivable native item cannot exist in a bridge-dependent
+  phase without an active mapping.**
+The two existing receipt writers (`registrarRecebimentoOrdemFio`,
 `op-writes.js:29-43`; `screenFornecedorOrdens`, `fornecedor.js:461-463` — the
-`SUPPLIER_RECEIPT_WRITE_PATH_DISCOVERED` writer) stay operational and mutate
-**only** the permitted flat receipt snapshot until Phase C. Direct flat
+`SUPPLIER_RECEIPT_WRITE_PATH_DISCOVERED` writer) locate the flat row **through this
+explicit mapping, not by material/color inference**, and mutate **only** the flat
+receipt snapshot until Phase C. Read models compose **administrative state from the
+new model** and **receipt state from the mapped flat source**; the flat admin
+columns are **compatibility data, not competing authority**. Direct flat
 `kg_recebido` `UPDATE` is revoked **only after** both consumers migrate (Phase C);
 `ORDEM-COMPRA-B1-KG-RECEBIDO-ACL-GAP` closes only then, after reconciliation. This
 is **not** two equal authoritative models — authority is split by dimension.
@@ -560,13 +655,17 @@ and its **own architect UI validation** where it touches UI.
   *Exit:* screen live, supplier assignment writes header + projection, architect
   **visual validation**. *Migration auth:* if any. *UI validation:* **yes.**
 - **C** — *Responsibility:* ledger-based `registrar_recebimento_ordem_compra_fio`
-  + the §R.8 cutover (fence → import → migrate both consumers → reconcile → switch
-  reads → revoke → close `KG-RECEBIDO-ACL-GAP`). *Authority:* admin→new,
-  **receipt→ledger (new)**, bridge retiring. *Rollback:* the cutover is one fenced,
-  idempotent, reconciled migration — **if reconciliation fails, do not revoke;
-  stay on flat.** *Exit:* both writers on the RPC, direct UPDATE revoked,
-  reconciliation passes, `saldo_fios` confirmation done, architect acceptance.
-  *Migration auth:* **required.** *UI validation:* yes (receipt UI).
+  + the §R.8 cutover **in one controlled maintenance window** (fence [verified by
+  write-denial] → snapshot → idempotent import → migrate both consumers → reconcile
+  → switch reads → revoke → close `KG-RECEBIDO-ACL-GAP`). *Authority:* admin→new,
+  **receipt→ledger (new)**, bridge retiring. *Rollback:* **point of no return = the
+  first accepted canonical receipt write after the read switch (§R.8)** — before it,
+  roll back to flat reads with legacy writers kept fenced; after it, recovery is
+  **forward-only** (never return to mutable flat authority). If reconciliation fails
+  before the switch, **do not revoke; stay on flat.** *Exit:* both writers on the
+  RPC, direct UPDATE revoked, reconciliation passes, `saldo_fios` confirmation done,
+  architect acceptance. *Migration auth:* **required.** *UI validation:* yes
+  (receipt UI).
 - **D** — *Responsibility:* server-side production gate on "Iniciar produção" (§5,
   SECURITY DEFINER) reading availability from allocations/receipts. *Exit:*
   insufficient yarn blocks production start server-side, architect acceptance.
@@ -584,12 +683,14 @@ None of these is authorized or accepted by this document. **REFUND-A remains
 
 - **Flaw 1 (missing needs + allocations):** RESOLVED — all four layers present
   (§R.3, Model A atomic need); each `necessidade_compra_fio` row carries its own
-  origin (`origem_tipo`/`op_id`), preserving which OP required which kg with no
-  child/JSONB store; `ordem_compra_item_alocacao` preserves which purchased kg
-  satisfy which need and from which OP; the locked-cache
-  `kg_alocado <= kg_necessario` invariant (§R.4) prevents double distribution under
-  concurrency (T1/T2 proof); OP-origin is allocation-level so one item satisfying
-  multiple needs keeps Pedido+OP traceability.
+  origin (`origem_tipo`/`op_id`) with no child/JSONB store; native persistence is
+  restricted to **two** material/origin combinations (cotton=OP-origin,
+  polyester=Pedido-origin) with a DB ownership guard (`op → lote → pedido`), and
+  imported legacy needs are identified by their source row
+  (`legado_origem_ordem_compra_fio_id`, separate legacy uniqueness);
+  `ordem_compra_item_alocacao` preserves which purchased kg satisfy which need and
+  from which OP; the sole-maintainer locked-cache `kg_alocado <= kg_necessario`
+  invariant (§R.4) prevents double distribution under concurrency (T1/T2 proof).
 - **Flaw 2 (unsafe legacy grouping):** RESOLVED — 1:1 conversion, no auto-merge,
   Class C → needs only, ratified 64/51/51/51 (§R.10); NULL supplier never a merge
   key (§R.10.4); the native accumulator is explicitly *not* a historical-identity
@@ -611,12 +712,17 @@ None of these is authorized or accepted by this document. **REFUND-A remains
   legacy and NULL-supplier headers; a new draft is allowed after emission; it does
   **not** merge legacy headers or establish historical identity.
 - **Rule 2 (kg_recebido semantic transition):** two explicit periods (§R.8) —
-  during coexistence receipt is authoritative on the flat source and **read** by
-  the new model (no opening entry from a still-changing snapshot); at Phase C the
-  flat snapshot becomes exactly one idempotent `import_saldo_inicial` ledger entry,
-  both consumers migrate, reconciliation passes, then direct UPDATE is revoked and
-  reads switch to the ledger — imported Class-A/D receipt survives **without**
-  double-counting and **without** a fabricated emission/acceptance event.
+  during coexistence receipt is authoritative on the flat source and **read** by the
+  new model via the explicit compatibility mapping (§R.11); at Phase C (one
+  controlled maintenance window) the flat snapshot becomes exactly one idempotent
+  `import_saldo_inicial` ledger entry, both consumers migrate, reconciliation
+  passes, then direct UPDATE is revoked and reads switch to the ledger (point of no
+  return defined). The append-only ledger enforces sign CHECKs + compensating
+  `estorno` (no over-reversal, no negative cumulative); native receipt is gated to
+  `emitida` + accepted (receipt-before-issuance prohibited); saldo is credited per
+  immutable ledger event (idempotent, estorno-reversible); imported Class-A/D
+  receipt survives **without** double-counting and **without** a fabricated
+  emission/acceptance event.
 
 ---
 
