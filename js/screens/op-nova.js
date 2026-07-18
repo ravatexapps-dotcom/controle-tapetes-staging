@@ -148,6 +148,49 @@
     return el('span', { style: PILL_BASE + 'background:var(--rv-status-prep-bg);color:var(--rv-status-prep);' }, rvDot('var(--rv-status-prep)'), 'Preparacao');
   }
 
+  // ORDEM-COMPRA-B1 reader — dimension-badge vocabulary. Reuses PILL_BASE
+  // and the established status palette (existing --rv-status-*/--rv-stage-*
+  // tokens + the green/red hexes already used elsewhere in this file), per
+  // ORDEM_COMPRA_LIFECYCLE_SPEC §6 ("reuse the existing pill/badge tokens,
+  // do not invent new visual language"). Read-only labels; no business rule.
+  var OCF_SELECT_LEGACY = 'id, tipo, cor_id, cor_poliester, kg_pedido, kg_recebido, status, fornecedor_id, cores:cor_id(id, nome)';
+  var OCF_SELECT_DIM = 'id, tipo, cor_id, cor_poliester, kg_pedido, kg_recebido, status, fornecedor_id, status_administrativo, status_aceite, status_recebimento, aceite_exigido_na_emissao, legado_recebimento_automatico, cores:cor_id(id, nome)';
+  var OCF_ADMIN_LABEL = { rascunho: 'Rascunho', emitida: 'Emitida', cancelada: 'Cancelada' };
+  var OCF_ACEITE_LABEL = { nao_aplicavel: 'Aceite dispensado', pendente: 'Aguardando aceite', aceita: 'Aceita', rejeitada: 'Rejeitada' };
+  var OCF_RECEB_LABEL = { nao_recebido: 'Nao recebido', parcial: 'Recebimento parcial', recebido: 'Recebido' };
+  function ocfPill(label, bg, fg, dot) {
+    var kids = dot ? [rvDot(fg), label] : [label];
+    return el('span', { style: PILL_BASE + 'background:' + bg + ';color:' + fg + ';' }, kids);
+  }
+  function ocfAdminBadge(v) {
+    var map = {
+      rascunho:  ['var(--rv-status-prep-bg)', 'var(--rv-status-prep)', true],
+      emitida:   ['var(--rv-stage-tecelagem-bg)', 'var(--rv-stage-tecelagem)', false],
+      cancelada: ['#f3f4f6', '#8a93a3', false],
+    };
+    var c = map[v] || ['#f3f4f6', '#8a93a3', false];
+    return ocfPill(OCF_ADMIN_LABEL[v] || v, c[0], c[1], c[2]);
+  }
+  function ocfAceiteBadge(v) {
+    var map = {
+      nao_aplicavel: ['#f3f4f6', '#8a93a3', false],
+      pendente:      ['var(--rv-status-prod-bg)', 'var(--rv-status-prod)', true],
+      aceita:        ['#e7f4ec', '#18794a', false],
+      rejeitada:     ['#fdecec', '#d6403a', false],
+    };
+    var c = map[v] || ['#f3f4f6', '#8a93a3', false];
+    return ocfPill(OCF_ACEITE_LABEL[v] || v, c[0], c[1], c[2]);
+  }
+  function ocfRecebBadge(v) {
+    var map = {
+      nao_recebido: ['#f3f4f6', '#8a93a3', false],
+      parcial:      ['var(--rv-status-prod-bg)', 'var(--rv-status-prod)', true],
+      recebido:     ['#e7f4ec', '#18794a', false],
+    };
+    var c = map[v] || ['#f3f4f6', '#8a93a3', false];
+    return ocfPill(OCF_RECEB_LABEL[v] || v, c[0], c[1], c[2]);
+  }
+
   function sectionIcon(svgMarkup) {
     return el('div', { style: SECTION_ICON }, svgEl(svgMarkup));
   }
@@ -243,6 +286,13 @@
   let clienteSel = '';
   let opItensRaw = [];
   let ordens = [];
+  // ORDEM-COMPRA-B1: is the db/65 dimension layer present on this database?
+  // Set by fetchOrdensCompraFio's extended-select-with-fallback. When false
+  // (pre-db/65 database, e.g. production before Phase A lands there), the
+  // reader treats every row as legacy read-only and the OP screen never
+  // regresses. See PROJECT_STATE ORDEM-COMPRA-B1-BLOCKED-BY-MCP-AUTH.
+  let ordensDimDisponivel = false;
+  let ocConfig = { exige_aceite: false };
   let entregasCima = [];
   let latexOpPorEntrega = {};
   let latexOpInfo = {};
@@ -416,11 +466,13 @@
     readOnly = data.status !== 'simulada';
     opItensRaw = data.op_itens || [];
     if (op.status !== 'simulada') {
-      const ordRes = await supa.from('ordens_compra_fio')
-        .select('id, tipo, cor_id, cor_poliester, kg_pedido, kg_recebido, status, cores:cor_id(id, nome)')
-        .eq('op_id', op.id);
+      const ordRes = await fetchOrdensCompraFio(op.id);
       if (ordRes.error) { toast('Erro ao carregar ordens de fio', 'error'); console.error(ordRes.error); }
       ordens = ordRes.data || [];
+      // ORDEM-COMPRA-B1: global config (Aceite dispensado/exigido chip).
+      // Best-effort — absent table (pre-db/65) or error → default dispensado.
+      const cfgRes = await supa.from('ordem_compra_config').select('exige_aceite').eq('id', 1).maybeSingle();
+      ocConfig = { exige_aceite: !!(cfgRes && cfgRes.data && cfgRes.data.exige_aceite) };
       const cimaForn = (data.op_fornecedores || []).find(f => f.etapa === 'cima');
       cimaFornecedorId = cimaForn ? cimaForn.fornecedor_id : null;
       const latexResIni = await supa.from('fornecedores').select('id, nome').eq('tipo', 'latex').order('nome');
@@ -635,6 +687,9 @@
     leftCol.appendChild(buildCardDados());
     leftCol.appendChild(buildCardItens());
     if (op && op.status !== 'simulada') leftCol.appendChild(buildBlocoFios());
+    // ORDEM-COMPRA-B1 reader: linked purchase orders + lifecycle badges +
+    // admin actions (tecelagem OPs only — látex OPs carry no fio orders).
+    if (op && op.status !== 'simulada' && op.tipo !== 'latex') leftCol.appendChild(buildOrdensReaderSection());
     grid.appendChild(leftCol);
     grid.appendChild(buildRight());
     wrap.appendChild(grid);
@@ -924,11 +979,28 @@
 
 
 
+  // ORDEM-COMPRA-B1: fetch ordens_compra_fio including the db/65 lifecycle
+  // dimension columns, with a defensive fallback. The extended select errors
+  // with 42703 (undefined_column) on a database where db/65 has not been
+  // applied (production, pre-Phase-A there); we then retry with the legacy
+  // column list and mark ordensDimDisponivel=false so the reader degrades to
+  // legacy read-only rows — the existing OP screen never regresses. Genuine
+  // (non-missing-column) errors are surfaced unchanged, as before.
+  // OCF_SELECT_LEGACY/OCF_SELECT_DIM are module-level constants (top of the
+  // IIFE) so the initial-load call site is never in their TDZ.
+  async function fetchOrdensCompraFio(opId) {
+    const dimRes = await supa.from('ordens_compra_fio').select(OCF_SELECT_DIM).eq('op_id', opId);
+    if (!dimRes.error) { ordensDimDisponivel = true; return dimRes; }
+    const semColuna = dimRes.error.code === '42703'
+      || /column .* does not exist/i.test(dimRes.error.message || '');
+    if (!semColuna) return dimRes;
+    ordensDimDisponivel = false;
+    return await supa.from('ordens_compra_fio').select(OCF_SELECT_LEGACY).eq('op_id', opId);
+  }
+
   async function reloadOrdens() {
     if (!op || op.status === 'simulada') return;
-    const r = await supa.from('ordens_compra_fio')
-      .select('id, tipo, cor_id, cor_poliester, kg_pedido, kg_recebido, status, cores:cor_id(id, nome)')
-      .eq('op_id', op.id);
+    const r = await fetchOrdensCompraFio(op.id);
     if (r.error) { toast('Erro ao recarregar ordens de fio', 'error'); console.error(r.error); return; }
     ordens = r.data || [];
     render();
@@ -970,6 +1042,111 @@
         btn,
       ),
     );
+  }
+
+  // ORDEM-COMPRA-B1 — purchase-order lifecycle READER on the OP screen.
+  // One row per linked ordem_compra_fio: material—cor | fornecedor | qty |
+  // three dimension badges (administrativo / aceite / recebimento) | admin
+  // actions (Emitir / Cancelar). This section REGISTERS NO RECEIPT — receipt
+  // registration moves to the purchase order's own detail screen in Phase C
+  // (ORDEM_COMPRA_LIFECYCLE_SPEC §6 amendment, 2026-07-18). The existing
+  // INSUMOS receipt inputs (buildOrdemPendenteRow / buildBlocoFios) are left
+  // untouched here and are removed in Phase C. The emitir/cancelar RPCs are
+  // Phase B1's DB half — NOT applied this session
+  // (ORDEM-COMPRA-B1-BLOCKED-BY-MCP-AUTH); the handlers call them defensively
+  // (toast on error), so the buttons stay inert until the RPCs land.
+  var SVG_OCF_EMITIR = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2 11 13"></path><path d="M22 2 15 22 11 13 2 9 22 2z"></path></svg>';
+  var SVG_OCF_CANCELAR = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>';
+
+  function ocfFornecedorNome(ordem) {
+    if (!ordem || ordem.fornecedor_id == null) return null;
+    var f = (forns || []).find(function (x) { return x.id === ordem.fornecedor_id; });
+    return f ? f.nome : null;
+  }
+  // Legacy = pre-lifecycle row (db/65 backfilled it 'emitida'/legacy), a
+  // cancelled row, or a database without the dimension layer → read-only.
+  function ocfIsLegacy(ordem) {
+    return !ordensDimDisponivel
+      || ordem.legado_recebimento_automatico === true
+      || ordem.status_administrativo == null;
+  }
+  async function emitirOrdemCompra(ordem) {
+    const res = await supa.rpc('emitir_ordem_compra_fio', { p_ordem_compra_fio_id: ordem.id });
+    if (res && res.error) { toast('Erro ao emitir ordem de compra', 'error'); console.error(res.error); return; }
+    toast('Ordem de compra emitida', 'success');
+    await reloadOrdens();
+  }
+  async function cancelarOrdemCompra(ordem) {
+    const res = await supa.rpc('cancelar_ordem_compra_fio', { p_ordem_compra_fio_id: ordem.id });
+    if (res && res.error) { toast('Erro ao cancelar ordem de compra', 'error'); console.error(res.error); return; }
+    toast('Ordem de compra cancelada', 'success');
+    await reloadOrdens();
+  }
+  function ocfAcoes(ordem) {
+    const wrap = el('div', { style: 'display:flex;align-items:center;justify-content:flex-end;gap:6px;' });
+    if (ocfIsLegacy(ordem)) return wrap;               // legacy/sem dimensão => read-only
+    const admin = ordem.status_administrativo;
+    if (admin === 'cancelada') return wrap;             // terminal => no actions
+    if (admin === 'rascunho') {
+      wrap.appendChild(actionButton({
+        title: 'Emitir ordem', icon: svgEl(SVG_OCF_EMITIR),
+        onclick: function () { emitirOrdemCompra(ordem); },
+      }));
+    }
+    if (admin === 'rascunho' || admin === 'emitida') {
+      wrap.appendChild(actionButton({
+        title: 'Cancelar ordem', danger: true, icon: svgEl(SVG_OCF_CANCELAR),
+        onclick: function () {
+          var ok = (typeof window.confirm === 'function')
+            ? window.confirm('Cancelar esta ordem de compra de fio? A ação não pode ser desfeita.')
+            : true;
+          if (!ok) return;
+          cancelarOrdemCompra(ordem);
+        },
+      }));
+    }
+    return wrap;
+  }
+  function ocfQtd(ordem) {
+    const parcial = ordem.status_recebimento === 'parcial'
+      || (ordem.kg_recebido != null && Number(ordem.kg_recebido) > 0 && Number(ordem.kg_recebido) < Number(ordem.kg_pedido));
+    if (parcial) return window.fmtKg(ordem.kg_recebido) + ' / ' + window.fmtKg(ordem.kg_pedido);
+    return window.fmtKg(ordem.kg_pedido);
+  }
+  function ocfBadges(ordem) {
+    const admin = ocfIsLegacy(ordem) ? 'emitida' : ordem.status_administrativo;
+    const aceite = ocfIsLegacy(ordem) ? 'nao_aplicavel' : (ordem.status_aceite || 'nao_aplicavel');
+    const receb = ordem.status_recebimento || 'nao_recebido';
+    return el('div', { style: 'display:flex;flex-wrap:wrap;gap:6px;' },
+      ocfAdminBadge(admin), ocfAceiteBadge(aceite), ocfRecebBadge(receb));
+  }
+  function buildOrdensReaderSection() {
+    const box = el('div', { id: 'ordens-compra-reader', style: CARD + 'padding:0;overflow:hidden;margin-top:16px;' });
+    const chip = ocConfig.exige_aceite
+      ? ocfPill('Aceite exigido', 'var(--rv-status-prod-bg)', 'var(--rv-status-prod)', true)
+      : ocfPill('Aceite dispensado', '#f3f4f6', '#8a93a3', false);
+    box.appendChild(el('div', { style: 'display:flex;align-items:center;justify-content:space-between;gap:10px;padding:15px 24px 12px;' },
+      el('span', { style: 'font-size:11px;font-weight:700;color:#8a93a3;letter-spacing:.06em;text-transform:uppercase;' }, 'Ordens de compra de fio'),
+      chip));
+    if (!ordens.length) {
+      box.appendChild(el('div', { style: 'padding:0 24px 18px;font-size:13px;color:#aab2bf;' }, 'Nenhuma ordem de compra de fio gerada.'));
+      return box;
+    }
+    const cols = 'minmax(120px,1.3fr) minmax(110px,1fr) 120px minmax(230px,1.7fr) 84px';
+    box.appendChild(thRow(cols, ['FIO', 'FORNECEDOR', 'QTD (KG)', 'SITUAÇÃO', ''], { alignLast: 'right' }));
+    ordens.forEach(function (o) {
+      const forn = ocfFornecedorNome(o);
+      box.appendChild(gridRow(cols, [
+        el('div', { style: 'font-size:13.5px;font-weight:500;color:#16203a;' }, window.rotuloFio(o)),
+        el('div', { style: 'font-size:13px;color:' + (forn ? '#3f4757' : '#aab2bf') + ';' }, forn || '— não atribuído'),
+        el('div', { class: 'num', style: 'font-size:13px;color:#3f4757;font-variant-numeric:tabular-nums;' }, ocfQtd(o)),
+        ocfBadges(o),
+        ocfAcoes(o),
+      ]));
+    });
+    box.appendChild(el('div', { style: 'padding:11px 24px;border-top:1px solid #f1f3f6;background:#fbfcfd;font-size:11.5px;color:#8a93a3;' },
+      'A exigência de aceite é congelada no momento da emissão de cada ordem — alterar a configuração global não afeta ordens já emitidas.'));
+    return box;
   }
 
   function buildBlocoFios() {

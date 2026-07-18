@@ -14,20 +14,37 @@
   `#/ordens-compra/:id`), **`B3`** (orders list screen); Phase `C` receipt
   entry point = the order detail screen. **Ratified §1/§4/§5/§2.3 untouched**
   (amendment confined to §6/§8; escalate-on-conflict did not trigger).
-  **Part 2 (`B1`) HARD-STOPPED (`ORDEM-COMPRA-B1-BLOCKED-BY-MCP-AUTH`):** the
-  order routes all DB work through the `supabase-legacy` MCP against staging
-  `ucrjtfswnfdlxwtmxnoo` (confirm ref, HARD STOP on mismatch), but that MCP is
-  **unauthenticated** and cannot be OAuth-authorized in this non-interactive
-  session (its tools are absent from the registry, verified via ToolSearch).
-  So the ref-confirm, the `emitir`/`cancelar` RPCs, the `db/66` RLS revoke, the
-  RPC role-matrix, and the ACL catalog verification cannot be executed or
-  verified — the executor stopped rather than commit unapplied, unverifiable
-  RPCs/RLS/UI as a false closeout (Supervision Protocol gate). **To unblock:**
-  authorize the `supabase-legacy` MCP in an interactive session, then resume
-  Part 2. **Record:** spec (3 edits) + `PROJECT_STATE.md` + `G28_LEDGER.md`, one
-  docs commit on `dev`. **No staging/production access; no push authorized by
-  this segment.** **Next authorizable action:** Phase `B1` Part 2 once the MCP
-  is available.
+  **Part 2 (`B1`) — architect ruling: leave the DB as a debt, proceed with UI
+  only.** **UI half DONE:** the OP-screen reader section
+  (`buildOrdensReaderSection` in `js/screens/op-nova.js`) — one row per linked
+  order (material—cor · fornecedor/"— não atribuído" · qtd received/ordered ·
+  three dimension badges administrativo/aceite/recebimento · Emitir on
+  `rascunho` + Cancelar on `rascunho`/`emitida`, none on `cancelada`/legacy,
+  30×30 `actionButton`, confirm on Cancelar), header config chip
+  (Aceite dispensado/exigido), frozen-at-emission footer note, cotton/poliéster
+  only (no Elastano), **no receipt inputs** (receipt is Phase C on the order
+  screen). Data via a defensive extended-select-with-fallback
+  (`fetchOrdensCompraFio`): on a pre-`db/65` database the dimension select
+  errors `42703` → legacy fallback → rows render legacy read-only, **so the OP
+  screen never regresses**. 7 new render-harness smokes (composition, badges,
+  actions-per-state, no receipt inputs, no Elastano, config chip, degraded
+  mode); full suite `+7` passing / `137` pre-existing failures byte-identical
+  (file-swap verified — zero regression). **DB half BLOCKED
+  (`ORDEM-COMPRA-B1-BLOCKED-BY-MCP-AUTH`):** the `supabase-legacy` MCP is
+  unauthenticated / non-interactive (tools absent from the registry, verified
+  via ToolSearch), so the ref-confirm, `emitir`/`cancelar` RPCs, `db/66` RLS
+  revoke, RPC role-matrix, and ACL catalog verification cannot run; Emitir/
+  Cancelar call the not-yet-existing RPCs defensively (inert until they land).
+  **Gate:** `IMPLEMENTAÇÃO VALIDADA (código) / AGUARDANDO VALIDAÇÃO VISUAL DO
+  ARQUITETO` — the full visual walk (draft→assign→Emitir→badges) is itself gated
+  on the DB half being applied to staging. **To unblock:** authorize the
+  `supabase-legacy` MCP interactively, apply RPCs + `db/66`, run the role matrix
+  + ACL check, then the architect walks the OP screen. **Record:** Part-1 docs
+  commit (spec + `PROJECT_STATE` + `G28_LEDGER` + this handoff); B1-UI technical
+  commit (`op-nova.js` + `op-nova.smoke.js` + `PROJECT_STATE`/handoff status).
+  **No staging/production access; no push authorized by this order.** **Next
+  authorizable action:** the `B1` DB half once the MCP is available (then
+  architect visual validation), or Phase `B2` by its own order.
 - **`YARN-BUTTONS-PHASE-1` (+ corrections) — Shared Distribution Builder —
   `CLOSED / ACCEPTED` (2026-07-18):** UI-only, branch `dev`. Architect
   visually validated on staging local — BOTH surfaces (OP screen Preparação

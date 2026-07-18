@@ -1504,3 +1504,111 @@ test('69. distribuição já salva => Iniciar (Preparação) habilitado, Salvar 
   assert.equal(iniciar.disabled, false, 'Iniciar deve habilitar com distribuição salva e fio recebido cobrindo o consumo');
   assert.equal(salvar.disabled, true, 'Salvar deve desabilitar quando a distribuição atual == última salva');
 });
+
+// -------------------------------------------------------------------------
+// ORDEM-COMPRA-B1 — purchase-order lifecycle READER section on the OP screen.
+// Reader-only surface (badges + Emitir/Cancelar admin actions), no receipt
+// registration. RPC writers (emitir/cancelar) are Phase B1's DB half, NOT
+// applied this session (ORDEM-COMPRA-B1-BLOCKED-BY-MCP-AUTH) — these smokes
+// assert composition/badges/actions-per-state statically via the render
+// harness; they do not click the RPC buttons.
+// -------------------------------------------------------------------------
+
+function buildOpReaderFixture(exigeAceite = false, dimensoes = true) {
+  const withDim = (row) => dimensoes ? row : {
+    id: row.id, op_id: row.op_id, tipo: row.tipo, cor_id: row.cor_id,
+    cor_poliester: row.cor_poliester, kg_pedido: row.kg_pedido,
+    kg_recebido: row.kg_recebido, status: row.status, fornecedor_id: row.fornecedor_id,
+    cores: row.cores,
+  };
+  return buildOpNovaFixture({
+    ops: [
+      {
+        id: 94, numero: 10, ano: 2026, status: 'aberta', tipo: 'tecelagem',
+        observacao: '', origem_op_id: null, lote_id: 304, criado_em: '2026-06-20T11:00:00Z',
+        lote: { id: 304, numero: 17, pedido_id: 'ped-1', cliente: { id: 501, nome: 'Cliente Atlas' } },
+        op_itens: [{ id: 10, modelo_id: 1, metros_pedidos: 120, metros_ajustados: null, pedido_item_id: 'pi-1' }],
+        op_fornecedores: [{ fornecedor_id: 701, etapa: 'cima' }],
+      },
+    ],
+    ordem_compra_config: [{ id: 1, exige_aceite: exigeAceite }],
+    ordens_compra_fio: [
+      withDim({ id: 611, op_id: 94, tipo: 'algodao', cor_id: 11, cor_poliester: null, kg_pedido: 1.2, kg_recebido: 0, status: 'pendente', fornecedor_id: 701, status_administrativo: 'rascunho', status_aceite: 'nao_aplicavel', status_recebimento: 'nao_recebido', aceite_exigido_na_emissao: null, legado_recebimento_automatico: false, cores: { id: 11, nome: 'PRETO' } }),
+      withDim({ id: 612, op_id: 94, tipo: 'algodao', cor_id: 12, cor_poliester: null, kg_pedido: 1.2, kg_recebido: 0, status: 'pendente', fornecedor_id: 701, status_administrativo: 'emitida', status_aceite: 'nao_aplicavel', status_recebimento: 'nao_recebido', aceite_exigido_na_emissao: false, legado_recebimento_automatico: false, cores: { id: 12, nome: 'CRU' } }),
+      withDim({ id: 613, op_id: 94, tipo: 'poliester', cor_id: null, cor_poliester: 'PRETO', kg_pedido: 2.4, kg_recebido: 0, status: 'pendente', fornecedor_id: null, status_administrativo: 'cancelada', status_aceite: 'nao_aplicavel', status_recebimento: 'nao_recebido', aceite_exigido_na_emissao: null, legado_recebimento_automatico: false, cores: null }),
+      withDim({ id: 614, op_id: 94, tipo: 'poliester', cor_id: null, cor_poliester: 'BRANCO', kg_pedido: 2.4, kg_recebido: 2.4, status: 'recebido_total', fornecedor_id: 702, status_administrativo: 'emitida', status_aceite: 'nao_aplicavel', status_recebimento: 'recebido', aceite_exigido_na_emissao: false, legado_recebimento_automatico: true, cores: null }),
+    ],
+    entregas: [],
+  });
+}
+
+function findByTag(node, tag, out = []) {
+  if (!node) return out;
+  if (node.tagName === tag) out.push(node);
+  for (const child of (node.children || [])) findByTag(child, tag, out);
+  return out;
+}
+
+test('70. ORDEM-COMPRA-B1: seção leitora de ordens de compra renderiza no leftCol', async () => {
+  const rendered = await renderNovaOpForTest({ opId: 94, db: buildOpReaderFixture(false) });
+  const reader = findNodeById(rendered.view, 'ordens-compra-reader');
+  assert.ok(reader, 'a seção #ordens-compra-reader deve existir na tela da OP');
+  const txt = collectNodeText(reader);
+  assert.ok(/Ordens de compra de fio/i.test(txt), 'cabeçalho da seção deve estar presente');
+  // Uma linha por ordem (4 fixtures) — confere pelos rótulos de fio.
+  assert.ok(/PRETO/.test(txt) && /CRU/.test(txt) && /BRANCO/.test(txt), 'deve listar as ordens por cor');
+});
+
+test('71. ORDEM-COMPRA-B1: três badges de dimensão por ordem (admin/aceite/recebimento)', async () => {
+  const rendered = await renderNovaOpForTest({ opId: 94, db: buildOpReaderFixture(false) });
+  const reader = findNodeById(rendered.view, 'ordens-compra-reader');
+  const txt = collectNodeText(reader);
+  assert.ok(/Rascunho/.test(txt), 'badge administrativo Rascunho presente');
+  assert.ok(/Emitida/.test(txt), 'badge administrativo Emitida presente');
+  assert.ok(/Cancelada/.test(txt), 'badge administrativo Cancelada presente');
+  assert.ok(/Aceite dispensado/.test(txt), 'badge de aceite (nao_aplicavel) presente');
+  assert.ok(/Nao recebido/.test(txt) && /Recebido/.test(txt), 'badges de recebimento presentes');
+});
+
+test('72. ORDEM-COMPRA-B1: ações por estado — Emitir só em rascunho; Cancelar em rascunho+emitida; nenhuma em cancelada/legacy', async () => {
+  const rendered = await renderNovaOpForTest({ opId: 94, db: buildOpReaderFixture(false) });
+  const reader = findNodeById(rendered.view, 'ordens-compra-reader');
+  const botoes = findButtons(reader);
+  const emitir = botoes.filter((b) => /Emitir ordem/i.test(collectNodeText(b) + ' ' + (b.getAttribute('title') || '')));
+  const cancelar = botoes.filter((b) => /Cancelar ordem/i.test(collectNodeText(b) + ' ' + (b.getAttribute('title') || '')));
+  assert.equal(emitir.length, 1, 'exatamente 1 Emitir (a ordem rascunho)');
+  assert.equal(cancelar.length, 2, 'exatamente 2 Cancelar (rascunho + emitida; não a cancelada nem a legacy)');
+});
+
+test('73. ORDEM-COMPRA-B1: nenhuma entrada de recebimento (kg/data/Registrar) dentro da seção leitora', async () => {
+  const rendered = await renderNovaOpForTest({ opId: 94, db: buildOpReaderFixture(false) });
+  const reader = findNodeById(rendered.view, 'ordens-compra-reader');
+  const inputs = findByTag(reader, 'INPUT');
+  assert.equal(inputs.length, 0, 'a seção leitora NÃO deve conter inputs de recebimento (recebimento mora na tela da ordem — Fase C)');
+  const registrar = findButtons(reader).filter((b) => /Registrar/i.test(collectNodeText(b)));
+  assert.equal(registrar.length, 0, 'a seção leitora NÃO deve conter botão Registrar');
+});
+
+test('74. ORDEM-COMPRA-B1: materiais são apenas algodão/poliéster — sem Elastano', async () => {
+  const rendered = await renderNovaOpForTest({ opId: 94, db: buildOpReaderFixture(false) });
+  const reader = findNodeById(rendered.view, 'ordens-compra-reader');
+  assert.ok(!/Elastano/i.test(collectNodeText(reader)), 'a seção não deve mencionar Elastano (alucinação do mockup — excluída)');
+});
+
+test('75. ORDEM-COMPRA-B1: chip de config reflete exige_aceite (dispensado/exigido)', async () => {
+  const off = await renderNovaOpForTest({ opId: 94, db: buildOpReaderFixture(false) });
+  const readerOff = findNodeById(off.view, 'ordens-compra-reader');
+  assert.ok(/Aceite dispensado/i.test(collectNodeText(readerOff)), 'exige_aceite=false => "Aceite dispensado"');
+
+  const on = await renderNovaOpForTest({ opId: 94, db: buildOpReaderFixture(true) });
+  const readerOn = findNodeById(on.view, 'ordens-compra-reader');
+  assert.ok(/Aceite exigido/i.test(collectNodeText(readerOn)), 'exige_aceite=true => "Aceite exigido"');
+});
+
+test('76. ORDEM-COMPRA-B1: base sem colunas de dimensão (pré-db/65) => linhas legacy read-only, sem ações', async () => {
+  const rendered = await renderNovaOpForTest({ opId: 94, db: buildOpReaderFixture(false, false) });
+  const reader = findNodeById(rendered.view, 'ordens-compra-reader');
+  assert.ok(reader, 'a seção deve renderizar mesmo sem a camada de dimensão (degrada com segurança)');
+  const acoes = findButtons(reader).filter((b) => /Emitir ordem|Cancelar ordem/i.test(collectNodeText(b) + ' ' + (b.getAttribute('title') || '')));
+  assert.equal(acoes.length, 0, 'sem colunas de dimensão, todas as linhas são legacy read-only (nenhuma ação)');
+});

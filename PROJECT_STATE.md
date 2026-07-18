@@ -57,13 +57,24 @@ are in `docs/ledgers/G28_LEDGER.md`. HEAD/working tree/divergence: consult Git d
   into `B1` (OP reader section + `emitir`/`cancelar` RPCs + RLS revoke `db/66`),
   `B2` (order detail screen, route `#/ordens-compra/:id`), `B3` (orders list
   screen). Phase `B1` is AUTHORIZED by this order (`ORDEM-COMPRA SPEC AMENDMENT
-  + PHASE B1`). Part 1 (the docs amendment) executed + committed on `dev`; Part
-  2 (B1 DB + UI) is `HARD-STOPPED` this session — the `supabase-legacy` MCP is
-  unauthenticated and cannot be OAuth-authorized in a non-interactive session,
-  so the order's mandated ref-confirm, RPC application, `db/66` RLS revoke, RPC
-  role-matrix tests, and ACL catalog verification cannot be executed or verified
-  (`ORDEM-COMPRA-B1-BLOCKED-BY-MCP-AUTH`, live debt below). Phases `B2`/`B3`/`C`/
-  `D`/`E` remain `NOT AUTHORIZED`, each pending its own order.**
+  + PHASE B1`). Part 1 (the docs amendment) executed + committed on `dev`. Part
+  2 split by the architect's ruling ("leave the DB as a debt; proceed only with
+  UI"): the **UI half is IMPLEMENTED** — the OP-screen reader section
+  (`buildOrdensReaderSection` in `js/screens/op-nova.js`: one row per linked
+  order, material—cor · fornecedor · qtd · three dimension badges · Emitir/
+  Cancelar admin actions per state, config chip, frozen-at-emission note, no
+  receipt inputs), rendered via a defensive extended-select-with-fallback so a
+  pre-`db/65` database (production today) never regresses; 7 new render-harness
+  smokes, full suite `+7` passing / `137` pre-existing failures unchanged
+  (zero regression, file-swap verified). The **DB half remains blocked** —
+  `emitir`/`cancelar` RPCs, `db/66` RLS revoke, RPC role-matrix, and ACL catalog
+  verification cannot run (`supabase-legacy` MCP unauthenticated, non-interactive
+  session): `ORDEM-COMPRA-B1-BLOCKED-BY-MCP-AUTH` (live debt below). The reader's
+  Emitir/Cancelar buttons call the not-yet-existing RPCs defensively (toast on
+  error) and stay inert until the RPCs land. **Gate:** `IMPLEMENTAÇÃO VALIDADA
+  (código) / AGUARDANDO VALIDAÇÃO VISUAL DO ARQUITETO` — full visual validation
+  (draft→assign→Emitir→badges walk) is itself gated on the DB half. Phases
+  `B2`/`B3`/`C`/`D`/`E` remain `NOT AUTHORIZED`, each pending its own order.**
   `docs/architecture/ORDEM_COMPRA_LIFECYCLE_SPEC_PROPOSED.md`
   (three-dimension model: administrative cycle rascunho/emitida/cancelada,
   acceptance nao_aplicavel/pendente/aceita/rejeitada, receipt derived from a
@@ -100,19 +111,23 @@ are in `docs/ledgers/G28_LEDGER.md`. HEAD/working tree/divergence: consult Git d
   in-chat authorization directly. Tracked separately from the ratified
   decisions above.
 - **`ORDEM-COMPRA-B1-BLOCKED-BY-MCP-AUTH` — live blocker (2026-07-18).** Phase
-  `B1` is authorized (spec-amendment order, Part 2), but its entire DB-dependent
-  scope cannot execute this session: the `supabase-legacy` MCP (the sole
-  authorized path to staging `ucrjtfswnfdlxwtmxnoo` per the order) is
+  `B1`'s **DB half** cannot execute this session: the `supabase-legacy` MCP (the
+  sole authorized path to staging `ucrjtfswnfdlxwtmxnoo` per the order) is
   unauthenticated and its OAuth flow cannot be completed in a non-interactive
   session — its tools are absent from the tool registry (verified via
   ToolSearch). Blocked until the MCP is authorized: the mandated ref-confirm
   (HARD STOP pre-step), the `emitir_ordem_compra_fio` / `cancelar_ordem_compra_
   fio` RPCs, the RLS-revoke migration `db/66`, the RPC role-matrix tests, and
-  the final-ACL catalog verification. Part 1 (the spec amendment) is unaffected
-  and `CLOSED`. **To unblock:** authorize/refresh the `supabase-legacy` MCP in
-  an interactive session, then re-issue (or resume) Part 2. The B1 UI (OP reader
-  section) can be authored independently but cannot be smoke-verified without the
-  RPCs live in staging.
+  the final-ACL catalog verification. **The UI half is DONE** (architect ruling:
+  DB as debt, proceed with UI) — the OP-screen reader section is implemented and
+  render-harness smoke-tested (`js/screens/op-nova.js`; 7 smokes; zero
+  regression), degrading safely on a pre-`db/65` database. **Two consequences of
+  the DB debt:** (1) the reader's Emitir/Cancelar are inert until the RPCs land;
+  (2) the architect's full visual walk (draft→assign→Emitir→badges) needs the
+  RPCs live in staging, so it is gated on this debt. **To unblock:**
+  authorize/refresh the `supabase-legacy` MCP in an interactive session, apply
+  the `emitir`/`cancelar` RPCs + `db/66`, run the role matrix + ACL check, then
+  the architect walks the OP screen against staging.
 - **Open architect decisions:** `NONE` blocking. **One non-blocking product
   decision registered (`YARN-MANTER-PEDIDO-REDUNDANCY`, 2026-07-18):** now that
   `Salvar distribuição` exists (save-only), the `Manter pedido` button — also
