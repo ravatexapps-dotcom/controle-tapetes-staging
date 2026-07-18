@@ -1,16 +1,29 @@
 # Purchase Order (Ordem de Compra de Fio) Lifecycle — Proposed Spec
 
-> **Status:** `PROPOSED` — drafted for architect ratification. No
-> implementation, no schema application, no staging/production action is
-> authorized by this document. Phase: `ORDEM-COMPRA-SPEC` (docs-only).
+> **Status:** `RATIFIED` (2026-07-18, `ORDEM-COMPRA-LIFECYCLE-SPEC-
+> RATIFICATION-R1`) — the model, Finding 1's correction (§4/§6/§7(e)), and
+> decisions (a)-(g) (§7) are ratified per the architect's ruling recorded in
+> §11. Ratification of the model authorizes **no implementation**: no
+> schema application, no staging/production action. Phase: `ORDEM-COMPRA-
+> SPEC` (docs-only). **Phase A remains `NOT AUTHORIZED`, pending its own
+> order.**
 > **Precedent:** ratified per the accepted `PURCHASE-ORDER-FOUNDATION-AUDIT`
 > and the consolidated architect decisions carried in this track's order.
+> **Open governance item (not yet resolved by this ratification):** an
+> exhaustive repository/git-history search found no document named
+> `PURCHASE-ORDER-FOUNDATION-AUDIT` anywhere in this repo
+> (`ORDEM-COMPRA-LIFECYCLE-SPEC-RATIFICATION-R1` review, 2026-07-18). The
+> architect is retrieving the original source for verbatim persistence as
+> `docs/reports/PURCHASE_ORDER_FOUNDATION_AUDIT_R1_2026-07-18.md`; if
+> reported unrecoverable, this banner's "Precedent" line is corrected
+> instead to cite the architect's in-chat authorization directly. See §11.
 > **Scope of this document:** schema, semantics, gate definition, event
 > vocabulary, legacy marking, UI-surface description (conceptual, no mockup —
-> mockup gate is the architect's reviewer, after ratification), and phasing
-> for the purchase-order (`ordens_compra_fio`) lifecycle. Production gate
-> activation (Phase D) is **specified, not implemented** here.
-> **Classification:** Contract (design, proposed) — same category as
+> mockup gate is the architect's reviewer, now that the model is ratified),
+> and phasing for the purchase-order (`ordens_compra_fio`) lifecycle.
+> Production gate activation (Phase D) is **specified, not implemented**
+> here.
+> **Classification:** Contract (design, ratified) — same category as
 > `docs/architecture/CAMADA3_BACKUP_CONTRACT.md` and
 > `docs/architecture/CAMADA2_USUARIOS_SPEC_PROPOSED.md`. Subject to
 > `docs/DOCUMENTATION_INDEX.md` §1/§1d classification once registered.
@@ -359,7 +372,16 @@ retroactive rewriting of history beyond this one vocabulary mapping.
 | `emitir_ordem_compra_fio(id)` | administrativo | `status_administrativo = 'rascunho'` | reads `ordem_compra_config.exige_aceite`, snapshots it into `aceite_exigido_na_emissao`, sets `status_administrativo = 'emitida'`, `status_aceite` per §2.3, `emitida_em`/`emitida_por`; inserts `ordem_compra_eventos` |
 | `cancelar_ordem_compra_fio(id)` | administrativo | `status_administrativo IN ('rascunho','emitida')` | sets `status_administrativo = 'cancelada'`, `cancelada_em`/`cancelada_por`; inserts `ordem_compra_eventos`; §7g governs partial-receipt interaction |
 | `decidir_aceite_ordem_compra_fio(id, decisao, motivo?)` | aceite | `status_aceite = 'pendente'` | sets `aceita`/`rejeitada`, `aceite_decidida_em`/`_por`, `aceite_motivo`; inserts `ordem_compra_eventos` |
-| `registrar_recebimento_ordem_compra_fio(id, kg, data, obs?)` | recebimento | `status_administrativo = 'emitida'` **and** (`status_aceite != 'pendente'`) | inserts `ordem_compra_fio_lancamentos` row (trigger derives §2.4); inserts `ordem_compra_eventos` |
+| `registrar_recebimento_ordem_compra_fio(id, kg, data, obs?)` | recebimento | `status_administrativo = 'emitida'` **and** `status_aceite IN ('nao_aplicavel', 'aceita')` | inserts `ordem_compra_fio_lancamentos` row (trigger derives §2.4); inserts `ordem_compra_eventos` |
+
+**Corrected 2026-07-18 (Finding 1, `ORDEM-COMPRA-LIFECYCLE-SPEC-
+RATIFICATION-R1`):** the receipt precondition originally read
+`status_aceite != 'pendente'`, which is also true for `rejeitada` —
+a rejected order would have passed the precondition and been able to
+receive yarn, directly contradicting ratified point 3 ("receipt blocked
+until `aceita`"). Corrected to the explicit allow-list
+`status_aceite IN ('nao_aplicavel', 'aceita')` above. The identical wording
+in §6's UI-disablement rule is corrected to match (see §6).
 
 All four are the **specific, non-generic** writers this track builds.
 `registrar_recebimento_ordem_compra_fio` is the single shared writer
@@ -458,8 +480,11 @@ not final visuals.
   - the existing receipt-registration inputs
     (`buildOrdemPendenteRow`/`buildInsumosTransferForm`'s per-row kg
     input) become disabled with an explanatory label whenever
-    `status_administrativo != 'emitida'` or `status_aceite = 'pendente'`,
-    instead of silently accepting the write as today.
+    `status_administrativo != 'emitida'` or
+    `status_aceite NOT IN ('nao_aplicavel', 'aceita')` (corrected 2026-07-18,
+    Finding 1 — the original `status_aceite = 'pendente'` wording left a
+    `rejeitada` order's input enabled), instead of silently accepting the
+    write as today.
 - **Client Portal (`cliente_pedido_summary`) unaffected** — purchase-order
   detail is an internal/admin concern; the ratified model does not add
   any new field to the client-facing DTO. Stage list the client sees is
@@ -475,12 +500,19 @@ access here). When authorized, precedence should be "supplier decision is
 authoritative unless overridden by admin" (mirrors (b)/(c) below), decided
 in its own future track once `meu_fornecedor_id()`-gated RLS is designed
 for `ordens_compra_fio`.
+**Ratified 2026-07-18 — deferral confirmed;** the future precedent as
+specced (supplier authoritative unless admin overrides) is recorded as
+guidance for that future track, not a binding rule of this one.
 
 **(b) Admin accepts on supplier's behalf — always allowed?**
 Recommendation: yes, always allowed in this track, since no supplier
 self-service path exists yet — admin-on-behalf is the *only* acceptance
 path until (a) is built. This is not really open under current scope; it
 becomes a real question only once (a) exists.
+**Ratified YES, 2026-07-18 — unconditionally.** Hard dependency
+acknowledged: until (a) ships, 100% of acceptance events are
+admin-authored, and the audit trail showing that is **correct, not a
+smell.**
 
 **(c) Admin overriding a rejection — allowed? audited how?**
 Recommendation: allow via a distinct `aceite_override_admin` event type
@@ -489,6 +521,9 @@ Recommendation: allow via a distinct `aceite_override_admin` event type
 `aceite_motivo` as mandatory (not optional) when overriding a prior
 `rejeitada`, so the audit trail distinguishes "first decision" from
 "admin overrode a rejection."
+**Ratified as recommended, 2026-07-18.** A wrongly-rejected order needs a
+recovery path; the distinct event keeps first-decision and override
+distinguishable forever.
 
 **(d) Who can undo an acceptance, and until when.**
 Recommendation: no undo path in this track. An accepted order that turns
@@ -496,14 +531,18 @@ out wrong should be handled via cancellation (§2.1) plus a new
 replacement order, not a reversible acceptance — mirrors this project's
 existing preference for append-only correction over in-place rewrite
 (`document_link_revisions`, `ordem_compra_fio_lancamentos` itself).
+**Ratified as recommended, 2026-07-18** — no undo path; cancel + new
+draft.
 
 **(e) Acceptance after partial receipt — permitted?**
 Recommendation: cannot arise under this spec's own gate
 (`registrar_recebimento_ordem_compra_fio` requires
-`status_aceite != 'pendente'` before any receipt registration, §4), so a
-partial receipt implies acceptance already happened (or was never
-required). No separate rule needed unless a future track changes the
-precondition ordering.
+`status_aceite IN ('nao_aplicavel', 'aceita')` before any receipt
+registration, §4 — corrected 2026-07-18, Finding 1), so a partial receipt
+implies acceptance already happened (or was never required). No separate
+rule needed unless a future track changes the precondition ordering.
+**Ratified as recommended, 2026-07-18, contingent on Finding 1's
+correction being applied** (it is, as of this ratification).
 
 **(f) Order modification after emission — invalidates acceptance?
 invalidates receipts? or emission locks quantities?**
@@ -513,6 +552,9 @@ modification of an emitted order. A quantity change after emission is a
 cancellation + new draft, not an edit. This keeps the freeze rule (§2.3)
 and the receipt gate (§5) simple: an emitted order's `kg_pedido` is a
 fixed target for the remainder of its life.
+**Ratified as recommended, 2026-07-18 — ruled now, not deferred:**
+changing this after Phase B ships would break the `emitir` RPC's contract,
+so it is decided as part of this ratification rather than left open.
 
 **(g) Cancellation with partial receipts — what happens to the received
 quantity in `saldo_fios`?**
@@ -527,6 +569,12 @@ received kg as-is; cancellation only stops *further* registration
 needs explicit confirmation from whoever owns the `saldo_fios` write path
 before Phase C ships, since this spec does not audit that table's own
 triggers.
+**Ratified as recommended, 2026-07-18** — ledger entries never reverse;
+`saldo_fios` reflects physically received kg regardless of administrative
+state (the physical world does not un-happen because paperwork changed).
+The still-open `saldo_fios` write-path confirmation is folded into the
+Phase C order as an explicit verification step; the architect pre-confirms
+the principle here and retains the ruling on that confirmation's outcome.
 
 ---
 
@@ -534,9 +582,9 @@ triggers.
 
 | Phase | Content | Blast radius |
 |---|---|---|
-| **A — Schema + config** | §3.1-§3.6: additive columns (all defaulted/nullable), two new tables (`ordem_compra_fio_lancamentos`, `ordem_compra_eventos`), one new singleton (`ordem_compra_config`, seeded `exige_aceite=false`), one-time legacy-marking backfill (§3.6). No trigger wired yet (§3.2's trigger ships in Phase C, not A — see below), no RPC, no UI, no JS change. | Schema-only. Zero behavior change: `registrarRecebimentoOrdemFio` keeps writing the old `status`/`kg_recebido` columns exactly as today; every existing reader is unaffected. Safe to ship and sit unused. |
-| **B — Panel visibility + administrative writes** | `emitir_ordem_compra_fio`/`cancelar_ordem_compra_fio` RPCs (§4); `op-persistir.js` continues generating rows unchanged (they land `rascunho` by Phase A's column default — no code change needed there); a minimal precondition guard added to `registrar_recebimento_ordem_compra_fio` (new RPC, still writing the old aggregate columns internally, not yet ledger-based) so an unemitted order cannot receive; UI badges + Emitir/Cancelar actions in the `insumos` sub-panel (§6). | **Behavior change, contained:** newly opened OPs' yarn orders now require an explicit "Emitir" before they are receivable — this is the ratified behavior (Rule 5), but it is a real workflow change for whoever registers receipts today, and must be called out to the architect/operations before shipping, not just to code review. No change to already-emitted legacy rows (§3.6 marks them `emitida` already). |
-| **C — Receipt rework via the single shared writer** | `ordem_compra_fio_lancamentos` trigger (§3.2) goes live; `registrar_recebimento_ordem_compra_fio`'s internal implementation swaps from direct aggregate-column writes to ledger inserts (external signature unchanged from Phase B — callers do not change); `js/screens/op-writes.js`'s `registrarRecebimentoOrdemFio` becomes a thin client-side wrapper calling the RPC instead of `.update()` directly. | Additive schema (new table + trigger) + one internal JS rewrite behind an unchanged call signature. No caller (`op-nova.js`, `pedido-detail-events.js`) needs to change. Legacy rows (§3.3) are unaffected until/unless a new entry is registered against one. |
+| **A — Schema + config** | §3.1-§3.6: additive columns (all defaulted/nullable), two new tables (`ordem_compra_fio_lancamentos`, `ordem_compra_eventos`), one new singleton (`ordem_compra_config`, seeded `exige_aceite=false`), one-time legacy-marking backfill (§3.6). No trigger wired yet (§3.2's trigger ships in Phase C, not A — see below), no RPC, no UI, no JS change. **Binding requirement (ratified 2026-07-18, gap 1):** the `ALTER TABLE` and the §3.6 legacy backfill `UPDATE` MUST execute in one migration file, one transaction — no window may exist for a live draft row (created between the two statements) to be mislabeled `emitida`/legacy by the backfill's `WHERE status_administrativo = 'rascunho'` clause. | Schema-only. Zero behavior change: `registrarRecebimentoOrdemFio` keeps writing the old `status`/`kg_recebido` columns exactly as today; every existing reader is unaffected. Safe to ship and sit unused. |
+| **B — Panel visibility + administrative writes** | `emitir_ordem_compra_fio`/`cancelar_ordem_compra_fio` RPCs (§4); `op-persistir.js` continues generating rows unchanged (they land `rascunho` by Phase A's column default — no code change needed there); a minimal precondition guard added to `registrar_recebimento_ordem_compra_fio` (new RPC, still writing the old aggregate columns internally, not yet ledger-based) so an unemitted order cannot receive; UI badges + Emitir/Cancelar actions in the `insumos` sub-panel (§6). **Binding requirement (ratified 2026-07-18, gap 2):** this order MUST also revoke direct `UPDATE` on `kg_recebido`/`status_recebimento`/`status_administrativo`/`status_aceite` from `authenticated` — the four RPCs in §4 (`SECURITY DEFINER`) become the only writers of these columns. "Single shared writer" must be an **enforced invariant**, not a convention, per the `ANON-GRANT-DEFENSE-IN-DEPTH` lesson. | **Behavior change, contained:** newly opened OPs' yarn orders now require an explicit "Emitir" before they are receivable — this is the ratified behavior (Rule 5), but it is a real workflow change for whoever registers receipts today, and must be called out to the architect/operations before shipping, not just to code review. No change to already-emitted legacy rows (§3.6 marks them `emitida` already). |
+| **C — Receipt rework via the single shared writer** | `ordem_compra_fio_lancamentos` trigger (§3.2) goes live; `registrar_recebimento_ordem_compra_fio`'s internal implementation swaps from direct aggregate-column writes to ledger inserts (external signature unchanged from Phase B — callers do not change); `js/screens/op-writes.js`'s `registrarRecebimentoOrdemFio` becomes a thin client-side wrapper calling the RPC instead of `.update()` directly. Carries forward Phase B's gap-2 RLS-revoke requirement if not already applied. **Includes, per decision (g)'s ratification:** an explicit verification step confirming the `saldo_fios`/`saldo_fios_op` write path's behavior on cancellation-with-partial-receipts matches the ratified principle (ledger entries never reverse). | Additive schema (new table + trigger) + one internal JS rewrite behind an unchanged call signature. No caller (`op-nova.js`, `pedido-detail-events.js`) needs to change. Legacy rows (§3.3) are unaffected until/unless a new entry is registered against one. |
 | **D — Gate activation** | Wires §5's two gate queries into the "Iniciar produção" path (`op-recalculo.js:108-163`), per the server-side-enforcement note in §5. | **Behavior change:** OPs/pedidos with insufficient received yarn can no longer start production, where today the client-side flow does not check this at all. Requires explicit before/after operational confirmation (production-flow-affecting) — recommended as its own authorization, not bundled with C. |
 | **E — Dormant acceptance structure** | No new code shipped. This phase is a checkpoint: confirms `status_aceite`/`aceite_exigido_na_emissao`/`ordem_compra_eventos` are exercised end-to-end with `exige_aceite=false` (the default), so the acceptance dimension is proven dormant-but-correct before any future track turns the config on or builds supplier-side acceptance (open decision (a)). | None — verification-only, read-only against Phases A-D's already-shipped state. |
 
@@ -569,7 +617,58 @@ document authorizes none of them by itself.
 - Does not create any table, column, RPC, trigger, or RLS policy.
 - Does not touch staging or production Supabase.
 - Does not modify any `.js` file.
-- Does not rule on §7's open decisions — it recommends; the architect
-  ratifies.
-- Does not authorize Phase A (or any phase). Ratification of the model is
-  a separate act from authorizing implementation.
+- Does not authorize Phase A (or any phase). Ratification of the model
+  (§11) is a separate act from authorizing implementation — **Phase A
+  remains `NOT AUTHORIZED`, pending its own order.**
+
+---
+
+## 11. Ratification record
+
+**`ORDEM-COMPRA-LIFECYCLE-SPEC-RATIFICATION-R1` — 2026-07-18.** The
+architect ratified this spec following an independent read-only
+architecture review (same date) that validated it against the ratified
+model and flagged one confirmed defect and two implementation gaps.
+
+- **Finding 1 (confirmed defect) — corrected.** The receipt precondition
+  in §4 and §6 read `status_aceite != 'pendente'`, which also admits
+  `rejeitada` — a rejected order could have registered a receipt,
+  contradicting the ratified rule that receipt is blocked until `aceita`.
+  Corrected in both places to `status_aceite IN ('nao_aplicavel',
+  'aceita')`; §7(e)'s citation corrected to match.
+- **Decisions (a)-(g) — all ratified**, per the annotations inline in §7:
+  (a) deferral confirmed; (b) ratified YES, unconditionally (acknowledged
+  hard dependency: 100% admin-authored acceptance until (a) ships is
+  correct, not a smell); (c) ratified as recommended (`aceite_override_admin`
+  event, mandatory `aceite_motivo`); (d) ratified as recommended (no undo
+  path); (e) ratified as recommended, contingent on Finding 1 (satisfied);
+  (f) ratified as recommended, **ruled now rather than deferred** — emission
+  locking quantities cannot change after Phase B ships without breaking the
+  `emitir` RPC contract; (g) ratified as recommended — ledger entries never
+  reverse, with the `saldo_fios` write-path confirmation folded into the
+  Phase C order as an explicit verification step.
+- **Two new gaps, both accepted and folded forward as binding requirements**
+  (§8's Phase A and Phase B rows amended accordingly):
+  1. Phase A's migration must apply the `ALTER TABLE` and the legacy
+     backfill in one transaction, closing the window for a live draft to
+     be mislabeled.
+  2. Phase B/C's migration must revoke direct `UPDATE` on the four
+     dimension-bearing columns from `authenticated`, making the
+     `SECURITY DEFINER` RPCs the sole writers — "single shared writer" as
+     an enforced invariant, not a convention.
+- **Phantom-audit governance item — not resolved by this ratification.**
+  The architect's hard stop on reconstructing `PURCHASE-ORDER-FOUNDATION-
+  AUDIT` without source was confirmed correct. The architect is retrieving
+  the original source for verbatim persistence as
+  `docs/reports/PURCHASE_ORDER_FOUNDATION_AUDIT_R1_2026-07-18.md`; if
+  reported unrecoverable, the fallback is an honest citation correction
+  (spec banner + `PROJECT_STATE.md` cite the architect's in-chat
+  authorization directly, no separate artifact claimed). **Neither branch
+  has executed yet — this remains open,** tracked in `PROJECT_STATE.md`
+  and the ledger, separate from the decisions ratified above.
+- **What ratification does and does not authorize:** the model, Finding 1's
+  correction, and decisions (a)-(g) are now `RATIFIED` — this is the
+  authoritative reference for any future phase order. It does **not**
+  authorize Phase A or any other phase; each remains `NOT AUTHORIZED`
+  pending its own order, per this project's standing rule that phases do
+  not chain automatically.

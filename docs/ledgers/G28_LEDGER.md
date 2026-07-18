@@ -1953,3 +1953,97 @@ risco residual e próxima fase indicada no fechamento.
   `docs/architecture/ORDEM_COMPRA_LIFECYCLE_SPEC_PROPOSED.md`, including a ruling on
   open decisions (a)-(g); then Phase `A` (schema + config), its own order, per the
   phasing in §8 of the spec.
+
+## 2026-07-18 — ORDEM-COMPRA-LIFECYCLE-SPEC-RATIFICATION-R1 — RATIFIED
+
+- **Gate:** docs-only phase. Two-step order: (1) an independent read-only
+  architecture review (Sonnet 5 / high effort) of commit `0859124`
+  ("Add purchase order lifecycle spec") against the ratified model; (2) the
+  architect's explicit ruling on the review's findings ("ARCHITECT
+  RATIFICATION — ORDEM_COMPRA_LIFECYCLE_SPEC"). No code, schema, staging, or
+  production action authorized or taken.
+- **Front:** `ORDEM-COMPRA-LIFECYCLE` track (opened `ORDEM-COMPRA-SPEC`,
+  2026-07-18).
+- **Review findings (step 1):** validated the spec against all ten ratified
+  model points (§1 of the spec) — nine matched; one **confirmed defect**
+  (Finding 1): the receipt precondition in §4/§6 read
+  `status_aceite != 'pendente'`, which is also true for `rejeitada` — a
+  rejected purchase order would have passed the precondition and been able
+  to register a receipt, contradicting the ratified rule that receipt is
+  blocked until `aceita`. Also surfaced, unprompted: (i) `ordem_compra_eventos`
+  payload completeness (minor, non-blocking) and (ii) an RLS-enforcement gap
+  — nothing in the original spec revoked direct `UPDATE` on the four
+  dimension-bearing columns from `authenticated`, so "single shared writer"
+  was a convention, not an enforced invariant (same shape as this project's
+  own registered `ANON-GRANT-DEFENSE-IN-DEPTH` debt). Confirmed: all five
+  phases (A-E) independently shippable (with a one-transaction caveat on
+  Phase A's backfill), Phase C preserves the single shared writer's external
+  signature, Phase D's gate correctly relies on the persisted per-order
+  policy snapshot rather than the live config (by construction, since the
+  receipt-registration writer is the only path `kg_recebido` can move
+  through). Verified exact push target: commit
+  `0859124060994c4bb29a38a742363d52aaa258e7` on `production`
+  (`https://github.com/inttexsystem/inttracker.git`), branch `main`.
+  **Re-confirmed, exhaustively, that no `PURCHASE-ORDER-FOUNDATION-AUDIT`
+  document exists** anywhere in this repository, any branch, or this ledger
+  — the executor hard-stopped rather than fabricate a reconstruction when
+  first asked to persist it verbatim, per the architect's own instruction
+  ("if the exact source is unavailable, hard stop and request it").
+- **Architect ruling (step 2), applied to the spec this commit:**
+  - **Finding 1 — `CONFIRMED DEFECT`, corrected.** §4 and §6 of
+    `docs/architecture/ORDEM_COMPRA_LIFECYCLE_SPEC_PROPOSED.md` corrected to
+    `status_aceite IN ('nao_aplicavel', 'aceita')`; §7(e)'s citation
+    corrected to match.
+  - **Decisions (a)-(g) — all ratified**, annotated inline in the spec's §7,
+    summarized in its new §11: (a) deferral confirmed, future precedent
+    recorded as guidance only; (b) ratified **YES, unconditionally** —
+    100%-admin-authored acceptance until supplier self-service ships is
+    correct, not a smell; (c) ratified as recommended (`aceite_override_admin`
+    event, mandatory `aceite_motivo`); (d) ratified as recommended (no undo
+    path, cancel + new draft); (e) ratified as recommended, contingent on
+    Finding 1 (satisfied); (f) ratified as recommended, **decided now rather
+    than deferred** — emission locks `kg_pedido`, since changing this after
+    Phase B ships would break the `emitir` RPC's contract; (g) ratified as
+    recommended — ledger entries never reverse, `saldo_fios` reflects
+    physically received kg regardless of administrative state, with the
+    `saldo_fios` write-path confirmation folded into the Phase C order as an
+    explicit verification step.
+  - **Two new implementation gaps, both accepted, folded into §8's phasing
+    table as binding requirements:** (1) Phase A's migration must apply the
+    `ALTER TABLE` and the legacy backfill in one transaction (closing the
+    window for a live draft to be mislabeled); (2) Phase B/C's migration must
+    revoke direct `UPDATE` on `kg_recebido`/`status_recebimento`/
+    `status_administrativo`/`status_aceite` from `authenticated`, making the
+    four `SECURITY DEFINER` RPCs the sole writers.
+  - **Phantom-audit governance item — NOT resolved by this ratification,
+    explicitly carried forward.** The architect confirmed the prior hard stop
+    was correct and is retrieving the original source for verbatim
+    persistence as `docs/reports/PURCHASE_ORDER_FOUNDATION_AUDIT_R1_2026-07-18.md`;
+    if reported unrecoverable, the fallback is an honest citation correction
+    (spec banner + `PROJECT_STATE.md` cite the architect's in-chat
+    authorization directly). Neither branch has executed yet.
+- **Status change:** `docs/architecture/ORDEM_COMPRA_LIFECYCLE_SPEC_PROPOSED.md`
+  moves from `PROPOSED` to `RATIFIED` (filename unchanged — same convention
+  as `CAMADA2_USUARIOS_SPEC_PROPOSED.md`, which also kept its `_PROPOSED`
+  suffix after full delivery). **Ratification authorizes no implementation.**
+  Phase `A` (and every other phase) remains `NOT AUTHORIZED`, pending its own
+  order.
+- **Record (this commit):** `PROJECT_STATE.md` (`ORDEM-COMPRA-LIFECYCLE`
+  track block updated to `RATIFIED`, phases still `NOT AUTHORIZED`;
+  `NOT AUTHORIZED` candidate fronts line updated; Closed-phases row added;
+  Mandatory links line updated); this ledger entry;
+  `docs/architecture/ORDEM_COMPRA_LIFECYCLE_SPEC_PROPOSED.md` (status banner,
+  §4/§6/§7(e) correction, §7(a)-(g) ratification annotations, §8 binding
+  requirements, new §11 ratification record, §10 updated).
+- **STRUCTURAL POLICY COMPLIANCE:** `§14` (single scope) — documentation
+  only, no code/schema/Supabase action; `§15` (Git) — selective staging by
+  literal path, single commit, push authorized by this order; `§19` —
+  English throughout. No staging/production access; no schema, RPC, or
+  frontend file created or modified.
+- **Push:** authorized by this order — single commit "Ratify purchase order
+  lifecycle spec".
+- **Next authorizable action:** Phase `A` (schema + config), its own order,
+  per the ratified phasing in §8 of the spec — subject to the two binding
+  requirements above. Separately: resolution of the phantom-audit governance
+  item (source retrieval or the fallback citation correction), whenever the
+  architect reports which branch applies.

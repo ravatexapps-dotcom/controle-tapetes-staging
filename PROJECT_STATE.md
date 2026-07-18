@@ -30,19 +30,41 @@ are in `docs/ledgers/G28_LEDGER.md`. HEAD/working tree/divergence: consult Git d
   the Ingestor's Google OAuth token is expired, so no documents are entering the live
   system.** See the `POST-LAUNCH DEBT REGISTER`. **Standing reminder: flip the Supabase
   MCP back to read-only** (still management-scoped/write-capable from `M2`/`M3`).
-- **`ORDEM-COMPRA-LIFECYCLE` track — `OPENED` (2026-07-18), docs-only, per the accepted
-  `PURCHASE-ORDER-FOUNDATION-AUDIT`.** Spec delivered:
-  `docs/architecture/ORDEM_COMPRA_LIFECYCLE_SPEC_PROPOSED.md` — `PROPOSED`, pending
-  architect ratification (three-dimension model: administrative cycle
-  rascunho/emitida/cancelada, acceptance nao_aplicavel/pendente/aceita/rejeitada,
-  receipt derived from a new physical-registration ledger; global config
-  `ordem_compra_exige_aceite` with a freeze-at-emission rule; production-gate query
-  definition for "Iniciar produção"; 7 open architect decisions (a)-(g), each with a
-  recommendation). **No implementation authorized.** Phasing proposed (A schema+config
-  → B panel visibility → C receipt rework via the single shared writer → D gate
-  activation → E dormant acceptance checkpoint), each independently authorizable —
-  **all phases `NOT AUTHORIZED`** pending the architect's ratification of the spec and
-  a separate order per phase.
+- **`ORDEM-COMPRA-LIFECYCLE` track — spec `RATIFIED` (`ORDEM-COMPRA-LIFECYCLE-
+  SPEC-RATIFICATION-R1`, 2026-07-18), docs-only. All phases still `NOT
+  AUTHORIZED`.** `docs/architecture/ORDEM_COMPRA_LIFECYCLE_SPEC_PROPOSED.md`
+  (three-dimension model: administrative cycle rascunho/emitida/cancelada,
+  acceptance nao_aplicavel/pendente/aceita/rejeitada, receipt derived from a
+  new physical-registration ledger; global config `ordem_compra_exige_aceite`
+  with a freeze-at-emission rule; production-gate query definition for
+  "Iniciar produção") was ratified following an independent read-only
+  architecture review that found **one confirmed defect (Finding 1,
+  corrected)** — the receipt precondition admitted a `rejeitada` order,
+  contradicting the ratified "blocked until `aceita`" rule; corrected to
+  `status_aceite IN ('nao_aplicavel','aceita')` in the spec's §4/§6/§7(e).
+  **All 7 open decisions (a)-(g) ratified** (full detail in the spec's §11):
+  notably (b) admin-accepts-on-supplier's-behalf ratified unconditionally
+  (hard dependency until supplier self-service ships), and (f)
+  emission-locks-quantities ratified now rather than deferred (changing it
+  after Phase B would break the `emitir` RPC contract). **Two new
+  implementation gaps accepted and folded into the phasing as binding
+  requirements:** Phase A's migration must apply schema + legacy backfill in
+  one transaction; Phase B/C must revoke direct `UPDATE` on the four
+  dimension-bearing columns from `authenticated` so the `SECURITY DEFINER`
+  RPCs are the sole writers (enforced invariant, not convention — the
+  `ANON-GRANT-DEFENSE-IN-DEPTH` lesson). **No implementation authorized by
+  ratification itself.** Phasing (A schema+config → B panel visibility → C
+  receipt rework via the single shared writer → D gate activation → E
+  dormant acceptance checkpoint) remains each independently authorizable —
+  **all phases `NOT AUTHORIZED`**, pending a separate order per phase.
+  **Open governance item, unresolved:** no `PURCHASE-ORDER-FOUNDATION-AUDIT`
+  document exists anywhere in this repo or its git history (confirmed by
+  exhaustive search); the architect is retrieving the original source for
+  verbatim persistence as
+  `docs/reports/PURCHASE_ORDER_FOUNDATION_AUDIT_R1_2026-07-18.md`, or, if
+  unrecoverable, the citation will be corrected to name the architect's
+  in-chat authorization directly. Tracked separately from the ratified
+  decisions above.
 - **Open architect decisions:** `NONE` blocking. `G28-CAMADA-2` remains `TRACK
   COMPLETE / CLOSED / ACCEPTED` (full `A1-A7` + password policy). Binding launch
   constraints (key regime, launch user model, standing pre-launch items) recorded
@@ -392,8 +414,8 @@ architect's discretion.
   `G28-D` publication (largely realized by the `M0`-`M10` cutover);
   `DEPLOYMENT_MAPPING_AND_PRODUCTION_MIGRATION_PROCEDURE` (superseded by `M0`-`M10`);
   `DELETE-PROD-GUARD-A`; `DELETE-AUDIT-LOG-A`; `G28-CAMADA-4`; `A4.3` (email/SMTP
-  invites); `ORDEM-COMPRA-LIFECYCLE` Phases `A`-`E` (spec `PROPOSED`, pending
-  ratification — see `docs/architecture/ORDEM_COMPRA_LIFECYCLE_SPEC_PROPOSED.md`).
+  invites); `ORDEM-COMPRA-LIFECYCLE` Phases `A`-`E` (spec `RATIFIED`, phases still
+  `NOT AUTHORIZED` — see `docs/architecture/ORDEM_COMPRA_LIFECYCLE_SPEC_PROPOSED.md`).
   Ranked items also appear in the `POST-LAUNCH DEBT REGISTER` above.
 - **`CAMADA3-TRIGGER-SELECTION` — `NOT AUTHORIZED` (`BK3`; register #3):** the
   automated-backup scheduler; mechanism resolved — **GitHub Actions, not Vercel cron**
@@ -541,7 +563,8 @@ technical commits; documentation-only phases show `(docs)`. Consult HEAD with
 
 | Phase | Status | Date | Commit(s) |
 |---|---|---|---|
-| Purchase Order Lifecycle Spec — `ORDEM-COMPRA-SPEC` (docs-only, spec `PROPOSED`, phases `A`-`E` `NOT AUTHORIZED`) | `SPEC DELIVERED / PENDING RATIFICATION` | 2026-07-18 | (docs: "Add purchase order lifecycle spec") |
+| Purchase Order Lifecycle Spec Ratification — `ORDEM-COMPRA-LIFECYCLE-SPEC-RATIFICATION-R1` (Finding 1 corrected, decisions a-g ratified, phases `A`-`E` still `NOT AUTHORIZED`) | `RATIFIED` | 2026-07-18 | (docs: "Ratify purchase order lifecycle spec") |
+| Purchase Order Lifecycle Spec — `ORDEM-COMPRA-SPEC` (docs-only, spec delivered `PROPOSED`) | `SPEC DELIVERED` | 2026-07-18 | (docs: "Add purchase order lifecycle spec") |
 | Migration Track Closeout — `M10` cutover; `G28-MIGRATION-TRACK` COMPLETE, backlog freeze LIFTED | `CLOSED / ACCEPTED` | 2026-07-18 | (docs: "Close migration track and lift backlog freeze") |
 | Cutover — `M10` (live at `inttracker-jade.vercel.app` against `gqmpsxkxynrjvidfmojk`) | `CLOSED / ACCEPTED` | 2026-07-18 | (architect out-of-band; recorded at closeout) |
 | Vercel Wiring — `M6` (static deploy live; Root Directory defect cleared) | `CLOSED / ACCEPTED` | 2026-07-18 | `5416128`, `aa77612` |
@@ -584,7 +607,7 @@ technical commits; documentation-only phases show `(docs)`. Consult HEAD with
 
 ## Mandatory links
 
-- Purchase order lifecycle spec (`PROPOSED`, pending ratification):
+- Purchase order lifecycle spec (`RATIFIED`, phases `NOT AUTHORIZED`):
   `docs/architecture/ORDEM_COMPRA_LIFECYCLE_SPEC_PROPOSED.md`
 - Documentation governance model: `docs/governance/DOCUMENTATION_MODEL.md`
 - Documentation authority arbiter: `docs/DOCUMENTATION_INDEX.md`
