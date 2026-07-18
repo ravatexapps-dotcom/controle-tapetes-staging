@@ -857,18 +857,48 @@
       return Object.assign({}, t, { op: op || t.op, action: { mode: 'enabled' } });
     }
 
-    function buildTecAcceptanceProposalBlock(op, options) {
+    // ---- YARN-BUTTONS-FINAL-CONTRACT: distribuição da OP de Tecelagem ----
+    // O painel do Pedido consome os MESMOS builders compartilhados
+    // (js/screens/op-distribuicao-ui.js) que a tela da OP — zero duplicação.
+    // buildTecDistribuicaoBlock = sliders + [Manter pedido, Salvar
+    // distribuição] (save-only). buildTecIniciarButton = ação primária
+    // "Iniciar produção" (ÚNICO início de produção). Sem "Aceitar proposta".
+    function tecOpContext(op) {
+      var parametrosByLargura = {};
+      (state.parametrosLargura || []).forEach(function (p) {
+        if (!p) return;
+        parametrosByLargura[Number(p.largura)] = p;
+        if (typeof window.larguraKey === 'function') parametrosByLargura[window.larguraKey(p.largura)] = p;
+      });
+      return {
+        op: op,
+        opItens: op.op_itens || [],
+        ordens: (state.ordensFio || []).filter(function (o) { return o.op_id === op.id; }),
+        modelosById: buildModelosForEntregaForm(),
+        parametrosByLargura: parametrosByLargura,
+      };
+    }
+
+    function afterTecSuccess(op, options) {
+      return async function () {
+        if (options && typeof options.onAfterSuccess === 'function') { await options.onAfterSuccess(op); return; }
+        await reload();
+        render();
+      };
+    }
+
+    // Bloco de distribuição (save-only) — builder compartilhado.
+    function buildTecDistribuicaoBlock(op, options) {
       options = options || {};
       if (!op || !Array.isArray(op.op_itens) || !op.op_itens.length) return null;
-
+      var api = window.RAVATEX_SCREENS && window.RAVATEX_SCREENS.opDistribuicao;
+      if (!api || typeof api.buildDistribuicaoBlock !== 'function') return null;
       var ordens = (state.ordensFio || []).filter(function (o) { return o.op_id === op.id; });
       var pendentes = ordens.filter(function (o) { return o.status === 'pendente'; });
       var todasRecebidas = ordens.length > 0 && pendentes.length === 0;
       if (!todasRecebidas) {
         return window.el('div', {
-          style: (options.compact
-            ? 'display:flex;align-items:flex-start;gap:8px;background:#fff9ee;border:1px solid #fbe8c6;border-radius:4px;padding:10px 12px;margin-top:10px;'
-            : 'display:flex;align-items:flex-start;gap:8px;background:#fff9ee;border:1px solid #fbe8c6;border-radius:4px;padding:10px 12px;margin-top:12px;'),
+          style: 'display:flex;align-items:flex-start;gap:8px;background:#fff9ee;border:1px solid #fbe8c6;border-radius:4px;padding:10px 12px;margin-top:' + (options.compact ? '10px' : '12px') + ';',
         },
           ns.svgEl(ns.SVG_INFO),
           window.el('div', { style: 'font-size:12.5px;color:#8a5a15;line-height:1.4;' },
@@ -877,276 +907,42 @@
               : 'Aguardando ordens de fio para calcular a proposta de ajuste.')
         );
       }
-      var modelosById = buildModelosForEntregaForm();
-      var parametrosByLargura = {};
-      (state.parametrosLargura || []).forEach(function (p) {
-        if (!p) return;
-        parametrosByLargura[Number(p.largura)] = p;
-        if (typeof window.larguraKey === 'function') {
-          parametrosByLargura[window.larguraKey(p.largura)] = p;
-        }
+      var c = tecOpContext(op);
+      return api.buildDistribuicaoBlock({
+        op: c.op, opItens: c.opItens, ordens: c.ordens,
+        modelosById: c.modelosById, parametrosByLargura: c.parametrosByLargura,
+        variant: 'compact',
+        onSaved: afterTecSuccess(op, options),
       });
-      var fmtMetros = typeof window.fmtMetros === 'function' ? window.fmtMetros : ns.fmtMetros;
-      var fmtKg = typeof window.fmtKg === 'function' ? window.fmtKg : ns.fmtKg;
-      var rotuloModelo = typeof window.rotuloModelo === 'function'
-        ? window.rotuloModelo
-        : function (modelo) { return modelo && modelo.nome ? modelo.nome : 'Modelo'; };
-      var itensCalc = op.op_itens.map(function (opItem) {
-        return {
-          op_item_id: opItem.id,
-          modelo_id: opItem.modelo_id,
-          metros_pedidos: ns.toFiniteNumber(opItem.metros_pedidos),
-          metros_ajustados: ns.round2(ns.toFiniteNumber(opItem.metros_ajustados || opItem.metros_pedidos)),
-        };
+    }
+
+    // Botão "Iniciar produção" (superfície de transição) — compartilhado.
+    function buildTecIniciarButton(op, options) {
+      options = options || {};
+      if (!op || !Array.isArray(op.op_itens) || !op.op_itens.length) return null;
+      var api = window.RAVATEX_SCREENS && window.RAVATEX_SCREENS.opDistribuicao;
+      if (!api || typeof api.buildIniciarProducaoButton !== 'function') return null;
+      var c = tecOpContext(op);
+      var styleEnabled = 'display:inline-flex;align-items:center;justify-content:center;background:#2563eb;color:#fff;border:none;border-radius:4px;padding:7px 12px;font-size:12.5px;font-weight:700;font-family:inherit;cursor:pointer;white-space:nowrap;';
+      var styleDisabled = 'display:inline-flex;align-items:center;justify-content:center;background:#93b7f5;color:#fff;border:none;border-radius:4px;padding:7px 12px;font-size:12.5px;font-weight:700;font-family:inherit;cursor:not-allowed;white-space:nowrap;';
+      return api.buildIniciarProducaoButton({
+        op: c.op, opItens: c.opItens, ordens: c.ordens,
+        modelosById: c.modelosById, parametrosByLargura: c.parametrosByLargura,
+        styleEnabled: styleEnabled, styleDisabled: styleDisabled,
+        onIniciado: afterTecSuccess(op, options),
       });
-      var resultado = typeof window.recalcularOP === 'function'
-        ? window.recalcularOP(itensCalc, ordens)
-        : {
-            fator: 1,
-            itens: itensCalc.map(function (item) {
-              return {
-                op_item_id: item.op_item_id,
-                metros_pedidos: item.metros_pedidos,
-                metros_ajustados: item.metros_ajustados || item.metros_pedidos,
-              };
-            }),
-            sobras: [],
-          };
-      var metrosOverride = {};
-      (resultado.itens || []).forEach(function (item) {
-        metrosOverride[item.op_item_id] = ns.round2(ns.toFiniteNumber(item.metros_ajustados));
-      });
-      // Snapshot do default (proporcional). "Aceitar proposta" so fica ativo
-      // quando o usuario move algum slider para um valor divergente deste
-      // default. Voltar a proposta proporcional ou restaurar manualmente
-      // re-desabilita o botao.
-      var defaultMetrosOverride = {};
-      Object.keys(metrosOverride).forEach(function (opItemId) {
-        defaultMetrosOverride[opItemId] = metrosOverride[opItemId];
-      });
+    }
 
-      var wrap = window.el('div', {
-        style: (options.compact
-          ? 'border:1px solid #d0e0fb;border-radius:4px;background:#f8fbff;padding:12px 14px;margin-top:10px;'
-          : 'border-top:1px solid #eceef1;padding-top:14px;margin-top:12px;'),
-      });
-
-      wrap.appendChild(window.el('div', {
-        style: 'font-size:12px;font-weight:800;color:#2563eb;letter-spacing:.03em;text-transform:uppercase;margin-bottom:6px;',
-      }, 'Proposta de aceite'));
-      wrap.appendChild(window.el('div', {
-        style: 'font-size:12.5px;color:#5b6472;line-height:1.45;margin-bottom:10px;',
-      }, 'Ajuste os sliders como na tela da OP. O aceite usa aplicarRecalculoOP, sem write paralelo no Pedido.'));
-      wrap.appendChild(window.el('div', {
-        style: 'font-size:12.5px;color:#3f4757;margin-bottom:12px;',
-      },
-        window.el('strong', {}, 'Fator proporcional: '),
-        ns.toFiniteNumber(resultado.fator).toFixed(2).replace('.', ',')
-      ));
-
-      var sliders = window.el('div', {});
-      var itemRowState = {};
-
-      function trackBg(slider) {
-        var max = Number(slider.max) || 1;
-        var pct = Math.max(0, Math.min(100, (Number(slider.value) / max) * 100));
-        return '-webkit-appearance:none;appearance:none;width:100%;height:4px;border-radius:99px;background:linear-gradient(to right,#2563eb ' + pct + '%,#d8dce2 ' + pct + '%);outline:none;border:none;cursor:pointer;';
-      }
-
-      itensCalc.forEach(function (item) {
-        var modelo = modelosById[item.modelo_id] || state.modelosById[item.modelo_id] || {};
-        var max = item.metros_pedidos;
-        if (typeof window.maxMetrosItem === 'function') {
-          try {
-            max = Math.max(window.maxMetrosItem(item, modelosById, parametrosByLargura, ordens), item.metros_pedidos);
-          } catch (e) {
-            max = item.metros_pedidos;
-          }
-        }
-        var slider = window.el('input', { type: 'range', min: '0', max: String(max), step: '1' });
-        slider.value = String(Math.round(metrosOverride[item.op_item_id] || item.metros_pedidos || 0));
-        slider.setAttribute('style', trackBg(slider));
-        var valorLabel = window.el('span', { style: 'font-size:13px;font-weight:800;color:#16203a;white-space:nowrap;' }, fmtMetros(Number(slider.value)));
-        slider.addEventListener('input', function () {
-          metrosOverride[item.op_item_id] = Number(slider.value);
-          valorLabel.textContent = fmtMetros(Number(slider.value));
-          slider.setAttribute('style', trackBg(slider));
-          recompute();
-        });
-        sliders.appendChild(window.el('div', { style: 'margin-bottom:14px;' },
-          window.el('div', { style: 'display:flex;justify-content:space-between;gap:10px;align-items:baseline;margin-bottom:6px;' },
-            window.el('span', { style: 'font-size:12.5px;font-weight:700;color:#16203a;line-height:1.35;' },
-              rotuloModelo(modelo) + ' - pedido ' + fmtMetros(item.metros_pedidos)),
-            valorLabel),
-          slider,
-          window.el('div', { style: 'display:flex;justify-content:space-between;gap:10px;margin-top:4px;' },
-            window.el('span', { style: 'font-size:11px;color:#aab2bf;' }, '0 m'),
-            window.el('span', { style: 'font-size:11px;color:#aab2bf;text-align:center;' }, 'max individual: ' + fmtMetros(max)))
-        ));
-        itemRowState[item.op_item_id] = { slider: slider, valorLabel: valorLabel };
-      });
-      wrap.appendChild(sliders);
-
-      var consumoBox = window.el('div', { style: 'padding-bottom:10px;' });
-      wrap.appendChild(consumoBox);
-
-      var btnReset = window.el('button', {
-        type: 'button',
-        style: 'display:inline-flex;align-items:center;gap:6px;font-size:12.5px;font-weight:700;color:#2563eb;background:none;border:none;padding:0;margin-bottom:10px;cursor:pointer;font-family:inherit;',
-        onclick: function () {
-          (resultado.itens || []).forEach(function (item) {
-            var v = Math.round(ns.toFiniteNumber(item.metros_ajustados));
-            metrosOverride[item.op_item_id] = v;
-            var row = itemRowState[item.op_item_id];
-            if (row) {
-              row.slider.value = String(v);
-              row.valorLabel.textContent = fmtMetros(v);
-              row.slider.setAttribute('style', trackBg(row.slider));
-            }
-          });
-          recompute();
-        },
-      }, 'Voltar a proposta proporcional');
-      var btnManter = window.el('button', {
-        type: 'button',
-        style: 'background:#fff;color:#3f4757;border:1px solid #d8dce2;border-radius:4px;padding:8px 14px;font-weight:700;font-size:12.5px;font-family:inherit;cursor:pointer;',
-        onclick: function (event) { return aceitarProposta('manter', event && event.currentTarget); },
-      }, 'Manter pedido');
-      var btnAceitar = window.el('button', {
-        type: 'button',
-        onclick: function (event) { return aceitarProposta('aceitar', event && event.currentTarget); },
-      }, 'Aceitar proposta');
-
-      wrap.appendChild(window.el('div', { style: 'border-top:1px solid #eceef1;padding-top:12px;' },
-        btnReset,
-        window.el('div', { style: 'display:flex;align-items:center;gap:8px;justify-content:flex-end;flex-wrap:wrap;' },
-          btnManter,
-          btnAceitar)
-      ));
-
-      function itensComMetrosAtuais() {
-        return itensCalc.map(function (item) {
-          return {
-            op_item_id: item.op_item_id,
-            modelo_id: item.modelo_id,
-            metros: metrosOverride[item.op_item_id] || 0,
-          };
-        });
-      }
-
-      function currentConsumos() {
-        if (typeof window.consumoPorOrdem !== 'function' || !ordens.length) return [];
-        try {
-          return window.consumoPorOrdem(itensComMetrosAtuais(), ordens, modelosById, parametrosByLargura);
-        } catch (e) {
-          return [];
-        }
-      }
-
-      function propostaDivergente() {
-        var keys = Object.keys(metrosOverride);
-        for (var i = 0; i < keys.length; i++) {
-          var opItemId = keys[i];
-          var current = ns.round2(ns.toFiniteNumber(metrosOverride[opItemId]));
-          var def = ns.round2(ns.toFiniteNumber(defaultMetrosOverride[opItemId]));
-          if (current !== def) return true;
-        }
-        return false;
-      }
-
-      function recompute() {
-        var consumos = currentConsumos();
-        var algumExcede = consumos.some(function (row) { return row.sobra < 0; });
-        if (consumos.length) {
-          consumoBox.replaceChildren(window.el('div', {
-            style: 'font-size:10.5px;font-weight:800;color:#8a93a3;letter-spacing:.06em;margin-bottom:8px;',
-          }, 'CONSUMO DE FIO'));
-          consumos.forEach(function (row) {
-            var ordem = ordens.find(function (o) { return o.id === row.ordem_id; }) || {};
-            var nome = ordem.tipo === 'algodao'
-              ? 'Algodao - ' + ((ordem.cores && ordem.cores.nome) || '?')
-              : 'Poliester - ' + (ordem.cor_poliester || '?');
-            var sobraTxt = row.sobra >= 0 ? ('sobra ' + fmtKg(row.sobra)) : ('EXCEDE em ' + fmtKg(-row.sobra));
-            consumoBox.appendChild(window.el('div', {
-              style: 'display:flex;justify-content:space-between;gap:10px;font-size:12px;color:' + (row.sobra < 0 ? '#d6403a' : '#3f4757') + ';margin-bottom:5px;',
-            },
-              window.el('span', {}, nome + ': ' + fmtKg(row.kg_consumido) + ' / ' + fmtKg(row.kg_recebido)),
-              window.el('span', { style: 'font-weight:800;color:' + (row.sobra < 0 ? '#d6403a' : '#18794a') + ';white-space:nowrap;' }, sobraTxt)
-            ));
-          });
-        } else {
-          consumoBox.replaceChildren(window.el('div', {
-            style: 'font-size:12px;color:#8a93a3;line-height:1.45;',
-          }, 'Consumo de fio sera recalculado quando as ordens e parametros estiverem disponiveis.'));
-        }
-
-        // Regra de aceite: "Aceitar proposta" so fica ativo se o usuario moveu
-        // o slider para fora do default (proporcional). Sem mudanca, manter
-        // desabilitado. Tambem bloqueia em excedente ou helper ausente.
-        var divergente = propostaDivergente();
-        var disabled = !divergente || algumExcede || typeof window.aplicarRecalculoOP !== 'function';
-        btnAceitar.disabled = disabled;
-        btnAceitar.setAttribute('style', 'display:inline-flex;align-items:center;justify-content:center;background:' + (disabled ? '#93b7f5' : '#2563eb') + ';color:#fff;border:none;border-radius:4px;padding:8px 14px;font-weight:800;font-size:12.5px;font-family:inherit;cursor:' + (disabled ? 'not-allowed' : 'pointer') + ';');
-      }
-
-      async function aceitarProposta(modo, btn) {
-        if (btn) btn.disabled = true;
-        var consumos = currentConsumos();
-        if (modo === 'aceitar' && consumos.some(function (row) { return row.sobra < 0; })) {
-          window.toast('Algum fio esta excedido - ajuste os sliders.', 'error');
-          if (btn) btn.disabled = false;
-          return;
-        }
-        if (typeof window.aplicarRecalculoOP !== 'function') {
-          window.toast('Operacao de recalculo indisponivel.', 'error');
-          if (btn) btn.disabled = false;
-          return;
-        }
-        var round3 = function (n) { return Math.round(n * 1000) / 1000; };
-        var itensFinais = itensCalc.map(function (item) {
-          return {
-            op_item_id: item.op_item_id,
-            metros_pedidos: item.metros_pedidos,
-            metros_ajustados: Math.round((metrosOverride[item.op_item_id] || 0) * 100) / 100,
-          };
-        });
-        var sobrasFinais = consumos.filter(function (row) { return row.sobra > 0; }).map(function (row) {
-          var ordem = ordens.find(function (o) { return o.id === row.ordem_id; }) || {};
-          return {
-            ordem_id: ordem.id,
-            tipo: ordem.tipo,
-            cor_id: ordem.cor_id != null ? ordem.cor_id : null,
-            cor_poliester: ordem.cor_poliester != null ? ordem.cor_poliester : null,
-            kg_sobra: round3(row.sobra),
-          };
-        });
-        var res = await window.aplicarRecalculoOP({
-          opId: op.id,
-          resultado: {
-            fator: resultado.fator,
-            itens: itensFinais,
-            sobras: modo === 'aceitar' ? sobrasFinais : (resultado.sobras || []),
-          },
-          modo: modo,
-          ordens: ordens,
-        });
-        if (res && res.error) {
-          window.toast('Erro ao aceitar OP: ' + (res.error.message || 'desconhecido'), 'error');
-          console.error(res.error);
-          if (btn) btn.disabled = false;
-          return;
-        }
-        window.toast(modo === 'aceitar' ? 'Proposta aceita - producao liberada.' : 'Pedido mantido - producao liberada.', 'success');
-        if (typeof options.onAfterSuccess === 'function') {
-          await options.onAfterSuccess(op);
-        } else {
-          await reload();
-          render();
-        }
-      }
-
-      recompute();
-      return wrap;
+    // Superfície inline (OPs relacionadas): distribuição + iniciar produção.
+    function buildTecAcceptanceProposalBlock(op, options) {
+      options = options || {};
+      var block = buildTecDistribuicaoBlock(op, options);
+      if (!block) return null;
+      var iniciar = buildTecIniciarButton(op, options);
+      return window.el('div', {},
+        block,
+        iniciar ? window.el('div', { style: 'display:flex;justify-content:flex-end;margin-top:10px;' }, iniciar) : null
+      );
     }
 
     function relatedActionButton(label, onclick, variant) {
@@ -1285,145 +1081,36 @@
       );
     }
 
+    // YARN-BUTTONS-FINAL-CONTRACT — modal do painel do Pedido: SOMENTE
+    // distribuição (builder COMPARTILHADO; rodapé [Manter pedido, Salvar
+    // distribuição], save-only). NENHUM início de produção aqui — a ação
+    // "Iniciar produção" mora na superfície de transição (linhas de OP).
     function openTecAcceptanceModal(tecAcceptance) {
-      var op = tecAcceptance.op;
+      var op = tecAcceptance && tecAcceptance.op;
       if (!op || !Array.isArray(op.op_itens)) return;
-      var ordens = (state.ordensFio || []).filter(function (o) { return o.op_id === op.id; });
-      var parametrosByLargura = {};
-      (state.parametrosLargura || []).forEach(function (p) {
-        parametrosByLargura[Number(p.largura)] = p;
-      });
-      var pedidoNumero = state.pedido && state.pedido.numero ? state.pedido.numero : null;
-
-      function itemLabel(opItem) {
-        var modelo = state.modelosById[opItem.modelo_id] || {};
-        var cor1 = modelo.cor_1_id != null && state.coresById[modelo.cor_1_id] ? state.coresById[modelo.cor_1_id].nome : null;
-        var cor2 = modelo.cor_2_id != null && state.coresById[modelo.cor_2_id] ? state.coresById[modelo.cor_2_id].nome : null;
-        var label = modelo.nome || ('Modelo #' + opItem.modelo_id);
-        if (modelo.largura != null) label += ' · ' + Number(modelo.largura).toFixed(2).replace('.', ',') + ' m';
-        if (cor1 || cor2) label += ' · ' + (cor1 || '-') + ' / ' + (cor2 || '-');
-        return label;
-      }
-
-      function buildItensTable() {
-        return window.el('div', { style: 'border:1px solid #eceef1;border-radius:4px;overflow:hidden;margin-bottom:12px;' },
-          window.el('div', {
-            style: 'display:grid;grid-template-columns:1fr auto;gap:10px;padding:10px 14px;border-bottom:1px solid #f1f3f6;background:#f8f9fb;font-size:11px;font-weight:700;color:#8a93a3;letter-spacing:.03em;',
-          },
-            window.el('span', {}, 'Produto'),
-            window.el('span', { style: 'text-align:center;' }, 'Metros pedido')),
-          op.op_itens.map(function (opItem, index) {
-            var metros = ns.toFiniteNumber(opItem.metros_pedidos);
-            return window.el('div', {
-              style: 'display:grid;grid-template-columns:1fr auto;gap:10px;padding:11px 14px;align-items:center;' + (index < op.op_itens.length - 1 ? 'border-bottom:1px solid #f1f3f6;' : ''),
-            },
-              window.el('div', { style: 'font-size:13px;color:#16203a;line-height:1.45;' }, itemLabel(opItem)),
-              window.el('div', { style: 'font-size:13px;font-weight:600;color:#3f4757;text-align:center;' }, ns.fmtMetros(metros))
-            );
-          })
-        );
-      }
-
-      function buildInfoBanner() {
-        return window.el('div', {
+      var body = window.el('div', {},
+        window.el('div', {
           style: 'display:flex;align-items:flex-start;gap:8px;background:#f6f9ff;border:1px solid #d0e0fb;border-radius:4px;padding:10px 12px;margin-bottom:12px;',
         },
           ns.svgEl(ns.SVG_INFO),
           window.el('div', { style: 'font-size:12.5px;color:#2c4a78;line-height:1.45;' },
-            'Aceitar a OP libera a producao e aplica o ajuste proporcional. O mesmo helper canonico usado pela tela de OP (' +
-            (window.aplicarRecalculoOP ? 'aplicarRecalculoOP' : 'indisponivel') +
-            ') sera usado. A tela da OP continua aceitando como antes.')
-        );
-      }
-
-      async function aplicarAceite(modo) {
-        var itensCalc = op.op_itens.map(function (opItem) {
-          return {
-            op_item_id: opItem.id,
-            modelo_id: opItem.modelo_id,
-            metros_pedidos: ns.toFiniteNumber(opItem.metros_pedidos),
-            metros_ajustados: ns.round2(ns.toFiniteNumber(opItem.metros_ajustados || opItem.metros_pedidos)),
-          };
-        });
-        var resultado;
-        if (modo === 'aceitar' && typeof window.recalcularOP === 'function') {
-          resultado = window.recalcularOP(itensCalc, ordens);
-        } else {
-          resultado = { fator: 1, itens: itensCalc, sobras: [] };
-        }
-        if (!window.aplicarRecalculoOP) {
-          window.toast('Operacao de recalculo indisponivel.', 'error');
-          return false;
-        }
-        var res = await window.aplicarRecalculoOP({ opId: op.id, resultado: resultado, modo: modo, ordens: ordens });
-        if (res && res.error) {
-          window.toast('Erro ao aceitar OP: ' + (res.error.message || 'desconhecido'), 'error');
-          console.error(res.error);
-          return false;
-        }
-        return true;
-      }
-
-      function buildActions() {
-        return window.el('div', { style: 'display:flex;gap:8px;' },
-          window.el('button', {
-            type: 'button',
-            style: 'flex:1;background:#2563eb;color:#fff;border:none;border-radius:4px;padding:10px 14px;font-weight:700;font-size:13px;font-family:inherit;cursor:pointer;',
-            onclick: async function (event) {
-              var btn = event && event.currentTarget ? event.currentTarget : null;
-              if (btn) btn.disabled = true;
-              var ok = await aplicarAceite('aceitar');
-              if (!ok) {
-                if (btn) btn.disabled = false;
-                return;
-              }
-              window.toast('OP aceita e producao liberada.', 'success');
-              await reload();
-              render();
-            },
-          }, 'Aceitar proposta (proporcional)'),
-          window.el('button', {
-            type: 'button',
-            style: 'flex:1;background:#fff;color:#2563eb;border:1px solid #cfe0fb;border-radius:4px;padding:10px 14px;font-weight:700;font-size:13px;font-family:inherit;cursor:pointer;',
-            onclick: async function (event) {
-              var btn = event && event.currentTarget ? event.currentTarget : null;
-              if (btn) btn.disabled = true;
-              var ok = await aplicarAceite('manter');
-              if (!ok) {
-                if (btn) btn.disabled = false;
-                return;
-              }
-              window.toast('OP aceita com metragem do pedido.', 'success');
-              await reload();
-              render();
-            },
-          }, 'Manter como pedido'),
-          window.el('button', {
-            type: 'button',
-            style: 'background:#fff;color:#3f4757;border:1px solid #d8dce2;border-radius:4px;padding:10px 14px;font-weight:600;font-size:13px;font-family:inherit;cursor:pointer;',
-            onclick: function () { navigateToOp(op.id); },
-          }, 'Abrir na tela da OP')
-        );
-      }
-
-      window.modal({
-        title: 'Aceitar ' + opCode(op),
-        body: window.el('div', {},
-          buildInfoBanner(),
-          window.el('div', {
-            style: 'display:flex;gap:12px;margin-bottom:12px;',
-          },
-            movementField('OP', opCode(op)),
-            movementField('Status', ns.fmtTextoOuEmpty(op.status, 'aberta'))
-          ),
-          window.el('div', { style: 'font-size:13px;font-weight:700;color:#16203a;margin-bottom:8px;' }, 'Itens da OP'),
-          buildItensTable(),
-          ordens.length
-            ? window.el('div', { style: 'font-size:12px;color:#5b6472;margin-bottom:12px;line-height:1.45;' },
-                'Fios recebidos: ' + ordens.filter(function (o) { return ns.toFiniteNumber(o.kg_recebido) > 0; }).length + ' de ' + ordens.length)
-            : null,
-          buildActions()
+            'Ajuste e salve a distribuição de metros desta OP. Salvar apenas persiste — a produção é iniciada pela ação "Iniciar produção" no painel. É o mesmo bloco da tela da OP.')
         ),
+        window.el('div', { style: 'display:flex;gap:12px;margin-bottom:12px;' },
+          movementField('OP', opCode(op)),
+          movementField('Status', ns.fmtTextoOuEmpty(op.status, 'aberta'))
+        ),
+        buildTecDistribuicaoBlock(op, {}),
+        window.el('div', { style: 'display:flex;justify-content:flex-end;margin-top:12px;' },
+          window.el('button', {
+            type: 'button',
+            style: 'background:#fff;color:#3f4757;border:1px solid #d8dce2;border-radius:4px;padding:9px 14px;font-weight:600;font-size:13px;font-family:inherit;cursor:pointer;',
+            onclick: function () { navigateToOp(op.id); },
+          }, 'Abrir na tela da OP'))
+      );
+      window.modal({
+        title: 'Distribuição — ' + opCode(op),
+        body: body,
         saveLabel: null,
         onSave: null,
       });
@@ -1435,8 +1122,8 @@
       var insumos = summarizeInsumos(ctxMovement);
       if (!(insumos.pedido > 0) || insumos.saldo > 0) return null;
       var opLabelBtn = ctxMovement.op
-        ? 'Revisar e aceitar ' + opCode(ctxMovement.op)
-        : 'Revisar e aceitar OP';
+        ? 'Revisar distribuição ' + opCode(ctxMovement.op)
+        : 'Revisar distribuição';
 
       var tecAcceptance = currentView && currentView.chainState && currentView.chainState.tecPendingAcceptance || null;
 
@@ -1444,16 +1131,16 @@
         style: 'display:flex;align-items:center;justify-content:space-between;gap:12px;background:#fff9ee;border:1px solid #fbe8c6;border-radius:' + MOVEMENT_SURFACE_RADIUS + ';padding:11px 14px;margin-bottom:14px;',
       },
         window.el('div', { style: 'min-width:0;' },
-          window.el('div', { style: 'font-size:13px;font-weight:800;color:#8a5a15;line-height:1.3;' }, 'OP pendente de aceite'),
+          window.el('div', { style: 'font-size:13px;font-weight:800;color:#8a5a15;line-height:1.3;' }, 'OP pendente de distribuição'),
           window.el('div', { style: 'font-size:12.5px;color:#8a5a15;line-height:1.45;margin-top:2px;' },
-            'Insumos recebidos; revise e aceite a OP para liberar producao.')
+            'Insumos recebidos; ajuste e salve a distribuição, depois use "Iniciar produção".')
         ),
         tecAcceptance && tecAcceptance.op
           ? window.el('button', {
               type: 'button',
               style: 'flex-shrink:0;background:#2563eb;color:#fff;border:none;border-radius:' + MOVEMENT_SURFACE_RADIUS + ';padding:8px 14px;font-size:12.5px;font-weight:700;font-family:inherit;cursor:pointer;',
               onclick: function () { openTecAcceptanceModal(tecAcceptance); },
-            }, 'Revisar e aceitar OP')
+            }, 'Revisar distribuição')
           : window.el('button', {
               type: 'button',
               style: 'flex-shrink:0;background:#fff;color:#2563eb;border:1px solid #2563eb;border-radius:' + MOVEMENT_SURFACE_RADIUS + ';padding:8px 12px;font-size:12.5px;font-weight:700;font-family:inherit;cursor:pointer;',
@@ -2345,7 +2032,8 @@
                       ns.opLabel(op) + ' · ' + (window.pedidoStatusLabel ? window.pedidoStatusLabel(op.status) : op.status)),
                     actionsRow(
                       linkBtn('Ver OP', function () { navigateToOp(op.id); }),
-                      podeAceitar ? actionBtn('Aceitar OP', function () { openTecAcceptanceModal({ op: op }); }) : null));
+                      podeAceitar ? actionBtn('Distribuição', function () { openTecAcceptanceModal({ op: op }); }) : null,
+                      podeAceitar ? buildTecIniciarButton(op) : null));
                 })
               )
             : null,
@@ -2356,8 +2044,8 @@
                 ns.svgEl(ns.SVG_INFO),
                 window.el('div', { style: 'font-size:12.5px;color:#8a5a15;line-height:1.4;' },
                   tecPend
-                    ? 'OP de Tecelagem pendente de aceite. Proxima acao: Aceitar OP neste hub ou abrir a OP.'
-                    : 'OP de Tecelagem pendente de aceite. Insumos recebidos; proxima acao: Aceitar OP.'))
+                    ? 'OP de Tecelagem pendente. Proxima acao: ajustar/salvar a distribuicao e Iniciar producao neste hub ou abrir a OP.'
+                    : 'OP de Tecelagem pendente. Insumos recebidos; proxima acao: salvar a distribuicao e Iniciar producao.'))
             : null
         );
       }
@@ -2390,7 +2078,8 @@
                         ns.opLabel(op) + ' · ' + (window.pedidoStatusLabel ? window.pedidoStatusLabel(op.status) : op.status)),
                       actionsRow(
                         linkBtn('Ver OP', function () { navigateToOp(op.id); }),
-                        podeAceitar ? actionBtn('Aceitar OP', function () { openTecAcceptanceModal({ op: op }); }) : null,
+                        podeAceitar ? actionBtn('Distribuição', function () { openTecAcceptanceModal({ op: op }); }) : null,
+                        podeAceitar ? buildTecIniciarButton(op) : null,
                         podeTransferir ? actionBtn('Transferir', openMovimentar('tecelagem', op)) : null,
                         podeFinalizar ? actionBtn('Finalizar OP', function () { finalizarOp(op); }) : null)),
                     window.el('div', { style: 'font-size:12.5px;color:#5b6472;margin-top:4px;line-height:1.4;' },
@@ -2451,7 +2140,7 @@
                 style: 'display:flex;align-items:flex-start;gap:8px;background:#fff9ee;border:1px solid #fbe8c6;border-radius:4px;padding:10px 12px;margin-top:10px;',
               },
                 ns.svgEl(ns.SVG_INFO),
-                window.el('div', { style: 'font-size:12.5px;color:#8a5a15;line-height:1.4;' }, 'OP Tecelagem pendente de aceite. Proxima acao: Aceitar OP neste hub.'))
+                window.el('div', { style: 'font-size:12.5px;color:#8a5a15;line-height:1.4;' }, 'OP Tecelagem pendente. Proxima acao: salvar a distribuicao e Iniciar producao neste hub.'))
             : null
         );
       }

@@ -80,6 +80,9 @@ const OPTP = path.join(ROOT, 'js', 'screens', 'op-tecelagem-producao-admin.js');
 const olaSrc = fs.readFileSync(OLA, 'utf8');
 const optpSrc = fs.readFileSync(OPTP, 'utf8');
 const opnSrc = fs.readFileSync(path.join(ROOT, 'js', 'screens', 'op-nova.js'), 'utf8');
+// YARN-BUTTONS-FINAL-CONTRACT: builder de distribuição COMPARTILHADO
+// consumido pelo painel do Pedido (mesmo módulo da tela da OP).
+const oduSrc = fs.readFileSync(path.join(ROOT, 'js', 'screens', 'op-distribuicao-ui.js'), 'utf8');
 const opDisplay = readOrFail(path.join(ROOT, 'js', 'op-display.js'));
 const detailBundle = [
   opDisplay,
@@ -958,14 +961,17 @@ test('pedido-detail.js: modal de transicao usa contrato visual discreto', () => 
   assert.doesNotMatch(movementModalSlice, /rounded-(?:lg|xl|2xl|full)/);
 });
 
-test('pedido-detail.js: OP aberta com insumos recebidos mostra bloqueio e CTA contextual', () => {
+test('pedido-detail.js: OP aberta com insumos recebidos mostra CTA de distribuição (YARN-BUTTONS-FINAL-CONTRACT)', () => {
   assert.match(detailEvents, /function buildPendingAcceptanceBlock/);
-  assert.match(detailEvents, /OP pendente de aceite/);
-  assert.match(detailEvents, /revise e aceite a OP para liberar producao/);
-  assert.match(detailEvents, /Revisar e aceitar OP/);
+  // A CTA deixou de ser "aceitar" (que iniciava produção) e passou a ser
+  // "distribuição" (save-only); a produção parte de "Iniciar produção".
+  assert.match(detailEvents, /OP pendente de distribuição/);
+  assert.match(detailEvents, /ajuste e salve a distribuição, depois use "Iniciar produção"/);
+  assert.match(detailEvents, /Revisar distribuição/);
+  assert.doesNotMatch(detailEvents, /Revisar e aceitar OP/);
   assert.match(detailProgress, /stage\.sublabel\s*=\s*['"]OP pendente de aceite['"]/);
   assert.match(detailEvents, /function openTecAcceptanceModal/,
-    'deve ter modal de aceite da OP Tecelagem pelo Pedido');
+    'deve ter o modal de distribuição da OP Tecelagem pelo Pedido');
 });
 
 test('pedido-detail.js: openMovementModal usa operacoes canonicas para movimentar pelo Pedido', () => {
@@ -1653,11 +1659,15 @@ test('tec-acceptance-B: openTecAcceptanceModal existe e e exposto', () => {
     'deve expor no retorno dos handlers');
 });
 
-test('tec-acceptance-B: buildPendingAcceptanceBlock oferece "Revisar e aceitar OP"', () => {
-  assert.match(detailEvents, /Revisar e aceitar OP/,
-    'bloqueio deve oferecer botao Revisar e aceitar OP em vez de so redirecionar');
+test('tec-acceptance-B: buildPendingAcceptanceBlock oferece "Revisar distribuição" (save-only, sem iniciar produção)', () => {
+  // YARN-BUTTONS-FINAL-CONTRACT: o CTA do bloqueio abre o modal de
+  // DISTRIBUIÇÃO (Manter/Salvar), não mais um "aceite" que iniciava produção.
+  assert.match(detailEvents, /Revisar distribuição/,
+    'bloqueio deve oferecer "Revisar distribuição" (modal save-only)');
+  assert.doesNotMatch(detailEvents, /Revisar e aceitar OP/,
+    'CTA de "aceitar" (que iniciava produção) foi removido');
   assert.match(detailEvents, /openTecAcceptanceModal\(tecAcceptance\)/,
-    'botao deve abrir modal de aceite, nao apenas navegar');
+    'botao deve abrir o modal de distribuição, nao apenas navegar');
 });
 
 test('tec-acceptance-B: modal de aceite mostra itens da OP', () => {
@@ -2040,7 +2050,16 @@ function makeHubRuntime() {
   sandbox.window.fmtMetros = (v) => Number(v || 0).toFixed(2) + ' m'; sandbox.window.pedidoStatusLabel = (s) => s;
   sandbox.window.isPedidoEditavel = (s) => s === 'rascunho';
   sandbox.window.recalcularOP = () => ({ fator: 1, itens: [], sobras: [] }); sandbox.window.aplicarRecalculoOP = async () => ({ error: null });
+  // Deps do builder de distribuição COMPARTILHADO (op-distribuicao-ui.js).
+  sandbox.window.consumoPorOrdem = () => [];
+  sandbox.window.maxMetrosItem = () => 1000;
+  sandbox.window.fmtKg = (v) => Number(v || 0).toFixed(3) + ' kg';
+  sandbox.window.larguraKey = (l) => Number(l);
+  sandbox.window.salvarDistribuicaoOP = async () => { events.push('salvarDistribuicaoOP'); return { error: null, step: 'ok' }; };
+  sandbox.window.iniciarProducaoOP = async () => { events.push('iniciarProducaoOP'); return { error: null, step: 'ok' }; };
   vm.runInContext(detailBundle, sandbox);
+  // Carrega o builder COMPARTILHADO no sandbox do hub (mesmo módulo da OP).
+  vm.runInContext(oduSrc, sandbox, { filename: 'js/screens/op-distribuicao-ui.js' });
   const ns = sandbox.window.RAVATEX_SCREENS.pedidoDetail;
   return { sandbox, ns, events, node };
 }
@@ -2364,7 +2383,7 @@ test('OP-OPERATIONAL-CODE-B: sem pedido.criado_em cai no legado OP {numero}/{ano
   assert.equal(tec.label, 'OP 18/2026', 'sem ano operacional confiavel, mantem legado');
 });
 
-test('INSUMOS-TECELAGEM modal: OP aberta mostra proposta com slider e botao canonico', () => {
+test('INSUMOS-TECELAGEM modal: OP aberta mostra distribuição COMPARTILHADA (slider + Manter/Salvar) sem Aceitar', () => {
   const rt = makeHubRuntime();
   const s = hubTecAcab(rt.ns, 'em_producao');
   s.ops = [s.ops[0]];
@@ -2391,27 +2410,28 @@ test('INSUMOS-TECELAGEM modal: OP aberta mostra proposta com slider e botao cano
   assert.match(text, /OPs relacionadas/);
   assert.match(text, /OP 18\/2026/);
   assert.ok(findHubBtn(cap, /^Ver OP$/i), 'deve mostrar Ver OP');
-  assert.match(text, /Proposta de aceite/);
+  // YARN-BUTTONS-FINAL-CONTRACT: bloco de distribuição compartilhado.
+  assert.match(text, /Fator proporcional/, 'deve renderizar o bloco de distribuição compartilhado');
   assert.ok(findNode(cap, (n) => n.tagName === 'INPUT' && n.getAttribute('type') === 'range'),
     'deve renderizar slider real');
-  assert.ok(findHubBtn(cap, /^Aceitar proposta$/i), 'deve mostrar botao real Aceitar proposta');
-  assert.equal(findHubBtn(cap, /^Aceitar OP$/i), null,
-    'nao pode substituir a proposta por botao simples Aceitar OP');
+  assert.ok(findHubBtn(cap, /Salvar distribui/i), 'deve mostrar "Salvar distribuição" (save-only)');
+  assert.ok(findHubBtn(cap, /Manter pedido/i), 'deve mostrar "Manter pedido"');
+  assert.ok(findHubBtn(cap, /Iniciar produ/i), 'deve mostrar "Iniciar produção" (único início de produção)');
+  assert.equal(findHubBtn(cap, /Aceitar proposta/i), null, '"Aceitar proposta" foi removido');
+  assert.equal(findHubBtn(cap, /^Aceitar OP$/i), null, '"Aceitar OP" foi removido');
 });
 
-test('INSUMOS-TECELAGEM modal: aceitar proposta recarrega e re-renderiza o mesmo modal', async () => {
+test('INSUMOS-TECELAGEM modal: "Iniciar produção" usa iniciarProducaoOP e re-renderiza; save-only NÃO inicia produção', async () => {
   const rt = makeHubRuntime();
   const s = hubTecAcab(rt.ns, 'em_producao');
   s.ops = [s.ops[0]];
   s.ops[0].status = 'aberta';
+  // Distribuição já salva (metros_ajustados setado) + fios recebidos =>
+  // "Iniciar produção" habilitado; save-only não deve iniciar produção.
   s.entregaItens = [];
   s.entregasById = {};
   s.opLatexEntregas = [];
   s.ordensFio = [{ id: 'fio1', op_id: 29, tipo: 'algodao', kg_pedido: 10, kg_recebido: 10 }];
-  rt.sandbox.window.aplicarRecalculoOP = async () => {
-    rt.events.push('aplicarRecalculoOP');
-    return { error: null };
-  };
   const handlers = rt.ns.createPedidoDetailEvents({
     pedidoId: s.pedido.id,
     state: s,
@@ -2428,17 +2448,16 @@ test('INSUMOS-TECELAGEM modal: aceitar proposta recarrega e re-renderiza o mesmo
   rt.sandbox.document.body = cap;
   handlers.openMovementModal(handlers.currentView.stepper[0].transfer);
 
-  const aceitar = findHubBtn(cap, /^Aceitar proposta$/i);
-  assert.ok(aceitar, 'proposta deve estar visivel antes do aceite');
-  await aceitar._listeners.click({ currentTarget: aceitar });
+  const iniciar = findHubBtn(cap, /Iniciar produ/i);
+  assert.ok(iniciar, '"Iniciar produção" deve estar visível');
+  assert.equal(iniciar.disabled, false, 'com distribuição salva + fios recebidos, "Iniciar produção" habilita');
+  await iniciar._listeners.click({ currentTarget: iniciar });
 
-  const updatedText = collectHubText(cap);
-  assert.ok(rt.events.includes('aplicarRecalculoOP'), 'deve chamar helper canonico');
-  assert.ok(rt.events.includes('reload'), 'deve recarregar dados apos aceite');
-  assert.ok(rt.events.includes('render'), 'deve re-renderizar a tela apos aceite');
-  assert.doesNotMatch(updatedText, /Aceitar proposta/,
-    'modal nao pode manter slider/botao antigo stale apos aceite');
-  assert.match(updatedText, /OP 18\/2026/);
+  assert.ok(rt.events.includes('iniciarProducaoOP'), 'deve iniciar via iniciarProducaoOP (único início de produção)');
+  assert.ok(rt.events.includes('reload'), 'deve recarregar dados após iniciar');
+  assert.ok(rt.events.includes('render'), 'deve re-renderizar a tela após iniciar');
+  assert.ok(!rt.events.includes('salvarDistribuicaoOP'), '"Iniciar produção" não persiste distribuição');
+  assert.ok(!rt.events.includes('aplicarRecalculoOP'), 'fluxo antigo aplicarRecalculoOP não é usado');
 });
 
 test('INSUMOS-TECELAGEM modal: registrar recebimento atualiza para proposta sem fechar', async () => {
@@ -2477,9 +2496,10 @@ test('INSUMOS-TECELAGEM modal: registrar recebimento atualiza para proposta sem 
   assert.ok(rt.events.includes('registrarRecebimentoOrdemFio'), 'deve usar helper canonico de recebimento');
   assert.ok(rt.events.includes('reload'), 'deve recarregar dados apos recebimento');
   assert.ok(rt.events.includes('render'), 'deve re-renderizar a tela apos recebimento');
-  assert.match(updatedText, /Proposta de aceite/,
-    'apos receber todos os insumos, o mesmo modal deve mostrar a proposta pendente');
-  assert.ok(findHubBtn(cap, /^Aceitar proposta$/i), 'proxima acao deve aparecer sem fechar/reabrir');
+  assert.match(updatedText, /Fator proporcional/,
+    'apos receber todos os insumos, o mesmo modal deve mostrar o bloco de distribuição compartilhado');
+  assert.ok(findHubBtn(cap, /Salvar distribui/i), 'proxima acao (Salvar distribuição) deve aparecer sem fechar/reabrir');
+  assert.equal(findHubBtn(cap, /Aceitar proposta/i), null, '"Aceitar proposta" não existe mais');
   assert.doesNotMatch(updatedText, /Registrar nova transferencia/,
     'modal nao deve manter formulario antigo stale apos recebimento');
 });
@@ -2567,13 +2587,17 @@ test('HUB runtime: modal lista OPs com Ver OP e Finalizar OP para Tecelagem entr
   assert.ok(rt.events.indexOf('rpc:alterar_status_op') !== -1, 'Finalizar OP deve chamar alterar_status_op');
 });
 
-test('HUB runtime: OP Tecelagem aberta oferece Aceitar OP', () => {
+test('HUB runtime: OP Tecelagem aberta oferece Distribuição + Iniciar produção (YARN-BUTTONS-FINAL-CONTRACT)', () => {
   const rt = makeHubRuntime();
   const s = hubTecAcab(rt.ns, 'em_producao');
   s.ops[0].status = 'aberta'; s.entregaItens = []; s.opLatexEntregas = [];
   s.ordensFio = [{ op_id: 29, kg_pedido: 10, kg_recebido: 10 }];
   const r = stageHub(rt, s, 'insumos');
-  assert.ok(findHubBtn(r.root, /Aceitar OP/i), 'OP aberta deve oferecer Aceitar OP');
+  // Superfície de transição do hub: abrir a distribuição (save-only) +
+  // a ação primária "Iniciar produção" (único início de produção).
+  assert.ok(findHubBtn(r.root, /Distribui/i), 'OP aberta deve oferecer "Distribuição"');
+  assert.ok(findHubBtn(r.root, /Iniciar produ/i), 'OP aberta deve oferecer "Iniciar produção"');
+  assert.ok(!findHubBtn(r.root, /Aceitar OP/i), '"Aceitar OP" foi removido');
 });
 
 test('HUB runtime: Pedido #13 abre Tecelagem/Aguardar sem appendChild invalido', () => {
@@ -2607,9 +2631,10 @@ test('HUB runtime: Pedido #13 abre Tecelagem/Aguardar sem appendChild invalido',
   assert.match(text, /OPs de Tecelagem/);
   assert.match(text, /OP 10\/2026/);
   assert.match(text, /Sem movimentacao para acabamento registrada ainda/);
-  assert.match(text, /OP Tecelagem pendente de aceite/);
+  assert.match(text, /OP Tecelagem pendente\. Proxima acao: salvar a distribuicao e Iniciar producao/);
   assert.ok(findHubBtn(r.root, /Ver OP/i), 'hub deve manter Ver OP');
-  assert.ok(findHubBtn(r.root, /Aceitar OP/i), 'hub deve oferecer Aceitar OP');
+  assert.ok(findHubBtn(r.root, /Distribui/i), 'hub deve oferecer "Distribuição"');
+  assert.ok(findHubBtn(r.root, /Iniciar produ/i), 'hub deve oferecer "Iniciar produção" (distribuição salva)');
   assert.equal(rt.events.some((ev) => /^rpc:|^toast:/.test(ev)), false, 'abrir hub nao deve executar write');
 });
 
@@ -2677,28 +2702,29 @@ test('INSUMOS-TECELAGEM-UI-FIX-A: buildInsumosTransferForm empilha Data do receb
     'texto auxiliar deve usar margin-top para alinhar logo abaixo do input');
 });
 
-test('INSUMOS-TECELAGEM-UI-FIX-A: buildTecAcceptanceProposalBlock tem defaultMetrosOverride e propostaDivergente', () => {
-  const proposalSlice = (detailEvents.match(/function buildTecAcceptanceProposalBlock[\s\S]*?\n    \}\n\n    function relatedActionButton/) || [''])[0];
-  assert.ok(proposalSlice, 'trecho buildTecAcceptanceProposalBlock nao encontrado');
-  assert.match(proposalSlice, /defaultMetrosOverride/,
-    'deve armazenar snapshot do default da proposta para comparar com estado atual');
-  assert.match(proposalSlice, /function propostaDivergente/,
-    'deve ter helper de comparacao contra default (propostaDivergente)');
-  assert.match(proposalSlice, /var divergente\s*=\s*propostaDivergente\(\)/,
-    'recompute deve usar propostaDivergente para habilitar/desabilitar');
-  assert.match(proposalSlice, /!divergente \|\| algumExcede \|\| typeof window\.aplicarRecalculoOP !== 'function'/,
-    'disabled = !divergente || algumExcede || helper ausente');
+test('INSUMOS-TECELAGEM-UI-FIX-A: enablement de "Salvar" vive no builder COMPARTILHADO (atual vs última salva)', () => {
+  // YARN-BUTTONS-FINAL-CONTRACT: a lógica de habilitação migrou para o
+  // builder compartilhado (op-distribuicao-ui.js): "Salvar distribuição"
+  // habilita só quando a distribuição atual difere da última SALVA e não
+  // excede o recebido.
+  assert.match(oduSrc, /function\s+metrosIguais/,
+    'builder compartilhado deve comparar distribuição atual vs salva');
+  assert.match(oduSrc, /savedSnapshot/,
+    'builder compartilhado deve manter o snapshot da última distribuição salva');
+  assert.match(oduSrc, /!mudouAtual\s*\|\|\s*infoAtual\.algumExcede/,
+    'Salvar desabilita quando (atual == salva) ou há excesso');
 });
 
-test('INSUMOS-TECELAGEM-UI-FIX-A: Aceitar proposta desabilitado por default; slider divergente habilita; voltar desabilita', () => {
+test('INSUMOS-TECELAGEM-UI-FIX-A: "Salvar distribuição" desabilitado por default; slider divergente habilita; voltar desabilita', () => {
   const rt = makeHubRuntime();
   const s = hubTecAcab(rt.ns, 'em_producao');
   s.ops = [s.ops[0]];
   s.ops[0].status = 'aberta';
+  // op_item 290 já salvo com metros_ajustados=1000 (== slider default).
   s.entregaItens = [];
   s.entregasById = {};
   s.opLatexEntregas = [];
-  // 10 kg pedidos, 10 recebidos -> proposta proporcional fator 1, sem excedente
+  // 10 kg pedidos, 10 recebidos -> sem excedente
   s.ordensFio = [{ id: 'fio1', op_id: 29, tipo: 'algodao', kg_pedido: 10, kg_recebido: 10 }];
   rt.sandbox.window.recalcularOP = () => ({
     fator: 1,
@@ -2707,7 +2733,6 @@ test('INSUMOS-TECELAGEM-UI-FIX-A: Aceitar proposta desabilitado por default; sli
     ],
     sobras: [],
   });
-  rt.sandbox.window.aplicarRecalculoOP = async () => ({ error: null });
   const view = rt.ns.computeViewModel(s);
   const handlers = rt.ns.createPedidoDetailEvents({
     pedidoId: s.pedido.id, state: s,
@@ -2719,10 +2744,10 @@ test('INSUMOS-TECELAGEM-UI-FIX-A: Aceitar proposta desabilitado por default; sli
   rt.sandbox.document.body = cap;
   handlers.openMovementModal(view.stepper[0].transfer);
 
-  const aceitar = findHubBtn(cap, /^Aceitar proposta$/i);
-  assert.ok(aceitar, 'botao Aceitar proposta deve existir');
-  assert.equal(aceitar.disabled, true,
-    'por default (sem divergencia), Aceitar proposta deve estar desabilitado');
+  const salvar = findHubBtn(cap, /Salvar distribui/i);
+  assert.ok(salvar, 'botao "Salvar distribuição" deve existir');
+  assert.equal(salvar.disabled, true,
+    'por default (distribuição atual == última salva), "Salvar distribuição" deve estar desabilitado');
 
   const sliders = [];
   function walk(n) {
@@ -2732,27 +2757,28 @@ test('INSUMOS-TECELAGEM-UI-FIX-A: Aceitar proposta desabilitado por default; sli
   walk(cap);
   assert.equal(sliders.length, 1, 'deve existir 1 slider para o unico op_item');
   const slider = sliders[0];
-  // Simula o usuario movendo o slider para um valor divergente do default
+  // Move o slider para um valor divergente da distribuição salva
   slider.value = String(Math.max(0, Number(slider.value) - 100));
   slider._listeners.input({ currentTarget: slider });
-  assert.equal(aceitar.disabled, false,
-    'apos mover o slider, Aceitar proposta deve ficar habilitado');
+  assert.equal(salvar.disabled, false,
+    'apos mover o slider (mudança não salva), "Salvar distribuição" deve habilitar');
 
-  // Volta exatamente para o default (proporcional): o input inicial e o
-  // valor que o `recompute` original deixou no slider.
+  // Volta exatamente para a distribuição salva (1000): desabilita de novo.
   slider.value = String(Math.round(1000));
   slider._listeners.input({ currentTarget: slider });
-  assert.equal(aceitar.disabled, true,
-    'ao voltar ao default, Aceitar proposta deve voltar a ficar desabilitado');
+  assert.equal(salvar.disabled, true,
+    'ao voltar à distribuição salva, "Salvar distribuição" deve voltar a desabilitar');
 });
 
-test('INSUMOS-TECELAGEM-UI-FIX-A: Manter pedido continua sempre ativo (default) na proposta inline', () => {
-  const proposalSlice = (detailEvents.match(/function buildTecAcceptanceProposalBlock[\s\S]*?\n    \}\n\n    function relatedActionButton/) || [''])[0];
-  assert.ok(proposalSlice, 'trecho buildTecAcceptanceProposalBlock nao encontrado');
-  assert.match(proposalSlice, /btnManter[\s\S]{0,300}onclick[\s\S]{0,80}aceitarProposta\('manter'/,
-    'btnManter (Manter pedido) deve chamar aceitarProposta("manter") e estar sempre habilitado');
-  assert.doesNotMatch(proposalSlice, /btnManter[\s\S]{0,260}btnManter\.disabled\s*=\s*true/,
-    'btnManter nao deve ser desabilitado em momento algum pelo recompute');
+test('INSUMOS-TECELAGEM-UI-FIX-A: "Manter pedido" é SAVE-ONLY da metragem do pedido (builder compartilhado)', () => {
+  // YARN-BUTTONS-FINAL-CONTRACT: "Manter pedido" persiste a metragem do
+  // pedido (pedidoMap) via salvarDistribuicaoOP; NUNCA inicia produção.
+  assert.match(oduSrc, /btnManter\.addEventListener/,
+    'Manter pedido deve ter handler no builder compartilhado');
+  assert.match(oduSrc, /persistir\(pedidoMap/,
+    'Manter pedido persiste a metragem do pedido (save-only)');
+  assert.doesNotMatch(oduSrc, /Aceitar proposta/i,
+    '"Aceitar proposta" não existe no builder compartilhado');
 });
 
 test('INSUMOS-TECELAGEM-UI-FIX-A: excluirOpRelacionada exposto nos handlers e usa helper canonico', () => {

@@ -147,6 +147,7 @@ const OPTP  = path.join(ROOT, 'js', 'screens', 'op-tecelagem-producao-admin.js')
 const OPPDF = path.join(ROOT, 'js', 'screens', 'op-pdf.js');
 const OPP   = path.join(ROOT, 'js', 'screens', 'op-persistir.js');
 const OPR   = path.join(ROOT, 'js', 'screens', 'op-recalculo.js');
+const ODU   = path.join(ROOT, 'js', 'screens', 'op-distribuicao-ui.js');
 const PAINEL= path.join(ROOT, 'js', 'screens', 'painel.js');
 const OLA   = path.join(ROOT, 'js', 'screens', 'op-latex-admin.js');
 const OPW   = path.join(ROOT, 'js', 'screens', 'op-writes.js');
@@ -169,6 +170,7 @@ const optpSrc   = fs.readFileSync(OPTP,  'utf8');
 const opPdfSrc  = fs.readFileSync(OPPDF, 'utf8');
 const oppSrc    = fs.readFileSync(OPP,   'utf8');
 const oprSrc    = fs.readFileSync(OPR,   'utf8');
+const oduSrc    = fs.readFileSync(ODU,   'utf8');
 const painelSrc = fs.readFileSync(PAINEL,'utf8');
 const olaSrc    = fs.readFileSync(OLA,   'utf8');
 const opwSrc    = fs.readFileSync(OPW,   'utf8');
@@ -402,6 +404,7 @@ function makeOpNovaBootSandbox() {
   vm.runInContext(olaSrc,    sandbox, { filename: 'js/screens/op-latex-admin.js' });
   vm.runInContext(painelSrc, sandbox, { filename: 'js/screens/painel.js' });
   vm.runInContext(oprSrc,    sandbox, { filename: 'js/screens/op-recalculo.js' });
+  vm.runInContext(oduSrc,    sandbox, { filename: 'js/screens/op-distribuicao-ui.js' });
   vm.runInContext(oppSrc,    sandbox, { filename: 'js/screens/op-persistir.js' });
   vm.runInContext(opPdfSrc,  sandbox, { filename: 'js/screens/op-pdf.js' });
   vm.runInContext(optpSrc,   sandbox, { filename: 'js/screens/op-tecelagem-producao-admin.js' });
@@ -435,22 +438,23 @@ test('13. op-nova.js NÃO contém mais function gerarPdfCompraFios (extraída pa
     'op-nova.js não chama window.gerarPdfCompraFios — call-site não foi atualizado');
 });
 
-test('14. op-nova.js contém buildProposta / recompute / onSalvar / onIniciarProducao (YARN-BUTTONS-PHASE-1-CORRECTION)', () => {
+test('14. op-nova.js: buildProposta delega ao builder COMPARTILHADO; sem onAceitar (YARN-BUTTONS-FINAL-CONTRACT)', () => {
   assert.match(opnSrc, /function\s+buildProposta\s*\(/);
-  assert.match(opnSrc, /function\s+recompute\s*\(/);
-  // O antigo onAceitar foi decomposto em onSalvar ("Salvar distribuição",
-  // dentro de buildProposta/modal) e onIniciarProducao ("Iniciar produção",
-  // função de escopo de screenNovaOP acionada pelo bloco de Preparação —
-  // YARN-BUTTONS-PHASE-1-CORRECTION moveu a entrada para fora do modal).
-  assert.match(opnSrc, /function\s+onSalvar\s*\(/);
-  assert.match(opnSrc, /async function\s+onIniciarProducao\s*\(/);
+  // buildProposta virou um wrapper fino sobre o builder COMPARTILHADO
+  // (op-distribuicao-ui.js), o MESMO consumido pelo painel do Pedido.
+  // recompute/onSalvar/onIniciar migraram para o módulo compartilhado —
+  // não vivem mais duplicados em op-nova.js.
+  assert.match(opnSrc, /window\.buildDistribuicaoBlock\(/,
+    'buildProposta deve delegar ao builder compartilhado buildDistribuicaoBlock');
   assert.doesNotMatch(opnSrc, /function\s+onAceitar\s*\(/,
-    'onAceitar deveria ter sido decomposto em onSalvar/onIniciarProducao');
+    'op-nova.js não deve mais conter onAceitar');
 });
 
-test('14.1 op-nova.js expõe os botões "Salvar distribuição" e "Iniciar produção"', () => {
-  assert.match(opnSrc, /Salvar distribui/i, 'label "Salvar distribuição" não encontrado');
-  assert.match(opnSrc, /Iniciar produ/i, 'label "Iniciar produção" não encontrado');
+test('14.1 builder compartilhado tem rodapé [Manter pedido, Salvar distribuição] + "Iniciar produção"; SEM "Aceitar proposta"', () => {
+  assert.match(oduSrc, /Manter pedido/, 'label "Manter pedido" ausente do builder compartilhado');
+  assert.match(oduSrc, /Salvar distribui/i, 'label "Salvar distribuição" ausente do builder compartilhado');
+  assert.match(oduSrc, /Iniciar produ/i, 'label "Iniciar produção" ausente do builder compartilhado');
+  assert.doesNotMatch(oduSrc, /Aceitar proposta/i, '"Aceitar proposta" não deve existir em lugar nenhum');
 });
 
 test('15. op-nova.js mantem preparacao e delega Tecelagem em producao para modulo proprio', () => {
@@ -477,16 +481,18 @@ test('16.1 op-nova.js nao usa MAX(numero)+1 para previa de OP Tecelagem', () => 
     'previa de numero deve ler op_numeros tecelagem');
 });
 
-test('17. op-nova.js chama window.aplicarRecalculoOP (via "Manter pedido")', () => {
-  assert.match(opnSrc, /window\.aplicarRecalculoOP\(/,
-    'op-nova.js não referencia window.aplicarRecalculoOP');
+test('17. op-nova.js: "Iniciar produção" (rail) usa o builder compartilhado, NÃO o antigo aplicarRecalculoOP', () => {
+  assert.match(opnSrc, /buildIniciarProducaoButton\(/,
+    'buildAcaoAberta deve usar o botão compartilhado buildIniciarProducaoButton');
+  assert.doesNotMatch(opnSrc, /window\.aplicarRecalculoOP\(/,
+    'op-nova.js não deve mais iniciar produção via aplicarRecalculoOP (fluxo antigo removido)');
 });
 
-test('17.1 op-nova.js chama window.salvarDistribuicaoOP e window.iniciarProducaoOP (split YARN-BUTTONS-PHASE-1)', () => {
-  assert.match(opnSrc, /window\.salvarDistribuicaoOP\(/,
-    'op-nova.js não referencia window.salvarDistribuicaoOP');
-  assert.match(opnSrc, /window\.iniciarProducaoOP\(/,
-    'op-nova.js não referencia window.iniciarProducaoOP');
+test('17.1 builder compartilhado persiste via window.salvarDistribuicaoOP e inicia via window.iniciarProducaoOP', () => {
+  assert.match(oduSrc, /window\.salvarDistribuicaoOP\(/,
+    'builder compartilhado deve persistir via window.salvarDistribuicaoOP');
+  assert.match(oduSrc, /window\.iniciarProducaoOP\(/,
+    'builder compartilhado deve iniciar produção via window.iniciarProducaoOP');
 });
 
 test('18. op-nova.js chama window.registrarRecebimentoOrdemFio', () => {
@@ -504,9 +510,11 @@ test('20. op-nova.js chama window.renderOPLatexAdmin', () => {
     'op-nova.js não referencia window.renderOPLatexAdmin');
 });
 
-test('21. op-nova.js chama window.maxMetrosItem / window.itensValidosOP', () => {
-  assert.match(opnSrc, /window\.maxMetrosItem\(/,
-    'op-nova.js não referencia window.maxMetrosItem');
+test('21. op-nova.js chama window.itensValidosOP; maxMetrosItem migrou p/ o builder compartilhado', () => {
+  // maxMetrosItem agora é chamado dentro do builder de distribuição
+  // COMPARTILHADO (op-distribuicao-ui.js), não mais em op-nova.js.
+  assert.match(oduSrc, /window\.maxMetrosItem\(/,
+    'builder compartilhado não referencia window.maxMetrosItem');
   assert.match(opnSrc, /window\.itensValidosOP\(/,
     'op-nova.js não referencia window.itensValidosOP');
 });
@@ -759,6 +767,7 @@ function makeRenderSandbox(db) {
   // salvarDistribuicaoOP / iniciarProducaoOP — necessários quando
   // buildProposta renderiza (OP 'aberta' com todos os fios recebidos).
   vm.runInContext(oprSrc, sandbox, { filename: 'js/screens/op-recalculo.js' });
+  vm.runInContext(oduSrc, sandbox, { filename: 'js/screens/op-distribuicao-ui.js' });
   vm.runInContext(opnSrc, sandbox, { filename: 'js/screens/op-nova.js' });
 
   sandbox.ADMIN_MENU = sandbox.ADMIN_MENU || [];

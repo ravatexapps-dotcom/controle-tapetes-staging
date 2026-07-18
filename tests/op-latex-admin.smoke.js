@@ -261,12 +261,12 @@ test('8. inline NÃO contém mais persistir (extraído para op-persistir.js)', (
     'inline ainda tem persistir - função deveria ter sido extraída');
 });
 
-test('9. aplicarRecalculo foi extraída para op-nova.js (NÃO está mais no inline)', () => {
+test('9. wrapper aplicarRecalculo aposentado (nem no inline, nem em op-nova.js) — YARN-BUTTONS-FINAL-CONTRACT', () => {
   const inline = extractInlineScript(indexSrc);
   assert.equal(/function\s+aplicarRecalculo\s*\(/.test(inline), false,
-    'inline ainda tem aplicarRecalculo — extração incompleta');
-  assert.match(opnSrc, /async\s+function\s+aplicarRecalculo\s*\(/,
-    'op-nova.js não contém aplicarRecalculo');
+    'inline ainda tem aplicarRecalculo');
+  assert.doesNotMatch(opnSrc, /async\s+function\s+aplicarRecalculo\s*\(/,
+    'op-nova.js não deve mais conter o wrapper aplicarRecalculo (fluxo antigo retirado)');
 });
 
 test('10. buildOrdemPendenteRow foi extraída para op-nova.js (NÃO está mais no inline)', () => {

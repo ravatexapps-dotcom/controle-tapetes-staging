@@ -1142,14 +1142,16 @@ test('62. buildRight e renderRightInto foram extraídos para op-nova.js (NÃO es
   assert.match(opnSrc, /function\s+renderRightInto\s*\(/);
 });
 
-test('63. aplicarRecalculo foi extraída para op-nova.js chamando window.aplicarRecalculoOP', () => {
+test('63. wrapper aplicarRecalculo aposentado; produção agora só via "Iniciar produção" (builder compartilhado)', () => {
   const inline = extractInlineScript(indexSrc);
   assert.equal(/async\s+function\s+aplicarRecalculo\s*\(/.test(inline), false,
-    'inline ainda tem aplicarRecalculo — extração incompleta');
-  // Foi movida para op-nova.js
-  assert.match(opnSrc, /async\s+function\s+aplicarRecalculo\s*\(/);
-  assert.match(opnSrc, /aplicarRecalculo[\s\S]*?window\.aplicarRecalculoOP/,
-    'aplicarRecalculo em op-nova.js não chama window.aplicarRecalculoOP');
+    'inline ainda tem aplicarRecalculo');
+  // YARN-BUTTONS-FINAL-CONTRACT: o wrapper foi retirado de op-nova.js; a
+  // produção parte do builder compartilhado (window.iniciarProducaoOP).
+  assert.doesNotMatch(opnSrc, /async\s+function\s+aplicarRecalculo\s*\(/,
+    'op-nova.js não deve mais conter o wrapper aplicarRecalculo');
+  assert.match(opnSrc, /window\.buildDistribuicaoBlock\(/,
+    'op-nova.js deve delegar ao builder compartilhado');
 });
 
 // ---- 34: setRoutes/main inline -------------------------------------

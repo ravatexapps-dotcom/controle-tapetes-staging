@@ -1132,235 +1132,28 @@
   // Extraído para js/screens/op-recalculo.js como window.maxMetrosItem.
 
   function buildProposta() {
-    const itensCalc = opItensRaw.map(i => ({ op_item_id: i.id, modelo_id: i.modelo_id, metros_pedidos: Number(i.metros_pedidos) }));
-    const resultado = recalcularOP(itensCalc, ordens);
-
-    // YARN-BUTTONS-PHASE-1: "Salvar distribuição" grava op_itens.metros_ajustados.
-    // "Iniciar produção" (bloco de Preparação, buildAcaoAberta) só habilita
-    // depois de salvar e faz o snapshot de saldo + libera a produção. A
-    // distribuição já salva vem de op_itens.metros_ajustados (persistida por
-    // uma sessão anterior de salvar); se todos os itens têm metros_ajustados
-    // != null, existe distribuição salva.
-    const savedMetros = (function () {
-      if (!opItensRaw.length) return null;
-      const acc = {};
-      for (const i of opItensRaw) {
-        if (i.metros_ajustados == null) return null;
-        acc[i.id] = Math.round(Number(i.metros_ajustados));
-      }
-      return acc;
-    })();
-    let savedMetrosOverride = savedMetros;  // reatribuído após "Salvar distribuição"
-
-    // Estado editável: metros escolhidos pelo admin por op_item_id.
-    // Default = distribuição salva (se houver) ou proposta proporcional
-    // do fator-gargalo.
-    const metrosOverride = {};
-    for (const it of resultado.itens) {
-      metrosOverride[it.op_item_id] = (savedMetrosOverride && savedMetrosOverride[it.op_item_id] != null)
-        ? savedMetrosOverride[it.op_item_id]
-        : it.metros_ajustados;
-    }
-
-    // Snapshot do default proporcional (para "Voltar à proposta proporcional").
-    var defaultMetrosOverride = {};
-    for (const it of resultado.itens) { defaultMetrosOverride[it.op_item_id] = Math.round(it.metros_ajustados); }
-
-    function distribuicaoAtual() {
-      const cur = {};
-      for (const k in metrosOverride) cur[k] = Math.round(metrosOverride[k] || 0);
-      return cur;
-    }
-    function metrosIguais(a, b) {
-      if (!a || !b) return false;
-      for (const k in metrosOverride) {
-        if (Math.round(a[k] || 0) !== Math.round(b[k] || 0)) return false;
-      }
-      return true;
-    }
-    // Há mudança não salva quando não existe distribuição salva ou quando a
-    // atual difere da última salva.
-    function temMudancaNaoSalva() { return !metrosIguais(distribuicaoAtual(), savedMetrosOverride); }
-
-    const wrap = el('div', { style: 'border-top:2px solid #eceef1;padding:18px 24px 0;' });
-
-    const semFio = ordens.some(o => Number(o.kg_recebido) <= 0);
-    if (semFio) wrap.appendChild(el('p', { style: 'font-size:13px;color:#d6403a;margin-bottom:8px;' }, 'Atenção: alguma ordem foi recebida com 0 kg.'));
-
-    wrap.appendChild(el('div', { style: 'font-size:13px;color:#3f4757;margin-bottom:2px;' },
-      el('strong', {}, 'Fator proporcional (cor mais escassa): '), resultado.fator.toFixed(2).replace('.', ',')));
-    wrap.appendChild(el('div', { style: 'font-size:12px;color:#8a93a3;margin-bottom:18px;' },
-      'Arraste os sliders para redistribuir os metros entre os modelos. O consumo de fio é recalculado ao vivo. Salve a distribuição aqui; depois use "Iniciar produção" no bloco de Preparação. Ambos travam se alguma cor exceder o recebido.'));
-
-    // Sliders por item ----------------------------------------------------
-    const sliders = el('div', {});
-    const itemRowState = {};  // { [op_item_id]: { slider, valorLabel } }
-
-    function trackBg(slider) {
-      const max = Number(slider.max) || 1;
-      const pct = Math.max(0, Math.min(100, (Number(slider.value) / max) * 100));
-      return '-webkit-appearance:none;appearance:none;width:100%;height:4px;border-radius:99px;background:linear-gradient(to right,#2563eb ' + pct + '%,#d8dce2 ' + pct + '%);outline:none;border:none;cursor:pointer;';
-    }
-
-    for (const c of itensCalc) {
-      const max = Math.max(window.maxMetrosItem(c, modelosById, parametrosByLargura, ordens), c.metros_pedidos);
-      const slider = el('input', { type: 'range', min: '0', max: String(max), step: '1' });
-      slider.value = String(Math.round(metrosOverride[c.op_item_id]));
-      slider.setAttribute('style', trackBg(slider));
-      const valorLabel = el('span', { style: 'font-size:13.5px;font-weight:700;color:#16203a;' }, window.fmtMetros(Number(slider.value)));
-      slider.addEventListener('input', () => {
-        metrosOverride[c.op_item_id] = Number(slider.value);
-        valorLabel.textContent = window.fmtMetros(Number(slider.value));
-        slider.setAttribute('style', trackBg(slider));
-        recompute();
-      });
-
-      const modelo = modelosById[c.modelo_id];
-      const linha = el('div', { style: 'margin-bottom:18px;' },
-        el('div', { style: 'display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px;' },
-          el('span', { style: 'font-size:13px;font-weight:600;color:#16203a;' }, window.rotuloModelo(modelo) + ' · pedido ' + window.fmtMetros(c.metros_pedidos)),
-          valorLabel,
-        ),
-        slider,
-        el('div', { style: 'display:flex;justify-content:space-between;margin-top:4px;' },
-          el('span', { style: 'font-size:11px;color:#aab2bf;' }, '0 m'),
-          el('span', { style: 'font-size:11px;color:#aab2bf;' }, 'máx individual: ' + window.fmtMetros(max)),
-        ),
-      );
-      sliders.appendChild(linha);
-      itemRowState[c.op_item_id] = { slider, valorLabel };
-    }
-    wrap.appendChild(sliders);
-
-    // Painel de consumo de fio (recomputa a cada movimento) ---------------
-    const consumoBox = el('div', { style: 'padding-bottom:16px;' });
-    wrap.appendChild(consumoBox);
-
-    const btnReset = el('button', {
-      type: 'button', style: BTN_LINK + 'margin-bottom:14px;',
-      onclick: () => {
-        for (const it of resultado.itens) {
-          const v = Math.round(it.metros_ajustados);
-          metrosOverride[it.op_item_id] = v;
-          const row = itemRowState[it.op_item_id];
-          if (row) { row.slider.value = String(v); row.valorLabel.textContent = window.fmtMetros(v); row.slider.setAttribute('style', trackBg(row.slider)); }
+    // YARN-BUTTONS-FINAL-CONTRACT: bloco de distribuição COMPARTILHADO
+    // (js/screens/op-distribuicao-ui.js) — a MESMA implementação
+    // consumida pelo painel do Pedido (pedido-detail-events.js). Rodapé =
+    // [Manter pedido, Salvar distribuição], ambos save-only; nenhum inicia
+    // produção. "Iniciar produção" mora no rail (buildAcaoAberta).
+    return window.buildDistribuicaoBlock({
+      op: op,
+      opItens: opItensRaw,
+      ordens: ordens,
+      modelosById: modelosById,
+      parametrosByLargura: parametrosByLargura,
+      variant: 'full',
+      onSaved: function (savedMap) {
+        // Reflete a distribuição recém-salva em memória e re-renderiza,
+        // para o "Iniciar produção" do rail reavaliar sua habilitação.
+        for (var i = 0; i < opItensRaw.length; i++) {
+          var it = opItensRaw[i];
+          if (savedMap[it.id] != null) it.metros_ajustados = savedMap[it.id];
         }
-        recompute();
+        render();
       },
-    }, svgEl(SVG_UNDO), 'Voltar à proposta proporcional');
-
-    // "Manter pedido" — inalterado: grava metragem do pedido + saldo e já
-    // libera a produção (atalho de aceite direto, sem passar por salvar).
-    const btnManter = el('button', {
-      type: 'button', style: 'background:#fff;color:#3f4757;border:1px solid #d8dce2;border-radius:4px;padding:10px 20px;font-weight:600;font-size:14px;font-family:inherit;cursor:pointer;',
-      onclick: () => aplicarRecalculo(resultado, 'manter'),
-    }, 'Manter pedido');
-    // YARN-BUTTONS-PHASE-1-CORRECTION: footer tem exatamente dois botões
-    // ("Manter pedido" + "Salvar distribuição") — "Iniciar produção" mora
-    // no bloco de Preparação (buildAcaoAberta), fora do modal.
-    const btnSalvar = el('button', { type: 'button', onclick: () => onSalvar() }, 'Salvar distribuição');
-
-    wrap.appendChild(el('div', { style: 'padding:14px 0 20px;border-top:1px solid #eceef1;margin-top:0;' },
-      btnReset,
-      el('div', { style: 'display:flex;align-items:center;gap:10px;justify-content:flex-end;' }, btnManter, btnSalvar),
-    ));
-
-    function setBtnState(btn, disabled) {
-      btn.disabled = disabled;
-      btn.setAttribute('style', 'display:inline-flex;align-items:center;gap:7px;background:#fff;color:' + (disabled ? '#9fb4d6' : '#2563eb') + ';border:1px solid ' + (disabled ? '#e1e7f0' : '#cfe0fb') + ';border-radius:4px;padding:10px 20px;font-weight:700;font-size:14px;font-family:inherit;cursor:' + (disabled ? 'not-allowed' : 'pointer') + ';');
-    }
-
-    function itensComMetrosAtuais() {
-      return itensCalc.map(c => ({ op_item_id: c.op_item_id, modelo_id: c.modelo_id, metros: metrosOverride[c.op_item_id] || 0 }));
-    }
-
-    function recompute() {
-      const consumos = consumoPorOrdem(itensComMetrosAtuais(), ordens, modelosById, parametrosByLargura);
-      const algumExcede = consumos.some(c => c.sobra < 0);
-
-      const linhas = [el('div', { style: 'font-size:10.5px;font-weight:700;color:#8a93a3;letter-spacing:.06em;margin-bottom:10px;' }, 'CONSUMO DE FIO')];
-      for (const c of consumos) {
-        const o = ordens.find(x => x.id === c.ordem_id);
-        const nome = o.tipo === 'algodao'
-          ? 'Algodão — ' + (o.cores?.nome || '?')
-          : 'Poliéster — ' + o.cor_poliester;
-        const sobraTxt = c.sobra >= 0
-          ? `sobra ${window.fmtKg(c.sobra)}`
-          : `EXCEDE em ${window.fmtKg(-c.sobra)}`;
-        linhas.push(el('div', { style: 'display:flex;justify-content:space-between;font-size:12.5px;color:' + (c.sobra < 0 ? '#d6403a' : '#3f4757') + ';margin-bottom:6px;' },
-          el('span', {}, nome + ': ' + window.fmtKg(c.kg_consumido) + ' / ' + window.fmtKg(c.kg_recebido)),
-          el('span', { style: 'font-weight:600;color:' + (c.sobra < 0 ? '#d6403a' : '#18794a') + ';' }, sobraTxt),
-        ));
-      }
-      consumoBox.replaceChildren(...linhas);
-
-      // "Salvar distribuição": só com mudança não salva (desabilita quando a
-      // distribuição atual == última salva) e sem excesso.
-      setBtnState(btnSalvar, !temMudancaNaoSalva() || algumExcede);
-    }
-
-    async function onSalvar() {
-      if (saving) return;
-      const consumos = consumoPorOrdem(itensComMetrosAtuais(), ordens, modelosById, parametrosByLargura);
-      if (consumos.some(c => c.sobra < 0)) { toast('Algum fio está excedido — ajuste os sliders', 'error'); return; }
-      saving = true;
-      try {
-        const itensFinais = itensCalc.map(c => ({
-          op_item_id: c.op_item_id,
-          metros_ajustados: Math.round((metrosOverride[c.op_item_id] || 0) * 100) / 100,
-        }));
-        const { error, step } = await window.salvarDistribuicaoOP({ opId: op.id, itens: itensFinais });
-        if (error) {
-          toast('Erro ao salvar distribuição — verifique no Supabase', 'error');
-          console.error(error, step);
-          return;
-        }
-        savedMetrosOverride = distribuicaoAtual();
-        toast('Distribuição salva', 'success');
-        recompute();
-      } finally {
-        saving = false;
-      }
-    }
-
-    recompute();
-    return wrap;
-  }
-
-  async function aplicarRecalculo(resultado, modo) {
-    if (saving) return;
-    saving = true;
-    try {
-      // Writes extraídos para js/screens/op-recalculo.js como
-      // window.aplicarRecalculoOP(...). Este caller preserva saving,
-      // toast, navigate e console.error.
-      const { error, step } = await window.aplicarRecalculoOP({
-        opId: op.id,
-        resultado,
-        modo,
-        ordens,
-      });
-
-      if (error) {
-        const mensagens = {
-          op_itens_update: 'Erro ao gravar metros ajustados',
-          saldo_fios_op_insert: 'Erro ao gravar saldo da OP — verifique no Supabase',
-          saldo_fios_select: 'Erro ao ler saldo total — verifique no Supabase',
-          saldo_fios_update: 'Erro ao gravar saldo total — verifique no Supabase',
-          saldo_fios_insert: 'Erro ao gravar saldo total — verifique no Supabase',
-          ops_update_status: 'Erro ao mudar status — saldo já gravado, verifique no Supabase',
-        };
-        toast(mensagens[step] || 'Erro ao recalcular OP', 'error');
-        console.error(error);
-        navigate('#/ops');
-        return;
-      }
-
-      toast(modo === 'aceitar' ? 'Proposta aceita — produção liberada' : 'Pedido mantido — produção liberada', 'success');
-      navigate('#/ops');
-    } finally {
-      saving = false;
-    }
+    });
   }
 
   let rightNode = null;
@@ -1416,110 +1209,28 @@
         : '');
   }
 
-  // YARN-BUTTONS-PHASE-1-CORRECTION: distribuição salva
-  // (op_itens.metros_ajustados) lida direto do banco — a fonte de verdade
-  // para a ação "Iniciar produção" do bloco de Preparação é o que foi
-  // SALVO, não o estado ao vivo dos sliders do modal (que pode ter edição
-  // pendente não salva). Espelha o cálculo de savedMetros de buildProposta.
-  function distribuicaoSalvaAtual() {
-    if (!opItensRaw.length) return null;
-    const acc = {};
-    for (const i of opItensRaw) {
-      if (i.metros_ajustados == null) return null;
-      acc[i.id] = Math.round(Number(i.metros_ajustados));
-    }
-    return acc;
-  }
-
-  function sobrasDaDistribuicaoSalva(savedMetros) {
-    const round3 = (n) => Math.round(n * 1000) / 1000;
-    const itensCalc = opItensRaw.map(i => ({ op_item_id: i.id, modelo_id: i.modelo_id, metros: savedMetros[i.id] || 0 }));
-    const consumos = consumoPorOrdem(itensCalc, ordens, modelosById, parametrosByLargura);
-    const algumExcede = consumos.some(c => c.sobra < 0);
-    const sobras = consumos
-      .filter(c => c.sobra > 0)
-      .map(c => {
-        const o = ordens.find(x => x.id === c.ordem_id);
-        return {
-          ordem_id: o.id, tipo: o.tipo,
-          cor_id: o.cor_id ?? null, cor_poliester: o.cor_poliester ?? null,
-          kg_sobra: round3(c.sobra),
-        };
-      });
-    return { algumExcede, sobras };
-  }
-
-  async function onIniciarProducao() {
-    if (saving) return;
-    const savedMetros = distribuicaoSalvaAtual();
-    if (!savedMetros) { toast('Salve a distribuição antes de iniciar a produção', 'error'); return; }
-    const { algumExcede, sobras } = sobrasDaDistribuicaoSalva(savedMetros);
-    if (algumExcede) { toast('Algum fio está excedido — ajuste e salve a distribuição', 'error'); return; }
-    saving = true;
-    try {
-      const { error, step } = await window.iniciarProducaoOP({ opId: op.id, sobras });
-      if (error) {
-        const mensagens = {
-          saldo_fios_op_insert: 'Erro ao gravar saldo da OP — verifique no Supabase',
-          saldo_fios_select: 'Erro ao ler saldo total — verifique no Supabase',
-          saldo_fios_update: 'Erro ao gravar saldo total — verifique no Supabase',
-          saldo_fios_insert: 'Erro ao gravar saldo total — verifique no Supabase',
-          ops_update_status: 'Erro ao mudar status — saldo já gravado, verifique no Supabase',
-        };
-        toast(mensagens[step] || 'Erro ao iniciar produção', 'error');
-        console.error(error);
-        navigate('#/ops');
-        return;
-      }
-      toast('Produção iniciada', 'success');
-      navigate('#/ops');
-    } finally {
-      saving = false;
-    }
-  }
-
   function buildAcaoAberta() {
-    var pendentes = ordens.filter(function (o) { return o.status === 'pendente'; });
-    var todasRecebidas = ordens.length > 0 && pendentes.length === 0;
-
-    if (!todasRecebidas) {
-      var detailPend = pendentes.length ? 'Ha ' + pendentes.length + ' ordem(ns) pendente(s) de recebimento.' : 'Aguardando ordens de compra de fio.';
-      return el('div', { style: RV_CARD + 'padding:15px 17px;' },
-        rvSectionPill('Preparacao', IC_MOV),
-        el('button', {
-          type: 'button',
-          style: RV_BTN_PRIMARY,
-          onclick: function () {
-            var alvo = document.getElementById && document.getElementById('insumos-open-op');
-            if (alvo && alvo.scrollIntoView) alvo.scrollIntoView({ behavior: 'smooth', block: 'start' });
-          },
-        }, 'Receber fios'),
-        el('div', { style: 'font-size:11.5px;color:#a2aab6;margin-top:9px;line-height:1.45;' }, detailPend));
-    }
-
-    // YARN-BUTTONS-PHASE-1-CORRECTION: com todos os fios recebidos, este
-    // botão vira a ação primária "Iniciar produção" — mesma posição do
-    // antigo "Revisar proposta", mesmo estilo primário. Habilita só quando
-    // existe distribuição salva e o fio recebido cobre o consumo.
-    var savedMetros = distribuicaoSalvaAtual();
-    var algumExcede = savedMetros ? sobrasDaDistribuicaoSalva(savedMetros).algumExcede : false;
-    var habilitado = savedMetros != null && !algumExcede;
-    var motivo = !savedMetros
-      ? 'Salve a distribuição no bloco de insumos antes de iniciar a produção.'
-      : (algumExcede ? 'Algum fio está excedido — ajuste e salve a distribuição.' : '');
-    var detail = habilitado
-      ? 'Todos os fios foram recebidos e a distribuição está salva — pronto para iniciar a producao.'
-      : motivo;
-    var btnStyle = habilitado
-      ? RV_BTN_PRIMARY
-      : RV_BTN_PRIMARY.replace('var(--rv-color-accent)', '#93b7f5').replace('cursor:pointer;', 'cursor:not-allowed;');
-    // .disabled é setado como propriedade (não via atributo el()) — mesmo
-    // padrão de setBtnState() em buildProposta, evita depender de
-    // removeAttribute em DOMs mínimos.
-    var btnIniciar = el('button', { type: 'button', style: btnStyle, onclick: onIniciarProducao }, 'Iniciar produção');
-    btnIniciar.disabled = !habilitado;
-    if (!habilitado) btnIniciar.setAttribute('title', motivo);
-
+    // YARN-BUTTONS-FINAL-CONTRACT — Surface 1: UMA ação primária,
+    // "Iniciar produção" (builder COMPARTILHADO, o mesmo consumido pelo
+    // painel do Pedido). Único ponto de início de produção. Habilita só
+    // com distribuição salva + fio recebido cobrindo; senão desabilitado
+    // com title explicativo (inclui "aguardando recebimento dos fios").
+    var api = window.RAVATEX_SCREENS.opDistribuicao;
+    var st = api.iniciarProducaoState(opItensRaw, ordens, modelosById, parametrosByLargura);
+    var styleDisabled = RV_BTN_PRIMARY.replace('var(--rv-color-accent)', '#93b7f5').replace('cursor:pointer;', 'cursor:not-allowed;');
+    var btnIniciar = api.buildIniciarProducaoButton({
+      op: op,
+      opItens: opItensRaw,
+      ordens: ordens,
+      modelosById: modelosById,
+      parametrosByLargura: parametrosByLargura,
+      styleEnabled: RV_BTN_PRIMARY,
+      styleDisabled: styleDisabled,
+      onIniciado: function () { navigate('#/ops'); },
+    });
+    var detail = st.habilitado
+      ? 'Distribuição salva e fios recebidos — pronto para iniciar a produção.'
+      : (st.motivo || '');
     return el('div', { style: RV_CARD + 'padding:15px 17px;' },
       rvSectionPill('Preparacao', IC_MOV),
       btnIniciar,

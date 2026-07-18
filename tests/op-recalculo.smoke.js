@@ -48,6 +48,7 @@ const cp     = require('node:child_process');
 const ROOT  = path.resolve(__dirname, '..');
 const INDEX = path.join(ROOT, 'index.html');
 const OPR   = path.join(ROOT, 'js', 'screens', 'op-recalculo.js');
+const ODU   = path.join(ROOT, 'js', 'screens', 'op-distribuicao-ui.js');
 const OPN   = path.join(ROOT, 'js', 'screens', 'op-nova.js');
 const OPPDF = path.join(ROOT, 'js', 'screens', 'op-pdf.js');
 const PAINEL= path.join(ROOT, 'js', 'screens', 'painel.js');
@@ -68,6 +69,7 @@ const OPSLIST = path.join(ROOT, 'js', 'screens', 'ops-list.js');
 
 const indexSrc  = fs.readFileSync(INDEX, 'utf8');
 const oprSrc    = fs.readFileSync(OPR,   'utf8');
+const oduSrc    = fs.readFileSync(ODU,   'utf8');
 const opnSrc    = fs.readFileSync(OPN,   'utf8');
 const opPdfSrc  = fs.readFileSync(OPPDF, 'utf8');
 const painelSrc = fs.readFileSync(PAINEL,'utf8');
@@ -200,11 +202,15 @@ test('6. inline NÃO contém mais function maxMetrosItem', () => {
     'inline ainda declara function maxMetrosItem — função deveria ter sido extraída');
 });
 
-test('7. op-nova.js chama window.maxMetrosItem (call-site em screenNovaOP)', () => {
-  // Após a extração de screenNovaOP para op-nova.js, o call-site
-  // window.maxMetrosItem() está em op-nova.js, não mais no inline.
-  assert.match(opnSrc, /window\.maxMetrosItem\(/,
-    'op-nova.js não referencia window.maxMetrosItem — call-site não foi atualizado');
+test('7. maxMetrosItem é chamado pelo builder de distribuição COMPARTILHADO (não no inline)', () => {
+  const inline = extractInlineScript(indexSrc);
+  assert.equal(/window\.maxMetrosItem\(/.test(inline), false,
+    'inline ainda chama window.maxMetrosItem');
+  // YARN-BUTTONS-FINAL-CONTRACT: o call-site dos sliders migrou de
+  // op-nova.js para o builder compartilhado (op-distribuicao-ui.js),
+  // consumido pelas duas telas (OP e Pedido).
+  assert.match(oduSrc, /window\.maxMetrosItem\(/,
+    'builder compartilhado não referencia window.maxMetrosItem');
 });
 
 test('8. op-nova.js contém buildProposta (NÃO está mais no inline)', () => {
@@ -215,34 +221,42 @@ test('8. op-nova.js contém buildProposta (NÃO está mais no inline)', () => {
     'op-nova.js não contém buildProposta');
 });
 
-test('9. op-nova.js contém recompute (NÃO está mais no inline)', () => {
+test('9. recompute vive no builder de distribuição COMPARTILHADO (NÃO no inline nem duplicado)', () => {
   const inline = extractInlineScript(indexSrc);
   assert.equal(/function\s+recompute\s*\(/.test(inline), false,
     'inline ainda tem recompute — extração incompleta');
-  assert.match(opnSrc, /function\s+recompute\s*\(/,
-    'op-nova.js não contém recompute');
+  // YARN-BUTTONS-FINAL-CONTRACT: recompute (habilitação dos botões +
+  // consumo ao vivo) mora no builder compartilhado, consumido pelas duas
+  // telas. op-nova.js apenas delega via window.buildDistribuicaoBlock.
+  assert.match(oduSrc, /function\s+recompute\s*\(/,
+    'builder compartilhado não contém recompute');
+  assert.match(opnSrc, /window\.buildDistribuicaoBlock\(/,
+    'op-nova.js deve delegar ao builder compartilhado');
 });
 
-test('10. op-nova.js contém onSalvar / onIniciarProducao (split do antigo onAceitar; NÃO no inline)', () => {
+test('10. salvar/iniciar produção vivem no builder COMPARTILHADO; sem onAceitar em lugar nenhum', () => {
   const inline = extractInlineScript(indexSrc);
-  // YARN-BUTTONS-PHASE-1: onAceitar foi decomposto em onSalvar/onIniciarProducao.
-  // YARN-BUTTONS-PHASE-1-CORRECTION: onIniciarProducao mora no escopo de
-  // screenNovaOP (não mais dentro de buildProposta) — acionado pelo bloco
-  // de Preparação, não pelo footer do modal.
+  // YARN-BUTTONS-FINAL-CONTRACT: o antigo onAceitar foi eliminado. O
+  // builder compartilhado persiste (salvarDistribuicaoOP) e inicia
+  // produção (iniciarProducaoOP); nenhuma tela reimplementa isso.
   assert.equal(/function\s+onAceitar\s*\(/.test(inline), false,
     'inline ainda tem onAceitar');
-  assert.match(opnSrc, /function\s+onSalvar\s*\(/,
-    'op-nova.js não contém onSalvar');
-  assert.match(opnSrc, /async function\s+onIniciarProducao\s*\(/,
-    'op-nova.js não contém onIniciarProducao');
+  assert.doesNotMatch(opnSrc, /function\s+onAceitar\s*\(/,
+    'op-nova.js não deve conter onAceitar');
+  assert.match(oduSrc, /window\.salvarDistribuicaoOP\(/,
+    'builder compartilhado deve persistir via salvarDistribuicaoOP');
+  assert.match(oduSrc, /window\.iniciarProducaoOP\(/,
+    'builder compartilhado deve iniciar via iniciarProducaoOP');
 });
 
-test('11. op-nova.js contém aplicarRecalculo wrapper (NÃO está mais no inline)', () => {
+test('11. wrapper aplicarRecalculo removido de op-nova.js (fluxo antigo aposentado; NÃO no inline)', () => {
   const inline = extractInlineScript(indexSrc);
   assert.equal(/async\s+function\s+aplicarRecalculo\s*\(/.test(inline), false,
-    'inline ainda tem aplicarRecalculo — extração incompleta');
-  assert.match(opnSrc, /async\s+function\s+aplicarRecalculo\s*\(/,
-    'op-nova.js não contém aplicarRecalculo');
+    'inline ainda tem aplicarRecalculo');
+  // O wrapper aplicarRecalculo (que iniciava produção via aplicarRecalculoOP)
+  // foi removido de op-nova.js — produção agora só via "Iniciar produção".
+  assert.doesNotMatch(opnSrc, /async\s+function\s+aplicarRecalculo\s*\(/,
+    'op-nova.js não deve mais conter o wrapper aplicarRecalculo');
 });
 
 test('12. op-nova.js NÃO contém writes de saldo_fios_op (write extraído para op-recalculo.js)', () => {
@@ -1078,64 +1092,62 @@ function extractAplicarRecalculoBlock(src) {
   return src.slice(start, i);
 }
 
-test('47. aplicarRecalculo foi extraída para op-nova.js (NÃO está mais no inline)', () => {
+test('47. wrapper aplicarRecalculo removido de op-nova.js; delega ao builder COMPARTILHADO', () => {
   const inline = extractInlineScript(indexSrc);
   assert.equal(/async\s+function\s+aplicarRecalculo\s*\(/.test(inline), false,
-    'inline ainda tem aplicarRecalculo — extração incompleta');
-  // Função foi movida para op-nova.js
-  assert.match(opnSrc, /async\s+function\s+aplicarRecalculo\s*\(/,
-    'op-nova.js não contém aplicarRecalculo');
+    'inline ainda tem aplicarRecalculo');
+  // YARN-BUTTONS-FINAL-CONTRACT: o wrapper que iniciava produção (fluxo
+  // combinado aplicarRecalculoOP) foi retirado de op-nova.js.
+  assert.doesNotMatch(opnSrc, /async\s+function\s+aplicarRecalculo\s*\(/,
+    'wrapper aplicarRecalculo deve ter sido removido de op-nova.js');
+  assert.match(opnSrc, /window\.buildDistribuicaoBlock\(/,
+    'op-nova.js deve delegar ao builder compartilhado');
 });
 
-test('48. bloco de aplicarRecalculo (em op-nova.js) chama window.aplicarRecalculoOP', () => {
-  const block = extractAplicarRecalculoBlock(opnSrc);
-  assert.ok(block, 'bloco de aplicarRecalculo não encontrado em op-nova.js');
-  assert.match(block, /window\.aplicarRecalculoOP\s*\(/,
-    'bloco de aplicarRecalculo em op-nova.js não chama window.aplicarRecalculoOP');
+test('48. builder compartilhado: rodapé é SAVE-ONLY (salvarDistribuicaoOP), nunca aplicarRecalculoOP', () => {
+  assert.match(oduSrc, /window\.salvarDistribuicaoOP\(/,
+    'Manter/Salvar devem persistir via salvarDistribuicaoOP');
+  assert.doesNotMatch(oduSrc, /window\.aplicarRecalculoOP\(/,
+    'o builder compartilhado NÃO deve usar o fluxo combinado aplicarRecalculoOP');
 });
 
-test('49. bloco de aplicarRecalculo (em op-nova.js) mantém saving', () => {
-  const block = extractAplicarRecalculoBlock(opnSrc);
-  assert.ok(block, 'bloco de aplicarRecalculo não encontrado em op-nova.js');
-  assert.match(block, /if\s*\(\s*saving\s*\)\s*return/, 'saving check não encontrado');
-  assert.match(block, /saving\s*=\s*true/, 'saving = true não encontrado');
-  assert.match(block, /saving\s*=\s*false/, 'saving = false (no finally) não encontrado');
+test('49. builder compartilhado inicia produção só via iniciarProducaoOP', () => {
+  assert.match(oduSrc, /window\.iniciarProducaoOP\(/,
+    'Iniciar produção deve usar iniciarProducaoOP');
 });
 
-test('50. bloco de aplicarRecalculo (em op-nova.js) mantém toast', () => {
-  const block = extractAplicarRecalculoBlock(opnSrc);
-  assert.ok(block, 'bloco de aplicarRecalculo não encontrado em op-nova.js');
-  assert.match(block, /toast\s*\(/, 'chamada toast não encontrada no bloco');
+test('50. op-nova.js NÃO faz WRITES de saldo (só leitura; writes centralizados em op-recalculo.js)', () => {
+  // Leitura (.select) de saldo_fios_op é permitida (visão Em Produção).
+  // O que não pode existir é INSERT/UPDATE de saldo a partir de op-nova.js.
+  assert.equal(/from\s*\(\s*['"]saldo_fios_op['"]\s*\)\s*\.insert\s*\(/.test(opnSrc), false,
+    'op-nova.js não deve inserir em saldo_fios_op');
+  assert.equal(/from\s*\(\s*['"]saldo_fios['"]\s*\)\s*\.(insert|update)\s*\(/.test(opnSrc), false,
+    'op-nova.js não deve escrever em saldo_fios');
 });
 
-test('51. bloco de aplicarRecalculo (em op-nova.js) mantém navigate("#/ops")', () => {
-  const block = extractAplicarRecalculoBlock(opnSrc);
-  assert.ok(block, 'bloco de aplicarRecalculo não encontrado em op-nova.js');
-  assert.match(block, /navigate\s*\(\s*['"]#\/ops['"]\s*\)/,
-    'navigate("#/ops") não encontrado no bloco');
-});
-
-test('52. bloco de aplicarRecalculo (em op-nova.js) NÃO contém mais saldo_fios_op.insert', () => {
-  const block = extractAplicarRecalculoBlock(opnSrc);
-  assert.ok(block, 'bloco de aplicarRecalculo não encontrado em op-nova.js');
-  assert.equal(/from\s*\(\s*['"]saldo_fios_op['"]\s*\)/.test(block), false,
-    'bloco de aplicarRecalculo ainda tem from("saldo_fios_op")');
-});
-
-test('53. bloco de aplicarRecalculo (em op-nova.js) NÃO contém mais saldo_fios select/update/insert', () => {
-  const block = extractAplicarRecalculoBlock(opnSrc);
-  assert.ok(block, 'bloco de aplicarRecalculo não encontrado em op-nova.js');
-  assert.equal(/from\s*\(\s*['"]saldo_fios['"]\s*\)/.test(block), false,
-    'bloco de aplicarRecalculo ainda tem from("saldo_fios")');
-});
-
-test('54. bloco de aplicarRecalculo (em op-nova.js) NÃO contém mais ops.update status em_producao', () => {
-  const block = extractAplicarRecalculoBlock(opnSrc);
-  assert.ok(block, 'bloco de aplicarRecalculo não encontrado em op-nova.js');
-  // Procura from('ops') seguido de update com status em_producao
+test('51. op-nova.js NÃO muda ops.status para em_producao diretamente', () => {
   const re = /from\s*\(\s*['"]ops['"]\s*\)[\s\S]*?update\s*\(\s*\{[\s\S]*?status\s*:\s*['"]em_producao['"]/;
-  assert.equal(re.test(block), false,
-    'bloco de aplicarRecalculo ainda tem update em ops com em_producao');
+  assert.equal(re.test(opnSrc), false,
+    'op-nova.js não deve conter update de ops para em_producao');
+});
+
+test('52. builder compartilhado NÃO faz writes inline de saldo/status (usa helpers de op-recalculo.js)', () => {
+  assert.equal(/from\s*\(\s*['"]saldo_fios_op['"]\s*\)/.test(oduSrc), false,
+    'builder compartilhado não deve escrever em saldo_fios_op diretamente');
+  assert.equal(/\.from\s*\(\s*['"]ops['"]\s*\)/.test(oduSrc), false,
+    'builder compartilhado não deve mudar status de ops diretamente');
+});
+
+test('53. writes de saldo/status permanecem centralizados em op-recalculo.js', () => {
+  assert.match(oprSrc, /from\s*\(\s*['"]saldo_fios_op['"]\s*\)/,
+    'op-recalculo.js deve conter o write de saldo_fios_op');
+  assert.match(oprSrc, /status\s*:\s*['"]em_producao['"]/,
+    'op-recalculo.js deve conter a transição para em_producao');
+});
+
+test('54. sem bloco aplicarRecalculo em op-nova.js (fluxo retirado)', () => {
+  assert.equal(extractAplicarRecalculoBlock(opnSrc), null,
+    'não deve haver bloco aplicarRecalculo em op-nova.js');
 });
 
 // ---- 29-32: outras funções continuam inline -------------------------
@@ -1146,7 +1158,7 @@ test('55. persistir NÃO está mais inline (extraído para op-persistir.js)', ()
     'inline ainda tem persistir - função deveria ter sido extraída');
 });
 
-test('56. buildProposta/recompute/onSalvar/onIniciarProducao em op-nova.js (NÃO no inline)', () => {
+test('56. buildProposta em op-nova.js delega ao builder compartilhado; recompute mora no módulo compartilhado', () => {
   const inline = extractInlineScript(indexSrc);
   assert.equal(/function\s+buildProposta\s*\(/.test(inline), false,
     'inline ainda tem buildProposta — extração incompleta');
@@ -1154,13 +1166,12 @@ test('56. buildProposta/recompute/onSalvar/onIniciarProducao em op-nova.js (NÃO
     'inline ainda tem recompute — extração incompleta');
   assert.equal(/function\s+onAceitar\s*\(/.test(inline), false,
     'inline ainda tem onAceitar — extração incompleta');
-  // Funções vivem em op-nova.js; onAceitar foi decomposto (YARN-BUTTONS-PHASE-1),
-  // e onIniciarProducao foi movida para o escopo de screenNovaOP, fora de
-  // buildProposta (YARN-BUTTONS-PHASE-1-CORRECTION).
+  // YARN-BUTTONS-FINAL-CONTRACT: buildProposta continua em op-nova.js mas
+  // como wrapper fino; recompute/salvar/iniciar vivem no builder
+  // COMPARTILHADO (op-distribuicao-ui.js), consumido também pelo Pedido.
   assert.match(opnSrc, /function\s+buildProposta\s*\(/);
-  assert.match(opnSrc, /function\s+recompute\s*\(/);
-  assert.match(opnSrc, /function\s+onSalvar\s*\(/);
-  assert.match(opnSrc, /async function\s+onIniciarProducao\s*\(/);
+  assert.match(opnSrc, /window\.buildDistribuicaoBlock\(/);
+  assert.match(oduSrc, /function\s+recompute\s*\(/);
 });
 
 test('57. screenNovaOP foi extraída para op-nova.js (NÃO está mais no inline)', () => {
