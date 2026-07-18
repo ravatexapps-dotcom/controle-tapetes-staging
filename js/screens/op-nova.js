@@ -1073,12 +1073,22 @@
   async function emitirOrdemCompra(ordem) {
     const res = await supa.rpc('emitir_ordem_compra_fio', { p_ordem_compra_fio_id: ordem.id });
     if (res && res.error) { toast('Erro ao emitir ordem de compra', 'error'); console.error(res.error); return; }
+    if (!res || !res.data || res.data.ok !== true) {
+      toast((res && res.data && res.data.erro) || 'Erro ao emitir ordem de compra', 'error');
+      console.error(res && res.data);
+      return;
+    }
     toast('Ordem de compra emitida', 'success');
     await reloadOrdens();
   }
   async function cancelarOrdemCompra(ordem) {
     const res = await supa.rpc('cancelar_ordem_compra_fio', { p_ordem_compra_fio_id: ordem.id });
     if (res && res.error) { toast('Erro ao cancelar ordem de compra', 'error'); console.error(res.error); return; }
+    if (!res || !res.data || res.data.ok !== true) {
+      toast((res && res.data && res.data.erro) || 'Erro ao cancelar ordem de compra', 'error');
+      console.error(res && res.data);
+      return;
+    }
     toast('Ordem de compra cancelada', 'success');
     await reloadOrdens();
   }

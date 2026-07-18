@@ -681,7 +681,7 @@ function buildOpNovaFixture(overrides = {}) {
   return Object.assign(base, overrides);
 }
 
-function buildFakeSupa(db) {
+function buildFakeSupa(db, rpcImpl) {
   function cloneRows(rows) {
     return JSON.parse(JSON.stringify(rows || []));
   }
@@ -725,10 +725,15 @@ function buildFakeSupa(db) {
         },
       };
     },
+    rpc(name, params) {
+      return rpcImpl
+        ? Promise.resolve(rpcImpl(name, params))
+        : Promise.resolve({ data: null, error: null });
+    },
   };
 }
 
-function makeRenderSandbox(db) {
+function makeRenderSandbox(db, rpcImpl) {
   const toastsNode = new FakeNode('div');
   const appNode = new FakeNode('div');
   const document = {
@@ -750,7 +755,7 @@ function makeRenderSandbox(db) {
     URL,
     URLSearchParams,
     location: { hash: '#/ops/nova' },
-    supa: buildFakeSupa(db),
+    supa: buildFakeSupa(db, rpcImpl),
   };
   sandbox.window = sandbox;
   sandbox.globalThis = sandbox;
@@ -776,6 +781,7 @@ function makeRenderSandbox(db) {
   sandbox.navigate = () => {};
   sandbox.itensValidosOP = (itens) => (itens || []).filter((item) => item && item.modeloId && Number(item.metros) > 0);
   sandbox.renderOPLatexAdmin = async () => new FakeNode('div');
+  sandbox.__toastsNode = toastsNode;
 
   return sandbox;
 }
@@ -836,8 +842,8 @@ function findNodeById(node, id) {
   return null;
 }
 
-async function renderNovaOpForTest({ opId = null, pedidoId = null, db } = {}) {
-  const sandbox = makeRenderSandbox(db || buildOpNovaFixture());
+async function renderNovaOpForTest({ opId = null, pedidoId = null, db, rpcImpl } = {}) {
+  const sandbox = makeRenderSandbox(db || buildOpNovaFixture(), rpcImpl);
   sandbox.__args = { opId, pedidoId };
   const view = await vm.runInContext('window.screenNovaOP(window.__args.opId, window.__args.pedidoId)', sandbox);
   return {
@@ -1611,4 +1617,88 @@ test('76. ORDEM-COMPRA-B1: base sem colunas de dimensão (pré-db/65) => linhas 
   assert.ok(reader, 'a seção deve renderizar mesmo sem a camada de dimensão (degrada com segurança)');
   const acoes = findButtons(reader).filter((b) => /Emitir ordem|Cancelar ordem/i.test(collectNodeText(b) + ' ' + (b.getAttribute('title') || '')));
   assert.equal(acoes.length, 0, 'sem colunas de dimensão, todas as linhas são legacy read-only (nenhuma ação)');
+});
+
+// -------------------------------------------------------------------------
+// ORDEM-COMPRA-B1-UI-FIX — emitir/cancelar devem ler res.data.ok (não só
+// res.error). db/66's RPCs respondem HTTP 200 com {ok:false, erro:...} em
+// rejeição de negócio (sem fornecedor, transição inválida); res.error só
+// existe em falha de transporte. Antes desta correção, emitirOrdemCompra/
+// cancelarOrdemCompra tratavam "sem erro de transporte" como sucesso,
+// mostrando um toast de sucesso falso mesmo quando a RPC rejeitou.
+// -------------------------------------------------------------------------
+
+function buildOpReaderRascunhoSemFornecedorFixture() {
+  return buildOpNovaFixture({
+    ops: [
+      {
+        id: 94, numero: 10, ano: 2026, status: 'aberta', tipo: 'tecelagem',
+        observacao: '', origem_op_id: null, lote_id: 304, criado_em: '2026-06-20T11:00:00Z',
+        lote: { id: 304, numero: 17, pedido_id: 'ped-1', cliente: { id: 501, nome: 'Cliente Atlas' } },
+        op_itens: [{ id: 10, modelo_id: 1, metros_pedidos: 120, metros_ajustados: null, pedido_item_id: 'pi-1' }],
+        op_fornecedores: [{ fornecedor_id: 701, etapa: 'cima' }],
+      },
+    ],
+    ordem_compra_config: [{ id: 1, exige_aceite: false }],
+    ordens_compra_fio: [
+      {
+        id: 621, op_id: 94, tipo: 'algodao', cor_id: 11, cor_poliester: null,
+        kg_pedido: 1.2, kg_recebido: 0, status: 'pendente', fornecedor_id: null,
+        status_administrativo: 'rascunho', status_aceite: 'nao_aplicavel',
+        status_recebimento: 'nao_recebido', aceite_exigido_na_emissao: null,
+        legado_recebimento_automatico: false, cores: { id: 11, nome: 'PRETO' },
+      },
+    ],
+    entregas: [],
+  });
+}
+
+async function flushMicrotasks() {
+  await new Promise((resolve) => setTimeout(resolve, 0));
+}
+
+test('77. ORDEM-COMPRA-B1-UI-FIX: Emitir rejeitado pela RPC (ok:false, sem fornecedor) => toast de ERRO, não o de sucesso', async () => {
+  const rendered = await renderNovaOpForTest({
+    opId: 94,
+    db: buildOpReaderRascunhoSemFornecedorFixture(),
+    rpcImpl: (name) => (name === 'emitir_ordem_compra_fio'
+      ? { data: { ok: false, erro: 'Ordem sem fornecedor atribuido nao pode ser emitida' }, error: null }
+      : { data: null, error: null }),
+  });
+  const reader = findNodeById(rendered.view, 'ordens-compra-reader');
+  const emitirBtn = findButtons(reader).find((b) => /Emitir ordem/i.test(collectNodeText(b) + ' ' + (b.getAttribute('title') || '')));
+  assert.ok(emitirBtn, 'botão Emitir deve existir na ordem rascunho sem fornecedor');
+
+  emitirBtn._listeners.click();
+  await flushMicrotasks();
+
+  const toastNodes = rendered.sandbox.__toastsNode.children;
+  assert.equal(toastNodes.length, 1, 'deve haver exatamente 1 toast após o clique (nenhum toast de sucesso adicional)');
+  const lastToast = toastNodes[toastNodes.length - 1];
+  assert.match(lastToast.textContent, /sem fornecedor atribuido/i, 'toast deve mostrar a mensagem de erro devolvida pela RPC');
+  assert.doesNotMatch(lastToast.textContent, /^Ordem de compra emitida$/i, 'REGRESSÃO: não deve mostrar o toast de sucesso quando a RPC rejeitou (ok:false)');
+  assert.match(lastToast.className, /bg-red-600/, 'toast deve ser da classe de erro (bg-red-600), não sucesso (bg-green-600)');
+});
+
+test('78. ORDEM-COMPRA-B1-UI-FIX: Cancelar rejeitado pela RPC (ok:false) => toast de ERRO, não o de sucesso', async () => {
+  const rendered = await renderNovaOpForTest({
+    opId: 94,
+    db: buildOpReaderRascunhoSemFornecedorFixture(),
+    rpcImpl: (name) => (name === 'cancelar_ordem_compra_fio'
+      ? { data: { ok: false, erro: 'Transicao invalida: ordem em status cancelada nao pode ser cancelada' }, error: null }
+      : { data: null, error: null }),
+  });
+  const reader = findNodeById(rendered.view, 'ordens-compra-reader');
+  const cancelarBtn = findButtons(reader).find((b) => /Cancelar ordem/i.test(collectNodeText(b) + ' ' + (b.getAttribute('title') || '')));
+  assert.ok(cancelarBtn, 'botão Cancelar deve existir na ordem rascunho');
+
+  cancelarBtn._listeners.click();
+  await flushMicrotasks();
+
+  const toastNodes = rendered.sandbox.__toastsNode.children;
+  assert.equal(toastNodes.length, 1, 'deve haver exatamente 1 toast após o clique (nenhum toast de sucesso adicional)');
+  const lastToast = toastNodes[toastNodes.length - 1];
+  assert.match(lastToast.textContent, /nao pode ser cancelada/i, 'toast deve mostrar a mensagem de erro devolvida pela RPC');
+  assert.doesNotMatch(lastToast.textContent, /^Ordem de compra cancelada$/i, 'REGRESSÃO: não deve mostrar o toast de sucesso quando a RPC rejeitou (ok:false)');
+  assert.match(lastToast.className, /bg-red-600/, 'toast deve ser da classe de erro (bg-red-600), não sucesso (bg-green-600)');
 });
