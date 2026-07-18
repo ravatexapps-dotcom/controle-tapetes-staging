@@ -1,8 +1,10 @@
 # ACTIVE OPERATIONAL HANDOFF
 
-- **`ORDEM-COMPRA REFOUNDATION` — diagnosis committed + PART 1 refounded spec
-  `PROPOSED / AWAITING ARCHITECT RATIFICATION` (2026-07-18, two docs-only commits,
-  branch `dev`):** Two-step order chain (diagnosis correction → PART 1). **(1)
+- **`ORDEM-COMPRA REFOUNDATION` — Part R `RATIFIED / ACCEPTED` (2026-07-18,
+  branch `dev`):** The architect accepted the governing refounded specification
+  against baseline `f2261ec` after the final read-only verification returned
+  `RATIFIABLE`. The acceptance chain began with diagnosis correction → PART 1.
+  **(1)
   Diagnosis** `docs/reports/ORDEM_COMPRA_LEGACY_DIAGNOSIS_2026-07-18.md` corrected
   to the architect-ratified **51-header 1:1 legacy conversion** (64 needs / 51
   headers / 51 items / 51 allocations) — committed **alone** as `de62b16` ("Add
@@ -27,8 +29,8 @@
   new diagnosis report + refounded spec) need updating in a **separate doc phase**
   (outside this pass's allowed files). **Phase `A`/`B1` historical acceptance
   preserved, not erased**; their flat foundation superseded on the persistence
-  model. **`REFUND-A` and every phase `NOT AUTHORIZED`** pending ratification of
-  Part R. **No implementation / no DB write / no production access / no push / no
+  model. **`REFUND-A` and every phase remain `NOT AUTHORIZED`** pending their own
+  architect orders. **No implementation / no DB write / no production access / no push / no
   `main`** this phase; `.gitignore` left untouched/unstaged. **Binding
   precondition:** a contemporaneous read-only **production** diagnosis is mandatory
   before any production migration (production UNKNOWN, not accessed). **Record (2nd
@@ -48,7 +50,7 @@
   ratified supplier-null exception. **Validation gates all pass; no open-alternative
   language remains in Part R** (residual `recommend`/`option` matches are all in the
   superseded §0–§11). Conversion unchanged 64/51/51/51; A/B1 history preserved. Spec
-  remains `PROPOSED / AWAITING ARCHITECT RATIFICATION`.
+  remained `PROPOSED / AWAITING ARCHITECT RATIFICATION` at that checkpoint.
   **FINAL STRUCTURAL PATCH (4th commit, `Complete purchase-order refoundation
   structural contract`):** a second (final) read-only ratification audit returned
   `REQUIRES_SPEC_PATCH_BEFORE_RATIFICATION` (accepted); the architect supplied
@@ -64,9 +66,17 @@
   explicit `ordem_compra_item_compat_fio` one-to-one mapping table, event-derived
   idempotent `saldo_fios` reconciliation, and the Phase-C maintenance-window +
   **point-of-no-return**. Validation gates pass; conversion unchanged 64/51/51/51.
-  **Next authorizable action:** one final read-only verification of the patched
-  structural clauses, then architect ratification; then `REFUND-A`, its own order.
-  `REFUND-A` NOT AUTHORIZED.
+  **RATIFICATION CLOSEOUT:** acceptance baseline `f2261ec`; diagnosis commit
+  `de62b16`; initial proposed-spec commit `c49f369`; design-gate commit `c10e959`;
+  final structural-contract commit `f2261ec`; final verification verdict
+  `RATIFIABLE`; conversion confirmed at 64 needs / 51 headers / 51 items / 51
+  allocations. Part R is now `RATIFIED / ACCEPTED`. The historical acceptance of
+  old Phase `A`/`B1` is preserved while their flat persistence foundation remains
+  superseded. No implementation has begun. The contemporaneous read-only production
+  diagnosis remains a binding precondition before any production migration. Pending
+  non-blocking documentation follow-ups: `PEDIDO_OP_SCHEMA_CONTRACT.md` §6.2 and
+  `DOCUMENTATION_INDEX.md`. **Next authorizable action:** `REFUND-A`, only by its own
+  architect order. `REFUND-A` remains `NOT AUTHORIZED`.
 
 - **`ORDEM-COMPRA-LIFECYCLE` Phase `B1` — `CLOSED / ACCEPTED` (2026-07-18,
   closeout order "CLOSEOUT ORDEM-COMPRA-B1", docs-only, branch `dev`):**

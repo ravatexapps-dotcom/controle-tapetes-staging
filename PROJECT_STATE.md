@@ -30,9 +30,12 @@ are in `docs/ledgers/G28_LEDGER.md`. HEAD/working tree/divergence: consult Git d
   the Ingestor's Google OAuth token is expired, so no documents are entering the live
   system.** See the `POST-LAUNCH DEBT REGISTER`. **Standing reminder: flip the Supabase
   MCP back to read-only** (still management-scoped/write-capable from `M2`/`M3`).
-- **`ORDEM-COMPRA REFOUNDATION` — legacy diagnosis committed `de62b16`
-  (accepted evidence); PART 1 refounded spec `PROPOSED / AWAITING ARCHITECT
-  RATIFICATION` (2026-07-18).** The purchase-order model is being refounded from
+- **`ORDEM-COMPRA REFOUNDATION` — Part R `RATIFIED / ACCEPTED` (2026-07-18).**
+  The architect accepted the governing refounded specification against baseline
+  `f2261ec` after the final read-only verification returned `RATIFIABLE`. Acceptance
+  chain: legacy diagnosis `de62b16` (accepted evidence); initial proposed-spec
+  commit `c49f369`; design-gate commit `c10e959`; final structural-contract commit
+  and acceptance baseline `f2261ec`. The purchase-order model is refounded from
   the flat three-dimension `ordens_compra_fio` table into a **four-layer model**
   (`necessidade_compra_fio → ordem_compra → ordem_compra_item →
   ordem_compra_item_alocacao`) — governing **Part R** of
@@ -69,9 +72,14 @@ are in `docs/ledgers/G28_LEDGER.md`. HEAD/working tree/divergence: consult Git d
   RPC/trigger split, receipt-ledger sign/reversal + append-only, explicit
   `ordem_compra_item_compat_fio` mapping, event-derived `saldo_fios`, cutover
   point-of-no-return, and the native receipt lifecycle gate. **Every
-  migration-critical decision is now CLOSED; no open alternatives remain.** Spec
-  still `PROPOSED / AWAITING ARCHITECT RATIFICATION`; next = one final read-only
-  verification of the patched structural clauses, then architect ratification.
+  migration-critical decision is CLOSED; no open alternatives remain.** The final
+  verification found no migration-critical contradiction, omission, or unresolved
+  choice. **No implementation has begun; `REFUND-A` remains `NOT AUTHORIZED` and is
+  merely the next authorizable action, by its own architect order.** A contemporaneous
+  read-only production diagnosis remains mandatory before any production migration.
+  Non-blocking documentation follow-ups remain pending: `PEDIDO_OP_SCHEMA_CONTRACT.md`
+  §6.2 and `DOCUMENTATION_INDEX.md`. The historical acceptance of the old Phase `A`
+  and `B1` remains preserved while their flat persistence foundation is superseded.
 - **`ORDEM-COMPRA-LIFECYCLE` track (flat-model history, superseded on persistence
   by the refoundation above) — spec `RATIFIED` (`ORDEM-COMPRA-LIFECYCLE-
   SPEC-RATIFICATION-R1`, 2026-07-18); Phase `A` (schema + config) `CLOSED /

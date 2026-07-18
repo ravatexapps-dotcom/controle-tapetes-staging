@@ -2777,3 +2777,34 @@ risco residual e próxima fase indicada no fechamento.
 - **Next authorizable action:** one final read-only verification of the patched
   structural clauses; then architect ratification; then `REFUND-A`, its own order.
   `REFUND-A` remains `NOT AUTHORIZED`.
+
+## 2026-07-18 — ORDEM-COMPRA REFOUNDATION — Part R RATIFICATION CLOSEOUT — RATIFIED / ACCEPTED
+
+- **Architect ruling:** Part R is `RATIFIED / ACCEPTED`. Acceptance baseline:
+  `f2261ec`. The final read-only verification returned `RATIFIABLE` and found no
+  migration-critical contradiction, omission, ambiguity, or unresolved choice.
+- **Acceptance chain:** legacy diagnosis commit `de62b16`; initial proposed-spec
+  commit `c49f369`; design-gate commit `c10e959`; final structural-contract commit
+  and acceptance baseline `f2261ec`.
+- **Conversion confirmed:** **64 needs / 51 headers / 51 items / 51 allocations**.
+  Every header-bearing legacy source row remains 1:1; Class C remains needs-only.
+- **Persistence ruling:** the four-layer Part R model is governing. Historical
+  acceptance of old Phase `A` and `B1` is preserved; their flat persistence
+  foundation is superseded, not erased.
+- **Authorization boundary:** acceptance authorizes no implementation. No
+  implementation has begun. `REFUND-A` remains `NOT AUTHORIZED` and requires its
+  own architect order. A contemporaneous read-only production diagnosis remains a
+  binding precondition before any production promotion or migration in this track.
+- **Pending non-blocking documentation follow-ups:** update
+  `PEDIDO_OP_SCHEMA_CONTRACT.md` §6.2 and register the refounded spec/diagnosis in
+  `DOCUMENTATION_INDEX.md`; neither changes or blocks the ratified structural model.
+- **Local instruction-file classification:** untracked root `AGENTS.md` was present
+  before this closeout and is byte-identical to tracked `CLAUDE.md`, the authority-
+  none agent-tooling pointer. It has no repository references or Git history,
+  introduces no conflicting instruction, and was left untouched and uncommitted.
+  Pre-existing `.gitignore` changes were also left untouched and unstaged.
+- **Scope:** documentation-only closeout. Only the governing spec, `PROJECT_STATE.md`,
+  `AGENT_HANDOFF.md`, and this append-only ledger were changed. No code, migration,
+  database, production, prohibited project, push, or `main` action occurred.
+- **Next authorizable action:** `REFUND-A`, by a separate explicit architect order.
+  `REFUND-A` remains `NOT AUTHORIZED`.

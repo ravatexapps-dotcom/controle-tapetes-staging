@@ -1,7 +1,8 @@
-# Purchase Order (Ordem de Compra de Fio) Lifecycle — Proposed Spec
+# Purchase Order (Ordem de Compra de Fio) Lifecycle — Specification
 
-> **REFOUNDATION STATUS (2026-07-18):** `PROPOSED / AWAITING ARCHITECT
-> RATIFICATION`. **Part R (below) is the governing model** — hardened through **two**
+> **REFOUNDATION STATUS (2026-07-18):** `RATIFIED / ACCEPTED` by architect order,
+> against baseline `f2261ec`, after the final read-only verification returned
+> `RATIFIABLE`. **Part R (below) is the governing model** — hardened through **two**
 > read-only ratification audits (both `REQUIRES_SPEC_PATCH_BEFORE_RATIFICATION`,
 > accepted): the design-gate patch closed the alternatives, and the final structural
 > patch closed the structural contracts (legacy source-row identity; exactly two
@@ -20,9 +21,11 @@
 > immutable events, future-requirements alignment) **transfer** into Part R
 > unless amended there. Part R cites the read-only legacy evidence in
 > `docs/reports/ORDEM_COMPRA_LEGACY_DIAGNOSIS_2026-07-18.md` (diagnosis commit
-> `de62b16`, architect-ratified conversion counts). **No implementation is
-> authorized** — `REFUND-A` and every phase remain `NOT AUTHORIZED` pending
-> ratification of this document. The historical acceptance of Phase `A`/`B1` is
+> `de62b16`, architect-ratified conversion counts). Acceptance chain: initial
+> proposed-spec commit `c49f369`; design-gate commit `c10e959`; final structural-
+> contract commit and acceptance baseline `f2261ec`. **No implementation is
+> authorized** — `REFUND-A` and every phase remain `NOT AUTHORIZED` pending their
+> own architect orders. The historical acceptance of Phase `A`/`B1` is
 > **preserved, not erased**; their flat foundation is superseded, not deleted.
 >
 > **Status (flat model, superseded on persistence — ratified decisions transfer):**
@@ -66,7 +69,7 @@
 
 ---
 
-## Part R — REFOUNDATION (four-layer persistence model) — PROPOSED
+## Part R — REFOUNDATION (four-layer persistence model) — RATIFIED / ACCEPTED
 
 > Governing model. Cites `docs/reports/ORDEM_COMPRA_LEGACY_DIAGNOSIS_2026-07-18.md`
 > (diagnosis commit `de62b16`) for all legacy facts and the architect-ratified
@@ -105,11 +108,11 @@ acts; each is a distinct responsibility with its own surface:
    `ordem_compra` header (three dimensions, §R.6–R.8), on the purchase order's own
    detail screen.
 
-### R.3 Four-layer persistence model (PROPOSED)
+### R.3 Four-layer persistence model (ratified design; not implemented)
 
 All four layers are mandatory (Flaw 1). **All design sub-decisions are CLOSED by
 the architect design-gate rulings (2026-07-18); no alternatives remain.** DDL is
-PROPOSED (this document applies no schema).
+ratified as a contract; this document applies no schema.
 
 **Layer 1 — `necessidade_compra_fio`** (Model A — atomic need per origin;
 Rulings 1–5). There is **no** `necessidade_compra_fio_origem` child table and
@@ -676,8 +679,8 @@ and its **own architect UI validation** where it touches UI.
   production precondition satisfied, architect acceptance. *Production:* the only
   phase that may touch production, and only post-diagnosis.
 
-None of these is authorized or accepted by this document. **REFUND-A remains
-`NOT AUTHORIZED`** pending architect ratification of the patched Part R.
+Ratification accepts the governing model but authorizes none of these phases.
+**REFUND-A remains `NOT AUTHORIZED`** pending its own architect order.
 
 ### R.18 Verification against the four structural flaws (CONTEXT SUPPLEMENT)
 
