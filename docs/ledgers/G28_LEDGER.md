@@ -2047,3 +2047,185 @@ risco residual e próxima fase indicada no fechamento.
   requirements above. Separately: resolution of the phantom-audit governance
   item (source retrieval or the fallback citation correction), whenever the
   architect reports which branch applies.
+
+## 2026-07-18 — ORDEM-COMPRA-LIFECYCLE Phase A (schema + config) — CLOSED / ACCEPTED
+
+- **Gate:** `CLOSED / ACCEPTED` — explicit architect order ("ARCHITECT
+  AUTHORIZATION — ORDEM-COMPRA-PHASE-A (schema + config)"), Sonnet 5 / medium
+  effort, scoped to Phase `A` exclusively per `ORDEM_COMPRA_LIFECYCLE_SPEC_
+  PROPOSED.md` §11 — Phases `B`-`E` each require their own order.
+- **Front:** `ORDEM-COMPRA-LIFECYCLE`, Phase `A`, per
+  `docs/architecture/ORDEM_COMPRA_LIFECYCLE_SPEC_PROPOSED.md` (`RATIFIED`,
+  `ORDEM-COMPRA-LIFECYCLE-SPEC-RATIFICATION-R1`).
+- **Branch discipline (new, binding for all implementation work going
+  forward per this order):** branch `dev` created from `work/g28-document-
+  qualification`'s HEAD (`84e2a07`); all implementation commits for this
+  phase land on `dev`. `git push production dev` is separately authorized
+  (remote backup) — see Push below. Push to `main` remains forbidden
+  (auto-deploys to production).
+- **Technical commit:** `fb0e6cb` — "Add ordem de compra lifecycle schema
+  (Phase A)" (`db/65_ordem_compra_lifecycle_schema.sql`,
+  `tests/ordem-compra-lifecycle-schema.smoke.js`). Documentation closeout:
+  this entry, in a separate commit after staging verification.
+- **Scope resolution (asked and answered before writing SQL):** the order's
+  own bullet enumeration named only three schema elements (dimension
+  columns, `ordem_compra_eventos`, config storage) but its SCOPE header
+  cited spec §8's Phase A row as authoritative, and that row explicitly
+  includes a fourth element — the `ordem_compra_fio_lancamentos` ledger
+  table (empty, no trigger, Phase C's job to wire). Flagged to the architect
+  before implementation; **architect selected "include it, per §8's Phase A
+  row"** — included in `db/65`, documented here rather than silently
+  resolved either way.
+- **Four schema additions, all additive/forward-only/idempotent:**
+  1. **`public.ordens_compra_fio`** gains 12 new columns (§3.1):
+     `status_administrativo` (`rascunho|emitida|cancelada`, default
+     `rascunho`), `status_aceite` (`nao_aplicavel|pendente|aceita|
+     rejeitada`, default `nao_aplicavel`), `status_recebimento`
+     (`nao_recebido|parcial|recebido`, default `nao_recebido`) — the three
+     orthogonal dimensions — plus `aceite_exigido_na_emissao` (nullable
+     freeze-snapshot), `emitida_em`/`emitida_por`, `cancelada_em`/
+     `cancelada_por`, `aceite_decidida_em`/`aceite_decidida_por`,
+     `aceite_motivo`, `legado_recebimento_automatico` (default `FALSE`).
+     Every column additive/nullable-or-defaulted; the existing `status`/
+     `kg_recebido` columns untouched (confirmed by static test — no `DROP`,
+     no `ALTER COLUMN` on either).
+  2. **`public.ordem_compra_fio_lancamentos`** (new, §3.2) — physical
+     receipt ledger, `kg_recebido NUMERIC(10,3) CHECK (> 0)`, indexed on
+     `ordem_compra_fio_id`. Shipped empty/unused: no trigger (Phase C's
+     job), no writer RPC.
+  3. **`public.ordem_compra_eventos`** (new, §3.4) — transition audit,
+     `op_eventos` (`db/21`) / `usuarios_eventos` (`db/60`) pattern:
+     `dimensao CHECK IN (administrativo, aceite, recebimento)`,
+     `tipo_evento`, `valor_anterior`/`valor_novo`, `payload JSONB`. No
+     writer exists yet (every write path in spec §4 is Phase B/C).
+  4. **`public.ordem_compra_config`** (new, §3.5) — singleton
+     (`id SMALLINT PRIMARY KEY DEFAULT 1 CHECK (id = 1)`),
+     `exige_aceite BOOLEAN NOT NULL DEFAULT FALSE`, seeded via
+     `INSERT ... ON CONFLICT (id) DO NOTHING`. Dedicated one-row table, not
+     a generic key-value store (Rule 7).
+- **RLS/ACL — db/57/63 standard, admin-only read, no client writes, stated
+  complete (not a delta) on all three new tables:** `ENABLE ROW LEVEL
+  SECURITY`; `REVOKE ALL FROM PUBLIC, anon, authenticated`; `GRANT SELECT TO
+  authenticated`; single `FOR SELECT USING (is_admin())` policy; no
+  `INSERT`/`UPDATE`/`DELETE` policy for any client role on any of the three
+  — every future writer (Phase B/C's `SECURITY DEFINER` RPCs) writes as
+  table owner, bypassing RLS by ownership, never by a permissive policy.
+- **Binding gap 1 honored (single transaction):** the `ALTER TABLE` and the
+  §3.6 legacy-marking `UPDATE` execute inside one explicit `BEGIN`/`COMMIT`
+  block in `db/65` — no window exists for a live draft row to be mislabeled
+  by the backfill's own `WHERE status_administrativo = 'rascunho'` clause.
+  Binding gap 2 (revoking direct `UPDATE` on the four dimension columns from
+  `authenticated`) is explicitly Phase B/C scope, per the spec — not applied
+  here; confirmed absent by static test (`scope guard` test).
+- **Legacy backfill (§3.6):** every pre-existing row (39 total, all at the
+  column default `status_administrativo='rascunho'` immediately after the
+  `ALTER TABLE`) marked `status_administrativo='emitida'`,
+  `status_aceite='nao_aplicavel'`, `legado_recebimento_automatico=TRUE`,
+  `status_recebimento` derived from the legacy `status` column
+  (`pendente→nao_recebido`, `recebido_parcial→parcial`,
+  `recebido_total→recebido`). No `kg_recebido` value rewritten.
+- **HARD STOP ZERO passed before any write:** the order required confirming
+  the MCP ref before writing. The project-scoped `supabase-legacy` MCP
+  (distinct from the management-scoped, production-pinned, read-only MCP
+  already connected this session) was fingerprinted via row counts unique
+  to the legacy/development database per the `M3` closeout record —
+  `usuarios_eventos=9` and `document_link_revisions=8` — both matched
+  exactly, confirming `supabase-legacy` is pinned to `ucrjtfswnfdlxwtmxnoo`
+  (development, formerly "staging"), not `gqmpsxkxynrjvidfmojk`
+  (production). No write issued before this confirmation.
+- **Staging (`ucrjtfswnfdlxwtmxnoo`) apply:** applied via `supabase-legacy`
+  MCP `apply_migration`. **Migrations registry — before/after:** before —
+  highest recorded `64_backup_runs_schema` (`20260717125153`); after —
+  `65_ordem_compra_lifecycle_schema` recorded at `20260718110246`,
+  immediately following `64` with no gap. **Pre-state:** 39
+  `ordens_compra_fio` rows (12 `pendente`, 0 `recebido_parcial`, 27
+  `recebido_total`); none of the four new tables/columns existed.
+  **Post-state:** same 39 rows, all backfilled correctly (12→
+  `nao_recebido`, 27→`recebido`, 0 bad-mapping rows in either group,
+  confirmed live); `ordem_compra_fio_lancamentos`/`ordem_compra_eventos`
+  both empty (0 rows, as designed); `ordem_compra_config` = 1 row,
+  `exige_aceite=false`.
+- **Verification matrix (`BEGIN…ROLLBACK`, synthetic, cleanup confirmed
+  zero), 14/14 checks, all `OK`:**
+  1. Legacy marking: both groups (27 `recebido_total`→`recebido`, 12
+     `pendente`→`nao_recebido`) map correctly, zero bad-mapping rows, zero
+     `NULL kg_recebido` on a `recebido_total` row.
+  2. New order defaults: a synthetic draft lands `status_administrativo=
+     rascunho`, `status_aceite=nao_aplicavel`, `status_recebimento=
+     nao_recebido`, `aceite_exigido_na_emissao=NULL`,
+     `legado_recebimento_automatico=false` — exactly the column defaults,
+     no legacy contamination.
+  3. `ordem_compra_config`: exactly 1 row, `exige_aceite=false`.
+  4. Events-table role matrix: `anon` `SELECT` → `42501` (table `GRANT`
+     boundary, before RLS even evaluates); non-admin `authenticated`
+     (`auth.uid()` resolved to a random UUID with no matching admin row) →
+     `0` rows visible (RLS filters); admin `authenticated` (real admin
+     `auth.uid()`) → `1` row visible (the synthetic event, correctly
+     surfaced).
+  5. Dimension `CHECK` constraints reject invalid values on all four
+     enum-bearing columns: `status_administrativo`, `status_aceite`,
+     `status_recebimento` (all `23514 check_violation` on an out-of-set
+     `UPDATE`), `ordem_compra_eventos.dimensao` (same), and the
+     `ordem_compra_config` singleton `CHECK (id = 1)` (rejects a second row
+     with `id=2`).
+  **Cleanup verified zero:** post-rollback live counts —
+  `ordens_compra_fio=39` (unchanged), `ordem_compra_fio_lancamentos=0`,
+  `ordem_compra_eventos=0`, `ordem_compra_config=1` (the real seed row
+  only) — no synthetic residue survived the `ROLLBACK`.
+- **Tests:** `tests/ordem-compra-lifecycle-schema.smoke.js`, 12/12 (static
+  source assertions — every new column/default/`CHECK`, all three new
+  tables' shape/index/RLS/grants, the single-transaction wrapper, the
+  backfill mapping, and a scope guard confirming no RPC/trigger/
+  dimension-column `REVOKE` — all explicitly Phase B/C/D territory — leaked
+  into this file). **Regression — file-swap method** (purely additive
+  change, one new SQL file + one new test file, zero existing files
+  modified — regression is guaranteed by construction, verified anyway):
+  the new test file moved aside, full suite run (`before`: `3830` tests /
+  `3690` pass / `140` fail), file restored and re-run (`after`: `3842` /
+  `3702` pass / `140` fail) — exactly the `+12` new tests added, all
+  passing; the 140 failing test names confirmed byte-identical between
+  runs (`comm -13`/`comm -23` both empty — pre-existing, unrelated
+  flakiness class, e.g. `write-guard.smoke.js`'s `ECONNREFUSED
+  127.0.0.1:8765` against a local `http.server` not running in this
+  session).
+- **Forbidden scope honored:** no RPC (`emitir`/`cancelar`/`decidir_aceite`/
+  `registrar_recebimento_ordem_compra_fio` — all Phase B), no UI, no
+  `.js` file touched, no trigger on `ordem_compra_fio_lancamentos` (Phase
+  C), no `REVOKE` of the dimension columns' `authenticated` write access
+  (Phase B/C, binding gap 2), no production access, no push to `main`.
+- **Hard stops:** none encountered. MCP ref confirmed before any write (see
+  above); the one scope ambiguity (ledger table inclusion) was surfaced to
+  the architect and resolved before implementation, not guessed.
+- **STRUCTURAL POLICY COMPLIANCE:** `§7` (size) — both new files well under
+  the acceptable ceiling; `§9` (Supabase writes) — no JS write module
+  touched (schema-only phase); `§13` (tests) — migration smoke proportional
+  to risk, static allow-list-style assertions, full staging role-matrix via
+  `BEGIN…ROLLBACK` as the real gate; `§14` (single scope) — schema/config
+  only, no RPC/UI/trigger/gate mixed in; `§15` (Git) — selective staging by
+  literal path (`db/65` + the new test file only — the pre-existing
+  uncommitted `op-nova.js`/`op-recalculo.js`/test changes on this worktree
+  from before this phase began were never staged or touched), technical
+  commit then a separate docs commit, both on `dev`, no `add -A`/`reset`/
+  `rebase`/force-push/`merge`/`tag`/`amend`; `§19` — English throughout new
+  code/comments/commit messages. No production access
+  (`gqmpsxkxynrjvidfmojk` not accessed by this phase — confirmed via the
+  fingerprint check above); push to `main` never attempted.
+- **Production:** `gqmpsxkxynrjvidfmojk` not accessed. **Push:** `git push
+  production dev` authorized by this order (remote backup only — `dev`
+  branch, not `main`).
+- **Record (this commit):** `PROJECT_STATE.md` (`ORDEM-COMPRA-LIFECYCLE`
+  track block: Phase `A` moved from `NOT AUTHORIZED` to `CLOSED /
+  ACCEPTED`; Closed-phases row added; `NOT AUTHORIZED` candidate fronts line
+  updated to show Phases `B`-`E` remaining); `AGENT_HANDOFF.md` (new top
+  entry); this ledger entry; `docs/DOCUMENTATION_INDEX.md` §4 (new `db/65`
+  row + new smoke-test row); `docs/reports/ORDEM_COMPRA_PHASE_A_2026-07-
+  18.md` (new phase report — guide format + verification matrix +
+  registry before/after).
+- **Next phase indicated at closeout:** Phase `B` (panel visibility +
+  administrative writes — `emitir_ordem_compra_fio`/
+  `cancelar_ordem_compra_fio` RPCs, a precondition-guarded
+  `registrar_recebimento_ordem_compra_fio`, UI badges, and binding gap 2's
+  `REVOKE`), pending its own architect order per spec §8. Phases `C`
+  (receipt rework via the ledger trigger), `D` (gate activation), and `E`
+  (dormant-acceptance checkpoint) remain `NOT AUTHORIZED`, each pending its
+  own order.

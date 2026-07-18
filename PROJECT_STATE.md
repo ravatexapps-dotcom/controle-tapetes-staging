@@ -31,8 +31,27 @@ are in `docs/ledgers/G28_LEDGER.md`. HEAD/working tree/divergence: consult Git d
   system.** See the `POST-LAUNCH DEBT REGISTER`. **Standing reminder: flip the Supabase
   MCP back to read-only** (still management-scoped/write-capable from `M2`/`M3`).
 - **`ORDEM-COMPRA-LIFECYCLE` track — spec `RATIFIED` (`ORDEM-COMPRA-LIFECYCLE-
-  SPEC-RATIFICATION-R1`, 2026-07-18), docs-only. All phases still `NOT
-  AUTHORIZED`.** `docs/architecture/ORDEM_COMPRA_LIFECYCLE_SPEC_PROPOSED.md`
+  SPEC-RATIFICATION-R1`, 2026-07-18); Phase `A` (schema + config) `CLOSED /
+  ACCEPTED` (2026-07-18).** `db/65_ordem_compra_lifecycle_schema.sql`
+  applied and verified in staging (`ucrjtfswnfdlxwtmxnoo`): the three
+  orthogonal dimension columns (`status_administrativo`/`status_aceite`/
+  `status_recebimento`) + audit columns on `ordens_compra_fio`, the new
+  `ordem_compra_fio_lancamentos` ledger (empty, no trigger yet — Phase C),
+  `ordem_compra_eventos` transition audit, and the `ordem_compra_config`
+  singleton (`exige_aceite=false`), all admin-only-read/no-client-write
+  (db/57/63 grants standard). `ALTER TABLE` + the one-time legacy-marking
+  backfill ran in one transaction (binding gap 1). 14/14 verification-matrix
+  checks passed (`BEGIN…ROLLBACK`, synthetic, cleanup confirmed zero);
+  12/12 static smoke tests; full-suite regression unchanged (`+12` new
+  tests, `140` pre-existing failures byte-identical before/after). No RPC,
+  no UI, no JS change — zero behavior change for existing readers. Full
+  detail: `docs/ledgers/G28_LEDGER.md` Phase `A` entry,
+  `docs/reports/ORDEM_COMPRA_PHASE_A_2026-07-18.md`. **New branch discipline
+  (binding going forward):** implementation work lands on branch `dev`
+  (created from this track's HEAD); `git push production dev` is a
+  standing remote-backup authorization — push to `main` remains forbidden.
+  **Phases `B`-`E` remain `NOT AUTHORIZED`, each pending its own order.**
+  `docs/architecture/ORDEM_COMPRA_LIFECYCLE_SPEC_PROPOSED.md`
   (three-dimension model: administrative cycle rascunho/emitida/cancelada,
   acceptance nao_aplicavel/pendente/aceita/rejeitada, receipt derived from a
   new physical-registration ledger; global config `ordem_compra_exige_aceite`
@@ -70,8 +89,12 @@ are in `docs/ledgers/G28_LEDGER.md`. HEAD/working tree/divergence: consult Git d
   constraints (key regime, launch user model, standing pre-launch items) recorded
   under "Binding decisions in force".
 - **Workspace:** `D:\OneDrive\Programação\Ravatex\controle-tapetes-g28`.
-  **Branch:** `work/g28-document-qualification`. **Allowed remote:** none — no push
-  without express authorization in this chain.
+  **Branch:** `dev` (created 2026-07-18 from `work/g28-document-qualification`'s
+  HEAD `84e2a07`, per `ORDEM-COMPRA-PHASE-A`'s branch discipline — all
+  implementation work lands here going forward). **Allowed remote:**
+  `production`, `dev` branch only (remote-backup push authorized by
+  `ORDEM-COMPRA-PHASE-A`) — `main` remains forbidden; no push to
+  `origin`/`staging` without separate express authorization.
 
 ## Binding decisions in force
 
@@ -414,8 +437,9 @@ architect's discretion.
   `G28-D` publication (largely realized by the `M0`-`M10` cutover);
   `DEPLOYMENT_MAPPING_AND_PRODUCTION_MIGRATION_PROCEDURE` (superseded by `M0`-`M10`);
   `DELETE-PROD-GUARD-A`; `DELETE-AUDIT-LOG-A`; `G28-CAMADA-4`; `A4.3` (email/SMTP
-  invites); `ORDEM-COMPRA-LIFECYCLE` Phases `A`-`E` (spec `RATIFIED`, phases still
-  `NOT AUTHORIZED` — see `docs/architecture/ORDEM_COMPRA_LIFECYCLE_SPEC_PROPOSED.md`).
+  invites); `ORDEM-COMPRA-LIFECYCLE` Phases `B`-`E` (spec `RATIFIED`, Phase `A`
+  `CLOSED / ACCEPTED` 2026-07-18, Phases `B`-`E` still `NOT AUTHORIZED` — see
+  `docs/architecture/ORDEM_COMPRA_LIFECYCLE_SPEC_PROPOSED.md`).
   Ranked items also appear in the `POST-LAUNCH DEBT REGISTER` above.
 - **`CAMADA3-TRIGGER-SELECTION` — `NOT AUTHORIZED` (`BK3`; register #3):** the
   automated-backup scheduler; mechanism resolved — **GitHub Actions, not Vercel cron**
@@ -563,6 +587,7 @@ technical commits; documentation-only phases show `(docs)`. Consult HEAD with
 
 | Phase | Status | Date | Commit(s) |
 |---|---|---|---|
+| Purchase Order Lifecycle — `ORDEM-COMPRA-LIFECYCLE` Phase `A` (schema + config: dimension columns, ledger/events/config tables, legacy backfill, 14/14 verification matrix) | `CLOSED / ACCEPTED` | 2026-07-18 | `fb0e6cb` (technical, branch `dev`) + docs record |
 | Purchase Order Lifecycle Spec Ratification — `ORDEM-COMPRA-LIFECYCLE-SPEC-RATIFICATION-R1` (Finding 1 corrected, decisions a-g ratified, phases `A`-`E` still `NOT AUTHORIZED`) | `RATIFIED` | 2026-07-18 | (docs: "Ratify purchase order lifecycle spec") |
 | Purchase Order Lifecycle Spec — `ORDEM-COMPRA-SPEC` (docs-only, spec delivered `PROPOSED`) | `SPEC DELIVERED` | 2026-07-18 | (docs: "Add purchase order lifecycle spec") |
 | Migration Track Closeout — `M10` cutover; `G28-MIGRATION-TRACK` COMPLETE, backlog freeze LIFTED | `CLOSED / ACCEPTED` | 2026-07-18 | (docs: "Close migration track and lift backlog freeze") |

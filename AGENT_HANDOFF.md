@@ -1,5 +1,47 @@
 # ACTIVE OPERATIONAL HANDOFF
 
+- **`ORDEM-COMPRA-LIFECYCLE` Phase `A` (schema + config) — `CLOSED /
+  ACCEPTED` (2026-07-18):** additive migration `db/65_ordem_compra_
+  lifecycle_schema.sql` applied and verified in staging
+  (`ucrjtfswnfdlxwtmxnoo`) — the three orthogonal dimension columns
+  (`status_administrativo`/`status_aceite`/`status_recebimento`) + audit
+  columns on `ordens_compra_fio`; new tables `ordem_compra_fio_lancamentos`
+  (receipt ledger, empty/no trigger — Phase C), `ordem_compra_eventos`
+  (transition audit, `op_eventos`/`usuarios_eventos` pattern),
+  `ordem_compra_config` (singleton, `exige_aceite=false`); admin-only RLS
+  read/no client writes on all three new tables (db/57/63 grants standard);
+  `ALTER TABLE` + the one-time legacy-marking backfill in one transaction
+  (binding gap 1, ratified). **Scope ambiguity surfaced and resolved before
+  implementation:** the order's bullet list omitted the
+  `ordem_compra_fio_lancamentos` ledger table even though its own scope
+  citation (spec §8's Phase A row) required it — asked the architect, who
+  selected "include it." **HARD STOP ZERO passed:** the project-scoped
+  `supabase-legacy` MCP was fingerprinted (`usuarios_eventos=9`,
+  `document_link_revisions=8` — matching the `M3` closeout's legacy-only
+  row counts exactly) confirming it is pinned to `ucrjtfswnfdlxwtmxnoo`
+  (development), not `gqmpsxkxynrjvidfmojk` (production), before any write.
+  **Verification:** 14/14 checks in a `BEGIN…ROLLBACK` synthetic matrix
+  (legacy backfill mapping, new-order defaults, config default, events-
+  table role matrix — anon `42501` / non-admin `0` rows / admin reads —
+  and all five dimension `CHECK` constraints), cleanup confirmed zero.
+  **Tests:** `tests/ordem-compra-lifecycle-schema.smoke.js` 12/12; full-
+  suite regression via file-swap (new test file moved aside, then
+  restored) — before `3830`/`3690` pass/`140` fail, after `3842`/`3702`
+  pass/`140` fail, exactly `+12` new passing tests, the 140 pre-existing
+  failures byte-identical. **New branch discipline (binding going
+  forward):** branch `dev` created from `work/g28-document-qualification`'s
+  HEAD (`84e2a07`) — all implementation commits land here; `git push
+  production dev` is a standing remote-backup authorization (never
+  `main`). **Technical commit:** `fb0e6cb` ("Add ordem de compra lifecycle
+  schema (Phase A)", `db/65_ordem_compra_lifecycle_schema.sql` +
+  `tests/ordem-compra-lifecycle-schema.smoke.js`), on `dev`. **No RPC, no
+  UI, no JS change** — Phases `B`-`E` remain `NOT AUTHORIZED`, each pending
+  its own order. **No production access** (`gqmpsxkxynrjvidfmojk` not
+  touched, confirmed by the MCP fingerprint above). Full detail:
+  `docs/ledgers/G28_LEDGER.md` Phase `A` entry,
+  `docs/reports/ORDEM_COMPRA_PHASE_A_2026-07-18.md`. **Next authorizable
+  action:** Phase `B` (panel visibility + administrative writes), its own
+  order per spec §8.
 - **`M10` CUTOVER CLOSEOUT — `G28-MIGRATION-TRACK` (M0-M10) `COMPLETE / CLOSED`,
   backlog freeze `LIFTED` (2026-07-18):** docs-only closeout recording an
   already-accomplished cutover. **The system is LIVE IN PRODUCTION** at
