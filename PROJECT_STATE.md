@@ -84,7 +84,12 @@ are in `docs/ledgers/G28_LEDGER.md`. HEAD/working tree/divergence: consult Git d
   unrecoverable, the citation will be corrected to name the architect's
   in-chat authorization directly. Tracked separately from the ratified
   decisions above.
-- **Open architect decisions:** `NONE` blocking. `G28-CAMADA-2` remains `TRACK
+- **Open architect decisions:** `NONE` blocking. **One non-blocking product
+  decision registered (`YARN-MANTER-PEDIDO-REDUNDANCY`, 2026-07-18):** now that
+  `Salvar distribuição` exists (save-only), the `Manter pedido` button — also
+  save-only, seeding the pedido metrage — may be redundant; **architect to decide
+  keep-or-remove.** Not a defect; if removed, foldable into a future
+  `YARN-BUTTONS Phase B`. `G28-CAMADA-2` remains `TRACK
   COMPLETE / CLOSED / ACCEPTED` (full `A1-A7` + password policy). Binding launch
   constraints (key regime, launch user model, standing pre-launch items) recorded
   under "Binding decisions in force".
@@ -352,6 +357,18 @@ decisions (verbatim) are in `docs/closeouts/PROJECT_STATE_ARCHIVE_2026-07.md`
   `el()` sets boolean attrs unconditionally, so `disabled`/`checked` `false` still
   render true; `admin-usuarios.js`'s Excluir button still carries the pattern
   (suspect). Not yet fixed. Full narrative archived.
+- **`UI-SURFACE-DUPLICATION` — standing LESSON (registered 2026-07-18, from the
+  `YARN-BUTTONS` regression saga):** UI position in an order must be specified by
+  **named block/screen**, never by relative reference ("the primary button", "the
+  footer"); and every UI order must require verifying **ALL surfaces that render the
+  component**. This app has documented modal duplication — the Tecelagem
+  distribution/acceptance UI renders on the **OP screen** (`op-nova.js`) and the
+  **Pedido hub** (`pedido-detail-events.js`); before the shared-builder
+  consolidation, a single-surface edit silently left the twin stale (a removed
+  button kept "reappearing"). The consolidation into
+  `js/screens/op-distribuicao-ui.js` (`buildDistribuicaoBlock` +
+  `buildIniciarProducaoButton`, consumed by both) removed that specific
+  duplication; the lesson stands for any future shared UI component.
 - **`TEST-MOCK-FIDELITY-AUDIT` — `CLOSED / ACCEPTED` (2026-07-17):** zero confirmed (c)
   blind doubles; `tests/_doubles.js` `APPROVED`, `§20` added to `CODE_HEALTH_RULES.md`,
   lots `L1`/`L2` `CLOSED / ACCEPTED`. Report
@@ -587,6 +604,7 @@ technical commits; documentation-only phases show `(docs)`. Consult HEAD with
 
 | Phase | Status | Date | Commit(s) |
 |---|---|---|---|
+| Yarn Buttons — `YARN-BUTTONS-PHASE-1` (+ corrections) — shared distribution builder (`op-distribuicao-ui.js`) consumed by OP screen + Pedido hub; footer = `[Manter pedido, Salvar distribuição]` save-only, `Iniciar produção` = only production-start; `Aceitar proposta` + dead `aplicarRecalculo` removed | `CLOSED / ACCEPTED` | 2026-07-18 | `02679f9`, `2388d39` (technical, branch `dev`) + docs record |
 | Purchase Order Lifecycle — `ORDEM-COMPRA-LIFECYCLE` Phase `A` (schema + config: dimension columns, ledger/events/config tables, legacy backfill, 14/14 verification matrix) | `CLOSED / ACCEPTED` | 2026-07-18 | `fb0e6cb` (technical, branch `dev`) + docs record |
 | Purchase Order Lifecycle Spec Ratification — `ORDEM-COMPRA-LIFECYCLE-SPEC-RATIFICATION-R1` (Finding 1 corrected, decisions a-g ratified, phases `A`-`E` still `NOT AUTHORIZED`) | `RATIFIED` | 2026-07-18 | (docs: "Ratify purchase order lifecycle spec") |
 | Purchase Order Lifecycle Spec — `ORDEM-COMPRA-SPEC` (docs-only, spec delivered `PROPOSED`) | `SPEC DELIVERED` | 2026-07-18 | (docs: "Add purchase order lifecycle spec") |

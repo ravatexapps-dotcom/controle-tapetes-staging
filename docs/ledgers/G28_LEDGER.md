@@ -2229,3 +2229,83 @@ risco residual e próxima fase indicada no fechamento.
   (receipt rework via the ledger trigger), `D` (gate activation), and `E`
   (dormant-acceptance checkpoint) remain `NOT AUTHORIZED`, each pending its
   own order.
+
+## 2026-07-18 — YARN-BUTTONS-PHASE-1 (+ corrections) — Shared Distribution Builder — CLOSED / ACCEPTED
+
+- **Gate:** `CLOSED / ACCEPTED` — architect visual validation on staging
+  local of BOTH surfaces (OP screen Preparação block + Pedido hub transition
+  modal). Order `CLOSEOUT YARN-BUTTONS-SHARED-BUILDER` (docs-only, Sonnet 5 /
+  low effort).
+- **Front:** `YARN-BUTTONS-PHASE-1` and its two corrections
+  (`YARN-BUTTONS-PHASE-1-CORRECTION`, `YARN-BUTTONS-FINAL-CONTRACT`). UI-only,
+  branch `dev`.
+- **Final contract (recorded, binding):**
+  - The proposal/distribution modal footer is EXACTLY two buttons —
+    **`Manter pedido`** and **`Salvar distribuição`** — both **save-only**:
+    they persist `op_itens.metros_ajustados` via `salvarDistribuicaoOP` and
+    NEVER start production, change status, or snapshot saldo. `Manter pedido`
+    persists the pedido metrage; `Salvar distribuição` persists the slider
+    distribution (enabled only when the current distribution differs from the
+    last saved one, and no yarn is exceeded).
+  - **`Iniciar produção`** is the ONLY production-start path (saldo snapshot
+    + `status → em_producao`, via `iniciarProducaoOP`). It is present on BOTH
+    surfaces — the OP screen Preparação block and the Pedido hub transition
+    surface — and is enabled only when a saved distribution exists AND the
+    received yarn covers it; otherwise disabled with an explanatory `title`.
+  - `Aceitar proposta` removed entirely (both surfaces). The dead
+    `aplicarRecalculo` wrapper in `op-nova.js` removed.
+- **ROOT CAUSE (why the earlier corrections regressed):** TWO parallel modal
+  builders existed — `op-nova.js` (`buildProposta`) and
+  `pedido-detail-events.js` (`buildTecAcceptanceProposalBlock` /
+  `openTecAcceptanceModal`). The first two corrections edited only the OP
+  screen, so the removed `Aceitar proposta` button (and a live
+  production-start path) kept returning from the Pedido-side twin whenever an
+  OP was accepted from the Pedido panel. It was not dead code — it was a
+  deliberately-built, separately-tested parallel implementation.
+- **Resolution:** new shared module **`js/screens/op-distribuicao-ui.js`** —
+  `buildDistribuicaoBlock` (sliders + live consumption + `[Manter pedido,
+  Salvar distribuição]`, save-only) and `buildIniciarProducaoButton` (the
+  single production-start). Both surfaces now CONSUME these builders; the two
+  duplicated implementations were deleted. Duplication eliminated.
+- **Files:** new `js/screens/op-distribuicao-ui.js`; `js/screens/op-nova.js`
+  (buildProposta → shared block; Preparação rail → shared button; dead
+  wrapper removed); `js/screens/pedido-detail-events.js` (twin builders →
+  shared block + shared button; hub `Aceitar OP` → `Distribuição` opening the
+  save-only modal + `Iniciar produção`); `index.html` (script tag); smokes
+  `op-nova`/`op-recalculo`/`pedido-detail`/`op-latex-admin`/`op-writes`/
+  `op-persistir`.
+- **Verification:** in-browser against the real production code (running
+  static app) — modal footer proven to be exactly `[Manter pedido, Salvar
+  distribuição]`; `Salvar` click calls ONLY `salvarDistribuicaoOP` (never
+  `iniciarProducaoOP`); `Iniciar produção` disabled without a saved
+  distribution (with title) and enabled with one, click → `iniciarProducaoOP`.
+  Grep-confirmed the only Tecelagem production-start is `iniciarProducaoOP`,
+  called from one place (the shared button). Full suite `3710` pass / `132`
+  fail — **zero new failures vs baseline** (`134`); the net `-2` are the two
+  previously-updated OP smokes now green. All remaining failures pre-existing
+  (CRLF slice-regex + `http.server` `:8765` not running).
+- **Technical commits (branch `dev`):** `02679f9` (Fix Iniciar produção
+  button placement — the first correction) and `2388d39` (Unify yarn
+  distribution UI into one shared builder — this closeout+s subject). This
+  ledger entry + `PROJECT_STATE.md` + `AGENT_HANDOFF.md` recorded in a
+  separate docs commit.
+- **Open PRODUCT DECISION (registered, NOT a defect):** `Manter pedido` may
+  now be redundant with `Salvar distribuição` (both are save-only; `Manter`
+  just seeds the pedido metrage). Architect to decide keep-or-remove; if
+  removed, can fold into a future `YARN-BUTTONS Phase B`.
+- **LESSON (standing governance/process note):** UI position must be
+  specified by NAMED block/screen, never by relative reference; and every
+  UI order must require verifying ALL surfaces that render the component —
+  this app has documented modal duplication (OP screen ↔ Pedido hub) and a
+  single-surface edit silently leaves the twin stale.
+- **STRUCTURAL POLICY COMPLIANCE:** `§14` (single scope) — UI-only, one
+  coherent change (extract-and-consume); `§7` (size) — shared module small,
+  both screens shrank (net `-183` lines across the code files); `§15` (Git)
+  — selective staging by literal path (the pre-existing uncommitted
+  `.gitignore` change left untouched/unstaged), single docs commit on `dev`,
+  no `add -A`/`reset`/`rebase`/force-push/`merge`/`tag`/`amend`; `§19` —
+  English for new code/comments/commit messages, pt-BR preserved for
+  user-facing UI labels. No production access; no push to `main`.
+- **Next indicated at closeout:** await the architect+s keep/remove ruling on
+  `Manter pedido` (the registered product decision). No further YARN-BUTTONS
+  work authorized otherwise.

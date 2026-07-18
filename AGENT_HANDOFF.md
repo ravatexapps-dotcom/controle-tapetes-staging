@@ -1,5 +1,41 @@
 # ACTIVE OPERATIONAL HANDOFF
 
+- **`YARN-BUTTONS-PHASE-1` (+ corrections) — Shared Distribution Builder —
+  `CLOSED / ACCEPTED` (2026-07-18):** UI-only, branch `dev`. Architect
+  visually validated on staging local — BOTH surfaces (OP screen Preparação
+  block + Pedido hub transition modal). **Final contract (binding):** the
+  proposal/distribution modal footer is EXACTLY `[Manter pedido, Salvar
+  distribuição]`, both **save-only** (persist `op_itens.metros_ajustados` via
+  `salvarDistribuicaoOP`; never start production / change status / snapshot
+  saldo). **`Iniciar produção`** is the ONLY production-start (`saldo` snapshot
+  + `status → em_producao` via `iniciarProducaoOP`), present on BOTH surfaces,
+  enabled only with a saved distribution + received yarn covering it (else
+  disabled with a `title`). `Aceitar proposta` removed everywhere; the dead
+  `aplicarRecalculo` wrapper removed. **ROOT CAUSE of the regression saga:**
+  two parallel modal builders existed — `op-nova.js` (`buildProposta`) and
+  `pedido-detail-events.js` (`buildTecAcceptanceProposalBlock` /
+  `openTecAcceptanceModal`); the earlier corrections edited only the OP screen,
+  so the removed button kept returning from the Pedido-side twin (a live,
+  separately-tested implementation, not dead code). **Resolution:** shared
+  module `js/screens/op-distribuicao-ui.js` (`buildDistribuicaoBlock` +
+  `buildIniciarProducaoButton`) consumed by BOTH surfaces; the two duplicated
+  implementations deleted — duplication eliminated. In the Pedido hub, `Aceitar
+  OP` became `Distribuição` (opens the save-only modal) + `Iniciar produção`.
+  **Verified in-browser against real production code:** footer exactly two
+  buttons; `Salvar` → only `salvarDistribuicaoOP` (never production); `Iniciar`
+  disabled→enabled→`iniciarProducaoOP`; full suite `3710` pass / `132` fail —
+  **zero new failures vs baseline** (`134`), all remaining pre-existing.
+  **Technical commits (`dev`):** `02679f9` (button placement — 1st correction),
+  `2388d39` (shared-builder unification). Docs closeout in a separate commit.
+  **Open PRODUCT DECISION (registered, not a defect):** `Manter pedido` may now
+  be redundant with `Salvar distribuição` — architect to decide keep/remove
+  (foldable into a future YARN-BUTTONS Phase B if removed). **Standing LESSON:**
+  UI position specified by NAMED block/screen, never relative reference; UI
+  orders must verify ALL surfaces that render the component (this app has
+  documented OP↔Pedido modal duplication). **No production access; no push to
+  `main`.** Full detail: `docs/ledgers/G28_LEDGER.md` (this-date entry). **Next:**
+  architect'\''s keep/remove ruling on `Manter pedido`; no other YARN-BUTTONS work
+  authorized.
 - **`ORDEM-COMPRA-LIFECYCLE` Phase `A` (schema + config) — `CLOSED /
   ACCEPTED` (2026-07-18):** additive migration `db/65_ordem_compra_
   lifecycle_schema.sql` applied and verified in staging
