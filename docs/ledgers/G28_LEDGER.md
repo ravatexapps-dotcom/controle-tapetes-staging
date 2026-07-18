@@ -2384,3 +2384,155 @@ risco residual e próxima fase indicada no fechamento.
 - **Next indicated at closeout:** resolve `ORDEM-COMPRA-B1-BLOCKED-BY-MCP-AUTH`
   (authorize the `supabase-legacy` MCP interactively), then execute Phase `B1`
   Part 2 under its authorization. Amendment Part 1 requires nothing further.
+
+---
+
+## 2026-07-18 — ORDEM-COMPRA-LIFECYCLE Phase B1 — CLOSED / ACCEPTED
+
+- **Gate:** `CLOSED / ACCEPTED` (Sonnet 5 / low effort, docs-only closeout,
+  branch `dev`). Supersedes the hard-stop recorded in the prior entry
+  (`ORDEM-COMPRA-B1-BLOCKED-BY-MCP-AUTH`) — the `supabase-legacy` MCP
+  authenticated this session.
+- **Front:** `ORDEM-COMPRA-LIFECYCLE` track, Phase `B1`.
+- **What closes:** both halves of Phase `B1`.
+  - **UI reader** (`buildOrdensReaderSection`, `js/screens/op-nova.js`,
+    commit `b0c3f27`): one row per linked order, material—cor · fornecedor ·
+    qtd · three dimension badges · Emitir/Cancelar admin actions per state,
+    config chip, frozen-at-emission note, no receipt inputs; defensive
+    extended-select-with-fallback so a pre-`db/65` database degrades safely.
+  - **DB half** (`db/66_ordem_compra_emitir_cancelar.sql`, commit `5a2cde7`,
+    applied to staging `ucrjtfswnfdlxwtmxnoo` in an earlier session):
+    `emitir_ordem_compra_fio`/`cancelar_ordem_compra_fio` RPCs (admin-only via
+    `is_admin()`; emit requires `status_administrativo='rascunho'` AND
+    `fornecedor_id IS NOT NULL`; cancel requires `rascunho`|`emitida`; each
+    writes one `ordem_compra_eventos` row) + partial ACL hardening (`REVOKE
+    UPDATE` on `ordens_compra_fio` from `authenticated`, restored
+    column-by-column except the three dimension columns).
+- **Verification this session (read-only diagnosis → seed → verify →
+  fix, four sub-steps):**
+  1. **Staging seed:** HARD STOP fingerprint (`usuarios_eventos=9`,
+     `document_link_revisions=8`) confirmed the MCP pinned to
+     `ucrjtfswnfdlxwtmxnoo` before any write. Seeded `fornecedor_id` on 4
+     `rascunho` orders (OP nº36/2026, ids 137-140) via direct `UPDATE` (not
+     the broken UI selects) so the architect could walk both admin actions.
+  2. **Bug report reconciliation:** the architect observed an Emitir click
+     on a null-fornecedor order show a success toast and appear to move to
+     `emitida`. A full scan of every non-legacy `ordens_compra_fio` row
+     showed **100% still `rascunho`, zero real `emitida_em`, zero
+     `ordem_compra_eventos` rows** — no order had ever actually transitioned
+     via this RPC. A first re-test attempt (CTEs joined only by a constant)
+     gave a false "no effect" reading — Postgres does not guarantee CTE
+     execution order without a real data dependency; corrected with a
+     PL/pgSQL `DO` block (guaranteed sequential statements) in a scoped
+     `BEGIN…ROLLBACK` transaction simulating the admin JWT
+     (`request.jwt.claims`): null-fornecedor emit → `{ok:false,erro:'Ordem
+     sem fornecedor atribuido nao pode ser emitida'}`, row unchanged;
+     fornecedor-assigned emit → `{ok:true,...}`, row genuinely transitions +
+     1 `ordem_compra_eventos` row. **The RPC and db/66's matrix are correct
+     in both directions** — the discrepancy was entirely client-side.
+  3. **Root cause + fix:** `emitirOrdemCompra`/`cancelarOrdemCompra`
+     (`js/screens/op-nova.js:1073-1091`, pre-fix) checked only `res.error`
+     (transport-level); the RPCs return HTTP 200 with `{ok:false,erro:...}`
+     on business-logic rejection, so `res.error` stays falsy and the code
+     fell through to an unconditional success toast + `reloadOrdens()`.
+     Fixed (commit `275ede2`) to also check `res.data.ok !== true`,
+     surfacing `res.data.erro` on rejection; identical fix applied to
+     `cancelarOrdemCompra` (same latent defect, not yet observed live —
+     double-cancel would have false-succeeded identically).
+  4. **Sweep (no systemic debt):** every other `supa.rpc(...)` call site
+     checked — `alterar_status_op`, `concluir_pedido_se_pronto`,
+     `cliente_pedido_summary`, `registrar_entrega_expedicao`,
+     `liberar_expedicao`/`liberar_expedicao_latex_parcial`, the
+     `documents-supabase-*` adapters, `delete-helpers.js`'s
+     `normalizeResult` already check `res.data.ok === false` correctly;
+     `gerar_op_latex`/`gerar_op_latex_split` (`RAISE EXCEPTION`, no
+     `{ok,erro}` envelope), `proximo_numero_op`/`admin_usuarios_last_sign_in`
+     (plain scalar/read, no envelope) correctly use error-only checks. This
+     was an isolated defect in the two new B1 handlers, not a pattern.
+  5. **Architect visual re-walk (staging):** error path — Emitir on the
+     "— não atribuído" order → error toast, row stays Rascunho; success
+     path — Emitir on a fornecedor-seeded order → success toast, badge
+     flips to Emitida. **Both confirmed OK.**
+- **Tests:** 2 new render-harness smokes (`tests/op-nova.smoke.js` #77-78)
+  assert the error path (rejected emit/cancel → error toast with the RPC's
+  own message, not the false success toast, correct `bg-red-600` class).
+  Harness extended with an optional `rpcImpl` hook on
+  `buildFakeSupa`/`makeRenderSandbox`/`renderNovaOpForTest` (default
+  preserves prior no-op behavior, zero impact on existing tests) and an
+  exposed `sandbox.__toastsNode`. `tests/op-nova.smoke.js` 83/83 pass; full
+  suite `132` pre-existing failures unchanged, zero regression.
+- **Ratified supplier-assignment decision (this closeout, binding):**
+  fornecedor assignment is a **per-order** property of `ordens_compra_fio`.
+  The schema already supports it fully — nullable `fornecedor_id` FK, one
+  row per material+color already generated at Abrir OP
+  (`montarOrdensCompraFio`), already the row-level RLS ownership key
+  (`ocf_fornecedor_read`/`ocf_fornecedor_update`) and already the `emitir`
+  RPC's own precondition — **no schema change needed**, this is UI-relocation
+  work. Assignment **moves to the future Phase `B2` order-detail screen**.
+  The OP-screen's legacy fornecedor selects (`buildAtrib` in `op-nova.js`,
+  which bulk-assigns one fornecedor per material type across an entire OP
+  via `atribuirFornecedorFioOp`, collapsing what the schema already models
+  as independent per-color orders) are **removed only after `B2` is
+  functional** — no gap where assignment becomes impossible in the UI.
+  `op_fornecedores` (the OP-level `etapa`-keyed bookkeeping table) is
+  **kept synchronized as a compatibility projection, not cosmetic** —
+  `ops_fornecedor_read`/`op_itens_fornecedor_read` RLS key on it for
+  supplier visibility into the OP, and `screenFornecedorOrdens`'s embedded
+  `ops(numero,ano)` join silently degrades to `—` without it; `B2`'s
+  fornecedor-assignment writer must also upsert the matching
+  `op_fornecedores` row. **Reassignment after `emitida` is BLOCKED** — the
+  correction path is cancel + open a new draft order, not an in-place swap
+  on an already-emitted order (keeps the `ordem_compra_eventos` audit trail
+  honest, consistent with the ratified "emission locks quantities"
+  precedent). The empty-dropdown bug (`fornecedores.tipo` domain
+  `fio_algodao`/`fio_poliester`/`tecelagem`/`latex` vs
+  `ordens_compra_fio.tipo` domain `algodao`/`poliester`, collided under the
+  shared variable name `tipo` in `buildAtrib`, `op-nova.js:1185-1188`) is
+  **recorded as noted-not-fixed** — those selects are slated for removal at
+  `B2`, so patching a soon-to-be-deleted path is not worthwhile.
+- **Debts registered (canonical, verbatim):**
+  - `ORDEM-COMPRA-B1-KG-RECEBIDO-ACL-GAP` — `kg_recebido` remains directly
+    writable by `authenticated` after `db/66` (both
+    `registrarRecebimentoOrdemFio`, `op-writes.js:29-43`, and
+    `screenFornecedorOrdens`, `fornecedor.js:461-463`, keep writing it
+    directly, the latter gated by the pre-existing `ocf_fornecedor_update`
+    RLS policy); PostgreSQL column-level `REVOKE` cannot narrow an
+    already-existing table-level grant without breaking both live
+    consumers immediately, with no replacement RPC. **Closes only when
+    Phase C ships the ledger-based `registrar_recebimento_ordem_compra_fio`
+    RPC in the same migration that revokes `kg_recebido` from
+    `authenticated`.**
+  - `SUPPLIER_RECEIPT_WRITE_PATH_DISCOVERED` — `js/screens/fornecedor.js:461`
+    (`screenFornecedorOrdens`) is a live, independent supplier-facing direct
+    `UPDATE` of `kg_recebido`/`data_recebimento`/`status` on
+    `ordens_compra_fio`; not mentioned in the spec's §0 evidenced-inventory
+    (which asserted suppliers have no existing write path on this table).
+    Flagged here in the provenance trail — **§0 of
+    `docs/architecture/ORDEM_COMPRA_LIFECYCLE_SPEC_PROPOSED.md` is
+    deliberately NOT rewritten**; the discovery is recorded as a correction
+    trail, not folded silently into the ratified inventory text.
+  - **Phase C scope AMENDED (binding):** the ledger-based
+    `registrar_recebimento_ordem_compra_fio` RPC and rewrite must serve
+    **both** live consumers — `op-writes.js`'s `registrarRecebimentoOrdemFio`
+    **and** `fornecedor.js`'s `screenFornecedorOrdens` (previously scoped
+    only around the admin writer) — `screenFornecedorOrdens` must be
+    rewritten to call the ledger RPC instead of updating
+    `ordens_compra_fio` directly.
+- **Record (this commit):** `PROJECT_STATE.md` (Phase `B1` marked `CLOSED /
+  ACCEPTED`, `ORDEM-COMPRA-B1-BLOCKED-BY-MCP-AUTH` marked `RESOLVED`, the
+  three debts registered, the supplier-assignment decision recorded,
+  Closed-phases row added); `AGENT_HANDOFF.md` (new entry, prepended); this
+  ledger entry.
+- **STRUCTURAL POLICY COMPLIANCE:** `§14` (single scope) — docs-only
+  closeout, one coherent record of an already-verified phase; `§15` (Git) —
+  selective staging by literal path, single docs commit on `dev`, the
+  pre-existing uncommitted `.gitignore` change left untouched/unstaged, no
+  `add -A`/`reset`/`rebase`/force-push/`merge`/`tag`/`amend`; `§19` —
+  English throughout (canonical docs; no UI text touched). No DB/schema
+  action this commit (the RPCs/ACL were already live from an earlier
+  session, re-verified read-only + via a rolled-back synthetic matrix); no
+  production access; no push to `main`.
+- **Next indicated at closeout:** Phase `B2` (order detail screen, route
+  `#/ordens-compra/:id`), its own order — scope must include the per-order
+  fornecedor-assignment UI per the ratified decision above, and must
+  preserve the `op_fornecedores` compatibility-projection write.

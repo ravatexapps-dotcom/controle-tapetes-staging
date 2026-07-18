@@ -56,25 +56,95 @@ are in `docs/ledgers/G28_LEDGER.md`. HEAD/working tree/divergence: consult Git d
   OP-screen section becomes a READER (registers nothing), and Phase B is split
   into `B1` (OP reader section + `emitir`/`cancelar` RPCs + RLS revoke `db/66`),
   `B2` (order detail screen, route `#/ordens-compra/:id`), `B3` (orders list
-  screen). Phase `B1` is AUTHORIZED by this order (`ORDEM-COMPRA SPEC AMENDMENT
-  + PHASE B1`). Part 1 (the docs amendment) executed + committed on `dev`. Part
-  2 split by the architect's ruling ("leave the DB as a debt; proceed only with
-  UI"): the **UI half is IMPLEMENTED** — the OP-screen reader section
-  (`buildOrdensReaderSection` in `js/screens/op-nova.js`: one row per linked
-  order, material—cor · fornecedor · qtd · three dimension badges · Emitir/
-  Cancelar admin actions per state, config chip, frozen-at-emission note, no
-  receipt inputs), rendered via a defensive extended-select-with-fallback so a
-  pre-`db/65` database (production today) never regresses; 7 new render-harness
-  smokes, full suite `+7` passing / `137` pre-existing failures unchanged
-  (zero regression, file-swap verified). The **DB half remains blocked** —
-  `emitir`/`cancelar` RPCs, `db/66` RLS revoke, RPC role-matrix, and ACL catalog
-  verification cannot run (`supabase-legacy` MCP unauthenticated, non-interactive
-  session): `ORDEM-COMPRA-B1-BLOCKED-BY-MCP-AUTH` (live debt below). The reader's
-  Emitir/Cancelar buttons call the not-yet-existing RPCs defensively (toast on
-  error) and stay inert until the RPCs land. **Gate:** `IMPLEMENTAÇÃO VALIDADA
-  (código) / AGUARDANDO VALIDAÇÃO VISUAL DO ARQUITETO` — full visual validation
-  (draft→assign→Emitir→badges walk) is itself gated on the DB half. Phases
-  `B2`/`B3`/`C`/`D`/`E` remain `NOT AUTHORIZED`, each pending its own order.**
+  screen).
+  **Phase `B1` — `CLOSED / ACCEPTED` (2026-07-18).** UI reader
+  (`buildOrdensReaderSection` in `js/screens/op-nova.js`, commit `b0c3f27`):
+  one row per linked order, material—cor · fornecedor · qtd · three dimension
+  badges · Emitir/Cancelar admin actions per state, config chip,
+  frozen-at-emission note, no receipt inputs, defensive
+  extended-select-with-fallback so a pre-`db/65` database never regresses.
+  DB half (`db/66_ordem_compra_emitir_cancelar.sql`, commit `5a2cde7`):
+  `emitir_ordem_compra_fio`/`cancelar_ordem_compra_fio` RPCs (admin-only,
+  fornecedor-assigned precondition on emit, `rascunho`/`emitida` precondition
+  on cancel, one `ordem_compra_eventos` row per transition) + partial ACL
+  hardening (`REVOKE UPDATE` on `ordens_compra_fio` from `authenticated`,
+  restored column-by-column except the three dimension columns — see the
+  `KG-RECEBIDO-ACL-GAP` debt below). Verified live in staging
+  (`ucrjtfswnfdlxwtmxnoo`): a scoped `BEGIN…ROLLBACK` matrix re-confirmed both
+  RPC branches (null-fornecedor emit → `{ok:false,erro:...}`, row unchanged;
+  fornecedor-assigned emit → `{ok:true,...}`, row transitions +
+  1 `ordem_compra_eventos` row), then the architect walked both paths live in
+  the UI (error path: Emitir on a "— não atribuído" order now shows the error
+  toast, row stays Rascunho; success path: Emitir on a fornecedor-seeded order
+  succeeds, badge flips to Emitida) — **both confirmed**.
+  **`ORDEM-COMPRA-B1-BLOCKED-BY-MCP-AUTH` is RESOLVED** (the `supabase-legacy`
+  MCP authenticated this session) — the live-blocker entry below is retired.
+  **`ORDEM-COMPRA-B1-UI-RESULT-CHECK` bug found + fixed in this closeout,
+  commit `275ede2`:** `emitirOrdemCompra`/`cancelarOrdemCompra`
+  (`js/screens/op-nova.js`) checked only `res.error` (transport-level); the
+  RPCs return HTTP 200 with `{ok:false,erro:...}` on business-logic rejection,
+  so a rejected emit/cancel showed a **false success toast** while the row
+  silently stayed unchanged — reproduced live (Emitir on a null-fornecedor
+  order showed "success" with no actual DB transition; confirmed via a full
+  non-legacy-row scan, 0 rows had ever reached `emitida` with a real
+  `emitida_em`/event before the fix) and fixed to also check `res.data.ok`,
+  surfacing `res.data.erro` on rejection. **Sweep finding (no systemic
+  debt):** every other `supa.rpc(...)` call site in the app either already
+  checks `res.data.ok === false` correctly, or calls an RPC with no
+  `{ok,erro}` envelope (raises a Postgres exception or returns a scalar), so
+  an error-only check is correct there — this was an isolated defect in the
+  two new B1 handlers, not a pattern. 2 new render-harness smokes assert the
+  error path (rejected emit/cancel → error toast, not the false success
+  toast); full suite `132` pre-existing failures unchanged, zero regression.
+  **Ratified supplier-assignment decision (2026-07-18, this closeout):**
+  fornecedor assignment is a **per-order** property of `ordens_compra_fio`
+  (schema already supports it — nullable `fornecedor_id` FK, one row per
+  material+color, already the row-level RLS ownership key for
+  `ocf_fornecedor_read`/`update` and the `emitir` RPC's own precondition — no
+  schema change needed). Assignment **moves to the future `B2` order-detail
+  screen**; the OP-screen's legacy fornecedor selects (`buildAtrib` in
+  `op-nova.js`, which bulk-assigns one fornecedor per material across an
+  entire OP via `atribuirFornecedorFioOp`) are **removed only after `B2` is
+  functional** (no assignment-capability gap in between). `op_fornecedores` is
+  **kept synchronized as a compatibility projection** — it is not cosmetic:
+  `ops_fornecedor_read`/`op_itens_fornecedor_read` RLS key on it for supplier
+  visibility, and `screenFornecedorOrdens`'s embedded `ops(numero,ano)` join
+  degrades silently without it. **Reassignment after `emitida` is BLOCKED**
+  (the correction path is cancel + open a new draft order, not an in-place
+  fornecedor swap on an emitted order — keeps the `ordem_compra_eventos` audit
+  trail honest). The empty-dropdown bug (`fornecedores.tipo` domain
+  `fio_algodao`/`fio_poliester`/`tecelagem`/`latex` vs `ordens_compra_fio.tipo`
+  domain `algodao`/`poliester`, collided under the shared variable name `tipo`
+  in `buildAtrib`, `op-nova.js:1185-1188`) is **recorded as noted-not-fixed** —
+  the selects it affects are slated for removal at `B2`, so patching a
+  soon-to-be-deleted code path is not worthwhile.
+  **Registered debts (canonical, verbatim):**
+  - `ORDEM-COMPRA-B1-KG-RECEBIDO-ACL-GAP` — `kg_recebido` remains directly
+    writable by `authenticated` after `db/66` (both
+    `registrarRecebimentoOrdemFio`, `op-writes.js:29-43`, and
+    `screenFornecedorOrdens`, `fornecedor.js:461-463`, keep writing it
+    directly); PostgreSQL column-level `REVOKE` cannot narrow an
+    already-existing table-level grant without breaking both live consumers
+    with no replacement RPC. **Closes only when Phase C ships the
+    ledger-based `registrar_recebimento_ordem_compra_fio` RPC in the same
+    migration that revokes `kg_recebido` from `authenticated`.**
+  - `SUPPLIER_RECEIPT_WRITE_PATH_DISCOVERED` — `js/screens/fornecedor.js:461`
+    (`screenFornecedorOrdens`) is a live, independent supplier-facing direct
+    `UPDATE` of `kg_recebido`/`data_recebimento`/`status` on
+    `ordens_compra_fio`, gated by `ocf_fornecedor_update` RLS
+    (`fornecedor_id = meu_fornecedor_id()`); not mentioned in the spec's §0
+    evidenced-inventory (which asserted suppliers have no existing write
+    path). Flagged in the spec's provenance trail — **§0 itself is NOT
+    rewritten** (the discovery is recorded here and in the ledger, not folded
+    into the ratified inventory text).
+  - **Phase C scope AMENDED:** the ledger-based
+    `registrar_recebimento_ordem_compra_fio` RPC and rewrite must serve
+    **both** live consumers — `op-writes.js`'s `registrarRecebimentoOrdemFio`
+    **and** `fornecedor.js`'s `screenFornecedorOrdens` (previously scoped only
+    around the admin writer) — `screenFornecedorOrdens` must be rewritten to
+    call the ledger RPC instead of updating `ordens_compra_fio` directly.
+  Phases `B2`/`B3`/`C`/`D`/`E` remain `NOT AUTHORIZED`, each pending its own
+  order.**
   `docs/architecture/ORDEM_COMPRA_LIFECYCLE_SPEC_PROPOSED.md`
   (three-dimension model: administrative cycle rascunho/emitida/cancelada,
   acceptance nao_aplicavel/pendente/aceita/rejeitada, receipt derived from a
@@ -110,24 +180,12 @@ are in `docs/ledgers/G28_LEDGER.md`. HEAD/working tree/divergence: consult Git d
   unrecoverable, the citation will be corrected to name the architect's
   in-chat authorization directly. Tracked separately from the ratified
   decisions above.
-- **`ORDEM-COMPRA-B1-BLOCKED-BY-MCP-AUTH` — live blocker (2026-07-18).** Phase
-  `B1`'s **DB half** cannot execute this session: the `supabase-legacy` MCP (the
-  sole authorized path to staging `ucrjtfswnfdlxwtmxnoo` per the order) is
-  unauthenticated and its OAuth flow cannot be completed in a non-interactive
-  session — its tools are absent from the tool registry (verified via
-  ToolSearch). Blocked until the MCP is authorized: the mandated ref-confirm
-  (HARD STOP pre-step), the `emitir_ordem_compra_fio` / `cancelar_ordem_compra_
-  fio` RPCs, the RLS-revoke migration `db/66`, the RPC role-matrix tests, and
-  the final-ACL catalog verification. **The UI half is DONE** (architect ruling:
-  DB as debt, proceed with UI) — the OP-screen reader section is implemented and
-  render-harness smoke-tested (`js/screens/op-nova.js`; 7 smokes; zero
-  regression), degrading safely on a pre-`db/65` database. **Two consequences of
-  the DB debt:** (1) the reader's Emitir/Cancelar are inert until the RPCs land;
-  (2) the architect's full visual walk (draft→assign→Emitir→badges) needs the
-  RPCs live in staging, so it is gated on this debt. **To unblock:**
-  authorize/refresh the `supabase-legacy` MCP in an interactive session, apply
-  the `emitir`/`cancelar` RPCs + `db/66`, run the role matrix + ACL check, then
-  the architect walks the OP screen against staging.
+- **`ORDEM-COMPRA-B1-BLOCKED-BY-MCP-AUTH` — `RESOLVED` (2026-07-18).** The
+  `supabase-legacy` MCP authenticated this session; the DB half (`db/66`
+  RPCs + partial ACL hardening) was already applied to staging in an earlier
+  session (commit `5a2cde7`) and is now verified live (matrix re-run +
+  architect visual walk — see Phase `B1` closeout above). No longer a live
+  blocker.
 - **Open architect decisions:** `NONE` blocking. **One non-blocking product
   decision registered (`YARN-MANTER-PEDIDO-REDUNDANCY`, 2026-07-18):** now that
   `Salvar distribuição` exists (save-only), the `Manter pedido` button — also
@@ -499,8 +557,7 @@ architect's discretion.
   `DEPLOYMENT_MAPPING_AND_PRODUCTION_MIGRATION_PROCEDURE` (superseded by `M0`-`M10`);
   `DELETE-PROD-GUARD-A`; `DELETE-AUDIT-LOG-A`; `G28-CAMADA-4`; `A4.3` (email/SMTP
   invites); `ORDEM-COMPRA-LIFECYCLE` Phases `B2`-`E` (spec `RATIFIED` + `AMENDED`
-  2026-07-18, Phase `A` `CLOSED / ACCEPTED`, Phase `B1` AUTHORIZED but
-  DB-execution `HARD-STOPPED` — `ORDEM-COMPRA-B1-BLOCKED-BY-MCP-AUTH`; Phases
+  2026-07-18, Phases `A` and `B1` `CLOSED / ACCEPTED`; Phases
   `B2`-`E` still `NOT AUTHORIZED` — see
   `docs/architecture/ORDEM_COMPRA_LIFECYCLE_SPEC_PROPOSED.md`).
   Ranked items also appear in the `POST-LAUNCH DEBT REGISTER` above.
@@ -650,6 +707,7 @@ technical commits; documentation-only phases show `(docs)`. Consult HEAD with
 
 | Phase | Status | Date | Commit(s) |
 |---|---|---|---|
+| Purchase Order Lifecycle — `ORDEM-COMPRA-LIFECYCLE` Phase `B1` (OP reader + `emitir`/`cancelar` RPCs + partial ACL, `db/66`; UI-result-check fix for both handlers; supplier-assignment decision ratified: per-order, moves to `B2`, `op_fornecedores` kept as compatibility projection, reassignment-after-`emitida` blocked; debts registered: `KG-RECEBIDO-ACL-GAP`, `SUPPLIER_RECEIPT_WRITE_PATH_DISCOVERED`, Phase C scope amended) | `CLOSED / ACCEPTED` | 2026-07-18 | `5a2cde7` (RPCs), `b0c3f27` (UI reader), `275ede2` (UI-result-check fix) — branch `dev` — + docs record |
 | Yarn Buttons — `YARN-BUTTONS-PHASE-1` (+ corrections) — shared distribution builder (`op-distribuicao-ui.js`) consumed by OP screen + Pedido hub; footer = `[Manter pedido, Salvar distribuição]` save-only, `Iniciar produção` = only production-start; `Aceitar proposta` + dead `aplicarRecalculo` removed | `CLOSED / ACCEPTED` | 2026-07-18 | `02679f9`, `2388d39` (technical, branch `dev`) + docs record |
 | Purchase Order Spec Amendment — `ORDEM-COMPRA SPEC AMENDMENT` (docs-only Part 1: §6 UI surface → three surfaces + reader/writer separation; §8 Phase B → B1/B2/B3; receipt entry point = order detail screen) | `CLOSED / ACCEPTED` | 2026-07-18 | (docs: "Amend purchase order spec: receipt lives on the order", branch `dev`) |
 | Purchase Order Lifecycle — `ORDEM-COMPRA-LIFECYCLE` Phase `A` (schema + config: dimension columns, ledger/events/config tables, legacy backfill, 14/14 verification matrix) | `CLOSED / ACCEPTED` | 2026-07-18 | `fb0e6cb` (technical, branch `dev`) + docs record |

@@ -1,5 +1,120 @@
 # ACTIVE OPERATIONAL HANDOFF
 
+- **`ORDEM-COMPRA-LIFECYCLE` Phase `B1` — `CLOSED / ACCEPTED` (2026-07-18,
+  closeout order "CLOSEOUT ORDEM-COMPRA-B1", docs-only, branch `dev`):**
+  supersedes the entry below (`ORDEM-COMPRA-B1-BLOCKED-BY-MCP-AUTH` is
+  `RESOLVED` — the `supabase-legacy` MCP authenticated this session). **B1 is
+  now fully closed, both halves:** the UI reader (`buildOrdensReaderSection`,
+  `js/screens/op-nova.js`, commit `b0c3f27`) and the DB half (`db/66_ordem_
+  compra_emitir_cancelar.sql` — `emitir_ordem_compra_fio`/`cancelar_ordem_
+  compra_fio` RPCs + partial ACL hardening, commit `5a2cde7`, already applied
+  to staging `ucrjtfswnfdlxwtmxnoo` in an earlier session). **Verification
+  this session:** a scoped `BEGIN…ROLLBACK` matrix re-confirmed both RPC
+  branches live (null-fornecedor emit → `{ok:false,erro:'Ordem sem
+  fornecedor atribuido nao pode ser emitida'}`, row unchanged;
+  fornecedor-assigned emit → `{ok:true,...}`, row transitions + 1
+  `ordem_compra_eventos` row) — the first CTE-based test attempt gave a
+  false "no effect" reading (Postgres does not guarantee execution order
+  across CTEs joined only by a constant; corrected with a PL/pgSQL `DO`
+  block for guaranteed sequential statements). The architect then walked
+  both paths live in staging: **error path** (Emitir on a "— não atribuído"
+  order → error toast, row stays Rascunho) and **success path** (Emitir on a
+  fornecedor-seeded order → success toast, badge flips to Emitida) — **both
+  confirmed OK**.
+  **Bug found + fixed in this closeout (commit `275ede2`,
+  `ORDEM-COMPRA-B1-UI-RESULT-CHECK`):** `emitirOrdemCompra`/
+  `cancelarOrdemCompra` (`js/screens/op-nova.js:1073-1091`) checked only
+  `res.error` (transport-level) — the RPCs return HTTP 200 with
+  `{ok:false,erro:...}` on business-logic rejection, so a rejected
+  emit/cancel showed a **false success toast** while the row silently stayed
+  unchanged. Reproduced live: the architect had observed exactly this ("it
+  emitted, success toast, order moved to emitida" on a null-fornecedor
+  order); a full scan of every non-legacy `ordens_compra_fio` row confirmed
+  100% still `status_administrativo='rascunho'` with zero real
+  `emitida_em`/`ordem_compra_eventos` rows before the fix — the RPC and its
+  db/66 matrix were correct throughout, the defect was entirely client-side.
+  Fixed to also check `res.data.ok !== true`, surfacing `res.data.erro` on
+  rejection; identical fix applied to `cancelarOrdemCompra` (same latent
+  defect, not yet observed live). **Sweep (no systemic debt):** every other
+  `supa.rpc(...)` call site in the app either already checks
+  `res.data.ok === false` correctly, or calls an RPC with no `{ok,erro}`
+  envelope (raises a Postgres exception, e.g. `gerar_op_latex`, or returns a
+  plain scalar, e.g. `proximo_numero_op`) — an error-only check is correct
+  there. This was an isolated defect in the two new B1 handlers. 2 new
+  render-harness smokes added (`tests/op-nova.smoke.js` #77-78) asserting the
+  error path (rejected emit/cancel → error toast, not the false success
+  toast); the harness's `buildFakeSupa`/`makeRenderSandbox`/
+  `renderNovaOpForTest` gained an optional `rpcImpl` hook (defaults to the
+  old no-op behavior, zero impact on existing tests) plus an exposed
+  `sandbox.__toastsNode` for toast assertions. Full suite: `132`
+  pre-existing failures unchanged, zero regression (`tests/op-nova.smoke.js`
+  83/83 pass).
+  **Ratified supplier-assignment decision (this closeout, binding):**
+  fornecedor assignment is a **per-order** property of `ordens_compra_fio` —
+  the schema already supports it fully (nullable `fornecedor_id` FK, one row
+  per material+color already generated at Abrir OP via
+  `montarOrdensCompraFio`, already the row-level RLS ownership key for
+  `ocf_fornecedor_read`/`ocf_fornecedor_update` and already the `emitir` RPC's
+  own precondition) — **no schema change needed**, this is UI-relocation
+  work. Assignment **moves to the future `B2` order-detail screen**. The
+  OP-screen's legacy fornecedor selects (`buildAtrib` in `op-nova.js`, which
+  bulk-assigns one fornecedor per material type across an entire OP via
+  `atribuirFornecedorFioOp` — collapsing what the schema already models as
+  independent per-color orders) are **removed only after `B2` is
+  functional**, so there is no gap where assignment is impossible in the UI.
+  `op_fornecedores` (the OP-level `etapa`-keyed bookkeeping table) is **kept
+  synchronized as a compatibility projection, not cosmetic** —
+  `ops_fornecedor_read`/`op_itens_fornecedor_read` RLS key on it for supplier
+  visibility into the OP, and `screenFornecedorOrdens`'s embedded
+  `ops(numero,ano)` join silently degrades to `—` without it; whatever writes
+  fornecedor assignment in `B2` must also upsert the matching
+  `op_fornecedores` row. **Reassignment after `emitida` is BLOCKED** — the
+  correction path is cancel + open a new draft order, not an in-place
+  fornecedor swap on an already-emitted order (keeps the
+  `ordem_compra_eventos` audit trail honest, consistent with the ratified
+  "emission locks quantities" precedent). The empty-dropdown bug
+  (`fornecedores.tipo` domain `fio_algodao`/`fio_poliester`/`tecelagem`/
+  `latex` vs `ordens_compra_fio.tipo` domain `algodao`/`poliester`, collided
+  under the shared variable name `tipo` in `buildAtrib`,
+  `op-nova.js:1185-1188`) is **recorded as noted-not-fixed** — those selects
+  are slated for removal at `B2`, so patching a soon-to-be-deleted path is
+  not worthwhile.
+  **Debts registered (canonical, verbatim):**
+  - `ORDEM-COMPRA-B1-KG-RECEBIDO-ACL-GAP` — `kg_recebido` remains directly
+    writable by `authenticated` after `db/66` (both
+    `registrarRecebimentoOrdemFio`, `op-writes.js:29-43`, and
+    `screenFornecedorOrdens`, `fornecedor.js:461-463`, keep writing it
+    directly, the latter gated by the pre-existing `ocf_fornecedor_update`
+    RLS policy); PostgreSQL column-level `REVOKE` cannot narrow an
+    already-existing table-level grant without breaking both live consumers
+    immediately, with no replacement RPC. **Closes only when Phase C ships
+    the ledger-based `registrar_recebimento_ordem_compra_fio` RPC in the
+    same migration that revokes `kg_recebido` from `authenticated`.**
+  - `SUPPLIER_RECEIPT_WRITE_PATH_DISCOVERED` — `js/screens/fornecedor.js:461`
+    (`screenFornecedorOrdens`) is a live, independent supplier-facing direct
+    `UPDATE` of `kg_recebido`/`data_recebimento`/`status` on
+    `ordens_compra_fio`; not mentioned in the spec's §0 evidenced-inventory
+    (which asserted suppliers have no existing write path on this table).
+    Flagged here and in the ledger's provenance trail — **§0 of
+    `docs/architecture/ORDEM_COMPRA_LIFECYCLE_SPEC_PROPOSED.md` is
+    deliberately NOT rewritten**; the discovery is recorded as a correction
+    trail, not folded silently into the ratified inventory text.
+  - **Phase C scope AMENDED (binding):** the ledger-based
+    `registrar_recebimento_ordem_compra_fio` RPC and rewrite must serve
+    **both** live consumers — `op-writes.js`'s `registrarRecebimentoOrdemFio`
+    **and** `fornecedor.js`'s `screenFornecedorOrdens` (previously scoped
+    only around the admin writer) — `screenFornecedorOrdens` must be
+    rewritten to call the ledger RPC instead of updating `ordens_compra_fio`
+    directly.
+  **Record (this commit):** `PROJECT_STATE.md` (Phase `B1` marked `CLOSED /
+  ACCEPTED`, the `BLOCKED-BY-MCP-AUTH` entry marked `RESOLVED`, the three
+  debts registered, the supplier-assignment decision recorded, Closed-phases
+  row added); this handoff entry; `docs/ledgers/G28_LEDGER.md` (closeout
+  entry). **No DB/schema/production action this commit — docs-only.** No
+  push to `main`. **Next authorizable action:** Phase `B2` (order detail
+  screen, route `#/ordens-compra/:id`), its own order — scope must include
+  the per-order fornecedor-assignment UI per the ratified decision above.
+
 - **`ORDEM-COMPRA SPEC AMENDMENT` (Part 1) — `CLOSED / ACCEPTED`; Phase `B1`
   AUTHORIZED but DB-execution `HARD-STOPPED` (2026-07-18):** docs-only Part 1
   of the order "ORDEM-COMPRA SPEC AMENDMENT + PHASE B1", branch `dev`. **Part 1
