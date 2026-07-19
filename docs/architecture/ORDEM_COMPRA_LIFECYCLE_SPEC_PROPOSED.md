@@ -65,6 +65,15 @@
 > facts only; it does not alter any ratified rule, column, constraint, or phase
 > gate above.
 >
+> **REFUND-B1-CONTRACT-R1 (2026-07-19, documentation-only design closure):** the
+> native administrative authority contract for REFUND-B1 is specified in **§R.21**
+> below — native draft-origination + item accumulation, native `emitir`/`cancelar`
+> on `ordem_compra`, the compatibility-bridge contract with its multi-OP/polyester
+> HARD STOPs, the dedicated `#/ordens-compra/:id` entity screen, a routing/authority
+> (non-destructive) rollback, the ACL contract, and the exact `db/68` + application
+> manifest. It **authorizes no implementation**; `REFUND-B1` remains
+> `NOT AUTHORIZED` pending its own separate order.
+>
 > **Status (flat model, superseded on persistence — ratified decisions transfer):**
 > `RATIFIED` (2026-07-18, `ORDEM-COMPRA-LIFECYCLE-SPEC-
 > RATIFICATION-R1`) — the model, Finding 1's correction (§4/§6/§7(e)), and
@@ -882,6 +891,431 @@ migration.
 it no longer says phases still await Part R ratification. The canonical current state
 is: **Part R is `RATIFIED / ACCEPTED`; REFUND-A is blocked pending this structural
 clarification and its explicit migration order; no implementation has begun.**
+
+---
+
+## §R.21 REFUND-B1-CONTRACT-R1 — Native administrative authority design closure
+
+> **Order:** `REFUND-B1-CONTRACT-R1 — NATIVE ADMIN AUTHORITY DESIGN CLOSURE`
+> (2026-07-19, documentation-only). **Baseline:** `dev @
+> 6a1066e80f0f470f7355b7bb3f38c6438da59ee7` (REFUND-A accepted).
+> **Type:** architecture contract clarification. **Authorizes no implementation.**
+> This section closes the design gaps the accepted REFUND-B1 pre-order
+> reconciliation surfaced, so that migration `db/68` and the application changes can
+> later be authorized against a settled contract. It refines Part R's REFUND-B1 row
+> (§R.11/§R.17); it does not alter any ratified column, constraint, or conversion.
+> Where this section and the pre-REFUND-A §6/§8 B1/B2 split diverge on **UI
+> ownership**, this section governs REFUND-B1 (see §R.21.12).
+
+### §R.21.0 Binding phase boundary (restates the order §4)
+
+REFUND-B1 changes **administrative authority only**. After REFUND-B1:
+
+| Concern | Authority after REFUND-B1 |
+|---|---|
+| Administrative authority — **native** orders | `ordem_compra` (new model), via the native RPCs below |
+| Administrative authority — **imported legacy** orders | legacy flat path (`ordens_compra_fio` + db/66 RPCs) remains available **only** for the imported-legacy model |
+| Receipt authority | `ordens_compra_fio` remains authoritative until **Phase C** — unchanged |
+| Allocation authority | **inactive**; no business grant; no application call; `alocar_necessidade_compra_fio` stays granted to no role |
+| Opening receipt ledger | none |
+| Production | none (`gqmpsxkxynrjvidfmojk` prohibited) |
+
+`LIVE_ALLOCATION_T1_T2_TEST_PENDING` does **not** block REFUND-B1, and **no
+REFUND-B1 design element may activate, grant, or depend on allocation mutation**
+(§R.21.5 proves separability).
+
+**Load-bearing coexistence fact (design constraint).** The refoundation
+(`db/65`/`db/66`/`db/67`) exists **only** on the staging/development database
+`ucrjtfswnfdlxwtmxnoo`. Production `gqmpsxkxynrjvidfmojk` carries `db/01→64` only —
+none of the lifecycle columns, the emit/cancel RPCs, or the four new layers. This is
+why `fetchOrdensCompraFio` (`js/screens/op-nova.js`) already degrades on a `42703`
+undefined-column error. **Every REFUND-B1 read-model and UI element MUST degrade
+gracefully on a database that lacks the new tables/functions** (function-not-found
+`PGRST202` / column-not-found `42703` → fall back to the legacy flat reader), so the
+same application can run against production-before-promotion without error. This is a
+binding requirement, not an optimization (§R.21.11/§R.21.12).
+
+### §R.21.5 Native draft-origination + accumulation contract (order §5)
+
+**Canonical writer (ONE):** `public.adicionar_item_ordem_compra(` `p_pedido_id UUID,
+p_fornecedor_id BIGINT, p_material TEXT, p_cor_id BIGINT, p_cor_poliester TEXT,
+p_kg_pedido NUMERIC` `) RETURNS JSONB`.
+
+- **Option decision (explicit, per order §5): B — the writer creates the native
+  `ordem_compra` header (create-or-get) AND the `ordem_compra_item` line, atomically,
+  in one call.** It does **not** create or mutate `necessidade_compra_fio` or
+  `ordem_compra_item_alocacao`. A native draft is born with its first item; empty
+  drafts are never created.
+- **Security:** `SECURITY DEFINER`, `SET search_path = public`, internal
+  `is_admin()` gate (returns `{ok:false, codigo:'sem_permissao'}` otherwise).
+- **Locking order:** at entry, take a transaction-level advisory lock keyed on
+  `hashtextextended(p_pedido_id::text || ':' || p_fornecedor_id::text, 0)` to
+  serialize get-or-create for the same `(pedido, fornecedor)`; the partial unique
+  index `ordem_compra_um_rascunho_ativo` (§R.3) is the structural backstop (a losing
+  concurrent INSERT re-selects the winner's draft). No allocation rows are touched,
+  so no cross-need lock ordering applies in this phase.
+- **Supplier validation:** `p_fornecedor_id` is **required** (native supplier
+  requirement, §R.5) and must exist in `fornecedores`; NULL or unknown →
+  `{ok:false, codigo:'fornecedor_invalido'}`.
+- **Pedido validation:** `p_pedido_id` must exist in `pedidos` →
+  else `{ok:false, codigo:'pedido_invalido'}`. (Native item→need→OP→Pedido ownership
+  is not checkable in REFUND-B1 because no allocations exist; it is enforced by the
+  §R.3 ownership guard when PRE-PROD creates needs/allocations.)
+- **Active-draft reuse:** if a `rascunho`, `legado=FALSE`, non-null-supplier header
+  already exists for `(pedido, fornecedor)`, reuse it; else insert one
+  (`legado=FALSE`, `status_administrativo='rascunho'`,
+  `status_recebimento='nao_recebido'`, `legado_provenance=NULL`).
+- **Prior emitted/cancelled orders** for the same `(pedido, fornecedor)` are
+  **ignored** — Rule 1 constrains only the active draft (§R.5); a new draft after a
+  prior emission is legitimate.
+- **Item accumulation (native identity, §R.21.6):** within the draft, an item is
+  keyed by `(material, color)`. If a matching line exists, **add** `p_kg_pedido` to
+  its `kg_pedido`; else insert a new `ordem_compra_item`. Never a duplicate line for
+  the same material/color.
+- **Idempotency:** accumulation is **additive by design, not idempotent** — a naive
+  retry double-adds. **Determination:** the UI must gate against double-submit
+  (in-flight disable); a `p_idempotency_key` parameter is an accepted future
+  hardening, deferred unless a caller demonstrably needs it (no alias/param added
+  speculatively).
+- **Event behavior:** origination/accumulation writes **no** `ordem_compra_eventos`
+  row — drafts are mutable working state; only `emitir`/`cancelar` are audited
+  transitions (mirrors the flat model, where the first event was `emitida`).
+- **Grants:** `REVOKE ALL` from `PUBLIC`/`anon`/`service_role`; `GRANT EXECUTE` to
+  `authenticated` only.
+- **Return (success):** `{ok:true, ordem_id, item_id, header_criado:<bool>,
+  kg_pedido_item:<numeric>}`.
+
+**Binding invariant:** at most one active native draft per `(pedido, supplier)`;
+repeated origination accumulates into it.
+
+### §R.21.6 Native item identity (order §6)
+
+- **Identity:** `ordem_compra_item` is identified by `(ordem_id, material, color)`
+  — one line per material+color per header. `material ∈ {algodao, poliester}`; color
+  is exactly one of `cor_id` (cotton) xor `cor_poliester` (polyester), per the table
+  CHECK. The item layer carries **no `op_id` and no need reference** — OP/need
+  provenance lives on the allocation layer (§R.4), by design.
+- **Ordered-quantity source:** `kg_pedido` = the accumulated admin-entered quantity
+  for that material/color (§R.21.5). `kg_recebido` stays 0 in REFUND-B1 (native
+  receipt is Phase C).
+- **One item may represent multiple needs and multiple OP origins** — because
+  need/OP linkage is expressed only later, through (multiple) allocation rows in
+  PRE-PROD. The item itself is need-agnostic and OP-agnostic. **Do not infer item
+  identity from the flat legacy model** (which is one row per OP+material+color).
+- **Adding the same material/color twice** → accumulate into the existing item, not a
+  second item (§R.21.5).
+- **Quantity immutability after emission:** on `emitir`, quantities freeze; no
+  post-emission item writer exists in REFUND-B1 (correction path = cancel + new draft,
+  §R.21.9), consistent with the ratified "emission locks quantities" precedent.
+- **Relationship to the future allocation sum:** at PRE-PROD, `SUM(allocations for
+  the item)` reconciles against `item.kg_pedido` (`≤`; any excess ordered surfaces as
+  `saldo_fios` per §R.8, never as a silent over-allocation). This reconciliation is
+  **PRE-PROD's**, not REFUND-B1's — a native item emitted in REFUND-B1 is
+  administratively complete but **not yet need-reconciled** (an accepted, explicit
+  consequence of the phase boundary).
+
+### §R.21.7 Compatibility bridge contract (order §7) — DEFINED, activation DEFERRED to PRE-PROD
+
+**Canonical bridge (ONE):** `public.criar_ponte_compat_ordem_compra_item(`
+`p_item_id BIGINT` `) RETURNS JSONB` — creates the flat `ordens_compra_fio` shadow
+row for a native item **and** the `ordem_compra_item_compat_fio` mapping
+(`origem='native_bridge'`) in one transaction; one-to-one in both directions
+(the two `UNIQUE` constraints are the backstop); idempotent (returns the existing
+mapping if present, creates nothing new). `SECURITY DEFINER`, internal `is_admin()`.
+
+- **Caller / exposure:** **internal-only.** In REFUND-B1 it is **granted to no client
+  role and never called** — no native item is receivable in REFUND-B1 (receipt is
+  entirely flat/legacy until Phase C), so there is nothing to bridge. PRE-PROD (which
+  first makes native items receivable-during-coexistence) is the phase that grants and
+  invokes it, as an internal step of a larger writer — never exposed directly to a
+  client.
+- **Locks / idempotency / rollback:** advisory lock on `p_item_id`; the mapping
+  `UNIQUE`s guarantee no duplicate shadow/mapping; rollback of the enclosing
+  transaction removes both or neither (never a half-bridge). **Receipt authority stays
+  on the flat shadow until Phase C** — the bridge sets up the flat row; it does not
+  move receipt authority.
+
+**Why activation is deferred (separability proof).** The bridge must fill the flat
+row's `op_id`, and `ordens_compra_fio.op_id` is **`NOT NULL`** (verified live in
+staging). The item's `op_id` is knowable only from its **allocations** — which are
+PRE-PROD. Therefore the bridge cannot run before allocation exists; it belongs to
+PRE-PROD. This is also why REFUND-B1 can create native items without activating
+allocation: items are OP-free (§R.21.6); only the *bridge* needs an OP, and the bridge
+is deferred.
+
+**Field determination + the four mandated cases (order §7).** For a native item whose
+(future) allocations resolve its provenance, the bridge fills:
+`fornecedor_id ← header.fornecedor_id`; `tipo ← item.material`;
+`cor_id/cor_poliester ← item.color`; `kg_pedido ← item.kg_pedido`; Pedido ownership
+via `op_id → ops.lote_id → lotes.pedido_id` must equal `header.pedido_id`; and
+`op_id ←` the item's OP origin. Then:
+
+1. **Item backed by exactly one OP-origin need (single-OP cotton):** `op_id` = that
+   need's `op_id`. **Representable** — one flat shadow, one mapping. ✓
+2. **Item backed by multiple OP-origin needs (multi-OP cotton):** the flat `op_id` is
+   scalar and the mapping is one-to-one, so one item cannot map to multiple flat rows,
+   and no single `op_id` is correct. **HARD STOP — the bridge MUST NOT fabricate,
+   pick a "first"/"representative" OP.** Such an item is **not flat-bridgeable**; its
+   receipt is served only by the **Phase-C native ledger**.
+3. **Pedido-origin shared polyester (`op_id` NULL at the need layer):** the flat
+   schema requires a non-null `op_id`, so no flat shadow can be created without
+   **fabricating an OP**. **HARD STOP** — not flat-bridgeable; **Phase-C native
+   ledger only.**
+4. **Item whose future allocations span multiple OPs:** identical to case 2 — **HARD
+   STOP**, not flat-bridgeable, Phase-C native ledger.
+
+**Binding consequence (surfaced now, for PRE-PROD/Phase-C planning).** The flat
+compat bridge is viable **only** for the degenerate single-OP-origin case (case 1);
+the general native case (cases 2–4) is receivable **only** from Phase C via the native
+ledger. Because REFUND-B1 activates none of this, cases 2–4 are **not** REFUND-B1
+blockers — but they are a standing **HARD STOP for PRE-PROD**: if PRE-PROD produces a
+native item that must be receivable during coexistence yet is not flat-representable,
+that requires an explicit architect decision (accept "not receivable until Phase C",
+or bring Phase C forward for that item), **never** an OP fabrication.
+
+### §R.21.8 Native emit contract (order §8)
+
+**RPC:** `public.emitir_ordem_compra(p_ordem_id BIGINT) RETURNS JSONB`.
+
+- Targets `ordem_compra.id`. **Rejects `legado=TRUE`** (`codigo:'ordem_legado'`).
+- Requires `status_administrativo='rascunho'` (`codigo:'estado_invalido'`),
+  `fornecedor_id IS NOT NULL` (`codigo:'sem_fornecedor'`), and the **minimum valid
+  item state = at least one `ordem_compra_item`** (`codigo:'sem_itens'`). Each item's
+  `kg_pedido>0` is already a table CHECK.
+- **Allocations are NOT required to emit in REFUND-B1** (they do not exist yet);
+  need-coverage is reconciled at PRE-PROD (§R.21.6). Explicit determination.
+- Freezes the issuance snapshot: `aceite_exigido_na_emissao ←
+  ordem_compra_config.exige_aceite`; sets `status_aceite` (`pendente` if required else
+  `nao_aplicavel`); sets `emitida_em=now()`, `emitida_por=auth.uid()` — all atomically
+  → `status_administrativo='emitida'`.
+- Writes **one** `ordem_compra_eventos` row using **`ordem_compra_id`**, leaving
+  `ordem_compra_fio_id` **NULL** (the exactly-one-parent CHECK is satisfied).
+- **Flat compatibility administrative mirror:** in the same transaction, mirror
+  `status_administrativo`/`status_aceite`/`emitida_em` onto any `native_bridge` flat
+  shadow rows of this order's items. **No-op in REFUND-B1** (no shadows exist); defined
+  for forward-compatibility. The mirror is **administrative-only, write-from-native,
+  never receipt** — it preserves flat receipt authority and is not a competing
+  authority (§R.11).
+- **Security/ACL:** `SECURITY DEFINER`, internal `is_admin()`; `GRANT EXECUTE` to
+  `authenticated` only; `REVOKE` `PUBLIC`/`anon`/`service_role`.
+- **Error contract:** `{ok:false, erro:<pt-BR message>, codigo:<slug>}` with codes
+  `sem_permissao | nao_encontrada | ordem_legado | estado_invalido | sem_fornecedor |
+  sem_itens`. **Idempotency:** re-emitting an already-`emitida` order returns
+  `{ok:false, codigo:'estado_invalido'}` with no second event (retry-safe).
+
+### §R.21.9 Native cancel contract (order §9)
+
+**RPC:** `public.cancelar_ordem_compra(p_ordem_id BIGINT) RETURNS JSONB`.
+
+- Targets `ordem_compra.id`. **Rejects `legado=TRUE`** (`codigo:'ordem_legado'`).
+- **Permitted source states:** `rascunho | emitida → cancelada` (terminal).
+- **Received-quantity rule:** in REFUND-B1 no native order can carry received
+  quantity (native receipt is Phase C), so this is moot for the phase. **Determination
+  (binding from Phase C onward):** once native receipt exists, **any received quantity
+  blocks cancellation** — the correction path is a ledger `estorno`, not order cancel
+  (consistent with §7g "receipt entries never reverse"). In REFUND-B1 the guard is
+  authored but structurally unreachable.
+- **Preserves receipt history; never deletes** items, allocations, mappings, flat
+  shadows, or events. Sets `cancelada_em/por`.
+- Writes **one** `ordem_compra_id`-referenced `ordem_compra_eventos` row.
+- Mirrors the cancelled administrative state to `native_bridge` flat shadows in the
+  same transaction (no-op in REFUND-B1).
+- Same security/ACL posture as §R.21.8. **Do not copy db/66 mechanically** where
+  native semantics differ (legado guard, id target, the received-quantity rule).
+- **Error contract:** codes `sem_permissao | nao_encontrada | ordem_legado |
+  estado_invalido | possui_recebimento` (the last reachable only from Phase C).
+
+### §R.21.10 Legacy coexistence (order §10)
+
+- **Discriminator:** `ordem_compra.legado` (`TRUE` = imported legacy, `FALSE` =
+  native). Flat shadows are `ordens_compra_fio` rows reachable only via
+  `ordem_compra_item_compat_fio` (`origem`: `imported_legacy` vs `native_bridge`).
+- **Imported legacy headers (51) remain inert in the new model** — native RPCs reject
+  `legado=TRUE`; they are read-only historical records under `ordem_compra`.
+- **Native RPCs cannot act on `legado=TRUE`** (explicit guard, §R.21.8/§R.21.9).
+- **Legacy RPCs remain available only for the imported-legacy flat model.** The db/66
+  `emitir_ordem_compra_fio`/`cancelar_ordem_compra_fio` operate on
+  `ordens_compra_fio.id` and stay the admin path for the original flat rows. They must
+  **never** become an alternate writer for a native order. **Enforcement obligation
+  (PRE-PROD, inert in REFUND-B1):** when `native_bridge` shadows first exist, the db/66
+  RPCs must be guarded to **reject any `ordens_compra_fio` row that carries a
+  `native_bridge` mapping** — administrative authority for anything native is
+  exclusively the native RPCs. In REFUND-B1 no such shadow exists, so the guard is not
+  yet needed; it is recorded here so PRE-PROD does not miss it.
+- **No double presentation:** the read model (§R.21.11) surfaces a native order
+  **once**, from `ordem_compra`; its `native_bridge` flat shadow is an internal
+  receipt-compat record and is **never** listed as an independent order.
+
+### §R.21.11 Administrative read model (order §11)
+
+**Choice: `SECURITY DEFINER` RPC pair** (not a SQL view + RLS). Rationale: it composes
+header+items+provenance server-side so the client never reconstructs authority from
+unrelated tables; it uniformly excludes `native_bridge` shadows so an order is never
+shown twice; and it degrades cleanly (a database without the function returns
+`PGRST202`, letting the client fall back to the legacy flat reader — §R.21.0).
+
+- `public.listar_ordens_compra_admin(p_pedido_id UUID DEFAULT NULL) RETURNS JSONB` —
+  array of orders (optionally filtered by Pedido), each: header (id, pedido, supplier,
+  three lifecycle states, `emitida_em`, `legado`, `legado_provenance`), items
+  (material, color, `kg_pedido`, `kg_recebido`), a **model discriminator**
+  `modelo ∈ {'nativo','legado'}`, server-derived **allowed actions**
+  (`emitir` when `rascunho` + supplier + `≥1` item; `cancelar` when `rascunho|emitida`;
+  none when `cancelada`/`legado`/inert), and compatibility state (whether a flat shadow
+  exists).
+- `public.obter_ordem_compra_admin(p_ordem_id BIGINT) RETURNS JSONB` — one order in
+  full, plus its `ordem_compra_eventos` history.
+- **Security:** `SECURITY DEFINER`, internal `is_admin()`, `GRANT EXECUTE` to
+  `authenticated` only; `REVOKE` `PUBLIC`/`anon`/`service_role`.
+- **Prevents:** duplicate native/shadow display (shadows excluded); client-side
+  authority reconstruction (composition is server-side); mistaking a flat mirror for
+  native authority (mirrors are never returned as orders — only as a compat flag).
+
+### §R.21.12 Dedicated-screen / UI ownership (order §12) — governs over the earlier B1/B2 split
+
+- **Route (detail):** `#/ordens-compra/:id` (numeric — `ordem_compra.id` is
+  `BIGSERIAL`). The app has **no generic `:id` router support**; every parameterized
+  route is a hand-written regex branch in `js/router.js`. So the detail route is a
+  **new regex branch** `^#/ordens-compra/(\d+)$ → screenOrdemCompra(Number(id))`.
+- **Route (list) + entry point:** static `#/ordens-compra` registered in
+  `js/boot.js`, plus an **`Ordens de Compra`** item in `ADMIN_MENU`
+  (`js/screens/common.js`).
+- **Dedicated screen** `screenOrdemCompra(id)` (async, param-driven — the
+  `pedido-detail.js` template): full header/items/lifecycle/supplier/Pedido/provenance
+  + event history; **`Emitir`/`Cancelar` as actions on this screen**; loads via the
+  §R.21.11 RPC through a dedicated `ordem-compra-data.js` loader
+  (`window.RAVATEX_SCREENS.ordemCompra` namespace).
+- **OP screen becomes summary + navigation.** `buildOrdensReaderSection`
+  (`op-nova.js`) stays as a **compact contextual summary** but its inline
+  `Emitir`/`Cancelar` actions (`ocfAcoes`/`emitirOrdemCompra`/`cancelarOrdemCompra`)
+  are **removed**; it gains a "ver ordem" link that navigates to
+  `#/ordens-compra/:id`. Governance: transition modals hold **actions only**; a
+  purchase order is an entity and its full CRUD/lifecycle lives on its dedicated
+  screen — never confined to `op-nova.js` or a modal.
+- **Phasing reconciliation (binding):** the pre-REFUND-A §6/§8 amendment placed the
+  detail screen in "B2". This contract **pulls the dedicated administrative Ordem de
+  Compra screen (list + detail + emit/cancel actions) into REFUND-B1**, because
+  admin authority (REFUND-B1's core) cannot be exposed governance-compliantly from a
+  reader section or modal. The residual "B2" scope (per-order supplier-assignment UI
+  relocation off the OP screen; receipt UI wiring — Phase C) remains later.
+- **UI validation is mandatory** at REFUND-B1 implementation (architect visual
+  walk of native emit/cancel + legacy-inert render).
+
+### §R.21.13 Rollback contract (order §13) — routing/authority, non-destructive (architect ruling)
+
+If rollback is required after native use has begun:
+
+1. **Revert application administrative writes to the prior flat path** (unpublish the
+   native admin UI / stop calling the native writers).
+2. **Revoke/disable native business-writer exposure** — `REVOKE EXECUTE` on
+   `adicionar_item_ordem_compra`, `emitir_ordem_compra`, `cancelar_ordem_compra`
+   (and the bridge, if it was granted) from `authenticated`; functions and tables
+   remain.
+3. **Retain** all native headers, items, mappings, flat compatibility rows, events,
+   recorded lifecycle state, and receipt snapshots.
+4. **Retained native records become inert/read-only** until forward repair: the read
+   model returns them with **allowed-actions = `[]`** and an `inert` flag; the
+   dedicated screen renders them read-only. Events are append-only, so the historical
+   trail stays truthful.
+
+**Never:** delete native orders created while REFUND-B1 was active; rewrite/remove
+events; merge native and legacy records; discard flat compat rows that may carry
+receipt history; or fabricate reverse administrative events to simulate rollback.
+
+### §R.21.14 Function-naming drift resolution (order §14)
+
+- Installed inactive function (db/67): `alocar_necessidade_compra_fio(p_item_id
+  BIGINT, p_necessidade_id BIGINT, p_op_id BIGINT, p_kg NUMERIC)`.
+- §R.4 prose: `alocar_necessidade(need_id, item_id, kg)`.
+- **Ruling: accepted installed name; the §R.4 prose is corrected on naming.** The
+  canonical name for future **PRE-PROD** allocation work is the installed
+  `alocar_necessidade_compra_fio(p_item_id, p_necessidade_id, p_op_id, p_kg)`. REFUND-B1
+  **does not rename, expose, alias, or grant** it (PRE-PROD owns activation); no caller
+  requires an alias, so none is created. §R.4's shorter prose signature is superseded
+  on naming by this ruling and retained as historical.
+
+### §R.21.15 ACL contract (order §15)
+
+| Object | Security | EXECUTE grant | Revokes |
+|---|---|---|---|
+| `adicionar_item_ordem_compra` | `SECURITY DEFINER`, `is_admin()` | `authenticated` | `PUBLIC`/`anon`/`service_role` |
+| `emitir_ordem_compra` | `SECURITY DEFINER`, `is_admin()` | `authenticated` | `PUBLIC`/`anon`/`service_role` |
+| `cancelar_ordem_compra` | `SECURITY DEFINER`, `is_admin()` | `authenticated` | `PUBLIC`/`anon`/`service_role` |
+| `criar_ponte_compat_ordem_compra_item` | `SECURITY DEFINER`, `is_admin()` | **none in REFUND-B1** (PRE-PROD grants) | `PUBLIC`/`anon`/`service_role` |
+| `listar_ordens_compra_admin`, `obter_ordem_compra_admin` | `SECURITY DEFINER`, `is_admin()` | `authenticated` | `PUBLIC`/`anon`/`service_role` |
+
+- **No direct client DML on the new model** — `ordem_compra`/`ordem_compra_item`
+  keep `SELECT`-only to `authenticated` (already so from REFUND-A) with admin-only RLS;
+  the RPCs are the sole writers.
+- **Do not reproduce the `ordens_compra_fio` anon-grant gap.** The flat table still
+  carries a stale table-level `UPDATE` grant to `anon` (pre-existing
+  `ANON-GRANT-DEFENSE-IN-DEPTH`, inert behind RLS). REFUND-A's five new tables have
+  **zero** anon DML — hold that bar; the `db/68` migration must add **no** anon grant,
+  and its verification must re-confirm zero anon DML on `ordem_compra`/
+  `ordem_compra_item`.
+- **No allocation RPC grant. No receipt-authority change** (`kg_recebido` stays
+  flat-writable until Phase C — `KG-RECEBIDO-ACL-GAP` unchanged).
+
+### §R.21.16 Exact implementation manifest (order §16) — REFUND-B1 (projected; NOT authorized)
+
+- **Migration:** `db/68_ordem_compra_native_admin.sql` — `adicionar_item_ordem_compra`,
+  `emitir_ordem_compra`, `cancelar_ordem_compra`, `criar_ponte_compat_ordem_compra_item`
+  (defined, **inactive** — granted to no role), `listar_ordens_compra_admin`,
+  `obter_ordem_compra_admin`; the ACL of §R.21.15; **no** allocation grant, **no**
+  receipt change, **no** db/66 replacement (the db/66 native-guard is a PRE-PROD
+  obligation, §R.21.10).
+- **New RPCs/read-model objects:** the six functions above (read model = the two
+  admin RPCs; **no** SQL view).
+- **New dedicated-screen files:** `js/screens/ordens-compra-list.js`,
+  `js/screens/ordem-compra.js`, `js/screens/ordem-compra-data.js`; and, if the render
+  or event logic exceeds the CODE_HEALTH §7 size guidance,
+  `js/screens/ordem-compra-render.js` and `js/screens/ordem-compra-events.js` (the
+  `pedido-detail*` split). Minimum required: screen + data loader.
+- **Modified application files:** `js/router.js` (list + `(\d+)` detail branches);
+  `js/boot.js` (register `#/ordens-compra`); `js/screens/common.js` (`ADMIN_MENU`
+  item + `MENU_ICONS` entry); `js/screens/op-nova.js` (reader → summary + "ver ordem"
+  link; remove inline `emitir`/`cancelar` handlers); `index.html` (new `<script>`
+  tags with current cache-busting `?v=`, before `js/boot.js`).
+- **Routing/navigation files:** `js/router.js`, `js/boot.js`, `js/screens/common.js`,
+  `index.html` (as above).
+- **Tests:** `tests/ordem-compra.smoke.js` (dedicated-screen render harness, incl.
+  business-rejection and transport-error paths, per §20 double-fidelity);
+  `tests/ordem-compra-admin.matrix.sql` (or an equivalent DB matrix) for the writers;
+  additions to `tests/op-nova.smoke.js` asserting the reader is summary-only (no inline
+  emit/cancel) and links out.
+- **Canonical closeout docs:** `PROJECT_STATE.md`, `AGENT_HANDOFF.md`,
+  `docs/ledgers/G28_LEDGER.md`, and this spec.
+- **`PEDIDO_OP_SCHEMA_CONTRACT.md` §6.2:** corrected in **this** contract phase
+  (REFUND-B1-CONTRACT-R1), not deferred — see the §6.2 edit.
+
+### §R.21.17 Test & UI-validation matrix (order §17)
+
+- **Database:** one active native draft per `(pedido, supplier)`; additive
+  accumulation into the existing draft; native emit success; emit rejection matrix
+  (`sem_permissao`/`ordem_legado`/`estado_invalido`/`sem_fornecedor`/`sem_itens`);
+  cancel success; cancel rejection matrix (+`possui_recebimento` reachable only from
+  Phase C); `legado=TRUE` rejection on both writers; exactly-one-parent event
+  enforcement (native events carry `ordem_compra_id`, never `ordem_compra_fio_id`);
+  bridge idempotency + one-to-one (exercised where case 1 applies; cases 2–4 assert the
+  HARD-STOP refusal to fabricate an OP); flat administrative-mirror equality (no-op in
+  REFUND-B1, asserted no shadow written); ACL negative tests (anon/authenticated direct
+  DML denied on `ordem_compra`/`ordem_compra_item`; RPCs reject non-admin);
+  **no allocation activation** (allocation RPC still granted to no role; no allocation
+  row created by any REFUND-B1 writer); rollback rehearsal (revoke EXECUTE → native
+  writers inert, all rows retained).
+- **Legacy regression (must stay byte-identical):** db/66 `emitir`/`cancelar` flat
+  path; the two direct flat receipt writers (`registrarRecebimentoOrdemFio`,
+  `screenFornecedorOrdens`); the OP reader; the Pedido Insumos transition; supplier
+  receipt; `ordens_compra_fio` row fingerprint unchanged.
+- **UI:** dedicated entity screen renders; native order render; imported-legacy render
+  (inert, no actions); no duplicate native/shadow display; action availability by
+  state; transport-error handling; business-rejection handling (`res.data.ok !== true`
+  → error toast, per the `275ede2` lesson); emit/cancel success refresh; OP summary →
+  detail navigation; modal action-only compliance; **graceful degradation on a
+  database lacking `db/65–67`** (PGRST202/42703 → legacy reader, no crash); architect
+  visual validation.
+
+**Nothing in §R.21 is authorized for implementation.** REFUND-B1 remains
+`NOT AUTHORIZED` pending its own separate architect order.
 
 ---
 

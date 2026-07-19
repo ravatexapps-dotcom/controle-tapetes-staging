@@ -486,11 +486,27 @@ INSUMOS → TECELAGEM → ACABAMENTO → EXPEDIÇÃO → ENTREGA
 
 | Stage | Source of truth | How to derive progress |
 |---|---|---|
-| **INSUMOS** | `ordens_compra_fio` (yarns) | `SUM(kg_recebido) / SUM(kg_pedido)` per OP linked to the pedido |
+| **INSUMOS** | `ordens_compra_fio` **for receipt progress until Phase C** (see note) | `SUM(kg_recebido) / SUM(kg_pedido)` per OP linked to the pedido |
 | **TECELAGEM** | `entrega_itens` (cima stage) | `SUM(metros_entregues without defect) / SUM(op_itens.metros_pedidos)` per linked OP |
 | **ACABAMENTO** | `entrega_itens` (latex stage) | Same, for látex deliveries |
 | **EXPEDIÇÃO** | To be defined (future) | Outbound movement (new stage or entrega with etapa=expedicao) |
 | **ENTREGA** | To be defined (future) | Receipt confirmation by the cliente or carrier |
+
+> **Purchase-order refoundation note (updated 2026-07-19, `REFUND-B1-CONTRACT-R1`).**
+> The `ordens_compra_fio` entry above is **no longer the sole authority** for the yarn
+> purchase-order domain; it is a **per-dimension** authority under the ratified
+> refoundation (`docs/architecture/ORDEM_COMPRA_LIFECYCLE_SPEC_PROPOSED.md`, Part R).
+> **Administrative** authority for **native** purchase orders moves to `ordem_compra`
+> at `REFUND-B1` (imported legacy orders keep the flat path); **receipt** authority —
+> the `SUM(kg_recebido)/SUM(kg_pedido)` used by this INSUMOS row — **remains on
+> `ordens_compra_fio` until Phase C**, when it moves to the
+> `ordem_compra_fio_lancamentos` / `ordem_compra_item` ledger. So this INSUMOS progress
+> formula stays correct through Phase C, but the table's "source of truth" label is
+> understood as *receipt-dimension authority during coexistence*, not administrative or
+> single-model authority. The refoundation is currently applied on the
+> staging/development database (`ucrjtfswnfdlxwtmxnoo`) only; production carries
+> `db/01→64`, so a production consumer sees the pre-refoundation flat shape until a
+> separately authorized production promotion.
 
 ### 6.3. UI rules
 

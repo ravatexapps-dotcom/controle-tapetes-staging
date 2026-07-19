@@ -148,6 +148,45 @@ are in `docs/ledgers/G28_LEDGER.md`. HEAD/working tree/divergence: consult Git d
   Non-blocking documentation follow-ups remain pending: `PEDIDO_OP_SCHEMA_CONTRACT.md`
   §6.2 and `DOCUMENTATION_INDEX.md`. The historical acceptance of the old Phase `A`
   and `B1` remains preserved while their flat persistence foundation is superseded.
+- **`REFUND-B1-CONTRACT-R1` — `DOCUMENTED / AWAITING ARCHITECT ACCEPTANCE`
+  (2026-07-19, documentation-only design closure, branch `dev`, baseline
+  `6a1066e`, staging read-only only).** The architect ordered a native-admin
+  authority design closure to settle the gaps the accepted REFUND-B1 pre-order
+  reconciliation surfaced, **before** any `db/68` or application change is
+  authorized. Written to `ORDEM_COMPRA_LIFECYCLE_SPEC_PROPOSED.md` **§R.21** (new
+  section) + banner pointer. **Binding determinations:** REFUND-B1 changes
+  **administrative authority only** (native → `ordem_compra`; imported legacy →
+  flat path; receipt stays flat until Phase C; allocation inactive/no grant/no
+  call). ONE origination writer `adicionar_item_ordem_compra` (Option B:
+  header + item, **no allocation, no needs, no event**); native item identity =
+  `(ordem_id, material, color)`, OP-free/need-free; native
+  `emitir_ordem_compra`/`cancelar_ordem_compra` on `ordem_compra.id`, reject
+  `legado=TRUE`, write `ordem_compra_id` events; the compatibility bridge
+  `criar_ponte_compat_ordem_compra_item` is **DEFINED but deferred to PRE-PROD**
+  (the flat `ordens_compra_fio.op_id` is `NOT NULL`, verified live — so
+  multi-OP and Pedido-origin-polyester native items are **not flat-representable**
+  → **HARD STOP, never fabricate an OP; Phase-C native ledger only** — a standing
+  PRE-PROD hard stop, not a REFUND-B1 blocker); `SECURITY DEFINER` read-model RPC
+  pair `listar_ordens_compra_admin`/`obter_ordem_compra_admin`; a **dedicated
+  `#/ordens-compra/:id` entity screen** (new `js/router.js` regex branch — the app
+  has no generic `:id` support) with emit/cancel as actions on the screen and
+  `buildOrdensReaderSection` demoted to summary + link (**this pulls the former
+  "B2" dedicated screen into REFUND-B1**); a **non-destructive routing/authority
+  rollback**; ACL with **no** anon grant (holding REFUND-A's bar, not the stale
+  `ordens_compra_fio` anon gap), no allocation grant, no receipt change; and an
+  exact `db/68_ordem_compra_native_admin.sql` + application manifest + test
+  matrix. **`PEDIDO_OP_SCHEMA_CONTRACT.md` §6.2 corrected** this phase
+  (`ordens_compra_fio` reclassified as a per-dimension authority) — that half of
+  the standing documentation debt is now **closed**; **`DOCUMENTATION_INDEX.md`
+  remains the only pending REFUND-A documentation follow-up.** Naming drift
+  resolved: the installed `alocar_necessidade_compra_fio(p_item_id,
+  p_necessidade_id, p_op_id, p_kg)` is canonical for future PRE-PROD; §R.4 prose
+  corrected-on-naming; no alias created. **No DB write, no migration, no
+  application code, no test, no push, no `main`, no production, prohibited project
+  not accessed; `.gitignore`/`AGENTS.md` untouched.** Full detail:
+  `docs/ledgers/G28_LEDGER.md` REFUND-B1-CONTRACT-R1 entry. **REFUND-B1
+  implementation remains `NOT AUTHORIZED`.** **Next authorizable action:**
+  architect acceptance of this contract, then a separate `REFUND-B1` order.
 - **`ORDEM-COMPRA-LIFECYCLE` track (flat-model history, superseded on persistence
   by the refoundation above) — spec `RATIFIED` (`ORDEM-COMPRA-LIFECYCLE-
   SPEC-RATIFICATION-R1`, 2026-07-18); Phase `A` (schema + config) `CLOSED /

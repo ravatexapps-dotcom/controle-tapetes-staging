@@ -3105,3 +3105,132 @@ risco residual e próxima fase indicada no fechamento.
 - **Status:** `REFUND-A` is `CLOSED / ACCEPTED_WITH_BLOCKING_FUTURE_ACTIVATION_DEBT`.
 - **Next authorizable action:** `REFUND-B1`, by its own separate architect
   order.
+
+## 2026-07-19 — REFUND-B1-CONTRACT-R1 — NATIVE ADMIN AUTHORITY DESIGN CLOSURE — DOCUMENTED / AWAITING ARCHITECT ACCEPTANCE
+
+- **Order:** `REFUND-B1-CONTRACT-R1 — NATIVE ADMIN AUTHORITY DESIGN CLOSURE`
+  (Opus 4.8, high effort). **Type:** documentation-only architecture contract
+  clarification. **Baseline:** `dev @
+  6a1066e80f0f470f7355b7bb3f38c6438da59ee7`. **Staging:** `ucrjtfswnfdlxwtmxnoo`
+  (read-only, no write this phase). **Production `gqmpsxkxynrjvidfmojk`,
+  prohibited `bhgifjrfagkzubpyqpew`, `main`, push:** untouched. **REFUND-B1
+  implementation: NOT AUTHORIZED.**
+- **Purpose:** close the design gaps the accepted REFUND-B1 pre-order
+  reconciliation surfaced (native draft-origination, native item + bridge,
+  emit/cancel authority transition, read-model/UI ownership, native-data
+  rollback, exact manifest + gates) before any `db/68` or application change is
+  authorized.
+- **Preflight (all confirmed, no material difference):** branch `dev`; HEAD
+  `6a1066e`; worktree only the known pre-existing `M .gitignore` / `?? AGENTS.md`;
+  `6a1066e` is a tip with no children (no later commit); staging read-only checks
+  — `db/67` present (`20260719012036`), counts `64/51/51/51/51`,
+  `ordem_compra_eventos`/`ordem_compra_fio_lancamentos` empty, no new-model
+  business writer active, `alocar_necessidade_compra_fio` EXECUTE = false for
+  every role, `emitir/cancelar_ordem_compra_fio` still flat, five new tables
+  `SELECT`-only to `authenticated` with zero anon DML.
+- **Decisive facts established (read-only):** `ordens_compra_fio.op_id` is
+  **`NOT NULL`** (staging) — the schema basis for the bridge HARD STOPs; the
+  frontend has **zero** references to any new-model table/RPC (greenfield client
+  side); production carries `db/01→64` only (no db/65–67), so the app's existing
+  `42703` fallback in `fetchOrdensCompraFio` is load-bearing and every REFUND-B1
+  read-model/UI element must degrade the same way.
+- **Contract written — `ORDEM_COMPRA_LIFECYCLE_SPEC_PROPOSED.md` §R.21
+  (`REFUND-B1-CONTRACT-R1`), verbatim determinations:**
+  - **§R.21.5 origination (Option B):** ONE writer
+    `adicionar_item_ordem_compra(p_pedido_id UUID, p_fornecedor_id BIGINT,
+    p_material, p_cor_id, p_cor_poliester, p_kg_pedido)` create-or-get header +
+    accumulate item atomically; advisory-lock on `(pedido,supplier)`; partial
+    unique index backstop; supplier required; **no allocation, no needs, no
+    event** (drafts unaudited; first event at emit); additive-not-idempotent
+    (UI must gate double-submit); EXECUTE `authenticated` only.
+  - **§R.21.6 item identity:** `(ordem_id, material, color)`; item layer is
+    OP-free/need-free; may span multiple needs/OPs via future allocations;
+    same material/color accumulates; quantity frozen at emission;
+    allocation-sum reconciliation is PRE-PROD's.
+  - **§R.21.7 bridge:** `criar_ponte_compat_ordem_compra_item(p_item_id)`
+    internal-only, DEFINED but **granted to no role and never called in
+    REFUND-B1** (activation = PRE-PROD, since the flat `op_id NOT NULL` needs
+    allocation-derived provenance). Four §7 cases resolved: (1) single-OP cotton
+    **representable**; (2) multi-OP cotton, (3) Pedido-origin polyester
+    (`op_id` NULL), (4) multi-OP future allocations — **HARD STOP, never
+    fabricate an OP; not flat-bridgeable; Phase-C native ledger only.** Recorded
+    as a standing PRE-PROD hard stop.
+  - **§R.21.8/§R.21.9 emit/cancel:** `emitir_ordem_compra`/
+    `cancelar_ordem_compra` on `ordem_compra.id`; reject `legado=TRUE`; emit
+    requires rascunho+supplier+≥1 item (no allocation required in REFUND-B1);
+    freezes issuance snapshot; writes `ordem_compra_id` events
+    (`ordem_compra_fio_id` NULL); administrative-only mirror to native_bridge
+    shadows (no-op in REFUND-B1); received-quantity blocks cancel from Phase C;
+    never deletes items/allocations/mappings/shadows/events; `SECURITY DEFINER`
+    + `is_admin()` + EXECUTE `authenticated` only; explicit error codes.
+  - **§R.21.10 coexistence:** `legado` discriminator; imported legacy inert;
+    native RPCs reject legado; db/66 legacy RPCs stay for imported flat only and
+    (PRE-PROD obligation) must reject native_bridge shadow rows; read model
+    surfaces a native order once.
+  - **§R.21.11 read model:** `SECURITY DEFINER` RPC pair
+    `listar_ordens_compra_admin(p_pedido_id)` / `obter_ordem_compra_admin(p_ordem_id)`
+    (not a view) — server-composed, excludes shadows, server-derived allowed
+    actions + model discriminator, degrades via PGRST202.
+  - **§R.21.12 UI:** dedicated `#/ordens-compra/:id` numeric route (NEW regex
+    branch in `js/router.js` — no generic `:id` support exists), `#/ordens-compra`
+    list + `ADMIN_MENU` entry, `screenOrdemCompra(id)` on the `pedido-detail.js`
+    template, emit/cancel as actions **on the dedicated screen**;
+    `buildOrdensReaderSection` demoted to summary + "ver ordem" link with inline
+    actions removed. **Pulls the former "B2" dedicated screen into REFUND-B1**
+    (admin authority can't be exposed governance-compliantly from a
+    reader/modal); B2 residual = supplier-assignment relocation + Phase-C receipt
+    UI.
+  - **§R.21.13 rollback:** routing/authority, **non-destructive** — revert app
+    admin writes to flat, revoke native-writer EXECUTE, retain all native
+    rows/events/mappings/shadows, retained rows go inert/read-only; never delete
+    or fabricate reverse events.
+  - **§R.21.14 naming drift:** accepted the **installed** name
+    `alocar_necessidade_compra_fio(p_item_id, p_necessidade_id, p_op_id, p_kg)`
+    as canonical for future PRE-PROD; §R.4's `alocar_necessidade(...)` prose
+    corrected-on-naming; REFUND-B1 creates no alias, grants nothing.
+  - **§R.21.15 ACL:** all writers `SECURITY DEFINER`+`is_admin()`+EXECUTE
+    `authenticated`; bridge granted to no role; no new-model client DML; **must
+    not** reproduce the `ordens_compra_fio` anon table-`UPDATE` gap (REFUND-A's
+    tables have zero anon DML — hold that bar); no allocation grant; no receipt
+    change.
+  - **§R.21.16 manifest (exact, no "and related files"):** `db/68_ordem_compra_native_admin.sql`;
+    six RPCs; new screens `ordens-compra-list.js` / `ordem-compra.js` /
+    `ordem-compra-data.js` (+ optional `-render.js`/`-events.js`); edits to
+    `js/router.js`, `js/boot.js`, `js/screens/common.js`, `js/screens/op-nova.js`,
+    `index.html`; tests `tests/ordem-compra.smoke.js` + a DB writer matrix +
+    `op-nova.smoke.js` additions; closeout docs; **`PEDIDO_OP_SCHEMA_CONTRACT.md`
+    §6.2 corrected in this phase**.
+  - **§R.21.17 matrix:** full DB / legacy-regression / UI gates incl.
+    no-allocation-activation, exactly-one-parent events, bridge HARD-STOP
+    assertions, and graceful degradation on a db without db/65–67.
+- **§6.2 correction:** `PEDIDO_OP_SCHEMA_CONTRACT.md` §6.2 INSUMOS row +
+  refoundation note — `ordens_compra_fio` is now a **per-dimension** authority
+  (admin → `ordem_compra` at REFUND-B1; receipt stays flat until Phase C), no
+  longer a stale sole-authority contract; closes the standing §6.2 documentation
+  debt.
+- **Remaining hard stops (design, for the future REFUND-B1 order):** the bridge
+  multi-OP/polyester non-representability (§R.21.7) is a **PRE-PROD** hard stop,
+  not a REFUND-B1 blocker; migration `db/68` is its own separate gate; UI
+  validation mandatory; canonical staging-vs-development naming for
+  `ucrjtfswnfdlxwtmxnoo` is inconsistent across tracks (this order labels it
+  "staging"; `PROJECT_STATE.md` labels it the "development database") — noted, not
+  resolved here.
+- **STRUCTURAL POLICY COMPLIANCE (`CODE_HEALTH_RULES.md`):** docs-only, so the
+  implementation-report `STRUCTURAL POLICY COMPLIANCE` obligation (§3 of
+  `SUPERVISION_PROTOCOL.md`, "not docs-only") does not strictly apply; recorded
+  anyway — §14 (single scope: one documentation design-closure), §15 (Git:
+  selective staging by literal path, one docs commit on `dev`,
+  `.gitignore`/`AGENTS.md` left untouched/unstaged, no `add -A`/`reset`/`rebase`/
+  force/`merge`/`tag`/`amend`), §16 (docs updated: spec + contract + state +
+  handoff + this ledger), §19 (English). No code, no migration, no test file
+  touched.
+- **Files changed (exactly five):** `docs/architecture/ORDEM_COMPRA_LIFECYCLE_SPEC_PROPOSED.md`
+  (banner pointer + new §R.21), `docs/architecture/PEDIDO_OP_SCHEMA_CONTRACT.md`
+  (§6.2), `PROJECT_STATE.md`, `AGENT_HANDOFF.md`, this ledger entry.
+- **Scope discipline:** no DB write; no migration applied/altered; no application
+  code; no test; `.gitignore`/`AGENTS.md` untouched; no push; no `main`; no
+  production; prohibited project not accessed.
+- **Status:** `REFUND-B1-CONTRACT-R1` is `DOCUMENTED / AWAITING ARCHITECT
+  ACCEPTANCE`. **REFUND-B1 implementation remains `NOT AUTHORIZED`.**
+- **Next authorizable action:** architect acceptance of this contract, then a
+  separate `REFUND-B1` implementation order.
