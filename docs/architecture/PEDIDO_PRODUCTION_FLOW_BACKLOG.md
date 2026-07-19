@@ -1587,3 +1587,23 @@ implementation/revalidation matrix. The architect separately authorized
 the forward-only correction, isolated PostgreSQL verification, and canonical closeout.
 Staging application, production, `main`, push, C3A acceptance, and F2 remain
 unauthorized.
+
+# Update 2026-07-19 — F1 forward correction implementation R1
+
+Status: **IMPLEMENTED / VERIFIED LOCALLY / AWAITING ARCHITECT REVIEW** at technical
+commit `463cafbdd4816ff1093b3086dd71d3d6e70b3479`.
+
+- `db/74_ordem_compra_hybrid_origin_forward_correction.sql` implements the accepted
+  need-first absolute-target command, permanent actor-scoped replay journal,
+  `(item_id, necessidade_id)` uniqueness, allocation-derived item quantity and
+  cleanup, obsolete-writer ACL disposition, and Phase C shared NULL-OP correction.
+- Existing application ownership controls are disabled/read-only until F2; no final
+  Pedido/Insumos distribution UI was implemented.
+- Isolated PostgreSQL 18.4 apply/reapply, rollback functional/ACL/Phase-C matrix, and
+  eight distinct-session race scenarios passed. Focused tests pass 62/62. The broad
+  suite retains the exact 132 baseline failure identities and hash
+  `5aca571de6057bfdf2080ef945112189e6f3f4cb7795ccd827a729131642e75f`, with six new
+  passing F1 tests.
+- No staging, production, `main`, remote, or push activity occurred. C3A remains
+  verified but unaccepted. The next authorizable action is architect review of F1;
+  staging application and F2 each require a separate order.

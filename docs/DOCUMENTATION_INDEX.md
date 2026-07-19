@@ -254,6 +254,7 @@ in `PROJECT_STATE.md`.
 | `db/71_ordem_compra_c3a_cutover_foundation.sql` | Inactive C3A cutover/opening-balance foundation and read-only preview. | `PHASE-C3A` | **Applied and verified in staging**, record `20260719172749 / 71_ordem_compra_c3a_cutover_foundation`; awaiting architect technical acceptance. |
 | `db/72_ordem_compra_c3a_cutover_initial_state.sql` | Protected deterministic inactive cutover singleton. | `PHASE-C3A-R1` | **Applied and verified in staging**, record `20260719174006 / 72_ordem_compra_c3a_cutover_initial_state`; awaiting architect technical acceptance. |
 | `db/73_ordem_compra_c3a_import_command.sql` | Owner-only, semantically idempotent Class A/D opening-balance import command; no physical inventory posting or client grant. | `PHASE-C3A-R2` | **Applied and verified in staging**, record `20260719175732 / 73_ordem_compra_c3a_import_command`; no real import executed; awaiting architect technical acceptance. |
+| `db/74_ordem_compra_hybrid_origin_forward_correction.sql` | Forward-only F1 authority correction: need-first absolute-target writer, immutable actor/key journal, corrected allocation identity, derived item quantity/cleanup/freeze guards, exact ACL matrix, and shared NULL-OP Phase C replacements. | `PURCHASE-ORDER HYBRID ORIGIN — F1` | **Implemented and verified locally only** at technical commit `463cafbdd4816ff1093b3086dd71d3d6e70b3479`; isolated PostgreSQL 18.4 apply/reapply, rollback and concurrency matrices passed. Not applied to staging; awaiting architect review. |
 
 ### Static smoke tests for versioned schema
 
@@ -272,6 +273,8 @@ in `PROJECT_STATE.md`.
 | `tests/ordem-compra-native-receipt.smoke.js` | Static/contract coverage of `db/70` native receipt, reversal, ledger, and narrow inventory integration. Existing evidence remains accepted; shared NULL-OP coverage is a future focused revalidation requirement. | `PHASE-C2` |
 | `tests/ordem-compra-c3a-cutover-foundation.smoke.js` | Static coverage of the inactive C3A cutover/opening-balance foundation (`db/71`, extended for `db/73`). | `PHASE-C3A` / `PHASE-C3A-R2` |
 | `tests/ordem-compra-c3a-cutover-initial-state.smoke.js` | Static coverage of the protected inactive singleton in `db/72`. | `PHASE-C3A-R1` |
+| `tests/ordem-compra-hybrid-origin-f1.smoke.js` | Static F1 migration, authority, ACL, provenance, quantity, Phase C, and F2-boundary coverage. | `PURCHASE-ORDER HYBRID ORIGIN — F1` |
+| `tests/ordem-compra-hybrid-origin-f1.integration.sql` | Rollback-scoped isolated PostgreSQL functional, idempotency, cleanup, freeze, ACL, shared receipt/excess/reversal/movement, and OP-origin regression matrix. | `PURCHASE-ORDER HYBRID ORIGIN — F1` |
 
 ### Frontend modules for visual tracking
 

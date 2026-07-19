@@ -10,14 +10,20 @@ are in `docs/ledgers/G28_LEDGER.md`. HEAD/working tree/divergence: consult Git d
 ## Active phase and next action
 
 - **`PURCHASE-ORDER HYBRID ORIGIN — F1 FORWARD CORRECTION IMPLEMENTATION R1` —
-  `AUTHORIZED` (2026-07-19).** Architect acceptance of the executable contract is
-  recorded below at accepted commit
-  `00897f09267fc8304b329ce46ba985d03a57faff`. Execute the forward-only database
-  correction and isolated PostgreSQL verification defined by lifecycle §R.28 and
-  schema contract §13. F2 UI and staging application are not authorized. C3A remains
-  implemented and verified but not accepted. Production, `main`, remote changes, and
-  push remain prohibited. Implementation may continue only after the final read-only
-  reconciliation returns `READY_FOR_F1_IMPLEMENTATION`.
+  `IMPLEMENTED / VERIFIED LOCALLY / AWAITING ARCHITECT REVIEW` (2026-07-19).**
+  Read-only reconciliation returned `READY_FOR_F1_IMPLEMENTATION`. Technical commit
+  `463cafbdd4816ff1093b3086dd71d3d6e70b3479` adds forward-only migration
+  `db/74_ordem_compra_hybrid_origin_forward_correction.sql`, the accepted need-first
+  writer/journal, corrected allocation identity, derived quantity/cleanup guards,
+  exact ACL disposition, and Phase C shared NULL-OP compatibility. Isolated
+  PostgreSQL 18.4 apply/reapply, rollback-scoped functional proof, and eight distinct-
+  session race cases passed. Focused purchase-order tests pass 62/62. The broader
+  suite is baseline-identical after six added F1 passes: 3,896/3,764/132 before and
+  3,902/3,770/132 after; normalized failure hash
+  `5aca571de6057bfdf2080ef945112189e6f3f4cb7795ccd827a729131642e75f`.
+  F2 UI and staging application remain unauthorized. C3A remains implemented and
+  verified but not accepted. Production, `main`, remote changes, and push remain
+  prohibited.
 
 - **`PURCHASE-ORDER HYBRID ORIGIN — F1 EXECUTABLE CONTRACT CLOSURE R1` —
   `CLOSED / ACCEPTED` (2026-07-19, accepted commit
@@ -25,7 +31,7 @@ are in `docs/ledgers/G28_LEDGER.md`. HEAD/working tree/divergence: consult Git d
   read-only F1 readiness reconciliation returned `HARD_STOP — CONTRACT INCOMPLETE`:
   the accepted hybrid invariants did not define the exact need-first API,
   command/replay identity, cleanup state machine, or obsolete-writer ACL matrix.
-  The hard stop is accepted and F1 implementation is **NOT AUTHORIZED**. Lifecycle
+  At the closure checkpoint, implementation remained unauthorized. Lifecycle
   specification §R.28 and schema contract §13 now close the exact executable
   contract: `definir_alocacao_necessidade_compra_fio(BIGINT,BIGINT,NUMERIC,TEXT)`;
   actor-scoped immutable command journal; one absolute target including zero;
@@ -67,7 +73,9 @@ are in `docs/ledgers/G28_LEDGER.md`. HEAD/working tree/divergence: consult Git d
   production, `main`, or push is authorized. **C3A remains implemented and verified
   in staging but not architecturally accepted.** The later F1 readiness gate failed
   closed and is now superseded operationally by the contract-closure entry above;
-  F1 implementation remains unauthorized. No later phase chains from this acceptance.
+  F1 implementation was not authorized by this R2 acceptance itself and was later
+  separately authorized and completed as recorded above. No later phase chains from
+  this acceptance.
 
 - **`PHASE-C3A` — `IMPLEMENTED / VERIFIED IN STAGING / AWAITING ARCHITECT
   TECHNICAL ACCEPTANCE` (2026-07-19).** Contract `d23645f`, foundation `fca6ea7`,
@@ -112,10 +120,10 @@ are in `docs/ledgers/G28_LEDGER.md`. HEAD/working tree/divergence: consult Git d
   cutover (`M10`)"; cutover is done. **New fronts are authorizable again**, each by
   its own individual order. The consolidated, ranked `POST-LAUNCH DEBT REGISTER`
   (below) supersedes the former "residual risk register (12 items)".
-- **Next active technical phase:** `PURCHASE-ORDER HYBRID ORIGIN — F1 FORWARD
-  CORRECTION IMPLEMENTATION R1`, authorized only within the isolated-database and
-  no-environment-write boundary above. C3A remains unaccepted; no later C3 phase
-  chains automatically. Separately, the
+- **Next authorizable action:** architect review and acceptance or rejection of the
+  locally verified `PURCHASE-ORDER HYBRID ORIGIN — F1 FORWARD CORRECTION
+  IMPLEMENTATION R1`. A separate order is required before staging application or F2.
+  C3A remains unaccepted; no later C3 phase chains automatically. Separately, the
   highest-consequence open operational item remains
   `INGESTOR-DOC-CYCLE-VERIFY-DEFERRED`, an `ACTIVE PRODUCTION BLOCKER`. See the
   `POST-LAUNCH DEBT REGISTER`. **Standing reminder: flip the Supabase MCP back to

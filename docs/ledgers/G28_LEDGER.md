@@ -4142,3 +4142,65 @@ MATERIAL_DIVERGENCES: NONE
   accepted. F2 UI and staging application remain unauthorized.
 - **Boundary:** isolated PostgreSQL verification is permitted. Staging, production,
   `main`, remote changes, push, C3A acceptance, F2, and later phases are prohibited.
+
+## 2026-07-19 — PURCHASE-ORDER HYBRID ORIGIN — F1 FORWARD CORRECTION IMPLEMENTATION R1
+
+- **Baseline / authorization:** `dev` at accepted contract
+  `00897f09267fc8304b329ce46ba985d03a57faff`; acceptance registration commit
+  `380c03dd34f37db80b1c171deb50017b685b69aa`. Lineage from
+  `361d0f77388b0adac9b83997707cd49df938e4dd` confirmed. Final reconciliation verdict:
+  `READY_FOR_F1_IMPLEMENTATION`.
+- **Technical implementation:** commit
+  `463cafbdd4816ff1093b3086dd71d3d6e70b3479`; forward-only migration
+  `db/74_ordem_compra_hybrid_origin_forward_correction.sql`. It installs
+  `definir_alocacao_necessidade_compra_fio(BIGINT,BIGINT,NUMERIC,TEXT) RETURNS JSONB`,
+  immutable `native_distribution_v1` actor/key journal, exact replay/conflict and
+  absolute create/increase/reduce/remove/unchanged semantics, corrected unique
+  `(item_id, necessidade_id)` identity, derived `kg_pedido`, deterministic cleanup,
+  draft/history freeze guards, and the accepted ACL matrix.
+- **Phase C correction:** native allocated ledger shape now permits shared NULL OP;
+  the db/71-compatible guard, receipt allocation selection/derivation, ledger,
+  movement, history, caps, and reversal preserve NULL for Pedido-origin, real OP for
+  OP-origin, and allocation-free/OP-free excess. C3A real-OP import and non-posting
+  behavior remain unchanged and unaccepted.
+- **Application boundary:** independent `Nova ordem`, manual item add/edit/remove,
+  and allocation controls remain visible only as disabled/read-only surfaces with no
+  handlers. Shared allocations render as `Pedido compartilhado`. These minimal
+  changes prevent calls to superseded writers; F2 was not implemented.
+- **Isolated database evidence:** PostgreSQL 18.4, full db/67-db/73-compatible local
+  baseline, clean db/74 apply and clean reapply, no CASCADE, no environment data
+  conversion. `tests/ordem-compra-hybrid-origin-f1.integration.sql` passed inside
+  `BEGIN ... ROLLBACK`, proving OP/shared provenance, exact result fields, replay,
+  conflict, actor scope, scalar/error taxonomy, quantity cap, derived-quantity guard,
+  cleanup and post-cleanup replay/audit, post-emission freeze, shared and OP receipt,
+  excess, reversal, movement provenance, and final ACLs.
+- **Concurrency evidence:** eight distinct-session cases passed: OP first allocation
+  `created/unchanged`; shared first allocation `created/unchanged`; target race
+  `increased/reduced` with final 25 kg; removal/recreate `removed/created` with final
+  15 kg; empty-draft cleanup/new-need `removed/created`; competing same-draft creation
+  `created/created` with one draft; duplicate actor/key returned the exact stored
+  `created` result with one journal/allocation row; emission/allocation returned
+  `ok/estado_invalido` and retained 20 kg. Final assertion:
+  `F1_CONCURRENCY_PASS | 9 allocations | 17 race command rows`; all surviving item
+  quantities equalled allocation sums.
+- **Tests:** focused purchase-order suite 62/62. Purchase-order + receipt/C3A + OP
+  persistence/recalculation + Pedido summary selection 277/278; the sole failure is
+  the pre-existing `op-writes` menu-count expectation (expected 9, rendered 12).
+  Full suite baseline was 3,896 tests / 3,764 pass / 132 fail; final is 3,902 / 3,770
+  / 132. The 132 normalized failure identities are exactly unchanged, SHA-256
+  `5aca571de6057bfdf2080ef945112189e6f3f4cb7795ccd827a729131642e75f`.
+- **Code health / exception:** JS source files remain below 500 lines and F1 added no
+  UI/domain/persistence coupling. The 1,227-line migration and its long RPC/replaced
+  receipt definition are a documented cohesive SQL exception: the accepted contract
+  requires one atomic next-number migration, and PostgreSQL `CREATE OR REPLACE
+  FUNCTION` requires full function bodies for localized replacement. Splitting would
+  break the single forward correction and rollback/apply proof. Static tests,
+  `node --check`, `git diff --check`, no-CASCADE inspection, and dynamic ACL matrix
+  passed.
+- **Boundary / status:** `IMPLEMENTED / VERIFIED LOCALLY / AWAITING ARCHITECT
+  REVIEW`. No staging application, production, `main`, remote change, push, migration
+  history write, or C3A acceptance occurred. Known modified `.gitignore` and untracked
+  `AGENTS.md` remained untouched and unstaged. F2 remains unauthorized.
+- **Next authorizable action:** architect acceptance or rejection of F1. A separate
+  explicit order is required for staging application or F2; neither chains from this
+  closeout.

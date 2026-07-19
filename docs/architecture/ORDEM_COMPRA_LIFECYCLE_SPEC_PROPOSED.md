@@ -3413,3 +3413,11 @@ requires an emitted order and uses the same order/item/allocation identities.
 Status of this section: `F1 EXECUTABLE CONTRACT CLOSURE R1: CLOSED / ACCEPTED` at
 commit `00897f09267fc8304b329ce46ba985d03a57faff`. Implementation is governed by
 the separately authorized `F1 FORWARD CORRECTION IMPLEMENTATION R1` order.
+
+Implementation checkpoint (2026-07-19): `IMPLEMENTED / VERIFIED LOCALLY / AWAITING
+ARCHITECT REVIEW` at technical commit
+`463cafbdd4816ff1093b3086dd71d3d6e70b3479`. Forward migration `db/74` implements
+this section without modifying db/67-db/73 or converting environment data. Isolated
+PostgreSQL 18.4 apply/reapply, rollback-scoped functional/ACL/Phase-C tests, and the
+required distinct-session race matrix passed. F2 and staging application remain
+separately unauthorized; C3A remains unaccepted.

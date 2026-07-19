@@ -1097,3 +1097,11 @@ cannot be concurrent with an accepted draft mutation.
 Status: `F1 EXECUTABLE CONTRACT CLOSURE R1: CLOSED / ACCEPTED` at commit
 `00897f09267fc8304b329ce46ba985d03a57faff`. The separate
 `F1 FORWARD CORRECTION IMPLEMENTATION R1` phase is authorized.
+
+Implementation checkpoint (2026-07-19): `IMPLEMENTED / VERIFIED LOCALLY / AWAITING
+ARCHITECT REVIEW` at technical commit
+`463cafbdd4816ff1093b3086dd71d3d6e70b3479`. Migration
+`db/74_ordem_compra_hybrid_origin_forward_correction.sql` installs the exact RPC,
+journal, identity/index, quantity/freeze guards, ACL matrix, and shared NULL-OP Phase
+C replacements defined by this section. Verification used isolated PostgreSQL 18.4
+only; staging was not applied. F2 remains unauthorized and C3A remains unaccepted.

@@ -1,18 +1,24 @@
 # ACTIVE OPERATIONAL HANDOFF
 
 - **`PURCHASE-ORDER HYBRID ORIGIN — F1 FORWARD CORRECTION IMPLEMENTATION R1` —
-  `AUTHORIZED` (2026-07-19).** Accepted contract commit
-  `00897f09267fc8304b329ce46ba985d03a57faff`. Run the final read-only
-  reconciliation, then implement only if it returns `READY_FOR_F1_IMPLEMENTATION`.
-  Scope: forward-only database authority correction, isolated PostgreSQL verification,
-  and canonical closeout. F2 UI, staging application, C3A acceptance, production,
-  `main`, remote changes, and push are prohibited.
+  `IMPLEMENTED / VERIFIED LOCALLY / AWAITING ARCHITECT REVIEW` (2026-07-19).**
+  Accepted contract `00897f09267fc8304b329ce46ba985d03a57faff`; acceptance
+  registration `380c03dd34f37db80b1c171deb50017b685b69aa`; technical commit
+  `463cafbdd4816ff1093b3086dd71d3d6e70b3479`. Reconciliation returned
+  `READY_FOR_F1_IMPLEMENTATION`. Isolated PostgreSQL 18.4 apply/reapply,
+  rollback-scoped integration, and eight distinct-session races passed. Focused
+  purchase-order tests pass 62/62; broader failures remain the exact 132-identity
+  baseline with SHA-256
+  `5aca571de6057bfdf2080ef945112189e6f3f4cb7795ccd827a729131642e75f`.
+  The UI remains read-only/disabled pending F2. No staging application occurred.
+  F2, staging, C3A acceptance, production, `main`, remote changes, and push remain
+  unauthorized. Next action requires architect review and a separate order.
 
 - **`PURCHASE-ORDER HYBRID ORIGIN — F1 EXECUTABLE CONTRACT CLOSURE R1` —
   `CLOSED / ACCEPTED` (accepted commit
   `00897f09267fc8304b329ce46ba985d03a57faff`).** The F1 readiness
-  gate returned and accepted `HARD_STOP — CONTRACT INCOMPLETE`; implementation did
-  not start and is not authorized. The missing executable decisions are now closed
+  gate returned and accepted `HARD_STOP — CONTRACT INCOMPLETE`; implementation had
+  not started at that checkpoint. The missing executable decisions are now closed
   in lifecycle §R.28 and schema contract §13: exact need-first absolute-target RPC,
   immutable actor/key command idempotency, deterministic zero-allocation/item/draft
   deletion, unique `(item_id, necessidade_id)` identity, deferred allocation-sum
