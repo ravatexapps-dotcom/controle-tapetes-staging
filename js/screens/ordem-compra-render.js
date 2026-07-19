@@ -18,6 +18,8 @@
   var ns = window.RAVATEX_SCREENS.ordemCompra = window.RAVATEX_SCREENS.ordemCompra || {};
 
   var el = window.el;
+  var LEGACY_ITEM_MUTATION_ENABLED = false;
+  ns.LEGACY_ITEM_MUTATION_ENABLED = LEGACY_ITEM_MUTATION_ENABLED;
 
   var STATUS_LABEL = { rascunho: 'Rascunho', emitida: 'Emitida', cancelada: 'Cancelada' };
   var RECEB_LABEL = { nao_recebido: 'Não recebido', parcial: 'Recebimento parcial', recebido: 'Recebido' };
@@ -70,8 +72,9 @@
       el('h1', { class: 'text-2xl font-bold' }, 'Ordens de compra'),
       el('button', {
         id: 'oc-nova',
-        class: 'bg-blue-700 hover:bg-blue-800 text-white font-semibold px-4 py-2 rounded-lg',
-        onclick: function () { handlers.novaOrdem(); },
+        class: 'bg-gray-200 text-gray-500 font-semibold px-4 py-2 rounded-lg cursor-not-allowed',
+        title: 'Criação manual indisponível; a ativação da distribuição ocorrerá na Fase F2.',
+        disabled: true,
       }, 'Nova ordem'));
     box.appendChild(header);
 
@@ -155,8 +158,9 @@
     if (acoes.editar_itens) {
       actions.appendChild(el('button', {
         id: 'oc-add-item',
-        class: 'bg-blue-700 hover:bg-blue-800 text-white text-sm font-semibold px-3 py-2 rounded-lg',
-        onclick: function () { handlers.adicionarItem(o); },
+        class: 'bg-gray-200 text-gray-500 text-sm font-semibold px-3 py-2 rounded-lg cursor-not-allowed',
+        title: 'Edição manual indisponível; use a distribuição por necessidade após a Fase F2.',
+        disabled: true,
       }, 'Adicionar item'));
     }
     if (acoes.cancelar) {
@@ -204,12 +208,16 @@
         var actTd = el('td', { class: 'px-4 py-2 text-right whitespace-nowrap' });
         if (acoes.editar_itens) {
           actTd.appendChild(el('button', {
-            class: 'text-sm text-blue-700 hover:underline ml-3', onclick: function () { handlers.editarItem(o, it); },
+            class: 'text-sm text-gray-400 ml-3 cursor-not-allowed',
+            title: 'Edição manual indisponível nesta fase.',
+            disabled: true,
           }, 'Editar'));
         }
         if (acoes.remover_itens) {
           actTd.appendChild(el('button', {
-            class: 'text-sm text-red-600 hover:underline ml-3', onclick: function () { handlers.removerItem(o, it); },
+            class: 'text-sm text-gray-400 ml-3 cursor-not-allowed',
+            title: 'Remoção manual indisponível nesta fase.',
+            disabled: true,
           }, 'Remover'));
         }
         tr.appendChild(actTd);

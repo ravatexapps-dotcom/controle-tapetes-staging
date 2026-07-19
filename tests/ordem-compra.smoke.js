@@ -144,7 +144,10 @@ test('1. lista renderiza ordens nativa + legado (cada uma uma vez), com "Nova or
   const view = await vm.runInContext('window.screenOrdensCompra()', sandbox);
   const list = findById(view, 'ordens-compra-list');
   assert.ok(list, 'a tela de lista deve renderizar (#ordens-compra-list)');
-  assert.ok(findById(view, 'oc-nova'), 'botão "Nova ordem" deve existir');
+  const nova = findById(view, 'oc-nova');
+  assert.ok(nova, 'botão "Nova ordem" deve existir');
+  assert.equal(nova.disabled, true, 'criação manual permanece desabilitada até F2');
+  assert.equal(typeof nova.onclick, 'undefined', 'criação manual não possui handler');
   const t = text(list);
   assert.match(t, /Fornecedor A/, 'ordem nativa listada');
   assert.match(t, /Fornecedor B/, 'ordem legado listada');
@@ -166,7 +169,7 @@ test('2. lista degrada com aviso quando db/68 ausente (PGRST202)', async () => {
 
 // ---- DETAIL ---------------------------------------------------------
 
-test('3. detalhe (rascunho nativo): editar/remover/cancelar presentes; adicionar item presente', async () => {
+test('3. detalhe (rascunho nativo): mutações manuais desabilitadas; cancelamento ativo', async () => {
   const sandbox = makeSandbox({
     tableData: FORM_REFS,
     rpcImpl: { obter_ordem_compra_admin: () => ({ data: { ok: true, ordem: NATIVE_DRAFT, eventos: [] }, error: null }) },
@@ -174,10 +177,17 @@ test('3. detalhe (rascunho nativo): editar/remover/cancelar presentes; adicionar
   const view = await vm.runInContext('window.screenOrdemCompra(100)', sandbox);
   const detail = findById(view, 'ordem-compra-detail');
   assert.ok(detail, 'tela de detalhe deve renderizar');
-  assert.ok(findById(view, 'oc-add-item'), 'botão "Adicionar item" (acoes.editar_itens)');
+  const add = findById(view, 'oc-add-item');
+  assert.ok(add, 'botão "Adicionar item" permanece visível');
+  assert.equal(add.disabled, true, 'Adicionar item permanece desabilitado');
+  assert.equal(typeof add.onclick, 'undefined', 'Adicionar item não possui handler');
   assert.ok(findById(view, 'oc-cancelar'), 'botão "Cancelar ordem" (acoes.cancelar)');
-  assert.ok(btnByText(detail, /Editar/), 'ação "Editar" por item (acoes.editar_itens)');
-  assert.ok(btnByText(detail, /Remover/), 'ação "Remover" por item (acoes.remover_itens)');
+  const edit = btnByText(detail, /^Editar$/);
+  const remove = btnByText(detail, /^Remover$/);
+  assert.ok(edit && edit.disabled === true, 'Editar item permanece desabilitado');
+  assert.ok(remove && remove.disabled === true, 'Remover item permanece desabilitado');
+  assert.equal(typeof edit.onclick, 'undefined', 'Editar item não possui handler');
+  assert.equal(typeof remove.onclick, 'undefined', 'Remover item não possui handler');
   assert.match(text(detail), /PRETO/, 'item exibido (algodão · PRETO)');
 });
 
@@ -266,7 +276,7 @@ test('10. isMissingFunction reconhece PGRST202 e "could not find the function"',
   assert.equal(ns.isMissingFunction(null), false);
 });
 
-test('11. active native distribution exposes create/update/remove while complete emission remains blocked', async () => {
+test('11. F1 keeps native distribution read-only while complete emission remains blocked', async () => {
   const sandbox = makeSandbox({
     tableData: FORM_REFS,
     rpcImpl: {
@@ -278,16 +288,17 @@ test('11. active native distribution exposes create/update/remove while complete
   const section = findById(view, 'oc-distribuicao');
   assert.ok(section, 'distribution must exist only in the native detail');
   const distribute = btnByText(section, /^Distribuir$/);
-  assert.ok(distribute && distribute.disabled !== true, 'create/update control is enabled');
-  assert.equal(typeof distribute.onclick, 'function', 'create/update control has a handler');
+  assert.ok(distribute && distribute.disabled === true, 'create/update control is disabled until F2');
+  assert.equal(typeof distribute.onclick, 'undefined', 'create/update control has no handler');
   let allocationRemove = null;
   walk(section, (node) => {
     if (node.getAttribute && node.getAttribute('data-alocacao-id') === '50') {
       allocationRemove = btnByText(node, /^Remover$/);
     }
   });
-  assert.ok(allocationRemove && allocationRemove.disabled !== true, 'allocation removal is enabled');
-  assert.equal(typeof allocationRemove.onclick, 'function', 'allocation removal has a handler');
+  assert.ok(allocationRemove && allocationRemove.disabled === true, 'allocation removal is disabled until F2');
+  assert.equal(typeof allocationRemove.onclick, 'undefined', 'allocation removal has no handler');
+  assert.match(text(section), /somente leitura/i, 'F2 activation boundary is visible');
   assert.match(text(section), /recebimento nativo/i, 'complete distribution retains the Phase-C emission block');
   const emit = findById(view, 'oc-emitir');
   assert.equal(emit.disabled, true, 'emission remains disabled even after complete distribution');

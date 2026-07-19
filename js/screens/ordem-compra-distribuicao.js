@@ -7,19 +7,15 @@
 //   - preview / synchronize native needs (Pedido level);
 //   - show, per item, the compatible native needs + current allocations
 //     with OP attribution, remaining need, and item reconciliation;
-//   - assign / edit an ABSOLUTE kg allocation and remove an allocation;
+//   - preserve the allocation surface as read-only until Phase F2;
 //   - show complete / incomplete distribution + the disabled-emission
 //     reason (Phase-C native receipt), never authorizing emission.
 //
 // Server authority: every field comes from obter_distribuicao_ordem_compra
-// and every write from the canonical RPCs (alocar_necessidade_compra_fio /
-// remover_alocacao_compra_fio / sincronizar_necessidades_compra_fio). The
-// client reconstructs no authority (§R.23.8).
+// The client reconstructs no authority (§R.23.8).
 //
-// ACTIVATION GATE (order §22): the authenticated live T1/T2 test closed
-// LIVE_ALLOCATION_T1_T2_TEST_PENDING, so allocation controls are enabled.
-// This flag remains limited to native allocation writes; it never authorizes
-// native emission or receipt (both remain inactive until their own phase).
+// F1 installs the server contract only. Phase F2 owns UI activation and
+// migration from the legacy mutation paths.
 //
 // Load via <script src="js/screens/ordem-compra-distribuicao.js"></script>
 // among the ordem-compra-* children, BEFORE ordem-compra.js, and AFTER
@@ -32,10 +28,7 @@
   window.RAVATEX_SCREENS = window.RAVATEX_SCREENS || {};
   var ns = window.RAVATEX_SCREENS.ordemCompraDistribuicao = window.RAVATEX_SCREENS.ordemCompraDistribuicao || {};
 
-  // Live-concurrency gate cleared by the authenticated T1/T2 PASS
-  // (LIVE_ALLOCATION_T1_T2_TEST_PENDING resolved). Keep this switch scoped to
-  // native allocation controls; it never authorizes emission or receipt.
-  var ALLOCATION_ENABLED = true;
+  var ALLOCATION_ENABLED = false;
   ns.ALLOCATION_ENABLED = ALLOCATION_ENABLED;
 
   var el = window.el;
@@ -74,7 +67,10 @@
       var al = el('div', { class: 'mb-2' });
       alocs.forEach(function (a) {
         var row = el('div', { class: 'flex justify-between items-center text-xs text-gray-600 py-1', 'data-alocacao-id': String(a.alocacao_id) });
-        row.appendChild(el('span', {}, 'OP ' + (a.op_numero != null ? a.op_numero : a.op_id) + (a.op_ano ? ('/' + a.op_ano) : '') + ' — ' + fmtKg(a.kg_alocado) + ' kg'));
+        var origem = a.op_id == null
+          ? 'Pedido compartilhado'
+          : 'OP ' + (a.op_numero != null ? a.op_numero : a.op_id) + (a.op_ano ? ('/' + a.op_ano) : '');
+        row.appendChild(el('span', {}, origem + ' — ' + fmtKg(a.kg_alocado) + ' kg'));
         var rm = el('button', {
           class: 'text-red-600 hover:underline' + (ALLOCATION_ENABLED ? '' : ' opacity-40 cursor-not-allowed'),
           disabled: ALLOCATION_ENABLED ? null : true,
@@ -100,13 +96,13 @@
     }
     card.appendChild(needBox);
 
-    // Absolute-allocation control (disabled until the live test passes).
+    // Absolute-allocation control remains visible but disabled until F2.
     if ((it.acoes && it.acoes.alocar)) {
       var ctl = el('div', { class: 'mt-3' });
       var btn = el('button', {
         class: 'text-sm font-semibold px-3 py-1.5 rounded-lg '
           + (ALLOCATION_ENABLED ? 'bg-blue-700 hover:bg-blue-800 text-white' : 'bg-gray-200 text-gray-500 cursor-not-allowed'),
-        title: ALLOCATION_ENABLED ? 'Distribuir necessidade' : 'Distribuição em ativação (aguardando validação de concorrência).',
+        title: ALLOCATION_ENABLED ? 'Distribuir necessidade' : 'Distribuição disponível após a Fase F2.',
         disabled: ALLOCATION_ENABLED ? null : true,
       }, 'Distribuir');
       if (ALLOCATION_ENABLED) btn.onclick = function () { ns._handlers && ns._handlers.abrirDistribuir(it); };
@@ -159,7 +155,7 @@
 
     if (!ALLOCATION_ENABLED) {
       body.appendChild(el('div', { class: 'text-xs text-gray-500 mb-3 bg-gray-50 border border-gray-100 rounded-lg p-2' },
-        'Controles de distribuição em ativação — habilitados após a validação de concorrência (teste T1/T2).'));
+        'Distribuição em modo somente leitura — a ativação dos controles ocorrerá na Fase F2.'));
     }
 
     var itens = distrib.itens || [];
