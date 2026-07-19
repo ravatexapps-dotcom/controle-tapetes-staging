@@ -567,6 +567,25 @@ INSUMOS → TECELAGEM → ACABAMENTO → EXPEDIÇÃO → ENTREGA
 > the ACL gap, and remove anonymous update. Native emission stays inactive until C1-C4
 > acceptance. This C1 record authorizes no schema implementation, migration, staging
 > write, grant, UI, test, or C2 work.
+>
+> **PHASE-C2 implementation boundary (2026-07-19, §R.25; implementation
+> authorized, staging pending).** Migration `db/70` may create immutable
+> `ordem_compra_recebimentos` headers, extend the existing receipt ledger for native
+> command/allocation/real-OP/material identity, create the source-linked
+> `ordem_compra_fio_movimentos_estoque` surplus movement object, and install three
+> RPCs: multi-line `registrar_recebimento_ordem_compra`, admin-only
+> `estornar_recebimento_ordem_compra`, and actor-scoped
+> `obter_historico_recebimento_ordem_compra`. Idempotency namespace
+> `native_receipt_v1` is unique by actor type + actor UUID + key and compares the
+> canonical JSONB payload for exact replay. Receipt lines are either concrete
+> allocations (real OP derived server-side) or explicit excess (no allocation/OP).
+> Item received cache and header status are ledger-derived; allocation/excess/
+> reversible quantities are projections. Exactly one source-linked movement exists
+> per ledger entry, but only derived surplus delta changes the existing multi-origin
+> `saldo_fios` cache. Admin or active matching supplier may register; only admin may
+> reverse; no direct client DML. The existing INSUMOS source row and both flat
+> consumers remain unchanged through C2. Cutover/import/readers/flat ACL are C3; UI
+> is C4; emission remains inactive until the later C5 gate.
 
 ### 6.3. UI rules
 

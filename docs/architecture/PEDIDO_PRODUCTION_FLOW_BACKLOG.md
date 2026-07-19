@@ -430,6 +430,16 @@ foundation/writers, C3 cutover/import/readers/ACL, C4 admin UI (supplier later),
 C5 separate emission activation. Native emission remains inactive until C1-C4 are
 accepted. C1 authorizes no implementation or C2 work; see lifecycle spec §R.24.
 
+**Phase C2 implementation boundary (authorized 2026-07-19).** C2 installs only the
+inactive native receipt foundation and verification read model: immutable command
+headers, the canonical multi-line admin/matching-supplier receipt RPC, admin-only
+reversal, ledger-derived caches, and source-linked surplus movement. The receipt line
+is explicitly allocated or excess; allocation supplies the real OP, while excess has
+no fabricated allocation/OP. Existing Pedido/OP receipt consumers and INSUMOS readers
+stay on the flat path in C2. No Pedido, OP, transition, order-detail, or supplier UI is
+changed. C3 owns both-consumer cutover/readers/flat ACL; C4 owns the admin receipt UI;
+C5 owns emission activation. See lifecycle spec §R.25.
+
 ### 1.2 Main routes/screens
 
 | Route | Screen | Function |

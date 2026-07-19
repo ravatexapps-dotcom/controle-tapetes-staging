@@ -1,5 +1,46 @@
 # ACTIVE OPERATIONAL HANDOFF
 
+- **`PHASE-C2` — `BOUNDARY CLOSED / IMPLEMENTATION AUTHORIZED / STAGING PENDING`
+  (2026-07-19, `dev`, baseline
+  `3395f83df0eb7db604df9a80d4a43a0601bc8b6c`).** Governing contract:
+  `docs/architecture/ORDEM_COMPRA_LIFECYCLE_SPEC_PROPOSED.md` **§R.25**.
+  - Preflight is compatible: C1 closed/accepted; local and staging latest migration
+    is `db/69`; slot 70 is free; staging corpus remains 64 needs / 51 headers / 51
+    items / 51 allocations / 51 mappings, with zero native orders, receipt ledger
+    rows, events, fixtures, or probe objects. `emitir_ordem_compra` has no client
+    grant. Known `.gitignore`/`AGENTS.md` residue remains out of scope.
+  - Create exactly `db/70_ordem_compra_native_receipt_foundation.sql`. Header table:
+    `ordem_compra_recebimentos`, immutable command identity and metadata, namespace
+    `native_receipt_v1`, uniqueness by namespace + actor type + actor UUID + key.
+    Exact canonical JSONB replay returns the immutable original result; conflicting
+    payload reuse rejects.
+  - Extend `ordem_compra_fio_lancamentos` additively for receipt header, native order,
+    item allocation, real OP, material/color, excess, actor type, and line index.
+    Preserve the legacy parent shape; no seed or cutover.
+  - Canonical authenticated RPCs: `registrar_recebimento_ordem_compra` (admin or
+    active matching supplier) and `estornar_recebimento_ordem_compra` (admin only).
+    Receipt lines are explicitly either `alocacao` with a concrete allocation or
+    `excesso` with no allocation. Supplier reversal is prohibited.
+  - Lock order: native order; items ascending; allocations ascending; idempotent
+    header identity; relevant ledger rows ascending; inventory identities in stable
+    material/color order. Re-evaluate every cap after locks.
+  - `ordem_compra_item.kg_recebido` and order receipt status are trigger-derived.
+    Allocation received/remaining and physical excess remain projections. The minimal
+    `ordem_compra_fio_movimentos_estoque` stores one immutable source-linked surplus
+    movement per ledger entry; only surplus delta changes `saldo_fios`, which remains
+    the existing multi-origin aggregate cache. No general inventory redesign.
+  - Read verification via `obter_historico_recebimento_ordem_compra`, available only
+    to admin or the matching supplier. All new tables use RLS with no client mutation;
+    receipt/reversal writers are `SECURITY DEFINER`, fixed safe search path,
+    `authenticated` only, with `PUBLIC`/`anon`/`service_role` revoked.
+  - C2 rollback: revoke C2 grants and drop only C2 objects in a controlled rehearsal
+    while zero real canonical receipts exist; preserve db/67-db/69 and the untouched
+    flat path. Immutable real receipt history may never be destroyed.
+  - **Do not touch:** legacy import/cutover/fencing, flat receipt grants or readers,
+    UI, native emission/grant, C3+, production, `main`, or push. Final target is
+    `IMPLEMENTED / VERIFIED IN STAGING / AWAITING ARCHITECT TECHNICAL ACCEPTANCE`;
+    do not record acceptance or begin C3.
+
 - **`PHASE-C1` — `CLOSED / ACCEPTED` (2026-07-19, documentation-only,
   `dev @ 47b8e6a6bc8dea0cd0fe053fef2ef9f2f16f14fa`).** The binding native receipt
   authority contract is `docs/architecture/ORDEM_COMPRA_LIFECYCLE_SPEC_PROPOSED.md`

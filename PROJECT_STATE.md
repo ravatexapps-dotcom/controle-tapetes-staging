@@ -315,6 +315,34 @@ are in `docs/ledgers/G28_LEDGER.md`. HEAD/working tree/divergence: consult Git d
   audit is deferred as a separate post-stabilization, non-blocking activity. The
   next authorizable action requires a separate architect order; this acceptance
   authorizes neither PRE-PROD-B nor Phase C implementation.
+- **`PHASE-C2` — `BOUNDARY CLOSED / IMPLEMENTATION AUTHORIZED / STAGING PENDING`
+  (2026-07-19, branch `dev`, baseline
+  `3395f83df0eb7db604df9a80d4a43a0601bc8b6c`).** The architect authorized the
+  C2 native receipt foundation under the exact contract in lifecycle spec
+  **§R.25**. The implementation is limited to migration
+  `db/70_ordem_compra_native_receipt_foundation.sql`, one focused test file if
+  required, staging application, verification, cleanup, and closeout.
+  **Concrete boundary:** immutable `ordem_compra_recebimentos` command headers;
+  additive native columns on `ordem_compra_fio_lancamentos`; canonical RPCs
+  `registrar_recebimento_ordem_compra` and
+  `estornar_recebimento_ordem_compra`; read model
+  `obter_historico_recebimento_ordem_compra`; ledger-derived item/header/
+  allocation/excess projections; and the source-linked
+  `ordem_compra_fio_movimentos_estoque` surplus movement authority with
+  `saldo_fios` retained only as the existing aggregate cache.
+  **Actors:** authenticated admin or matching active supplier may register through
+  the same receipt RPC; only admin may reverse; suppliers receive no reversal or
+  direct table DML. **Idempotency:** namespace `native_receipt_v1`, scoped by actor
+  type + actor UUID + key; canonical JSONB payload equality controls exact replay
+  versus conflict. **Locks:** order header; affected items ascending; allocations
+  ascending; command identity; ledger rows ascending; inventory identities in
+  deterministic material/color order; all balances are re-evaluated under lock.
+  **Explicit exclusions:** no legacy seed/import, cutover, flat-writer fence,
+  productive-reader switch, flat grant revocation, UI, native emission activation,
+  `emitir_ordem_compra` grant, production, `main`, or push. C3/C4/C5 remain separate
+  and unauthorized. Continue only after the documentation-only boundary commit
+  passes; final C2 status may reach `IMPLEMENTED / VERIFIED IN STAGING / AWAITING
+  ARCHITECT TECHNICAL ACCEPTANCE`, never architect acceptance.
 - **`PHASE-C1` — `CLOSED / ACCEPTED` (2026-07-19, documentation-only contract,
   branch `dev`, baseline `47b8e6a6bc8dea0cd0fe053fef2ef9f2f16f14fa`).** The
   architect accepted the native receipt authority contract recorded in

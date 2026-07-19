@@ -3748,3 +3748,52 @@ risco residual e próxima fase indicada no fechamento.
 - **Status / next authorization:** `PHASE-C1` is `CLOSED / ACCEPTED`. C2 is **not
   authorized**. The next possible action is a separate architect C2 order after the
   open contract decisions are settled.
+
+## 2026-07-19 — PHASE-C2 — NATIVE RECEIPT IMPLEMENTATION BOUNDARY — DOCUMENTATION GATE
+
+- **Order:** `PHASE C2 — NATIVE RECEIPT FOUNDATION, WRITER, REVERSAL AND NARROW
+  INVENTORY INTEGRATION`.
+- **Baseline:** `dev @ 3395f83df0eb7db604df9a80d4a43a0601bc8b6c`; C1 is
+  closed/accepted and is the direct ancestor. Known `.gitignore` modified and
+  `AGENTS.md` untracked residue preserved out of scope.
+- **Local/staging preflight:** local latest migration is `db/69`; slot 70 is free.
+  Staging `ucrjtfswnfdlxwtmxnoo` is healthy on PostgreSQL 17.6 and its last recorded
+  migration is `20260719120036 / 69_ordem_compra_preprod_allocation`. Corpus remains
+  64 flat/needs, 51 native legacy headers/items/allocations/mappings, receipt ledger
+  and events zero, native orders zero, transient objects zero. Flat checksum remains
+  25,608.300 kg ordered / 20,221.280 kg received; native item checksum matches.
+  `emitir_ordem_compra` has no EXECUTE for PUBLIC/anon/authenticated/service_role.
+- **Inventory inspection:** `saldo_fios` has 5 rows / 2,685.020 kg and no duplicate
+  material/color identity; `saldo_fios_op` is empty. Its current client writer is the
+  OP recalculation path and no source-linked receipt movement authority exists.
+  Therefore C2 may create only a receipt-source surplus movement object; it may not
+  refactor general inventory.
+- **Concrete contract:** lifecycle spec §R.25 closes the five C2 decisions left by
+  C1. Header = immutable `ordem_compra_recebimentos`; idempotency namespace
+  `native_receipt_v1`, scoped by actor type + actor UUID + key, with canonical JSONB
+  equality. Ledger gains native command/order/allocation/real-OP/material/excess/
+  actor/line identity while preserving legacy coexistence columns.
+- **RPCs:** `registrar_recebimento_ordem_compra` accepts a non-empty multi-line
+  absolute command with lines explicitly `alocacao` or `excesso`; only active admin
+  or the order's active matching supplier. `estornar_recebimento_ordem_compra` is
+  administrator-only and refuses imported opening balances. The actor-scoped read
+  model is `obter_historico_recebimento_ordem_compra`.
+- **Locks:** native order; items ascending; allocations ascending; scoped command
+  identity; relevant ledger rows ascending; deterministic material/color inventory
+  identities. All caps are re-evaluated after waits.
+- **Ownership:** `ordem_compra_fio_lancamentos` is physical authority; item/header
+  caches derive in the database; allocation/excess/reversible quantities are
+  projections. `ordem_compra_fio_movimentos_estoque` is immutable and unique by
+  ledger source entry; only surplus delta affects `saldo_fios`, preserving §R.9 and
+  preventing allocated kg from becoming general stock.
+- **ACL:** new tables expose no client mutation. Receipt/reversal/read RPCs are
+  authenticated-only after PUBLIC/anon/service_role revoke; matching supplier has
+  receipt only, never reversal. Native emission and flat UPDATE ACL remain unchanged.
+- **Rollback/exclusions:** revoke C2 grants and rehearse dependency-safe C2 object
+  removal only while zero real canonical receipts exist. No import/seed, cutover,
+  flat-writer fence, productive-reader switch, UI, emission activation, production,
+  `main`, or push. C3/C4/C5 remain unauthorized.
+- **Status / next action:** documentation boundary is closed. Continue under the same
+  architect order only with `db/70`, focused tests, staging verification/cleanup,
+  rollback rehearsal, and canonical closeout. Do not record architect acceptance or
+  begin C3.

@@ -2077,6 +2077,199 @@ Before C2 implementation authorization, the architect must accept:
 level by the single-ledger, explicit-origin, multi-line contract above; the named C2
 physical schema decisions remain open. **Status:** `PHASE-C1` is `CLOSED / ACCEPTED`.
 
+## §R.25 PHASE-C2 — Native receipt implementation boundaries
+
+> **Order:** `PHASE C2 — NATIVE RECEIPT FOUNDATION, WRITER, REVERSAL AND
+> NARROW INVENTORY INTEGRATION` (2026-07-19).
+> **Baseline:** `dev @ 3395f83df0eb7db604df9a80d4a43a0601bc8b6c`.
+> **Status:** `BOUNDARY CLOSED / IMPLEMENTATION AUTHORIZED / STAGING PENDING`.
+> This section resolves every C2 question left by §R.24.11 and governs migration
+> `db/70_ordem_compra_native_receipt_foundation.sql`. It does not authorize C3,
+> C4, C5, production, `main`, or push.
+
+### §R.25.1 Immutable command header and idempotency identity
+
+Create `public.ordem_compra_recebimentos`, one immutable header per accepted
+receipt or reversal command. Its concrete persisted identity is:
+
+- `id BIGSERIAL PRIMARY KEY`;
+- `ordem_compra_id BIGINT NOT NULL`;
+- `comando_tipo IN ('recebimento','estorno')`;
+- `idempotency_namespace TEXT NOT NULL`, fixed to `native_receipt_v1` in C2;
+- `idempotency_key TEXT NOT NULL`;
+- `ator_id UUID NOT NULL` and `ator_tipo IN ('admin','fornecedor')`;
+- `ocorrido_em TIMESTAMPTZ NOT NULL` and `criado_em TIMESTAMPTZ NOT NULL`;
+- optional `documento_ref`, required explicit `origem_tipo`, optional `origem_ref`;
+- immutable canonical `comando_payload JSONB`, `comando_hash`, and
+  `resultado_metadata JSONB` sufficient to reconstruct the exact result.
+
+The unique command identity is `(idempotency_namespace, ator_tipo, ator_id,
+idempotency_key)`. Admin and supplier keys therefore cannot collide accidentally,
+and separate authenticated actors have independent key spaces. Canonical JSONB
+payload equality defines an exact retry: exact equality returns the original
+header and its immutable ledger result; any same-identity payload difference rejects
+with `idempotencia_conflitante`. Header UPDATE/DELETE is denied by privilege and an
+immutable guard trigger. Failed commands roll back the header with the transaction.
+
+### §R.25.2 Ledger extension
+
+Evolve `public.ordem_compra_fio_lancamentos` additively, preserving its existing
+legacy parent columns and append-only/sign constraints. Add nullable transition
+columns which are mandatory for native `recebimento`/`estorno` rows:
+
+- `recebimento_id` → immutable command header;
+- `ordem_compra_id` → native order header;
+- `ordem_compra_item_alocacao_id` → concrete allocation when the line is allocated;
+- `op_id` → real OP copied only from that allocation;
+- immutable `material`, `cor_id`, and `cor_poliester` reconciliation identity;
+- signed `kg_excesso` (zero for allocated lines, equal to signed ledger kg for an
+  explicit excess line);
+- `ator_tipo`; and
+- stable `linha_indice` within the command.
+
+A positive native line is explicitly one of two shapes: `alocacao`, requiring a
+concrete allocation and its real OP, or `excesso`, requiring no allocation and no
+fabricated OP. A reversal copies the source line's attribution and classification,
+uses negative kg, and references the positive source through `estorno_de_id`.
+`import_saldo_inicial` remains blocked in C2 and is neither created nor assigned a
+reversal policy here.
+
+### §R.25.3 Canonical receipt RPC
+
+The sole C2 writer is:
+
+```text
+registrar_recebimento_ordem_compra(
+  p_ordem_id BIGINT,
+  p_idempotency_key TEXT,
+  p_recebido_em TIMESTAMPTZ,
+  p_documento_ref TEXT,
+  p_origem_tipo TEXT,
+  p_origem_ref TEXT,
+  p_linhas JSONB
+) -> JSONB
+```
+
+`p_linhas` is a non-empty JSON array. Each object has `item_id`, `destino`
+(`alocacao` or `excesso`), positive absolute command quantity `kg`, and
+`alocacao_id` only for `alocacao`. One command may span multiple items,
+allocations, and real OPs. The RPC is transactional, `SECURITY DEFINER`, fixed safe
+search path, and callable only by `authenticated` after revoking `PUBLIC`, `anon`,
+and `service_role`.
+
+The server identifies the actor from `auth.uid()`. An active admin may receive any
+eligible native order. An active supplier may receive only when its
+`usuarios.fornecedor_id` equals the order's frozen `fornecedor_id`. The server
+rejects every other actor and never trusts client actor, supplier, order totals,
+material/color, OP, or derived balance.
+
+Eligibility is native/non-legacy, `status_administrativo='emitida'`, not cancelled,
+and `status_aceite IN ('nao_aplicavel','aceita')`; draft, acceptance-pending,
+rejected, cancelled, legacy, foreign item/allocation, and mismatched identity reject.
+Allocated cumulative receipt cannot exceed `kg_alocado`; non-excess cumulative item
+receipt cannot exceed `kg_pedido`; any quantity above ordered/allocated capacity must
+be an explicit `excesso` line. Partial and successive commands are permitted.
+
+### §R.25.4 Administrator-only reversal RPC
+
+The sole reversal writer is:
+
+```text
+estornar_recebimento_ordem_compra(
+  p_ordem_id BIGINT,
+  p_idempotency_key TEXT,
+  p_estornado_em TIMESTAMPTZ,
+  p_motivo TEXT,
+  p_linhas JSONB
+) -> JSONB
+```
+
+Each line identifies one original positive native `recebimento` ledger entry and a
+positive absolute quantity to reverse. The RPC requires `is_admin()`; matching
+suppliers are explicitly denied reversal. It locks sources and existing reversals,
+computes remaining reversible quantity, rejects over-reversal, and appends negative
+immutable rows. It never edits/deletes a source and cannot make item, allocation,
+excess, or stock totals negative. Its idempotency uses the same header namespace and
+exact-payload rule. C2 refuses reversal of future `import_saldo_inicial` entries.
+
+### §R.25.5 Deterministic lock order
+
+Both writers use this complete order and re-evaluate all caps after locks:
+
+1. native `ordem_compra` header;
+2. affected `ordem_compra_item` rows by ascending `id`;
+3. affected `ordem_compra_item_alocacao` rows by ascending `id`;
+4. scoped `ordem_compra_recebimentos` idempotency identity;
+5. relevant positive/reversal ledger rows by ascending `id`;
+6. affected inventory identities in deterministic `(material, cor_id,
+   cor_poliester)` order.
+
+Inventory identity serialization may use transaction advisory locks plus row locks,
+provided the key is derived only from the stable material/color identity. Command
+line insertion is stable by item/allocation/line index. Lock waits must end in
+post-wait balance re-evaluation, never stale validation.
+
+### §R.25.6 Derived caches and read model
+
+The append-only ledger remains authority. Canonical database logic alone maintains
+`ordem_compra_item.kg_recebido` and `ordem_compra.status_recebimento`. Item remaining,
+allocation received/remaining, reversible quantity, and physical excess are computed
+projections. No client writes a derived cache.
+
+The verification read model is
+`obter_historico_recebimento_ordem_compra(p_ordem_id BIGINT) -> JSONB`. It exposes
+immutable headers, positive/negative entries, allocation and real-OP attribution,
+item totals, excess, remaining reversible quantity, inventory movement linkage, and
+actor-specific allowed actions. It is callable only by an active admin or the active
+matching supplier, through `authenticated`; it grants no mutation.
+
+### §R.25.7 Narrow inventory movement authority
+
+The current inventory inspection found `saldo_fios` as a multi-origin aggregate
+cache, written by the existing OP recalculation path, and no structurally adequate
+source-linked receipt movement authority. C2 therefore creates only
+`public.ordem_compra_fio_movimentos_estoque`, an immutable, receipt-source-specific
+movement table. It is not a second physical-receipt ledger and is not a general
+inventory redesign.
+
+Exactly one movement row exists per native receipt ledger entry, unique by
+`lancamento_id`. It carries native order/item/allocation/real-OP and material/color
+identity plus signed `kg_excedente_delta`, surplus before/after, actor, and timestamp.
+Allocated receipt/reversal rows may legitimately record zero stock delta; explicit
+excess produces a positive surplus delta and reversal produces the corresponding
+non-positive delta. This preserves §R.9: only ledger-derived **surplus delta** changes
+`saldo_fios`; the same kg is never both allocated need satisfaction and general stock.
+Ledger row, source-linked movement, and `saldo_fios` cache delta are one transaction.
+The cache cannot become negative, retries cannot duplicate movement, and a
+reconciliation compares item ledger surplus with summed source-linked movement.
+
+The intended material/color uniqueness of `saldo_fios` is enforced for nullable
+color axes before C2 writes it; no unrelated saldo table, OP recalculation writer, or
+general stock contract is redesigned.
+
+### §R.25.8 ACL and rollback
+
+All C2 tables enable RLS. `PUBLIC`, `anon`, and `authenticated` receive no table
+mutation; no client receives UPDATE/DELETE. Only the three named RPCs receive the
+minimum `authenticated` EXECUTE grant; the reversal function still denies supplier
+actors internally. `service_role` receives no explicit EXECUTE. Native
+`emitir_ordem_compra` remains inactive and ungranted. Flat receipt UPDATE ACL remains
+unchanged until C3.
+
+C2 rollback is safe only while no real canonical receipt exists: revoke C2 RPC
+grants, prove no productive reader depends on C2, remove test fixtures, and rehearse
+dependency-safe removal of only C2 objects in a transaction that is rolled back or
+equivalently controlled. db/67-db/69, legacy data/readers/writers, and flat ACL remain
+intact. Once any real immutable canonical receipt exists, destructive rollback is
+forbidden and recovery becomes forward-only.
+
+### §R.25.9 Explicit exclusions and phase gate
+
+C2 creates no legacy opening balance, import, cutover fence, flat-consumer migration,
+productive-reader switch, flat UPDATE revocation, receipt UI, supplier UI, native
+emission activation, or emission grant. C3 owns cutover/import/readers/ACL; C4 owns
+admin UI and any later supplier UI; C5 is the separate emission gate. No phase chains.
+
 ---
 
 ## 0. Current state (evidenced, read-only inventory) — SUPERSEDED on the persistence model by Part R (retained for provenance)
