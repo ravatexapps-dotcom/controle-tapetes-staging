@@ -3690,3 +3690,61 @@ risco residual e próxima fase indicada no fechamento.
   implementation remain prohibited unless separately authorized. The next
   authorizable action is a separate architect order selecting a reconciled backlog
   front.
+
+## 2026-07-19 — PHASE-C1 — NATIVE RECEIPT AUTHORITY CONTRACT — CLOSED / ACCEPTED
+
+- **Order:** `PHASE C1 — NATIVE RECEIPT AUTHORITY CONTRACT`.
+- **Baseline / Git:** branch `dev`, HEAD
+  `47b8e6a6bc8dea0cd0fe053fef2ef9f2f16f14fa`; required lineage confirmed. Known
+  pre-existing residue `.gitignore` modified and `AGENTS.md` untracked was preserved
+  untouched and unstaged.
+- **Scope executed:** documentation-only canonical reconciliation and contract closure.
+  No implementation, SQL/migration, staging/production write, ACL/grant, UI, test,
+  push, `main`, or C2 action was performed.
+- **Canonical authority:** `ordem_compra_fio_lancamentos` evolves as the sole physical
+  receipt ledger. No competing ledger or flat received-total authority survives the
+  cutover. Events are audit-only; item totals, order receipt status, and projections
+  are database-derived; clients receive no receipt-table DML.
+- **Receipt shape:** immutable header with receipt/document identity, origin, date,
+  actor, stable submission idempotency key, and immutable command metadata. Each line
+  binds header, native item, optional allocation, allocation's real OP, and canonical
+  ledger entry. A single receipt may span multiple items, allocations, and real OPs.
+- **Material semantics:** cotton follows its concrete real-OP allocation. Shared
+  polyester needs keep `op_id IS NULL`; physical lines follow the selected
+  allocation's actual OP, allowing multiple real OPs without representative or fake
+  OPs. Excess stays on the same receipt/item, creates no fake need/allocation, and may
+  produce only the narrow atomic inventory movement.
+- **Writer and reversal:** receive only emitted, non-cancelled, acceptance-eligible
+  native orders; lock order/item and allocations deterministically (allocation IDs
+  ascending); re-evaluate under lock; stable exact-repeat idempotency returns the
+  original result; conflicting reuse rejects; cumulative allocation receipts cannot
+  exceed `kg_alocado`; invalid states reject; history is immutable. Reversal appends
+  an idempotent negative entry referencing its positive source, locks source and
+  reversals, caps at the remaining reversible quantity, and cannot make derived totals
+  negative.
+- **Actors / ACL:** admin and future matching supplier use the same RPC. Supplier scope
+  is limited to its matching order; no table DML. Supplier reversal authority remains
+  an explicit C2 decision and must not be inferred. Supplier UI is deferred.
+- **Legacy classes:** A and D import one `import_saldo_inicial` receipt per mapped item
+  for non-zero balance; D preserves received-without-emission without fake events. B
+  seeds none; C has no rows. Fake needs, allocations, OPs, or events are forbidden.
+- **Cutover / rollback:** fence both flat writers and prove denial; snapshot all 51
+  mappings; import and reconcile; migrate both consumers; switch readers; revoke flat
+  updates; close the ACL gap; remove anonymous update. Rollback is allowed only before
+  the first post-switch canonical receipt and only with zero canonical writes; after
+  that point recovery is forward-only.
+- **UI placement:** future admin UI only at `#/ordens-compra/:id`, persistent
+  **Recebimentos** section with dedicated modal action. No receipt UI in OP, Pedido,
+  production-transition, or supplier-assignment modals. Supplier UI remains later.
+- **Binding sequence:** C1 contract; C2 inactive foundation/writer/reversal/narrow
+  inventory; C3 cutover/import/readers/ACL; C4 admin UI and later supplier UI; C5
+  separate emission activation. Native emission stays inactive/ungranted until C1-C4
+  are accepted. Phases do not chain automatically.
+- **Open before C2:** exact header schema and idempotency namespace; supplier reversal
+  permission; inventory-movement object/reconciliation; multi-line RPC signature/result
+  plus complete lock order; migration split between inactive foundation and cutover.
+- **Documentation index ruling:** no update required under the documentation model;
+  C1 creates no new canonical path, authority class, document class, or migration.
+- **Status / next authorization:** `PHASE-C1` is `CLOSED / ACCEPTED`. C2 is **not
+  authorized**. The next possible action is a separate architect C2 order after the
+  open contract decisions are settled.

@@ -1,5 +1,50 @@
 # ACTIVE OPERATIONAL HANDOFF
 
+- **`PHASE-C1` — `CLOSED / ACCEPTED` (2026-07-19, documentation-only,
+  `dev @ 47b8e6a6bc8dea0cd0fe053fef2ef9f2f16f14fa`).** The binding native receipt
+  authority contract is `docs/architecture/ORDEM_COMPRA_LIFECYCLE_SPEC_PROPOSED.md`
+  **§R.24**, cross-recorded in the canonical state, schema contract, production-flow
+  backlog, and G28 ledger.
+  - **Authority:** evolve `ordem_compra_fio_lancamentos` as the sole canonical
+    physical receipt ledger. Events remain audit-only. Receipt/item totals, header
+    status, and projections are database-derived; no client direct table writes.
+  - **Shape:** immutable receipt header (identity, origin, date, actor, stable
+    submission idempotency key, immutable command metadata) plus lines binding item,
+    optional allocation, allocation's real OP, and ledger entry. One receipt may span
+    items, allocations, and real OPs.
+  - **Allocation semantics:** cotton follows a concrete real-OP allocation. Shared
+    polyester needs keep `op_id IS NULL`; each receipt follows the selected
+    allocation's actual OP. No representative/synthetic OP. Excess remains on the
+    same receipt/item and creates only the narrow transactional inventory movement.
+  - **Writers:** emitted, non-cancelled, acceptance-eligible native orders only;
+    deterministic order/item/allocation locks; allocation IDs ascending; stable
+    idempotency returns the original result on exact repeat; received allocation
+    quantity cannot exceed `kg_alocado`; invalid states reject; history is immutable.
+    Reversal is an idempotent negative entry linked to its positive source, locks
+    source/reversals, and cannot exceed the remaining reversible amount or make
+    derived totals negative.
+  - **Actors/ACL:** admin and the future matching supplier call the same RPC. Supplier
+    scope is its matching order only, with no table DML. Decide supplier reversal
+    permission explicitly before implementation. Supplier UI remains deferred.
+  - **Legacy/cutover:** A/D import one `import_saldo_inicial` receipt per mapped item;
+    D preserves received-without-emission without fake events; B seeds none; C none.
+    Fence and prove denial for both flat writers; snapshot 51 mappings; import and
+    reconcile; migrate both consumers; switch readers; revoke flat updates; close
+    the ACL gap; remove anonymous update. Roll back only before the first post-switch
+    canonical receipt and only if canonical writes are zero; then forward-only.
+  - **UI:** future admin receipt UI belongs in `#/ordens-compra/:id`, section
+    **Recebimentos**, via modal action only. Do not add it to OP, Pedido, transition,
+    or supplier-assignment modals. Supplier UI is later.
+  - **Sequence:** C2 foundation/writer/reversal/narrow inventory; C3 cutover/import/
+    readers/ACL; C4 admin UI and later supplier UI; C5 separate emission gate.
+    Native emission stays inactive until C1-C4 are accepted.
+  - **Next authorizable action:** a separate C2 order after settling the exact header
+    schema/idempotency namespace, supplier reversal permission, inventory-movement
+    object/reconciliation, multi-line RPC signature/result and lock order, and the
+    migration split between inactive foundation and cutover. **Do not begin C2,
+    implementation, migration, staging, grants, UI, tests, production, push, or
+    `main` work from this handoff.**
+
 - **`PRE-PROD-A-R1` — `CLOSED / ACCEPTED_WITH_NONBLOCKING_ADMIN_SHELL_MOBILE_RESPONSIVENESS_DEBT`
   (2026-07-19, architect acceptance, branch `dev`) — CLOSEOUT, supersedes on status
   the checkpoint below.** Do not repeat T1/T2 or the browser-console harness.

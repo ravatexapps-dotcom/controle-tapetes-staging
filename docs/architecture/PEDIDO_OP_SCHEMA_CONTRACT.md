@@ -547,6 +547,26 @@ INSUMOS → TECELAGEM → ACABAMENTO → EXPEDIÇÃO → ENTREGA
 > production, `main`, push, PRE-PROD-B, and Phase C implementation remain prohibited.
 > UI provenance / modern-visual-language audit is deferred as a separate,
 > post-stabilization, non-blocking activity.
+>
+> **PHASE-C1 native receipt authority update (2026-07-19, §R.24; `CLOSED /
+> ACCEPTED`).** Phase C evolves `ordem_compra_fio_lancamentos` into the sole
+> canonical physical receipt ledger; events remain audit-only, and all receipt totals,
+> order status, and projections become database-derived. An immutable receipt header
+> owns origin/document identity, date, actor, stable submission idempotency, and command
+> metadata; its lines bind the native item, optional allocation, allocation's real OP,
+> and ledger entry. Cotton follows a real-OP allocation. Shared polyester keeps its need
+> `op_id IS NULL` and each receipt follows the concrete allocation OP; fake or
+> representative OPs are forbidden. Excess remains on the same receipt/item and may
+> create only a narrow atomic inventory movement. Positive history is immutable;
+> reversal appends a source-referencing negative entry under locked remaining-reversible
+> limits. Admin and future matching-supplier actors use the same RPC with no table DML;
+> supplier reversal permission remains an explicit pre-implementation decision.
+> Legacy A/D non-zero balances seed one `import_saldo_inicial` receipt per mapped item;
+> B seeds none; C has none. C3 must fence both flat writers, snapshot all 51 mappings,
+> import/reconcile, migrate both consumers, switch readers, revoke flat updates, close
+> the ACL gap, and remove anonymous update. Native emission stays inactive until C1-C4
+> acceptance. This C1 record authorizes no schema implementation, migration, staging
+> write, grant, UI, test, or C2 work.
 
 ### 6.3. UI rules
 

@@ -1919,6 +1919,164 @@ prohibited. No PRE-PROD-B or Phase C implementation is authorized by this
 acceptance. UI provenance / modern-visual-language audit is deferred as a separate,
 post-stabilization, non-blocking activity.
 
+## §R.24 PHASE-C1 — Native receipt authority contract (CLOSED / ACCEPTED)
+
+> **Order:** `PHASE C1 — NATIVE RECEIPT AUTHORITY CONTRACT` (2026-07-19).
+> **Baseline:** `dev @ 47b8e6a6bc8dea0cd0fe053fef2ef9f2f16f14fa`.
+> **Scope:** documentation-only contract closure. This section authorizes no
+> implementation, migration, staging write, grant, UI, test, production operation,
+> push, or Phase C2 work. Where earlier receipt projections diverge, this section
+> governs Phase C.
+
+### §R.24.1 Canonical physical authority
+
+`ordem_compra_fio_lancamentos` evolves in place as the **sole canonical physical
+receipt ledger**. Phase C must not create a competing ledger or preserve
+`ordens_compra_fio.kg_recebido` as parallel authority. Receipt events remain an
+immutable audit trail only; they do not authorize or calculate physical stock.
+
+The database derives item received quantity, order/header receipt status, receipt
+progress, and every projection from the canonical ledger. Clients receive no direct
+`INSERT`, `UPDATE`, or `DELETE` authority on receipt headers, lines, ledger entries,
+derived totals, or inventory movements.
+
+### §R.24.2 Immutable receipt header and lines
+
+Each physical submission creates or reuses an immutable receipt header containing:
+
+- receipt/document identity and origin;
+- effective receipt date;
+- authenticated actor identity and actor class;
+- one stable submission idempotency key in a defined namespace; and
+- immutable command metadata sufficient to reproduce and audit the accepted command.
+
+Each receipt line binds the header to exactly one native purchase-order item and its
+canonical ledger entry. When the line satisfies a need, it also binds the concrete
+allocation and the **real OP reached through that allocation**. One header may contain
+multiple items, allocations, and real OPs. Header and line history is immutable;
+correction uses reversal, never mutation or deletion.
+
+### §R.24.3 Cotton, shared polyester, and excess
+
+- **Cotton:** receipt follows a concrete allocation to a real OP.
+- **Shared polyester need:** the need remains `op_id IS NULL`; physical receipt follows
+  each selected allocation's actual `op_id`. Multiple real OPs are valid. No
+  representative, arbitrary, placeholder, or synthetic OP may be stored.
+- **Excess:** quantity above allocated need remains on the same receipt and item. It
+  must not create a fake need or allocation. The canonical writer may create only the
+  narrowly scoped transactional inventory movement required for that excess, in the
+  same transaction as the receipt.
+
+### §R.24.4 Native receipt writer
+
+The future multi-line native receipt writer must:
+
+1. accept only native orders that are emitted, non-cancelled, and otherwise eligible
+   for physical acceptance;
+2. lock the order and addressed items, then lock concrete allocations in deterministic
+   ascending allocation-ID order;
+3. re-evaluate all eligibility and balances after locks are acquired;
+4. enforce a stable idempotency key: an exact repeat returns the original header,
+   lines, ledger entries, and result; a conflicting payload under the same key rejects;
+5. enforce cumulative canonical receipt against an allocation at or below
+   `kg_alocado`;
+6. reject missing, foreign, removed, invalid-state, mismatched-item, or mismatched-OP
+   allocations and every negative/zero quantity not belonging to reversal semantics;
+7. write header, lines, canonical positive ledger entries, derived projections, and
+   any narrow excess inventory movement atomically; and
+8. preserve receipt history immutably.
+
+The exact public signature/result contract and full lock order remain a C2 design
+decision, but they must preserve the rules above and support one submission spanning
+multiple items, allocations, and real OPs.
+
+### §R.24.5 Reversal writer
+
+Reversal never edits or deletes a positive entry. It appends an immutable negative
+ledger entry that references the positive source and records its own actor, reason,
+date, metadata, and stable idempotency key. The writer locks the positive source and
+its reversals, computes the remaining reversible quantity under lock, rejects any
+excess, and guarantees that canonical item/allocation/order totals cannot become
+negative. An exact idempotent repeat returns the original reversal result; a key/payload
+conflict rejects. Any paired inventory movement reverses atomically and by reference.
+
+### §R.24.6 Actors and ACL
+
+The admin workflow and a future matching-supplier workflow must call the **same
+canonical RPC**. Supplier authority, if later activated, is restricted to an order
+whose supplier matches the authenticated supplier identity. Neither admin nor supplier
+clients receive table DML. Supplier reversal permission is deliberately unresolved and
+must be decided explicitly before implementation; it cannot be inferred from receipt
+permission. Supplier UI is deferred and is not part of the first admin receipt UI.
+
+### §R.24.7 Legacy import classes
+
+The cutover migration applies the reconciled legacy classes as follows:
+
+| Class | Canonical seed rule |
+|---|---|
+| A | One `import_saldo_inicial` receipt, mapped to the corresponding native item, for each non-zero observed receipt balance. |
+| B | No receipt seed. |
+| C | No legacy rows exist; no seed. |
+| D | One `import_saldo_inicial` receipt per mapped item for the non-zero observed balance; preserve received-without-emission provenance without inventing emission or other fake events. |
+
+Imported entries remain distinguishable by origin and immutable after acceptance. No
+class may be made representable by a fake need, fake allocation, or fake OP.
+
+### §R.24.8 Cutover, consumers, ACL closure, and rollback
+
+The Phase C cutover must execute under a write fence for **both** direct flat receipt
+writers and must prove both are denied before import. It then must, in a controlled and
+reconcilable order:
+
+1. snapshot and validate all **51** legacy-to-native mappings;
+2. create the required canonical imports and reconcile counts/quantities exactly;
+3. migrate both current receipt consumers to the canonical writer;
+4. switch receipt readers and projections to the canonical ledger;
+5. revoke flat receipt updates;
+6. close the identified receipt ACL gap; and
+7. remove anonymous update authority.
+
+Rollback to flat authority is permitted only before the first post-switch canonical
+receipt and only when the proof shows **zero canonical writes** after the switch. Once
+any post-switch canonical receipt exists, recovery is forward-only; canonical history
+must not be discarded or rewritten.
+
+### §R.24.9 UI placement
+
+The first receipt UI is admin-only and belongs on `#/ordens-compra/:id`, in a persistent
+**Recebimentos** section. Creation/reversal actions open a dedicated modal and call the
+canonical RPC. Receipt input must not appear in the OP screen, Pedido screen, production
+transition modal, or supplier-assignment modal. Supplier receipt UI remains deferred.
+
+### §R.24.10 Binding delivery sequence and emission gate
+
+1. **C1:** this documentation-only authority contract.
+2. **C2:** inactive foundation, receipt/reversal writers, and narrowly scoped excess
+   inventory movement/reconciliation.
+3. **C3:** writer fencing, 51-mapping snapshot, legacy import, both-consumer migration,
+   reader switch, reconciliation, flat-update revocation, and ACL closure.
+4. **C4:** admin receipt UI; a later separately authorized supplier UI may reuse the
+   same RPC subject to its actor/permission contract.
+5. **C5:** separate native emission activation gate.
+
+Native emission stays inactive and ungranted until **C1 through C4 are each accepted**.
+No phase chains automatically, and no part of this C1 acceptance authorizes C2.
+
+### §R.24.11 C2 design questions that remain open
+
+Before C2 implementation authorization, the architect must accept:
+
+- the exact header schema, receipt/document identity rules, and idempotency namespace;
+- whether a matching supplier may reverse receipts, and under which explicit policy;
+- the exact excess inventory movement object and its reconciliation authority;
+- the multi-line RPC request/result shape and complete deterministic lock order; and
+- the migration split between inactive foundation and the later cutover/import.
+
+`NATIVE_RECEIPT_COMPATIBILITY_MULTI_ORIGIN_UNRESOLVED` is resolved at the authority
+level by the single-ledger, explicit-origin, multi-line contract above; the named C2
+physical schema decisions remain open. **Status:** `PHASE-C1` is `CLOSED / ACCEPTED`.
+
 ---
 
 ## 0. Current state (evidenced, read-only inventory) — SUPERSEDED on the persistence model by Part R (retained for provenance)

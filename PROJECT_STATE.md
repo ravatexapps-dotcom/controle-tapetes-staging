@@ -315,6 +315,48 @@ are in `docs/ledgers/G28_LEDGER.md`. HEAD/working tree/divergence: consult Git d
   audit is deferred as a separate post-stabilization, non-blocking activity. The
   next authorizable action requires a separate architect order; this acceptance
   authorizes neither PRE-PROD-B nor Phase C implementation.
+- **`PHASE-C1` — `CLOSED / ACCEPTED` (2026-07-19, documentation-only contract,
+  branch `dev`, baseline `47b8e6a6bc8dea0cd0fe053fef2ef9f2f16f14fa`).** The
+  architect accepted the native receipt authority contract recorded in
+  `docs/architecture/ORDEM_COMPRA_LIFECYCLE_SPEC_PROPOSED.md` **§R.24**.
+  `ordem_compra_fio_lancamentos` evolves into the **sole canonical physical
+  receipt ledger**; no competing receipt ledger is permitted. A future immutable
+  receipt header owns document/receipt identity, origin, date, actor, a stable
+  submission idempotency key, and immutable command metadata. Receipt lines bind
+  that header to the item, optional need allocation, the allocation's real OP,
+  and the canonical ledger entry. Cotton follows its concrete real-OP allocation;
+  shared polyester needs remain `op_id IS NULL` until allocated, and each receipt
+  follows the actual allocation OP without representative or synthetic OPs.
+  Excess stays on the same receipt/item with a narrowly scoped transactional
+  inventory movement, never a fake need/allocation.
+  **Writer/reversal contract:** only emitted, non-cancelled, acceptance-eligible
+  native orders may receive; deterministic order/item/allocation locks and stable
+  idempotency are mandatory; allocation receipts cannot exceed `kg_alocado`;
+  history is immutable. Reversal is a negative ledger entry referencing the
+  positive source and is capped by the remaining reversible amount under locks.
+  Item received totals, header status, and projections are database-derived;
+  events are audit evidence, not physical authority; clients receive no direct
+  table-write authority.
+  **Actors/ACL:** admin and future matching-supplier flows must use the same RPC.
+  Supplier access is restricted to its matching order and never gains table DML;
+  supplier reversal permission must be decided explicitly before implementation.
+  Supplier UI is deferred. The future admin receipt surface belongs only in the
+  `#/ordens-compra/:id` **Recebimentos** section/modal, not in OP, Pedido,
+  transition, or supplier-assignment modals.
+  **Legacy/cutover:** classes A/D import one `import_saldo_inicial` receipt per
+  mapped item (D preserves received-without-emission without fake events); B seeds
+  none; C has no rows. Cutover must fence both flat writers, prove denial, snapshot
+  all 51 mappings, import/reconcile, migrate both consumers, switch readers, revoke
+  flat updates, close the ACL gap, and remove anonymous update. Rollback is allowed
+  only before the first post-switch canonical receipt and only with zero canonical
+  writes; afterwards recovery is forward-only.
+  **Sequence:** C1 contract only; C2 foundation/writer/reversal/narrow inventory;
+  C3 cutover/import/readers/ACL; C4 admin UI and later supplier UI; C5 is the
+  separate emission gate. Native emission remains inactive until C1-C4 are
+  accepted. **No implementation, migration, staging write, grant, UI, test, push,
+  `main`, production, or C2 work was authorized or performed.** Next authorizable
+  action: a separate architect order for C2 after resolving its recorded open
+  design questions.
 - **`REFUND-B1` (original implementation record) — 2026-07-19, branch `dev`,
   staging `ucrjtfswnfdlxwtmxnoo` only; superseded on status by the acceptance
   closeout directly above, retained verbatim for the technical detail.** The

@@ -417,6 +417,19 @@ with `insumos` and `transporte` skippable) are covered by real transitions:
    delivery/pickup; `concluir_pedido_se_pronto` persists the completion when
    there is no balance.
 
+**Phase C receipt-authority correction (C1 accepted 2026-07-19).** Item 1 describes
+the current legacy consumer, not the future physical authority. Phase C must evolve
+`ordem_compra_fio_lancamentos` into the sole canonical receipt ledger and migrate
+both current consumers through one native multi-line RPC. Cotton receipts follow
+their concrete real-OP allocation; shared polyester receipts follow each actual
+allocation OP without a representative/fake OP; excess stays on the receipt/item
+with only a narrow transactional inventory movement. The future admin surface is
+`#/ordens-compra/:id` → **Recebimentos**; it does not belong in Pedido/OP/transition
+or supplier-assignment modals. Supplier UI is deferred. Delivery sequence is C2
+foundation/writers, C3 cutover/import/readers/ACL, C4 admin UI (supplier later), then
+C5 separate emission activation. Native emission remains inactive until C1-C4 are
+accepted. C1 authorizes no implementation or C2 work; see lifecycle spec §R.24.
+
 ### 1.2 Main routes/screens
 
 | Route | Screen | Function |
