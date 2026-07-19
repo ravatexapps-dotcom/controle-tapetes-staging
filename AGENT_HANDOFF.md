@@ -1,13 +1,19 @@
 # ACTIVE OPERATIONAL HANDOFF
 
 - **`PURCHASE-ORDER HYBRID ORIGIN — F2 PEDIDO/INSUMOS UI CUTOVER R1` —
-  `AUTHORIZED / READINESS RECONCILIATION IN PROGRESS` (2026-07-19).**
-  This order authorizes only the local F2 UI cutover after the readiness gate.
-  Canonical purchasing distribution belongs to `Pedido → Insumos /
-  aguardando_fios`, not to OP or purchase-order entity screens and not to a new
-  stepper stage. F2 must call the accepted F1 need-first RPC with stable client
-  command keys. Staging application, Supabase writes, production, `main`, remote
-  changes, push, and C3A acceptance remain prohibited.
+  `IMPLEMENTED / VERIFIED LOCALLY / AWAITING ARCHITECT REVIEW` (2026-07-19).**
+  Technical commit `577921150ac5a478294f28b1c8c3501dad23dbbb` installs
+  `#/pedidos/:pedidoId/insumos`, loaded by
+  `js/screens/pedido-insumos-distribuicao.js`. The surface owns only need,
+  supplier, absolute target, and an idempotency key; OP provenance is read-only
+  and shared Pedido needs have no OP selector. Exact retries retain the modal's
+  command key; reopening for a later intended mutation creates a new key.
+  Purchase-order entity screens remain consultation/lifecycle/receipt/history
+  surfaces. Focused F2/Pedido/OP/order/router coverage passes 139/139. No new
+  stage, migration, staging application, Supabase write, production, `main`,
+  remote change, push, or C3A acceptance occurred. `db/74` remains unapplied to
+  staging. Next authorizable action: integrated F1+F2 staging deployment and
+  validation, only after architect review and a separate order.
 
 - **`PURCHASE-ORDER HYBRID ORIGIN — F1 FORWARD CORRECTION IMPLEMENTATION R1` —
   `CLOSED / ACCEPTED_WITH_NONBLOCKING_BASELINE_TEST_DEBT` (2026-07-19).**

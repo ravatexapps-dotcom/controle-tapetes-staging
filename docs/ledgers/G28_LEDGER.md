@@ -4230,3 +4230,43 @@ MATERIAL_DIVERGENCES: NONE
   all hard gates in the architect order. C3A remains `IMPLEMENTED / VERIFIED / NOT
   ACCEPTED`. The F2 boundary does not authorize staging application or any later
   C3 phase.
+
+## 2026-07-19 — PURCHASE-ORDER HYBRID ORIGIN — F2 PEDIDO/INSUMOS UI CUTOVER R1
+
+- **Readiness / technical commit:** reconciliation returned
+  `READY_FOR_F2_IMPLEMENTATION`. Technical commit
+  `577921150ac5a478294f28b1c8c3501dad23dbbb` installs the admin route
+  `#/pedidos/:pedidoId/insumos`, loaded by
+  `js/screens/pedido-insumos-distribuicao.js`; Pedido detail and the OP summary
+  link to it contextually.
+- **Ownership and command contract:** the screen reads the existing authenticated
+  canonical need/allocation projections and calls only
+  `definir_alocacao_necessidade_compra_fio(BIGINT,BIGINT,NUMERIC,TEXT)`. It sends
+  need identity, supplier identity, absolute target, and a client command key;
+  it never sends Pedido, OP, order, item, material, color, or authoritative item
+  quantity. OP-origin needs display server-derived OP provenance read-only;
+  shared Pedido-origin needs display `Pedido compartilhado` with no OP selector.
+  A modal keeps one generated key through exact/uncertain-response retries and
+  creates a new key only for a later intentional action. The UI maps F1 business
+  errors explicitly, including authorization, missing need/supplier, invalid or
+  excessive target, frozen state, idempotency conflict, provenance, concurrency,
+  and cleanup conflicts.
+- **Cutover:** purchase-order list/detail screens retain consultation, lifecycle,
+  receipt/history, cancellation, and navigation to the owning Pedido. They no
+  longer expose `Nova ordem`, manual item writes, or allocation mutation. OP no
+  longer assigns a purchasing supplier and links to the Pedido-owned surface;
+  unrelated legacy receipt behavior remains intact. No new stepper stage or
+  migration was added.
+- **Verification:** JavaScript syntax checks and focused
+  `pedido-insumos-distribuicao`, purchase-order, OP, and router tests pass
+  `139/139`; `git diff --check` passes. Static searches confirm order-first
+  writers and the OP purchasing assignment call are absent. Parallel broader-suite
+  runs against the F1 closeout worktree and F2 both report 133 pre-existing
+  failures; failure identities are not stable under the suite's parallel runner,
+  and the serial normalization attempt exceeded the 120-second local limit.
+- **Boundary / status:** `IMPLEMENTED / VERIFIED LOCALLY / AWAITING ARCHITECT
+  REVIEW`. No staging application, Supabase write, production, `main`, remote
+  change, or push occurred. `db/74` remains unapplied to staging. C3A remains
+  implemented and verified but not accepted. Next authorizable action: an
+  architect-reviewed, separately authorized integrated F1+F2 staging deployment
+  and validation.

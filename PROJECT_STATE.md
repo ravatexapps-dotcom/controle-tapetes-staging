@@ -10,13 +10,19 @@ are in `docs/ledgers/G28_LEDGER.md`. HEAD/working tree/divergence: consult Git d
 ## Active phase and next action
 
 - **`PURCHASE-ORDER HYBRID ORIGIN — F2 PEDIDO/INSUMOS UI CUTOVER R1` —
-  `AUTHORIZED / READINESS RECONCILIATION IN PROGRESS` (2026-07-19).**
-  The architect accepted F1 and authorized the Pedido-owned UI cutover under the
-  current order. Distribution remains `Pedido → Insumos / aguardando_fios`; it is
-  not a new stage and is not an OP-owned supplier-assignment action. F2 must use
-  the accepted F1 need-first RPC, preserve its client command-key semantics, and
-  leave staging application, Supabase writes, production, `main`, remote changes,
-  and push prohibited. C3A remains implemented and verified but not accepted.
+  `IMPLEMENTED / VERIFIED LOCALLY / AWAITING ARCHITECT REVIEW` (2026-07-19).**
+  Technical commit `577921150ac5a478294f28b1c8c3501dad23dbbb` adds the dedicated
+  admin route `#/pedidos/:pedidoId/insumos` and its Pedido-detail/OP contextual
+  navigation. `js/screens/pedido-insumos-distribuicao.js` renders canonical native
+  needs and allocation projections, calls only
+  `definir_alocacao_necessidade_compra_fio(need, supplier, absoluteTarget, key)`,
+  and retains one command key for a retry while issuing a new key for a later modal
+  action. Purchase-order entity screens no longer originate orders, items, or
+  allocations; OP no longer assigns a purchasing supplier. F2 adds no stage or
+  migration. Focused F2/Pedido/OP/order/router tests pass 139/139. No staging
+  application occurred; `db/74` remains unapplied to staging; C3A remains
+  implemented and verified but not accepted. Production, `main`, remote changes,
+  and push remain prohibited.
 
 - **`PURCHASE-ORDER HYBRID ORIGIN — F1 FORWARD CORRECTION IMPLEMENTATION R1` —
   `CLOSED / ACCEPTED_WITH_NONBLOCKING_BASELINE_TEST_DEBT` (2026-07-19).**
@@ -136,11 +142,10 @@ are in `docs/ledgers/G28_LEDGER.md`. HEAD/working tree/divergence: consult Git d
   cutover (`M10`)"; cutover is done. **New fronts are authorizable again**, each by
   its own individual order. The consolidated, ranked `POST-LAUNCH DEBT REGISTER`
   (below) supersedes the former "residual risk register (12 items)".
-- **Next authorizable action:** complete the authorized F2 readiness reconciliation
-  and, only if it returns `READY_FOR_F2_IMPLEMENTATION`, the bounded local UI
-  implementation and verification under the current order. Staging application,
-  Supabase writes, C3A acceptance, production, `main`, remote changes, and push
-  remain separately unauthorized. Separately, the
+- **Next authorizable action:** architect review of the integrated F1+F2 local
+  closeout, then a separately authorized integrated F1+F2 staging deployment and
+  validation. Staging application, Supabase writes, C3A acceptance, production,
+  `main`, remote changes, and push remain separately unauthorized. Separately, the
   highest-consequence open operational item remains
   `INGESTOR-DOC-CYCLE-VERIFY-DEFERRED`, an `ACTIVE PRODUCTION BLOCKER`. See the
   `POST-LAUNCH DEBT REGISTER`. **Standing reminder: flip the Supabase MCP back to
