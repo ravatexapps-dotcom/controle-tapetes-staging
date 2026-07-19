@@ -871,3 +871,227 @@ purchase-order statement above. It authorizes documentation only.
 All redo verdicts remain **NO**. The accepted strategy is forward correction; no SQL,
 migration, staging write, test change, grant, implementation, or C3A acceptance is
 authorized by this section.
+
+## 13. F1 executable database contract R1 — awaiting architect acceptance
+
+Lifecycle specification §R.28 owns the domain/API semantics; this section owns the
+corresponding exact schema, identity, ACL, and concurrency realization. The two are
+one contract and must be changed together. This documentation phase authorizes no
+migration or environment write.
+
+### 13.1 RPC parameters and outputs
+
+The sole native distribution writer is
+`public.definir_alocacao_necessidade_compra_fio(BIGINT, BIGINT, NUMERIC, TEXT)
+RETURNS JSONB`, with named parameters in this exact order:
+
+| Parameter | Meaning and validation |
+|---|---|
+| `p_necessidade_id BIGINT` | Native need locked `FOR UPDATE`; derives Pedido, material, color, origin, and OP-or-NULL provenance. |
+| `p_fornecedor_id BIGINT` | Existing supplier locked `FOR KEY SHARE`; type must be `fio_algodao` for cotton or `fio_poliester` for polyester. Current schema has no active flag. |
+| `p_kg_alocado NUMERIC` | Absolute target `NUMERIC(12,3)` semantics, non-negative, at most three decimals; zero means removal. |
+| `p_idempotency_key TEXT` | Trimmed 1-200 key in actor-scoped namespace `native_distribution_v1`. |
+
+The caller supplies none of Pedido, order, item, allocation, material/color, or OP.
+The function is `SECURITY DEFINER`, fixed empty `search_path`, internal
+`auth.uid()` + `is_admin()`, `authenticated` EXECUTE only.
+
+| Output | JSON type |
+|---|---|
+| `ok`, `codigo`, `idempotency_key`, `discriminador` | boolean/text; discriminator is `created`, `increased`, `reduced`, `removed`, or `unchanged`. |
+| `necessidade_id`, `pedido_id`, `fornecedor_id` | number/string UUID/number. |
+| `origem_tipo`, `op_id`, `material`, `cor_id`, `cor_poliester` | text/nullable number/text/nullable number/nullable text. |
+| `ordem_compra_id`, `ordem_compra_item_id`, `alocacao_id` | nullable numbers; removal returns the affected deleted IDs, absent zero-target returns NULL. |
+| `kg_anterior`, `kg_final`, `item_kg_pedido` | three-decimal numbers; item total NULL after item cleanup. |
+| `necessidade_kg_necessario`, `necessidade_kg_alocado`, `necessidade_kg_restante` | three-decimal numbers from locked post-state. |
+| `item_removido`, `ordem_removida` | booleans. |
+
+Errors use `{ok:false,codigo,erro}` and the stable taxonomy in §13.8. Only successful
+commands enter the immutable command journal.
+
+### 13.2 Idempotency and replay
+
+The future schema object is `public.ordem_compra_distribuicao_comandos`:
+
+| Column/constraint | Exact contract |
+|---|---|
+| `id BIGSERIAL PRIMARY KEY` | Immutable command identity. |
+| `idempotency_namespace TEXT NOT NULL` | CHECK exactly `native_distribution_v1`. |
+| `ator_id UUID NOT NULL` | FK `auth.users(id) ON DELETE RESTRICT`. |
+| `idempotency_key TEXT NOT NULL` | Trimmed length 1-200. |
+| `comando_payload JSONB NOT NULL` | Exact normalized request object. |
+| `comando_hash TEXT NOT NULL` | Lowercase 32-hex MD5 of canonical JSON text. |
+| `resultado JSONB NOT NULL` | Exact successful return object, including deleted IDs when cleanup occurred. |
+| `criado_em TIMESTAMPTZ NOT NULL DEFAULT now()` | Acceptance time only. |
+| unique | `(idempotency_namespace, ator_id, idempotency_key)`. |
+
+It has RLS, no client DML, and an owner-only immutable UPDATE/DELETE guard. No FK to
+draft order/item/allocation is allowed because successful cleanup must not destroy or
+block command history. Retention is permanent.
+
+Canonical request JSON is exactly
+`{"namespace":"native_distribution_v1","necessidade_id":N,"fornecedor_id":F,
+"kg_alocado":"0.000"}`. JSONB equality decides conflict; hash alone never does.
+
+| Replay case | Result |
+|---|---|
+| same actor/key/request | Return stored result byte-for-byte; zero business mutation. |
+| same actor/key/different request | `idempotencia_conflitante`. |
+| intentional later target change | New key required; evaluate current state. |
+| same target/new key | Accepted `unchanged` record. |
+| failed validation | No command row; a retry revalidates live state. |
+
+### 13.3 Allocation mutation API
+
+Separate increase/reduce/remove RPCs are rejected. The absolute target command is the
+only API:
+
+| Current/target | Row operation | Derived quantity/cleanup |
+|---|---|---|
+| absent / positive | Insert allocation after deriving draft/item/provenance. | Recompute item sum. |
+| positive / higher | UPDATE locked allocation `kg_alocado`. | Recompute and cap against need excluding current identity. |
+| positive / lower positive | UPDATE locked allocation `kg_alocado`. | Recompute item sum. |
+| equal | No business-row write. | Return current totals. |
+| positive / zero | DELETE allocation. | Delete empty item, then empty active draft. |
+| absent / zero | Create nothing. | Return `unchanged`, NULL entity IDs. |
+
+Every intentional operation uses a new command key; reuse with a changed target is a
+conflict. Parent must be native `rascunho`; emitted/cancelled/legacy state is frozen.
+
+### 13.4 Cleanup and derived quantity
+
+| Post-mutation state | Canonical transition |
+|---|---|
+| allocation remains positive | Retain allocation/item/order; item kg becomes allocation sum. |
+| allocation becomes zero | Delete allocation; zero-valued historical rows are prohibited. |
+| item has no allocation | Delete the draft item; empty shells are prohibited. |
+| active draft has no item | Delete the native draft; later distribution creates new identities. |
+| non-draft/history-bearing entity | No cleanup; return `estado_invalido` or `limpeza_conflitante`. |
+
+No lifecycle event is written for deletion of a never-emitted draft; the immutable
+command journal is the audit. Exact replay after cleanup returns stored deleted IDs.
+The one-active-draft partial unique index remains.
+
+F1 must add a deferred initially-deferred constraint trigger
+`trg_item_kg_pedido_derivado_guard` covering item and allocation mutations. At commit,
+every surviving item must have at least one allocation and exact
+`kg_pedido = SUM(kg_alocado)`. This permits transactional create-before-allocation and
+last-allocation-before-item-delete, while rejecting direct/manual divergence. The
+writer performs the recompute before commit. Freeze guards must also reject non-draft
+supplier/Pedido, item identity/existence, allocation, and quantity mutation.
+
+### 13.5 NULL-safe logical identity
+
+The exact identity is `(item_id, necessidade_id)` for both origins; OP is derived
+data and is not an identity input.
+
+| Origin | Stored provenance | Identity enforcement |
+|---|---|---|
+| native `op` | allocation OP equals non-NULL need OP; OP resolves to need Pedido. | Unique `(item_id, necessidade_id)`. |
+| native `pedido` | need OP NULL and allocation OP NULL. | Same unique `(item_id, necessidade_id)`; no NULL semantic gap. |
+| imported legacy | Existing real OP retained unchanged. | Same index after duplicate preflight; no conversion. |
+
+The migration hard-stops if `GROUP BY item_id, necessidade_id HAVING count(*)>1`
+returns any row, drops/replaces the old nullable-OP identity index, and installs an
+owner-only origin guard using `IS NOT DISTINCT FROM`. PostgreSQL `NULLS NOT DISTINCT`
+and partial-index alternatives are rejected as unnecessary; the need already carries
+the complete origin identity.
+
+### 13.6 ACL disposition
+
+| Function | Disposition | PUBLIC | anon | authenticated | service_role | Legacy/internal dependency |
+|---|---|---:|---:|---:|---:|---|
+| `definir_alocacao_necessidade_compra_fio(BIGINT,BIGINT,NUMERIC,TEXT)` | create/sole canonical native writer | no | no | yes, internal admin | no | none |
+| `definir_item_ordem_compra(UUID,BIGINT,TEXT,BIGINT,TEXT,NUMERIC)` | retain owner-only, deprecated | no | no | no | no | no legacy dependency; later dependency-safe drop |
+| `alocar_necessidade_compra_fio(BIGINT,BIGINT,BIGINT,NUMERIC)` | replace, retain owner-only | no | no | no | no | no legacy dependency |
+| `remover_item_ordem_compra(BIGINT)` | replace, retain owner-only | no | no | no | no | no legacy dependency |
+| `remover_alocacao_compra_fio(BIGINT)` | replace, retain owner-only | no | no | no | no | already rejects legacy |
+| `emitir_ordem_compra(BIGINT)` | keep inactive owner-only | no | no | no | no | unchanged |
+| `cancelar_ordem_compra(BIGINT)` | keep admin draft lifecycle | no | no | yes | no | unchanged |
+| `registrar_recebimento_ordem_compra(...)` | keep/correct shared shape | no | no | yes, existing actor checks | no | no activation/cutover |
+| `estornar_recebimento_ordem_compra(...)` | keep | no | no | yes, internal admin | no | unchanged |
+| `visualizar_importacao_saldo_inicial_c3a()` | keep read-only preview | no | no | yes | no | C3A unchanged/unaccepted |
+| `importar_saldo_inicial_ordem_compra_c3a(JSONB)` plus C3A mutation helpers | keep owner-only | no | no | no | no | Class A/D legacy import only |
+
+Flat db/66/`ordens_compra_fio` authority is untouched. F2 must replace current UI
+calls before any operational environment application; F1 contract acceptance does
+not authorize F2, implementation, or application.
+
+### 13.7 Phase C native receipt/ledger shapes
+
+| Shape | allocation | need/allocation OP | ledger/movement OP | Required behavior |
+|---|---|---|---|---|
+| OP-origin allocated | present | same real non-NULL OP | same OP | Validate order/item/need/Pedido/material/color and caps. |
+| Pedido-origin shared allocated | present | both NULL | NULL | Preserve all non-OP identities; no fabricated OP. |
+| excess | absent | not applicable | NULL | Preserve receipt/item/material/color and source-linked surplus movement. |
+| C3A attributed import | present | existing real OP | real OP | Retain db/73 frozen legacy validation; zero inventory posting. |
+
+| Existing object/path | Future F1 change |
+|---|---|
+| native ledger shape CHECK | Allocated branch requires allocation + zero excess, not non-NULL OP; excess branch remains allocation NULL + OP NULL + full excess. |
+| db/70 guard | Compare `v_alloc.op_id IS DISTINCT FROM NEW.op_id`; validate need origin/Pedido. |
+| db/71 replacement guard | Same NULL-safe comparison; preserve system import rules. |
+| receipt selection | Remove non-NULL filter; accept OP/equal or Pedido/both-NULL shape; line OP remains derived from allocation. |
+| quantity caps | Allocation/item caps unchanged. |
+| derivation/movement | Carry nullable OP; surplus and `saldo_fios` policy unchanged. |
+| reversal | Preserve source with NULL-safe comparisons; shared reversal remains NULL. |
+| history/read models | Emit shared rows with `op_id:null`; any OP enrichment is a LEFT join. |
+| db/72-db/73 C3A | No change to singleton, import identity/hash, real-OP legacy guard, non-posting, or ACL. |
+
+No data conversion or receipt/ledger history rewrite is required.
+
+### 13.8 Stable error identifiers
+
+| Code | Condition |
+|---|---|
+| `sem_permissao` | unauthenticated or non-admin actor |
+| `idempotencia_invalida` | blank/over-200 key |
+| `idempotencia_conflitante` | accepted key reused with different normalized request |
+| `necessidade_nao_encontrada` | missing need |
+| `necessidade_invalida` | legacy, zero, or non-native need |
+| `necessidade_origem_invalida` | invalid material/origin/nullable-OP shape |
+| `fornecedor_invalido` | missing supplier |
+| `fornecedor_inativo` | reserved but unreachable: current schema has no activity field; F1 adds none |
+| `fornecedor_incompativel` | supplier type/material mismatch |
+| `kg_invalido` | NULL, negative, scale/range invalid |
+| `excede_saldo` | absolute target exceeds need capacity excluding current identity |
+| `pedido_incoerente` | need/order/OP Pedido mismatch |
+| `op_incoerente` | derived OP differs or shared provenance is non-NULL |
+| `estado_invalido` | parent is not native active draft |
+| `alocacao_duplicada` | corrected logical identity has duplicates/unique conflict |
+| `limpeza_conflitante` | cleanup encounters frozen/history-bearing or unlocked divergent state |
+| `alocacao_invalida` | receipt line identity/provenance mismatch |
+
+### 13.9 Exact lock order
+
+| Order | Lock |
+|---:|---|
+| 1 | command-key transaction advisory lock over namespace + actor + trimmed key |
+| 2 | existing immutable command row `FOR UPDATE`, when present |
+| 3 | need row `FOR UPDATE` |
+| 4 | supplier row `FOR KEY SHARE` |
+| 5 | `(Pedido,supplier)` draft transaction advisory lock, then active draft `FOR UPDATE`/insert |
+| 6 | compatible item `FOR UPDATE`/insert |
+| 7 | logical allocation `FOR UPDATE`/insert |
+| 8 | mutation, cache readback, derived quantity, item/draft cleanup |
+| 9 | immutable successful-command insert |
+
+Advisory keys are exactly those specified in lifecycle §R.28.8. Single-need calls
+cannot form cross-need cycles. Need+draft locks serialize allocation/removal and
+cleanup/new-allocation races. Order row locking serializes emission: the loser
+re-evaluates committed status/state. Receipt requires emitted state and therefore
+cannot be concurrent with an accepted draft mutation.
+
+### 13.10 Implementation and revalidation matrix
+
+| Area | F1 implementation scope | Excluded/later |
+|---|---|---|
+| Forward migration | command journal; canonical RPC; duplicate preflight/new index; origin, deferred quantity, and freeze guards; exact ACL replacements; localized db/70-db/71 replacements | no rollback/rebuild of db/67-db/73; no data conversion |
+| Verification | isolated apply; no-CASCADE rollback; static/focused tests; role matrix; full-suite identity comparison | staging application requires separate authorization |
+| Concurrency | same OP need; same shared need; allocation/removal; duplicate key; competing same draft | no production or staging writes in contract phase |
+| Phase C | shared NULL-OP receipt/ledger/movement/history/reversal; unchanged OP/excess/C3A regression | later focused Phase C revalidation |
+| UI | contract-fixture coherence only | F2 Pedido/Insumos UI migration not authorized |
+| Sequence | contract acceptance → separate F1 implementation order → local verification → separately authorized staging validation | PRE-PROD, C3A acceptance, C3B+, production, main, push do not chain |
+
+Status: `F1 EXECUTABLE CONTRACT CLOSURE R1: COMPLETED / AWAITING ARCHITECT
+ACCEPTANCE`. F1 implementation remains not authorized.

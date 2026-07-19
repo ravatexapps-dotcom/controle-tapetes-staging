@@ -1,12 +1,17 @@
 # ACTIVE OPERATIONAL HANDOFF
 
-- **`PURCHASE-ORDER HYBRID ORIGIN — FORWARD CORRECTION F1` — `AUTHORIZED`
-  (2026-07-19).** Execute only after read-only readiness reconciliation returns
-  `READY_FOR_F1_IMPLEMENTATION`. F1 scope is database-only: atomic need-first writer,
-  derived OP-or-NULL provenance, NULL-safe allocation identity, allocation-derived
-  item quantity, deterministic removal/cleanup, obsolete database-writer restriction,
-  and localized Phase C shared-allocation compatibility. UI correction is outside F1.
-  Staging database writes, production, `main`, and push are prohibited.
+- **`PURCHASE-ORDER HYBRID ORIGIN — F1 EXECUTABLE CONTRACT CLOSURE R1` —
+  `COMPLETED / AWAITING ARCHITECT ACCEPTANCE` (2026-07-19).** The F1 readiness
+  gate returned and accepted `HARD_STOP — CONTRACT INCOMPLETE`; implementation did
+  not start and is not authorized. The missing executable decisions are now closed
+  in lifecycle §R.28 and schema contract §13: exact need-first absolute-target RPC,
+  immutable actor/key command idempotency, deterministic zero-allocation/item/draft
+  deletion, unique `(item_id, necessidade_id)` identity, deferred allocation-sum
+  quantity backstop, obsolete native-writer revocations, shared NULL-OP Phase C
+  shape, stable error taxonomy, and exact lock order. **Next action:** architect
+  acceptance or rejection. If accepted, a separate F1 implementation order is the
+  only next authorizable technical action. F1 implementation, F2 UI, C3A acceptance,
+  staging application, production, `main`, and push remain unauthorized.
 
 - **`PURCHASE-ORDER HYBRID ORIGIN — CANONICAL DOCUMENTATION CORRECTION R2` —
   `CLOSED / ACCEPTED` (accepted commit
@@ -33,8 +38,10 @@
   - C3A remains `IMPLEMENTED / VERIFIED IN STAGING / AWAITING ARCHITECT TECHNICAL
     ACCEPTANCE`; this correction does not accept it. No implementation, SQL,
     migration, tests, environment writes, production, `main`, or push are authorized.
-  - **Exact active boundary:** F1 implementation only after the readiness gate. No
-    F2 UI work, C3A acceptance, staging application, or later phase is implied.
+  - **Exact active boundary:** the readiness gate failed closed. F1 implementation
+    remains unauthorized pending architect acceptance of §R.28/§13 and a separate
+    implementation order. No F2 UI work, C3A acceptance, staging application, or
+    later phase is implied.
   - **Mandatory continuity — retransmit every path below in every future handoff:**
     1. `PROJECT_STATE.md`
     2. `AGENT_HANDOFF.md`

@@ -9,15 +9,23 @@ are in `docs/ledgers/G28_LEDGER.md`. HEAD/working tree/divergence: consult Git d
 
 ## Active phase and next action
 
-- **`PURCHASE-ORDER HYBRID ORIGIN — FORWARD CORRECTION F1` — `AUTHORIZED`
-  (2026-07-19).** R2 acceptance is recorded below. F1 owns database authority,
-  an atomic need-first writer, NULL-safe allocation identity, allocation-derived
-  item quantity, deterministic removal/cleanup, obsolete database-writer
-  restriction, and localized Phase C compatibility for shared allocations with
-  `op_id IS NULL`. UI correction remains outside F1. Staging database writes,
-  production, `main`, and push remain prohibited. Implementation may proceed only
-  after the read-only F1 readiness reconciliation returns
-  `READY_FOR_F1_IMPLEMENTATION`; otherwise stop without implementation.
+- **`PURCHASE-ORDER HYBRID ORIGIN — F1 EXECUTABLE CONTRACT CLOSURE R1` —
+  `COMPLETED / AWAITING ARCHITECT ACCEPTANCE` (2026-07-19).** The authorized
+  read-only F1 readiness reconciliation returned `HARD_STOP — CONTRACT INCOMPLETE`:
+  the accepted hybrid invariants did not define the exact need-first API,
+  command/replay identity, cleanup state machine, or obsolete-writer ACL matrix.
+  The hard stop is accepted and F1 implementation is **NOT AUTHORIZED**. Lifecycle
+  specification §R.28 and schema contract §13 now close the exact executable
+  contract: `definir_alocacao_necessidade_compra_fio(BIGINT,BIGINT,NUMERIC,TEXT)`;
+  actor-scoped immutable command journal; one absolute target including zero;
+  deletion of zero allocation, empty item, and empty never-emitted draft; unique
+  `(item_id, necessidade_id)` identity; allocation-derived item quantity with a
+  deferred database backstop; complete ACL disposition; shared Phase C allocated
+  lines with real OP or NULL according to the locked need; stable errors; and exact
+  lock order. This is documentation only. The next authorizable action is architect
+  acceptance or rejection of this contract; only acceptance permits a separate F1
+  implementation order. F2 UI, C3A acceptance, staging application, production,
+  `main`, and push remain unauthorized.
 
 - **`PURCHASE-ORDER HYBRID ORIGIN — CANONICAL DOCUMENTATION CORRECTION R2` —
   `CLOSED / ACCEPTED` (2026-07-19, accepted commit
@@ -47,8 +55,9 @@ are in `docs/ledgers/G28_LEDGER.md`. HEAD/working tree/divergence: consult Git d
   OP-surface ownership of supplier assignment, and every shared-receipt rule that
   requires an OP. No implementation, SQL, migration, test, grant, staging write,
   production, `main`, or push is authorized. **C3A remains implemented and verified
-  in staging but not architecturally accepted.** F1 is separately authorized above;
-  no later phase chains from this acceptance.
+  in staging but not architecturally accepted.** The later F1 readiness gate failed
+  closed and is now superseded operationally by the contract-closure entry above;
+  F1 implementation remains unauthorized. No later phase chains from this acceptance.
 
 - **`PHASE-C3A` — `IMPLEMENTED / VERIFIED IN STAGING / AWAITING ARCHITECT
   TECHNICAL ACCEPTANCE` (2026-07-19).** Contract `d23645f`, foundation `fca6ea7`,
@@ -93,9 +102,10 @@ are in `docs/ledgers/G28_LEDGER.md`. HEAD/working tree/divergence: consult Git d
   cutover (`M10`)"; cutover is done. **New fronts are authorizable again**, each by
   its own individual order. The consolidated, ranked `POST-LAUNCH DEBT REGISTER`
   (below) supersedes the former "residual risk register (12 items)".
-- **Next active technical phase:** `PURCHASE-ORDER HYBRID ORIGIN — FORWARD
-  CORRECTION F1`, authorized only within the scope and hard gate above. C3A remains
-  unaccepted; no later C3 phase chains automatically. Separately, the
+- **Next active technical phase:** architect acceptance or rejection of
+  `PURCHASE-ORDER HYBRID ORIGIN — F1 EXECUTABLE CONTRACT CLOSURE R1`. F1
+  implementation is not authorized until acceptance and a separate implementation
+  order. C3A remains unaccepted; no later C3 phase chains automatically. Separately, the
   highest-consequence open operational item remains
   `INGESTOR-DOC-CYCLE-VERIFY-DEFERRED`, an `ACTIVE PRODUCTION BLOCKER`. See the
   `POST-LAUNCH DEBT REGISTER`. **Standing reminder: flip the Supabase MCP back to

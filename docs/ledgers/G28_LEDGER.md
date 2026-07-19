@@ -4068,3 +4068,63 @@ MATERIAL_DIVERGENCES: NONE
 - **Boundary:** staging database writes, production, `main`, push, UI/F2, C3A
   acceptance, and later phases remain unauthorized. F1 implementation may begin only
   after its read-only readiness reconciliation passes.
+
+## 2026-07-19 — PURCHASE-ORDER HYBRID ORIGIN — F1 EXECUTABLE CONTRACT CLOSURE R1
+
+- **Authorization / baseline:** documentation-only architectural contract closure on
+  `dev` at `91fac9ca730660244bfc6d537e7282c4802f9089`; lineage from accepted C2
+  baseline `361d0f77388b0adac9b83997707cd49df938e4dd` confirmed. Known modified
+  `.gitignore` and untracked `AGENTS.md` remained untouched and unstaged. No SQL,
+  migration, application, test, grant, environment write, production, `main`, or
+  push was authorized.
+- **Accepted readiness result recorded:** F1 implementation readiness returned
+  `HARD_STOP — CONTRACT INCOMPLETE`. The accepted hybrid-origin model determined
+  provenance and quantity invariants but not the exact need-first API, replay model,
+  zero-allocation/item/draft cleanup transitions, or obsolete-writer ACL disposition.
+  Implementation did not start.
+- **Canonical command:**
+  `definir_alocacao_necessidade_compra_fio(p_necessidade_id BIGINT,
+  p_fornecedor_id BIGINT, p_kg_alocado NUMERIC, p_idempotency_key TEXT) RETURNS
+  JSONB`; authenticated active admin only. Need, supplier, absolute target, and
+  idempotency key are the only caller inputs. Pedido, material, color, order, item,
+  allocation, and real-or-NULL OP are derived under lock.
+- **Idempotency / mutation:** permanent immutable command journal in namespace
+  `native_distribution_v1`, unique by namespace + actor + key, canonical request
+  JSONB equality plus MD5 fingerprint. Same request/key returns the stored result;
+  changed request/key conflicts; intentional create/increase/reduction/removal uses a
+  new key. One absolute-target API is canonical; target zero is removal.
+- **Cleanup / quantity:** zero allocation row is deleted; an item with no allocations
+  is deleted; a never-emitted active draft with no items is deleted. No lifecycle
+  event is fabricated; the immutable command is the audit. Later distribution creates
+  new entity IDs while old-key replay returns stored deleted IDs. Every surviving
+  item is protected by a deferred constraint trigger requiring at least one allocation
+  and exact `kg_pedido = SUM(kg_alocado)`.
+- **Identity / provenance:** logical identity is exactly `(item_id,
+  necessidade_id)`, making shared NULL provenance structurally irrelevant to
+  uniqueness. Duplicate preflight is mandatory before replacing the old index.
+  OP-origin stores the need's real OP; Pedido-origin stores NULL; imported legacy
+  real-OP rows are preserved without conversion.
+- **ACL closure:** only the new need-first writer gets authenticated execution.
+  `definir_item_ordem_compra`, item-first `alocar_necessidade_compra_fio`,
+  `remover_item_ordem_compra`, and `remover_alocacao_compra_fio` become owner-only
+  deprecated definitions. Native emission remains owner-only/inactive; draft cancel,
+  receipt/reversal, read-only preview, flat coexistence, and owner-only C3A authority
+  retain their exact documented boundaries.
+- **Phase C shape:** allocated OP-origin lines keep the real OP; allocated shared
+  Pedido-origin lines retain full order/supplier/Pedido/item/need/allocation/material/
+  color/quantity/receipt/ledger/movement identity with NULL OP; excess remains
+  allocation-free and OP-free. db/70 and db/71 future guards become NULL-safe; receipt
+  selection drops the non-NULL filter; caps, reversal, surplus movement, and db/73
+  legacy real-OP/non-posting import remain unchanged. No history/data conversion.
+- **Concurrency / errors:** exact command-key advisory gate, command row, need,
+  supplier, draft advisory+row, item, allocation, mutation/cleanup, and command insert
+  order is closed. Stable codes cover authorization, need/supplier/quantity/origin,
+  capacity, replay conflict, frozen state, duplicates, cleanup, and receipt mismatch.
+- **Canonical transaction:** lifecycle §R.28 and schema contract §13 contain the
+  complete executable contract; backlog, current state, active handoff, documentation
+  index, and this append-only entry are synchronized. Earlier R2, REFUND, PRE-PROD,
+  C1, C2, and C3A entries were not rewritten.
+- **Status / next action:** `COMPLETED / AWAITING ARCHITECT ACCEPTANCE`. F1
+  implementation is not authorized. The only next authorizable action is architect
+  acceptance or rejection; acceptance must be followed by a separate F1
+  implementation order. F2 and C3A acceptance remain unauthorized/pending.
