@@ -10,7 +10,8 @@ are in `docs/ledgers/G28_LEDGER.md`. HEAD/working tree/divergence: consult Git d
 ## Active phase and next action
 
 - **`PURCHASE-ORDER HYBRID ORIGIN — F2 PEDIDO/INSUMOS UI CUTOVER R1` —
-  `IMPLEMENTED / VERIFIED LOCALLY / AWAITING ARCHITECT REVIEW` (2026-07-19).**
+  `CLOSED / ACCEPTED_LOCALLY_WITH_INTEGRATED_STAGING_VALIDATION_REQUIRED`
+  (2026-07-19).**
   Technical commit `577921150ac5a478294f28b1c8c3501dad23dbbb` adds the dedicated
   admin route `#/pedidos/:pedidoId/insumos` and its Pedido-detail/OP contextual
   navigation. `js/screens/pedido-insumos-distribuicao.js` renders canonical native
@@ -19,10 +20,16 @@ are in `docs/ledgers/G28_LEDGER.md`. HEAD/working tree/divergence: consult Git d
   and retains one command key for a retry while issuing a new key for a later modal
   action. Purchase-order entity screens no longer originate orders, items, or
   allocations; OP no longer assigns a purchasing supplier. F2 adds no stage or
-  migration. Focused F2/Pedido/OP/order/router tests pass 139/139. No staging
-  application occurred; `db/74` remains unapplied to staging; C3A remains
-  implemented and verified but not accepted. Production, `main`, remote changes,
-  and push remain prohibited.
+  migration. Focused F2/Pedido/OP/order/router tests pass 139/139. The architect
+  accepted technical commit `577921150ac5a478294f28b1c8c3501dad23dbbb` and
+  documentation closeout commit `911b7985297d3b33b4fbf4cf3575a39b8440ff42`.
+  Browser validation and staging deployment remain pending. The 133 broader-suite
+  failures remain pre-existing baseline debt; deterministic serial identity
+  comparison is incomplete. `PURCHASE-ORDER HYBRID ORIGIN — F3 INTEGRATED STAGING
+  DEPLOYMENT AND AUTHENTICATED VALIDATION R1` is authorized under the architect's
+  staging-only execution order. `db/74` remains unapplied until that controlled
+  gate. C3A remains implemented and verified but not accepted. Production, `main`,
+  and the prohibited project remain forbidden.
 
 - **`PURCHASE-ORDER HYBRID ORIGIN — F1 FORWARD CORRECTION IMPLEMENTATION R1` —
   `CLOSED / ACCEPTED_WITH_NONBLOCKING_BASELINE_TEST_DEBT` (2026-07-19).**
@@ -142,10 +149,12 @@ are in `docs/ledgers/G28_LEDGER.md`. HEAD/working tree/divergence: consult Git d
   cutover (`M10`)"; cutover is done. **New fronts are authorizable again**, each by
   its own individual order. The consolidated, ranked `POST-LAUNCH DEBT REGISTER`
   (below) supersedes the former "residual risk register (12 items)".
-- **Next authorizable action:** architect review of the integrated F1+F2 local
-  closeout, then a separately authorized integrated F1+F2 staging deployment and
-  validation. Staging application, Supabase writes, C3A acceptance, production,
-  `main`, remote changes, and push remain separately unauthorized. Separately, the
+- **Next authorized action:** execute `PURCHASE-ORDER HYBRID ORIGIN — F3 INTEGRATED
+  STAGING DEPLOYMENT AND AUTHENTICATED VALIDATION R1` against development/staging
+  Supabase `ucrjtfswnfdlxwtmxnoo`, beginning with contemporary read-only
+  reconciliation and continuing only on `READY_FOR_F3_STAGING_DEPLOYMENT`.
+  Production, `main`, the prohibited project, native emission activation, C3A
+  activation/acceptance, and later phases remain unauthorized. Separately, the
   highest-consequence open operational item remains
   `INGESTOR-DOC-CYCLE-VERIFY-DEFERRED`, an `ACTIVE PRODUCTION BLOCKER`. See the
   `POST-LAUNCH DEBT REGISTER`. **Standing reminder: flip the Supabase MCP back to

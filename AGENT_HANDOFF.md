@@ -1,7 +1,8 @@
 # ACTIVE OPERATIONAL HANDOFF
 
 - **`PURCHASE-ORDER HYBRID ORIGIN — F2 PEDIDO/INSUMOS UI CUTOVER R1` —
-  `IMPLEMENTED / VERIFIED LOCALLY / AWAITING ARCHITECT REVIEW` (2026-07-19).**
+  `CLOSED / ACCEPTED_LOCALLY_WITH_INTEGRATED_STAGING_VALIDATION_REQUIRED`
+  (2026-07-19).**
   Technical commit `577921150ac5a478294f28b1c8c3501dad23dbbb` installs
   `#/pedidos/:pedidoId/insumos`, loaded by
   `js/screens/pedido-insumos-distribuicao.js`. The surface owns only need,
@@ -9,11 +10,17 @@
   and shared Pedido needs have no OP selector. Exact retries retain the modal's
   command key; reopening for a later intended mutation creates a new key.
   Purchase-order entity screens remain consultation/lifecycle/receipt/history
-  surfaces. Focused F2/Pedido/OP/order/router coverage passes 139/139. No new
-  stage, migration, staging application, Supabase write, production, `main`,
-  remote change, push, or C3A acceptance occurred. `db/74` remains unapplied to
-  staging. Next authorizable action: integrated F1+F2 staging deployment and
-  validation, only after architect review and a separate order.
+  surfaces. Focused F2/Pedido/OP/order/router coverage passes 139/139. The architect
+  accepted technical commit `577921150ac5a478294f28b1c8c3501dad23dbbb` and
+  documentation closeout commit `911b7985297d3b33b4fbf4cf3575a39b8440ff42`.
+  Browser validation and staging deployment remain pending. The 133 broader-suite
+  failures are pre-existing baseline debt whose deterministic serial identity
+  comparison remains incomplete. `PURCHASE-ORDER HYBRID ORIGIN — F3 INTEGRATED
+  STAGING DEPLOYMENT AND AUTHENTICATED VALIDATION R1` is authorized against
+  `ucrjtfswnfdlxwtmxnoo`, subject to its reconciliation and readiness hard gate.
+  `db/74` remains unapplied until that gate. C3A remains implemented and verified
+  but not accepted. Production, `main`, the prohibited project, and later phases
+  remain forbidden.
 
 - **`PURCHASE-ORDER HYBRID ORIGIN — F1 FORWARD CORRECTION IMPLEMENTATION R1` —
   `CLOSED / ACCEPTED_WITH_NONBLOCKING_BASELINE_TEST_DEBT` (2026-07-19).**

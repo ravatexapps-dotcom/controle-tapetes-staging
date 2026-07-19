@@ -4270,3 +4270,23 @@ MATERIAL_DIVERGENCES: NONE
   implemented and verified but not accepted. Next authorizable action: an
   architect-reviewed, separately authorized integrated F1+F2 staging deployment
   and validation.
+
+## 2026-07-19 — PURCHASE-ORDER HYBRID ORIGIN — F2 ARCHITECT ACCEPTANCE REGISTRATION R1
+
+- **Architect ruling:** `PURCHASE-ORDER HYBRID ORIGIN — F2 PEDIDO/INSUMOS UI CUTOVER
+  R1` is `CLOSED / ACCEPTED_LOCALLY_WITH_INTEGRATED_STAGING_VALIDATION_REQUIRED`.
+- **Accepted commits and evidence:** technical commit
+  `577921150ac5a478294f28b1c8c3501dad23dbbb`; documentation closeout commit
+  `911b7985297d3b33b4fbf4cf3575a39b8440ff42`; focused F2/Pedido/OP/order/router
+  result `139/139 PASS`.
+- **Pending integrated evidence:** browser validation and staging application remain
+  pending. The 133 broader-suite failures are preserved as pre-existing baseline
+  debt; deterministic serial comparison of their identities remains incomplete and
+  must not be represented as exact identity proof.
+- **Authorization:** `PURCHASE-ORDER HYBRID ORIGIN — F3 INTEGRATED STAGING DEPLOYMENT
+  AND AUTHENTICATED VALIDATION R1` is authorized against development/staging project
+  `ucrjtfswnfdlxwtmxnoo`, subject to contemporary reconciliation and the explicit
+  readiness gate. C3A remains implemented and verified but not accepted.
+- **Boundary:** this acceptance does not authorize production, `main`, the prohibited
+  project, native-emission activation, C3A activation/acceptance, C3B, or any later
+  phase.
