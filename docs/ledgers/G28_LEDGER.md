@@ -3797,3 +3797,69 @@ risco residual e próxima fase indicada no fechamento.
   architect order only with `db/70`, focused tests, staging verification/cleanup,
   rollback rehearsal, and canonical closeout. Do not record architect acceptance or
   begin C3.
+
+## 2026-07-19 — PHASE-C2 — NATIVE RECEIPT FOUNDATION — IMPLEMENTED / VERIFIED IN STAGING / AWAITING ARCHITECT TECHNICAL ACCEPTANCE
+
+- **Order and baseline:** `PHASE C2 — NATIVE RECEIPT FOUNDATION, WRITER, REVERSAL
+  AND NARROW INVENTORY INTEGRATION`; `dev @
+  3395f83df0eb7db604df9a80d4a43a0601bc8b6c`. C1 lineage was confirmed. Permanent
+  `.gitignore` modified / `AGENTS.md` untracked residue was preserved untouched and
+  unstaged. Boundary commit: `9a5cb4f`; implementation commit: `833c2ad`.
+- **Implementation:** exactly migration
+  `db/70_ordem_compra_native_receipt_foundation.sql` and focused test
+  `tests/ordem-compra-native-receipt.smoke.js`. Staging records
+  `20260719160518 / 70_ordem_compra_native_receipt_foundation`. The sole receipt
+  ledger was extended additively; immutable command headers, actor-scoped exact
+  idempotency, admin/matching-supplier receipt, admin-only reversal, actor-scoped
+  history, database-derived caches, and one source-linked surplus movement per
+  ledger entry are active. Native emission remains ungranted.
+- **Functional and authorization evidence:** rollback-only scenarios passed for
+  partial/successive/multi-item/multi-allocation receipts, cotton and shared
+  polyester real-OP attribution, excess, exact retry, conflicting retry, draft/
+  pending/rejected/cancelled rejection, allocation cap, supplier ownership,
+  administrator partial/full reversal, over-reversal, immutable guards, history
+  scope, and exact stock delta. Authenticated clients can execute only the three C2
+  RPCs; header/ledger/movement direct mutation is denied; supplier reversal is
+  denied; `emitir_ordem_compra` remains denied.
+- **True concurrency evidence:** five independent-backend scenarios passed. Same
+  allocation used PIDs 2281708/2281707 (`ok` / post-wait `excede_alocacao`);
+  duplicate identity used 2281917/2281916 (both `ok`, same header); receipt/reversal
+  used 2282003/2282002 with a transaction-id lock wait and both `ok`; distinct
+  shared-polyester allocations/real OPs used 2282095/2282094 with a transaction-id
+  wait and both `ok`; same-item excess/cache used 2282204/2282205 with a
+  transaction-id wait, both `ok`, exact 5 kg ledger/movement/cache delta, and all
+  caps intact. Every waiting writer re-evaluated under lock.
+- **Rollback and cleanup:** dependency-safe C2 removal was rehearsed inside a
+  transaction without CASCADE and rolled back; db/67-db/69, 51 legacy header/item/
+  allocation rows, and flat ACL remained intact. All marked fixture rows and
+  temporary cron/probe objects were removed. Final staging: 64 flat needs; 51 legacy
+  headers/items/allocations; zero native orders, receipt headers, receipt ledger,
+  movements, or orphans; `saldo_fios` 5 rows / 2,685.020 kg; no cron, dblink, probe
+  schema/function, active job, or disabled C2 trigger.
+- **Checksums and tests:** flat ordered 25,608.300 kg; flat received and legacy item
+  received 20,221.280 kg; allocations and need cache 20,238.300 kg. Focused native
+  purchase-order tests: 48/48 pass; new focused file: 13/13 pass. Full JavaScript
+  suite: 3,888 tests, 3,755 pass, 133 pre-existing unrelated failures, 0 skipped;
+  none is attributed to the two C2 implementation files.
+- **STRUCTURAL POLICY COMPLIANCE:** the 1,211-line migration is the single atomic
+  file required by the architect; splitting it was expressly outside scope. The
+  approximately 347-line receipt writer and 256-line reversal remain below the
+  500-line acceptable function limit and are cohesive transactional lock/write
+  orchestrators; derivation and result helpers are already separated. Further
+  SECURITY DEFINER fragmentation would expand privilege surface and disperse the
+  lock contract. The 211-line focused test is bounded to C2. No UI/application
+  monolith, parallel authority, silent fallback, or undocumented cross-layer
+  dependency was introduced.
+- **Scope preservation:** no import/seed, cutover, flat-writer fence, productive
+  reader switch, flat ACL change, UI, emission activation/grant, production,
+  `main`, push, C3, C4, or C5 action occurred. C2 is not architect-accepted.
+
+PLAN_ALIGNMENT:
+MASTER_PLAN: docs/architecture/ORDEM_COMPRA_LIFECYCLE_SPEC_PROPOSED.md (§R.24-§R.25) and docs/architecture/PEDIDO_PRODUCTION_FLOW_BACKLOG.md
+LAST_ACCEPTED_PHASE: PHASE-C1 (CLOSED / ACCEPTED)
+CURRENT_PHASE: PHASE-C2 (IMPLEMENTED / VERIFIED IN STAGING / AWAITING ARCHITECT TECHNICAL ACCEPTANCE)
+NEXT_AUTHORIZABLE_ACTION: ARCHITECT TECHNICAL ACCEPTANCE DECISION FOR PHASE-C2 ONLY
+OPEN_ARCHITECT_DECISIONS: ACCEPT OR REJECT PHASE-C2 TECHNICAL CLOSEOUT; C3 REMAINS UNAUTHORIZED
+DEFERRED_PHASES: PHASE-C3; PHASE-C4; PHASE-C5; PRODUCTION; MAIN; PUSH
+STATE_FILES_UPDATED: PROJECT_STATE.md; AGENT_HANDOFF.md; docs/architecture/ORDEM_COMPRA_LIFECYCLE_SPEC_PROPOSED.md; docs/architecture/PEDIDO_PRODUCTION_FLOW_BACKLOG.md; docs/architecture/PEDIDO_OP_SCHEMA_CONTRACT.md; docs/ledgers/G28_LEDGER.md
+MATERIAL_DIVERGENCES: NONE

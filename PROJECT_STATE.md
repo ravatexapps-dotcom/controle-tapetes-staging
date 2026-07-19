@@ -315,7 +315,8 @@ are in `docs/ledgers/G28_LEDGER.md`. HEAD/working tree/divergence: consult Git d
   audit is deferred as a separate post-stabilization, non-blocking activity. The
   next authorizable action requires a separate architect order; this acceptance
   authorizes neither PRE-PROD-B nor Phase C implementation.
-- **`PHASE-C2` — `BOUNDARY CLOSED / IMPLEMENTATION AUTHORIZED / STAGING PENDING`
+- **`PHASE-C2` — `IMPLEMENTED / VERIFIED IN STAGING / AWAITING ARCHITECT
+  TECHNICAL ACCEPTANCE`
   (2026-07-19, branch `dev`, baseline
   `3395f83df0eb7db604df9a80d4a43a0601bc8b6c`).** The architect authorized the
   C2 native receipt foundation under the exact contract in lifecycle spec
@@ -337,12 +338,21 @@ are in `docs/ledgers/G28_LEDGER.md`. HEAD/working tree/divergence: consult Git d
   versus conflict. **Locks:** order header; affected items ascending; allocations
   ascending; command identity; ledger rows ascending; inventory identities in
   deterministic material/color order; all balances are re-evaluated under lock.
+  **Implemented:** documentation boundary commit `9a5cb4f`; migration and focused
+  test commit `833c2ad`; staging migration `20260719160518 / 70`; 48/48 focused
+  native purchase-order tests pass. Receipt, reversal, read-model, ACL, immutable
+  guard, allocation/excess, derived-cache, inventory-delta, idempotency, and
+  true-concurrency matrices passed. The dependency-safe rollback rehearsal passed
+  inside a rolled-back transaction. All marked fixtures, cron/probe objects, and
+  transient rows were removed; staging returned to zero native receipts/ledger/
+  movements and `saldo_fios` returned to 5 rows / 2,685.020 kg. The full JavaScript
+  suite completed with 3,755 pass / 133 pre-existing unrelated failures; none is
+  attributable to the two C2 implementation files.
   **Explicit exclusions:** no legacy seed/import, cutover, flat-writer fence,
   productive-reader switch, flat grant revocation, UI, native emission activation,
   `emitir_ordem_compra` grant, production, `main`, or push. C3/C4/C5 remain separate
-  and unauthorized. Continue only after the documentation-only boundary commit
-  passes; final C2 status may reach `IMPLEMENTED / VERIFIED IN STAGING / AWAITING
-  ARCHITECT TECHNICAL ACCEPTANCE`, never architect acceptance.
+  and unauthorized. C2 is not architect-accepted. The only next authorizable action
+  is the architect's technical acceptance decision for C2; no phase chains.
 - **`PHASE-C1` — `CLOSED / ACCEPTED` (2026-07-19, documentation-only contract,
   branch `dev`, baseline `47b8e6a6bc8dea0cd0fe053fef2ef9f2f16f14fa`).** The
   architect accepted the native receipt authority contract recorded in

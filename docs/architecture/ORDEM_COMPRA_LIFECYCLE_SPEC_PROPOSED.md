@@ -2082,7 +2082,8 @@ physical schema decisions remain open. **Status:** `PHASE-C1` is `CLOSED / ACCEP
 > **Order:** `PHASE C2 — NATIVE RECEIPT FOUNDATION, WRITER, REVERSAL AND
 > NARROW INVENTORY INTEGRATION` (2026-07-19).
 > **Baseline:** `dev @ 3395f83df0eb7db604df9a80d4a43a0601bc8b6c`.
-> **Status:** `BOUNDARY CLOSED / IMPLEMENTATION AUTHORIZED / STAGING PENDING`.
+> **Status:** `IMPLEMENTED / VERIFIED IN STAGING / AWAITING ARCHITECT TECHNICAL
+> ACCEPTANCE`.
 > This section resolves every C2 question left by §R.24.11 and governs migration
 > `db/70_ordem_compra_native_receipt_foundation.sql`. It does not authorize C3,
 > C4, C5, production, `main`, or push.
@@ -2269,6 +2270,30 @@ C2 creates no legacy opening balance, import, cutover fence, flat-consumer migra
 productive-reader switch, flat UPDATE revocation, receipt UI, supplier UI, native
 emission activation, or emission grant. C3 owns cutover/import/readers/ACL; C4 owns
 admin UI and any later supplier UI; C5 is the separate emission gate. No phase chains.
+
+### §R.25.10 Implementation and staging verification
+
+Migration `20260719160518 / 70_ordem_compra_native_receipt_foundation` installed the
+exact C2 contract on staging `ucrjtfswnfdlxwtmxnoo`. The focused native purchase-order
+suite passed 48/48. Rollback-only functional evidence covered partial, successive,
+multi-item, multi-allocation, real-OP attribution, explicit excess, supplier scope,
+administrator reversal, exact replay/conflict, state rejection, allocation caps,
+immutable guards, read scope, ledger/cache derivation, and source-linked stock delta.
+
+Five independent database-backend scenarios verified same-allocation contention,
+duplicate idempotency, receipt/reversal collision, shared-polyester allocations for
+distinct real OPs, and same-item excess/cache serialization. Waiting transactions
+re-evaluated balances under lock. The dependency-safe rollback rehearsal removed all
+C2 objects inside a transaction and then rolled back, proving restoration without
+CASCADE or damage to db/67-db/69 or flat ACL.
+
+All marked fixtures and temporary concurrency infrastructure were removed. Final
+staging state has zero native order, receipt-header, receipt-ledger, or movement rows;
+no cron, dblink, probe schema/function, disabled trigger, or orphan remains;
+`saldo_fios` is restored to 5 rows / 2,685.020 kg. Native emission remains ungranted,
+flat ACL is unchanged, and C3/C4/C5 remain unauthorized. The full JavaScript suite
+completed with 3,755 pass / 133 unrelated pre-existing failures; no failure is
+attributed to `db/70` or its focused test. C2 awaits architect technical acceptance.
 
 ---
 

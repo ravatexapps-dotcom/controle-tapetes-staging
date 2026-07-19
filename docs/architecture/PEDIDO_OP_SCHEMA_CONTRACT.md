@@ -568,8 +568,8 @@ INSUMOS → TECELAGEM → ACABAMENTO → EXPEDIÇÃO → ENTREGA
 > acceptance. This C1 record authorizes no schema implementation, migration, staging
 > write, grant, UI, test, or C2 work.
 >
-> **PHASE-C2 implementation boundary (2026-07-19, §R.25; implementation
-> authorized, staging pending).** Migration `db/70` may create immutable
+> **PHASE-C2 implementation boundary (2026-07-19, §R.25; `IMPLEMENTED /
+> VERIFIED IN STAGING / AWAITING ARCHITECT TECHNICAL ACCEPTANCE`).** Migration `db/70` creates immutable
 > `ordem_compra_recebimentos` headers, extend the existing receipt ledger for native
 > command/allocation/real-OP/material identity, create the source-linked
 > `ordem_compra_fio_movimentos_estoque` surplus movement object, and install three
@@ -586,6 +586,15 @@ INSUMOS → TECELAGEM → ACABAMENTO → EXPEDIÇÃO → ENTREGA
 > reverse; no direct client DML. The existing INSUMOS source row and both flat
 > consumers remain unchanged through C2. Cutover/import/readers/flat ACL are C3; UI
 > is C4; emission remains inactive until the later C5 gate.
+>
+> **C2 staging closeout.** Staging records
+> `20260719160518 / 70_ordem_compra_native_receipt_foundation`. The 48/48 focused
+> tests, complete rollback-only functional/ACL matrix, five independent-backend
+> concurrency scenarios, source-linked inventory reconciliation, immutable guards,
+> exact idempotency, cleanup, and dependency-safe rolled-back removal rehearsal all
+> passed. Final native receipt/header/ledger/movement residue is zero; legacy
+> rows/checksums, `saldo_fios` (5 rows / 2,685.020 kg), flat ACL, and the ungranted
+> emission boundary remain unchanged. No C3 cutover or acceptance is implied.
 
 ### 6.3. UI rules
 
