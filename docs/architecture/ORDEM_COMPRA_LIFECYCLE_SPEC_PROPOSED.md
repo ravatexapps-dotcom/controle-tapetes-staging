@@ -3029,3 +3029,24 @@ cannot justify stock mutation without a separate physical inventory reconciliati
 C3A may create inactive `legacy-active` cutover/snapshot/baseline-hash metadata and an
 owner-only read-only preview. It does not authorize real seed, final snapshot, fence,
 reader/writer switch, flat ACL change, native emission, or C3B/C3C/C3D execution.
+
+### §R.26.1 C3A implementation checkpoint (awaiting architect acceptance)
+
+Staging migrations `20260719172749 / 71`, `20260719174006 / 72`, and
+`20260719175732 / 73` implement the inactive foundation, protected singleton, and
+owner-only maintenance command. The command uses the complete documented identity,
+canonical three-decimal quantities, immutable semantic fingerprints, source plus
+full-identity transaction advisory locks, exact immutable replay, and
+`idempotencia_conflitante` for payload reuse. It accepts only frozen Class A/D source
+shape while `maintenance_fenced/previewed`, records Class-D
+`recebido_sem_emissao`, uses no physical receipt date/document/human actor, creates
+allocation plus optional item-level excess entries, and never posts inventory or
+permits reversal.
+
+Rollback-controlled staging behavior, four distinct-backend scenarios, db/73-only
+and full db/71-db/73 no-CASCADE rollback rehearsals, 56 focused tests, and stable
+detached full-suite identity comparison passed. Final staging remains the inactive
+`legacy_active/not_started` singleton with zero imported data and the unchanged
+39/44 preview and inventory hash. This checkpoint is not architect acceptance and
+does not authorize real import, fence activation, reader/writer or ACL switch,
+emission, C3B/C3C/C3D, production, `main`, or push.

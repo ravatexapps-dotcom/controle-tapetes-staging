@@ -9,14 +9,32 @@ are in `docs/ledgers/G28_LEDGER.md`. HEAD/working tree/divergence: consult Git d
 
 ## Active phase and next action
 
-- **`PHASE-C3A` — `AUTHORIZED / CONTRACT CLOSURE IN PROGRESS` (2026-07-19).**
-  Staging-only foundation for a future C3 maintenance cutover. `saldo_fios` at the
-  future cutover is the authoritative opening inventory baseline:
-  `import_saldo_inicial` reconstructs receipt state only, creates no inventory
-  movement, and does not alter `saldo_fios` or `saldo_fios_op`.
-  `HISTORICAL_SALDO_FIOS_PROVENANCE_UNAVAILABLE` is nonblocking historical debt.
-  C3A may not seed real rows, activate a fence, change readers/writers or flat ACL,
-  activate native emission, access production, push, or begin C3B/C3C/C3D/C4/C5.
+- **`PHASE-C3A` — `IMPLEMENTED / VERIFIED IN STAGING / AWAITING ARCHITECT
+  TECHNICAL ACCEPTANCE` (2026-07-19).** Contract `d23645f`, foundation `fca6ea7`,
+  protected singleton correction `0908b77`, and owner-only import command
+  `94e6068` are installed on `dev`. Staging migrations are
+  `20260719172749 / 71`, `20260719174006 / 72`, and `20260719175732 / 73`.
+  `db/73` supplies `importar_saldo_inicial_ordem_compra_c3a(jsonb)`: owner
+  `postgres`, `SECURITY DEFINER`, fixed empty `search_path`, and no EXECUTE for
+  PUBLIC, `anon`, `authenticated`, or `service_role`. The immutable identity is
+  cutover + flat row + mapping + item in `legacy_initial_balance_v1`; canonical
+  normalized JSONB plus SHA-256 fingerprint controls exact replay versus
+  `idempotencia_conflitante`. Transaction-scoped source and full-identity advisory
+  locks serialize duplicates without globally serializing unrelated sources.
+  Rollback-only functional, concurrency, non-posting, non-reversibility, ACL, and
+  no-CASCADE rollback matrices passed. Detached full-suite comparison is stable:
+  baseline 3,864/3,731/133, current 3,872/3,739/133, zero baseline-only,
+  current-only, or unstable failure identities; canonical normalized SHA-256
+  `af9246c162a514f1162d845bb129980f9a1e4505c46323966d8def262a48a192`.
+  Final staging remains inactive: singleton `id=1 / legacy_active / not_started`,
+  NULL snapshot/productive markers, zero headers/ledger/movements/baselines, preview
+  39/44 / 20,221.280 kg / 405.980 kg excess / zero movements, and `saldo_fios`
+  5 rows / 2,685.020 kg with hash
+  `79d5c1393193b67cd9f3a7b8cdc5037ce919bca87084d59f84a08949baafd566`.
+  `HISTORICAL_SALDO_FIOS_PROVENANCE_UNAVAILABLE` remains nonblocking debt. No real
+  import, fence, reader/writer or flat ACL switch, native emission, production,
+  push, or C3B/C3C/C3D/C4/C5 occurred. The next single authorizable action is the
+  architect's PHASE-C3A technical acceptance decision.
 
 - **`G28-MIGRATION-TRACK` (`PRODUCTION-MIGRATION-M0-M10`) — `COMPLETE / CLOSED`
   (2026-07-18).** The system is **LIVE IN PRODUCTION** at
@@ -34,11 +52,12 @@ are in `docs/ledgers/G28_LEDGER.md`. HEAD/working tree/divergence: consult Git d
   cutover (`M10`)"; cutover is done. **New fronts are authorizable again**, each by
   its own individual order. The consolidated, ranked `POST-LAUNCH DEBT REGISTER`
   (below) supersedes the former "residual risk register (12 items)".
-- **Next authorizable action:** any new front, by its own order. **The highest-consequence
-  open item is `INGESTOR-DOC-CYCLE-VERIFY-DEFERRED` — an `ACTIVE PRODUCTION BLOCKER`:
-  the Ingestor's Google OAuth token is expired, so no documents are entering the live
-  system.** See the `POST-LAUNCH DEBT REGISTER`. **Standing reminder: flip the Supabase
-  MCP back to read-only** (still management-scoped/write-capable from `M2`/`M3`).
+- **Next authorizable action:** architect technical acceptance or rejection of
+  `PHASE-C3A` only; no later C3 phase chains automatically. Separately, the
+  highest-consequence open operational item remains
+  `INGESTOR-DOC-CYCLE-VERIFY-DEFERRED`, an `ACTIVE PRODUCTION BLOCKER`. See the
+  `POST-LAUNCH DEBT REGISTER`. **Standing reminder: flip the Supabase MCP back to
+  read-only** (still management-scoped/write-capable from `M2`/`M3`).
 - **`ORDEM-COMPRA REFOUNDATION` — Part R `RATIFIED / ACCEPTED` (2026-07-18).**
   The architect accepted the governing refounded specification against baseline
   `f2261ec` after the final read-only verification returned `RATIFIABLE`. Acceptance

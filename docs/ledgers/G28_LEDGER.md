@@ -3915,3 +3915,85 @@ OPEN_ARCHITECT_DECISIONS: C3 IMPLEMENTATION REQUIRES A SEPARATE ARCHITECT AUTHOR
 DEFERRED_PHASES: PHASE-C3 IMPLEMENTATION; PHASE-C4; PHASE-C5; PRODUCTION; MAIN; PUSH
 STATE_FILES_UPDATED: PROJECT_STATE.md; AGENT_HANDOFF.md; docs/architecture/ORDEM_COMPRA_LIFECYCLE_SPEC_PROPOSED.md; docs/architecture/PEDIDO_PRODUCTION_FLOW_BACKLOG.md; docs/architecture/PEDIDO_OP_SCHEMA_CONTRACT.md; docs/ledgers/G28_LEDGER.md
 MATERIAL_DIVERGENCES: NONE
+
+## 2026-07-19 — PHASE-C3A-R1/R2 — INACTIVE CUTOVER AND OWNER-ONLY IMPORT COMMAND — IMPLEMENTED / VERIFIED IN STAGING / AWAITING ARCHITECT TECHNICAL ACCEPTANCE
+
+- **Authorization and lineage:** accepted pre-C3A baseline
+  `361d0f77388b0adac9b83997707cd49df938e4dd`; contract `d23645f`; foundation
+  `fca6ea7`; R1 protected singleton `0908b77`; R2 command `94e6068`. Staging only;
+  production, prohibited project, `main`, and push were not accessed.
+- **Applied migrations:** `20260719172749 / 71_ordem_compra_c3a_cutover_foundation`,
+  `20260719174006 / 72_ordem_compra_c3a_cutover_initial_state`, and
+  `20260719175732 / 73_ordem_compra_c3a_import_command`.
+- **Root cause and correction:** db/71 created import-compatible header/type/trigger
+  foundations but omitted the owner command, so duplicate replay/conflict and real
+  concurrency semantics did not exist. It also retained a ledger actor check that
+  excluded `sistema` and a NOT NULL receipt date that would fabricate a physical
+  date. db/73 adds exactly one owner-only command plus the minimum actor/date and
+  source-identity support; no application or activation path was added.
+- **Command contract:** `public.importar_saldo_inicial_ordem_compra_c3a(jsonb)`,
+  owner `postgres`, `SECURITY DEFINER`, empty fixed `search_path`, EXECUTE revoked
+  from PUBLIC/anon/authenticated/service_role. Namespace
+  `legacy_initial_balance_v1`; identity is cutover + flat row + mapping + item.
+  Canonical request JSONB uses explicit NULL and three-decimal kg strings. Its
+  SHA-256 and the full derived payload SHA-256 cover snapshot identity/hash,
+  order/item/allocation/real OP, Class A/D, total/attributed/excess kg, and provenance;
+  volatile execution time is excluded and stored as header acceptance time only.
+  Class D records `recebido_sem_emissao`; no physical date, document, emission,
+  acceptance, human actor, or representative OP is fabricated.
+- **Locks and idempotency:** source key is
+  `hashtextextended('legacy_initial_balance_v1|source|cutover|flat',0)`; full key is
+  `hashtextextended('legacy_initial_balance_v1|identity|cutover|flat|mapping|item',0)`.
+  Both are transaction-scoped. A 64-bit hash collision could conservatively serialize
+  unrelated work but cannot bypass payload/source validation or uniqueness. Exact
+  retry returns the stored header and ledger IDs with no mutation; changed quantity,
+  mapping, snapshot, or other meaning returns `idempotencia_conflitante`.
+- **Functional gates:** rollback-controlled pre-apply and live-staging matrices passed
+  first valid A/D import, exact retry, quantity/mapping/snapshot conflict, B/C and zero
+  denial, allocation overflow, valid excess, fabricated excess allocation denial,
+  execution denial, inventory non-posting, and import non-reversibility. Import shape
+  is one allocation line plus an excess line only when excess is positive; line sum
+  equals source total and allocation never exceeds the real allocation.
+- **Distinct-backend concurrency:** scenario A PIDs `18624/20432`, full identity lock
+  `-6666601321319751478`, observed advisory wait, one header/two ledger rows and exact
+  IDs `3 / 3,4` returned to both calls. Scenario B PIDs `29848/17092`, identity lock
+  `5039416729415450130`, observed advisory wait, first `ok`, second
+  `idempotencia_conflitante`, one header/one ledger/no movement. Scenario C import/C2
+  PIDs `14692/24184` completed independently: import two lines/zero movement; C2 one
+  receipt/one movement/+1 kg isolated test-stock effect. Scenario D flat/import PIDs
+  `15856/23736` under `legacy_active`: transient flat 4.125 kg write succeeded and
+  rolled back to 4.000; import rejected `estado_cutover_invalido`; no source-4 header.
+  All concurrency fixtures ran in an isolated PostgreSQL instance, which was stopped
+  and removed; real staging cutover state was never activated.
+- **Rollback rehearsals:** db/73-only and full db/71-db/73 rollback passed inside
+  staging transactions without CASCADE. Dependency-safe order removed command/index,
+  restored ledger actor/date shape, removed singleton protection/row, restored db/70
+  guard/trigger/header/ledger constraints, then removed baseline/cutover tables. C2
+  admin and matching-supplier receipt passed; supplier reversal stayed denied; admin
+  reversal and flat receipt passed; inventory remained unchanged. db/71, db/72, and
+  db/73 were restored in order and the rehearsal transaction rolled back cleanly.
+- **Tests and regression:** focused purchase-order suite `56/56`. Two detached runs
+  per revision of `node --test tests/*.js`: baseline 3,864 tests / 3,731 pass / 133
+  known failures; current 3,872 / 3,739 / 133. Baseline-only, current-only, and
+  unstable identities are all zero; canonical normalized SHA-256 remains
+  `af9246c162a514f1162d845bb129980f9a1e4505c46323966d8def262a48a192`.
+- **Final cleanup:** migrations 71/72/73 applied; one singleton
+  `id=1 / legacy_active / not_started`, NULL snapshot/baseline/productive markers;
+  zero headers, ledger, movements, baseline rows, fixture rows, transient functions,
+  active probe sessions, disabled triggers, or temporary grants. Preview remains
+  39 headers / 44 ledger / 20,221.280 kg / 405.980 kg excess / zero movements.
+  `saldo_fios` remains 5 rows / 2,685.020 kg, normalized hash
+  `79d5c1393193b67cd9f3a7b8cdc5037ce919bca87084d59f84a08949baafd566`;
+  `saldo_fios_op` remains zero. Flat ACL/writers and native emission denial are
+  unchanged.
+- **Structural policy:** db/73 is a cohesive 388-line migration, below the 500-line
+  acceptable file limit. The single long command is a documented §7 exception: the
+  architect required one owner-only atomic maintenance command; splitting state,
+  snapshot, lock, fingerprint, and immutable-write orchestration would add privileged
+  surface and disperse the transaction contract. No UI/application monolith or
+  parallel source of truth was introduced.
+- **Boundary:** no real import, snapshot, fence, reader/writer switch, flat ACL
+  closure, Class-B receipt, activation RPC, db/74, emission, C3B/C3C/C3D/C4/C5,
+  production, `main`, or push. `HISTORICAL_SALDO_FIOS_PROVENANCE_UNAVAILABLE`
+  remains nonblocking debt. The next single authorizable action is architect technical
+  acceptance or rejection of PHASE-C3A. Architect acceptance is not recorded here.

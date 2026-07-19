@@ -823,3 +823,15 @@ and inventory-movement sources. Productive receipt/reversal retain the source-li
 movement invariant. The later cutover state starts `legacy-active`; C3A must not fence
 flat writers in that state. Snapshot/baseline hashes are reconciliation metadata, not
 inventory mutation authority.
+
+Staging checkpoint (awaiting architect acceptance): db/71-db/73 install the inactive
+singleton and owner-only JSONB import command. Import entries require the system actor
+and NULL physical receipt date; productive/legacy receipt rows retain their prior
+actor/date rules. The command validates the frozen source/mapping/item/allocation and
+real OP, fingerprints canonical request plus derived provenance, serializes source and
+complete identity with transaction advisory locks, returns immutable IDs on exact
+retry, and rejects material reuse as `idempotencia_conflitante`. A source-identity
+unique index is defense in depth, not the primary concurrency mechanism. Verified
+import rows create zero `ordem_compra_fio_movimentos_estoque`, `saldo_fios`, or
+`saldo_fios_op` effects and remain non-reversible. Final staging contains no import or
+fixture rows and remains `legacy_active`.

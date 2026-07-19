@@ -1,13 +1,53 @@
 # ACTIVE OPERATIONAL HANDOFF
 
-- **`PHASE-C3A` — `AUTHORIZED / CONTRACT CLOSURE IN PROGRESS` (2026-07-19).**
-  Lifecycle specification §R.26 governs an inactive staging-only foundation.
-  Historical import reconstructs receipt state and has zero inventory movement; it
-  must not alter `saldo_fios` or `saldo_fios_op`. Record
-  `HISTORICAL_SALDO_FIOS_PROVENANCE_UNAVAILABLE`; do not repair it without a distinct
-  physical inventory reconciliation authorization. Real import, fencing,
-  reader/writer switch, flat ACL closure, emission, production, `main`, and push are
-  prohibited. C3B/C3C/C3D remain separate phases.
+- **`PHASE-C3A` — `IMPLEMENTED / VERIFIED IN STAGING / AWAITING ARCHITECT
+  TECHNICAL ACCEPTANCE` (2026-07-19).** Governing specification: §R.26.
+  - Lineage: accepted pre-C3A baseline `361d0f7`; contract `d23645f`; foundation
+    `fca6ea7`; R1 singleton protection `0908b77`; R2 command `94e6068`. Applied
+    staging migrations: `20260719172749 / 71`, `20260719174006 / 72`, and
+    `20260719175732 / 73`.
+  - R1 left exactly one protected inactive singleton. R2 adds owner-only
+    `importar_saldo_inicial_ordem_compra_c3a(jsonb)` and the minimum ledger support:
+    `sistema` actor only for import rows and NULL physical receipt date only for
+    import rows. Owner is `postgres`; function is `SECURITY DEFINER`, fixed empty
+    `search_path`; PUBLIC/anon/authenticated/service_role execution is revoked.
+  - Identity is `legacy_initial_balance_v1|cutover|flat|mapping|item`. The source
+    lock is `hashtextextended('legacy_initial_balance_v1|source|cutover|flat',0)`;
+    the full retry lock is `hashtextextended('legacy_initial_balance_v1|identity|cutover|flat|mapping|item',0)`.
+    Canonical kg strings use three decimals; explicit NULLs, frozen snapshot identity
+    and hash, derived order/allocation/real OP, Class A/D provenance, and Class-D
+    `recebido_sem_emissao` are fingerprinted. Execution time is stored only as
+    command-acceptance metadata. Exact retry returns the original header/ledger IDs;
+    mismatch returns `idempotencia_conflitante` with no mutation.
+  - Rollback-controlled staging matrices passed first command, exact retry, changed
+    quantity/mapping/snapshot, B/C denial, zero/overflow denial, excess shape,
+    fabricated allocation denial, grant denial, non-posting, and non-reversibility.
+    Distinct-backend evidence: exact duplicate PIDs `18624/20432` waited on advisory
+    lock and returned header `3`, ledger `3/4`; conflict PIDs `29848/17092` waited and
+    returned `ok/idempotencia_conflitante`; C2/import PIDs `24184/14692` ran without
+    cross-command corruption (movements `1/0`); legacy-active flat/import PIDs
+    `15856/23736` preserved the flat write while import rejected the inactive state.
+  - Both db/73-only and full db/71-db/73 dependency-safe rollback rehearsals passed
+    without CASCADE. The full rehearsal proved C2 admin and matching-supplier receipt,
+    supplier reversal denial, admin reversal, flat writing, zero stock drift, then
+    restored db/71, db/72, and db/73 in order.
+  - Focused purchase-order tests pass `56/56`. Two detached runs per revision of
+    `node --test tests/*.js` are stable: baseline `3,864 / 3,731 / 133`; current
+    `3,872 / 3,739 / 133`; zero baseline-only/current-only/unstable identities;
+    canonical normalized SHA-256
+    `af9246c162a514f1162d845bb129980f9a1e4505c46323966d8def262a48a192`.
+  - Final staging: one `legacy_active/not_started` singleton; NULL snapshot,
+    inventory-baseline and productive markers; zero headers, ledger, movements and
+    baseline rows; preview 39 headers / 44 entries / 20,221.280 kg / 405.980 kg excess
+    / zero movements. `saldo_fios` remains 5 rows / 2,685.020 kg, hash
+    `79d5c1393193b67cd9f3a7b8cdc5037ce919bca87084d59f84a08949baafd566`;
+    `saldo_fios_op` remains zero. No fixture, probe, disabled trigger, temporary grant,
+    real import, fence, ACL/reader/writer switch, emission, production, `main`, push,
+    or C3B/C3C/C3D/C4/C5 action occurred.
+  - `HISTORICAL_SALDO_FIOS_PROVENANCE_UNAVAILABLE` remains nonblocking debt. Do not
+    repair it without separate physical inventory reconciliation authorization. The
+    next single authorizable action is architect technical acceptance or rejection
+    of PHASE-C3A; do not chain into C3B/C3C/C3D.
 
 - **`PHASE-C2` — `CLOSED / ACCEPTED`
   (2026-07-19, `dev`, baseline

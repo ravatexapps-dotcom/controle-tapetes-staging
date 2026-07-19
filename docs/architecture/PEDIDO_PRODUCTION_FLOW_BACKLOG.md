@@ -1509,6 +1509,15 @@ or `saldo_fios_op`. The provenance debt is
 `HISTORICAL_SALDO_FIOS_PROVENANCE_UNAVAILABLE`. Real import, fencing, consumer
 switches, flat ACL closure, UI, emission, and C3B/C3C/C3D remain out of scope.
 
+Implementation checkpoint: C3A is `IMPLEMENTED / VERIFIED IN STAGING / AWAITING
+ARCHITECT TECHNICAL ACCEPTANCE`. Migrations `71/72/73` are applied; db/73 provides
+the owner-only, semantically idempotent, advisory-locked Class A/D opening-balance
+command. Exact replay and conflict, non-posting/non-reversibility, distinct-backend
+concurrency, both no-CASCADE rollback rehearsals, 56 focused tests, and the stable
+133-identity full-suite baseline all passed. Final staging remains `legacy_active`
+with zero import rows and unchanged 39/44 preview and `saldo_fios` hash. No later C3
+phase is selected or authorized.
+
 Status: **CLOSED / ACCEPTED_WITH_NONBLOCKING_ADMIN_SHELL_MOBILE_RESPONSIVENESS_DEBT**.
 
 - Architect acceptance covers the staging migration `20260719120036 /
