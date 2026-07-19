@@ -4290,3 +4290,37 @@ MATERIAL_DIVERGENCES: NONE
 - **Boundary:** this acceptance does not authorize production, `main`, the prohibited
   project, native-emission activation, C3A activation/acceptance, C3B, or any later
   phase.
+
+## 2026-07-19 — PURCHASE-ORDER HYBRID ORIGIN — F3 PARTIAL STAGING CHECKPOINT — HARD STOP
+
+- **Readiness:** `READY_FOR_F3_STAGING_DEPLOYMENT`. Branch `dev`; initial HEAD
+  `911b7985297d3b33b4fbf4cf3575a39b8440ff42`; F2 acceptance-registration commit
+  `8214ab7b4e7c185d6f4501a593fcaa836ad65d1b`; required lineage anchor
+  `361d0f77388b0adac9b83997707cd49df938e4dd` confirmed.
+- **Staging migration:** exact checked-out `db/74` applied to
+  `ucrjtfswnfdlxwtmxnoo` as `20260719215401 /
+  74_ordem_compra_hybrid_origin_forward_correction`. An initial transport-truncated
+  submission failed inside the migration transaction and left no history/object
+  residue; the complete 50,036-byte file then applied successfully.
+- **Preservation and authority:** every recorded business table count, material total,
+  and stable row hash is identical before/after. The command journal exists empty;
+  allocation identity is `(item_id, necessidade_id)`; the need-first RPC and all
+  accepted guards are installed. `authenticated` retains only the accepted
+  need-first/sync/cancel/receipt/reversal/preview surfaces; obsolete manual/item-first
+  and independent remover writers, native emission, and C3A import are owner-only.
+  C3A remains `legacy_active / not_started`, with zero import/baseline rows.
+- **Staging application:** exact committed tree
+  `8214ab7b4e7c185d6f4501a593fcaa836ad65d1b` deployed without Git push to Vercel
+  preview `dpl_7QGBHzW8MoE4sPVVuGdFrv9Ci7iP`, URL
+  `inttracker-5o6qxsrxz-inttex.vercel.app`, `READY`, target `preview`.
+- **Hard stop:** the deployment URL, generated alias, and `dev` preview alias all
+  redirect to Vercel Authentication. The controlled browser has no authenticated
+  Vercel session. Per the order, no workaround, fixture, or business-data mutation
+  was attempted. Authenticated browser/API, PRE-PROD, Phase C, focused post-deploy,
+  and broader-suite comparison remain pending and are not claimed as passed.
+- **Residue and boundaries:** fixture residue is zero because no fixture was created.
+  Production `gqmpsxkxynrjvidfmojk`, prohibited project
+  `bhgifjrfagkzubpyqpew`, `main`, native emission, and C3A activation/acceptance were
+  not accessed. Next authorized action: architect authenticates the preserved
+  controlled-browser Vercel login, then instructs Codex to resume F3 at the
+  authenticated-browser gate without reapplying `db/74` or redeploying by default.

@@ -1108,3 +1108,15 @@ accepted obsolete native mutation paths. Migration
 journal, identity/index, quantity/freeze guards, ACL matrix, and shared NULL-OP Phase
 C replacements defined by this section. Verification used isolated PostgreSQL 18.4
 only; staging was not applied. F2 remains unauthorized and C3A remains unaccepted.
+
+### 13.11 F3 partial staging checkpoint (2026-07-19)
+
+Staging `ucrjtfswnfdlxwtmxnoo` now contains migration
+`20260719215401 / 74_ordem_compra_hybrid_origin_forward_correction`. The
+`(item_id, necessidade_id)` unique identity, immutable command journal, need-first
+absolute-target RPC, provenance/freeze/derived-quantity guards, NULL-OP Phase C
+shape correction, and accepted role matrix are live. All pre-existing business
+data snapshots remained unchanged. The accepted F2 source was deployed to a Vercel
+preview, but authenticated browser validation is blocked by Vercel Authentication.
+No fixture was created and no PRE-PROD/Phase C result is claimed. C3A remains
+inactive and unaccepted.

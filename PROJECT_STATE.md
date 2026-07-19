@@ -9,6 +9,24 @@ are in `docs/ledgers/G28_LEDGER.md`. HEAD/working tree/divergence: consult Git d
 
 ## Active phase and next action
 
+- **`PURCHASE-ORDER HYBRID ORIGIN — F3 INTEGRATED STAGING DEPLOYMENT AND
+  AUTHENTICATED VALIDATION R1` — `PARTIALLY EXECUTED / HARD STOP — VERCEL
+  AUTHENTICATION REQUIRED` (2026-07-19).** Readiness returned
+  `READY_FOR_F3_STAGING_DEPLOYMENT`. Staging Supabase `ucrjtfswnfdlxwtmxnoo`
+  applied `20260719215401 / 74_ordem_compra_hybrid_origin_forward_correction`;
+  all recorded pre/post business counts, totals, and stable hashes are identical.
+  The final ACL matrix matches the accepted F1 contract, native emission and C3A
+  import remain owner-only, and C3A remains `legacy_active / not_started`.
+  Committed source `8214ab7b4e7c185d6f4501a593fcaa836ad65d1b` was deployed without a
+  Git push to Vercel preview `dpl_7QGBHzW8MoE4sPVVuGdFrv9Ci7iP` at
+  `inttracker-5o6qxsrxz-inttex.vercel.app` (`READY`, target `preview`). The
+  controlled browser and every preview alias redirect to Vercel Authentication;
+  no safe authenticated Vercel session is available. Per the execution order,
+  execution stopped before creating any fixture or business row. Authenticated
+  browser, database/API fixture validation, PRE-PROD, Phase C, and broader-suite
+  comparison remain pending and must not be claimed as passed. Production,
+  `main`, the prohibited project, and C3A activation/acceptance were not accessed.
+
 - **`PURCHASE-ORDER HYBRID ORIGIN — F2 PEDIDO/INSUMOS UI CUTOVER R1` —
   `CLOSED / ACCEPTED_LOCALLY_WITH_INTEGRATED_STAGING_VALIDATION_REQUIRED`
   (2026-07-19).**
@@ -23,12 +41,13 @@ are in `docs/ledgers/G28_LEDGER.md`. HEAD/working tree/divergence: consult Git d
   migration. Focused F2/Pedido/OP/order/router tests pass 139/139. The architect
   accepted technical commit `577921150ac5a478294f28b1c8c3501dad23dbbb` and
   documentation closeout commit `911b7985297d3b33b4fbf4cf3575a39b8440ff42`.
-  Browser validation and staging deployment remain pending. The 133 broader-suite
+  At F2 acceptance registration, browser validation and staging deployment were
+  pending; the F3 checkpoint above supersedes that environment status. The 133 broader-suite
   failures remain pre-existing baseline debt; deterministic serial identity
   comparison is incomplete. `PURCHASE-ORDER HYBRID ORIGIN — F3 INTEGRATED STAGING
   DEPLOYMENT AND AUTHENTICATED VALIDATION R1` is authorized under the architect's
-  staging-only execution order. `db/74` remains unapplied until that controlled
-  gate. C3A remains implemented and verified but not accepted. Production, `main`,
+  staging-only execution order. `db/74` is now applied only as recorded by the F3
+  checkpoint above. C3A remains implemented and verified but not accepted. Production, `main`,
   and the prohibited project remain forbidden.
 
 - **`PURCHASE-ORDER HYBRID ORIGIN — F1 FORWARD CORRECTION IMPLEMENTATION R1` —
@@ -48,8 +67,9 @@ are in `docs/ledgers/G28_LEDGER.md`. HEAD/working tree/divergence: consult Git d
   `5aca571de6057bfdf2080ef945112189e6f3f4cb7795ccd827a729131642e75f`.
    The accepted technical commits are `463cafbdd4816ff1093b3086dd71d3d6e70b3479`
    and `680cff136a3294ae9a345fc8f91f02e246891eef`; final technical closeout HEAD is
-   `1ea4a509c069983732af86130d0092b6c1d96e2b`. Migration `db/74` is implemented
-   and verified locally only, not applied to staging. The normalized broader-suite
+   `1ea4a509c069983732af86130d0092b6c1d96e2b`. At F1 closeout, migration `db/74`
+   was implemented and verified locally only; the F3 checkpoint above supersedes
+   its environment status. The normalized broader-suite
    failures are unchanged; the pre-existing admin-menu count failure remains
    nonblocking. C3A remains implemented and verified but not accepted. Production,
    `main`, remote changes, and push remain prohibited.
@@ -149,10 +169,10 @@ are in `docs/ledgers/G28_LEDGER.md`. HEAD/working tree/divergence: consult Git d
   cutover (`M10`)"; cutover is done. **New fronts are authorizable again**, each by
   its own individual order. The consolidated, ranked `POST-LAUNCH DEBT REGISTER`
   (below) supersedes the former "residual risk register (12 items)".
-- **Next authorized action:** execute `PURCHASE-ORDER HYBRID ORIGIN — F3 INTEGRATED
-  STAGING DEPLOYMENT AND AUTHENTICATED VALIDATION R1` against development/staging
-  Supabase `ucrjtfswnfdlxwtmxnoo`, beginning with contemporary read-only
-  reconciliation and continuing only on `READY_FOR_F3_STAGING_DEPLOYMENT`.
+- **Next authorized action:** the architect authenticates the preserved controlled
+  browser session to Vercel for the staging preview, then instructs Codex to resume
+  the already-authorized F3 validation from the authenticated-browser gate. Do not
+  reapply `db/74` or redeploy unless a new reconciliation proves it necessary.
   Production, `main`, the prohibited project, native emission activation, C3A
   activation/acceptance, and later phases remain unauthorized. Separately, the
   highest-consequence open operational item remains

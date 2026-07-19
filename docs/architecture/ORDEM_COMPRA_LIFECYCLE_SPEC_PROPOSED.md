@@ -3424,3 +3424,16 @@ this section without modifying db/67-db/73 or converting environment data. Isola
 PostgreSQL 18.4 apply/reapply, rollback-scoped functional/ACL/Phase-C tests, and the
 required distinct-session race matrix passed. F2 and staging application remain
 separately unauthorized; C3A remains unaccepted.
+
+### §R.28.10 F3 partial staging checkpoint (2026-07-19)
+
+F3 readiness passed and the accepted forward correction was applied to staging as
+`20260719215401 / 74_ordem_compra_hybrid_origin_forward_correction`. Pre/post
+business snapshots remained identical; the need-first writer and accepted ACL
+matrix are live while native emission and C3A import remain owner-only. Committed
+source `8214ab7b4e7c185d6f4501a593fcaa836ad65d1b` was deployed without push to
+Vercel preview `dpl_7QGBHzW8MoE4sPVVuGdFrv9Ci7iP`. Authenticated validation
+hard-stopped because Vercel Authentication protects every preview alias and the
+controlled browser has no authenticated Vercel session. No fixture was created;
+PRE-PROD and Phase C revalidation remain pending. This checkpoint is not F3
+completion or C3A acceptance.

@@ -1610,3 +1610,19 @@ owner-only.
 - No staging, production, `main`, remote, or push activity occurred. C3A remains
   verified but unaccepted. The next authorizable action is architect review of F1;
   staging application and F2 each require a separate order.
+
+# Update 2026-07-19 — F3 partial staging deployment checkpoint
+
+Status: **PARTIALLY EXECUTED / HARD STOP — VERCEL AUTHENTICATION REQUIRED**.
+
+- Readiness passed; staging migration `20260719215401 /
+  74_ordem_compra_hybrid_origin_forward_correction` applied with identical
+  pre/post business snapshots and the accepted ACL matrix.
+- Source `8214ab7b4e7c185d6f4501a593fcaa836ad65d1b` was deployed without push to
+  Vercel preview `dpl_7QGBHzW8MoE4sPVVuGdFrv9Ci7iP` (`READY`).
+- Every preview alias requires Vercel Authentication and the controlled browser
+  has no Vercel session. No fixture was created. Browser, PRE-PROD, Phase C, and
+  broader-suite validation remain pending.
+- Resume only after architect authentication in the preserved browser. Production,
+  `main`, native emission, C3A activation/acceptance, and later phases remain
+  prohibited.

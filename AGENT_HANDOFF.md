@@ -1,5 +1,22 @@
 # ACTIVE OPERATIONAL HANDOFF
 
+- **`PURCHASE-ORDER HYBRID ORIGIN — F3 INTEGRATED STAGING DEPLOYMENT AND
+  AUTHENTICATED VALIDATION R1` — `PARTIALLY EXECUTED / HARD STOP — VERCEL
+  AUTHENTICATION REQUIRED` (2026-07-19).** Readiness passed. `db/74` is applied
+  only to staging `ucrjtfswnfdlxwtmxnoo` as `20260719215401 /
+  74_ordem_compra_hybrid_origin_forward_correction`; pre/post business snapshots
+  are identical, the accepted ACL matrix is live, native emission and C3A import
+  remain owner-only, and C3A remains inactive. Exact committed source
+  `8214ab7b4e7c185d6f4501a593fcaa836ad65d1b` is deployed without push to
+  Vercel preview `dpl_7QGBHzW8MoE4sPVVuGdFrv9Ci7iP` (`READY`, target
+  `preview`). The preview is protected by Vercel Authentication and the controlled
+  browser has no Vercel session. No fixture or business row was created. Browser,
+  API/DB fixture validation, PRE-PROD, Phase C, and broader-suite comparison are
+  pending. Resume only after the architect authenticates the preserved browser;
+  do not reapply the migration or redeploy by default. Production, `main`, the
+  prohibited project, C3A activation/acceptance, and native emission remain
+  prohibited.
+
 - **`PURCHASE-ORDER HYBRID ORIGIN — F2 PEDIDO/INSUMOS UI CUTOVER R1` —
   `CLOSED / ACCEPTED_LOCALLY_WITH_INTEGRATED_STAGING_VALIDATION_REQUIRED`
   (2026-07-19).**
@@ -13,12 +30,13 @@
   surfaces. Focused F2/Pedido/OP/order/router coverage passes 139/139. The architect
   accepted technical commit `577921150ac5a478294f28b1c8c3501dad23dbbb` and
   documentation closeout commit `911b7985297d3b33b4fbf4cf3575a39b8440ff42`.
-  Browser validation and staging deployment remain pending. The 133 broader-suite
+  At F2 acceptance registration, browser validation and staging deployment were
+  pending; the F3 checkpoint above supersedes that environment status. The 133 broader-suite
   failures are pre-existing baseline debt whose deterministic serial identity
   comparison remains incomplete. `PURCHASE-ORDER HYBRID ORIGIN — F3 INTEGRATED
   STAGING DEPLOYMENT AND AUTHENTICATED VALIDATION R1` is authorized against
   `ucrjtfswnfdlxwtmxnoo`, subject to its reconciliation and readiness hard gate.
-  `db/74` remains unapplied until that gate. C3A remains implemented and verified
+  `db/74` is now applied only as recorded by the F3 checkpoint above. C3A remains implemented and verified
   but not accepted. Production, `main`, the prohibited project, and later phases
   remain forbidden.
 
@@ -35,8 +53,8 @@
   baseline with SHA-256
   `5aca571de6057bfdf2080ef945112189e6f3f4cb7795ccd827a729131642e75f`.
    Final technical closeout HEAD: `1ea4a509c069983732af86130d0092b6c1d96e2b`.
-   Migration `db/74` is implemented and verified locally only; no staging
-   application occurred. The normalized broader-suite failures remain unchanged,
+   At F1 closeout, migration `db/74` was implemented and verified locally only;
+   the F3 checkpoint above supersedes that environment status. The normalized broader-suite failures remain unchanged,
    including the pre-existing nonblocking admin-menu count failure. C3A remains
    implemented and verified but not accepted.
 
