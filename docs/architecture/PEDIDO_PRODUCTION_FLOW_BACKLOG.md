@@ -440,14 +440,21 @@ stay on the flat path in C2. No Pedido, OP, transition, order-detail, or supplie
 changed. C3 owns both-consumer cutover/readers/flat ACL; C4 owns the admin receipt UI;
 C5 owns emission activation. See lifecycle spec §R.25.
 
-**Phase C2 staging closeout (2026-07-19).** Migration
+**Phase C2 acceptance closeout (2026-07-19).** Migration
 `20260719160518 / 70_ordem_compra_native_receipt_foundation` is implemented and
 verified on staging. Focused tests passed 48/48; functional, authorization,
 idempotency, immutable-history, derived-cache, source-linked inventory, five-scenario
 true-concurrency, cleanup, and rolled-back dependency-safe removal evidence passed.
-The legacy corpus, flat consumers/ACL, and native emission gate are unchanged. Status:
-`IMPLEMENTED / VERIFIED IN STAGING / AWAITING ARCHITECT TECHNICAL ACCEPTANCE`.
-C3/C4/C5 remain unauthorized and do not chain from this result.
+The legacy corpus, flat consumers/ACL, and native emission gate are unchanged. The
+reproducible full-suite baseline is 3,864 tests / 3,731 pass / 133 identified
+pre-existing failures: PRE-PROD-A `47b8e6a`, C2 baseline `3395f83`, and checkpoint
+`14ca5c7` have the same normalized set (SHA-256
+`af9246c162a514f1162d845bb129980f9a1e4505c46323966d8def262a48a192`), so the former
+132 aggregate is superseded and C2 has zero regression. Status: `CLOSED / ACCEPTED`.
+Flat receipt remains productive authority until C3 cutover; no opening-balance seed or
+productive-reader switch occurred. C3/C4/C5 remain unimplemented. The next
+authorizable action is a fresh read-only C3 pre-cutover reconciliation and
+implementation-boundary diagnosis; no implementation chains from this result.
 
 ### 1.2 Main routes/screens
 

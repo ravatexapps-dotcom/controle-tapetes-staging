@@ -3863,3 +3863,42 @@ OPEN_ARCHITECT_DECISIONS: ACCEPT OR REJECT PHASE-C2 TECHNICAL CLOSEOUT; C3 REMAI
 DEFERRED_PHASES: PHASE-C3; PHASE-C4; PHASE-C5; PRODUCTION; MAIN; PUSH
 STATE_FILES_UPDATED: PROJECT_STATE.md; AGENT_HANDOFF.md; docs/architecture/ORDEM_COMPRA_LIFECYCLE_SPEC_PROPOSED.md; docs/architecture/PEDIDO_PRODUCTION_FLOW_BACKLOG.md; docs/architecture/PEDIDO_OP_SCHEMA_CONTRACT.md; docs/ledgers/G28_LEDGER.md
 MATERIAL_DIVERGENCES: NONE
+
+## 2026-07-19 — PHASE-C2 — NATIVE RECEIPT FOUNDATION — CLOSED / ACCEPTED
+
+- **Architect ruling:** `PHASE-C2` is `CLOSED / ACCEPTED`. Accepted technical/staging
+  checkpoint: `dev @ 14ca5c77f87c11c310a6df2469969a23e32972d5`; staging migration:
+  `20260719160518 / 70_ordem_compra_native_receipt_foundation`.
+- **Accepted model:** immutable native receipt headers; the additive
+  `ordem_compra_fio_lancamentos` sole canonical physical receipt ledger; canonical
+  multi-line receipt writer; administrator-only source-linked reversal; deterministic
+  locking and actor-scoped exact idempotency; ledger-derived receipt caches; and one
+  transactional source-linked surplus movement per ledger entry. A matching active
+  supplier may register only its own order receipts; supplier reversal remains denied.
+  Direct client DML is denied; receipt/reversal/read RPCs are authenticated-only;
+  native emission remains inactive and ungranted.
+- **Acceptance evidence:** 48/48 focused tests and 13/13 new C2 tests pass; five real
+  concurrent-backend scenarios pass; rollback rehearsal passes without CASCADE;
+  db/67-db/69 and the legacy flat path remain intact; final staging fixtures and
+  transient artifacts are zero. No opening-balance seed, productive-reader switch,
+  cutover, flat ACL change, UI, C3/C4/C5 action, production, `main`, or push occurred.
+- **Full-suite reconciliation:** PRE-PROD-A `47b8e6a`, pre-C2 baseline `3395f83`, and
+  C2 checkpoint `14ca5c7` each reproduce 133 identified failures. The accepted C2
+  full-suite baseline is 3,864 tests / 3,731 pass / 133 pre-existing failures; zero
+  baseline-only, current-only, or unstable identities; normalized set SHA-256
+  `af9246c162a514f1162d845bb129980f9a1e4505c46323966d8def262a48a192`. The earlier
+  aggregate count of 132 is superseded. Zero C2 regression exists.
+- **Post-acceptance boundary:** flat receipt remains productive authority until C3
+  cutover. C3, C4, and C5 remain unimplemented. The next authorizable action is a
+  fresh read-only C3 pre-cutover reconciliation and implementation-boundary diagnosis;
+  it does not authorize C3 implementation.
+
+PLAN_ALIGNMENT:
+MASTER_PLAN: docs/architecture/ORDEM_COMPRA_LIFECYCLE_SPEC_PROPOSED.md (§R.24-§R.25) and docs/architecture/PEDIDO_PRODUCTION_FLOW_BACKLOG.md
+LAST_ACCEPTED_PHASE: PHASE-C2 (CLOSED / ACCEPTED)
+CURRENT_PHASE: NONE — PHASE-C2 CLOSED / ACCEPTED
+NEXT_AUTHORIZABLE_ACTION: FRESH READ-ONLY C3 PRE-CUTOVER RECONCILIATION AND IMPLEMENTATION-BOUNDARY DIAGNOSIS
+OPEN_ARCHITECT_DECISIONS: C3 IMPLEMENTATION REQUIRES A SEPARATE ARCHITECT AUTHORIZATION AFTER RECONCILIATION
+DEFERRED_PHASES: PHASE-C3 IMPLEMENTATION; PHASE-C4; PHASE-C5; PRODUCTION; MAIN; PUSH
+STATE_FILES_UPDATED: PROJECT_STATE.md; AGENT_HANDOFF.md; docs/architecture/ORDEM_COMPRA_LIFECYCLE_SPEC_PROPOSED.md; docs/architecture/PEDIDO_PRODUCTION_FLOW_BACKLOG.md; docs/architecture/PEDIDO_OP_SCHEMA_CONTRACT.md; docs/ledgers/G28_LEDGER.md
+MATERIAL_DIVERGENCES: NONE

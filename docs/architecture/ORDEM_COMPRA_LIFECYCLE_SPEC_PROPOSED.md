@@ -2082,8 +2082,7 @@ physical schema decisions remain open. **Status:** `PHASE-C1` is `CLOSED / ACCEP
 > **Order:** `PHASE C2 — NATIVE RECEIPT FOUNDATION, WRITER, REVERSAL AND
 > NARROW INVENTORY INTEGRATION` (2026-07-19).
 > **Baseline:** `dev @ 3395f83df0eb7db604df9a80d4a43a0601bc8b6c`.
-> **Status:** `IMPLEMENTED / VERIFIED IN STAGING / AWAITING ARCHITECT TECHNICAL
-> ACCEPTANCE`.
+> **Status:** `CLOSED / ACCEPTED`.
 > This section resolves every C2 question left by §R.24.11 and governs migration
 > `db/70_ordem_compra_native_receipt_foundation.sql`. It does not authorize C3,
 > C4, C5, production, `main`, or push.
@@ -2291,9 +2290,16 @@ All marked fixtures and temporary concurrency infrastructure were removed. Final
 staging state has zero native order, receipt-header, receipt-ledger, or movement rows;
 no cron, dblink, probe schema/function, disabled trigger, or orphan remains;
 `saldo_fios` is restored to 5 rows / 2,685.020 kg. Native emission remains ungranted,
-flat ACL is unchanged, and C3/C4/C5 remain unauthorized. The full JavaScript suite
-completed with 3,755 pass / 133 unrelated pre-existing failures; no failure is
-attributed to `db/70` or its focused test. C2 awaits architect technical acceptance.
+flat ACL is unchanged, and C3/C4/C5 remain unimplemented. The reproducible full-suite
+baseline is 3,864 tests / 3,731 pass / 133 identified pre-existing failures. PRE-PROD-A
+`47b8e6a`, C2 baseline `3395f83`, and C2 checkpoint `14ca5c7` have identical normalized
+failure identities (SHA-256
+`af9246c162a514f1162d845bb129980f9a1e4505c46323966d8def262a48a192`): zero baseline-
+only/current-only or unstable identities, and zero C2 regression. The historical 132
+aggregate is superseded. Architect technical acceptance closes C2; flat receipt remains
+productive authority until a separately authorized C3 cutover, with no opening-balance
+seed or productive-reader switch performed. The next authorizable action is a fresh
+read-only C3 pre-cutover reconciliation and implementation-boundary diagnosis.
 
 ---
 

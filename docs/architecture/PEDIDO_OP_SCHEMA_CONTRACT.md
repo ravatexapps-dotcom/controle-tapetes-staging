@@ -568,8 +568,8 @@ INSUMOS → TECELAGEM → ACABAMENTO → EXPEDIÇÃO → ENTREGA
 > acceptance. This C1 record authorizes no schema implementation, migration, staging
 > write, grant, UI, test, or C2 work.
 >
-> **PHASE-C2 implementation boundary (2026-07-19, §R.25; `IMPLEMENTED /
-> VERIFIED IN STAGING / AWAITING ARCHITECT TECHNICAL ACCEPTANCE`).** Migration `db/70` creates immutable
+> **PHASE-C2 implementation boundary (2026-07-19, §R.25; `CLOSED /
+> ACCEPTED`).** Migration `db/70` creates immutable
 > `ordem_compra_recebimentos` headers, extend the existing receipt ledger for native
 > command/allocation/real-OP/material identity, create the source-linked
 > `ordem_compra_fio_movimentos_estoque` surplus movement object, and install three
@@ -594,7 +594,14 @@ INSUMOS → TECELAGEM → ACABAMENTO → EXPEDIÇÃO → ENTREGA
 > exact idempotency, cleanup, and dependency-safe rolled-back removal rehearsal all
 > passed. Final native receipt/header/ledger/movement residue is zero; legacy
 > rows/checksums, `saldo_fios` (5 rows / 2,685.020 kg), flat ACL, and the ungranted
-> emission boundary remain unchanged. No C3 cutover or acceptance is implied.
+> emission boundary remain unchanged. Full-suite reconciliation fixes the reproducible
+> baseline at 3,864 tests / 3,731 pass / 133 identified pre-existing failures: PRE-
+> PROD-A `47b8e6a`, C2 baseline `3395f83`, and checkpoint `14ca5c7` have identical
+> normalized identities (SHA-256
+> `af9246c162a514f1162d845bb129980f9a1e4505c46323966d8def262a48a192`), with zero C2
+> regression; the historical 132 aggregate is superseded. C2 is accepted. Flat receipt
+> remains productive authority until a separately authorized C3 cutover; no opening-
+> balance seed or productive-reader switch occurred. C3/C4/C5 remain unimplemented.
 
 ### 6.3. UI rules
 

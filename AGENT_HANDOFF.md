@@ -1,14 +1,14 @@
 # ACTIVE OPERATIONAL HANDOFF
 
-- **`PHASE-C2` — `IMPLEMENTED / VERIFIED IN STAGING / AWAITING ARCHITECT
-  TECHNICAL ACCEPTANCE`
+- **`PHASE-C2` — `CLOSED / ACCEPTED`
   (2026-07-19, `dev`, baseline
   `3395f83df0eb7db604df9a80d4a43a0601bc8b6c`).** Governing contract:
   `docs/architecture/ORDEM_COMPRA_LIFECYCLE_SPEC_PROPOSED.md` **§R.25**.
-  - Boundary commit `9a5cb4f` and implementation commit `833c2ad` preserve the
-    required lineage. Staging now records `20260719160518 / 70`; legacy corpus and
-    flat checksums remain unchanged. Known `.gitignore`/`AGENTS.md` residue remains
-    untouched and unstaged. Native emission remains ungranted.
+  - Boundary commit `9a5cb4f`, implementation commit `833c2ad`, and technical/staging
+    checkpoint `14ca5c7` preserve the required lineage. Staging records
+    `20260719160518 / 70`; legacy corpus and flat checksums remain unchanged. Known
+    `.gitignore`/`AGENTS.md` residue remains untouched and unstaged. Native emission
+    remains ungranted.
   - Installed exactly `db/70_ordem_compra_native_receipt_foundation.sql`. Header table:
     `ordem_compra_recebimentos`, immutable command identity and metadata, namespace
     `native_receipt_v1`, uniqueness by namespace + actor type + actor UUID + key.
@@ -37,13 +37,19 @@
     immutable-guard/idempotency/derived-cache/inventory matrices; five independent
     true-concurrency scenarios; and dependency-safe rollback inside a transaction
     that rolled back. Cleanup restored zero native receipts/ledger/movements, no
-    cron/probe artifacts, and `saldo_fios` 5 rows / 2,685.020 kg. The full JavaScript
-    suite completed with 3,755 pass / 133 pre-existing unrelated failures; none
-    touches the two C2 implementation files.
-  - **Do not touch:** legacy import/cutover/fencing, flat receipt grants or readers,
-    UI, native emission/grant, C3+, production, `main`, or push. Final target is
-    reached, but not architect-accepted. The next action is the architect's C2
-    technical acceptance decision only; do not record acceptance or begin C3.
+    cron/probe artifacts, and `saldo_fios` 5 rows / 2,685.020 kg. Reproduction at
+    PRE-PROD-A `47b8e6a`, baseline `3395f83`, and C2 `14ca5c7` yields the same 133
+    identified failures (SHA-256
+    `af9246c162a514f1162d845bb129980f9a1e4505c46323966d8def262a48a192`), with zero
+    baseline-only/current-only or unstable identities. The accepted full-suite
+    baseline is 3,864 tests / 3,731 pass / 133 pre-existing failures; the earlier 132
+    aggregate is superseded and C2 has zero regression.
+  - **Accepted boundary:** no legacy import/opening-balance seed, cutover/fencing,
+    flat receipt-grant or productive-reader change, UI, native emission/grant, C3,
+    C4, C5, production, `main`, or push occurred. Flat receipt remains productive
+    authority until C3. The next authorizable action is a fresh read-only C3
+    pre-cutover reconciliation and implementation-boundary diagnosis only; C3
+    implementation remains unauthorized.
 
 - **`PHASE-C1` — `CLOSED / ACCEPTED` (2026-07-19, documentation-only,
   `dev @ 47b8e6a6bc8dea0cd0fe053fef2ef9f2f16f14fa`).** The binding native receipt
