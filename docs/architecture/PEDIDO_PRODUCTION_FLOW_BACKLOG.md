@@ -1626,3 +1626,21 @@ Status: **PARTIALLY EXECUTED / HARD STOP — VERCEL AUTHENTICATION REQUIRED**.
 - Resume only after architect authentication in the preserved browser. Production,
   `main`, native emission, C3A activation/acceptance, and later phases remain
   prohibited.
+
+# Update 2026-07-19 — F3R1 staging database/API validation checkpoint
+
+Status: **PARTIALLY COMPLETED / HARD STOP — SAFE COMMITTED CONCURRENCY FIXTURE
+POLICY MISSING**.
+
+- `db/74` history, live objects, guards, accepted ACLs, and stable business-data
+  snapshots match the repository and accepted contract.
+- A rollback-only canonical-domain fixture passed need-first OP/shared mutation,
+  replay/conflict, quantity/cleanup, freeze, receipt/reversal, PRE-PROD, and
+  nullable-OP Phase C validation with zero persistent residue.
+- A committed multi-session synthetic race cannot satisfy zero residue because the
+  accepted immutable journal permanently retains each successful actor/key command;
+  no canonical retained staging fixture exists.
+- The next authorizable action is architect disposition of that exact evidence
+  boundary. C3A remains inactive and unaccepted. Vercel/browser, production,
+  `main`, remotes, push, native emission activation, and the prohibited project
+  were untouched.

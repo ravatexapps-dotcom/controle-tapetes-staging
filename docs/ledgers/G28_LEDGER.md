@@ -4324,3 +4324,45 @@ MATERIAL_DIVERGENCES: NONE
   not accessed. Next authorized action: architect authenticates the preserved
   controlled-browser Vercel login, then instructs Codex to resume F3 at the
   authenticated-browser gate without reapplying `db/74` or redeploying by default.
+
+## 2026-07-19 — PURCHASE-ORDER HYBRID ORIGIN — F3R1 STAGING DATABASE/API AND PHASE C CHECKPOINT — HARD STOP
+
+- **Starting state:** branch `dev`, HEAD
+  `52cc62f966e32ea61260b63aa1a299fbea876566`; modified `.gitignore`, untracked
+  `AGENTS.md`, empty index, and no `index.lock` preserved.
+- **Database verification:** staging `ucrjtfswnfdlxwtmxnoo` contains exactly one
+  `20260719215401 / 74_ordem_compra_hybrid_origin_forward_correction` and no later
+  purchase-order migration. The checked-out command journal, need-first RPC
+  signature/body, allocation identity, provenance/quantity/freeze guards,
+  nullable-OP Phase C replacements, and accepted effective ACL matrix match.
+- **Data preservation:** recorded purchase-order, need, allocation, item, receipt,
+  ledger, movement, cutover, and inventory counts/totals/stable hashes match the
+  post-`db/74` baseline. C3A remains `legacy_active / not_started`; native emitted
+  orders remain zero.
+- **Rollback-only validation:** a canonical-domain fixture passed OP-origin and
+  shared Pedido-origin absolute-target create/increase/reduce/zero, draft/item
+  reuse, server-derived provenance, derived item quantity, duplicate prevention,
+  exact replay, conflicting-key rejection, journal survival through cleanup,
+  post-emission freeze, ACL denial, receipt, reversal, excess, and nullable-OP
+  ledger/movement behavior. Transaction rollback left zero fixture residue.
+- **Revalidation result:** `PRE-PROD HYBRID ORIGIN REVALIDATION: PASS` and `PHASE C
+  HYBRID PROVENANCE REVALIDATION: PASS` on read-only and rollback evidence. These
+  results do not activate or accept C3A.
+- **Regression evidence:** focused scope produced 430 tests, 428 passed, with two
+  unchanged-HEAD baseline failures (obsolete OP purchasing-supplier expectation and
+  stale admin-menu count). Two broader parallel runs each produced 3,906 total,
+  3,773 passed, and 133 failed with the same observed normalized failure-identity
+  SHA-256 `a6ec3d6a4045763291ce30b48a1237c7695871b7534cf839229611f07cfb0dd2`.
+  Deterministic serial identity is not claimed; new attributable failures: zero.
+- **Hard stop:** committed multi-session staging concurrency remains unproved. A
+  successful committed synthetic command must retain its actor/key in the immutable
+  journal even after zero-target cleanup, so it cannot meet the mandatory
+  zero-residue policy; no canonical retained staging fixture exists. The accepted
+  isolated F1 distinct-session race matrix remains valid but is not silently
+  substituted for the specifically requested committed staging proof.
+- **Boundaries and next action:** Vercel/browser, production, `main`, remotes, push,
+  the prohibited project, native emission activation, and C3A execution were not
+  accessed. Next authorizable action: architect disposition of the concurrency
+  evidence boundary—accept the isolated F1 race matrix plus F3R1 staging evidence,
+  or authorize an explicit retained-fixture/journal-residue policy. C3A disposition
+  remains deferred until F3R1 can close.

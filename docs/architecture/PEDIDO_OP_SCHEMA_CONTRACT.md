@@ -1120,3 +1120,19 @@ data snapshots remained unchanged. The accepted F2 source was deployed to a Verc
 preview, but authenticated browser validation is blocked by Vercel Authentication.
 No fixture was created and no PRE-PROD/Phase C result is claimed. C3A remains
 inactive and unaccepted.
+
+### 13.12 F3R1 staging database/API checkpoint (2026-07-19)
+
+Staging revalidation confirms the `db/74` command journal, need-first signature,
+allocation identity, derived-quantity/provenance/freeze guards, nullable-OP Phase C
+replacements, effective ACLs, and unchanged business-data snapshots. A
+rollback-only domain fixture passed OP-origin and shared-origin mutation,
+idempotency, cleanup, post-emission freeze, receipt, and reversal with zero
+residue. PRE-PROD and targeted Phase C requirements pass on that evidence.
+
+Committed multi-session staging concurrency is still unproved. The accepted
+immutable journal must retain every successful actor/key command even after target
+zero cleanup; consequently a committed synthetic race cannot be both observable
+across sessions and residue-free. No canonical retained staging fixture exists.
+This is a validation-policy hard stop, not a schema divergence, ACL divergence, or
+authorization to remove journal evidence. C3A remains inactive and unaccepted.

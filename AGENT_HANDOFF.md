@@ -1,21 +1,22 @@
 # ACTIVE OPERATIONAL HANDOFF
 
-- **`PURCHASE-ORDER HYBRID ORIGIN — F3 INTEGRATED STAGING DEPLOYMENT AND
-  AUTHENTICATED VALIDATION R1` — `PARTIALLY EXECUTED / HARD STOP — VERCEL
-  AUTHENTICATION REQUIRED` (2026-07-19).** Readiness passed. `db/74` is applied
-  only to staging `ucrjtfswnfdlxwtmxnoo` as `20260719215401 /
-  74_ordem_compra_hybrid_origin_forward_correction`; pre/post business snapshots
-  are identical, the accepted ACL matrix is live, native emission and C3A import
-  remain owner-only, and C3A remains inactive. Exact committed source
-  `8214ab7b4e7c185d6f4501a593fcaa836ad65d1b` is deployed without push to
-  Vercel preview `dpl_7QGBHzW8MoE4sPVVuGdFrv9Ci7iP` (`READY`, target
-  `preview`). The preview is protected by Vercel Authentication and the controlled
-  browser has no Vercel session. No fixture or business row was created. Browser,
-  API/DB fixture validation, PRE-PROD, Phase C, and broader-suite comparison are
-  pending. Resume only after the architect authenticates the preserved browser;
-  do not reapply the migration or redeploy by default. Production, `main`, the
-  prohibited project, C3A activation/acceptance, and native emission remain
-  prohibited.
+- **`PURCHASE-ORDER HYBRID ORIGIN — F3R1 STAGING DATABASE/API VALIDATION AND
+  PHASE-C REVALIDATION` — `PARTIALLY COMPLETED / HARD STOP — SAFE COMMITTED
+  CONCURRENCY FIXTURE POLICY MISSING` (2026-07-19).** `db/74` is present exactly
+  once in staging `ucrjtfswnfdlxwtmxnoo`; checked-out object identity, stable
+  business snapshots, guards, and the accepted ACL matrix match. A rollback-only
+  canonical-domain fixture passed OP-origin, shared Pedido-origin, need-first
+  replay/conflict, target mutation/cleanup, post-emission freeze, receipt,
+  reversal, and nullable-OP Phase C validation with zero residue. PRE-PROD and
+  targeted Phase C revalidation pass on that evidence. The only mandatory missing
+  proof is committed multi-session staging concurrency. A successful committed
+  synthetic command necessarily leaves the immutable actor/key journal row, no
+  canonical retained fixture exists, and the order forbids inventing a residue
+  policy. Resume only after the architect either accepts the isolated F1
+  distinct-session matrix plus F3R1 staging runtime evidence or authorizes an
+  explicit retained-fixture/journal-residue policy. C3A remains inactive and
+  unaccepted. Vercel/browser, production, `main`, remotes, push, the prohibited
+  project, native emission activation, and C3A execution were untouched.
 
 - **`PURCHASE-ORDER HYBRID ORIGIN — F2 PEDIDO/INSUMOS UI CUTOVER R1` —
   `CLOSED / ACCEPTED_LOCALLY_WITH_INTEGRATED_STAGING_VALIDATION_REQUIRED`

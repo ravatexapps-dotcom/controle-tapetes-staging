@@ -3437,3 +3437,21 @@ hard-stopped because Vercel Authentication protects every preview alias and the
 controlled browser has no authenticated Vercel session. No fixture was created;
 PRE-PROD and Phase C revalidation remain pending. This checkpoint is not F3
 completion or C3A acceptance.
+
+### §R.28.11 F3R1 staging database/API and Phase C checkpoint (2026-07-19)
+
+The applied `db/74` identity, live objects, guards, accepted execution matrix, and
+stable business-data snapshots match the accepted F1 contract. A rollback-only
+canonical-domain fixture passed OP-origin and shared Pedido-origin need-first
+mutation, replay/conflict, quantity derivation, cleanup, freeze, receipt, reversal,
+and nullable-OP Phase C behavior without persistent residue. PRE-PROD hybrid-origin
+and targeted Phase C revalidation pass on read-only and rollback evidence.
+
+F3R1 remains incomplete only at committed multi-session staging concurrency. The
+permanent actor/key journal deliberately survives zero-target cleanup, so any
+successful committed synthetic command leaves immutable journal residue; no
+canonical retained staging fixture exists. The zero-residue validation policy
+therefore precludes that proof without a new architect decision. The next
+authorizable action is architect disposition of this evidence boundary, not C3A
+disposition. Vercel/browser validation is not part of F3R1. C3A remains inactive
+and unaccepted.
