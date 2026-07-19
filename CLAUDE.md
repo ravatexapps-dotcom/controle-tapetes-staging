@@ -25,6 +25,7 @@
 
 ## Language policy
 
+- Architect-facing conversation and operational reports: English
 - New code, comments, and commit messages: English
 - Canonical state documents and reports: English
 - Ledger entries: language of original entry, immutable
