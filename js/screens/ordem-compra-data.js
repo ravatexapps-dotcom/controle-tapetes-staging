@@ -42,8 +42,21 @@
       pedidos: [],
       fornecedores: [],
       cores: [],
+      distribuicao: null,
       indisponivel: false,
     };
+  };
+
+  // Distribution read model for a native draft order (PRE-PROD-A, §R.23.8).
+  // Best-effort: only meaningful for native orders; a missing RPC (db/69 not
+  // applied) or a legacy/non-draft order simply leaves state.distribuicao null.
+  ns.loadDistribuicao = async function (ordemId, state) {
+    state.distribuicao = null;
+    var api = window.RAVATEX_SCREENS && window.RAVATEX_SCREENS.ordemCompraDistribuicao;
+    if (!api || !state.ordem || state.ordem.modelo !== 'nativo') return null;
+    var d = await api.carregar(ordemId);
+    if (d && d.ok === true) state.distribuicao = d;
+    return null;
   };
 
   // List view loader — listar_ordens_compra_admin(p_pedido_id=null).

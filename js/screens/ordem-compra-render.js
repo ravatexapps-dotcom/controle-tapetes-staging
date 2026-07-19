@@ -220,6 +220,12 @@
     }
     box.appendChild(itemsCard);
 
+    // Distribution of native needs (PRE-PROD-A, §R.23.10) — native orders only.
+    var distApi = window.RAVATEX_SCREENS && window.RAVATEX_SCREENS.ordemCompraDistribuicao;
+    if (distApi && state.distribuicao) {
+      box.appendChild(distApi.renderSection(state.distribuicao, handlers));
+    }
+
     // Event history
     var evCard = el('div', { class: 'bg-white rounded-xl shadow overflow-hidden' });
     evCard.appendChild(el('div', { class: 'px-5 py-3 border-b text-xs font-semibold text-gray-600 uppercase' }, 'Histórico'));

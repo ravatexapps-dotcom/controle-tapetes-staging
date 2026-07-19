@@ -26,6 +26,7 @@
     }
     async function reload() {
       await ns.loadOrdemDetail(id, state);
+      await ns.loadDistribuicao(id, state);
       render();
     }
 
@@ -41,6 +42,7 @@
     // Reference data for the add/edit-item forms (best-effort).
     await ns.loadFormRefs(state);
     await ns.loadOrdemDetail(id, state);
+    await ns.loadDistribuicao(id, state);
     render();
 
     return window.shellLayout(window.ADMIN_MENU, container);
