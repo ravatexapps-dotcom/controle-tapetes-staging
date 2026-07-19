@@ -739,6 +739,16 @@
     return wrap;
   }
 
+  function buildPurchaseDistributionEntry(state) {
+    var pedidoId = state.pedido && state.pedido.id;
+    if (!pedidoId) return null;
+    return window.el('div', { id: 'pedido-insumos-distribuicao-entry', style: 'background:#fff;border:1px solid #dbeafe;border-radius:4px;padding:16px 20px;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;' },
+      window.el('div', {},
+        window.el('div', { style: 'font-size:15px;font-weight:700;color:#16203a;' }, 'Insumos — distribuição de compra'),
+        window.el('div', { style: 'font-size:13px;color:#5b6472;margin-top:4px;' }, 'Defina fornecedores e quantidades alvo das necessidades deste Pedido.')),
+      window.el('button', { type: 'button', style: 'background:#2563eb;color:#fff;border:none;border-radius:4px;padding:9px 14px;font-size:13px;font-weight:700;font-family:inherit;cursor:pointer;', onclick: function () { window.navigate('#/pedidos/' + pedidoId + '/insumos'); } }, 'Abrir distribuição'));
+  }
+
   function buildExpedicoes(state, view, handlers) {
     var wrap = window.el('div', {
       id: 'expedicoes-vinculadas',
@@ -1292,9 +1302,10 @@
     container.replaceChildren(
       header,
       buildResumo(view),
-      buildDadosGerais(state),
-      buildStepper(view, handlers),
-      buildItens(state, view, handlers),
+       buildDadosGerais(state),
+       buildStepper(view, handlers),
+       buildPurchaseDistributionEntry(state),
+       buildItens(state, view, handlers),
       buildOps(state, view, handlers),
       buildExpedicoes(state, view, handlers),
       buildConclusaoPedido(state, view, handlers),

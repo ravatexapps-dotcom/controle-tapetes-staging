@@ -500,9 +500,9 @@ test('18. op-nova.js chama window.registrarRecebimentoOrdemFio', () => {
     'op-nova.js não referencia window.registrarRecebimentoOrdemFio');
 });
 
-test('19. op-nova.js chama window.atribuirFornecedorFioOp', () => {
-  assert.match(opnSrc, /window\.atribuirFornecedorFioOp\(/,
-    'op-nova.js não referencia window.atribuirFornecedorFioOp');
+test('19. F2 removes purchase-supplier assignment from OP', () => {
+  assert.doesNotMatch(opnSrc, /window\.atribuirFornecedorFioOp\(/,
+    'op-nova.js must not assign a purchasing supplier');
 });
 
 test('20. op-nova.js chama window.renderOPLatexAdmin', () => {

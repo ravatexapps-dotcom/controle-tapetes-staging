@@ -1093,9 +1093,12 @@
       href: '#/ordens-compra', id: 'ordens-compra-ver-link',
       style: 'font-size:12px;font-weight:600;color:#2563eb;text-decoration:none;white-space:nowrap;',
     }, 'Ver ordens de compra →');
+    const distributionLink = hasLinkedPedido()
+      ? el('button', { type: 'button', id: 'op-abrir-distribuicao-pedido', style: 'font-size:12px;font-weight:600;color:#2563eb;background:none;border:none;padding:0;cursor:pointer;', onclick: function () { navigate('#/pedidos/' + pedidoCtx.id + '/insumos'); } }, 'Distribuir no Pedido →')
+      : null;
     box.appendChild(el('div', { style: 'display:flex;align-items:center;justify-content:space-between;gap:10px;padding:15px 24px 12px;' },
       el('span', { style: 'font-size:11px;font-weight:700;color:#8a93a3;letter-spacing:.06em;text-transform:uppercase;' }, 'Ordens de compra de fio'),
-      el('div', { style: 'display:flex;align-items:center;gap:12px;' }, chip, verLink)));
+      el('div', { style: 'display:flex;align-items:center;gap:12px;' }, chip, distributionLink, verLink)));
     if (!ordens.length) {
       box.appendChild(el('div', { style: 'padding:0 24px 18px;font-size:13px;color:#aab2bf;' }, 'Nenhuma ordem de compra de fio gerada.'));
       return box;
@@ -1147,40 +1150,8 @@
     }
 
     if (op.status === 'aberta') {
-      const temAlgodao = ordens.some(o => o.tipo === 'algodao');
-      const temPoliester = ordens.some(o => o.tipo === 'poliester');
-      const buildAtrib = (label, etapa, tipo, temTipo) => {
-        if (!temTipo) return null;
-        const sel = selectInput({ options: fornsPorTipo(tipo), value: fioFornSel[etapa], placeholder: 'Selecione...' });
-        styleSelect(sel, 'font-size:13px;padding:7px 30px 7px 10px;');
-        const btn = el('button', {
-          type: 'button', style: BTN_SOLID_SM,
-          onclick: async () => {
-            const fornecedorId = sel.value ? Number(sel.value) : '';
-            if (!fornecedorId) { toast('Selecione um fornecedor.', 'error'); return; }
-            const { error } = await window.atribuirFornecedorFioOp({
-              opId: op.id,
-              etapa,
-              tipo,
-              fornecedorId,
-            });
-            if (error) { toast('Erro ao atribuir fornecedor.', 'error'); console.error(error); return; }
-            fioFornSel[etapa] = fornecedorId;
-            toast('Fornecedor atribuído.', 'success');
-            await reloadOrdens();
-          }
-        }, 'Atribuir');
-        return el('div', {},
-          el('label', { style: FIELD_LABEL + 'font-size:12px;' }, label),
-          el('div', { style: 'display:flex;align-items:center;gap:8px;' },
-            el('div', { style: 'flex:1;min-width:0;' }, wrapSelect(sel, true)), btn));
-      };
-      const a = buildAtrib('Fornecedor de algodão', 'fio_algodao', 'algodao', temAlgodao);
-      const p = buildAtrib('Fornecedor de poliéster', 'fio_poliester', 'poliester', temPoliester);
-      if (a || p) {
-        box.appendChild(el('div', { style: 'padding:0 24px 16px;display:grid;grid-template-columns:1fr 1fr;gap:12px;' }, a || el('div', {}), p || el('div', {})));
-      }
-
+      box.appendChild(el('div', { id: 'op-purchase-assignment-readonly', style: 'padding:0 24px 16px;font-size:12.5px;color:#5b6472;' },
+        'A escolha do fornecedor de compra é feita em Pedido → Insumos. Esta OP apenas consulta a disponibilidade.'));
       const pendentes = ordens.filter(o => o.status === 'pendente');
       const recebidas = ordens.filter(o => o.status !== 'pendente');
 

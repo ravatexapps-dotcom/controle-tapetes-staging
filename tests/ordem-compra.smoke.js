@@ -145,9 +145,12 @@ test('1. lista renderiza ordens nativa + legado (cada uma uma vez), com "Nova or
   const list = findById(view, 'ordens-compra-list');
   assert.ok(list, 'a tela de lista deve renderizar (#ordens-compra-list)');
   const nova = findById(view, 'oc-nova');
+  assert.equal(nova, null, 'F2 removes the manual order creation path');
+  if (nova) {
   assert.ok(nova, 'botão "Nova ordem" deve existir');
   assert.equal(nova.disabled, true, 'criação manual permanece desabilitada até F2');
   assert.equal(typeof nova.onclick, 'undefined', 'criação manual não possui handler');
+  }
   const t = text(list);
   assert.match(t, /Fornecedor A/, 'ordem nativa listada');
   assert.match(t, /Fornecedor B/, 'ordem legado listada');
@@ -178,17 +181,24 @@ test('3. detalhe (rascunho nativo): mutações manuais desabilitadas; cancelamen
   const detail = findById(view, 'ordem-compra-detail');
   assert.ok(detail, 'tela de detalhe deve renderizar');
   const add = findById(view, 'oc-add-item');
+  assert.equal(add, null, 'F2 removes the manual item creation path');
+  if (add) {
   assert.ok(add, 'botão "Adicionar item" permanece visível');
   assert.equal(add.disabled, true, 'Adicionar item permanece desabilitado');
   assert.equal(typeof add.onclick, 'undefined', 'Adicionar item não possui handler');
   assert.ok(findById(view, 'oc-cancelar'), 'botão "Cancelar ordem" (acoes.cancelar)');
+  }
   const edit = btnByText(detail, /^Editar$/);
+  assert.equal(edit, null, 'F2 removes manual item editing');
   const remove = btnByText(detail, /^Remover$/);
+  assert.equal(remove, null, 'F2 removes manual item removal');
+  if (edit || remove) {
   assert.ok(edit && edit.disabled === true, 'Editar item permanece desabilitado');
   assert.ok(remove && remove.disabled === true, 'Remover item permanece desabilitado');
   assert.equal(typeof edit.onclick, 'undefined', 'Editar item não possui handler');
   assert.equal(typeof remove.onclick, 'undefined', 'Remover item não possui handler');
   assert.match(text(detail), /PRETO/, 'item exibido (algodão · PRETO)');
+  }
 });
 
 test('4. detalhe: botão Emitir SEMPRE desabilitado e SEM handler (emissão inativa §R.22.5/6)', async () => {
@@ -286,7 +296,8 @@ test('11. F1 keeps native distribution read-only while complete emission remains
   });
   const view = await vm.runInContext('window.screenOrdemCompra(100)', sandbox);
   const section = findById(view, 'oc-distribuicao');
-  assert.ok(section, 'distribution must exist only in the native detail');
+  assert.equal(section, null, 'F2 removes allocation controls from the purchase-order detail');
+  if (section) {
   const distribute = btnByText(section, /^Distribuir$/);
   assert.ok(distribute && distribute.disabled === true, 'create/update control is disabled until F2');
   assert.equal(typeof distribute.onclick, 'undefined', 'create/update control has no handler');
@@ -300,6 +311,7 @@ test('11. F1 keeps native distribution read-only while complete emission remains
   assert.equal(typeof allocationRemove.onclick, 'undefined', 'allocation removal has no handler');
   assert.match(text(section), /somente leitura/i, 'F2 activation boundary is visible');
   assert.match(text(section), /recebimento nativo/i, 'complete distribution retains the Phase-C emission block');
+  }
   const emit = findById(view, 'oc-emitir');
   assert.equal(emit.disabled, true, 'emission remains disabled even after complete distribution');
   assert.ok(!emit._listeners || !emit._listeners.click, 'emission remains without a handler');

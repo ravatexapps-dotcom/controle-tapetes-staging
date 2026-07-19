@@ -1,0 +1,188 @@
+// =====================================================================
+// === PEDIDO / INSUMOS — PURCHASE DISTRIBUTION =========================
+// F2 owns the only purchasing-distribution surface. Server state remains
+// authoritative: this module renders canonical projections and sends only
+// need, supplier, absolute target, and an idempotency key to the F1 RPC.
+// =====================================================================
+
+(function (window) {
+  'use strict';
+
+  var ns = window.RAVATEX_SCREENS = window.RAVATEX_SCREENS || {};
+  var UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  var el = window.el;
+
+  function kg(value) {
+    return typeof window.fmtKg === 'function' ? window.fmtKg(value) : String(value || 0);
+  }
+
+  function commandKey() {
+    if (window.crypto && typeof window.crypto.randomUUID === 'function') return window.crypto.randomUUID();
+    return 'f2-' + Date.now() + '-' + Math.random().toString(36).slice(2);
+  }
+
+  function errorText(code, fallback) {
+    var texts = {
+      sem_permissao: 'Você não tem permissão para distribuir esta necessidade.',
+      necessidade_nao_encontrada: 'A necessidade não foi encontrada.',
+      fornecedor_invalido: 'O fornecedor não foi encontrado.',
+      fornecedor_incompativel: 'O fornecedor não atende este tipo de fio.',
+      kg_invalido: 'Informe uma quantidade válida, com até três casas decimais.',
+      excede_saldo: 'A quantidade alvo excede o saldo disponível da necessidade.',
+      estado_invalido: 'A ordem já está emitida ou congelada para alteração.',
+      idempotencia_conflitante: 'Esta chave de comando já foi usada com uma ação diferente. Não repita como um novo comando.',
+      necessidade_origem_invalida: 'A proveniência da necessidade está inconsistente.',
+      pedido_incoerente: 'A necessidade não pertence ao Pedido informado.',
+      limpeza_conflitante: 'A remoção não pode limpar um item ou ordem com histórico.',
+      alocacao_duplicada: 'Houve conflito de concorrência. Refaça a leitura antes de uma nova alteração.',
+    };
+    return texts[code] || fallback || 'Não foi possível concluir a distribuição.';
+  }
+
+  async function loadData(pedidoId) {
+    var needs = await window.supa.from('necessidade_compra_fio')
+      .select('id, origem_tipo, op_id, material, cor_id, cor_poliester, kg_necessario, kg_alocado, legado, ops:op_id(id,numero,ano), cores:cor_id(nome)')
+      .eq('pedido_id', pedidoId).eq('legado', false).order('id');
+    if (needs.error) throw needs.error;
+    var ids = (needs.data || []).map(function (item) { return item.id; });
+    var allocations = ids.length ? await window.supa.from('ordem_compra_item_alocacao')
+      .select('id, necessidade_id, kg_alocado, item:ordem_compra_item!inner(ordem_id, ordem:ordem_id!inner(id, fornecedor_id, status_administrativo, status_recebimento, fornecedores:fornecedor_id(nome)))')
+      .in('necessidade_id', ids) : { data: [], error: null };
+    if (allocations.error) throw allocations.error;
+    var suppliers = await window.supa.from('fornecedores').select('id, nome, tipo').order('nome');
+    if (suppliers.error) throw suppliers.error;
+    (needs.data || []).forEach(function (need) {
+      need.alocacoes = (allocations.data || []).filter(function (row) { return Number(row.necessidade_id) === Number(need.id); });
+    });
+    return { needs: needs.data || [], suppliers: suppliers.data || [] };
+  }
+
+  function needLabel(need) {
+    if (need.origem_tipo === 'op') {
+      var op = need.ops || {};
+      return 'OP ' + (op.numero != null ? op.numero + (op.ano ? '/' + op.ano : '') : need.op_id);
+    }
+    return 'Pedido compartilhado';
+  }
+
+  function materialLabel(need) {
+    return (need.material === 'algodao' ? 'Algodão' : 'Poliéster') + ' · '
+      + ((need.cores && need.cores.nome) || need.cor_poliester || '—');
+  }
+
+  function orderFrom(allocation) {
+    return allocation && allocation.item && allocation.item.ordem;
+  }
+
+  function renderNeed(need, openAllocation) {
+    var remaining = Number(need.kg_necessario) - Number(need.kg_alocado);
+    var card = el('section', { class: 'bg-white rounded-xl shadow p-5 mb-4', 'data-necessidade-id': String(need.id) });
+    card.appendChild(el('div', { class: 'flex items-start justify-between gap-3 flex-wrap' },
+      el('div', {},
+        el('h2', { class: 'font-semibold text-gray-900' }, materialLabel(need)),
+        el('div', { class: 'text-xs text-gray-500 mt-1' }, needLabel(need) + ' · proveniência somente leitura')),
+      el('button', { type: 'button', class: 'bg-blue-700 hover:bg-blue-800 text-white text-sm font-semibold px-3 py-2 rounded-lg', onclick: function () { openAllocation(need, null); } }, 'Distribuir')));
+    card.appendChild(el('div', { class: 'grid grid-cols-3 gap-2 text-sm mt-4' },
+      el('div', { class: 'bg-gray-50 rounded p-2' }, 'Necessário: ' + kg(need.kg_necessario)),
+      el('div', { class: 'bg-gray-50 rounded p-2' }, 'Alocado: ' + kg(need.kg_alocado)),
+      el('div', { class: 'bg-gray-50 rounded p-2' }, 'Restante: ' + kg(remaining))));
+    var allocations = need.alocacoes || [];
+    card.appendChild(el('div', { class: 'mt-4 text-xs font-semibold text-gray-600 uppercase' }, 'Alocações atuais'));
+    if (!allocations.length) card.appendChild(el('div', { class: 'text-sm text-gray-500 mt-1' }, 'Nenhuma alocação para esta necessidade.'));
+    allocations.forEach(function (allocation) {
+      var order = orderFrom(allocation) || {};
+      var supplier = order.fornecedores || {};
+      var row = el('div', { class: 'flex items-center justify-between gap-3 mt-2 text-sm border-t pt-2', 'data-alocacao-id': String(allocation.id) },
+        el('span', {}, (supplier.nome || 'Fornecedor') + ' · alvo ' + kg(allocation.kg_alocado) + ' kg'),
+        el('div', { class: 'flex gap-3' },
+          el('button', { type: 'button', class: 'text-blue-700 font-semibold', onclick: function () { openAllocation(need, allocation); } }, 'Alterar'),
+          order.id != null ? el('button', { type: 'button', class: 'text-blue-700 font-semibold', onclick: function () { window.navigate('#/ordens-compra/' + order.id); } }, 'Ver ordem') : null));
+      card.appendChild(row);
+    });
+    return card;
+  }
+
+  function openModal(need, allocation, suppliers, onDone, setNotice) {
+    var order = orderFrom(allocation) || {};
+    var selectedSupplier = order.fornecedor_id || '';
+    var supplierType = need.material === 'algodao' ? 'fio_algodao' : 'fio_poliester';
+    var validSuppliers = suppliers.filter(function (supplier) { return supplier.tipo === supplierType; });
+    var supplier = window.selectInput({ options: validSuppliers.map(function (item) { return { value: item.id, label: item.nome }; }), value: selectedSupplier, placeholder: 'Selecione o fornecedor...' });
+    var target = el('input', { type: 'number', min: '0', step: '0.001', value: allocation ? String(allocation.kg_alocado) : '', class: 'w-full border rounded px-3 py-2' });
+    var current = allocation ? Number(allocation.kg_alocado) : 0;
+    var body = el('div', { class: 'space-y-3' },
+      el('div', { class: 'text-sm text-gray-700' }, materialLabel(need) + ' · ' + needLabel(need)),
+      window.formField({ label: 'Fornecedor', input: supplier }),
+      window.formField({ label: 'Quantidade alvo absoluta (kg)', input: target }),
+      el('div', { class: 'text-xs text-gray-500 bg-gray-50 rounded p-3' },
+        'Necessário: ' + kg(need.kg_necessario) + ' · total alocado: ' + kg(need.kg_alocado)
+        + ' · neste fornecedor: ' + kg(current) + ' · restante atual: ' + kg(Number(need.kg_necessario) - Number(need.kg_alocado))
+        + '. Use zero para remover esta alocação.'));
+    var command = { key: commandKey(), submitting: false };
+    window.modal({
+      title: 'Distribuir necessidade', body: body, saveLabel: 'Confirmar alvo',
+      onSave: async function () {
+        if (command.submitting) return false;
+        var supplierId = Number(supplier.value);
+        var targetKg = Number(target.value);
+        if (!supplierId || !Number.isFinite(targetKg) || targetKg < 0 || !/^\d+(\.\d{1,3})?$/.test(String(target.value).trim())) {
+          setNotice('error', 'Informe fornecedor e quantidade alvo válida.');
+          return false;
+        }
+        command.submitting = true;
+        var result;
+        try {
+          result = await window.supa.rpc('definir_alocacao_necessidade_compra_fio', {
+            p_necessidade_id: Number(need.id), p_fornecedor_id: supplierId,
+            p_kg_alocado: targetKg, p_idempotency_key: command.key,
+          });
+        } catch (error) {
+          command.submitting = false;
+          setNotice('error', 'Resposta incerta. Reenvie para repetir com segurança a mesma chave de comando.');
+          return false;
+        }
+        command.submitting = false;
+        if (result.error || !result.data || result.data.ok !== true) {
+          var data = result.data || {};
+          setNotice('error', errorText(data.codigo, data.erro || 'Falha de comunicação. Reenvie para repetir com segurança a mesma chave de comando.'));
+          return false;
+        }
+        setNotice('success', 'Distribuição atualizada (' + (result.data.discriminador || 'ok') + ').');
+        await onDone();
+        return true;
+      },
+    });
+  }
+
+  async function screenPedidoInsumosDistribuicao(pedidoId) {
+    var root = el('div', { id: 'pedido-insumos-distribuicao' });
+    var notice = el('div', { id: 'pedido-insumos-distribuicao-notice', class: 'hidden mb-4' });
+    function setNotice(kind, text) {
+      notice.className = 'mb-4 rounded p-3 text-sm ' + (kind === 'error' ? 'bg-red-50 text-red-700' : 'bg-green-50 text-green-700');
+      notice.textContent = text;
+    }
+    function renderLoading() { root.replaceChildren(el('div', { class: 'bg-white rounded-xl shadow p-6 text-gray-500' }, 'Carregando necessidades de compra...')); }
+    async function reload() {
+      renderLoading();
+      try {
+        var data = await loadData(pedidoId);
+        var body = el('div', {},
+          el('div', { class: 'flex items-center justify-between gap-3 mb-4 flex-wrap' },
+            el('div', {}, el('h1', { class: 'text-xl font-bold' }, 'Insumos — distribuição de compra'), el('div', { class: 'text-sm text-gray-500 mt-1' }, 'Defina fornecedores e quantidades alvo por necessidade do Pedido.')),
+            el('button', { type: 'button', class: 'text-blue-700 font-semibold', onclick: function () { window.navigate('#/pedidos/' + pedidoId); } }, 'Voltar ao Pedido')));
+        if (!data.needs.length) body.appendChild(el('div', { class: 'bg-white rounded-xl shadow p-6 text-gray-500' }, 'Nenhuma necessidade nativa disponível para este Pedido.'));
+        data.needs.forEach(function (need) { body.appendChild(renderNeed(need, function (selected, allocation) { openModal(selected, allocation, data.suppliers, reload, setNotice); })); });
+        root.replaceChildren(body);
+      } catch (error) {
+        setNotice('error', 'Não foi possível carregar a distribuição. Tente novamente.');
+        root.replaceChildren(el('button', { type: 'button', class: 'text-blue-700 font-semibold', onclick: reload }, 'Tentar novamente'));
+      }
+    }
+    if (!UUID.test(String(pedidoId || ''))) setNotice('error', 'Identificador de Pedido inválido.');
+    else await reload();
+    return window.shellLayout(window.ADMIN_MENU, el('div', {}, notice, root));
+  }
+
+  ns.pedidoInsumosDistribuicao = { screenPedidoInsumosDistribuicao: screenPedidoInsumosDistribuicao, commandKey: commandKey, errorText: errorText };
+  window.screenPedidoInsumosDistribuicao = screenPedidoInsumosDistribuicao;
+})(window);

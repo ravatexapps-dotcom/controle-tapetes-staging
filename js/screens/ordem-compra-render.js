@@ -69,13 +69,7 @@
     var box = el('div', { id: 'ordens-compra-list' });
 
     var header = el('div', { class: 'flex justify-between items-center mb-4' },
-      el('h1', { class: 'text-2xl font-bold' }, 'Ordens de compra'),
-      el('button', {
-        id: 'oc-nova',
-        class: 'bg-gray-200 text-gray-500 font-semibold px-4 py-2 rounded-lg cursor-not-allowed',
-        title: 'Criação manual indisponível; a ativação da distribuição ocorrerá na Fase F2.',
-        disabled: true,
-      }, 'Nova ordem'));
+      el('h1', { class: 'text-2xl font-bold' }, 'Ordens de compra'));
     box.appendChild(header);
 
     if (state.indisponivel) {
@@ -155,20 +149,18 @@
 
     // Actions row (server-derived)
     var actions = el('div', { class: 'flex items-center gap-2 mt-4' });
-    if (acoes.editar_itens) {
-      actions.appendChild(el('button', {
-        id: 'oc-add-item',
-        class: 'bg-gray-200 text-gray-500 text-sm font-semibold px-3 py-2 rounded-lg cursor-not-allowed',
-        title: 'Edição manual indisponível; use a distribuição por necessidade após a Fase F2.',
-        disabled: true,
-      }, 'Adicionar item'));
-    }
     if (acoes.cancelar) {
       actions.appendChild(el('button', {
         id: 'oc-cancelar',
         class: 'border border-red-300 text-red-600 hover:bg-red-50 text-sm font-semibold px-3 py-2 rounded-lg',
         onclick: function () { handlers.cancelar(o); },
       }, 'Cancelar ordem'));
+    }
+    if (o.pedido_id) {
+      actions.appendChild(el('button', {
+        id: 'oc-abrir-pedido', class: 'text-blue-700 text-sm font-semibold px-3 py-2',
+        onclick: function () { handlers.verPedido(o.pedido_id); },
+      }, 'Abrir Pedido'));
     }
     // Emission — INSTALLED BUT INACTIVE (§R.22.6): always disabled, never wired.
     var emitBtn = el('button', {
@@ -206,20 +198,6 @@
         tr.appendChild(el('td', { class: 'px-4 py-2 text-sm text-right text-gray-800', style: 'font-variant-numeric:tabular-nums;' }, fmtKg(it.kg_pedido)));
         tr.appendChild(el('td', { class: 'px-4 py-2 text-sm text-right text-gray-500', style: 'font-variant-numeric:tabular-nums;' }, fmtKg(it.kg_alocado)));
         var actTd = el('td', { class: 'px-4 py-2 text-right whitespace-nowrap' });
-        if (acoes.editar_itens) {
-          actTd.appendChild(el('button', {
-            class: 'text-sm text-gray-400 ml-3 cursor-not-allowed',
-            title: 'Edição manual indisponível nesta fase.',
-            disabled: true,
-          }, 'Editar'));
-        }
-        if (acoes.remover_itens) {
-          actTd.appendChild(el('button', {
-            class: 'text-sm text-gray-400 ml-3 cursor-not-allowed',
-            title: 'Remoção manual indisponível nesta fase.',
-            disabled: true,
-          }, 'Remover'));
-        }
         tr.appendChild(actTd);
         tb.appendChild(tr);
       });
@@ -229,10 +207,6 @@
     box.appendChild(itemsCard);
 
     // Distribution of native needs (PRE-PROD-A, §R.23.10) — native orders only.
-    var distApi = window.RAVATEX_SCREENS && window.RAVATEX_SCREENS.ordemCompraDistribuicao;
-    if (distApi && state.distribuicao) {
-      box.appendChild(distApi.renderSection(state.distribuicao, handlers));
-    }
 
     // Event history
     var evCard = el('div', { class: 'bg-white rounded-xl shadow overflow-hidden' });

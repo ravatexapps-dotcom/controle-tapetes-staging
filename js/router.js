@@ -98,6 +98,16 @@
       };
     }
 
+    const mPedInsumos = rawHash.match(
+      /^#\/pedidos\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\/insumos$/i
+    );
+    if (mPedInsumos) {
+      return {
+        render: () => window.screenPedidoInsumosDistribuicao(mPedInsumos[1]),
+        roles: ['admin'],
+      };
+    }
+
   // Match dinâmico para detalhe de Pedido (read-only, UUID).
   // Aceita UUIDs case-insensitive. Não conflita com `#/pedidos`,
   // `#/pedidos/novo` (resolvidos pelo match exato acima),

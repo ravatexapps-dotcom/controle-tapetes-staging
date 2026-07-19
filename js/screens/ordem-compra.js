@@ -32,6 +32,7 @@
 
     handlers = ns.createEvents({ state: state, reload: reload });
     handlers.voltar = function () { window.navigate('#/ordens-compra'); };
+    handlers.verPedido = function (pedidoId) { window.navigate('#/pedidos/' + pedidoId); };
 
     if (!Number.isFinite(id) || id <= 0) {
       window.toast('Ordem de compra inválida.', 'error');
