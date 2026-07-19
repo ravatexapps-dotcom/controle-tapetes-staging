@@ -9,8 +9,17 @@ are in `docs/ledgers/G28_LEDGER.md`. HEAD/working tree/divergence: consult Git d
 
 ## Active phase and next action
 
+- **`PURCHASE-ORDER HYBRID ORIGIN — F2 PEDIDO/INSUMOS UI CUTOVER R1` —
+  `AUTHORIZED / READINESS RECONCILIATION IN PROGRESS` (2026-07-19).**
+  The architect accepted F1 and authorized the Pedido-owned UI cutover under the
+  current order. Distribution remains `Pedido → Insumos / aguardando_fios`; it is
+  not a new stage and is not an OP-owned supplier-assignment action. F2 must use
+  the accepted F1 need-first RPC, preserve its client command-key semantics, and
+  leave staging application, Supabase writes, production, `main`, remote changes,
+  and push prohibited. C3A remains implemented and verified but not accepted.
+
 - **`PURCHASE-ORDER HYBRID ORIGIN — F1 FORWARD CORRECTION IMPLEMENTATION R1` —
-  `IMPLEMENTED / VERIFIED LOCALLY / AWAITING ARCHITECT REVIEW` (2026-07-19).**
+  `CLOSED / ACCEPTED_WITH_NONBLOCKING_BASELINE_TEST_DEBT` (2026-07-19).**
   Read-only reconciliation returned `READY_FOR_F1_IMPLEMENTATION`. Technical commits
   `463cafbdd4816ff1093b3086dd71d3d6e70b3479` and
   `680cff136a3294ae9a345fc8f91f02e246891eef` add the forward-only migration and
@@ -24,9 +33,13 @@ are in `docs/ledgers/G28_LEDGER.md`. HEAD/working tree/divergence: consult Git d
   suite is baseline-identical after six added F1 passes: 3,896/3,764/132 before and
   3,902/3,770/132 after; normalized failure hash
   `5aca571de6057bfdf2080ef945112189e6f3f4cb7795ccd827a729131642e75f`.
-  F2 UI and staging application remain unauthorized. C3A remains implemented and
-  verified but not accepted. Production, `main`, remote changes, and push remain
-  prohibited.
+   The accepted technical commits are `463cafbdd4816ff1093b3086dd71d3d6e70b3479`
+   and `680cff136a3294ae9a345fc8f91f02e246891eef`; final technical closeout HEAD is
+   `1ea4a509c069983732af86130d0092b6c1d96e2b`. Migration `db/74` is implemented
+   and verified locally only, not applied to staging. The normalized broader-suite
+   failures are unchanged; the pre-existing admin-menu count failure remains
+   nonblocking. C3A remains implemented and verified but not accepted. Production,
+   `main`, remote changes, and push remain prohibited.
 
 - **`PURCHASE-ORDER HYBRID ORIGIN — F1 EXECUTABLE CONTRACT CLOSURE R1` —
   `CLOSED / ACCEPTED` (2026-07-19, accepted commit
@@ -123,10 +136,11 @@ are in `docs/ledgers/G28_LEDGER.md`. HEAD/working tree/divergence: consult Git d
   cutover (`M10`)"; cutover is done. **New fronts are authorizable again**, each by
   its own individual order. The consolidated, ranked `POST-LAUNCH DEBT REGISTER`
   (below) supersedes the former "residual risk register (12 items)".
-- **Next authorizable action:** architect review and acceptance or rejection of the
-  locally verified `PURCHASE-ORDER HYBRID ORIGIN — F1 FORWARD CORRECTION
-  IMPLEMENTATION R1`. A separate order is required before staging application or F2.
-  C3A remains unaccepted; no later C3 phase chains automatically. Separately, the
+- **Next authorizable action:** complete the authorized F2 readiness reconciliation
+  and, only if it returns `READY_FOR_F2_IMPLEMENTATION`, the bounded local UI
+  implementation and verification under the current order. Staging application,
+  Supabase writes, C3A acceptance, production, `main`, remote changes, and push
+  remain separately unauthorized. Separately, the
   highest-consequence open operational item remains
   `INGESTOR-DOC-CYCLE-VERIFY-DEFERRED`, an `ACTIVE PRODUCTION BLOCKER`. See the
   `POST-LAUNCH DEBT REGISTER`. **Standing reminder: flip the Supabase MCP back to

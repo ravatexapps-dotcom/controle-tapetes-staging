@@ -1,7 +1,16 @@
 # ACTIVE OPERATIONAL HANDOFF
 
+- **`PURCHASE-ORDER HYBRID ORIGIN — F2 PEDIDO/INSUMOS UI CUTOVER R1` —
+  `AUTHORIZED / READINESS RECONCILIATION IN PROGRESS` (2026-07-19).**
+  This order authorizes only the local F2 UI cutover after the readiness gate.
+  Canonical purchasing distribution belongs to `Pedido → Insumos /
+  aguardando_fios`, not to OP or purchase-order entity screens and not to a new
+  stepper stage. F2 must call the accepted F1 need-first RPC with stable client
+  command keys. Staging application, Supabase writes, production, `main`, remote
+  changes, push, and C3A acceptance remain prohibited.
+
 - **`PURCHASE-ORDER HYBRID ORIGIN — F1 FORWARD CORRECTION IMPLEMENTATION R1` —
-  `IMPLEMENTED / VERIFIED LOCALLY / AWAITING ARCHITECT REVIEW` (2026-07-19).**
+  `CLOSED / ACCEPTED_WITH_NONBLOCKING_BASELINE_TEST_DEBT` (2026-07-19).**
   Accepted contract `00897f09267fc8304b329ce46ba985d03a57faff`; acceptance
   registration `380c03dd34f37db80b1c171deb50017b685b69aa`; technical commits
   `463cafbdd4816ff1093b3086dd71d3d6e70b3479` and
@@ -12,9 +21,11 @@
   purchase-order tests pass 62/62; broader failures remain the exact 132-identity
   baseline with SHA-256
   `5aca571de6057bfdf2080ef945112189e6f3f4cb7795ccd827a729131642e75f`.
-  The UI remains read-only/disabled pending F2. No staging application occurred.
-  F2, staging, C3A acceptance, production, `main`, remote changes, and push remain
-  unauthorized. Next action requires architect review and a separate order.
+   Final technical closeout HEAD: `1ea4a509c069983732af86130d0092b6c1d96e2b`.
+   Migration `db/74` is implemented and verified locally only; no staging
+   application occurred. The normalized broader-suite failures remain unchanged,
+   including the pre-existing nonblocking admin-menu count failure. C3A remains
+   implemented and verified but not accepted.
 
 - **`PURCHASE-ORDER HYBRID ORIGIN — F1 EXECUTABLE CONTRACT CLOSURE R1` —
   `CLOSED / ACCEPTED` (accepted commit

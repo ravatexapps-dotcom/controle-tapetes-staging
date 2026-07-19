@@ -4212,3 +4212,21 @@ MATERIAL_DIVERGENCES: NONE
   manual/item-first writers remain owner-only. db/74 reapply, dynamic ACL proof,
   rollback integration 62/62 focused tests, and the exact broad-suite failure hash
   passed again. No staging or other environment observed the superseded local ACL.
+
+## 2026-07-19 — PURCHASE-ORDER HYBRID ORIGIN — F1 FORWARD CORRECTION ACCEPTANCE R1
+
+- **Architect ruling:** `PURCHASE-ORDER HYBRID ORIGIN — F1 FORWARD CORRECTION
+  IMPLEMENTATION R1` is `CLOSED / ACCEPTED_WITH_NONBLOCKING_BASELINE_TEST_DEBT`.
+  Accepted technical commits: `463cafbdd4816ff1093b3086dd71d3d6e70b3479` and
+  `680cff136a3294ae9a345fc8f91f02e246891eef`; final technical closeout HEAD:
+  `1ea4a509c069983732af86130d0092b6c1d96e2b`.
+- **Accepted evidence and boundaries:** `db/74_ordem_compra_hybrid_origin_forward_correction.sql`
+  is implemented and verified locally only. It was not applied to staging. The
+  normalized broader-suite failures remain exactly unchanged; the existing
+  admin-menu count failure remains pre-existing and nonblocking. No staging
+  application, Supabase write, production, `main`, remote change, or push occurred.
+- **Disposition:** F2 is authorized as `PURCHASE-ORDER HYBRID ORIGIN — F2
+  PEDIDO/INSUMOS UI CUTOVER R1`, subject to its own readiness reconciliation and
+  all hard gates in the architect order. C3A remains `IMPLEMENTED / VERIFIED / NOT
+  ACCEPTED`. The F2 boundary does not authorize staging application or any later
+  C3 phase.
