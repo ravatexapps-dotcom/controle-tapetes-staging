@@ -3563,3 +3563,58 @@ risco residual e próxima fase indicada no fechamento.
   the live T1/T2 concurrency test (needs a Kleber-logged-in staging admin browser
   session), the dedicated distribution UI, visual evidence, and closeout. Native
   emission, native receipt, `PRE-PROD-B`, and `Phase C` remain `NOT AUTHORIZED`.
+
+## 2026-07-19 — PRE-PROD-A-R1 — DB FOUNDATION APPLIED + OWNER-TESTED / APP AUTHORED — SESSION CHECKPOINT (commits 2-3 of the implementation order)
+
+- **Order:** `PRE-PROD-A-R1 — NATIVE NEEDS, ALLOCATION AND LIVE CONCURRENCY` (Opus 4.8).
+  This is a mid-phase session checkpoint, not an acceptance; recorded because the next
+  atomic block (live T1/T2) needs a browser session unavailable this session.
+- **Commits:** `4ffd674` (Add native need and allocation foundation), `2bcacac` (Add
+  native purchase-order distribution UI). Baseline `dev @ 51f31dd`; HEAD `2bcacac`.
+- **Migration:** `db/69_ordem_compra_preprod_allocation.sql` **APPLIED to staging
+  `ucrjtfswnfdlxwtmxnoo`** (Supabase migration history `69_ordem_compra_preprod_allocation`).
+  Complete/self-consistent; safe to leave applied. Objects: `pedido_compra_fio_regime` +
+  immutability guard + `resolver_regime_compra_fio_pedido`; `avaliar`/`sincronizar_necessidades_compra_fio`;
+  hardened absolute `alocar_necessidade_compra_fio` + identity uniqueness index;
+  `remover_alocacao_compra_fio`; post-emission item/allocation mutation guards;
+  `obter_distribuicao_ordem_compra` + read-model block-reason replacements. ACL: all 8
+  client RPCs SECURITY DEFINER + is_admin(), EXECUTE authenticated only; `emitir_ordem_compra`
+  ungranted (emission inactive); no bridge, no flat shadow, no receipt/ledger activation.
+- **§8 need formula:** proven — SQL replica of `calcularFiosOP`/`montarOrdensCompraFio`
+  reproduced the 64-row flat corpus with 0 unmatched keys and **0.000 kg drift** (eligible
+  aberta/em_producao tecelagem OPs).
+- **DB test matrix (§23):** all pass (regime; need assessment incl. idempotent/absolute-update/
+  obsolete-delete/parity; allocation incl. absolute/idempotent/over-allocation/coherence/
+  cache=SUM/removal; read model incl. block reasons + poly OP attribution; ACL; sync-conflicts
+  incl. decrease-below-alloc atomic + non-draft block + legacy-regime rejection), run as
+  rolled-back admin-context transactions. **Legacy regression (§24):** clean —
+  64/51/51/51/51, `ordens_compra_fio` kg checksum 25608.300, zero fixture residue.
+- **3 db/69 bugs found + fixed during testing:** Cyrillic typo in the item-quantity guard;
+  `sincronizar` temp-table re-entrancy (added `DROP TABLE IF EXISTS _sync_plan`);
+  `obter_distribuicao` record→json ORDER BY (`to_jsonb(x) ORDER BY x.item_id`). File and
+  staging kept in sync.
+- **Application:** `op-persistir.js` regime cutover (§R.23.2; native skips flat + syncs needs,
+  no silent fallback); new `js/screens/op-compra-regime.js` (regime/need RPC wrappers) and
+  `js/screens/ordem-compra-distribuicao.js` (distribution read view; allocation write controls
+  **disabled** behind `ALLOCATION_ENABLED=false`, §22); wiring in `ordem-compra{,-data,-render}.js`
+  + `index.html`; no router/boot/common change (§17).
+- **STRUCTURAL POLICY COMPLIANCE (§26):** new files well within CODE_HEALTH §7 caps
+  (op-compra-regime.js ~85 lines; ordem-compra-distribuicao.js ~190 lines; db/69 ~1080 lines SQL);
+  no Supabase writes in render (§9); no client-side authority reconstruction (server RPCs);
+  cache trigger remains sole `kg_alocado` maintainer; no new responsibility on op-nova.js; no
+  transient concurrency probe present.
+- **Tests:** `op-persistir.smoke.js` amended under explicit architect authorization (outside the
+  §25 manifest) for the regime-gated behavior + native no-flat-row proof; `node --check` clean on
+  all touched JS; full suite **133 failures = clean-HEAD baseline, zero new**.
+- **Scope discipline:** staging only; production (`gqmpsxkxynrjvidfmojk`) and prohibited
+  (`bhgifjrfagkzubpyqpew`) not accessed; no push; no `main`; `.gitignore`/`AGENTS.md` untouched.
+- **Open / pending (next session, needs Kleber's staging browser login):** live authenticated
+  **T1/T2 concurrency test** closing `LIVE_ALLOCATION_T1_T2_TEST_PENDING` (transient probe
+  `preprod_a_allocation_concurrency_probe` to be created for the test and dropped immediately —
+  none exists now); then enable `ALLOCATION_ENABLED`; browser visual evidence (§27); rollback
+  rehearsal (§28); §30 closeout. `NATIVE_RECEIPT_COMPATIBILITY_MULTI_ORIGIN_UNRESOLVED`, native
+  emission/receipt, `ADMIN_SHELL_MOBILE_RESPONSIVENESS_DEBT`, and production diagnosis remain open.
+- **Status:** `PRE-PROD-A-R1` DB foundation applied + owner-tested; application authored with
+  allocation UI disabled; **live concurrency, visual evidence, and closeout PENDING**. Not accepted.
+- **Next authorizable action:** resume PRE-PROD-A with the live T1/T2 test against the applied
+  db/69. `PRE-PROD-B` and `Phase C` remain `NOT AUTHORIZED`.

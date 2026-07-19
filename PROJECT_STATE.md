@@ -279,10 +279,20 @@ are in `docs/ledgers/G28_LEDGER.md`. HEAD/working tree/divergence: consult Git d
   Migration slot **`db/69`** authorized (regime + resolver + assess/sync RPCs +
   hardened absolute `alocar_necessidade_compra_fio` + `remover_alocacao_compra_fio`
   + allocation-identity uniqueness + post-emission mutation guards + distribution
-  read model; **no** emission grant, bridge, flat shadow, or receipt work). **This
-  entry records the documentation contract-closure commit only; `db/69`, the
-  application code, and the live staging test are the conditional implementation
-  half, not yet applied.** **Kept open:**
+  read model; **no** emission grant, bridge, flat shadow, or receipt work).
+  **Implementation progress (2026-07-19, HEAD `2bcacac`; commits `3746284` contract /
+  `4ffd674` foundation / `2bcacac` UI):** `db/69` is **APPLIED to staging
+  `ucrjtfswnfdlxwtmxnoo`** (migration history `69_ordem_compra_preprod_allocation`);
+  the owner-level DB test matrix (§23) and §24 legacy regression **all pass** (zero
+  residue; full suite 133 failures = baseline, zero new); 3 real db/69 bugs found and
+  fixed during testing. The application layer (regime cutover in `op-persistir.js`;
+  new `op-compra-regime.js` and `ordem-compra-distribuicao.js`; wiring) is authored,
+  with the **allocation write controls feature-disabled** (`ALLOCATION_ENABLED=false`,
+  §22) and `emitir_ordem_compra` ungranted. **PENDING (needs a Kleber-logged-in staging
+  browser):** the live authenticated **T1/T2 concurrency test** that closes
+  `LIVE_ALLOCATION_T1_T2_TEST_PENDING`, then enabling the UI flag, browser visual
+  evidence (§27), rollback rehearsal (§28), and the §30 closeout — none yet done.
+  **Kept open:**
   `NATIVE_RECEIPT_COMPATIBILITY_MULTI_ORIGIN_UNRESOLVED`, native emission inactive,
   Phase C receipt authority, production diagnosis precondition,
   `ADMIN_SHELL_MOBILE_RESPONSIVENESS_DEBT`. **`PRE-PROD-B` and `Phase C` remain

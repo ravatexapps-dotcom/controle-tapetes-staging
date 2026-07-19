@@ -1,5 +1,45 @@
 # ACTIVE OPERATIONAL HANDOFF
 
+- **`PRE-PROD-A-R1` — `DB FOUNDATION APPLIED + OWNER-TESTED / APP AUTHORED (ALLOCATION UI DISABLED) /
+  LIVE T1/T2 + VISUAL EVIDENCE PENDING` (2026-07-19, branch `dev`, Opus 4.8) — SESSION CHECKPOINT,
+  supersedes on status the contract bullet below.** Session-safe stopping point mid-phase; the next
+  atomic block (the live T1/T2 concurrency test) needs an authenticated staging admin browser session
+  and could not run this session.
+  - **HEAD `2bcacac`** on `dev`. Commits this phase: `3746284` (contract), `4ffd674` (foundation:
+    db/69 + regime cutover + op-persistir.smoke fix), `2bcacac` (distribution UI). No push, no `main`;
+    `.gitignore`/`AGENTS.md` untouched.
+  - **`db/69_ordem_compra_preprod_allocation.sql` APPLIED to staging `ucrjtfswnfdlxwtmxnoo`**
+    (Supabase migration `69_ordem_compra_preprod_allocation`, recorded in migration history). This is a
+    COMPLETE, self-consistent migration — safe to leave applied. Grants: all 8 native RPCs EXECUTE to
+    `authenticated`; `alocar_necessidade_compra_fio` **granted** (active) but the application allocation
+    controls are **feature-disabled** (`ALLOCATION_ENABLED=false` in `ordem-compra-distribuicao.js`) per
+    order §22 — do NOT enable the UI until the live T1/T2 test passes. `emitir_ordem_compra` remains
+    ungranted (emission inactive).
+  - **Owner-level DB matrix (§23) ALL PASS** (regime, need-assessment, allocation, read-model, ACL,
+    sync-conflicts — run as rolled-back admin-context transactions). **§24 legacy regression clean**
+    (64/51/51/51/51, `ordens_compra_fio` kg checksum 25608.300, zero fixture residue). **§8 need formula
+    proven** (SQL replica of calcularFiosOP/montarOrdensCompraFio, 0.000 kg drift). 3 real db/69 bugs were
+    found and fixed during testing (Cyrillic typo; `sincronizar` temp-table re-entrancy → `DROP TABLE IF
+    EXISTS`; `obter_distribuicao` record→json ordering → `to_jsonb(x) ORDER BY x.item_id`).
+  - **Full test suite: 133 failures = clean-HEAD baseline; ZERO new failures.** `node --check` clean on
+    all touched JS. `op-persistir.smoke.js` was amended under explicit architect authorization (it is not
+    in the §25 manifest) for the regime-gated behavior + a native no-flat-row proof.
+  - **PENDING (next session, needs Kleber):** (1) the real authenticated **T1/T2 live concurrency test**
+    (§20–22) — Kleber must log into the staging app locally in a browser; Claude drives concurrent
+    PostgREST requests and must not handle a password. A transient staging-only probe
+    (`preprod_a_allocation_concurrency_probe`) is authorized for the test and must be dropped immediately
+    (verify catalog count=0) — NONE exists now. (2) On T1/T2 pass, flip `ALLOCATION_ENABLED=true` and
+    enable the allocation controls (§22 step 5). (3) Browser **visual evidence** (§27) desktop/tablet +
+    mobile-against-`ADMIN_SHELL_MOBILE_RESPONSIVENESS_DEBT`, contact sheet, architect visual acceptance.
+    (4) Rollback rehearsal (§28). (5) Closeout to `PRE-PROD-A: IMPLEMENTED / VERIFIED IN STAGING / LIVE
+    CONCURRENCY PASS / AWAITING ARCHITECT VISUAL VALIDATION AND ACCEPTANCE` (§30) — NOT yet recordable.
+  - **Safest continuation:** resume with the T1/T2 test (fixtures + probe per §20–21) against the
+    applied db/69; nothing to re-apply or roll back. Beware: `git stash -u` corrupted the index on this
+    OneDrive worktree once this session (recovered) — avoid stash; use worktrees for baseline comparisons.
+  - **Kept open / NOT authorized:** `NATIVE_RECEIPT_COMPATIBILITY_MULTI_ORIGIN_UNRESOLVED`; native
+    emission; native receipt (Phase C); `ADMIN_SHELL_MOBILE_RESPONSIVENESS_DEBT`; production diagnosis
+    precondition. `PRE-PROD-B` and `Phase C` remain `NOT AUTHORIZED`.
+
 - **`PRE-PROD-A-R1` — `CONTRACT CLOSED / IMPLEMENTATION AUTHORIZED (CONDITIONAL) /
   STAGING PENDING` (2026-07-19, branch `dev`, baseline `51f31dd`, Opus 4.8):** the
   binding PRE-PROD-A contract is closed in
