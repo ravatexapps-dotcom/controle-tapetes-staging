@@ -434,7 +434,8 @@ accepted. C1 authorizes no implementation or C2 work; see lifecycle spec §R.24.
 inactive native receipt foundation and verification read model: immutable command
 headers, the canonical multi-line admin/matching-supplier receipt RPC, admin-only
 reversal, ledger-derived caches, and source-linked surplus movement. The receipt line
-is explicitly allocated or excess; allocation supplies the real OP, while excess has
+is explicitly allocated or excess; allocation supplies the derived real OP for
+OP-origin or NULL for shared Pedido-origin, while excess has
 no fabricated allocation/OP. Existing Pedido/OP receipt consumers and INSUMOS readers
 stay on the flat path in C2. No Pedido, OP, transition, order-detail, or supplier UI is
 changed. C3 owns both-consumer cutover/readers/flat ACL; C4 owns the admin receipt UI;
@@ -1460,13 +1461,13 @@ Status: **CONTRACT CLOSED / IMPLEMENTATION AUTHORIZED (CONDITIONAL) / STAGING PE
   `docs/architecture/ORDEM_COMPRA_LIFECYCLE_SPEC_PROPOSED.md` **§R.23** (governing
   home). This backlog note records only the **production-flow / UI-ownership
   boundary** the contract fixes, which touches this document's concerns.
-- **UI ownership boundary (binding).** Native yarn-need **distribution/allocation**
-  belongs exclusively to the **dedicated Ordem de Compra entity** (new child module
-  `js/screens/ordem-compra-distribuicao.js` under route `#/ordens-compra/:id`). It is
-  **not** added to `op-nova.js`, the Pedido detail screen, the supplier screen, or
-  the transition modals — transition modals remain action-only. This preserves the
-  §2/§9 backlog principle that the Pedido shows consolidated previews + shortcuts and
-  does not become a parallel production/purchasing source.
+- **UI surface and domain ownership boundary (corrected by the accepted hybrid-origin
+  addendum).** Native yarn-need distribution/allocation belongs to **Pedido → Insumos /
+  `aguardando_fios`**. The dedicated Ordem de Compra route
+  `#/ordens-compra/:id` and child module
+  `js/screens/ordem-compra-distribuicao.js` are an allowed focused surface, not a
+  transfer of ownership. The action is not OP-owned, is not a transition-modal write,
+  and does not create a new stepper stage.
 - **Purchasing regime per Pedido.** `pedido_compra_fio_regime` makes the purchasing
   model explicit and immutable (`legacy` vs `native`); a `native` Pedido stops
   producing flat `ordens_compra_fio` rows at Abrir OP and instead assesses/synchronizes
@@ -1534,3 +1535,31 @@ Status: **CLOSED / ACCEPTED_WITH_NONBLOCKING_ADMIN_SHELL_MOBILE_RESPONSIVENESS_D
   Production, `main`, push, PRE-PROD-B, and Phase C implementation remain prohibited
   unless separately authorized. The next authorizable action is a separate architect
   order selecting a reconciled backlog front.
+
+# Update 2026-07-19 — Purchase-order hybrid-origin correction R2
+
+Status: **DOCUMENTATION CORRECTION COMPLETED / AWAITING ARCHITECT ACCEPTANCE**.
+
+- The accepted impact audit keeps every redo verdict at **NO**. B1, PRE-PROD, C1,
+  C2, and C3A are not restarted; C3A remains technically verified but unaccepted.
+- Native cotton is OP-origin. Shared polyester is Pedido-origin with NULL need and
+  allocation OP provenance. No caller-selected, representative, or synthetic OP is
+  allowed. Item ordered quantity is derived only from allocation totals.
+- Purchase-order ownership remains Pedido + supplier. Purchasing distribution remains
+  inside the existing Pedido / Insumos / `aguardando_fios` context. A dedicated route
+  may host the UI, but **no new Insumos or purchasing stage is introduced**.
+- Localized forward correction must supersede or restrict independent `Nova ordem`,
+  item-first/manual-quantity origination, caller-controlled `p_op_id`, OP-owned
+  supplier assignment, and Phase C rules that require an OP on shared allocations.
+- **Future sequence (each step separately authorized):**
+  1. canonical documentation correction;
+  2. forward corrective implementation;
+  3. focused staging validation;
+  4. PRE-PROD revalidation;
+  5. Phase C shared-allocation revalidation;
+  6. later architect disposition of C3A;
+  7. only then continuation to C3B and subsequent phases.
+
+This entry authorizes no implementation, migration, staging write, production, `main`,
+or push. The next authorization boundary is architect acceptance or rejection of the
+documentation correction only.

@@ -152,8 +152,10 @@ The `insumos` stepper stage (unchanged as a stage) internally comprises three
 acts; each is a distinct responsibility with its own surface:
 
 1. **Assessment (apuração).** Compute the Pedido's consolidated yarn requirement
-   per material/color and **persist it as `necessidade_compra_fio`** (with the
-   per-OP origin breakdown). Source of the requirement is the existing
+   per material/color and **persist it as `necessidade_compra_fio`** with hybrid
+   origin: production-specific cotton remains attached to the real OP that
+   calculated its consumption, while genuinely shared polyester belongs to the
+   Pedido and carries no OP. Source of the requirement is the existing
    `calcularFiosOP`/`montarOrdensCompraFio` computation — Part R only persists it
    as a first-class need instead of leaving it implicit.
 2. **Purchase distribution.** Allocate slices of the need to purchase orders per
@@ -344,7 +346,9 @@ historical row is rewritten or silently re-pointed (§R.12).
 **Canonical write surface.** `authenticated`/`anon` receive **no** direct
 `INSERT`/`UPDATE`/`DELETE` on `ordem_compra_item_alocacao`. All allocation change
 occurs through canonical `SECURITY DEFINER` RPCs — at minimum
-`alocar_necessidade(need_id, item_id, kg)` and `remover_alocacao(alocacao_id)`;
+`alocar_necessidade_compra_fio(item_id, need_id, kg)` and
+`remover_alocacao_compra_fio(alocacao_id)`; the future corrected writer derives
+allocation provenance from the locked need and accepts no caller-selected OP;
 no generic table mutation is exposed. Allocation **UPDATE is not a public
 operation** — a quantity change is a controlled remove + insert inside the writer.
 Allocation insert/remove are permitted **only while the parent `ordem_compra` is
@@ -385,11 +389,14 @@ active allocations)` per need; any drift is an invariant **violation** (blocking
 any repair is an **explicitly authorized maintenance operation**, never a silent
 application correction.
 
-**Item integrity & OP origin.** `item.kg_pedido = SUM(item's allocations.
-kg_alocado)` (planning identity; physical over-receipt is receipt-time, routed to
-`saldo_fios` §R.9, never an allocation). Every allocation carries `op_id`, so
-purchased kg trace to the originating OP even when one item satisfies needs from
-multiple OPs (Flaw 1); the header carries no OP.
+**Item integrity & hybrid origin.** `item.kg_pedido = SUM(item's allocations.
+kg_alocado)` is the only authoritative item quantity (physical over-receipt is
+receipt-time, routed to `saldo_fios` §R.9, never an allocation). An OP-origin
+allocation carries exactly the need's real OP. A Pedido-origin shared allocation
+carries `op_id IS NULL`; its Pedido/material/color traceability remains complete
+through the need and allocation. One item may consolidate allocations from several
+OP-origin needs and from shared Pedido-origin needs; the header and item carry no
+exclusive OP ownership.
 
 ### R.5 Native accumulating drafts (Rule 1) + new draft after emission
 
@@ -1371,7 +1378,13 @@ need/item allocation is possible; `LIVE_ALLOCATION_T1_T2_TEST_PENDING` is resolv
 every item is fully reconciled to allocations; and the emission precondition can be
 proven against real allocations. **PRE-PROD is `NOT AUTHORIZED`.**
 
-### §R.22.3 Item **definition** writer (replaces §R.21.5)
+### §R.22.3 Item **definition** writer (replaces §R.21.5; operationally superseded for future origination by §R.27)
+
+The installed REFUND-B1 writer below remains historical/current implementation
+evidence, but it is **not** the canonical future origination authority. Its manual
+absolute quantity is a localized forward-correction target: future purchasing flow
+must derive `item.kg_pedido` exclusively from allocation totals under Pedido / Insumos
+ownership. Do not use this section to create a second quantity authority.
 
 **`public.definir_item_ordem_compra(p_pedido_id UUID, p_fornecedor_id BIGINT,
 p_material TEXT, p_cor_id BIGINT, p_cor_poliester TEXT, p_kg_pedido NUMERIC) RETURNS
@@ -1720,20 +1733,24 @@ belongs to a non-draft order; return `created`/`updated`/`deleted`/`unchanged`/
 `conflicts` separately; leave `kg_alocado` maintenance to the installed trigger
 (§R.4). No orders or items are created during need synchronization.
 
-### §R.23.5 Absolute, idempotent allocation semantics
+### §R.23.5 Absolute, idempotent allocation semantics — qualified by the hybrid-origin addendum
 
-The currently inactive `alocar_necessidade_compra_fio(p_item_id, p_necessidade_id,
-p_op_id, p_kg)` is hardened **before** any grant. Because it has never been
-granted or called, its semantics are corrected before activation.
+The installed `alocar_necessidade_compra_fio(p_item_id, p_necessidade_id,
+p_op_id, p_kg)` is retained as implementation history but is a localized
+forward-correction target. The future writer must remove caller authority over
+`op_id`: it locks the need first and derives allocation provenance from that row.
 
 - **Absolute quantity.** `p_kg` is the **absolute** desired allocation for the
-  identity `(ordem_compra_item_id, necessidade_compra_fio_id, op_id)` — not an
+  logical identity `(ordem_compra_item_id, necessidade_compra_fio_id, derived
+  op_id)` — not an
   increment. Repeated calls with the same identity and `p_kg` reproduce the same
   state without increasing the quantity.
-- **Uniqueness.** A unique constraint/index on `(item_id, necessidade_id, op_id)`
-  enforces one allocation row per identity. **Preflight:** the 51 imported
-  legacy allocations must be unique on that identity before the constraint is
-  created — HARD STOP if duplicates exist.
+- **Null-safe uniqueness.** The logical identity must treat NULL derived provenance
+  as equal. The current plain unique index on `(item_id, necessidade_id, op_id)` is
+  insufficient because PostgreSQL permits multiple NULLs; future correction must
+  enforce one logical shared allocation without changing legacy rows. **Preflight:**
+  existing allocations must be duplicate-free under the corrected NULL-safe
+  identity — HARD STOP otherwise.
 - **Validation (before insert/update).** Lock the `necessidade` row
   `FOR UPDATE`; lock/validate the existing identity; load item + parent order;
   require `ordem_compra.legado=FALSE` and parent `status_administrativo='rascunho'`;
@@ -1741,11 +1758,11 @@ granted or called, its semantics are corrected before activation.
   equality; require cotton/polyester color equality; require `p_kg > 0`; enforce
   the **total need cap** after replacing the existing identity quantity;
   `kg_alocado` maintenance stays exclusively with the installed trigger.
-  Cotton need: `origem_tipo='op'` and `p_op_id = necessidade.op_id` (OP in the
-  same Pedido). Shared polyester need: `origem_tipo='pedido'`,
-  `necessidade.op_id IS NULL`, `p_op_id` required and identifying a real OP of
-  the same Pedido; allocations may span multiple OPs; the need-level total is the
-  authoritative cap; no representative/fabricated OP.
+  OP-origin need: derive `allocation.op_id = necessidade.op_id` after locking the
+  need; the caller cannot choose, replace, or override it. Shared Pedido-origin
+  need: require `necessidade.op_id IS NULL` and derive `allocation.op_id IS NULL`;
+  never select, infer, or fabricate an OP. The need-level total is the authoritative
+  cap.
 - **Return.** `ok`, `codigo`, allocation id, `created|updated|unchanged`
   discriminator, previous kg, final kg, need total, allocated total, remaining
   total.
@@ -1795,11 +1812,14 @@ authority. The UI renders **Emitir** as disabled; when distribution is complete
 its explanation states that emission **awaits native receipt activation
 (Phase C)**, not that distribution is incomplete.
 
-### §R.23.10 Dedicated distribution UI, entity boundaries, no new route
+### §R.23.10 Distribution UI surface, Pedido / Insumos ownership, no new route
 
-Allocation belongs to the dedicated Ordem de Compra entity. A new focused child
-module **`js/screens/ordem-compra-distribuicao.js`** is added under the existing
-detail screen; regime resolution is factored into **`js/screens/op-compra-regime.js`**.
+Purchasing distribution belongs to the existing **Pedido → Insumos /
+`aguardando_fios`** context; it is not a new stepper stage and is not owned by an OP.
+The dedicated Ordem de Compra detail is an allowed focused surface for the action,
+not a transfer of domain ownership. The implemented child module
+**`js/screens/ordem-compra-distribuicao.js`** remains under the existing detail
+screen; regime resolution is factored into **`js/screens/op-compra-regime.js`**.
 Authorized application files: `js/screens/op-persistir.js`,
 `js/screens/op-compra-regime.js` (new), `js/screens/ordem-compra.js`,
 `js/screens/ordem-compra-data.js`, `js/screens/ordem-compra-render.js`,
@@ -1952,16 +1972,19 @@ Each physical submission creates or reuses an immutable receipt header containin
 
 Each receipt line binds the header to exactly one native purchase-order item and its
 canonical ledger entry. When the line satisfies a need, it also binds the concrete
-allocation and the **real OP reached through that allocation**. One header may contain
-multiple items, allocations, and real OPs. Header and line history is immutable;
+allocation and preserves that allocation's hybrid provenance: the derived real OP for
+OP-origin needs, or NULL for genuinely shared Pedido-origin needs. One header may
+contain multiple items, allocations, real OPs, and shared NULL-OP allocations. Header
+and line history is immutable;
 correction uses reversal, never mutation or deletion.
 
 ### §R.24.3 Cotton, shared polyester, and excess
 
-- **Cotton:** receipt follows a concrete allocation to a real OP.
-- **Shared polyester need:** the need remains `op_id IS NULL`; physical receipt follows
-  each selected allocation's actual `op_id`. Multiple real OPs are valid. No
-  representative, arbitrary, placeholder, or synthetic OP may be stored.
+- **Cotton / OP-origin:** receipt follows a concrete allocation whose
+  `allocation.op_id` equals the locked need's real OP.
+- **Shared polyester / Pedido-origin:** both `necessidade.op_id` and
+  `allocation.op_id` remain NULL. The receipt preserves Pedido, supplier, material,
+  color, quantity, receipt identity, and inventory identity without inventing an OP.
 - **Excess:** quantity above allocated need remains on the same receipt and item. It
   must not create a fake need or allocation. The canonical writer may create only the
   narrowly scoped transactional inventory movement required for that excess, in the
@@ -1980,15 +2003,16 @@ The future multi-line native receipt writer must:
    lines, ledger entries, and result; a conflicting payload under the same key rejects;
 5. enforce cumulative canonical receipt against an allocation at or below
    `kg_alocado`;
-6. reject missing, foreign, removed, invalid-state, mismatched-item, or mismatched-OP
-   allocations and every negative/zero quantity not belonging to reversal semantics;
+6. reject missing, foreign, removed, invalid-state, mismatched-item, or
+   provenance-inconsistent allocations and every negative/zero quantity not belonging
+   to reversal semantics; NULL shared provenance is valid and must not be replaced;
 7. write header, lines, canonical positive ledger entries, derived projections, and
    any narrow excess inventory movement atomically; and
 8. preserve receipt history immutably.
 
 The exact public signature/result contract and full lock order remain a C2 design
 decision, but they must preserve the rules above and support one submission spanning
-multiple items, allocations, and real OPs.
+multiple items, allocations, real OPs, and shared NULL-OP provenance.
 
 ### §R.24.5 Reversal writer
 
@@ -2120,7 +2144,8 @@ columns which are mandatory for native `recebimento`/`estorno` rows:
 - `recebimento_id` → immutable command header;
 - `ordem_compra_id` → native order header;
 - `ordem_compra_item_alocacao_id` → concrete allocation when the line is allocated;
-- `op_id` → real OP copied only from that allocation;
+- `op_id` → derived provenance copied from that allocation: real OP for OP-origin,
+  NULL for shared Pedido-origin;
 - immutable `material`, `cor_id`, and `cor_poliester` reconciliation identity;
 - signed `kg_excesso` (zero for allocated lines, equal to signed ledger kg for an
   explicit excess line);
@@ -2128,7 +2153,7 @@ columns which are mandatory for native `recebimento`/`estorno` rows:
 - stable `linha_indice` within the command.
 
 A positive native line is explicitly one of two shapes: `alocacao`, requiring a
-concrete allocation and its real OP, or `excesso`, requiring no allocation and no
+concrete allocation and preserving its derived real-or-NULL provenance, or `excesso`, requiring no allocation and no
 fabricated OP. A reversal copies the source line's attribution and classification,
 uses negative kg, and references the positive source through `estorno_de_id`.
 `import_saldo_inicial` remains blocked in C2 and is neither created nor assigned a
@@ -2153,7 +2178,7 @@ registrar_recebimento_ordem_compra(
 `p_linhas` is a non-empty JSON array. Each object has `item_id`, `destino`
 (`alocacao` or `excesso`), positive absolute command quantity `kg`, and
 `alocacao_id` only for `alocacao`. One command may span multiple items,
-allocations, and real OPs. The RPC is transactional, `SECURITY DEFINER`, fixed safe
+allocations, real OPs, and shared NULL-OP allocations. The RPC is transactional, `SECURITY DEFINER`, fixed safe
 search path, and callable only by `authenticated` after revoking `PUBLIC`, `anon`,
 and `service_role`.
 
@@ -2161,7 +2186,7 @@ The server identifies the actor from `auth.uid()`. An active admin may receive a
 eligible native order. An active supplier may receive only when its
 `usuarios.fornecedor_id` equals the order's frozen `fornecedor_id`. The server
 rejects every other actor and never trusts client actor, supplier, order totals,
-material/color, OP, or derived balance.
+material/color, OP provenance, or derived balance.
 
 Eligibility is native/non-legacy, `status_administrativo='emitida'`, not cancelled,
 and `status_aceite IN ('nao_aplicavel','aceita')`; draft, acceptance-pending,
@@ -2218,7 +2243,7 @@ projections. No client writes a derived cache.
 
 The verification read model is
 `obter_historico_recebimento_ordem_compra(p_ordem_id BIGINT) -> JSONB`. It exposes
-immutable headers, positive/negative entries, allocation and real-OP attribution,
+immutable headers, positive/negative entries, allocation and derived real-or-NULL OP attribution,
 item totals, excess, remaining reversible quantity, inventory movement linkage, and
 actor-specific allowed actions. It is callable only by an active admin or the active
 matching supplier, through `authenticated`; it grants no mutation.
@@ -2233,7 +2258,7 @@ movement table. It is not a second physical-receipt ledger and is not a general
 inventory redesign.
 
 Exactly one movement row exists per native receipt ledger entry, unique by
-`lancamento_id`. It carries native order/item/allocation/real-OP and material/color
+`lancamento_id`. It carries native order/item/allocation/derived real-or-NULL OP and material/color
 identity plus signed `kg_excedente_delta`, surplus before/after, actor, and timestamp.
 Allocated receipt/reversal rows may legitimately record zero stock delta; explicit
 excess produces a positive surplus delta and reversal produces the corresponding
@@ -2280,8 +2305,10 @@ administrator reversal, exact replay/conflict, state rejection, allocation caps,
 immutable guards, read scope, ledger/cache derivation, and source-linked stock delta.
 
 Five independent database-backend scenarios verified same-allocation contention,
-duplicate idempotency, receipt/reversal collision, shared-polyester allocations for
-distinct real OPs, and same-item excess/cache serialization. Waiting transactions
+duplicate idempotency, receipt/reversal collision, the then-current shared-polyester
+real-OP allocation shape, and same-item excess/cache serialization. These results
+remain accepted evidence for C2 but do **not** prove the new shared NULL-OP shape;
+focused forward revalidation is mandatory after the localized correction. Waiting transactions
 re-evaluated balances under lock. The dependency-safe rollback rehearsal removed all
 C2 objects inside a transaction and then rolled back, proving restoration without
 CASCADE or damage to db/67-db/69 or flat ACL.
@@ -3050,3 +3077,65 @@ detached full-suite identity comparison passed. Final staging remains the inacti
 39/44 preview and inventory hash. This checkpoint is not architect acceptance and
 does not authorize real import, fence activation, reader/writer or ACL switch,
 emission, C3B/C3C/C3D, production, `main`, or push.
+
+## §R.27 Purchase-order hybrid-origin addendum — ACCEPTED / forward correction required
+
+> **Decision date:** 2026-07-19. The architect accepted the purchase-order impact
+> audit and this addendum. This section governs every earlier order-first,
+> item-first, allocation, receipt, and UI-ownership statement that conflicts with
+> it. The audit found localized forward-correction work; every phase redo verdict
+> remains **NO**. No implementation, migration, grant, environment write, or C3A
+> acceptance is authorized by this documentation correction.
+
+### §R.27.1 Binding hybrid origin and ownership
+
+- Production-specific native needs originate from the real OP that calculated
+  consumption. For native cotton, `origem_tipo='op'`, the need's `op_id` is that
+  real OP, and the OP belongs to the same Pedido.
+- Genuinely shared native needs originate from the Pedido. For shared polyester,
+  `origem_tipo='pedido'` and `necessidade.op_id IS NULL`; no representative,
+  synthetic, convenience, first, or arbitrary OP exists.
+- Purchasing distribution belongs to **Pedido → Insumos / `aguardando_fios`**.
+  A dedicated screen or route is allowed as a focused surface, but does not create
+  a new stepper stage or transfer ownership to the purchase-order detail or OP.
+- A native purchase order belongs to **Pedido + supplier**, never exclusively to
+  one OP. OP traceability lives in the need/allocation layers; one item may
+  consolidate allocations from multiple OP-specific needs plus shared Pedido needs.
+
+### §R.27.2 Allocation provenance, identity, and quantity authority
+
+- For `origem_tipo='op'`, the future writer locks the need and derives
+  `allocation.op_id = necessidade.op_id`. The UI/caller cannot choose, replace, or
+  override it.
+- For `origem_tipo='pedido'`, both `necessidade.op_id` and `allocation.op_id` are
+  NULL. The system must not select or infer an OP.
+- Shared allocation identity is NULL-safe. The current plain uniqueness semantics
+  must be corrected forward so NULL cannot permit duplicate logical allocations.
+- `ordem_compra_item.kg_pedido = SUM(ordem_compra_item_alocacao.kg_alocado)` is
+  the sole authoritative item quantity. Manual absolute item quantity is not an
+  independent authority.
+
+### §R.27.3 Phase C compatibility qualification
+
+Phase C is reusable and is **not** restarted. Localized receipt/ledger assumptions
+that require non-NULL OP provenance must be corrected and focusedly revalidated. A
+line associated with a shared Pedido allocation may preserve purchase order, item,
+need, Pedido, supplier, material, color, quantity, receipt identity, and inventory
+identity while `allocation.op_id IS NULL`. No receipt, ledger, movement, projection,
+or validation rule may fabricate an OP to satisfy shape. Valid excess remains governed
+by `saldo_fios`; it has no allocation and acquires no artificial OP.
+
+### §R.27.4 Superseded operational paths and forward sequence
+
+The following installed or described paths are not canonical origination authorities
+and require a separately authorized forward implementation to supersede or restrict
+them: independent **Nova ordem**; `definir_item_ordem_compra` as an origination
+writer; item-first `alocar_necessidade_compra_fio`; caller-controlled `p_op_id`;
+manual authoritative item quantity; allocation writes owned by purchase-order detail;
+supplier assignment owned by the OP surface; and any receipt/ledger rule that requires
+an artificial OP for shared Pedido allocation.
+
+The selected strategy is: canonical documentation correction → localized forward
+corrective implementation → focused staging validation → PRE-PROD revalidation →
+Phase C shared-allocation revalidation → later architect disposition of unaccepted
+C3A → only then C3B and subsequent phases. No step chains automatically.

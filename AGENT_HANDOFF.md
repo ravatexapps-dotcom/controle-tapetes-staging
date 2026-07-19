@@ -1,5 +1,47 @@
 # ACTIVE OPERATIONAL HANDOFF
 
+- **`PURCHASE-ORDER HYBRID ORIGIN — CANONICAL DOCUMENTATION CORRECTION R2` —
+  `COMPLETED / AWAITING ARCHITECT ACCEPTANCE` (2026-07-19, documentation-only).**
+  - The accepted impact audit and hybrid-origin addendum are canonical in
+    `docs/architecture/ORDEM_COMPRA_LIFECYCLE_SPEC_PROPOSED.md` §R.27. All phase
+    redo verdicts remain **NO**; the strategy is localized forward correction.
+  - Native OP-origin need: `origem_tipo='op'`; need OP is the real calculating OP;
+    future allocation writer locks the need and derives
+    `allocation.op_id = necessidade.op_id`. The caller/UI never selects it.
+  - Native shared Pedido-origin need: `origem_tipo='pedido'`;
+    `necessidade.op_id IS NULL`; `allocation.op_id IS NULL`. Never infer or fabricate
+    a representative OP. Shared identity must be NULL-safe.
+  - `ordem_compra_item.kg_pedido` has one authority only: the sum of allocation kg.
+    Purchase order ownership is Pedido + supplier. Purchasing distribution remains
+    Pedido → Insumos / `aguardando_fios`; a dedicated route is only a surface and no
+    new stepper stage exists.
+  - Phase C is reusable. Its receipt/ledger constraints that require a real OP for
+    every allocated line need localized forward correction and focused revalidation;
+    a shared allocation/receipt/ledger/movement may keep complete Pedido/material/
+    quantity/identity traceability with NULL OP. Valid excess remains allocation-free
+    and receives no artificial OP.
+  - C3A remains `IMPLEMENTED / VERIFIED IN STAGING / AWAITING ARCHITECT TECHNICAL
+    ACCEPTANCE`; this correction does not accept it. No implementation, SQL,
+    migration, tests, environment writes, production, `main`, or push are authorized.
+  - **Exact next authorization boundary:** architect acceptance or rejection of this
+    documentation correction only. A forward corrective implementation requires a
+    new explicit order; no phase chains.
+  - **Mandatory continuity — retransmit every path below in every future handoff:**
+    1. `PROJECT_STATE.md`
+    2. `AGENT_HANDOFF.md`
+    3. `CLAUDE.md`
+    4. `docs/architecture/PEDIDO_OP_MOVIMENTACAO_DOCUMENTOS_PLANO.md`
+    5. `docs/architecture/PEDIDO_PRODUCTION_FLOW_BACKLOG.md`
+    6. `docs/architecture/DOCUMENTOS_VALIDACAO_VINCULOS_E_EVOLUCAO_PLANO.md`
+    7. `docs/architecture/PEDIDO_OP_SCHEMA_CONTRACT.md`
+    8. `docs/architecture/ORDEM_COMPRA_LIFECYCLE_SPEC_PROPOSED.md`
+    9. `docs/ledgers/G28_LEDGER.md`
+    10. `docs/DOCUMENTATION_INDEX.md`
+    11. `docs/governance/DOCUMENTATION_MODEL.md`
+    12. `docs/governance/SUPERVISION_PROTOCOL.md`
+    13. `docs/architecture/CODE_HEALTH_RULES.md`
+    14. `docs/reports/ORDEM_COMPRA_LEGACY_DIAGNOSIS_2026-07-18.md`
+
 - **`PHASE-C3A` — `IMPLEMENTED / VERIFIED IN STAGING / AWAITING ARCHITECT
   TECHNICAL ACCEPTANCE` (2026-07-19).** Governing specification: §R.26.
   - Lineage: accepted pre-C3A baseline `361d0f7`; contract `d23645f`; foundation
@@ -64,7 +106,7 @@
     Exact canonical JSONB replay returns the immutable original result; conflicting
     payload reuse rejects.
   - Extended `ordem_compra_fio_lancamentos` additively for receipt header, native order,
-    item allocation, real OP, material/color, excess, actor type, and line index.
+    item allocation, derived real-or-NULL OP, material/color, excess, actor type, and line index.
     Preserve the legacy parent shape; no seed or cutover.
   - Installed canonical authenticated RPCs: `registrar_recebimento_ordem_compra` (admin or
     active matching supplier) and `estornar_recebimento_ordem_compra` (admin only).
@@ -110,11 +152,11 @@
     status, and projections are database-derived; no client direct table writes.
   - **Shape:** immutable receipt header (identity, origin, date, actor, stable
     submission idempotency key, immutable command metadata) plus lines binding item,
-    optional allocation, allocation's real OP, and ledger entry. One receipt may span
-    items, allocations, and real OPs.
+    optional allocation, allocation's derived real-or-NULL OP provenance, and ledger
+    entry. One receipt may span items, allocations, real OPs, and shared NULL-OP lines.
   - **Allocation semantics:** cotton follows a concrete real-OP allocation. Shared
-    polyester needs keep `op_id IS NULL`; each receipt follows the selected
-    allocation's actual OP. No representative/synthetic OP. Excess remains on the
+    polyester needs and allocations keep `op_id IS NULL`; each receipt preserves that
+    NULL provenance. No representative/synthetic OP. Excess remains on the
     same receipt/item and creates only the narrow transactional inventory movement.
   - **Writers:** emitted, non-cancelled, acceptance-eligible native orders only;
     deterministic order/item/allocation locks; allocation IDs ascending; stable

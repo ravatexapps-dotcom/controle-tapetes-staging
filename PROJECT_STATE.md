@@ -9,6 +9,34 @@ are in `docs/ledgers/G28_LEDGER.md`. HEAD/working tree/divergence: consult Git d
 
 ## Active phase and next action
 
+- **`PURCHASE-ORDER HYBRID ORIGIN — CANONICAL DOCUMENTATION CORRECTION R2` —
+  `COMPLETED / AWAITING ARCHITECT ACCEPTANCE` (2026-07-19, documentation-only).**
+  The architect accepted the original purchase-order impact audit and the
+  hybrid-origin addendum now governed by
+  `docs/architecture/ORDEM_COMPRA_LIFECYCLE_SPEC_PROPOSED.md` §R.27. Binding model:
+  native cotton is OP-origin (`necessidade.op_id` = the real calculating OP);
+  genuinely shared polyester is Pedido-origin (`necessidade.op_id IS NULL`);
+  allocation provenance is derived from the locked need (`allocation.op_id` equals
+  the need OP for OP-origin and remains NULL for Pedido-origin); callers cannot
+  choose it. Shared allocation identity must be NULL-safe. Item ordered quantity is
+  derived exclusively from allocation totals. Purchase orders belong to Pedido +
+  supplier; distribution remains owned by Pedido → Insumos / `aguardando_fios`, not
+  a new stage and not an OP-owned action. Phase C remains reusable, but its non-NULL
+  OP receipt/ledger assumptions require localized forward correction and focused
+  revalidation; valid excess remains allocation-free under `saldo_fios` and receives
+  no artificial OP.
+  **Impact-audit disposition:** redo verdicts for B1, PRE-PROD, C1, C2, and C3A are
+  all **NO**; forward correction is selected. Supersession/restriction targets are
+  independent `Nova ordem`, origination through `definir_item_ordem_compra`,
+  item-first `alocar_necessidade_compra_fio`, caller-controlled `p_op_id`, manual
+  authoritative item quantity, purchase-order-detail ownership of allocation,
+  OP-surface ownership of supplier assignment, and every shared-receipt rule that
+  requires an OP. No implementation, SQL, migration, test, grant, staging write,
+  production, `main`, or push is authorized. **C3A remains implemented and verified
+  in staging but not architecturally accepted.** The only next authorizable action is
+  architect acceptance or rejection of this documentation correction; forward
+  implementation requires a separate explicit order.
+
 - **`PHASE-C3A` — `IMPLEMENTED / VERIFIED IN STAGING / AWAITING ARCHITECT
   TECHNICAL ACCEPTANCE` (2026-07-19).** Contract `d23645f`, foundation `fca6ea7`,
   protected singleton correction `0908b77`, and owner-only import command
@@ -52,8 +80,10 @@ are in `docs/ledgers/G28_LEDGER.md`. HEAD/working tree/divergence: consult Git d
   cutover (`M10`)"; cutover is done. **New fronts are authorizable again**, each by
   its own individual order. The consolidated, ranked `POST-LAUNCH DEBT REGISTER`
   (below) supersedes the former "residual risk register (12 items)".
-- **Next authorizable action:** architect technical acceptance or rejection of
-  `PHASE-C3A` only; no later C3 phase chains automatically. Separately, the
+- **Next authorizable action:** architect acceptance or rejection of
+  `PURCHASE-ORDER HYBRID ORIGIN — CANONICAL DOCUMENTATION CORRECTION R2` only.
+  C3A remains unaccepted; no corrective implementation or later C3 phase chains
+  automatically. Separately, the
   highest-consequence open operational item remains
   `INGESTOR-DOC-CYCLE-VERIFY-DEFERRED`, an `ACTIVE PRODUCTION BLOCKER`. See the
   `POST-LAUNCH DEBT REGISTER`. **Standing reminder: flip the Supabase MCP back to
@@ -396,8 +426,9 @@ are in `docs/ledgers/G28_LEDGER.md`. HEAD/working tree/divergence: consult Git d
   receipt ledger**; no competing receipt ledger is permitted. A future immutable
   receipt header owns document/receipt identity, origin, date, actor, a stable
   submission idempotency key, and immutable command metadata. Receipt lines bind
-  that header to the item, optional need allocation, the allocation's real OP,
-  and the canonical ledger entry. Cotton follows its concrete real-OP allocation;
+  that header to the item, optional need allocation, the allocation's derived
+  real-or-NULL OP provenance, and the canonical ledger entry. Cotton follows its
+  concrete real-OP allocation; shared Pedido-origin allocation retains NULL OP;
   shared polyester needs remain `op_id IS NULL` until allocated, and each receipt
   follows the actual allocation OP without representative or synthetic OPs.
   Excess stays on the same receipt/item with a narrowly scoped transactional

@@ -3997,3 +3997,54 @@ MATERIAL_DIVERGENCES: NONE
   production, `main`, or push. `HISTORICAL_SALDO_FIOS_PROVENANCE_UNAVAILABLE`
   remains nonblocking debt. The next single authorizable action is architect technical
   acceptance or rejection of PHASE-C3A. Architect acceptance is not recorded here.
+
+## 2026-07-19 — PURCHASE-ORDER HYBRID ORIGIN — CANONICAL DOCUMENTATION CORRECTION R2
+
+- **Authorization / mode:** architect-authorized documentation-only correction.
+  Implementation, SQL, migrations, tests, grants, staging writes, production,
+  `main`, and push prohibited. Baseline `dev @
+  369e5342d3dee0c361a10c42ac1d889f3483b8c7`; accepted C2 lineage
+  `361d0f77388b0adac9b83997707cd49df938e4dd` confirmed. Known modified
+  `.gitignore` and untracked `AGENTS.md` remained untouched; index was empty and no
+  `index.lock` existed.
+- **Accepted evidence and decision:** the architect accepted the purchase-order
+  impact audit and the hybrid-origin addendum. Redo verdicts remain **NO** for B1,
+  PRE-PROD, C1, C2, and C3A. The selected strategy is localized forward correction,
+  not phase restart. C3A remains implemented/verified in staging and unaccepted.
+- **Hybrid origin:** native cotton is OP-origin and uses the real calculating OP;
+  genuinely shared polyester is Pedido-origin with `necessidade.op_id IS NULL`.
+  Future allocation provenance is server-derived from the locked need:
+  OP-origin → `allocation.op_id = necessidade.op_id`; Pedido-origin →
+  `allocation.op_id IS NULL`. No caller-selected, representative, synthetic,
+  convenience, first, or arbitrary OP is permitted.
+- **Identity / quantity / ownership:** shared allocation identity must be NULL-safe;
+  `ordem_compra_item.kg_pedido` is authoritative only as the sum of allocation kg;
+  purchase orders belong to Pedido + supplier; purchasing distribution belongs to
+  Pedido → Insumos / `aguardando_fios`, with no new stepper stage. A dedicated route
+  remains an allowed surface only. An item may consolidate allocations from multiple
+  OP-specific needs and shared Pedido needs.
+- **Localized defects found:** `db/69` accepts caller-controlled `p_op_id`, requires an
+  OP for shared allocations, and uses a plain nullable-OP unique index; `db/68` exposes
+  an independent manual item quantity; `db/70` receipt/ledger/movement guards require
+  non-NULL OP on every allocated line. These applied files were not altered. Phase C
+  remains reusable but requires focused forward correction and revalidation for shared
+  NULL-OP allocation lines. Valid excess remains allocation-free under `saldo_fios`.
+- **Operational paths superseded for future origination:** independent `Nova ordem`;
+  `definir_item_ordem_compra` as origination writer; item-first
+  `alocar_necessidade_compra_fio`; caller-controlled `p_op_id`; manual authoritative
+  item quantity; allocation ownership by purchase-order detail; supplier-assignment
+  ownership by OP; any receipt/ledger rule requiring artificial shared OP provenance.
+- **Documentation transaction:** corrected the governing lifecycle spec, current
+  state, active handoff, production-flow backlog, schema contract, documentation
+  index, and this append-only ledger. Earlier B1, PRE-PROD, C1, C2, and C3A entries
+  remain byte-preserved. The legacy diagnosis, Pedido/OP movement plan, Documents
+  evolution plan, governance model, supervision protocol, code-health rules, and
+  `CLAUDE.md` were inspected and required no change because they contain no current
+  hybrid-origin contradiction within their roles.
+- **Forward sequence:** documentation correction → separately authorized corrective
+  implementation → focused staging validation → PRE-PROD revalidation → Phase C
+  shared-allocation revalidation → later architect disposition of C3A → only then
+  C3B and subsequent phases. No phase chains.
+- **Status:** `COMPLETED / AWAITING ARCHITECT ACCEPTANCE`. The only next
+  authorizable action is architect acceptance or rejection of this documentation
+  correction. `NO IMPLEMENTATION AUTHORIZED`.

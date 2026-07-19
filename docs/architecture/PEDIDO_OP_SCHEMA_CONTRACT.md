@@ -553,9 +553,9 @@ INSUMOS → TECELAGEM → ACABAMENTO → EXPEDIÇÃO → ENTREGA
 > canonical physical receipt ledger; events remain audit-only, and all receipt totals,
 > order status, and projections become database-derived. An immutable receipt header
 > owns origin/document identity, date, actor, stable submission idempotency, and command
-> metadata; its lines bind the native item, optional allocation, allocation's real OP,
-> and ledger entry. Cotton follows a real-OP allocation. Shared polyester keeps its need
-> `op_id IS NULL` and each receipt follows the concrete allocation OP; fake or
+> metadata; its lines bind the native item, optional allocation, allocation's derived
+> real-or-NULL OP provenance, and ledger entry. Cotton follows a real-OP allocation.
+> Shared polyester keeps both need and allocation `op_id IS NULL`; fake or
 > representative OPs are forbidden. Excess remains on the same receipt/item and may
 > create only a narrow atomic inventory movement. Positive history is immutable;
 > reversal appends a source-referencing negative entry under locked remaining-reversible
@@ -571,14 +571,15 @@ INSUMOS → TECELAGEM → ACABAMENTO → EXPEDIÇÃO → ENTREGA
 > **PHASE-C2 implementation boundary (2026-07-19, §R.25; `CLOSED /
 > ACCEPTED`).** Migration `db/70` creates immutable
 > `ordem_compra_recebimentos` headers, extend the existing receipt ledger for native
-> command/allocation/real-OP/material identity, create the source-linked
+> command/allocation/derived real-or-NULL OP/material identity, create the source-linked
 > `ordem_compra_fio_movimentos_estoque` surplus movement object, and install three
 > RPCs: multi-line `registrar_recebimento_ordem_compra`, admin-only
 > `estornar_recebimento_ordem_compra`, and actor-scoped
 > `obter_historico_recebimento_ordem_compra`. Idempotency namespace
 > `native_receipt_v1` is unique by actor type + actor UUID + key and compares the
 > canonical JSONB payload for exact replay. Receipt lines are either concrete
-> allocations (real OP derived server-side) or explicit excess (no allocation/OP).
+> allocations (real OP derived server-side for OP-origin, NULL for shared Pedido-origin)
+> or explicit excess (no allocation/OP).
 > Item received cache and header status are ledger-derived; allocation/excess/
 > reversible quantities are projections. Exactly one source-linked movement exists
 > per ledger entry, but only derived surplus delta changes the existing multi-origin
@@ -835,3 +836,38 @@ unique index is defense in depth, not the primary concurrency mechanism. Verifie
 import rows create zero `ordem_compra_fio_movimentos_estoque`, `saldo_fios`, or
 `saldo_fios_op` effects and remain non-reversible. Final staging contains no import or
 fixture rows and remains `legacy_active`.
+
+## 12. Purchase-order hybrid-origin contract — accepted forward correction
+
+This section records the accepted hybrid-origin addendum and governs any conflicting
+purchase-order statement above. It authorizes documentation only.
+
+1. **Need origin.** Native production-specific cotton is `origem_tipo='op'` and
+   carries the real OP that calculated consumption; the OP resolves to the same Pedido.
+   Native genuinely shared polyester is `origem_tipo='pedido'` with
+   `necessidade.op_id IS NULL`. A representative OP is prohibited.
+2. **Allocation provenance.** The future writer locks the need and derives provenance:
+   OP-origin → `allocation.op_id = necessidade.op_id`; Pedido-origin →
+   `allocation.op_id IS NULL`. The caller and UI do not provide, select, replace, or
+   override it.
+3. **NULL-safe identity.** The current plain `(item_id, necessidade_id, op_id)` unique
+   index is not a valid logical identity for shared NULL-OP allocations. A separately
+   authorized migration must enforce NULL-safe uniqueness after a duplicate preflight.
+4. **Single quantity authority.** `ordem_compra_item.kg_pedido` is derived exclusively
+   as `SUM(ordem_compra_item_alocacao.kg_alocado)`. Manual absolute quantity cannot
+   coexist as an independent authority; the existing writer is a forward-correction
+   target.
+5. **Ownership.** Purchase orders belong to Pedido + supplier. Distribution remains
+   owned by Pedido → Insumos / `aguardando_fios`; a dedicated route is only a surface,
+   not a new stage or OP ownership. One item may consolidate several OP-origin needs
+   plus shared Pedido-origin needs.
+6. **Phase C compatibility.** Receipt, ledger, movement, and read-model rows may retain
+   complete purchase-order/item/need/Pedido/supplier/material/color/quantity/receipt/
+   inventory identity while `allocation.op_id IS NULL`. Current non-NULL OP shape
+   guards require localized forward correction and focused revalidation. Never fabricate
+   OP provenance. Valid excess has no allocation or OP and remains governed by
+   `saldo_fios`.
+
+All redo verdicts remain **NO**. The accepted strategy is forward correction; no SQL,
+migration, staging write, test change, grant, implementation, or C3A acceptance is
+authorized by this section.
