@@ -49,10 +49,17 @@ are in `docs/ledgers/G28_LEDGER.md`. HEAD/working tree/divergence: consult Git d
   is **superseded on the persistence model** by the refoundation; **their
   historical acceptance is preserved, not erased** (the flat table stays writable
   through coexistence; both receipt writers operate until Phase C). Rephased track:
-  `REFUND-A → REFUND-B1 → PRE-PROD → B2 → C → D → E`. **`REFUND-A` and every phase
-  are `NOT AUTHORIZED`** pending architect ratification of Part R; **no
-  implementation performed** (docs-only, no DB/schema/production action). **Binding
-  precondition:** a contemporaneous read-only **production** `ordens_compra_fio`
+  `REFUND-A → REFUND-B1 → PRE-PROD → B2 → C → D → E`. **Part R is `RATIFIED /
+  ACCEPTED`** (not awaiting ratification); **`REFUND-A` is blocked pending the
+  `REFUND-A PRE-ORDER STRUCTURAL CLARIFICATION` (2026-07-18, §R.20) and its
+  explicit migration order; every phase is `NOT AUTHORIZED`; no implementation has
+  begun** (docs-only, no DB/schema/production action). **Structural clarification
+  recorded (2026-07-18):** the architect ruled the REFUND-A migration boundaries —
+  additive dual-reference event/ledger transition (no destructive re-point;
+  §R.20.1/§R.20.2), REFUND-A as schema-and-seed only (§R.20.3), a complete
+  byte/count-equivalent rollback (§R.20.4), and mandatory read-only MCP-capability
+  (§R.20.5) and Pedido-ownership (§R.20.6) preflights, each a HARD STOP on failure.
+  **Binding precondition:** a contemporaneous read-only **production** `ordens_compra_fio`
   diagnosis is mandatory immediately before any production promotion/migration in
   this track — production is **UNKNOWN for migration** and was **not accessed**.
   Docs commits: `Add purchase-order legacy diagnosis` (`de62b16`), `Propose

@@ -1,5 +1,53 @@
 # ACTIVE OPERATIONAL HANDOFF
 
+- **`REFUND-A PRE-ORDER STRUCTURAL CLARIFICATION` — `CLOSED / ACCEPTED`
+  (2026-07-18, docs-only, branch `dev`):** a REFUND-A pre-order reconciliation
+  found canonical contradictions between Part R's earlier "clean re-point of empty
+  event/ledger tables" language and the live flat writers that still depend on
+  those tables. The architect ruled the REFUND-A migration boundaries and this pass
+  recorded them (no implementation, no DB, no push, no `main`, no unrelated file
+  changes). **Files changed:** `docs/architecture/ORDEM_COMPRA_LIFECYCLE_SPEC_PROPOSED.md`
+  (header clarification banner; §R.3 event/ledger paragraph rewritten to additive
+  dual-reference; §R.8 ledger contract parenthetical; §R.12 immutable-events
+  reworded; §R.15 rollback boundary replaced by the complete rollback contract;
+  §R.17 REFUND-A phase entry; §R.18 Flaw-4 verification; **new §R.20** consolidating
+  Rulings 1–7), `PROJECT_STATE.md` (current-state correction), this handoff entry,
+  `docs/ledgers/G28_LEDGER.md`. **Final event transition contract (§R.20.1):**
+  REFUND-A does NOT re-point `ordem_compra_eventos`; it **retains** the legacy
+  `ordens_compra_fio` reference (live `emitir`/`cancelar` writers keep writing
+  legacy-referenced events), **adds** a nullable `ordem_compra` reference, and
+  enforces **exactly one** purchase-order model per event; REFUND-B1 switches admin
+  writers to new-order events; the legacy reference is removed only in a later
+  authorized cleanup after reconciliation — no historical event rewritten or
+  silently re-pointed. **Final ledger transition contract (§R.20.2):** REFUND-A does
+  NOT re-point `ordem_compra_fio_lancamentos`; it **retains** the legacy item/order
+  reference, **adds** nullable `ordem_compra_item_id`, enforces exactly one
+  applicable parent, creates **no** opening-balance entry; Phase C performs the
+  final receipt snapshot import, switches both receipt writers, and makes the item
+  ledger authoritative; the legacy reference is removed only after Phase-C
+  reconciliation + a separate cleanup. **Complete rollback contract (§R.20.4):** a
+  REFUND-A rollback restores the exact pre-migration state — drop the four new
+  four-layer tables + the compatibility mapping table; remove **only** the additive
+  event/ledger columns/constraints/indexes/triggers/functions; preserve every
+  original event/ledger column and the legacy writer contract; prove
+  `ordens_compra_fio` and all flat data byte/count equivalent to the pre-migration
+  snapshot; no destructive transformation in REFUND-A. **MCP + Pedido preflight
+  (§R.20.5/§R.20.6):** canonical docs must not assert the configured MCP is both
+  read-only and write-ready — effective write capability is **UNKNOWN until runtime
+  preflight**; the future REFUND-A order must fingerprint the target as
+  `ucrjtfswnfdlxwtmxnoo`, verify actual tool capability + DB role before any write
+  (read-only MCP or ambiguous target = **HARD STOP**), and run a read-only
+  Pedido-ownership preflight (column existence/constraints, population/null counts,
+  OP → lote → Pedido consistency, whether OP1/OP2 remain unresolved legacy
+  exceptions) — any inconsistency with the ratified conversion = **HARD STOP**;
+  production and `bhgifjrfagkzubpyqpew` remain prohibited. **Canonical state
+  correction (§R.20.7):** Part R is `RATIFIED / ACCEPTED` (no longer "awaiting
+  ratification"); REFUND-A is blocked pending this clarification and its explicit
+  migration order; no implementation has begun. **Part R historical acceptance
+  preserved.** **No DB access, no implementation, no push, no unrelated file
+  changes.** **Next authorizable action:** architect review of this clarification,
+  then a separate REFUND-A migration order — `REFUND-A` remains `NOT AUTHORIZED`.
+
 - **`ORDEM-COMPRA REFOUNDATION` — Part R `RATIFIED / ACCEPTED` (2026-07-18,
   branch `dev`):** The architect accepted the governing refounded specification
   against baseline `f2261ec` after the final read-only verification returned

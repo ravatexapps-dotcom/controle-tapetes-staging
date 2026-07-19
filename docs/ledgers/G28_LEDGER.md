@@ -2808,3 +2808,70 @@ risco residual e próxima fase indicada no fechamento.
   database, production, prohibited project, push, or `main` action occurred.
 - **Next authorizable action:** `REFUND-A`, by a separate explicit architect order.
   `REFUND-A` remains `NOT AUTHORIZED`.
+
+---
+
+## 2026-07-18 — REFUND-A PRE-ORDER STRUCTURAL CLARIFICATION — CLOSED / ACCEPTED
+
+- **Links to:** the Part R RATIFICATION CLOSEOUT entry above (append-only correction
+  trail; refines migration mechanics only, does not reopen the ratified model).
+- **Gate:** CLOSED / ACCEPTED. Documentation-only. Baseline `dev @ 988cc9d`.
+- **Context:** a REFUND-A pre-order reconciliation found canonical contradictions
+  between Part R's earlier "clean re-point of empty event/ledger tables" language
+  and the live flat writers (`emitir_ordem_compra_fio`/`cancelar_ordem_compra_fio`,
+  db/66) that still write `ordem_compra_eventos` referencing `ordens_compra_fio`.
+  The architect resolved the boundaries with seven rulings.
+- **Ruling 1 — Event coexistence (additive dual-reference):** REFUND-A does NOT
+  destructively re-point `ordem_compra_eventos`. Retain the legacy
+  `ordens_compra_fio` reference; add a nullable `ordem_compra` reference; enforce
+  exactly one purchase-order model per event; flat writers keep writing
+  legacy-referenced events; REFUND-B1 switches admin writers; legacy reference
+  removed only in a later authorized cleanup after reconciliation. No historical
+  event rewritten or silently re-pointed.
+- **Ruling 2 — Receipt-ledger coexistence (additive dual-reference):** REFUND-A does
+  NOT destructively re-point `ordem_compra_fio_lancamentos`. Retain the legacy
+  item/order reference; add nullable `ordem_compra_item_id`; enforce exactly one
+  applicable parent; no opening-balance entries in REFUND-A; Phase C performs the
+  final snapshot import, switches both receipt writers, makes the item ledger
+  authoritative; legacy reference removed only after Phase-C reconciliation + a
+  separate cleanup.
+- **Ruling 3 — REFUND-A authority (schema-and-seed only):** create the four new
+  layers + the compatibility mapping; seed the ratified 64/51/51/51 conversion; add
+  the transitional event/ledger references; leave all live admin + receipt authority
+  on `ordens_compra_fio`; switch no reader/writer; revoke no flat privilege; create
+  no opening receipt balance.
+- **Ruling 4 — Complete rollback:** restore the exact pre-migration schema/data
+  state — drop the four new tables + the compatibility mapping table; remove ONLY
+  the additive event/ledger columns/constraints/indexes/triggers/functions;
+  preserve every original event/ledger column and legacy writer contract; prove
+  `ordens_compra_fio` and all flat data byte/count equivalent to the pre-migration
+  snapshot. No destructive transformation permitted in REFUND-A.
+- **Ruling 5 — MCP capability:** canonical docs must not assert the configured MCP
+  is both read-only and write-ready. Effective write capability UNKNOWN until
+  runtime preflight; the future REFUND-A order must fingerprint the target as
+  `ucrjtfswnfdlxwtmxnoo`, verify actual tool capability + DB role before any write;
+  a read-only MCP or ambiguous target is a HARD STOP; production and
+  `bhgifjrfagkzubpyqpew` remain prohibited.
+- **Ruling 6 — Pedido ownership preflight:** the future REFUND-A order must run a
+  read-only preflight verifying column existence/constraints, actual
+  population/null counts, OP → lote → Pedido consistency, and whether OP1/OP2 remain
+  unresolved legacy exceptions. Any result inconsistent with the ratified conversion
+  is a HARD STOP before migration.
+- **Ruling 7 — Current-state correction:** `PROJECT_STATE.md` no longer says phases
+  await Part R ratification. Part R is `RATIFIED / ACCEPTED`; REFUND-A is blocked
+  pending this structural clarification and its explicit migration order; no
+  implementation has begun.
+- **Files changed:** `docs/architecture/ORDEM_COMPRA_LIFECYCLE_SPEC_PROPOSED.md`
+  (header clarification banner; §R.3 event/ledger paragraph → additive dual-reference;
+  §R.8 ledger parenthetical; §R.12 immutable-events reworded; §R.15 rollback boundary
+  → complete rollback contract; §R.17 REFUND-A phase entry; §R.18 Flaw-4
+  verification; new **§R.20** consolidating Rulings 1–7), `PROJECT_STATE.md`
+  (current-state correction), `AGENT_HANDOFF.md` (new entry), and this ledger entry.
+- **Scope discipline:** no change to plans, backlog, schema contract
+  (`PEDIDO_OP_SCHEMA_CONTRACT.md`), documentation index, code, migrations,
+  `.gitignore`, or `AGENTS.md`. No DB access, no implementation, no migration, no
+  production, no prohibited-project access, no push, no `main` change.
+- **Status after patch:** Part R historical acceptance preserved; structural
+  clarification recorded; `REFUND-A` remains `NOT AUTHORIZED`.
+- **Next authorizable action:** architect review of this clarification, then a
+  separate REFUND-A migration order.

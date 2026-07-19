@@ -28,6 +28,20 @@
 > own architect orders. The historical acceptance of Phase `A`/`B1` is
 > **preserved, not erased**; their flat foundation is superseded, not deleted.
 >
+> **STRUCTURAL CLARIFICATION (2026-07-18, `REFUND-A PRE-ORDER STRUCTURAL
+> CLARIFICATION`):** a REFUND-A pre-order reconciliation found canonical
+> contradictions between Part R's earlier "clean re-point of empty event/ledger
+> tables" language and the live flat writers that still depend on those tables.
+> The architect ruled the migration boundaries: **additive dual-reference** event
+> and ledger transition (no destructive re-point), REFUND-A as **schema-and-seed
+> only**, a **complete** (byte/count-equivalent) rollback contract, and mandatory
+> **MCP-capability** and **Pedido-ownership** read-only preflights. These rulings
+> are recorded in the new **§R.20** and applied surgically to §R.3, §R.8, §R.12,
+> §R.15, and §R.17. **Part R's historical acceptance is preserved**; this
+> clarification refines migration mechanics only. **`REFUND-A` remains
+> `NOT AUTHORIZED`** — its next step is architect review of this clarification,
+> then a separate REFUND-A migration order.
+>
 > **Status (flat model, superseded on persistence — ratified decisions transfer):**
 > `RATIFIED` (2026-07-18, `ORDEM-COMPRA-LIFECYCLE-SPEC-
 > RATIFICATION-R1`) — the model, Finding 1's correction (§4/§6/§7(e)), and
@@ -271,9 +285,17 @@ CREATE TABLE public.ordem_compra_item_alocacao (
 ```
 
 The receipt ledger (`ordem_compra_fio_lancamentos`, ratified §3.2) and the event
-table (`ordem_compra_eventos`, ratified §3.4) are **re-pointed to `ordem_compra`
-in the refoundation** (both are empty in staging — §R.12 — so this is a clean
-re-point of empty tables, not a rewrite of history).
+table (`ordem_compra_eventos`, ratified §3.4) are **NOT re-pointed in REFUND-A**.
+Their existing legacy references to `ordens_compra_fio` are **retained** (the live
+`emitir_ordem_compra_fio`/`cancelar_ordem_compra_fio` writers still write
+legacy-referenced events); REFUND-A **adds** a nullable new-model reference to each
+(`ordem_compra_id` on the event table, `ordem_compra_item_id` on the ledger) under
+an **exactly-one-model** constraint, and switches no writer. The final switch of
+each reference to the new model happens in a later explicitly authorized phase
+(events at REFUND-B1, ledger at Phase C); the legacy reference is dropped only in a
+still-later, separately authorized cleanup after reconciliation. See the additive
+event transition (§R.20.1) and receipt-ledger transition (§R.20.2) contracts. No
+historical row is rewritten or silently re-pointed (§R.12).
 
 ### R.4 Allocation invariants — double-distribution enforcement (Ruling 3, single design)
 
@@ -373,9 +395,12 @@ Transfers unchanged from ratified §2.2/§4/§7: config-gated at emission
 **exclusively** from the ledger; there is **no** `kg_recebido_inicial` column in
 the permanent derivation (Ruling 5).
 
-**Canonical receipt ledger contract** (append-only, re-pointed to
-`ordem_compra_item`), with **structural sign & reversal invariants (Rulings 7–8):**
-- `item_id` FK → `ordem_compra_item`;
+**Canonical receipt ledger contract** (append-only; the new-model
+`ordem_compra_item_id` reference is **added nullable** in REFUND-A and becomes the
+sole applicable parent only at Phase C — the legacy `ordens_compra_fio` reference is
+retained through coexistence, exactly-one-parent enforced, §R.20.2), with
+**structural sign & reversal invariants (Rulings 7–8):**
+- `item_id` FK → `ordem_compra_item` (the new-model parent, applicable post-Phase-C);
 - `tipo ∈ {recebimento, import_saldo_inicial, estorno}`;
 - **sign CHECKs:** `recebimento` ⇒ `kg > 0` and `estorno_de_id IS NULL`;
   `import_saldo_inicial` ⇒ `kg > 0` and `estorno_de_id IS NULL`; `estorno` ⇒
@@ -574,12 +599,16 @@ is **not** two equal authoritative models — authority is split by dimension.
 
 `ordem_compra_eventos` rows are immutable historical facts — never silently
 re-pointed, deleted-and-recreated, rewritten, or synthesized to conceal an
-inconsistent source. Staging currently holds **0 events and 0 ledger rows**
-(diagnosis §1), so the refoundation's re-point of these (empty) tables to
-`ordem_compra`/`ordem_compra_item` converts no history and repoints no live row.
-**This does not weaken the rule** and **must not be generalized to production** —
-a contemporaneous production diagnosis is mandatory (§R.14) before any production
-event/ledger touch.
+inconsistent source. REFUND-A does **not** re-point the existing
+`ordens_compra_fio` reference at all: it **adds** a nullable new-model reference
+alongside it and switches no writer (§R.20.1). The existing legacy reference and
+every original column are preserved; historical rows are never re-pointed. Staging
+currently holds **0 events and 0 ledger rows** (diagnosis §1), but the additive
+transition does not rely on emptiness — even a populated event table keeps its
+legacy references intact, because the new reference is nullable and the exactly-one-
+model constraint admits legacy-only rows. **This does not weaken the rule** and
+**must not be generalized to production** — a contemporaneous production diagnosis
+is mandatory (§R.14) before any production event/ledger touch.
 
 ### R.13 Native vs legacy identity semantics
 
@@ -601,13 +630,22 @@ promotion or migration in this track.** Production access remains prohibited now
 
 ### R.15 Migration safety & rollback boundaries
 
-- **Seed-only, additive:** the refoundation migration creates the four tables and
-  seeds them from `ordens_compra_fio` in one transaction; it **alters no existing
-  column** and drops nothing. `ordens_compra_fio` remains the live source of truth
-  through cutover.
-- **Rollback boundary:** dropping the four new (seeded) tables fully reverts
-  REFUND-A with zero impact on the live flat-table flows (they never depended on
-  the new tables pre-Phase-C).
+- **Seed-only, additive:** the refoundation migration creates the four new tables +
+  the compatibility mapping table and seeds them from `ordens_compra_fio` in one
+  transaction; it **adds** only nullable transitional references (plus their
+  constraints/indexes/triggers/functions) to the event and ledger tables; it
+  **alters no existing column, drops nothing, and switches no writer**.
+  `ordens_compra_fio` remains the live source of truth through cutover.
+- **Complete rollback contract (replaces the earlier "drop the four tables"
+  boundary; Ruling 4, detailed in §R.20.4):** a REFUND-A rollback must restore the
+  **exact** pre-migration schema and data state by (1) dropping all four newly
+  created four-layer tables; (2) dropping the compatibility mapping table
+  (`ordem_compra_item_compat_fio`); (3) removing **only** the additive event and
+  ledger columns, constraints, indexes, triggers and functions introduced by
+  REFUND-A; (4) preserving every original event/ledger column and the legacy writer
+  contract; and (5) proving `ordens_compra_fio` and all existing flat data are
+  **byte/count equivalent** to the pre-migration snapshot. **No destructive
+  transformation is permitted in REFUND-A.**
 - **No production in scope:** every count/rule here derives from the staging
   corpus; production migration is a separate, later, diagnosis-gated act (§R.14).
 - **No silent merge, no fabricated event, no double-counted receipt** (Flaws 2/4,
@@ -630,14 +668,23 @@ unapproved production migration, or automatic authorization of the next phase.**
 Each phase requires its **own migration authorization** where it touches schema,
 and its **own architect UI validation** where it touches UI.
 
-- **REFUND-A** — *Responsibility:* create the four layers + ledger/event re-point
-  (additive schema); seed from `ordens_compra_fio` per the ratified 1:1 conversion
-  (64/51/51/51); build the compatibility mapping **inactive**. *Authority:* flat
-  (admin + receipt). *Writers:* migration only; no live business writer switched.
-  *Rollback:* drop the four seeded tables — zero impact on live flat flows. *Entry:*
-  ratification of Part R + own order. *Exit:* conversion reconciles to
-  64/51/51/51 exactly, invariants verified, flat flows unchanged, architect
-  acceptance. *Migration auth:* **required.** *UI validation:* no.
+- **REFUND-A** — *Responsibility:* schema-and-seed only (§R.20.3) — create the four
+  layers + the compatibility mapping table; **add** the nullable transitional
+  event/ledger references (no re-point, §R.20.1/§R.20.2); seed from
+  `ordens_compra_fio` per the ratified 1:1 conversion (64/51/51/51); build the
+  compatibility mapping **inactive**. Leaves all live admin + receipt authority on
+  `ordens_compra_fio`; switches no reader/writer; revokes no flat privilege; creates
+  no opening receipt balance. *Preflights (read-only, HARD STOP on failure):*
+  MCP-capability fingerprint of `ucrjtfswnfdlxwtmxnoo` + write-capability/role check
+  (§R.20.5); Pedido-ownership verification (§R.20.6). *Authority:* flat (admin +
+  receipt). *Writers:* migration only; no live business writer switched. *Rollback:*
+  the complete byte/count-equivalent rollback contract (§R.15/§R.20.4) — drop the
+  four seeded tables + the mapping table, remove **only** the additive event/ledger
+  objects, prove flat data unchanged; zero impact on live flat flows. *Entry:*
+  ratification of Part R + architect review of the §R.20 clarification + own
+  migration order. *Exit:* conversion reconciles to 64/51/51/51 exactly, invariants
+  verified, flat flows unchanged, architect acceptance. *Migration auth:*
+  **required.** *UI validation:* no.
 - **REFUND-B1** — *Responsibility:* re-base the B1 reader + `emitir`/`cancelar` on
   `ordem_compra`; native accumulation (Rule 1); legacy headers inert. *Authority:*
   admin→**new**, receipt→flat, bridge **active** (flat admin columns mirror only).
@@ -704,9 +751,11 @@ Ratification accepts the governing model but authorizes none of these phases.
   migrate to the canonical writer **before** direct UPDATE is revoked;
   `KG-RECEBIDO-ACL-GAP` closes only then (§R.11).
 - **Flaw 4 (immutable events):** RESOLVED — events never re-pointed/deleted/
-  rewritten/synthesized; staging has 0 events/0 ledger rows so the empty-table
-  re-point converts no history; rule not weakened and not generalized to
-  production; production diagnosis mandatory first (§R.12/§R.14).
+  rewritten/synthesized; REFUND-A **adds** a nullable new-model reference and
+  **retains** the legacy `ordens_compra_fio` reference (additive dual-reference,
+  §R.20.1), so no existing event row is re-pointed; the exactly-one-model constraint
+  preserves history regardless of table population; rule not weakened and not
+  generalized to production; production diagnosis mandatory first (§R.12/§R.14).
 
 ### R.19 Verification against the two additional rules
 
@@ -726,6 +775,90 @@ Ratification accepts the governing model but authorizes none of these phases.
   immutable ledger event (idempotent, estorno-reversible); imported Class-A/D
   receipt survives **without** double-counting and **without** a fabricated
   emission/acceptance event.
+
+### R.20 REFUND-A pre-order structural clarification — migration boundaries (2026-07-18)
+
+A REFUND-A pre-order reconciliation found that Part R's earlier "clean re-point of
+empty event/ledger tables" language contradicted the fact that the live flat writers
+still depend on those tables. The architect resolved the contradiction with the
+seven rulings below. They **refine migration mechanics only** — Part R's historical
+acceptance is preserved, and **REFUND-A remains `NOT AUTHORIZED`**; its next step is
+architect review of this clarification, then a separate REFUND-A migration order.
+
+**§R.20.1 Event coexistence (additive dual-reference; Ruling 1).** REFUND-A must
+**not** destructively re-point `ordem_compra_eventos`. Use an additive dual-reference
+transition:
+- **retain** the current legacy `ordens_compra_fio` reference required by the live
+  `emitir_ordem_compra_fio`/`cancelar_ordem_compra_fio` writers;
+- **add** the new `ordem_compra` reference as **nullable**;
+- **enforce** that an event identifies **exactly one** purchase-order model (a CHECK
+  constraint: precisely one of the legacy/new references is non-NULL);
+- existing flat writers **continue writing legacy-referenced events** unchanged;
+- **REFUND-B1** switches administrative writers to new-order events;
+- the legacy reference is **removed only** in a later, explicitly authorized cleanup
+  after reconciliation.
+
+No historical event may be rewritten or silently re-pointed.
+
+**§R.20.2 Receipt-ledger coexistence (additive dual-reference; Ruling 2).** REFUND-A
+must **not** destructively re-point `ordem_compra_fio_lancamentos` while flat receipt
+authority remains live. Use the same additive transition:
+- **retain** the existing legacy item/order reference (`ordens_compra_fio`);
+- **add** `ordem_compra_item_id` as **nullable**;
+- **enforce** exactly one applicable parent reference;
+- **no** opening-balance ledger entries in REFUND-A;
+- **Phase C** performs the final receipt snapshot import, switches both receipt
+  writers, and makes the item ledger authoritative;
+- the legacy reference is **removed only** after the Phase-C reconciliation and a
+  separately authorized cleanup.
+
+**§R.20.3 REFUND-A authority (schema-and-seed only; Ruling 3).** REFUND-A is
+schema-and-seed only:
+- create the four new persistence layers (`necessidade_compra_fio → ordem_compra →
+  ordem_compra_item → ordem_compra_item_alocacao`);
+- create the explicit compatibility mapping (`ordem_compra_item_compat_fio`);
+- seed the ratified **64 / 51 / 51 / 51** conversion (§R.10);
+- add transitional references to events and ledger (§R.20.1/§R.20.2);
+- **leave all live administrative and receipt authority on `ordens_compra_fio`**;
+- **switch no reader or writer**;
+- **revoke no existing flat privilege**;
+- **create no opening receipt balance.**
+
+**§R.20.4 Complete rollback (Ruling 4; replaces the incomplete boundary in §R.15).**
+A REFUND-A rollback must restore the **exact** pre-migration schema and data state by:
+- dropping all newly created four-layer tables;
+- dropping the compatibility mapping table (`ordem_compra_item_compat_fio`);
+- removing **only** the additive event and ledger columns, constraints, indexes,
+  triggers and functions introduced by REFUND-A;
+- preserving every original event/ledger column and legacy writer contract;
+- proving `ordens_compra_fio` and all existing flat data are **byte/count
+  equivalent** to the pre-migration snapshot.
+
+**No destructive transformation is permitted in REFUND-A.**
+
+**§R.20.5 MCP capability (Ruling 5).** Canonical documents must **not** assert that
+the currently configured MCP is both read-only and write-ready. Record:
+- current effective **write capability is UNKNOWN** until runtime preflight;
+- the future REFUND-A order must **fingerprint the target as `ucrjtfswnfdlxwtmxnoo`**;
+- it must **verify the actual tool capability and database role before any write**;
+- a **read-only MCP or ambiguous target is a HARD STOP**;
+- production and `bhgifjrfagkzubpyqpew` remain **prohibited**.
+
+**§R.20.6 Pedido ownership preflight (Ruling 6).** Because canonical documents
+disagree about the current population of `lotes.pedido_id`, the future REFUND-A order
+must run a **read-only** preflight that verifies:
+- column existence and constraints;
+- actual population / null counts;
+- OP → lote → Pedido consistency;
+- whether OP1/OP2 remain unresolved legacy exceptions (§R.10.7).
+
+Any result inconsistent with the ratified conversion is a **HARD STOP** before
+migration.
+
+**§R.20.7 Current-state correction (Ruling 7).** `PROJECT_STATE.md` is corrected so
+it no longer says phases still await Part R ratification. The canonical current state
+is: **Part R is `RATIFIED / ACCEPTED`; REFUND-A is blocked pending this structural
+clarification and its explicit migration order; no implementation has begun.**
 
 ---
 
