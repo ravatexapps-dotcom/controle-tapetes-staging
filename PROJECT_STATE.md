@@ -50,16 +50,61 @@ are in `docs/ledgers/G28_LEDGER.md`. HEAD/working tree/divergence: consult Git d
   historical acceptance is preserved, not erased** (the flat table stays writable
   through coexistence; both receipt writers operate until Phase C). Rephased track:
   `REFUND-A → REFUND-B1 → PRE-PROD → B2 → C → D → E`. **Part R is `RATIFIED /
-  ACCEPTED`** (not awaiting ratification); **`REFUND-A` is blocked pending the
-  `REFUND-A PRE-ORDER STRUCTURAL CLARIFICATION` (2026-07-18, §R.20) and its
-  explicit migration order; every phase is `NOT AUTHORIZED`; no implementation has
-  begun** (docs-only, no DB/schema/production action). **Structural clarification
-  recorded (2026-07-18):** the architect ruled the REFUND-A migration boundaries —
-  additive dual-reference event/ledger transition (no destructive re-point;
-  §R.20.1/§R.20.2), REFUND-A as schema-and-seed only (§R.20.3), a complete
-  byte/count-equivalent rollback (§R.20.4), and mandatory read-only MCP-capability
-  (§R.20.5) and Pedido-ownership (§R.20.6) preflights, each a HARD STOP on failure.
-  **Binding precondition:** a contemporaneous read-only **production** `ordens_compra_fio`
+  ACCEPTED`.** **Structural clarification recorded (2026-07-18, §R.20):** the
+  architect ruled the REFUND-A migration boundaries — additive dual-reference
+  event/ledger transition (no destructive re-point; §R.20.1/§R.20.2), REFUND-A as
+  schema-and-seed only (§R.20.3), a complete byte/count-equivalent rollback
+  (§R.20.4), and mandatory read-only MCP-capability (§R.20.5) and Pedido-ownership
+  (§R.20.6) preflights, each a HARD STOP on failure.
+  **`REFUND-A` — `IMPLEMENTED / VERIFIED IN STAGING / AWAITING ARCHITECT
+  ACCEPTANCE` (2026-07-19, executed under the REFUND-A EXECUTION ORDER, staging
+  `ucrjtfswnfdlxwtmxnoo` only):** migration `db/67_ordem_compra_refoundation_schema.sql`
+  (commit `eb84071`, staging migration-history identifier
+  `20260719012036 / 67_ordem_compra_refoundation_schema`) created the four
+  persistence layers + `ordem_compra_item_compat_fio`, applied the additive
+  dual-reference transition to `ordem_compra_eventos`/`ordem_compra_fio_lancamentos`
+  (legacy references relaxed to nullable, new references added nullable, exactly-one
+  -parent `CHECK`s, no writer switched), and seeded the ratified conversion exactly
+  **64 needs / 51 headers / 51 items / 51 allocations / 51 mappings** (Class
+  A27/B12/C13/D12; OP36 → 4 distinct headers; OP1/OP2 → 11 null-Pedido needs/headers,
+  source-row identity preserved). The ownership guard trigger, the
+  `kg_alocado` sole-cache-maintainer trigger, and the canonical allocation RPC
+  (`alocar_necessidade_compra_fio`, `SELECT … FOR UPDATE`) were built but granted to
+  **no client role** — inactive until PRE-PROD. The ledger structural contract
+  (append-only guard, estorno-relationship guard, sign `CHECK`s, `idempotency_key`)
+  was built on the existing (still-empty) `ordem_compra_fio_lancamentos` table with
+  no opening balance and no writer. **Concurrency-gate waiver (architect ruling,
+  this order):** the live two-session T1/T2 interleave test was waived for REFUND-A
+  because allocation is not activated as a business path; accepted instead were
+  catalog proof of `SELECT … FOR UPDATE`, the `kg_alocado` `CHECK` backstop, direct
+  -DML denial to `authenticated`/`anon`, and deterministic sequential tests (all
+  passed). **Debt registered: `LIVE_ALLOCATION_T1_T2_TEST_PENDING`** — non-blocking
+  for REFUND-A; a **HARD STOP** before PRE-PROD activates purchase distribution,
+  before any authenticated grant is added to allocation RPCs, before any application
+  calls the allocation writer, and before any production promotion involving
+  allocation. **Verification (staging, all rolled-back fixtures unless noted):**
+  21/21 negative-constraint tests correctly rejected by their intended guard;
+  reversal-via-delete never goes negative; `authenticated`/`anon` direct DML denied
+  (`permission denied`) on both new tables tested; append-only guard rejects
+  UPDATE/DELETE; estorno-relationship guard enforces same-parent/positive-source;
+  over-reversal **magnitude** validation is an intentionally undeferred scope
+  boundary (Phase C canonical-writer responsibility, not a REFUND-A schema `CHECK`
+  — documented, not a defect). **Legacy-flow regression (all passed, live RPC calls
+  against a real admin session, rolled back):** `emitir_ordem_compra_fio`/
+  `cancelar_ordem_compra_fio` (db/66) still succeed unchanged, writing
+  legacy-referenced events (`ordem_compra_id` stays `NULL`); the OP-screen
+  extended-select reader pattern still resolves; the direct `kg_recebido` writer
+  path (`registrarRecebimentoOrdemFio`/`screenFornecedorOrdens` pattern) still
+  succeeds. **Before/after equality:** `ordens_compra_fio` stayed at 64 rows with an
+  **identical row fingerprint** (`e11babdaf6cc98bd3b688839a790b64d`) before, during,
+  and after every test. **Rollback rehearsal:** the complete rollback DDL (drop the
+  four new tables + compat mapping + new functions; remove only the additive
+  event/ledger columns/constraints/triggers; restore the original `NOT NULL`/`CHECK`
+  contracts) was executed and verified to pass all 9 restoration checks, then the
+  rehearsal itself was rolled back, leaving the real committed migration intact.
+  **No application code, UI, reader/writer cutover, production access, or push** —
+  staging-only. **`REFUND-B1` and every later phase remain `NOT AUTHORIZED`.** Full
+  detail: `docs/ledgers/G28_LEDGER.md` REFUND-A entry. **Binding precondition:** a contemporaneous read-only **production** `ordens_compra_fio`
   diagnosis is mandatory immediately before any production promotion/migration in
   this track — production is **UNKNOWN for migration** and was **not accessed**.
   Docs commits: `Add purchase-order legacy diagnosis` (`de62b16`), `Propose
@@ -81,9 +126,11 @@ are in `docs/ledgers/G28_LEDGER.md`. HEAD/working tree/divergence: consult Git d
   point-of-no-return, and the native receipt lifecycle gate. **Every
   migration-critical decision is CLOSED; no open alternatives remain.** The final
   verification found no migration-critical contradiction, omission, or unresolved
-  choice. **No implementation has begun; `REFUND-A` remains `NOT AUTHORIZED` and is
-  merely the next authorizable action, by its own architect order.** A contemporaneous
-  read-only production diagnosis remains mandatory before any production migration.
+  choice. **`REFUND-A` is now `IMPLEMENTED / VERIFIED IN STAGING / AWAITING
+  ARCHITECT ACCEPTANCE`** (see the dated entry above) — not marked accepted by this
+  implementation pass itself; acceptance is the architect's own next action. A
+  contemporaneous read-only production diagnosis remains mandatory before any
+  production migration.
   Non-blocking documentation follow-ups remain pending: `PEDIDO_OP_SCHEMA_CONTRACT.md`
   §6.2 and `DOCUMENTATION_INDEX.md`. The historical acceptance of the old Phase `A`
   and `B1` remains preserved while their flat persistence foundation is superseded.

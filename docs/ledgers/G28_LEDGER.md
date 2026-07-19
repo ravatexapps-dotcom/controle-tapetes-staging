@@ -2875,3 +2875,166 @@ risco residual e próxima fase indicada no fechamento.
   clarification recorded; `REFUND-A` remains `NOT AUTHORIZED`.
 - **Next authorizable action:** architect review of this clarification, then a
   separate REFUND-A migration order.
+
+---
+
+## 2026-07-19 — REFUND-A — IMPLEMENTED / VERIFIED IN STAGING / AWAITING ARCHITECT ACCEPTANCE
+
+- **Links to:** the `REFUND-A PRE-ORDER STRUCTURAL CLARIFICATION` entry above
+  (§R.20 is the migration-boundary contract this implementation follows) and the
+  Part R `RATIFICATION CLOSEOUT` entry (the governing model).
+- **Gate:** `IMPLEMENTED / VERIFIED IN STAGING / AWAITING ARCHITECT ACCEPTANCE` —
+  not marked accepted by this entry. Baseline `dev @ 5fd94d8`; staging
+  `ucrjtfswnfdlxwtmxnoo` only; no production access; no push.
+- **Authorization chain:** `REFUND-A — EXECUTION ORDER` (schema-and-seed
+  authorization) followed by `ARCHITECT RULING — CLEAR REFUND-A CONCURRENCY HARD
+  STOP` (waiving the live two-session test for this phase only, substituting
+  structural + sequential evidence, and registering
+  `LIVE_ALLOCATION_T1_T2_TEST_PENDING`).
+- **Credential-handling incident (recorded for the record):** mid-execution, the
+  live T1/T2 concurrency test HARD-STOPPED because no available tooling channel
+  could hold two independent database sessions open (`dblink` present but cannot
+  self-connect without a password; MCP `execute_sql` cannot straddle a held-open
+  transaction across calls). In response, plaintext database credentials
+  (`admin@tapetes.test` / a password) were supplied directly in chat with
+  instructions to use them for the test. **Declined** — entering passwords to
+  authenticate is a standing prohibited action that does not lift on request, even
+  when explicitly authorized and detailed. The credentials were never used, never
+  echoed, never stored, and do not appear in this ledger, `PROJECT_STATE.md`,
+  `AGENT_HANDOFF.md`, any commit, or any file. The architect subsequently issued
+  the formal concurrency-gate waiver instead (no credential use required).
+- **Preflights (all passed; full detail in `AGENT_HANDOFF.md`):** canonical
+  reconciliation; git preflight (branch `dev`, HEAD `5fd94d8`, next slot `db/67`,
+  `.gitignore`/`AGENTS.md` residue untouched); database target + capability
+  preflight (fingerprint match, write-capable, transactional); legacy-corpus
+  preflight (64/27/12/13/12, both history tables empty); Pedido-ownership
+  preflight (11 null-Pedido rows all OP1/OP2, op→lote→pedido consistent
+  elsewhere, OP36 = 4 distinct headers).
+- **Migration:** `db/67_ordem_compra_refoundation_schema.sql`, 705 lines. Dry-run
+  rehearsed in a rolled-back transaction first (zero residue confirmed before and
+  after), then applied for real via `apply_migration`. **Technical commit:**
+  `eb84071` ("Create purchase-order refoundation foundation"). **Staging
+  migration-history identifier:** `20260719012036 /
+  67_ordem_compra_refoundation_schema`.
+- **Schema objects created:** the four Part R persistence layers
+  (`necessidade_compra_fio`, `ordem_compra`, `ordem_compra_item`,
+  `ordem_compra_item_alocacao`) with every ratified column, `CHECK`, partial
+  unique index, RLS policy (admin-only `SELECT`), and grant (zero
+  `authenticated`/`anon` DML — confirmed load-bearing: `public` schema default
+  ACLs auto-grant full DML to `anon`/`authenticated`/`service_role` on new
+  objects, so every `REVOKE ALL` in the migration is necessary, not defensive);
+  `ordem_compra_item_compat_fio` (explicit one-to-one compatibility mapping,
+  same grant posture); the `op→lote→pedido` ownership guard trigger on
+  `necessidade_compra_fio`; the `kg_alocado` sole-cache-maintainer trigger on
+  `ordem_compra_item_alocacao`; the canonical allocation RPC
+  `alocar_necessidade_compra_fio` (`SELECT … FOR UPDATE`, granted to `postgres`
+  only — no client role); the additive dual-reference transition on
+  `ordem_compra_eventos` (legacy ref relaxed to nullable, `ordem_compra_id`
+  added nullable, exactly-one-parent `CHECK`) and on
+  `ordem_compra_fio_lancamentos` (same pattern plus the full ledger structural
+  contract: `tipo`/`estorno_de_id`/`idempotency_key`/`origem_tipo`/`origem_ref`,
+  sign `CHECK`, append-only guard trigger, estorno-relationship guard trigger).
+- **Seed conversion by class (exact match to the ratified diagnosis):**
+
+  | Class | Needs | Headers | Items | Allocations | Mappings |
+  |---|---:|---:|---:|---:|---:|
+  | A | 27 | 27 | 27 | 27 | 27 |
+  | B | 12 | 12 | 12 | 12 | 12 |
+  | C | 13 | 0 | 0 | 0 | 0 |
+  | D | 12 | 12 | 12 | 12 | 12 |
+  | **Total** | **64** | **51** | **51** | **51** | **51** |
+
+  All 51 header-bearing needs fully self-allocated (`kg_alocado = kg_necessario`);
+  13 Class-C needs unallocated (`kg_alocado = 0`).
+- **OP36 result:** 4 distinct headers (rows 137/138/139/140, suppliers 4/5/22/22);
+  rows 139/140 (both supplier 22, PRETO/BRANCO) confirmed **not merged**.
+- **OP1/OP2 result:** 11 null-Pedido needs and headers (`op_id ∈ {1,2}`), each
+  keyed by its unique `legado_origem_ordem_compra_fio_id` source-row identity, no
+  duplication or collapse.
+- **Compatibility mapping:** 51 `imported_legacy` rows, one-to-one in both
+  directions (both `UNIQUE` constraints hold); Class C created none; the bridge
+  is inactive (no live application path reads it).
+- **Allocation concurrency result:** live two-session T1/T2 test **waived** by
+  architect ruling (see above). Substitute evidence delivered: `SELECT … FOR
+  UPDATE` catalog-proven in `alocar_necessidade_compra_fio`; the trigger proven
+  the sole `kg_alocado` maintainer (full-`SUM` recompute on every
+  INSERT/UPDATE/DELETE); `kg_alocado>=0`/`kg_alocado<=kg_necessario` CHECKs in
+  place; sequential valid-allocation, over-allocation-rejection (against a
+  genuinely full need, id 17, 860.100/860.100), and reversal-via-delete
+  (40.000 → 0.000, never negative) all passed. **Debt:
+  `LIVE_ALLOCATION_T1_T2_TEST_PENDING`** — non-blocking here; HARD STOP before
+  PRE-PROD activation, before any client grant on allocation RPCs, before any
+  application writer call, before any production promotion involving
+  allocation.
+- **Negative constraint matrix — 21/21 correctly rejected** by the intended
+  guard (native cotton/Pedido-origin and native polyester/OP-origin forbidden
+  combos; native NULL-Pedido; mismatched OP/Pedido via the ownership guard;
+  duplicate native cotton/shared-polyester needs; duplicate legacy source-row
+  identity; legacy row without source reference; invalid Class-D provenance on
+  a native row; second native active draft same Pedido+supplier; allocation
+  over a genuinely full need; direct `authenticated` DML on
+  `necessidade_compra_fio` and `ordem_compra_item_alocacao` — `permission
+  denied`; event rows with both/neither parent; ledger row with both parents;
+  invalid ledger sign). Two fixtures (native-polyester-OP-origin,
+  duplicate-legacy-source-row) were corrected and re-run after an initial
+  mismatched op/pedido test pairing caused them to trip the ownership guard
+  before reaching their intended constraint — both then confirmed against the
+  intended guard directly.
+- **Append-only and reversal tests:** `UPDATE`/`DELETE` against
+  `ordem_compra_fio_lancamentos` both rejected by the append-only guard trigger
+  (fires regardless of caller). Estorno-relationship guard enforces
+  same-parent, positive-source-only reversal. **Over-reversal magnitude** is a
+  documented, intentional scope boundary — schema currently allows an estorno
+  larger than its source entry because that quantity validation is Phase C's
+  canonical-writer responsibility (Ruling 8), not a REFUND-A schema `CHECK`;
+  verified this is the case (not a defect) rather than silently claimed as
+  covered.
+- **Existing flat-flow regression — all passed** (live RPC calls under a
+  simulated real admin session via `request.jwt.claims`, rolled back):
+  `emitir_ordem_compra_fio` succeeds unchanged (1 event, legacy-referenced,
+  `ordem_compra_id` NULL); `cancelar_ordem_compra_fio` succeeds unchanged (2nd
+  event); the OP-screen extended-select reader pattern resolves all 64 rows;
+  the direct `kg_recebido` writer pattern (`registrarRecebimentoOrdemFio`/
+  `screenFornecedorOrdens`) still succeeds unchanged.
+- **Before/after flat-data equality:** `ordens_compra_fio` — 64 rows, **identical
+  md5 row-fingerprint** (`e11babdaf6cc98bd3b688839a790b64d`) captured before the
+  dry run, after the dry run's rollback, after the real apply, after the full
+  negative-test matrix, after the regression matrix, and after the rollback
+  rehearsal (six independent checkpoints, byte-identical every time).
+- **Rollback rehearsal:** the complete rollback DDL executed for real inside a
+  transaction — drop the four new tables + compat mapping + all 5 new
+  functions; remove only the additive event/ledger
+  columns/constraints/triggers; restore the original `NOT NULL` on both legacy
+  references and the original `kg_recebido > 0` CHECK on the ledger. All **9**
+  restoration checks passed (new objects absent; `ordem_compra_eventos`/
+  `ordem_compra_fio_lancamentos` column sets byte-identical to pre-migration;
+  both legacy references `NOT NULL` again; `ordens_compra_fio` byte/count
+  -equivalent; both history tables still empty; db/66 RPCs survive untouched).
+  The rehearsal transaction was then rolled back (rehearsal only), and a final
+  state check confirmed the real committed migration remained fully intact
+  (all 5 tables present, exact seed counts, unchanged fingerprint).
+- **Structural policy compliance:** SQL migration, not a JS screen —
+  `CODE_HEALTH_RULES.md` §7's line-count guidance targets app screens; the
+  705-line single file is justified as one cohesive, transaction-scoped unit
+  (§14 single-scope-per-phase — splitting an atomic seed transaction across
+  files would be a correctness risk, not a health improvement). §9/§15/§16/§19
+  followed. No JS/UI/Edge Function touched; no duplicated writer logic.
+- **Files changed:** `db/67_ordem_compra_refoundation_schema.sql` (new,
+  technical commit `eb84071`); `PROJECT_STATE.md`, `AGENT_HANDOFF.md`, this
+  ledger entry (documentation commit, separate). No other file touched.
+- **Scope discipline:** no application code, UI, Edge Function, plans/backlog,
+  `PEDIDO_OP_SCHEMA_CONTRACT.md`, `DOCUMENTATION_INDEX.md`,
+  `SUPERVISION_PROTOCOL.md`, diagnosis report, `.gitignore`, or `AGENTS.md`
+  changed. No reader/writer cutover; no existing flat privilege revoked; no
+  opening ledger balance created; no production access; no prohibited-project
+  access; no push; no `main` change.
+- **Remaining risks / debts:** `LIVE_ALLOCATION_T1_T2_TEST_PENDING` (see above);
+  the pre-existing non-blocking documentation follow-ups
+  (`PEDIDO_OP_SCHEMA_CONTRACT.md` §6.2, `DOCUMENTATION_INDEX.md`) carried over
+  unchanged; a contemporaneous read-only production diagnosis remains a binding
+  precondition before any production promotion in this track.
+- **Status:** `REFUND-A` is `IMPLEMENTED / VERIFIED IN STAGING / AWAITING
+  ARCHITECT ACCEPTANCE` — not marked accepted by this pass. `REFUND-B1` and
+  every later phase remain `NOT AUTHORIZED`.
+- **Next authorizable action:** architect acceptance of this implementation,
+  then `REFUND-B1` by its own separate order.
