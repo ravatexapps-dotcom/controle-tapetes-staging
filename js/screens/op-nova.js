@@ -1044,19 +1044,14 @@
     );
   }
 
-  // ORDEM-COMPRA-B1 — purchase-order lifecycle READER on the OP screen.
-  // One row per linked ordem_compra_fio: material—cor | fornecedor | qty |
-  // three dimension badges (administrativo / aceite / recebimento) | admin
-  // actions (Emitir / Cancelar). This section REGISTERS NO RECEIPT — receipt
-  // registration moves to the purchase order's own detail screen in Phase C
-  // (ORDEM_COMPRA_LIFECYCLE_SPEC §6 amendment, 2026-07-18). The existing
-  // INSUMOS receipt inputs (buildOrdemPendenteRow / buildBlocoFios) are left
-  // untouched here and are removed in Phase C. The emitir/cancelar RPCs are
-  // Phase B1's DB half — NOT applied this session
-  // (ORDEM-COMPRA-B1-BLOCKED-BY-MCP-AUTH); the handlers call them defensively
-  // (toast on error), so the buttons stay inert until the RPCs land.
-  var SVG_OCF_EMITIR = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2 11 13"></path><path d="M22 2 15 22 11 13 2 9 22 2z"></path></svg>';
-  var SVG_OCF_CANCELAR = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>';
+  // REFUND-B1 (§R.22.11) — the OP screen keeps only a COMPACT read-only
+  // summary of this OP's yarn purchase orders (fio · fornecedor · qty ·
+  // dimension badges) plus a "Ver ordens de compra" link to the dedicated
+  // entity screen (#/ordens-compra). The inline emit/cancel entity actions
+  // were REMOVED here: administrative authority for purchase orders lives on
+  // the dedicated screen, never in a summary section or a transition modal
+  // (governance §R.16). Receipt inputs (buildOrdemPendenteRow / buildBlocoFios)
+  // remain untouched (Phase C).
 
   function ocfFornecedorNome(ordem) {
     if (!ordem || ordem.fornecedor_id == null) return null;
@@ -1070,53 +1065,9 @@
       || ordem.legado_recebimento_automatico === true
       || ordem.status_administrativo == null;
   }
-  async function emitirOrdemCompra(ordem) {
-    const res = await supa.rpc('emitir_ordem_compra_fio', { p_ordem_compra_fio_id: ordem.id });
-    if (res && res.error) { toast('Erro ao emitir ordem de compra', 'error'); console.error(res.error); return; }
-    if (!res || !res.data || res.data.ok !== true) {
-      toast((res && res.data && res.data.erro) || 'Erro ao emitir ordem de compra', 'error');
-      console.error(res && res.data);
-      return;
-    }
-    toast('Ordem de compra emitida', 'success');
-    await reloadOrdens();
-  }
-  async function cancelarOrdemCompra(ordem) {
-    const res = await supa.rpc('cancelar_ordem_compra_fio', { p_ordem_compra_fio_id: ordem.id });
-    if (res && res.error) { toast('Erro ao cancelar ordem de compra', 'error'); console.error(res.error); return; }
-    if (!res || !res.data || res.data.ok !== true) {
-      toast((res && res.data && res.data.erro) || 'Erro ao cancelar ordem de compra', 'error');
-      console.error(res && res.data);
-      return;
-    }
-    toast('Ordem de compra cancelada', 'success');
-    await reloadOrdens();
-  }
-  function ocfAcoes(ordem) {
-    const wrap = el('div', { style: 'display:flex;align-items:center;justify-content:flex-end;gap:6px;' });
-    if (ocfIsLegacy(ordem)) return wrap;               // legacy/sem dimensão => read-only
-    const admin = ordem.status_administrativo;
-    if (admin === 'cancelada') return wrap;             // terminal => no actions
-    if (admin === 'rascunho') {
-      wrap.appendChild(actionButton({
-        title: 'Emitir ordem', icon: svgEl(SVG_OCF_EMITIR),
-        onclick: function () { emitirOrdemCompra(ordem); },
-      }));
-    }
-    if (admin === 'rascunho' || admin === 'emitida') {
-      wrap.appendChild(actionButton({
-        title: 'Cancelar ordem', danger: true, icon: svgEl(SVG_OCF_CANCELAR),
-        onclick: function () {
-          var ok = (typeof window.confirm === 'function')
-            ? window.confirm('Cancelar esta ordem de compra de fio? A ação não pode ser desfeita.')
-            : true;
-          if (!ok) return;
-          cancelarOrdemCompra(ordem);
-        },
-      }));
-    }
-    return wrap;
-  }
+  // Emit/cancel entity actions removed from the OP screen (REFUND-B1,
+  // §R.22.11): purchase-order administrative authority lives on the
+  // dedicated #/ordens-compra screen. This section is summary-only.
   function ocfQtd(ordem) {
     const parcial = ordem.status_recebimento === 'parcial'
       || (ordem.kg_recebido != null && Number(ordem.kg_recebido) > 0 && Number(ordem.kg_recebido) < Number(ordem.kg_pedido));
@@ -1135,15 +1086,20 @@
     const chip = ocConfig.exige_aceite
       ? ocfPill('Aceite exigido', 'var(--rv-status-prod-bg)', 'var(--rv-status-prod)', true)
       : ocfPill('Aceite dispensado', '#f3f4f6', '#8a93a3', false);
+    // Navigation to the dedicated purchase-order entity screen (REFUND-B1).
+    const verLink = el('a', {
+      href: '#/ordens-compra', id: 'ordens-compra-ver-link',
+      style: 'font-size:12px;font-weight:600;color:#2563eb;text-decoration:none;white-space:nowrap;',
+    }, 'Ver ordens de compra →');
     box.appendChild(el('div', { style: 'display:flex;align-items:center;justify-content:space-between;gap:10px;padding:15px 24px 12px;' },
       el('span', { style: 'font-size:11px;font-weight:700;color:#8a93a3;letter-spacing:.06em;text-transform:uppercase;' }, 'Ordens de compra de fio'),
-      chip));
+      el('div', { style: 'display:flex;align-items:center;gap:12px;' }, chip, verLink)));
     if (!ordens.length) {
       box.appendChild(el('div', { style: 'padding:0 24px 18px;font-size:13px;color:#aab2bf;' }, 'Nenhuma ordem de compra de fio gerada.'));
       return box;
     }
-    const cols = 'minmax(120px,1.3fr) minmax(110px,1fr) 120px minmax(230px,1.7fr) 84px';
-    box.appendChild(thRow(cols, ['FIO', 'FORNECEDOR', 'QTD (KG)', 'SITUAÇÃO', ''], { alignLast: 'right' }));
+    const cols = 'minmax(120px,1.3fr) minmax(110px,1fr) 120px minmax(230px,1.7fr)';
+    box.appendChild(thRow(cols, ['FIO', 'FORNECEDOR', 'QTD (KG)', 'SITUAÇÃO']));
     ordens.forEach(function (o) {
       const forn = ocfFornecedorNome(o);
       box.appendChild(gridRow(cols, [
@@ -1151,11 +1107,10 @@
         el('div', { style: 'font-size:13px;color:' + (forn ? '#3f4757' : '#aab2bf') + ';' }, forn || '— não atribuído'),
         el('div', { class: 'num', style: 'font-size:13px;color:#3f4757;font-variant-numeric:tabular-nums;' }, ocfQtd(o)),
         ocfBadges(o),
-        ocfAcoes(o),
       ]));
     });
     box.appendChild(el('div', { style: 'padding:11px 24px;border-top:1px solid #f1f3f6;background:#fbfcfd;font-size:11.5px;color:#8a93a3;' },
-      'A exigência de aceite é congelada no momento da emissão de cada ordem — alterar a configuração global não afeta ordens já emitidas.'));
+      'A administração das ordens de compra (emitir, cancelar, itens) fica na tela dedicada — esta seção é apenas um resumo.'));
     return box;
   }
 

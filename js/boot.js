@@ -68,6 +68,8 @@
     '#/pedidos':  { render: window.screenPedidosLista, roles: ['admin'] },
     '#/pedidos/novo': { render: window.screenPedidoNovo, roles: ['admin'] },
 
+    '#/ordens-compra': { render: window.screenOrdensCompra, roles: ['admin'] },
+
     '#/documentos/recebidos': { render: window.screenDocumentosRecebidos, roles: ['admin'] },
 
     '#/cadastros/cores':       { render: window.screenCadastrosCores,       roles: ['admin'] },

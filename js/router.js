@@ -120,6 +120,17 @@
     };
   }
 
+  // Match dinâmico para detalhe de Ordem de Compra (REFUND-B1, id numérico —
+  // ordem_compra.id é BIGSERIAL). A lista `#/ordens-compra` é rota exata
+  // (resolvida pelo match exato acima).
+  const mOrdemCompra = rawHash.match(/^#\/ordens-compra\/(\d+)$/);
+  if (mOrdemCompra) {
+    return {
+      render: () => window.screenOrdemCompra(Number(mOrdemCompra[1])),
+      roles: ['admin'],
+    };
+  }
+
   return null;
   }
 

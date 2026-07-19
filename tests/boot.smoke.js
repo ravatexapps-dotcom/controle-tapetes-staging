@@ -447,9 +447,9 @@ test('18. boot chain completo não lança SyntaxError de duplicate identifier', 
 
 test('19. boot chain completo não lança ReferenceError de globals', () => {
   const { sandbox } = makeBootChainSandbox();
-  const routesOk = vm.runInContext('window.routes && Object.keys(window.routes).length === 21', sandbox);
+  const routesOk = vm.runInContext('window.routes && Object.keys(window.routes).length === 22', sandbox);
   assert.equal(routesOk, true,
-    'window.routes não foi populado com 21 rotas (algum window.screen* não foi resolvido)');
+    'window.routes não foi populado com 22 rotas (algum window.screen* não foi resolvido)');
 });
 
 test('20. window.routes populado corretamente após o boot completo', () => {

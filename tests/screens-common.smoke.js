@@ -91,6 +91,7 @@ const EXPECTED_ADMIN_MENU = [
   { href: '#/painel',                  label: 'Painel' },
   { href: '#/ops',                     label: 'OPs' },
   { href: '#/pedidos',                 label: 'Pedidos' },
+  { href: '#/ordens-compra',           label: 'Ordens de compra' },
   { href: '#/documentos/recebidos',    label: 'Documentos' },
   { href: '#/cadastros/cores',         label: 'Cores' },
   { href: '#/cadastros/modelos',       label: 'Modelos' },

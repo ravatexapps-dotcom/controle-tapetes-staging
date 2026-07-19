@@ -605,8 +605,8 @@ test('runtime: tela usa shellLayout(ADMIN_MENU, container)', function () {
   const aside = flexDiv.children.find((c) => c.tagName === 'ASIDE');
   assert.ok(aside, 'aside esperado (menu lateral)');
   const links = aside.children.filter((c) => c.tagName === 'A');
-  // ADMIN_MENU agora tem 11 itens (10 originais + Documentos)
-  assert.equal(links.length, 11, 'menu admin deve ter 11 itens apos G12-G2');
+  // ADMIN_MENU agora tem 12 itens (+ "Ordens de compra" em REFUND-B1)
+  assert.equal(links.length, 12, 'menu admin deve ter 12 itens apos REFUND-B1');
 });
 
 test('runtime: NAO le RAVATEX_DOCUMENTS_LOADED_EVENTS (legado continua intacto)', function () {
