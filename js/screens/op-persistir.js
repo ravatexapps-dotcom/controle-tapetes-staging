@@ -215,8 +215,31 @@
       }
     }
 
-    // 5) se abrir: gera ordens_compra_fio SEM fornecedor (atribuído depois)
+    // 5) se abrir: PRE-PROD-A (spec §R.23.2) regime cutover. The SERVER
+    //    decides the purchasing regime; the client never decides locally and
+    //    a native Pedido never silently falls back to flat purchasing.
     if (status === 'aberta') {
+      const regimeApi = window.RAVATEX_SCREENS && window.RAVATEX_SCREENS.opCompraRegime;
+      const regime = regimeApi
+        ? await regimeApi.resolverRegimeCompraFio(pedidoId)
+        : { ok: false, erro: 'Modulo de regime de compra indisponivel' };
+      if (!regime || regime.ok !== true) {
+        await supa.from('ops').update({ status: 'simulada' }).eq('id', opIdSalvo);
+        return { error: regime && regime.error ? regime.error : { message: (regime && regime.erro) || 'Falha ao resolver regime de compra' }, step: 'regime_resolve', partial: true, opId: opIdSalvo };
+      }
+
+      if (regime.modelo === 'native') {
+        // Native: no flat ordens_compra_fio; synchronize native needs through
+        // the canonical server writer. Failure stops the operation (no fallback).
+        const sync = await regimeApi.sincronizarNecessidadesCompraFio(pedidoId);
+        if (!sync || sync.ok !== true) {
+          await supa.from('ops').update({ status: 'simulada' }).eq('id', opIdSalvo);
+          return { error: sync && sync.error ? sync.error : { message: (sync && sync.erro) || 'Falha ao sincronizar necessidades nativas' }, step: 'necessidades_sync', partial: true, opId: opIdSalvo };
+        }
+        return { error: null, step: 'ok', partial: false, opId: opIdSalvo, numero: numeroPersistido, modelo: 'native' };
+      }
+
+      // legacy: preserve the existing flat-row creation/deletion EXACTLY.
       const calc = window.calcularFiosOP(validos, modelosById, parametrosByLargura);
       const ordens = window.montarOrdensCompraFio(calc).map((o) => ({
         op_id: opIdSalvo,
@@ -234,6 +257,7 @@
         await supa.from('ops').update({ status: 'simulada' }).eq('id', opIdSalvo);
         return { error: ordRes.error, step: 'ordens_compra_fio_insert', partial: true, opId: opIdSalvo };
       }
+      return { error: null, step: 'ok', partial: false, opId: opIdSalvo, numero: numeroPersistido, modelo: 'legacy' };
     }
 
     return { error: null, step: 'ok', partial: false, opId: opIdSalvo, numero: numeroPersistido };

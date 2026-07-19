@@ -619,12 +619,14 @@
           pedido_required: 'Nao e possivel abrir OP sem Pedido vinculado.',
           ordens_compra_fio_delete: 'Falha ao gerar ordens de compra — OP mantida como simulada',
           ordens_compra_fio_insert: 'Falha ao gerar ordens de compra — OP mantida como simulada',
+          regime_resolve: 'Falha ao resolver o regime de compra do Pedido — OP mantida como simulada',
+          necessidades_sync: 'Falha ao sincronizar as necessidades de compra — OP mantida como simulada',
         };
         toast(mensagens[result.step] || 'Erro ao abrir OP', 'error');
         console.error(result.error);
         return;
       }
-      toast('OP aberta — ordens de compra geradas', 'success');
+      toast(result.modelo === 'native' ? 'OP aberta — necessidades de compra sincronizadas' : 'OP aberta — ordens de compra geradas', 'success');
       navigate('#/ops');
     } finally { saving = false; }
   }

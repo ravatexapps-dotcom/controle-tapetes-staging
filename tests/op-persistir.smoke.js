@@ -37,6 +37,7 @@ const cp     = require('node:child_process');
 const ROOT  = path.resolve(__dirname, '..');
 const INDEX = path.join(ROOT, 'index.html');
 const OPP   = path.join(ROOT, 'js', 'screens', 'op-persistir.js');
+const OCR   = path.join(ROOT, 'js', 'screens', 'op-compra-regime.js');
 const OPN   = path.join(ROOT, 'js', 'screens', 'op-nova.js');
 const OPPDF = path.join(ROOT, 'js', 'screens', 'op-pdf.js');
 const OPR   = path.join(ROOT, 'js', 'screens', 'op-recalculo.js');
@@ -58,6 +59,7 @@ const OPSLIST = path.join(ROOT, 'js', 'screens', 'ops-list.js');
 
 const indexSrc  = fs.readFileSync(INDEX, 'utf8');
 const oppSrc    = fs.readFileSync(OPP,   'utf8');
+const ocrSrc    = fs.readFileSync(OCR,   'utf8');
 const opnSrc    = fs.readFileSync(OPN,   'utf8');
 const opPdfSrc  = fs.readFileSync(OPPDF, 'utf8');
 const oprSrc    = fs.readFileSync(OPR,   'utf8');
@@ -152,8 +154,8 @@ test('3. op-persistir.js é script clássico, sem import/export', () => {
 });
 
 test('4. index.html carrega op-persistir.js EXATAMENTE UMA VEZ, sem type=module', () => {
-  // Aceita com ou sem query string (cache-busting ?v=...).
-  const reWithQs = /<script\s+src="js\/screens\/op-persistir\.js\?v=20260623-asset1"\s*><\/script>/g;
+  // Aceita com ou sem query string (cache-busting ?v=... — versão livre).
+  const reWithQs = /<script\s+src="js\/screens\/op-persistir\.js\?v=[^"]*"\s*><\/script>/g;
   const reNoQs   = /<script\s+src="js\/screens\/op-persistir\.js"\s*><\/script>/g;
   const total = (indexSrc.match(reWithQs) || []).length + (indexSrc.match(reNoQs) || []).length;
   assert.equal(total, 1,
@@ -231,6 +233,7 @@ function makePersistirBootSandbox() {
   vm.runInContext(olaSrc,    sandbox, { filename: 'js/screens/op-latex-admin.js' });
   vm.runInContext(painelSrc, sandbox, { filename: 'js/screens/painel.js' });
   vm.runInContext(oprSrc,    sandbox, { filename: 'js/screens/op-recalculo.js' });
+  vm.runInContext(ocrSrc,    sandbox, { filename: 'js/screens/op-compra-regime.js' });
   vm.runInContext(oppSrc,    sandbox, { filename: 'js/screens/op-persistir.js' });
   vm.runInContext(opPdfSrc,  sandbox, { filename: 'js/screens/op-pdf.js' });
   vm.runInContext(opnSrc,    sandbox, { filename: 'js/screens/op-nova.js' });
@@ -505,6 +508,12 @@ function makePersistirOPSandbox({
   ordensInsertError = null,
   calcularFiosOPResult = { algodaoPorCor: {}, poliester: { PRETO: 0, BRANCO: 0 } },
   montarOrdensResult = [],
+  // PRE-PROD-A (§R.23.2): the server decides the Pedido purchasing regime.
+  // Default 'legacy' keeps the flat-path behavior these tests assert; 'native'
+  // exercises the cutover (no flat rows, need synchronization).
+  regimeModelo = 'legacy',
+  regimeResolveResult = null,
+  sincronizarResult = null,
 } = {}) {
   const toastsNode = new FakeNode('div');
   const document = {
@@ -668,6 +677,12 @@ function makePersistirOPSandbox({
         }
         return Promise.resolve(opNumeroRpcResult);
       }
+      if (fn === 'resolver_regime_compra_fio_pedido') {
+        return Promise.resolve(regimeResolveResult || { data: { ok: true, modelo: regimeModelo }, error: null });
+      }
+      if (fn === 'sincronizar_necessidades_compra_fio') {
+        return Promise.resolve(sincronizarResult || { data: { ok: true, created: 0, updated: 0, deleted: 0, unchanged: 0 }, error: null });
+      }
       return Promise.resolve({ data: null, error: null });
     },
     auth: {
@@ -703,6 +718,7 @@ function makePersistirOPSandbox({
   vm.runInContext(olaSrc,    sandbox, { filename: 'js/screens/op-latex-admin.js' });
   vm.runInContext(painelSrc, sandbox, { filename: 'js/screens/painel.js' });
   vm.runInContext(oprSrc,    sandbox, { filename: 'js/screens/op-recalculo.js' });
+  vm.runInContext(ocrSrc,    sandbox, { filename: 'js/screens/op-compra-regime.js' });
   vm.runInContext(oppSrc,    sandbox, { filename: 'js/screens/op-persistir.js' });
   vm.runInContext(opPdfSrc,  sandbox, { filename: 'js/screens/op-pdf.js' });
   vm.runInContext(opnSrc,    sandbox, { filename: 'js/screens/op-nova.js' });
@@ -1045,6 +1061,48 @@ test('50. falha em ordens_compra_fio.insert retorna step "ordens_compra_fio_inse
   sandbox.payload = { ...payloadBase(), status: 'aberta', op: { id: 42, lote_id: 100 } };
   const result = await vm.runInContext('window.persistirOP(payload)', sandbox);
   assert.equal(result.step, 'ordens_compra_fio_insert');
+  assert.equal(result.partial, true);
+});
+
+// ---- PRE-PROD-A (§R.23.2): native-mode regime cutover ---------------
+
+test('50b. status="aberta" nativo NÃO cria ordens_compra_fio e sincroniza necessidades', async () => {
+  const { sandbox, calls } = makePersistirOPSandbox({
+    regimeModelo: 'native',
+    montarOrdensResult: [{ tipo: 'algodao', cor_id: 10, cor_poliester: null, kg_pedido: 50 }],
+  });
+  sandbox.payload = { ...payloadBase(), status: 'aberta' };
+  const result = await vm.runInContext('window.persistirOP(payload)', sandbox);
+  assert.equal(result.step, 'ok', 'nativo deve concluir com step ok');
+  assert.equal(result.modelo, 'native', 'deve reportar modelo native');
+  assert.equal(calls.filter((c) => c.op === 'ordens_compra_fio_insert').length, 0,
+    'nativo NÃO deve inserir ordens_compra_fio (sem shadow flat)');
+  assert.equal(calls.filter((c) => c.op === 'ordens_compra_fio_delete').length, 0,
+    'nativo NÃO deve deletar ordens_compra_fio');
+  assert.equal(calls.filter((c) => c.op === 'calcularFiosOP').length, 0,
+    'nativo NÃO deve computar o cálculo flat');
+  assert.ok(calls.find((c) => c.op === 'rpc' && c.fn === 'sincronizar_necessidades_compra_fio'),
+    'nativo deve sincronizar necessidades via RPC canônica');
+});
+
+test('50c. status="aberta" nativo: falha na sincronização retorna step "necessidades_sync"', async () => {
+  const { sandbox } = makePersistirOPSandbox({
+    regimeModelo: 'native',
+    sincronizarResult: { data: { ok: false, codigo: 'conflito', erro: 'conflito' }, error: null },
+  });
+  sandbox.payload = { ...payloadBase(), status: 'aberta', op: { id: 42, lote_id: 100 } };
+  const result = await vm.runInContext('window.persistirOP(payload)', sandbox);
+  assert.equal(result.step, 'necessidades_sync', 'falha de sync deve mapear para necessidades_sync');
+  assert.equal(result.partial, true);
+});
+
+test('50d. status="aberta": falha ao resolver regime retorna step "regime_resolve"', async () => {
+  const { sandbox } = makePersistirOPSandbox({
+    regimeResolveResult: { data: { ok: false, codigo: 'sem_permissao', erro: 'Sem permissao' }, error: null },
+  });
+  sandbox.payload = { ...payloadBase(), status: 'aberta', op: { id: 42, lote_id: 100 } };
+  const result = await vm.runInContext('window.persistirOP(payload)', sandbox);
+  assert.equal(result.step, 'regime_resolve');
   assert.equal(result.partial, true);
 });
 
