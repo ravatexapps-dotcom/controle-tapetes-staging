@@ -266,6 +266,7 @@ BEGIN
     RAISE EXCEPTION 'obsolete/emission writer remains executable by authenticated';
   END IF;
   IF NOT has_function_privilege('authenticated', 'public.definir_alocacao_necessidade_compra_fio(bigint,bigint,numeric,text)', 'EXECUTE')
+     OR NOT has_function_privilege('authenticated', 'public.sincronizar_necessidades_compra_fio(uuid)', 'EXECUTE')
      OR NOT has_function_privilege('authenticated', 'public.cancelar_ordem_compra(bigint)', 'EXECUTE')
      OR NOT has_function_privilege('authenticated', 'public.registrar_recebimento_ordem_compra(bigint,text,timestamptz,text,text,text,jsonb)', 'EXECUTE')
      OR NOT has_function_privilege('authenticated', 'public.estornar_recebimento_ordem_compra(bigint,text,timestamptz,text,jsonb)', 'EXECUTE')

@@ -1187,6 +1187,8 @@ REVOKE ALL ON FUNCTION public.remover_alocacao_compra_fio(BIGINT)
   FROM PUBLIC, anon, authenticated, service_role;
 REVOKE ALL ON FUNCTION public.sincronizar_necessidades_compra_fio(UUID)
   FROM PUBLIC, anon, authenticated, service_role;
+GRANT EXECUTE ON FUNCTION public.sincronizar_necessidades_compra_fio(UUID)
+  TO authenticated;
 REVOKE ALL ON FUNCTION public.emitir_ordem_compra(BIGINT)
   FROM PUBLIC, anon, authenticated, service_role;
 

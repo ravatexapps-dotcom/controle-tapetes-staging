@@ -54,7 +54,7 @@ test('F1 ACL exposes only the authorized operational surface', () => {
   assert.match(sql, /REVOKE ALL ON FUNCTION public\.definir_item_ordem_compra\(UUID, BIGINT, TEXT, BIGINT, TEXT, NUMERIC\)[\s\S]*FROM PUBLIC, anon, authenticated, service_role/i);
   assert.match(sql, /REVOKE ALL ON FUNCTION public\.alocar_necessidade_compra_fio\(BIGINT, BIGINT, BIGINT, NUMERIC\)[\s\S]*FROM PUBLIC, anon, authenticated, service_role/i);
   assert.match(sql, /REVOKE ALL ON FUNCTION public\.remover_alocacao_compra_fio\(BIGINT\)[\s\S]*FROM PUBLIC, anon, authenticated, service_role/i);
-  assert.match(sql, /REVOKE ALL ON FUNCTION public\.sincronizar_necessidades_compra_fio\(UUID\)[\s\S]*FROM PUBLIC, anon, authenticated, service_role/i);
+  assert.match(sql, /REVOKE ALL ON FUNCTION public\.sincronizar_necessidades_compra_fio\(UUID\)[\s\S]*FROM PUBLIC, anon, authenticated, service_role[\s\S]*GRANT EXECUTE ON FUNCTION public\.sincronizar_necessidades_compra_fio\(UUID\)\s+TO authenticated/i);
   assert.match(sql, /GRANT EXECUTE ON FUNCTION public\.cancelar_ordem_compra\(BIGINT\)\s+TO authenticated/i);
   assert.match(sql, /GRANT EXECUTE ON FUNCTION public\.registrar_recebimento_ordem_compra\(BIGINT, TEXT, TIMESTAMPTZ, TEXT, TEXT, TEXT, JSONB\)\s+TO authenticated/i);
   assert.match(sql, /GRANT EXECUTE ON FUNCTION public\.estornar_recebimento_ordem_compra\(BIGINT, TEXT, TIMESTAMPTZ, TEXT, JSONB\)\s+TO authenticated/i);
