@@ -38,9 +38,32 @@
 > **MCP-capability** and **Pedido-ownership** read-only preflights. These rulings
 > are recorded in the new **§R.20** and applied surgically to §R.3, §R.8, §R.12,
 > §R.15, and §R.17. **Part R's historical acceptance is preserved**; this
-> clarification refines migration mechanics only. **`REFUND-A` remains
-> `NOT AUTHORIZED`** — its next step is architect review of this clarification,
-> then a separate REFUND-A migration order.
+> clarification refines migration mechanics only.
+>
+> **IMPLEMENTATION RESULT (2026-07-19, factual annotation, contract unchanged):**
+> `REFUND-A` is `CLOSED / ACCEPTED_WITH_BLOCKING_FUTURE_ACTIVATION_DEBT`.
+> Migration `db/67_ordem_compra_refoundation_schema.sql` (technical commit
+> `eb84071`, staging migration-history identifier `20260719012036 /
+> 67_ordem_compra_refoundation_schema`) applied §R.3's four layers +
+> `ordem_compra_item_compat_fio` and §R.20's additive dual-reference transition to
+> staging `ucrjtfswnfdlxwtmxnoo` only, seeding the ratified conversion exactly (64
+> needs / 51 headers / 51 items / 51 allocations / 51 mappings). Flat
+> administrative/receipt authority remains on `ordens_compra_fio`, unchanged; no
+> reader/writer switched; no production access. The live two-session T1/T2
+> allocation-concurrency test (§R.4/§20 of the execution order) was
+> architect-waived for this phase and not executed; structural + sequential
+> evidence was accepted instead, and **`LIVE_ALLOCATION_T1_T2_TEST_PENDING`** is
+> registered as a HARD STOP before PRE-PROD activates allocation (not before
+> REFUND-A itself). **New Phase-C activation obligation (this closeout):** the
+> canonical receipt writer must enforce the remaining reversible quantity for
+> partial/repeated `estorno` reversals (§R.8 Ruling 8) before ledger authority is
+> activated — REFUND-A's guards enforce shape/relationship only, not magnitude, by
+> design. **`REFUND-B1` is the next authorizable phase, NOT authorized by this
+> annotation** — its own separate order is required; `PRE-PROD` and later phases
+> remain `NOT AUTHORIZED`. Full record: `docs/ledgers/G28_LEDGER.md` REFUND-A
+> staging-verification and acceptance-closeout entries. This annotation records
+> facts only; it does not alter any ratified rule, column, constraint, or phase
+> gate above.
 >
 > **Status (flat model, superseded on persistence — ratified decisions transfer):**
 > `RATIFIED` (2026-07-18, `ORDEM-COMPRA-LIFECYCLE-SPEC-

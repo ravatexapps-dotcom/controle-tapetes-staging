@@ -1,11 +1,52 @@
 # ACTIVE OPERATIONAL HANDOFF
 
+- **`REFUND-A` — `CLOSED / ACCEPTED_WITH_BLOCKING_FUTURE_ACTIVATION_DEBT`
+  (2026-07-19, architect acceptance closeout, branch `dev`, docs-only, no DB
+  access):** the architect accepted the REFUND-A staging implementation below
+  (technical commit `eb84071`, documentation commit `e1ae04e`, staging
+  migration-history identifier `20260719012036 /
+  67_ordem_compra_refoundation_schema`, exact conversion **64 needs / 51
+  headers / 51 items / 51 allocations / 51 compatibility mappings**). **Flat
+  administrative and receipt authority remains entirely on
+  `ordens_compra_fio`** — no reader or writer was switched by REFUND-A or by
+  this acceptance. **No production access; no push.**
+  **The `LIVE_ALLOCATION_T1_T2_TEST_PENDING` debt does NOT block this
+  acceptance.** It blocks, specifically: (1) PRE-PROD activating purchase
+  distribution; (2) any authenticated business grant added to the allocation
+  RPCs; (3) any application beginning to call the allocation writer; (4) any
+  production promotion involving allocation. The live T1/T2 interleave test
+  was **not executed** in REFUND-A (waived by architect ruling); the accepted
+  substitute was structural + sequential allocation evidence (catalog-proven
+  `SELECT … FOR UPDATE`, sole-cache-maintainer trigger, `CHECK` backstop,
+  direct-DML denial, valid/over-allocation/reversal sequential tests) — all of
+  which passed.
+  **New Phase-C activation obligation recorded (this closeout):** the
+  canonical receipt writer must enforce the **remaining reversible quantity**
+  for partial/repeated `estorno` reversals (§R.8 Ruling 8) before ledger
+  authority is activated — REFUND-A's append-only and estorno-relationship
+  guards do not yet enforce reversal magnitude (documented scope boundary,
+  not a defect); Phase C closes this as part of switching receipt authority
+  to the ledger.
+  **`REFUND-B1` is now the next authorizable phase but is NOT authorized by
+  this closeout.** `PRE-PROD` and every later phase remain `NOT AUTHORIZED`.
+  **Pending non-blocking documentation debts, unchanged:**
+  `PEDIDO_OP_SCHEMA_CONTRACT.md` §6.2 and `DOCUMENTATION_INDEX.md`. A
+  contemporaneous read-only production diagnosis remains mandatory before any
+  production migration in this track.
+  **Files changed by this closeout:** `PROJECT_STATE.md`, this handoff entry,
+  `docs/ledgers/G28_LEDGER.md`, `docs/architecture/ORDEM_COMPRA_LIFECYCLE_SPEC_PROPOSED.md`
+  (factual implementation-result annotation only — the ratified Part R
+  contract itself is unchanged). No database access, no migration alteration,
+  no application code, no `.gitignore`/`AGENTS.md` change, no push, no `main`
+  touch, `REFUND-B1` not begun.
+
 - **`REFUND-A` — `IMPLEMENTED / VERIFIED IN STAGING / AWAITING ARCHITECT
-  ACCEPTANCE` (2026-07-19, branch `dev`, staging `ucrjtfswnfdlxwtmxnoo` only):**
-  executed under the `REFUND-A — EXECUTION ORDER` plus a follow-up
+  ACCEPTANCE` (2026-07-19, branch `dev`, staging `ucrjtfswnfdlxwtmxnoo` only) —
+  superseded by the acceptance closeout entry directly above; retained
+  verbatim as the technical implementation record:** executed under the
+  `REFUND-A — EXECUTION ORDER` plus a follow-up
   `ARCHITECT RULING — CLEAR REFUND-A CONCURRENCY HARD STOP` (waiving the live
-  two-session T1/T2 test for this phase; see below). **Not marked accepted by
-  this pass** — acceptance is the architect's own next action.
+  two-session T1/T2 test for this phase; see below).
   **Preflights (all passed before any write):** canonical reconciliation (Part R
   `RATIFIED`, §R.20 present, HEAD == baseline `5fd94d8`, no intervening
   purchase-order-contract commit); git preflight (branch `dev`, clean of

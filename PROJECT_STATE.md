@@ -56,9 +56,9 @@ are in `docs/ledgers/G28_LEDGER.md`. HEAD/working tree/divergence: consult Git d
   schema-and-seed only (§R.20.3), a complete byte/count-equivalent rollback
   (§R.20.4), and mandatory read-only MCP-capability (§R.20.5) and Pedido-ownership
   (§R.20.6) preflights, each a HARD STOP on failure.
-  **`REFUND-A` — `IMPLEMENTED / VERIFIED IN STAGING / AWAITING ARCHITECT
-  ACCEPTANCE` (2026-07-19, executed under the REFUND-A EXECUTION ORDER, staging
-  `ucrjtfswnfdlxwtmxnoo` only):** migration `db/67_ordem_compra_refoundation_schema.sql`
+  **`REFUND-A` — `CLOSED / ACCEPTED_WITH_BLOCKING_FUTURE_ACTIVATION_DEBT`
+  (2026-07-19, architect acceptance closeout, executed under the REFUND-A
+  EXECUTION ORDER, staging `ucrjtfswnfdlxwtmxnoo` only):** migration `db/67_ordem_compra_refoundation_schema.sql`
   (commit `eb84071`, staging migration-history identifier
   `20260719012036 / 67_ordem_compra_refoundation_schema`) created the four
   persistence layers + `ordem_compra_item_compat_fio`, applied the additive
@@ -78,11 +78,18 @@ are in `docs/ledgers/G28_LEDGER.md`. HEAD/working tree/divergence: consult Git d
   because allocation is not activated as a business path; accepted instead were
   catalog proof of `SELECT … FOR UPDATE`, the `kg_alocado` `CHECK` backstop, direct
   -DML denial to `authenticated`/`anon`, and deterministic sequential tests (all
-  passed). **Debt registered: `LIVE_ALLOCATION_T1_T2_TEST_PENDING`** — non-blocking
-  for REFUND-A; a **HARD STOP** before PRE-PROD activates purchase distribution,
-  before any authenticated grant is added to allocation RPCs, before any application
-  calls the allocation writer, and before any production promotion involving
-  allocation. **Verification (staging, all rolled-back fixtures unless noted):**
+  passed). **Debt registered: `LIVE_ALLOCATION_T1_T2_TEST_PENDING`** — does **not**
+  block this REFUND-A acceptance; it is a **HARD STOP** before: (1) PRE-PROD
+  activates purchase distribution; (2) any authenticated business grant is added to
+  the allocation RPCs; (3) any application begins calling the allocation writer;
+  (4) any production promotion involving allocation. **Also preserved as a Phase-C
+  activation obligation (architect ruling, this closeout):** the canonical receipt
+  writer must enforce the remaining reversible quantity for partial/repeated
+  `estorno` reversals before ledger authority is activated — the append-only and
+  estorno-relationship guards built in REFUND-A do not yet enforce reversal
+  **magnitude**, by design (§R.8 Ruling 8 assigns that to the canonical writer, not
+  a REFUND-A schema `CHECK`); Phase C must close this before switching receipt
+  reads/writes to the ledger. **Verification (staging, all rolled-back fixtures unless noted):**
   21/21 negative-constraint tests correctly rejected by their intended guard;
   reversal-via-delete never goes negative; `authenticated`/`anon` direct DML denied
   (`permission denied`) on both new tables tested; append-only guard rejects
@@ -103,8 +110,15 @@ are in `docs/ledgers/G28_LEDGER.md`. HEAD/working tree/divergence: consult Git d
   contracts) was executed and verified to pass all 9 restoration checks, then the
   rehearsal itself was rolled back, leaving the real committed migration intact.
   **No application code, UI, reader/writer cutover, production access, or push** —
-  staging-only. **`REFUND-B1` and every later phase remain `NOT AUTHORIZED`.** Full
-  detail: `docs/ledgers/G28_LEDGER.md` REFUND-A entry. **Binding precondition:** a contemporaneous read-only **production** `ordens_compra_fio`
+  staging-only; flat administrative and receipt authority remains entirely on
+  `ordens_compra_fio` (unchanged, no reader/writer switched). **Acceptance
+  (2026-07-19):** the architect accepted REFUND-A as `CLOSED /
+  ACCEPTED_WITH_BLOCKING_FUTURE_ACTIVATION_DEBT` — the debt above does not block
+  this acceptance, only the named future activations. **`REFUND-B1` is now the
+  next authorizable phase but is NOT authorized by this closeout; `PRE-PROD` and
+  every later phase remain `NOT AUTHORIZED`.** Full detail:
+  `docs/ledgers/G28_LEDGER.md` REFUND-A entries (staging verification +
+  acceptance closeout). **Binding precondition:** a contemporaneous read-only **production** `ordens_compra_fio`
   diagnosis is mandatory immediately before any production promotion/migration in
   this track — production is **UNKNOWN for migration** and was **not accessed**.
   Docs commits: `Add purchase-order legacy diagnosis` (`de62b16`), `Propose
@@ -126,9 +140,9 @@ are in `docs/ledgers/G28_LEDGER.md`. HEAD/working tree/divergence: consult Git d
   point-of-no-return, and the native receipt lifecycle gate. **Every
   migration-critical decision is CLOSED; no open alternatives remain.** The final
   verification found no migration-critical contradiction, omission, or unresolved
-  choice. **`REFUND-A` is now `IMPLEMENTED / VERIFIED IN STAGING / AWAITING
-  ARCHITECT ACCEPTANCE`** (see the dated entry above) — not marked accepted by this
-  implementation pass itself; acceptance is the architect's own next action. A
+  choice. **`REFUND-A` is now `CLOSED / ACCEPTED_WITH_BLOCKING_FUTURE_ACTIVATION_DEBT`**
+  (see the dated entry above). Non-blocking documentation follow-ups remain
+  pending: `PEDIDO_OP_SCHEMA_CONTRACT.md` §6.2 and `DOCUMENTATION_INDEX.md`. A
   contemporaneous read-only production diagnosis remains mandatory before any
   production migration.
   Non-blocking documentation follow-ups remain pending: `PEDIDO_OP_SCHEMA_CONTRACT.md`

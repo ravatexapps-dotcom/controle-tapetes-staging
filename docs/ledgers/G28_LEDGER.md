@@ -3038,3 +3038,70 @@ risco residual e próxima fase indicada no fechamento.
   every later phase remain `NOT AUTHORIZED`.
 - **Next authorizable action:** architect acceptance of this implementation,
   then `REFUND-B1` by its own separate order.
+
+---
+
+## 2026-07-19 — REFUND-A — ARCHITECT ACCEPTANCE CLOSEOUT — CLOSED / ACCEPTED_WITH_BLOCKING_FUTURE_ACTIVATION_DEBT
+
+- **Links to:** the `REFUND-A — IMPLEMENTED / VERIFIED IN STAGING / AWAITING
+  ARCHITECT ACCEPTANCE` entry directly above (append-only — that entry's
+  record of the implementation and its evidence stands unchanged; this entry
+  records the architect's acceptance decision on top of it).
+- **Gate:** `CLOSED / ACCEPTED_WITH_BLOCKING_FUTURE_ACTIVATION_DEBT`.
+  Documentation-only closeout; no database access. Baseline `dev @ e1ae04e`.
+- **Architect ruling:** REFUND-A is accepted. **Technical commit:** `eb84071`
+  ("Create purchase-order refoundation foundation"). **Documentation commit:**
+  `e1ae04e` ("Record REFUND-A staging verification"). **Staging
+  migration-history identifier:** `20260719012036 /
+  67_ordem_compra_refoundation_schema`. **Exact conversion:** **64 needs / 51
+  headers / 51 items / 51 allocations / 51 compatibility mappings.**
+- **Flat authority preserved:** administrative and receipt authority remain
+  entirely on `ordens_compra_fio`; no reader or writer was switched by
+  REFUND-A or by this acceptance. No production access. No push.
+- **Live concurrency test — factual record:** the live two-session T1/T2
+  interleave test was **not executed** in REFUND-A (architect-waived, since
+  allocation is not activated as a business path in this phase). Accepted
+  substitute evidence — all passed: catalog-proven `SELECT … FOR UPDATE` in
+  the canonical allocation RPC; proof the trigger is the sole `kg_alocado`
+  cache maintainer; the `kg_alocado>=0`/`kg_alocado<=kg_necessario` CHECKs;
+  direct-DML denial to `authenticated`/`anon`; deterministic sequential tests
+  (valid allocation, over-allocation rejection against a genuinely full need,
+  reversal-via-delete never negative).
+- **Debt `LIVE_ALLOCATION_T1_T2_TEST_PENDING` — does NOT block this
+  acceptance.** It is a binding **HARD STOP** before, specifically:
+  1. `PRE-PROD` activates purchase distribution;
+  2. any authenticated business grant is added to the allocation RPCs;
+  3. any application begins calling the allocation writer;
+  4. any production promotion involving allocation.
+- **New Phase-C activation obligation (this closeout, binding):** the
+  canonical receipt writer must enforce the **remaining reversible quantity**
+  for partial/repeated `estorno` reversals (§R.8 Ruling 8: `SUM(ABS(valid
+  estornos)) <= original positive kg`) **before ledger authority is
+  activated**. REFUND-A's append-only and estorno-relationship guards
+  enforce shape/relationship (same parent, positive source, no self
+  -reference) but not reversal **magnitude** — verified live during REFUND-A
+  as an intentional, documented scope boundary (Phase C canonical-writer
+  responsibility, not a REFUND-A schema `CHECK`), not a defect. Phase C's
+  migration/RPC must close this obligation before the read/write switch to
+  the ledger (§R.8's Phase-C cutover sequence).
+- **Next phase authorization:** `REFUND-B1` is now the next authorizable
+  phase but is **NOT authorized by this closeout** — it requires its own
+  separate order. `PRE-PROD` and every later phase remain `NOT AUTHORIZED`.
+- **Production diagnosis precondition unchanged:** a contemporaneous
+  read-only **production** `ordens_compra_fio` diagnosis remains mandatory
+  immediately before any production promotion/migration in this track;
+  production remains `UNKNOWN for migration` and was not accessed by this
+  closeout.
+- **Documentation debts remain pending, unchanged:**
+  `PEDIDO_OP_SCHEMA_CONTRACT.md` §6.2 and `DOCUMENTATION_INDEX.md`.
+- **Files changed (exactly four, per order):** `PROJECT_STATE.md`,
+  `AGENT_HANDOFF.md`, this ledger entry,
+  `docs/architecture/ORDEM_COMPRA_LIFECYCLE_SPEC_PROPOSED.md` (factual
+  implementation-result annotation only — the ratified Part R contract text
+  itself is unchanged; no append-only history rewritten).
+- **Scope discipline:** no database access; no migration alteration; no
+  application code; `.gitignore`/`AGENTS.md` untouched; no push; no `main`
+  touch; `REFUND-B1` not begun.
+- **Status:** `REFUND-A` is `CLOSED / ACCEPTED_WITH_BLOCKING_FUTURE_ACTIVATION_DEBT`.
+- **Next authorizable action:** `REFUND-B1`, by its own separate architect
+  order.
