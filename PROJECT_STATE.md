@@ -9,8 +9,19 @@ are in `docs/ledgers/G28_LEDGER.md`. HEAD/working tree/divergence: consult Git d
 
 ## Active phase and next action
 
+- **`PURCHASE-ORDER HYBRID ORIGIN — FORWARD CORRECTION F1` — `AUTHORIZED`
+  (2026-07-19).** R2 acceptance is recorded below. F1 owns database authority,
+  an atomic need-first writer, NULL-safe allocation identity, allocation-derived
+  item quantity, deterministic removal/cleanup, obsolete database-writer
+  restriction, and localized Phase C compatibility for shared allocations with
+  `op_id IS NULL`. UI correction remains outside F1. Staging database writes,
+  production, `main`, and push remain prohibited. Implementation may proceed only
+  after the read-only F1 readiness reconciliation returns
+  `READY_FOR_F1_IMPLEMENTATION`; otherwise stop without implementation.
+
 - **`PURCHASE-ORDER HYBRID ORIGIN — CANONICAL DOCUMENTATION CORRECTION R2` —
-  `COMPLETED / AWAITING ARCHITECT ACCEPTANCE` (2026-07-19, documentation-only).**
+  `CLOSED / ACCEPTED` (2026-07-19, accepted commit
+  `840dcb19b6bc6ffd8543a3f79bcae07516738bf6`).**
   The architect accepted the original purchase-order impact audit and the
   hybrid-origin addendum now governed by
   `docs/architecture/ORDEM_COMPRA_LIFECYCLE_SPEC_PROPOSED.md` §R.27. Binding model:
@@ -25,17 +36,19 @@ are in `docs/ledgers/G28_LEDGER.md`. HEAD/working tree/divergence: consult Git d
   OP receipt/ledger assumptions require localized forward correction and focused
   revalidation; valid excess remains allocation-free under `saldo_fios` and receives
   no artificial OP.
-  **Impact-audit disposition:** redo verdicts for B1, PRE-PROD, C1, C2, and C3A are
-  all **NO**; forward correction is selected. Supersession/restriction targets are
+  **Accepted disposition:** the Impact Audit, Hybrid Need Origin Addendum, and
+  Documentation Correction R2 are each `CLOSED / ACCEPTED`. Redo verdicts are
+  REFUND-A **NO**, REFUND-B1 **NO**, PRE-PROD **NO**, and Phase C **NO**; the selected
+  strategy is a forward corrective migration, with staging-data conversion **NO**.
+  Supersession/restriction targets are
   independent `Nova ordem`, origination through `definir_item_ordem_compra`,
   item-first `alocar_necessidade_compra_fio`, caller-controlled `p_op_id`, manual
   authoritative item quantity, purchase-order-detail ownership of allocation,
   OP-surface ownership of supplier assignment, and every shared-receipt rule that
   requires an OP. No implementation, SQL, migration, test, grant, staging write,
   production, `main`, or push is authorized. **C3A remains implemented and verified
-  in staging but not architecturally accepted.** The only next authorizable action is
-  architect acceptance or rejection of this documentation correction; forward
-  implementation requires a separate explicit order.
+  in staging but not architecturally accepted.** F1 is separately authorized above;
+  no later phase chains from this acceptance.
 
 - **`PHASE-C3A` — `IMPLEMENTED / VERIFIED IN STAGING / AWAITING ARCHITECT
   TECHNICAL ACCEPTANCE` (2026-07-19).** Contract `d23645f`, foundation `fca6ea7`,
@@ -61,8 +74,8 @@ are in `docs/ledgers/G28_LEDGER.md`. HEAD/working tree/divergence: consult Git d
   `79d5c1393193b67cd9f3a7b8cdc5037ce919bca87084d59f84a08949baafd566`.
   `HISTORICAL_SALDO_FIOS_PROVENANCE_UNAVAILABLE` remains nonblocking debt. No real
   import, fence, reader/writer or flat ACL switch, native emission, production,
-  push, or C3B/C3C/C3D/C4/C5 occurred. The next single authorizable action is the
-  architect's PHASE-C3A technical acceptance decision.
+  push, or C3B/C3C/C3D/C4/C5 occurred. Its technical-acceptance decision remains
+  pending and is not implied by F1 authorization.
 
 - **`G28-MIGRATION-TRACK` (`PRODUCTION-MIGRATION-M0-M10`) — `COMPLETE / CLOSED`
   (2026-07-18).** The system is **LIVE IN PRODUCTION** at
@@ -80,10 +93,9 @@ are in `docs/ledgers/G28_LEDGER.md`. HEAD/working tree/divergence: consult Git d
   cutover (`M10`)"; cutover is done. **New fronts are authorizable again**, each by
   its own individual order. The consolidated, ranked `POST-LAUNCH DEBT REGISTER`
   (below) supersedes the former "residual risk register (12 items)".
-- **Next authorizable action:** architect acceptance or rejection of
-  `PURCHASE-ORDER HYBRID ORIGIN — CANONICAL DOCUMENTATION CORRECTION R2` only.
-  C3A remains unaccepted; no corrective implementation or later C3 phase chains
-  automatically. Separately, the
+- **Next active technical phase:** `PURCHASE-ORDER HYBRID ORIGIN — FORWARD
+  CORRECTION F1`, authorized only within the scope and hard gate above. C3A remains
+  unaccepted; no later C3 phase chains automatically. Separately, the
   highest-consequence open operational item remains
   `INGESTOR-DOC-CYCLE-VERIFY-DEFERRED`, an `ACTIVE PRODUCTION BLOCKER`. See the
   `POST-LAUNCH DEBT REGISTER`. **Standing reminder: flip the Supabase MCP back to

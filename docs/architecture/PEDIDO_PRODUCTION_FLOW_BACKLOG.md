@@ -1538,7 +1538,8 @@ Status: **CLOSED / ACCEPTED_WITH_NONBLOCKING_ADMIN_SHELL_MOBILE_RESPONSIVENESS_D
 
 # Update 2026-07-19 — Purchase-order hybrid-origin correction R2
 
-Status: **DOCUMENTATION CORRECTION COMPLETED / AWAITING ARCHITECT ACCEPTANCE**.
+Status: **CLOSED / ACCEPTED** at commit
+`840dcb19b6bc6ffd8543a3f79bcae07516738bf6`.
 
 - The accepted impact audit keeps every redo verdict at **NO**. B1, PRE-PROD, C1,
   C2, and C3A are not restarted; C3A remains technically verified but unaccepted.
@@ -1560,6 +1561,13 @@ Status: **DOCUMENTATION CORRECTION COMPLETED / AWAITING ARCHITECT ACCEPTANCE**.
   6. later architect disposition of C3A;
   7. only then continuation to C3B and subsequent phases.
 
-This entry authorizes no implementation, migration, staging write, production, `main`,
-or push. The next authorization boundary is architect acceptance or rejection of the
-documentation correction only.
+The Impact Audit and Hybrid Need Origin Addendum are also `CLOSED / ACCEPTED`.
+REFUND-A, REFUND-B1, PRE-PROD, and Phase C redo verdicts remain **NO**; a forward
+corrective migration is selected and staging-data conversion is **NO**.
+
+The next active technical phase is `PURCHASE-ORDER HYBRID ORIGIN — FORWARD
+CORRECTION F1`, `AUTHORIZED`, limited to database authority, atomic need-first writing,
+NULL-safe allocation identity, allocation-derived item quantity, deterministic
+removal/cleanup, obsolete database-writer restriction, and localized Phase C shared-
+allocation compatibility. UI correction is outside F1. Staging writes, production,
+`main`, and push remain prohibited.

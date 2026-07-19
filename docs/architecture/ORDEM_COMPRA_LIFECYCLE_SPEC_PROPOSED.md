@@ -3078,14 +3078,18 @@ detached full-suite identity comparison passed. Final staging remains the inacti
 does not authorize real import, fence activation, reader/writer or ACL switch,
 emission, C3B/C3C/C3D, production, `main`, or push.
 
-## §R.27 Purchase-order hybrid-origin addendum — ACCEPTED / forward correction required
+## §R.27 Purchase-order hybrid-origin addendum — CLOSED / ACCEPTED
 
 > **Decision date:** 2026-07-19. The architect accepted the purchase-order impact
 > audit and this addendum. This section governs every earlier order-first,
 > item-first, allocation, receipt, and UI-ownership statement that conflicts with
 > it. The audit found localized forward-correction work; every phase redo verdict
 > remains **NO**. No implementation, migration, grant, environment write, or C3A
-> acceptance is authorized by this documentation correction.
+> acceptance is authorized by this documentation correction. Documentation
+> Correction R2 was accepted at commit
+> `840dcb19b6bc6ffd8543a3f79bcae07516738bf6`; the separately authorized next
+> technical phase is `PURCHASE-ORDER HYBRID ORIGIN — FORWARD CORRECTION F1`, scoped
+> to database authority and compatibility only. UI correction remains outside F1.
 
 ### §R.27.1 Binding hybrid origin and ownership
 

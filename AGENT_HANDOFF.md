@@ -1,10 +1,20 @@
 # ACTIVE OPERATIONAL HANDOFF
 
+- **`PURCHASE-ORDER HYBRID ORIGIN — FORWARD CORRECTION F1` — `AUTHORIZED`
+  (2026-07-19).** Execute only after read-only readiness reconciliation returns
+  `READY_FOR_F1_IMPLEMENTATION`. F1 scope is database-only: atomic need-first writer,
+  derived OP-or-NULL provenance, NULL-safe allocation identity, allocation-derived
+  item quantity, deterministic removal/cleanup, obsolete database-writer restriction,
+  and localized Phase C shared-allocation compatibility. UI correction is outside F1.
+  Staging database writes, production, `main`, and push are prohibited.
+
 - **`PURCHASE-ORDER HYBRID ORIGIN — CANONICAL DOCUMENTATION CORRECTION R2` —
-  `COMPLETED / AWAITING ARCHITECT ACCEPTANCE` (2026-07-19, documentation-only).**
-  - The accepted impact audit and hybrid-origin addendum are canonical in
-    `docs/architecture/ORDEM_COMPRA_LIFECYCLE_SPEC_PROPOSED.md` §R.27. All phase
-    redo verdicts remain **NO**; the strategy is localized forward correction.
+  `CLOSED / ACCEPTED` (accepted commit
+  `840dcb19b6bc6ffd8543a3f79bcae07516738bf6`).**
+  - Impact Audit, Hybrid Need Origin Addendum, and Documentation Correction R2 are
+    each `CLOSED / ACCEPTED`. REFUND-A, REFUND-B1, PRE-PROD, and Phase C redo
+    verdicts are all **NO**. Forward corrective migration is selected; staging-data
+    conversion is **NO**.
   - Native OP-origin need: `origem_tipo='op'`; need OP is the real calculating OP;
     future allocation writer locks the need and derives
     `allocation.op_id = necessidade.op_id`. The caller/UI never selects it.
@@ -23,9 +33,8 @@
   - C3A remains `IMPLEMENTED / VERIFIED IN STAGING / AWAITING ARCHITECT TECHNICAL
     ACCEPTANCE`; this correction does not accept it. No implementation, SQL,
     migration, tests, environment writes, production, `main`, or push are authorized.
-  - **Exact next authorization boundary:** architect acceptance or rejection of this
-    documentation correction only. A forward corrective implementation requires a
-    new explicit order; no phase chains.
+  - **Exact active boundary:** F1 implementation only after the readiness gate. No
+    F2 UI work, C3A acceptance, staging application, or later phase is implied.
   - **Mandatory continuity — retransmit every path below in every future handoff:**
     1. `PROJECT_STATE.md`
     2. `AGENT_HANDOFF.md`
@@ -88,8 +97,8 @@
     or C3B/C3C/C3D/C4/C5 action occurred.
   - `HISTORICAL_SALDO_FIOS_PROVENANCE_UNAVAILABLE` remains nonblocking debt. Do not
     repair it without separate physical inventory reconciliation authorization. The
-    next single authorizable action is architect technical acceptance or rejection
-    of PHASE-C3A; do not chain into C3B/C3C/C3D.
+    technical acceptance or rejection of PHASE-C3A remains pending; F1 does not
+    accept it and must not chain into C3B/C3C/C3D.
 
 - **`PHASE-C2` — `CLOSED / ACCEPTED`
   (2026-07-19, `dev`, baseline

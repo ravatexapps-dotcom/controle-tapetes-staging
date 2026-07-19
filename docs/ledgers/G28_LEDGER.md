@@ -4048,3 +4048,23 @@ MATERIAL_DIVERGENCES: NONE
 - **Status:** `COMPLETED / AWAITING ARCHITECT ACCEPTANCE`. The only next
   authorizable action is architect acceptance or rejection of this documentation
   correction. `NO IMPLEMENTATION AUTHORIZED`.
+
+## 2026-07-19 — PURCHASE-ORDER HYBRID ORIGIN R2 — ARCHITECT ACCEPTANCE CLOSEOUT
+
+- **Accepted commit:** `840dcb19b6bc6ffd8543a3f79bcae07516738bf6`.
+- **Ratified status:** Impact Audit `CLOSED / ACCEPTED`; Hybrid Need Origin Addendum
+  `CLOSED / ACCEPTED`; Documentation Correction R2 `CLOSED / ACCEPTED`.
+- **Redo / strategy rulings:** REFUND-A redo **NO**; REFUND-B1 redo **NO**;
+  PRE-PROD redo **NO**; Phase C redo **NO**; selected strategy = forward corrective
+  migration; staging-data conversion required = **NO**.
+- **C3A:** remains `IMPLEMENTED / VERIFIED IN STAGING / AWAITING ARCHITECT TECHNICAL
+  ACCEPTANCE`; this closeout does not accept it.
+- **Next active technical phase:** `PURCHASE-ORDER HYBRID ORIGIN — FORWARD
+  CORRECTION F1`, `AUTHORIZED`, scoped to database authority, atomic need-first
+  writer, derived OP-or-NULL provenance, NULL-safe allocation identity,
+  allocation-derived item quantity, deterministic removal/cleanup, obsolete
+  database-writer restriction, and localized Phase C shared-allocation compatibility.
+  UI correction remains outside F1.
+- **Boundary:** staging database writes, production, `main`, push, UI/F2, C3A
+  acceptance, and later phases remain unauthorized. F1 implementation may begin only
+  after its read-only readiness reconciliation passes.
