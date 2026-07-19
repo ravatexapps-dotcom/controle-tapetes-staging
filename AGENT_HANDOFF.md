@@ -3,8 +3,10 @@
 - **`PURCHASE-ORDER HYBRID ORIGIN — F1 FORWARD CORRECTION IMPLEMENTATION R1` —
   `IMPLEMENTED / VERIFIED LOCALLY / AWAITING ARCHITECT REVIEW` (2026-07-19).**
   Accepted contract `00897f09267fc8304b329ce46ba985d03a57faff`; acceptance
-  registration `380c03dd34f37db80b1c171deb50017b685b69aa`; technical commit
-  `463cafbdd4816ff1093b3086dd71d3d6e70b3479`. Reconciliation returned
+  registration `380c03dd34f37db80b1c171deb50017b685b69aa`; technical commits
+  `463cafbdd4816ff1093b3086dd71d3d6e70b3479` and
+  `680cff136a3294ae9a345fc8f91f02e246891eef` (preserved authenticated need
+  synchronization ACL). Reconciliation returned
   `READY_FOR_F1_IMPLEMENTATION`. Isolated PostgreSQL 18.4 apply/reapply,
   rollback-scoped integration, and eight distinct-session races passed. Focused
   purchase-order tests pass 62/62; broader failures remain the exact 132-identity

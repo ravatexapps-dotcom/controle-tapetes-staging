@@ -11,10 +11,13 @@ are in `docs/ledgers/G28_LEDGER.md`. HEAD/working tree/divergence: consult Git d
 
 - **`PURCHASE-ORDER HYBRID ORIGIN — F1 FORWARD CORRECTION IMPLEMENTATION R1` —
   `IMPLEMENTED / VERIFIED LOCALLY / AWAITING ARCHITECT REVIEW` (2026-07-19).**
-  Read-only reconciliation returned `READY_FOR_F1_IMPLEMENTATION`. Technical commit
-  `463cafbdd4816ff1093b3086dd71d3d6e70b3479` adds forward-only migration
-  `db/74_ordem_compra_hybrid_origin_forward_correction.sql`, the accepted need-first
-  writer/journal, corrected allocation identity, derived quantity/cleanup guards,
+  Read-only reconciliation returned `READY_FOR_F1_IMPLEMENTATION`. Technical commits
+  `463cafbdd4816ff1093b3086dd71d3d6e70b3479` and
+  `680cff136a3294ae9a345fc8f91f02e246891eef` add the forward-only migration and
+  preserve authenticated need synchronization while revoking only the accepted
+  obsolete writers. Migration
+  `db/74_ordem_compra_hybrid_origin_forward_correction.sql` contains the accepted
+  need-first writer/journal, corrected allocation identity, derived quantity/cleanup guards,
   exact ACL disposition, and Phase C shared NULL-OP compatibility. Isolated
   PostgreSQL 18.4 apply/reapply, rollback-scoped functional proof, and eight distinct-
   session race cases passed. Focused purchase-order tests pass 62/62. The broader

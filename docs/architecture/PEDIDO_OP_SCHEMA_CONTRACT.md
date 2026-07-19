@@ -1099,8 +1099,11 @@ Status: `F1 EXECUTABLE CONTRACT CLOSURE R1: CLOSED / ACCEPTED` at commit
 `F1 FORWARD CORRECTION IMPLEMENTATION R1` phase is authorized.
 
 Implementation checkpoint (2026-07-19): `IMPLEMENTED / VERIFIED LOCALLY / AWAITING
-ARCHITECT REVIEW` at technical commit
-`463cafbdd4816ff1093b3086dd71d3d6e70b3479`. Migration
+ARCHITECT REVIEW` at technical commits
+`463cafbdd4816ff1093b3086dd71d3d6e70b3479` and
+`680cff136a3294ae9a345fc8f91f02e246891eef`. The final ACL preserves authenticated
+execution of `sincronizar_necessidades_compra_fio(UUID)` and revokes only the
+accepted obsolete native mutation paths. Migration
 `db/74_ordem_compra_hybrid_origin_forward_correction.sql` installs the exact RPC,
 journal, identity/index, quantity/freeze guards, ACL matrix, and shared NULL-OP Phase
 C replacements defined by this section. Verification used isolated PostgreSQL 18.4

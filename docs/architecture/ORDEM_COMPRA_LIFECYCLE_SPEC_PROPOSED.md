@@ -3415,8 +3415,11 @@ commit `00897f09267fc8304b329ce46ba985d03a57faff`. Implementation is governed by
 the separately authorized `F1 FORWARD CORRECTION IMPLEMENTATION R1` order.
 
 Implementation checkpoint (2026-07-19): `IMPLEMENTED / VERIFIED LOCALLY / AWAITING
-ARCHITECT REVIEW` at technical commit
-`463cafbdd4816ff1093b3086dd71d3d6e70b3479`. Forward migration `db/74` implements
+ARCHITECT REVIEW` at technical commits
+`463cafbdd4816ff1093b3086dd71d3d6e70b3479` and
+`680cff136a3294ae9a345fc8f91f02e246891eef`. The latter preserves the existing
+authenticated `sincronizar_necessidades_compra_fio(UUID)` authority while the
+accepted obsolete writers remain owner-only. Forward migration `db/74` implements
 this section without modifying db/67-db/73 or converting environment data. Isolated
 PostgreSQL 18.4 apply/reapply, rollback-scoped functional/ACL/Phase-C tests, and the
 required distinct-session race matrix passed. F2 and staging application remain

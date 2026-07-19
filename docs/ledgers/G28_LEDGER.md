@@ -4204,3 +4204,11 @@ MATERIAL_DIVERGENCES: NONE
 - **Next authorizable action:** architect acceptance or rejection of F1. A separate
   explicit order is required for staging application or F2; neither chains from this
   closeout.
+- **Final ACL reconciliation addendum:** follow-up technical commit
+  `680cff136a3294ae9a345fc8f91f02e246891eef` corrects an over-broad local-only
+  revocation before any environment application. The accepted matrix preserves
+  authenticated `sincronizar_necessidades_compra_fio(UUID)` for canonical need
+  synchronization; PUBLIC, `anon`, and `service_role` remain revoked. All obsolete
+  manual/item-first writers remain owner-only. db/74 reapply, dynamic ACL proof,
+  rollback integration 62/62 focused tests, and the exact broad-suite failure hash
+  passed again. No staging or other environment observed the superseded local ACL.

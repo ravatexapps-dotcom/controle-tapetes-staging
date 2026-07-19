@@ -1591,7 +1591,10 @@ unauthorized.
 # Update 2026-07-19 — F1 forward correction implementation R1
 
 Status: **IMPLEMENTED / VERIFIED LOCALLY / AWAITING ARCHITECT REVIEW** at technical
-commit `463cafbdd4816ff1093b3086dd71d3d6e70b3479`.
+commits `463cafbdd4816ff1093b3086dd71d3d6e70b3479` and
+`680cff136a3294ae9a345fc8f91f02e246891eef`; the follow-up preserves the existing
+authenticated need-synchronization ACL while obsolete native writers remain
+owner-only.
 
 - `db/74_ordem_compra_hybrid_origin_forward_correction.sql` implements the accepted
   need-first absolute-target command, permanent actor-scoped replay journal,
