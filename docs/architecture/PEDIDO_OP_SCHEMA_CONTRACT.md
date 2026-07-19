@@ -872,12 +872,13 @@ All redo verdicts remain **NO**. The accepted strategy is forward correction; no
 migration, staging write, test change, grant, implementation, or C3A acceptance is
 authorized by this section.
 
-## 13. F1 executable database contract R1 — awaiting architect acceptance
+## 13. F1 executable database contract R1 — CLOSED / ACCEPTED
 
 Lifecycle specification §R.28 owns the domain/API semantics; this section owns the
 corresponding exact schema, identity, ACL, and concurrency realization. The two are
-one contract and must be changed together. This documentation phase authorizes no
-migration or environment write.
+one contract and must be changed together. The architect accepted this contract at
+commit `00897f09267fc8304b329ce46ba985d03a57faff` and separately authorized the
+forward-only F1 implementation. Environment application remains unauthorized.
 
 ### 13.1 RPC parameters and outputs
 
@@ -1093,5 +1094,6 @@ cannot be concurrent with an accepted draft mutation.
 | UI | contract-fixture coherence only | F2 Pedido/Insumos UI migration not authorized |
 | Sequence | contract acceptance → separate F1 implementation order → local verification → separately authorized staging validation | PRE-PROD, C3A acceptance, C3B+, production, main, push do not chain |
 
-Status: `F1 EXECUTABLE CONTRACT CLOSURE R1: COMPLETED / AWAITING ARCHITECT
-ACCEPTANCE`. F1 implementation remains not authorized.
+Status: `F1 EXECUTABLE CONTRACT CLOSURE R1: CLOSED / ACCEPTED` at commit
+`00897f09267fc8304b329ce46ba985d03a57faff`. The separate
+`F1 FORWARD CORRECTION IMPLEMENTATION R1` phase is authorized.

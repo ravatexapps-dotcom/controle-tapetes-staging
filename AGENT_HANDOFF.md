@@ -1,17 +1,25 @@
 # ACTIVE OPERATIONAL HANDOFF
 
+- **`PURCHASE-ORDER HYBRID ORIGIN — F1 FORWARD CORRECTION IMPLEMENTATION R1` —
+  `AUTHORIZED` (2026-07-19).** Accepted contract commit
+  `00897f09267fc8304b329ce46ba985d03a57faff`. Run the final read-only
+  reconciliation, then implement only if it returns `READY_FOR_F1_IMPLEMENTATION`.
+  Scope: forward-only database authority correction, isolated PostgreSQL verification,
+  and canonical closeout. F2 UI, staging application, C3A acceptance, production,
+  `main`, remote changes, and push are prohibited.
+
 - **`PURCHASE-ORDER HYBRID ORIGIN — F1 EXECUTABLE CONTRACT CLOSURE R1` —
-  `COMPLETED / AWAITING ARCHITECT ACCEPTANCE` (2026-07-19).** The F1 readiness
+  `CLOSED / ACCEPTED` (accepted commit
+  `00897f09267fc8304b329ce46ba985d03a57faff`).** The F1 readiness
   gate returned and accepted `HARD_STOP — CONTRACT INCOMPLETE`; implementation did
   not start and is not authorized. The missing executable decisions are now closed
   in lifecycle §R.28 and schema contract §13: exact need-first absolute-target RPC,
   immutable actor/key command idempotency, deterministic zero-allocation/item/draft
   deletion, unique `(item_id, necessidade_id)` identity, deferred allocation-sum
   quantity backstop, obsolete native-writer revocations, shared NULL-OP Phase C
-  shape, stable error taxonomy, and exact lock order. **Next action:** architect
-  acceptance or rejection. If accepted, a separate F1 implementation order is the
-  only next authorizable technical action. F1 implementation, F2 UI, C3A acceptance,
-  staging application, production, `main`, and push remain unauthorized.
+  shape, stable error taxonomy, and exact lock order. The architect accepted this
+  contract and separately authorized the implementation phase recorded above. F2 UI,
+  C3A acceptance, staging application, production, `main`, and push remain unauthorized.
 
 - **`PURCHASE-ORDER HYBRID ORIGIN — CANONICAL DOCUMENTATION CORRECTION R2` —
   `CLOSED / ACCEPTED` (accepted commit

@@ -3144,15 +3144,16 @@ corrective implementation → focused staging validation → PRE-PROD revalidati
 Phase C shared-allocation revalidation → later architect disposition of unaccepted
 C3A → only then C3B and subsequent phases. No step chains automatically.
 
-## §R.28 F1 executable contract closure R1 — awaiting architect acceptance
+## §R.28 F1 executable contract closure R1 — CLOSED / ACCEPTED
 
 This section closes the executable database contract that §R.27 intentionally left
 at the invariant level. It supersedes the future-operation portions of §R.4,
 §R.22.3-§R.22.4, and §R.23.5-§R.23.6 where they retain order-first, item-first,
 caller-selected-OP, manual-quantity, or manual-cleanup authority. It authorizes no
 SQL, migration, grant, application change, test change, environment write, or F1
-implementation. Acceptance of this contract and implementation remain separate
-architect decisions.
+implementation by itself. The architect accepted this contract at commit
+`00897f09267fc8304b329ce46ba985d03a57faff` and separately authorized
+`PURCHASE-ORDER HYBRID ORIGIN — F1 FORWARD CORRECTION IMPLEMENTATION R1`.
 
 ### §R.28.1 Canonical need-first command
 
@@ -3409,5 +3410,6 @@ requires an emitted order and uses the same order/item/allocation identities.
 | Application/UI | Only fixture/contract coherence strictly required by changed RPC availability; no distribution UI migration. | F2 migrates Pedido/Insumos UI and removes independent Nova ordem/order-detail ownership. Not authorized here. |
 | Broader proof | Canonical full-suite before/after failure-identity comparison. | PRE-PROD revalidation, C3A disposition, and later C3 phases each remain separate. |
 
-Status of this section: `F1 EXECUTABLE CONTRACT CLOSURE R1: COMPLETED / AWAITING
-ARCHITECT ACCEPTANCE`. F1 implementation is not authorized by this record.
+Status of this section: `F1 EXECUTABLE CONTRACT CLOSURE R1: CLOSED / ACCEPTED` at
+commit `00897f09267fc8304b329ce46ba985d03a57faff`. Implementation is governed by
+the separately authorized `F1 FORWARD CORRECTION IMPLEMENTATION R1` order.

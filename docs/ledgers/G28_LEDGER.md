@@ -4128,3 +4128,17 @@ MATERIAL_DIVERGENCES: NONE
   implementation is not authorized. The only next authorizable action is architect
   acceptance or rejection; acceptance must be followed by a separate F1
   implementation order. F2 and C3A acceptance remain unauthorized/pending.
+
+## 2026-07-19 — PURCHASE-ORDER HYBRID ORIGIN — F1 EXECUTABLE CONTRACT ACCEPTANCE
+
+- **Accepted contract commit:** `00897f09267fc8304b329ce46ba985d03a57faff`.
+- **Ratified status:** `PURCHASE-ORDER HYBRID ORIGIN — F1 EXECUTABLE CONTRACT
+  CLOSURE R1: CLOSED / ACCEPTED`.
+- **Implementation authorization:** `PURCHASE-ORDER HYBRID ORIGIN — F1 FORWARD
+  CORRECTION IMPLEMENTATION R1: AUTHORIZED`, subject to the final read-only
+  reconciliation returning `READY_FOR_F1_IMPLEMENTATION`.
+- **Preserved decisions:** all redo verdicts remain **NO** and forward correction
+  remains the selected strategy. C3A remains implemented and verified but not
+  accepted. F2 UI and staging application remain unauthorized.
+- **Boundary:** isolated PostgreSQL verification is permitted. Staging, production,
+  `main`, remote changes, push, C3A acceptance, F2, and later phases are prohibited.

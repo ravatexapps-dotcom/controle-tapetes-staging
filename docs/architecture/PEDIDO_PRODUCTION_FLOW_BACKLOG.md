@@ -1574,14 +1574,16 @@ allocation compatibility. UI correction is outside F1. Staging writes, productio
 
 # Update 2026-07-19 — F1 executable contract closure R1
 
-Status: **COMPLETED / AWAITING ARCHITECT ACCEPTANCE**. The authorized F1 readiness
+Status: **CLOSED / ACCEPTED** at commit
+`00897f09267fc8304b329ce46ba985d03a57faff`. The authorized F1 readiness
 reconciliation returned `HARD_STOP — CONTRACT INCOMPLETE`; no implementation began.
 Lifecycle §R.28 and schema contract §13 now define the exact need-first RPC,
 actor-scoped immutable command idempotency, absolute-target mutation API, deletion of
 zero allocations/empty items/empty never-emitted drafts, unique `(item_id,
 necessidade_id)` identity, allocation-derived item quantity backstop, complete ACL
 disposition, shared NULL-OP receipt/ledger shape, stable errors, lock order, and the
-implementation/revalidation matrix. F1 implementation remains unauthorized pending
-architect acceptance plus a separate implementation order. No SQL, migration,
-application, test, grant, staging, production, `main`, push, C3A acceptance, or F2
-authorization occurred.
+implementation/revalidation matrix. The architect separately authorized
+`PURCHASE-ORDER HYBRID ORIGIN — F1 FORWARD CORRECTION IMPLEMENTATION R1`, limited to
+the forward-only correction, isolated PostgreSQL verification, and canonical closeout.
+Staging application, production, `main`, push, C3A acceptance, and F2 remain
+unauthorized.
