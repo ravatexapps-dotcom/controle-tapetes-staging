@@ -1457,3 +1457,22 @@ ARCHITECT VISUAL VALIDATION AND ACCEPTANCE**.
   remains an existing, non-blocking visual debt.
 - Production, `main`, and push were not accessed. The only next authorizable action is
   architect visual validation and acceptance of PRE-PROD-A.
+
+# Update 2026-07-19 - PRE-PROD-A-R1 Architect Acceptance
+
+Status: **CLOSED / ACCEPTED_WITH_NONBLOCKING_ADMIN_SHELL_MOBILE_RESPONSIVENESS_DEBT**.
+
+- Architect acceptance covers the staging migration `20260719120036 /
+  69_ordem_compra_preprod_allocation`, authenticated ACL PASS, live T1/T2 PASS,
+  allocation UI activation, rollback rehearsal, and desktop/tablet visual evidence.
+  `LIVE_ALLOCATION_T1_T2_TEST_PENDING` is resolved.
+- Allocation controls remain active in staging for eligible native drafts. Native
+  emission remains inactive and ungranted; native receipt and Phase C remain pending.
+  `NATIVE_RECEIPT_COMPATIBILITY_MULTI_ORIGIN_UNRESOLVED` remains open.
+- `ADMIN_SHELL_MOBILE_RESPONSIVENESS_DEBT` remains open and non-blocking. UI
+  provenance / modern-visual-language audit is deferred as a separate
+  post-stabilization activity and does not block this acceptance.
+- A contemporaneous production diagnosis is mandatory before any production work.
+  Production, `main`, push, PRE-PROD-B, and Phase C implementation remain prohibited
+  unless separately authorized. The next authorizable action is a separate architect
+  order selecting a reconciled backlog front.

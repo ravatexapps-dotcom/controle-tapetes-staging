@@ -256,8 +256,8 @@ are in `docs/ledgers/G28_LEDGER.md`. HEAD/working tree/divergence: consult Git d
   application code, no test change, no push, no `main` touch, `.gitignore`/
   `AGENTS.md` untouched this closeout.** **`PRE-PROD` is now the next
   authorizable track but is NOT authorized by this closeout.**
-- **`PRE-PROD-A-R1` — `CONTRACT CLOSED / IMPLEMENTATION AUTHORIZED (CONDITIONAL) / STAGING PENDING`
-  (2026-07-19, branch `dev`, baseline `51f31dd`, Opus 4.8).** The architect
+- **`PRE-PROD-A-R1` — `CLOSED / ACCEPTED_WITH_NONBLOCKING_ADMIN_SHELL_MOBILE_RESPONSIVENESS_DEBT`
+  (2026-07-19, architect acceptance, branch `dev`, baseline `51f31dd`).** The architect
   authorized `PRE-PROD-A-R1 — NATIVE NEEDS, ALLOCATION AND LIVE CONCURRENCY`. The
   binding contract is closed in `docs/architecture/ORDEM_COMPRA_LIFECYCLE_SPEC_PROPOSED.md`
   **§R.23** (governs PRE-PROD-A over §R.17/§R.22.12). **PRE-PROD-A owns:** explicit
@@ -304,11 +304,17 @@ are in `docs/ledgers/G28_LEDGER.md`. HEAD/working tree/divergence: consult Git d
   with no flat fallback; UI and grants were restored. All probes, run-key locks,
   fixture ranges, and active probe activity are zero. Focused tests passed 129/129;
   full suite: 3,743 pass / 132 known failures (the prior baseline recorded 133), with
-  no new failure attributed to this closeout. **Not architect-accepted:** PRE-PROD-A
-  awaits architect visual validation and acceptance. `NATIVE_RECEIPT_COMPATIBILITY_MULTI_ORIGIN_UNRESOLVED`,
-  native emission inactive, Phase C receipt authority, production diagnosis
-  precondition, and `ADMIN_SHELL_MOBILE_RESPONSIVENESS_DEBT` remain open. Production,
-  `main`, push, `PRE-PROD-B`, and Phase C remain prohibited/not authorized.
+  no new failure attributed to this closeout. **Architect ruling (2026-07-19):**
+  `PRE-PROD-A-R1` is closed and accepted. The desktop/tablet visual package and
+  staging technical evidence are accepted; the 390px result remains only the
+  pre-existing, non-blocking `ADMIN_SHELL_MOBILE_RESPONSIVENESS_DEBT`.
+  `NATIVE_RECEIPT_COMPATIBILITY_MULTI_ORIGIN_UNRESOLVED`, native emission inactive
+  and ungranted, Phase C receipt authority, and the mandatory contemporaneous
+  production diagnosis remain open. Production, `main`, push, `PRE-PROD-B`, and
+  Phase C remain prohibited/not authorized. UI provenance / modern-visual-language
+  audit is deferred as a separate post-stabilization, non-blocking activity. The
+  next authorizable action requires a separate architect order; this acceptance
+  authorizes neither PRE-PROD-B nor Phase C implementation.
 - **`REFUND-B1` (original implementation record) — 2026-07-19, branch `dev`,
   staging `ucrjtfswnfdlxwtmxnoo` only; superseded on status by the acceptance
   closeout directly above, retained verbatim for the technical detail.** The

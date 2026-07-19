@@ -1,8 +1,8 @@
 # ACTIVE OPERATIONAL HANDOFF
 
-- **`PRE-PROD-A-R1` — `IMPLEMENTED / VERIFIED IN STAGING / LIVE CONCURRENCY PASS /
-  AWAITING ARCHITECT VISUAL VALIDATION AND ACCEPTANCE` (2026-07-19, branch `dev`) — CLOSEOUT,
-  supersedes on status the checkpoint below.** Do not repeat T1/T2 or the browser-console harness.
+- **`PRE-PROD-A-R1` — `CLOSED / ACCEPTED_WITH_NONBLOCKING_ADMIN_SHELL_MOBILE_RESPONSIVENESS_DEBT`
+  (2026-07-19, architect acceptance, branch `dev`) — CLOSEOUT, supersedes on status
+  the checkpoint below.** Do not repeat T1/T2 or the browser-console harness.
   - The prior commits remain `3746284` (contract), `4ffd674` (foundation), and `2bcacac` (initial
     distribution UI); this closeout adds the enablement/handler/test/docs commit. No push, no `main`;
     `.gitignore`/`AGENTS.md` remain untouched.
@@ -29,8 +29,12 @@
   - **Tests/evidence:** `node --check` clean; focused 129/129 pass; full suite 3,743 pass / 132 known
     failures (historical baseline 133). Contact sheet is outside Git. Mobile evidence reproduces the
     existing `ADMIN_SHELL_MOBILE_RESPONSIVENESS_DEBT` only.
-  - **Next authorized action:** architect visual validation and acceptance of PRE-PROD-A only. Do not
-    begin PRE-PROD-B, Phase C, native emission, receipt, production, push, or `main` work.
+  - **Architect acceptance:** desktop/tablet visual evidence and the staging technical package are
+    accepted. The mobile result retains only the pre-existing, non-blocking
+    `ADMIN_SHELL_MOBILE_RESPONSIVENESS_DEBT`; UI provenance / modern-visual-language audit is
+    deferred as a separate post-stabilization activity and does not block this acceptance.
+  - **Next authorizable action:** a separate architect order selecting a reconciled backlog front.
+    Do not begin PRE-PROD-B, Phase C, native emission, receipt, production, push, or `main` work.
   - **Kept open / NOT authorized:** `NATIVE_RECEIPT_COMPATIBILITY_MULTI_ORIGIN_UNRESOLVED`; native
     emission; native receipt (Phase C); `ADMIN_SHELL_MOBILE_RESPONSIVENESS_DEBT`; production diagnosis
     precondition. `PRE-PROD-B` and `Phase C` remain `NOT AUTHORIZED`.

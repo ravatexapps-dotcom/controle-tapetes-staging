@@ -3665,3 +3665,28 @@ risco residual e próxima fase indicada no fechamento.
   receipt and Phase C remain pending; PRE-PROD-B, Phase C, production, `main`, and
   push remain prohibited. Next authorizable action: architect visual validation and
   acceptance only.
+
+## 2026-07-19 — PRE-PROD-A-R1 — ARCHITECT ACCEPTANCE — CLOSED / ACCEPTED_WITH_NONBLOCKING_ADMIN_SHELL_MOBILE_RESPONSIVENESS_DEBT
+
+- **Architect ruling:** `PRE-PROD-A-R1` is closed and accepted. The accepted record
+  includes staging migration `20260719120036 / 69_ordem_compra_preprod_allocation`,
+  implementation commit `56868fea1b65c3d627827a0bba47997cb1de0511`, authenticated
+  ACL PASS, rollback rehearsal PASS, focused tests 129/129 PASS, full suite 3,743
+  pass / 132 historical failures, zero transient residue, and accepted desktop/tablet
+  visual evidence.
+- **Concurrency gate resolved:** `LIVE_ALLOCATION_T1_T2_TEST_PENDING` is resolved.
+  T1 PID `2272591` acquired the real lock first and committed absolute 60 kg; T2 PID
+  `2272590` waited, re-evaluated 40 kg remaining, and rejected absolute 60 kg with
+  `excede_saldo`. Final allocation/cache=60 kg; no over-allocation.
+- **Accepted operating state:** allocation controls are active in staging for eligible
+  native drafts; legacy remains read-only. Native emission remains inactive and
+  `emitir_ordem_compra` remains ungranted. Native receipt and Phase C remain pending;
+  `NATIVE_RECEIPT_COMPATIBILITY_MULTI_ORIGIN_UNRESOLVED` remains open.
+- **Non-blocking/deferred work:** `ADMIN_SHELL_MOBILE_RESPONSIVENESS_DEBT` remains open
+  and non-blocking. UI provenance / modern-visual-language audit is deferred as a
+  separate post-stabilization activity and does not block this acceptance.
+- **Boundaries:** a contemporaneous read-only production diagnosis remains mandatory
+  before any production work. Production, `main`, push, PRE-PROD-B, and Phase C
+  implementation remain prohibited unless separately authorized. The next
+  authorizable action is a separate architect order selecting a reconciled backlog
+  front.

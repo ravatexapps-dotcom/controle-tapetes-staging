@@ -535,6 +535,18 @@ INSUMOS → TECELAGEM → ACABAMENTO → EXPEDIÇÃO → ENTREGA
 > revoked/restored the three writers and proved a denied native synchronization maps to
 > `necessidades_sync`, never a flat shadow. All fixtures/probes were removed; production
 > was not accessed.
+>
+> **PRE-PROD-A-R1 architect acceptance (2026-07-19).** Status is `CLOSED /
+> ACCEPTED_WITH_NONBLOCKING_ADMIN_SHELL_MOBILE_RESPONSIVENESS_DEBT`. Allocation controls
+> remain active in staging only for eligible native drafts. The authenticated ACL and live
+> T1/T2 gates are accepted; `LIVE_ALLOCATION_T1_T2_TEST_PENDING` is resolved. This does
+> not authorize native emission: `emitir_ordem_compra` remains inactive and ungranted.
+> Native receipt and Phase C remain pending, and
+> `NATIVE_RECEIPT_COMPATIBILITY_MULTI_ORIGIN_UNRESOLVED` remains open. The mobile shell
+> debt remains non-blocking. A production diagnosis is mandatory before production work;
+> production, `main`, push, PRE-PROD-B, and Phase C implementation remain prohibited.
+> UI provenance / modern-visual-language audit is deferred as a separate,
+> post-stabilization, non-blocking activity.
 
 ### 6.3. UI rules
 

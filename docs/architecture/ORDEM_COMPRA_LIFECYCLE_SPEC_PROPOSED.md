@@ -1903,6 +1903,22 @@ the 390px result reproduces the pre-existing `ADMIN_SHELL_MOBILE_RESPONSIVENESS_
 PRE-PROD-A is **awaiting architect visual validation and acceptance**; this record
 does not self-accept it.
 
+### §R.23.16 Architect acceptance (2026-07-19)
+
+The architect ruled `PRE-PROD-A-R1` **`CLOSED /
+ACCEPTED_WITH_NONBLOCKING_ADMIN_SHELL_MOBILE_RESPONSIVENESS_DEBT`**. This accepts
+the staging migration `20260719120036 / 69_ordem_compra_preprod_allocation`, the
+live T1/T2 evidence in §R.23.15, the authenticated ACL matrix, allocation UI
+activation for eligible native drafts, rollback rehearsal, and desktop/tablet
+visual evidence. `LIVE_ALLOCATION_T1_T2_TEST_PENDING` is resolved. Native emission
+remains inactive and ungranted; native receipt and Phase C remain pending;
+`NATIVE_RECEIPT_COMPATIBILITY_MULTI_ORIGIN_UNRESOLVED` remains open. The mobile
+shell debt remains open and non-blocking. A contemporaneous production diagnosis is
+mandatory before any production work; production, `main`, and push remain
+prohibited. No PRE-PROD-B or Phase C implementation is authorized by this
+acceptance. UI provenance / modern-visual-language audit is deferred as a separate,
+post-stabilization, non-blocking activity.
+
 ---
 
 ## 0. Current state (evidenced, read-only inventory) — SUPERSEDED on the persistence model by Part R (retained for provenance)
