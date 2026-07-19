@@ -217,9 +217,49 @@ are in `docs/ledgers/G28_LEDGER.md`. HEAD/working tree/divergence: consult Git d
   bridge/receipt decisions are **PRE-PROD** (gated on
   `LIVE_ALLOCATION_T1_T2_TEST_PENDING` + full allocation). **PRE-PROD remains
   `NOT AUTHORIZED`.**
-- **`REFUND-B1` — `IMPLEMENTED / VERIFIED IN STAGING / AWAITING ARCHITECT VISUAL
-  VALIDATION AND ACCEPTANCE` (2026-07-19, branch `dev`, staging
-  `ucrjtfswnfdlxwtmxnoo` only).** The R2 documentation gate passed exactly
+- **`REFUND-B1` — `CLOSED / ACCEPTED_WITH_RECORDED_FUTURE_GATES` (2026-07-19,
+  architect acceptance closeout, branch `dev`, docs-only, no DB access).** The
+  architect accepted the REFUND-B1 implementation recorded in the entry directly
+  below (technical commits `231f17a`/`82f6247`/`d4d7533`/`7a2c04c`, staging
+  migration `20260719025055 / 68_ordem_compra_native_draft_admin`). **Visual
+  qualification `ACCEPTED`** — the architect reviewed the supplied contact
+  sheet: dedicated purchase-order list/entity screens; native/legacy
+  distinction; item editing confined to the dedicated entity; action-only
+  cancellation modal; native emission visibly disabled with the PRE-PROD
+  explanation; OP screen reduced to contextual summary + navigation; no
+  duplicate native/flat-shadow representation; desktop and tablet layouts
+  acceptable. **Out-of-manifest test fixture synchronization `QUALIFIED /
+  ACCEPTABLE`** — the changes in `tests/boot.smoke.js`,
+  `tests/screens-common.smoke.js`, `tests/cadastros-screens.smoke.js`,
+  `tests/documentos-recebidos.smoke.js` are accepted as mechanical,
+  coverage-preserving synchronization caused by the new route/menu
+  entry/screen registration; no assertion weakening or unrelated behavioral
+  change identified. **Non-blocking UI debt registered:
+  `ADMIN_SHELL_MOBILE_RESPONSIVENESS_DEBT`** — the 390px evidence shows severe
+  content compression from the pre-existing fixed-width administrative
+  sidebar; app-wide, not introduced by REFUND-B1, non-blocking for this
+  acceptance, **not authorized for correction in this closeout** — a separate
+  global UI phase, not an ordem-compra-specific patch. **Future blocking gates
+  (binding, restated):** (1) `LIVE_ALLOCATION_T1_T2_TEST_PENDING` — blocks
+  allocation business activation, authenticated allocation grants, application
+  allocation calls, production promotion involving allocation; (2)
+  `NATIVE_RECEIPT_COMPATIBILITY_MULTI_ORIGIN_UNRESOLVED` — blocks fabricated
+  -`op_id` flat shadows and native receipt routing through legacy writers for
+  shared-polyester/multi-OP items; (3) native emission remains inactive/
+  ungranted, PRE-PROD-only activation after allocation activation is valid +
+  live concurrency evidence + full item-allocation reconciliation + emission
+  preconditions pass; (4) native receipt authority deferred to Phase C; (5) a
+  contemporaneous read-only production diagnosis remains mandatory before any
+  production migration/promotion. **B2 residual scope** (supplier-assignment
+  relocation off the OP screen; Phase-C receipt UI) remains governed by this
+  updated canonical plan. **No database access, no `db/68` change, no
+  application code, no test change, no push, no `main` touch, `.gitignore`/
+  `AGENTS.md` untouched this closeout.** **`PRE-PROD` is now the next
+  authorizable track but is NOT authorized by this closeout.**
+- **`REFUND-B1` (original implementation record) — 2026-07-19, branch `dev`,
+  staging `ucrjtfswnfdlxwtmxnoo` only; superseded on status by the acceptance
+  closeout directly above, retained verbatim for the technical detail.** The
+  R2 documentation gate passed exactly
   (commit `231f17a`), so implementation proceeded under the same order.
   **Migration `db/68_ordem_compra_native_draft_admin.sql`** (commit `82f6247`,
   staging migration-history identifier `20260719025055 /

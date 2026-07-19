@@ -3440,3 +3440,70 @@ risco residual e próxima fase indicada no fechamento.
 - **Status:** `REFUND-B1` is `IMPLEMENTED / VERIFIED IN STAGING / AWAITING ARCHITECT
   VISUAL VALIDATION AND ACCEPTANCE`. **Next authorizable action:** architect visual
   validation + acceptance, then a separate `PRE-PROD` order.
+
+## 2026-07-19 — REFUND-B1 — ARCHITECT ACCEPTANCE CLOSEOUT — CLOSED / ACCEPTED_WITH_RECORDED_FUTURE_GATES
+
+- **Links to:** the `REFUND-B1 — IMPLEMENTED / VERIFIED IN STAGING / AWAITING
+  ARCHITECT VISUAL VALIDATION AND ACCEPTANCE` entry directly above (append-only —
+  that entry's record of the implementation and its evidence stands unchanged;
+  this entry records the architect's acceptance decision on top of it).
+- **Gate:** `CLOSED / ACCEPTED_WITH_RECORDED_FUTURE_GATES`. Documentation-only
+  closeout; no database access. Baseline `dev @ 7a2c04c`.
+- **Architect ruling:** REFUND-B1 is accepted. **Technical commits:** `231f17a`
+  (Correct REFUND-B1 activation boundaries), `82f6247` (Add native purchase-order
+  draft administration), `d4d7533` (Add dedicated native purchase-order
+  administration), `7a2c04c` (Record REFUND-B1 staging verification). **Staging
+  migration:** `20260719025055 / 68_ordem_compra_native_draft_admin`.
+- **Visual qualification — `ACCEPTED`.** The architect reviewed the supplied
+  contact sheet. Accepted findings: dedicated purchase-order list and entity
+  screens; native/legacy distinction; item editing confined to the dedicated
+  entity; action-only cancellation modal; native emission visibly disabled with
+  PRE-PROD explanation; OP screen reduced to contextual summary and navigation;
+  no duplicate native/flat-shadow representation; desktop and tablet layouts
+  acceptable.
+- **Out-of-manifest test fixture synchronization — `QUALIFIED / ACCEPTABLE`.**
+  The changes in `tests/boot.smoke.js`, `tests/screens-common.smoke.js`,
+  `tests/cadastros-screens.smoke.js`, `tests/documentos-recebidos.smoke.js` are
+  accepted as mechanical, coverage-preserving synchronization caused by the new
+  route, menu entry, and screen registration. No assertion weakening or
+  unrelated behavioral change was identified.
+- **Non-blocking UI debt — `ADMIN_SHELL_MOBILE_RESPONSIVENESS_DEBT`.** The
+  390px evidence shows severe content compression caused by the pre-existing
+  fixed-width administrative sidebar. This is app-wide; not introduced by
+  REFUND-B1; non-blocking for REFUND-B1 acceptance; **not authorized for
+  correction in this closeout**. Must be handled as a separate global UI phase,
+  not as an ordem-compra-specific patch.
+- **Future blocking gates (binding, restated):**
+  1. `LIVE_ALLOCATION_T1_T2_TEST_PENDING` — blocks allocation business
+     activation; authenticated allocation grants; application allocation
+     calls; production promotion involving allocation.
+  2. `NATIVE_RECEIPT_COMPATIBILITY_MULTI_ORIGIN_UNRESOLVED` — blocks flat
+     receipt shadows that require fabricated or arbitrary `op_id`; native
+     receipt routing through legacy writers for shared-polyester or multi-OP
+     items.
+  3. **Native emission** — remains inactive and ungranted. Activation belongs
+     to PRE-PROD only, after: allocation activation is valid; live concurrency
+     evidence passes; every item is fully reconciled to allocations; emission
+     preconditions pass.
+  4. **Native receipt authority** — remains deferred to Phase C.
+  5. **Production** — a contemporaneous read-only production diagnosis
+     remains mandatory before any production migration or promotion.
+- **B2 residual scope** (per-order supplier-assignment relocation off the OP
+  screen; Phase-C receipt UI wiring) remains governed by the updated canonical
+  plan (this closeout + §R.22).
+- **Next phase authorization:** `PRE-PROD` is now the next authorizable phase
+  but is **NOT authorized by this closeout** — it requires its own separate
+  order.
+- **Production diagnosis precondition unchanged:** production remains
+  `UNKNOWN for migration` and was not accessed by this closeout.
+- **Files changed (exactly four, per order):** `PROJECT_STATE.md`,
+  `AGENT_HANDOFF.md`, this ledger entry, `docs/architecture/
+  ORDEM_COMPRA_LIFECYCLE_SPEC_PROPOSED.md` (new §R.22.18 acceptance record +
+  banner update — no ratified rule/column/constraint/gate rewritten; no
+  append-only history rewritten).
+- **Scope discipline:** no database access; `db/68` unmodified; no application
+  code; no test changed; `.gitignore`/`AGENTS.md` untouched; no push; no `main`
+  touch; `PRE-PROD` not begun.
+- **Status:** `REFUND-B1` is `CLOSED / ACCEPTED_WITH_RECORDED_FUTURE_GATES`.
+- **Next authorizable action:** `PRE-PROD`, only by its own separate architect
+  order.

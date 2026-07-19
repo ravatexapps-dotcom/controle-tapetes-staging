@@ -1,8 +1,38 @@
 # ACTIVE OPERATIONAL HANDOFF
 
-- **`REFUND-B1` — `IMPLEMENTED / VERIFIED IN STAGING / AWAITING ARCHITECT VISUAL
-  VALIDATION AND ACCEPTANCE` (2026-07-19, branch `dev`, staging
-  `ucrjtfswnfdlxwtmxnoo` only, no production, no push).** The R2 documentation gate
+- **`REFUND-B1` — `CLOSED / ACCEPTED_WITH_RECORDED_FUTURE_GATES` (2026-07-19,
+  architect acceptance closeout, branch `dev`, docs-only, no DB access):** the
+  architect accepted the REFUND-B1 implementation below (technical commits
+  `231f17a`/`82f6247`/`d4d7533`/`7a2c04c`, staging migration `20260719025055 /
+  68_ordem_compra_native_draft_admin`). **Visual qualification `ACCEPTED`**
+  (contact sheet reviewed: dedicated list/entity screens, native/legacy
+  distinction, item editing confined to the dedicated entity, action-only
+  cancellation modal, native emission visibly disabled with the PRE-PROD
+  explanation, OP screen reduced to contextual summary + navigation, no
+  duplicate native/flat-shadow representation, desktop/tablet layouts
+  acceptable). **Out-of-manifest test fixture sync `QUALIFIED / ACCEPTABLE`**
+  (`tests/boot.smoke.js`, `tests/screens-common.smoke.js`,
+  `tests/cadastros-screens.smoke.js`, `tests/documentos-recebidos.smoke.js` —
+  mechanical, coverage-preserving, no assertion weakening). **Non-blocking
+  debt registered: `ADMIN_SHELL_MOBILE_RESPONSIVENESS_DEBT`** (app-wide fixed
+  -sidebar mobile compression, pre-existing, not REFUND-B1-specific, not
+  authorized for correction here — separate global UI phase). **Future
+  blocking gates restated as binding:** `LIVE_ALLOCATION_T1_T2_TEST_PENDING`;
+  `NATIVE_RECEIPT_COMPATIBILITY_MULTI_ORIGIN_UNRESOLVED`; native emission
+  inactive/ungranted until PRE-PROD (allocation valid + live concurrency
+  evidence + full item-allocation reconciliation + emission preconditions);
+  native receipt authority deferred to Phase C; contemporaneous read-only
+  production diagnosis mandatory before any production migration. B2 residual
+  scope (supplier-assignment relocation; Phase-C receipt UI) remains governed
+  by the updated canonical plan. **No DB access, no `db/68` change, no
+  application code, no test change, no push, no `main`, `.gitignore`/
+  `AGENTS.md` untouched this closeout.** **`PRE-PROD` is now the next
+  authorizable track but is NOT authorized by this closeout.**
+
+- **`REFUND-B1` (original implementation record) — 2026-07-19, branch `dev`,
+  staging `ucrjtfswnfdlxwtmxnoo` only, no production, no push; superseded on
+  status by the acceptance closeout directly above, retained for the technical
+  detail.** The R2 documentation gate
   passed exactly (commit `231f17a`) so implementation proceeded under the same
   order. **Commits:** `231f17a` (R2 docs correction), `82f6247` (migration
   `db/68_ordem_compra_native_draft_admin.sql`, staging id `20260719025055`),

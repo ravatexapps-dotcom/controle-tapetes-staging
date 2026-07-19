@@ -78,7 +78,11 @@
 > `NATIVE_RECEIPT_COMPATIBILITY_MULTI_ORIGIN_UNRESOLVED`), a mandatory five-file
 > dedicated `#/ordens-compra/:id` screen split, and `db/68_ordem_compra_native_draft_admin.sql`.
 > §R.22 also carries the implementation authorization, conditional on its documentation
-> gate passing exactly; `PRE-PROD` remains `NOT AUTHORIZED`.
+> gate passing exactly. **`REFUND-B1` is now `CLOSED / ACCEPTED_WITH_RECORDED_FUTURE_GATES`
+> (§R.22.18, 2026-07-19)** — implemented, staging-verified, and architect-accepted (visual
+> qualification accepted; out-of-manifest test-fixture sync qualified/acceptable;
+> `ADMIN_SHELL_MOBILE_RESPONSIVENESS_DEBT` recorded non-blocking). `PRE-PROD` is the next
+> authorizable track but is **NOT authorized** by this closeout.
 >
 > **Status (flat model, superseded on persistence — ratified decisions transfer):**
 > `RATIFIED` (2026-07-18, `ORDEM-COMPRA-LIFECYCLE-SPEC-
@@ -1520,6 +1524,62 @@ to no role; no receipt-authority change (`KG-RECEBIDO-ACL-GAP` unchanged).
 **Nothing above authorizes PRE-PROD.** REFUND-B1 implementation is authorized under the
 R2 order **only after the R2 documentation gate passes exactly** (order §13);
 `PRE-PROD` remains `NOT AUTHORIZED`.
+
+### §R.22.18 REFUND-B1 — ARCHITECT ACCEPTANCE CLOSEOUT (2026-07-19)
+
+> **Order:** `REFUND-B1 — ARCHITECT ACCEPTANCE CLOSEOUT` (documentation-only).
+> **Baseline:** `dev @ 7a2c04c`. **Ruling: `REFUND-B1: CLOSED /
+> ACCEPTED_WITH_RECORDED_FUTURE_GATES`.**
+
+- **Technical commits accepted:** `231f17a` (Correct REFUND-B1 activation
+  boundaries), `82f6247` (Add native purchase-order draft administration),
+  `d4d7533` (Add dedicated native purchase-order administration), `7a2c04c`
+  (Record REFUND-B1 staging verification).
+- **Staging migration:** `20260719025055 /
+  68_ordem_compra_native_draft_admin`.
+- **Visual qualification: `ACCEPTED`.** The architect reviewed the supplied
+  contact sheet and accepted: dedicated purchase-order list and entity screens;
+  native/legacy distinction; item editing confined to the dedicated entity;
+  action-only cancellation modal; native emission visibly disabled with the
+  PRE-PROD explanation; the OP screen reduced to contextual summary +
+  navigation; no duplicate native/flat-shadow representation; desktop and
+  tablet layouts acceptable.
+- **Out-of-manifest test fixture synchronization: `QUALIFIED / ACCEPTABLE`.**
+  The changes in `tests/boot.smoke.js`, `tests/screens-common.smoke.js`,
+  `tests/cadastros-screens.smoke.js`, `tests/documentos-recebidos.smoke.js` are
+  accepted as mechanical, coverage-preserving synchronization caused by the new
+  route, menu entry, and screen registration — no assertion weakening or
+  unrelated behavioral change identified.
+- **Non-blocking UI debt — `ADMIN_SHELL_MOBILE_RESPONSIVENESS_DEBT`:** the
+  390px evidence shows severe content compression caused by the pre-existing
+  fixed-width administrative sidebar. App-wide, **not** introduced by
+  REFUND-B1, non-blocking for this acceptance, **not authorized for
+  correction in this closeout** — must be handled as a separate global UI
+  phase, not an ordem-compra-specific patch.
+- **Future blocking gates, restated as binding:**
+  1. **`LIVE_ALLOCATION_T1_T2_TEST_PENDING`** — blocks allocation business
+     activation, authenticated allocation grants, application allocation
+     calls, and production promotion involving allocation.
+  2. **`NATIVE_RECEIPT_COMPATIBILITY_MULTI_ORIGIN_UNRESOLVED`** — blocks flat
+     receipt shadows that would require a fabricated/arbitrary `op_id`, and
+     native receipt routing through legacy writers for shared-polyester or
+     multi-OP items.
+  3. **Native emission** remains inactive and ungranted; activation belongs to
+     PRE-PROD only after allocation activation is valid, live concurrency
+     evidence passes, every item is fully reconciled to allocations, and the
+     emission preconditions (§R.22.5) pass.
+  4. **Native receipt authority** remains deferred to Phase C.
+  5. **Production:** a contemporaneous read-only production diagnosis remains
+     mandatory before any production migration or promotion.
+- **B2 residual scope** (per-order supplier-assignment relocation off the OP
+  screen; Phase-C receipt UI wiring) remains governed by this updated canonical
+  plan.
+- **Scope discipline:** documentation-only; no database access; `db/68`
+  unmodified; no application code; no test changed; production, `main`, and
+  push untouched.
+- **Status:** `REFUND-B1` is `CLOSED / ACCEPTED_WITH_RECORDED_FUTURE_GATES`.
+  **`PRE-PROD` is now the next authorizable track but is NOT authorized by this
+  closeout.**
 
 ---
 
