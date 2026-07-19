@@ -3234,3 +3234,78 @@ risco residual e próxima fase indicada no fechamento.
   ACCEPTANCE`. **REFUND-B1 implementation remains `NOT AUTHORIZED`.**
 - **Next authorizable action:** architect acceptance of this contract, then a
   separate `REFUND-B1` implementation order.
+
+## 2026-07-19 — REFUND-B1-CONTRACT-R2 — ACTIVATION-BOUNDARY CORRECTION — DOCUMENTATION GATE (commit 1 of the R2 implementation order)
+
+- **Order:** `REFUND-B1-CONTRACT-R2 + REFUND-B1 IMPLEMENTATION ORDER` (Opus 4.8,
+  high effort). **Baseline:** `dev @ 39d35f7`. **This entry = the docs-only R2
+  correction (order §12).** R1 (§R.21) was **`NOT ACCEPTED AS WRITTEN`.**
+- **Three defects corrected (architect findings, order §1):**
+  1. **emission without allocation** — R1 §R.21.8 allowed emitting a native order
+     with items but no allocations; allocations carry immutable need/OP provenance,
+     so such an order could never acquire provenance later.
+  2. **non-idempotent item writer** — R1 §R.21.5 `adicionar_item_ordem_compra` was
+     additive and leaned on UI double-submit gating (not an idempotency mechanism).
+  3. **premature incomplete bridge** — R1 §R.21.7's bridge could not represent
+     Pedido-origin polyester / multi-OP items without fabricating an `op_id`.
+- **Binding R2 boundary (order §2):** REFUND-B1 activates **native draft
+  administrative authority, not native emission authority.** ACTIVE = create/obtain
+  draft, define absolute item qty, edit/remove draft items, cancel draft, list,
+  dedicated screen. INSTALLED-INACTIVE = emission RPC (no client grant) + disabled
+  emit UI. NOT CREATED = compatibility bridge. INACTIVE = allocation writer, receipt
+  ledger, native receipt path, flat shadows. Native emission activates only in
+  PRE-PROD after `LIVE_ALLOCATION_T1_T2_TEST_PENDING` is resolved + full allocation
+  is possible + the precondition is provable against real allocations.
+- **Contract determinations recorded (spec §R.22.3–§R.22.13):**
+  - `definir_item_ordem_compra(p_pedido_id UUID, p_fornecedor_id BIGINT, p_material,
+    p_cor_id, p_cor_poliester, p_kg_pedido)` — **absolute, idempotent** (sets
+    `kg_pedido`, never increments; same args → same state); create-or-get single
+    active draft; create-or-update the `(material,color)` item; no allocation/need/
+    OP/event; only `rascunho` mutable; advisory lock + partial-unique backstop;
+    `SECURITY DEFINER`/`is_admin()`/EXECUTE `authenticated` only; return
+    `{ok,codigo,ordem_compra_id,ordem_compra_item_id,criado_ordem,criado_item,
+    kg_pedido_final}`.
+  - `remover_item_ordem_compra(p_item_id)` — draft-only; reject legado / emitted /
+    cancelled / **allocations-exist**; delete only the item; never the parent; no
+    event; same ACL.
+  - `emitir_ordem_compra(p_ordem_id)` — **installed, granted to no role** (owner-only
+    for rollback-safe tests); rejects unless native + rascunho + supplier + ≥1 item +
+    every item ≥1 allocation + `SUM(active alloc)=item.kg_pedido` + Pedido-ownership +
+    material/color identity + acceptance snapshot freezable; on success freezes
+    issuance, sets states atomically, one `ordem_compra_id` event (`ordem_compra_fio_id`
+    NULL), never fabricates OP provenance, never creates a flat shadow;
+    post-emission immutability holds by construction (draft writers reject non-rascunho;
+    allocation writer ungranted).
+  - `cancelar_ordem_compra(p_ordem_id)` — **active** for drafts (rascunho→cancelada,
+    retains items, one `ordem_compra_id` event, repeat-cancel rejected, terminal);
+    emitted-order cancel deferred to PRE-PROD/Phase C.
+  - **No bridge** — debt `NATIVE_RECEIPT_COMPATIBILITY_MULTI_ORIGIN_UNRESOLVED`
+    registered; PRE-PROD decides single-OP-bridgeable vs native-ledger-only from real
+    allocations.
+  - Read model `listar_ordens_compra_admin(p_pedido_id UUID)` /
+    `obter_ordem_compra_admin(p_ordem_id BIGINT)` — server-composed, native+legacy
+    once each, server-derived actions (`editar_itens/remover_itens/cancelar=true`,
+    `emitir=false` + `bloqueio_emissao='distribuicao_necessidades_pendente'`,
+    `receber=false`); `SECURITY DEFINER`/EXECUTE `authenticated` only.
+  - Dedicated screen: 5 files (`ordens-compra-list.js`, `ordem-compra.js`,
+    `ordem-compra-data.js`, `ordem-compra-render.js`, `ordem-compra-events.js`),
+    routes `#/ordens-compra` + `#/ordens-compra/:id`; `op-nova.js` net-reduced to
+    summary + "Ver ordem" link (inline emit/cancel removed).
+  - Migration `db/68_ordem_compra_native_draft_admin.sql`; no bridge / allocation
+    grant / receipt-ledger activation / flat shadow / opening balance / unrelated
+    table change.
+- **`PEDIDO_OP_SCHEMA_CONTRACT.md` §6.2** refined to R2 (native draft admin →
+  `ordem_compra` at REFUND-B1; native emission deferred to PRE-PROD; receipt flat
+  until Phase C; no native receipt path / shadow yet).
+- **STRUCTURAL POLICY COMPLIANCE:** docs-only (§3 report obligation N/A); §14
+  single scope (one correction), §15 selective staging (5 files, `.gitignore`/
+  `AGENTS.md` untouched), §16 docs updated, §19 English.
+- **Files changed (exactly five):** `docs/architecture/ORDEM_COMPRA_LIFECYCLE_SPEC_PROPOSED.md`
+  (banner + §R.22), `docs/architecture/PEDIDO_OP_SCHEMA_CONTRACT.md` (§6.2),
+  `PROJECT_STATE.md`, `AGENT_HANDOFF.md`, this ledger entry.
+- **Scope discipline:** no DB write, no migration, no application code, no test, no
+  push, no `main`, no production, prohibited project not accessed.
+- **Conditional continuation (order §13):** after this commit, its diff is
+  self-inspected against the order; if exact, implementation proceeds immediately
+  under the same order (no further architect message). `PRE-PROD` remains
+  `NOT AUTHORIZED`.

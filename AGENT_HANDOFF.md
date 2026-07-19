@@ -1,6 +1,51 @@
 # ACTIVE OPERATIONAL HANDOFF
 
-- **`REFUND-B1-CONTRACT-R1` — `DOCUMENTED / AWAITING ARCHITECT ACCEPTANCE`
+- **`REFUND-B1-CONTRACT-R2` + `REFUND-B1 IMPLEMENTATION` — in progress (2026-07-19,
+  branch `dev`, baseline `39d35f7`, staging `ucrjtfswnfdlxwtmxnoo`).** The architect
+  rejected `REFUND-B1-CONTRACT-R1` **as written** (three defects: emission-without
+  -allocation; non-idempotent additive item writer; premature structurally-incomplete
+  bridge), issued the corrected **R2** contract, and **conditionally authorized
+  REFUND-B1 implementation** — proceeding only after the R2 documentation gate passes
+  exactly. Spec **§R.22** is the governing correction over §R.21.
+  **Binding boundary — native DRAFT administrative authority only, NOT emission.**
+  **ACTIVE** (client `authenticated`): create-or-obtain a native draft;
+  `definir_item_ordem_compra(p_pedido_id UUID, p_fornecedor_id BIGINT, p_material,
+  p_cor_id, p_cor_poliester, p_kg_pedido)` — **absolute, idempotent** item quantity
+  (sets, never increments; same call → same state; no allocation/need/OP/event);
+  `remover_item_ordem_compra(p_item_id)` (rejects if allocations exist / non-draft /
+  legado; deletes only the item, never the parent); `cancelar_ordem_compra(p_ordem_id)`
+  **active** for drafts (rascunho→cancelada, retains items, one `ordem_compra_id`
+  event, repeat-cancel rejected); the read model + dedicated screen.
+  **INSTALLED BUT INACTIVE:** `emitir_ordem_compra(p_ordem_id)` — created but **granted
+  to no client role** (owner-only for rollback-safe tests); rejects unless every item
+  is fully allocated (`SUM(active alloc kg)=item.kg_pedido`, matching Pedido ownership
+  + material/color identity) — so no UI draft can emit in REFUND-B1 (intentional); a
+  disabled emit UI action returns `bloqueio_emissao='distribuicao_necessidades_pendente'`.
+  **NOT CREATED:** the compatibility bridge (no `criar_ponte_compat_ordem_compra_item`,
+  no `native_bridge` rows, no flat shadow, no synthetic `op_id`) — debt
+  **`NATIVE_RECEIPT_COMPATIBILITY_MULTI_ORIGIN_UNRESOLVED`**. **INACTIVE (unchanged):**
+  allocation writer, receipt ledger, native receipt path.
+  **Read model:** `listar_ordens_compra_admin(p_pedido_id UUID)` /
+  `obter_ordem_compra_admin(p_ordem_id BIGINT)` — `SECURITY DEFINER`, EXECUTE
+  `authenticated` only, server-composed, native+legacy each once, server-derived
+  actions (`editar_itens/remover_itens/cancelar=true`, `emitir/receber=false`).
+  **Dedicated screen (mandatory 5 files):** `ordens-compra-list.js`, `ordem-compra.js`,
+  `ordem-compra-data.js`, `ordem-compra-render.js`, `ordem-compra-events.js`; routes
+  `#/ordens-compra` + `#/ordens-compra/:id` (new `js/router.js` regex branch); menu
+  entry (`common.js`); `op-nova.js` **reduced** to compact summary + "Ver ordem" link
+  (inline emit/cancel removed — net-reductive, it is the frozen size exception).
+  **Migration:** `db/68_ordem_compra_native_draft_admin.sql` — the six functions above
+  + supporting constraints only if strictly required; **no** bridge, allocation grant,
+  receipt-ledger activation, flat shadow, opening balance, or unrelated table change.
+  **Legacy unchanged:** db/66 flat emit/cancel + receipt writers untouched.
+  **PRE-PROD (native emission activation, allocation, bridge/receipt decision) is
+  `NOT AUTHORIZED`.** Debts carried: `LIVE_ALLOCATION_T1_T2_TEST_PENDING`,
+  `NATIVE_RECEIPT_COMPATIBILITY_MULTI_ORIGIN_UNRESOLVED`, native emission → PRE-PROD,
+  native receipt → Phase C, production diagnosis before any production migration.
+  Full record: `docs/ledgers/G28_LEDGER.md` R2 entry + REFUND-B1 staging-verification
+  entry (added at the implementation closeout commit).
+
+- **`REFUND-B1-CONTRACT-R1` — `NOT ACCEPTED AS WRITTEN` / `SUPERSEDED BY R2`
   (2026-07-19, documentation-only design closure, branch `dev`, baseline
   `6a1066e`, staging `ucrjtfswnfdlxwtmxnoo` read-only only, no DB write):** the
   architect ordered a native-admin authority design closure to settle the gaps the

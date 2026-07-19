@@ -148,7 +148,13 @@ are in `docs/ledgers/G28_LEDGER.md`. HEAD/working tree/divergence: consult Git d
   Non-blocking documentation follow-ups remain pending: `PEDIDO_OP_SCHEMA_CONTRACT.md`
   §6.2 and `DOCUMENTATION_INDEX.md`. The historical acceptance of the old Phase `A`
   and `B1` remains preserved while their flat persistence foundation is superseded.
-- **`REFUND-B1-CONTRACT-R1` — `DOCUMENTED / AWAITING ARCHITECT ACCEPTANCE`
+- **`REFUND-B1-CONTRACT-R1` — `NOT ACCEPTED AS WRITTEN` / `SUPERSEDED BY R2`
+  (2026-07-19).** The architect rejected R1 for three material defects
+  (emission-without-allocation; non-idempotent additive item writer; premature
+  structurally-incomplete bridge) and issued `REFUND-B1-CONTRACT-R2` (see the next
+  bullet). The R1 record below is retained for provenance; **§R.22 of the spec
+  governs over the corrected parts of §R.21.**
+- **`REFUND-B1-CONTRACT-R1` (original record) —
   (2026-07-19, documentation-only design closure, branch `dev`, baseline
   `6a1066e`, staging read-only only).** The architect ordered a native-admin
   authority design closure to settle the gaps the accepted REFUND-B1 pre-order
@@ -187,6 +193,31 @@ are in `docs/ledgers/G28_LEDGER.md`. HEAD/working tree/divergence: consult Git d
   `docs/ledgers/G28_LEDGER.md` REFUND-B1-CONTRACT-R1 entry. **REFUND-B1
   implementation remains `NOT AUTHORIZED`.** **Next authorizable action:**
   architect acceptance of this contract, then a separate `REFUND-B1` order.
+- **`REFUND-B1-CONTRACT-R2` — `AUTHORIZED` + `REFUND-B1` implementation
+  `AUTHORIZED ONLY AFTER THE R2 DOCUMENTATION GATE PASSES EXACTLY` (2026-07-19,
+  branch `dev`, baseline `39d35f7`, staging `ucrjtfswnfdlxwtmxnoo`).** The
+  architect corrected R1's three defects and set the binding REFUND-B1 boundary:
+  **native DRAFT administrative authority only, not native emission authority.**
+  Spec **§R.22** (new correction section) records it. **ACTIVE** (client): create/
+  obtain a native draft, **absolute/idempotent** `definir_item_ordem_compra`,
+  `remover_item_ordem_compra`, **active** draft `cancelar_ordem_compra`, list,
+  dedicated entity screen. **INSTALLED BUT INACTIVE:** `emitir_ordem_compra`
+  (granted to **no client role**; full-allocation precondition; owner-only for
+  rollback-safe tests) + a disabled emit UI action
+  (`bloqueio_emissao='distribuicao_necessidades_pendente'`). **NOT CREATED:** the
+  compatibility bridge (no `native_bridge` rows, no flat shadow, no synthetic
+  `op_id`) — debt **`NATIVE_RECEIPT_COMPATIBILITY_MULTI_ORIGIN_UNRESOLVED`**
+  registered. **INACTIVE (unchanged):** allocation writer, receipt ledger, native
+  receipt path. Read model `listar_ordens_compra_admin`/`obter_ordem_compra_admin`
+  (server-composed, native/legacy once, server-derived actions
+  `editar_itens/remover_itens/cancelar=true`, `emitir/receber=false`). Mandatory
+  **five-file** dedicated `#/ordens-compra/:id` + `#/ordens-compra` screen split;
+  `op-nova.js` reduced to compact summary + "Ver ordem" link (inline emit/cancel
+  removed). Migration `db/68_ordem_compra_native_draft_admin.sql`. Native emission +
+  bridge/receipt decisions are **PRE-PROD** (gated on
+  `LIVE_ALLOCATION_T1_T2_TEST_PENDING` + full allocation). **PRE-PROD remains
+  `NOT AUTHORIZED`.** This bullet is updated to the implementation closeout status
+  by the REFUND-B1 staging-verification commit.
 - **`ORDEM-COMPRA-LIFECYCLE` track (flat-model history, superseded on persistence
   by the refoundation above) — spec `RATIFIED` (`ORDEM-COMPRA-LIFECYCLE-
   SPEC-RATIFICATION-R1`, 2026-07-18); Phase `A` (schema + config) `CLOSED /

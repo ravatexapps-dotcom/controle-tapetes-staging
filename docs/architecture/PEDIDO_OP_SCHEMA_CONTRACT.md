@@ -492,15 +492,18 @@ INSUMOS → TECELAGEM → ACABAMENTO → EXPEDIÇÃO → ENTREGA
 | **EXPEDIÇÃO** | To be defined (future) | Outbound movement (new stage or entrega with etapa=expedicao) |
 | **ENTREGA** | To be defined (future) | Receipt confirmation by the cliente or carrier |
 
-> **Purchase-order refoundation note (updated 2026-07-19, `REFUND-B1-CONTRACT-R1`).**
+> **Purchase-order refoundation note (updated 2026-07-19, `REFUND-B1-CONTRACT-R2`).**
 > The `ordens_compra_fio` entry above is **no longer the sole authority** for the yarn
 > purchase-order domain; it is a **per-dimension** authority under the ratified
-> refoundation (`docs/architecture/ORDEM_COMPRA_LIFECYCLE_SPEC_PROPOSED.md`, Part R).
-> **Administrative** authority for **native** purchase orders moves to `ordem_compra`
-> at `REFUND-B1` (imported legacy orders keep the flat path); **receipt** authority —
-> the `SUM(kg_recebido)/SUM(kg_pedido)` used by this INSUMOS row — **remains on
-> `ordens_compra_fio` until Phase C**, when it moves to the
-> `ordem_compra_fio_lancamentos` / `ordem_compra_item` ledger. So this INSUMOS progress
+> refoundation (`docs/architecture/ORDEM_COMPRA_LIFECYCLE_SPEC_PROPOSED.md`, Part R,
+> corrected by §R.22). **Native purchase-order administration** moves to `ordem_compra`
+> at `REFUND-B1`, but only as **draft** authority — native **emission** is installed
+> but inactive and is deferred to PRE-PROD (§R.22.2/§R.22.5); imported-legacy orders
+> keep the db/66 flat path. **Receipt** authority — the `SUM(kg_recebido)/SUM(kg_pedido)`
+> used by this INSUMOS row — **remains on `ordens_compra_fio` until Phase C**, when it
+> moves to the `ordem_compra_fio_lancamentos` / `ordem_compra_item` ledger; **no native
+> receipt path and no flat compatibility shadow exist yet** (bridge deferred, debt
+> `NATIVE_RECEIPT_COMPATIBILITY_MULTI_ORIGIN_UNRESOLVED`). So this INSUMOS progress
 > formula stays correct through Phase C, but the table's "source of truth" label is
 > understood as *receipt-dimension authority during coexistence*, not administrative or
 > single-model authority. The refoundation is currently applied on the
