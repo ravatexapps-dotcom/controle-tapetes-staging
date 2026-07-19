@@ -1085,15 +1085,23 @@ test('50b. status="aberta" nativo NÃO cria ordens_compra_fio e sincroniza neces
     'nativo deve sincronizar necessidades via RPC canônica');
 });
 
-test('50c. status="aberta" nativo: falha na sincronização retorna step "necessidades_sync"', async () => {
-  const { sandbox } = makePersistirOPSandbox({
+test('50c. status="aberta" nativo: falha na sincronização retorna step "necessidades_sync" sem fallback flat', async () => {
+  const { sandbox, calls } = makePersistirOPSandbox({
     regimeModelo: 'native',
-    sincronizarResult: { data: { ok: false, codigo: 'conflito', erro: 'conflito' }, error: null },
+    sincronizarResult: {
+      data: null,
+      error: { code: '42501', message: 'permission denied for function sincronizar_necessidades_compra_fio' },
+    },
   });
   sandbox.payload = { ...payloadBase(), status: 'aberta', op: { id: 42, lote_id: 100 } };
   const result = await vm.runInContext('window.persistirOP(payload)', sandbox);
   assert.equal(result.step, 'necessidades_sync', 'falha de sync deve mapear para necessidades_sync');
   assert.equal(result.partial, true);
+  assert.equal(result.error.code, '42501', 'negação de EXECUTE deve permanecer observável');
+  assert.equal(calls.filter((c) => c.op === 'ordens_compra_fio_insert' || c.op === 'ordens_compra_fio_delete').length, 0,
+    'falha nativa não pode criar ou remover shadow rows flat');
+  assert.equal(calls.filter((c) => c.op === 'calcularFiosOP').length, 0,
+    'falha nativa não pode desviar para o cálculo flat');
 });
 
 test('50d. status="aberta": falha ao resolver regime retorna step "regime_resolve"', async () => {

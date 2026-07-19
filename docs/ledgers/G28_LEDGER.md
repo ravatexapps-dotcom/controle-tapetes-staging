@@ -3618,3 +3618,50 @@ risco residual e próxima fase indicada no fechamento.
   allocation UI disabled; **live concurrency, visual evidence, and closeout PENDING**. Not accepted.
 - **Next authorizable action:** resume PRE-PROD-A with the live T1/T2 test against the applied
   db/69. `PRE-PROD-B` and `Phase C` remain `NOT AUTHORIZED`.
+
+## 2026-07-19 — PRE-PROD-A-R1 — POST-CONCURRENCY ACTIVATION, VISUAL PACKAGE, ROLLBACK, AND CLOSEOUT (awaiting architect acceptance)
+
+- **Scope and environment:** staging `ucrjtfswnfdlxwtmxnoo` only. Production
+  `gqmpsxkxynrjvidfmojk`, prohibited project `bhgifjrfagkzubpyqpew`, `main`, and push
+  were not accessed. `db/69` remains applied (`20260719120036 /
+  69_ordem_compra_preprod_allocation`); no migration was changed.
+- **Live concurrency PASS / debt resolved:** `LIVE_ALLOCATION_T1_T2_TEST_PENDING`
+  is closed. T1 PID `2272591` locked the real need first at
+  `2026-07-19T14:07:12.423433+00:00`, readiness was visible at `...12.423614`, then
+  committed absolute 60 kg at `...14.959616`. T2 PID `2272590` began at
+  `...14:07:13.362084+00`, waited, locked at `...14.962558`, and rejected its
+  absolute 60 kg request with `excede_saldo` after re-evaluating the 40 kg remainder.
+  Final allocation/cache were 60 kg; no over-allocation.
+- **ACL:** retained executed authenticated ACL evidence was not unnecessarily
+  repeated. Current catalog: the eight authorized native admin RPCs are `SECURITY
+  DEFINER`, `authenticated`-only, `anon`/`PUBLIC` denied. Authenticated admin UI
+  writes succeeded. `emitir_ordem_compra(bigint)` is ungranted to `authenticated`,
+  `anon`, and `PUBLIC`, and remains inactive.
+- **Activation/UI evidence:** enabled `ALLOCATION_ENABLED=true`; added the missing
+  event handlers and allocation modal for explicit create/absolute update/remove plus
+  need synchronization. Authenticated browser evidence: native draft controls;
+  create 60 kg, absolute update 60→80 kg, remove; native/legacy list; incomplete
+  block; complete block `recebimento_nativo_ainda_inativo`; desktop/tablet/mobile;
+  and OP purchase-order summary/navigation. The out-of-Git contact sheet is
+  `C:/Users/klebe/.codex/visualizations/2026/07/19/preprod-a-r1/PRE-PROD-A-R1-contact-sheet.png`.
+  The 390px capture reproduces the existing `ADMIN_SHELL_MOBILE_RESPONSIVENESS_DEBT`.
+- **Rollback rehearsal:** temporarily disabled UI and revoked EXECUTE from
+  `authenticated` for `sincronizar_necessidades_compra_fio(uuid)`,
+  `alocar_necessidade_compra_fio(bigint,bigint,bigint,numeric)`, and
+  `remover_alocacao_compra_fio(bigint)`. Native `persistirOP` under a simulated actual
+  `42501` writer denial returns `necessidades_sync`, `partial=true`, and performs no
+  flat writer/calc call. UI and grants were restored.
+- **Tests:** `node --check` passed for the touched screens; focused
+  `ordem-compra`/`op-persistir`/`boot` smoke: **129/129 pass**. Full `node --test`
+  suite: **3,743 pass / 132 fail / 3,875 tests**; historical full-suite baseline was
+  133 failures, with no new failure attributed to this closeout.
+- **Zero residue:** probe functions=0; fixture needs `128..135`=0; fixture orders
+  `76..82`=0; fixture items `70..79`=0; fixture allocations=0; run-key advisory
+  locks=0; active probe activity=0. No runner or credential material was created or
+  persisted; the external screenshots/contact sheet are intended visual deliverables.
+- **Status / debts:** PRE-PROD-A is **IMPLEMENTED / VERIFIED IN STAGING / LIVE
+  CONCURRENCY PASS / AWAITING ARCHITECT VISUAL VALIDATION AND ACCEPTANCE**. Do not
+  record architect acceptance yet. Native emission remains inactive/ungranted;
+  receipt and Phase C remain pending; PRE-PROD-B, Phase C, production, `main`, and
+  push remain prohibited. Next authorizable action: architect visual validation and
+  acceptance only.

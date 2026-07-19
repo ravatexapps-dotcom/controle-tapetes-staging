@@ -16,13 +16,10 @@
 // remover_alocacao_compra_fio / sincronizar_necessidades_compra_fio). The
 // client reconstructs no authority (§R.23.8).
 //
-// ACTIVATION GATE (order §22): the allocation WRITE controls stay
-// feature-disabled (ALLOCATION_ENABLED=false) until the real authenticated
-// T1/T2 live concurrency test passes and closes
-// LIVE_ALLOCATION_T1_T2_TEST_PENDING. Until then this renders as a
-// read-only distribution view with disabled controls and an explanatory
-// note. Flipping ALLOCATION_ENABLED to true is the only change needed to
-// enable writes (§22 step 5).
+// ACTIVATION GATE (order §22): the authenticated live T1/T2 test closed
+// LIVE_ALLOCATION_T1_T2_TEST_PENDING, so allocation controls are enabled.
+// This flag remains limited to native allocation writes; it never authorizes
+// native emission or receipt (both remain inactive until their own phase).
 //
 // Load via <script src="js/screens/ordem-compra-distribuicao.js"></script>
 // among the ordem-compra-* children, BEFORE ordem-compra.js, and AFTER
@@ -35,9 +32,10 @@
   window.RAVATEX_SCREENS = window.RAVATEX_SCREENS || {};
   var ns = window.RAVATEX_SCREENS.ordemCompraDistribuicao = window.RAVATEX_SCREENS.ordemCompraDistribuicao || {};
 
-  // Live-concurrency activation gate (order §22). Flip to true only after the
-  // authenticated T1/T2 test passes (LIVE_ALLOCATION_T1_T2_TEST_PENDING).
-  var ALLOCATION_ENABLED = false;
+  // Live-concurrency gate cleared by the authenticated T1/T2 PASS
+  // (LIVE_ALLOCATION_T1_T2_TEST_PENDING resolved). Keep this switch scoped to
+  // native allocation controls; it never authorizes emission or receipt.
+  var ALLOCATION_ENABLED = true;
   ns.ALLOCATION_ENABLED = ALLOCATION_ENABLED;
 
   var el = window.el;
@@ -124,7 +122,20 @@
   ns.renderSection = function (distrib, handlers) {
     ns._handlers = handlers || {};
     var card = el('div', { id: 'oc-distribuicao', class: 'bg-white rounded-xl shadow overflow-hidden mb-4' });
-    card.appendChild(el('div', { class: 'px-5 py-3 border-b text-xs font-semibold text-gray-600 uppercase' }, 'Distribuição de necessidades'));
+    var heading = el('div', { class: 'px-5 py-3 border-b flex justify-between items-center gap-3' },
+      el('div', { class: 'text-xs font-semibold text-gray-600 uppercase' }, 'Distribuição de necessidades'));
+    if (ALLOCATION_ENABLED && distrib && distrib.ordem && distrib.ordem.pedido_id) {
+      var syncBtn = el('button', {
+        class: 'text-xs font-semibold text-blue-700 hover:underline',
+      }, 'Sincronizar necessidades');
+      syncBtn.onclick = function () {
+        if (ns._handlers && ns._handlers.sincronizarNecessidades) {
+          ns._handlers.sincronizarNecessidades(distrib.ordem.pedido_id);
+        }
+      };
+      heading.appendChild(syncBtn);
+    }
+    card.appendChild(heading);
 
     if (!distrib || distrib.ok !== true) {
       card.appendChild(el('div', { class: 'p-6 text-center text-gray-500 text-sm' },

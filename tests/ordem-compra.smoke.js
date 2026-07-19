@@ -34,6 +34,7 @@ function read(rel) { return fs.readFileSync(path.join(ROOT, rel), 'utf8'); }
 const uiSrc = read('js/ui.js');
 const commonSrc = read('js/screens/common.js');
 const dataSrc = read('js/screens/ordem-compra-data.js');
+const distributionSrc = read('js/screens/ordem-compra-distribuicao.js');
 const renderSrc = read('js/screens/ordem-compra-render.js');
 const eventsSrc = read('js/screens/ordem-compra-events.js');
 const listSrc = read('js/screens/ordens-compra-list.js');
@@ -58,6 +59,7 @@ function makeSandbox({ rpcImpl = {}, tableData = {} } = {}) {
   vm.runInContext(uiSrc, sandbox, { filename: 'js/ui.js' });
   vm.runInContext(commonSrc, sandbox, { filename: 'js/screens/common.js' });
   vm.runInContext(dataSrc, sandbox, { filename: 'js/screens/ordem-compra-data.js' });
+  vm.runInContext(distributionSrc, sandbox, { filename: 'js/screens/ordem-compra-distribuicao.js' });
   vm.runInContext(renderSrc, sandbox, { filename: 'js/screens/ordem-compra-render.js' });
   vm.runInContext(eventsSrc, sandbox, { filename: 'js/screens/ordem-compra-events.js' });
   vm.runInContext(listSrc, sandbox, { filename: 'js/screens/ordens-compra-list.js' });
@@ -113,6 +115,21 @@ const LEGACY_ORDER = {
   itens: [{ item_id: 20, material: 'poliester', cor_id: null, cor_poliester: 'BRANCO', cor_nome: null, kg_pedido: 50, kg_recebido: 50, alocacoes: 1, kg_alocado: 50 }],
   acoes: { editar_itens: false, remover_itens: false, cancelar: false, emitir: false, receber: false },
   pode_emitir: false, bloqueio_emissao: null,
+};
+
+const COMPLETE_DISTRIBUTION = {
+  ok: true,
+  ordem: { ordem_id: 100, modelo: 'nativo', pedido_id: 'p1', fornecedor_id: 1, status_administrativo: 'rascunho', legado: false },
+  distribuicao_completa: true,
+  pronta_para_emissao: true,
+  pode_emitir: false,
+  bloqueio_emissao: 'recebimento_nativo_ainda_inativo',
+  itens: [{
+    item_id: 10, material: 'algodao', cor_id: 1, cor_nome: 'PRETO', kg_pedido: 100, kg_alocado: 100, kg_diferenca: 0,
+    alocacoes: [{ alocacao_id: 50, necessidade_id: 70, op_id: 80, op_numero: 9, op_ano: 2026, kg_alocado: 100 }],
+    necessidades_compativeis: [{ necessidade_id: 70, origem_tipo: 'op', op_id: 80, op_numero: 9, kg_necessario: 100, kg_alocado: 100, kg_restante: 0 }],
+    acoes: { alocar: true, editar: true, remover: true },
+  }],
 };
 
 const FORM_REFS = { pedidos: [{ id: 'p1', numero: 120 }], fornecedores: [{ id: 1, nome: 'Fornecedor A', tipo: 'fio_algodao' }], cores: [{ id: 1, nome: 'PRETO' }] };
@@ -247,4 +264,32 @@ test('10. isMissingFunction reconhece PGRST202 e "could not find the function"',
   assert.equal(ns.isMissingFunction({ message: 'Could not find the function public.x' }), true);
   assert.equal(ns.isMissingFunction({ code: '42501', message: 'permission denied' }), false);
   assert.equal(ns.isMissingFunction(null), false);
+});
+
+test('11. active native distribution exposes create/update/remove while complete emission remains blocked', async () => {
+  const sandbox = makeSandbox({
+    tableData: FORM_REFS,
+    rpcImpl: {
+      obter_ordem_compra_admin: () => ({ data: { ok: true, ordem: NATIVE_DRAFT, eventos: [] }, error: null }),
+      obter_distribuicao_ordem_compra: () => ({ data: COMPLETE_DISTRIBUTION, error: null }),
+    },
+  });
+  const view = await vm.runInContext('window.screenOrdemCompra(100)', sandbox);
+  const section = findById(view, 'oc-distribuicao');
+  assert.ok(section, 'distribution must exist only in the native detail');
+  const distribute = btnByText(section, /^Distribuir$/);
+  assert.ok(distribute && distribute.disabled !== true, 'create/update control is enabled');
+  assert.equal(typeof distribute.onclick, 'function', 'create/update control has a handler');
+  let allocationRemove = null;
+  walk(section, (node) => {
+    if (node.getAttribute && node.getAttribute('data-alocacao-id') === '50') {
+      allocationRemove = btnByText(node, /^Remover$/);
+    }
+  });
+  assert.ok(allocationRemove && allocationRemove.disabled !== true, 'allocation removal is enabled');
+  assert.equal(typeof allocationRemove.onclick, 'function', 'allocation removal has a handler');
+  assert.match(text(section), /recebimento nativo/i, 'complete distribution retains the Phase-C emission block');
+  const emit = findById(view, 'oc-emitir');
+  assert.equal(emit.disabled, true, 'emission remains disabled even after complete distribution');
+  assert.ok(!emit._listeners || !emit._listeners.click, 'emission remains without a handler');
 });

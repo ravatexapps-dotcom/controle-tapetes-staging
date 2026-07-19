@@ -526,6 +526,15 @@ INSUMOS → TECELAGEM → ACABAMENTO → EXPEDIÇÃO → ENTREGA
 > emission inactive, creates no receipt path and no flat shadow (bridge still
 > deferred, `NATIVE_RECEIPT_COMPATIBILITY_MULTI_ORIGIN_UNRESOLVED`). Staging
 > (`ucrjtfswnfdlxwtmxnoo`) only.
+>
+> **PRE-PROD-A-R1 closeout update (2026-07-19; not architect acceptance).** The
+> authenticated live allocation gate passed, so allocation controls on the dedicated
+> order detail are enabled. This does not change the contract above: `persistirOP`
+> still uses the native needs writer with no flat fallback; native emission remains
+> ungranted/inactive and receipt remains deferred to Phase C. The rollback rehearsal
+> revoked/restored the three writers and proved a denied native synchronization maps to
+> `necessidades_sync`, never a flat shadow. All fixtures/probes were removed; production
+> was not accessed.
 
 ### 6.3. UI rules
 

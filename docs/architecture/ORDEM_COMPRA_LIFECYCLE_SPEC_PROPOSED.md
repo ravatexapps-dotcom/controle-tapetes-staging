@@ -1877,6 +1877,32 @@ executor records `PRE-PROD-A: IMPLEMENTED / VERIFIED IN STAGING / LIVE
 CONCURRENCY PASS / AWAITING ARCHITECT VISUAL VALIDATION AND ACCEPTANCE` and does
 not self-accept. **`PRE-PROD-B` and `Phase C` remain `NOT AUTHORIZED`.**
 
+### §R.23.15 PRE-PROD-A-R1 staging closeout evidence (2026-07-19; not architect acceptance)
+
+The live authenticated T1/T2 gate **passed** and resolves
+`LIVE_ALLOCATION_T1_T2_TEST_PENDING`: T1 backend PID `2272591` acquired the real
+need row lock first (`2026-07-19T14:07:12.423433+00:00`), published advisory
+readiness before T2 launched, held, and committed an absolute 60 kg allocation.
+T2 PID `2272590` started at `...14:07:13.362084+00`, waited, acquired the row lock
+at `...14:07:14.962558+00`, re-evaluated the 40 kg remainder, and returned
+`excede_saldo` for its absolute 60 kg request. The final allocation and cache were
+60 kg, with no over-allocation.
+
+The authenticated ACL matrix retained its executed runtime evidence; the current
+catalog additionally confirms the eight authorized native admin RPCs are
+`SECURITY DEFINER`, `authenticated`-only, and denied to `anon`/`PUBLIC`.
+`emitir_ordem_compra` remains ungranted/inactive. Allocation UI activation is
+limited to `ALLOCATION_ENABLED=true`; native emission and receipt remain inactive.
+
+The staging rollback rehearsal disabled the allocation UI, revoked the three
+PRE-PROD-A writer grants, proved the native `persistirOP` sync-denial path returns
+`necessidades_sync` with no flat fallback, and restored UI/grants. The transient
+probe catalog count, run-key advisory locks, active probe activity, and all test
+fixtures are zero. Browser evidence was collected at desktop, tablet, and mobile;
+the 390px result reproduces the pre-existing `ADMIN_SHELL_MOBILE_RESPONSIVENESS_DEBT`.
+PRE-PROD-A is **awaiting architect visual validation and acceptance**; this record
+does not self-accept it.
+
 ---
 
 ## 0. Current state (evidenced, read-only inventory) — SUPERSEDED on the persistence model by Part R (retained for provenance)

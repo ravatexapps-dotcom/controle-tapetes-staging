@@ -280,23 +280,35 @@ are in `docs/ledgers/G28_LEDGER.md`. HEAD/working tree/divergence: consult Git d
   hardened absolute `alocar_necessidade_compra_fio` + `remover_alocacao_compra_fio`
   + allocation-identity uniqueness + post-emission mutation guards + distribution
   read model; **no** emission grant, bridge, flat shadow, or receipt work).
-  **Implementation progress (2026-07-19, HEAD `2bcacac`; commits `3746284` contract /
-  `4ffd674` foundation / `2bcacac` UI):** `db/69` is **APPLIED to staging
-  `ucrjtfswnfdlxwtmxnoo`** (migration history `69_ordem_compra_preprod_allocation`);
-  the owner-level DB test matrix (§23) and §24 legacy regression **all pass** (zero
-  residue; full suite 133 failures = baseline, zero new); 3 real db/69 bugs found and
-  fixed during testing. The application layer (regime cutover in `op-persistir.js`;
-  new `op-compra-regime.js` and `ordem-compra-distribuicao.js`; wiring) is authored,
-  with the **allocation write controls feature-disabled** (`ALLOCATION_ENABLED=false`,
-  §22) and `emitir_ordem_compra` ungranted. **PENDING (needs a Kleber-logged-in staging
-  browser):** the live authenticated **T1/T2 concurrency test** that closes
-  `LIVE_ALLOCATION_T1_T2_TEST_PENDING`, then enabling the UI flag, browser visual
-  evidence (§27), rollback rehearsal (§28), and the §30 closeout — none yet done.
-  **Kept open:**
-  `NATIVE_RECEIPT_COMPATIBILITY_MULTI_ORIGIN_UNRESOLVED`, native emission inactive,
-  Phase C receipt authority, production diagnosis precondition,
-  `ADMIN_SHELL_MOBILE_RESPONSIVENESS_DEBT`. **`PRE-PROD-B` and `Phase C` remain
-  `NOT AUTHORIZED`.**
+  **Completion evidence (2026-07-19):** `db/69` remains **APPLIED to staging
+  `ucrjtfswnfdlxwtmxnoo`** (`20260719120036 / 69_ordem_compra_preprod_allocation`).
+  `LIVE_ALLOCATION_T1_T2_TEST_PENDING` is **RESOLVED** by the authenticated live
+  test: T1 PID `2272591` locked first at `2026-07-19T14:07:12.423433+00:00`, became
+  ready at `...12.423614`, committed the absolute 60 kg allocation, and completed at
+  `...14.959616`; T2 PID `2272590` started at `...13.362084`, waited, locked at
+  `...14.962558`, then rejected its absolute 60 kg request with `excede_saldo` against
+  the re-evaluated 40 kg remainder. Final allocation/cache were 60 kg; no
+  over-allocation occurred. The current catalog confirms all eight authorized native
+  admin RPCs are `SECURITY DEFINER`, `authenticated`-only, with `anon`/`PUBLIC`
+  denied; retained authenticated-matrix evidence plus the live admin UI writes prove
+  the authorized path. `emitir_ordem_compra` remains ungranted/inactive.
+  **Activation and validation:** `ALLOCATION_ENABLED=true`; the dedicated native
+  distribution UI performed create, absolute update (60→80), and remove under the
+  authenticated staging admin session. Native draft controls are available; legacy
+  orders remain reader-only; incomplete allocation blocks emission; complete allocation
+  still blocks it with `recebimento_nativo_ainda_inativo`. Desktop/tablet/mobile and
+  OP-reader evidence is in the out-of-Git PRE-PROD-A-R1 contact sheet. The 390px
+  result reproduces the existing app-wide `ADMIN_SHELL_MOBILE_RESPONSIVENESS_DEBT`.
+  **Rollback rehearsal passed:** UI disabled; the three PRE-PROD-A writer grants were
+  revoked; the native `persistirOP` permission-denial path returned `necessidades_sync`
+  with no flat fallback; UI and grants were restored. All probes, run-key locks,
+  fixture ranges, and active probe activity are zero. Focused tests passed 129/129;
+  full suite: 3,743 pass / 132 known failures (the prior baseline recorded 133), with
+  no new failure attributed to this closeout. **Not architect-accepted:** PRE-PROD-A
+  awaits architect visual validation and acceptance. `NATIVE_RECEIPT_COMPATIBILITY_MULTI_ORIGIN_UNRESOLVED`,
+  native emission inactive, Phase C receipt authority, production diagnosis
+  precondition, and `ADMIN_SHELL_MOBILE_RESPONSIVENESS_DEBT` remain open. Production,
+  `main`, push, `PRE-PROD-B`, and Phase C remain prohibited/not authorized.
 - **`REFUND-B1` (original implementation record) — 2026-07-19, branch `dev`,
   staging `ucrjtfswnfdlxwtmxnoo` only; superseded on status by the acceptance
   closeout directly above, retained verbatim for the technical detail.** The

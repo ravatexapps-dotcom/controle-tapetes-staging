@@ -1438,3 +1438,22 @@ Status: **CONTRACT CLOSED / IMPLEMENTATION AUTHORIZED (CONDITIONAL) / STAGING PE
   not addressed by this phase.
 - Staging (`ucrjtfswnfdlxwtmxnoo`) only; production not accessed; no push. See
   `docs/ledgers/G28_LEDGER.md` for the append-only entry of this phase.
+
+# Update 2026-07-19 - PRE-PROD-A-R1 Staging Closeout
+
+Status: **IMPLEMENTED / VERIFIED IN STAGING / LIVE CONCURRENCY PASS / AWAITING
+ARCHITECT VISUAL VALIDATION AND ACCEPTANCE**.
+
+- `LIVE_ALLOCATION_T1_T2_TEST_PENDING` is resolved: T1 PID `2272591` locked and
+  committed 60 kg before T2 PID `2272590` woke and rejected 60 kg against 40 kg
+  remaining. Cache/allocation total=60 kg; no over-allocation.
+- Allocation UI is enabled only on the dedicated native draft-order detail. Browser
+  evidence covers native/legacy list, detail, create/absolute update/remove,
+  incomplete and complete emission blocks, tablet/mobile, and the OP reader section.
+  Native emission remains disabled with `recebimento_nativo_ainda_inativo`; receipt,
+  bridge, PRE-PROD-B, and Phase C are not in scope.
+- Rollback rehearsal passed and restored the accepted staging state; zero probe,
+  advisory-lock, fixture, process, and credential residue. `ADMIN_SHELL_MOBILE_RESPONSIVENESS_DEBT`
+  remains an existing, non-blocking visual debt.
+- Production, `main`, and push were not accessed. The only next authorizable action is
+  architect visual validation and acceptance of PRE-PROD-A.
