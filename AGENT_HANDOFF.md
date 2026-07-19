@@ -1,7 +1,43 @@
 # ACTIVE OPERATIONAL HANDOFF
 
-- **`REFUND-B1-CONTRACT-R2` + `REFUND-B1 IMPLEMENTATION` — in progress (2026-07-19,
-  branch `dev`, baseline `39d35f7`, staging `ucrjtfswnfdlxwtmxnoo`).** The architect
+- **`REFUND-B1` — `IMPLEMENTED / VERIFIED IN STAGING / AWAITING ARCHITECT VISUAL
+  VALIDATION AND ACCEPTANCE` (2026-07-19, branch `dev`, staging
+  `ucrjtfswnfdlxwtmxnoo` only, no production, no push).** The R2 documentation gate
+  passed exactly (commit `231f17a`) so implementation proceeded under the same
+  order. **Commits:** `231f17a` (R2 docs correction), `82f6247` (migration
+  `db/68_ordem_compra_native_draft_admin.sql`, staging id `20260719025055`),
+  `d4d7533` (application + tests), and this closeout. **What shipped:** the six
+  db/68 RPCs (definir/remover/cancelar/listar/obter granted to `authenticated`;
+  `emitir_ordem_compra` installed but **granted to no client role**, full-allocation
+  precondition, owner-only) + two item-uniqueness indexes; dedicated
+  `#/ordens-compra` list + `#/ordens-compra/:id` detail screens (five files) with
+  native draft item edit/remove, draft cancel, server-derived allowed actions, and a
+  disabled Emitir showing `distribuicao_necessidades_pendente`; `op-nova.js` reduced
+  to a summary + "Ver ordens de compra" link (1548→1503). **No bridge, no allocation
+  grant, no receipt change, no flat shadow** — all verified live. **Verification:**
+  DB matrix (draft lifecycle, absolute-idempotency, emission precondition passing
+  only when fully allocated, ACL, legacy-rejection) all passed rolled-back; legacy
+  regression rolled-back (flat db/66 RPCs + kg_recebido path unchanged, ocf
+  fingerprint `eb26d39316e7fb4a5f4b46c8a99631b3` byte-identical); UI validated in the
+  staging-served app (list/native-detail/legacy-detail render correctly, Emitir
+  disabled, no console errors); rollback rehearsal (revoke→inert, data retained,
+  db/68 drops without touching db/67). Full test suite: 132 pre-existing failures
+  unchanged, zero new. **Forced test-fixture coupling (recorded):** the §11-required
+  menu/route additions required syncing the menu/route-count mirrors in
+  `boot.smoke.js`, `screens-common.smoke.js`, `cadastros-screens.smoke.js`,
+  `documentos-recebidos.smoke.js` — beyond the two §19-named test files. **Open
+  debts:** `LIVE_ALLOCATION_T1_T2_TEST_PENDING`,
+  `NATIVE_RECEIPT_COMPATIBILITY_MULTI_ORIGIN_UNRESOLVED`, active native emission →
+  PRE-PROD, native receipt authority → Phase C, production diagnosis before any
+  production migration. **PRE-PROD remains `NOT AUTHORIZED`; do not begin it.**
+  **Next authorizable action:** architect visual validation + acceptance, then a
+  separate PRE-PROD order. Full record: `docs/ledgers/G28_LEDGER.md` REFUND-B1
+  staging-verification entry.
+
+- **`REFUND-B1-CONTRACT-R2` + `REFUND-B1 IMPLEMENTATION` — R2 contract record
+  (2026-07-19, branch `dev`, baseline `39d35f7`, staging `ucrjtfswnfdlxwtmxnoo`);
+  superseded on status by the implementation closeout directly above, retained for
+  the contract detail.** The architect
   rejected `REFUND-B1-CONTRACT-R1` **as written** (three defects: emission-without
   -allocation; non-idempotent additive item writer; premature structurally-incomplete
   bridge), issued the corrected **R2** contract, and **conditionally authorized

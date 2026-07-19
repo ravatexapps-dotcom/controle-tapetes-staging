@@ -216,8 +216,58 @@ are in `docs/ledgers/G28_LEDGER.md`. HEAD/working tree/divergence: consult Git d
   removed). Migration `db/68_ordem_compra_native_draft_admin.sql`. Native emission +
   bridge/receipt decisions are **PRE-PROD** (gated on
   `LIVE_ALLOCATION_T1_T2_TEST_PENDING` + full allocation). **PRE-PROD remains
-  `NOT AUTHORIZED`.** This bullet is updated to the implementation closeout status
-  by the REFUND-B1 staging-verification commit.
+  `NOT AUTHORIZED`.**
+- **`REFUND-B1` — `IMPLEMENTED / VERIFIED IN STAGING / AWAITING ARCHITECT VISUAL
+  VALIDATION AND ACCEPTANCE` (2026-07-19, branch `dev`, staging
+  `ucrjtfswnfdlxwtmxnoo` only).** The R2 documentation gate passed exactly
+  (commit `231f17a`), so implementation proceeded under the same order.
+  **Migration `db/68_ordem_compra_native_draft_admin.sql`** (commit `82f6247`,
+  staging migration-history identifier `20260719025055 /
+  68_ordem_compra_native_draft_admin`): six functions —
+  `definir_item_ordem_compra` (absolute/idempotent), `remover_item_ordem_compra`,
+  `cancelar_ordem_compra` (draft), `listar_ordens_compra_admin`,
+  `obter_ordem_compra_admin` (all `SECURITY DEFINER`, `is_admin()`, EXECUTE
+  `authenticated` only), and `emitir_ordem_compra` **installed but granted to no
+  client role** (full-allocation precondition; owner-only) — plus two partial
+  unique indexes backing the idempotent item writer. **No bridge, no allocation
+  grant, no receipt change** (verified live: `alocar_necessidade_compra_fio`
+  ungranted, zero `native_bridge` rows, no bridge function). **Application**
+  (commit `d4d7533`): dedicated `#/ordens-compra` list + `#/ordens-compra/:id`
+  detail screens (five files) with native draft item edit/remove, draft cancel,
+  server-derived allowed actions, and a **disabled** Emitir showing
+  `bloqueio_emissao='distribuicao_necessidades_pendente'`; `op-nova.js` reduced to
+  a compact summary + "Ver ordens de compra" link (inline emit/cancel removed,
+  1548→1503 lines). **DB test matrix (rolled back):** first-draft, reuse,
+  absolute-idempotency (no increment), quantity replacement, item reuse/create,
+  cancelled/emitted not reused, invalid pedido/supplier/material/color, zero/neg
+  qty, legacy-mutation rejection, item removal (+ allocation-block), draft cancel
+  (+ repeat-reject), events with `ordem_compra_id` only, **emission rejected with
+  no/partial allocations and succeeding only in an owner-only fully-allocated
+  fixture**, post-emission immutability, and full ACL (authenticated cannot emit;
+  anon/service_role cannot execute; no direct table DML; allocation ungranted; no
+  bridge) — all passed. **Legacy regression (rolled back):** flat
+  `emitir/cancelar_ordem_compra_fio` unchanged, direct `kg_recebido` write path
+  unchanged, OP reader resolves, **`ordens_compra_fio` fingerprint
+  `eb26d39316e7fb4a5f4b46c8a99631b3` byte-identical before/after**. **UI validation
+  (staging-served app, stubbed data):** list renders native + legacy each once;
+  native detail shows items with edit/remove, add-item, cancel, and a disabled
+  Emitir with the PRE-PROD reason; legacy detail is read-only (no actions); no
+  console errors. **Rollback rehearsal (rolled back):** revoking the new client
+  grants makes them inert while retaining all native data; db/68 objects drop
+  without altering db/67 (tables + `alocar_necessidade_compra_fio` intact).
+  **Test suite:** full `node --test tests/*.js` = 132 pre-existing failures
+  unchanged, **zero new failures** (10 new `ordem-compra.smoke.js` + updated
+  `op-nova.smoke.js`; menu/route-count fixtures synced in
+  `boot`/`screens-common`/`cadastros-screens`/`documentos-recebidos` smokes for
+  the required nav entry — a forced coupling beyond the two named test files,
+  recorded here). **No production access, no push, no `main`, prohibited project
+  not accessed; `.gitignore`/`AGENTS.md` untouched.** **Open future debts:**
+  `LIVE_ALLOCATION_T1_T2_TEST_PENDING`;
+  `NATIVE_RECEIPT_COMPATIBILITY_MULTI_ORIGIN_UNRESOLVED`; active native emission
+  deferred to PRE-PROD; native receipt authority deferred to Phase C; a
+  contemporaneous read-only production diagnosis before any production migration.
+  **PRE-PROD remains `NOT AUTHORIZED`. Next authorizable action:** architect visual
+  validation + acceptance of REFUND-B1, then a separate PRE-PROD order.
 - **`ORDEM-COMPRA-LIFECYCLE` track (flat-model history, superseded on persistence
   by the refoundation above) — spec `RATIFIED` (`ORDEM-COMPRA-LIFECYCLE-
   SPEC-RATIFICATION-R1`, 2026-07-18); Phase `A` (schema + config) `CLOSED /

@@ -3309,3 +3309,134 @@ risco residual e próxima fase indicada no fechamento.
   self-inspected against the order; if exact, implementation proceeds immediately
   under the same order (no further architect message). `PRE-PROD` remains
   `NOT AUTHORIZED`.
+
+## 2026-07-19 — REFUND-B1 — IMPLEMENTED / VERIFIED IN STAGING / AWAITING ARCHITECT VISUAL VALIDATION AND ACCEPTANCE
+
+- **Order:** `REFUND-B1-CONTRACT-R2 + REFUND-B1 IMPLEMENTATION ORDER` (Opus 4.8,
+  high effort). **Baseline:** `dev @ 39d35f7`. **Staging:** `ucrjtfswnfdlxwtmxnoo`
+  only. **The R2 documentation gate (commit `231f17a`) passed exactly** (§13
+  self-check confirmed all mandated terms + exactly five docs + no
+  `.gitignore`/`AGENTS.md`), so implementation proceeded under the same order.
+- **Commits:** `231f17a` (R2 docs correction), `82f6247` (migration), `d4d7533`
+  (application + tests), + this closeout. **No production, no push, no `main`,
+  prohibited project not accessed.**
+- **Migration — `db/68_ordem_compra_native_draft_admin.sql`** (staging
+  migration-history id `20260719025055 / 68_ordem_compra_native_draft_admin`).
+  Objects (exactly the authorized set, §R.22.13): `definir_item_ordem_compra`
+  (create-or-get single active draft + create-or-update unique (material,color)
+  item, **ABSOLUTE idempotent** quantity, advisory-locked, no allocation/event),
+  `remover_item_ordem_compra`, `cancelar_ordem_compra` (draft rascunho→cancelada),
+  `listar_ordens_compra_admin` / `obter_ordem_compra_admin` (server-composed read
+  model, native+legacy each once, server-derived `acoes`), and
+  `emitir_ordem_compra` **installed but granted to NO client role** (full-allocation
+  precondition: every item ≥1 allocation + `SUM(active alloc)=kg_pedido` + Pedido
+  ownership + material/color identity; owner-only for rollback-safe tests) + two
+  partial unique indexes (`ordem_compra_item_unico_algodao/_poliester`) backing the
+  idempotent writer. All client RPCs `SECURITY DEFINER` + internal `is_admin()` +
+  EXECUTE `authenticated` only, `PUBLIC`/`anon`/`service_role` revoked. **No bridge
+  RPC, no `native_bridge` rows, no flat shadow, no allocation grant, no receipt
+  change** (verified live).
+- **DB test matrix (§16, all rolled-back BEGIN…ROLLBACK; admin session via
+  `SET LOCAL request.jwt.claims`):** first-draft creation; reuse of the active
+  (pedido,supplier) draft; **absolute-quantity idempotency** (repeat same call →
+  `criado_*=false`, kg unchanged, no increment); quantity replacement (100→150, not
+  250); same/different material-color item; cancelled and emitted orders NOT reused
+  (new draft); invalid pedido/supplier; invalid material/color combos; zero/negative
+  qty; legacy-header mutation rejection (cancel/emit/remove → `ordem_legado`); item
+  removal; removal-with-allocation rejected (`possui_alocacao`); draft cancel; repeat
+  -cancel rejected (`estado_invalido`); event carries `ordem_compra_id` only
+  (`ordem_compra_fio_id` NULL); **emission rejected with no allocations
+  (`alocacao_incompleta`) and partial allocations, succeeding only in an owner-only
+  fully-allocated fixture** (event `emitida`, `ordem_compra_id`); incoherent-
+  allocation rejected (`alocacao_incoerente`); post-emission immutability (definir →
+  new draft; remove/cancel on emitted → `estado_invalido`); ACL — `authenticated`
+  runtime-executes definir (SECURITY DEFINER writes as owner) but is **denied
+  `emitir`** (function-priv false + runtime `insufficient_privilege`), `anon`/
+  `service_role` cannot execute the new RPCs, no direct `authenticated`/`anon` table
+  DML on `ordem_compra`/`ordem_compra_item`, `alocar_necessidade_compra_fio` ungranted,
+  no bridge object, zero `native_bridge` rows. Persistent state unchanged after all
+  tests (headers 51, items 51, allocations 51, events 0, needs 64).
+- **Legacy regression (§17, rolled-back live):** flat `cancelar_ordem_compra_fio(1)`
+  → ok (emitida→cancelada); flat `emitir_ordem_compra_fio` still enforces its
+  contract; direct `kg_recebido` write path (registrarRecebimentoOrdemFio /
+  screenFornecedorOrdens) works (1024.8→123.4); OP-screen extended-select reader
+  resolves the dimension columns. **`ordens_compra_fio` fingerprint
+  `eb26d39316e7fb4a5f4b46c8a99631b3` byte-identical before and after** (64 rows).
+  Existing ACL debts (`KG-RECEBIDO-ACL-GAP`, `ANON-GRANT-DEFENSE-IN-DEPTH`)
+  unchanged, not expanded.
+- **Application (`d4d7533`):** five screen files —
+  `js/screens/ordem-compra-data.js` (102), `ordem-compra-render.js` (242),
+  `ordem-compra-events.js` (233), `ordens-compra-list.js` (43), `ordem-compra.js`
+  (51); routing/nav — `js/router.js` (numeric `#/ordens-compra/(\d+)` regex branch),
+  `js/boot.js` (`#/ordens-compra` route), `js/screens/common.js` (`ADMIN_MENU` entry
+  + icon), `index.html` (five cache-busted script tags); `js/screens/op-nova.js`
+  net-reduced 1548→1503 (reader = compact summary + "Ver ordens de compra" link;
+  inline emit/cancel handlers + SVGs removed). res.data.ok + PGRST202 handling
+  throughout (graceful degradation on a db without db/68).
+- **UI validation (§20, staging-served app at `localhost:8765`, stubbed data —
+  admin auth not entered, per prohibited-action policy):** `#/ordens-compra` list
+  renders the native and imported-legacy orders **each once** with model
+  discriminator, status, item count, and "Ver ordem"; `#/ordens-compra/:id` native
+  draft renders items with **Editar/Remover**, **Adicionar item**, **Cancelar
+  ordem**, and a **disabled Emitir** whose title/notice is *"Emissão disponível após
+  a distribuição de necessidades (etapa PRE-PROD)"* (`disabled=true`, no click
+  handler); imported-legacy detail is **read-only** (no add/edit/remove/cancel,
+  Emitir disabled, "inerte no novo modelo" note); no console errors. Screenshots
+  timed out in this environment; evidence captured via text-DOM inspection
+  (get_page_text + button-state introspection). Architect visual acceptance remains
+  required before final closure.
+- **Rollback rehearsal (§21, rolled-back):** revoking EXECUTE on the five active
+  client RPCs makes them inert (`authenticated` false) while **retaining all native
+  data** (64/51/51/51, events 0); dropping the six db/68 functions + two indexes
+  leaves db/67 fully intact (four layers + compat + `alocar_necessidade_compra_fio`
+  all present, `ordens_compra_fio` 64). Rehearsal rolled back; db/68 confirmed still
+  live afterward (6 functions, correct grants).
+- **Test suite (§R):** full `node --test tests/*.js` = **3871 tests, 3739 pass, 132
+  fail**; diff vs the committed baseline (3863/3731/**132**) = **zero net-new
+  failures** — the 132 are pre-existing (stale http.server/index.html-inline-script
+  suites). `tests/ordem-compra.smoke.js` 10/10; `tests/op-nova.smoke.js` 81/81
+  (retired the two obsolete OP-screen emit/cancel tests). `node --check` clean on all
+  new/changed JS.
+- **STRUCTURAL POLICY COMPLIANCE (`CODE_HEALTH_RULES.md`):** **§7 (size)** — five
+  new screen files 43–242 lines, all within the ≤250 ideal; `op-nova.js` is the
+  accepted frozen exception and this change is **net-reductive** (1548→1503);
+  `db/68` 575 lines is one cohesive transaction-scoped migration (§14 single-scope,
+  same justification as db/65/67). **§4/§3** — the new `#/ordens-compra/(\d+)` branch
+  is a hand-written regex in `router.js` (the engine has no generic `:id`), route
+  registration in `boot.js`, no OP/Supabase logic in the router. **§9 (writes)** —
+  all new persistence is behind db/68 SECURITY DEFINER RPCs called from
+  `ordem-compra-events.js`; no `insert/update/delete` inside render functions; each
+  writer declares table/op/payload/error-behavior; atomicity noted (get-or-create +
+  item under one advisory-locked call). **§10 (reads)** — the read model is a
+  dedicated RPC pair, not a client join. **§12 (cache-busting)** — five new scripts
+  carry `?v=20260719-refund-b1`, before `boot.js`, no `?v=` on CDNs. **§13/§20
+  (tests)** — new smoke suite via the shared `_doubles.js` FaithfulNode (boolean-attr
+  fidelity), business-rejection (`res.data.ok`) asserted, full suite run + baseline
+  compared. **§15 (git)** — selective staging by literal path, four commits on `dev`,
+  `.gitignore`/`AGENTS.md` left untouched/unstaged, no `add -A`/`reset`/`rebase`/
+  force/`merge`/`tag`/`amend`. **§16 (docs)** — spec §R.22 + this closeout.
+  **§19 (language)** — English code/comments/commits; pt-BR UI strings.
+  **Forced coupling recorded (beyond §19's two named test files):** the §11-required
+  nav additions (route + `ADMIN_MENU` entry) necessitated mechanical menu/route-count
+  fixture syncs in `tests/boot.smoke.js` (route count 21→22),
+  `tests/screens-common.smoke.js` (`EXPECTED_ADMIN_MENU` +1),
+  `tests/cadastros-screens.smoke.js` and `tests/documentos-recebidos.smoke.js`
+  (menu-links 11→12). No test logic changed; these mirror the app menu and would
+  otherwise be false-red. Flagged for architect awareness.
+- **Files changed:** `db/68_ordem_compra_native_draft_admin.sql` (new);
+  `js/screens/ordem-compra-data.js`, `ordem-compra-render.js`,
+  `ordem-compra-events.js`, `ordens-compra-list.js`, `ordem-compra.js` (new);
+  `js/router.js`, `js/boot.js`, `js/screens/common.js`, `js/screens/op-nova.js`,
+  `index.html` (modified); `tests/ordem-compra.smoke.js` (new);
+  `tests/op-nova.smoke.js`, `tests/boot.smoke.js`, `tests/screens-common.smoke.js`,
+  `tests/cadastros-screens.smoke.js`, `tests/documentos-recebidos.smoke.js`
+  (modified); `PROJECT_STATE.md`, `AGENT_HANDOFF.md`, this ledger entry (closeout).
+- **Open future debts / blocked actions:** `LIVE_ALLOCATION_T1_T2_TEST_PENDING`
+  (HARD STOP before allocation activation); `NATIVE_RECEIPT_COMPATIBILITY_MULTI_ORIGIN_UNRESOLVED`
+  (PRE-PROD must decide single-OP-bridgeable vs native-ledger-only, never fabricate an
+  OP); **active native emission deferred to PRE-PROD**; **native receipt authority
+  deferred to Phase C**; a contemporaneous read-only **production** diagnosis remains
+  mandatory before any production migration. **`PRE-PROD` is `NOT AUTHORIZED`.**
+- **Status:** `REFUND-B1` is `IMPLEMENTED / VERIFIED IN STAGING / AWAITING ARCHITECT
+  VISUAL VALIDATION AND ACCEPTANCE`. **Next authorizable action:** architect visual
+  validation + acceptance, then a separate `PRE-PROD` order.
