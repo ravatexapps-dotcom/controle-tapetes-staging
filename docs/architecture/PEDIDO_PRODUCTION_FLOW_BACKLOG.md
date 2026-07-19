@@ -1409,3 +1409,32 @@ RPC grant hardening`).
 - Production (`bhgifjrfagkzubpyqpew`) not accessed; Vercel not accessed; no
   push. See `docs/ledgers/G28_LEDGER.md` for the append-only entry of this
   phase.
+
+# Update 2026-07-19 - PRE-PROD-A-R1 Native Allocation Contract
+
+Phase: `PRE-PROD-A-R1 — NATIVE NEEDS, ALLOCATION AND LIVE CONCURRENCY`
+Date: 2026-07-19
+Base: branch `dev`, HEAD `51f31dd`
+Status: **CONTRACT CLOSED / IMPLEMENTATION AUTHORIZED (CONDITIONAL) / STAGING PENDING**
+
+- Binding contract closed in
+  `docs/architecture/ORDEM_COMPRA_LIFECYCLE_SPEC_PROPOSED.md` **§R.23** (governing
+  home). This backlog note records only the **production-flow / UI-ownership
+  boundary** the contract fixes, which touches this document's concerns.
+- **UI ownership boundary (binding).** Native yarn-need **distribution/allocation**
+  belongs exclusively to the **dedicated Ordem de Compra entity** (new child module
+  `js/screens/ordem-compra-distribuicao.js` under route `#/ordens-compra/:id`). It is
+  **not** added to `op-nova.js`, the Pedido detail screen, the supplier screen, or
+  the transition modals — transition modals remain action-only. This preserves the
+  §2/§9 backlog principle that the Pedido shows consolidated previews + shortcuts and
+  does not become a parallel production/purchasing source.
+- **Purchasing regime per Pedido.** `pedido_compra_fio_regime` makes the purchasing
+  model explicit and immutable (`legacy` vs `native`); a `native` Pedido stops
+  producing flat `ordens_compra_fio` rows at Abrir OP and instead assesses/synchronizes
+  native needs server-side. No mixed legacy/native purchasing inside one Pedido.
+- **Not in scope here.** Native emission stays inactive (Phase-C receipt gate); B2
+  supplier-assignment relocation off the OP screen is unchanged; no receipt/bridge
+  work. Open UI debt `ADMIN_SHELL_MOBILE_RESPONSIVENESS_DEBT` remains app-wide and is
+  not addressed by this phase.
+- Staging (`ucrjtfswnfdlxwtmxnoo`) only; production not accessed; no push. See
+  `docs/ledgers/G28_LEDGER.md` for the append-only entry of this phase.

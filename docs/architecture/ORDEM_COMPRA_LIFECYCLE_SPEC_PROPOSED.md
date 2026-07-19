@@ -1581,6 +1581,302 @@ R2 order **only after the R2 documentation gate passes exactly** (order §13);
   **`PRE-PROD` is now the next authorizable track but is NOT authorized by this
   closeout.**
 
+## §R.23 PRE-PROD-A-R1 — Native needs, allocation, and live concurrency (governs the corrected/activated parts of §R.17/§R.22 for PRE-PROD-A only)
+
+> **Order:** `PRE-PROD-A-R1 — NATIVE NEEDS, ALLOCATION AND LIVE CONCURRENCY`
+> (2026-07-19, Opus 4.8). **Baseline:** `dev @ 51f31dd` (REFUND-B1 accepted).
+> **Type:** binding contract closure + conditional staging implementation
+> authorization. This section closes the PRE-PROD-A contracts and authorizes the
+> PRE-PROD-A implementation (migration `db/69` + the dedicated distribution UI)
+> **conditionally**, on this documentation gate matching the order exactly. It
+> refines §R.17's `PRE-PROD` phase row and §R.22.12's activation gates for the
+> **PRE-PROD-A slice only**. Where this section and §R.17/§R.22 diverge on
+> PRE-PROD-A scope, **§R.23 governs**; §R.22 continues to govern REFUND-B1.
+> **Nothing here authorizes native emission, native receipt, PRE-PROD-B, or
+> Phase C** — those remain `NOT AUTHORIZED`.
+
+### §R.23.0 Accepted phase split and emission-after-Phase-C sequence
+
+The PRE-PROD split is ratified. **PRE-PROD-A owns:** explicit Pedido
+purchasing-model classification; native need assessment and synchronization;
+native draft allocation and allocation removal; allocation coherence and
+draft-status enforcement; the dedicated allocation UI; real authenticated
+T1/T2 concurrency testing; closure of `LIVE_ALLOCATION_T1_T2_TEST_PENDING`.
+
+**PRE-PROD-A does NOT own:** native emission activation; an authenticated grant
+on `emitir_ordem_compra`; native receipt; flat compatibility shadows; receipt
+ledger activation; emitted-order cancellation; supplier-assignment relocation
+(B2); production promotion.
+
+**Binding phase sequence.** PRE-PROD-A may activate native needs and allocation
+while native emission stays inactive. **Phase C must establish native receipt
+authority before any client-facing native emission may be activated.** The
+former PRE-PROD-B emission step becomes a **post-Phase-C activation gate**, not
+the immediate successor of PRE-PROD-A. PRE-PROD-A acceptance does not
+automatically authorize B2, Phase C, or emission activation. `NATIVE_RECEIPT_COMPATIBILITY_MULTI_ORIGIN_UNRESOLVED`
+remains open; no bridge and no receipt work is performed in PRE-PROD-A.
+
+### §R.23.1 Pedido-level purchasing regime — no mixed authority per Pedido
+
+A Pedido must not silently mix legacy-flat and native purchasing authority. An
+explicit **immutable** Pedido-level regime is introduced.
+
+- **Table `public.pedido_compra_fio_regime`** — `pedido_id UUID PRIMARY KEY`
+  (FK `pedidos`), `modelo TEXT CHECK (modelo IN ('legacy','native'))`,
+  `origem TEXT`, `definido_em TIMESTAMPTZ NOT NULL DEFAULT now()`,
+  `definido_por UUID` nullable (FK `auth.users`). One regime row per Pedido;
+  no client UPDATE/DELETE path. RLS: `SELECT` to `authenticated` under
+  `is_admin()`; no client DML policy.
+- **Immutability guard.** A `BEFORE UPDATE OR DELETE` trigger raises, so no
+  application writer (even an owner-bypassing one) can mutate or remove a regime
+  row through the client surface.
+- **Seeding / classification rule.** A Pedido carrying **any** legacy purchasing
+  evidence — any `ordens_compra_fio` row on its OPs, any `legado=TRUE`
+  `necessidade_compra_fio`, any imported `ordem_compra_item_compat_fio` mapping,
+  or any imported legacy `ordem_compra` header — is classified **`legacy`**.
+  Unresolved NULL-Pedido OP1/OP2 rows create no regime row. A Pedido **without**
+  existing legacy purchasing evidence becomes **`native`** on its first
+  purchasing-model resolution. Once `native`, no new flat `ordens_compra_fio`
+  purchasing row may be created for that Pedido; once `legacy`, native need
+  synchronization must reject it.
+- **`resolver_regime_compra_fio_pedido(p_pedido_id UUID) RETURNS JSONB`** —
+  transactional; serializes first resolution (advisory lock on the Pedido);
+  returns an existing regime if present; detects historical legacy evidence
+  before creating `native`; creates `native` only when no legacy evidence
+  exists; idempotent; `SECURITY DEFINER`, internal `is_admin()`; EXECUTE to
+  `authenticated` only, `PUBLIC`/`anon`/`service_role` revoked.
+
+### §R.23.2 `persistirOP` cutover — regime-gated, no silent fallback
+
+`persistirOP` must consult the **server-resolved** Pedido regime before touching
+`ordens_compra_fio`. The client must not decide the regime locally; it consumes
+the server response.
+
+- **`modelo='legacy'`** — preserve the existing flat-row creation/deletion
+  (`op-persistir.js` step 5, `status='aberta'`) and all legacy readers/writers
+  exactly.
+- **`modelo='native'`** — do **not** create new `ordens_compra_fio` rows; do not
+  delete existing historical flat rows; synchronize native needs through the
+  canonical server writer (§R.23.4); create no order headers, items, or
+  allocations automatically; create no flat compatibility shadow.
+- **No silent fallback.** A native Pedido may not fall back to flat purchasing
+  after an RPC/synchronization failure; the failure stops the operation and
+  surfaces a business error.
+
+### §R.23.3 Authoritative need-assessment source (PROVEN, §8 hard stop cleared)
+
+Native kg requirements are computed **server-side** from canonical
+production-demand data — never from client-supplied totals, never from
+`ordens_compra_fio` as the source (flat rows are a **parity oracle** only).
+
+- **Source tables / joins.** `op_itens` → `modelos` (`cor_1_id`, `cor_2_id`,
+  `largura`) → `parametros_largura` (matched on `round(largura,2)`), scoped to
+  the Pedido via `ops.lote_id → lotes.pedido_id`.
+- **Eligible OP states.** `ops.status IN ('aberta','em_producao')`. `simulada`
+  is excluded (it produces no flat rows). `ops.tipo` must be `tecelagem`;
+  latex/acabamento OPs consume no yarn and are excluded.
+- **kg formula (exact replica of `js/calculo-op.js`).** Cotton per op_item:
+  `algodao_por_ml · valor_x · metros_pedidos`, **added to both `cor_1_id` and
+  `cor_2_id`** (including the double-add when they are equal — faithful to the
+  code), aggregated per (OP, `cor_id`). Polyester per op_item:
+  `poliester_por_ml · valor_x · metros_pedidos`, applied to both `PRETO` and
+  `BRANCO`. Rounded to 3 decimals (`round3`); rows with `kg ≤ 0` are dropped.
+- **Native identity re-grouping.** Cotton need = per (Pedido, OP, cotton color).
+  Shared polyester need = per (Pedido, polyester color), aggregating the same
+  per-OP polyester quantities across the Pedido's eligible OPs — a
+  parity-preserving `SUM` of already-proven per-OP blocks.
+- **Ownership / relationship.** Pedido-ownership is enforced by the
+  `necessidade_compra_fio` op→lote→pedido guard trigger (§R.3). The formula is
+  the SQL image of `calcularFiosOP` + `montarOrdensCompraFio`.
+- **Parity evidence (recorded).** The SQL assessment reconstructed against the
+  live staging corpus (`ucrjtfswnfdlxwtmxnoo`) reproduces the 64-row flat
+  corpus **exactly** when restricted to eligible OP states: 64 calc rows, 0
+  unmatched keys, **0.000 kg drift**, cotton and polyester both matched. The §8
+  hard stop is cleared; the full fixture parity is re-run at db/69 authoring.
+
+### §R.23.4 Native need-assessment RPCs
+
+- **`avaliar_necessidades_compra_fio(p_pedido_id UUID) RETURNS JSONB`** —
+  read-only preview.
+- **`sincronizar_necessidades_compra_fio(p_pedido_id UUID) RETURNS JSONB`** —
+  canonical writer.
+
+Both require `modelo='native'`, enforce Pedido existence and ownership, use only
+server-derived demand, are `SECURITY DEFINER` + internal `is_admin()`, EXECUTE
+to `authenticated` only (`PUBLIC`/`anon`/`service_role` revoked).
+
+**Native need identity.** Cotton: one need per (Pedido, OP, cotton color),
+`origem_tipo='op'`, `op_id` required. Shared polyester: one need per (Pedido,
+polyester color), `origem_tipo='pedido'`, `op_id` NULL, demand aggregated across
+the Pedido's eligible OPs.
+
+**Synchronization semantics.** All-or-nothing per Pedido; idempotent (repeated
+identical sync creates no new rows); never mutate `legado=TRUE` needs; never
+convert a legacy need to native; create missing native needs; update
+`kg_necessario` **absolutely**; delete an obsolete native need only when
+`kg_alocado=0` and no allocation rows reference it; **reject** the whole sync if
+a decrease would make `kg_necessario < kg_alocado`, or if an affected allocation
+belongs to a non-draft order; return `created`/`updated`/`deleted`/`unchanged`/
+`conflicts` separately; leave `kg_alocado` maintenance to the installed trigger
+(§R.4). No orders or items are created during need synchronization.
+
+### §R.23.5 Absolute, idempotent allocation semantics
+
+The currently inactive `alocar_necessidade_compra_fio(p_item_id, p_necessidade_id,
+p_op_id, p_kg)` is hardened **before** any grant. Because it has never been
+granted or called, its semantics are corrected before activation.
+
+- **Absolute quantity.** `p_kg` is the **absolute** desired allocation for the
+  identity `(ordem_compra_item_id, necessidade_compra_fio_id, op_id)` — not an
+  increment. Repeated calls with the same identity and `p_kg` reproduce the same
+  state without increasing the quantity.
+- **Uniqueness.** A unique constraint/index on `(item_id, necessidade_id, op_id)`
+  enforces one allocation row per identity. **Preflight:** the 51 imported
+  legacy allocations must be unique on that identity before the constraint is
+  created — HARD STOP if duplicates exist.
+- **Validation (before insert/update).** Lock the `necessidade` row
+  `FOR UPDATE`; lock/validate the existing identity; load item + parent order;
+  require `ordem_compra.legado=FALSE` and parent `status_administrativo='rascunho'`;
+  require item and need to share the same Pedido; require material identity
+  equality; require cotton/polyester color equality; require `p_kg > 0`; enforce
+  the **total need cap** after replacing the existing identity quantity;
+  `kg_alocado` maintenance stays exclusively with the installed trigger.
+  Cotton need: `origem_tipo='op'` and `p_op_id = necessidade.op_id` (OP in the
+  same Pedido). Shared polyester need: `origem_tipo='pedido'`,
+  `necessidade.op_id IS NULL`, `p_op_id` required and identifying a real OP of
+  the same Pedido; allocations may span multiple OPs; the need-level total is the
+  authoritative cap; no representative/fabricated OP.
+- **Return.** `ok`, `codigo`, allocation id, `created|updated|unchanged`
+  discriminator, previous kg, final kg, need total, allocated total, remaining
+  total.
+
+### §R.23.6 Allocation removal
+
+**`remover_alocacao_compra_fio(p_alocacao_id BIGINT) RETURNS JSONB`** — loads and
+locks the allocation and its need; requires a **native** parent order in
+`status='rascunho'`; rejects imported legacy allocations; deletes only the
+target allocation (the trigger recomputes `kg_alocado`); returns a stable
+not-found result for an already-absent allocation without fabricating success;
+`SECURITY DEFINER` + `is_admin()`; EXECUTE to `authenticated` only.
+
+### §R.23.7 Post-emission immutability backstop (database-level)
+
+Beyond RPC discipline, `db/69` installs a database-level backstop: no INSERT/
+UPDATE/DELETE of an allocation, and no item-quantity mutation, survives when its
+parent order is not `rascunho`. Triggers (or equivalent constraints) prevent an
+owner-bypassing writer from accidentally changing emitted/cancelled orders. The
+backstop preserves imported legacy rows and REFUND-A seed data.
+
+### §R.23.8 Distribution read model
+
+**`obter_distribuicao_ordem_compra(p_ordem_id BIGINT) RETURNS JSONB`** —
+server-composes order + Pedido identity; items; compatible native needs; current
+allocation identities with per-allocation OP attribution; kg required/allocated/
+remaining; item ordered qty, allocation total, and reconciliation difference;
+Pedido-level distribution completeness; reasons preventing distribution/future
+emission; allowed allocation/edit/removal actions. The client never reconstructs
+authority by joining tables.
+
+`obter_ordem_compra_admin` (and, where required, `listar_ordens_compra_admin`)
+expose `distribuicao_completa`, `pronta_para_emissao`, `pode_emitir=false`, and
+`bloqueio_emissao`:
+- `'recebimento_nativo_ainda_inativo'` when distribution is **complete** (the
+  block is Phase-C native receipt, not distribution);
+- `'distribuicao_necessidades_pendente'` when distribution is **incomplete**.
+
+The server computes readiness; it does **not** authorize emission.
+
+### §R.23.9 Emission remains inactive
+
+`db/69` does not grant `emitir_ordem_compra` to `authenticated`, does not wire
+the emit button, does not call the emission RPC from application code, creates no
+emitted native order outside rollback-only owner fixtures, and changes no receipt
+authority. The UI renders **Emitir** as disabled; when distribution is complete
+its explanation states that emission **awaits native receipt activation
+(Phase C)**, not that distribution is incomplete.
+
+### §R.23.10 Dedicated distribution UI, entity boundaries, no new route
+
+Allocation belongs to the dedicated Ordem de Compra entity. A new focused child
+module **`js/screens/ordem-compra-distribuicao.js`** is added under the existing
+detail screen; regime resolution is factored into **`js/screens/op-compra-regime.js`**.
+Authorized application files: `js/screens/op-persistir.js`,
+`js/screens/op-compra-regime.js` (new), `js/screens/ordem-compra.js`,
+`js/screens/ordem-compra-data.js`, `js/screens/ordem-compra-render.js`,
+`js/screens/ordem-compra-events.js`, `js/screens/ordem-compra-distribuicao.js`
+(new), `index.html`. No allocation orchestration is added to `op-nova.js`, Pedido
+detail, the supplier screen, transition modals, or unrelated screens.
+
+The existing route `#/ordens-compra/:id` is reused; **no** new route, and no
+change to `router.js`/`boot.js`/`common.js` (recon confirmed a child module wires
+purely via an `index.html` script tag self-registering on
+`window.RAVATEX_SCREENS.ordemCompra`). If any of those three files turns out
+required, that is a HARD STOP with a reported reason.
+
+### §R.23.11 Migration `db/69` object manifest + ACL
+
+**`db/69_ordem_compra_preprod_allocation.sql`** — authorized objects only:
+`pedido_compra_fio_regime`; the regime immutability guard;
+`resolver_regime_compra_fio_pedido`; `avaliar_necessidades_compra_fio`;
+`sincronizar_necessidades_compra_fio`; the hardened absolute
+`alocar_necessidade_compra_fio`; `remover_alocacao_compra_fio`; the allocation
+identity uniqueness index; the post-emission item/allocation mutation guards;
+`obter_distribuicao_ordem_compra`; the required read-model replacements; and the
+exact grants/revocations. **Not authorized:** emission grant; bridge function;
+flat shadow generation; receipt-ledger activation; `saldo_fios` movement; native
+receipt; any unrelated schema change. Every new client RPC is `SECURITY DEFINER`
+with internal `is_admin()`, EXECUTE to `authenticated` only,
+`PUBLIC`/`anon`/`service_role` revoked; new tables get no client DML policy.
+
+### §R.23.12 Concurrency mechanism, live T1/T2 test, grant-activation order
+
+**Mechanism.** The canonical allocation writer locks the target
+`necessidade_compra_fio` row with `SELECT … FOR UPDATE`; callers touching
+multiple needs in one transaction lock in ascending `necessidade_id` order.
+
+**Live test.** `LIVE_ALLOCATION_T1_T2_TEST_PENDING` is closed only by a **real**
+two-session test using authenticated concurrent PostgREST requests from a
+logged-in staging admin **browser** session (never the service channel; no
+plaintext password is requested/handled). A transient staging-only probe
+(`preprod_a_allocation_concurrency_probe`, `SECURITY DEFINER`, `is_admin()`,
+temporarily granted to `authenticated`, calling the real writer and capturing
+`pg_backend_pid()` + timing) is authorized **outside** the committed migration
+and dropped immediately after; it is never committed. Required proof: distinct
+backend PIDs; T2 waits on T1's need-row lock, then re-evaluates the remaining
+balance and returns a business rejection; exactly one 60 kg allocation survives
+against a `kg_necessario=100` need with two draft orders; `kg_alocado=60`,
+`SUM(allocations)=60`, no cache drift, no over-allocation, no partial residue.
+
+**Grant-activation order.** (1) install `db/69` with active allocation grants;
+(2) keep the application allocation controls feature-disabled; (3) run
+owner-level + authenticated negative tests; (4) run the live T1/T2 test; (5) on
+pass, enable the allocation controls in application code; (6) on fail, revoke the
+allocation/need-writer grants immediately, do not enable the UI, clean fixtures,
+HARD STOP. The transient staging grants during this controlled test are
+authorized and are not production activation.
+
+### §R.23.13 Rollback contract
+
+Rollback rehearsal: revoke all PRE-PROD-A writer grants; disable the allocation
+UI; restore native-mode `persistirOP` to a **safe blocked state** rather than
+silently reverting to flat; retain native regimes/needs/allocations as inert
+read-only data; delete only test fixtures; drop `db/69` functions/triggers/
+indexes/table in dependency-safe order during rehearsal; confirm `db/67`/`db/68`
+intact; preserve all legacy flat data, events, and mappings; never auto-convert
+native Pedidos to legacy. A production rollback must never silently reintroduce
+mixed authority.
+
+### §R.23.14 Debts and closeout vocabulary
+
+`LIVE_ALLOCATION_T1_T2_TEST_PENDING` is the debt PRE-PROD-A closes (via the live
+test). **Kept open:** `NATIVE_RECEIPT_COMPATIBILITY_MULTI_ORIGIN_UNRESOLVED`;
+native emission inactive; native receipt authority deferred to Phase C;
+contemporaneous read-only production diagnosis mandatory before any production
+promotion; `ADMIN_SHELL_MOBILE_RESPONSIVENESS_DEBT`. On full-gate pass the
+executor records `PRE-PROD-A: IMPLEMENTED / VERIFIED IN STAGING / LIVE
+CONCURRENCY PASS / AWAITING ARCHITECT VISUAL VALIDATION AND ACCEPTANCE` and does
+not self-accept. **`PRE-PROD-B` and `Phase C` remain `NOT AUTHORIZED`.**
+
 ---
 
 ## 0. Current state (evidenced, read-only inventory) — SUPERSEDED on the persistence model by Part R (retained for provenance)

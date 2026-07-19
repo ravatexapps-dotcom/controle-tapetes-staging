@@ -1,5 +1,40 @@
 # ACTIVE OPERATIONAL HANDOFF
 
+- **`PRE-PROD-A-R1` — `CONTRACT CLOSED / IMPLEMENTATION AUTHORIZED (CONDITIONAL) /
+  STAGING PENDING` (2026-07-19, branch `dev`, baseline `51f31dd`, Opus 4.8):** the
+  binding PRE-PROD-A contract is closed in
+  `docs/architecture/ORDEM_COMPRA_LIFECYCLE_SPEC_PROPOSED.md` **§R.23** and
+  cross-recorded in `PROJECT_STATE.md`, this handoff, `PEDIDO_OP_SCHEMA_CONTRACT.md`
+  §6.2, `PEDIDO_PRODUCTION_FLOW_BACKLOG.md`, and `docs/ledgers/G28_LEDGER.md`, via a
+  single documentation-only commit `Define PRE-PROD-A native allocation contract`.
+  **What is authorized next (conditional implementation half, NOT yet applied):**
+  migration `db/69_ordem_compra_preprod_allocation.sql` (Pedido purchasing regime
+  `pedido_compra_fio_regime` + `resolver_regime_compra_fio_pedido`;
+  `avaliar_necessidades_compra_fio` / `sincronizar_necessidades_compra_fio` derived
+  server-side from `op_itens→modelos→parametros_largura` for eligible
+  `aberta`/`em_producao` `tecelagem` OPs; hardened **absolute/idempotent**
+  `alocar_necessidade_compra_fio` on identity `(item,necessidade,op)` +
+  `remover_alocacao_compra_fio`; allocation-identity uniqueness; post-emission
+  mutation guards; `obter_distribuicao_ordem_compra` + read-model block reasons),
+  then the dedicated distribution UI (`js/screens/ordem-compra-distribuicao.js`,
+  `js/screens/op-compra-regime.js`, edits to `op-persistir.js` +
+  `ordem-compra{,-data,-render,-events}.js` + `index.html`; route unchanged), then
+  the **live authenticated T1/T2 concurrency test** that closes
+  `LIVE_ALLOCATION_T1_T2_TEST_PENDING`. **KEY DEPENDENCY for the next session:** the
+  T1/T2 test (order §20–21) needs an authenticated staging admin **browser** session
+  (Supabase `ucrjtfswnfdlxwtmxnoo`); Claude must not handle a password — Kleber logs
+  into the staging app locally and Claude drives the concurrent PostgREST requests.
+  The service-level `supabase-legacy` MCP is fine for owner tests + migration apply,
+  but **not** for the authenticated concurrency proof. **Baseline evidence:** §8 need
+  formula proven (0.000 kg drift vs the 64-row flat corpus); slot `db/69` free;
+  staging fingerprint `64/51/51/51/51` intact. **Kept open / NOT authorized:** native
+  emission (inactive/ungranted), native receipt + bridge
+  (`NATIVE_RECEIPT_COMPATIBILITY_MULTI_ORIGIN_UNRESOLVED`, Phase C),
+  emitted-order cancellation, B2 supplier relocation, production promotion (needs a
+  contemporaneous read-only production diagnosis first),
+  `ADMIN_SHELL_MOBILE_RESPONSIVENESS_DEBT`. **`PRE-PROD-B` and `Phase C` remain `NOT
+  AUTHORIZED`.**
+
 - **`REFUND-B1` — `CLOSED / ACCEPTED_WITH_RECORDED_FUTURE_GATES` (2026-07-19,
   architect acceptance closeout, branch `dev`, docs-only, no DB access):** the
   architect accepted the REFUND-B1 implementation below (technical commits

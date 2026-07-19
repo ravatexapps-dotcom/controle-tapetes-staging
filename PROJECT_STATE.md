@@ -256,6 +256,37 @@ are in `docs/ledgers/G28_LEDGER.md`. HEAD/working tree/divergence: consult Git d
   application code, no test change, no push, no `main` touch, `.gitignore`/
   `AGENTS.md` untouched this closeout.** **`PRE-PROD` is now the next
   authorizable track but is NOT authorized by this closeout.**
+- **`PRE-PROD-A-R1` — `CONTRACT CLOSED / IMPLEMENTATION AUTHORIZED (CONDITIONAL) / STAGING PENDING`
+  (2026-07-19, branch `dev`, baseline `51f31dd`, Opus 4.8).** The architect
+  authorized `PRE-PROD-A-R1 — NATIVE NEEDS, ALLOCATION AND LIVE CONCURRENCY`. The
+  binding contract is closed in `docs/architecture/ORDEM_COMPRA_LIFECYCLE_SPEC_PROPOSED.md`
+  **§R.23** (governs PRE-PROD-A over §R.17/§R.22.12). **PRE-PROD-A owns:** explicit
+  Pedido purchasing regime (`pedido_compra_fio_regime`, immutable, seeded `legacy`
+  on any legacy purchasing evidence else `native`); server-side native need
+  assessment/synchronization from canonical production demand (`op_itens → modelos
+  → parametros_largura`, eligible OP states `aberta`/`em_producao`, `tecelagem`
+  only, latex excluded); absolute/idempotent draft allocation + removal; the
+  dedicated distribution UI on route `#/ordens-compra/:id`; and the real
+  authenticated **T1/T2** live-concurrency test that closes
+  `LIVE_ALLOCATION_T1_T2_TEST_PENDING`. **PRE-PROD-A does NOT own** native emission
+  activation, an `emitir_ordem_compra` grant, native receipt, flat shadows,
+  receipt-ledger activation, emitted-order cancellation, B2 supplier relocation,
+  or production. **Sequence ruling:** native emission stays inactive; **Phase C
+  must establish native receipt authority before emission may be activated** — the
+  former PRE-PROD-B emission step is now a post-Phase-C gate. **§8 need formula
+  PROVEN** against staging: SQL replica of `calcularFiosOP`/`montarOrdensCompraFio`
+  reproduces the 64-row flat corpus exactly (0 unmatched keys, **0.000 kg drift**).
+  Migration slot **`db/69`** authorized (regime + resolver + assess/sync RPCs +
+  hardened absolute `alocar_necessidade_compra_fio` + `remover_alocacao_compra_fio`
+  + allocation-identity uniqueness + post-emission mutation guards + distribution
+  read model; **no** emission grant, bridge, flat shadow, or receipt work). **This
+  entry records the documentation contract-closure commit only; `db/69`, the
+  application code, and the live staging test are the conditional implementation
+  half, not yet applied.** **Kept open:**
+  `NATIVE_RECEIPT_COMPATIBILITY_MULTI_ORIGIN_UNRESOLVED`, native emission inactive,
+  Phase C receipt authority, production diagnosis precondition,
+  `ADMIN_SHELL_MOBILE_RESPONSIVENESS_DEBT`. **`PRE-PROD-B` and `Phase C` remain
+  `NOT AUTHORIZED`.**
 - **`REFUND-B1` (original implementation record) — 2026-07-19, branch `dev`,
   staging `ucrjtfswnfdlxwtmxnoo` only; superseded on status by the acceptance
   closeout directly above, retained verbatim for the technical detail.** The

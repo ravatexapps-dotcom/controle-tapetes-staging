@@ -3507,3 +3507,59 @@ risco residual e próxima fase indicada no fechamento.
 - **Status:** `REFUND-B1` is `CLOSED / ACCEPTED_WITH_RECORDED_FUTURE_GATES`.
 - **Next authorizable action:** `PRE-PROD`, only by its own separate architect
   order.
+
+## 2026-07-19 — PRE-PROD-A-R1 — NATIVE ALLOCATION CONTRACT — DOCUMENTATION GATE (commit 1 of the PRE-PROD-A implementation order)
+
+- **Order:** `PRE-PROD-A-R1 — NATIVE NEEDS, ALLOCATION AND LIVE CONCURRENCY`
+  (Opus 4.8, high effort). Mode: binding contract closure followed by conditional
+  staging implementation.
+- **Baseline:** `dev @ 51f31dd` (REFUND-B1 accepted). Required ancestors
+  `7a2c04c`/`39d35f7`/`6a1066e`/`988cc9d` present; no later commit; worktree only
+  `M .gitignore` + `?? AGENTS.md` (untouched); migration slot `db/69` free.
+- **Gate:** documentation-only contract closure (order §5). No `db/69`, no
+  application code, no test change in this commit.
+- **Staging preflight (read-only):** reached via the pre-configured
+  `supabase-legacy` MCP connection; fingerprint matched the declared staging state
+  exactly — `ordens_compra_fio`=64, native `64/51/51/51/51`, receipt ledger +
+  `ordem_compra_eventos` empty, `alocar_necessidade_compra_fio` present. (Project
+  ref is not SQL-exposable; identity rests on the pre-configured connection + exact
+  fingerprint.)
+- **§8 authoritative need formula — PROVEN:** an in-SQL replica of
+  `js/calculo-op.js` (`calcularFiosOP` + `montarOrdensCompraFio`) — cotton
+  `algodao_por_ml·valor_x·Σ metros_pedidos` dual-added to `cor_1_id`/`cor_2_id`
+  (incl. double-add when equal), polyester `poliester_por_ml·valor_x·Σ metros`,
+  `round3`, `>0`, restricted to eligible OP states `aberta`/`em_producao`
+  (`tecelagem`; latex excluded) — reproduced the live 64-row flat corpus with **0
+  unmatched keys and 0.000 kg drift**. The §8 hard stop is cleared; full fixture
+  parity re-runs at db/69 authoring.
+- **Contract recorded:** `ORDEM_COMPRA_LIFECYCLE_SPEC_PROPOSED.md` **§R.23**
+  (phase split + emission-after-Phase-C sequence; Pedido regime
+  `pedido_compra_fio_regime` + `resolver_regime_compra_fio_pedido`; persistirOP
+  cutover; authoritative need source; `avaliar`/`sincronizar` need RPCs; absolute
+  idempotent allocation + uniqueness; `remover_alocacao_compra_fio`; post-emission
+  DB backstop; `obter_distribuicao_ordem_compra` + block reasons; emission stays
+  inactive; dedicated UI + no new route; `db/69` manifest + ACL; T1/T2 mechanism +
+  grant-activation order; rollback; debts). Cross-recorded in `PROJECT_STATE.md`
+  (active-phase bullet), `AGENT_HANDOFF.md` (top continuity bullet),
+  `PEDIDO_OP_SCHEMA_CONTRACT.md` §6.2 note, and
+  `PEDIDO_PRODUCTION_FLOW_BACKLOG.md` (update log).
+- **Files changed:** `docs/architecture/ORDEM_COMPRA_LIFECYCLE_SPEC_PROPOSED.md`,
+  `docs/architecture/PEDIDO_PRODUCTION_FLOW_BACKLOG.md`,
+  `docs/architecture/PEDIDO_OP_SCHEMA_CONTRACT.md`, `PROJECT_STATE.md`,
+  `AGENT_HANDOFF.md`, this ledger entry.
+- **Scope discipline:** documentation-only; no `db/69` yet; no application code; no
+  test change; `.gitignore`/`AGENTS.md` untouched; no push; no `main` touch;
+  production (`gqmpsxkxynrjvidfmojk`) and prohibited (`bhgifjrfagkzubpyqpew`) not
+  accessed.
+- **Open future debts / blocked actions:**
+  `LIVE_ALLOCATION_T1_T2_TEST_PENDING` (closed only by the real authenticated
+  two-session test, still pending); `NATIVE_RECEIPT_COMPATIBILITY_MULTI_ORIGIN_UNRESOLVED`;
+  native emission inactive/ungranted; native receipt deferred to Phase C;
+  production diagnosis precondition; `ADMIN_SHELL_MOBILE_RESPONSIVENESS_DEBT`.
+- **Status:** `PRE-PROD-A-R1` contract is `CLOSED`; implementation is
+  `AUTHORIZED (CONDITIONAL) / STAGING PENDING`.
+- **Next authorizable action:** the PRE-PROD-A implementation half under the same
+  order — author + apply `db/69` to staging, owner + authenticated negative tests,
+  the live T1/T2 concurrency test (needs a Kleber-logged-in staging admin browser
+  session), the dedicated distribution UI, visual evidence, and closeout. Native
+  emission, native receipt, `PRE-PROD-B`, and `Phase C` remain `NOT AUTHORIZED`.

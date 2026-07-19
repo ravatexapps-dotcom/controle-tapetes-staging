@@ -510,6 +510,22 @@ INSUMOS → TECELAGEM → ACABAMENTO → EXPEDIÇÃO → ENTREGA
 > staging/development database (`ucrjtfswnfdlxwtmxnoo`) only; production carries
 > `db/01→64`, so a production consumer sees the pre-refoundation flat shape until a
 > separately authorized production promotion.
+>
+> **PRE-PROD-A-R1 update (2026-07-19, `PRE-PROD-A-R1`, §R.23).** The purchasing
+> **model per Pedido** becomes explicit and immutable via `pedido_compra_fio_regime`
+> (`legacy` for any Pedido with existing flat purchasing evidence, else `native`),
+> resolved server-side by `resolver_regime_compra_fio_pedido`. For `native` Pedidos,
+> `persistirOP` no longer writes `ordens_compra_fio`; native yarn **needs** are
+> assessed/synchronized server-side (`avaliar_necessidades_compra_fio` /
+> `sincronizar_necessidades_compra_fio`) from the same canonical demand this INSUMOS
+> row uses (`op_itens → modelos → parametros_largura`, eligible `aberta`/`em_producao`
+> `tecelagem` OPs), and distributed onto native draft orders through the
+> absolute/idempotent allocation writer. **Receipt authority is unchanged** — the
+> `SUM(kg_recebido)/SUM(kg_pedido)` progress above **stays on `ordens_compra_fio`
+> until Phase C**; PRE-PROD-A activates needs + allocation only, leaves native
+> emission inactive, creates no receipt path and no flat shadow (bridge still
+> deferred, `NATIVE_RECEIPT_COMPATIBILITY_MULTI_ORIGIN_UNRESOLVED`). Staging
+> (`ucrjtfswnfdlxwtmxnoo`) only.
 
 ### 6.3. UI rules
 
