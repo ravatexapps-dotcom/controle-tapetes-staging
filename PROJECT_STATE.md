@@ -9,6 +9,15 @@ are in `docs/ledgers/G28_LEDGER.md`. HEAD/working tree/divergence: consult Git d
 
 ## Active phase and next action
 
+- **`PHASE-C3A` — `AUTHORIZED / CONTRACT CLOSURE IN PROGRESS` (2026-07-19).**
+  Staging-only foundation for a future C3 maintenance cutover. `saldo_fios` at the
+  future cutover is the authoritative opening inventory baseline:
+  `import_saldo_inicial` reconstructs receipt state only, creates no inventory
+  movement, and does not alter `saldo_fios` or `saldo_fios_op`.
+  `HISTORICAL_SALDO_FIOS_PROVENANCE_UNAVAILABLE` is nonblocking historical debt.
+  C3A may not seed real rows, activate a fence, change readers/writers or flat ACL,
+  activate native emission, access production, push, or begin C3B/C3C/C3D/C4/C5.
+
 - **`G28-MIGRATION-TRACK` (`PRODUCTION-MIGRATION-M0-M10`) — `COMPLETE / CLOSED`
   (2026-07-18).** The system is **LIVE IN PRODUCTION** at
   `inttracker-jade.vercel.app`, served by Vercel from `inttexsystem/inttracker`,

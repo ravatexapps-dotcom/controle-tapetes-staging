@@ -3005,3 +3005,27 @@ model and flagged one confirmed defect and two implementation gaps.
   authorize Phase A or any other phase; each remains `NOT AUTHORIZED`
   pending its own order, per this project's standing rule that phases do
   not chain automatically.
+
+## §R.26 PHASE-C3A — Legacy opening-balance and inactive cutover foundation
+
+`PHASE-C3A` separates receipt-state reconstruction from physical inventory. At the
+future cutover transaction, observed `saldo_fios` per material/color is the
+authoritative opening inventory baseline. `import_saldo_inicial` is immutable
+historical reconstruction, not a physical receipt: it creates no
+`ordem_compra_fio_movimentos_estoque` row and does not alter `saldo_fios` or
+`saldo_fios_op`. The 405.980 kg historical excess is neither credited nor debited.
+
+The future identity is `cutover_id + flat_row_id + mapping_id + item_id` in namespace
+`legacy_initial_balance_v1`. Exact replay returns its immutable result; mismatch
+rejects. It is system-owned (`ator_tipo='sistema'`, NULL actor id), preserves Class-D
+`recebido_sem_emissao`, and fabricates no emission, acceptance, document, or actor.
+There will be 39 headers and 44 ledger rows: 39 allocation-attributed entries plus
+five item-level excess entries, 20,221.280 kg reconstructed and 405.980 kg excess.
+It is non-reversible. One source-linked inventory movement exists only for productive
+receipt/reversal ledger entries.
+
+`HISTORICAL_SALDO_FIOS_PROVENANCE_UNAVAILABLE` is nonblocking historical debt and
+cannot justify stock mutation without a separate physical inventory reconciliation.
+C3A may create inactive `legacy-active` cutover/snapshot/baseline-hash metadata and an
+owner-only read-only preview. It does not authorize real seed, final snapshot, fence,
+reader/writer switch, flat ACL change, native emission, or C3B/C3C/C3D execution.

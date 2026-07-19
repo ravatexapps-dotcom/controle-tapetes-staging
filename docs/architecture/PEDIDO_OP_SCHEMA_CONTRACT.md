@@ -814,3 +814,12 @@ Phase `DOCS-CANONICAL-CONSISTENCY-BACKFILL-A`. Docs-only; no code, test, SQL, mi
 - `docs/DOCUMENTATION_INDEX.md` SS4 received the missing lines for `db/34`-`db/37` and `db/53`-`db/56`, and the status of `db/30` was corrected from "not yet applied" to the precise state already accepted in `CLIENTE-ORDER-SUMMARY-READMODEL-APPLY-STAGING-A` (applied and verified in staging, no drift, not recorded in `supabase_migrations.schema_migrations`, live ACL broader than the canonical contract, no confirmed exposure).
 - Does not normalize or resolve `CLIENTE-ORDER-SUMMARY-READMODEL-ACL-GRANTS-R1`, `DB30_NOT_RECORDED_IN_SUPABASE_MIGRATION_HISTORY`, the authenticated smoke debts, or `DEPLOYMENT_MAPPING_AND_PRODUCTION_MIGRATION_PROCEDURE`, which remain `ARCHITECT DECISION REQUIRED`/open.
 - Production (`bhgifjrfagkzubpyqpew`) not accessed; no push. See `docs/ledgers/G28_LEDGER.md` for the append-only entry of this phase.
+
+## Phase C3A — opening-balance inventory boundary
+
+`import_saldo_inicial` is non-posting immutable ledger type. It is system-owned,
+requires NULL actor id, uses `legacy_initial_balance_v1`, and is excluded from reversal
+and inventory-movement sources. Productive receipt/reversal retain the source-linked
+movement invariant. The later cutover state starts `legacy-active`; C3A must not fence
+flat writers in that state. Snapshot/baseline hashes are reconciliation metadata, not
+inventory mutation authority.

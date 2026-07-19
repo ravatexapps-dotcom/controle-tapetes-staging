@@ -1499,6 +1499,16 @@ ARCHITECT VISUAL VALIDATION AND ACCEPTANCE**.
 
 # Update 2026-07-19 - PRE-PROD-A-R1 Architect Acceptance
 
+## Update 2026-07-19 — PHASE-C3A contract boundary
+
+`PHASE-C3A` is authorized only for an inactive staging foundation. Historical
+opening-balance import reconstructs receipt state (39 command headers / 44 ledger
+entries / 20,221.280 kg / 405.980 kg excess) without inventory posting. Current
+`saldo_fios` is the authoritative opening inventory baseline; no import may alter it
+or `saldo_fios_op`. The provenance debt is
+`HISTORICAL_SALDO_FIOS_PROVENANCE_UNAVAILABLE`. Real import, fencing, consumer
+switches, flat ACL closure, UI, emission, and C3B/C3C/C3D remain out of scope.
+
 Status: **CLOSED / ACCEPTED_WITH_NONBLOCKING_ADMIN_SHELL_MOBILE_RESPONSIVENESS_DEBT**.
 
 - Architect acceptance covers the staging migration `20260719120036 /

@@ -3864,6 +3864,19 @@ DEFERRED_PHASES: PHASE-C3; PHASE-C4; PHASE-C5; PRODUCTION; MAIN; PUSH
 STATE_FILES_UPDATED: PROJECT_STATE.md; AGENT_HANDOFF.md; docs/architecture/ORDEM_COMPRA_LIFECYCLE_SPEC_PROPOSED.md; docs/architecture/PEDIDO_PRODUCTION_FLOW_BACKLOG.md; docs/architecture/PEDIDO_OP_SCHEMA_CONTRACT.md; docs/ledgers/G28_LEDGER.md
 MATERIAL_DIVERGENCES: NONE
 
+## PHASE-C3A — Contract boundary opened (2026-07-19)
+
+- **Status:** `AUTHORIZED / CONTRACT CLOSURE IN PROGRESS`; staging-only, no real
+  import/cutover. Current `saldo_fios` is the opening inventory baseline. Historical
+  import is receipt-state reconstruction: zero movement and no `saldo_fios`/
+  `saldo_fios_op` mutation.
+- **Future shape:** 39 `legacy_initial_balance_v1` system headers; 44 immutable
+  `import_saldo_inicial` entries (39 allocation-attributed plus five allocation-free
+  excess), 20,221.280 kg reconstructed, 405.980 kg excess. Debt:
+  `HISTORICAL_SALDO_FIOS_PROVENANCE_UNAVAILABLE`.
+- **Not authorized:** real seed, fence activation, reader/writer switch, flat ACL
+  revocation, UI, native emission, C3B/C3C/C3D/C4/C5, production, `main`, or push.
+
 ## 2026-07-19 — PHASE-C2 — NATIVE RECEIPT FOUNDATION — CLOSED / ACCEPTED
 
 - **Architect ruling:** `PHASE-C2` is `CLOSED / ACCEPTED`. Accepted technical/staging

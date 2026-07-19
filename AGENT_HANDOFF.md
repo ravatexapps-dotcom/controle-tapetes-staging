@@ -1,5 +1,14 @@
 # ACTIVE OPERATIONAL HANDOFF
 
+- **`PHASE-C3A` — `AUTHORIZED / CONTRACT CLOSURE IN PROGRESS` (2026-07-19).**
+  Lifecycle specification §R.26 governs an inactive staging-only foundation.
+  Historical import reconstructs receipt state and has zero inventory movement; it
+  must not alter `saldo_fios` or `saldo_fios_op`. Record
+  `HISTORICAL_SALDO_FIOS_PROVENANCE_UNAVAILABLE`; do not repair it without a distinct
+  physical inventory reconciliation authorization. Real import, fencing,
+  reader/writer switch, flat ACL closure, emission, production, `main`, and push are
+  prohibited. C3B/C3C/C3D remain separate phases.
+
 - **`PHASE-C2` — `CLOSED / ACCEPTED`
   (2026-07-19, `dev`, baseline
   `3395f83df0eb7db604df9a80d4a43a0601bc8b6c`).** Governing contract:
