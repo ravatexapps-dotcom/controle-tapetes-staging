@@ -2,7 +2,7 @@
 
 <!-- MATERIAL_PHASE_CONTRACT:BEGIN -->
 PHASE_ID: PHASE-C3C-B-DB-PREREQ
-STATUS: PROPOSED / AWAITING SUPERVISOR ACCEPTANCE / IMPLEMENTATION NOT AUTHORIZED
+STATUS: ACCEPTED_WITH_NONBLOCKING_DOCUMENTARY_DEBT / IMPLEMENTATION NOT YET AUTHORIZED
 <!-- MATERIAL_PHASE_CONTRACT:END -->
 
 > **Role of this document.** This is a **material phase contract**, authored
@@ -1713,3 +1713,181 @@ IMPLEMENTATION NOT AUTHORIZED**. `ACTIVE_PHASE`/`ACTIVE_PHASE_CONTRACT` remain
 nor any environment action, is authorized by this correction.
 
 **Next step:** read-only supervisor review of this R2-corrected contract.
+
+## 34. Supervisor acceptance and R3 documentary forward correction (governs on conflict)
+
+> **Append-only forward correction (`FORWARD_CORRECTION` per
+> `docs/governance/DOCUMENTATION_MODEL.md` §19).** Recorded under architect
+> order `C3C-B-DB-PREREQ CONTRACT RATIFICATION CLOSEOUT`, documentation-only.
+> This disposition is recorded by the delegated technical supervisor; it is not
+> attributed to Kleber. §§0–33 are preserved verbatim as authored (no history
+> rewrite). **Where §§1–33 and this §34 conflict, §34 governs.** This section
+> records supervisor acceptance of the R2 architecture and reconciles the
+> proposed-wording items that R2 (§§29–33) left stale in the append-only earlier
+> sections. It authorizes **no** SQL, migration, implementation, or environment
+> action; `db/76` still does not exist and is not created here.
+
+### 34.1 Verdict
+
+**`ACCEPTED_WITH_NONBLOCKING_DOCUMENTARY_DEBT / IMPLEMENTATION NOT YET
+AUTHORIZED`.**
+
+The corrected R2 architecture (§§29–33) is **accepted in principle**:
+
+- Component A is installed inert and becomes active only under `canonical_active`
+  (§30); Component B is installed inert and becomes active only under
+  `canonical_active` (§22).
+- `db/76` remains exactly **two new functions plus one additive
+  `CHECK`-constraint extension** (§33.1); no bridge trigger, no one-time
+  compat-mapping backfill, no `db/67`/`db/75` object modification.
+- The current **fixed corpus** (§32) remains binding for the existing `db/75`
+  cutover model.
+- Corpus completeness, freeze, stranded-row diagnosis, and re-baselining belong
+  to the later **real-cutover/C3D** band (§32/§33.3), not to this contract.
+- The existence and quantity of post-REFUND-A stranded rows are an **empirical
+  environment question** (a future read-only diagnosis), not a blocker to this
+  contract's architecture.
+
+An independent read-only premise audit verified these premises against the
+installed `db/67`–`db/75` objects and the live `js/screens/*` writers and found
+no premise requiring redesign. The remaining issues are **documentary only**
+(stale proposed-delta, rollback, and requirement wording, superseded by R2 but
+preserved append-only) and are reconciled in §§34.2–34.6. No hard stop is
+triggered and no new blocking gate is introduced.
+
+### 34.2 Corrected proposed `§R.29.7` (supersedes the §13.1 draft)
+
+The §13.1 draft's claim that the two RPCs are "independent of the §R.29.3
+cutover state machine" is **withdrawn** — R2 (§§30/22) makes both inert unless
+`canonical_active`. The corrected text below remains a **proposed** normative
+delta only; it is **not** applied to `ORDEM_COMPRA_LIFECYCLE_SPEC_PROPOSED.md`
+in this pass (that application is itself a separate `NORMATIVE_CHANGE`, a
+prerequisite to `db/76` authorization — §34.7):
+
+```text
+### §R.29.7 Legacy-compat database prerequisites (proposed)
+
+A canonical order-catalog projection (listar_ordens_compra_fio_compat) and an
+atomic legacy receipt-intent adapter (registrar_recebimento_ordem_compra_fio_compat)
+operate on legacy-compat orders (ordem_compra.legado = TRUE). Both are installed
+before the real cutover and are inactive unless the cutover singleton is
+status='canonical_active' AND read_authority='canonical'. Before canonical
+activation the projection raises the defined inactive-reader signal
+(listar_compat_inativo, SQLSTATE 55000) and the adapter returns its defined
+inactive-writer response ({ok:false, codigo:'recebimento_compat_inativo'}); the
+future application read/write adapters fall back to the flat table during
+legacy_active/maintenance_fenced, byte-identical to today. After canonical
+activation, the adapter's first successful non-import receipt participates in
+the existing §R.29.3 productive_receipt_started_at point of no return; no second
+PONR is created. Legacy-compat receipt decrease is admin-only; reversal source
+selection is deterministic LIFO over eligible tipo='recebimento' lançamentos,
+capped at each line's remaining reversible balance; the imported opening balance
+(tipo='import_saldo_inicial') is an immutable floor that no decrease may reduce.
+Legacy-compat receipt eligibility is status_administrativo <> 'cancelada' (not
+the native-only 'emitida' requirement) and status_aceite IN ('nao_aplicavel',
+'aceita'). The projection's OP-attributable grain is item × OP, allocations
+aggregated within the requested OP. The implementation binds to the
+compat-mapped fixed corpus supported by the existing db/75 cutover; corpus
+completeness, freeze, and any re-baseline are a later real-cutover/C3D
+precondition, outside these RPCs' scope.
+```
+
+### 34.3 Corrected proposed `§13.18` (supersedes the §13.2 draft)
+
+The reduced `db/76` schema surface (§33.1). Remains **proposed** text only, not
+applied to `PEDIDO_OP_SCHEMA_CONTRACT.md` in this pass:
+
+```text
+#### 13.18 Legacy-compat receipt adapter schema requirements (proposed)
+
+ordem_compra_recebimentos.idempotency_namespace and .comando_tipo CHECK
+constraints are additively extended to admit 'legacy_compat_receipt_v1' and
+'recebimento_compat' respectively, alongside the existing native values; no
+existing row's namespace or type changes. db/76 introduces no trigger on
+ordens_compra_fio, no one-time compat-mapping backfill, no
+ordem_compra_item_compat_fio row, and no modification to any db/67 or db/75
+object. The migration is exactly two SECURITY DEFINER functions plus this one
+additive constraint change.
+```
+
+### 34.4 Rollback and test-contract reconciliation (supersedes §17 and §10 where they reference the withdrawn bridge/backfill)
+
+Under the R2 manifest (§33.1), rollback of an applied `db/76` consists **only**
+of dropping the two new functions and restoring the two prior `CHECK`-constraint
+definitions. **No backfill rows exist to preserve or remove; no bridge trigger
+exists to remove; `db/76` creates no `ordem_compra_item_compat_fio` row.** §17's
+references to "the idempotent backfill's inserted rows" are superseded and inert.
+
+The test contract (§10/§9.6, as corrected by §33.2) **must not** require the
+withdrawn bridge/backfill tests. It retains or adds coverage for: Component A
+inactive in `legacy_active` and `maintenance_fenced`; Component B inactive in
+`legacy_active` and `maintenance_fenced`; both active only in `canonical_active`;
+zero mutation while inactive; Component A item grain and item × OP grain;
+pending/zero-receipt representation after canonical activation; supplier/admin
+authorization; absolute increase/equal/decrease; imported-balance floor;
+idempotency; concurrency; PONR participation; additive-constraint behavior; and
+a reduced-manifest rollback rehearsal (drop two functions, restore the two
+constraints) proving `db/76` introduces no FK on the legacy delete/reinsert flow.
+
+### 34.5 Component A required-population wording (bounds the "every legacy-compat order" phrasing of §4)
+
+Component A's required population is **every compat-mapped legacy order in the
+qualified/migrated cutover corpus** — i.e. every `ordem_compra.legado = TRUE`
+order that has an `ordem_compra_item_compat_fio` mapping, which under the §32
+fixed-corpus decision equals the frozen REFUND-A set the `db/75` cutover
+migrates. Component A does **not** claim coverage of unmapped post-REFUND-A flat
+rows; those are read via the application's flat fallback during `legacy_active`
+and are out of the cutover corpus (§31/§32). Any earlier aspirational phrasing
+of "every legacy-compat order" (e.g. §4, §0 finding 3) is read subject to this
+bound.
+
+### 34.6 Completeness ownership (confirms §32/§33.3; introduces no `db/76` gate)
+
+Stopping new legacy flat-row creation, diagnosing stranded rows, proving final
+corpus completeness, disposing of already-stranded rows, freeze or re-baseline,
+and the real fence/snapshot/import all belong to the later **real-cutover/C3D
+preparation band** (§32/§33.3; consistent with the traceability matrix's
+`OC-C3D-*`/`OC-CUTOVER-*` owners and `§R.29.4`/`§R.29.5`). This pass:
+
+- adds **no** mandatory `UNMAPPED_HEADER_BEARING_LEGACY_ROWS = 0` gate to
+  `db/76`;
+- does **not** claim that a freeze alone resolves already-existing stranded
+  rows — a freeze blocks only further creation, whereas already-stranded rows
+  require an authorized backfill/re-baseline or a documented exclusion;
+- records that the later cutover owner must **choose and prove an authorized
+  completeness disposition** (freeze plus re-baseline/backfill, or a documented
+  exclusion) based on the future read-only environment `ordens_compra_fio`
+  diagnosis (`PROJECT_STATE.md` Phase-C open items). The quantity of stranded
+  rows is empirical and unproven until that diagnosis runs; its absence does not
+  block this contract.
+
+### 34.7 What this acceptance does and does not authorize
+
+- **Accepts** the R2 architecture (§§29–33) as the governing design of this
+  contract going forward, with the documentary reconciliations in §§34.2–34.6.
+- Does **not** authorize `PHASE-C3C-B-DB-PREREQ` implementation, `db/76`
+  authoring, any migration, or any database/staging/production/environment
+  action.
+- Does **not** apply the corrected `§R.29.7`/`§13.18` deltas to the normative
+  files. **Formal normative application of §34.2/§34.3 (a separate
+  `NORMATIVE_CHANGE`) remains a prerequisite to `PHASE-C3C-B-DB-PREREQ`
+  implementation authorization**, to be obtained as part of that authorization.
+- Does **not** ratify the still-pending design decisions in §14/§28.3/§33.4
+  (LIFO reversal rule, legacy eligibility gate, item×OP grain, activation
+  regime, fixed-corpus/freeze options) beyond accepting them as the
+  architecture; each remains an architect ratification item at
+  implementation-authorization time.
+- Does **not** change `ACTIVE_PHASE`/`ACTIVE_PHASE_CONTRACT` (`PROJECT_STATE.md`
+  keeps both `NONE`); marks **no** requirement `SATISFIED`.
+
+### 34.8 Status and next authorizable action
+
+`STATUS` (machine-readable marker updated at the head of this file):
+**`ACCEPTED_WITH_NONBLOCKING_DOCUMENTARY_DEBT / IMPLEMENTATION NOT YET
+AUTHORIZED`.**
+
+`NEXT_AUTHORIZABLE_ACTION`: **`PHASE-C3C-B-DB-PREREQ-IMPLEMENTATION-AUTHORIZATION`**
+— an architect decision to authorize `PHASE-C3C-B-DB-PREREQ` implementation
+(which must, as its own precondition, obtain the §34.2/§34.3 normative
+application). No phase chains automatically; `db/76` authoring, implementation,
+migration, and every environment action remain unauthorized.

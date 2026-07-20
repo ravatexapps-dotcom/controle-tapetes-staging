@@ -20,7 +20,7 @@ LAST_ACCEPTED_PHASE: PHASE-C3C-A
 ACTIVE_PHASE: NONE
 ACTIVE_PHASE_CONTRACT: NONE
 ACTIVE_TRACK: PURCHASE_ORDER_PHASE_C
-NEXT_AUTHORIZABLE_ACTION: C3C-B-DB-COMPATIBILITY-PREREQUISITES-CONTRACT-R1-SUPERVISOR-REVIEW
+NEXT_AUTHORIZABLE_ACTION: PHASE-C3C-B-DB-PREREQ-IMPLEMENTATION-AUTHORIZATION
 GOVERNING_SPEC: docs/architecture/ORDEM_COMPRA_LIFECYCLE_SPEC_PROPOSED.md
 TECHNICAL_CONTRACT: docs/architecture/PEDIDO_OP_SCHEMA_CONTRACT.md
 SEQUENCE_AUTHORITY: docs/architecture/PEDIDO_PRODUCTION_FLOW_BACKLOG.md
@@ -62,19 +62,40 @@ ACCEPTED_CHECKPOINT: dd631299f410027ebb23b006aa5e380ad460aefa
     / IMPLEMENTATION NOT AUTHORIZED` (§31 of that file). `PHASE-C3C-B`
     implementation remains unauthorized and is now additionally blocked pending
     a separate database-prerequisites contract.
-- **NEXT_AUTHORIZABLE_ACTION:** `C3C-B-DB-COMPATIBILITY-PREREQUISITES-CONTRACT-R1-SUPERVISOR-REVIEW`.
-  The database prerequisites required to unblock `PHASE-C3C-B` were bound to an
-  exact, implementation-ready design (docs-only) at
+  - `C3C-B-DB-COMPATIBILITY-PREREQUISITES-CONTRACT` (ratification closeout / R3
+    documentary forward correction): an independent read-only premise audit
+    confirmed the R2 architecture against the installed `db/67`–`db/75` objects
+    and the live `js/screens/*` writers; the supervisor **ACCEPTED** it as
+    `ACCEPTED_WITH_NONBLOCKING_DOCUMENTARY_DEBT / IMPLEMENTATION NOT YET
+    AUTHORIZED` (§34 of
+    `docs/architecture/ORDEM_COMPRA_C3C_B_DB_PREREQUISITES_PHASE_CONTRACT.md`).
+    Stale proposed-delta/rollback/requirement wording (authored in R1,
+    superseded by R2) was reconciled append-only; the proposed
+    mandatory-`UNMAPPED=0`-gate interpretation was **not** adopted (out of this
+    contract's scope — a real-cutover/C3D completeness precondition). No SQL,
+    implementation, migration, environment action, or normative-file change was
+    made. `PHASE-C3C-B-DB-PREREQ` implementation remains a separate
+    authorization.
+- **NEXT_AUTHORIZABLE_ACTION:** `PHASE-C3C-B-DB-PREREQ-IMPLEMENTATION-AUTHORIZATION`.
+  The database-prerequisites contract
   `docs/architecture/ORDEM_COMPRA_C3C_B_DB_PREREQUISITES_PHASE_CONTRACT.md`
-  (`PHASE_ID: PHASE-C3C-B-DB-PREREQ`) —
-  `STATUS: PROPOSED / AWAITING SUPERVISOR ACCEPTANCE / IMPLEMENTATION NOT
-  AUTHORIZED`. Two components: a canonical order-catalog read projection and an
-  atomic legacy receipt-intent write adapter, both independent of the C3 cutover
-  state machine. **C3C-B remains the next product implementation lot but is
-  UNAUTHORIZED and has no ACTIVE phase contract** (`ACTIVE_PHASE` and
+  (`PHASE_ID: PHASE-C3C-B-DB-PREREQ`) was supervisor-reviewed and its R2
+  architecture **accepted in principle** —
+  `STATUS: ACCEPTED_WITH_NONBLOCKING_DOCUMENTARY_DEBT / IMPLEMENTATION NOT YET
+  AUTHORIZED` (that file's §34). Two components — a canonical order-catalog read
+  projection (Component A) and an atomic legacy receipt-intent write adapter
+  (Component B) — are each **installed inert and active only under
+  `canonical_active`** (not independent of cutover state; corrected in §§30/22,
+  reconciled in §34.2). `db/76` is exactly two functions plus one additive
+  `CHECK` extension — no bridge, no backfill, no `db/67`/`db/75` change; the
+  fixed corpus is binding, and corpus completeness/freeze/re-baseline is a later
+  real-cutover/C3D precondition. **C3C-B remains the next product implementation
+  lot but is UNAUTHORIZED and has no ACTIVE phase contract** (`ACTIVE_PHASE` and
   `ACTIVE_PHASE_CONTRACT` remain `NONE`); no product phase chains automatically.
-  The next authorizable action is supervisor review/acceptance of the new
-  database-prerequisites contract, not implementation.
+  The next authorizable action is an architect decision to authorize
+  `PHASE-C3C-B-DB-PREREQ` implementation, which must first obtain the formal
+  `NORMATIVE_CHANGE` applying the corrected `§R.29.7`/`§13.18` deltas (contract
+  §34.2/§34.3); it is not implementation itself, and `db/76` does not exist.
 
 ## Workspace and Git boundaries
 
@@ -198,6 +219,7 @@ Commit SHAs there are the accepted technical commits; consult HEAD via Git.
 
 | Phase | Status | Date |
 |---|---|---|
+| `C3C-B-DB-COMPATIBILITY-PREREQUISITES-CONTRACT` (ratification closeout / R3 documentary forward correction, §34) | `ACCEPTED_WITH_NONBLOCKING_DOCUMENTARY_DEBT / IMPLEMENTATION NOT YET AUTHORIZED` | 2026-07-20 |
 | `C3C-B-MATERIAL-PHASE-CONTRACT-R1` (forward correction, commit `6585a6c`) | `ACCEPTED_WITH_BLOCKING_DATABASE_PREREQUISITES / IMPLEMENTATION NOT AUTHORIZED` | 2026-07-20 |
 | `GOVERNANCE-STATE-HANDOFF-COMPACTION-R1` (accepted commit `1157b9e`) | `CLOSED / ACCEPTED` | 2026-07-20 |
 | `GOVERNANCE-SPEC-CUSTODY-FOUNDATION-R1` | `CLOSED / ACCEPTED` | 2026-07-20 |

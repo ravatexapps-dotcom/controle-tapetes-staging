@@ -5242,3 +5242,85 @@ MATERIAL_DIVERGENCES: NONE
   — read-only supervisor review of the **R2-corrected** database-prerequisites
   contract. Neither `PHASE-C3C-B-DB-PREREQ` nor `PHASE-C3C-B` implementation is
   authorized; no phase chains automatically.
+
+## 2026-07-20 — C3C-B-DB-PREREQ CONTRACT RATIFICATION CLOSEOUT — R3 DOCUMENTARY FORWARD CORRECTION + SUPERVISOR ACCEPTANCE — DONE / LOCALLY VERIFIED
+
+- **Append-only forward correction + acceptance (`FORWARD_CORRECTION` per
+  `docs/governance/DOCUMENTATION_MODEL.md` §19).** Records supervisor acceptance
+  of the R2 architecture of
+  `docs/architecture/ORDEM_COMPRA_C3C_B_DB_PREREQUISITES_PHASE_CONTRACT.md` and
+  reconciles the stale proposed-delta/rollback/requirement wording that R2 left
+  in the append-only earlier sections. History is not rewritten; the new §34
+  governs on conflict. Documentation-only — no product, SQL, database, Supabase,
+  staging, production, deployment, activation, cutover, remote, or push action.
+- **Entry checkpoint:** branch `dev`, HEAD
+  `5971ed50d1a587fc042bdea26a4ee04de6cd323b`, parent
+  `971ec1256488755b99c6c5e53e3a601c07677713`, empty index, preserved residue
+  modified `.gitignore` only — matched the expected baseline exactly. Local
+  `staging/dev` tracking ref equalled HEAD (no fetch performed; none authorized).
+- **Independent premise audit (recorded).** A strict read-only architectural
+  premise audit verified the R2 premises against the installed `db/67`–`db/75`
+  objects and the live `js/screens/*` writers: FIXED corpus is a
+  historical-snapshot binding whose re-baseline is a deferred,
+  explicitly-authorized option (§32.2); both components are
+  inert-until-`canonical_active` (§§30/22); Component A's population is the
+  compat-mapped migrated corpus (not every flat legacy order); and corpus
+  completeness/freeze/stranded-row diagnosis is owned by the real-cutover/C3D
+  band (§32/§33.3). No premise required redesign.
+- **Broad blocking interpretation withdrawn.** The proposed mandatory
+  `UNMAPPED_HEADER_BEARING_LEGACY_ROWS = 0` gate on `db/76` is **not adopted** —
+  it is out of this contract's scope (a real-cutover/C3D completeness
+  precondition, satisfiable by freeze plus re-baseline/backfill or a documented
+  exclusion, not a `db/76` gate). Remaining review items are classified
+  **documentary** (stale §13.1/§13.2 proposed deltas, §17 rollback text, §4/§0
+  population phrasing — all superseded by R2 and reconciled in §34) or
+  **later-cutover scope** (stranded-row diagnosis, freeze, re-baseline). None
+  blocks the contract architecture.
+- **Contract correction (new §34; machine STATUS marker updated).** §34.1
+  verdict `ACCEPTED_WITH_NONBLOCKING_DOCUMENTARY_DEBT / IMPLEMENTATION NOT YET
+  AUTHORIZED`; §34.2 corrected proposed `§R.29.7`
+  (inert-unless-`canonical_active`; `listar_compat_inativo`/55000;
+  `recebimento_compat_inativo`; PONR participation; admin-only LIFO decrease;
+  imported-balance floor; item×OP grain; fixed-corpus bind; completeness
+  deferred) — proposed text only, not applied; §34.3 corrected proposed
+  `§13.18` (additive `idempotency_namespace`/`comando_tipo`; no
+  bridge/backfill/row/`db/67`/`db/75` change) — proposed text only; §34.4
+  rollback = drop two functions + restore two `CHECK`s, no backfill rows,
+  corrected test contract; §34.5 Component A population = every compat-mapped
+  legacy order in the qualified/migrated cutover corpus; §34.6 completeness
+  ownership = real-cutover/C3D, no `db/76` `UNMAPPED=0` gate, freeze alone does
+  not remediate already-stranded rows; §34.7/§34.8 authorization boundary and
+  next action. §§0–33 preserved verbatim.
+- **Normative files unchanged.** `§R.29.7`/`§13.18` remain **proposed** text
+  inside the contract; formal application to
+  `ORDEM_COMPRA_LIFECYCLE_SPEC_PROPOSED.md` §R.29 and
+  `PEDIDO_OP_SCHEMA_CONTRACT.md` (a separate `NORMATIVE_CHANGE`) remains a
+  prerequisite to `PHASE-C3C-B-DB-PREREQ` implementation authorization. Lifecycle
+  §R.29, schema §13.15–13.17, the requirement registries, the spec-custody
+  validator, and the byte-identical `CLAUDE.md`/`AGENTS.md` are unchanged.
+- **Files materially changed (this pass):**
+  `docs/architecture/ORDEM_COMPRA_C3C_B_DB_PREREQUISITES_PHASE_CONTRACT.md`
+  (new §34 + STATUS marker); `PROJECT_STATE.md` (next action, governance status,
+  accepted-phase index); this ledger; `AGENT_HANDOFF.md` (next-action /
+  continuity); `docs/architecture/ORDEM_COMPRA_C3_TRACEABILITY.md`
+  (contract-reference, `OC-C3-COMPAT-001` residual, accounting subject);
+  `docs/DOCUMENTATION_INDEX.md` (contract status). `PEDIDO_PRODUCTION_FLOW_BACKLOG.md`
+  intentionally untouched (append-only historical log; live state owned by
+  `PROJECT_STATE.md`; the C3C-B→DB-PREREQ→C3D→real-cutover sequence is unchanged).
+- **State transition:** `NEXT_AUTHORIZABLE_ACTION`
+  `C3C-B-DB-COMPATIBILITY-PREREQUISITES-CONTRACT-R1-SUPERVISOR-REVIEW` →
+  `PHASE-C3C-B-DB-PREREQ-IMPLEMENTATION-AUTHORIZATION`.
+  `ACTIVE_PHASE`/`ACTIVE_PHASE_CONTRACT` remain `NONE`; no requirement marked
+  `SATISFIED`; `db/76` does not exist.
+- **Local verification:** `node scripts/validate-spec-custody.mjs` PASS;
+  `node scripts/validate-spec-custody.mjs --self-test` all PASS; `git diff
+  --check` clean; `git diff --cached --check` clean; the committed manifest
+  matches exactly the six documentation-only paths above.
+- **Exact accounting subject:** `docs: ratify C3C-B DB prerequisites architecture`.
+- **Status after this commit:** `DONE / LOCALLY VERIFIED — DOCUMENTATION-ONLY
+  RATIFICATION`.
+- **NEXT_AUTHORIZABLE_ACTION:** `PHASE-C3C-B-DB-PREREQ-IMPLEMENTATION-AUTHORIZATION`
+  — architect decision to authorize `PHASE-C3C-B-DB-PREREQ` implementation
+  (which must first obtain the §34.2/§34.3 normative application). Neither
+  `db/76`, `PHASE-C3C-B-DB-PREREQ`, nor `PHASE-C3C-B` implementation is
+  authorized; no phase chains automatically; no push authorized.

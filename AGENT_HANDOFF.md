@@ -34,19 +34,23 @@
   supervisor at commit `1157b9e71bc629903c5940ab50d4b370964e560e` (state/handoff
   compaction; historical content preserved in tracked archives + the append-only
   ledger; validator PASS; self-tests 47/47 PASS).
-- **Next authorizable action:** `C3C-B-DB-COMPATIBILITY-PREREQUISITES-CONTRACT-R1-SUPERVISOR-REVIEW`.
-  The C3C-B material phase contract (`docs/architecture/ORDEM_COMPRA_C3C_B_PHASE_CONTRACT.md`)
-  was reviewed (`CHANGES_REQUIRED`), forward-corrected, and accepted —
-  `STATUS: ACCEPTED_WITH_BLOCKING_DATABASE_PREREQUISITES / IMPLEMENTATION NOT
-  AUTHORIZED`. The two database prerequisites it identified (canonical
-  order-catalog projection; atomic legacy receipt-intent adapter) are now bound
-  to an exact design (docs-only) at
-  `docs/architecture/ORDEM_COMPRA_C3C_B_DB_PREREQUISITES_PHASE_CONTRACT.md` —
-  `STATUS: PROPOSED / AWAITING SUPERVISOR ACCEPTANCE / IMPLEMENTATION NOT
-  AUTHORIZED`. Next action is supervisor review of that new contract, not
-  implementation. **C3C-B implementation remains UNAUTHORIZED and has no ACTIVE
-  phase contract** (`ACTIVE_PHASE`/`ACTIVE_PHASE_CONTRACT` remain `NONE`); no
-  product phase chains automatically; the current product phase remains `NONE`.
+- **Next authorizable action:** `PHASE-C3C-B-DB-PREREQ-IMPLEMENTATION-AUTHORIZATION`.
+  The C3C-B database-prerequisites contract
+  (`docs/architecture/ORDEM_COMPRA_C3C_B_DB_PREREQUISITES_PHASE_CONTRACT.md`)
+  was supervisor-reviewed and its R2 architecture **accepted** —
+  `STATUS: ACCEPTED_WITH_NONBLOCKING_DOCUMENTARY_DEBT / IMPLEMENTATION NOT YET
+  AUTHORIZED` (that file's §34). Component A and Component B are each installed
+  inert and active only under `canonical_active`; `db/76` is exactly two
+  functions plus one additive `CHECK` (no bridge, no backfill, no
+  `db/67`/`db/75` change); the fixed corpus is binding, and corpus
+  completeness/freeze/re-baseline is a later real-cutover/C3D precondition. The
+  next action is an architect decision to authorize `PHASE-C3C-B-DB-PREREQ`
+  implementation, which must first obtain the `NORMATIVE_CHANGE` applying the
+  corrected `§R.29.7`/`§13.18` deltas (contract §34.2/§34.3) — **not**
+  implementation itself, and `db/76` does not exist. **C3C-B implementation
+  remains UNAUTHORIZED and has no ACTIVE phase contract**
+  (`ACTIVE_PHASE`/`ACTIVE_PHASE_CONTRACT` remain `NONE`); no product phase chains
+  automatically; the current product phase remains `NONE`.
 
 ## Governing specifications and contracts
 
@@ -143,8 +147,9 @@ Full matrix and normative anchors: `docs/architecture/ORDEM_COMPRA_C3_TRACEABILI
 19. `docs/architecture/ORDEM_COMPRA_C3C_B_PHASE_CONTRACT.md` (C3C-B material
     phase contract, accepted with blocking database prerequisites — not active)
 20. `docs/architecture/ORDEM_COMPRA_C3C_B_DB_PREREQUISITES_PHASE_CONTRACT.md`
-    (C3C-B database prerequisites contract, proposed — not active; supervisor
-    review pending)
+    (C3C-B database prerequisites contract, R2 architecture accepted with
+    nonblocking documentary debt — not active; implementation authorization
+    pending, §34)
 
 > Bootstrap first through `docs/governance/AGENT_INSTRUCTIONS.md` and the
 > `SPEC_CUSTODY_BOOTSTRAP` block in `PROJECT_STATE.md`. Private conversation,
