@@ -56,12 +56,18 @@ Allowed dispositions: `SATISFIED`, `PARTIALLY_SATISFIED`, `PLANNED`, `DEFERRED`,
 ## Authorization boundary
 
 C3C-B is the next product lot; its material phase contract is
-`ACCEPTED_WITH_BLOCKING_DATABASE_PREREQUISITES` but implementation remains
-unauthorized, additionally blocked pending the separately `PROPOSED`
-`PHASE-C3C-B-DB-PREREQ` database contract. C3D, staging application/validation,
-deployment, activation, real snapshot/import, fence transition, read switch,
-final ACL-closure invocation, cutover, C4, C5, production, `main`, remotes, and
-push remain unauthorized.
+`ACCEPTED_WITH_BLOCKING_DATABASE_PREREQUISITES`. The separate
+`PHASE-C3C-B-DB-PREREQ` database-prerequisites contract's R2 architecture is
+now **ACCEPTED** (`ACCEPTED_WITH_NONBLOCKING_DOCUMENTARY_DEBT`,
+`docs/architecture/ORDEM_COMPRA_C3C_B_DB_PREREQUISITES_PHASE_CONTRACT.md` §34)
+— it is no longer `PROPOSED`. `OC-C3-COMPAT-001` remains `BLOCKED`. The
+remaining sequence is: formal normative application of the corrected
+`§R.29.7`/`§13.18` deltas; explicit architect authorization of
+`PHASE-C3C-B-DB-PREREQ` implementation; that implementation itself; and only
+then the later `PHASE-C3C-B` application adaptation. C3D, staging
+application/validation, deployment, activation, real snapshot/import, fence
+transition, read switch, final ACL-closure invocation, cutover, C4, C5,
+production, `main`, remotes, and push remain unauthorized.
 
 ## Material phase contract reference
 

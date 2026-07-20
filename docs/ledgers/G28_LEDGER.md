@@ -5324,3 +5324,52 @@ MATERIAL_DIVERGENCES: NONE
   (which must first obtain the §34.2/§34.3 normative application). Neither
   `db/76`, `PHASE-C3C-B-DB-PREREQ`, nor `PHASE-C3C-B` implementation is
   authorized; no phase chains automatically; no push authorized.
+
+## 2026-07-20 — C3C-B-DB-PREREQ RATIFICATION FINALIZATION — DOCUMENTARY FORWARD CORRECTION — DONE / LOCALLY VERIFIED
+
+- **Append-only forward correction (`FORWARD_CORRECTION` per
+  `docs/governance/DOCUMENTATION_MODEL.md` §19).** Corrects three residual
+  documentary inconsistencies left by the `c68f89dd79e565cec09673fa10254bdaec606e77`
+  ratification closeout. The R2 architecture accepted by that closeout is
+  **unchanged and remains accepted** — this pass does not reopen or reassess it.
+  Documentation-only — no product, SQL, database, migration, test, environment,
+  or normative-file change.
+- **Entry checkpoint:** branch `dev`, HEAD
+  `c68f89dd79e565cec09673fa10254bdaec606e77`, local `staging/dev` tracking ref
+  equal to HEAD, preserved residue modified `.gitignore` only — matched the
+  expected baseline exactly.
+- **Correction 1 (contract §34.7):** the LIFO reversal rule, legacy eligibility
+  gate, item×OP grain, activation regime, fixed corpus, and real-cutover/C3D
+  ownership of freeze/re-baseline are now recorded as **ratified and frozen**
+  by §34, not as items requiring a further architectural ratification pass.
+  Only two items remain pending: formal normative application of the
+  corrected `§R.29.7`/`§13.18` deltas, and explicit implementation
+  authorization.
+- **Correction 2 (traceability `Authorization boundary`):** the stale
+  `PROPOSED` characterization of the database-prerequisites contract is
+  removed; it now records the contract as **ACCEPTED**
+  (`ACCEPTED_WITH_NONBLOCKING_DOCUMENTARY_DEBT`), `OC-C3-COMPAT-001` remaining
+  `BLOCKED`, and the remaining sequence (normative application →
+  implementation authorization → `PHASE-C3C-B-DB-PREREQ` implementation →
+  later `PHASE-C3C-B` application adaptation). Requirement ownership and
+  normative anchors in the matrix table are unchanged.
+- **Correction 3 (`AGENT_HANDOFF.md`):** `OC-C3-COMPAT-001` changed from
+  `PLANNED` to `BLOCKED`, recording that the database-prerequisites contract
+  is already accepted and the requirement remains blocked pending normative
+  application, authorization, and implementation.
+- **Files materially changed (this pass):**
+  `docs/architecture/ORDEM_COMPRA_C3C_B_DB_PREREQUISITES_PHASE_CONTRACT.md`;
+  `docs/architecture/ORDEM_COMPRA_C3_TRACEABILITY.md`; `AGENT_HANDOFF.md`; this
+  ledger. No other file modified or committed.
+- **State unchanged:** `ACTIVE_PHASE`/`ACTIVE_PHASE_CONTRACT` remain `NONE`; no
+  requirement marked `SATISFIED`; `db/76` does not exist.
+- **Local verification:** `node scripts/validate-spec-custody.mjs` PASS;
+  `git diff --check` clean; `git diff --cached --check` clean; the committed
+  manifest matches exactly the four documentation-only paths above.
+- **Exact accounting subject:** `docs: finalize C3C-B DB prerequisites ratification`.
+- **Status after this commit:** `DONE / LOCALLY VERIFIED — DOCUMENTARY
+  FINALIZATION`.
+- **NEXT_AUTHORIZABLE_ACTION:** `PHASE-C3C-B-DB-PREREQ-IMPLEMENTATION-AUTHORIZATION`
+  — unchanged. Neither `db/76`, `PHASE-C3C-B-DB-PREREQ`, nor `PHASE-C3C-B`
+  implementation is authorized; no phase chains automatically; no push
+  authorized by this entry.

@@ -1872,11 +1872,22 @@ preparation band** (§32/§33.3; consistent with the traceability matrix's
   files. **Formal normative application of §34.2/§34.3 (a separate
   `NORMATIVE_CHANGE`) remains a prerequisite to `PHASE-C3C-B-DB-PREREQ`
   implementation authorization**, to be obtained as part of that authorization.
-- Does **not** ratify the still-pending design decisions in §14/§28.3/§33.4
-  (LIFO reversal rule, legacy eligibility gate, item×OP grain, activation
-  regime, fixed-corpus/freeze options) beyond accepting them as the
-  architecture; each remains an architect ratification item at
-  implementation-authorization time.
+- **Ratifies and freezes** the design decisions listed in §14/§28.3/§33.4 —
+  the LIFO reversal rule (§6.7/§34.2), the legacy eligibility gate
+  (§6.4.3/§34.2), the item×OP grain (§25/§34.2), the activation regime
+  (§§22/30/34.2), the fixed corpus (§32/§34.2), and real-cutover/C3D
+  ownership of freeze and re-baseline (§32/§34.6) — as the accepted
+  architecture for implementation. None of these six items requires a
+  further architectural ratification pass; each is **frozen** unless new
+  material evidence (e.g. a contradicted premise, a changed installed
+  `db/67`–`db/75` object, or an architect-directed redesign) requires
+  reopening it. This §34.7 bullet corrects the R3 pass's earlier
+  "ratification-pending" framing of the same six items, which is
+  superseded.
+- Only two items remain pending before `PHASE-C3C-B-DB-PREREQ`
+  implementation: (a) formal normative application of the corrected
+  `§R.29.7`/`§13.18` deltas (§34.2/§34.3), and (b) explicit architect
+  implementation authorization.
 - Does **not** change `ACTIVE_PHASE`/`ACTIVE_PHASE_CONTRACT` (`PROJECT_STATE.md`
   keeps both `NONE`); marks **no** requirement `SATISFIED`.
 

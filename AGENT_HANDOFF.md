@@ -72,8 +72,12 @@ Full matrix and normative anchors: `docs/architecture/ORDEM_COMPRA_C3_TRACEABILI
 - `OC-C3-READ-001`, `OC-C3-WRITE-001`, `OC-C3-NOUI-001` — `PARTIALLY_SATISFIED`
   (owning phase C3C-B; inactive `db/75`, `LOCAL_POSTGRES_18_4_ONLY`; application
   consumers/routing not migrated).
-- `OC-C3-COMPAT-001` — `PLANNED` (C3C-B adapter scope needs a separate accepted
-  contract).
+- `OC-C3-COMPAT-001` — `BLOCKED`. The database-prerequisites contract
+  (`docs/architecture/ORDEM_COMPRA_C3C_B_DB_PREREQUISITES_PHASE_CONTRACT.md`)
+  is already **ACCEPTED** (§34); the requirement remains blocked pending
+  formal normative application of the corrected `§R.29.7`/`§13.18` deltas,
+  explicit architect authorization, and implementation of
+  `PHASE-C3C-B-DB-PREREQ`.
 - `OC-C3D-DEPLOY-001` — `PLANNED`; `OC-C3D-FENCE-001`, `OC-C3D-ACL-001`,
   `OC-C3D-LOCK-001` — `PARTIALLY_SATISFIED` (C3D; inactive staging rehearsal /
   role matrix pending).
