@@ -109,6 +109,31 @@ automatically.** An order covers exclusively what it authorizes.
   (see `docs/architecture/CAMADA2_USUARIOS_SPEC_PROPOSED.md`, Auth risk
   table).
 
+## 5. Spec custody and proportional closeout
+
+Every repository-capable executor starts through
+`docs/governance/AGENT_INSTRUCTIONS.md` and the
+`SPEC_CUSTODY_BOOTSTRAP` block in `PROJECT_STATE.md`. Private conversation,
+memory, rollout summaries, and tool caches do not authorize work or establish
+state.
+
+The supervision rule is:
+
+**UPDATE EVERY AFFECTED CANONICAL DOCUMENT — DO NOT TOUCH UNAFFECTED DOCUMENTS.**
+
+- `READ_ONLY_RECONCILIATION`: no canonical mutation.
+- `INTERMEDIATE_IMPLEMENTATION`: evidence only when state materially changes.
+- `MATERIAL_STATE_CHANGE`: affected state and ledger owners.
+- `PHASE_CLOSEOUT`: state, ledger, traceability, handoff when continuity changes,
+  and every other affected canonical owner.
+- `NORMATIVE_CHANGE`: the owning specification or contract.
+- `HANDOFF`: only the derived handoff.
+- `FORWARD_CORRECTION`: append the correction and update only affected current,
+  normative, and traceability owners.
+
+No event authorizes the next phase automatically. A material product phase must
+have an explicit contract and anchored requirements before implementation.
+
 ---
 
 > In conflict with any canonical document listed in

@@ -1277,3 +1277,17 @@ final ACL-closure invocation, cutover, C4, C5, production, `main`, remotes, and
 push. **NEXT_AUTHORIZABLE_ACTION: `READ-ONLY GOVERNANCE AND SPEC-CUSTODY AUDIT`.**
 C3C-B remains the next product implementation lot but is not authorized; the
 audit precedes any C3C-B implementation order, and no phase chains automatically.
+
+### 13.17 Active Phase-C schema requirement registry — governance metadata
+
+`OC-C3D-ACL-001` maps to existing §13.15.2: C3D must rehearse the complete
+effective ACL closure across table privileges, column privileges, sequences,
+functions, and RLS policies without invoking the real final closure. This label
+does not change §13.15, create a C3C-B contract, or authorize staging, deployment,
+activation, or cutover.
+
+The complete active-track matrix is
+`docs/architecture/ORDEM_COMPRA_C3_TRACEABILITY.md`. Current governance routing is
+`LAST_ACCEPTED_PHASE: PHASE-C3C-A`, `ACTIVE_PHASE: NONE`, and
+`NEXT_AUTHORIZABLE_ACTION: GOVERNANCE-STATE-HANDOFF-COMPACTION-R1`. C3C-B remains
+unauthorized.

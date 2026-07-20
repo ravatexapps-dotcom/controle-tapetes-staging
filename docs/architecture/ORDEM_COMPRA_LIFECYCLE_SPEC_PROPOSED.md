@@ -3695,3 +3695,30 @@ push remain unauthorized.
 C3C-B remains the next product implementation lot but is not authorized. The
 audit must precede any C3C-B implementation order; no product phase chains from
 this closeout.
+
+## §R.31 Active Phase-C continuation requirement registry — governance metadata
+
+This registry adds stable identifiers to already accepted semantics. It does not
+rewrite, expand, or reinterpret §R.29, create a C3C-B phase contract, or authorize
+product or environment work. Detailed disposition is derived in
+`docs/architecture/ORDEM_COMPRA_C3_TRACEABILITY.md`.
+
+| Requirement ID | Existing normative anchor |
+|---|---|
+| `OC-C3-READ-001` | §R.29.2 — normalized canonical read contract. |
+| `OC-C3-WRITE-001` | §R.29.1 and §R.29.3 — legacy callers must route to canonical commands or be state-disabled. |
+| `OC-C3-COMPAT-001` | §R.29.1 — every discovered dependency requires canonical compatibility or disablement before activation. |
+| `OC-C3-NOUI-001` | §R.29.6 — C3 creates no visual UI. |
+| `OC-C3D-DEPLOY-001` | §R.29 — C3D is rehearsal and inactive staging deployment preparation only. |
+| `OC-C3D-FENCE-001` | §R.29.3 — empirical admin and matching-supplier fence denial with unchanged hashes. |
+| `OC-C3D-LOCK-001` | §R.29.5 — session exclusion, deterministic resource locks, short transactions, and release. |
+| `OC-CUTOVER-001` | §R.29.5 — one contiguous eight-step maintenance window. |
+| `OC-CUTOVER-PONR-001` | §R.29.6 — exact PONR and pre-/post-PONR recovery boundaries. |
+| `OC-C4-ADMIN-001` | §R.29.6 — admin receipt UI belongs at `#/ordens-compra/:id`. |
+| `OC-C4-SUPPLIER-001` | §R.29.6 — supplier receipt UI remains deferred. |
+| `OC-C5-EMISSION-001` | §R.24.10 — native emission is a separate gate after C1 through C4 acceptance. |
+
+Current governance routing: `LAST_ACCEPTED_PHASE: PHASE-C3C-A`;
+`ACTIVE_PHASE: NONE`; `NEXT_AUTHORIZABLE_ACTION:
+GOVERNANCE-STATE-HANDOFF-COMPACTION-R1`. C3C-B remains unauthorized and has no
+phase contract.

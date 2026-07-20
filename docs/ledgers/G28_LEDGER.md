@@ -4588,3 +4588,48 @@ MATERIAL_DIVERGENCES: NONE
   C3C-B remains the next product implementation lot but is not authorized. The
   governance audit must precede any C3C-B implementation order. No product phase
   chains automatically from this closeout.
+
+## 2026-07-20 — GOVERNANCE-SPEC-CUSTODY-FOUNDATION-R1 — IMPLEMENTED / LOCALLY VERIFIED
+
+- **Authorization:** governance-only implementation of the accepted read-only
+  custody audit. Commit subject: `docs: establish shared spec custody`. This entry
+  records no product implementation, product acceptance, environment transition,
+  or authorization of a later phase.
+- **Starting state:** standalone repository
+  `D:\Programação\controle-tapetes-g28`; branch `dev`; HEAD
+  `dd631299f410027ebb23b006aa5e380ad460aefa`; empty index; preserved residue
+  was modified `.gitignore` plus untracked `AGENTS.md`.
+- **Authorized adoption of `AGENTS.md`:** before replacement, the existing
+  untracked file had SHA-256
+  `3B0761466B00B3AD9C48990FA3A900AC49E1A9322462FA3CB881ADA9E7C63C64`.
+  The architect explicitly authorized adopting it. Final tracked `AGENTS.md` and
+  `CLAUDE.md` are minimal byte-identical wrappers for the single tracked source
+  `docs/governance/AGENT_INSTRUCTIONS.md`; no symlink or undocumented import
+  syntax is used.
+- **Foundation:** `PROJECT_STATE.md` now exposes rigid bootstrap pointers; the
+  active purchase-order continuation has stable requirement labels and a derived
+  traceability matrix; documentation and supervision contracts record
+  proportional update rules; `scripts/validate-spec-custody.mjs` validates only
+  the six authorized deterministic rule classes with no external dependency.
+- **Local verification:** live repository validation passed. Isolated temporary
+  fixture baseline passed, and every negative class failed closed as intended:
+  missing bootstrap path; active-phase/contract mismatch; pending requirement in
+  a closed material phase; invalid checkpoint; divergent wrappers; duplicate
+  requirement ID; unresolved normative anchor. Lifecycle §R.29 and schema §13.15
+  are byte-identical to their pre-foundation content.
+- **Executor-provenance forward correction:** the C3C-A initial implementation
+  and correction chain—`d4dba671c07ec25f23e385e7786cbe90209816f3`,
+  `4b7ee13fe35a830e9a3cb1cc182679c81034ce73`,
+  `29913e40fa06eda009b5a2e8f058209cde90da11`, and
+  `89123729b3529fff6e4a2336bfec2907c4b94b4c`—was executed by **Codex**, not
+  Claude Code. Git records the intentionally generic author identity `IAexec`.
+  This append-only correction preserves the prior entries and changes no
+  technical acceptance, evidence disposition, product state, or environment
+  consequence.
+- **Product boundary:** lifecycle §R.29 and schema §13.15 product semantics are
+  unchanged. C3C-B is the next product lot but remains unauthorized and has no
+  phase contract. C3D, staging, deployment, activation, real snapshot/import,
+  fence transition, read switch, ACL-closure invocation, cutover, C4, C5,
+  production, `main`, remotes, and push remain unauthorized.
+- **NEXT_AUTHORIZABLE_ACTION:**
+  `GOVERNANCE-STATE-HANDOFF-COMPACTION-R1`, requiring a separate architect order.

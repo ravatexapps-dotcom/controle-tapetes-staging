@@ -320,6 +320,10 @@ Main docs:
 * `docs/refactor/ARCHITECTURE_REFACTOR_LEDGER.md`;
 * `docs/architecture/CODE_HEALTH_RULES.md`.
 
+This list is routing guidance, not a requirement to update every listed file.
+Documentation changes follow `docs/governance/DOCUMENTATION_MODEL.md` §19:
+**UPDATE EVERY AFFECTED CANONICAL DOCUMENT — DO NOT TOUCH UNAFFECTED DOCUMENTS.**
+
 ## 17. Architectural blocking criteria
 
 A patch must be blocked if it:

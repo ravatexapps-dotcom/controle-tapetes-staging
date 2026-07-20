@@ -7,7 +7,35 @@ those were moved by `PROJECT-STATE-COMPACTION-A` (2026-07-16) and `-B` (2026-07-
 `docs/closeouts/PROJECT_STATE_ARCHIVE_2026-07.md`, verbatim; full per-phase closeouts
 are in `docs/ledgers/G28_LEDGER.md`. HEAD/working tree/divergence: consult Git directly.
 
+<!-- SPEC_CUSTODY_BOOTSTRAP:BEGIN -->
+```text
+LAST_ACCEPTED_PHASE: PHASE-C3C-A
+ACTIVE_PHASE: NONE
+ACTIVE_PHASE_CONTRACT: NONE
+ACTIVE_TRACK: PURCHASE_ORDER_PHASE_C
+NEXT_AUTHORIZABLE_ACTION: GOVERNANCE-STATE-HANDOFF-COMPACTION-R1
+GOVERNING_SPEC: docs/architecture/ORDEM_COMPRA_LIFECYCLE_SPEC_PROPOSED.md
+TECHNICAL_CONTRACT: docs/architecture/PEDIDO_OP_SCHEMA_CONTRACT.md
+SEQUENCE_AUTHORITY: docs/architecture/PEDIDO_PRODUCTION_FLOW_BACKLOG.md
+TRACEABILITY: docs/architecture/ORDEM_COMPRA_C3_TRACEABILITY.md
+LEDGER: docs/ledgers/G28_LEDGER.md
+HANDOFF: AGENT_HANDOFF.md
+ACCEPTED_CHECKPOINT: dd631299f410027ebb23b006aa5e380ad460aefa
+```
+<!-- SPEC_CUSTODY_BOOTSTRAP:END -->
+
 ## Active phase and next action
+
+- **`GOVERNANCE-SPEC-CUSTODY-FOUNDATION-R1` — `IMPLEMENTED / LOCALLY
+  VERIFIED / AWAITING INDEPENDENT SUPERVISOR REVIEW` (2026-07-20).** The
+  repository now has one tracked shared agent-instruction source, byte-identical
+  Claude Code/Codex wrappers, deterministic current-state bootstrap pointers,
+  active Phase-C requirement IDs and traceability, proportional update rules,
+  and a dependency-free validator. This governance-only foundation changes no
+  product semantics or product acceptance. **NEXT_AUTHORIZABLE_ACTION:
+  `GOVERNANCE-STATE-HANDOFF-COMPACTION-R1`.** That next action is a separately
+  authorized governance phase; C3C-B remains the next product lot and remains
+  unauthorized.
 
 - **`PHASE-C3C-A-DOCUMENTARY-CLOSEOUT-R1` — `CLOSED / TECHNICALLY
   ACCEPTED — LOCALLY VERIFIED / INACTIVE / NOT APPLIED TO STAGING`
@@ -232,9 +260,10 @@ are in `docs/ledgers/G28_LEDGER.md`. HEAD/working tree/divergence: consult Git d
   cutover (`M10`)"; cutover is done. **New fronts are authorizable again**, each by
   its own individual order. The consolidated, ranked `POST-LAUNCH DEBT REGISTER`
   (below) supersedes the former "residual risk register (12 items)".
-- **Next authorizable action:** `READ-ONLY GOVERNANCE AND SPEC-CUSTODY AUDIT`.
+- **Next authorizable action:** `GOVERNANCE-STATE-HANDOFF-COMPACTION-R1`.
   C3C-B remains the next product implementation lot but is not authorized; the
-  audit must precede any C3C-B implementation order. C3D, staging
+  governance foundation and later compaction do not create a C3C-B phase
+  contract or implementation authority. C3D, staging
   application/validation, activation, deployment, real snapshot/import, fence,
   read switch, final ACL closure, cutover, C4, C5, production, `main`, remotes,
   and push remain unauthorized. Separately, the

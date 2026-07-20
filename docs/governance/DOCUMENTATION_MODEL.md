@@ -558,3 +558,37 @@ MATERIAL_DIVERGENCES:
   (`DEPLOYMENT.md`, `AI_AGENT_RULES.md`, `BACKUP_AND_RESTORE.md`,
   `HANDOFF.md`, `STAGING_BASELINE.md`). Ratified by the architect,
   `DOC-LANGUAGE-MIGRATION-L3`, 2026-07-16.
+
+---
+
+## 19. Spec-custody foundation and proportional update protocol
+
+Repository-capable agents share one tracked behavior source:
+`docs/governance/AGENT_INSTRUCTIONS.md`. Root `CLAUDE.md` and `AGENTS.md` are
+byte-identical, authority-free harness wrappers. Neither wrapper may contain
+current state, HEAD, backlog copies, or execution history.
+
+`PROJECT_STATE.md` contains a rigid `SPEC_CUSTODY_BOOTSTRAP` block. Its paths are
+the deterministic entry route for a clean session. Plans/backlogs remain sequence
+authority; specifications/contracts remain normative product authority; active
+traceability maps requirements to those existing normative anchors and never
+creates architecture.
+
+The canonical update rule is:
+
+**UPDATE EVERY AFFECTED CANONICAL DOCUMENT — DO NOT TOUCH UNAFFECTED DOCUMENTS.**
+
+| Event | Required canonical update |
+|---|---|
+| `READ_ONLY_RECONCILIATION` | No canonical mutation. |
+| `INTERMEDIATE_IMPLEMENTATION` | Evidence only when operational state materially changes; no premature acceptance or closeout. |
+| `MATERIAL_STATE_CHANGE` | Affected current-state and ledger owners. |
+| `PHASE_CLOSEOUT` | State, ledger, active traceability, handoff when continuity changes, and every other affected canonical owner. |
+| `NORMATIVE_CHANGE` | The specification or contract that owns the changed semantics. |
+| `HANDOFF` | Only the derived handoff unless another owned fact independently changed. |
+| `FORWARD_CORRECTION` | Append a ledger correction and update only affected current-state, normative, and traceability owners. Never rewrite history. |
+
+Stable requirement IDs are introduced only for the active track. No historical
+retrofit is implied. Material phases require an explicit contract before
+implementation; a traceability row, backlog position, or prior phase closure does
+not authorize that contract or phase.

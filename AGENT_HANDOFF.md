@@ -1,5 +1,17 @@
 # ACTIVE OPERATIONAL HANDOFF
 
+- **`GOVERNANCE-SPEC-CUSTODY-FOUNDATION-R1` — `IMPLEMENTED / LOCALLY
+  VERIFIED / AWAITING INDEPENDENT SUPERVISOR REVIEW` (2026-07-20).** Shared
+  behavior is now owned by `docs/governance/AGENT_INSTRUCTIONS.md`; tracked
+  `CLAUDE.md` and `AGENTS.md` are byte-identical wrappers. The deterministic
+  bootstrap is in `PROJECT_STATE.md`, and active purchase-order continuation is
+  mapped in `docs/architecture/ORDEM_COMPRA_C3_TRACEABILITY.md`. The historical
+  stack below is intentionally preserved in this pass and remains pending the
+  separately authorized `GOVERNANCE-STATE-HANDOFF-COMPACTION-R1`. C3C-B remains
+  the next product lot but has no authorized phase contract or implementation.
+  No product, database, staging, deployment, activation, or cutover authority is
+  created by this governance foundation.
+
 - **`PHASE-C3C-A-DOCUMENTARY-CLOSEOUT-R1` — `CLOSED / TECHNICALLY
   ACCEPTED — LOCALLY VERIFIED / INACTIVE / NOT APPLIED TO STAGING`
   (2026-07-20).**
