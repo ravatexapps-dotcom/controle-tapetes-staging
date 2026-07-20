@@ -5152,3 +5152,93 @@ MATERIAL_DIVERGENCES: NONE
   — read-only supervisor review of the **corrected** database-prerequisites
   contract. Neither `PHASE-C3C-B-DB-PREREQ` nor `PHASE-C3C-B` implementation
   is authorized; no phase chains automatically.
+
+## 2026-07-20 — C3C-B-DB-COMPATIBILITY-PREREQUISITES-CONTRACT-R1 — FORWARD CORRECTION R2 (verdict CHANGES_REQUIRED) — IMPLEMENTED / LOCALLY VERIFIED / AWAITING SUPERVISOR REVIEW
+
+- **Append-only forward correction (second on this contract).** Corrects, and
+  does not rewrite, the two preceding
+  `C3C-B-DB-COMPATIBILITY-PREREQUISITES-CONTRACT-R1` entries. A second
+  read-only supervisor review returned `CHANGES_REQUIRED`; neither
+  `PHASE-C3C-B-DB-PREREQ` nor `PHASE-C3C-B` implementation is authorized.
+  Documentation-only (`FORWARD_CORRECTION` per
+  `docs/governance/DOCUMENTATION_MODEL.md` §4). No product, database, Supabase,
+  staging, production, deployment, activation, cutover, remote mutation, or
+  push occurred.
+- **Entry checkpoint reconciled:** branch `dev`, HEAD
+  `971ec1256488755b99c6c5e53e3a601c07677713`, parent
+  `a0a0b7597c4cdc46333973b4e715f78c8c34ab2d`, empty index, preserved residue
+  modified `.gitignore` only — matched the expected baseline exactly.
+- **All three review findings verified against the installed
+  `db/67`–`db/75` objects and the live `js/screens/*` writers before
+  acceptance; all three are valid.**
+- **Finding 1 — Component A stale during `legacy_active`.** The legacy writers
+  record receipts as a flat `UPDATE` on `ordens_compra_fio.{kg_recebido,
+  data_recebimento, status}` (`op-writes.js` L35–42; `fornecedor.js`
+  L461–463); they never touch `ordem_compra_item` or the native ledger.
+  `ordem_compra_item.kg_recebido` is maintained only by
+  `trg_native_lancamento_derive_state` (`db/70` L333–335), which fires only
+  `AFTER INSERT ON ordem_compra_fio_lancamentos`. R1's §23 bridge fires only
+  `AFTER INSERT ON ordens_compra_fio` (initial value once); it never syncs
+  later flat receipts. So Component A, reading the native cache (R1 §5.2),
+  returns a stale `kg_recebido` after the first legacy receipt — R1 §5.5's
+  "fully reachable and correct" claim was false. **Corrected (new §30):**
+  Component A becomes inert until `canonical_active` (raises
+  `listar_compat_inativo`/55000, mirroring the installed canonical reader),
+  symmetric with Component B; the app falls back to the flat reader during
+  `legacy_active`, byte-identical to today.
+- **Finding 2 — the live bridge breaks the legacy delete/reinsert flow.**
+  `ordem_compra_item_compat_fio.ordens_compra_fio_id` FK has no `ON DELETE`
+  clause (`db/67` L427) and the mapping is immutable (L433). `op-persistir.js`'s
+  legacy branch deletes-then-reinserts flat rows by `op_id` (L250 delete, L255
+  insert) on every `aberta` save. After the R1 bridge maps a new row, the next
+  re-save's delete is FK-blocked — applying `db/76` alone would break an
+  existing legacy flow. **Corrected:** the bridge is withdrawn in full (§31);
+  without it, no FK blocks the flow and the legacy path is byte-unchanged.
+- **Finding 3 — the bridge/backfill make `db/75`'s cutover impossible
+  (decisive).** `db/75`'s snapshot hard-codes `IF v_source_count <> 51 THEN
+  RAISE EXCEPTION 'snapshot_mapping_count_mismatch'` (L566), counting only
+  compat-mapped rows (join L514–517); §R.29.4 and schema §13.15.3 fix
+  51 mappings / 39 headers / 44 ledger lines / 20,221.280 kg / 405.980 kg
+  excess. R1's bridge and one-time backfill both grow the mapping count beyond
+  51, breaking the cutover — while R1 §8.3 forbids `db/76` from touching
+  `db/75`. A genuine dynamic-vs-fixed-corpus contradiction. **Corrected (new
+  §31/§32):** the bridge and the backfill are both withdrawn; the contract
+  binds definitively to **FIXED corpus** (the only executable choice that keeps
+  `db/76` off `db/75`), and re-scopes the compat-mapping gap — correcting R1
+  §28.2's "CLOSED" claim — as a real-cutover/C3D completeness precondition with
+  two named, separately-authorized freeze options (block new legacy flat rows;
+  or re-baseline the cutover corpus/counts), neither authorized here.
+- **Corrected `db/76` manifest (new §33.1):** exactly two new functions
+  (Component A inert-until-`canonical_active`, item×OP grain; Component B
+  inert-until-`canonical_active`, import-floor reversal) plus one additive
+  `CHECK`-constraint extension. **No bridge trigger, no backfill, no
+  `ordem_compra_item_compat_fio` row, no `db/75`/`db/67` object touched** —
+  strictly smaller than R1's manifest.
+- **Contract sections corrected:** R2 banner after §0; appended §§29–33
+  (three-finding evaluation; Component A activation regime; bridge+backfill
+  withdrawal; binding fixed-corpus decision; corrected manifest/residual
+  debts/status). §§1–28 preserved as authored; §5.5, §23, §27.2 items 3–4, and
+  §28.2's "gap CLOSED" claim explicitly superseded.
+- **Contract status unchanged:** `STATUS: PROPOSED / AWAITING SUPERVISOR
+  ACCEPTANCE / IMPLEMENTATION NOT AUTHORIZED`; no requirement `SATISFIED`.
+  `PROJECT_STATE.md` `ACTIVE_PHASE`/`ACTIVE_PHASE_CONTRACT` remain `NONE`; the
+  `NEXT_AUTHORIZABLE_ACTION` value is factually unchanged (still supervisor
+  review of this contract, now its R2-corrected form), so
+  `PROJECT_STATE.md`/`AGENT_HANDOFF.md`/the traceability matrix were **not**
+  touched — nothing owned there changed.
+- **Documentation-only manifest:**
+  `docs/architecture/ORDEM_COMPRA_C3C_B_DB_PREREQUISITES_PHASE_CONTRACT.md`
+  and this ledger only. Lifecycle §R.29, schema §13.15–13.17, the requirement
+  registries, the traceability matrix, the spec-custody validator, and the
+  byte-identical wrappers `CLAUDE.md`/`AGENTS.md` are unchanged.
+- **Local verification:** `node scripts/validate-spec-custody.mjs` PASS;
+  `node scripts/validate-spec-custody.mjs --self-test` all PASS; `git diff
+  --check` clean; `git diff --cached --check` clean; the committed manifest
+  matches exactly the two documentation-only paths above.
+- **Exact accounting subject:** `docs: forward-correct C3C-B DB prerequisites R2`.
+- **Status after this commit:** `IMPLEMENTED / LOCALLY VERIFIED / AWAITING
+  SUPERVISOR REVIEW`.
+- **NEXT_AUTHORIZABLE_ACTION:** `C3C-B-DB-COMPATIBILITY-PREREQUISITES-CONTRACT-R1-SUPERVISOR-REVIEW`
+  — read-only supervisor review of the **R2-corrected** database-prerequisites
+  contract. Neither `PHASE-C3C-B-DB-PREREQ` nor `PHASE-C3C-B` implementation is
+  authorized; no phase chains automatically.

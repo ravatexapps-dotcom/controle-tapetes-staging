@@ -89,6 +89,16 @@ error code and an immutable-floor policy; and (d) changing the OP-attributable
 grain to item×OP (allocations aggregated, full breakdown still available in
 `alocacoes`).
 
+> **A second read-only supervisor review (R2) returned `CHANGES_REQUIRED`
+> again.** The R1-corrected design (§§0, 22–28) is still not implementable:
+> Component A remained wrongly "live during `legacy_active`" (it reads a native
+> cache that legacy flat writers never maintain), and the §23 live bridge
+> trigger both breaks the legacy delete/reinsert flow and is fundamentally
+> incompatible with `db/75`'s hard-coded fixed-51-mapping cutover. The R2
+> forward correction is recorded in the appended §§29–33; it supersedes §5.5,
+> §23 (withdrawn in full), §27.2 items 3–4, and §28.2's "gap CLOSED" claim.
+> Where §§1–28 and §§29–33 conflict, **§§29–33 govern.**
+
 ## 1. Authorization source and entry checkpoint
 
 - **Authorization source for this authoring pass:** architect order
@@ -1468,3 +1478,238 @@ migration, is authorized by this correction.
 **Next step:** read-only supervisor review of this corrected contract. This
 correction authorizes no implementation and no database, staging, production,
 or environment action.
+
+## 29. Supervisor forward correction R2 (verdict: CHANGES_REQUIRED)
+
+A second read-only supervisor review returned `CHANGES_REQUIRED`. Three
+findings, all verified against the actually-installed `db/67`–`db/75` objects
+and the live `js/screens/*` writers before acceptance. Neither
+`PHASE-C3C-B-DB-PREREQ` nor `PHASE-C3C-B` implementation, nor any migration,
+is authorized. §§1–28 are preserved as authored (append-only); §§29–33 record
+the correction and govern on any conflict.
+
+### 29.1 Finding 1 — Component A is stale during `legacy_active` (VALID)
+
+- **Evidence.** During `legacy_active`, receipts are recorded by the legacy
+  writers as a flat `UPDATE`: `op-writes.js` `registrarRecebimentoOrdemFio`
+  (`.from('ordens_compra_fio').update({kg_recebido, data_recebimento,
+  status}).eq('id', ordemId)`, L35–42) and `fornecedor.js`'s inline
+  `.update(...)` (L461–463). Neither touches `ordem_compra_item` or the native
+  ledger. `ordem_compra_item.kg_recebido` is maintained **only** by
+  `trg_native_lancamento_derive_state` (`db/70` L333–335), which fires **only
+  `AFTER INSERT ON ordem_compra_fio_lancamentos`** — never on a legacy flat
+  `UPDATE`. R1's §23 bridge fires only `AFTER INSERT ON ordens_compra_fio`,
+  setting the initial value once at flat-row creation; it does **not** sync
+  any later flat receipt. Therefore, after the first legacy receipt against a
+  bridged order, Component A (which reads `ordem_compra_item.kg_recebido`,
+  §5.2) returns a **stale** `kg_recebido`. R1 §5.5's "fully reachable and
+  correct" in `legacy_active` is false.
+- **Fix:** §30 — Component A becomes inert until `canonical_active`, exactly
+  symmetric with Component B (§22).
+
+### 29.2 Finding 2 — the live bridge trigger breaks the legacy delete/reinsert flow (VALID)
+
+- **Evidence.** `ordem_compra_item_compat_fio.ordens_compra_fio_id` is
+  `NOT NULL UNIQUE REFERENCES public.ordens_compra_fio(id)` with **no
+  `ON DELETE` clause** (`db/67` L427) → default `NO ACTION` → a `DELETE` of a
+  referenced flat row is **blocked**; the mapping is declared immutable, never
+  removed (`db/67` L433). `op-persistir.js`'s legacy branch **deletes then
+  reinserts**: `.from('ordens_compra_fio').delete().eq('op_id', opIdSalvo)`
+  (L250) followed by `.from('ordens_compra_fio').insert(ordens)` (L255), on
+  every `status==='aberta'` save. Once R1's §23 bridge maps a newly-inserted
+  flat row, the **next** re-save of that OP's delete step is blocked by the FK.
+  Applying `db/76` alone — with no application change — would break the
+  existing legacy re-save flow, directly contradicting the "zero observable
+  behavior change while `legacy_active`" guarantee.
+- **Fix:** resolved by withdrawing the bridge entirely (§31).
+
+### 29.3 Finding 3 — the bridge/backfill make `db/75`'s cutover impossible (VALID, decisive)
+
+- **Evidence.** `db/75`'s snapshot hard-codes `IF v_source_count <> 51 THEN
+  RAISE EXCEPTION 'snapshot_mapping_count_mismatch'` (L566), where
+  `v_source_count` counts **only compat-mapped** flat rows (the snapshot
+  `FROM public.ordens_compra_fio f JOIN public.ordem_compra_item_compat_fio c
+  ...`, L514–517). The normative anchors fix the same corpus: §R.29.4 ("all
+  **51 mappings**", "**39 headers**", "**44 immutable ledger lines**",
+  "**20,221.280 kg**", "**405.980 kg** excess") and schema §13.15.3 (identical
+  counts). R1's §23 bridge **and** its §9.2-item-3 / §27.2-item-4 one-time
+  backfill both grow the mapping count **beyond 51**, so the future cutover
+  fails the count check and the fixed reconciliation totals. R1's own boundary
+  (§8.3) forbids `db/76` from modifying any `db/75` object — so there is **no
+  executable path**: dynamic corpus in the bridge/backfill versus fixed corpus
+  in the cutover is a genuine contradiction.
+- **Fix:** §31 (withdraw bridge and backfill) + §32 (bind to FIXED corpus).
+
+## 30. Component A — corrected activation regime (supersedes §5.5; refines §5.2)
+
+Component A adopts the identical install-inert-during-`legacy_active` regime
+Component B already has (§22), for the identical reason: the native cache it
+reads (`ordem_compra_item.kg_recebido`) is authoritative and live **only** in
+`canonical_active`.
+
+- **State check first.** Before any projection, Component A checks the cutover
+  singleton and, while `status <> 'canonical_active' OR read_authority <>
+  'canonical'`, `RAISE EXCEPTION 'listar_compat_inativo' USING ERRCODE =
+  '55000'` — structurally identical to how the installed canonical reader
+  `listar_recebimentos_ordem_compra_normalizados` already signals inactivity
+  (`RAISE ... 'canonical_reader_inactive'` `55000`, `db/75` L319–324). A
+  `RETURNS TABLE` function signals inactivity by raising, not by an envelope;
+  this matches the existing reader exactly.
+- **Fallback is unchanged.** The future `PHASE-C3C-B` application read adapter
+  catches `listar_compat_inativo` exactly as it already catches
+  `canonical_reader_inactive` (parent contract §9/§27's bounded fallback
+  list, which that future application contract names — this contract does not
+  edit that already-committed file), and reads the flat table. During
+  `legacy_active`/`maintenance_fenced`, behavior is byte-identical to today.
+- **Correctness after cutover.** Only in `canonical_active` — where the native
+  triggers maintain `ordem_compra_item.kg_recebido` from the ledger, and no
+  legacy flat `UPDATE` can occur (the fence `trg_c3c_protected_mutation_guard`
+  blocks flat mutation, `db/75` L170) — does Component A return live data.
+  This resolves Finding 1 and makes both components provably inert-by-
+  construction throughout the entire `PHASE-C3C-B` window, before any
+  application code calls them.
+
+§5.2's per-column mapping is otherwise unchanged; the correction is solely
+**when** Component A answers (only `canonical_active`), not **what** it
+projects.
+
+## 31. Bridge trigger and one-time backfill withdrawn (supersedes §23, §27.2 items 3–4; resolves Findings 2 & 3)
+
+The R1 live bridge trigger (`trg_ordens_compra_fio_bridge_compat`, §23) is
+**withdrawn in full**, and the R1 one-time compat-mapping backfill (§9.2 item
+3 / §27.2 item 4) is **withdrawn in full**. `db/76` installs **no trigger on
+`ordens_compra_fio`**, creates or modifies **no `ordem_compra_item_compat_fio`
+row**, and touches **no `db/75` or `db/67` object** — fully consistent with
+§8.3.
+
+Both were withdrawn for Finding 3's decisive reason: either mechanism grows
+the compat-mapping count beyond the exactly-51 the cutover requires. The
+bridge additionally breaks the legacy delete/reinsert flow (Finding 2); with
+the bridge gone, no FK blocks that flow, so the legacy path is byte-unchanged
+by `db/76`.
+
+**Why this does not reopen the coverage gap for Component A's actual
+purpose:**
+
+- Component A is now inert until `canonical_active` (§30). **Before** cutover,
+  the app reads the flat table via fallback, seeing **every** flat row —
+  including any created after REFUND-A — so no order is invisible to the user
+  during the entire `PHASE-C3C-B` window.
+- **After** cutover, the fence blocks all new flat-row inserts
+  (`trg_c3c_protected_mutation_guard`'s catch-all `RAISE ...
+  'legacy_receipt_fenced'`, `db/75` L170, reached for `ordens_compra_fio` in
+  any non-`legacy_active` state) — so no new legacy flat row can appear, and
+  Component A's post-cutover corpus is exactly the migrated set.
+- The only residue is a **cutover-completeness** question (are all legacy flat
+  rows present at fence time migrated?), which is not a Component A/B
+  correctness problem and is addressed as a cutover precondition in §32.
+
+**Pre-existing condition (not introduced by `db/76`).** The FK between the 51
+REFUND-A `imported_legacy` mappings and their historical flat rows already
+exists (since 2026-07-18) and is unchanged here. Whether one of those 51
+historical OPs could still be re-saved through `op-persistir.js`'s legacy
+branch and hit that FK is a **pre-existing** latent condition, neither created
+nor resolved by this contract.
+
+## 32. Binding corpus decision — FIXED corpus (resolves Finding 3)
+
+The contract binds, definitively, to **FIXED corpus**.
+
+- **Rationale.** `db/75`'s snapshot/import/reconciliation and the normative
+  anchors §R.29.4 / §13.15.3 hard-code exactly **51 mappings / 39 headers / 44
+  ledger lines / 20,221.280 kg / 405.980 kg excess**. The dynamic-corpus
+  alternative would require re-opening `db/75` **and** those normative anchors
+  — a `NORMATIVE_CHANGE` plus a `db/75`-superseding migration — which is far
+  outside this DB-prerequisites contract's boundary (§8.3/§8.4) and which
+  `db/76` explicitly will not do. Fixed corpus is therefore the **only**
+  executable choice that keeps `db/76` from touching `db/75`.
+- **What fixed corpus means here.** The legacy flat corpus eligible for
+  cutover is frozen at the REFUND-A set (51 header-bearing mappings). `db/76`
+  adds nothing to it (no bridge, no backfill, §31). Component A's coverage,
+  post-cutover, is precisely that migrated corpus.
+- **New legacy flat rows created after REFUND-A** (still possible via
+  `op-persistir.js`'s legacy branch on Pedidos pinned `'legacy'` by the
+  immutable resolver `resolver_regime_compra_fio_pedido`, `db/69` L127–196 —
+  new Pedidos always resolve `'native'`, but a pre-existing `'legacy'` Pedido
+  can still receive new OPs) are **out of the cutover corpus**. They live in
+  the flat table and are read via the app's flat fallback during
+  `legacy_active`.
+- **Enforcing the freeze is a REAL-CUTOVER / C3D precondition, not this
+  contract's scope.** Before the real cutover, the architect must resolve any
+  stranded post-REFUND-A legacy flat rows by one of — each a **separate,
+  explicitly-authorized** action, neither granted here:
+  1. a freeze that blocks further legacy flat-row creation (a product and/or
+     DB change with its own review — e.g. gating `op-persistir.js`'s legacy
+     branch, or a DB guard), **or**
+  2. a re-baseline of the cutover corpus/counts (a `NORMATIVE_CHANGE` to
+     §R.29.4 / §13.15.3 plus a `db/75`-superseding migration).
+  This contract **names** the precondition so the decision is not lost, and
+  binds the near-term choice (`db/76`) to option-preserving fixed corpus.
+- **Correction to R1 §28.2.** R1 claimed the coverage gap was "CLOSED" by the
+  bridge. It was not: the bridge was incompatible with the cutover. The gap is
+  **re-scoped**, not closed — it is a cutover-completeness precondition under
+  the fixed-corpus decision, owned by the real-cutover/C3D phase.
+
+## 33. Corrected manifest, hard stops, residual debts, and status (supersedes §27.2, §28.2, §28.4 where noted)
+
+### 33.1 Corrected `db/76` objects (supersedes §27.2)
+
+1. `public.listar_ordens_compra_fio_compat(UUID, BIGINT)` — Component A,
+   inert until `canonical_active` (§30), item×OP grain (§25).
+2. `public.registrar_recebimento_ordem_compra_fio_compat(BIGINT, NUMERIC,
+   DATE, TEXT, TEXT, TEXT)` — Component B, inert until `canonical_active`
+   (§22), import-floor reversal policy (§24).
+3. `ALTER TABLE public.ordem_compra_recebimentos DROP/ADD CONSTRAINT` — the
+   additive `idempotency_namespace`/`comando_tipo` `CHECK` extension (§6.9),
+   unchanged.
+4. **No bridge trigger** (withdrawn, §31).
+5. **No one-time backfill** (withdrawn, §31).
+
+`db/76` therefore creates **exactly two functions and one additive
+`CHECK`-constraint change**; it creates or modifies **zero** rows, **zero**
+triggers, and **zero** existing `db/*.sql` objects. This is strictly smaller
+than R1's manifest and removes every object that touched
+`ordem_compra_item_compat_fio` or `ordens_compra_fio`.
+
+### 33.2 Corrected test manifest note (refines §27.4)
+
+The three test files (§9.6) drop the withdrawn bridge/backfill cases and add:
+Component A raises `listar_compat_inativo` and returns no rows while
+`legacy_active`/`maintenance_fenced` (integration SQL); the legacy
+delete/reinsert flow is proven **unbroken** by `db/76` (no FK introduced —
+integration SQL); and a `canonical_active` fixture proves Component A returns
+the migrated-corpus rows correctly. No new test file is added.
+
+### 33.3 Corrected residual debts (supersedes §28.2)
+
+- The compat-mapping coverage gap is **NOT closed** by this contract
+  (correcting R1 §28.2's "CLOSED"). It is re-scoped as a fixed-corpus cutover
+  precondition (§32), owned by the real-cutover/C3D phase.
+- Component A/B inert-until-`canonical_active`: not a debt — the corrected
+  design.
+- Import-floor policy (§24), decrease-admin-only (§6.7/§16),
+  `obter_historico_recebimento_ordem_compra` verification (§6.10): unchanged.
+
+### 33.4 Ratification-pending additions (extends §14/§28.3)
+
+8. §30's Component A activation regime (inert until `canonical_active`).
+9. §32's binding fixed-corpus decision, and the two named cutover-freeze
+   options as the deferred C3D-scope precondition.
+
+### 33.5 Hard-stop re-evaluation
+
+No hard stop is newly triggered. Finding 3 was resolvable by a binding
+architectural decision (§32 fixed corpus), which is precisely the category the
+order's own hard-stop clause routes through a revised design rather than an
+outright block. Findings 1 and 2 were resolvable by precedented design changes
+(inert-until-`canonical_active`; withdraw the bridge).
+
+### 33.6 Status
+
+`STATUS` (unchanged): **PROPOSED / AWAITING SUPERVISOR ACCEPTANCE /
+IMPLEMENTATION NOT AUTHORIZED**. `ACTIVE_PHASE`/`ACTIVE_PHASE_CONTRACT` remain
+`NONE` in `PROJECT_STATE.md`. No requirement is marked `SATISFIED`. Neither
+`PHASE-C3C-B-DB-PREREQ` nor `PHASE-C3C-B` implementation, nor any migration,
+nor any environment action, is authorized by this correction.
+
+**Next step:** read-only supervisor review of this R2-corrected contract.
