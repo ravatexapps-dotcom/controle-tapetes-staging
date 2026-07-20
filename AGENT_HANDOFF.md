@@ -1,5 +1,26 @@
 # ACTIVE OPERATIONAL HANDOFF
 
+- **`PHASE-C3A` — `CLOSED / TECHNICALLY ACCEPTED` (2026-07-19).** Staging
+  migrations `71`-`74` are present; the cutover singleton is `id=1`,
+  `legacy_active / not_started`, with every cutover marker `NULL`; staging holds
+  zero import headers, import ledger rows, native headers, inventory movements,
+  and baseline rows. Preview reconstruction shows 39 headers, 44 ledger entries,
+  20,221.280 kg reconstructed, and 405.980 kg excess. `saldo_fios` holds 5 rows /
+  2,685.020 kg; `saldo_fios_op` is zero. The import command
+  `importar_saldo_inicial_ordem_compra_c3a(jsonb)` is owned by `postgres`,
+  `SECURITY DEFINER`, fixed empty `search_path`, with no EXECUTE grant for
+  `PUBLIC`, `anon`, `authenticated`, or `service_role`; the authenticated
+  read-only preview ACL is intentionally retained under §R.28.5. The focused
+  acceptance suite passed 66/66. **Disposition:** technical acceptance is
+  recorded by the technical supervisor acting as delegated project architect;
+  this wording is not attributed to Kleber. This is a documentation-only
+  closeout: it authorizes no real import, snapshot, fence, reader/writer
+  switch, flat-ACL change, native emission, `C3B`/`C3C`/`C3D`/`C4`/`C5`,
+  production, `main`, remote change, push, or deployment.
+  `HISTORICAL_SALDO_FIOS_PROVENANCE_UNAVAILABLE` remains nonblocking debt,
+  unchanged by this acceptance. **Next authorizable action:** none chains
+  automatically; any `C3B`+ scope requires a separate architect order.
+
 - **`PURCHASE-ORDER HYBRID ORIGIN — F3R1 STAGING DATABASE/API VALIDATION AND
   PHASE-C REVALIDATION` — `CLOSED / ACCEPTED_WITH_SCOPED_COMMITTED_CONCURRENCY_FIXTURE_WAIVER`
   (2026-07-19).** `db/74` is present exactly

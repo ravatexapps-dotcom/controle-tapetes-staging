@@ -825,7 +825,8 @@ movement invariant. The later cutover state starts `legacy-active`; C3A must not
 flat writers in that state. Snapshot/baseline hashes are reconciliation metadata, not
 inventory mutation authority.
 
-Staging checkpoint (awaiting architect acceptance): db/71-db/73 install the inactive
+Staging checkpoint (`CLOSED / TECHNICALLY ACCEPTED`, 2026-07-19; see §13.14):
+db/71-db/73 install the inactive
 singleton and owner-only JSONB import command. Import entries require the system actor
 and NULL physical receipt date; productive/legacy receipt rows retain their prior
 actor/date rules. The command validates the frozen source/mapping/item/allocation and
@@ -1149,3 +1150,24 @@ schema, ACL, error-taxonomy, or lock-order contract changes. PRE-PROD and focuse
 Phase C revalidation are accepted. C3A remains inactive and unaccepted. Production,
 `main`, emission activation, C3A execution, remotes, push, and deployment remain
 unauthorized.
+
+### 13.14 PHASE-C3A technical acceptance (2026-07-19) — CLOSED / TECHNICALLY ACCEPTED
+
+PHASE-C3A is accepted. Staging migrations `71`-`74` are present. The cutover
+singleton is `id=1`, `legacy_active / not_started`, with every cutover marker
+`NULL`. Staging holds zero import headers, import ledger rows, native headers,
+inventory movements, and baseline rows. Preview reconstruction shows 39
+headers, 44 ledger entries, 20,221.280 kg reconstructed, and 405.980 kg
+excess. `saldo_fios` holds 5 rows / 2,685.020 kg; `saldo_fios_op` is zero. The
+import command `importar_saldo_inicial_ordem_compra_c3a(jsonb)` is owned by
+`postgres`, `SECURITY DEFINER`, fixed empty `search_path`, with no EXECUTE
+grant for `PUBLIC`, `anon`, `authenticated`, or `service_role`. The
+authenticated read-only preview ACL is intentionally retained under §R.28.5.
+The focused acceptance suite passed 66/66. This disposition is recorded by the
+technical supervisor acting as delegated project architect and is not
+attributed to Kleber. This disposition records acceptance only: no schema,
+ACL, error-taxonomy, or lock-order contract changes. It authorizes no real
+import, snapshot, fence, reader/writer or flat-ACL switch, native emission,
+`C3B`/`C3C`/`C3D`/`C4`/`C5`, production, `main`, remote change, push, or
+deployment. `HISTORICAL_SALDO_FIOS_PROVENANCE_UNAVAILABLE` remains
+nonblocking debt.

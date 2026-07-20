@@ -3470,3 +3470,21 @@ revalidation are accepted. C3A remains inactive and unaccepted. Production, `mai
 native emission activation, C3A execution, remotes, push, and deployment remain
 unauthorized. The next authorizable action is the architect's technical-acceptance
 disposition for C3A only.
+
+### §R.28.13 PHASE-C3A technical acceptance (2026-07-19) — CLOSED / TECHNICALLY ACCEPTED
+
+PHASE-C3A is accepted on the staging evidence recorded in §13.14: staging
+migrations `71`-`74` present; cutover singleton `id=1`, `legacy_active /
+not_started`, all cutover markers `NULL`; zero import headers, import ledger
+rows, native headers, inventory movements, and baseline rows; preview 39
+headers / 44 ledger entries / 20,221.280 kg reconstructed / 405.980 kg excess;
+`saldo_fios` 5 rows / 2,685.020 kg; `saldo_fios_op` zero; the import command
+owner `postgres`, `SECURITY DEFINER`, fixed empty `search_path`, no EXECUTE for
+`PUBLIC`/`anon`/`authenticated`/`service_role`; the authenticated read-only
+preview ACL intentionally retained under §R.28.5; focused suite 66/66 passed.
+This disposition is recorded by the technical supervisor acting as delegated
+project architect and is not attributed to Kleber. It is documentation-only and
+authorizes no real import, snapshot, fence, reader/writer or flat-ACL switch,
+native emission, `C3B`/`C3C`/`C3D`/`C4`/`C5`, production, `main`, remote
+change, push, or deployment. `HISTORICAL_SALDO_FIOS_PROVENANCE_UNAVAILABLE`
+remains nonblocking debt. No phase chains automatically from this closeout.

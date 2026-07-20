@@ -4423,3 +4423,50 @@ MATERIAL_DIVERGENCES: NONE
 - **Next authorizable action:** unchanged — the architect's technical-acceptance
   disposition for **C3A only**. No phase chains automatically from this
   correction.
+
+## 2026-07-19 — PHASE-C3A TECHNICAL ACCEPTANCE — CLOSED / TECHNICALLY ACCEPTED
+
+- **Starting state:** branch `dev`, HEAD
+  `a79b78dfb811a921c67f6a0dd1839239975ad9a8`; empty index; preserved residue —
+  modified `.gitignore`, untracked `AGENTS.md`. Documentation-only closeout; no
+  application, SQL, migration, test, configuration, `.gitignore`, or
+  `AGENTS.md` change; no database, deployment, production, `main`, remote, or
+  push activity.
+- **Scope:** technical acceptance of `PHASE-C3A` — contract `d23645f`,
+  foundation `fca6ea7`, protected singleton correction `0908b77`, and
+  owner-only import command `94e6068`, installed on `dev` via staging
+  migrations `20260719172749 / 71`, `20260719174006 / 72`, and
+  `20260719175732 / 73`.
+- **Acceptance evidence:**
+  - staging migrations `71`-`74` present;
+  - cutover singleton `id=1`, `legacy_active / not_started`, all cutover
+    markers `NULL`;
+  - zero import headers, import ledger rows, native headers, inventory
+    movements, and baseline rows;
+  - preview: 39 headers, 44 ledger entries, 20,221.280 kg reconstructed,
+    405.980 kg excess;
+  - `saldo_fios`: 5 rows / 2,685.020 kg; `saldo_fios_op`: zero;
+  - import command `importar_saldo_inicial_ordem_compra_c3a(jsonb)`: owner
+    `postgres`, `SECURITY DEFINER`, empty `search_path`, no EXECUTE grant for
+    `PUBLIC`, `anon`, `authenticated`, or `service_role`;
+  - authenticated read-only preview ACL intentionally retained under §R.28.5;
+  - focused acceptance suite: 66/66 passed.
+- **Disposition:** technical acceptance is recorded by the technical
+  supervisor acting as delegated project architect. This wording is **not**
+  attributed to Kleber.
+- **Retained obligations:** `HISTORICAL_SALDO_FIOS_PROVENANCE_UNAVAILABLE`
+  remains nonblocking debt, unchanged by this acceptance.
+- **Boundaries:** this acceptance is documentation-only and authorizes no real
+  import, snapshot, fence, reader/writer switch, flat-ACL change, native
+  emission, `C3B`/`C3C`/`C3D`/`C4`/`C5`, production, `main`, remote change,
+  push, or deployment. Vercel/browser validation, the prohibited project, and
+  any staging write beyond the already-applied `71`-`73` were not accessed.
+- **Canonical records updated:** `PROJECT_STATE.md` active-phase entry + next
+  authorized action; `AGENT_HANDOFF.md` top entry; lifecycle spec §R.28.13;
+  schema contract §13.14 (+ Phase C3A boundary section); backlog update entry;
+  `DOCUMENTATION_INDEX.md` `db/71`-`db/74` rows and §R.28/§13 summary rows;
+  this ledger entry.
+- **Next authorizable action:** none chains automatically from this closeout.
+  Any `C3B`/`C3C`/`C3D`/`C4`/`C5` scope, real import, snapshot, fence,
+  reader/writer or flat-ACL switch, and native emission activation require a
+  separate architect order.

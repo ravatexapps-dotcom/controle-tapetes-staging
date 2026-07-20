@@ -9,6 +9,26 @@ are in `docs/ledgers/G28_LEDGER.md`. HEAD/working tree/divergence: consult Git d
 
 ## Active phase and next action
 
+- **`PHASE-C3A` — `CLOSED / TECHNICALLY ACCEPTED` (2026-07-19).** Staging
+  migrations `71`-`74` are present. The cutover singleton is `id=1`,
+  `legacy_active / not_started`, with every cutover marker `NULL`. Staging holds
+  zero import headers, import ledger rows, native headers, inventory movements,
+  and baseline rows. Preview reconstruction shows 39 headers, 44 ledger entries,
+  20,221.280 kg reconstructed, and 405.980 kg excess. `saldo_fios` holds 5 rows /
+  2,685.020 kg; `saldo_fios_op` is zero. The import command
+  `importar_saldo_inicial_ordem_compra_c3a(jsonb)` is owned by `postgres`,
+  `SECURITY DEFINER`, fixed empty `search_path`, with no EXECUTE grant for
+  `PUBLIC`, `anon`, `authenticated`, or `service_role`. The authenticated
+  read-only preview ACL is intentionally retained under §R.28.5. The focused
+  acceptance suite passed 66/66. **Disposition:** technical acceptance is
+  recorded by the technical supervisor acting as delegated project architect;
+  this wording is not attributed to Kleber. This acceptance authorizes no real
+  import, snapshot, fence, reader/writer switch, flat-ACL change, native
+  emission, `C3B`/`C3C`/`C3D`/`C4`/`C5`, production, `main`, remote change,
+  push, or deployment. `HISTORICAL_SALDO_FIOS_PROVENANCE_UNAVAILABLE` remains
+  nonblocking debt, unchanged by this acceptance. No phase chains automatically
+  from this closeout.
+
 - **`PURCHASE-ORDER HYBRID ORIGIN — F3R1 STAGING DATABASE/API VALIDATION AND
   PHASE-C REVALIDATION` — `CLOSED / ACCEPTED_WITH_SCOPED_COMMITTED_CONCURRENCY_FIXTURE_WAIVER`
   (2026-07-19).** Staging Supabase
@@ -140,8 +160,7 @@ are in `docs/ledgers/G28_LEDGER.md`. HEAD/working tree/divergence: consult Git d
   separately authorized and completed as recorded above. No later phase chains from
   this acceptance.
 
-- **`PHASE-C3A` — `IMPLEMENTED / VERIFIED IN STAGING / AWAITING ARCHITECT
-  TECHNICAL ACCEPTANCE` (2026-07-19).** Contract `d23645f`, foundation `fca6ea7`,
+- **`PHASE-C3A` — `CLOSED / TECHNICALLY ACCEPTED` (2026-07-19).** Contract `d23645f`, foundation `fca6ea7`,
   protected singleton correction `0908b77`, and owner-only import command
   `94e6068` are installed on `dev`. Staging migrations are
   `20260719172749 / 71`, `20260719174006 / 72`, and `20260719175732 / 73`.
@@ -164,8 +183,12 @@ are in `docs/ledgers/G28_LEDGER.md`. HEAD/working tree/divergence: consult Git d
   `79d5c1393193b67cd9f3a7b8cdc5037ce919bca87084d59f84a08949baafd566`.
   `HISTORICAL_SALDO_FIOS_PROVENANCE_UNAVAILABLE` remains nonblocking debt. No real
   import, fence, reader/writer or flat ACL switch, native emission, production,
-  push, or C3B/C3C/C3D/C4/C5 occurred. Its technical-acceptance decision remains
-  pending and is not implied by F1 authorization.
+  push, or C3B/C3C/C3D/C4/C5 occurred. **Technical acceptance (2026-07-19):**
+  recorded by the technical supervisor acting as delegated project architect;
+  this wording is not attributed to Kleber. Acceptance is documentation-only and
+  authorizes no real import, snapshot, fence, reader/writer switch, flat-ACL
+  change, native emission, `C3B`/`C3C`/`C3D`/`C4`/`C5`, production, `main`,
+  remote change, push, or deployment.
 
 - **`G28-MIGRATION-TRACK` (`PRODUCTION-MIGRATION-M0-M10`) — `COMPLETE / CLOSED`
   (2026-07-18).** The system is **LIVE IN PRODUCTION** at
@@ -183,13 +206,14 @@ are in `docs/ledgers/G28_LEDGER.md`. HEAD/working tree/divergence: consult Git d
   cutover (`M10`)"; cutover is done. **New fronts are authorizable again**, each by
   its own individual order. The consolidated, ranked `POST-LAUNCH DEBT REGISTER`
   (below) supersedes the former "residual risk register (12 items)".
-- **Next authorized action:** with F3R1 now `CLOSED / ACCEPTED` under the scoped
-  committed-concurrency-fixture waiver above, the next authorizable action is the
-  architect's technical-acceptance disposition for **C3A only** (accept or reject
-  the implemented/verified but unaccepted C3A foundation). No phase chains
-  automatically from this closeout. Do not reapply `db/74`, activate native
-  emission or execute C3A, or access Vercel, production, `main`, remotes, push, or
-  the prohibited project. Separately, the
+- **Next authorized action:** with F3R1 `CLOSED / ACCEPTED` under the scoped
+  committed-concurrency-fixture waiver and `PHASE-C3A` now `CLOSED / TECHNICALLY
+  ACCEPTED` (2026-07-19), no phase chains automatically from either closeout.
+  Any `C3B`/`C3C`/`C3D`/`C4`/`C5` scope, real import, snapshot, fence,
+  reader/writer or flat-ACL switch, and native emission remain unauthorized
+  pending a separate architect order. Do not reapply `db/74`, activate native
+  emission or execute a real C3A import, or access Vercel, production, `main`,
+  remotes, push, or the prohibited project. Separately, the
   highest-consequence open operational item remains
   `INGESTOR-DOC-CYCLE-VERIFY-DEFERRED`, an `ACTIVE PRODUCTION BLOCKER`. See the
   `POST-LAUNCH DEBT REGISTER`. **Standing reminder: flip the Supabase MCP back to
