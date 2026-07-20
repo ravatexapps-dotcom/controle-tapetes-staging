@@ -23,7 +23,12 @@
 
 ## Phase status
 
-- **Last accepted product phase:** `PHASE-C3C-A` — `CLOSED / TECHNICALLY
+- **Last accepted product phase:** `PHASE-C3C-B-DB-PREREQ` — `CLOSED /
+  TECHNICALLY ACCEPTED / LOCAL DB VERIFIED / NOT APPLIED TO STAGING DATABASE`
+  (2026-07-20), technical checkpoint `34d7d231d0875093bc2091f385c61cf35fa0b5cb`
+  (contract §37). Validation occurred only in a disposable local PostgreSQL
+  18.4 cluster; `db/76` is not applied to any staging database.
+- **Prior accepted product phase:** `PHASE-C3C-A` — `CLOSED / TECHNICALLY
   ACCEPTED — LOCALLY VERIFIED / INACTIVE / NOT APPLIED TO STAGING` (2026-07-20),
   technical checkpoint `89123729b3529fff6e4a2336bfec2907c4b94b4c`.
 - **Active product phase:** `NONE`.
@@ -34,8 +39,9 @@
   supervisor at commit `1157b9e71bc629903c5940ab50d4b370964e560e` (state/handoff
   compaction; historical content preserved in tracked archives + the append-only
   ledger; validator PASS; self-tests 47/47 PASS).
-- **`PHASE-C3C-B-DB-PREREQ` (implementation + DB-backed validation):**
-  `IMPLEMENTED / LOCAL DB VERIFIED / AWAITING SUPERVISOR ACCEPTANCE` (2026-07-20).
+- **`PHASE-C3C-B-DB-PREREQ` (implementation + DB-backed validation +
+  supervisor acceptance):** `CLOSED / TECHNICALLY ACCEPTED / LOCAL DB VERIFIED
+  / NOT APPLIED TO STAGING DATABASE` (2026-07-20, contract §37).
   `db/76_ordem_compra_c3c_b_db_prerequisites.sql` exists — Component A
   (`listar_ordens_compra_fio_compat`) and Component B
   (`registrar_recebimento_ordem_compra_fio_compat`), both inert until
@@ -48,17 +54,20 @@
   sequence, reapplied `db/76` (idempotent), ran both DB-backed tests to PASS,
   rehearsed a real persisted rollback + reapply, and reran both tests to PASS
   again; one genuine `db/76` defect (a PL/pgSQL naming ambiguity in Component A)
-  was found and corrected. The two C3C-A DB-backed regressions remain
+  was found and corrected. The two C3C-A DB-backed regressions
+  (`tests/ordem-compra-c3c-inactive.integration.sql`/`-concurrency.mjs`) remain
   genuinely unexecutable against any synthetic corpus (pre-existing, unrelated
-  to `db/76`). Static smoke suites PASS (49/49). The phase is **not accepted**;
-  no dependent requirement is `SATISFIED`.
-- **Next authorizable action:** `PHASE-C3C-B-DB-PREREQ-SUPERVISOR-REVIEW`. A
-  read-only supervisor review of the implemented `PHASE-C3C-B-DB-PREREQ` precedes
-  any acceptance; only after acceptance and separately authorized staging
-  validation does the later `PHASE-C3C-B` application-adaptation lot become
-  authorizable. **C3C-B application implementation remains UNAUTHORIZED and has no
-  ACTIVE phase contract** (`ACTIVE_PHASE`/`ACTIVE_PHASE_CONTRACT` remain `NONE`);
-  no product phase chains automatically; the current product phase remains `NONE`.
+  to `db/76`) — recorded as nonblocking C3C-A fixture debt. Static smoke
+  suites PASS (49/49). `db/76` is **not applied to any staging database**.
+  Supervisor acceptance does not mark any dependent requirement `SATISFIED`.
+- **Next authorizable action:** a separately authorized **staging
+  validation/application of `db/76`** (no existing canonical phase/action ID
+  names this step; recorded descriptively per contract §37.3). Only after
+  that separate authorization does the later `PHASE-C3C-B`
+  application-adaptation lot become authorizable. **C3C-B application
+  implementation remains UNAUTHORIZED and has no ACTIVE phase contract**
+  (`ACTIVE_PHASE`/`ACTIVE_PHASE_CONTRACT` remain `NONE`); no product phase
+  chains automatically; the current product phase remains `NONE`.
 
 ## Governing specifications and contracts
 
@@ -83,10 +92,11 @@ Full matrix and normative anchors: `docs/architecture/ORDEM_COMPRA_C3_TRACEABILI
   (owning phase C3C-B; inactive `db/75`, `LOCAL_POSTGRES_18_4_ONLY`; application
   consumers/routing not migrated).
 - `OC-C3-COMPAT-001` — `BLOCKED`. The database prerequisites are now
-  **IMPLEMENTED and LOCAL DB VERIFIED** in `db/76`
+  **CLOSED / TECHNICALLY ACCEPTED / LOCAL DB VERIFIED / NOT APPLIED TO STAGING
+  DATABASE** in `db/76`
   (`docs/architecture/ORDEM_COMPRA_C3C_B_DB_PREREQUISITES_PHASE_CONTRACT.md`
-  §§35–36; `§R.29.7`/`§13.18` applied); the requirement remains blocked pending
-  `PHASE-C3C-B-DB-PREREQ` supervisor acceptance, staging validation, and the later
+  §§35–37; `§R.29.7`/`§13.18` applied); the requirement remains blocked pending
+  separately authorized staging validation/application of `db/76` and the later
   C3C-B application adaptation.
 - `OC-C3D-DEPLOY-001` — `PLANNED`; `OC-C3D-FENCE-001`, `OC-C3D-ACL-001`,
   `OC-C3D-LOCK-001` — `PARTIALLY_SATISFIED` (C3D; inactive staging rehearsal /
@@ -161,10 +171,10 @@ Full matrix and normative anchors: `docs/architecture/ORDEM_COMPRA_C3_TRACEABILI
 19. `docs/architecture/ORDEM_COMPRA_C3C_B_PHASE_CONTRACT.md` (C3C-B material
     phase contract, accepted with blocking database prerequisites — not active)
 20. `docs/architecture/ORDEM_COMPRA_C3C_B_DB_PREREQUISITES_PHASE_CONTRACT.md`
-    (C3C-B database prerequisites contract; `PHASE-C3C-B-DB-PREREQ` implemented /
-    local DB verified / awaiting supervisor acceptance — §§35–36; `db/76` exists,
-    DB-backed tests pass against an isolated disposable local cluster; not
-    active)
+    (C3C-B database prerequisites contract; `PHASE-C3C-B-DB-PREREQ` closed /
+    technically accepted / local DB verified / not applied to staging
+    database — §§35–37; `db/76` exists, DB-backed tests pass against an
+    isolated disposable local cluster; not active)
 
 > Bootstrap first through `docs/governance/AGENT_INSTRUCTIONS.md` and the
 > `SPEC_CUSTODY_BOOTSTRAP` block in `PROJECT_STATE.md`. Private conversation,

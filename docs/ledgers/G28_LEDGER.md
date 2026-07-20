@@ -5551,3 +5551,57 @@ MATERIAL_DIVERGENCES: NONE
   unchanged. Supervisor acceptance, staging validation/application, C3C-B
   application adaptation, C3D, activation, cutover, and any further push remain
   unauthorized; no phase chains automatically.
+
+## 2026-07-20 — PHASE-C3C-B-DB-PREREQ SUPERVISOR ACCEPTANCE — CLOSED / TECHNICALLY ACCEPTED / LOCAL DB VERIFIED / NOT APPLIED TO STAGING DATABASE
+
+- **Order:** documentation-only supervisor-acceptance closeout. Persists the
+  supervisor's acceptance of `PHASE-C3C-B-DB-PREREQ` as recorded in
+  `docs/architecture/ORDEM_COMPRA_C3C_B_DB_PREREQUISITES_PHASE_CONTRACT.md`
+  §§35–36 (implementation + DB-backed validation completion). No technical
+  validation is repeated by this pass; no `db/76`, test, environment,
+  runtime, product, or configuration file is touched.
+- **Entry checkpoint:** branch `dev`, HEAD
+  `34d7d231d0875093bc2091f385c61cf35fa0b5cb`, parent
+  `a0038db3c2edc4954829a6fb4b1b33ae494c4f41`, local `staging/dev` tracking ref
+  equal to HEAD, preserved residue modified `.gitignore` only — matched the
+  expected baseline exactly.
+- **Disposition recorded:** `PHASE-C3C-B-DB-PREREQ` is
+  `CLOSED / TECHNICALLY ACCEPTED / LOCAL DB VERIFIED / NOT APPLIED TO STAGING
+  DATABASE`. Validation occurred only in a disposable, isolated local
+  PostgreSQL 18.4 cluster (§36.1); `db/76_ordem_compra_c3c_b_db_prerequisites.sql`
+  has **not** been applied to any staging database. `tests/ordem-compra-c3c-inactive.integration.sql`
+  and `tests/ordem-compra-c3c-inactive-concurrency.mjs` remain **nonblocking
+  C3C-A fixture debt** (§36.6) — a pre-existing, unrelated limitation, not a
+  `db/76` defect, and not repaired by this acceptance.
+- **What this acceptance does NOT do:** it does not mark `OC-C3-READ-001`,
+  `OC-C3-WRITE-001`, or `OC-C3-COMPAT-001` `SATISFIED`; it does not authorize
+  staging validation/application of `db/76`, deployment, activation, real
+  snapshot/import, fence transition, read switch, final ACL-closure
+  invocation, cutover, C3D, C4, C5, production access, Supabase writes,
+  `main`, or `origin`/`production` remote mutation; it does not chain
+  `PHASE-C3C-B` application-adaptation implementation, which remains a
+  separate, unauthorized authorization.
+- **Files materially changed (this pass, documentation-only):**
+  `PROJECT_STATE.md`; `AGENT_HANDOFF.md`; `docs/DOCUMENTATION_INDEX.md`;
+  `docs/architecture/ORDEM_COMPRA_C3C_B_DB_PREREQUISITES_PHASE_CONTRACT.md`
+  (§37 appended, top `STATUS` marker updated); `docs/architecture/ORDEM_COMPRA_C3_TRACEABILITY.md`;
+  this ledger. No `db/*.sql`, test, product, runtime, or configuration file
+  modified. The pre-existing unstaged `.gitignore` residue is preserved
+  byte-for-byte and excluded from this commit.
+- **State after this pass:** `LAST_ACCEPTED_PHASE: PHASE-C3C-B-DB-PREREQ`.
+  `ACTIVE_PHASE: NONE`. `ACTIVE_PHASE_CONTRACT: NONE`. No phase chains
+  automatically.
+- **Validation (documentation-proportional only):** `git diff --check` clean;
+  `node scripts/validate-spec-custody.mjs` PASS. No technical, database,
+  environment, or runtime test suite was rerun.
+- **Exact accounting subject:** `docs: accept C3C-B DB prerequisites`.
+- **Status after this commit:** `CLOSED / TECHNICALLY ACCEPTED / LOCAL DB
+  VERIFIED / NOT APPLIED TO STAGING DATABASE`.
+- **NEXT_AUTHORIZABLE_ACTION:** a separately authorized staging
+  validation/application of `db/76_ordem_compra_c3c_b_db_prerequisites.sql`
+  (no existing canonical phase/action ID names this step in the repository;
+  recorded descriptively, per architect instruction, without creating
+  architecture or authorizing execution). Only after that separate
+  authorization does the later `PHASE-C3C-B` application-adaptation lot
+  become authorizable. No push beyond the authorized `staging/dev`
+  fast-forward is authorized by this entry.

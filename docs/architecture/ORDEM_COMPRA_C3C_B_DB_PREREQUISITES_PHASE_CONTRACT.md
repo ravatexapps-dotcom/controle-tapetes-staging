@@ -2,7 +2,7 @@
 
 <!-- MATERIAL_PHASE_CONTRACT:BEGIN -->
 PHASE_ID: PHASE-C3C-B-DB-PREREQ
-STATUS: IMPLEMENTED / LOCALLY VERIFIED / AWAITING SUPERVISOR ACCEPTANCE
+STATUS: CLOSED / TECHNICALLY ACCEPTED / LOCAL DB VERIFIED / NOT APPLIED TO STAGING DATABASE
 <!-- MATERIAL_PHASE_CONTRACT:END -->
 
 > **Role of this document.** This is a **material phase contract**, authored
@@ -2201,3 +2201,55 @@ cutover, C3D, C4, C5, production access, Supabase writes, `main`,
 `origin`/`production` remote mutation, and any push beyond the authorized
 `staging/dev` fast-forward remain unauthorized. Accounting subject:
 `test: complete C3C-B DB prerequisites validation`.
+
+## 37. Supervisor acceptance closeout (governs on conflict)
+
+> **Append-only forward correction (`FORWARD_CORRECTION` per
+> `docs/governance/DOCUMENTATION_MODEL.md` §19; `PHASE_CLOSEOUT` per
+> `docs/governance/AGENT_INSTRUCTIONS.md` §4).** Recorded under a
+> documentation-only supervisor-acceptance closeout order. §§0–36 are
+> preserved verbatim (no history rewrite). **Where §§1–36 and this §37
+> conflict, §37 governs.** No technical validation is repeated by this
+> section; no `db/76`, test, environment, or product file is touched.
+
+### 37.1 Disposition
+
+The supervisor **ACCEPTS** `PHASE-C3C-B-DB-PREREQ` as implemented and
+DB-backed-validated in §§35–36:
+
+- **Status:** `CLOSED / TECHNICALLY ACCEPTED / LOCAL DB VERIFIED / NOT
+  APPLIED TO STAGING DATABASE`.
+- **Technical checkpoint:** `34d7d231d0875093bc2091f385c61cf35fa0b5cb`.
+- Validation occurred **only** in a disposable, isolated local PostgreSQL
+  18.4 cluster (§36.1) — never against Supabase, `ucrjtfswnfdlxwtmxnoo`, or
+  any staging/production environment.
+- `db/76_ordem_compra_c3c_b_db_prerequisites.sql` has **not** been applied to
+  the staging database.
+- `tests/ordem-compra-c3c-inactive.integration.sql` and
+  `tests/ordem-compra-c3c-inactive-concurrency.mjs` remain **nonblocking
+  C3C-A fixture debt** (§36.6) — a pre-existing, unrelated limitation of
+  those two files, not a `db/76` defect, and not repaired or reopened by
+  this acceptance.
+
+### 37.2 What remains unauthorized
+
+This acceptance does **not** mark `OC-C3-READ-001`, `OC-C3-WRITE-001`, or
+`OC-C3-COMPAT-001` `SATISFIED` (traceability remains `PARTIALLY_SATISFIED`/
+`BLOCKED` as recorded in `docs/architecture/ORDEM_COMPRA_C3_TRACEABILITY.md`).
+It does not authorize staging validation/application of `db/76`, deployment,
+activation, real snapshot/import, fence transition, read switch, final
+ACL-closure invocation, cutover, C3D, C4, C5, production access, Supabase
+writes, `main`, or `origin`/`production` remote mutation. It does not chain
+`PHASE-C3C-B` application-adaptation implementation, which remains its own,
+separately unauthorized action.
+
+### 37.3 Final state and next authorizable action
+
+`LAST_ACCEPTED_PHASE: PHASE-C3C-B-DB-PREREQ`. `ACTIVE_PHASE: NONE`.
+`ACTIVE_PHASE_CONTRACT: NONE`. No phase chains automatically.
+
+The next authorizable technical action is a **separately authorized staging
+validation/application of `db/76`**. No existing canonical phase/action ID in
+this repository names that specific step; it is recorded here descriptively,
+per the closeout order, without creating architecture or authorizing
+execution. Accounting subject: `docs: accept C3C-B DB prerequisites`.

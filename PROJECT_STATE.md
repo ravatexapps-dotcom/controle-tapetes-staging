@@ -16,24 +16,38 @@ directly (`git rev-parse HEAD`, `git status --short --untracked-files=all`).
 
 <!-- SPEC_CUSTODY_BOOTSTRAP:BEGIN -->
 ```text
-LAST_ACCEPTED_PHASE: PHASE-C3C-A
+LAST_ACCEPTED_PHASE: PHASE-C3C-B-DB-PREREQ
 ACTIVE_PHASE: NONE
 ACTIVE_PHASE_CONTRACT: NONE
 ACTIVE_TRACK: PURCHASE_ORDER_PHASE_C
-NEXT_AUTHORIZABLE_ACTION: PHASE-C3C-B-DB-PREREQ-SUPERVISOR-REVIEW
+NEXT_AUTHORIZABLE_ACTION: a separately authorized staging validation/application of db/76 (no existing canonical ID; descriptive only, see PHASE-C3C-B-DB-PREREQ closeout)
 GOVERNING_SPEC: docs/architecture/ORDEM_COMPRA_LIFECYCLE_SPEC_PROPOSED.md
 TECHNICAL_CONTRACT: docs/architecture/PEDIDO_OP_SCHEMA_CONTRACT.md
 SEQUENCE_AUTHORITY: docs/architecture/PEDIDO_PRODUCTION_FLOW_BACKLOG.md
 TRACEABILITY: docs/architecture/ORDEM_COMPRA_C3_TRACEABILITY.md
 LEDGER: docs/ledgers/G28_LEDGER.md
 HANDOFF: AGENT_HANDOFF.md
-ACCEPTED_CHECKPOINT: dd631299f410027ebb23b006aa5e380ad460aefa
+ACCEPTED_CHECKPOINT: 34d7d231d0875093bc2091f385c61cf35fa0b5cb
 ```
 <!-- SPEC_CUSTODY_BOOTSTRAP:END -->
 
 ## Active phase and next action
 
-- **Last accepted product phase:** `PHASE-C3C-A` — `CLOSED / TECHNICALLY
+- **Last accepted product phase:** `PHASE-C3C-B-DB-PREREQ` — `CLOSED /
+  TECHNICALLY ACCEPTED / LOCAL DB VERIFIED / NOT APPLIED TO STAGING DATABASE`
+  (2026-07-20), technical checkpoint `34d7d231d0875093bc2091f385c61cf35fa0b5cb`
+  (`docs/architecture/ORDEM_COMPRA_C3C_B_DB_PREREQUISITES_PHASE_CONTRACT.md`
+  §37). It supplies the two legacy-compat database prerequisites — Component A
+  (`listar_ordens_compra_fio_compat`) and Component B
+  (`registrar_recebimento_ordem_compra_fio_compat`), both installed inert and
+  active only under `canonical_active` — validated only in a disposable,
+  isolated local PostgreSQL 18.4 cluster; **not applied to any staging
+  database**. `tests/ordem-compra-c3c-inactive.integration.sql`/
+  `-concurrency.mjs` remain nonblocking C3C-A fixture debt (pre-existing,
+  unrelated to `db/76`). No dependent `OC-C3-*` requirement is `SATISFIED`.
+  Local technical acceptance only — no staging validation/application,
+  deployment, activation, cutover, or product acceptance.
+- **Prior accepted product phase:** `PHASE-C3C-A` — `CLOSED / TECHNICALLY
   ACCEPTED — LOCALLY VERIFIED / INACTIVE / NOT APPLIED TO STAGING` (2026-07-20),
   technical checkpoint `89123729b3529fff6e4a2336bfec2907c4b94b4c`. It supplies
   the inactive C3C database contract (state/fence, canonical snapshot/import/
@@ -76,8 +90,12 @@ ACCEPTED_CHECKPOINT: dd631299f410027ebb23b006aa5e380ad460aefa
     implementation, migration, environment action, or normative-file change was
     made. `PHASE-C3C-B-DB-PREREQ` implementation remains a separate
     authorization.
-  - `PHASE-C3C-B-DB-PREREQ` (implementation): **IMPLEMENTED / LOCAL DB VERIFIED /
-    AWAITING SUPERVISOR ACCEPTANCE** (2026-07-20). The architect authorized
+  - `PHASE-C3C-B-DB-PREREQ` (implementation): **CLOSED / TECHNICALLY ACCEPTED /
+    LOCAL DB VERIFIED / NOT APPLIED TO STAGING DATABASE** (2026-07-20,
+    supervisor acceptance recorded in
+    `docs/architecture/ORDEM_COMPRA_C3C_B_DB_PREREQUISITES_PHASE_CONTRACT.md`
+    §37, technical checkpoint `34d7d231d0875093bc2091f385c61cf35fa0b5cb`). The
+    architect authorized
     implementation; `db/76_ordem_compra_c3c_b_db_prerequisites.sql` now exists —
     Component A (`listar_ordens_compra_fio_compat`) and Component B
     (`registrar_recebimento_ordem_compra_fio_compat`), both **installed inert and
@@ -114,19 +132,25 @@ ACCEPTED_CHECKPOINT: dd631299f410027ebb23b006aa5e380ad460aefa
     characteristic of those C3C-A files, not a `db/76` defect; reported as
     unavailable, not inferred. Supabase was not used (out of this phase's
     `LOCAL_ONLY` scope). Local verification: static smoke suite PASS (49/49);
-    validator and `git diff --check`s clean. The phase is **not accepted**; no
-    dependent C3C-B requirement is `SATISFIED`; `ACTIVE_PHASE`/
-    `ACTIVE_PHASE_CONTRACT` remain `NONE`.
-- **NEXT_AUTHORIZABLE_ACTION:** `PHASE-C3C-B-DB-PREREQ-SUPERVISOR-REVIEW`.
-  A read-only supervisor review of the implemented `PHASE-C3C-B-DB-PREREQ`
-  (migration `db/76`, three tests, applied `§R.29.7`/`§13.18`, contract §35
-  ruling, closeout) precedes any acceptance. Only after supervisor acceptance —
-  and separately authorized staging validation/application — does the later
-  `PHASE-C3C-B` application-adaptation lot become authorizable. **No product
-  phase chains automatically**; `ACTIVE_PHASE`/`ACTIVE_PHASE_CONTRACT` remain
-  `NONE`. Staging application, deployment, activation, real snapshot/import,
-  cutover, and push beyond the authorized `staging/dev` fast-forward remain
-  unauthorized.
+    validator and `git diff --check`s clean.
+    **Supervisor acceptance (2026-07-20, contract §37):** the phase is
+    **CLOSED / TECHNICALLY ACCEPTED / LOCAL DB VERIFIED / NOT APPLIED TO
+    STAGING DATABASE**. Validation occurred only in a disposable local
+    PostgreSQL cluster; `db/76` has **not** been applied to any staging
+    database; `tests/ordem-compra-c3c-inactive.integration.sql`/
+    `-concurrency.mjs` remain nonblocking C3C-A fixture debt. No dependent
+    C3C-B requirement is `SATISFIED`; `ACTIVE_PHASE`/`ACTIVE_PHASE_CONTRACT`
+    remain `NONE`.
+- **NEXT_AUTHORIZABLE_ACTION:** a separately authorized **staging
+  validation/application of `db/76`**. No existing canonical phase/action ID
+  in this repository names this specific step; it is recorded descriptively
+  (contract §37.3), not as an invented parallel phase name, and does not
+  itself authorize execution. Only after that separate authorization does the
+  later `PHASE-C3C-B` application-adaptation lot become authorizable. **No
+  product phase chains automatically**; `ACTIVE_PHASE`/`ACTIVE_PHASE_CONTRACT`
+  remain `NONE`. Staging application, deployment, activation, real
+  snapshot/import, cutover, and push beyond the authorized `staging/dev`
+  fast-forward remain unauthorized.
 
 ## Workspace and Git boundaries
 
@@ -233,8 +257,10 @@ and `docs/ledgers/G28_LEDGER.md`; in any wording divergence the archive/ledger w
 ## Product and environment prohibitions
 
 `PHASE-C3C-B-DB-PREREQ` implementation (migration `db/76`, three tests, applied
-`§R.29.7`/`§13.18`, contract §35) is **done and locally verified but not
-accepted** — it awaits `PHASE-C3C-B-DB-PREREQ-SUPERVISOR-REVIEW`. Beyond that
+`§R.29.7`/`§13.18`, contract §§35–37) is **`CLOSED / TECHNICALLY ACCEPTED /
+LOCAL DB VERIFIED / NOT APPLIED TO STAGING DATABASE`** — the next authorizable
+technical action is a separately authorized staging validation/application of
+`db/76` (contract §37.3). Beyond that
 single authorized implementation and its one authorized fast-forward push to
 `staging/dev`, no product implementation, migration, application, validator,
 lifecycle/schema semantic, or traceability change is authorized. C3C-B
@@ -253,7 +279,7 @@ Commit SHAs there are the accepted technical commits; consult HEAD via Git.
 
 | Phase | Status | Date |
 |---|---|---|
-| `PHASE-C3C-B-DB-PREREQ` (implementation + DB-backed validation, `db/76` + 3 tests + `§R.29.7`/`§13.18` + contract §35/§36) | `IMPLEMENTED / LOCAL DB VERIFIED / AWAITING SUPERVISOR ACCEPTANCE` | 2026-07-20 |
+| `PHASE-C3C-B-DB-PREREQ` (implementation + DB-backed validation, `db/76` + 3 tests + `§R.29.7`/`§13.18` + contract §35/§36/§37) | `CLOSED / TECHNICALLY ACCEPTED / LOCAL DB VERIFIED / NOT APPLIED TO STAGING DATABASE` | 2026-07-20 |
 | `C3C-B-DB-COMPATIBILITY-PREREQUISITES-CONTRACT` (ratification closeout / R3 documentary forward correction, §34) | `ACCEPTED_WITH_NONBLOCKING_DOCUMENTARY_DEBT / IMPLEMENTATION NOT YET AUTHORIZED` | 2026-07-20 |
 | `C3C-B-MATERIAL-PHASE-CONTRACT-R1` (forward correction, commit `6585a6c`) | `ACCEPTED_WITH_BLOCKING_DATABASE_PREREQUISITES / IMPLEMENTATION NOT AUTHORIZED` | 2026-07-20 |
 | `GOVERNANCE-STATE-HANDOFF-COMPACTION-R1` (accepted commit `1157b9e`) | `CLOSED / ACCEPTED` | 2026-07-20 |
@@ -300,7 +326,7 @@ Commit SHAs there are the accepted technical commits; consult HEAD via Git.
 - Active-track traceability: `docs/architecture/ORDEM_COMPRA_C3_TRACEABILITY.md`
 - C3C-B material phase contract (accepted with blocking database prerequisites,
   not active): `docs/architecture/ORDEM_COMPRA_C3C_B_PHASE_CONTRACT.md`
-- C3C-B database prerequisites contract (implemented / local DB verified / awaiting supervisor acceptance; §35 records the implementation closeout, §36 records DB-backed validation completion, not active): `docs/architecture/ORDEM_COMPRA_C3C_B_DB_PREREQUISITES_PHASE_CONTRACT.md`
+- C3C-B database prerequisites contract (closed / technically accepted / local DB verified / not applied to staging database; §35 records the implementation closeout, §36 records DB-backed validation completion, §37 records supervisor acceptance, not active): `docs/architecture/ORDEM_COMPRA_C3C_B_DB_PREREQUISITES_PHASE_CONTRACT.md`
 - Append-only ledger: `docs/ledgers/G28_LEDGER.md`
 - Derived operational handoff: `AGENT_HANDOFF.md`
 - Documentation authority arbiter: `docs/DOCUMENTATION_INDEX.md`
