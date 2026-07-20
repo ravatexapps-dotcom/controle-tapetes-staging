@@ -9,6 +9,37 @@ are in `docs/ledgers/G28_LEDGER.md`. HEAD/working tree/divergence: consult Git d
 
 ## Active phase and next action
 
+- **`PHASE-C3C-A-DOCUMENTARY-CLOSEOUT-R1` — `CLOSED / TECHNICALLY
+  ACCEPTED — LOCALLY VERIFIED / INACTIVE / NOT APPLIED TO STAGING`
+  (2026-07-20).**
+  `C3C_A_STATUS: CLOSED / TECHNICALLY ACCEPTED — LOCALLY VERIFIED / INACTIVE / NOT APPLIED TO STAGING`
+  `NEXT_AUTHORIZABLE_ACTION: READ-ONLY GOVERNANCE AND SPEC-CUSTODY AUDIT`
+  The delegated technical supervisor accepts the local inactive C3C-A database
+  implementation; this acceptance is not attributed to Kleber.
+  Accepted technical chain: `d4dba671c07ec25f23e385e7786cbe90209816f3` →
+  `4b7ee13fe35a830e9a3cb1cc182679c81034ce73` →
+  `29913e40fa06eda009b5a2e8f058209cde90da11` →
+  `89123729b3529fff6e4a2336bfec2907c4b94b4c`. Local PostgreSQL 18.4
+  apply/reapply preserved `legacy_active / flat / not_started`. Accepted evidence
+  covers the inactive database contract; complete 14-table `PUBLIC`-policy
+  detection/closure; exact replay and stable `55000 / idempotencia_conflitante`;
+  canonical source/inventory SHA-256 and live-drift rejection; 51 frozen mappings,
+  39 headers, 44 scoped lines, 19,815.300 kg attributable, 405.980 kg excess,
+  20,221.280 kg reconstructed, and zero import-attributable inventory movements;
+  nullable Pedido-origin `op_id`, no fabricated OP, no double counting; session
+  advisory-lock exclusion and deterministic eight-stage resource locking with
+  release/reacquisition, zero deadlocks, and an idle final backend; and the
+  pre-PONR rollback/post-PONR forward-only boundaries. Lifecycle §R.29 and schema
+  §13.15 remain unchanged. This is local technical acceptance only—not staging
+  validation/application, deployment, activation, cutover, or product acceptance.
+  Unauthorized: C3C-B implementation, C3D, staging application/validation,
+  activation, deployment, real snapshot/import, fence transition, read switch,
+  final ACL-closure invocation, cutover, C4, C5, production, `main`, remotes, and
+  push. **NEXT_AUTHORIZABLE_ACTION: `READ-ONLY GOVERNANCE AND SPEC-CUSTODY
+  AUDIT`.** C3C-B remains the next product implementation lot but is not
+  authorized; the audit precedes any C3C-B implementation order, and no product
+  phase chains from this closeout.
+
 - **`PHASE-C3B-EXECUTABLE-CONTRACT-CLOSURE-R1` — `CLOSED / ACCEPTED`
   (2026-07-19).** The exact Phase-C3 executable contract is closed in lifecycle
   §R.29 and schema contract §13.15. Acceptance is recorded by the technical
@@ -20,8 +51,9 @@ are in `docs/ledgers/G28_LEDGER.md`. HEAD/working tree/divergence: consult Git d
   documentation-only: no implementation, staging application, migration, import,
   fence, switch, ACL change, deployment, production, `main`, remote change, or
   push occurred. `HISTORICAL_SALDO_FIOS_PROVENANCE_UNAVAILABLE` remains
-  nonblocking debt. **NEXT_AUTHORIZABLE_ACTION: `PHASE-C3C` — inactive
-  implementation only; a separate architect order is still required.**
+  nonblocking debt. Its then-next C3C inactive implementation was subsequently
+  authorized, implemented, corrected through R4, and locally accepted as recorded
+  above; it created no environment or activation authority.
 
 - **`PURCHASE-ORDER HYBRID ORIGIN — F3R1 STAGING DATABASE/API VALIDATION AND
   PHASE-C REVALIDATION` — `CLOSED / ACCEPTED_WITH_SCOPED_COMMITTED_CONCURRENCY_FIXTURE_WAIVER`
@@ -200,13 +232,12 @@ are in `docs/ledgers/G28_LEDGER.md`. HEAD/working tree/divergence: consult Git d
   cutover (`M10`)"; cutover is done. **New fronts are authorizable again**, each by
   its own individual order. The consolidated, ranked `POST-LAUNCH DEBT REGISTER`
   (below) supersedes the former "residual risk register (12 items)".
-- **Next authorizable action:** `PHASE-C3C — inactive implementation only`.
-  This closeout does not authorize or execute C3C; it remains subject to a
-  separate architect order. C3D is rehearsal/inactive staging deployment
-  preparation only. The real cutover remains a later, separately authorized,
-  single maintenance window. Do not reapply `db/74`, activate native emission,
-  execute a real C3A import, or access Vercel, production, `main`, remotes,
-  push, or the prohibited project. Separately, the
+- **Next authorizable action:** `READ-ONLY GOVERNANCE AND SPEC-CUSTODY AUDIT`.
+  C3C-B remains the next product implementation lot but is not authorized; the
+  audit must precede any C3C-B implementation order. C3D, staging
+  application/validation, activation, deployment, real snapshot/import, fence,
+  read switch, final ACL closure, cutover, C4, C5, production, `main`, remotes,
+  and push remain unauthorized. Separately, the
   highest-consequence open operational item remains
   `INGESTOR-DOC-CYCLE-VERIFY-DEFERRED`, an `ACTIVE PRODUCTION BLOCKER`. See the
   `POST-LAUNCH DEBT REGISTER`. **Standing reminder: flip the Supabase MCP back to

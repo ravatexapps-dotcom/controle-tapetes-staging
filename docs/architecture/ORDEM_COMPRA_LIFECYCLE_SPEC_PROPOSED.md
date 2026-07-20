@@ -3651,3 +3651,47 @@ C3 creates no visual UI. C4 exclusively owns the new admin receipt UI at
 `#/ordens-compra/:id`; supplier UI is deferred. Existing compatibility surfaces
 may receive non-visual state-driven adapters or be disabled at cutover, but may
 not become new UX.
+
+## §R.30 PHASE-C3C-A inactive implementation closeout R1 — CLOSED / TECHNICALLY ACCEPTED
+
+`C3C_A_STATUS: CLOSED / TECHNICALLY ACCEPTED — LOCALLY VERIFIED / INACTIVE / NOT APPLIED TO STAGING`
+
+`NEXT_AUTHORIZABLE_ACTION: READ-ONLY GOVERNANCE AND SPEC-CUSTODY AUDIT`
+
+**Recorded status:** `CLOSED / TECHNICALLY ACCEPTED — LOCALLY VERIFIED /
+INACTIVE / NOT APPLIED TO STAGING`. The delegated technical supervisor records
+this acceptance; it is not attributed to Kleber. Accepted technical chain:
+`d4dba671c07ec25f23e385e7786cbe90209816f3` →
+`4b7ee13fe35a830e9a3cb1cc182679c81034ce73` →
+`29913e40fa06eda009b5a2e8f058209cde90da11` →
+`89123729b3529fff6e4a2336bfec2907c4b94b4c`.
+
+This closeout accepts locally: the inactive database contract; complete
+14-table `PUBLIC`-policy detection and closure; exact import replay and stable
+`55000 / idempotencia_conflitante` identity conflicts; canonical snapshot and
+live-state SHA-256 verification; exact 51-mapping / 39-header / 44-line /
+19,815.300 kg attributable / 405.980 kg excess / 20,221.280 kg reconstructed /
+zero-import-movement reconciliation; nullable Pedido-origin `op_id`, attributable
+versus excess separation, no fabricated OP, and no double counting; session
+advisory-lock exclusion plus deterministic eight-stage resource locking,
+release/reacquisition, zero deadlocks, and an idle final backend; pre-PONR
+rollback; and post-PONR forward-only recovery. Local PostgreSQL 18.4
+apply/reapply preserved `legacy_active / flat / not_started`.
+
+§R.29 remains unchanged and governing: one later contiguous maintenance window,
+database-owned fencing, short transactions, the session advisory lock, complete
+table/column ACL closure, C3's no-visual-UI boundary, C4 ownership of the new
+admin receipt UI, deferred supplier UI, the PONR definition, and both recovery
+boundaries are neither reinterpreted nor broadened here.
+
+Only local technical acceptance is granted. Staging validation, staging
+application, deployment, activation, cutover, and product acceptance are distinct
+and not granted. C3C-B implementation, C3D, staging application/validation,
+activation, deployment, real snapshot/import, fence transition, read switch,
+final ACL-closure invocation, cutover, C4, C5, production, `main`, remotes, and
+push remain unauthorized.
+
+**NEXT_AUTHORIZABLE_ACTION: `READ-ONLY GOVERNANCE AND SPEC-CUSTODY AUDIT`.**
+C3C-B remains the next product implementation lot but is not authorized. The
+audit must precede any C3C-B implementation order; no product phase chains from
+this closeout.

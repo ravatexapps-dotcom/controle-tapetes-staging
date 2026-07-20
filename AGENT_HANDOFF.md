@@ -1,5 +1,32 @@
 # ACTIVE OPERATIONAL HANDOFF
 
+- **`PHASE-C3C-A-DOCUMENTARY-CLOSEOUT-R1` — `CLOSED / TECHNICALLY
+  ACCEPTED — LOCALLY VERIFIED / INACTIVE / NOT APPLIED TO STAGING`
+  (2026-07-20).**
+  `C3C_A_STATUS: CLOSED / TECHNICALLY ACCEPTED — LOCALLY VERIFIED / INACTIVE / NOT APPLIED TO STAGING`
+  `NEXT_AUTHORIZABLE_ACTION: READ-ONLY GOVERNANCE AND SPEC-CUSTODY AUDIT`
+  Acceptance is recorded by the delegated technical supervisor and is not
+  attributed to Kleber. Technical chain: `d4dba671` → `4b7ee13f` →
+  `29913e40` → `89123729`. Local PostgreSQL 18.4 apply/reapply preserved
+  `legacy_active / flat / not_started`. Accepted findings: inactive database
+  contract; complete 14-table `PUBLIC`-policy closure; exact replay and stable
+  `55000 / idempotencia_conflitante`; canonical snapshot/live SHA-256 checks;
+  exact 51 mappings / 39 headers / 44 scoped lines / 19,815.300 kg attributable /
+  405.980 kg excess / 20,221.280 kg reconstructed / zero import inventory
+  movements; nullable Pedido-origin `op_id`, no fabricated OP, and no double
+  counting; session advisory-lock exclusion and deterministic eight-stage
+  resource locking, release/reacquisition, zero deadlocks, and idle final backend;
+  pre-PONR rollback and post-PONR forward-only recovery. §R.29 and §13.15 remain
+  unchanged. Only local technical acceptance is granted. Staging validation,
+  staging application, deployment, activation, cutover, and product acceptance
+  are distinct and not granted. Unauthorized: C3C-B implementation, C3D, staging
+  application/validation, activation, deployment, real snapshot/import, fence
+  transition, read switch, final ACL-closure invocation, cutover, C4, C5,
+  production, `main`, remotes, and push. **NEXT_AUTHORIZABLE_ACTION: `READ-ONLY
+  GOVERNANCE AND SPEC-CUSTODY AUDIT`.** C3C-B is the next product implementation
+  lot but is not authorized; no product phase chains, and the audit must precede
+  any C3C-B implementation order.
+
 - **`PHASE-C3B-EXECUTABLE-CONTRACT-CLOSURE-R1` — `CLOSED / ACCEPTED`
   (2026-07-19).** Lifecycle §R.29 and schema §13.15 are the exact executable
   Phase-C3 contract. Acceptance is recorded by the technical supervisor acting
@@ -10,8 +37,9 @@
   reads; explicit final ACL/policy closure; and pre-/post-point-of-no-return
   recovery. C3B made no environment or implementation change.
   `HISTORICAL_SALDO_FIOS_PROVENANCE_UNAVAILABLE` remains nonblocking debt.
-  **NEXT_AUTHORIZABLE_ACTION: `PHASE-C3C` — inactive implementation only; it is
-  not authorized by this closeout and requires a separate architect order.**
+  Its then-next C3C inactive implementation was subsequently authorized,
+  implemented, corrected through R4, and locally accepted as recorded above; it
+  created no staging, deployment, activation, or cutover authority.
 
 - **`PURCHASE-ORDER HYBRID ORIGIN — F3R1 STAGING DATABASE/API VALIDATION AND
   PHASE-C REVALIDATION` — `CLOSED / ACCEPTED_WITH_SCOPED_COMMITTED_CONCURRENCY_FIXTURE_WAIVER`

@@ -1241,3 +1241,39 @@ zero productive canonical receipts. It retains legacy fencing and does not resto
 flat grants. Flat mutation re-enablement is a distinct recovery authorization
 requiring generation/idempotency proof against stale or double-counted immutable
 import data. After the point of no return, recovery is forward-only.
+
+### 13.16 PHASE-C3C-A inactive implementation closeout R1 — CLOSED / TECHNICALLY ACCEPTED
+
+`C3C_A_STATUS: CLOSED / TECHNICALLY ACCEPTED — LOCALLY VERIFIED / INACTIVE / NOT APPLIED TO STAGING`
+
+`NEXT_AUTHORIZABLE_ACTION: READ-ONLY GOVERNANCE AND SPEC-CUSTODY AUDIT`
+
+Recorded status: **`CLOSED / TECHNICALLY ACCEPTED — LOCALLY VERIFIED / INACTIVE /
+NOT APPLIED TO STAGING`**. The delegated technical supervisor records this
+acceptance; it is not attributed to Kleber. Technical chain: `d4dba671` →
+`4b7ee13f` → `29913e40` → `89123729`.
+
+The accepted local implementation realizes §13.15 without changing it: inactive
+state authority; complete `PUBLIC`-policy membership detection and closure across
+the protected 14-table set; replay idempotency and stable
+`55000 / idempotencia_conflitante`; canonical row/aggregate SHA-256 plus live
+source/inventory drift rejection; exact 51 mappings, 39 headers, 44 scoped lines,
+19,815.300 kg attributable, 405.980 kg excess, 20,221.280 kg reconstructed, and
+zero import-attributable inventory movements; nullable Pedido-origin provenance,
+separate attributable/excess quantities, no fabricated OP, and no double count;
+runtime session-lock exclusion and deterministic eight-stage resource locking;
+and the accepted pre-/post-PONR recovery behavior. PostgreSQL 18.4 local
+apply/reapply leaves the singleton `legacy_active / flat / not_started`.
+
+Only local technical acceptance is recorded. No staging validation or
+application, deployment, activation, cutover, or product acceptance is granted.
+The single-window cutover, database fence, short-transaction/session-lock
+requirements, table- and column-level ACL closure, UI ownership, supplier-UI
+deferral, PONR, and recovery boundaries in §§R.29/13.15 remain unchanged.
+
+Unauthorized: C3C-B implementation, C3D, staging application/validation,
+activation, deployment, real snapshot/import, fence transition, read switch,
+final ACL-closure invocation, cutover, C4, C5, production, `main`, remotes, and
+push. **NEXT_AUTHORIZABLE_ACTION: `READ-ONLY GOVERNANCE AND SPEC-CUSTODY AUDIT`.**
+C3C-B remains the next product implementation lot but is not authorized; the
+audit precedes any C3C-B implementation order, and no phase chains automatically.

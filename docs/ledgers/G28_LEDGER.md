@@ -4524,3 +4524,67 @@ MATERIAL_DIVERGENCES: NONE
 - **NEXT_AUTHORIZABLE_ACTION:** `PHASE-C3C — inactive implementation only`.
   This closeout does not authorize or execute C3C; a separate architect order is
   required. C3D and the later real cutover remain separately authorized actions.
+
+## 2026-07-20 — PHASE-C3C-A-DOCUMENTARY-CLOSEOUT-R1 — CLOSED / TECHNICALLY ACCEPTED
+
+`C3C_A_STATUS: CLOSED / TECHNICALLY ACCEPTED — LOCALLY VERIFIED / INACTIVE / NOT APPLIED TO STAGING`
+
+`NEXT_AUTHORIZABLE_ACTION: READ-ONLY GOVERNANCE AND SPEC-CUSTODY AUDIT`
+
+- **Recorded status:** `CLOSED / TECHNICALLY ACCEPTED — LOCALLY VERIFIED /
+  INACTIVE / NOT APPLIED TO STAGING`.
+- **Acceptance provenance:** the delegated technical supervisor records the
+  acceptance of the completed local inactive implementation. The acceptance
+  wording and decision are not attributed to Kleber.
+- **Starting state:** standalone repository `D:\Programação\controle-tapetes-g28`;
+  branch `dev`; HEAD `89123729b3529fff6e4a2336bfec2907c4b94b4c`;
+  empty index; preserved residue only—modified `.gitignore` and untracked
+  `AGENTS.md`.
+- **Technical chain:** initial implementation
+  `d4dba671c07ec25f23e385e7786cbe90209816f3`; R2 `PUBLIC`-policy correction
+  `4b7ee13fe35a830e9a3cb1cc182679c81034ce73`; R3 import/snapshot/
+  reconciliation/lock correction `29913e40fa06eda009b5a2e8f058209cde90da11`;
+  R4 stable identity-conflict correction
+  `89123729b3529fff6e4a2336bfec2907c4b94b4c`.
+- **Accepted local evidence:** PostgreSQL 18.4 migration apply/reapply with
+  unchanged `legacy_active / flat / not_started`; complete protected 14-table
+  `PUBLIC`-policy membership detection/closure; exact replay idempotency; stable
+  `55000 / idempotencia_conflitante` for related-header identity conflicts with
+  zero writes; canonical per-row/aggregate source and inventory SHA-256 with live
+  drift rejection; 51 frozen mappings; 39 headers; 44 scoped import lines;
+  19,815.300 kg attributable; 405.980 kg excess; 20,221.280 kg reconstructed;
+  zero import-attributable inventory movements; nullable Pedido-origin `op_id`;
+  no fabricated OP; no double counting; session advisory-lock exclusion;
+  deterministic eight-stage resource locks; release/reacquisition; zero
+  deadlocks; idle final backend with no open transaction; focused static,
+  rollback-scoped integration, and distinct-session concurrency proofs.
+- **Accepted finding disposition:** inactive database contract—closed locally;
+  `PUBLIC` policy detection/closure—closed locally; replay idempotency—closed;
+  stable identity conflict—closed; snapshot/live SHA-256—closed;
+  reconciliation completeness—closed; nullable Pedido-origin provenance—closed;
+  attributable/excess separation—closed; zero import inventory movement—closed;
+  runtime session/resource locks—closed; pre-PONR rollback—closed; post-PONR
+  recovery—forward-only as contracted.
+- **Contract preservation:** lifecycle §R.29 and schema §13.15 are unchanged.
+  Their single-window cutover, database-owned fence, short transactions, session
+  advisory lock, table- and column-level ACL closure, C3 no-visual-UI boundary,
+  C4 admin receipt UI ownership, deferred supplier UI, PONR definition, pre-PONR
+  rollback, and post-PONR forward-only recovery remain governing.
+- **Acceptance distinctions:** only local technical acceptance is granted.
+  Staging validation, staging application, deployment, activation, cutover, and
+  product acceptance are separate states and are not granted by this closeout.
+- **Unauthorized boundaries:** C3C-B implementation; C3D; staging application;
+  staging validation; activation; deployment; real snapshot; real import; fence
+  transition; read switch; final ACL-closure invocation; cutover; C4; C5;
+  production; `main`; remotes; push.
+- **Documentation-only manifest:** `PROJECT_STATE.md`, `AGENT_HANDOFF.md`,
+  `docs/architecture/ORDEM_COMPRA_LIFECYCLE_SPEC_PROPOSED.md`,
+  `docs/architecture/PEDIDO_OP_SCHEMA_CONTRACT.md`,
+  `docs/architecture/PEDIDO_PRODUCTION_FLOW_BACKLOG.md`,
+  `docs/DOCUMENTATION_INDEX.md`, and this append-only ledger. No implementation,
+  test, migration, database, Supabase, environment, deployment, remote, push,
+  `.gitignore`, or `AGENTS.md` change occurred.
+- **NEXT_AUTHORIZABLE_ACTION:** `READ-ONLY GOVERNANCE AND SPEC-CUSTODY AUDIT`.
+  C3C-B remains the next product implementation lot but is not authorized. The
+  governance audit must precede any C3C-B implementation order. No product phase
+  chains automatically from this closeout.

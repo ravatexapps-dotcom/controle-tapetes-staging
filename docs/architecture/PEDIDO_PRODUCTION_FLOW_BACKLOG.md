@@ -1711,3 +1711,37 @@ project architect; this acceptance is not attributed to Kleber.
 - **NEXT_AUTHORIZABLE_ACTION: `PHASE-C3C` — inactive implementation only.** A
   separate architect order is required; this closeout neither authorizes nor
   executes C3C.
+
+# Update 2026-07-20 — PHASE-C3C-A inactive implementation documentary closeout R1
+
+`C3C_A_STATUS: CLOSED / TECHNICALLY ACCEPTED — LOCALLY VERIFIED / INACTIVE / NOT APPLIED TO STAGING`
+
+`NEXT_AUTHORIZABLE_ACTION: READ-ONLY GOVERNANCE AND SPEC-CUSTODY AUDIT`
+
+Status: **CLOSED / TECHNICALLY ACCEPTED — LOCALLY VERIFIED / INACTIVE / NOT
+APPLIED TO STAGING**. Acceptance is recorded by the delegated technical
+supervisor and is not attributed to Kleber.
+
+- Technical chain: `d4dba671` → `4b7ee13f` → `29913e40` → `89123729`.
+- Accepted locally: inactive database contract; 14-table `PUBLIC`-policy
+  closure; replay idempotency; stable identity conflict; canonical snapshot/live
+  SHA-256; exact 51 mappings / 39 headers / 44 scoped lines / 19,815.300 kg
+  attributable / 405.980 kg excess / 20,221.280 kg reconstructed / zero import
+  inventory movements; nullable Pedido-origin provenance; attributable/excess
+  separation; no fabricated OP or double count; runtime session-lock exclusion,
+  deterministic eight-stage resource locks, release/reacquisition, zero
+  deadlocks, and idle final backend; pre-PONR rollback; post-PONR forward-only
+  recovery.
+- Lifecycle §R.29 and schema §13.15 are unchanged. The single later cutover
+  window, database fence, short transactions, session lock, complete table/column
+  ACL closure, no-visual-C3 boundary, C4 admin-UI ownership, deferred supplier UI,
+  PONR, and recovery boundaries remain governing.
+- This grants local technical acceptance only. Staging validation/application,
+  deployment, activation, cutover, and product acceptance are not granted.
+- Unauthorized: C3C-B implementation, C3D, staging application/validation,
+  activation, deployment, real snapshot/import, fence transition, read switch,
+  final ACL-closure invocation, cutover, C4, C5, production, `main`, remotes, and
+  push.
+- **NEXT_AUTHORIZABLE_ACTION: `READ-ONLY GOVERNANCE AND SPEC-CUSTODY AUDIT`.**
+  C3C-B remains the next product implementation lot but is not authorized. The
+  audit precedes any C3C-B implementation order; no product phase chains.
