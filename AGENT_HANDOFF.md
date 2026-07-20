@@ -34,11 +34,16 @@
   supervisor at commit `1157b9e71bc629903c5940ab50d4b370964e560e` (state/handoff
   compaction; historical content preserved in tracked archives + the append-only
   ledger; validator PASS; self-tests 47/47 PASS).
-- **Next authorizable action:** `C3C-B-MATERIAL-PHASE-CONTRACT-R1-SUPERVISOR-REVIEW`.
-  The C3C-B material phase contract was authored (docs-only) at
-  `docs/architecture/ORDEM_COMPRA_C3C_B_PHASE_CONTRACT.md` —
+- **Next authorizable action:** `C3C-B-DB-COMPATIBILITY-PREREQUISITES-CONTRACT-R1-SUPERVISOR-REVIEW`.
+  The C3C-B material phase contract (`docs/architecture/ORDEM_COMPRA_C3C_B_PHASE_CONTRACT.md`)
+  was reviewed (`CHANGES_REQUIRED`), forward-corrected, and accepted —
+  `STATUS: ACCEPTED_WITH_BLOCKING_DATABASE_PREREQUISITES / IMPLEMENTATION NOT
+  AUTHORIZED`. The two database prerequisites it identified (canonical
+  order-catalog projection; atomic legacy receipt-intent adapter) are now bound
+  to an exact design (docs-only) at
+  `docs/architecture/ORDEM_COMPRA_C3C_B_DB_PREREQUISITES_PHASE_CONTRACT.md` —
   `STATUS: PROPOSED / AWAITING SUPERVISOR ACCEPTANCE / IMPLEMENTATION NOT
-  AUTHORIZED`. Next action is supervisor review of that contract, not
+  AUTHORIZED`. Next action is supervisor review of that new contract, not
   implementation. **C3C-B implementation remains UNAUTHORIZED and has no ACTIVE
   phase contract** (`ACTIVE_PHASE`/`ACTIVE_PHASE_CONTRACT` remain `NONE`); no
   product phase chains automatically; the current product phase remains `NONE`.
@@ -136,7 +141,10 @@ Full matrix and normative anchors: `docs/architecture/ORDEM_COMPRA_C3_TRACEABILI
 17. `docs/closeouts/AGENT_HANDOFF_ARCHIVE_2026-07.md` (historical handoff stack)
 18. `docs/closeouts/PROJECT_STATE_ARCHIVE_2026-07.md` (historical state closeouts)
 19. `docs/architecture/ORDEM_COMPRA_C3C_B_PHASE_CONTRACT.md` (C3C-B material
-    phase contract, proposed — not active; supervisor review pending)
+    phase contract, accepted with blocking database prerequisites — not active)
+20. `docs/architecture/ORDEM_COMPRA_C3C_B_DB_PREREQUISITES_PHASE_CONTRACT.md`
+    (C3C-B database prerequisites contract, proposed — not active; supervisor
+    review pending)
 
 > Bootstrap first through `docs/governance/AGENT_INSTRUCTIONS.md` and the
 > `SPEC_CUSTODY_BOOTSTRAP` block in `PROJECT_STATE.md`. Private conversation,

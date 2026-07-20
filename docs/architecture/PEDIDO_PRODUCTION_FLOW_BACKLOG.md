@@ -8,6 +8,23 @@
 > `PROJECT_STATE.md`. Phase sequence, dependencies, backlog items, and accepted
 > architecture in this file remain authoritative; live operational status does not.
 
+# Update 2026-07-20 - C3C-B Contract Accepted With Blocking Database Prerequisites
+
+Phase: `C3C-B-DB-COMPATIBILITY-PREREQUISITES-CONTRACT-R1`
+Type: docs-only, read-only-repository-inspection documentation patch.
+
+Supervisor review of `C3C-B-MATERIAL-PHASE-CONTRACT-R1` returned
+`CHANGES_REQUIRED`; the resulting forward correction (two database hard stops)
+was accepted as `ACCEPTED_WITH_BLOCKING_DATABASE_PREREQUISITES / IMPLEMENTATION
+NOT AUTHORIZED`. The two database prerequisites (canonical order-catalog
+projection; atomic legacy receipt-intent adapter) are now bound to an exact
+design at `docs/architecture/ORDEM_COMPRA_C3C_B_DB_PREREQUISITES_PHASE_CONTRACT.md`
+(`PHASE_ID: PHASE-C3C-B-DB-PREREQ`, `PROPOSED / AWAITING SUPERVISOR ACCEPTANCE
+/ IMPLEMENTATION NOT AUTHORIZED`). Implementation of neither contract is
+authorized. This entry changes no backlog sequence, dependency, or accepted
+architecture. Current live state, next authorizable action, and debts remain
+solely owned by `PROJECT_STATE.md`.
+
 # Update 2026-07-20 - C3C-B Material Phase Contract Authored
 
 Phase: `C3C-B-MATERIAL-PHASE-CONTRACT-R1`

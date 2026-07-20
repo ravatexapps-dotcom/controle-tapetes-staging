@@ -4905,3 +4905,139 @@ MATERIAL_DIVERGENCES: NONE
   — read-only supervisor review of the **corrected** contract. `PHASE-C3C-B`
   implementation remains unauthorized and is additionally blocked pending the two
   database forward corrections above; no phase chains automatically.
+
+## 2026-07-20 — C3C-B-DB-COMPATIBILITY-PREREQUISITES-CONTRACT-R1 — SUPERVISOR ACCEPTANCE + NEW MATERIAL CONTRACT AUTHORED
+
+- **Authorization:** the architect authorized
+  `C3C-B-DB-COMPATIBILITY-PREREQUISITES-CONTRACT-R1`, a documentation-only pass
+  to (a) record supervisor acceptance of the corrected
+  `C3C-B-MATERIAL-PHASE-CONTRACT-R1` and (b) author a new material phase
+  contract defining the two database prerequisites that contract's forward
+  correction identified as hard stops. This entry records no product
+  implementation, no migration, no database or environment action, and no
+  authorization of `PHASE-C3C-B` or `PHASE-C3C-B-DB-PREREQ` implementation.
+- **Entry checkpoint reconciled:** branch `dev`, HEAD
+  `6585a6c6d1837a3e0044bac8c603ffe866b73e05`, parent
+  `84e7b61fecd5c406793ccc1962cb77b97a6bd015`, empty index, preserved residue
+  modified `.gitignore` only — matched the expected baseline exactly.
+
+### Supervisor acceptance of `C3C-B-MATERIAL-PHASE-CONTRACT-R1`
+
+- **Verdict:** `ACCEPTED — C3C-B-MATERIAL-PHASE-CONTRACT-R1`,
+  `ACCEPTED_WITH_BLOCKING_DATABASE_PREREQUISITES / IMPLEMENTATION NOT
+  AUTHORIZED`. Recorded by the delegated technical supervisor; not attributed
+  to Kleber.
+- **Basis:** the forward correction's reader shape matrix (§25) and writer
+  payload matrix (§26) — verified field-by-field against the installed `db/75`
+  surface and the three real legacy consumers — are accepted as correct; both
+  hard stops (database read-contract, database command-adapter) are
+  well-founded and not resolvable by an application-layer-only design. The
+  unified error policy (§27), supplier reader disposition (§28), and
+  exact-manifest wording (§29) corrections are accepted without further
+  change. Recorded as §31 of
+  `docs/architecture/ORDEM_COMPRA_C3C_B_PHASE_CONTRACT.md` (append-only; §30
+  preserved verbatim as superseded history, not rewritten).
+- **Traceability disposition applied** (in
+  `docs/architecture/ORDEM_COMPRA_C3_TRACEABILITY.md`, same commit):
+  `OC-C3-READ-001` remains `PARTIALLY_SATISFIED`, residual debt now names the
+  Component A prerequisite; `OC-C3-WRITE-001` remains `PARTIALLY_SATISFIED`,
+  residual debt now names the Component B prerequisite; `OC-C3-COMPAT-001`
+  changed `PLANNED` → `BLOCKED`, residual debt names both prerequisites;
+  `OC-C3-NOUI-001` remains `PARTIALLY_SATISFIED`, unchanged. No requirement
+  marked `SATISFIED`. `ACTIVE_PHASE`/`ACTIVE_PHASE_CONTRACT` remain `NONE` in
+  `PROJECT_STATE.md`.
+
+### New material contract authored: `PHASE-C3C-B-DB-PREREQ`
+
+- **Contract authored:** `docs/architecture/ORDEM_COMPRA_C3C_B_DB_PREREQUISITES_PHASE_CONTRACT.md`,
+  `STATUS: PROPOSED / AWAITING SUPERVISOR ACCEPTANCE / IMPLEMENTATION NOT
+  AUTHORIZED`. Defines exactly two tightly coupled components, treated as one
+  material prerequisite phase per the order's no-microphase design principle:
+  - **Component A** — `public.listar_ordens_compra_fio_compat(p_pedido_id,
+    p_op_id)`, a canonical order-catalog projection over the
+    already-populated `ordem_compra_item_compat_fio` bridge (REFUND-A,
+    `db/67`), returning item-grain or OP-attributable-grain rows including
+    pending/zero-receipt orders — closing every gap in the corrected
+    contract's §25 reader shape matrix.
+  - **Component B** — `public.registrar_recebimento_ordem_compra_fio_compat(...)`,
+    an atomic legacy receipt-intent adapter accepting the flat absolute-total
+    intent, resolving flat→native identity server-side under lock, and
+    converting it into the immutable native ledger (`ordem_compra_fio_lancamentos`/
+    `ordem_compra_recebimentos`) via a deterministic per-allocation fan-out
+    (increase) or a proposed LIFO reversal-selection rule (decrease,
+    admin-only) — closing the corrected contract's §26 writer payload matrix.
+- **Critical finding recorded:** the existing native receipt commands
+  (`_c3c_registrar_recebimento_impl`/`_c3c_estornar_recebimento_impl`, `db/70`
+  as renamed by `db/75`) unconditionally reject every legacy-compat order
+  (`ordem_compra.legado = TRUE`) by explicit design. Component B is therefore
+  a new, parallel entry point reusing the same immutable ledger tables and
+  the same `legado`-agnostic triggers, with its own legacy-appropriate
+  eligibility gate — not a thin wrapper around the existing commands.
+- **Ongoing compat-mapping coverage gap recorded (not silently closed):**
+  `ordem_compra_item_compat_fio` was seeded once by REFUND-A
+  (2026-07-18, 51 rows); no live bridge writer was ever built (confirmed
+  absent by exhaustive grep across `db/68`–`db/75`); `op-persistir.js`'s
+  still-live legacy branch creates new unmapped flat rows going forward. The
+  contract's migration backfills every currently-unmapped row at apply-time
+  only; the forward-going gap is an explicit named residual debt with two
+  undecided follow-up options, not a solved problem.
+- **Missing-RPC/deployment model:** Model A (database-first) adopted and
+  justified — `db/76` (specified, not created) must be applied before any
+  consuming application code ships to the same environment; no long-lived
+  `42883` fallback is required; the existing bounded-interval exception
+  (`ORDEM_COMPRA_C3C_B_PHASE_CONTRACT.md` §27) extends to the two new RPC
+  names rather than a second independent tolerance.
+- **Normative amendments identified as preconditions, not applied:** two
+  proposed deltas (a new `§R.29.7` in the lifecycle spec; a new `§13.18` in
+  the schema contract) are quoted verbatim in the new contract's §13 as
+  proposed text only — neither normative file is edited by this pass. Two
+  draft requirement IDs (`OC-C3-DBPREREQ-READ-001`, `OC-C3-DBPREREQ-WRITE-001`)
+  are proposed for future registry ratification, not added to either registry
+  in this pass.
+- **Hard-stop evaluation:** all nine hard-stop conditions from the order were
+  evaluated against the actual repository evidence; none triggers. The two
+  reversal/eligibility design questions that could have been hard stops are
+  instead closed with concrete, deterministic proposed rules, explicitly
+  flagged as requiring architect ratification before implementation — per the
+  order's own allowance to describe proposed amendments rather than declare
+  an unresolvable stop.
+- **Exact future manifest:** one migration file
+  (`db/76_ordem_compra_c3c_b_db_prerequisites.sql`, not created); two new
+  database functions plus one idempotent backfill block plus one additive
+  `CHECK`-constraint extension; zero product files; three new test files
+  (`tests/ordem-compra-c3c-b-db-prerequisites.smoke.js`,
+  `.integration.sql`, `-concurrency.mjs`, none created).
+- **Named behavior-change disclosure:** the future canonical decrease path is
+  admin-only, narrowing `fornecedor.js`'s current unrestricted-decrease inline
+  `.update()` — disclosed now as a residual debt (§16 of the new contract),
+  not deferred to discovery at implementation time.
+- **Documentation-only manifest this pass:**
+  `docs/architecture/ORDEM_COMPRA_C3C_B_PHASE_CONTRACT.md` (§31 appended, §30
+  marked superseded, STATUS marker updated),
+  `docs/architecture/ORDEM_COMPRA_C3C_B_DB_PREREQUISITES_PHASE_CONTRACT.md`
+  (new), `docs/architecture/ORDEM_COMPRA_C3_TRACEABILITY.md`,
+  `PROJECT_STATE.md`, `AGENT_HANDOFF.md`,
+  `docs/architecture/PEDIDO_PRODUCTION_FLOW_BACKLOG.md`,
+  `docs/DOCUMENTATION_INDEX.md`, and this ledger. `PROJECT_STATE.md`'s
+  `ACTIVE_PHASE` and `ACTIVE_PHASE_CONTRACT` remain `NONE`; only
+  `NEXT_AUTHORIZABLE_ACTION` advanced to
+  `C3C-B-DB-COMPATIBILITY-PREREQUISITES-CONTRACT-R1-SUPERVISOR-REVIEW`.
+- **No product implementation, no migration, no database or environment
+  action:** zero product, test, or `db/*.sql` files were created, modified, or
+  deleted by this pass. Lifecycle §R.29 and schema §13.15–13.17 remain
+  byte-unchanged; the two proposed normative deltas (§13 of the new contract)
+  are quoted text only, not applied.
+- **Local verification:** `node scripts/validate-spec-custody.mjs` PASS;
+  `node scripts/validate-spec-custody.mjs --self-test` all PASS; `git diff
+  --check` clean; `git diff --cached --check` clean; the committed manifest
+  matches exactly the documentation-only paths above; lifecycle §R.29 and
+  schema §13.15–13.17 confirmed byte-identical; wrappers
+  `CLAUDE.md`/`AGENTS.md` confirmed unchanged and byte-identical.
+- **Exact accounting subject:** `docs: accept C3C-B contract, define DB prerequisites`.
+- **Status after this commit:** `IMPLEMENTED / LOCALLY VERIFIED / AWAITING
+  SUPERVISOR REVIEW`.
+- **NEXT_AUTHORIZABLE_ACTION:** `C3C-B-DB-COMPATIBILITY-PREREQUISITES-CONTRACT-R1-SUPERVISOR-REVIEW`
+  — read-only supervisor review of the new database-prerequisites contract.
+  `PHASE-C3C-B` implementation remains unauthorized and is additionally
+  blocked pending that contract's acceptance and its own future
+  implementation authorization; no phase chains automatically.

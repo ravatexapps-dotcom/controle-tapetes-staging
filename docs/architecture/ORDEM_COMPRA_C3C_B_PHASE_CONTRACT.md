@@ -2,7 +2,7 @@
 
 <!-- MATERIAL_PHASE_CONTRACT:BEGIN -->
 PHASE_ID: PHASE-C3C-B
-STATUS: PROPOSED / AWAITING SUPERVISOR ACCEPTANCE / IMPLEMENTATION NOT AUTHORIZED
+STATUS: ACCEPTED_WITH_BLOCKING_DATABASE_PREREQUISITES / IMPLEMENTATION NOT AUTHORIZED
 <!-- MATERIAL_PHASE_CONTRACT:END -->
 
 > **Role of this document.** This is a **material phase contract**, authored under
@@ -848,9 +848,14 @@ Normalized numeric wording, authoritative over any looser phrasing elsewhere:
 The scope is never "nine product files": `index.html` is the tenth authorized
 product path.
 
-## 30. Corrected contract status and database blockers
+## 30. Corrected contract status and database blockers (historical — superseded by §31)
 
-- `STATUS` (unchanged): **PROPOSED / AWAITING SUPERVISOR ACCEPTANCE /
+> This section records the state at the moment the forward correction (§0/§25–29)
+> was authored, before supervisor review. It is preserved verbatim
+> (append-only); §31 records the subsequent acceptance. Where this section and
+> §31 conflict, **§31 governs**.
+
+- `STATUS` (at authoring time): **PROPOSED / AWAITING SUPERVISOR ACCEPTANCE /
   IMPLEMENTATION NOT AUTHORIZED**. `ACTIVE_PHASE`/`ACTIVE_PHASE_CONTRACT` remain
   `NONE` in `PROJECT_STATE.md`. No requirement is marked `SATISFIED`.
 - **Additional blockers beyond supervisor acceptance.** Even if the supervisor
@@ -866,12 +871,86 @@ product path.
      atomically resolves flat→native identity, converts absolute→signed delta,
      classifies attributed/excess, and registers idempotently under a retry-stable
      key.
-- **Traceability note.** The `OC-C3-READ-001` / `OC-C3-WRITE-001` dispositions in
-  `docs/architecture/ORDEM_COMPRA_C3_TRACEABILITY.md` (currently
-  `PARTIALLY_SATISFIED`, reflecting the installed `db/75` foundation) are **not**
-  changed by this documentation-only correction; whether to record them as
-  `BLOCKED` is a matter for supervisor acceptance of this contract, not for this
-  pass (the contract remains `PROPOSED`).
-- **Next step:** read-only supervisor review of this corrected contract. This
-  correction authorizes no implementation and no database, staging, production,
-  or environment action.
+- **Traceability note (superseded by §31.3).** The `OC-C3-READ-001` /
+  `OC-C3-WRITE-001` dispositions in `docs/architecture/ORDEM_COMPRA_C3_TRACEABILITY.md`
+  (at that time `PARTIALLY_SATISFIED`, reflecting the installed `db/75`
+  foundation) were **not** changed by the forward-correction pass itself;
+  whether to record them as `BLOCKED` was left to supervisor acceptance.
+- **Next step (superseded by §31):** read-only supervisor review of this
+  corrected contract.
+
+## 31. Supervisor acceptance record (`C3C-B-MATERIAL-PHASE-CONTRACT-R1`)
+
+> Recorded under order `C3C-B-DB-COMPATIBILITY-PREREQUISITES-CONTRACT-R1`,
+> documentation-only. This disposition is recorded by the delegated technical
+> supervisor; it is not attributed to Kleber.
+
+### 31.1 Verdict
+
+**`ACCEPTED_WITH_BLOCKING_DATABASE_PREREQUISITES / IMPLEMENTATION NOT
+AUTHORIZED`.**
+
+The diagnosis in §0/§25–29 (both hard stops, the unified error policy, the
+supplier reader disposition, and the exact-manifest wording) is **accepted as
+correct**. `PHASE-C3C-B` implementation remains **unauthorized**, now for two
+independent reasons: (a) no architect authorization of the phase itself has
+been granted (unchanged, per §1/§21 throughout this document's history), and
+(b) the two named database forward corrections (§25/§26) are themselves
+**blocking prerequisites** that must be authorized, implemented, and applied
+before `PHASE-C3C-B`'s application-only design (§§4–17) is buildable at all.
+
+### 31.2 Basis for acceptance
+
+- The reader shape matrix (§25) and writer payload matrix (§26) are verified
+  field-by-field against the actually-installed `db/75` surface and the three
+  real legacy consumers; both hard stops are well-founded and not resolvable
+  by an application-layer-only design.
+- The unified error policy (§27), supplier reader disposition (§28), and
+  exact-manifest wording (§29) corrections are accepted without further
+  change.
+- The two database prerequisites are now bound to an exact, implementation-ready
+  design in a companion contract:
+  `docs/architecture/ORDEM_COMPRA_C3C_B_DB_PREREQUISITES_PHASE_CONTRACT.md`
+  (`PHASE_ID: PHASE-C3C-B-DB-PREREQ`, authored the same pass as this
+  acceptance, `STATUS: PROPOSED / AWAITING SUPERVISOR ACCEPTANCE /
+  IMPLEMENTATION NOT AUTHORIZED` — itself not yet accepted, and not
+  authorizing any implementation).
+
+### 31.3 Traceability disposition (resolves §30's superseded note)
+
+Recorded in `docs/architecture/ORDEM_COMPRA_C3_TRACEABILITY.md` in the same
+commit as this acceptance:
+
+- `OC-C3-READ-001` — remains `PARTIALLY_SATISFIED`; `RESIDUAL_DEBT` now names
+  the read-contract prerequisite (Component A of the companion DB contract) as
+  the blocker.
+- `OC-C3-WRITE-001` — remains `PARTIALLY_SATISFIED`; `RESIDUAL_DEBT` now names
+  the command-adapter prerequisite (Component B of the companion DB contract)
+  as the blocker.
+- `OC-C3-COMPAT-001` — changes `PLANNED` → `BLOCKED`; `RESIDUAL_DEBT` names
+  both database prerequisites as the exact blocker.
+- `OC-C3-NOUI-001` — remains `PARTIALLY_SATISFIED`, unchanged reasoning.
+
+No requirement is marked `SATISFIED`.
+
+### 31.4 What this acceptance does and does not authorize
+
+- Accepts the R1 forward correction's diagnosis as the governing analysis of
+  this contract going forward.
+- Does **not** authorize `PHASE-C3C-B` implementation.
+- Does **not** authorize `PHASE-C3C-B-DB-PREREQ` implementation, any
+  migration, or any database/staging/production/environment action — that
+  contract remains separately `PROPOSED`, requiring its own supervisor review
+  and its own explicit architect authorization.
+- Does **not** change `ACTIVE_PHASE`/`ACTIVE_PHASE_CONTRACT` in
+  `PROJECT_STATE.md` (both remain `NONE`).
+- Does **not** ratify the two normative-amendment proposals in the companion
+  DB contract's §13 (the LIFO reversal rule and the legacy eligibility gate).
+
+### 31.5 Next authorizable action
+
+**`READ-ONLY SUPERVISOR REVIEW OF PHASE-C3C-B-DB-PREREQ`** — supervisor review
+and acceptance of `docs/architecture/ORDEM_COMPRA_C3C_B_DB_PREREQUISITES_PHASE_CONTRACT.md`.
+`PHASE-C3C-B` implementation remains unauthorized and now additionally blocked
+pending that separate contract's acceptance and its own future implementation
+authorization.

@@ -10,13 +10,15 @@ ACTIVE_TRACK: PURCHASE_ORDER_PHASE_C
 LAST_ACCEPTED_PHASE: PHASE-C3C-A
 ACTIVE_PHASE: NONE
 CLOSED_MATERIAL_PHASES: PHASE-C3C-A
-NEXT_AUTHORIZABLE_ACTION: C3C-B-MATERIAL-PHASE-CONTRACT-R1-SUPERVISOR-REVIEW
+NEXT_AUTHORIZABLE_ACTION: C3C-B-DB-COMPATIBILITY-PREREQUISITES-CONTRACT-R1-SUPERVISOR-REVIEW
 VALIDATION_ACCOUNTING_SUBJECT: fix: harden spec custody validation
 VALIDATION_ACCOUNTING_SUBJECT_R2: fix: reject detached spec custody rows
 VALIDATION_ACCOUNTING_SUBJECT_R3: fix: distinguish prose from detached tables
 VALIDATION_ACCOUNTING_SUBJECT_R4: refactor: split spec custody validator
 VALIDATION_ACCOUNTING_SUBJECT_R5: docs: accept state handoff compaction
 VALIDATION_ACCOUNTING_SUBJECT_R6: docs: define C3C-B material phase contract
+VALIDATION_ACCOUNTING_SUBJECT_R7: docs: forward-correct C3C-B material phase contract
+VALIDATION_ACCOUNTING_SUBJECT_R8: docs: accept C3C-B contract, define DB prerequisites
 ```
 
 ## Accepted foundation
@@ -36,9 +38,9 @@ Allowed dispositions: `SATISFIED`, `PARTIALLY_SATISFIED`, `PLANNED`, `DEFERRED`,
 
 | REQUIREMENT_ID | NORMATIVE_ANCHOR | OWNING_PHASE | DISPOSITION | IMPLEMENTATION_ARTIFACT | TEST_OR_EVIDENCE | ENVIRONMENT | ACCEPTED_CHECKPOINT | RESIDUAL_DEBT |
 |---|---|---|---|---|---|---|---|---|
-| OC-C3-READ-001 | docs/architecture/ORDEM_COMPRA_LIFECYCLE_SPEC_PROPOSED.md::§R.29.2 | C3C-B | PARTIALLY_SATISFIED | db/75_ordem_compra_c3c_inactive_cutover.sql | tests/ordem-compra-c3c-inactive.smoke.js and tests/ordem-compra-c3c-inactive.integration.sql | LOCAL_POSTGRES_18_4_ONLY | 89123729b3529fff6e4a2336bfec2907c4b94b4c | Application consumers in §R.29.1 are not migrated. |
-| OC-C3-WRITE-001 | docs/architecture/ORDEM_COMPRA_LIFECYCLE_SPEC_PROPOSED.md::§R.29.1; docs/architecture/ORDEM_COMPRA_LIFECYCLE_SPEC_PROPOSED.md::§R.29.3 | C3C-B | PARTIALLY_SATISFIED | db/75_ordem_compra_c3c_inactive_cutover.sql | tests/ordem-compra-c3c-inactive.integration.sql | LOCAL_POSTGRES_18_4_ONLY | 89123729b3529fff6e4a2336bfec2907c4b94b4c | Legacy application callers are not routed or state-disabled. |
-| OC-C3-COMPAT-001 | docs/architecture/ORDEM_COMPRA_LIFECYCLE_SPEC_PROPOSED.md::§R.29.1 | C3C-B | PLANNED | — | — | NOT_APPLIED | — | Exact C3C-B adapter scope requires a separately accepted phase contract. |
+| OC-C3-READ-001 | docs/architecture/ORDEM_COMPRA_LIFECYCLE_SPEC_PROPOSED.md::§R.29.2 | C3C-B | PARTIALLY_SATISFIED | db/75_ordem_compra_c3c_inactive_cutover.sql | tests/ordem-compra-c3c-inactive.smoke.js and tests/ordem-compra-c3c-inactive.integration.sql | LOCAL_POSTGRES_18_4_ONLY | 89123729b3529fff6e4a2336bfec2907c4b94b4c | BLOCKED pending PHASE-C3C-B-DB-PREREQ Component A (canonical order-catalog projection, docs/architecture/ORDEM_COMPRA_C3C_B_DB_PREREQUISITES_PHASE_CONTRACT.md §5) — the installed reader cannot represent pending/zero-receipt orders or project kg_pedido/status/supplier label (§25 of the C3C-B contract). |
+| OC-C3-WRITE-001 | docs/architecture/ORDEM_COMPRA_LIFECYCLE_SPEC_PROPOSED.md::§R.29.1; docs/architecture/ORDEM_COMPRA_LIFECYCLE_SPEC_PROPOSED.md::§R.29.3 | C3C-B | PARTIALLY_SATISFIED | db/75_ordem_compra_c3c_inactive_cutover.sql | tests/ordem-compra-c3c-inactive.integration.sql | LOCAL_POSTGRES_18_4_ONLY | 89123729b3529fff6e4a2336bfec2907c4b94b4c | BLOCKED pending PHASE-C3C-B-DB-PREREQ Component B (atomic legacy receipt-intent adapter, docs/architecture/ORDEM_COMPRA_C3C_B_DB_PREREQUISITES_PHASE_CONTRACT.md §6) — no client-authorized surface converts a flat absolute receipt into the native per-allocation signed-delta command (§26 of the C3C-B contract). |
+| OC-C3-COMPAT-001 | docs/architecture/ORDEM_COMPRA_LIFECYCLE_SPEC_PROPOSED.md::§R.29.1 | C3C-B | BLOCKED | — | — | NOT_APPLIED | — | Exact C3C-B adapter scope is bound (docs/architecture/ORDEM_COMPRA_C3C_B_PHASE_CONTRACT.md, ACCEPTED_WITH_BLOCKING_DATABASE_PREREQUISITES) but BLOCKED pending both database prerequisites in docs/architecture/ORDEM_COMPRA_C3C_B_DB_PREREQUISITES_PHASE_CONTRACT.md (PROPOSED, not yet accepted). |
 | OC-C3-NOUI-001 | docs/architecture/ORDEM_COMPRA_LIFECYCLE_SPEC_PROPOSED.md::§R.29.6 | C3C-B | PARTIALLY_SATISFIED | No UI artifact in C3C-A | Static manifest verification | LOCAL_ONLY | 89123729b3529fff6e4a2336bfec2907c4b94b4c | The no-new-UI boundary remains binding through later C3 work. |
 | OC-C3D-DEPLOY-001 | docs/architecture/ORDEM_COMPRA_LIFECYCLE_SPEC_PROPOSED.md::§R.29 | C3D | PLANNED | — | — | STAGING_NOT_APPLIED | — | Inactive deployment manifest and rehearsal remain unauthorized. |
 | OC-C3D-FENCE-001 | docs/architecture/ORDEM_COMPRA_LIFECYCLE_SPEC_PROPOSED.md::§R.29.3 | C3D | PARTIALLY_SATISFIED | db/75_ordem_compra_c3c_inactive_cutover.sql | tests/ordem-compra-c3c-inactive.integration.sql | LOCAL_POSTGRES_18_4_ONLY | 89123729b3529fff6e4a2336bfec2907c4b94b4c | Required staging admin and matching-supplier empirical proof is pending. |
@@ -52,18 +54,34 @@ Allowed dispositions: `SATISFIED`, `PARTIALLY_SATISFIED`, `PLANNED`, `DEFERRED`,
 
 ## Authorization boundary
 
-C3C-B is the next product lot but is unauthorized and has no phase contract.
-C3D, staging application/validation, deployment, activation, real snapshot/import,
-fence transition, read switch, final ACL-closure invocation, cutover, C4, C5,
-production, `main`, remotes, and push remain unauthorized.
+C3C-B is the next product lot; its material phase contract is
+`ACCEPTED_WITH_BLOCKING_DATABASE_PREREQUISITES` but implementation remains
+unauthorized, additionally blocked pending the separately `PROPOSED`
+`PHASE-C3C-B-DB-PREREQ` database contract. C3D, staging application/validation,
+deployment, activation, real snapshot/import, fence transition, read switch,
+final ACL-closure invocation, cutover, C4, C5, production, `main`, remotes, and
+push remain unauthorized.
 
 ## Material phase contract reference
 
 `docs/architecture/ORDEM_COMPRA_C3C_B_PHASE_CONTRACT.md` (authored by
 `C3C-B-MATERIAL-PHASE-CONTRACT-R1`, docs-only) binds the four `OC-C3-*` rows
 above to an exact repository scope, dependency inventory, implementation-file
-manifest, and hard stops for a future `PHASE-C3C-B` implementation order. It is
-`STATUS: PROPOSED / AWAITING SUPERVISOR ACCEPTANCE / IMPLEMENTATION NOT
-AUTHORIZED` and authorizes no implementation by itself. `ACTIVE_PHASE` and
-`ACTIVE_PHASE_CONTRACT` remain `NONE` in `PROJECT_STATE.md`; no disposition in
-the requirement matrix above was changed by this reference.
+manifest, and hard stops for a future `PHASE-C3C-B` implementation order. A
+read-only supervisor review returned `CHANGES_REQUIRED`; the resulting forward
+correction (§§0, 25–30 of that file) was accepted by the supervisor as
+`STATUS: ACCEPTED_WITH_BLOCKING_DATABASE_PREREQUISITES / IMPLEMENTATION NOT
+AUTHORIZED` (§31 of that file) — the contract's diagnosis is accepted, but
+`PHASE-C3C-B` implementation remains unauthorized and is additionally blocked
+pending the database prerequisites below. `ACTIVE_PHASE` and
+`ACTIVE_PHASE_CONTRACT` remain `NONE` in `PROJECT_STATE.md`.
+
+`docs/architecture/ORDEM_COMPRA_C3C_B_DB_PREREQUISITES_PHASE_CONTRACT.md`
+(`PHASE_ID: PHASE-C3C-B-DB-PREREQ`, authored by
+`C3C-B-DB-COMPATIBILITY-PREREQUISITES-CONTRACT-R1`, docs-only) defines the two
+blocking database components (Component A — canonical order-catalog
+projection; Component B — atomic legacy receipt-intent adapter) required to
+close `OC-C3-READ-001`/`OC-C3-WRITE-001`/`OC-C3-COMPAT-001`'s residual debts
+above, to migration-ready precision, with no migration authorized or created
+by that contract. It is `STATUS: PROPOSED / AWAITING SUPERVISOR ACCEPTANCE /
+IMPLEMENTATION NOT AUTHORIZED` and authorizes no implementation by itself.

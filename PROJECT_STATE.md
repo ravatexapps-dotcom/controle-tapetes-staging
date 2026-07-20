@@ -20,7 +20,7 @@ LAST_ACCEPTED_PHASE: PHASE-C3C-A
 ACTIVE_PHASE: NONE
 ACTIVE_PHASE_CONTRACT: NONE
 ACTIVE_TRACK: PURCHASE_ORDER_PHASE_C
-NEXT_AUTHORIZABLE_ACTION: C3C-B-MATERIAL-PHASE-CONTRACT-R1-SUPERVISOR-REVIEW
+NEXT_AUTHORIZABLE_ACTION: C3C-B-DB-COMPATIBILITY-PREREQUISITES-CONTRACT-R1-SUPERVISOR-REVIEW
 GOVERNING_SPEC: docs/architecture/ORDEM_COMPRA_LIFECYCLE_SPEC_PROPOSED.md
 TECHNICAL_CONTRACT: docs/architecture/PEDIDO_OP_SCHEMA_CONTRACT.md
 SEQUENCE_AUTHORITY: docs/architecture/PEDIDO_PRODUCTION_FLOW_BACKLOG.md
@@ -53,15 +53,28 @@ ACCEPTED_CHECKPOINT: dd631299f410027ebb23b006aa5e380ad460aefa
     deployment, remote, or push change.
   - `GOVERNANCE-STATE-HANDOFF-COMPACTION-R1-CLOSEOUT`: this closeout records that
     acceptance and advances the next authorizable action.
-- **NEXT_AUTHORIZABLE_ACTION:** `C3C-B-MATERIAL-PHASE-CONTRACT-R1-SUPERVISOR-REVIEW`.
-  The material phase contract for C3C-B was authored (docs-only) at
-  `docs/architecture/ORDEM_COMPRA_C3C_B_PHASE_CONTRACT.md` —
+  - `C3C-B-MATERIAL-PHASE-CONTRACT-R1`: a read-only supervisor review returned
+    `CHANGES_REQUIRED`; the resulting forward correction (two database hard
+    stops, a unified error policy, a supplier-reader disposition, and
+    exact-manifest wording — recorded in
+    `docs/architecture/ORDEM_COMPRA_C3C_B_PHASE_CONTRACT.md` §§0, 25–30) was
+    **ACCEPTED** by the supervisor as `ACCEPTED_WITH_BLOCKING_DATABASE_PREREQUISITES
+    / IMPLEMENTATION NOT AUTHORIZED` (§31 of that file). `PHASE-C3C-B`
+    implementation remains unauthorized and is now additionally blocked pending
+    a separate database-prerequisites contract.
+- **NEXT_AUTHORIZABLE_ACTION:** `C3C-B-DB-COMPATIBILITY-PREREQUISITES-CONTRACT-R1-SUPERVISOR-REVIEW`.
+  The database prerequisites required to unblock `PHASE-C3C-B` were bound to an
+  exact, implementation-ready design (docs-only) at
+  `docs/architecture/ORDEM_COMPRA_C3C_B_DB_PREREQUISITES_PHASE_CONTRACT.md`
+  (`PHASE_ID: PHASE-C3C-B-DB-PREREQ`) —
   `STATUS: PROPOSED / AWAITING SUPERVISOR ACCEPTANCE / IMPLEMENTATION NOT
-  AUTHORIZED`. **C3C-B remains the next product implementation lot but is
+  AUTHORIZED`. Two components: a canonical order-catalog read projection and an
+  atomic legacy receipt-intent write adapter, both independent of the C3 cutover
+  state machine. **C3C-B remains the next product implementation lot but is
   UNAUTHORIZED and has no ACTIVE phase contract** (`ACTIVE_PHASE` and
   `ACTIVE_PHASE_CONTRACT` remain `NONE`); no product phase chains automatically.
-  The next authorizable action is supervisor review/acceptance of that contract,
-  not implementation.
+  The next authorizable action is supervisor review/acceptance of the new
+  database-prerequisites contract, not implementation.
 
 ## Workspace and Git boundaries
 
@@ -167,9 +180,10 @@ and `docs/ledgers/G28_LEDGER.md`; in any wording divergence the archive/ledger w
 
 ## Product and environment prohibitions
 
-No product implementation, C3C-B contract, migration, application, validator,
-lifecycle/schema semantic, requirement-ID, or traceability change is authorized
-by the current action. C3C-B implementation, C3D, staging application/validation,
+No product implementation, migration, application, validator, lifecycle/schema
+semantic, requirement-ID, or traceability change beyond the disposition updates
+recorded in this pass is authorized by the current action. C3C-B implementation,
+`PHASE-C3C-B-DB-PREREQ` implementation, C3D, staging application/validation,
 activation, deployment, real snapshot/import, fence transition, read switch,
 final ACL-closure invocation, cutover, C4, C5, production access, `main`, remote
 mutation, and push all remain **UNAUTHORIZED**. Production `bhgifjrfagkzubpyqpew`
@@ -184,6 +198,7 @@ Commit SHAs there are the accepted technical commits; consult HEAD via Git.
 
 | Phase | Status | Date |
 |---|---|---|
+| `C3C-B-MATERIAL-PHASE-CONTRACT-R1` (forward correction, commit `6585a6c`) | `ACCEPTED_WITH_BLOCKING_DATABASE_PREREQUISITES / IMPLEMENTATION NOT AUTHORIZED` | 2026-07-20 |
 | `GOVERNANCE-STATE-HANDOFF-COMPACTION-R1` (accepted commit `1157b9e`) | `CLOSED / ACCEPTED` | 2026-07-20 |
 | `GOVERNANCE-SPEC-CUSTODY-FOUNDATION-R1` | `CLOSED / ACCEPTED` | 2026-07-20 |
 | `PHASE-C3C-A` (inactive impl. documentary closeout R1, `db/75`, R2-R4) | `CLOSED / TECHNICALLY ACCEPTED — LOCALLY VERIFIED / INACTIVE / NOT APPLIED TO STAGING` | 2026-07-20 |
@@ -226,7 +241,9 @@ Commit SHAs there are the accepted technical commits; consult HEAD via Git.
 - Technical contract (§13.15, unchanged): `docs/architecture/PEDIDO_OP_SCHEMA_CONTRACT.md`
 - Sequence authority: `docs/architecture/PEDIDO_PRODUCTION_FLOW_BACKLOG.md`
 - Active-track traceability: `docs/architecture/ORDEM_COMPRA_C3_TRACEABILITY.md`
-- C3C-B material phase contract (proposed, not active): `docs/architecture/ORDEM_COMPRA_C3C_B_PHASE_CONTRACT.md`
+- C3C-B material phase contract (accepted with blocking database prerequisites,
+  not active): `docs/architecture/ORDEM_COMPRA_C3C_B_PHASE_CONTRACT.md`
+- C3C-B database prerequisites contract (proposed, not active): `docs/architecture/ORDEM_COMPRA_C3C_B_DB_PREREQUISITES_PHASE_CONTRACT.md`
 - Append-only ledger: `docs/ledgers/G28_LEDGER.md`
 - Derived operational handoff: `AGENT_HANDOFF.md`
 - Documentation authority arbiter: `docs/DOCUMENTATION_INDEX.md`
