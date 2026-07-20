@@ -199,7 +199,114 @@ END;
 $test$;
 
 SELECT public.ordem_compra_c3c_set_canonical_read(75);
+
+CREATE POLICY c3c_test_public_only
+  ON public.ordem_compra_cutover FOR SELECT TO PUBLIC USING (TRUE);
+CREATE POLICY c3c_test_public_mixed
+  ON public.ordem_compra_cutover_source_snapshot FOR SELECT
+  TO PUBLIC, authenticated USING (TRUE);
+CREATE POLICY c3c_test_public_outside_scope
+  ON public.pedidos FOR SELECT TO PUBLIC USING (FALSE);
+
+CREATE TEMP TABLE _c3c_acl_before (
+  mixed_targets_public BOOLEAN NOT NULL,
+  mixed_roles_retained BOOLEAN NOT NULL,
+  outside_select BOOLEAN NOT NULL,
+  status TEXT NOT NULL,
+  read_authority TEXT NOT NULL,
+  reconciliation_status TEXT NOT NULL,
+  cutover_generation BIGINT,
+  productive_receipt_started_at TIMESTAMPTZ
+) ON COMMIT DROP;
+
+INSERT INTO _c3c_acl_before
+SELECT
+  0::oid = ANY(p.polroles),
+  cardinality(p.polroles) > 1,
+  has_table_privilege('authenticated', 'public.pedidos', 'SELECT'),
+  s.status,
+  s.read_authority,
+  s.reconciliation_status,
+  s.cutover_generation,
+  s.productive_receipt_started_at
+FROM pg_catalog.pg_policy p
+JOIN pg_catalog.pg_class c ON c.oid = p.polrelid
+JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace
+CROSS JOIN public.ordem_compra_cutover s
+WHERE n.nspname = 'public'
+  AND c.relname = 'ordem_compra_cutover_source_snapshot'
+  AND p.polname = 'c3c_test_public_mixed'
+  AND s.id = 1;
+
+DO $test$
+BEGIN
+  IF (SELECT count(*) FROM _c3c_acl_before) <> 1
+     OR NOT (SELECT mixed_targets_public FROM _c3c_acl_before) THEN
+    RAISE EXCEPTION 'mixed PUBLIC policy fixture was not represented in pg_policy';
+  END IF;
+  IF (SELECT count(*) FROM pg_catalog.pg_policy p
+      JOIN pg_catalog.pg_class c ON c.oid = p.polrelid
+      JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace
+      WHERE n.nspname = 'public'
+        AND p.polname IN ('c3c_test_public_only', 'c3c_test_public_mixed')
+        AND 0::oid = ANY(p.polroles)) <> 2 THEN
+    RAISE EXCEPTION 'protected PUBLIC policy fixtures were not detected';
+  END IF;
+END;
+$test$;
+
 SELECT public.ordem_compra_c3c_close_final_acl(75);
+
+DO $test$
+DECLARE
+  v_before _c3c_acl_before%ROWTYPE;
+  v_state public.ordem_compra_cutover%ROWTYPE;
+BEGIN
+  SELECT * INTO v_before FROM _c3c_acl_before;
+  SELECT * INTO v_state FROM public.ordem_compra_cutover WHERE id = 1;
+  IF EXISTS (
+    SELECT 1
+    FROM pg_catalog.pg_policy p
+    JOIN pg_catalog.pg_class c ON c.oid = p.polrelid
+    JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace
+    WHERE n.nspname = 'public'
+      AND 0::oid = ANY(p.polroles)
+      AND c.relname IN (
+        'ordens_compra_fio', 'necessidade_compra_fio',
+        'ordem_compra_item_compat_fio', 'ordem_compra_item_alocacao',
+        'ordem_compra_item', 'ordem_compra', 'saldo_fios', 'saldo_fios_op',
+        'ordem_compra_recebimentos', 'ordem_compra_fio_lancamentos',
+        'ordem_compra_fio_movimentos_estoque', 'ordem_compra_cutover',
+        'ordem_compra_cutover_source_snapshot',
+        'ordem_compra_cutover_inventory_baseline'
+      )
+  ) THEN
+    RAISE EXCEPTION 'protected PUBLIC policy remained after closure';
+  END IF;
+  IF NOT EXISTS (
+    SELECT 1
+    FROM pg_catalog.pg_policy p
+    JOIN pg_catalog.pg_class c ON c.oid = p.polrelid
+    JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace
+    WHERE n.nspname = 'public' AND c.relname = 'pedidos'
+      AND p.polname = 'c3c_test_public_outside_scope'
+      AND 0::oid = ANY(p.polroles)
+  ) THEN
+    RAISE EXCEPTION 'PUBLIC policy outside protected scope was changed';
+  END IF;
+  IF has_table_privilege('authenticated', 'public.pedidos', 'SELECT')
+       IS DISTINCT FROM v_before.outside_select
+     OR v_state.status IS DISTINCT FROM v_before.status
+     OR v_state.read_authority IS DISTINCT FROM v_before.read_authority
+     OR v_state.reconciliation_status IS DISTINCT FROM v_before.reconciliation_status
+     OR v_state.cutover_generation IS DISTINCT FROM v_before.cutover_generation
+     OR v_state.productive_receipt_started_at IS DISTINCT FROM v_before.productive_receipt_started_at
+     OR v_state.final_acl_closed_at IS NULL THEN
+    RAISE EXCEPTION 'ACL closure changed unrelated privilege or cutover state';
+  END IF;
+END;
+$test$;
+
 SELECT public.ordem_compra_c3c_pre_ponr_rollback(75);
 
 DO $test$

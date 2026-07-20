@@ -73,7 +73,29 @@ test('final ACL closure is owner-only, separate, and not invoked by migration ap
   assert.match(sql, /ordem_compra_c3c_close_final_acl/);
   assert.match(sql, /REVOKE SELECT, INSERT, UPDATE, DELETE, TRUNCATE, REFERENCES, TRIGGER[\s\S]*ordens_compra_fio/i);
   assert.match(sql, /REVOKE UPDATE\(op_id, fornecedor_id, tipo, cor_id, cor_poliester, kg_pedido,[\s\S]*status_recebimento\)/i);
-  assert.match(sql, /p\.polroles\s*=\s*ARRAY\[0::oid\]/i);
+  assert.doesNotMatch(sql, /p\.polroles\s*=\s*ARRAY\[0::oid\]/i);
+  assert.equal((sql.match(/0::oid\s*=\s*ANY\s*\(\s*p\.polroles\s*\)/gi) || []).length, 2);
+  assert.equal((sql.match(/c\.relname::TEXT\s*=\s*ANY\s*\(\s*v_protected_tables\s*\)/gi) || []).length, 2);
+  const protectedTables = [
+    'ordens_compra_fio',
+    'necessidade_compra_fio',
+    'ordem_compra_item_compat_fio',
+    'ordem_compra_item_alocacao',
+    'ordem_compra_item',
+    'ordem_compra',
+    'saldo_fios',
+    'saldo_fios_op',
+    'ordem_compra_recebimentos',
+    'ordem_compra_fio_lancamentos',
+    'ordem_compra_fio_movimentos_estoque',
+    'ordem_compra_cutover',
+    'ordem_compra_cutover_source_snapshot',
+    'ordem_compra_cutover_inventory_baseline',
+  ];
+  const tableSet = sql.match(/v_protected_tables\s+CONSTANT\s+TEXT\[\]\s*:=\s*ARRAY\[([\s\S]*?)\]::TEXT\[\]/i);
+  assert.ok(tableSet, 'final ACL closure must define one protected-table set');
+  assert.deepEqual([...tableSet[1].matchAll(/'([^']+)'/g)].map((match) => match[1]), protectedTables);
+  assert.match(sql, /RAISE EXCEPTION 'public_policy_remaining' USING ERRCODE = '55000'[\s\S]*UPDATE public\.ordem_compra_cutover SET final_acl_closed_at/i);
   assert.doesNotMatch(executable, /^\s*SELECT\s+public\.ordem_compra_c3c_close_final_acl/im);
 });
 

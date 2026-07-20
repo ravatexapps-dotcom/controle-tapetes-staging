@@ -674,6 +674,22 @@ SET search_path = ''
 AS $$
 DECLARE
   r RECORD;
+  v_protected_tables CONSTANT TEXT[] := ARRAY[
+    'ordens_compra_fio',
+    'necessidade_compra_fio',
+    'ordem_compra_item_compat_fio',
+    'ordem_compra_item_alocacao',
+    'ordem_compra_item',
+    'ordem_compra',
+    'saldo_fios',
+    'saldo_fios_op',
+    'ordem_compra_recebimentos',
+    'ordem_compra_fio_lancamentos',
+    'ordem_compra_fio_movimentos_estoque',
+    'ordem_compra_cutover',
+    'ordem_compra_cutover_source_snapshot',
+    'ordem_compra_cutover_inventory_baseline'
+  ]::TEXT[];
 BEGIN
   IF current_user <> 'postgres' OR NOT public.ordem_compra_c3c_session_lock_held(p_generation) THEN
     RAISE EXCEPTION 'cutover_session_lock_required' USING ERRCODE = '55000';
@@ -709,14 +725,23 @@ BEGIN
     FROM pg_catalog.pg_policy p
     JOIN pg_catalog.pg_class c ON c.oid = p.polrelid
     JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace
-    WHERE n.nspname = 'public' AND p.polroles = ARRAY[0::oid]
-      AND c.relname IN ('ordens_compra_fio','ordem_compra_recebimentos',
-        'ordem_compra_fio_lancamentos','ordem_compra_fio_movimentos_estoque',
-        'ordem_compra_cutover','ordem_compra_cutover_source_snapshot',
-        'ordem_compra_cutover_inventory_baseline')
+    WHERE n.nspname = 'public'
+      AND 0::oid = ANY (p.polroles)
+      AND c.relname::TEXT = ANY (v_protected_tables)
   LOOP
     EXECUTE format('DROP POLICY %I ON %I.%I', r.polname, r.nspname, r.relname);
   END LOOP;
+  IF EXISTS (
+    SELECT 1
+    FROM pg_catalog.pg_policy p
+    JOIN pg_catalog.pg_class c ON c.oid = p.polrelid
+    JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace
+    WHERE n.nspname = 'public'
+      AND 0::oid = ANY (p.polroles)
+      AND c.relname::TEXT = ANY (v_protected_tables)
+  ) THEN
+    RAISE EXCEPTION 'public_policy_remaining' USING ERRCODE = '55000';
+  END IF;
   UPDATE public.ordem_compra_cutover SET final_acl_closed_at = clock_timestamp() WHERE id = 1;
 END;
 $$;
