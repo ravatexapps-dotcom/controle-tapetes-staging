@@ -76,7 +76,7 @@ ACCEPTED_CHECKPOINT: dd631299f410027ebb23b006aa5e380ad460aefa
     implementation, migration, environment action, or normative-file change was
     made. `PHASE-C3C-B-DB-PREREQ` implementation remains a separate
     authorization.
-  - `PHASE-C3C-B-DB-PREREQ` (implementation): **IMPLEMENTED / LOCALLY VERIFIED /
+  - `PHASE-C3C-B-DB-PREREQ` (implementation): **IMPLEMENTED / LOCAL DB VERIFIED /
     AWAITING SUPERVISOR ACCEPTANCE** (2026-07-20). The architect authorized
     implementation; `db/76_ordem_compra_c3c_b_db_prerequisites.sql` now exists —
     Component A (`listar_ordens_compra_fio_compat`) and Component B
@@ -91,14 +91,31 @@ ACCEPTED_CHECKPOINT: dd631299f410027ebb23b006aa5e380ad460aefa
     (`recebimento`/`estorno`), carry compat identity solely in
     `idempotency_namespace='legacy_compat_receipt_v1'`, introduce no
     `recebimento_compat`, and leave the `comando_tipo` `CHECK` and the shape guard
-    unchanged. Local verification: the new static smoke suite plus the static-smoke
-    regressions PASS (49/49); the validator and `git diff --check`s are clean. The
-    two DB-backed tests (`…integration.sql`, `…concurrency.mjs`) and the DB-backed
-    C3C-A regressions are authored to §34.4 but **not executed** — the local
-    PostgreSQL 18.4 cluster crash-loops on startup (Windows shared-memory
-    reservation failure), reported as unavailable, not inferred. Supabase was not
-    used (out of this phase's `LOCAL_ONLY` scope). The phase is **not accepted**;
-    no dependent C3C-B requirement is `SATISFIED`; `ACTIVE_PHASE`/
+    unchanged.
+    **DB-backed validation completion (contract §36):** a disposable, isolated
+    local PostgreSQL 18.4 cluster (initdb/pg_ctl, distinct port, outside the
+    host's broken cluster and outside the repository) was used to apply the full
+    `db/01`…`db/76` sequence, reapply `db/76` alone (idempotent), run both new
+    DB-backed tests (`…integration.sql`, `…concurrency.mjs` — both **PASS**),
+    rehearse a real persisted rollback (drop both functions, restore both prior
+    constraints byte-for-byte, confirm zero bridge/backfill/compat rows required
+    reversal) and reapply, then rerun both tests again (**PASS**). One genuine
+    `db/76` defect was found and corrected in-scope: Component A's activation
+    check used a bare `status` column reference ambiguous with its own
+    `RETURNS TABLE` OUT column of the same name (PL/pgSQL `42702`); fixed with a
+    `%ROWTYPE` variable matching Component B's/`db/75`'s own pattern. Several
+    test-file-only defects (fixture shape, role/grant scoping, a transaction-local
+    vs. session-scoped GUC mistake, and a lock-order deadlock) were also
+    corrected, confined to the three C3C-B test files. The two C3C-A DB-backed
+    regressions (`…c3c-inactive.integration.sql`/`-concurrency.mjs`) remain
+    genuinely unexecutable against any synthetic local corpus — they assert
+    exact real historical aggregate values (39 headers/44 lines/20,221.280 kg/
+    405.980 kg) tied to the actual `ucrjtfswnfdlxwtmxnoo` corpus, a pre-existing
+    characteristic of those C3C-A files, not a `db/76` defect; reported as
+    unavailable, not inferred. Supabase was not used (out of this phase's
+    `LOCAL_ONLY` scope). Local verification: static smoke suite PASS (49/49);
+    validator and `git diff --check`s clean. The phase is **not accepted**; no
+    dependent C3C-B requirement is `SATISFIED`; `ACTIVE_PHASE`/
     `ACTIVE_PHASE_CONTRACT` remain `NONE`.
 - **NEXT_AUTHORIZABLE_ACTION:** `PHASE-C3C-B-DB-PREREQ-SUPERVISOR-REVIEW`.
   A read-only supervisor review of the implemented `PHASE-C3C-B-DB-PREREQ`
@@ -236,7 +253,7 @@ Commit SHAs there are the accepted technical commits; consult HEAD via Git.
 
 | Phase | Status | Date |
 |---|---|---|
-| `PHASE-C3C-B-DB-PREREQ` (implementation, `db/76` + 3 tests + `§R.29.7`/`§13.18` + contract §35 ruling) | `IMPLEMENTED / LOCALLY VERIFIED / AWAITING SUPERVISOR ACCEPTANCE` | 2026-07-20 |
+| `PHASE-C3C-B-DB-PREREQ` (implementation + DB-backed validation, `db/76` + 3 tests + `§R.29.7`/`§13.18` + contract §35/§36) | `IMPLEMENTED / LOCAL DB VERIFIED / AWAITING SUPERVISOR ACCEPTANCE` | 2026-07-20 |
 | `C3C-B-DB-COMPATIBILITY-PREREQUISITES-CONTRACT` (ratification closeout / R3 documentary forward correction, §34) | `ACCEPTED_WITH_NONBLOCKING_DOCUMENTARY_DEBT / IMPLEMENTATION NOT YET AUTHORIZED` | 2026-07-20 |
 | `C3C-B-MATERIAL-PHASE-CONTRACT-R1` (forward correction, commit `6585a6c`) | `ACCEPTED_WITH_BLOCKING_DATABASE_PREREQUISITES / IMPLEMENTATION NOT AUTHORIZED` | 2026-07-20 |
 | `GOVERNANCE-STATE-HANDOFF-COMPACTION-R1` (accepted commit `1157b9e`) | `CLOSED / ACCEPTED` | 2026-07-20 |
@@ -283,7 +300,7 @@ Commit SHAs there are the accepted technical commits; consult HEAD via Git.
 - Active-track traceability: `docs/architecture/ORDEM_COMPRA_C3_TRACEABILITY.md`
 - C3C-B material phase contract (accepted with blocking database prerequisites,
   not active): `docs/architecture/ORDEM_COMPRA_C3C_B_PHASE_CONTRACT.md`
-- C3C-B database prerequisites contract (implemented / locally verified / awaiting supervisor acceptance; §35 records the implementation closeout, not active): `docs/architecture/ORDEM_COMPRA_C3C_B_DB_PREREQUISITES_PHASE_CONTRACT.md`
+- C3C-B database prerequisites contract (implemented / local DB verified / awaiting supervisor acceptance; §35 records the implementation closeout, §36 records DB-backed validation completion, not active): `docs/architecture/ORDEM_COMPRA_C3C_B_DB_PREREQUISITES_PHASE_CONTRACT.md`
 - Append-only ledger: `docs/ledgers/G28_LEDGER.md`
 - Derived operational handoff: `AGENT_HANDOFF.md`
 - Documentation authority arbiter: `docs/DOCUMENTATION_INDEX.md`

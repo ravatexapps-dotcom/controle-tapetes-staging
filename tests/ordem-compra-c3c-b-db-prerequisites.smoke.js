@@ -45,7 +45,12 @@ test('both functions are owner postgres and closed to every role except authenti
 
 test('Component A is inert until canonical_active and reads only the fixed legacy corpus', () => {
   assert.match(sql, /RAISE EXCEPTION 'listar_compat_inativo' USING ERRCODE = '55000'/i);
-  assert.match(sql, /status = 'canonical_active' AND read_authority = 'canonical'/i);
+  // %ROWTYPE variable, not a bare column reference (this function's own
+  // RETURNS TABLE declares an OUT column named "status", which would make a
+  // bare "status" ambiguous under PL/pgSQL's variable/column resolution).
+  assert.match(sql, /v_cutover public\.ordem_compra_cutover%ROWTYPE/i);
+  assert.match(sql, /v_cutover\.status <> 'canonical_active'/i);
+  assert.match(sql, /v_cutover\.read_authority <> 'canonical'/i);
   assert.match(sql, /WHERE oc\.legado = TRUE/i);
   // Supplier scoping mirrors the installed canonical reader.
   assert.match(sql, /public\.is_admin\(\) OR oc\.fornecedor_id = v_supplier_id/i);

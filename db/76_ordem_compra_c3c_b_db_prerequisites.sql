@@ -115,15 +115,19 @@ SET search_path = ''
 AS $$
 DECLARE
   v_supplier_id BIGINT;
+  v_cutover public.ordem_compra_cutover%ROWTYPE;
 BEGIN
   -- Inert until canonical activation. The native cache this reader projects
   -- (ordem_compra_item.kg_recebido) is authoritative only under canonical_active
   -- (contract §30). Signal inactivity by raising, exactly like the installed
-  -- canonical reader listar_recebimentos_ordem_compra_normalizados.
-  IF NOT EXISTS (
-    SELECT 1 FROM public.ordem_compra_cutover
-    WHERE id = 1 AND status = 'canonical_active' AND read_authority = 'canonical'
-  ) THEN
+  -- canonical reader listar_recebimentos_ordem_compra_normalizados. A %ROWTYPE
+  -- variable (not a bare column reference) is required here: this function's
+  -- own RETURNS TABLE declares an OUT column named "status", which would
+  -- otherwise make a bare "status" reference ambiguous under PL/pgSQL's
+  -- variable/column conflict resolution.
+  SELECT * INTO v_cutover FROM public.ordem_compra_cutover WHERE id = 1;
+  IF NOT FOUND OR v_cutover.status <> 'canonical_active'
+     OR v_cutover.read_authority <> 'canonical' THEN
     RAISE EXCEPTION 'listar_compat_inativo' USING ERRCODE = '55000';
   END IF;
 

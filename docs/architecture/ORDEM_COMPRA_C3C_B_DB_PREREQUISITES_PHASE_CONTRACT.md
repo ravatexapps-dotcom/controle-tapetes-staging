@@ -2002,7 +2002,7 @@ are unaffected.
 
 ### 35.6 Status and next authorizable action
 
-`STATUS`: **`IMPLEMENTED / LOCALLY VERIFIED / AWAITING SUPERVISOR ACCEPTANCE`**.
+`STATUS` (superseded by §36): **`IMPLEMENTED / LOCALLY VERIFIED / AWAITING SUPERVISOR ACCEPTANCE`**.
 `ACTIVE_PHASE`/`ACTIVE_PHASE_CONTRACT` remain `NONE`; no dependent C3C-B
 requirement is `SATISFIED`. `NEXT_AUTHORIZABLE_ACTION`:
 **`PHASE-C3C-B-DB-PREREQ-SUPERVISOR-REVIEW`**. Staging application/validation,
@@ -2010,3 +2010,194 @@ deployment, activation, real snapshot/import, fence transition, read switch,
 final ACL-closure invocation, cutover, C3D, C4, C5, production access, `main`,
 `origin`/`production` remote mutation, and any further push remain unauthorized.
 Accounting subject: `feat: add C3C-B database prerequisites`.
+
+## 36. DB-backed validation completion — isolated local Postgres (governs on conflict)
+
+> **Append-only forward correction (`FORWARD_CORRECTION` per
+> `docs/governance/DOCUMENTATION_MODEL.md` §19).** Recorded under the architect
+> order authorizing `VALIDATION CONTINUATION — ISOLATED LOCAL POSTGRES`. §§0–35
+> are preserved verbatim (no history rewrite). **Where §§1–35 and this §36
+> conflict, §36 governs.** This section replaces §35.5's "not executed" finding
+> for the two C3C-B DB-backed test files, which have since been executed
+> successfully against a disposable local PostgreSQL 18.4 cluster, and records
+> two in-scope defect corrections (one in `db/76` itself, several in the test
+> files) discovered in the process. No architecture is reopened; no Supabase or
+> staging access occurred; `ACTIVE_PHASE`/`ACTIVE_PHASE_CONTRACT` remain `NONE`.
+
+### 36.1 Runtime used
+
+The host's scoop-installed PostgreSQL 18.4 cluster (§35.5) remained unusable
+(same Windows shared-memory reservation crash). Docker, Podman, and WSL were
+absent from this host. A **disposable, isolated local PostgreSQL 18.4 cluster**
+was initialized via `initdb`/`pg_ctl` into a fresh data directory under the
+system temp path (outside the repository and outside the host's broken
+`PGDATA`), on a distinct port, with `autovacuum = off` and reduced parallel
+workers as mitigation. It ran stably for the full validation session. A
+Supabase-compatibility shim (schema `auth` with `uid()`/`role()`/`users`, roles
+`anon`/`authenticated`/`service_role`, `extensions` schema with `pgcrypto`) was
+bootstrapped in the disposable database only — these objects exist solely in
+that throwaway cluster, are not part of the repository's migration history, and
+are not referenced by any tracked file.
+
+### 36.2 Schema apply and `db/76` reapply
+
+The full `db/01`…`db/76` sequence applied cleanly, in order, against the
+disposable cluster. `db/67`'s own migration-time self-check requires the exact
+historical 64-row legacy `ordens_compra_fio` corpus (27/12/13/12 classification,
+per the ratified diagnosis) to already exist at apply time; that corpus is real
+historical production data, not reproduced by any repository seed script. A
+synthetic fixture batch matching only that classification shape (not the deeper
+historical aggregate values, §36.5) was inserted immediately before `db/67`,
+external to any tracked migration file, solely to let the unmodified `db/67`
+apply and self-verify. `db/76` was then reapplied alone afterward: it converged
+with no error and no duplicate constraint, proving the additive
+`idempotency_namespace` `CHECK` extension (`DROP CONSTRAINT IF EXISTS` +
+`ADD CONSTRAINT`) is safely re-runnable.
+
+### 36.3 DB-backed test results
+
+- `tests/ordem-compra-c3c-b-db-prerequisites.integration.sql` — **PASS**
+  (`C3C_B_INTEGRATION_PASS`). Covers: inactive behavior in `legacy_active` and
+  `maintenance_fenced` (Component A raises `listar_compat_inativo`; Component B
+  returns `recebimento_compat_inativo`; zero mutation while inactive); both
+  active only in `canonical_active`; Component A item grain and item × OP
+  grain; pending/zero-receipt representation; admin/matching-supplier/
+  non-matching-supplier/anonymous role matrix; absolute increase (with PONR
+  participation) / equal-no-op / admin-only decrease; deterministic LIFO
+  reversal; the imported-balance immutable floor
+  (`reducao_abaixo_saldo_importado`); supplier-decrease denial
+  (`decremento_exige_admin`); exact-replay and conflicting-payload idempotency;
+  unmapped-flat-row denial (`mapeamento_compat_ausente`); the additive
+  `CHECK` admitting `legacy_compat_receipt_v1` while `legacy_initial_balance_v1`
+  remains valid and no `comando_tipo='recebimento_compat'` is ever written; and
+  a reduced-manifest rollback rehearsal proving the legacy delete/reinsert flow
+  on `ordens_compra_fio` is unbroken (no trigger/FK introduced).
+- `tests/ordem-compra-c3c-b-db-prerequisites-concurrency.mjs` — **PASS**
+  (`C3C_B_CONCURRENCY_PASS`). Proves the item `FOR UPDATE` lock genuinely
+  serializes two concurrent Component B calls against the same legacy-compat
+  item, confirmed via `pg_catalog.pg_blocking_pids`, and that the second caller
+  re-evaluates the current total fresh after its lock is granted rather than
+  applying a stale delta (holder moves the absolute total 40→55 kg; subject,
+  unblocked, targets 80 kg; final cache is exactly 80 kg — a stale read would
+  have produced 95 kg). `pg_stat_database.deadlocks` unchanged across the run
+  (no new deadlock).
+- Both tests were then **rerun after the standalone rollback-and-reapply cycle**
+  (§36.4) and **passed again**, confirming `db/76`'s objects are correct and
+  usable both before and after a real (not test-transaction-nested) rollback.
+
+### 36.4 Rollback rehearsal (standalone, persisted — supersedes the transaction-nested proof in the integration test alone)
+
+Before rollback: direct queries confirmed zero `trg_ordens_compra_fio_bridge_compat`
+triggers, zero `ordem_compra_item_compat_fio` rows with `origem='native_bridge'`,
+and zero `ordem_compra_recebimentos` rows with
+`idempotency_namespace='legacy_compat_receipt_v1'` — nothing required reversal,
+confirming §17/§34.4's "no backfill rows, no bridge trigger" claim empirically,
+not just by migration-text inspection. Rollback executed and committed: both new
+functions dropped; both prior `idempotency_namespace`/hash-shape `CHECK`
+definitions restored byte-for-byte (verified via `pg_get_constraintdef`). `db/76`
+was then reapplied (§36.2) and both DB-backed tests rerun and passed (§36.3).
+
+### 36.5 Defects found and corrected (in-scope: `db/76` and the three test files only)
+
+**One defect in `db/76` itself**, corrected:
+
+- Component A (`listar_ordens_compra_fio_compat`) checked cutover activation
+  with a bare `SELECT 1 FROM ordem_compra_cutover WHERE id = 1 AND status =
+  'canonical_active' AND read_authority = 'canonical'`. Because this function's
+  own `RETURNS TABLE` declares an OUT column literally named `status`,
+  PL/pgSQL's variable/column conflict resolution made the bare `status`
+  reference ambiguous, raising `42702` on every call. **Fix:** replaced with a
+  `v_cutover public.ordem_compra_cutover%ROWTYPE` variable and
+  `v_cutover.status`/`v_cutover.read_authority` field access — the identical
+  pattern Component B and `db/75`'s own wrappers already use, and now the only
+  form used in this file. No other object, grant, or semantic changed.
+
+**Several defects in the C3C-B test files**, corrected (none in `db/67`,
+`db/75`, or any product/UI/JS/HTML/CSS file):
+
+- `…integration.sql`: the synthetic imported-balance ledger line
+  (`tipo='import_saldo_inicial'`) was fixture-seeded with a non-`NULL`
+  `data_recebimento` and a `NULL` `ator_tipo`, violating the `db/73`
+  constraints (`…_c3a_receipt_date_check`, `…_c3a_actor_check`) that require
+  `NULL` date and `ator_tipo='sistema'` for import rows. Fixed in both
+  `…integration.sql` and `…concurrency.mjs` (identical fixture shape).
+- `…integration.sql`: the rollback-rehearsal section originally ran *after* the
+  productive Component B tests had already written `legacy_compat_receipt_v1`
+  headers, so restoring the narrower two-value `CHECK` necessarily failed
+  against those existing non-conforming rows — not a `db/76` defect, but a test
+  sequencing error: the contract's rollback scenario (§17/§34.4) is inherently
+  pre-activation (before Component B is ever productively used). Fixed with a
+  `SAVEPOINT`/`ROLLBACK TO` pair that discards the productive-write side
+  effects (already asserted) immediately before the rehearsal, reproducing the
+  real near-term rollback precondition.
+- `…integration.sql`: a post-increase assertion read
+  `ordem_compra_cutover.productive_receipt_started_at` directly while still
+  `SET LOCAL ROLE authenticated` — that table is fully revoked from every
+  client role (`db/75`). Fixed by `RESET ROLE` around that one check.
+  `ordem_compra_item`/other tables the surrounding assertions read do carry a
+  direct `authenticated` grant and were unaffected.
+- `…concurrency.mjs`: the holder session tried a raw
+  `SELECT … FOR UPDATE` on `ordem_compra_item` while `SET ROLE authenticated`
+  (only a plain `SELECT` grant exists for that role; direct mutation/locking is
+  by design reserved to the owning `SECURITY DEFINER` functions). Fixed by
+  running that raw lock as the cluster owner and reserving the `authenticated`
+  role switch for the actual RPC calls, whose internal locking runs as the
+  function owner regardless of caller.
+- `…concurrency.mjs`: `set_config('request.jwt.claim.sub', …, TRUE)` sets a
+  **transaction-local** GUC; each statement sent to the interactive `psql`
+  session (no wrapping `BEGIN`) executes as its own separate implicit
+  transaction, so the claim silently reverted before the next statement and
+  `auth.uid()` read back `NULL`, failing every RPC call closed with
+  `sem_permissao`. Fixed by using session-scoped persistence (`FALSE`) instead.
+- `…concurrency.mjs`: after that auth fix, the holder locked only the item row
+  directly, while Component B locks the order header **then** the item
+  internally (§6.4.2/§6.10). This produced a genuine deadlock once the holder
+  later issued its own RPC call needing the header (already held hostage by
+  the blocked subject, which held the header while waiting on the item). Fixed
+  by having the holder lock the header **and** the item upfront, in the same
+  order Component B uses — the same discipline the function itself relies on
+  to stay deadlock-free.
+
+None of these corrections touched the frozen architecture (§34.7's six ratified
+decisions), the manifest (§33.1 — still exactly two functions plus one additive
+`CHECK`), `db/67`, `db/75`, or any product/UI/JS/HTML/CSS file.
+
+### 36.6 C3C-A DB-backed regressions — genuine, pre-existing environment/data limitation (not `db/76`-related)
+
+`tests/ordem-compra-c3c-inactive.integration.sql` and
+`tests/ordem-compra-c3c-inactive-concurrency.mjs` could **not** be executed
+against the disposable cluster (or any synthetic corpus). Both assert exact
+ratified historical aggregate values tied to the real
+`ucrjtfswnfdlxwtmxnoo` corpus — `…integration.sql` checks header count `= 39`,
+ledger-line count `= 44`, total `= 20221.280` kg, and excess `= 405.980` kg
+(lines 215–224, 434–445); `…concurrency.mjs` asserts the import result JSON
+contains `"headers": 39` (line 179). These are the specific real-data numbers
+from `docs/reports/ORDEM_COMPRA_LEGACY_DIAGNOSIS_2026-07-18.md`, not a function
+of any classification-count-only synthetic fixture (the kind built for `db/67`,
+§36.2) — reproducing them would require a byte-for-byte synthetic clone of the
+real historical corpus's exact per-row `kg_pedido`/`kg_recebido` values, which
+this `LOCAL_ONLY`, no-Supabase phase has no authorized way to construct or
+verify against the genuine source of truth. This is a **pre-existing
+characteristic of the C3C-A test files** (fixed at `PHASE-C3C-A`'s own
+authoring, unrelated to and unmodified by this phase), not a defect discovered
+in or introduced by `db/76`. The two C3C-A **static** smoke regressions already
+required by this phase (`ordem-compra-c3c-inactive.smoke.js`, which is
+data-independent) ran and passed (§35.5/§36.3's combined 49/49). Reported here
+as **unavailable**, not inferred, consistent with the order's evidence
+discipline.
+
+### 36.7 Validation and status
+
+`node scripts/validate-spec-custody.mjs` PASS; `git diff --check` and
+`git diff --cached --check` clean (checked again after this pass's edits,
+§36.8). `ACTIVE_PHASE`/`ACTIVE_PHASE_CONTRACT` remain `NONE`; no dependent
+C3C-B requirement is marked `SATISFIED`.
+
+`STATUS`: **`IMPLEMENTED / LOCAL DB VERIFIED / AWAITING SUPERVISOR ACCEPTANCE`**.
+`NEXT_AUTHORIZABLE_ACTION`: **`PHASE-C3C-B-DB-PREREQ-SUPERVISOR-REVIEW`**
+(unchanged). Staging application/validation, deployment, activation, real
+snapshot/import, fence transition, read switch, final ACL-closure invocation,
+cutover, C3D, C4, C5, production access, Supabase writes, `main`,
+`origin`/`production` remote mutation, and any push beyond the authorized
+`staging/dev` fast-forward remain unauthorized. Accounting subject:
+`test: complete C3C-B DB prerequisites validation`.

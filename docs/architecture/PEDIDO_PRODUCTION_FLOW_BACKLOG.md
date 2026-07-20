@@ -8,6 +8,30 @@
 > `PROJECT_STATE.md`. Phase sequence, dependencies, backlog items, and accepted
 > architecture in this file remain authoritative; live operational status does not.
 
+# Update 2026-07-20 - PHASE-C3C-B-DB-PREREQ DB-Backed Validation Completion
+
+Phase: `PHASE-C3C-B-DB-PREREQ` (validation continuation)
+Type: DB-backed validation, `LOCAL_ONLY`, isolated disposable Postgres cluster.
+
+The prior entry reported the two new DB-backed tests as authored but not
+executed (host PostgreSQL crash-looping). This pass stood up a disposable,
+isolated local PostgreSQL 18.4 cluster (initdb/pg_ctl, distinct port, outside
+the repository and the host's broken cluster), applied the full `db/01`…`db/76`
+sequence, reapplied `db/76` alone (idempotent), ran both new DB-backed tests
+(`…integration.sql`, `…concurrency.mjs` — both PASS), rehearsed a real persisted
+rollback (drop both functions, restore both prior constraints, confirm zero
+bridge/backfill/compat rows required reversal) and reapplied, then reran both
+tests again (PASS). One genuine `db/76` defect (a PL/pgSQL column/OUT-parameter
+naming ambiguity in Component A) was found and corrected in-scope; several
+test-file-only defects were also corrected, confined to the three C3C-B test
+files. The two C3C-A DB-backed regressions remain genuinely unexecutable
+against any synthetic corpus (they assert exact real historical aggregate
+values, a pre-existing characteristic unrelated to `db/76`). `STATUS:
+IMPLEMENTED / LOCAL DB VERIFIED / AWAITING SUPERVISOR ACCEPTANCE`. This entry
+changes no backlog sequence, dependency, or accepted architecture. Current live
+state, next authorizable action (`PHASE-C3C-B-DB-PREREQ-SUPERVISOR-REVIEW`),
+and debts remain solely owned by `PROJECT_STATE.md`.
+
 # Update 2026-07-20 - PHASE-C3C-B-DB-PREREQ Implemented / Locally Verified
 
 Phase: `PHASE-C3C-B-DB-PREREQ`

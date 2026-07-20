@@ -156,8 +156,8 @@ async function setup() {
     INSERT INTO public.ordem_compra_fio_lancamentos(id, ordem_compra_fio_id, ordem_compra_item_id, kg_recebido,
       data_recebimento, criado_por, tipo, idempotency_key, origem_tipo, recebimento_id, ordem_compra_id,
       ordem_compra_item_alocacao_id, op_id, material, cor_id, cor_poliester, kg_excesso, ator_tipo, linha_indice)
-      VALUES (770001, NULL, 77001, 40.000, CURRENT_DATE, NULL, 'import_saldo_inicial', 'c3cb_conc_import_line',
-        'legacy_flat_snapshot', 770001, 77001, 77001, 77001, 'algodao', 77001, NULL, 0, NULL, 1);
+      VALUES (770001, NULL, 77001, 40.000, NULL, NULL, 'import_saldo_inicial', 'c3cb_conc_import_line',
+        'legacy_flat_snapshot', 770001, 77001, 77001, 77001, 'algodao', 77001, NULL, 0, 'sistema', 1);
     UPDATE public.ordem_compra_cutover SET status='canonical_active', read_authority='canonical',
       reconciliation_status='reconciled', final_acl_closed_at=clock_timestamp(),
       canonical_activated_at=clock_timestamp(), cutover_generation=770001 WHERE id=1;
@@ -197,16 +197,33 @@ async function main() {
   const deadlocksBefore = Number((await queryLines(
     `SELECT deadlocks FROM pg_catalog.pg_stat_database WHERE datname = current_database();`))[0]);
 
-  const auth = (uid) => `SET ROLE authenticated; SELECT set_config('request.jwt.claim.sub', '${uid}', TRUE);`;
+  // is_local=FALSE (session-scoped), not TRUE: each statement sent to this
+  // interactive psql session runs as its own separate implicit transaction
+  // (no wrapping BEGIN), so a transaction-local (TRUE) GUC would silently
+  // revert before the next statement — auth.uid() would read back NULL and
+  // the RPC call would fail closed with sem_permissao.
+  const auth = (uid) => `SET ROLE authenticated; SELECT set_config('request.jwt.claim.sub', '${uid}', FALSE);`;
 
-  // Holder: lock the item row, hold it open.
+  // Holder: lock the order header then the item row directly as the cluster
+  // owner, in the SAME order Component B locks them internally (order header
+  // first, then item, per §6.4.2/§6.10). Locking both upfront — not just the
+  // item — is required to avoid a genuine deadlock: if the holder held only
+  // the item, the subject's RPC call would acquire the header (uncontested)
+  // then block on the item, leaving the header hostage; when the holder later
+  // issued its own RPC call needing the header, the two sessions would form a
+  // circular wait. Matching the fixed lock order here is the same discipline
+  // Component B itself relies on to stay deadlock-free.
   const holder = openSession('holder');
-  holder.send(`${auth(ADMIN)} BEGIN; SELECT 'PID|' || pg_backend_pid();
+  holder.send(`BEGIN; SELECT 'PID|' || pg_backend_pid();
+    SELECT id FROM public.ordem_compra WHERE id = 77001 FOR UPDATE;
     SELECT id FROM public.ordem_compra_item WHERE id = 77001 FOR UPDATE; SELECT 'HELD';`);
   const holderPid = Number((await holder.waitFor((l) => l.startsWith('PID|'))).split('|')[1]);
   await holder.waitFor((l) => l === 'HELD');
 
   // Subject: Component B increase to absolute 80 — blocks on the item lock.
+  // The RPC call itself needs the authenticated role + admin JWT claim so its
+  // internal auth.uid()/is_admin() permission check resolves; its internal row
+  // lock runs as the function owner (SECURITY DEFINER) regardless of caller.
   const subject = openSession('subject');
   subject.send(`${auth(ADMIN)} SELECT 'SUBJECT_PID|' || pg_backend_pid();
     SELECT 'RESULT|' || public.registrar_recebimento_ordem_compra_fio_compat(
@@ -217,7 +234,7 @@ async function main() {
   console.log(`LOCK_STAGE|item|subject=${subjectPid}|blocker=${holderPid}|blocking_pids=${evidence}`);
 
   // Holder itself moves 40 -> 55 via Component B, then commits and releases.
-  holder.send(`SELECT 'HOLDER_RESULT|' || public.registrar_recebimento_ordem_compra_fio_compat(
+  holder.send(`${auth(ADMIN)} SELECT 'HOLDER_RESULT|' || public.registrar_recebimento_ordem_compra_fio_compat(
       77001, 55.000, CURRENT_DATE, 'conc-holder', NULL, NULL)::TEXT;
     COMMIT; SELECT 'HOLDER_COMMITTED';`);
   const holderResult = await holder.waitFor((l) => l.startsWith('HOLDER_RESULT|'));

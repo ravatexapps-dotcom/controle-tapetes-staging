@@ -34,18 +34,24 @@
   supervisor at commit `1157b9e71bc629903c5940ab50d4b370964e560e` (state/handoff
   compaction; historical content preserved in tracked archives + the append-only
   ledger; validator PASS; self-tests 47/47 PASS).
-- **`PHASE-C3C-B-DB-PREREQ` (implementation):** `IMPLEMENTED / LOCALLY VERIFIED /
-  AWAITING SUPERVISOR ACCEPTANCE` (2026-07-20). `db/76_ordem_compra_c3c_b_db_prerequisites.sql`
-  exists — Component A (`listar_ordens_compra_fio_compat`) and Component B
+- **`PHASE-C3C-B-DB-PREREQ` (implementation + DB-backed validation):**
+  `IMPLEMENTED / LOCAL DB VERIFIED / AWAITING SUPERVISOR ACCEPTANCE` (2026-07-20).
+  `db/76_ordem_compra_c3c_b_db_prerequisites.sql` exists — Component A
+  (`listar_ordens_compra_fio_compat`) and Component B
   (`registrar_recebimento_ordem_compra_fio_compat`), both inert until
   `canonical_active`, plus one additive `idempotency_namespace` `CHECK`; the
   corrected `§R.29.7`/`§13.18` deltas were applied; an installed-shape-guard
   finding was resolved by the architect ruling in contract §35 (reuse native
   command types, compat identity in `idempotency_namespace='legacy_compat_receipt_v1'`,
-  no `recebimento_compat`, shape guard unchanged). Static smoke suites PASS
-  (49/49); the two DB-backed tests are authored to §34.4 but not executed (local
-  Postgres unstable). The phase is **not accepted**; no dependent requirement is
-  `SATISFIED`.
+  no `recebimento_compat`, shape guard unchanged). A disposable, isolated local
+  PostgreSQL 18.4 cluster (contract §36) then applied the full `db/01`…`db/76`
+  sequence, reapplied `db/76` (idempotent), ran both DB-backed tests to PASS,
+  rehearsed a real persisted rollback + reapply, and reran both tests to PASS
+  again; one genuine `db/76` defect (a PL/pgSQL naming ambiguity in Component A)
+  was found and corrected. The two C3C-A DB-backed regressions remain
+  genuinely unexecutable against any synthetic corpus (pre-existing, unrelated
+  to `db/76`). Static smoke suites PASS (49/49). The phase is **not accepted**;
+  no dependent requirement is `SATISFIED`.
 - **Next authorizable action:** `PHASE-C3C-B-DB-PREREQ-SUPERVISOR-REVIEW`. A
   read-only supervisor review of the implemented `PHASE-C3C-B-DB-PREREQ` precedes
   any acceptance; only after acceptance and separately authorized staging
@@ -77,9 +83,9 @@ Full matrix and normative anchors: `docs/architecture/ORDEM_COMPRA_C3_TRACEABILI
   (owning phase C3C-B; inactive `db/75`, `LOCAL_POSTGRES_18_4_ONLY`; application
   consumers/routing not migrated).
 - `OC-C3-COMPAT-001` — `BLOCKED`. The database prerequisites are now
-  **IMPLEMENTED and LOCALLY VERIFIED** in `db/76`
-  (`docs/architecture/ORDEM_COMPRA_C3C_B_DB_PREREQUISITES_PHASE_CONTRACT.md` §35;
-  `§R.29.7`/`§13.18` applied); the requirement remains blocked pending
+  **IMPLEMENTED and LOCAL DB VERIFIED** in `db/76`
+  (`docs/architecture/ORDEM_COMPRA_C3C_B_DB_PREREQUISITES_PHASE_CONTRACT.md`
+  §§35–36; `§R.29.7`/`§13.18` applied); the requirement remains blocked pending
   `PHASE-C3C-B-DB-PREREQ` supervisor acceptance, staging validation, and the later
   C3C-B application adaptation.
 - `OC-C3D-DEPLOY-001` — `PLANNED`; `OC-C3D-FENCE-001`, `OC-C3D-ACL-001`,
@@ -156,7 +162,8 @@ Full matrix and normative anchors: `docs/architecture/ORDEM_COMPRA_C3_TRACEABILI
     phase contract, accepted with blocking database prerequisites — not active)
 20. `docs/architecture/ORDEM_COMPRA_C3C_B_DB_PREREQUISITES_PHASE_CONTRACT.md`
     (C3C-B database prerequisites contract; `PHASE-C3C-B-DB-PREREQ` implemented /
-    locally verified / awaiting supervisor acceptance — §35; `db/76` exists; not
+    local DB verified / awaiting supervisor acceptance — §§35–36; `db/76` exists,
+    DB-backed tests pass against an isolated disposable local cluster; not
     active)
 
 > Bootstrap first through `docs/governance/AGENT_INSTRUCTIONS.md` and the

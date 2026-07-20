@@ -87,9 +87,9 @@ INSERT INTO public.ordem_compra_fio_lancamentos(
   ordem_compra_item_alocacao_id, op_id, material, cor_id, cor_poliester,
   kg_excesso, ator_tipo, linha_indice
 ) VALUES (
-  760001, NULL, 76001, 40.000, CURRENT_DATE, NULL, 'import_saldo_inicial',
+  760001, NULL, 76001, 40.000, NULL, NULL, 'import_saldo_inicial',
   'c3cb_import_line_76001', 'legacy_flat_snapshot', 760001, 76001,
-  76001, 76001, 'algodao', 76001, NULL, 0, NULL, 1
+  76001, 76001, 'algodao', 76001, NULL, 0, 'sistema', 1
 );
 
 -- A second, UNMAPPED legacy flat row to prove db/76 leaves the legacy
@@ -263,6 +263,15 @@ END;
 $test$;
 RESET ROLE;
 
+-- The rollback rehearsal (§11) reflects the contract's actual near-term
+-- rollback scenario: db/76 reverted while its objects are still dormant
+-- (pre-canonical_active), before Component B ever wrote a single
+-- legacy_compat_receipt_v1 header. A SAVEPOINT here lets sections 6-10 exercise
+-- and assert Component B's full productive behavior first, then discards those
+-- writes before §11, so the restored idempotency_namespace CHECK is never
+-- asked to admit rows it was never meant to constrain retroactively.
+SAVEPOINT before_component_b_writes;
+
 -- ---------------------------------------------------------------------------
 -- 6. Component B increase (delta > 0) participates in the PONR.
 -- ---------------------------------------------------------------------------
@@ -279,11 +288,21 @@ BEGIN
   IF (SELECT kg_recebido FROM public.ordem_compra_item WHERE id = 76001) <> 70.000 THEN
     RAISE EXCEPTION 'increase did not move the cache to 70';
   END IF;
+END;
+$test$;
+
+-- ordem_compra_cutover is REVOKEd from every client role (db/75); the PONR
+-- check must run as the cluster owner, not the authenticated test session.
+RESET ROLE;
+DO $test$
+BEGIN
   IF (SELECT productive_receipt_started_at FROM public.ordem_compra_cutover WHERE id = 1) IS NULL THEN
     RAISE EXCEPTION 'increase did not record the PONR';
   END IF;
 END;
 $test$;
+SET LOCAL ROLE authenticated;
+SELECT set_config('request.jwt.claim.sub', '76111111-1111-1111-1111-111111111111', TRUE);
 
 -- ---------------------------------------------------------------------------
 -- 7. Component B equal / no-op returns sem_alteracao, inserts no ledger line.
@@ -417,6 +436,11 @@ BEGIN
   END IF;
 END;
 $test$;
+
+-- Discard every Component B write from sections 6-10 (already asserted above),
+-- returning to the state immediately after section 5: schema fully applied,
+-- zero legacy_compat_receipt_v1 rows — the actual rollback precondition.
+ROLLBACK TO SAVEPOINT before_component_b_writes;
 
 -- ---------------------------------------------------------------------------
 -- 11. Reduced-manifest rollback rehearsal proves the legacy delete/reinsert
