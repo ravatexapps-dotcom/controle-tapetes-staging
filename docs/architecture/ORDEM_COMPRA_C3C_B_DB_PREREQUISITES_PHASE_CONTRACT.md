@@ -22,6 +22,73 @@ STATUS: PROPOSED / AWAITING SUPERVISOR ACCEPTANCE / IMPLEMENTATION NOT AUTHORIZE
 > only when the architect separately authorizes `PHASE-C3C-B-DB-PREREQ` and
 > sets `ACTIVE_PHASE_CONTRACT` to this file's path.
 
+## 0. Supervisor forward correction R1 (verdict: CHANGES_REQUIRED)
+
+> **Forward correction (documentation-only, `FORWARD_CORRECTION` per
+> `DOCUMENTATION_MODEL.md` §4).** A read-only supervisor review of this
+> contract's R1 returned `CHANGES_REQUIRED`. Neither `PHASE-C3C-B-DB-PREREQ`
+> nor `PHASE-C3C-B` implementation is authorized. §§1–21 above/below are
+> preserved as authored (append-only correction, no history rewrite); §§22–28
+> below record the correction. Where §§1–21 and §§22–28 conflict, **§§22–28
+> govern**.
+
+The review found the R1 design **not implementable as written**, for five
+verified reasons, all confirmed against the real installed `db/67`–`db/75`
+objects:
+
+1. **Component B is blocked by `db/75`'s own `trg_c3c_command_state_guard`**
+   (§22). That `BEFORE INSERT ON ordem_compra_recebimentos` trigger (`db/75`
+   L193–222) rejects every `comando_tipo` other than `'import_saldo_inicial'`
+   unless `status='canonical_active' AND read_authority='canonical'`. R1's
+   Component B, inserting `comando_tipo='recebimento_compat'` headers, would
+   be rejected by this trigger on every attempt during `legacy_active` — a
+   design R1 itself prohibited from modifying (§8.3).
+2. **Writing to the canonical ledger before a real cutover would create
+   dual authority** (§22). Even if the trigger were bypassed, R1's design
+   would let two divergent sources of truth exist simultaneously: the flat
+   table (still authoritative per §R.29.1 through this entire track) and the
+   canonical ledger. `db/75`'s own fence/snapshot logic
+   (`ordem_compra_c3c_fence_and_snapshot`, L503–517) reads
+   `ordens_compra_fio.kg_recebido` directly as the frozen source — it has no
+   awareness of any pre-existing canonical lines a live Component B might
+   have written. R1's claim that a `'legacy_compat_receipt_v1'`-namespaced
+   receipt is "outside" `productive_receipt_started_at` tracking was
+   incorrect in substance: a real receipt is productive in every way that
+   matters (it mutates `saldo_fios` permanently) regardless of which
+   namespace records it.
+3. **The compat-mapping coverage gap cannot remain an open residual debt**
+   (§23). R1's §5.4/§16 correctly identified the gap but left it as an
+   undecided follow-up; that is insufficient — Component A's stated purpose
+   ("every legacy-compat order") is not met while new orders can silently
+   fall outside its coverage.
+4. **The reversal policy does not account for imported opening balances**
+   (§24). `db/75`'s import command (`_c3c_import_snapshot_row`... via the
+   postgres-only import path, L855–934) inserts ledger lines with
+   `tipo='import_saldo_inicial'`, not `tipo='recebimento'`. R1's §6.7 selects
+   only `tipo='recebimento'` lines for reversal, so an item whose balance is
+   entirely import-derived would have zero reversible balance under R1's
+   rule — an unstated, silently-broken case for any post-cutover absolute
+   decrease.
+5. **The OP-attributable grain in Component A can duplicate rows for
+   `op-nova.js`** (§25). Nothing structurally prevents two
+   `ordem_compra_item_alocacao` rows from targeting the same `(item_id,
+   op_id)` pair via different `necessidade_id`s (verified: the only relevant
+   `UNIQUE` indexes constrain native-only `necessidade_compra_fio` rows,
+   `db/67` L107–115, not `ordem_compra_item_alocacao`). R1's item×allocation
+   OP-grain would then return two rows for what the unmodified `op-nova.js`
+   renders as one form against one flat identity.
+
+The corrected design (§§22–25) resolves all five by (a) making Component B
+**install-inert-during-`legacy_active`**, live only in `canonical_active` —
+the identical pattern `db/75` already uses for its own three RPCs, so no
+dual-authority window ever opens and no PONR-tracking bypass exists; (b)
+adding a live, mandatory bridge-writer trigger that closes the compat-mapping
+gap going forward, not just at migration-apply time; (c) excluding
+`tipo='import_saldo_inicial'` lines from the reversible balance, with a named
+error code and an immutable-floor policy; and (d) changing the OP-attributable
+grain to item×OP (allocations aggregated, full breakdown still available in
+`alocacoes`).
+
 ## 1. Authorization source and entry checkpoint
 
 - **Authorization source for this authoring pass:** architect order
@@ -1009,7 +1076,7 @@ entry), `AGENT_HANDOFF.md` (only if continuity changes), and this contract
 file's `STATUS` marker (updated only by an explicit supervisor acceptance
 record, never rewritten in place to claim an acceptance that did not occur).
 
-## 21. Point of no return
+## 21. Point of no return (historical — superseded by §22.4)
 
 **NONE — LOCAL DATABASE-PREREQUISITE DESIGN ONLY.** No migration is applied
 or authorized by this contract's authoring pass. Once `db/76` is eventually
@@ -1017,3 +1084,387 @@ authorized, applied, and verified, the schema/function changes themselves
 remain locally reversible per §17 with no PONR; the real cutover's PONR
 (§R.29.3) is a wholly separate, still-out-of-scope gate untouched by this
 contract in any way.
+
+> **Superseded note:** this section's claim that Component B is "entirely
+> outside" `productive_receipt_started_at` tracking was incorrect in
+> substance (§0 finding 2) and is corrected by §22.4: Component B's
+> corrected, inert-until-`canonical_active` design **does** participate in
+> the existing §R.29.3 PONR exactly as the native commands do, once live. No
+> new or second PONR is created — this remains the same single PONR already
+> governed by §R.29.3.
+
+## 22. Component B — corrected activation state machine (closes §0 findings 1–2)
+
+### 22.1 Root cause
+
+R1's Component B (§6) was designed as an always-reachable parallel entry
+point, gated only by its own business-rule check (§6.4) — never checking the
+C3 cutover's own state. Two independent problems result, both confirmed
+against the installed `db/75` objects (§0):
+
+- `trg_c3c_command_state_guard` (`db/75` L193–222) is a table-level `BEFORE
+  INSERT` trigger on `ordem_compra_recebimentos`, installed **before** this
+  contract's authoring and explicitly **out of scope to modify** (§8.3). It
+  rejects any `comando_tipo <> 'import_saldo_inicial'` unless
+  `status='canonical_active' AND read_authority='canonical'`. R1's Component B
+  would fail this trigger unconditionally during `legacy_active`.
+- Even hypothetically bypassing the trigger, a live canonical write during
+  `legacy_active` would diverge from the flat table, which
+  `ordem_compra_c3c_fence_and_snapshot` (`db/75` L462–583) treats as the sole
+  frozen source at fence time — creating exactly the "two divergent versions"
+  problem the review identified.
+
+### 22.2 Corrected design — install-inert-during-`legacy_active`
+
+Component B adopts the **identical pattern already used by `db/75`'s own
+three RPCs** (`registrar_recebimento_ordem_compra`'s wrapper, L242–270): the
+function checks cutover state **first**, before any lock or mutation, and
+returns a clean inactive response while `legacy_active` or
+`maintenance_fenced` — never attempting an insert the trigger would reject
+anyway (defense-in-depth: the trigger remains the authoritative backstop,
+unmodified).
+
+```sql
+SELECT * INTO v_cutover FROM public.ordem_compra_cutover WHERE id = 1;
+IF NOT FOUND OR v_cutover.status <> 'canonical_active'
+   OR v_cutover.read_authority <> 'canonical' THEN
+  RETURN jsonb_build_object('ok', false, 'codigo', 'recebimento_compat_inativo',
+    'erro', 'Legacy-compat receipt adapter is inactive');
+END IF;
+-- only past this point: §6.4's resolve/gate, §6.5's delta, §6.6's branches
+```
+
+`ordem_compra_cutover` is fully revoked from every role including
+`service_role` (`db/75` L118) — Component B, as `SECURITY DEFINER OWNER TO
+postgres`, reads it internally exactly as `trg_c3c_command_state_guard` and
+the existing wrapper already do; no new grant is required.
+
+A new, distinct response code — `recebimento_compat_inativo` — is used rather
+than reusing `recebimento_canonico_inativo`, keeping the two RPC families'
+codes independently distinguishable while remaining functionally analogous.
+**This is the exact signal the future `PHASE-C3C-B` application adapter's
+fallback branch already expects to detect** (mirroring
+`ORDEM_COMPRA_C3C_B_PHASE_CONTRACT.md` §27's unified error policy — that
+future contract, when authored, names this code alongside
+`recebimento_canonico_inativo` in its own bounded fallback list; this
+contract does not edit that already-committed file).
+
+### 22.3 Consequence — resolves both findings
+
+- **Finding 1 resolved:** Component B never attempts an insert while
+  `legacy_active`; when it eventually is authorized to run past this gate
+  (only in `canonical_active`), `trg_c3c_command_state_guard`'s
+  `import_saldo_inicial`-vs-other-branch passes normally for
+  `comando_tipo='recebimento_compat'` under `canonical_active`, exactly as it
+  already does for the native `'recebimento'`/`'estorno'` types.
+- **Finding 2 resolved:** no productive canonical write can ever occur during
+  `legacy_active` — the dual-authority window this contract's R1 design
+  opened is closed by construction, not by policy. `db/75`'s
+  fence/snapshot/import machinery remains the sole path by which pre-cutover
+  history enters the canonical ledger, unchanged and unchallenged.
+- **Zero observable behavior change while `legacy_active`** (the same
+  invariant `ORDEM_COMPRA_C3C_B_PHASE_CONTRACT.md` §4/§12 already requires of
+  the future application layer) now holds for the **database** layer too:
+  Component B is provably inert-by-construction throughout the entire
+  `PHASE-C3C-B` window, before any application code even calls it.
+
+### 22.4 PONR participation (corrects §21's superseded claim)
+
+Once Component B is reachable (`canonical_active`), a successful **increase**
+call is a genuine productive canonical receipt. It **must** atomically set
+`ordem_compra_cutover.productive_receipt_started_at := COALESCE(productive_receipt_started_at,
+clock_timestamp())` after a successful insert — identical to
+`registrar_recebimento_ordem_compra`'s own wrapper behavior (`db/75`
+L263–267). This is not a new or second PONR: it is Component B correctly
+participating in the **single**, already-governed §R.29.3 PONR ("the first
+successfully committed non-import canonical receipt after the canonical read
+switch"), exactly as the native commands do. R1's §6.11 claim that Component
+B was "entirely outside" this tracking is withdrawn.
+
+## 23. Component A — live compat-mapping bridge (closes §0 finding 3, supersedes §5.4's residual framing)
+
+### 23.1 Corrected disposition
+
+The compat-mapping coverage gap is **closed, not left as a residual debt**.
+`db/76`'s manifest (§27.2) adds a new trigger,
+`trg_ordens_compra_fio_bridge_compat`, `AFTER INSERT ON public.ordens_compra_fio`,
+`SECURITY DEFINER`, that creates the equivalent
+`necessidade_compra_fio`/`ordem_compra`/`ordem_compra_item`/
+`ordem_compra_item_alocacao`/`ordem_compra_item_compat_fio` rows for **every**
+new flat row, at the moment it is inserted — by any current or future
+caller, including `op-persistir.js`'s still-live legacy branch (verified: a
+plain `.insert(ordens)` with no product-file change required, `js/screens/op-persistir.js`
+L255) — with **no application change**, since this is a table-level trigger,
+not a client call site.
+
+### 23.2 Exact trigger logic
+
+Reuses the identical classification expression already proven twice in this
+codebase (REFUND-A's seed, `db/67` L655–659; the cutover snapshot,
+`db/75` L507–509):
+
+```sql
+v_class := CASE
+  WHEN NEW.status_administrativo = 'rascunho' AND NEW.status = 'recebido_total' THEN 'D'
+  WHEN NEW.status_administrativo = 'emitida'  AND NEW.status = 'recebido_total' THEN 'A'
+  ELSE 'B'
+END;
+```
+
+Resolves `pedido_id` via `NEW.op_id → ops.lote_id → lotes.pedido_id`, the
+identical join `trg_necessidade_ownership_guard` already performs (`db/67`
+L149–153). Inserts exactly one row into each of the five tables per new flat
+row — `necessidade_compra_fio` (`origem_tipo='op'`, `legado=TRUE`,
+`legado_origem_ordem_compra_fio_id=NEW.id`), `ordem_compra` (`legado=TRUE`,
+`legado_provenance` from the class map), `ordem_compra_item`
+(`kg_pedido=NEW.kg_pedido`, `kg_recebido=COALESCE(NEW.kg_recebido,0)`),
+`ordem_compra_item_alocacao` (`kg_alocado=NEW.kg_pedido`, fully
+self-allocating, identical to REFUND-A), `ordem_compra_item_compat_fio`
+(`origem='native_bridge'` — the value already reserved for exactly this
+purpose by `db/67`'s original `CHECK (origem IN ('imported_legacy',
+'native_bridge'))`, L428, never previously used since no bridge writer had
+been built until now).
+
+### 23.3 Idempotency and safety
+
+Guarded by `NOT EXISTS (SELECT 1 FROM ordem_compra_item_compat_fio WHERE
+ordens_compra_fio_id = NEW.id)` (defensive; an `AFTER INSERT` trigger fires
+once per row by construction, but this makes the trigger itself safely
+re-invocable if ever attached via a backfill replay). Runs inside the same
+transaction as the flat-row insert — if the bridge insert fails, the whole
+flat-row insert rolls back (all-or-nothing), surfacing a clear error rather
+than silently leaving an unmapped row. `db/76`'s own backfill (§9.2 item 3,
+unchanged from R1) closes the gap for rows that already existed before
+`db/76`'s apply; this trigger closes it for every row from that point
+forward — **together, zero unmapped header-bearing legacy row can exist
+after `db/76` is applied**, at any point in time.
+
+### 23.4 Interaction with the C3 fence
+
+Verified against `trg_c3c_protected_mutation_guard` (`db/75` L121–191): while
+`status IS NULL OR status = 'legacy_active'` (the entire `PHASE-C3C-B`
+window), the guard's own early-return (L131–133) passes every mutation to
+the five target tables through unrestricted — the bridge trigger's inserts
+are unaffected by that guard for the whole of this contract's operative
+window. No conflict exists.
+
+### 23.5 Defensive classification failure
+
+If `NEW.status`/`NEW.status_administrativo` ever fall outside the three
+recognized class combinations (should not occur given the existing `CHECK`
+constraints on `ordens_compra_fio`, but not proven impossible by this
+contract), the trigger `RAISE EXCEPTION` rather than silently guessing a
+class — matching REFUND-A's own defensive-reconciliation philosophy
+(`db/67` L602–616).
+
+## 24. Reversal floor policy for imported opening balances (closes §0 finding 4, refines §6.7)
+
+### 24.1 The gap
+
+`db/75`'s import command inserts ledger lines with `tipo='import_saldo_inicial'`
+(`db/75` L910–934), not `tipo='recebimento'`. R1's §6.7 reversal-selection
+scope (`tipo='recebimento'` only) silently excludes these lines — an item
+whose balance derives entirely from the import would have zero reversible
+balance under R1's rule, failing any decrease request with
+`excede_estornavel` without ever disclosing why.
+
+### 24.2 Corrected policy — imported balance is an immutable floor
+
+**Adopted (of the three options the review offered): the imported opening
+balance is an immutable floor.** A decrease request may reverse only
+`tipo='recebimento'` lines created by Component B itself (or, in principle,
+by the native command family, though that never applies to `legado=TRUE`
+orders); it may **never** reduce the portion of `kg_recebido` attributable to
+`tipo='import_saldo_inicial'` lines.
+
+**Why this option, not the other two:** correcting an import line would
+require inventing a new ledger-mutation type with its own idempotency, audit,
+and — critically — **hash-reconciliation** implications, since `db/75`'s
+import is verified against a frozen, SHA-256-hashed snapshot
+(`ordem_compra_c3c_assert_snapshot_and_live`, `db/75` L630–732); silently
+"correcting" post-import history would invalidate that hash chain's meaning.
+Ending support for the absolute-intent interaction after cutover (the
+review's third option) contradicts the whole purpose of `PHASE-C3C-B`
+(`ORDEM_COMPRA_LIFECYCLE_SPEC_PROPOSED.md` §R.29's own framing: "prepares the
+JS layer so that a later... real cutover window can flip `read_authority` to
+`canonical` without a synchronized application deployment") — the legacy
+screens must keep working, in their existing absolute-total shape, after a
+real cutover, until a separate future phase (C4) replaces them. The
+immutable-floor option requires no new ledger semantics and is the
+conservative, reversible choice.
+
+### 24.3 Exact behavior
+
+- Reversible balance for an item = `SUM(kg_recebido)` over that item's
+  `tipo='recebimento'` lines, minus `SUM(kg_recebido)` over reversals already
+  applied against them (`db/70`'s existing per-line formula, reused
+  unchanged) — **`tipo='import_saldo_inicial'` lines are never included in
+  this sum, in either direction.**
+- If the requested decrease, after exhausting the item's genuine
+  `tipo='recebimento'` reversible balance (LIFO, §6.7, unchanged), still
+  requires going below the import-derived floor: `{ok:false,
+  codigo:'reducao_abaixo_saldo_importado', erro:'...', 'saldo_importado',
+  <the floor amount>}` — a new, distinct, self-explanatory error code (not
+  `excede_estornavel`, so the caller can distinguish "nothing left to
+  reverse" from "you are asking to go below a value this system will never
+  let you reverse").
+- This policy applies **only** to legacy-compat orders reachable through
+  Component B; native-regime orders' own reversal semantics
+  (`estornar_recebimento_ordem_compra`) are entirely unaffected and out of
+  this contract's scope.
+
+## 25. OP-attributable grain correction (closes §0 finding 5, supersedes §5.2's OP-grain definition)
+
+### 25.1 The problem
+
+R1's OP-attributable grain returned one row per (item × allocation within
+that OP). `op-nova.js`'s unmodified `fetchOrdensCompraFio(opId)`/
+`buildOrdemPendenteRow` (§7 row 5 of `ORDEM_COMPRA_C3C_B_PHASE_CONTRACT.md`)
+renders exactly one "Registrar" form per returned row, against the row's flat
+identity. Nothing in the schema prevents two allocations from targeting the
+same `(item_id, op_id)` pair via different `necessidade_id`s (verified:
+`db/67`'s only relevant `UNIQUE` indexes, L107–115, constrain
+`necessidade_compra_fio` for native rows only, not
+`ordem_compra_item_alocacao`). Under R1's grain, that case would render two
+forms for one legacy order, both able to submit an absolute total against the
+same underlying `ordens_compra_fio_id` — an undocumented, unhandled
+duplicate-write risk.
+
+### 25.2 Corrected grain — item × OP, allocations aggregated
+
+The OP-attributable grain (`p_op_id IS NOT NULL`) now returns **exactly one
+row per compat-mapped item that has at least one allocation in the requested
+OP** — matching the flat-row grain `op-nova.js`'s unmodified code already
+expects:
+
+- `kg_pedido` := `SUM(a.kg_alocado)` over the item's allocations **within
+  that OP only**.
+- `kg_recebido`/`kg_recebido_atribuido` := `SUM(l.kg_recebido)` over ledger
+  lines whose `ordem_compra_item_alocacao_id` belongs to one of the item's
+  allocations **within that OP only** (never lines belonging to a different
+  OP's allocation of the same shared item — preserves §R.29.2's
+  no-double-counting rule).
+- `alocacoes` (unchanged shape, `db/69`'s existing convention) still carries
+  the full per-allocation breakdown **restricted to this OP's allocations**,
+  so any future consumer needing finer detail than the aggregated row has it
+  without a second query.
+- `op_id`/`op_numero`/`op_ano`/`op_label` are always singular and populated
+  at this grain (the grain is defined by the OP filter itself).
+
+This is now structurally impossible to duplicate: one compat-mapped item, one
+row, regardless of how many allocations it has within the requested OP.
+
+### 25.3 Item grain unaffected
+
+§5.2's item grain (`p_op_id IS NULL`) is unchanged — it already returns one
+row per `ordem_compra_item_compat_fio` mapping regardless of allocation
+count, which was never the source of this finding.
+
+## 26. Missing-RPC / deployment-order model — refinement
+
+§7's Model A (database-first) conclusion is **unchanged and now further
+reinforced** for Component B: since it is inert-by-construction until
+`canonical_active` (§22), the question of a transitional `42883` fallback is
+moot for its entire `PHASE-C3C-B`-relevant lifetime — it behaves exactly like
+`db/75`'s three existing RPCs, which already have the single, already-ratified
+bounded-interval exception. Component A's Model-A reasoning (§7) is
+unaffected — it remains a genuinely live, independent reader with no PONR
+risk, unchanged by this correction.
+
+## 27. Corrected exact future implementation manifest (supersedes §9 where noted)
+
+### 27.1 Migration file
+
+Unchanged: exactly one new file, `db/76_ordem_compra_c3c_b_db_prerequisites.sql`.
+
+### 27.2 Database objects created (supersedes §9.2)
+
+1. `public.listar_ordens_compra_fio_compat(UUID, BIGINT)` — Component A
+   (§5.1), with the OP-grain correction (§25.2).
+2. `public.registrar_recebimento_ordem_compra_fio_compat(BIGINT, NUMERIC,
+   DATE, TEXT, TEXT, TEXT)` — Component B (§6.2), with the corrected
+   activation gate (§22.2) and the import-floor reversal policy (§24.2)
+   composed in.
+3. `public.trg_ordens_compra_fio_bridge_compat()` + trigger
+   `trg_ordens_compra_fio_bridge_compat AFTER INSERT ON public.ordens_compra_fio` —
+   **new**, closes the compat-mapping gap going forward (§23).
+4. The idempotent one-time backfill `DO $$ ... $$` block (§9.2 item 3,
+   unchanged) — closes the gap for rows that predate `db/76`.
+5. `ALTER TABLE public.ordem_compra_recebimentos DROP/ADD CONSTRAINT` —
+   unchanged from §9.2 item 4 (namespace/type additive extension).
+
+### 27.3 Grants/revocations (supersedes §9.4)
+
+Unchanged pattern for the two functions (§9.4); the new trigger function
+follows the same `SECURITY DEFINER`/fixed-empty-`search_path`/`REVOKE ALL ...
+FROM PUBLIC, anon, authenticated, service_role` idiom as every other trigger
+function in this codebase (e.g. `trg_necessidade_ownership_guard`,
+`trg_alocacao_kg_alocado_cache`) — a trigger function is never directly
+callable by a client role regardless of grants, but the explicit `REVOKE` is
+kept for consistency and defense-in-depth.
+
+### 27.4 Test files (supersedes §9.6 coverage, same three file names)
+
+No new file added to the manifest — the three files named in §9.6 now also
+cover: Component B returns `recebimento_compat_inativo` and performs zero
+mutation while `legacy_active`/`maintenance_fenced` (integration SQL); the
+bridge trigger fires on every new flat-row insert and produces exactly one
+compat mapping, including a rollback-if-bridge-fails proof (integration SQL);
+reversal below the imported floor returns `reducao_abaixo_saldo_importado`
+(integration SQL); the OP-grain returns exactly one row per item per OP even
+with two allocations in the same OP (integration SQL + smoke shape
+assertion).
+
+## 28. Corrected hard-stop evaluation, residual debts, and status
+
+### 28.1 Hard-stop re-evaluation (supersedes §15 where noted)
+
+- *A flat row maps to multiple incompatible native items* — **still does not
+  occur** (§15, unaffected by this correction).
+- **New consideration:** did §0's findings 1–2 constitute an unresolvable
+  stop ("the existing database structure makes the design impossible")?
+  **No** — a concrete, precedented fix exists (§22, the identical pattern
+  `db/75` already uses for its own objects) and was applied; this is the
+  category of correction the order's hard-stop clause exists to route
+  through a revised design, not to block outright.
+- Every other hard-stop condition (§15) remains evaluated as **not
+  triggered**, unaffected by this correction.
+
+### 28.2 Residual debts (supersedes §16)
+
+- **§5.4's ongoing compat-mapping coverage gap — CLOSED**, not residual.
+  §23's live bridge trigger closes it permanently, going forward, for every
+  future flat-row insert regardless of caller.
+- **§6.7's decrease-admin-only tightening** — unchanged, still disclosed
+  (§16, preserved).
+- **New: §24's immutable-floor policy** — a named, deliberate product
+  decision (not a debt): imported balances can never be reduced through
+  Component B. If the architect later wants a correction path for imported
+  balances, that is a separate, explicitly authorized future decision, not
+  implied by this contract.
+- **§6.10's `obter_historico_recebimento_ordem_compra` compatibility** —
+  unchanged, still flagged for implementation-time verification.
+- **§13's normative amendments** — unchanged as preconditions; §24.2's
+  import-floor policy and §22's activation gate are folded into the same
+  proposed `§R.29.7`/`§13.18` text (§14 updated below).
+
+### 28.3 §14 ratification-pending list — additions
+
+5. §22.2's activation gate (inert during `legacy_active`/`maintenance_fenced`,
+   live only in `canonical_active`) and §22.4's `productive_receipt_started_at`
+   participation.
+6. §24.2's immutable-floor reversal policy for imported balances.
+7. §25.2's item×OP aggregated grain (or an alternative the architect prefers,
+   provided it does not reintroduce the duplicate-row risk of §0 finding 5).
+
+### 28.4 Contract status
+
+`STATUS` (unchanged): **PROPOSED / AWAITING SUPERVISOR ACCEPTANCE /
+IMPLEMENTATION NOT AUTHORIZED**. `ACTIVE_PHASE`/`ACTIVE_PHASE_CONTRACT`
+remain `NONE` in `PROJECT_STATE.md`. No requirement is marked `SATISFIED`.
+Neither `PHASE-C3C-B-DB-PREREQ` nor `PHASE-C3C-B` implementation, nor any
+migration, is authorized by this correction.
+
+**Next step:** read-only supervisor review of this corrected contract. This
+correction authorizes no implementation and no database, staging, production,
+or environment action.

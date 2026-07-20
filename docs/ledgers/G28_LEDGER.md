@@ -5041,3 +5041,114 @@ MATERIAL_DIVERGENCES: NONE
   `PHASE-C3C-B` implementation remains unauthorized and is additionally
   blocked pending that contract's acceptance and its own future
   implementation authorization; no phase chains automatically.
+
+## 2026-07-20 — C3C-B-DB-COMPATIBILITY-PREREQUISITES-CONTRACT-R1 — FORWARD CORRECTION (verdict CHANGES_REQUIRED) — IMPLEMENTED / LOCALLY VERIFIED / AWAITING SUPERVISOR REVIEW
+
+- **Append-only forward correction.** This entry corrects, and does not
+  rewrite, the immediately preceding
+  `C3C-B-DB-COMPATIBILITY-PREREQUISITES-CONTRACT-R1` entry. A read-only
+  supervisor review of that contract's R1 returned `CHANGES_REQUIRED`;
+  neither `PHASE-C3C-B-DB-PREREQ` nor `PHASE-C3C-B` implementation is
+  authorized. Documentation-only (`FORWARD_CORRECTION` per
+  `docs/governance/DOCUMENTATION_MODEL.md` §4). No product, database,
+  Supabase, staging, production, deployment, activation, cutover, remote
+  mutation, or push occurred.
+- **Entry checkpoint reconciled:** branch `dev`, HEAD
+  `a0a0b7597c4cdc46333973b4e715f78c8c34ab2d`, parent
+  `6585a6c6d1837a3e0044bac8c603ffe866b73e05`, empty index, preserved residue
+  modified `.gitignore` only — matched the expected baseline exactly.
+- **Root cause.** R1's Component B was designed as an always-reachable
+  parallel entry point, gated only by its own business-rule check, never
+  checking the C3 cutover's own state. Two independent findings resulted from
+  this, plus three further independent findings against Component A's design
+  and the reversal/grain details — all five verified against the actually
+  installed `db/67`–`db/75` objects before correction.
+- **Finding 1 — Component B blocked by `db/75`'s own trigger.**
+  `trg_c3c_command_state_guard` (`db/75` L193–222, out of this contract's
+  scope to modify) rejects any `ordem_compra_recebimentos.comando_tipo <>
+  'import_saldo_inicial'` insert unless `status='canonical_active' AND
+  read_authority='canonical'`. R1's `comando_tipo='recebimento_compat'`
+  insert would fail unconditionally during `legacy_active`.
+- **Finding 2 — dual authority.** Even bypassing the trigger, a live
+  canonical write during `legacy_active` would diverge from the flat table,
+  which `db/75`'s fence/snapshot logic treats as the sole frozen source at
+  fence time. R1's claim that a `legacy_compat_receipt_v1`-namespaced receipt
+  was "outside" `productive_receipt_started_at` tracking was incorrect in
+  substance.
+- **Corrected design (new §22):** Component B adopts the identical
+  install-inert-during-`legacy_active` pattern `db/75` already uses for its
+  own three RPCs — checks cutover state first, returns
+  `{ok:false,codigo:'recebimento_compat_inativo'}` while
+  `legacy_active`/`maintenance_fenced`, proceeds only in `canonical_active`.
+  A successful increase now correctly participates in the single, existing
+  §R.29.3 PONR by setting `productive_receipt_started_at`, exactly as the
+  native command already does — no new or second PONR is created.
+- **Finding 3 — compat-mapping gap could not remain a residual debt.** R1's
+  §5.4/§16 left the ongoing coverage gap as an undecided follow-up, which is
+  insufficient given Component A's stated purpose. **Corrected (new §23):** a
+  new mandatory live bridge trigger,
+  `trg_ordens_compra_fio_bridge_compat AFTER INSERT ON
+  public.ordens_compra_fio`, reuses the identical class-determination logic
+  already proven twice in this codebase (REFUND-A's seed, `db/67`
+  L655–659; the cutover snapshot, `db/75` L507–509) to create the compat
+  mapping the moment any new flat row is inserted, by any caller including
+  `op-persistir.js`'s still-live legacy branch, with zero application change.
+  Together with the unchanged one-time backfill, zero unmapped
+  header-bearing legacy row can exist after `db/76` is applied, at any point
+  in time, going forward. Verified compatible with
+  `trg_c3c_protected_mutation_guard`'s own early-return during
+  `legacy_active` (`db/75` L131–133) — no conflict.
+- **Finding 4 — reversal policy silently excluded imported balances.**
+  `db/75`'s import command inserts ledger lines with
+  `tipo='import_saldo_inicial'` (`db/75` L910–934), not `tipo='recebimento'`;
+  R1's §6.7 reversal scope excluded them, so an item whose balance is entirely
+  import-derived would have zero reversible balance under R1's rule.
+  **Corrected (new §24):** the imported opening balance is adopted as an
+  **immutable floor** — decreases may reverse only genuine
+  `tipo='recebimento'` lines; a decrease that would go below the
+  import-derived floor returns a new, distinct code
+  `reducao_abaixo_saldo_importado`, naming the floor amount. Chosen over
+  correcting import lines (would invalidate `db/75`'s SHA-256 hash-chain
+  verification) or ending absolute-intent support post-cutover (contradicts
+  §R.29's own stated purpose for `PHASE-C3C-B`).
+- **Finding 5 — OP-attributable grain could duplicate rows.** Nothing
+  structurally prevents two `ordem_compra_item_alocacao` rows from targeting
+  the same `(item_id, op_id)` pair via different `necessidade_id`s (verified:
+  `db/67`'s only relevant `UNIQUE` indexes constrain native-only
+  `necessidade_compra_fio`, not the allocation table). R1's item×allocation
+  OP-grain could render two "Registrar" forms for one unmodified `op-nova.js`
+  order. **Corrected (new §25):** the OP-attributable grain becomes item×OP —
+  exactly one row per compat-mapped item per requested OP, allocations
+  aggregated (`kg_pedido`/`kg_recebido` summed across that OP's allocations
+  only), full per-allocation detail still available in the unchanged
+  `alocacoes` sub-array. Structurally impossible to duplicate.
+- **Contract sections corrected:** new §0 banner; §21 marked superseded by
+  §22.4; appended §§22–28 (Component B activation state machine, Component A
+  bridge trigger, reversal floor policy, OP-grain correction, deployment-model
+  refinement, corrected exact manifest, corrected hard-stop
+  evaluation/residual debts/status). §§1–21 preserved as authored.
+- **Contract status unchanged:** `STATUS: PROPOSED / AWAITING SUPERVISOR
+  ACCEPTANCE / IMPLEMENTATION NOT AUTHORIZED`; no requirement marked
+  `SATISFIED`. `PROJECT_STATE.md` `ACTIVE_PHASE`/`ACTIVE_PHASE_CONTRACT`
+  remain `NONE`; `NEXT_AUTHORIZABLE_ACTION` value is factually unchanged
+  (still supervisor review of this contract, now its corrected form), so
+  `PROJECT_STATE.md`/`AGENT_HANDOFF.md`/the traceability matrix were **not**
+  touched by this pass, per the proportional update rule — nothing owned
+  there changed.
+- **Documentation-only manifest:**
+  `docs/architecture/ORDEM_COMPRA_C3C_B_DB_PREREQUISITES_PHASE_CONTRACT.md`
+  and this ledger only. No other canonical document was modified; lifecycle
+  §R.29, schema §13.15–13.17, the requirement registries, the traceability
+  matrix, the spec-custody validator, and the byte-identical wrappers
+  `CLAUDE.md`/`AGENTS.md` are unchanged.
+- **Local verification:** `node scripts/validate-spec-custody.mjs` PASS;
+  `node scripts/validate-spec-custody.mjs --self-test` all PASS; `git diff
+  --check` clean; `git diff --cached --check` clean; the committed manifest
+  matches exactly the two documentation-only paths above.
+- **Exact accounting subject:** `docs: forward-correct C3C-B DB prerequisites contract`.
+- **Status after this commit:** `IMPLEMENTED / LOCALLY VERIFIED / AWAITING
+  SUPERVISOR REVIEW`.
+- **NEXT_AUTHORIZABLE_ACTION:** `C3C-B-DB-COMPATIBILITY-PREREQUISITES-CONTRACT-R1-SUPERVISOR-REVIEW`
+  — read-only supervisor review of the **corrected** database-prerequisites
+  contract. Neither `PHASE-C3C-B-DB-PREREQ` nor `PHASE-C3C-B` implementation
+  is authorized; no phase chains automatically.
