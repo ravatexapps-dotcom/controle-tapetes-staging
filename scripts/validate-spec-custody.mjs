@@ -152,10 +152,17 @@ function splitTableRow(line) {
   return line.split('|').slice(1, -1).map((cell) => cell.trim());
 }
 
-function isGovernedRowOutsideTable(line) {
+function isGovernedRowOutsideTable(line, columnCount) {
   const value = line.trim();
   if (!value) return false;
-  return value.includes('|') || /\bOC-/i.test(value);
+  if (/\bOC-/i.test(value)) return true;
+  if (!value.includes('|')) return false;
+  const cells = value.split('|').map((cell) => cell.trim());
+  if (value.startsWith('|') || value.endsWith('|')) return true;
+  if (cells.length > 1 && cells.every((cell) => /^:?-{3,}:?$/.test(cell))) return true;
+  if (/^(?:#{1,6}|[-*+]|>)\s/.test(value)) return false;
+  if (cells.length === columnCount && cells.every(Boolean)) return true;
+  return cells.length >= 3 && cells.every((cell) => cell && cell.split(/\s+/).length <= 4 && !/[.!?;]/.test(cell));
 }
 
 function extractSection(text, heading, errors, code) {
@@ -201,7 +208,7 @@ function parseTable(section, headers, errors, code) {
   }
   for (let index = 0; index < lines.length; index += 1) {
     if (index >= start && index < end) continue;
-    if (isGovernedRowOutsideTable(lines[index])) {
+    if (isGovernedRowOutsideTable(lines[index], headers.length)) {
       errors.push(`${code}: governed row exists outside the canonical table: ${lines[index].trim()}`);
     }
   }
@@ -436,9 +443,11 @@ function runSelfTests(source) {
   const traceRow = readText(source, 'docs/architecture/ORDEM_COMPRA_C3_TRACEABILITY.md').match(/^\| OC-C3-READ-001 \|.*$/m)[0];
   const lifecycleRow = readText(source, REGISTRIES[0].path).match(/^\| `OC-C3-READ-001` \|.*$/m)[0];
   const schemaRow = readText(source, REGISTRIES[1].path).match(/^\| `OC-C3D-ACL-001` \|.*$/m)[0];
-  results.push(expectSuccess(source, 'POSITIVE_EXPLANATORY_PROSE', (f) => trace(f, (s) => inTrace(s, 'Ordinary explanatory prose.'))));
-  results.push(expectSuccess(source, 'POSITIVE_BLANK_LINES', (f) => trace(f, (s) => inTrace(s, '\n\n'))));
-  results.push(expectSuccess(source, 'POSITIVE_NON_TABLE_MARKDOWN', (f) => trace(f, (s) => inTrace(s, '- Plain Markdown without governed identifiers.'))));
+  results.push(...[
+    ['POSITIVE_A_PIPE_B', 'A | B'], ['POSITIVE_PIPE_PROSE', 'Use A | B as explanatory prose.'], ['POSITIVE_PIPE_NOTATION', 'Use A | B as an explanatory notation.'], ['POSITIVE_INLINE_CODE', 'The expression `A | B` is not a table.'],
+    ['POSITIVE_INLINE_SEPARATOR', 'This prose contains | one inline separator.'], ['POSITIVE_MULTIPLE_PIPES', 'Use A | B and C | D as explanatory prose.'],
+    ['POSITIVE_BULLET_PIPES', '- Compare A | B and C | D.'], ['POSITIVE_HEADING_PIPES', '### Compare A | B and C | D'], ['POSITIVE_BLANK_LINES', '\n\n'], ['POSITIVE_EXPLANATORY_PROSE', 'Ordinary explanatory prose.'],
+  ].map(([name, content]) => expectSuccess(source, name, (f) => trace(f, (s) => inTrace(s, content)))));
   results.push(expectFailure(source, 'DUPLICATE_BOOTSTRAP_BLOCK', 'R1', (f) => state(f, (s) => `${s}\n${s.match(/<!-- SPEC_CUSTODY_BOOTSTRAP:BEGIN -->[\s\S]*?<!-- SPEC_CUSTODY_BOOTSTRAP:END -->/)[0]}\n`)));
   results.push(expectFailure(source, 'DUPLICATE_BOOTSTRAP_KEY', 'R1', (f) => state(f, (s) => s.replace('ACTIVE_TRACK: PURCHASE_ORDER_PHASE_C', 'ACTIVE_TRACK: PURCHASE_ORDER_PHASE_C\nACTIVE_TRACK: PURCHASE_ORDER_PHASE_C'))));
   results.push(expectFailure(source, 'MISSING_BOOTSTRAP_KEY', 'R1', (f) => state(f, (s) => s.replace(/^ACTIVE_TRACK:.*\r?\n/m, ''))));
@@ -478,16 +487,14 @@ function runSelfTests(source) {
   results.push(expectFailure(source, 'DETACHED_ROW_AFTER_MARKDOWN_HEADING', 'R6', (f) => trace(f, (s) => inTrace(s, `### Notes\n${traceRow}`))));
   results.push(expectFailure(source, 'UNEXPECTED_ID_OUTSIDE_TABLE', 'R6', (f) => trace(f, (s) => inTrace(s, 'OC-UNEXPECTED-OUTSIDE-001'))));
   results.push(expectFailure(source, 'DUPLICATE_ID_OUTSIDE_TABLE', 'R6', (f) => trace(f, (s) => inTrace(s, 'OC-C3-READ-001'))));
+  results.push(expectFailure(source, 'TABLE_ROW_WITHOUT_LEADING_PIPE', 'R6', (f) => trace(f, (s) => inTrace(s, 'A | B | C |'))));
+  results.push(expectFailure(source, 'TABLE_ROW_WITHOUT_TRAILING_PIPE', 'R6', (f) => trace(f, (s) => inTrace(s, '| A | B | C'))));
+  results.push(expectFailure(source, 'MARKDOWN_SEPARATOR_ROW', 'R6', (f) => trace(f, (s) => inTrace(s, '--- | --- | ---'))));
   return results;
 }
 
 const rootIndex = process.argv.indexOf('--root');
 if (rootIndex >= 0 && !process.argv[rootIndex + 1]) throw new Error('--root requires a path');
 const root = resolve(rootIndex >= 0 ? process.argv[rootIndex + 1] : process.cwd());
-if (process.argv.includes('--self-test')) {
-  for (const result of runSelfTests(root)) console.log(result);
-} else {
-  const errors = validateRepository(root);
-  if (errors.length) { for (const error of errors) console.error(error); process.exitCode = 1; }
-  else console.log('SPEC_CUSTODY_VALIDATION: PASS');
-}
+if (process.argv.includes('--self-test')) for (const result of runSelfTests(root)) console.log(result);
+else { const errors = validateRepository(root); if (errors.length) { for (const error of errors) console.error(error); process.exitCode = 1; } else console.log('SPEC_CUSTODY_VALIDATION: PASS'); }

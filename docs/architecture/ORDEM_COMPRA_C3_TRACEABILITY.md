@@ -13,6 +13,7 @@ CLOSED_MATERIAL_PHASES: PHASE-C3C-A
 NEXT_AUTHORIZABLE_ACTION: GOVERNANCE-STATE-HANDOFF-COMPACTION-R1
 VALIDATION_ACCOUNTING_SUBJECT: fix: harden spec custody validation
 VALIDATION_ACCOUNTING_SUBJECT_R2: fix: reject detached spec custody rows
+VALIDATION_ACCOUNTING_SUBJECT_R3: fix: distinguish prose from detached tables
 ```
 
 ## Accepted foundation
