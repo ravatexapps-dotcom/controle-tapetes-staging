@@ -1171,3 +1171,73 @@ import, snapshot, fence, reader/writer or flat-ACL switch, native emission,
 `C3B`/`C3C`/`C3D`/`C4`/`C5`, production, `main`, remote change, push, or
 deployment. `HISTORICAL_SALDO_FIOS_PROVENANCE_UNAVAILABLE` remains
 nonblocking debt.
+
+### 13.15 PHASE-C3B executable contract closure R1 — CLOSED / ACCEPTED
+
+This section is accepted by the technical supervisor acting as delegated project
+architect and is not attributed to Kleber. It is the structural complement to
+§R.29. C3B is documentation closure; C3C is separately ordered inactive
+implementation; C3D is rehearsal/inactive staging deployment preparation; the
+only real activation is a later separately authorized single maintenance window.
+
+#### 13.15.1 Canonical structures and normalized-read authority
+
+The cutover singleton must contain an authoritative `read_authority` (`flat` or
+`canonical`), lifecycle state, cutover generation, frozen-source and
+inventory-baseline identities/hashes, and `productive_receipt_started_at`.
+Canonical reader output must retain nullable `op_id`, distinguish
+`kg_recebido_atribuido` from `kg_excesso`, and make Pedido-origin rows visible
+once at Pedido scope. Projection consumers cannot read the flat table directly
+after activation or independently reconstruct receipt totals.
+
+#### 13.15.2 Exact final effective ACL closure
+
+The following is the required post-window direct authority. “None” means no
+direct privilege on flat/canonical receipt tables, sequences, cutover structures,
+or internal commands. A table-level `REVOKE` never removes a column grant; both
+table-level and every column-level grant must be explicitly revoked.
+
+| Principal | Flat receipt tables / sequences | Canonical receipt tables / sequences | Cutover structures / internal commands | RPC surface |
+|---|---|---|---|---|
+| `PUBLIC` | none | none | none | no EXECUTE by default |
+| `anon` | none | none | none | none |
+| `authenticated` | none | none | none | only explicitly authorized receipt/reversal/history RPCs, least privilege |
+| `service_role` | none | none | none | none; service-role bypass is not a grant model |
+| `admin` | none direct | none direct | none direct | authorized canonical RPCs only, with internal actor/order checks |
+| `supplier` | none direct | none direct | none direct | only the expressly authorized canonical receipt RPC for its matching supplier/order, with actor/order checks |
+
+Final closure explicitly revokes legacy table DML and every legacy column DML,
+including anon table-level/column `UPDATE` and authenticated receipt-column
+`UPDATE`; it also revokes sequence privileges, cutover/internal-command access,
+and obsolete RPC EXECUTE. RLS policies for protected tables are removed or
+replaced so that no policy targets `PUBLIC`; supplier paths are RPC-authorized and
+role/actor/order constrained. Existing excessive anon grants are legacy authority,
+not a confirmed exploit, until an empirical role-matrix proof establishes it.
+
+Every `SECURITY DEFINER` function has fixed empty `search_path`, explicit EXECUTE
+revocation from `PUBLIC`, `anon`, and `service_role`, no implicit table access,
+and only a least-privilege `authenticated` grant where the RPC is expressly
+required. Each canonical function validates the internal actor and the permitted
+order/supplier relationship before mutation or history disclosure.
+
+#### 13.15.3 Fence, import, and recovery invariants
+
+Database guards enforce `legacy_receipt_fenced` for direct legacy receipt-column
+updates and protected source/inventory mutations while state is
+`maintenance_fenced` or `canonical_active`. Canonical commands require
+`canonical_active` after the window closes. The first successfully committed
+non-import canonical receipt after `read_authority = canonical` atomically sets
+`productive_receipt_started_at`; this is the exact point of no return.
+
+The frozen import source contains all 51 mappings and the full inventory baseline
+with stable ordering, three-decimal quantities, and SHA-256 identities. The
+postgres-only import accepts only that snapshot and produces exactly 39 headers,
+44 ledger lines, 20,221.280 kg, and 405.980 kg excess with zero inventory
+movements. Pre-switch reconciliation proves those counts/totals, snapshot and
+inventory hashes, normalized no-double-counting, and zero productive receipts.
+
+Before the point of no return, rollback restores flat reads only after proving
+zero productive canonical receipts. It retains legacy fencing and does not restore
+flat grants. Flat mutation re-enablement is a distinct recovery authorization
+requiring generation/idempotency proof against stale or double-counted immutable
+import data. After the point of no return, recovery is forward-only.

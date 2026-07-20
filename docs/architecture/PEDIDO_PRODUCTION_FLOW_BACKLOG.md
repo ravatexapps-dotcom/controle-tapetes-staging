@@ -1684,3 +1684,30 @@ Status: **CLOSED / TECHNICALLY ACCEPTED**.
   nonblocking debt.
 - No phase chains automatically from this closeout; any `C3B`+ scope requires
   a separate architect order.
+
+# Update 2026-07-19 — PHASE-C3B executable contract closure R1
+
+Status: **CLOSED / ACCEPTED** by the technical supervisor acting as delegated
+project architect; this acceptance is not attributed to Kleber.
+
+- C3B closes the executable Phase-C3 contract only. Lifecycle §R.29 and schema
+  §13.15 govern C3C inactive implementation, C3D rehearsal/inactive staging
+  deployment preparation, and the later separately authorized real cutover.
+- The real cutover consists of one contiguous maintenance window with a
+  session-level advisory lock, deterministic resource lock order, short database
+  transactions, database-owned legacy receipt fencing, frozen 51-mapping and full
+  inventory snapshots, deterministic 39-header/44-line import, reconciliation,
+  canonical read activation, explicit ACL/policy closure, and no soak interval.
+- The point of no return is the first successfully committed non-import canonical
+  receipt after the canonical read switch. Before it, rollback may restore flat
+  reads only after proving zero productive canonical receipts; legacy writers
+  remain fenced and flat mutation grants remain closed. After it, recovery is
+  forward-only.
+- C3 creates no visual UI. C4 exclusively owns the new admin receipt UI at
+  `#/ordens-compra/:id`; supplier UI remains deferred. Existing compatibility
+  surfaces may receive only non-visual state adapters or be disabled at cutover.
+- Documentation-only: no code, SQL, test, database, staging, deployment,
+  production, `main`, remote, or push activity occurred.
+- **NEXT_AUTHORIZABLE_ACTION: `PHASE-C3C` — inactive implementation only.** A
+  separate architect order is required; this closeout neither authorizes nor
+  executes C3C.

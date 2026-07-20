@@ -4470,3 +4470,57 @@ MATERIAL_DIVERGENCES: NONE
   Any `C3B`/`C3C`/`C3D`/`C4`/`C5` scope, real import, snapshot, fence,
   reader/writer or flat-ACL switch, and native emission activation require a
   separate architect order.
+
+## 2026-07-19 — PHASE-C3B-EXECUTABLE-CONTRACT-CLOSURE-R1 — CLOSED / ACCEPTED
+
+- **Starting state:** branch `dev`, HEAD
+  `a08db7f10b8b447fa38cd7e11ac7fb567291ecea`; empty index; preserved residue:
+  modified `.gitignore` and untracked `AGENTS.md`.
+- **Scope:** documentation-only closure in exactly `PROJECT_STATE.md`,
+  `AGENT_HANDOFF.md`, lifecycle §R.29, schema §13.15, production-flow backlog,
+  documentation index, and this append-only ledger. No application, SQL,
+  migration, test, database, staging, deployment, production, `main`, remote,
+  push, `.gitignore`, or `AGENTS.md` change occurred.
+- **Disposition:** accepted by the technical supervisor acting as delegated
+  project architect; this wording is not attributed to Kleber.
+- **Closed contract:** C3B is contract closure; C3C is inactive implementation
+  preserving legacy behavior in `legacy_active`; C3D is rehearsal and inactive
+  staging deployment preparation. They create no independent real cutover
+  windows. The later real cutover is a single contiguous maintenance window with
+  no soak interval, session advisory lock, deterministic resource-lock order,
+  and short transactions only.
+- **Execution boundary:** database-owned guards fence both known legacy receipt
+  writers and protected source/inventory mutations; application flags only consume
+  cutover state. The frozen source includes all 51 mappings and the full inventory
+  baseline. Deterministic import is exactly 39 headers / 44 immutable lines /
+  20,221.280 kg / 405.980 kg excess / zero inventory movements. Pre-switch
+  reconciliation includes frozen hashes, counts/totals, normalized no-double-count
+  proof, and zero productive canonical receipts.
+- **Read and UI boundary:** canonical normalized reads preserve Pedido-origin
+  `op_id = NULL`, separate attributable from excess quantity, and prevent double
+  counting. C3 creates no visual UI; C4 exclusively owns the new admin receipt UI
+  at `#/ordens-compra/:id`; supplier UI remains deferred. Compatibility surfaces
+  are non-visual state adapters or disabled at cutover.
+- **Recovery boundary:** the point of no return is the first successfully
+  committed non-import canonical receipt after the canonical read switch. Before
+  it, rollback may restore flat reads only after proving zero productive canonical
+  receipts; legacy writers remain fenced and flat grants remain closed. Flat
+  mutation re-enablement requires separate recovery authorization plus a
+  generation/idempotency proof. After it, recovery is forward-only.
+- **ACL boundary:** direct privileges on flat/canonical receipt tables,
+  sequences, cutover structures, and internal commands are none for `PUBLIC`,
+  `anon`, `authenticated`, and `service_role`; `admin` and `supplier` use only
+  their expressly authorized canonical RPC surfaces. Table-level and every
+  column-level grant are explicitly revoked; no RLS policy targets `PUBLIC`; every
+  `SECURITY DEFINER` function has fixed empty `search_path`, explicit
+  `PUBLIC`/`anon`/`service_role` revocation, and internal actor/order checks.
+  Excessive anon grants are not labeled a confirmed exploit without empirical
+  role-matrix proof.
+- **Supervisor-supplied evidence:** project `ucrjtfswnfdlxwtmxnoo` starts
+  `legacy_active / not_started` with all markers `NULL`, zero import/native/baseline
+  counts, postgres-only import RPC, authenticated receipt/reversal/history RPCs,
+  and broad flat legacy grants/`PUBLIC` RLS policies. This closeout did not query
+  that environment.
+- **NEXT_AUTHORIZABLE_ACTION:** `PHASE-C3C — inactive implementation only`.
+  This closeout does not authorize or execute C3C; a separate architect order is
+  required. C3D and the later real cutover remain separately authorized actions.

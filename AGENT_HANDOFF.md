@@ -1,25 +1,17 @@
 # ACTIVE OPERATIONAL HANDOFF
 
-- **`PHASE-C3A` — `CLOSED / TECHNICALLY ACCEPTED` (2026-07-19).** Staging
-  migrations `71`-`74` are present; the cutover singleton is `id=1`,
-  `legacy_active / not_started`, with every cutover marker `NULL`; staging holds
-  zero import headers, import ledger rows, native headers, inventory movements,
-  and baseline rows. Preview reconstruction shows 39 headers, 44 ledger entries,
-  20,221.280 kg reconstructed, and 405.980 kg excess. `saldo_fios` holds 5 rows /
-  2,685.020 kg; `saldo_fios_op` is zero. The import command
-  `importar_saldo_inicial_ordem_compra_c3a(jsonb)` is owned by `postgres`,
-  `SECURITY DEFINER`, fixed empty `search_path`, with no EXECUTE grant for
-  `PUBLIC`, `anon`, `authenticated`, or `service_role`; the authenticated
-  read-only preview ACL is intentionally retained under §R.28.5. The focused
-  acceptance suite passed 66/66. **Disposition:** technical acceptance is
-  recorded by the technical supervisor acting as delegated project architect;
-  this wording is not attributed to Kleber. This is a documentation-only
-  closeout: it authorizes no real import, snapshot, fence, reader/writer
-  switch, flat-ACL change, native emission, `C3B`/`C3C`/`C3D`/`C4`/`C5`,
-  production, `main`, remote change, push, or deployment.
-  `HISTORICAL_SALDO_FIOS_PROVENANCE_UNAVAILABLE` remains nonblocking debt,
-  unchanged by this acceptance. **Next authorizable action:** none chains
-  automatically; any `C3B`+ scope requires a separate architect order.
+- **`PHASE-C3B-EXECUTABLE-CONTRACT-CLOSURE-R1` — `CLOSED / ACCEPTED`
+  (2026-07-19).** Lifecycle §R.29 and schema §13.15 are the exact executable
+  Phase-C3 contract. Acceptance is recorded by the technical supervisor acting
+  as delegated project architect, not attributed to Kleber. The contract fixes
+  one later maintenance window; session advisory lock plus deterministic resource
+  locks; database-owned receipt fencing; deterministic frozen source/inventory
+  snapshots; 39-header/44-line import and reconciliation; canonical normalized
+  reads; explicit final ACL/policy closure; and pre-/post-point-of-no-return
+  recovery. C3B made no environment or implementation change.
+  `HISTORICAL_SALDO_FIOS_PROVENANCE_UNAVAILABLE` remains nonblocking debt.
+  **NEXT_AUTHORIZABLE_ACTION: `PHASE-C3C` — inactive implementation only; it is
+  not authorized by this closeout and requires a separate architect order.**
 
 - **`PURCHASE-ORDER HYBRID ORIGIN — F3R1 STAGING DATABASE/API VALIDATION AND
   PHASE-C REVALIDATION` — `CLOSED / ACCEPTED_WITH_SCOPED_COMMITTED_CONCURRENCY_FIXTURE_WAIVER`

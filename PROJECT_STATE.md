@@ -9,25 +9,19 @@ are in `docs/ledgers/G28_LEDGER.md`. HEAD/working tree/divergence: consult Git d
 
 ## Active phase and next action
 
-- **`PHASE-C3A` — `CLOSED / TECHNICALLY ACCEPTED` (2026-07-19).** Staging
-  migrations `71`-`74` are present. The cutover singleton is `id=1`,
-  `legacy_active / not_started`, with every cutover marker `NULL`. Staging holds
-  zero import headers, import ledger rows, native headers, inventory movements,
-  and baseline rows. Preview reconstruction shows 39 headers, 44 ledger entries,
-  20,221.280 kg reconstructed, and 405.980 kg excess. `saldo_fios` holds 5 rows /
-  2,685.020 kg; `saldo_fios_op` is zero. The import command
-  `importar_saldo_inicial_ordem_compra_c3a(jsonb)` is owned by `postgres`,
-  `SECURITY DEFINER`, fixed empty `search_path`, with no EXECUTE grant for
-  `PUBLIC`, `anon`, `authenticated`, or `service_role`. The authenticated
-  read-only preview ACL is intentionally retained under §R.28.5. The focused
-  acceptance suite passed 66/66. **Disposition:** technical acceptance is
-  recorded by the technical supervisor acting as delegated project architect;
-  this wording is not attributed to Kleber. This acceptance authorizes no real
-  import, snapshot, fence, reader/writer switch, flat-ACL change, native
-  emission, `C3B`/`C3C`/`C3D`/`C4`/`C5`, production, `main`, remote change,
-  push, or deployment. `HISTORICAL_SALDO_FIOS_PROVENANCE_UNAVAILABLE` remains
-  nonblocking debt, unchanged by this acceptance. No phase chains automatically
-  from this closeout.
+- **`PHASE-C3B-EXECUTABLE-CONTRACT-CLOSURE-R1` — `CLOSED / ACCEPTED`
+  (2026-07-19).** The exact Phase-C3 executable contract is closed in lifecycle
+  §R.29 and schema contract §13.15. Acceptance is recorded by the technical
+  supervisor acting as delegated project architect and is not attributed to
+  Kleber. It records the single later cutover window, database-owned fence,
+  deterministic frozen 51-mapping/inventory snapshot, exact 39-header/44-line
+  import reconciliation, normalized shared-Pedido reader projection, explicit
+  ACL/policy closure, and rollback/forward-recovery boundaries. This is
+  documentation-only: no implementation, staging application, migration, import,
+  fence, switch, ACL change, deployment, production, `main`, remote change, or
+  push occurred. `HISTORICAL_SALDO_FIOS_PROVENANCE_UNAVAILABLE` remains
+  nonblocking debt. **NEXT_AUTHORIZABLE_ACTION: `PHASE-C3C` — inactive
+  implementation only; a separate architect order is still required.**
 
 - **`PURCHASE-ORDER HYBRID ORIGIN — F3R1 STAGING DATABASE/API VALIDATION AND
   PHASE-C REVALIDATION` — `CLOSED / ACCEPTED_WITH_SCOPED_COMMITTED_CONCURRENCY_FIXTURE_WAIVER`
@@ -206,14 +200,13 @@ are in `docs/ledgers/G28_LEDGER.md`. HEAD/working tree/divergence: consult Git d
   cutover (`M10`)"; cutover is done. **New fronts are authorizable again**, each by
   its own individual order. The consolidated, ranked `POST-LAUNCH DEBT REGISTER`
   (below) supersedes the former "residual risk register (12 items)".
-- **Next authorized action:** with F3R1 `CLOSED / ACCEPTED` under the scoped
-  committed-concurrency-fixture waiver and `PHASE-C3A` now `CLOSED / TECHNICALLY
-  ACCEPTED` (2026-07-19), no phase chains automatically from either closeout.
-  Any `C3B`/`C3C`/`C3D`/`C4`/`C5` scope, real import, snapshot, fence,
-  reader/writer or flat-ACL switch, and native emission remain unauthorized
-  pending a separate architect order. Do not reapply `db/74`, activate native
-  emission or execute a real C3A import, or access Vercel, production, `main`,
-  remotes, push, or the prohibited project. Separately, the
+- **Next authorizable action:** `PHASE-C3C — inactive implementation only`.
+  This closeout does not authorize or execute C3C; it remains subject to a
+  separate architect order. C3D is rehearsal/inactive staging deployment
+  preparation only. The real cutover remains a later, separately authorized,
+  single maintenance window. Do not reapply `db/74`, activate native emission,
+  execute a real C3A import, or access Vercel, production, `main`, remotes,
+  push, or the prohibited project. Separately, the
   highest-consequence open operational item remains
   `INGESTOR-DOC-CYCLE-VERIFY-DEFERRED`, an `ACTIVE PRODUCTION BLOCKER`. See the
   `POST-LAUNCH DEBT REGISTER`. **Standing reminder: flip the Supabase MCP back to

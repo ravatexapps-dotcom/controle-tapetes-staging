@@ -3488,3 +3488,166 @@ authorizes no real import, snapshot, fence, reader/writer or flat-ACL switch,
 native emission, `C3B`/`C3C`/`C3D`/`C4`/`C5`, production, `main`, remote
 change, push, or deployment. `HISTORICAL_SALDO_FIOS_PROVENANCE_UNAVAILABLE`
 remains nonblocking debt. No phase chains automatically from this closeout.
+
+## §R.29 PHASE-C3B — Executable Phase-C3 contract closure R1 — CLOSED / ACCEPTED
+
+**Authority and packaging.** This contract is accepted by the technical
+supervisor acting as delegated project architect; the acceptance wording is not
+attributed to Kleber. C3B is this documentation-only closure. C3C is inactive
+implementation and must preserve legacy behavior while the cutover state is
+`legacy_active`. C3D is rehearsal and inactive staging deployment preparation.
+Neither C3B, C3C, nor C3D creates a real cutover window. A real cutover is one
+later, separately authorized maintenance window in which the eight steps below
+run contiguously; there is no soak period between the read switch and ACL
+closure.
+
+| Package | Artifacts and permitted result |
+|---|---|
+| C3B contract closure | §§R.29/13.15, the dependency and ACL matrices, state/lock/fence/import/recovery specification, and acceptance records only. |
+| C3C inactive implementation | Migrations and internal database objects, canonical reader/writer adapters, state-aware compatibility adapters, and tests; all remain inactive while `legacy_active`. |
+| C3D rehearsal/deployment preparation | Deployment manifest, rehearsal procedures and empirical fence/role-matrix proof against isolated rehearsal scope; no real cutover state change, import, or ACL closure. |
+| Later real cutover window | The session lock, state transition, frozen live snapshot, deterministic import/reconciliation, canonical-read activation, final ACL/policy closure, and final verification in §R.29.5. |
+
+The supervisor-supplied live staging evidence for project
+`ucrjtfswnfdlxwtmxnoo` is the starting fact for this contract: singleton `id=1`
+is `legacy_active / not_started` with all markers `NULL`; import, native, and
+baseline counts are zero; the import RPC is postgres-only; receipt/reversal/
+history RPCs have authenticated EXECUTE; and the flat table retains broad legacy
+grants and `PUBLIC`-targeted RLS policies. This is supervisor-supplied evidence,
+not a query performed by the documentation closeout.
+
+### §R.29.1 Authority and dependency matrix
+
+| Class | Artifact / consumer | Current dependency and C3 contract |
+|---|---|---|
+| Direct flat writer | `js/screens/op-writes.js` | Writes flat receipt state (`kg_recebido`, `data_recebimento`, `status`); replace internally with the canonical receipt command before activation. |
+| Direct flat writer/reader | `js/screens/fornecedor.js` | Reads and mutates receipt fields inline; route to canonical reader/command or disable at cutover. |
+| Direct flat source writer | `js/screens/op-persistir.js` | Deletes/inserts flat purchase-order source rows; remains legacy-only and is fenced from receipt/source mutation during cutover. |
+| Direct flat readers | `js/screens/pedido-detail-data.js`, `js/screens/op-nova.js` | Query flat order/receipt state directly; consume the normalized canonical projection before activation. |
+| Receipt command caller / derived projection | `js/screens/pedido-detail-events.js` | Calls the legacy write path and derives receipt state; become a non-visual compatibility adapter or disabled surface, never new C3 UX. |
+| Derived receipt/progress projections | `js/screens/pedido-detail-progress.js`, `js/screens/pedido-chain-state.js`, `js/calculo-op.js`, `js/screens/op-recalculo.js` | Derive progress, chain state, and material balances from receipt quantities; consume normalized canonical fields only. `op-recalculo.js` must not globally credit `saldo_fios` from `kg_recebido - kg_pedido`. |
+| Derived operational/admin views | `js/screens/op-distribuicao-ui.js`, `js/screens/op-tecelagem-producao-admin.js`, `js/screens/ordem-compra-data.js`, `js/screens/ordem-compra-render.js`, `js/screens/op-pdf.js`, `js/screens/pedido-insumos-distribuicao.js` | Read derived order, allocation, receipt, or production state; use the normalized projection and cannot independently reconstruct receipt authority. |
+| Flat lifecycle/delete dependency | `js/delete-helpers.js` | Includes `ordens_compra_fio` in controlled OP deletion; must observe cutover state and cannot bypass canonical commands or the database fence. |
+| Canonical authority | receipt, reversal, history RPCs; import command; cutover structures | Only explicitly authorized RPC surfaces may mutate/read protected receipt state after closure. The import command remains postgres-only. |
+
+This is the complete discovered dependency boundary: direct database readers and
+writers are separated above from projection consumers. Every listed consumer must
+be deployed with canonical-read compatibility before activation; no undiscovered
+flat receipt read or write may remain on the activation manifest.
+
+### §R.29.2 Normalized canonical read contract
+
+One canonical reader projection is the sole post-switch source for all receipt
+state. It returns stable header, allocation, Pedido, material, supplier, receipt,
+reversal, and history identity plus, at minimum,
+`op_id`, `origem_tipo`, `kg_recebido_atribuido`, and `kg_excesso`.
+
+- Pedido-origin rows preserve `op_id = NULL`; no representative or fabricated OP
+  is introduced.
+- `kg_recebido_atribuido` is allocated receipt quantity. `kg_excesso` is a
+  separate allocation-free quantity. Aggregates must not add either field twice
+  through a header and a child row.
+- Pedido-level consumers show shared rows once at Pedido scope. OP-level
+  consumers include only real OP-attributable quantities; they do not absorb
+  Pedido-origin or excess quantities.
+- Only a canonical source-linked surplus event may affect global `saldo_fios`.
+  OP-local `saldo_fios_op` derives only canonical attributable quantity. Import
+  posts zero inventory movements.
+
+### §R.29.3 Cutover state machine and database-owned fence
+
+The cutover row is the authoritative state machine; application flags are
+consumers only.
+
+| State | Read authority | Receipt/source writers | Permitted transition |
+|---|---|---|---|
+| `legacy_active` | flat | legacy behavior | controlled maintenance entry only |
+| `maintenance_fenced` | flat or canonical for verification | both legacy receipt writers and protected legacy source/inventory mutations denied | snapshot, import, reconciliation, read switch, closure, or pre-PONR rollback |
+| `canonical_active` | canonical | canonical commands only | forward recovery only after PONR |
+
+The database fence is implemented by database-owned guards on direct flat receipt
+columns (`kg_recebido`, `data_recebimento`, `status`) and protected flat
+source/inventory mutation paths. In `maintenance_fenced` and `canonical_active`,
+they reject both known legacy receipt writers with stable
+`legacy_receipt_fenced`; no UI flag can bypass them. C3D must empirically prove
+denial using the actual authorized admin path and a matching-supplier path, while
+proving unchanged source/inventory hashes. Canonical receipt/reversal commands
+check state, actor, and order authorization; a successful non-import canonical
+receipt after canonical reads are active atomically records
+`productive_receipt_started_at`.
+
+The exact point of no return is the first successfully committed non-import
+canonical receipt after the canonical read switch, not the switch itself.
+
+### §R.29.4 Snapshot, import, and pre-switch reconciliation
+
+After fencing and before import, a short database transaction captures a frozen
+source snapshot of all **51 mappings**, including zero-quantity mappings, sorted
+by stable semantic identity and canonical three-decimal kg formatting. It also
+captures the complete `saldo_fios` inventory baseline. Each snapshot records
+count, total, canonical serialization, and SHA-256; later work reads that frozen
+snapshot, never live flat rows.
+
+The postgres-only deterministic orchestrator takes only the frozen snapshot and
+produces exactly **39 headers**, **44 immutable ledger lines**,
+**20,221.280 kg** reconstructed, and **405.980 kg** excess with **zero inventory
+movements**. Its deterministic ordering is flat source, mapping, canonical order
+item, allocation, then ledger identity. It is idempotent only for the exact
+frozen snapshot/hash and rejects any mismatch without inserting another header or
+line.
+
+Before the reader switch, reconciliation in short transactions must prove all of:
+
+1. frozen mapping count is 51 and complete, and source plus inventory hashes are
+   unchanged after fencing;
+2. canonical import counts and totals equal 39 / 44 / 20,221.280 kg / 405.980 kg;
+3. import created zero inventory movements and did not change the inventory
+   baseline;
+4. normalized projection totals reconcile attributable and excess quantity without
+   a fabricated OP or double count; and
+5. no productive canonical receipt exists.
+
+### §R.29.5 Lock and single-window execution contract
+
+The cutover coordinator first obtains a session-level advisory lock identified by
+the cutover generation. The deterministic resource-lock order is: cutover row,
+frozen source/mapping rows, inventory baseline rows, canonical header/allocation
+identities, then affected order rows. Every database transaction is short; no
+transaction remains open across client probes, UI operations, deployment checks,
+or any external call.
+
+The later real window executes exactly this contiguous sequence:
+
+1. Obtain the session advisory lock and deterministic row locks; transition from
+   `legacy_active` to `maintenance_fenced`.
+2. Empirically prove both legacy receipt writers are denied and source/inventory
+   hashes remain unchanged.
+3. Freeze the 51-mapping source snapshot and complete inventory baseline.
+4. Verify the already-deployed inactive canonical writers and every dependency in
+   §R.29.1 has canonical-reader compatibility or a state-driven disablement.
+5. Run the deterministic import and pre-switch reconciliation in §R.29.4.
+6. Set read authority to canonical while remaining fenced; run canonical reader
+   and projection checks.
+7. Explicitly close final ACLs and RLS policies as §13.15; there is no soak
+   interval before this closure.
+8. Repeat fence-denial, catalog/ACL, and reconciliation checks; activate
+   `canonical_active`, then release the advisory lock.
+
+### §R.29.6 Rollback, recovery, and UI boundary
+
+Before the point of no return, rollback may restore flat reads only after a
+database proof that zero post-switch productive canonical receipts were accepted.
+Base rollback retains the database fence on legacy writers and does **not**
+restore flat grants. Re-enabling flat mutation requires a separate recovery
+authorization plus a generation/idempotency plan proving that the committed
+immutable import cannot become stale or double-counted.
+
+After the first productive canonical receipt commits, recovery is forward-only:
+repair canonical commands/projections, reconcile immutable history and inventory,
+and preserve the closed flat authority. No return to flat reads or writers is
+permitted.
+
+C3 creates no visual UI. C4 exclusively owns the new admin receipt UI at
+`#/ordens-compra/:id`; supplier UI is deferred. Existing compatibility surfaces
+may receive non-visual state-driven adapters or be disabled at cutover, but may
+not become new UX.
