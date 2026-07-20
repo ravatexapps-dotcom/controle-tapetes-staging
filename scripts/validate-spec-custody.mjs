@@ -152,6 +152,12 @@ function splitTableRow(line) {
   return line.split('|').slice(1, -1).map((cell) => cell.trim());
 }
 
+function isGovernedRowOutsideTable(line) {
+  const value = line.trim();
+  if (!value) return false;
+  return value.includes('|') || /\bOC-/i.test(value);
+}
+
 function extractSection(text, heading, errors, code) {
   const lines = text.split(/\r?\n/);
   const indexes = lines.flatMap((line, index) => line === heading ? [index] : []);
@@ -183,14 +189,21 @@ function parseTable(section, headers, errors, code) {
     return [];
   }
   const rows = [];
-  for (let index = start + 2; index < lines.length && lines[index].startsWith('|'); index += 1) {
-    const cells = splitTableRow(lines[index]);
+  let end = start + 2;
+  for (; end < lines.length && lines[end].startsWith('|'); end += 1) {
+    const cells = splitTableRow(lines[end]);
     if (!cells || cells.length !== headers.length) {
-      errors.push(`${code}: malformed ${headers.length}-cell row: ${lines[index]}`);
+      errors.push(`${code}: malformed ${headers.length}-cell row: ${lines[end]}`);
       continue;
     }
-    if (cells.some((cell) => !cell)) errors.push(`${code}: row contains a blank required cell: ${lines[index]}`);
+    if (cells.some((cell) => !cell)) errors.push(`${code}: row contains a blank required cell: ${lines[end]}`);
     rows.push(cells);
+  }
+  for (let index = 0; index < lines.length; index += 1) {
+    if (index >= start && index < end) continue;
+    if (isGovernedRowOutsideTable(lines[index])) {
+      errors.push(`${code}: governed row exists outside the canonical table: ${lines[index].trim()}`);
+    }
   }
   return rows;
 }
@@ -372,6 +385,20 @@ function mutateFile(root, path, transform) {
   writeFileSync(target, transform(readFileSync(target, 'utf8')));
 }
 
+function insertInSection(text, heading, content) {
+  const lines = text.split(/\r?\n/);
+  const start = lines.indexOf(heading);
+  if (start < 0) throw new Error(`fixture section missing: ${heading}`);
+  const level = heading.match(/^#+/)[0].length;
+  let end = lines.length;
+  for (let index = start + 1; index < lines.length; index += 1) {
+    const found = lines[index].match(/^(#+)\s/);
+    if (found && found[1].length <= level) { end = index; break; }
+  }
+  lines.splice(end, 0, '', content);
+  return lines.join('\n');
+}
+
 function expectFailure(source, name, prefix, mutate) {
   const fixture = createFixture(source);
   try {
@@ -380,6 +407,16 @@ function expectFailure(source, name, prefix, mutate) {
     if (!errors.some((error) => error.startsWith(`${prefix}:`))) {
       throw new Error(`${name} did not trigger ${prefix}. Errors: ${errors.join(' | ')}`);
     }
+    return `${name}=PASS`;
+  } finally { disposeFixture(fixture); }
+}
+
+function expectSuccess(source, name, mutate) {
+  const fixture = createFixture(source);
+  try {
+    mutate(fixture);
+    const errors = validateRepository(fixture.root);
+    if (errors.length) throw new Error(`${name} failed: ${errors.join(' | ')}`);
     return `${name}=PASS`;
   } finally { disposeFixture(fixture); }
 }
@@ -394,6 +431,14 @@ function runSelfTests(source) {
   } finally { disposeFixture(baseline); }
   const state = (fixture, transform) => mutateFile(fixture.root, 'PROJECT_STATE.md', transform);
   const trace = (fixture, transform) => mutateFile(fixture.root, REGISTRIES[0].path.replace('ORDEM_COMPRA_LIFECYCLE_SPEC_PROPOSED.md', 'ORDEM_COMPRA_C3_TRACEABILITY.md'), transform);
+  const inTrace = (text, content) => insertInSection(text, '## Requirement matrix', content);
+  const inRegistry = (text, index, content) => insertInSection(text, REGISTRIES[index].heading, content);
+  const traceRow = readText(source, 'docs/architecture/ORDEM_COMPRA_C3_TRACEABILITY.md').match(/^\| OC-C3-READ-001 \|.*$/m)[0];
+  const lifecycleRow = readText(source, REGISTRIES[0].path).match(/^\| `OC-C3-READ-001` \|.*$/m)[0];
+  const schemaRow = readText(source, REGISTRIES[1].path).match(/^\| `OC-C3D-ACL-001` \|.*$/m)[0];
+  results.push(expectSuccess(source, 'POSITIVE_EXPLANATORY_PROSE', (f) => trace(f, (s) => inTrace(s, 'Ordinary explanatory prose.'))));
+  results.push(expectSuccess(source, 'POSITIVE_BLANK_LINES', (f) => trace(f, (s) => inTrace(s, '\n\n'))));
+  results.push(expectSuccess(source, 'POSITIVE_NON_TABLE_MARKDOWN', (f) => trace(f, (s) => inTrace(s, '- Plain Markdown without governed identifiers.'))));
   results.push(expectFailure(source, 'DUPLICATE_BOOTSTRAP_BLOCK', 'R1', (f) => state(f, (s) => `${s}\n${s.match(/<!-- SPEC_CUSTODY_BOOTSTRAP:BEGIN -->[\s\S]*?<!-- SPEC_CUSTODY_BOOTSTRAP:END -->/)[0]}\n`)));
   results.push(expectFailure(source, 'DUPLICATE_BOOTSTRAP_KEY', 'R1', (f) => state(f, (s) => s.replace('ACTIVE_TRACK: PURCHASE_ORDER_PHASE_C', 'ACTIVE_TRACK: PURCHASE_ORDER_PHASE_C\nACTIVE_TRACK: PURCHASE_ORDER_PHASE_C'))));
   results.push(expectFailure(source, 'MISSING_BOOTSTRAP_KEY', 'R1', (f) => state(f, (s) => s.replace(/^ACTIVE_TRACK:.*\r?\n/m, ''))));
@@ -422,6 +467,17 @@ function runSelfTests(source) {
   }));
   results.push(expectFailure(source, 'DIVERGENT_WRAPPERS', 'R5', (f) => mutateFile(f.root, 'AGENTS.md', (s) => `${s}\nDIVERGED\n`)));
   results.push(expectFailure(source, 'UNTRACKED_WRAPPER', 'R1', (f) => runGit(f.root, ['rm', '--cached', '--quiet', '--', 'AGENTS.md'])));
+  results.push(expectFailure(source, 'UNEXPECTED_TRACE_ROW_AFTER_BLANK', 'R6', (f) => trace(f, (s) => inTrace(s, traceRow.replaceAll('OC-C3-READ-001', 'OC-UNEXPECTED-TRACE-001')))));
+  results.push(expectFailure(source, 'DUPLICATE_TRACE_ROW_AFTER_BLANK', 'R6', (f) => trace(f, (s) => inTrace(s, traceRow))));
+  results.push(expectFailure(source, 'MALFORMED_NINE_CELL_TRACE_ROW_AFTER_BLANK', 'R6', (f) => trace(f, (s) => inTrace(s, '| OC-C3-DETACHED-001 | anchor | owner | PLANNED | NONE | NONE | LOCAL | NONE | |'))));
+  results.push(expectFailure(source, 'REQUIREMENT_ID_ALONE_AFTER_BLANK', 'R6', (f) => trace(f, (s) => inTrace(s, 'OC-C3-READ-001'))));
+  results.push(expectFailure(source, 'HIDDEN_LIFECYCLE_REGISTRY_ROW', 'R6', (f) => mutateFile(f.root, REGISTRIES[0].path, (s) => inRegistry(s, 0, lifecycleRow.replaceAll('OC-C3-READ-001', 'OC-HIDDEN-LIFECYCLE-001')))));
+  results.push(expectFailure(source, 'HIDDEN_SCHEMA_REGISTRY_ROW', 'R6', (f) => mutateFile(f.root, REGISTRIES[1].path, (s) => inRegistry(s, 1, schemaRow.replaceAll('OC-C3D-ACL-001', 'OC-HIDDEN-SCHEMA-001')))));
+  results.push(expectFailure(source, 'SECOND_TABLE_AFTER_PROSE', 'R6', (f) => trace(f, (s) => inTrace(s, 'Explanatory prose.\n\nOTHER | TABLE\n--- | ---'))));
+  results.push(expectFailure(source, 'DETACHED_ROW_AFTER_HTML_COMMENT', 'R6', (f) => trace(f, (s) => inTrace(s, `<!-- note -->\n${traceRow}`))));
+  results.push(expectFailure(source, 'DETACHED_ROW_AFTER_MARKDOWN_HEADING', 'R6', (f) => trace(f, (s) => inTrace(s, `### Notes\n${traceRow}`))));
+  results.push(expectFailure(source, 'UNEXPECTED_ID_OUTSIDE_TABLE', 'R6', (f) => trace(f, (s) => inTrace(s, 'OC-UNEXPECTED-OUTSIDE-001'))));
+  results.push(expectFailure(source, 'DUPLICATE_ID_OUTSIDE_TABLE', 'R6', (f) => trace(f, (s) => inTrace(s, 'OC-C3-READ-001'))));
   return results;
 }
 
