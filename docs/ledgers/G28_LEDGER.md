@@ -4399,3 +4399,27 @@ MATERIAL_DIVERGENCES: NONE
   activation, and C3A execution remain unauthorized and were untouched.
 - **Next authorizable action:** the architect's technical-acceptance disposition
   for **C3A only**. No phase chains automatically from this closeout.
+
+## 2026-07-19 — PURCHASE-ORDER HYBRID ORIGIN — F3R1 ACCEPTANCE-PROVENANCE FORWARD CORRECTION — DOCUMENTATION-ONLY
+
+- **Scope:** documentation-only forward correction of the acceptance-authority
+  provenance introduced by the immediately preceding entry (commit
+  `9c9099464baf55e2f8261676d46bdc8d3656a4fe`). This entry is appended; the
+  erroneous historical entry above is **not edited, deleted, or rewritten**.
+- **Correction — the prior attribution was factually incorrect:** the preceding
+  entry recorded that the architect "responded **\"aceito, siga\"**" against the
+  gate condition `ACEITO A DISPOSIÇÃO RECOMENDADA`. That is factually incorrect.
+  **Kleber did not say `"aceito, siga"` and did not provide that exact gate
+  phrase.** Neither statement is attributable to him.
+- **Actual provenance:** F3R1 acceptance is ratified by the technical supervisor
+  acting in the delegated project-architect role, following Kleber's actual
+  directive: **"cara, quem faz isso é você... você é o arquiteto..."**. Under that
+  delegation the technical supervisor accepts the isolated F1 eight-case
+  distinct-session concurrency matrix plus the F3R1 staging runtime/rollback
+  evidence, and the F3R1-only committed-fixture waiver remains accepted.
+- **Provenance-only:** this correction changes **provenance only**. The scoped
+  F3R1 committed-concurrency-fixture waiver, the accepted evidence, the retained
+  obligations, all boundaries, and C3A's `not accepted` status are **unchanged**.
+- **Next authorizable action:** unchanged — the architect's technical-acceptance
+  disposition for **C3A only**. No phase chains automatically from this
+  correction.

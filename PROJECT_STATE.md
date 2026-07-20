@@ -30,7 +30,13 @@ are in `docs/ledgers/G28_LEDGER.md`. HEAD/working tree/divergence: consult Git d
   Immutable journal integrity and zero synthetic residue remain mandatory and are
   not relaxed by this waiver, which authorizes no journal-residue policy and does
   not extend to any later gate. PRE-PROD hybrid-origin and focused Phase C
-  revalidation are **accepted**. C3A remains `legacy_active / not_started`,
+  revalidation are **accepted**. **Provenance correction (2026-07-19):** the prior
+  ledger attribution of `"aceito, siga"` to Kleber was factually incorrect — he did
+  not say it and did not provide that gate phrase; F3R1 acceptance is ratified by
+  the technical supervisor acting as delegated project architect, following
+  Kleber's actual directive `"cara, quem faz isso é você... você é o arquiteto..."`.
+  This changes provenance only; the scoped waiver, accepted evidence, boundaries,
+  and C3A `not accepted` status are unchanged. C3A remains `legacy_active / not_started`,
   implemented and verified but **not accepted**. Vercel, browser validation,
   production, `main`, remotes, push, the prohibited project, native emission
   activation, and C3A execution remain unauthorized and were untouched.

@@ -17,7 +17,13 @@
   evidence are accepted as sufficient for this gate; the committed-staging-fixture
   requirement is waived **for F3R1 only**. Immutable journal integrity and zero
   synthetic residue remain mandatory; the waiver relaxes neither and extends to no
-  later gate. C3A remains inactive and **not accepted**. Vercel/browser,
+  later gate. **Provenance correction (2026-07-19):** the prior ledger attribution
+  of `"aceito, siga"` to Kleber was factually incorrect — he did not say it and did
+  not provide that gate phrase; F3R1 acceptance is ratified by the technical
+  supervisor acting as delegated project architect, following Kleber's actual
+  directive `"cara, quem faz isso é você... você é o arquiteto..."`. This changes
+  provenance only; the scoped waiver, accepted evidence, boundaries, and C3A
+  `not accepted` status are unchanged. C3A remains inactive and **not accepted**. Vercel/browser,
   production, `main`, remotes, push, the prohibited project, native emission
   activation, and C3A execution remain unauthorized and were untouched. **Next
   authorizable action: architect technical-acceptance disposition for C3A only.**
