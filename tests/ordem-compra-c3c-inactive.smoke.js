@@ -24,7 +24,12 @@ test('C3C-A freezes all mappings and inventory with stable three-decimal SHA-256
   assert.match(sql, /row_sha256/);
   assert.match(sql, /IF\s+v_source_count\s*<>\s*51/i);
   assert.match(sql, /FM999999999990\.000/g);
-  assert.match(sql, /extensions\.digest\([\s\S]{0,500}'sha256'/i);
+  assert.match(sql, /ordem_compra_c3c_source_canonical_line[\s\S]*c3c-source-v3/i);
+  assert.match(sql, /ordem_compra_c3c_inventory_canonical_line[\s\S]*c3c-inventory-v3/i);
+  assert.match(sql, /s\.row_sha256\s+IS DISTINCT FROM\s+encode\(extensions\.digest\(s\.canonical_line,\s*'sha256'\)/i);
+  assert.match(sql, /b\.row_sha256\s+IS DISTINCT FROM\s+encode\(extensions\.digest\(b\.canonical_line,\s*'sha256'\)/i);
+  assert.match(sql, /RAISE EXCEPTION 'source_drift_detected'/i);
+  assert.match(sql, /RAISE EXCEPTION 'inventory_drift_detected'/i);
 });
 
 test('C3C-A installs database-owned fence guards without a UI bypass', () => {
@@ -51,22 +56,27 @@ test('normalized reader preserves nullable OP and separates attributable and exc
   assert.doesNotMatch(sql, /COALESCE\(l\.op_id\s*,/i);
 });
 
-test('snapshot import is postgres-only, frozen-source based, deterministic, and non-posting', () => {
+test('snapshot import is scoped, SHA-256 idempotent, fully reconciled, and non-posting', () => {
   assert.match(sql, /ordem_compra_c3c_import_snapshot_row/);
   assert.match(sql, /FROM public\.ordem_compra_cutover_source_snapshot/i);
+  assert.match(sql, /'cutover_generation',\s*v_state\.cutover_generation/i);
+  assert.match(sql, /'snapshot_hash',\s*v_state\.snapshot_hash/i);
+  assert.match(sql, /v_command_hash\s*:=\s*encode\(extensions\.digest\(v_payload::TEXT,\s*'sha256'\),\s*'hex'\)/i);
+  assert.doesNotMatch(sql, /v_command_hash\s*:=\s*md5/i);
+  assert.match(sql, /RAISE EXCEPTION 'idempotencia_conflitante'/i);
+  assert.match(sql, /productive_receipt_exists/i);
+  assert.match(sql, /h\.comando_payload\s*->>\s*'cutover_generation'\s*=\s*p_generation::TEXT/i);
+  assert.match(sql, /JOIN public\.ordem_compra_fio_lancamentos l ON l\.id = m\.lancamento_id/i);
   assert.match(sql, /v_headers\s*<>\s*39[\s\S]*v_lines\s*<>\s*44[\s\S]*v_total\s*<>\s*20221\.280[\s\S]*v_excess\s*<>\s*405\.980[\s\S]*v_movements\s*<>\s*0/i);
   assert.doesNotMatch(executable, /INSERT\s+INTO\s+public\.ordem_compra_fio_movimentos_estoque/i);
 });
 
-test('cutover orchestration requires a session advisory lock and deterministic resource order', () => {
+test('import executes the runtime lock helper under a session advisory lock', () => {
   assert.match(sql, /pg_try_advisory_lock\(public\.ordem_compra_c3c_lock_key\(p_generation\)\)/i);
   assert.doesNotMatch(sql, /pg_try_advisory_xact_lock|pg_advisory_xact_lock\(public\.ordem_compra_c3c_lock_key/i);
-  const cutover = sql.indexOf('PERFORM 1 FROM public.ordem_compra_cutover');
-  const source = sql.indexOf('FROM public.ordens_compra_fio f', cutover);
-  const inventory = sql.indexOf('PERFORM 1 FROM public.saldo_fios', source);
-  const allocation = sql.indexOf('FROM public.ordem_compra_item i', inventory);
-  const order = sql.indexOf('PERFORM 1 FROM public.ordem_compra o', allocation);
-  assert.ok(cutover < source && source < inventory && inventory < allocation && allocation < order);
+  assert.match(sql, /CREATE OR REPLACE FUNCTION public\.ordem_compra_c3c_lock_import_resources/i);
+  assert.match(sql, /PERFORM public\.ordem_compra_c3c_lock_import_resources\(p_generation\)/i);
+  assert.doesNotMatch(sql, /pg_sleep\s*\(/i);
 });
 
 test('final ACL closure is owner-only, separate, and not invoked by migration apply', () => {

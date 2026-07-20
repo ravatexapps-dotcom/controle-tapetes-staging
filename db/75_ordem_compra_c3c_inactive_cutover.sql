@@ -23,6 +23,16 @@ ALTER TABLE public.ordem_compra_cutover
   ADD COLUMN IF NOT EXISTS final_acl_closed_at TIMESTAMPTZ,
   ADD COLUMN IF NOT EXISTS canonical_activated_at TIMESTAMPTZ;
 
+ALTER TABLE public.ordem_compra_recebimentos
+  DROP CONSTRAINT IF EXISTS ordem_compra_recebimentos_comando_hash_check,
+  DROP CONSTRAINT IF EXISTS ordem_compra_recebimentos_c3c_hash_check;
+ALTER TABLE public.ordem_compra_recebimentos
+  ADD CONSTRAINT ordem_compra_recebimentos_c3c_hash_check CHECK (
+    (idempotency_namespace = 'native_receipt_v1' AND comando_hash ~ '^[0-9a-f]{32}$')
+    OR
+    (idempotency_namespace = 'legacy_initial_balance_v1' AND comando_hash ~ '^[0-9a-f]{64}$')
+  );
+
 DO $$
 BEGIN
   IF NOT EXISTS (
@@ -403,6 +413,52 @@ END;
 $$;
 REVOKE ALL ON FUNCTION public.ordem_compra_c3c_release_session_lock(BIGINT) FROM PUBLIC, anon, authenticated, service_role;
 
+CREATE OR REPLACE FUNCTION public.ordem_compra_c3c_source_canonical_line(
+  p_generation BIGINT, p_stable_position BIGINT, p_flat_row_id BIGINT,
+  p_mapping_id BIGINT, p_order_id BIGINT, p_item_id BIGINT,
+  p_allocation_id BIGINT, p_need_id BIGINT, p_op_id BIGINT,
+  p_legacy_class TEXT, p_material TEXT, p_cor_id BIGINT,
+  p_cor_poliester TEXT, p_kg_pedido NUMERIC, p_kg_recebido NUMERIC,
+  p_kg_atribuido NUMERIC, p_kg_excesso NUMERIC
+)
+RETURNS TEXT
+LANGUAGE sql
+IMMUTABLE
+SECURITY DEFINER
+SET search_path = ''
+AS $$
+  SELECT concat_ws('|', 'c3c-source-v3', p_generation, p_stable_position,
+    p_flat_row_id, p_mapping_id, p_order_id, p_item_id, p_allocation_id,
+    p_need_id, COALESCE(p_op_id::TEXT, ''), p_legacy_class, p_material,
+    COALESCE(p_cor_id::TEXT, ''), COALESCE(p_cor_poliester, ''),
+    to_char(p_kg_pedido, 'FM999999999990.000'),
+    to_char(p_kg_recebido, 'FM999999999990.000'),
+    to_char(p_kg_atribuido, 'FM999999999990.000'),
+    to_char(p_kg_excesso, 'FM999999999990.000'))
+$$;
+REVOKE ALL ON FUNCTION public.ordem_compra_c3c_source_canonical_line(
+  BIGINT, BIGINT, BIGINT, BIGINT, BIGINT, BIGINT, BIGINT, BIGINT, BIGINT,
+  TEXT, TEXT, BIGINT, TEXT, NUMERIC, NUMERIC, NUMERIC, NUMERIC
+) FROM PUBLIC, anon, authenticated, service_role;
+
+CREATE OR REPLACE FUNCTION public.ordem_compra_c3c_inventory_canonical_line(
+  p_generation BIGINT, p_stable_position BIGINT, p_material TEXT,
+  p_cor_id BIGINT, p_cor_poliester TEXT, p_kg_total NUMERIC
+)
+RETURNS TEXT
+LANGUAGE sql
+IMMUTABLE
+SECURITY DEFINER
+SET search_path = ''
+AS $$
+  SELECT concat_ws('|', 'c3c-inventory-v3', p_generation, p_stable_position,
+    p_material, COALESCE(p_cor_id::TEXT, ''), COALESCE(p_cor_poliester, ''),
+    to_char(p_kg_total, 'FM999999999990.000'))
+$$;
+REVOKE ALL ON FUNCTION public.ordem_compra_c3c_inventory_canonical_line(
+  BIGINT, BIGINT, TEXT, BIGINT, TEXT, NUMERIC
+) FROM PUBLIC, anon, authenticated, service_role;
+
 CREATE OR REPLACE FUNCTION public.ordem_compra_c3c_fence_and_snapshot(p_generation BIGINT)
 RETURNS JSONB
 LANGUAGE plpgsql
@@ -444,51 +500,62 @@ BEGIN
   WHERE EXISTS (SELECT 1 FROM public.ordem_compra_item i WHERE i.ordem_id = o.id)
   ORDER BY o.id FOR UPDATE;
 
+  WITH source_rows AS (
+    SELECT row_number() OVER (ORDER BY f.id, c.id, i.id, a.id) AS stable_position,
+           c.id AS mapping_id, f.id AS flat_row_id, i.ordem_id, i.id AS item_id,
+           a.id AS allocation_id, a.necessidade_id, a.op_id,
+           CASE WHEN f.status_administrativo = 'rascunho' AND f.status = 'recebido_total' THEN 'D'
+                WHEN f.status_administrativo = 'emitida' AND f.status = 'recebido_total' THEN 'A'
+                ELSE 'B' END AS legacy_class,
+           i.material, i.cor_id, i.cor_poliester, f.kg_pedido,
+           COALESCE(f.kg_recebido, 0) AS kg_recebido,
+           LEAST(COALESCE(f.kg_recebido, 0), a.kg_alocado) AS kg_atribuido,
+           GREATEST(COALESCE(f.kg_recebido, 0) - a.kg_alocado, 0) AS kg_excesso
+    FROM public.ordens_compra_fio f
+    JOIN public.ordem_compra_item_compat_fio c ON c.ordens_compra_fio_id = f.id
+    JOIN public.ordem_compra_item i ON i.id = c.ordem_compra_item_id
+    JOIN public.ordem_compra_item_alocacao a ON a.item_id = i.id
+  ), serialized AS (
+    SELECT r.*, public.ordem_compra_c3c_source_canonical_line(
+      p_generation, r.stable_position, r.flat_row_id, r.mapping_id,
+      r.ordem_id, r.item_id, r.allocation_id, r.necessidade_id, r.op_id,
+      r.legacy_class, r.material, r.cor_id, r.cor_poliester, r.kg_pedido,
+      r.kg_recebido, r.kg_atribuido, r.kg_excesso
+    ) AS canonical_line
+    FROM source_rows r
+  )
   INSERT INTO public.ordem_compra_cutover_source_snapshot(
     cutover_id, stable_position, mapping_id, flat_row_id, ordem_compra_id,
     item_id, allocation_id, necessidade_id, op_id, legacy_class, material,
     cor_id, cor_poliester, kg_pedido, kg_recebido, kg_atribuido, kg_excesso,
     canonical_line, row_sha256
   )
-  SELECT 1, row_number() OVER (ORDER BY f.id, c.id, i.id, a.id), c.id, f.id,
-         i.ordem_id, i.id, a.id, a.necessidade_id, a.op_id,
-         CASE WHEN f.status_administrativo = 'rascunho' AND f.status = 'recebido_total' THEN 'D'
-              WHEN f.status_administrativo = 'emitida' AND f.status = 'recebido_total' THEN 'A'
-              ELSE 'B' END,
-         i.material, i.cor_id, i.cor_poliester, f.kg_pedido,
-         COALESCE(f.kg_recebido, 0), LEAST(COALESCE(f.kg_recebido, 0), a.kg_alocado),
-         GREATEST(COALESCE(f.kg_recebido, 0) - a.kg_alocado, 0),
-         concat_ws('|', f.id, c.id, i.id, i.ordem_id, a.id, a.necessidade_id,
-           COALESCE(a.op_id::TEXT, ''), i.material, COALESCE(i.cor_id::TEXT, ''),
-           COALESCE(i.cor_poliester, ''), to_char(f.kg_pedido, 'FM999999999990.000'),
-           to_char(COALESCE(f.kg_recebido, 0), 'FM999999999990.000'),
-           to_char(LEAST(COALESCE(f.kg_recebido, 0), a.kg_alocado), 'FM999999999990.000'),
-           to_char(GREATEST(COALESCE(f.kg_recebido, 0) - a.kg_alocado, 0), 'FM999999999990.000')),
-         encode(extensions.digest(concat_ws('|', f.id, c.id, i.id, i.ordem_id, a.id,
-           a.necessidade_id, COALESCE(a.op_id::TEXT, ''), i.material,
-           COALESCE(i.cor_id::TEXT, ''), COALESCE(i.cor_poliester, ''),
-           to_char(f.kg_pedido, 'FM999999999990.000'),
-           to_char(COALESCE(f.kg_recebido, 0), 'FM999999999990.000'),
-           to_char(LEAST(COALESCE(f.kg_recebido, 0), a.kg_alocado), 'FM999999999990.000'),
-           to_char(GREATEST(COALESCE(f.kg_recebido, 0) - a.kg_alocado, 0), 'FM999999999990.000')), 'sha256'), 'hex')
-  FROM public.ordens_compra_fio f
-  JOIN public.ordem_compra_item_compat_fio c ON c.ordens_compra_fio_id = f.id
-  JOIN public.ordem_compra_item i ON i.id = c.ordem_compra_item_id
-  JOIN public.ordem_compra_item_alocacao a ON a.item_id = i.id
-  ORDER BY f.id, c.id, i.id, a.id;
+  SELECT 1, stable_position, mapping_id, flat_row_id, ordem_id, item_id,
+         allocation_id, necessidade_id, op_id, legacy_class, material, cor_id,
+         cor_poliester, kg_pedido, kg_recebido, kg_atribuido, kg_excesso,
+         canonical_line, encode(extensions.digest(canonical_line, 'sha256'), 'hex')
+  FROM serialized ORDER BY stable_position;
 
+  WITH inventory_rows AS (
+    SELECT row_number() OVER (
+             ORDER BY tipo, cor_id NULLS FIRST, cor_poliester NULLS FIRST
+           ) AS stable_position,
+           tipo AS material, cor_id, cor_poliester, kg_total
+    FROM public.saldo_fios
+  ), serialized AS (
+    SELECT r.*, public.ordem_compra_c3c_inventory_canonical_line(
+      p_generation, r.stable_position, r.material, r.cor_id,
+      r.cor_poliester, r.kg_total
+    ) AS canonical_line
+    FROM inventory_rows r
+  )
   INSERT INTO public.ordem_compra_cutover_inventory_baseline(
     cutover_id, stable_position, material, cor_id, cor_poliester, kg_total,
     canonical_line, row_sha256
   )
-  SELECT 1, row_number() OVER (ORDER BY tipo, cor_id NULLS FIRST, cor_poliester NULLS FIRST),
-         tipo, cor_id, cor_poliester, kg_total,
-         concat_ws('|', tipo, COALESCE(cor_id::TEXT, ''), COALESCE(cor_poliester, ''),
-           to_char(kg_total, 'FM999999999990.000')),
-         encode(extensions.digest(concat_ws('|', tipo, COALESCE(cor_id::TEXT, ''),
-           COALESCE(cor_poliester, ''), to_char(kg_total, 'FM999999999990.000')), 'sha256'), 'hex')
-  FROM public.saldo_fios
-  ORDER BY tipo, cor_id NULLS FIRST, cor_poliester NULLS FIRST;
+  SELECT 1, stable_position, material, cor_id, cor_poliester, kg_total,
+         canonical_line, encode(extensions.digest(canonical_line, 'sha256'), 'hex')
+  FROM serialized ORDER BY stable_position;
 
   SELECT count(*), COALESCE(sum(kg_recebido), 0), COALESCE(string_agg(canonical_line, E'\n' ORDER BY stable_position), '')
   INTO v_source_count, v_source_total, v_source_serialization
@@ -516,6 +583,154 @@ END;
 $$;
 REVOKE ALL ON FUNCTION public.ordem_compra_c3c_fence_and_snapshot(BIGINT) FROM PUBLIC, anon, authenticated, service_role;
 
+CREATE OR REPLACE FUNCTION public.ordem_compra_c3c_lock_import_resources(p_generation BIGINT)
+RETURNS VOID
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = ''
+AS $$
+BEGIN
+  IF current_user <> 'postgres'
+     OR NOT public.ordem_compra_c3c_session_lock_held(p_generation) THEN
+    RAISE EXCEPTION 'cutover_session_lock_required' USING ERRCODE = '55000';
+  END IF;
+  PERFORM 1 FROM public.ordem_compra_cutover
+  WHERE id = 1 AND status = 'maintenance_fenced' AND read_authority = 'flat'
+    AND reconciliation_status IN ('previewed', 'reconciled')
+    AND cutover_generation = p_generation
+  FOR UPDATE;
+  IF NOT FOUND THEN RAISE EXCEPTION 'estado_cutover_invalido' USING ERRCODE = '55000'; END IF;
+  PERFORM 1
+  FROM public.ordem_compra_cutover_source_snapshot s
+  JOIN public.ordem_compra_item_compat_fio c ON c.id = s.mapping_id
+  WHERE s.cutover_id = 1
+  ORDER BY s.stable_position, c.id FOR UPDATE OF s, c;
+  PERFORM 1
+  FROM public.ordem_compra_cutover_inventory_baseline b
+  JOIN public.saldo_fios f ON f.tipo = b.material
+    AND f.cor_id IS NOT DISTINCT FROM b.cor_id
+    AND f.cor_poliester IS NOT DISTINCT FROM b.cor_poliester
+  WHERE b.cutover_id = 1
+  ORDER BY b.stable_position FOR UPDATE OF b, f;
+  PERFORM 1
+  FROM public.ordem_compra_cutover_source_snapshot s
+  JOIN public.ordem_compra_item i ON i.id = s.item_id
+  JOIN public.ordem_compra_item_alocacao a ON a.id = s.allocation_id
+  WHERE s.cutover_id = 1
+  ORDER BY i.id, a.id FOR UPDATE OF i, a;
+  PERFORM 1
+  FROM public.ordem_compra_cutover_source_snapshot s
+  JOIN public.ordem_compra o ON o.id = s.ordem_compra_id
+  WHERE s.cutover_id = 1
+  ORDER BY o.id FOR UPDATE OF o;
+END;
+$$;
+REVOKE ALL ON FUNCTION public.ordem_compra_c3c_lock_import_resources(BIGINT) FROM PUBLIC, anon, authenticated, service_role;
+
+CREATE OR REPLACE FUNCTION public.ordem_compra_c3c_assert_snapshot_and_live(p_generation BIGINT)
+RETURNS VOID
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = ''
+AS $$
+DECLARE
+  v_state public.ordem_compra_cutover%ROWTYPE;
+  v_source_count INTEGER; v_inventory_count INTEGER;
+  v_source_total NUMERIC(15,3); v_inventory_total NUMERIC(15,3);
+  v_source_serialization TEXT; v_inventory_serialization TEXT;
+  v_source_hash TEXT; v_inventory_hash TEXT;
+BEGIN
+  SELECT * INTO v_state FROM public.ordem_compra_cutover WHERE id = 1;
+  IF NOT FOUND OR v_state.cutover_generation <> p_generation THEN
+    RAISE EXCEPTION 'estado_cutover_invalido' USING ERRCODE = '55000';
+  END IF;
+  IF EXISTS (
+    SELECT 1 FROM public.ordem_compra_cutover_source_snapshot s
+    WHERE s.cutover_id = 1 AND (
+      s.canonical_line IS DISTINCT FROM public.ordem_compra_c3c_source_canonical_line(
+        p_generation, s.stable_position, s.flat_row_id, s.mapping_id,
+        s.ordem_compra_id, s.item_id, s.allocation_id, s.necessidade_id, s.op_id,
+        s.legacy_class, s.material, s.cor_id, s.cor_poliester, s.kg_pedido,
+        s.kg_recebido, s.kg_atribuido, s.kg_excesso)
+      OR s.row_sha256 IS DISTINCT FROM encode(extensions.digest(s.canonical_line, 'sha256'), 'hex')
+    )
+  ) THEN RAISE EXCEPTION 'source_snapshot_hash_mismatch' USING ERRCODE = '55000'; END IF;
+  IF EXISTS (
+    SELECT 1 FROM public.ordem_compra_cutover_inventory_baseline b
+    WHERE b.cutover_id = 1 AND (
+      b.canonical_line IS DISTINCT FROM public.ordem_compra_c3c_inventory_canonical_line(
+        p_generation, b.stable_position, b.material, b.cor_id, b.cor_poliester, b.kg_total)
+      OR b.row_sha256 IS DISTINCT FROM encode(extensions.digest(b.canonical_line, 'sha256'), 'hex')
+    )
+  ) THEN RAISE EXCEPTION 'inventory_snapshot_hash_mismatch' USING ERRCODE = '55000'; END IF;
+  SELECT count(*), COALESCE(sum(kg_recebido), 0),
+         COALESCE(string_agg(canonical_line, E'\n' ORDER BY stable_position), '')
+  INTO v_source_count, v_source_total, v_source_serialization
+  FROM public.ordem_compra_cutover_source_snapshot WHERE cutover_id = 1;
+  SELECT count(*), COALESCE(sum(kg_total), 0),
+         COALESCE(string_agg(canonical_line, E'\n' ORDER BY stable_position), '')
+  INTO v_inventory_count, v_inventory_total, v_inventory_serialization
+  FROM public.ordem_compra_cutover_inventory_baseline WHERE cutover_id = 1;
+  v_source_hash := encode(extensions.digest(v_source_serialization, 'sha256'), 'hex');
+  v_inventory_hash := encode(extensions.digest(v_inventory_serialization, 'sha256'), 'hex');
+  IF v_source_count <> v_state.source_snapshot_count
+     OR v_source_total <> v_state.source_snapshot_total_kg
+     OR v_source_serialization IS DISTINCT FROM v_state.source_snapshot_serialization
+     OR v_source_hash IS DISTINCT FROM v_state.snapshot_hash THEN
+    RAISE EXCEPTION 'source_snapshot_hash_mismatch' USING ERRCODE = '55000';
+  END IF;
+  IF v_inventory_count <> v_state.inventory_baseline_count
+     OR v_inventory_total <> v_state.inventory_baseline_total_kg
+     OR v_inventory_serialization IS DISTINCT FROM v_state.inventory_baseline_serialization
+     OR v_inventory_hash IS DISTINCT FROM v_state.inventory_baseline_hash THEN
+    RAISE EXCEPTION 'inventory_snapshot_hash_mismatch' USING ERRCODE = '55000';
+  END IF;
+  WITH live_rows AS (
+    SELECT row_number() OVER (ORDER BY f.id, c.id, i.id, a.id) AS stable_position,
+      f.id flat_row_id, c.id mapping_id, i.ordem_id, i.id item_id,
+      a.id allocation_id, a.necessidade_id, a.op_id,
+      CASE WHEN f.status_administrativo='rascunho' AND f.status='recebido_total' THEN 'D'
+           WHEN f.status_administrativo='emitida' AND f.status='recebido_total' THEN 'A'
+           ELSE 'B' END legacy_class,
+      i.material, i.cor_id, i.cor_poliester, f.kg_pedido,
+      COALESCE(f.kg_recebido,0) kg_recebido,
+      LEAST(COALESCE(f.kg_recebido,0),a.kg_alocado) kg_atribuido,
+      GREATEST(COALESCE(f.kg_recebido,0)-a.kg_alocado,0) kg_excesso
+    FROM public.ordens_compra_fio f
+    JOIN public.ordem_compra_item_compat_fio c ON c.ordens_compra_fio_id=f.id
+    JOIN public.ordem_compra_item i ON i.id=c.ordem_compra_item_id
+    JOIN public.ordem_compra_item_alocacao a ON a.item_id=i.id
+  )
+  SELECT count(*), COALESCE(sum(kg_recebido),0),
+    encode(extensions.digest(COALESCE(string_agg(
+      public.ordem_compra_c3c_source_canonical_line(p_generation, stable_position,
+        flat_row_id, mapping_id, ordem_id, item_id, allocation_id, necessidade_id,
+        op_id, legacy_class, material, cor_id, cor_poliester, kg_pedido,
+        kg_recebido, kg_atribuido, kg_excesso), E'\n' ORDER BY stable_position),''), 'sha256'),'hex')
+  INTO v_source_count, v_source_total, v_source_hash FROM live_rows;
+  IF v_source_count <> v_state.source_snapshot_count
+     OR v_source_total <> v_state.source_snapshot_total_kg
+     OR v_source_hash IS DISTINCT FROM v_state.snapshot_hash THEN
+    RAISE EXCEPTION 'source_drift_detected' USING ERRCODE = '55000';
+  END IF;
+  WITH live_rows AS (
+    SELECT row_number() OVER (ORDER BY tipo,cor_id NULLS FIRST,cor_poliester NULLS FIRST) stable_position,
+      tipo material, cor_id, cor_poliester, kg_total FROM public.saldo_fios
+  )
+  SELECT count(*), COALESCE(sum(kg_total),0),
+    encode(extensions.digest(COALESCE(string_agg(
+      public.ordem_compra_c3c_inventory_canonical_line(p_generation, stable_position,
+        material, cor_id, cor_poliester, kg_total), E'\n' ORDER BY stable_position),''), 'sha256'),'hex')
+  INTO v_inventory_count, v_inventory_total, v_inventory_hash FROM live_rows;
+  IF v_inventory_count <> v_state.inventory_baseline_count
+     OR v_inventory_total <> v_state.inventory_baseline_total_kg
+     OR v_inventory_hash IS DISTINCT FROM v_state.inventory_baseline_hash THEN
+    RAISE EXCEPTION 'inventory_drift_detected' USING ERRCODE = '55000';
+  END IF;
+END;
+$$;
+REVOKE ALL ON FUNCTION public.ordem_compra_c3c_assert_snapshot_and_live(BIGINT) FROM PUBLIC, anon, authenticated, service_role;
+
 CREATE OR REPLACE FUNCTION public.ordem_compra_c3c_import_snapshot_row(p_snapshot_id BIGINT)
 RETURNS BIGINT
 LANGUAGE plpgsql
@@ -524,36 +739,115 @@ SET search_path = ''
 AS $$
 DECLARE
   v_row public.ordem_compra_cutover_source_snapshot%ROWTYPE;
+  v_state public.ordem_compra_cutover%ROWTYPE;
+  v_header public.ordem_compra_recebimentos%ROWTYPE;
   v_payload JSONB;
+  v_result_metadata JSONB;
+  v_command_hash TEXT;
+  v_header_key TEXT;
   v_header_id BIGINT;
   v_line INTEGER := 0;
+  v_expected_lines INTEGER;
+  v_actual_lines INTEGER;
+  v_valid_attributed INTEGER;
+  v_valid_excess INTEGER;
+  v_excess_line INTEGER;
 BEGIN
   IF current_user <> 'postgres' THEN RAISE EXCEPTION 'owner_only_cutover_command' USING ERRCODE = '42501'; END IF;
   SELECT * INTO v_row FROM public.ordem_compra_cutover_source_snapshot WHERE id = p_snapshot_id;
   IF NOT FOUND OR v_row.kg_recebido = 0 THEN RETURN NULL; END IF;
-  SELECT id INTO v_header_id FROM public.ordem_compra_recebimentos
-  WHERE idempotency_namespace = 'legacy_initial_balance_v1'
-    AND comando_payload ->> 'cutover_id' = v_row.cutover_id::TEXT
-    AND comando_payload ->> 'flat_row_id' = v_row.flat_row_id::TEXT;
-  IF v_header_id IS NOT NULL THEN RETURN v_header_id; END IF;
+  SELECT * INTO v_state FROM public.ordem_compra_cutover WHERE id = v_row.cutover_id;
+  IF NOT FOUND OR v_state.status <> 'maintenance_fenced' OR v_state.read_authority <> 'flat'
+     OR v_state.cutover_generation IS NULL
+     OR NOT public.ordem_compra_c3c_session_lock_held(v_state.cutover_generation) THEN
+    RAISE EXCEPTION 'estado_cutover_invalido' USING ERRCODE = '55000';
+  END IF;
+  v_header_key := 'c3c_snapshot:' || v_row.cutover_id || ':'
+    || v_state.cutover_generation || ':' || v_row.flat_row_id;
   v_payload := jsonb_build_object(
-    'schema_version', 2, 'cutover_id', v_row.cutover_id,
+    'schema_version', 3, 'cutover_id', v_row.cutover_id,
+    'cutover_generation', v_state.cutover_generation,
+    'snapshot_hash', v_state.snapshot_hash,
+    'inventory_baseline_hash', v_state.inventory_baseline_hash,
     'flat_row_id', v_row.flat_row_id, 'mapping_id', v_row.mapping_id,
     'snapshot_row_id', v_row.id, 'snapshot_row_sha256', v_row.row_sha256,
-    'legacy_class', v_row.legacy_class,
+    'order_id', v_row.ordem_compra_id, 'item_id', v_row.item_id,
+    'allocation_id', v_row.allocation_id, 'need_id', v_row.necessidade_id,
+    'op_id', v_row.op_id, 'legacy_class', v_row.legacy_class,
+    'material', v_row.material, 'cor_id', v_row.cor_id,
+    'cor_poliester', v_row.cor_poliester,
     'total_kg', to_char(v_row.kg_recebido, 'FM999999999990.000'),
     'attributed_kg', to_char(v_row.kg_atribuido, 'FM999999999990.000'),
-    'excess_kg', to_char(v_row.kg_excesso, 'FM999999999990.000'));
+    'excess_kg', to_char(v_row.kg_excesso, 'FM999999999990.000'),
+    'expected_line_count', (CASE WHEN v_row.kg_atribuido > 0 THEN 1 ELSE 0 END)
+      + (CASE WHEN v_row.kg_excesso > 0 THEN 1 ELSE 0 END));
+  v_command_hash := encode(extensions.digest(v_payload::TEXT, 'sha256'), 'hex');
+  v_result_metadata := jsonb_build_object('schema_version', 3,
+    'cutover_generation', v_state.cutover_generation,
+    'snapshot_hash', v_state.snapshot_hash,
+    'snapshot_row_sha256', v_row.row_sha256);
+  SELECT * INTO v_header FROM public.ordem_compra_recebimentos
+  WHERE idempotency_namespace = 'legacy_initial_balance_v1'
+    AND ator_tipo = 'sistema' AND ator_id IS NULL
+    AND idempotency_key = v_header_key;
+  IF FOUND THEN
+    IF v_header.ordem_compra_id <> v_row.ordem_compra_id
+       OR v_header.comando_tipo <> 'import_saldo_inicial'
+       OR v_header.documento_ref IS NOT NULL
+       OR v_header.origem_tipo <> 'legacy_flat_snapshot'
+       OR v_header.origem_ref IS DISTINCT FROM v_row.row_sha256
+       OR v_header.comando_payload IS DISTINCT FROM v_payload
+       OR v_header.comando_hash IS DISTINCT FROM v_command_hash
+       OR v_header.resultado_metadata IS DISTINCT FROM v_result_metadata THEN
+      RAISE EXCEPTION 'idempotencia_conflitante' USING ERRCODE = '55000';
+    END IF;
+    v_expected_lines := (CASE WHEN v_row.kg_atribuido > 0 THEN 1 ELSE 0 END)
+      + (CASE WHEN v_row.kg_excesso > 0 THEN 1 ELSE 0 END);
+    v_excess_line := CASE WHEN v_row.kg_atribuido > 0 THEN 2 ELSE 1 END;
+    SELECT count(*),
+      count(*) FILTER (WHERE v_row.kg_atribuido > 0 AND l.linha_indice = 1
+        AND l.ordem_compra_fio_id IS NULL AND l.ordem_compra_item_id = v_row.item_id
+        AND l.kg_recebido = v_row.kg_atribuido AND l.data_recebimento IS NULL
+        AND l.observacao IS NULL AND l.criado_por IS NULL AND l.tipo = 'import_saldo_inicial'
+        AND l.estorno_de_id IS NULL
+        AND l.idempotency_key = 'c3c:' || v_state.cutover_generation || ':' || v_row.flat_row_id || ':1'
+        AND l.origem_tipo = 'legacy_flat_snapshot' AND l.origem_ref = v_row.row_sha256
+        AND l.ordem_compra_id = v_row.ordem_compra_id
+        AND l.ordem_compra_item_alocacao_id = v_row.allocation_id
+        AND l.op_id IS NOT DISTINCT FROM v_row.op_id AND l.material = v_row.material
+        AND l.cor_id IS NOT DISTINCT FROM v_row.cor_id
+        AND l.cor_poliester IS NOT DISTINCT FROM v_row.cor_poliester
+        AND l.kg_excesso = 0 AND l.ator_tipo = 'sistema'),
+      count(*) FILTER (WHERE v_row.kg_excesso > 0 AND l.linha_indice = v_excess_line
+        AND l.ordem_compra_fio_id IS NULL AND l.ordem_compra_item_id = v_row.item_id
+        AND l.kg_recebido = v_row.kg_excesso AND l.data_recebimento IS NULL
+        AND l.observacao IS NULL AND l.criado_por IS NULL AND l.tipo = 'import_saldo_inicial'
+        AND l.estorno_de_id IS NULL
+        AND l.idempotency_key = 'c3c:' || v_state.cutover_generation || ':' || v_row.flat_row_id || ':' || v_excess_line
+        AND l.origem_tipo = 'legacy_flat_snapshot' AND l.origem_ref = v_row.row_sha256
+        AND l.ordem_compra_id = v_row.ordem_compra_id
+        AND l.ordem_compra_item_alocacao_id IS NULL AND l.op_id IS NULL
+        AND l.material = v_row.material AND l.cor_id IS NOT DISTINCT FROM v_row.cor_id
+        AND l.cor_poliester IS NOT DISTINCT FROM v_row.cor_poliester
+        AND l.kg_excesso = v_row.kg_excesso AND l.ator_tipo = 'sistema')
+    INTO v_actual_lines, v_valid_attributed, v_valid_excess
+    FROM public.ordem_compra_fio_lancamentos l WHERE l.recebimento_id = v_header.id;
+    IF v_actual_lines <> v_expected_lines
+       OR v_valid_attributed <> (CASE WHEN v_row.kg_atribuido > 0 THEN 1 ELSE 0 END)
+       OR v_valid_excess <> (CASE WHEN v_row.kg_excesso > 0 THEN 1 ELSE 0 END) THEN
+      RAISE EXCEPTION 'idempotencia_conflitante' USING ERRCODE = '55000';
+    END IF;
+    RETURN v_header.id;
+  END IF;
   INSERT INTO public.ordem_compra_recebimentos(
     ordem_compra_id, comando_tipo, idempotency_namespace, idempotency_key,
     ator_id, ator_tipo, ocorrido_em, origem_tipo, origem_ref,
     comando_payload, comando_hash, resultado_metadata
   ) VALUES (
     v_row.ordem_compra_id, 'import_saldo_inicial', 'legacy_initial_balance_v1',
-    'c3c_snapshot:' || v_row.cutover_id || ':' || v_row.flat_row_id,
+    v_header_key,
     NULL, 'sistema', clock_timestamp(), 'legacy_flat_snapshot', v_row.row_sha256,
-    v_payload, md5(v_payload::TEXT),
-    jsonb_build_object('schema_version', 2, 'snapshot_row_sha256', v_row.row_sha256)
+    v_payload, v_command_hash, v_result_metadata
   ) RETURNING id INTO v_header_id;
   IF v_row.kg_atribuido > 0 THEN
     v_line := v_line + 1;
@@ -563,7 +857,7 @@ BEGIN
       ordem_compra_id, ordem_compra_item_alocacao_id, op_id, material, cor_id,
       cor_poliester, kg_excesso, ator_tipo, linha_indice
     ) VALUES (NULL, v_row.item_id, v_row.kg_atribuido, NULL, NULL,
-      'import_saldo_inicial', 'c3c:' || v_header_id || ':' || v_line,
+      'import_saldo_inicial', 'c3c:' || v_state.cutover_generation || ':' || v_row.flat_row_id || ':' || v_line,
       'legacy_flat_snapshot', v_row.row_sha256, v_header_id, v_row.ordem_compra_id,
       v_row.allocation_id, v_row.op_id, v_row.material, v_row.cor_id,
       v_row.cor_poliester, 0, 'sistema', v_line);
@@ -576,7 +870,7 @@ BEGIN
       ordem_compra_id, ordem_compra_item_alocacao_id, op_id, material, cor_id,
       cor_poliester, kg_excesso, ator_tipo, linha_indice
     ) VALUES (NULL, v_row.item_id, v_row.kg_excesso, NULL, NULL,
-      'import_saldo_inicial', 'c3c:' || v_header_id || ':' || v_line,
+      'import_saldo_inicial', 'c3c:' || v_state.cutover_generation || ':' || v_row.flat_row_id || ':' || v_line,
       'legacy_flat_snapshot', v_row.row_sha256, v_header_id, v_row.ordem_compra_id,
       NULL, NULL, v_row.material, v_row.cor_id, v_row.cor_poliester,
       v_row.kg_excesso, 'sistema', v_line);
@@ -586,6 +880,83 @@ END;
 $$;
 REVOKE ALL ON FUNCTION public.ordem_compra_c3c_import_snapshot_row(BIGINT) FROM PUBLIC, anon, authenticated, service_role;
 
+CREATE OR REPLACE FUNCTION public.ordem_compra_c3c_assert_import_reconciled(p_generation BIGINT)
+RETURNS JSONB
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = ''
+AS $$
+DECLARE
+  v_state public.ordem_compra_cutover%ROWTYPE;
+  v_headers INTEGER; v_lines INTEGER; v_movements INTEGER;
+  v_total NUMERIC(15,3); v_excess NUMERIC(15,3); v_attributed NUMERIC(15,3);
+  v_expected_attributed NUMERIC(15,3); v_expected_excess NUMERIC(15,3);
+BEGIN
+  SELECT * INTO v_state FROM public.ordem_compra_cutover WHERE id = 1;
+  IF NOT FOUND OR v_state.cutover_generation <> p_generation THEN
+    RAISE EXCEPTION 'estado_cutover_invalido' USING ERRCODE = '55000';
+  END IF;
+  IF v_state.productive_receipt_started_at IS NOT NULL OR EXISTS (
+    SELECT 1 FROM public.ordem_compra_recebimentos
+    WHERE idempotency_namespace = 'native_receipt_v1' AND comando_tipo = 'recebimento'
+  ) THEN RAISE EXCEPTION 'productive_receipt_exists' USING ERRCODE = '55000'; END IF;
+  IF EXISTS (
+    SELECT s.id
+    FROM public.ordem_compra_cutover_source_snapshot s
+    LEFT JOIN public.ordem_compra_recebimentos h
+      ON h.idempotency_namespace = 'legacy_initial_balance_v1'
+     AND h.comando_payload ->> 'cutover_generation' = p_generation::TEXT
+     AND h.comando_payload ->> 'snapshot_hash' = v_state.snapshot_hash
+     AND h.comando_payload ->> 'snapshot_row_id' = s.id::TEXT
+    WHERE s.cutover_id = 1 AND s.kg_recebido > 0
+    GROUP BY s.id HAVING count(h.id) <> 1
+  ) THEN RAISE EXCEPTION 'import_reconciliation_mismatch' USING ERRCODE = '55000'; END IF;
+  SELECT count(DISTINCT h.id), count(l.id), COALESCE(sum(l.kg_recebido),0),
+         COALESCE(sum(l.kg_excesso),0),
+         COALESCE(sum(l.kg_recebido) FILTER (WHERE l.ordem_compra_item_alocacao_id IS NOT NULL),0)
+  INTO v_headers, v_lines, v_total, v_excess, v_attributed
+  FROM public.ordem_compra_recebimentos h
+  LEFT JOIN public.ordem_compra_fio_lancamentos l ON l.recebimento_id = h.id
+  WHERE h.idempotency_namespace = 'legacy_initial_balance_v1'
+    AND h.comando_payload ->> 'cutover_generation' = p_generation::TEXT
+    AND h.comando_payload ->> 'snapshot_hash' = v_state.snapshot_hash;
+  SELECT COALESCE(sum(kg_atribuido),0), COALESCE(sum(kg_excesso),0)
+  INTO v_expected_attributed, v_expected_excess
+  FROM public.ordem_compra_cutover_source_snapshot WHERE cutover_id = 1;
+  SELECT count(*) INTO v_movements
+  FROM public.ordem_compra_fio_movimentos_estoque m
+  JOIN public.ordem_compra_fio_lancamentos l ON l.id = m.lancamento_id
+  JOIN public.ordem_compra_recebimentos h ON h.id = l.recebimento_id
+  WHERE h.idempotency_namespace = 'legacy_initial_balance_v1'
+    AND h.comando_payload ->> 'cutover_generation' = p_generation::TEXT
+    AND h.comando_payload ->> 'snapshot_hash' = v_state.snapshot_hash;
+  IF v_headers <> 39 OR v_lines <> 44 OR v_total <> 20221.280
+     OR v_excess <> 405.980 OR v_movements <> 0
+     OR v_attributed <> v_expected_attributed OR v_excess <> v_expected_excess
+     OR v_total <> v_attributed + v_excess THEN
+    RAISE EXCEPTION 'import_reconciliation_mismatch' USING ERRCODE = '55000';
+  END IF;
+  IF EXISTS (
+    SELECT 1
+    FROM public.ordem_compra_recebimentos h
+    JOIN public.ordem_compra_fio_lancamentos l ON l.recebimento_id = h.id
+    JOIN public.ordem_compra_cutover_source_snapshot s
+      ON h.comando_payload ->> 'snapshot_row_id' = s.id::TEXT
+    WHERE h.idempotency_namespace = 'legacy_initial_balance_v1'
+      AND h.comando_payload ->> 'cutover_generation' = p_generation::TEXT
+      AND h.comando_payload ->> 'snapshot_hash' = v_state.snapshot_hash
+      AND ((l.ordem_compra_item_alocacao_id IS NOT NULL AND l.op_id IS DISTINCT FROM s.op_id)
+        OR (l.ordem_compra_item_alocacao_id IS NULL AND l.op_id IS NOT NULL))
+  ) THEN RAISE EXCEPTION 'import_reconciliation_mismatch' USING ERRCODE = '55000'; END IF;
+  PERFORM public.ordem_compra_c3c_assert_snapshot_and_live(p_generation);
+  RETURN jsonb_build_object('ok', true, 'headers', v_headers, 'ledger_lines', v_lines,
+    'reconstructed_kg', to_char(v_total, 'FM999999999990.000'),
+    'excess_kg', to_char(v_excess, 'FM999999999990.000'),
+    'inventory_movements', v_movements);
+END;
+$$;
+REVOKE ALL ON FUNCTION public.ordem_compra_c3c_assert_import_reconciled(BIGINT) FROM PUBLIC, anon, authenticated, service_role;
+
 CREATE OR REPLACE FUNCTION public.ordem_compra_c3c_import_and_reconcile(p_generation BIGINT)
 RETURNS JSONB
 LANGUAGE plpgsql
@@ -594,56 +965,38 @@ SET search_path = ''
 AS $$
 DECLARE
   r RECORD;
-  v_headers INTEGER;
-  v_lines INTEGER;
-  v_total NUMERIC(15,3);
-  v_excess NUMERIC(15,3);
-  v_movements INTEGER;
-  v_source_hash TEXT;
-  v_inventory_hash TEXT;
+  v_result JSONB;
+  v_replay BOOLEAN;
   v_state public.ordem_compra_cutover%ROWTYPE;
 BEGIN
   IF current_user <> 'postgres'
      OR NOT public.ordem_compra_c3c_session_lock_held(p_generation) THEN
     RAISE EXCEPTION 'cutover_session_lock_required' USING ERRCODE = '55000';
   END IF;
-  SELECT * INTO v_state FROM public.ordem_compra_cutover WHERE id = 1 FOR UPDATE;
+  PERFORM public.ordem_compra_c3c_lock_import_resources(p_generation);
+  SELECT * INTO v_state FROM public.ordem_compra_cutover WHERE id = 1;
   IF v_state.status <> 'maintenance_fenced' OR v_state.read_authority <> 'flat'
-     OR v_state.reconciliation_status <> 'previewed'
+     OR v_state.reconciliation_status NOT IN ('previewed', 'reconciled')
      OR v_state.cutover_generation <> p_generation THEN
     RAISE EXCEPTION 'estado_cutover_invalido' USING ERRCODE = '55000';
   END IF;
-  SELECT encode(extensions.digest(COALESCE(string_agg(canonical_line, E'\n' ORDER BY stable_position), ''), 'sha256'), 'hex')
-  INTO v_source_hash FROM public.ordem_compra_cutover_source_snapshot WHERE cutover_id = 1;
-  SELECT encode(extensions.digest(COALESCE(string_agg(canonical_line, E'\n' ORDER BY stable_position), ''), 'sha256'), 'hex')
-  INTO v_inventory_hash FROM public.ordem_compra_cutover_inventory_baseline WHERE cutover_id = 1;
-  IF v_source_hash <> v_state.snapshot_hash OR v_inventory_hash <> v_state.inventory_baseline_hash THEN
-    RAISE EXCEPTION 'snapshot_hash_mismatch' USING ERRCODE = '55000';
+  v_replay := v_state.reconciliation_status = 'reconciled';
+  PERFORM public.ordem_compra_c3c_assert_snapshot_and_live(p_generation);
+  IF NOT v_replay THEN
+    UPDATE public.ordem_compra_cutover
+    SET import_started_at = COALESCE(import_started_at, clock_timestamp()) WHERE id = 1;
   END IF;
-  UPDATE public.ordem_compra_cutover SET import_started_at = COALESCE(import_started_at, clock_timestamp()) WHERE id = 1;
   FOR r IN SELECT id FROM public.ordem_compra_cutover_source_snapshot
            WHERE cutover_id = 1 AND kg_recebido > 0 ORDER BY stable_position LOOP
     PERFORM public.ordem_compra_c3c_import_snapshot_row(r.id);
   END LOOP;
-  SELECT count(*), COALESCE(sum(l.kg_recebido), 0), COALESCE(sum(l.kg_excesso), 0)
-  INTO v_lines, v_total, v_excess
-  FROM public.ordem_compra_fio_lancamentos l
-  JOIN public.ordem_compra_recebimentos h ON h.id = l.recebimento_id
-  WHERE h.idempotency_namespace = 'legacy_initial_balance_v1';
-  SELECT count(*) INTO v_headers FROM public.ordem_compra_recebimentos
-  WHERE idempotency_namespace = 'legacy_initial_balance_v1';
-  SELECT count(*) INTO v_movements FROM public.ordem_compra_fio_movimentos_estoque;
-  IF v_headers <> 39 OR v_lines <> 44 OR v_total <> 20221.280
-     OR v_excess <> 405.980 OR v_movements <> 0 THEN
-    RAISE EXCEPTION 'import_reconciliation_mismatch';
+  v_result := public.ordem_compra_c3c_assert_import_reconciled(p_generation);
+  IF NOT v_replay THEN
+    UPDATE public.ordem_compra_cutover
+    SET reconciliation_status = 'reconciled', import_completed_at = clock_timestamp()
+    WHERE id = 1;
   END IF;
-  UPDATE public.ordem_compra_cutover
-  SET reconciliation_status = 'reconciled', import_completed_at = clock_timestamp()
-  WHERE id = 1;
-  RETURN jsonb_build_object('ok', true, 'headers', v_headers, 'ledger_lines', v_lines,
-    'reconstructed_kg', to_char(v_total, 'FM999999999990.000'),
-    'excess_kg', to_char(v_excess, 'FM999999999990.000'),
-    'inventory_movements', v_movements);
+  RETURN v_result;
 END;
 $$;
 REVOKE ALL ON FUNCTION public.ordem_compra_c3c_import_and_reconcile(BIGINT) FROM PUBLIC, anon, authenticated, service_role;
