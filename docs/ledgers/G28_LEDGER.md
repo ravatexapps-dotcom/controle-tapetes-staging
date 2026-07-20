@@ -4366,3 +4366,36 @@ MATERIAL_DIVERGENCES: NONE
   evidence boundary—accept the isolated F1 race matrix plus F3R1 staging evidence,
   or authorize an explicit retained-fixture/journal-residue policy. C3A disposition
   remains deferred until F3R1 can close.
+
+## 2026-07-19 — PURCHASE-ORDER HYBRID ORIGIN — F3R1 ACCEPTANCE DISPOSITION — CLOSED / ACCEPTED
+
+- **Starting state:** branch `dev`, HEAD
+  `0b5ef552ca0fd1c36f8b6c16129f3025a30312af`; empty index; preserved residue —
+  modified `.gitignore`, untracked `AGENTS.md`. Documentation-only closeout; no
+  application, SQL, migration, test, configuration, `.gitignore`, or `AGENTS.md`
+  change; no database, deployment, production, `main`, remote, or push activity.
+- **Architect disposition (original wording preserved):** the architect authorized
+  the recommended disposition against the gate condition
+  `ACEITO A DISPOSIÇÃO RECOMENDADA` and responded **"aceito, siga"**, taken as the
+  explicit acceptance releasing this closeout.
+- **Accepted evidence:** the isolated F1 eight-case distinct-session concurrency
+  matrix plus the F3R1 staging database/API runtime and rollback-only evidence are
+  accepted as sufficient concurrency proof for this gate.
+- **Scoped waiver:** the committed multi-session staging-fixture requirement is
+  **waived for F3R1 only**; it sets no precedent and does not extend to any later
+  gate.
+- **Retained obligations:** immutable command-journal integrity and the
+  zero-synthetic-residue validation policy remain mandatory; the waiver authorizes
+  no journal-residue policy and no retained synthetic fixture.
+- **Also accepted:** PRE-PROD hybrid-origin and focused Phase C revalidation.
+- **C3A:** remains `legacy_active / not_started`, implemented and verified but
+  **not accepted**; this closeout does not accept, activate, or execute C3A.
+- **Canonical records updated:** `PROJECT_STATE.md` active-phase entry + next
+  authorized action; lifecycle spec §R.28.12; schema contract §13.13;
+  `PEDIDO_PRODUCTION_FLOW_BACKLOG.md` F3R1 acceptance update;
+  `DOCUMENTATION_INDEX.md` §R.28/§13/`db/74` rows; this ledger entry.
+- **Boundaries:** production `gqmpsxkxynrjvidfmojk`, the prohibited project
+  `bhgifjrfagkzubpyqpew`, `main`, remotes, push, deployment, native emission
+  activation, and C3A execution remain unauthorized and were untouched.
+- **Next authorizable action:** the architect's technical-acceptance disposition
+  for **C3A only**. No phase chains automatically from this closeout.

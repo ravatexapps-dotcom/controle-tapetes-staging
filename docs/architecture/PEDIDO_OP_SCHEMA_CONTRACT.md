@@ -1136,3 +1136,16 @@ zero cleanup; consequently a committed synthetic race cannot be both observable
 across sessions and residue-free. No canonical retained staging fixture exists.
 This is a validation-policy hard stop, not a schema divergence, ACL divergence, or
 authorization to remove journal evidence. C3A remains inactive and unaccepted.
+
+### 13.13 F3R1 acceptance disposition (2026-07-19) — CLOSED / ACCEPTED
+
+The architect accepted the F3R1 staging database/API gate. The isolated F1
+eight-case distinct-session concurrency matrix and the F3R1 rollback-only staging
+evidence (§13.12) are accepted as sufficient concurrency proof for this gate; the
+committed multi-session staging-fixture requirement is **waived for F3R1 only**.
+The immutable command journal and the zero-synthetic-residue policy remain binding
+and are not relaxed by this waiver. This disposition records acceptance only: no
+schema, ACL, error-taxonomy, or lock-order contract changes. PRE-PROD and focused
+Phase C revalidation are accepted. C3A remains inactive and unaccepted. Production,
+`main`, emission activation, C3A execution, remotes, push, and deployment remain
+unauthorized.

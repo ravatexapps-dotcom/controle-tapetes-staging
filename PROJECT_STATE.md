@@ -10,8 +10,8 @@ are in `docs/ledgers/G28_LEDGER.md`. HEAD/working tree/divergence: consult Git d
 ## Active phase and next action
 
 - **`PURCHASE-ORDER HYBRID ORIGIN — F3R1 STAGING DATABASE/API VALIDATION AND
-  PHASE-C REVALIDATION` — `PARTIALLY COMPLETED / HARD STOP — SAFE COMMITTED
-  CONCURRENCY FIXTURE POLICY MISSING` (2026-07-19).** Staging Supabase
+  PHASE-C REVALIDATION` — `CLOSED / ACCEPTED_WITH_SCOPED_COMMITTED_CONCURRENCY_FIXTURE_WAIVER`
+  (2026-07-19).** Staging Supabase
   `ucrjtfswnfdlxwtmxnoo` contains exactly one
   `20260719215401 / 74_ordem_compra_hybrid_origin_forward_correction`; its
   history, objects, guards, data preservation, and accepted ACL matrix were
@@ -20,13 +20,20 @@ are in `docs/ledgers/G28_LEDGER.md`. HEAD/working tree/divergence: consult Git d
   target, cleanup, post-emission freeze, receipt, reversal, and nullable-OP Phase C
   matrices. PRE-PROD hybrid-origin and targeted Phase C revalidation therefore
   pass on read-only and rollback evidence, with zero fixture residue. Committed
-  multi-session staging concurrency remains unproved: every successful command
-  permanently records its actor/key in the immutable command journal, so a
-  committed synthetic race cannot meet the mandatory zero-residue policy, and no
-  canonical retained staging fixture exists. That proof is not waived. C3A remains
-  `legacy_active / not_started`, implemented and verified but not accepted. Vercel,
-  browser validation, production, `main`, remotes, push, the prohibited project,
-  native emission activation, and C3A execution were outside scope and untouched.
+  multi-session staging concurrency remains unproved by a committed fixture: every
+  successful command permanently records its actor/key in the immutable command
+  journal, so a committed synthetic race cannot meet the mandatory zero-residue
+  policy, and no canonical retained staging fixture exists. **Architect disposition
+  (2026-07-19):** the isolated F1 eight-case distinct-session concurrency matrix
+  plus the F3R1 staging runtime/rollback evidence are accepted as sufficient for
+  this gate; the committed-staging-fixture requirement is **waived for F3R1 only**.
+  Immutable journal integrity and zero synthetic residue remain mandatory and are
+  not relaxed by this waiver, which authorizes no journal-residue policy and does
+  not extend to any later gate. PRE-PROD hybrid-origin and focused Phase C
+  revalidation are **accepted**. C3A remains `legacy_active / not_started`,
+  implemented and verified but **not accepted**. Vercel, browser validation,
+  production, `main`, remotes, push, the prohibited project, native emission
+  activation, and C3A execution remain unauthorized and were untouched.
 
 - **`PURCHASE-ORDER HYBRID ORIGIN — F2 PEDIDO/INSUMOS UI CUTOVER R1` —
   `CLOSED / ACCEPTED_LOCALLY_WITH_INTEGRATED_STAGING_VALIDATION_REQUIRED`
@@ -170,13 +177,13 @@ are in `docs/ledgers/G28_LEDGER.md`. HEAD/working tree/divergence: consult Git d
   cutover (`M10`)"; cutover is done. **New fronts are authorizable again**, each by
   its own individual order. The consolidated, ranked `POST-LAUNCH DEBT REGISTER`
   (below) supersedes the former "residual risk register (12 items)".
-- **Next authorized action:** architect disposition of the missing committed
-  staging concurrency evidence: either accept the already-passing isolated
-  distinct-session F1 matrix plus F3R1 staging rollback/runtime evidence, or
-  authorize an explicit retained-fixture/journal-residue policy. Until that
-  decision, F3R1 cannot close and C3A disposition is not the next action. Do not
-  reapply `db/74`, activate emission or C3A, or access Vercel, production, `main`,
-  remotes, push, or the prohibited project. Separately, the
+- **Next authorized action:** with F3R1 now `CLOSED / ACCEPTED` under the scoped
+  committed-concurrency-fixture waiver above, the next authorizable action is the
+  architect's technical-acceptance disposition for **C3A only** (accept or reject
+  the implemented/verified but unaccepted C3A foundation). No phase chains
+  automatically from this closeout. Do not reapply `db/74`, activate native
+  emission or execute C3A, or access Vercel, production, `main`, remotes, push, or
+  the prohibited project. Separately, the
   highest-consequence open operational item remains
   `INGESTOR-DOC-CYCLE-VERIFY-DEFERRED`, an `ACTIVE PRODUCTION BLOCKER`. See the
   `POST-LAUNCH DEBT REGISTER`. **Standing reminder: flip the Supabase MCP back to

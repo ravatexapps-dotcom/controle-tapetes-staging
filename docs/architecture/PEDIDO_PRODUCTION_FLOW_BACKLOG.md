@@ -1644,3 +1644,19 @@ POLICY MISSING**.
   boundary. C3A remains inactive and unaccepted. Vercel/browser, production,
   `main`, remotes, push, native emission activation, and the prohibited project
   were untouched.
+
+# Update 2026-07-19 — F3R1 acceptance disposition (concurrency evidence)
+
+Status: **CLOSED / ACCEPTED_WITH_SCOPED_COMMITTED_CONCURRENCY_FIXTURE_WAIVER**.
+
+- The architect accepted the isolated F1 eight-case distinct-session concurrency
+  matrix plus the F3R1 staging runtime/rollback evidence as sufficient for this
+  gate. The committed multi-session staging-fixture requirement is waived **for
+  F3R1 only**.
+- Immutable journal integrity and zero synthetic residue remain mandatory; the
+  waiver relaxes neither and sets no precedent for later gates.
+- PRE-PROD hybrid-origin and focused Phase C revalidation are accepted.
+- C3A remains inactive and not accepted. The next authorizable action is the
+  architect's technical-acceptance disposition for C3A only.
+- Production, `main`, native emission activation, C3A execution, remotes, push,
+  deployment, and the prohibited project remain unauthorized and were untouched.

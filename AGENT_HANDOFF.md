@@ -1,22 +1,26 @@
 # ACTIVE OPERATIONAL HANDOFF
 
 - **`PURCHASE-ORDER HYBRID ORIGIN — F3R1 STAGING DATABASE/API VALIDATION AND
-  PHASE-C REVALIDATION` — `PARTIALLY COMPLETED / HARD STOP — SAFE COMMITTED
-  CONCURRENCY FIXTURE POLICY MISSING` (2026-07-19).** `db/74` is present exactly
+  PHASE-C REVALIDATION` — `CLOSED / ACCEPTED_WITH_SCOPED_COMMITTED_CONCURRENCY_FIXTURE_WAIVER`
+  (2026-07-19).** `db/74` is present exactly
   once in staging `ucrjtfswnfdlxwtmxnoo`; checked-out object identity, stable
   business snapshots, guards, and the accepted ACL matrix match. A rollback-only
   canonical-domain fixture passed OP-origin, shared Pedido-origin, need-first
   replay/conflict, target mutation/cleanup, post-emission freeze, receipt,
   reversal, and nullable-OP Phase C validation with zero residue. PRE-PROD and
-  targeted Phase C revalidation pass on that evidence. The only mandatory missing
-  proof is committed multi-session staging concurrency. A successful committed
-  synthetic command necessarily leaves the immutable actor/key journal row, no
-  canonical retained fixture exists, and the order forbids inventing a residue
-  policy. Resume only after the architect either accepts the isolated F1
-  distinct-session matrix plus F3R1 staging runtime evidence or authorizes an
-  explicit retained-fixture/journal-residue policy. C3A remains inactive and
-  unaccepted. Vercel/browser, production, `main`, remotes, push, the prohibited
-  project, native emission activation, and C3A execution were untouched.
+  targeted Phase C revalidation pass on that evidence. Committed multi-session
+  staging concurrency was the one unproved item: a successful committed synthetic
+  command necessarily leaves the immutable actor/key journal row, no canonical
+  retained fixture exists, and inventing a residue policy was forbidden.
+  **Architect disposition (2026-07-19):** the isolated F1 eight-case
+  distinct-session concurrency matrix plus the F3R1 staging runtime/rollback
+  evidence are accepted as sufficient for this gate; the committed-staging-fixture
+  requirement is waived **for F3R1 only**. Immutable journal integrity and zero
+  synthetic residue remain mandatory; the waiver relaxes neither and extends to no
+  later gate. C3A remains inactive and **not accepted**. Vercel/browser,
+  production, `main`, remotes, push, the prohibited project, native emission
+  activation, and C3A execution remain unauthorized and were untouched. **Next
+  authorizable action: architect technical-acceptance disposition for C3A only.**
 
 - **`PURCHASE-ORDER HYBRID ORIGIN — F2 PEDIDO/INSUMOS UI CUTOVER R1` —
   `CLOSED / ACCEPTED_LOCALLY_WITH_INTEGRATED_STAGING_VALIDATION_REQUIRED`

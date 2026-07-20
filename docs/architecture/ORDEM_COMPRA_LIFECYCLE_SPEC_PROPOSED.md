@@ -3455,3 +3455,18 @@ therefore precludes that proof without a new architect decision. The next
 authorizable action is architect disposition of this evidence boundary, not C3A
 disposition. Vercel/browser validation is not part of F3R1. C3A remains inactive
 and unaccepted.
+
+### §R.28.12 F3R1 acceptance disposition (2026-07-19) — CLOSED / ACCEPTED
+
+The architect accepted the F3R1 gate. The isolated F1 eight-case distinct-session
+concurrency matrix (§R.28.9) together with the F3R1 staging database/API runtime
+and rollback-only evidence (§R.28.11) are accepted as sufficient concurrency proof
+for this gate. The committed multi-session staging-fixture requirement is **waived
+for F3R1 only** and creates no precedent for later gates. Immutable
+command-journal integrity and the zero-synthetic-residue validation policy remain
+mandatory and are not relaxed: the waiver authorizes no journal-residue policy and
+no retained synthetic fixture. PRE-PROD hybrid-origin and focused Phase C
+revalidation are accepted. C3A remains inactive and unaccepted. Production, `main`,
+native emission activation, C3A execution, remotes, push, and deployment remain
+unauthorized. The next authorizable action is the architect's technical-acceptance
+disposition for C3A only.
