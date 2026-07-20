@@ -492,7 +492,11 @@ of `G28-DOCS-B2` depends on a new order from the architect.
 
 ## 17. PHASE CHECKPOINT RECONCILIATION
 
-A phase checkpoint reconciliation is the mandatory end-of-phase protocol. It applies after any authorized work — technical or documentation — concludes. The protocol is a closeout procedure, not a corrective phase. It does not by itself authorize the next phase.
+A phase checkpoint reconciliation is the mandatory end-of-phase protocol. It
+applies after authorized work concludes, but canonical mutation is determined
+only by the proportional event matrix in §19. `READ_ONLY_RECONCILIATION` produces
+a report only and changes no canonical file. The protocol is a closeout
+procedure, not a corrective phase, and does not authorize the next phase.
 
 ### 17.1 Requirements
 
@@ -502,13 +506,16 @@ A phase checkpoint reconciliation is the mandatory end-of-phase protocol. It app
 
 3. Compare planned objective, work actually performed, accepted evidence, remaining work, next authorizable action.
 
-4. Update master plan status using SEPARATE labels: diagnosed, decided, implemented, tested, accepted, deferred.
+4. Update master-plan status only when the event materially changes a plan-owned
+   fact, using separate labels: diagnosed, decided, implemented, tested,
+   accepted, deferred.
 
-5. Update PROJECT_STATE.md current operational state.
+5. Update `PROJECT_STATE.md` only for a material current-state change or phase
+   closeout that changes an owned state fact.
 
-6. Update AGENT_HANDOFF.md when continuity remains.
+6. Update `AGENT_HANDOFF.md` only when operational continuity changes.
 
-7. Append ledger when required.
+7. Append the applicable ledger only when required by the §19 event matrix.
 
 8. Include this EXACT literal section in final report (labels only, no fixed G28 values):
 
@@ -592,3 +599,14 @@ Stable requirement IDs are introduced only for the active track. No historical
 retrofit is implied. Material phases require an explicit contract before
 implementation; a traceability row, backlog position, or prior phase closure does
 not authorize that contract or phase.
+
+An active material-phase contract exposes exactly one tracked marker:
+
+```text
+<!-- MATERIAL_PHASE_CONTRACT:BEGIN -->
+PHASE_ID: <exact ACTIVE_PHASE value>
+<!-- MATERIAL_PHASE_CONTRACT:END -->
+```
+
+The marker identifies the contract; it does not authorize the phase. Duplicate,
+missing, ambiguous, untracked, or phase-mismatched markers are invalid.

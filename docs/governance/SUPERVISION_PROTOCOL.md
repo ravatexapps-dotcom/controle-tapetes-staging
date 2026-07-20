@@ -40,8 +40,8 @@
 - Executes what was authorized, within the exact scope of the order.
 - Runs tests, validates syntax, confirms the file manifest before
   committing.
-- Updates the canonical documents (`PROJECT_STATE.md`,
-  `AGENT_HANDOFF.md`, ledgers) at the closeout of each phase.
+- Updates only the materially affected canonical owners at closeout under §5;
+  `AGENT_HANDOFF.md` changes only when operational continuity changes.
 - Reports technical quality, repository inspection and test result — the reviewer
   does not assume this information without such
   verification.
@@ -121,8 +121,9 @@ The supervision rule is:
 
 **UPDATE EVERY AFFECTED CANONICAL DOCUMENT — DO NOT TOUCH UNAFFECTED DOCUMENTS.**
 
-- `READ_ONLY_RECONCILIATION`: no canonical mutation.
-- `INTERMEDIATE_IMPLEMENTATION`: evidence only when state materially changes.
+- `READ_ONLY_RECONCILIATION`: no canonical mutation; report only.
+- `INTERMEDIATE_IMPLEMENTATION`: only materially affected evidence or
+  active-phase owners.
 - `MATERIAL_STATE_CHANGE`: affected state and ledger owners.
 - `PHASE_CLOSEOUT`: state, ledger, traceability, handoff when continuity changes,
   and every other affected canonical owner.
