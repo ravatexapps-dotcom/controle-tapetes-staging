@@ -157,7 +157,7 @@ subject.send(`
   SELECT CASE WHEN public.ordem_compra_c3c_acquire_session_lock(${generation}) THEN 'SUBJECT_LOCKED' ELSE 'FAILED' END;
   BEGIN;
   SELECT 'SUBJECT_PID|' || pg_backend_pid();
-  SELECT public.ordem_compra_c3c_lock_import_resources(${generation});
+  SELECT 'IMPORT_RESULT|' || public.ordem_compra_c3c_import_and_reconcile(${generation})::TEXT;
   SELECT 'SUBJECT_DONE';
   COMMIT;
   SELECT 'SUBJECT_COMMITTED';
@@ -175,6 +175,8 @@ for (const { name, blocker, pid } of blockers) {
   await blocker.close();
 }
 
+const importResult = await subject.waitFor((line) => line.startsWith('IMPORT_RESULT|'));
+assert.match(importResult, /"headers": 39/);
 await subject.waitFor((line) => line === 'SUBJECT_DONE');
 await subject.waitFor((line) => line === 'SUBJECT_COMMITTED');
 await subject.waitFor((line) => line === 'SUBJECT_RELEASED');
@@ -190,5 +192,7 @@ const [deadlocksAfter] = await query(`
 `);
 assert.equal(deadlocksAfter, deadlocksBefore);
 console.log(`ADVISORY|contended=true|released=true|reacquired=true`);
-console.log(`TRANSACTION|subject_state=${idleEvidence}|external_activity=none|deadlocks=${deadlocksAfter}`);
+console.log('TEST_INSTRUMENTATION|catalog_probes=pg_blocking_pids|controlled_blocker_release=true');
+console.log('PRODUCTION_PATH|server_side_import_calls=1|client_callbacks=0');
+console.log(`FINAL_BACKEND|state=idle|open_transaction=false|deadlocks=${deadlocksAfter}`);
 console.log('C3C_CONCURRENCY_PASS');

@@ -731,6 +731,70 @@ END;
 $$;
 REVOKE ALL ON FUNCTION public.ordem_compra_c3c_assert_snapshot_and_live(BIGINT) FROM PUBLIC, anon, authenticated, service_role;
 
+CREATE OR REPLACE FUNCTION public.ordem_compra_c3c_find_import_header(
+  p_snapshot_id BIGINT, p_header_key TEXT, p_payload JSONB,
+  p_command_hash TEXT, p_result_metadata JSONB
+)
+RETURNS BIGINT
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = ''
+AS $$
+DECLARE
+  v_row public.ordem_compra_cutover_source_snapshot%ROWTYPE;
+  v_state public.ordem_compra_cutover%ROWTYPE;
+  v_header public.ordem_compra_recebimentos%ROWTYPE;
+  v_related_id BIGINT;
+  v_related_count INTEGER := 0;
+BEGIN
+  SELECT * INTO v_row
+  FROM public.ordem_compra_cutover_source_snapshot WHERE id = p_snapshot_id;
+  SELECT * INTO v_state
+  FROM public.ordem_compra_cutover WHERE id = v_row.cutover_id;
+  IF v_row.id IS NULL OR v_state.id IS NULL THEN
+    RAISE EXCEPTION 'estado_cutover_invalido' USING ERRCODE = '55000';
+  END IF;
+  FOR v_related_id IN
+    SELECT h.id
+    FROM public.ordem_compra_recebimentos h
+    WHERE h.idempotency_namespace = 'legacy_initial_balance_v1'
+      AND (h.idempotency_key = p_header_key OR (
+        h.comando_payload ->> 'cutover_id' = v_row.cutover_id::TEXT
+        AND h.comando_payload ->> 'flat_row_id' = v_row.flat_row_id::TEXT))
+    ORDER BY h.id FOR UPDATE
+  LOOP
+    v_related_count := v_related_count + 1;
+  END LOOP;
+  IF v_related_count = 0 THEN RETURN NULL; END IF;
+  IF v_related_count <> 1 THEN
+    RAISE EXCEPTION 'idempotencia_conflitante' USING ERRCODE = '55000';
+  END IF;
+  SELECT * INTO v_header
+  FROM public.ordem_compra_recebimentos WHERE id = v_related_id;
+  IF v_header.idempotency_namespace <> 'legacy_initial_balance_v1'
+     OR v_header.ator_tipo <> 'sistema' OR v_header.ator_id IS NOT NULL
+     OR v_header.idempotency_key <> p_header_key
+     OR v_header.ordem_compra_id <> v_row.ordem_compra_id
+     OR v_header.comando_tipo <> 'import_saldo_inicial'
+     OR v_header.documento_ref IS NOT NULL
+     OR v_header.origem_tipo <> 'legacy_flat_snapshot'
+     OR v_header.origem_ref IS DISTINCT FROM v_row.row_sha256
+     OR v_header.comando_payload ->> 'cutover_id' IS DISTINCT FROM v_row.cutover_id::TEXT
+     OR v_header.comando_payload ->> 'flat_row_id' IS DISTINCT FROM v_row.flat_row_id::TEXT
+     OR v_header.comando_payload ->> 'cutover_generation' IS DISTINCT FROM v_state.cutover_generation::TEXT
+     OR v_header.comando_payload ->> 'snapshot_hash' IS DISTINCT FROM v_state.snapshot_hash
+     OR v_header.comando_payload IS DISTINCT FROM p_payload
+     OR v_header.comando_hash IS DISTINCT FROM p_command_hash
+     OR v_header.resultado_metadata IS DISTINCT FROM p_result_metadata THEN
+    RAISE EXCEPTION 'idempotencia_conflitante' USING ERRCODE = '55000';
+  END IF;
+  RETURN v_header.id;
+END;
+$$;
+REVOKE ALL ON FUNCTION public.ordem_compra_c3c_find_import_header(
+  BIGINT, TEXT, JSONB, TEXT, JSONB
+) FROM PUBLIC, anon, authenticated, service_role;
+
 CREATE OR REPLACE FUNCTION public.ordem_compra_c3c_import_snapshot_row(p_snapshot_id BIGINT)
 RETURNS BIGINT
 LANGUAGE plpgsql
@@ -786,21 +850,11 @@ BEGIN
     'cutover_generation', v_state.cutover_generation,
     'snapshot_hash', v_state.snapshot_hash,
     'snapshot_row_sha256', v_row.row_sha256);
-  SELECT * INTO v_header FROM public.ordem_compra_recebimentos
-  WHERE idempotency_namespace = 'legacy_initial_balance_v1'
-    AND ator_tipo = 'sistema' AND ator_id IS NULL
-    AND idempotency_key = v_header_key;
-  IF FOUND THEN
-    IF v_header.ordem_compra_id <> v_row.ordem_compra_id
-       OR v_header.comando_tipo <> 'import_saldo_inicial'
-       OR v_header.documento_ref IS NOT NULL
-       OR v_header.origem_tipo <> 'legacy_flat_snapshot'
-       OR v_header.origem_ref IS DISTINCT FROM v_row.row_sha256
-       OR v_header.comando_payload IS DISTINCT FROM v_payload
-       OR v_header.comando_hash IS DISTINCT FROM v_command_hash
-       OR v_header.resultado_metadata IS DISTINCT FROM v_result_metadata THEN
-      RAISE EXCEPTION 'idempotencia_conflitante' USING ERRCODE = '55000';
-    END IF;
+  v_header_id := public.ordem_compra_c3c_find_import_header(
+    v_row.id, v_header_key, v_payload, v_command_hash, v_result_metadata);
+  IF v_header_id IS NOT NULL THEN
+    SELECT * INTO v_header
+    FROM public.ordem_compra_recebimentos WHERE id = v_header_id;
     v_expected_lines := (CASE WHEN v_row.kg_atribuido > 0 THEN 1 ELSE 0 END)
       + (CASE WHEN v_row.kg_excesso > 0 THEN 1 ELSE 0 END);
     v_excess_line := CASE WHEN v_row.kg_atribuido > 0 THEN 2 ELSE 1 END;
@@ -839,16 +893,20 @@ BEGIN
     END IF;
     RETURN v_header.id;
   END IF;
-  INSERT INTO public.ordem_compra_recebimentos(
-    ordem_compra_id, comando_tipo, idempotency_namespace, idempotency_key,
-    ator_id, ator_tipo, ocorrido_em, origem_tipo, origem_ref,
-    comando_payload, comando_hash, resultado_metadata
-  ) VALUES (
-    v_row.ordem_compra_id, 'import_saldo_inicial', 'legacy_initial_balance_v1',
-    v_header_key,
-    NULL, 'sistema', clock_timestamp(), 'legacy_flat_snapshot', v_row.row_sha256,
-    v_payload, v_command_hash, v_result_metadata
-  ) RETURNING id INTO v_header_id;
+  BEGIN
+    INSERT INTO public.ordem_compra_recebimentos(
+      ordem_compra_id, comando_tipo, idempotency_namespace, idempotency_key,
+      ator_id, ator_tipo, ocorrido_em, origem_tipo, origem_ref,
+      comando_payload, comando_hash, resultado_metadata
+    ) VALUES (
+      v_row.ordem_compra_id, 'import_saldo_inicial', 'legacy_initial_balance_v1',
+      v_header_key,
+      NULL, 'sistema', clock_timestamp(), 'legacy_flat_snapshot', v_row.row_sha256,
+      v_payload, v_command_hash, v_result_metadata
+    ) RETURNING id INTO v_header_id;
+  EXCEPTION WHEN unique_violation THEN
+    RAISE EXCEPTION 'idempotencia_conflitante' USING ERRCODE = '55000';
+  END;
   IF v_row.kg_atribuido > 0 THEN
     v_line := v_line + 1;
     INSERT INTO public.ordem_compra_fio_lancamentos(

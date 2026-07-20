@@ -239,6 +239,8 @@ SELECT f.result,
   (SELECT count(*) FROM public.ordem_compra_fio_lancamentos l
    JOIN public.ordem_compra_recebimentos h ON h.id = l.recebimento_id
    WHERE h.idempotency_namespace = 'legacy_initial_balance_v1') AS import_line_count,
+  (SELECT jsonb_agg(to_jsonb(h) ORDER BY h.id)
+   FROM public.ordem_compra_recebimentos h) AS header_state,
   s.import_started_at, s.import_completed_at, s.reconciliation_status,
   s.snapshot_hash, s.inventory_baseline_hash
 FROM _c3c_first_import_result f
@@ -255,6 +257,8 @@ BEGIN
   IF v_result IS DISTINCT FROM v_before.result
      OR (SELECT count(*) FROM public.ordem_compra_recebimentos) <> v_before.header_count
      OR (SELECT count(*) FROM public.ordem_compra_fio_lancamentos) <> v_before.line_count
+     OR (SELECT jsonb_agg(to_jsonb(h) ORDER BY h.id)
+         FROM public.ordem_compra_recebimentos h) IS DISTINCT FROM v_before.header_state
      OR EXISTS (
        SELECT 1 FROM public.ordem_compra_cutover s WHERE s.id = 1 AND (
          s.import_started_at IS DISTINCT FROM v_before.import_started_at
@@ -271,6 +275,21 @@ $test$;
 -- must reject with one stable error and roll every simulation back.
 DO $test$
 BEGIN
+  BEGIN
+    PERFORM set_config('session_replication_role', 'replica', TRUE);
+    UPDATE public.ordem_compra_recebimentos
+    SET ator_tipo = 'admin',
+        ator_id = '91111111-1111-1111-1111-111111111111',
+        idempotency_key = idempotency_key || ':altered-identity'
+    WHERE id = (SELECT min(id) FROM public.ordem_compra_recebimentos
+                WHERE idempotency_namespace = 'legacy_initial_balance_v1');
+    PERFORM set_config('session_replication_role', 'origin', TRUE);
+    PERFORM public.ordem_compra_c3c_import_and_reconcile(75);
+    RAISE EXCEPTION 'altered header identity was accepted';
+  EXCEPTION WHEN SQLSTATE '55000' THEN
+    PERFORM set_config('session_replication_role', 'origin', TRUE);
+    IF SQLERRM <> 'idempotencia_conflitante' THEN RAISE; END IF;
+  END;
   BEGIN
     PERFORM set_config('session_replication_role', 'replica', TRUE);
     UPDATE public.ordem_compra_recebimentos
@@ -389,6 +408,8 @@ BEGIN
   SELECT * INTO v_before FROM _c3c_replay_before;
   IF (SELECT count(*) FROM public.ordem_compra_recebimentos) <> v_before.header_count
      OR (SELECT count(*) FROM public.ordem_compra_fio_lancamentos) <> v_before.line_count
+     OR (SELECT jsonb_agg(to_jsonb(h) ORDER BY h.id)
+         FROM public.ordem_compra_recebimentos h) IS DISTINCT FROM v_before.header_state
      OR EXISTS (SELECT 1 FROM public.ordem_compra_cutover s WHERE s.id = 1 AND
        (s.import_started_at IS DISTINCT FROM v_before.import_started_at
         OR s.import_completed_at IS DISTINCT FROM v_before.import_completed_at
@@ -403,7 +424,7 @@ SELECT 'C3C_REPLAY_PROOF' AS proof, header_count, line_count,
        inventory_baseline_hash
 FROM _c3c_replay_before;
 SELECT 'C3C_NEGATIVE_PROOFS' AS proof,
-       'conflict,missing,duplicate,mismatch,source_drift,inventory_drift,productive_receipt' AS rejected;
+       'header_identity,conflict,missing,duplicate,mismatch,source_drift,inventory_drift,productive_receipt' AS rejected;
 
 SELECT public.ordem_compra_c3c_set_canonical_read(75);
 
