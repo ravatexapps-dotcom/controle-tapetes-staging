@@ -4704,3 +4704,52 @@ MATERIAL_DIVERGENCES: NONE
   `GOVERNANCE-STATE-HANDOFF-COMPACTION-R1-SUPERVISOR-REVIEW`. C3C-B remains the
   next product implementation lot but is not authorized and has no phase contract;
   no product phase chains automatically from this compaction.
+
+## 2026-07-20 — GOVERNANCE-STATE-HANDOFF-COMPACTION-R1-CLOSEOUT — SUPERVISOR ACCEPTANCE
+
+- **Supervisor decision:** `ACCEPTED — GOVERNANCE-STATE-HANDOFF-COMPACTION-R1`.
+  Documentation-only acceptance closeout; it creates no C3C-B contract and
+  implements no product work.
+- **Accepted commit:** `1157b9e71bc629903c5940ab50d4b370964e560e` (parent
+  `17ff8adddaa9f2fd3bc61af7261d9ebaad275f08`). Acceptance basis: `PROJECT_STATE.md`
+  compacted to 243 lines; `AGENT_HANDOFF.md` compacted to 135 lines; historical
+  content preserved in tracked archives and this append-only ledger; no unique
+  canonical evidence lost; validator PASS; self-tests 47/47 PASS; index empty;
+  only the pre-existing modified `.gitignore` residue remained; no product,
+  database, Supabase, staging, production, deployment, remote, or push action
+  occurred.
+- **Archive-file clarification:** both closeout archives are tracked and intact.
+  `docs/closeouts/AGENT_HANDOFF_ARCHIVE_2026-07.md` was created by the compaction
+  commit `1157b9e`; `docs/closeouts/PROJECT_STATE_ARCHIVE_2026-07.md` is a
+  **pre-existing** tracked evidence owner (last touched by
+  `2a8822728cc80436153ade4254f7da996e500d32`, `PROJECT-STATE-COMPACTION-B`) and
+  was correctly referenced — not created — by the compaction, so its absence from
+  the compaction change-manifest was correct, not a manifest defect.
+- **No unique evidence lost:** every material block removed from `PROJECT_STATE.md`
+  has a tracked preservation owner — the purchase-order/Phase-C/governance
+  narratives in this ledger, the migration/Camada/UI narratives in
+  `docs/closeouts/PROJECT_STATE_ARCHIVE_2026-07.md`, the handoff stack verbatim in
+  `docs/closeouts/AGENT_HANDOFF_ARCHIVE_2026-07.md`, and the concise accepted-phase
+  index retained in `PROJECT_STATE.md`.
+- **Self-test count correction:** the compaction report's "48 tests" was a typo.
+  The correct result is **47/47 PASS, 0 FAIL** (the validator and self-test files
+  are byte-unchanged; the suite has always emitted 47 result lines).
+- **Traceability pointer correction:** the obsolete derived line
+  `NEXT_AUTHORIZABLE_ACTION: GOVERNANCE-STATE-HANDOFF-COMPACTION-R1` in
+  `docs/architecture/ORDEM_COMPRA_C3_TRACEABILITY.md` was replaced with
+  `NEXT_AUTHORIZABLE_ACTION: C3C-B-MATERIAL-PHASE-CONTRACT-R1`; a single accounting
+  line was added for this commit. Requirement IDs, normative anchors, ownership,
+  dispositions, evidence, environments, checkpoints, residual debts, and all
+  requirement-table rows are unchanged.
+- **No product or environment consequence:** lifecycle §R.29, schema §13.15, the
+  requirement registries, the requirement-matrix rows, the spec-custody validator,
+  and the byte-identical wrappers `CLAUDE.md`/`AGENTS.md` are unchanged. No
+  database, Supabase, staging, production, deployment, activation, cutover, remote
+  mutation, or push occurred; no `.gitignore` change.
+- **C3C-B remains UNAUTHORIZED** with no phase contract; no product phase chains.
+- **NEXT_AUTHORIZABLE_ACTION:** `C3C-B-MATERIAL-PHASE-CONTRACT-R1` — the next
+  phase must define and obtain acceptance of a material phase contract before any
+  C3C-B implementation.
+- **Exact accounting subject:** `docs: accept state handoff compaction`.
+- **Status after this commit:** `IMPLEMENTED / LOCALLY VERIFIED / AWAITING
+  SUPERVISOR REVIEW`.

@@ -30,12 +30,15 @@
 - **Active phase contract:** `NONE`.
 - **Active track:** `PURCHASE_ORDER_PHASE_C`.
 - **Current governance status:** `GOVERNANCE-SPEC-CUSTODY-FOUNDATION-R1`
-  accepted; `GOVERNANCE-STATE-HANDOFF-COMPACTION-R1` (this documentation
-  compaction) `IMPLEMENTED / LOCALLY VERIFIED / AWAITING SUPERVISOR REVIEW`.
-- **Next authorizable action:**
-  `GOVERNANCE-STATE-HANDOFF-COMPACTION-R1-SUPERVISOR-REVIEW`. C3C-B remains the
-  next product implementation lot but is **unauthorized** and has **no phase
-  contract**; no product phase chains automatically.
+  **ACCEPTED**; `GOVERNANCE-STATE-HANDOFF-COMPACTION-R1` **ACCEPTED** by the
+  supervisor at commit `1157b9e71bc629903c5940ab50d4b370964e560e` (state/handoff
+  compaction; historical content preserved in tracked archives + the append-only
+  ledger; validator PASS; self-tests 47/47 PASS).
+- **Next authorizable action:** `C3C-B-MATERIAL-PHASE-CONTRACT-R1` **only** —
+  the next phase must **define and obtain acceptance of a material phase
+  contract** for C3C-B before any implementation. **C3C-B implementation remains
+  UNAUTHORIZED and has no phase contract**; no product phase chains
+  automatically; the current product phase remains `NONE`.
 
 ## Governing specifications and contracts
 

@@ -20,7 +20,7 @@ LAST_ACCEPTED_PHASE: PHASE-C3C-A
 ACTIVE_PHASE: NONE
 ACTIVE_PHASE_CONTRACT: NONE
 ACTIVE_TRACK: PURCHASE_ORDER_PHASE_C
-NEXT_AUTHORIZABLE_ACTION: GOVERNANCE-STATE-HANDOFF-COMPACTION-R1-SUPERVISOR-REVIEW
+NEXT_AUTHORIZABLE_ACTION: C3C-B-MATERIAL-PHASE-CONTRACT-R1
 GOVERNING_SPEC: docs/architecture/ORDEM_COMPRA_LIFECYCLE_SPEC_PROPOSED.md
 TECHNICAL_CONTRACT: docs/architecture/PEDIDO_OP_SCHEMA_CONTRACT.md
 SEQUENCE_AUTHORITY: docs/architecture/PEDIDO_PRODUCTION_FLOW_BACKLOG.md
@@ -42,16 +42,23 @@ ACCEPTED_CHECKPOINT: dd631299f410027ebb23b006aa5e380ad460aefa
   schema §13.15 are unchanged. Local technical acceptance only — no staging
   validation/application, deployment, activation, cutover, or product acceptance.
 - **Active product phase:** `NONE`. **Active phase contract:** `NONE`.
-- **Governance status:** `GOVERNANCE-SPEC-CUSTODY-FOUNDATION-R1` accepted;
-  `GOVERNANCE-STATE-HANDOFF-COMPACTION-R1` (this documentation compaction)
-  `IMPLEMENTED / LOCALLY VERIFIED / AWAITING SUPERVISOR REVIEW` (2026-07-20).
-  Documentation-only: no product semantics, database, environment, deployment,
-  remote, or push change.
-- **NEXT_AUTHORIZABLE_ACTION:**
-  `GOVERNANCE-STATE-HANDOFF-COMPACTION-R1-SUPERVISOR-REVIEW`. **C3C-B remains the
-  next product implementation lot but is UNAUTHORIZED and has no phase
-  contract.** No product phase chains automatically; C3C-B contract creation is
-  not authorized before supervisor acceptance of this compaction.
+- **Governance status:**
+  - `GOVERNANCE-SPEC-CUSTODY-FOUNDATION-R1`: **ACCEPTED**.
+  - `GOVERNANCE-STATE-HANDOFF-COMPACTION-R1`: **ACCEPTED** by the supervisor at
+    commit `1157b9e71bc629903c5940ab50d4b370964e560e` (`PROJECT_STATE.md`
+    compacted to a current-state hub, `AGENT_HANDOFF.md` to a concise derived
+    handoff, historical content preserved in tracked archives and the append-only
+    ledger, no unique canonical evidence lost, validator PASS, self-tests 47/47
+    PASS). Documentation-only: no product semantics, database, environment,
+    deployment, remote, or push change.
+  - `GOVERNANCE-STATE-HANDOFF-COMPACTION-R1-CLOSEOUT`: this closeout records that
+    acceptance and advances the next authorizable action.
+- **NEXT_AUTHORIZABLE_ACTION:** `C3C-B-MATERIAL-PHASE-CONTRACT-R1` — define and
+  obtain acceptance of a material phase contract for C3C-B **before** any C3C-B
+  implementation. **C3C-B remains the next product implementation lot but is
+  UNAUTHORIZED and has no phase contract**; no product phase chains
+  automatically, and this closeout neither creates the C3C-B contract nor
+  authorizes product work.
 
 ## Workspace and Git boundaries
 
@@ -174,8 +181,8 @@ Commit SHAs there are the accepted technical commits; consult HEAD via Git.
 
 | Phase | Status | Date |
 |---|---|---|
-| `GOVERNANCE-STATE-HANDOFF-COMPACTION-R1` | `IMPLEMENTED / LOCALLY VERIFIED / AWAITING SUPERVISOR REVIEW` | 2026-07-20 |
-| `GOVERNANCE-SPEC-CUSTODY-FOUNDATION-R1` | `IMPLEMENTED / LOCALLY VERIFIED / AWAITING SUPERVISOR REVIEW` | 2026-07-20 |
+| `GOVERNANCE-STATE-HANDOFF-COMPACTION-R1` (accepted commit `1157b9e`) | `CLOSED / ACCEPTED` | 2026-07-20 |
+| `GOVERNANCE-SPEC-CUSTODY-FOUNDATION-R1` | `CLOSED / ACCEPTED` | 2026-07-20 |
 | `PHASE-C3C-A` (inactive impl. documentary closeout R1, `db/75`, R2-R4) | `CLOSED / TECHNICALLY ACCEPTED — LOCALLY VERIFIED / INACTIVE / NOT APPLIED TO STAGING` | 2026-07-20 |
 | `PHASE-C3B` executable contract closure R1 (§R.29 / §13.15) | `CLOSED / ACCEPTED` | 2026-07-19 |
 | Hybrid Origin — `F3R1` staging DB/API validation + Phase-C revalidation (`db/74`) | `CLOSED / ACCEPTED_WITH_SCOPED_COMMITTED_CONCURRENCY_FIXTURE_WAIVER` | 2026-07-19 |
