@@ -10,12 +10,13 @@ ACTIVE_TRACK: PURCHASE_ORDER_PHASE_C
 LAST_ACCEPTED_PHASE: PHASE-C3C-A
 ACTIVE_PHASE: NONE
 CLOSED_MATERIAL_PHASES: PHASE-C3C-A
-NEXT_AUTHORIZABLE_ACTION: C3C-B-MATERIAL-PHASE-CONTRACT-R1
+NEXT_AUTHORIZABLE_ACTION: C3C-B-MATERIAL-PHASE-CONTRACT-R1-SUPERVISOR-REVIEW
 VALIDATION_ACCOUNTING_SUBJECT: fix: harden spec custody validation
 VALIDATION_ACCOUNTING_SUBJECT_R2: fix: reject detached spec custody rows
 VALIDATION_ACCOUNTING_SUBJECT_R3: fix: distinguish prose from detached tables
 VALIDATION_ACCOUNTING_SUBJECT_R4: refactor: split spec custody validator
 VALIDATION_ACCOUNTING_SUBJECT_R5: docs: accept state handoff compaction
+VALIDATION_ACCOUNTING_SUBJECT_R6: docs: define C3C-B material phase contract
 ```
 
 ## Accepted foundation
@@ -55,3 +56,14 @@ C3C-B is the next product lot but is unauthorized and has no phase contract.
 C3D, staging application/validation, deployment, activation, real snapshot/import,
 fence transition, read switch, final ACL-closure invocation, cutover, C4, C5,
 production, `main`, remotes, and push remain unauthorized.
+
+## Material phase contract reference
+
+`docs/architecture/ORDEM_COMPRA_C3C_B_PHASE_CONTRACT.md` (authored by
+`C3C-B-MATERIAL-PHASE-CONTRACT-R1`, docs-only) binds the four `OC-C3-*` rows
+above to an exact repository scope, dependency inventory, implementation-file
+manifest, and hard stops for a future `PHASE-C3C-B` implementation order. It is
+`STATUS: PROPOSED / AWAITING SUPERVISOR ACCEPTANCE / IMPLEMENTATION NOT
+AUTHORIZED` and authorizes no implementation by itself. `ACTIVE_PHASE` and
+`ACTIVE_PHASE_CONTRACT` remain `NONE` in `PROJECT_STATE.md`; no disposition in
+the requirement matrix above was changed by this reference.

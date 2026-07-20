@@ -4753,3 +4753,66 @@ MATERIAL_DIVERGENCES: NONE
 - **Exact accounting subject:** `docs: accept state handoff compaction`.
 - **Status after this commit:** `IMPLEMENTED / LOCALLY VERIFIED / AWAITING
   SUPERVISOR REVIEW`.
+
+## 2026-07-20 — C3C-B-MATERIAL-PHASE-CONTRACT-R1 — IMPLEMENTED / LOCALLY VERIFIED / AWAITING SUPERVISOR REVIEW
+
+- **Authorization:** the architect authorized
+  `C3C-B-MATERIAL-PHASE-CONTRACT-R1`, a documentation-only pass to inspect the
+  real repository and author an implementation-ready material phase contract for
+  `PHASE-C3C-B`, following the acceptance of
+  `GOVERNANCE-STATE-HANDOFF-COMPACTION-R1-CLOSEOUT` (entry directly above). This
+  entry records no product implementation, no database or environment action,
+  and no authorization of `PHASE-C3C-B` implementation.
+- **Entry checkpoint reconciled:** branch `dev`, HEAD
+  `6fcd139e8cdfd2e1539157388896ebc039a3af23`, parent
+  `1157b9e71bc629903c5940ab50d4b370964e560e`, empty index, preserved residue
+  modified `.gitignore` only — matched the expected baseline exactly.
+- **Contract authored:** `docs/architecture/ORDEM_COMPRA_C3C_B_PHASE_CONTRACT.md`,
+  binding the four already-accepted `§R.31`/`13.17` requirement IDs
+  (`OC-C3-READ-001`, `OC-C3-WRITE-001`, `OC-C3-COMPAT-001`, `OC-C3-NOUI-001`) to:
+  a verified 17-file dependency inventory (re-checked against the real `js/`
+  tree — three files reclassified out of scope as native-only
+  `ordem_compra`/RPC consumers with no legacy-table coupling, one file
+  reclassified out of scope as a pre-receipt-only consumer, `op-nova.js`
+  reclassified as also a write call-site); an exact 9-file product manifest
+  (8 existing files plus one new shared adapter module
+  `js/screens/ordem-compra-receipt-cutover.js`) and an exact 8-file test manifest
+  (7 existing plus one new); reader/writer migration rules keyed to the three
+  already-granted canonical RPCs installed by `db/75`
+  (`registrar_recebimento_ordem_compra`, `estornar_recebimento_ordem_compra`,
+  `listar_recebimentos_ordem_compra_normalizados`); a documented finding that no
+  client-reachable cutover-state-check surface exists (`ordem_compra_cutover` is
+  fully revoked), so detection must be response-shape-driven, not a new schema
+  read; per-requirement acceptance criteria; residual debts; and hard stops.
+- **No product implementation:** zero product or test files were created,
+  modified, or deleted by this pass; the new contract document only describes
+  files a **future**, separately authorized implementation order may touch.
+  `db/75` and every other migration are unchanged; lifecycle §R.29 and schema
+  §13.15/§13.16 are byte-unchanged; the four `OC-C3-*` traceability dispositions
+  in `docs/architecture/ORDEM_COMPRA_C3_TRACEABILITY.md` are unchanged (still
+  `PARTIALLY_SATISFIED`/`PLANNED`, none `SATISFIED`).
+- **No database or environment action:** no Supabase MCP call, no staging or
+  production access, no migration, and no `.gitignore` change occurred.
+- **Documentation-only manifest:** `docs/architecture/ORDEM_COMPRA_C3C_B_PHASE_CONTRACT.md`
+  (new), `docs/DOCUMENTATION_INDEX.md`, `docs/architecture/ORDEM_COMPRA_C3_TRACEABILITY.md`,
+  `PROJECT_STATE.md`, `AGENT_HANDOFF.md`,
+  `docs/architecture/PEDIDO_PRODUCTION_FLOW_BACKLOG.md`, and this ledger.
+  `PROJECT_STATE.md`'s `ACTIVE_PHASE` and `ACTIVE_PHASE_CONTRACT` remain `NONE`;
+  only `NEXT_AUTHORIZABLE_ACTION` advanced to
+  `C3C-B-MATERIAL-PHASE-CONTRACT-R1-SUPERVISOR-REVIEW`.
+- **C3C-B remains UNAUTHORIZED** with no ACTIVE phase contract; the new contract
+  is `STATUS: PROPOSED / AWAITING SUPERVISOR ACCEPTANCE / IMPLEMENTATION NOT
+  AUTHORIZED`; no product phase chains automatically from this pass.
+- **Local verification:** `node scripts/validate-spec-custody.mjs` PASS;
+  `node scripts/validate-spec-custody.mjs --self-test` 47/47 PASS; `git diff --check`
+  clean; `git diff --cached --check` clean; the committed manifest matches
+  exactly the documentation-only paths above; lifecycle §R.29 and schema §13.15
+  confirmed byte-identical; wrappers `CLAUDE.md`/`AGENTS.md` confirmed unchanged
+  and byte-identical.
+- **Exact accounting subject:** `docs: define C3C-B material phase contract`.
+- **Status after this commit:** `IMPLEMENTED / LOCALLY VERIFIED / AWAITING
+  SUPERVISOR REVIEW`.
+- **NEXT_AUTHORIZABLE_ACTION:** `C3C-B-MATERIAL-PHASE-CONTRACT-R1-SUPERVISOR-REVIEW`
+  — supervisor review and acceptance of the new contract. `PHASE-C3C-B`
+  implementation remains a separate, later authorization; no phase chains
+  automatically.
