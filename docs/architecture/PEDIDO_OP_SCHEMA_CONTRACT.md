@@ -1289,3 +1289,29 @@ creating operational state or phase authority.
 
 The complete derived matrix is
 `docs/architecture/ORDEM_COMPRA_C3_TRACEABILITY.md`.
+
+### 13.18 Legacy-compat receipt adapter schema requirements
+
+`ordem_compra_recebimentos.idempotency_namespace` `CHECK` constraints are
+additively extended to admit `'legacy_compat_receipt_v1'` alongside the existing
+native values (`'native_receipt_v1'`, `'legacy_initial_balance_v1'`). Concretely
+this extends both `ordem_compra_recebimentos_c3a_namespace_check` (the IN-list,
+db/71) and `ordem_compra_recebimentos_c3c_hash_check` (the namespace/hash-shape
+coupling, db/75), using a 32-hex md5 command hash for the new namespace. No
+existing row's namespace changes.
+
+The `comando_tipo` `CHECK` is left **unchanged**: legacy-compat receipts reuse
+the native command types — `'recebimento'` for an increase and the equal/no-op
+record, `'estorno'` for a decrease — and are distinguished **solely** by the
+idempotency namespace; no `'recebimento_compat'` command type is introduced or
+admitted. This corrects the R2 §34.3 draft (which proposed a `comando_tipo`
+extension): the installed native ledger shape guard
+(`trg_native_lancamento_shape_guard`, db/71/db/74) couples the header's
+`comando_tipo` to each ledger line's `tipo`, so a distinct compat command type is
+not viable without modifying that guard, which the frozen manifest forbids
+(contract §35, architect ruling).
+
+`db/76` introduces no trigger on `ordens_compra_fio`, no one-time compat-mapping
+backfill, no `ordem_compra_item_compat_fio` row, and no modification to any
+`db/67` or `db/75` object. The migration is exactly two `SECURITY DEFINER`
+functions plus this one additive constraint change.

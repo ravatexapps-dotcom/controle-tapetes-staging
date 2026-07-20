@@ -2,7 +2,7 @@
 
 <!-- MATERIAL_PHASE_CONTRACT:BEGIN -->
 PHASE_ID: PHASE-C3C-B-DB-PREREQ
-STATUS: ACCEPTED_WITH_NONBLOCKING_DOCUMENTARY_DEBT / IMPLEMENTATION NOT YET AUTHORIZED
+STATUS: IMPLEMENTED / LOCALLY VERIFIED / AWAITING SUPERVISOR ACCEPTANCE
 <!-- MATERIAL_PHASE_CONTRACT:END -->
 
 > **Role of this document.** This is a **material phase contract**, authored
@@ -1902,3 +1902,111 @@ AUTHORIZED`.**
 (which must, as its own precondition, obtain the §34.2/§34.3 normative
 application). No phase chains automatically; `db/76` authoring, implementation,
 migration, and every environment action remain unauthorized.
+
+## 35. Implementation closeout — R3 shape-guard correction (governs on conflict)
+
+> **Append-only forward correction (`FORWARD_CORRECTION` per
+> `docs/governance/DOCUMENTATION_MODEL.md` §19).** Recorded under the architect
+> order authorizing `PHASE-C3C-B-DB-PREREQ` implementation. §§0–34 are preserved
+> verbatim (no history rewrite). **Where §§1–34 and this §35 conflict, §35
+> governs.** This section records that `PHASE-C3C-B-DB-PREREQ` was implemented and
+> locally verified, and the single within-phase correction that implementation
+> forced on the narrow §34.3/§13.18 premise. It records `IMPLEMENTED / LOCALLY
+> VERIFIED / AWAITING SUPERVISOR ACCEPTANCE`; it does **not** mark the phase
+> accepted, does **not** mark any dependent C3C-B requirement `SATISFIED`, and
+> keeps `ACTIVE_PHASE`/`ACTIVE_PHASE_CONTRACT` `NONE`.
+
+### 35.1 Authorization and entry
+
+The architect order authorized `PHASE-C3C-B-DB-PREREQ` implementation, the
+required normative application of §34.2 → `§R.29.7` and §34.3 → `§13.18`
+(removing the "proposed" designation), the migration `db/76`, the three
+contracted test files, the closeout documents, and a single fast-forward push to
+`staging/dev`. Environment is `LOCAL_ONLY`: no Supabase write, staging
+application, deployment, activation, cutover, snapshot/import, ACL-closure
+invocation, `main`, `origin`, or `production` remote.
+
+### 35.2 Shape-guard finding (new material evidence)
+
+Mapping Component B against the actually-installed objects surfaced that the
+native ledger shape guard `trg_native_lancamento_shape_guard` (db/71 L95–98,
+latest db/74 L802–808) cross-checks the header's `comando_tipo` against each
+ledger line's `tipo` (`tipo='recebimento'` requires `comando_tipo='recebimento'`;
+`tipo='estorno'` requires `comando_tipo='estorno'`). R1 §6.6/§6.9's
+`comando_tipo='recebimento_compat'` header — which §34.3/§13.18 carried into the
+proposed schema delta as a `comando_tipo` `CHECK` extension — is therefore
+rejected on every receipt/reversal line. The frozen manifest (§33.1) forbids
+`db/76` from modifying that guard, so the only manifest-preserving path is to
+reuse the native command types.
+
+### 35.3 Architect ruling (governs)
+
+- Increase and equal/no-op requests write `comando_tipo='recebimento'`.
+- Decrease requests write `comando_tipo='estorno'`.
+- Compatibility identity is carried **exclusively** by
+  `idempotency_namespace='legacy_compat_receipt_v1'`.
+- No `comando_tipo='recebimento_compat'` is introduced or admitted; the
+  `comando_tipo` `CHECK` is left unchanged; `trg_native_lancamento_shape_guard`
+  is left unchanged.
+- `db/76` is therefore **exactly two new functions plus one additive `CHECK`
+  change — idempotency_namespace only**. This corrects the narrow §34.3/§13.18
+  premise within this authorized phase. No other architectural decision is
+  reopened.
+
+Consequently the applied `§13.18` (schema contract) is the corrected text
+(idempotency_namespace-only extension of both
+`ordem_compra_recebimentos_c3a_namespace_check` and
+`ordem_compra_recebimentos_c3c_hash_check`, `comando_tipo` unchanged); the
+applied `§R.29.7` (lifecycle spec) is §34.2 verbatim plus one clarifying sentence
+recording the native-command-type reuse. The inactive-writer response code
+`recebimento_compat_inativo` and the inactive-reader signal `listar_compat_inativo`
+are unaffected.
+
+### 35.4 Manifest as built
+
+- `db/76_ordem_compra_c3c_b_db_prerequisites.sql`: `listar_ordens_compra_fio_compat(UUID, BIGINT)`
+  (Component A, inert until `canonical_active`, item and item × OP grains) and
+  `registrar_recebimento_ordem_compra_fio_compat(BIGINT, NUMERIC, DATE, TEXT, TEXT, TEXT)`
+  (Component B, inert until `canonical_active`, LIFO reversal, admin-only
+  decrease, imported-balance floor, PONR participation on increase), plus the
+  additive extension of `ordem_compra_recebimentos_c3a_namespace_check` and
+  `ordem_compra_recebimentos_c3c_hash_check` to admit `'legacy_compat_receipt_v1'`.
+  No bridge trigger, no backfill, no `ordem_compra_item_compat_fio` row, no
+  `db/67`/`db/75` object modification, no product/UI/JS/HTML/CSS change.
+- Tests: `tests/ordem-compra-c3c-b-db-prerequisites.smoke.js`,
+  `tests/ordem-compra-c3c-b-db-prerequisites.integration.sql`,
+  `tests/ordem-compra-c3c-b-db-prerequisites-concurrency.mjs`.
+- Normative: `§R.29.7` applied to `ORDEM_COMPRA_LIFECYCLE_SPEC_PROPOSED.md`;
+  `§13.18` applied to `PEDIDO_OP_SCHEMA_CONTRACT.md`.
+
+### 35.5 Verification scope (honest)
+
+- **Executed (local, no database):** the smoke suite
+  (`…smoke.js`, 14 assertions) PASS; the directly dependent static-smoke
+  regressions `ordem-compra-c3c-inactive.smoke.js`,
+  `ordem-compra-native-receipt.smoke.js`, and `ordem-compra.smoke.js` PASS
+  (49/49 combined); the concurrency file parses under `node --check`;
+  `node scripts/validate-spec-custody.mjs` PASS; `git diff --check` /
+  `git diff --cached --check` clean.
+- **Authored to §34.4 but NOT executed:** the two DB-backed files
+  (`…integration.sql`, `…concurrency.mjs`) and the DB-backed C3C-A regressions
+  (`ordem-compra-c3c-inactive.integration.sql`,
+  `ordem-compra-c3c-inactive-concurrency.mjs`). The local PostgreSQL 18.4
+  cluster crash-loops on startup (Windows shared-memory reservation failure,
+  `could not reserve shared memory region … error code 487`), so no backend
+  connection survives. Supabase execution is out of this phase's `LOCAL_ONLY`
+  authorization and was not used. These files are ready to run against a stable
+  local Postgres with the full applied `db/01…db/76` schema; their execution is
+  a supervisor-acceptance / staging-validation item, not a completed local
+  proof, and is reported as **unavailable** rather than inferred.
+
+### 35.6 Status and next authorizable action
+
+`STATUS`: **`IMPLEMENTED / LOCALLY VERIFIED / AWAITING SUPERVISOR ACCEPTANCE`**.
+`ACTIVE_PHASE`/`ACTIVE_PHASE_CONTRACT` remain `NONE`; no dependent C3C-B
+requirement is `SATISFIED`. `NEXT_AUTHORIZABLE_ACTION`:
+**`PHASE-C3C-B-DB-PREREQ-SUPERVISOR-REVIEW`**. Staging application/validation,
+deployment, activation, real snapshot/import, fence transition, read switch,
+final ACL-closure invocation, cutover, C3D, C4, C5, production access, `main`,
+`origin`/`production` remote mutation, and any further push remain unauthorized.
+Accounting subject: `feat: add C3C-B database prerequisites`.

@@ -5373,3 +5373,81 @@ MATERIAL_DIVERGENCES: NONE
   — unchanged. Neither `db/76`, `PHASE-C3C-B-DB-PREREQ`, nor `PHASE-C3C-B`
   implementation is authorized; no phase chains automatically; no push
   authorized by this entry.
+
+## 2026-07-20 — PHASE-C3C-B-DB-PREREQ IMPLEMENTATION — IMPLEMENTED / LOCALLY VERIFIED / AWAITING SUPERVISOR ACCEPTANCE
+
+- **Order:** architect authorization of `PHASE-C3C-B-DB-PREREQ` implementation
+  (medium risk, `LOCAL_ONLY`). Also authorized the normative application of
+  contract §34.2 → lifecycle `§R.29.7` and §34.3 → schema `§13.18` (removing the
+  "proposed" designation).
+- **Entry checkpoint:** branch `dev`, HEAD
+  `f18346f9fb5bf181945c75896e32535a96ddd92e`, local `staging/dev` tracking ref
+  equal to HEAD, preserved residue modified `.gitignore` only — matched the
+  expected baseline exactly.
+- **Migration created (exactly one):** `db/76_ordem_compra_c3c_b_db_prerequisites.sql` —
+  (1) `public.listar_ordens_compra_fio_compat(UUID, BIGINT)` (Component A: canonical
+  order-catalog projection, inert until `canonical_active` via
+  `RAISE 'listar_compat_inativo' 55000`, item grain and aggregated item × OP grain,
+  admin/supplier scoping, pending/zero-receipt survival); (2)
+  `public.registrar_recebimento_ordem_compra_fio_compat(BIGINT, NUMERIC, DATE, TEXT, TEXT, TEXT)`
+  (Component B: atomic legacy receipt-intent adapter, inert until `canonical_active`
+  via `recebimento_compat_inativo`, absolute-delta under lock, increase fan-out +
+  explicit excess, deterministic LIFO admin-only decrease, imported-balance
+  immutable floor, PONR participation on increase); (3) additive extension of the
+  `idempotency_namespace` `CHECK` constraints
+  (`ordem_compra_recebimentos_c3a_namespace_check` and
+  `ordem_compra_recebimentos_c3c_hash_check`) to admit
+  `'legacy_compat_receipt_v1'`. No bridge trigger, no backfill, no
+  `ordem_compra_item_compat_fio` row, no `db/67`/`db/75` object modification, no
+  product/UI/JS/HTML/CSS change.
+- **R3 shape-guard correction (architect ruling, contract §35):** implementation
+  surfaced that the installed `trg_native_lancamento_shape_guard` (db/71 L95–98,
+  db/74 L802–808) couples the header's `comando_tipo` to each ledger line's `tipo`,
+  which makes R1 §6.9/§34.3's `comando_tipo='recebimento_compat'` header
+  unimplementable without modifying that guard (forbidden by the frozen manifest).
+  The architect ruled: reuse the native command types (`recebimento` for
+  increase/no-op, `estorno` for decrease); carry compat identity solely in
+  `idempotency_namespace='legacy_compat_receipt_v1'`; introduce/admit no
+  `recebimento_compat`; leave the `comando_tipo` `CHECK` and the shape guard
+  unchanged; `db/76` therefore extends the `idempotency_namespace` `CHECK` only.
+  Applied within this authorized phase; the corrected `§13.18` reflects it, and
+  `§R.29.7` records the native-command-type reuse.
+- **Normative application:** `§R.29.7` added to
+  `ORDEM_COMPRA_LIFECYCLE_SPEC_PROPOSED.md` (from §34.2, "proposed" removed, plus
+  one clarifying sentence per §35); `§13.18` added to
+  `PEDIDO_OP_SCHEMA_CONTRACT.md` (from §34.3, "proposed" removed, corrected to the
+  idempotency_namespace-only extension per §35). Neither registry gained a new
+  requirement ID; no requirement marked `SATISFIED`.
+- **Tests created (exactly three):**
+  `tests/ordem-compra-c3c-b-db-prerequisites.smoke.js` (static structural, 14
+  assertions — **PASS**);
+  `tests/ordem-compra-c3c-b-db-prerequisites.integration.sql` and
+  `tests/ordem-compra-c3c-b-db-prerequisites-concurrency.mjs` (authored to the
+  §34.4 test contract; **not executed** — see verification scope).
+- **Verification (honest, `LOCAL_ONLY`):** static smoke suites PASS 49/49 (the new
+  suite + the required static-smoke regressions
+  `ordem-compra-c3c-inactive.smoke.js`, `ordem-compra-native-receipt.smoke.js`,
+  `ordem-compra.smoke.js`); the concurrency file parses under `node --check`. The
+  DB-backed files (the new `…integration.sql`/`…concurrency.mjs` and the C3C-A
+  `…integration.sql`/`…concurrency.mjs` regressions) were **not executed**: the
+  local PostgreSQL 18.4 cluster crash-loops on startup with a Windows
+  shared-memory reservation failure (`could not reserve shared memory region …
+  error code 487`), so no backend connection survives. Supabase execution is
+  outside this phase's `LOCAL_ONLY` authorization and was not used. Reported as
+  unavailable, not inferred. `node scripts/validate-spec-custody.mjs` PASS;
+  `git diff --check` and `git diff --cached --check` clean.
+- **State:** `LAST_ACCEPTED_PHASE` remains `PHASE-C3C-A`;
+  `ACTIVE_PHASE`/`ACTIVE_PHASE_CONTRACT` remain `NONE`; `ACCEPTED_CHECKPOINT`
+  unchanged (`dd631299f410027ebb23b006aa5e380ad460aefa`). The phase is **not
+  accepted**; no dependent C3C-B requirement is `SATISFIED`.
+- **Environment boundary held:** no Supabase write, staging application,
+  deployment, activation, cutover, snapshot/import, ACL-closure invocation, `main`,
+  `origin`, or `production` remote. One authorized fast-forward push to
+  `staging/dev` only.
+- **Exact accounting subject:** `feat: add C3C-B database prerequisites`.
+- **Status after this commit:** `IMPLEMENTED / LOCALLY VERIFIED / AWAITING
+  SUPERVISOR ACCEPTANCE`.
+- **NEXT_AUTHORIZABLE_ACTION:** `PHASE-C3C-B-DB-PREREQ-SUPERVISOR-REVIEW` — a
+  read-only supervisor review of this implementation. Supervisor acceptance,
+  staging validation/application, C3C-B application adaptation, C3D, activation,
+  cutover, and any further push remain unauthorized; no phase chains automatically.

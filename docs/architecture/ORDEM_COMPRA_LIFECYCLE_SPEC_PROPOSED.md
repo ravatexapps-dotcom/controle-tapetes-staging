@@ -3652,6 +3652,36 @@ C3 creates no visual UI. C4 exclusively owns the new admin receipt UI at
 may receive non-visual state-driven adapters or be disabled at cutover, but may
 not become new UX.
 
+### §R.29.7 Legacy-compat database prerequisites
+
+A canonical order-catalog projection (listar_ordens_compra_fio_compat) and an
+atomic legacy receipt-intent adapter (registrar_recebimento_ordem_compra_fio_compat)
+operate on legacy-compat orders (ordem_compra.legado = TRUE). Both are installed
+before the real cutover and are inactive unless the cutover singleton is
+status='canonical_active' AND read_authority='canonical'. Before canonical
+activation the projection raises the defined inactive-reader signal
+(listar_compat_inativo, SQLSTATE 55000) and the adapter returns its defined
+inactive-writer response ({ok:false, codigo:'recebimento_compat_inativo'}); the
+future application read/write adapters fall back to the flat table during
+legacy_active/maintenance_fenced, byte-identical to today. After canonical
+activation, the adapter's first successful non-import receipt participates in
+the existing §R.29.3 productive_receipt_started_at point of no return; no second
+PONR is created. Legacy-compat receipt decrease is admin-only; reversal source
+selection is deterministic LIFO over eligible tipo='recebimento' lançamentos,
+capped at each line's remaining reversible balance; the imported opening balance
+(tipo='import_saldo_inicial') is an immutable floor that no decrease may reduce.
+Legacy-compat receipt eligibility is status_administrativo <> 'cancelada' (not
+the native-only 'emitida' requirement) and status_aceite IN ('nao_aplicavel',
+'aceita'). The projection's OP-attributable grain is item × OP, allocations
+aggregated within the requested OP. The implementation binds to the
+compat-mapped fixed corpus supported by the existing db/75 cutover; corpus
+completeness, freeze, and any re-baseline are a later real-cutover/C3D
+precondition, outside these RPCs' scope. Compat identity is carried by the
+idempotency namespace legacy_compat_receipt_v1; the adapter reuses the native
+command types (recebimento for increase and the equal/no-op record, estorno for
+decrease) and introduces no new comando_tipo — the installed native ledger shape
+guard couples comando_tipo to each ledger line's tipo (contract §35 correction).
+
 ## §R.30 PHASE-C3C-A inactive implementation closeout R1 — CLOSED / TECHNICALLY ACCEPTED
 
 `C3C_A_STATUS: CLOSED / TECHNICALLY ACCEPTED — LOCALLY VERIFIED / INACTIVE / NOT APPLIED TO STAGING`

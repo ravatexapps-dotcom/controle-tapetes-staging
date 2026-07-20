@@ -34,32 +34,36 @@
   supervisor at commit `1157b9e71bc629903c5940ab50d4b370964e560e` (state/handoff
   compaction; historical content preserved in tracked archives + the append-only
   ledger; validator PASS; self-tests 47/47 PASS).
-- **Next authorizable action:** `PHASE-C3C-B-DB-PREREQ-IMPLEMENTATION-AUTHORIZATION`.
-  The C3C-B database-prerequisites contract
-  (`docs/architecture/ORDEM_COMPRA_C3C_B_DB_PREREQUISITES_PHASE_CONTRACT.md`)
-  was supervisor-reviewed and its R2 architecture **accepted** —
-  `STATUS: ACCEPTED_WITH_NONBLOCKING_DOCUMENTARY_DEBT / IMPLEMENTATION NOT YET
-  AUTHORIZED` (that file's §34). Component A and Component B are each installed
-  inert and active only under `canonical_active`; `db/76` is exactly two
-  functions plus one additive `CHECK` (no bridge, no backfill, no
-  `db/67`/`db/75` change); the fixed corpus is binding, and corpus
-  completeness/freeze/re-baseline is a later real-cutover/C3D precondition. The
-  next action is an architect decision to authorize `PHASE-C3C-B-DB-PREREQ`
-  implementation, which must first obtain the `NORMATIVE_CHANGE` applying the
-  corrected `§R.29.7`/`§13.18` deltas (contract §34.2/§34.3) — **not**
-  implementation itself, and `db/76` does not exist. **C3C-B implementation
-  remains UNAUTHORIZED and has no ACTIVE phase contract**
-  (`ACTIVE_PHASE`/`ACTIVE_PHASE_CONTRACT` remain `NONE`); no product phase chains
-  automatically; the current product phase remains `NONE`.
+- **`PHASE-C3C-B-DB-PREREQ` (implementation):** `IMPLEMENTED / LOCALLY VERIFIED /
+  AWAITING SUPERVISOR ACCEPTANCE` (2026-07-20). `db/76_ordem_compra_c3c_b_db_prerequisites.sql`
+  exists — Component A (`listar_ordens_compra_fio_compat`) and Component B
+  (`registrar_recebimento_ordem_compra_fio_compat`), both inert until
+  `canonical_active`, plus one additive `idempotency_namespace` `CHECK`; the
+  corrected `§R.29.7`/`§13.18` deltas were applied; an installed-shape-guard
+  finding was resolved by the architect ruling in contract §35 (reuse native
+  command types, compat identity in `idempotency_namespace='legacy_compat_receipt_v1'`,
+  no `recebimento_compat`, shape guard unchanged). Static smoke suites PASS
+  (49/49); the two DB-backed tests are authored to §34.4 but not executed (local
+  Postgres unstable). The phase is **not accepted**; no dependent requirement is
+  `SATISFIED`.
+- **Next authorizable action:** `PHASE-C3C-B-DB-PREREQ-SUPERVISOR-REVIEW`. A
+  read-only supervisor review of the implemented `PHASE-C3C-B-DB-PREREQ` precedes
+  any acceptance; only after acceptance and separately authorized staging
+  validation does the later `PHASE-C3C-B` application-adaptation lot become
+  authorizable. **C3C-B application implementation remains UNAUTHORIZED and has no
+  ACTIVE phase contract** (`ACTIVE_PHASE`/`ACTIVE_PHASE_CONTRACT` remain `NONE`);
+  no product phase chains automatically; the current product phase remains `NONE`.
 
 ## Governing specifications and contracts
 
 - **Governing spec:** `docs/architecture/ORDEM_COMPRA_LIFECYCLE_SPEC_PROPOSED.md`
-  — §R.29 is the unchanged accepted Phase-C3 product contract (§R.30 records
-  C3C-A local technical acceptance; §R.31 is governance metadata only).
+  — §R.29 core is the unchanged accepted Phase-C3 product contract (§R.30 records
+  C3C-A local technical acceptance; §R.31 is governance metadata only); `§R.29.7`
+  (legacy-compat DB prerequisites) applied 2026-07-20 for `PHASE-C3C-B-DB-PREREQ`.
 - **Technical contract:** `docs/architecture/PEDIDO_OP_SCHEMA_CONTRACT.md` —
   §13.15 is the unchanged C3B executable contract (§13.16 records C3C-A local
-  technical acceptance; §13.17 is governance metadata only).
+  technical acceptance; §13.17 is governance metadata only); `§13.18`
+  (legacy-compat receipt-adapter schema) applied 2026-07-20.
 - **Sequence authority:** `docs/architecture/PEDIDO_PRODUCTION_FLOW_BACKLOG.md`.
 - **Active-track traceability:** `docs/architecture/ORDEM_COMPRA_C3_TRACEABILITY.md`.
 - **Ledger (append-only):** `docs/ledgers/G28_LEDGER.md`.
@@ -72,12 +76,12 @@ Full matrix and normative anchors: `docs/architecture/ORDEM_COMPRA_C3_TRACEABILI
 - `OC-C3-READ-001`, `OC-C3-WRITE-001`, `OC-C3-NOUI-001` — `PARTIALLY_SATISFIED`
   (owning phase C3C-B; inactive `db/75`, `LOCAL_POSTGRES_18_4_ONLY`; application
   consumers/routing not migrated).
-- `OC-C3-COMPAT-001` — `BLOCKED`. The database-prerequisites contract
-  (`docs/architecture/ORDEM_COMPRA_C3C_B_DB_PREREQUISITES_PHASE_CONTRACT.md`)
-  is already **ACCEPTED** (§34); the requirement remains blocked pending
-  formal normative application of the corrected `§R.29.7`/`§13.18` deltas,
-  explicit architect authorization, and implementation of
-  `PHASE-C3C-B-DB-PREREQ`.
+- `OC-C3-COMPAT-001` — `BLOCKED`. The database prerequisites are now
+  **IMPLEMENTED and LOCALLY VERIFIED** in `db/76`
+  (`docs/architecture/ORDEM_COMPRA_C3C_B_DB_PREREQUISITES_PHASE_CONTRACT.md` §35;
+  `§R.29.7`/`§13.18` applied); the requirement remains blocked pending
+  `PHASE-C3C-B-DB-PREREQ` supervisor acceptance, staging validation, and the later
+  C3C-B application adaptation.
 - `OC-C3D-DEPLOY-001` — `PLANNED`; `OC-C3D-FENCE-001`, `OC-C3D-ACL-001`,
   `OC-C3D-LOCK-001` — `PARTIALLY_SATISFIED` (C3D; inactive staging rehearsal /
   role matrix pending).
@@ -151,9 +155,9 @@ Full matrix and normative anchors: `docs/architecture/ORDEM_COMPRA_C3_TRACEABILI
 19. `docs/architecture/ORDEM_COMPRA_C3C_B_PHASE_CONTRACT.md` (C3C-B material
     phase contract, accepted with blocking database prerequisites — not active)
 20. `docs/architecture/ORDEM_COMPRA_C3C_B_DB_PREREQUISITES_PHASE_CONTRACT.md`
-    (C3C-B database prerequisites contract, R2 architecture accepted with
-    nonblocking documentary debt — not active; implementation authorization
-    pending, §34)
+    (C3C-B database prerequisites contract; `PHASE-C3C-B-DB-PREREQ` implemented /
+    locally verified / awaiting supervisor acceptance — §35; `db/76` exists; not
+    active)
 
 > Bootstrap first through `docs/governance/AGENT_INSTRUCTIONS.md` and the
 > `SPEC_CUSTODY_BOOTSTRAP` block in `PROJECT_STATE.md`. Private conversation,

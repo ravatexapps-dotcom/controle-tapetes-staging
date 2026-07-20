@@ -8,6 +8,31 @@
 > `PROJECT_STATE.md`. Phase sequence, dependencies, backlog items, and accepted
 > architecture in this file remain authoritative; live operational status does not.
 
+# Update 2026-07-20 - PHASE-C3C-B-DB-PREREQ Implemented / Locally Verified
+
+Phase: `PHASE-C3C-B-DB-PREREQ`
+Type: implementation (database prerequisites), `LOCAL_ONLY`.
+
+The architect authorized and this pass implemented the two blocking database
+prerequisites as `db/76_ordem_compra_c3c_b_db_prerequisites.sql`: Component A
+(`listar_ordens_compra_fio_compat`) and Component B
+(`registrar_recebimento_ordem_compra_fio_compat`), both installed inert and
+active only under `canonical_active`, plus one additive `idempotency_namespace`
+`CHECK` extension (no bridge, no backfill, no `db/67`/`db/75` change). The
+corrected `§R.29.7`/`§13.18` normative deltas (contract §34.2/§34.3) were applied.
+An implementation-time material finding — the installed
+`trg_native_lancamento_shape_guard` couples `comando_tipo` to each ledger line's
+`tipo` — was resolved by an architect ruling (contract §35): legacy-compat
+receipts reuse the native command types (`recebimento`/`estorno`) and carry compat
+identity solely in `idempotency_namespace='legacy_compat_receipt_v1'`; no
+`recebimento_compat` type is introduced. Local verification: the new static smoke
+suite plus the static-smoke regressions PASS; the two DB-backed tests are authored
+to §34.4 but not executed (local Postgres unstable). `STATUS: IMPLEMENTED /
+LOCALLY VERIFIED / AWAITING SUPERVISOR ACCEPTANCE`. This entry changes no backlog
+sequence, dependency, or accepted architecture. Current live state, next
+authorizable action (`PHASE-C3C-B-DB-PREREQ-SUPERVISOR-REVIEW`), and debts remain
+solely owned by `PROJECT_STATE.md`.
+
 # Update 2026-07-20 - C3C-B Contract Accepted With Blocking Database Prerequisites
 
 Phase: `C3C-B-DB-COMPATIBILITY-PREREQUISITES-CONTRACT-R1`
