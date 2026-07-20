@@ -11,6 +11,16 @@
 
 # MASTER PLAN — DOCUMENTS, HUMAN VALIDATION, LINKS AND EVOLUTION
 
+<!-- LIVE-STATE OWNERSHIP BANNER (GOVERNANCE-STATE-HANDOFF-COMPACTION-R1, 2026-07-20) -->
+> **This is the documents-front architectural master plan (architecture, phase
+> matrix, sequence, backlog, hard stops). It is NOT a current-state owner.** The
+> `Active phase` / `Last accepted phase` / `Open architect decisions` /
+> `NEXT_AUTHORIZABLE_ACTION` status lines in the header block below are a
+> **historical 2026-07-14/15 reconciliation snapshot (G28-C/G28-D era),
+> superseded**. The sole owner of the live current phase, next authorizable
+> action, and open decisions is `PROJECT_STATE.md`; the active track has since
+> moved to the purchase-order refoundation / Phase-C work recorded there.
+
 **Project:** Ravatex — Controle de Tapetes / Documents Ingestor  
 **Plan status:** reconciled (G28-PLAN-R1 on 2026-07-14); this plan is the architectural backlog of G28 and `PROJECT_STATE.md` holds the current operational state.
 **Active phase:** No functional phase is active. G28-C is `CLOSED / ACCEPTED_WITH_NONBLOCKING_AUTHENTICATED_BROWSER_SMOKE_DEBT`. G28-D discovery/preparation remains `RELEASE CONTRACT DISCOVERY COMPLETE` (evidence preserved in `docs/releases/G28_D_RELEASE_CANDIDATE.md`); by explicit architect decision (`STAGING-ONLY-EXECUTION-BOUNDARY-A`, 2026-07-15) its publication is `DEFERRED BY ARCHITECT UNTIL GLOBAL BACKLOG COMPLETION` and does not constitute a current blocker for staging work. Publication remains `NOT STARTED / NOT ACCEPTED / NOT AUTHORIZED`.
@@ -1085,7 +1095,12 @@ The plan will be considered fully closed when:
 
 ---
 
-# NEXT ACTION — CURRENT STATE
+# NEXT ACTION — CURRENT STATE (HISTORICAL SNAPSHOT — SUPERSEDED)
+
+> **Historical record (2026-07-15 reconciliation), superseded.** The live current
+> phase and next authorizable action are owned solely by `PROJECT_STATE.md`; the
+> `NEXT_AUTHORIZABLE_ACTION` value in this section is not current. Retained for
+> chronology only.
 
 **G28-P0-R1, G28-B1, G28-B2, G28-B3 (accepted subphases), G28-B4, G28-B5-D5, G28-B6,
 G28-B7, and G28-C have been accepted** (G28-C on 2026-07-15, `CLOSED / ACCEPTED_WITH_NONBLOCKING_AUTHENTICATED_BROWSER_SMOKE_DEBT`;

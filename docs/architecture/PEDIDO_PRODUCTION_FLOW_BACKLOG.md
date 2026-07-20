@@ -1,3 +1,13 @@
+<!-- LIVE-STATE OWNERSHIP BANNER (GOVERNANCE-STATE-HANDOFF-COMPACTION-R1, 2026-07-20) -->
+> **This document is the production-flow sequence/backlog authority. It is NOT a
+> current-state owner.** Every dated `# Update …` closeout block below is a
+> **historical record** of what was true when it was written. All
+> `Status:` / `NEXT_AUTHORIZABLE_ACTION:` / "next authorizable action" / "current
+> state" statements inside those blocks are **historical and superseded** — the
+> sole owner of the live current phase, next authorizable action, and debts is
+> `PROJECT_STATE.md`. Phase sequence, dependencies, backlog items, and accepted
+> architecture in this file remain authoritative; live operational status does not.
+
 # Update 2026-07-06 - OP Create Requires Pedido Guard B
 
 Phase: `RAVATEX-TAPETES-OP-CREATE-REQUIRES-PEDIDO-GUARD-B`
@@ -801,8 +811,8 @@ Each modal opened by the stepper arrows in the Pedido Detail must display:
 - `tests/production-flow-invariants.smoke.js` — Production flow invariants
 - `docs/architecture/PEDIDO_OP_MOVIMENTACAO_DOCUMENTOS_PLANO.md` — Architectural plan
 - `docs/architecture/PEDIDO_OP_SCHEMA_CONTRACT.md` — Schema contract
-- `PROJECT_STATE.md` — Full phase history
-- `AGENT_HANDOFF.md` — Current state and binding rules
+- `PROJECT_STATE.md` — **Sole owner of live current state** (phase, next action, debts, accepted-phase index)
+- `AGENT_HANDOFF.md` — Derived operational handoff (continuity only; not a current-state owner)
 ## 9. Admin Backlog — Operational Validation
 
 Phase: `RAVATEX-TAPETES-ADMIN-FLOW-BACKLOG-SYNC-A`

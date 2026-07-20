@@ -4633,3 +4633,74 @@ MATERIAL_DIVERGENCES: NONE
   production, `main`, remotes, and push remain unauthorized.
 - **NEXT_AUTHORIZABLE_ACTION:**
   `GOVERNANCE-STATE-HANDOFF-COMPACTION-R1`, requiring a separate architect order.
+
+## 2026-07-20 — GOVERNANCE-STATE-HANDOFF-COMPACTION-R1 — IMPLEMENTED / LOCALLY VERIFIED / AWAITING SUPERVISOR REVIEW
+
+- **Authorization:** the architect authorized `GOVERNANCE-STATE-HANDOFF-COMPACTION-R1`,
+  a documentation/governance-only compaction of the current-state and handoff
+  documents. It follows and builds on the acceptance of
+  `GOVERNANCE-SPEC-CUSTODY-FOUNDATION-R1` (recorded in the entry directly above,
+  `IMPLEMENTED / LOCALLY VERIFIED / AWAITING INDEPENDENT SUPERVISOR REVIEW`). This
+  entry records no product implementation, product acceptance, environment
+  transition, or authorization of a later phase.
+- **Accepted commit chain reconciled:** the governance foundation's accepted chain
+  runs through the compaction baseline `17ff8adddaa9f2fd3bc61af7261d9ebaad275f08`
+  (branch `dev`), on top of the accepted checkpoint
+  `dd631299f410027ebb23b006aa5e380ad460aefa`. Every commit from the accepted
+  checkpoint through the baseline (`docs: establish shared spec custody`;
+  `fix: harden spec custody validation`; `fix: reject detached spec custody rows`;
+  `fix: distinguish prose from detached tables`; `refactor: split spec custody
+  validator`) remains accounted by the spec-custody validator.
+- **Compaction performed (documentation-only):**
+  - `PROJECT_STATE.md` compacted from 1449 to a ~243-line current-state hub; the
+    `SPEC_CUSTODY_BOOTSTRAP` block is retained and remains unique/valid, with
+    `NEXT_AUTHORIZABLE_ACTION` advanced to
+    `GOVERNANCE-STATE-HANDOFF-COMPACTION-R1-SUPERVISOR-REVIEW`;
+    `LAST_ACCEPTED_PHASE: PHASE-C3C-A`, `ACTIVE_PHASE: NONE`,
+    `ACTIVE_PHASE_CONTRACT: NONE`, `ACTIVE_TRACK: PURCHASE_ORDER_PHASE_C`.
+  - `AGENT_HANDOFF.md` reduced from 2377 lines to a ~135-line concise derived
+    operational handoff.
+  - New archive `docs/closeouts/AGENT_HANDOFF_ARCHIVE_2026-07.md` preserves the
+    prior root `AGENT_HANDOFF.md` stack verbatim (source: root `AGENT_HANDOFF.md`
+    at `17ff8ad`) under a non-authoritative banner; it holds no live next-action
+    authority and names `PROJECT_STATE.md` as current-state owner and root
+    `AGENT_HANDOFF.md` as the current operational handoff.
+  - Stale live "current phase" / "next action" copies were qualified with
+    pointers to `PROJECT_STATE.md` in
+    `docs/architecture/PEDIDO_PRODUCTION_FLOW_BACKLOG.md`,
+    `docs/architecture/DOCUMENTOS_VALIDACAO_VINCULOS_E_EVOLUCAO_PLANO.md`, and
+    `docs/architecture/PEDIDO_OP_MOVIMENTACAO_DOCUMENTOS_PLANO.md`; phase
+    sequence, dependencies, backlog items, and accepted architecture are
+    unchanged.
+  - `docs/DOCUMENTATION_INDEX.md` indexes the new archive and classifies
+    `PROJECT_STATE.md` as current-state authority, root `AGENT_HANDOFF.md` as the
+    derived current handoff, and both archives as historical/non-operational.
+  - `services/documents-ingestor/AGENT_HANDOFF.md` was marked historical /
+    service-local and non-authoritative for global state, pointing to
+    `/PROJECT_STATE.md`, `/AGENT_HANDOFF.md`, and `/docs/DOCUMENTATION_INDEX.md`.
+  - `docs/architecture/CLAUDE_PROJECT_ASSET_MAP.md` was corrected to reflect the
+    actual tracked `.claude/launch.json` (tracked; `python -m http.server 8765`)
+    and the real `.claude` presence in this worktree.
+- **No content lost:** every removed live-document narrative is preserved in this
+  append-only ledger, in `docs/closeouts/PROJECT_STATE_ARCHIVE_2026-07.md`, and in
+  the new `docs/closeouts/AGENT_HANDOFF_ARCHIVE_2026-07.md`; the concise
+  accepted-phase index in `PROJECT_STATE.md` indexes every affected phase.
+- **No product semantics changed:** lifecycle §R.29, schema §13.15, the
+  requirement registries, and `docs/architecture/ORDEM_COMPRA_C3_TRACEABILITY.md`
+  are byte-unchanged; the spec-custody validator and the byte-identical wrappers
+  `CLAUDE.md`/`AGENTS.md` are unchanged. C3C-B remains unauthorized with no phase
+  contract.
+- **No environment action:** no database, Supabase, staging, production,
+  deployment, activation, cutover, remote mutation, or push occurred; no
+  `.gitignore` change; the only preserved worktree residue is modified
+  `.gitignore`.
+- **Local verification:** `node scripts/validate-spec-custody.mjs` PASS;
+  `node scripts/validate-spec-custody.mjs --self-test` all PASS; `git diff --check`
+  clean; the committed manifest matches exactly the authorized allowed paths.
+- **Commit subject (for accounting):** `docs: compact project state and handoff`.
+- **Status after this commit:** `IMPLEMENTED / LOCALLY VERIFIED / AWAITING
+  SUPERVISOR REVIEW`.
+- **NEXT_AUTHORIZABLE_ACTION:**
+  `GOVERNANCE-STATE-HANDOFF-COMPACTION-R1-SUPERVISOR-REVIEW`. C3C-B remains the
+  next product implementation lot but is not authorized and has no phase contract;
+  no product phase chains automatically from this compaction.

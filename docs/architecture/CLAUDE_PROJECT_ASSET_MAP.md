@@ -80,11 +80,16 @@ authority:
 
 ## 5. Inventory of the `.claude` folder
 
-`.claude` is **untracked** (not versioned, not ignored) and physically exists
-**only in the original workspace** in quarantine. The `controle-tapetes-g28`
-worktree **does not contain `.claude`** (see §13). None of the files below contain credentials,
-authentication tokens, keys, or secrets — the files called `tokens/` are
-**CSS design tokens** (colors/layout/typography), not secrets.
+`.claude` is **partially tracked**: `.claude/launch.json` **is a tracked file**
+(committed under `GOVERNANCE-SPEC-CUSTODY`/`Add local preview launch config`); the
+rest of `.claude` is untracked (not versioned, not ignored). In the current
+`controle-tapetes-g28` worktree, `.claude/` **exists on disk** and contains
+exactly `launch.json` (tracked) and `settings.local.json` (untracked, machine
+permissions, no secrets) — the design-skill/tokens/preview material below lives
+only in the original quarantined workspace and is **absent from this worktree**
+(confirm with `git ls-files .claude` and a disk listing). None of the files below
+contain credentials, authentication tokens, keys, or secrets — the files called
+`tokens/` are **CSS design tokens** (colors/layout/typography), not secrets.
 
 | Path (`.claude/…`) | Tracked | Purpose | Type | Permanent rule? | Local path? | Usable in a new worktree? | Action |
 |---|---|---|---|---|---|---|---|
@@ -103,7 +108,7 @@ authentication tokens, keys, or secrets — the files called `tokens/` are
 | `tokens/typography.css` | untracked | Typography design tokens | visual reference | Partial | No | No | REFERENCE_ONLY |
 | `preview/*.html` | untracked | Real render harness (tecelagem/acabamento/op-aberta) | example / verification | No | No | No | KEEP_LOCAL (visual verification harness) |
 | `preview/screenshots/*.png` | untracked | Visual evidence of the pilots | visual reference | No | No | No | KEEP_LOCAL |
-| `launch.json` | untracked | Local preview config (`python -m http.server 5599`) | local configuration | No | Yes (local runtime) | Yes (regenerable) | KEEP_LOCAL |
+| `launch.json` | **tracked** | Local preview config (`python -m http.server 8765`) | local configuration | No | Yes (local runtime) | Yes (present in this worktree) | TRACKED — authority NONE (tooling pointer; see `docs/DOCUMENTATION_INDEX.md` §1d) |
 | `settings.local.json` | untracked | Machine permission allowlist (no secrets) | local configuration / machine-specific | No | Yes (local path) | No | KEEP_LOCAL |
 
 > No sensitive content was found; therefore no row is marked as
@@ -218,11 +223,15 @@ document whose **scope** matches the question — not its position in a list:
 > **In a real conflict, stop and escalate.** Do not silently choose a source
 > just by its position in a list. A skill cannot contradict the architecture.
 
-## 13. Risk: a clean worktree may not contain `.claude`
+## 13. Risk: a clean worktree may not contain the full `.claude`
 
-`.claude` is untracked and physical per directory. The `controle-tapetes-g28`
-worktree **does not have `.claude`** — this was verified (`git ls-files .claude` empty;
-`.claude` absent on disk; not in `.gitignore`). Consequences:
+Only `.claude/launch.json` is tracked; the rest of `.claude` is untracked and
+physical per directory. The `controle-tapetes-g28` worktree **does contain
+`.claude/`**, but only with the tracked `launch.json` and an untracked
+`settings.local.json` — the design-skill/tokens/preview material is **absent**
+(verified: `git ls-files .claude` = `.claude/launch.json`; disk listing shows
+`launch.json` + `settings.local.json`; the untracked skill/token/preview files
+are not in `.gitignore` and exist only in the original workspace). Consequences:
 
 - skills and tokens from `.claude` are **not** automatically available in
   new worktrees;
@@ -233,7 +242,6 @@ worktree **does not have `.claude`** — this was verified (`git ls-files .claud
 
 ## 14. Items that must remain local
 
-- `.claude/launch.json` (regenerable local preview);
 - `.claude/settings.local.json` (machine permissions, no secrets);
 - `.claude/preview/*.html` and `.claude/preview/screenshots/*.png` (verification harness/evidence);
 - the standalone mocks and `example.html` (supporting reference).

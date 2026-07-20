@@ -1,5 +1,17 @@
 # AGENT HANDOFF
 
+<!-- SCOPE BANNER (GOVERNANCE-STATE-HANDOFF-COMPACTION-R1, 2026-07-20) -->
+> **Historical, service-local handoff — NOT authoritative for global project
+> state.** The blocks below are the Documents Ingestor service's own historical
+> (G23–G25) closeouts, preserved for service-local continuity. This file is **not**
+> a competing global handoff and holds no live current phase, next action, or
+> authorization for the monorepo. For the authoritative global state and
+> continuity, always use:
+>
+> - `/PROJECT_STATE.md` — sole owner of the current operational state;
+> - `/AGENT_HANDOFF.md` — the single active derived operational handoff;
+> - `/docs/DOCUMENTATION_INDEX.md` — documentation authority and canonical paths.
+
 ## RAVATEX-DOCUMENTS-G25-B1-UX-C-B-TEST-CLEANUP-CLOSEOUT (2026-07-10)
 
 - Status: **CONCLUIDO - LIMPEZA DE DOCUMENTOS DE TESTE (STAGING)**.

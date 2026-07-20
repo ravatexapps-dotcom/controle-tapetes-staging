@@ -59,8 +59,8 @@ this section, not repeat the list.
 | `docs/governance/DOCUMENTATION_MODEL.md` | Defines the governance model and the rules for per-phase documentary updates. Content in English since `DOC-LANGUAGE-MIGRATION-L1`; pt-BR original archived at `docs/archive/pt-BR/` (see §7). |
 | `docs/governance/SUPERVISION_PROTOCOL.md` | Defines the roles of the supervision process (Architect/Reviewer/Resident Executor), onboarding of a new reviewer, order format, and gates (visual validation, approved mockup, migration as its own gate, Auth risk kept separate). Does not define state or documentary organization rules — that is `DOCUMENTATION_MODEL.md`. Content in English since `DOC-LANGUAGE-MIGRATION-L1`; pt-BR original archived at `docs/archive/pt-BR/` (see §7). |
 | `docs/governance/AGENT_INSTRUCTIONS.md` | Single tracked repository-agent behavior source for Claude Code, Codex, and equivalent repository-capable agents. It defines bootstrap, evidence, safety, and proportional-update behavior but owns no current state or product semantics. |
-| `PROJECT_STATE.md` (root) | Sole owner of the current operational state per front. Content in English since `DOC-LANGUAGE-MIGRATION-L2`; pt-BR original archived at `docs/archive/pt-BR/PROJECT_STATE.md` (see §7). |
-| `AGENT_HANDOFF.md` (root) | Sole active operational handoff. Content in English since `DOC-LANGUAGE-MIGRATION-L2`; pt-BR original archived at `docs/archive/pt-BR/AGENT_HANDOFF.md` (see §7). |
+| `PROJECT_STATE.md` (root) | **Current-state authority** — sole owner of the current operational state per front. Compacted to a current-state hub by `GOVERNANCE-STATE-HANDOFF-COMPACTION-R1` (2026-07-20); historical narratives live in the ledger and closeout archives. Content in English since `DOC-LANGUAGE-MIGRATION-L2`; pt-BR original archived at `docs/archive/pt-BR/PROJECT_STATE.md` (see §7). |
+| `AGENT_HANDOFF.md` (root) | **Derived current operational handoff** — sole active handoff, derived from `PROJECT_STATE.md`; never a second state owner. Reduced to a concise derived handoff by `GOVERNANCE-STATE-HANDOFF-COMPACTION-R1` (2026-07-20); the prior stack is preserved in `docs/closeouts/AGENT_HANDOFF_ARCHIVE_2026-07.md`. Content in English since `DOC-LANGUAGE-MIGRATION-L2`; pt-BR original archived at `docs/archive/pt-BR/AGENT_HANDOFF.md` (see §7). |
 | `docs/ledgers/G28_LEDGER.md` | Structured append-only history of the G28 front. |
 | `docs/refactor/ARCHITECTURE_REFACTOR_LEDGER.md` | History exclusive to the refactor front. |
 | `docs/legacy/pre-model/MANIFEST.md` | Immutable pre-model preservation; not operational. |
@@ -139,12 +139,18 @@ declared in §1. Not a second authority list.
   (2026-07-16) and `PROJECT-STATE-COMPACTION-B` (2026-07-17, its own
   batch divider — the 2026-07-17 Camada-2/Camada-3 subphase narratives, the
   superseded Publication Criterion, and the UI-track closeouts), verbatim and
-  in original order. **Not a source of current
+  in original order. **Historical / non-operational — not a source of current
   state** (that is `PROJECT_STATE.md`, now current-state-only); archived
-  phases are indexed in the "Closed phases" table of `PROJECT_STATE.md`.
+  phases are indexed in the "Accepted-phase index" of `PROJECT_STATE.md`.
   Append-only for this batch; the architect decisions recorded there
   remain in force and are condensed in `PROJECT_STATE.md` §"Binding
   decisions in force".
+- `docs/closeouts/AGENT_HANDOFF_ARCHIVE_2026-07.md` — the accumulated
+  operational-handoff stack moved verbatim from the root `AGENT_HANDOFF.md` by
+  `GOVERNANCE-STATE-HANDOFF-COMPACTION-R1` (2026-07-20). **Historical /
+  non-operational — carries no live next-action authority.** The current-state
+  owner is `PROJECT_STATE.md`; the current operational handoff is the root
+  `AGENT_HANDOFF.md`. Append-only for this batch.
 
 ## 1d. Diagnostic and reconciliation reports, and external supervision artifacts (non-normative)
 
