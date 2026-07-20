@@ -17,6 +17,48 @@ STATUS: PROPOSED / AWAITING SUPERVISOR ACCEPTANCE / IMPLEMENTATION NOT AUTHORIZE
 > separately authorizes `PHASE-C3C-B` and sets `ACTIVE_PHASE_CONTRACT` to this
 > file's path.
 
+## 0. Supervisor forward correction R1 (verdict: CHANGES_REQUIRED)
+
+> **Forward correction, authored under `C3C-B-MATERIAL-PHASE-CONTRACT-R1`
+> (documentation-only, `FORWARD_CORRECTION` per `DOCUMENTATION_MODEL.md` §4).**
+> A read-only supervisor review of this contract's R1 returned
+> `CHANGES_REQUIRED`. `PHASE-C3C-B` product implementation remains unauthorized.
+> This section and the appended §§25–30 record the correction; §§1–24 above are
+> preserved as authored (append-only correction, no history rewrite). Where §§1–24
+> and §§25–30 conflict, **§§25–30 govern**.
+
+The review found that §§6–17's application-only compatibility design cannot be
+built against the database surface installed by `db/75`, because that surface
+does not reproduce the shapes the three legacy consumers require. Two blocking
+findings result — both **hard stops**, both requiring a **database** forward
+correction that is a separate `NORMATIVE_CHANGE` + migration authorization and is
+**not granted here**:
+
+1. **HARD STOP — C3C-B REQUIRES DATABASE READ-CONTRACT FORWARD CORRECTION**
+   (§25). The canonical reader `listar_recebimentos_ordem_compra_normalizados`
+   is a receipt-event/ledger reader (§R.29.2). It cannot represent
+   pending/unreceived (zero-receipt) orders, does not project `kg_pedido`, does
+   not project per-order administrative/acceptance status, and does not project a
+   supplier-facing order label — all of which the three legacy order-list readers
+   (#2 `fornecedor.js`, #4 `pedido-detail-data.js`, #5 `op-nova.js`) consume. No
+   authorized canonical-active composition of the installed surface reproduces
+   those consumer shapes.
+2. **HARD STOP — C3C-B REQUIRES DATABASE COMMAND-ADAPTER FORWARD CORRECTION**
+   (§26). The canonical command `registrar_recebimento_ordem_compra` is a
+   **native** per-line receipt command (native `ordem_compra_id` + per-allocation
+   signed-delta lines + a stable idempotency key). No client-authorized surface
+   atomically converts the legacy flat write (flat `ordens_compra_fio.id` +
+   absolute cumulative `kg_recebido` + date + client-derived status) into that
+   command; the delta requires the current canonical total, which is unreadable
+   while the reader is inactive; and no retry-stable idempotency contract exists.
+
+The contract is **not** amended to invent a JS-only reconstruction and does **not**
+authorize any migration (§14/§19 hard stops preserved and reinforced). It also
+corrects the error-policy contradiction (§27, Defect 3), the supplier reader
+disposition (§28, Defect 4), and the exact-manifest wording (§29, Defect 5). The
+`STATUS` marker is unchanged: `PROPOSED / AWAITING SUPERVISOR ACCEPTANCE /
+IMPLEMENTATION NOT AUTHORIZED`; §30 records the additional database blockers.
+
 ## 1. Authorization source and entry checkpoint
 
 - **Authorization source for this authoring pass:** architect order
@@ -182,6 +224,13 @@ call-site (§9); there is no single choke point.
 
 ### 8.1 Product files a future C3C-B implementation order may modify
 
+> **Exact-manifest wording (Defect 5, §29).** This manifest is **ten authorized
+> product paths total**: **nine JavaScript product paths** (items 1–9 below,
+> including the new adapter module `js/screens/ordem-compra-receipt-cutover.js`)
+> **plus `index.html`** (item 10, an authorized modified path — one line added).
+> §8.2 authorizes **eight test paths**. Do not describe the scope as "nine
+> product files"; `index.html` is a tenth authorized product path.
+
 Exactly these paths — no directory or wildcard scope:
 
 1. `js/screens/op-writes.js`
@@ -282,9 +331,20 @@ For each of the two independent readers (#4 `pedido-detail-data.js`, #5
 1. Call `public.listar_recebimentos_ordem_compra_normalizados` scoped by the
    same identity the legacy select already scopes by (`p_pedido_id` for #4,
    `p_op_id` for #5).
-2. If the RPC call errors with `canonical_reader_inactive` (or any error —
-   fail-safe, not fail-open): run the **existing, unmodified** `.from('ordens_compra_fio').select(...)`
-   query and populate the exact existing shape/field names consumed downstream.
+2. If the RPC call errors with **exactly** the documented inactive code
+   `canonical_reader_inactive` (`SQLSTATE 55000`) — or, only within the bounded
+   deployment interval named in §27, `42883 undefined_function` — run the
+   **existing, unmodified** `.from('ordens_compra_fio').select(...)` query and
+   populate the exact existing shape/field names consumed downstream. Any other
+   error (permission `42501`, payload, contract/shape, network, timeout, or
+   unrecognized) is surfaced fail-closed, never classified as inactive. This
+   supersedes the earlier "(or any error — fail-safe, not fail-open)" wording;
+   the single finite error policy is §27 (Defect 3). **Note (Defect 1 / §25):**
+   the success branch's mapping of the canonical projection into the legacy shape
+   is **not buildable** against the installed reader, because the reader omits
+   `kg_pedido`, per-order status, pending/zero-receipt rows, and the
+   supplier-facing label; that composition is blocked pending the read-contract
+   forward correction (§25/§30).
 3. If the RPC call succeeds (only possible after a real, separately authorized
    cutover): map the canonical projection's `kg_recebido_atribuido`/`kg_excesso`
    into the legacy `kg_recebido` field name expected by unmodified downstream
@@ -304,9 +364,18 @@ not receipt rows):
    `public.registrar_recebimento_ordem_compra` with a deterministic idempotency
    key derived from the call's natural key (order id + occurrence timestamp,
    consistent with the header shape already accepted by `db/75`'s import path).
-   On `{ok:false, codigo:'recebimento_canonico_inativo'}`, run the **existing,
-   unmodified** `.update(...)` exactly as today. On any other error shape, surface
-   it as a genuine failure — do not mask a real canonical error as "inactive."
+   On **exactly** `{ok:false, codigo:'recebimento_canonico_inativo'}` (or, within
+   §27's bounded deployment interval, a `42883 undefined_function` transport
+   error), run the **existing, unmodified** `.update(...)` exactly as today. On
+   any other error shape, surface it fail-closed as a genuine failure — do not
+   mask a real canonical error as "inactive" (single finite policy: §27).
+   **Note (Defect 2 / §26):** the canonical-attempt branch itself is **not
+   buildable** against the installed command, because no client-authorized
+   surface converts the flat absolute write into the native per-allocation
+   signed-delta command with a retry-stable idempotency key; that adapter is
+   blocked pending the command-adapter forward correction (§26/§30). The
+   deterministic-idempotency-key proposal ("order id + occurrence timestamp") in
+   this clause is withdrawn as insufficient (§26.6).
 2. `op-persistir.js` (source rows): no canonical replacement exists or is
    authorized for source-row writes (§7 row 3); add only a defensive catch for
    `legacy_receipt_fenced` (the DB fence's own error code) so a future real fence
@@ -556,3 +625,253 @@ authorized scope. There is no committed state, no data conversion, and no
 irreversible step anywhere in §8–§17; the only "point of no return" defined
 anywhere in the governing spec is §R.29.3's real-cutover PONR, which remains
 explicitly out of scope (§8.4) and unauthorized by this contract.
+
+## 25. Canonical reader shape matrix (Defect 1) — HARD STOP
+
+Field-by-field reconciliation of **(A)** every legacy reader output consumed by
+the three order-list screens against **(B)** the actual output of
+`public.listar_recebimentos_ordem_compra_normalizados(p_pedido_id UUID,
+p_op_id BIGINT)` as installed by `db/75` (lines 301–356). Legacy sources:
+
+- **#4** `js/screens/pedido-detail-data.js` L327–330 — admin, by `op_id IN opIds`:
+  `select('id, op_id, tipo, cor_id, cor_poliester, kg_pedido, kg_recebido,
+  status, cores:cor_id(id, nome)')` → `state.ordensFio` (all order rows).
+- **#5** `js/screens/op-nova.js` `fetchOrdensCompraFio` L993–1001 — admin, by
+  `op_id`; renders pending rows via `buildOrdemPendenteRow` L1011–1034 (needs
+  `kg_pedido`, `status`, `rotuloFio`).
+- **#2** `js/screens/fornecedor.js` `screenFornecedorOrdens` L440–442 — supplier
+  (RLS-scoped), `select('id, tipo, cor_poliester, kg_pedido, kg_recebido,
+  data_recebimento, status, ops(numero, ano), cores:cor_id(id, nome)')`; splits
+  `pendentes` vs `recebidas` L483–484.
+
+Canonical `RETURNS TABLE`: `recebimento_id, lancamento_id, ordem_compra_id,
+ordem_compra_item_id, allocation_id, pedido_id, fornecedor_id, op_id,
+origem_tipo, material, cor_id, cor_poliester, kg_recebido_atribuido, kg_excesso,
+tipo, estorno_de_id, ocorrido_em`, produced by an **INNER JOIN** of
+`ordem_compra_recebimentos` ⋈ `ordem_compra_fio_lancamentos` (L343–344): a row
+exists **only** where a receipt lançamento exists.
+
+| # | Required consumer shape | (A) Legacy reader output | (B) Canonical reader output | Reproducible? |
+|---|---|---|---|---|
+| 1 | flat row identity | `id` (`ordens_compra_fio.id`) — #2/#4/#5; writers key on it | not projected (only `recebimento_id`, `lancamento_id`) | **NO** |
+| 2 | native order identity | none | `ordem_compra_id` | yes (added) |
+| 3 | native item/allocation identity | none | `ordem_compra_item_id`, `allocation_id` | yes (added) |
+| 4 | Pedido | indirect via `op_id`→OP→Pedido | `pedido_id` (direct) | yes |
+| 5 | OP | `op_id` always set (#4/#5); `ops(numero,ano)` (#2) | `op_id` **nullable** (Pedido-origin/excess rows are `NULL`) | partial (divergent for Pedido-origin/excess) |
+| 6 | supplier scoping | #2 relies on flat-table RLS | `fornecedor_id` + server-side `is_admin()`/supplier filter (L325–332, L350) | yes |
+| 7 | material/color | `tipo` + `cor_id`/`cor_poliester` + `cores` join | `material` + `cor_id`/`cor_poliester` (no color-name join) | partial (`tipo`→`material` rename; color name re-join needed) |
+| 8 | `kg_pedido` (ordered qty) | **primary column**, #2/#4/#5; default input value | **not projected** | **NO — critical** |
+| 9 | `kg_recebido` | absolute cumulative per order (#2/#4/#5) | `kg_recebido_atribuido` + `kg_excesso` **per receipt event** (sum across events; excess separated) | **NO** (needs aggregation; absent for zero-receipt orders) |
+| 10 | attributable quantity | derived | `kg_recebido_atribuido` | yes |
+| 11 | excess | derived | `kg_excesso` | yes |
+| 12 | administrative/acceptance/receipt status | `status` (`pendente`/`recebido_parcial`/`recebido_total`) #2/#4; `status_administrativo` #5 | none (only lançamento `tipo` recebimento/estorno + `estorno_de_id`) | **NO — gap** |
+| 13 | receipt date | `data_recebimento` (one date per order) #2 | `ocorrido_em` (per receipt event) | partial (per-event ≠ per-order) |
+| 14 | rows with zero receipts | **YES** — pending orders returned (`kg_recebido` NULL/0) | **NO** — INNER JOIN drops zero-receipt orders | **NO — critical** |
+| 15 | pending-order visibility | **YES** — #5 renders `buildOrdemPendenteRow`; #2 lists `pendentes` | **NO** — pending orders produce no rows | **NO — critical** |
+| 16 | supplier-facing order labels | #2 `Nº {ops.numero}/{ops.ano}` | only raw `op_id`/`fornecedor_id`; no OP number/year | **NO — gap** |
+
+**Result.** The canonical reader reproduces the receipt-event fields (native
+identities, attributed/excess, Pedido/supplier scoping, `ocorrido_em`) but
+**cannot** reproduce flat-row identity (#1), `kg_pedido` (#8), per-order
+administrative/acceptance status (#12), zero-receipt/pending-order rows
+(#14/#15), or the supplier-facing OP label (#16). Because it **cannot represent
+pending/unreceived orders** and omits the ordered quantity and per-order status,
+no authorized canonical-active composition of the installed surface reproduces
+the three consumer shapes. §R.29.2 confirms the reader is "the sole post-switch
+source for all **receipt state**" — a receipt-ledger reader, not an order-list
+reader.
+
+> **HARD STOP — C3C-B REQUIRES DATABASE READ-CONTRACT FORWARD CORRECTION.**
+> The read-contract forward correction (a separate `NORMATIVE_CHANGE` on
+> §R.29.2 + a new migration, **not authorized here**) must add an
+> order-catalog canonical projection that returns **every** order row —
+> including pending/zero-receipt — carrying, at minimum: a stable order/flat
+> identity, `kg_pedido`, per-order administrative/acceptance/receipt status, a
+> supplier-facing OP label, and the already-present attributed/excess receipt
+> fields. Per §14/§19 and the `C3C-B-MATERIAL-PHASE-CONTRACT-R1` order, this
+> contract does **not** invent a JS-only reconstruction of the missing rows/fields
+> and does **not** authorize the migration.
+
+## 26. Canonical writer payload matrix (Defect 2) — HARD STOP
+
+Reconciliation of the legacy writer input against the canonical command input.
+
+**Legacy writer input** (#1 `op-writes.js` `registrarRecebimentoOrdemFio`
+L29–43; #2 `fornecedor.js` inline `.update` L461–463):
+
+- flat `ordens_compra_fio.id` (`ordemId` / `ordem.id`);
+- absolute/cumulative `kg_recebido` (`Number(kgInput.value)`);
+- `data_recebimento` (date, **day** granularity);
+- client-derived `status` (`kg < kg_pedido ? 'recebido_parcial' : 'recebido_total'`).
+
+**Canonical command input** (`registrar_recebimento_ordem_compra`, `db/75`
+L242–244):
+
+- native `ordem_compra_id` (BIGINT);
+- `p_idempotency_key` (stable idempotency identity);
+- `p_ocorrido_em` (TIMESTAMPTZ command timestamp);
+- `p_documento_ref`, `p_origem_tipo`, `p_origem_ref` (origin metadata);
+- `p_linhas` JSONB (per-line item/allocation identity, receipt delta, attributed
+  vs excess).
+
+The nine required specifications from the order:
+
+1. **Flat row → native order/item/need/allocation.** Available for *read* via
+   `ordem_compra_item_compat_fio` (`ordens_compra_fio_id → ordem_compra_item_id`)
+   and `ordem_compra_item_alocacao` (`item_id → allocation_id`, `kg_alocado`,
+   `necessidade_id`, `op_id`). But a single flat row **fans out to N allocations**
+   (`db/75` snapshot L514–517 joins item⋈alocacao), so one absolute write must be
+   **decomposed** per allocation. No surface performs that decomposition.
+2. **Client-authorized surface that supplies the mapping.** `GRANT SELECT` to
+   `authenticated` exists on `ordem_compra_item_compat_fio` (`db/67` L442),
+   `ordem_compra_item_alocacao` (`db/67` L292), `necessidade_compra_fio`
+   (`db/67` L123) — these supply **identity (read)** only. **No** surface supplies
+   the atomic conversion. (No JS file references any of them today.)
+3. **Absolute → immutable receipt delta.** The canonical model records signed
+   lançamento **deltas**, not an absolute. Computing the delta needs the current
+   canonical received total per allocation, obtainable only from the canonical
+   reader — which is **inactive** (`canonical_reader_inactive`). Reconstructing it
+   from the flat absolute would be a JS-only reconstruction (forbidden).
+4. **Requested absolute below / equal / above current canonical total.** Legacy
+   overwrites the absolute unconditionally. Canonical needs: below → an **estorno**
+   (reversal) delta via `estornar_recebimento_ordem_compra`; equal → no-op; above
+   → a positive receipt delta. The flat writer has no delta concept and no surface
+   maps absolute→signed-delta.
+5. **Excess handling.** Attributed vs excess is `LEAST(kg_recebido, kg_alocado)` /
+   `GREATEST(kg_recebido − kg_alocado, 0)` **per allocation** (`db/75` L512–513),
+   computed server-side in the snapshot/import path; it is not exposed as a client
+   command input the flat writer can populate.
+6. **Retry-stable idempotency-key lifecycle.** Legacy has **none**. §10.1's
+   withdrawn proposal ("order id + occurrence timestamp") is **insufficient**: at
+   day granularity it is not per-event stable and collides.
+7. **Multiple legitimate receipts on the same date.** A day-granular key makes two
+   same-date receipts collide — one is dropped as a false duplicate or raises a
+   spurious `idempotencia_conflitante`. A per-event stable key is required.
+8. **Ambiguous network response.** Legacy `.update()` re-sets the same absolute on
+   retry (benign). The canonical **delta** command double-posts on retry unless
+   the client supplies a retry-stable key the server can dedupe — a key the client
+   cannot currently derive.
+9. **Supplier authorization / matching-order constraints.** The command enforces
+   actor/order server-side (`SECURITY DEFINER`); the client must still pass the
+   correct native `ordem_compra_id`, which requires the resolution in (1).
+
+**Result.** Identity is SELECT-readable, but (a) no client-authorized surface
+atomically converts a flat absolute receipt into the native per-allocation
+signed-delta command, (b) the delta requires the canonical total that is
+unreadable while the reader is inactive, and (c) no retry-stable idempotency
+contract exists.
+
+> **HARD STOP — C3C-B REQUIRES DATABASE COMMAND-ADAPTER FORWARD CORRECTION.**
+> The command-adapter forward correction (a separate `NORMATIVE_CHANGE` +
+> migration, **not authorized here**) must add a client-authorized RPC that
+> accepts the flat receipt intent (flat row / native order id + the requested
+> quantity + date + document metadata) and **atomically** resolves the
+> flat→native order/item/need/allocation fan-out, converts the requested total
+> into an immutable signed delta (receipt or estorno) against the canonical
+> total, classifies attributed vs excess per allocation, and registers
+> idempotently under a retry-stable key. Per the order, this contract does **not**
+> fabricate identifiers, infer allocations client-side, or reuse a timestamp as
+> the idempotency contract, and does **not** authorize the migration.
+
+## 27. Unified error policy (Defect 3)
+
+Replaces the contradiction between §9.2's former "fallback on any error" and
+§10/§14's "fail-closed on unrecognized errors." **One finite policy** governs
+every adapter call-site (#1/#2/#4/#5):
+
+- **Fall back to the exact existing legacy read/write** on, and only on:
+  - the reader's documented inactive signal `canonical_reader_inactive`
+    (`SQLSTATE 55000`); or the writer's documented inactive envelope
+    `{ok:false, codigo:'recebimento_canonico_inativo'}`; **and**
+  - **only within the bounded deployment interval** where `db/75` is not yet
+    applied to the target environment: `42883 undefined_function` (the canonical
+    RPC does not exist). This interval **begins** when the C3C-B application is
+    deployed to an environment and **ends** the moment `db/75` is confirmed
+    applied there (e.g. production `gqmpsxkxynrjvidfmojk`, where `db/75` is not
+    applied, is inside this interval; local/staging with `db/75` applied is
+    outside it). This is the exact missing-RPC compatibility condition — named by
+    code and interval, never "any error." It mirrors #5's existing
+    `42703 undefined_column` deployment-sequencing precedent (`op-nova.js`
+    L996–1000).
+- **Surface fail-closed** (do not fall back, do not classify as inactive): the
+  permission error `sem_permissao` (`42501`), payload/validation errors,
+  contract/shape mismatches, network errors, timeouts, and **any unrecognized
+  error**. An unknown failure is never treated as inactive.
+
+This policy governs **detection only**; it does not, by itself, make either
+adapter buildable — the canonical branches remain blocked by §25/§26 until the
+database forward corrections land.
+
+## 28. Supplier reader disposition (Defect 4) — `js/screens/fornecedor.js`
+
+`fornecedor.js` is treated as a **third independent reader** as well as an
+independent writer, at the **highest scrutiny** (non-admin supplier role).
+
+- **Supplier scoping.** Today: `screenFornecedorOrdens` selects the flat table
+  with **no** explicit `fornecedor_id` filter and relies on flat-table **RLS** to
+  scope rows (L440–442). The canonical reader scopes supplier rows **server-side**
+  (`db/75` L325–332, L350: non-admin resolves `usuarios.fornecedor_id` and filters
+  `o.fornecedor_id = v_supplier_id`) — so canonical-active scoping is available and
+  does not need a client filter.
+- **Pending/unreceived-order visibility.** Required: the screen splits
+  `pendentes` (`status === 'pendente'`) from `recebidas` (L483–484) and renders a
+  "Registrar" input for each pending order. The canonical reader returns **no**
+  pending rows (§25 #14/#15) → **BLOCKED** by the read-contract forward correction
+  (§25/§30). This is the sharpest instance of Defect 1: a supplier would lose all
+  pending orders at cutover.
+- **Shape mapping.** Also needs `kg_pedido`, `data_recebimento`, and the
+  supplier-facing label `Nº {ops.numero}/{ops.ano}` (L447, L451, L474, L503–505),
+  none of which the canonical reader projects (§25 #8/#13/#16).
+- **Read + write disposition.** Independent state-aware read+write adapter applied
+  at this call-site directly; it must **not** be silently unified with
+  `op-writes.js` (#1) — that would be an undocumented behavior change (§7 row 2).
+  The write side (inline `.update` L461–463) is a **third independent writer** and
+  is **BLOCKED** by the command-adapter forward correction (§26/§30).
+- **Routed vs state-disabled.** While `legacy_active`, it stays on the exact
+  legacy path (fallback branch, §27). It is **not** routed to canonical and **not**
+  state-disabled by this phase; canonical routing is blocked pending §25/§26.
+- **Tests.** `tests/fornecedor-screens.smoke.js`, **independent** from the admin
+  Pedido/OP reader tests — proving the supplier read+write adapters do not
+  converge with or cross-call `op-writes.js`'s (§14 last bullet).
+
+## 29. Exact-manifest wording (Defect 5)
+
+Normalized numeric wording, authoritative over any looser phrasing elsewhere:
+
+- **Nine JavaScript product paths** (§8.1 items 1–9), **including** the new
+  adapter `js/screens/ordem-compra-receipt-cutover.js`.
+- **Plus `index.html`** (§8.1 item 10) — one `<script>` line added.
+- **Ten authorized product paths total.**
+- **Eight authorized test paths** (§8.2 items 1–8), including the new
+  `tests/ordem-compra-receipt-cutover.smoke.js`.
+
+The scope is never "nine product files": `index.html` is the tenth authorized
+product path.
+
+## 30. Corrected contract status and database blockers
+
+- `STATUS` (unchanged): **PROPOSED / AWAITING SUPERVISOR ACCEPTANCE /
+  IMPLEMENTATION NOT AUTHORIZED**. `ACTIVE_PHASE`/`ACTIVE_PHASE_CONTRACT` remain
+  `NONE` in `PROJECT_STATE.md`. No requirement is marked `SATISFIED`.
+- **Additional blockers beyond supervisor acceptance.** Even if the supervisor
+  accepts this corrected contract, `PHASE-C3C-B` as scoped in §§4–17 (a JS/HTML
+  application-only compatibility phase) is **not implementable** against the
+  installed `db/75` surface. Two **database** forward corrections are prerequisites
+  and are each a separate `NORMATIVE_CHANGE` + migration authorization **not
+  granted here**:
+  1. **Read-contract forward correction** (§25) — an order-catalog canonical
+     projection including pending/zero-receipt orders, `kg_pedido`, per-order
+     status, and a supplier-facing label.
+  2. **Command-adapter forward correction** (§26) — a client-authorized RPC that
+     atomically resolves flat→native identity, converts absolute→signed delta,
+     classifies attributed/excess, and registers idempotently under a retry-stable
+     key.
+- **Traceability note.** The `OC-C3-READ-001` / `OC-C3-WRITE-001` dispositions in
+  `docs/architecture/ORDEM_COMPRA_C3_TRACEABILITY.md` (currently
+  `PARTIALLY_SATISFIED`, reflecting the installed `db/75` foundation) are **not**
+  changed by this documentation-only correction; whether to record them as
+  `BLOCKED` is a matter for supervisor acceptance of this contract, not for this
+  pass (the contract remains `PROPOSED`).
+- **Next step:** read-only supervisor review of this corrected contract. This
+  correction authorizes no implementation and no database, staging, production,
+  or environment action.

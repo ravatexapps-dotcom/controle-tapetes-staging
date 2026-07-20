@@ -4816,3 +4816,92 @@ MATERIAL_DIVERGENCES: NONE
   — supervisor review and acceptance of the new contract. `PHASE-C3C-B`
   implementation remains a separate, later authorization; no phase chains
   automatically.
+
+## 2026-07-20 — C3C-B-MATERIAL-PHASE-CONTRACT-R1 — FORWARD CORRECTION (verdict CHANGES_REQUIRED) — IMPLEMENTED / LOCALLY VERIFIED / AWAITING SUPERVISOR REVIEW
+
+- **Append-only forward correction.** This entry corrects, and does not rewrite,
+  the immediately preceding `C3C-B-MATERIAL-PHASE-CONTRACT-R1` entry. A read-only
+  supervisor review of that contract's R1 returned `CHANGES_REQUIRED`;
+  `PHASE-C3C-B` product implementation remains unauthorized. Documentation-only
+  (`FORWARD_CORRECTION` per `docs/governance/DOCUMENTATION_MODEL.md` §4). No
+  product, database, Supabase, staging, production, deployment, activation,
+  cutover, remote mutation, or push occurred by the authoring of this correction.
+- **Entry checkpoint reconciled:** branch `dev`, HEAD
+  `84e7b61fecd5c406793ccc1962cb77b97a6bd015`, parent
+  `6fcd139e8cdfd2e1539157388896ebc039a3af23`, empty index, preserved residue
+  modified `.gitignore` only — matched the expected baseline exactly.
+- **Root cause.** The R1 contract's §§4–17 designed `PHASE-C3C-B` as a JS/HTML
+  application-only compatibility phase that attempts the canonical surface and
+  falls back to legacy while `legacy_active`. Reconciliation against the actually
+  installed `db/75` surface and the three legacy consumers proved that design is
+  **not buildable**: the canonical reader is a receipt-ledger reader that cannot
+  reproduce the order-list shapes the screens require, and the canonical command
+  is a native per-line receipt command with no client-authorized flat→native
+  atomic adapter.
+- **Reader shape matrix result (Defect 1, contract §25).** Field-by-field, the
+  reader `listar_recebimentos_ordem_compra_normalizados` reproduces receipt-event
+  fields (native order/item/allocation identity, `kg_recebido_atribuido`,
+  `kg_excesso`, Pedido/supplier scoping, `ocorrido_em`) but **cannot** reproduce
+  flat-row identity, `kg_pedido`, per-order administrative/acceptance status,
+  zero-receipt/pending-order rows, or the supplier-facing OP label. Its INNER
+  JOIN over receipts/lançamentos (`db/75` L343–344) drops every unreceived order.
+  → **HARD STOP — C3C-B REQUIRES DATABASE READ-CONTRACT FORWARD CORRECTION.**
+- **Writer payload matrix result (Defect 2, contract §26).** The legacy writer
+  input (flat `ordens_compra_fio.id` + absolute cumulative `kg_recebido` + date +
+  client-derived status) has no atomic path to the canonical command input
+  (native `ordem_compra_id` + per-allocation signed-delta `p_linhas` + stable
+  idempotency key). Identity is `SELECT`-readable (`ordem_compra_item_compat_fio`,
+  `ordem_compra_item_alocacao`, `necessidade_compra_fio` — `db/67` L442/L292/L123),
+  but no surface performs the flat→native fan-out decomposition, the absolute→delta
+  conversion requires the canonical total that is unreadable while the reader is
+  inactive, and no retry-stable idempotency contract exists (the R1 "order id +
+  occurrence timestamp" proposal is withdrawn as insufficient/collision-prone).
+  → **HARD STOP — C3C-B REQUIRES DATABASE COMMAND-ADAPTER FORWARD CORRECTION.**
+- **Database forward correction required: YES (both read-contract and
+  command-adapter).** Each is a separate `NORMATIVE_CHANGE` + migration
+  authorization and is **not** granted here. No JS-only reconstruction was
+  invented and no migration was authorized or written (order + contract §14/§19).
+- **Error policy (Defect 3, contract §27).** The §9.2 "fallback on any error"
+  vs §10/§14 "fail-closed" contradiction is replaced by one finite policy: fall
+  back only on the exact inactive signal (`canonical_reader_inactive` /
+  `recebimento_canonico_inativo`) and — only within the named bounded deployment
+  interval where `db/75` is unapplied to the target environment (e.g. production
+  `gqmpsxkxynrjvidfmojk`) — on `42883 undefined_function`; surface fail-closed on
+  permission (`42501`), payload, contract, network, timeout, and unrecognized
+  errors; never classify an unknown failure as inactive.
+- **Supplier reader disposition (Defect 4, contract §28).** `js/screens/fornecedor.js`
+  is recorded as a **third independent reader** and independent writer at highest
+  scrutiny: supplier scoping (flat RLS today; server-side in the canonical reader),
+  pending/unreceived-order visibility and supplier-facing OP label both **BLOCKED**
+  by the read-contract forward correction, write side **BLOCKED** by the
+  command-adapter forward correction, not routed/not state-disabled by this phase,
+  with tests independent from the admin Pedido/OP readers.
+- **Exact-manifest wording (Defect 5, contract §29).** Normalized to **ten
+  authorized product paths total** = **nine JavaScript product paths** (including
+  the new adapter `js/screens/ordem-compra-receipt-cutover.js`) **plus
+  `index.html`**; and **eight authorized test paths**.
+- **Contract sections corrected:** new §0 banner; in-place fixes to §9.2 and
+  §10.1 (error policy); new §8.1 manifest-wording note; appended §§25–30 (reader
+  matrix, writer matrix, unified error policy, supplier disposition, manifest
+  wording, corrected status + database blockers). §§1–24 preserved as authored.
+- **Contract status unchanged:** `STATUS: PROPOSED / AWAITING SUPERVISOR
+  ACCEPTANCE / IMPLEMENTATION NOT AUTHORIZED`; no requirement marked `SATISFIED`.
+  `PROJECT_STATE.md` `ACTIVE_PHASE`/`ACTIVE_PHASE_CONTRACT` remain `NONE` and were
+  not touched; the four `OC-C3-*` traceability dispositions are unchanged
+  (recording them as `BLOCKED` is a supervisor-acceptance matter, not this pass).
+- **Documentation-only manifest:** `docs/architecture/ORDEM_COMPRA_C3C_B_PHASE_CONTRACT.md`
+  and this ledger only. No other canonical document was modified; lifecycle §R.29,
+  schema §13.15–13.17, the requirement registries, the traceability matrix, the
+  spec-custody validator, and the byte-identical wrappers `CLAUDE.md`/`AGENTS.md`
+  are unchanged.
+- **Local verification:** `node scripts/validate-spec-custody.mjs` PASS;
+  `node scripts/validate-spec-custody.mjs --self-test` all PASS; `git diff --check`
+  clean; `git diff --cached --check` clean; the committed manifest matches exactly
+  the two documentation-only paths above.
+- **Exact accounting subject:** `docs: forward-correct C3C-B material phase contract`.
+- **Status after this commit:** `IMPLEMENTED / LOCALLY VERIFIED / AWAITING
+  SUPERVISOR REVIEW`.
+- **NEXT_AUTHORIZABLE_ACTION:** `C3C-B-MATERIAL-PHASE-CONTRACT-R1-SUPERVISOR-REVIEW`
+  — read-only supervisor review of the **corrected** contract. `PHASE-C3C-B`
+  implementation remains unauthorized and is additionally blocked pending the two
+  database forward corrections above; no phase chains automatically.
