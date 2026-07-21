@@ -2,7 +2,7 @@
 
 <!-- MATERIAL_PHASE_CONTRACT:BEGIN -->
 PHASE_ID: PHASE-C3C-B
-STATUS: ACCEPTED_WITH_BLOCKING_DATABASE_PREREQUISITES / IMPLEMENTATION NOT AUTHORIZED
+STATUS: AUTHORIZED / IMPLEMENTATION AUTHORIZED (§32) — NOT YET IMPLEMENTED
 <!-- MATERIAL_PHASE_CONTRACT:END -->
 
 > **Role of this document.** This is a **material phase contract**, authored under
@@ -954,3 +954,153 @@ and acceptance of `docs/architecture/ORDEM_COMPRA_C3C_B_DB_PREREQUISITES_PHASE_C
 `PHASE-C3C-B` implementation remains unauthorized and now additionally blocked
 pending that separate contract's acceptance and its own future implementation
 authorization.
+
+## 32. Governing contract forward correction — database prerequisites closed, application targets corrected
+
+> **Forward correction (`FORWARD_CORRECTION` per
+> `docs/governance/DOCUMENTATION_MODEL.md` §19), authored in the same pass as
+> `docs/architecture/ORDEM_COMPRA_C3C_B_DB_PREREQUISITES_PHASE_CONTRACT.md`
+> §39, under architect order `docs: authorize C3C-B application adaptation`.**
+> §§0–31 are preserved verbatim (no history rewrite). **Where §§1–31 and this
+> §32 conflict, §32 governs.** This section activates `PHASE-C3C-B`
+> implementation; it does not itself implement anything.
+
+### 32.1 Database blockers closed
+
+The two hard stops recorded in §25 (read-contract) and §26 (command-adapter)
+are **CLOSED**. `db/76_ordem_compra_c3c_b_db_prerequisites.sql` — accepted in
+`docs/architecture/ORDEM_COMPRA_C3C_B_DB_PREREQUISITES_PHASE_CONTRACT.md` §37,
+applied and verified inert in the development database
+`ucrjtfswnfdlxwtmxnoo` per that contract's §38, and that environment
+application supervisor-accepted in that contract's §39 — installs the two
+components this section binds application code to. `db/75` remains complete
+and unchanged (§3, §11, unaffected by this section).
+
+### 32.2 Corrected application targets
+
+§§6, 9, 10, 25, 26 above named `listar_recebimentos_ordem_compra_normalizados`,
+`registrar_recebimento_ordem_compra`, and `estornar_recebimento_ordem_compra`
+as the (blocked, unbuildable) canonical targets. **These are superseded.**
+`PHASE-C3C-B` implementation must **not** call them. The two authorized
+targets are:
+
+- **Reader:** `public.listar_ordens_compra_fio_compat(p_pedido_id UUID
+  DEFAULT NULL, p_op_id BIGINT DEFAULT NULL)` — item grain when `p_op_id IS
+  NULL`, OP-attributable grain otherwise (companion contract §5.2, corrected
+  by its §30).
+- **Writer:** `public.registrar_recebimento_ordem_compra_fio_compat(
+  p_ordens_compra_fio_id BIGINT, p_kg_total_absoluto NUMERIC,
+  p_data_recebimento DATE, p_idempotency_key TEXT, p_documento_ref TEXT
+  DEFAULT NULL, p_origem_ref TEXT DEFAULT NULL) RETURNS JSONB` (companion
+  contract §6.2, corrected by its §35 shape-guard ruling).
+
+### 32.3 Corrected inactive signals
+
+§9/§10/§27's error-policy text named the C3C-A reader/writer's inactive
+signals (`canonical_reader_inactive` / `recebimento_canonico_inativo`). The
+two `db/76` components have their **own**, distinct inactive signals, and the
+application adapter must detect exactly these:
+
+- **Reader inactive:** Postgres exception `listar_compat_inativo`,
+  `SQLSTATE 55000`.
+- **Writer inactive:** success-shaped JSONB envelope `{ok:false,
+  codigo:'recebimento_compat_inativo', ...}` (not an exception).
+
+### 32.4 Bounded missing-RPC compatibility — narrowed, not the development-database condition
+
+§27's bounded `42883 undefined_function` tolerance is preserved **only** for
+the interval defined in the companion contract §7: it begins when C3C-B
+application code calling either new RPC is deployed to a given environment,
+and ends the moment `db/76` is confirmed applied there. This interval governs
+only environments where `db/76` is **not yet installed**. It is **not** the
+development-database condition: `db/76` is already installed and confirmed
+present in `ucrjtfswnfdlxwtmxnoo` (companion contract §38), so `42883` is not
+an expected or tolerated response there — if it occurs there, it is an
+unrecognized error and fails closed under §32.5, not a signal of legitimate
+absence.
+
+### 32.5 Fail-closed error matrix (unchanged in kind, restated for the corrected targets)
+
+Every other response from either RPC is a genuine failure, surfaced to the
+caller without a legacy fallback and without masking it as inactivity:
+
+- `sem_permissao` (`42501`)
+- `estado_invalido`
+- `mapeamento_compat_ausente`
+- `decremento_exige_admin`
+- `reducao_abaixo_saldo_importado`
+- `excede_estornavel`
+- `kg_absoluto_invalido`
+- `idempotencia_conflitante`
+- `erro_interno`
+- any payload/shape error (a response that does not match the documented
+  envelope)
+- network errors and timeouts with no classified ambiguous-retry handling
+  (i.e. no code path may guess these mean "inactive")
+- every unrecognized response
+
+This supersedes and narrows §27's more general formulation to the exact code
+set the `db/76` components actually return (companion contract §6.11), while
+preserving §27's governing principle unchanged: fall back only on a
+documented inactive signal (or the bounded §32.4 interval); fail closed on
+everything else.
+
+### 32.6 Component A projected shape — no client-side reconstruction
+
+Component A (`listar_ordens_compra_fio_compat`) already projects the full
+legacy-compatible order shape application code needs, closing every gap §25
+identified as unbuildable: `ordens_compra_fio_id`, `ordem_compra_id`,
+`ordem_compra_item_id`, `pedido_id`, `op_id` (+ `op_ids_multiplos`),
+`op_numero`/`op_ano`/`op_label`, `fornecedor_id`/`fornecedor_nome`,
+`tipo`/`material`, `cor_id`/`cor_nome`/`cor_poliester`, `kg_pedido`,
+`kg_recebido`, `kg_recebido_atribuido`, `kg_excesso`, `status`,
+`status_administrativo`, `status_aceite`, `status_recebimento`,
+`data_recebimento`, `alocacoes` (JSONB per-allocation breakdown).
+
+`PHASE-C3C-B` application code must consume this projection as-is. It must
+not reconstruct missing canonical fields, aggregate receipt events
+client-side, or derive any value the RPC does not already return — every
+field the three legacy consumers (§7 rows 2, 4, 5) require is already
+present.
+
+### 32.7 Idempotency lifecycle (binding on the new adapter module, §8.1 item 9)
+
+- The caller generates **one** client-side idempotency token per
+  user-initiated submission attempt.
+- That token is retained in the in-flight request's local state for the
+  duration of that attempt.
+- A retry of the **same** attempt (timeout, connection drop, ambiguous
+  response) reuses the token **verbatim**.
+- A genuinely **new** user-initiated submission (e.g. the user changes the
+  entered value and clicks "Registrar" again) generates a **new** token.
+- The token is never derived from date, timestamp, order id, quantity, or any
+  other collision-prone natural key (companion contract §6.8, explicitly
+  superseding and withdrawing the earlier §10.1 "order id + occurrence
+  timestamp" proposal already marked withdrawn in this file).
+
+### 32.8 Fixed-corpus boundary — unchanged, restated
+
+- The 13 unmapped flat rows (companion contract §38.5) remain visible through
+  the flat fallback while `legacy_active` — Component A never returns them
+  (they lack a compat mapping) and this phase creates no mapping for them.
+- `mapeamento_compat_ausente`, if ever reached on a canonical branch, is
+  fail-closed per §32.5 — it is not treated as equivalent to "inactive."
+- Mapping completeness, freeze, and re-baseline remain C3D scope; this phase
+  creates no bridge, backfill, or mapping row (companion contract §32,
+  "binding corpus decision — FIXED corpus").
+
+### 32.9 Manifest preserved
+
+The exact-manifest wording in §29 is unchanged and binding: ten authorized
+product paths (§8.1 items 1–9 plus `index.html`), eight authorized test paths
+(§8.2), no new UI (§8.5), no database or environment action (§8.4, §11, §22).
+This section authorizes `PHASE-C3C-B` to proceed within that unchanged scope,
+corrected only for the application targets, inactive signals, error matrix,
+and idempotency lifecycle in §§32.2–32.7 above.
+
+### 32.10 Authorization
+
+`PHASE-C3C-B` implementation is **AUTHORIZED**, effective this commit.
+`PROJECT_STATE.md`'s `ACTIVE_PHASE` is set to `PHASE-C3C-B` and
+`ACTIVE_PHASE_CONTRACT` to this file's path in the same commit that appends
+this section (companion contract §39.4).

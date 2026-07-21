@@ -17,10 +17,10 @@ directly (`git rev-parse HEAD`, `git status --short --untracked-files=all`).
 <!-- SPEC_CUSTODY_BOOTSTRAP:BEGIN -->
 ```text
 LAST_ACCEPTED_PHASE: PHASE-C3C-B-DB-PREREQ
-ACTIVE_PHASE: NONE
-ACTIVE_PHASE_CONTRACT: NONE
+ACTIVE_PHASE: PHASE-C3C-B
+ACTIVE_PHASE_CONTRACT: docs/architecture/ORDEM_COMPRA_C3C_B_PHASE_CONTRACT.md
 ACTIVE_TRACK: PURCHASE_ORDER_PHASE_C
-NEXT_AUTHORIZABLE_ACTION: supervisor review/acceptance of the applied db/75+db/76 development-database stack (ucrjtfswnfdlxwtmxnoo; APPLIED / DEVELOPMENT DB VERIFIED / AWAITING SUPERVISOR ACCEPTANCE; no existing canonical ID, descriptive only); only then may PHASE-C3C-B application adaptation become authorizable
+NEXT_AUTHORIZABLE_ACTION: PHASE-C3C-B application compatibility/adaptation implementation, per that contract's §§1-24 as corrected by its §32 (docs/architecture/ORDEM_COMPRA_C3C_B_DB_PREREQUISITES_PHASE_CONTRACT.md §39 records supervisor acceptance of the applied db/75+db/76 development-database stack, ucrjtfswnfdlxwtmxnoo, that authorizes this action)
 GOVERNING_SPEC: docs/architecture/ORDEM_COMPRA_LIFECYCLE_SPEC_PROPOSED.md
 TECHNICAL_CONTRACT: docs/architecture/PEDIDO_OP_SCHEMA_CONTRACT.md
 SEQUENCE_AUTHORITY: docs/architecture/PEDIDO_PRODUCTION_FLOW_BACKLOG.md
@@ -55,7 +55,12 @@ ACCEPTED_CHECKPOINT: 34d7d231d0875093bc2091f385c61cf35fa0b5cb
   resource locks, ACL-closure command, recovery boundaries). Lifecycle §R.29 and
   schema §13.15 are unchanged. Local technical acceptance only — no staging
   validation/application, deployment, activation, cutover, or product acceptance.
-- **Active product phase:** `NONE`. **Active phase contract:** `NONE`.
+- **Active product phase:** `PHASE-C3C-B` (application compatibility/adaptation).
+  **Active phase contract:** `docs/architecture/ORDEM_COMPRA_C3C_B_PHASE_CONTRACT.md`,
+  authorized by that contract's §32 forward correction and
+  `docs/architecture/ORDEM_COMPRA_C3C_B_DB_PREREQUISITES_PHASE_CONTRACT.md`
+  §39 (supervisor acceptance of the applied `db/75`+`db/76`
+  development-database stack), both 2026-07-20.
 - **Governance status:**
   - `GOVERNANCE-SPEC-CUSTODY-FOUNDATION-R1`: **ACCEPTED**.
   - `GOVERNANCE-STATE-HANDOFF-COMPACTION-R1`: **ACCEPTED** by the supervisor at
@@ -155,16 +160,17 @@ ACCEPTED_CHECKPOINT: 34d7d231d0875093bc2091f385c61cf35fa0b5cb
   stands). Recorded in contract §38 as `APPLIED / DEVELOPMENT DB VERIFIED /
   AWAITING SUPERVISOR ACCEPTANCE`. **No dependent `OC-C3-*` requirement is
   `SATISFIED`.**
-- **NEXT_AUTHORIZABLE_ACTION:** **supervisor review/acceptance of the applied
-  `db/75`+`db/76` development-database stack**. No existing canonical
-  phase/action ID names this environment step; it is recorded descriptively,
-  not as an invented parallel phase name, and does not itself authorize the
-  next. Only after supervisor acceptance of this environment application does
-  the later `PHASE-C3C-B` application-adaptation lot become authorizable. **No
-  product phase chains automatically**; `ACTIVE_PHASE`/`ACTIVE_PHASE_CONTRACT`
-  remain `NONE`. Deployment, activation, real snapshot/import, fence transition,
-  read switch, final ACL-closure invocation, cutover, and push beyond the
-  authorized `staging/dev` fast-forward remain unauthorized.
+- **NEXT_AUTHORIZABLE_ACTION:** the applied `db/75`+`db/76` development-database
+  stack was supervisor-accepted
+  (`docs/architecture/ORDEM_COMPRA_C3C_B_DB_PREREQUISITES_PHASE_CONTRACT.md`
+  §39); `PHASE-C3C-B` application-adaptation implementation is now
+  **authorized** and **active**, exactly as scoped by
+  `docs/architecture/ORDEM_COMPRA_C3C_B_PHASE_CONTRACT.md` §§1–24 as corrected
+  by its §32 (corrected application RPC targets, inactive signals, error
+  matrix, idempotency lifecycle). Deployment, activation, real snapshot/import,
+  fence transition, read switch, final ACL-closure invocation, cutover, C3D,
+  C4, C5, production access, and push beyond the authorized `staging/dev`
+  fast-forward remain unauthorized.
 
 ## Workspace and Git boundaries
 
@@ -284,16 +290,20 @@ and `docs/ledgers/G28_LEDGER.md`; in any wording divergence the archive/ledger w
 `PHASE-C3C-B-DB-PREREQ` implementation (migration `db/76`, three tests, applied
 `§R.29.7`/`§13.18`, contract §§35–37) is `CLOSED / TECHNICALLY ACCEPTED / LOCAL
 DB VERIFIED`, and `db/75`+`db/76` are now **applied to the development/legacy
-database `ucrjtfswnfdlxwtmxnoo`, inert** (`APPLIED / DEVELOPMENT DB VERIFIED /
-AWAITING SUPERVISOR ACCEPTANCE`, contract §38) — the next authorizable technical
-action is **supervisor review/acceptance of that environment application**.
-Beyond the one authorized fast-forward push to `staging/dev` recording it, no
-product implementation, migration, application, validator, lifecycle/schema
-semantic, or traceability change is authorized. C3C-B
-application implementation, C3D, staging application/validation, activation,
-deployment, real snapshot/import, fence transition, read switch, final
-ACL-closure invocation, cutover, C4, C5, production access, Supabase writes,
-`main`, `origin`/`production` remote mutation, and any further push all remain
+database `ucrjtfswnfdlxwtmxnoo`, inert and supervisor-accepted**
+(`docs/architecture/ORDEM_COMPRA_C3C_B_DB_PREREQUISITES_PHASE_CONTRACT.md`
+§39) — `PHASE-C3C-B` application compatibility/adaptation implementation is
+now **AUTHORIZED and ACTIVE**, scoped exactly by
+`docs/architecture/ORDEM_COMPRA_C3C_B_PHASE_CONTRACT.md` §§1–24 as corrected
+by its §32 (ten authorized product paths, eight authorized test paths, no new
+UI, no database or environment action — §8 of that contract). Beyond that
+authorized local application-adapter implementation and the one authorized
+fast-forward push to `staging/dev` recording each closeout, no migration,
+validator, lifecycle/schema semantic, or traceability change is authorized.
+C3D, staging application/validation of `db/76`, activation, deployment, real
+snapshot/import, fence transition, read switch, final ACL-closure invocation,
+cutover, C4, C5, production access, Supabase writes, `main`,
+`origin`/`production` remote mutation, and any further push all remain
 **UNAUTHORIZED**. Production `bhgifjrfagkzubpyqpew` must not be accessed.
 
 ## Accepted-phase index (concise)

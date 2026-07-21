@@ -2,7 +2,7 @@
 
 <!-- MATERIAL_PHASE_CONTRACT:BEGIN -->
 PHASE_ID: PHASE-C3C-B-DB-PREREQ
-STATUS: CLOSED / TECHNICALLY ACCEPTED / LOCAL DB VERIFIED / APPLIED TO DEVELOPMENT DB ucrjtfswnfdlxwtmxnoo (INERT) — AWAITING SUPERVISOR ACCEPTANCE OF THE ENVIRONMENT APPLICATION (§38)
+STATUS: CLOSED / TECHNICALLY ACCEPTED / LOCAL DB VERIFIED / DEVELOPMENT DB APPLIED AND VERIFIED INERT (§39)
 <!-- MATERIAL_PHASE_CONTRACT:END -->
 
 > **Role of this document.** This is a **material phase contract**, authored
@@ -2388,3 +2388,83 @@ cutover, C3D, C4, C5, production access, `main`, and `origin`/`production`
 remote mutation remain unauthorized; one fast-forward push to `staging/dev`
 records this closeout. Accounting subject:
 `docs: record C3C database development application`.
+
+## 39. Supervisor acceptance of the development-database application (governs on conflict)
+
+> **Append-only forward correction (`FORWARD_CORRECTION` per
+> `docs/governance/DOCUMENTATION_MODEL.md` §19; `PHASE_CLOSEOUT`-adjacent per
+> `docs/governance/AGENT_INSTRUCTIONS.md` §4).** Recorded under architect order
+> `docs: authorize C3C-B application adaptation` (PHASE-C3C-B application
+> adaptation + local application implementation). §§0–38 are preserved
+> verbatim (no history rewrite). **Where §§1–38 and this §39 conflict, §39
+> governs.** No technical validation is repeated by this section; no `db/76`,
+> test, environment, or product file is touched by this pass.
+
+### 39.1 Disposition
+
+The supervisor **ACCEPTS** the development-database application recorded in
+§38:
+
+- **Environment:** `ucrjtfswnfdlxwtmxnoo` (development/legacy database).
+- **Migrations:** `db/75_ordem_compra_c3c_inactive_cutover.sql` applied as
+  Supabase migration version `20260720234958`;
+  `db/76_ordem_compra_c3c_b_db_prerequisites.sql` applied as version
+  `20260720235820`. Migration history ends `74 → 75 → 76`, exactly one entry
+  each.
+- **State:** the database remains `legacy_active` / `read_authority='flat'`;
+  both `db/76` functions remain inert
+  (`listar_ordens_compra_fio_compat` raises `listar_compat_inativo`,
+  `SQLSTATE 55000`; `registrar_recebimento_ordem_compra_fio_compat` returns
+  `{ok:false, codigo:'recebimento_compat_inativo'}`), exactly as verified in
+  §38.3.
+- **Zero business-data mutation:** the seven business-table fingerprints
+  recorded in §38.3 remain accepted as-is; this acceptance does not re-verify
+  them and repeats no DB-backed test.
+
+### 39.2 What this acceptance does and does not authorize
+
+- Accepts §38's application/verification as the governing record of this
+  environment step.
+- Does **not** authorize staging validation/application, deployment,
+  activation, real snapshot/import, fence transition, read switch, final
+  ACL-closure invocation, cutover, C3D, C4, C5, production access, Supabase
+  writes, `main`, or `origin`/`production` remote mutation.
+- Does **not** mark `OC-C3-READ-001`, `OC-C3-WRITE-001`, or `OC-C3-COMPAT-001`
+  `SATISFIED` — the two database components remain inert-until-`canonical_active`;
+  the environment application changes no functional capability, only confirms
+  the accepted migrations are present and inert in `ucrjtfswnfdlxwtmxnoo`.
+- **Authorizes** `PHASE-C3C-B` (application compatibility/adaptation,
+  `docs/architecture/ORDEM_COMPRA_C3C_B_PHASE_CONTRACT.md`) to proceed,
+  subject to that contract's own §32 forward correction (recorded in the same
+  order/commit as this section) and its full existing scope, manifest, and
+  hard-stop boundaries (§§1–24 of that contract, unchanged by §32 except where
+  §32 explicitly corrects the application RPC targets, inactive signals, error
+  matrix, and idempotency lifecycle).
+
+### 39.3 Residual debt carried forward, unchanged
+
+- **13 post-REFUND-A unmapped flat rows** (`ordens_compra_fio` ids 153–165,
+  §38.5) remain a **DOCUMENTARY** real-cutover/C3D completeness finding — not
+  a blocker to `PHASE-C3C-B`, which operates entirely within the fixed
+  compat-mapped corpus and creates no bridge, backfill, or mapping row (§32 of
+  the companion contract, "binding corpus decision — FIXED corpus"; unchanged
+  by this section).
+- `tests/ordem-compra-c3c-inactive.integration.sql` /
+  `-concurrency.mjs` remain nonblocking C3C-A fixture debt (§36.6/§38.5),
+  carried forward unchanged.
+
+### 39.4 Final state and next authorizable action
+
+`LAST_ACCEPTED_PHASE: PHASE-C3C-B-DB-PREREQ` (unchanged — this section accepts
+an environment application, not a new product phase). `ACTIVE_PHASE:
+PHASE-C3C-B`. `ACTIVE_PHASE_CONTRACT:
+docs/architecture/ORDEM_COMPRA_C3C_B_PHASE_CONTRACT.md`. Technical checkpoint
+for this acceptance: `6cd70d7503f7f020b5c948c96fef0b095b0f1211` (HEAD at
+authoring time, `docs: record C3C database development application`).
+
+The next authorizable action is `PHASE-C3C-B` implementation, exactly as
+scoped by that contract's §§1–24 as corrected by its own §32, appended in the
+same pass as this section. Deployment, activation, real snapshot/import, fence
+transition, read switch, final ACL-closure invocation, cutover, C3D, C4, C5,
+production access, `main`, and `origin`/`production` remote mutation remain
+unauthorized.
