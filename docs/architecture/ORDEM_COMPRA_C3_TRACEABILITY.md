@@ -10,7 +10,7 @@ ACTIVE_TRACK: PURCHASE_ORDER_PHASE_C
 LAST_ACCEPTED_PHASE: PHASE-C3C-B-DB-PREREQ
 ACTIVE_PHASE: NONE
 CLOSED_MATERIAL_PHASES: PHASE-C3C-A, PHASE-C3C-B-DB-PREREQ
-NEXT_AUTHORIZABLE_ACTION: a separately authorized staging validation/application of db/76 (no existing canonical ID; descriptive only, see PHASE-C3C-B-DB-PREREQ closeout)
+NEXT_AUTHORIZABLE_ACTION: supervisor review/acceptance of the applied db/75+db/76 development-database stack (ucrjtfswnfdlxwtmxnoo; APPLIED / DEVELOPMENT DB VERIFIED / AWAITING SUPERVISOR ACCEPTANCE, contract §38; no existing canonical ID, descriptive only)
 VALIDATION_ACCOUNTING_SUBJECT: fix: harden spec custody validation
 VALIDATION_ACCOUNTING_SUBJECT_R2: fix: reject detached spec custody rows
 VALIDATION_ACCOUNTING_SUBJECT_R3: fix: distinguish prose from detached tables
@@ -23,6 +23,7 @@ VALIDATION_ACCOUNTING_SUBJECT_R9: docs: ratify C3C-B DB prerequisites architectu
 VALIDATION_ACCOUNTING_SUBJECT_R10: feat: add C3C-B database prerequisites
 VALIDATION_ACCOUNTING_SUBJECT_R11: test: complete C3C-B DB prerequisites validation
 VALIDATION_ACCOUNTING_SUBJECT_R12: docs: accept C3C-B DB prerequisites
+VALIDATION_ACCOUNTING_SUBJECT_R13: docs: record C3C database development application
 ```
 
 ## Accepted foundation
@@ -78,14 +79,20 @@ assert exact real historical aggregate values, a pre-existing characteristic
 of those files, not a `db/76` defect (§36.6) — recorded as nonblocking C3C-A
 fixture debt. Supervisor acceptance (§37) does not mark `OC-C3-COMPAT-001`
 `SATISFIED`; it remains `BLOCKED`; no dependent requirement is `SATISFIED`.
-The remaining sequence is: a separately authorized staging
-validation/application of `db/76` (no existing canonical ID names this step;
-recorded descriptively, contract §37.3); and only then the later `PHASE-C3C-B`
-application adaptation. C3D, staging application/validation, deployment,
-activation, real snapshot/import, fence transition, read switch, final
-ACL-closure invocation, cutover, C4, C5, production, Supabase writes, `main`,
-remotes, and any push beyond the authorized `staging/dev` fast-forward remain
-unauthorized.
+The remaining sequence is: **supervisor review/acceptance of the applied
+`db/75`+`db/76` development-database stack** — the separately authorized
+development/legacy-database (`ucrjtfswnfdlxwtmxnoo`) application of
+`db/75`→`db/76` was executed and verified inert on 2026-07-20 (`APPLIED /
+DEVELOPMENT DB VERIFIED / AWAITING SUPERVISOR ACCEPTANCE`, contract §38:
+Supabase versions `20260720234958`/`20260720235820`, `legacy_active`/`flat`,
+both `db/76` functions inert, zero business-data mutation, 13 unmapped
+post-REFUND-A legacy flat rows recorded as a DOCUMENTARY C3D completeness
+finding, no dependent requirement `SATISFIED`); and only after that acceptance
+the later `PHASE-C3C-B` application adaptation. C3D, further
+staging/deployment, activation, real snapshot/import, fence transition, read
+switch, final ACL-closure invocation, cutover, C4, C5, production, Supabase
+writes to any other target, `main`, remotes, and any push beyond the authorized
+`staging/dev` fast-forward remain unauthorized.
 
 ## Material phase contract reference
 

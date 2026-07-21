@@ -2,7 +2,7 @@
 
 <!-- MATERIAL_PHASE_CONTRACT:BEGIN -->
 PHASE_ID: PHASE-C3C-B-DB-PREREQ
-STATUS: CLOSED / TECHNICALLY ACCEPTED / LOCAL DB VERIFIED / NOT APPLIED TO STAGING DATABASE
+STATUS: CLOSED / TECHNICALLY ACCEPTED / LOCAL DB VERIFIED / APPLIED TO DEVELOPMENT DB ucrjtfswnfdlxwtmxnoo (INERT) — AWAITING SUPERVISOR ACCEPTANCE OF THE ENVIRONMENT APPLICATION (§38)
 <!-- MATERIAL_PHASE_CONTRACT:END -->
 
 > **Role of this document.** This is a **material phase contract**, authored
@@ -2253,3 +2253,138 @@ validation/application of `db/76`**. No existing canonical phase/action ID in
 this repository names that specific step; it is recorded here descriptively,
 per the closeout order, without creating architecture or authorizing
 execution. Accounting subject: `docs: accept C3C-B DB prerequisites`.
+
+## 38. Development-database application closeout (governs on conflict)
+
+> **Append-only forward correction (`FORWARD_CORRECTION` per
+> `docs/governance/DOCUMENTATION_MODEL.md` §19).** Recorded under the architect
+> order authorizing the controlled development/legacy-database application and
+> validation of the accepted inactive `db/75`→`db/76` stack. §§0–37 are
+> preserved verbatim (no history rewrite). **Where §§1–37 and this §38 conflict,
+> §38 governs.** This section records that the two migrations were applied to the
+> development/legacy database and verified inert. It records **no supervisor
+> acceptance** of this environment application (none has been issued), marks
+> **no** dependent requirement `SATISFIED`, and keeps
+> `ACTIVE_PHASE`/`ACTIVE_PHASE_CONTRACT` `NONE`.
+
+### 38.1 Authorization, target, and boundary
+
+The order authorized applying and validating the byte-exact accepted migrations
+`db/75_ordem_compra_c3c_inactive_cutover.sql` then
+`db/76_ordem_compra_c3c_b_db_prerequisites.sql` against the **only** authorized
+target `ucrjtfswnfdlxwtmxnoo` (DEVELOPMENT / LEGACY DATABASE, formerly
+"staging"), via Supabase MCP `apply_migration`. Production
+`bhgifjrfagkzubpyqpew`, `gqmpsxkxynrjvidfmojk`, `main`, `origin`, the production
+remote, Vercel, deployment, activation, and cutover were neither accessed nor
+executed. No migration SQL, product, UI, JS, HTML, CSS, or normative file was
+edited; the two migration files are byte-for-byte the accepted commit
+(SHA-256 `db/75` = `707012a5fdd9574c4e446e613393bee784b968bcdd94bb3fd71853491fd5b171`,
+`db/76` = `8ab2a80eab7a8dd91b3dde39f73469aa276593f0212289ca7a3816c363c1d2d4`).
+
+### 38.2 Application result
+
+- `db/75` applied as Supabase migration version **`20260720234958`**
+  (name `75_ordem_compra_c3c_inactive_cutover`); `db/76` applied as version
+  **`20260720235820`** (name `76_ordem_compra_c3c_b_db_prerequisites`).
+  Migration history now ends `74 → 75 → 76`, exactly one entry each.
+- Pre-application preflight confirmed the target ended at `74`, the cutover
+  singleton was unique and `legacy_active`/`not_started`, no `db/75`/`db/76`
+  object pre-existed, no productive receipt state existed, no conflicting
+  lock/transaction was present, and the 51 compat mappings were structurally
+  valid.
+
+### 38.3 Verified inert invariants (development DB)
+
+- Cutover singleton remains `status=legacy_active`, `read_authority=flat`,
+  `cutover_generation=null`, `reconciliation_status=not_started`, and every
+  snapshot/import/final-ACL/activation/`productive_receipt_started_at` field
+  `null`.
+- `db/75` installed its full inactive foundation (source-snapshot table, guard
+  triggers on 8 tables + the command-state guard, renamed `_c3c_*_impl`
+  functions, inactive receipt/reversal wrappers, canonical normalized reader,
+  owner-only fence/snapshot/import/reconcile/ACL-closure/activate/rollback
+  commands, `c3c` hash + state constraints, and the REVOKEs); the legacy flat
+  authority on `ordens_compra_fio` is **byte-identical** to pre-application
+  grants; owner-only cutover commands are `postgres`-only; the wrappers return
+  `recebimento_canonico_inativo` and the normalized reader raises
+  `canonical_reader_inactive` (SQLSTATE 55000).
+- `db/76` installed exactly the two functions
+  (`listar_ordens_compra_fio_compat(UUID,BIGINT)` — STABLE;
+  `registrar_recebimento_ordem_compra_fio_compat(BIGINT,NUMERIC,DATE,TEXT,TEXT,TEXT)`
+  — VOLATILE), both SECURITY DEFINER / `search_path=''` / owner `postgres` /
+  `authenticated` EXECUTE, plus the additive `idempotency_namespace` extension
+  of both `ordem_compra_recebimentos_c3a_namespace_check` (now admits
+  `legacy_compat_receipt_v1`) and `ordem_compra_recebimentos_c3c_hash_check`
+  (32-hex for `legacy_compat_receipt_v1`). `comando_tipo`
+  (`…_c3a_tipo_check`) is **unchanged**; no `recebimento_compat` type is admitted
+  or written; no bridge trigger on `ordens_compra_fio` (only
+  `trg_c3c_protected_mutation_guard`); no backfill, no `native_bridge` mapping
+  (`ordem_compra_item_compat_fio` stays 51). Both functions are **inert**: the
+  reader raises `listar_compat_inativo` and the writer returns
+  `recebimento_compat_inativo`, each with zero mutation, while `legacy_active`/
+  `flat`.
+- **Zero business-data mutation:** seven business-table fingerprints
+  (`ordens_compra_fio`, `ordem_compra`, `ordem_compra_item`,
+  `ordem_compra_item_alocacao`, `ordem_compra_item_compat_fio`,
+  `necessidade_compra_fio`, `saldo_fios`) are byte-for-byte identical
+  pre-/post-`db/75` and post-`db/76`; the receipt/ledger/movement tables remain
+  empty (0 rows); `productive_receipt_started_at` was never created.
+
+### 38.4 Validation run / not run
+
+- **Run (PASS):** `node scripts/validate-spec-custody.mjs` (PASS);
+  `git diff --check` / `git diff --cached --check` (clean); the directly
+  dependent static smoke suite (`ordem-compra-c3c-b-db-prerequisites.smoke.js`,
+  `ordem-compra-c3c-inactive.smoke.js`, `ordem-compra-native-receipt.smoke.js`,
+  `ordem-compra.smoke.js`) **49/49 PASS**; both concurrency files parse
+  (`node --check`). The inert behavior of all four new/changed functions was
+  additionally validated **directly against the real corpus** on the shared dev
+  DB (§38.3).
+- **NOT RUN (with accepted local PASS reference):** the four DB-backed tests —
+  `tests/ordem-compra-c3c-b-db-prerequisites.integration.sql` /
+  `-concurrency.mjs` and `tests/ordem-compra-c3c-inactive.integration.sql` /
+  `-concurrency.mjs`. Although each `.sql` is `BEGIN…ROLLBACK`, all four
+  **exercise the explicitly prohibited machinery** — C3C-A calls
+  `ordem_compra_c3c_fence_and_snapshot` + `ordem_compra_c3c_import_and_reconcile`;
+  C3C-B flips the singleton to `canonical_active`/`canonical` and performs
+  productive Component B writes — so running them against the shared development
+  database would breach this action's prohibitions (activation, read switch,
+  fence, snapshot, import, productive receipt), even transactionally, and the
+  concurrency `.mjs` files further require a direct multi-session connection the
+  MCP path does not provide. Their accepted local PASS (§36.3:
+  `C3C_B_INTEGRATION_PASS`, `C3C_B_CONCURRENCY_PASS`) stands and was not
+  destructively duplicated.
+
+### 38.5 Findings
+
+- **Unmapped post-REFUND-A legacy flat rows = 13** (`ordens_compra_fio` ids
+  153–165; all `status_administrativo=rascunho`, `status=pendente`,
+  `status_recebimento=nao_recebido`, `kg_recebido` null; OPs 97/98/99;
+  `data_pedido=2026-07-18`). These carry no receipt data and violate no `db/75`
+  or `db/76` migration precondition (install applies no mapping-count gate; the
+  51-count check lives only in the un-invoked owner-only fence command).
+  Classification **DOCUMENTARY** — a real-cutover/C3D completeness finding
+  (consistent with §34.5/§34.6), not a blocker.
+- **C3C-A DB-backed fixture-debt disposition after access to the real corpus:**
+  the real historical corpus is present in `ucrjtfswnfdlxwtmxnoo`, so the
+  data-availability limitation that made `…c3c-inactive.integration.sql`/
+  `-concurrency.mjs` unexecutable against a synthetic corpus (§36.6) is
+  resolvable in principle here; however executing them requires the prohibited
+  fence/snapshot/import/activation path (§38.4), so they remain **NOT RUN** in
+  this environment action and are deferred to a future separately-authorized
+  cutover-rehearsal action. They remain nonblocking C3C-A fixture debt.
+
+### 38.6 Status and next authorizable action
+
+`STATUS`: **`APPLIED / DEVELOPMENT DB VERIFIED / AWAITING SUPERVISOR
+ACCEPTANCE`** (machine-readable marker at the head of this file updated
+accordingly). No dependent `OC-C3-READ-001`/`OC-C3-WRITE-001`/`OC-C3-COMPAT-001`
+requirement is `SATISFIED`; `ACTIVE_PHASE`/`ACTIVE_PHASE_CONTRACT` remain
+`NONE`. `NEXT_AUTHORIZABLE_ACTION`: **supervisor review/acceptance of this
+development-database application**, after which `PHASE-C3C-B` application
+adaptation may become authorizable. Deployment, activation, real
+snapshot/import, fence transition, read switch, final ACL-closure invocation,
+cutover, C3D, C4, C5, production access, `main`, and `origin`/`production`
+remote mutation remain unauthorized; one fast-forward push to `staging/dev`
+records this closeout. Accounting subject:
+`docs: record C3C database development application`.

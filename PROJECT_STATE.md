@@ -20,7 +20,7 @@ LAST_ACCEPTED_PHASE: PHASE-C3C-B-DB-PREREQ
 ACTIVE_PHASE: NONE
 ACTIVE_PHASE_CONTRACT: NONE
 ACTIVE_TRACK: PURCHASE_ORDER_PHASE_C
-NEXT_AUTHORIZABLE_ACTION: a separately authorized staging validation/application of db/76 (no existing canonical ID; descriptive only, see PHASE-C3C-B-DB-PREREQ closeout)
+NEXT_AUTHORIZABLE_ACTION: supervisor review/acceptance of the applied db/75+db/76 development-database stack (ucrjtfswnfdlxwtmxnoo; APPLIED / DEVELOPMENT DB VERIFIED / AWAITING SUPERVISOR ACCEPTANCE; no existing canonical ID, descriptive only); only then may PHASE-C3C-B application adaptation become authorizable
 GOVERNING_SPEC: docs/architecture/ORDEM_COMPRA_LIFECYCLE_SPEC_PROPOSED.md
 TECHNICAL_CONTRACT: docs/architecture/PEDIDO_OP_SCHEMA_CONTRACT.md
 SEQUENCE_AUTHORITY: docs/architecture/PEDIDO_PRODUCTION_FLOW_BACKLOG.md
@@ -141,16 +141,30 @@ ACCEPTED_CHECKPOINT: 34d7d231d0875093bc2091f385c61cf35fa0b5cb
     `-concurrency.mjs` remain nonblocking C3C-A fixture debt. No dependent
     C3C-B requirement is `SATISFIED`; `ACTIVE_PHASE`/`ACTIVE_PHASE_CONTRACT`
     remain `NONE`.
-- **NEXT_AUTHORIZABLE_ACTION:** a separately authorized **staging
-  validation/application of `db/76`**. No existing canonical phase/action ID
-  in this repository names this specific step; it is recorded descriptively
-  (contract §37.3), not as an invented parallel phase name, and does not
-  itself authorize execution. Only after that separate authorization does the
-  later `PHASE-C3C-B` application-adaptation lot become authorizable. **No
+- **`DEVELOPMENT-DB APPLICATION` (`db/75`→`db/76`, 2026-07-20):** the separately
+  authorized development/legacy-database application has been **executed and
+  verified** against `ucrjtfswnfdlxwtmxnoo` — `db/75` applied as version
+  `20260720234958`, `db/76` as version `20260720235820`, both **inert**; the
+  database remains `legacy_active`/`flat`; migration history now ends at `76`
+  after `75` after `74`; zero business-data mutation; no fence/import/ACL
+  closure/activation/read switch/cutover/productive receipt/deployment/product
+  adaptation. Static validation clean (`validate-spec-custody` PASS, static
+  smoke 49/49, `git diff --check` clean); DB-backed integration/concurrency
+  tests **NOT RUN** against the shared dev DB (they exercise the prohibited
+  fence/import/activation machinery; accepted local PASS in contract §36
+  stands). Recorded in contract §38 as `APPLIED / DEVELOPMENT DB VERIFIED /
+  AWAITING SUPERVISOR ACCEPTANCE`. **No dependent `OC-C3-*` requirement is
+  `SATISFIED`.**
+- **NEXT_AUTHORIZABLE_ACTION:** **supervisor review/acceptance of the applied
+  `db/75`+`db/76` development-database stack**. No existing canonical
+  phase/action ID names this environment step; it is recorded descriptively,
+  not as an invented parallel phase name, and does not itself authorize the
+  next. Only after supervisor acceptance of this environment application does
+  the later `PHASE-C3C-B` application-adaptation lot become authorizable. **No
   product phase chains automatically**; `ACTIVE_PHASE`/`ACTIVE_PHASE_CONTRACT`
-  remain `NONE`. Staging application, deployment, activation, real
-  snapshot/import, cutover, and push beyond the authorized `staging/dev`
-  fast-forward remain unauthorized.
+  remain `NONE`. Deployment, activation, real snapshot/import, fence transition,
+  read switch, final ACL-closure invocation, cutover, and push beyond the
+  authorized `staging/dev` fast-forward remain unauthorized.
 
 ## Workspace and Git boundaries
 
@@ -177,10 +191,21 @@ ACCEPTED_CHECKPOINT: 34d7d231d0875093bc2091f385c61cf35fa0b5cb
   rows excluded at `M3` (must not be pruned without a separate architect
   decision). Purchase-order phases through F3R1 were validated here.
 - **PROHIBITED / never accessed:** production `bhgifjrfagkzubpyqpew`.
-- **Migrations `db/71`–`db/74`** applied and verified in `ucrjtfswnfdlxwtmxnoo`;
-  **`db/75` (C3C-A)** is locally verified only, **inactive, not applied to
-  staging**. The staging-only stack (`db/12`/`21`/`30`/`49`–`57`) is not applied
-  in production by this chain.
+- **Migrations `db/71`–`db/74`** applied and verified in `ucrjtfswnfdlxwtmxnoo`.
+  **`db/75` (C3C-A inactive cutover) and `db/76` (C3C-B DB prerequisites) are now
+  applied to `ucrjtfswnfdlxwtmxnoo`** (2026-07-20; Supabase migration versions
+  `20260720234958` and `20260720235820`), installed **inert**: the database
+  remains `legacy_active` with `flat` read authority, both `db/76` functions
+  return only their inactive signals (`listar_compat_inativo` /
+  `recebimento_compat_inativo`), and no fence, snapshot, import, ACL closure,
+  activation, read switch, cutover, productive receipt, deployment, or product
+  adaptation occurred. All business tables are byte-for-byte unchanged (seven
+  table fingerprints identical pre/post; `ordem_compra_item_compat_fio` = 51
+  mappings intact). Status `APPLIED / DEVELOPMENT DB VERIFIED / AWAITING
+  SUPERVISOR ACCEPTANCE`
+  (`docs/architecture/ORDEM_COMPRA_C3C_B_DB_PREREQUISITES_PHASE_CONTRACT.md`
+  §38). The staging-only stack (`db/12`/`21`/`30`/`49`–`57`) is not applied in
+  production by this chain.
 - **Supabase MCP:** verified read-only against `gqmpsxkxynrjvidfmojk`; the
   legacy management-scoped credential is still write-capable from `M2`/`M3` —
   **standing reminder: flip back to read-only.**
@@ -257,13 +282,14 @@ and `docs/ledgers/G28_LEDGER.md`; in any wording divergence the archive/ledger w
 ## Product and environment prohibitions
 
 `PHASE-C3C-B-DB-PREREQ` implementation (migration `db/76`, three tests, applied
-`§R.29.7`/`§13.18`, contract §§35–37) is **`CLOSED / TECHNICALLY ACCEPTED /
-LOCAL DB VERIFIED / NOT APPLIED TO STAGING DATABASE`** — the next authorizable
-technical action is a separately authorized staging validation/application of
-`db/76` (contract §37.3). Beyond that
-single authorized implementation and its one authorized fast-forward push to
-`staging/dev`, no product implementation, migration, application, validator,
-lifecycle/schema semantic, or traceability change is authorized. C3C-B
+`§R.29.7`/`§13.18`, contract §§35–37) is `CLOSED / TECHNICALLY ACCEPTED / LOCAL
+DB VERIFIED`, and `db/75`+`db/76` are now **applied to the development/legacy
+database `ucrjtfswnfdlxwtmxnoo`, inert** (`APPLIED / DEVELOPMENT DB VERIFIED /
+AWAITING SUPERVISOR ACCEPTANCE`, contract §38) — the next authorizable technical
+action is **supervisor review/acceptance of that environment application**.
+Beyond the one authorized fast-forward push to `staging/dev` recording it, no
+product implementation, migration, application, validator, lifecycle/schema
+semantic, or traceability change is authorized. C3C-B
 application implementation, C3D, staging application/validation, activation,
 deployment, real snapshot/import, fence transition, read switch, final
 ACL-closure invocation, cutover, C4, C5, production access, Supabase writes,

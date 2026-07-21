@@ -8,6 +8,40 @@
 > `PROJECT_STATE.md`. Phase sequence, dependencies, backlog items, and accepted
 > architecture in this file remain authoritative; live operational status does not.
 
+# Update 2026-07-20 - db/75+db/76 Applied to Development Database (Inert)
+
+Phase: development/legacy-database application of the accepted inactive C3C stack
+(descriptive environment action; no existing canonical phase ID).
+Type: controlled environment action, DEVELOPMENT DB (`ucrjtfswnfdlxwtmxnoo`), no
+product/normative/migration-file change.
+
+The separately authorized development/legacy-database application applied the
+byte-exact accepted migrations `db/75_ordem_compra_c3c_inactive_cutover.sql`
+(Supabase version `20260720234958`) then
+`db/76_ordem_compra_c3c_b_db_prerequisites.sql` (version `20260720235820`) to
+`ucrjtfswnfdlxwtmxnoo` via Supabase MCP `apply_migration`. Both installed
+**inert**: the cutover singleton stays `legacy_active`/`flat` with every
+snapshot/import/ACL/activation/`productive_receipt_started_at` field null;
+`db/76`'s two functions return only their inactive signals
+(`listar_compat_inativo` / `recebimento_compat_inativo`); `comando_tipo` is
+unchanged (no `recebimento_compat`); no bridge trigger, no backfill, no new
+compat mapping (`ordem_compra_item_compat_fio` = 51); seven business-table
+fingerprints are byte-for-byte unchanged. No fence, snapshot, import, ACL
+closure, activation, read switch, cutover, productive receipt, deployment, or
+product adaptation occurred; production / `main` / `origin` were not accessed.
+Static validation clean (`validate-spec-custody` PASS, static smoke 49/49,
+`git diff --check` clean); the four DB-backed tests were **NOT RUN** against the
+shared dev DB because they exercise the prohibited fence/import/activation
+machinery (accepted local PASS in contract §36 stands). 13 unmapped
+post-REFUND-A legacy flat rows (`ordens_compra_fio` ids 153–165, all
+draft/pending/never-received) are recorded as a DOCUMENTARY real-cutover/C3D
+completeness finding, not a blocker. `STATUS: APPLIED / DEVELOPMENT DB VERIFIED /
+AWAITING SUPERVISOR ACCEPTANCE` (contract §38). No dependent `OC-C3-*`
+requirement is `SATISFIED`. This entry changes no backlog sequence, dependency,
+or accepted architecture. Live state, next authorizable action (supervisor
+review/acceptance of this environment application), and debts remain solely
+owned by `PROJECT_STATE.md`.
+
 # Update 2026-07-20 - PHASE-C3C-B-DB-PREREQ DB-Backed Validation Completion
 
 Phase: `PHASE-C3C-B-DB-PREREQ` (validation continuation)

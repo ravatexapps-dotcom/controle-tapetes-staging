@@ -5605,3 +5605,86 @@ MATERIAL_DIVERGENCES: NONE
   authorization does the later `PHASE-C3C-B` application-adaptation lot
   become authorizable. No push beyond the authorized `staging/dev`
   fast-forward is authorized by this entry.
+
+## 2026-07-20 — DEVELOPMENT-DATABASE APPLICATION (db/75→db/76) — APPLIED / DEVELOPMENT DB VERIFIED / AWAITING SUPERVISOR ACCEPTANCE
+
+- **Order:** controlled development/legacy-database application and validation of
+  the accepted inactive C3C stack (`db/75_ordem_compra_c3c_inactive_cutover.sql`
+  then `db/76_ordem_compra_c3c_b_db_prerequisites.sql`). Descriptive environment
+  action — no existing canonical phase ID, none invented. **This entry records
+  execution and verification, NOT supervisor acceptance (none has been issued).**
+- **Entry checkpoint:** branch `dev`, HEAD
+  `11cee2224b8c7c39ab939881b151a96281f2a85e`, local + remote `staging/dev` equal
+  to HEAD, preserved residue modified `.gitignore` only (plus the untracked
+  `.mcp.json` auth-setup artifact created at the user's request to point the
+  Supabase MCP at `ucrjtfswnfdlxwtmxnoo`; never staged). Matched the expected
+  baseline.
+- **Target:** `ucrjtfswnfdlxwtmxnoo` (DEVELOPMENT / LEGACY DATABASE, formerly
+  "staging") only. Production `bhgifjrfagkzubpyqpew` / `gqmpsxkxynrjvidfmojk`,
+  `main`, `origin`, the production remote, Vercel, deployment, activation, and
+  cutover were neither accessed nor executed.
+- **Applied (byte-exact, via Supabase MCP `apply_migration`, no `execute_sql`
+  for DDL):** `db/75` (SHA-256 `707012a5…1fd5b171`) as version `20260720234958`;
+  `db/76` (SHA-256 `8ab2a80e…363c1d2d4`) as version `20260720235820`.
+  Reproductions were hash-verified byte-identical to the repository files before
+  application. Migration history now ends `74 → 75 → 76`, exactly one entry each.
+- **Verified inert (development DB):** cutover singleton `legacy_active`/`flat`,
+  `cutover_generation` null, every snapshot/import/final-ACL/activation/
+  `productive_receipt_started_at` field null; `db/75` full inactive foundation
+  installed (guard triggers on 8 tables + command-state guard, renamed
+  `_c3c_*_impl`, inactive wrappers returning `recebimento_canonico_inativo`,
+  normalized reader raising `canonical_reader_inactive`, owner-only cutover
+  commands `postgres`-only, legacy `ordens_compra_fio` grants byte-identical to
+  pre-application); `db/76` two functions installed
+  (`listar_ordens_compra_fio_compat` STABLE raising `listar_compat_inativo`,
+  `registrar_recebimento_ordem_compra_fio_compat` VOLATILE returning
+  `recebimento_compat_inativo`, both SECURITY DEFINER / `search_path=''` / owner
+  `postgres` / `authenticated` EXECUTE) plus the additive
+  `idempotency_namespace` extension of both `…_c3a_namespace_check` and
+  `…_c3c_hash_check`; `comando_tipo` unchanged (no `recebimento_compat`); no
+  bridge trigger, no backfill, no `native_bridge` mapping
+  (`ordem_compra_item_compat_fio` = 51). Seven business-table fingerprints
+  byte-for-byte unchanged pre/post; receipt/ledger/movement tables remain empty.
+- **Validation run (PASS):** `node scripts/validate-spec-custody.mjs` PASS;
+  `git diff --check` / `git diff --cached --check` clean; static smoke suite
+  49/49 PASS; both concurrency files parse (`node --check`); inert behavior of
+  all four functions validated directly on the real corpus.
+- **Validation NOT RUN:** the four DB-backed tests
+  (`…c3c-b-db-prerequisites.integration.sql`/`-concurrency.mjs`,
+  `…c3c-inactive.integration.sql`/`-concurrency.mjs`) — each exercises the
+  explicitly prohibited fence/snapshot/import/activation/read-switch/productive-
+  receipt machinery (C3C-A calls `fence_and_snapshot` + `import_and_reconcile`;
+  C3C-B flips to `canonical_active` and performs productive writes) and/or needs
+  a direct multi-session connection the MCP path lacks; accepted local PASS
+  (contract §36.3) stands and was not destructively duplicated.
+- **Findings:** 13 unmapped post-REFUND-A legacy flat rows (`ordens_compra_fio`
+  ids 153–165, all `rascunho`/`pendente`/`nao_recebido`, `kg_recebido` null,
+  OPs 97/98/99) — DOCUMENTARY real-cutover/C3D completeness finding, violating no
+  migration precondition. C3C-A DB-backed fixture debt: the real corpus is now
+  present but the tests still require the prohibited activation/import path, so
+  they remain NOT RUN, nonblocking, deferred to a future authorized cutover
+  rehearsal.
+- **Files materially changed (this pass, documentation-only):**
+  `PROJECT_STATE.md`; `AGENT_HANDOFF.md`;
+  `docs/architecture/ORDEM_COMPRA_C3C_B_DB_PREREQUISITES_PHASE_CONTRACT.md`
+  (§38 appended, top `STATUS` marker updated);
+  `docs/architecture/ORDEM_COMPRA_C3_TRACEABILITY.md`;
+  `docs/architecture/PEDIDO_PRODUCTION_FLOW_BACKLOG.md`; this ledger. No
+  `db/*.sql`, test, product, runtime, or configuration file modified;
+  `.gitignore` and `.mcp.json` are excluded from the commit.
+- **State after this pass:** `LAST_ACCEPTED_PHASE: PHASE-C3C-B-DB-PREREQ`.
+  `ACTIVE_PHASE: NONE`. `ACTIVE_PHASE_CONTRACT: NONE`. No dependent `OC-C3-*`
+  requirement is `SATISFIED`. No phase chains automatically.
+- **Validation (documentation-proportional):** `git diff --check` /
+  `git diff --cached --check` clean; `node scripts/validate-spec-custody.mjs`
+  PASS.
+- **Exact accounting subject:** `docs: record C3C database development application`.
+- **Status after this commit:** `APPLIED / DEVELOPMENT DB VERIFIED / AWAITING
+  SUPERVISOR ACCEPTANCE`.
+- **NEXT_AUTHORIZABLE_ACTION:** supervisor review/acceptance of this
+  development-database application. Only after that acceptance does the later
+  `PHASE-C3C-B` application adaptation become authorizable. Deployment,
+  activation, real snapshot/import, fence transition, read switch, final
+  ACL-closure invocation, cutover, C3D, C4, C5, production access, `main`, and
+  `origin`/`production` remote mutation remain unauthorized; one fast-forward
+  push to `staging/dev` records this closeout.

@@ -60,12 +60,19 @@
   to `db/76`) — recorded as nonblocking C3C-A fixture debt. Static smoke
   suites PASS (49/49). `db/76` is **not applied to any staging database**.
   Supervisor acceptance does not mark any dependent requirement `SATISFIED`.
-- **Next authorizable action:** a separately authorized **staging
-  validation/application of `db/76`** (no existing canonical phase/action ID
-  names this step; recorded descriptively per contract §37.3). Only after
-  that separate authorization does the later `PHASE-C3C-B`
-  application-adaptation lot become authorizable. **C3C-B application
-  implementation remains UNAUTHORIZED and has no ACTIVE phase contract**
+- **Development-DB application (`db/75`→`db/76`, 2026-07-20):** the separately
+  authorized development/legacy-database application has been **executed and
+  verified** against `ucrjtfswnfdlxwtmxnoo` — `db/75` (version `20260720234958`)
+  and `db/76` (version `20260720235820`), both **inert** (`legacy_active`/`flat`;
+  inactive-signal-only readers/writers; zero business-data mutation). Recorded in
+  `docs/architecture/ORDEM_COMPRA_C3C_B_DB_PREREQUISITES_PHASE_CONTRACT.md` §38 as
+  `APPLIED / DEVELOPMENT DB VERIFIED / AWAITING SUPERVISOR ACCEPTANCE`.
+- **Next authorizable action:** **supervisor review/acceptance of that applied
+  `db/75`+`db/76` development-database stack** (no existing canonical
+  phase/action ID names this environment step; recorded descriptively). Only
+  after supervisor acceptance does the later `PHASE-C3C-B` application-adaptation
+  lot become authorizable. **C3C-B application implementation remains
+  UNAUTHORIZED and has no ACTIVE phase contract**
   (`ACTIVE_PHASE`/`ACTIVE_PHASE_CONTRACT` remain `NONE`); no product phase
   chains automatically; the current product phase remains `NONE`.
 
@@ -129,8 +136,11 @@ Full matrix and normative anchors: `docs/architecture/ORDEM_COMPRA_C3_TRACEABILI
 - **DEVELOPMENT / legacy (formerly "staging"):** `ucrjtfswnfdlxwtmxnoo` —
   retained development database and historical record for the excluded audit
   trails/test rows per `M3`. Purchase-order phases through F3R1 were validated
-  here; `db/75` (C3C-A) is **locally verified only, inactive, not applied to
-  staging**.
+  here; **`db/75` (C3C-A) and `db/76` (C3C-B DB prerequisites) are now applied
+  (2026-07-20; versions `20260720234958`/`20260720235820`), installed inert —
+  `legacy_active`/`flat`, both `db/76` functions returning only their inactive
+  signals, zero business-data mutation** (contract §38; `APPLIED / DEVELOPMENT
+  DB VERIFIED / AWAITING SUPERVISOR ACCEPTANCE`).
 - **PROHIBITED / never accessed:** production `bhgifjrfagkzubpyqpew`.
 
 ## Push, remote, main and deployment limits
