@@ -22,14 +22,22 @@
 --     EXECUTE for PUBLIC/anon/authenticated/service_role; Component A/B keep
 --     authenticated EXECUTE and deny PUBLIC/anon/service_role; no SECURITY
 --     DEFINER search_path/owner changes during the simulation;
---   * a TEST-ONLY canonical_active role-matrix fixture drives Component A and
---     Component B across the full eight-actor matrix (postgres owner, PUBLIC,
---     anon, authenticated admin / matching supplier / non-matching supplier /
---     without-supplier, service_role) with no productive receipt and PONR NULL;
---   * ROLLBACK restores the exact pre-simulation catalog + business state.
+--   * WHILE the simulated closure is still materially active in the SAME outer
+--     transaction, a TEST-ONLY canonical_active role-matrix fixture (created in a
+--     nested SAVEPOINT c3dd_runtime_fixture) drives Component A and Component B
+--     across the full eight-actor matrix (postgres owner, PUBLIC, anon,
+--     authenticated admin / matching supplier / non-matching supplier /
+--     without-supplier, service_role) with no productive receipt and PONR NULL —
+--     so the runtime role matrix is bound to the live post-closure ACL/policy
+--     state, not run after it was rolled back (PHASE-C3D-D correction);
+--   * ROLLBACK TO SAVEPOINT restores the synthetic cutover markers while the
+--     simulated closure stays active; the outer ROLLBACK then restores the exact
+--     pre-simulation catalog + business + cutover state byte-for-byte.
 --
 -- The real closure command public.ordem_compra_c3c_close_final_acl(BIGINT) is
--- NEVER invoked; final_acl_closed_at is proven NULL throughout the simulation;
+-- NEVER invoked; final_acl_closed_at is proven NULL throughout the simulation
+-- (and again after the savepoint rollback); the synthetic canonical_active
+-- markers exist only inside SAVEPOINT c3dd_runtime_fixture;
 -- public.ordem_compra_c3c_activate is never called; no productive receipt ever
 -- commits (all Component B writes run on rolled-back savepoints).
 --
@@ -400,10 +408,15 @@ END
 $precap$;
 
 -- ===========================================================================
--- 4. SIMULATED CLOSURE — reproduce db/75 close_final_acl's ACL effects EXACTLY
---    inside ONE explicit transaction, WITHOUT invoking close_final_acl, without
---    setting final_acl_closed_at, without activate/import/commit. ROLLBACK at
---    the end restores the exact pre-simulation catalog.
+-- 4. SIMULATED CLOSURE + BOUND RUNTIME ROLE MATRIX — reproduce db/75
+--    close_final_acl's ACL effects EXACTLY inside ONE outer transaction, WITHOUT
+--    invoking close_final_acl, without setting final_acl_closed_at, without
+--    activate/import/commit. The runtime role matrix (section 4.12+) then runs in
+--    a nested SAVEPOINT of THIS SAME transaction, so it executes while the
+--    simulated post-closure ACL/policy state is still active (the PHASE-C3D-D
+--    correction: the runtime matrix is no longer split into a second transaction
+--    that would run after the closure had already been rolled back). The final
+--    outer ROLLBACK restores the exact pre-simulation catalog + business state.
 -- ===========================================================================
 BEGIN;
 
@@ -641,49 +654,90 @@ BEGIN
 END
 $s_end$;
 
-ROLLBACK;  -- discard the entire simulated closure
-
--- ===========================================================================
--- 5. Post-rollback restoration proof: the real closure was never invoked, so
---    the ROLLBACK must restore the exact pre-simulation catalog and business
---    state byte-for-byte.
--- ===========================================================================
-DO $restore$
-DECLARE v RECORD;
+-- 4.10 PRE-RUNTIME PROOF — before the runtime matrix, prove the simulated
+--      closure is still materially active in THIS SAME transaction (not relying
+--      only on the earlier per-object matrices): zero PUBLIC policy on the 14
+--      protected tables, no targeted direct table/sequence privilege, Component
+--      A/B authenticated-only EXECUTE, and final_acl_closed_at still NULL.
+DO $pre_runtime$
+DECLARE v_pub INT; v_role TEXT; s RECORD; p TEXT;
+  v_roles TEXT[] := ARRAY['public','anon','authenticated','service_role'];
 BEGIN
-  SELECT * INTO v FROM c3dd_capture WHERE label='pre_sim';
-  IF pg_temp.c3dd_fp_all() IS DISTINCT FROM v.fp_all THEN
-    RAISE EXCEPTION 'FAIL[5/restore]: table/sequence/column/function/policy ACL fingerprint not byte-identical after rollback';
-  END IF;
-  IF pg_temp.c3dd_fp_business() IS DISTINCT FROM v.fp_business THEN
-    RAISE EXCEPTION 'FAIL[5/restore]: business-data fingerprint changed across the simulation';
-  END IF;
-  IF (SELECT md5(c::text) FROM public.ordem_compra_cutover c WHERE c.id=1) IS DISTINCT FROM v.cutover_md5 THEN
-    RAISE EXCEPTION 'FAIL[5/restore]: cutover singleton changed across the simulation';
-  END IF;
-  IF (SELECT final_acl_closed_at FROM public.ordem_compra_cutover WHERE id=1) IS NOT NULL THEN
-    RAISE EXCEPTION 'FAIL[5/restore]: final_acl_closed_at not NULL after rollback';
-  END IF;
-  RAISE NOTICE 'PASS[5/restore]: post-rollback ACL/policy/function fingerprint, business-data fingerprint, and cutover singleton byte-identical to pre-simulation; final_acl_closed_at NULL';
-END
-$restore$;
+  SELECT count(*) INTO v_pub
+  FROM pg_policy pol JOIN pg_class c ON c.oid=pol.polrelid
+  JOIN pg_namespace n ON n.oid=c.relnamespace AND n.nspname='public'
+  WHERE 0::oid = ANY(pol.polroles) AND c.relname IN (SELECT name FROM c3dd_tables);
+  IF v_pub <> 0 THEN RAISE EXCEPTION 'FAIL[4/pre-runtime]: % PUBLIC policy remain on the 14 protected tables', v_pub; END IF;
 
--- ===========================================================================
--- 6. RUNTIME ROLE MATRIX — TEST-ONLY CANONICAL-ACTIVE ROLE-MATRIX FIXTURE.
+  FOREACH v_role IN ARRAY v_roles LOOP
+    IF has_table_privilege(v_role,'public.ordens_compra_fio','SELECT')
+       OR has_table_privilege(v_role,'public.ordens_compra_fio','INSERT')
+       OR has_table_privilege(v_role,'public.ordens_compra_fio','UPDATE')
+       OR has_table_privilege(v_role,'public.ordens_compra_fio','DELETE') THEN
+      RAISE EXCEPTION 'FAIL[4/pre-runtime]: % retains direct privilege on ordens_compra_fio', v_role;
+    END IF;
+  END LOOP;
+
+  FOR s IN SELECT name FROM c3dd_seqs LOOP
+    FOREACH v_role IN ARRAY v_roles LOOP
+      FOREACH p IN ARRAY ARRAY['USAGE','SELECT','UPDATE'] LOOP
+        IF has_sequence_privilege(v_role,'public.'||s.name,p) THEN
+          RAISE EXCEPTION 'FAIL[4/pre-runtime]: % retains % on sequence %', v_role, p, s.name;
+        END IF;
+      END LOOP;
+    END LOOP;
+  END LOOP;
+
+  IF NOT has_function_privilege('authenticated','public.listar_ordens_compra_fio_compat(uuid,bigint)','EXECUTE')
+     OR has_function_privilege('public','public.listar_ordens_compra_fio_compat(uuid,bigint)','EXECUTE')
+     OR has_function_privilege('anon','public.listar_ordens_compra_fio_compat(uuid,bigint)','EXECUTE')
+     OR has_function_privilege('service_role','public.listar_ordens_compra_fio_compat(uuid,bigint)','EXECUTE')
+     OR NOT has_function_privilege('authenticated','public.registrar_recebimento_ordem_compra_fio_compat(bigint,numeric,date,text,text,text)','EXECUTE')
+     OR has_function_privilege('public','public.registrar_recebimento_ordem_compra_fio_compat(bigint,numeric,date,text,text,text)','EXECUTE')
+     OR has_function_privilege('anon','public.registrar_recebimento_ordem_compra_fio_compat(bigint,numeric,date,text,text,text)','EXECUTE')
+     OR has_function_privilege('service_role','public.registrar_recebimento_ordem_compra_fio_compat(bigint,numeric,date,text,text,text)','EXECUTE') THEN
+    RAISE EXCEPTION 'FAIL[4/pre-runtime]: Component A/B EXECUTE is not authenticated-only before the runtime fixture';
+  END IF;
+
+  IF (SELECT final_acl_closed_at FROM public.ordem_compra_cutover WHERE id=1) IS NOT NULL THEN
+    RAISE EXCEPTION 'FAIL[4/pre-runtime]: final_acl_closed_at is not NULL before the runtime fixture';
+  END IF;
+  RAISE NOTICE 'PASS[4/pre-runtime]: before the runtime matrix the simulated closure is still materially active (0 PUBLIC policy on the 14 tables; no targeted direct table/sequence privilege; Component A/B authenticated-only EXECUTE; final_acl_closed_at NULL)';
+END
+$pre_runtime$;
+
+-- 4.11 Capture the pre-fixture ACL/business/cutover state (STILL inside the outer
+--      closure simulation, so its fp_all reflects the revoked/dropped closure ACL)
+--      so the savepoint rollback below can be proven byte-identical. This row is
+--      created BEFORE the savepoint, so ROLLBACK TO SAVEPOINT preserves it; the
+--      outer ROLLBACK discards it (only 'pre_sim', captured in autocommit,
+--      survives to the final restoration proof).
+INSERT INTO c3dd_capture
+SELECT 'pre_fixture',
+       pg_temp.c3dd_fp_all(),
+       pg_temp.c3dd_fp_of(ARRAY(SELECT name FROM c3dd_tables WHERE NOT grant_revoked)),
+       pg_temp.c3dd_fp_nonpub_pol(),
+       pg_temp.c3dd_fp_business(),
+       (SELECT md5(c::text) FROM public.ordem_compra_cutover c WHERE c.id=1),
+       (SELECT COALESCE(final_acl_closed_at::text,'NULL') FROM public.ordem_compra_cutover WHERE id=1);
+
+-- 4.12 RUNTIME ROLE MATRIX — TEST-ONLY CANONICAL-ACTIVE FIXTURE, inside a nested
+--      SAVEPOINT of the SAME outer closure-simulation transaction. Because the
+--      revokes and PUBLIC-policy drops of section 4.2 stay in force, the whole
+--      role matrix executes under the live simulated post-closure ACL/policy state.
 --
---    NOTE (deviation, reported): making Component A/B active requires the cutover
---    singleton at status='canonical_active'. The installed db/75
---    ordem_compra_cutover_c3c_state_check makes canonical_active UNREPRESENTABLE
---    unless final_acl_closed_at IS NOT NULL AND canonical_activated_at IS NOT NULL.
---    A canonical_active fixture therefore cannot literally keep final_acl_closed_at
---    NULL; this section sets synthetic non-null final_acl_closed_at/
---    canonical_activated_at ONLY to satisfy that CHECK. This is NOT a real closure:
---    ordem_compra_c3c_close_final_acl / _activate are never invoked, no ACL is
---    revoked here, and the whole fixture is rolled back. The closure-simulation
---    section 4 (the requirement that final_acl_closed_at stays NULL) uses
---    maintenance-independent legacy_active state and keeps it NULL throughout.
--- ===========================================================================
-BEGIN;
+--      NOTE (deviation, reported): making Component A/B active requires the cutover
+--      singleton at status='canonical_active'. The installed db/75
+--      ordem_compra_cutover_c3c_state_check makes canonical_active UNREPRESENTABLE
+--      unless final_acl_closed_at IS NOT NULL AND canonical_activated_at IS NOT NULL.
+--      A canonical_active fixture therefore cannot literally keep final_acl_closed_at
+--      NULL; the fixture sets synthetic non-null final_acl_closed_at/
+--      canonical_activated_at ONLY to satisfy that CHECK, ONLY inside this savepoint.
+--      This is NOT a real closure/activation: ordem_compra_c3c_close_final_acl /
+--      _activate are never invoked, the synthetic markers live entirely inside the
+--      savepoint, and ROLLBACK TO SAVEPOINT proves final_acl_closed_at NULL again
+--      while the outer simulated closure remains active.
+SAVEPOINT c3dd_runtime_fixture;
 DO $fixture$
 DECLARE v_rows INT;
 BEGIN
@@ -802,6 +856,40 @@ BEGIN
   RAISE NOTICE 'PASS[6/A/public]: PUBLIC/unauthenticated has no EXECUTE on Component A (function-privilege denial)';
 END
 $a_public$;
+
+-- 6/mid-runtime PROOF — during the runtime matrix (between Component A and
+--   Component B), assert AGAIN that the simulated post-closure ACL/policy/grant
+--   state is still active, rather than relying only on the earlier catalog
+--   checks: zero PUBLIC policy, no authenticated direct table privilege, no
+--   reappearance of a revoked cutover/receipt privilege, Component A/B still
+--   authenticated-only EXECUTE.
+DO $mid_runtime$
+DECLARE v_pub INT;
+BEGIN
+  SELECT count(*) INTO v_pub
+  FROM pg_policy pol JOIN pg_class c ON c.oid=pol.polrelid
+  JOIN pg_namespace n ON n.oid=c.relnamespace AND n.nspname='public'
+  WHERE 0::oid = ANY(pol.polroles) AND c.relname IN (SELECT name FROM c3dd_tables);
+  IF v_pub <> 0 THEN RAISE EXCEPTION 'FAIL[6/mid-runtime]: % PUBLIC policy reappeared during the runtime matrix', v_pub; END IF;
+  IF has_table_privilege('authenticated','public.ordens_compra_fio','SELECT')
+     OR has_table_privilege('authenticated','public.ordens_compra_fio','UPDATE')
+     OR has_table_privilege('authenticated','public.ordens_compra_fio','INSERT') THEN
+    RAISE EXCEPTION 'FAIL[6/mid-runtime]: authenticated regained a direct privilege on ordens_compra_fio during the runtime matrix';
+  END IF;
+  IF has_table_privilege('authenticated','public.ordem_compra_recebimentos','INSERT')
+     OR has_table_privilege('service_role','public.ordem_compra_recebimentos','SELECT')
+     OR has_table_privilege('authenticated','public.ordem_compra_cutover','SELECT') THEN
+    RAISE EXCEPTION 'FAIL[6/mid-runtime]: a revoked cutover/receipt-table privilege reappeared during the runtime matrix';
+  END IF;
+  IF NOT has_function_privilege('authenticated','public.listar_ordens_compra_fio_compat(uuid,bigint)','EXECUTE')
+     OR has_function_privilege('anon','public.listar_ordens_compra_fio_compat(uuid,bigint)','EXECUTE')
+     OR NOT has_function_privilege('authenticated','public.registrar_recebimento_ordem_compra_fio_compat(bigint,numeric,date,text,text,text)','EXECUTE')
+     OR has_function_privilege('anon','public.registrar_recebimento_ordem_compra_fio_compat(bigint,numeric,date,text,text,text)','EXECUTE') THEN
+    RAISE EXCEPTION 'FAIL[6/mid-runtime]: Component A/B EXECUTE drifted during the runtime matrix';
+  END IF;
+  RAISE NOTICE 'PASS[6/mid-runtime]: mid-runtime re-check — the simulated post-closure ACL/policy/grant state is still active while the Component A/B role matrix executes';
+END
+$mid_runtime$;
 
 -- 6.B Component B runtime matrix (rolled-back savepoints; unique idempotency keys).
 --     Each mutating probe runs inside its own SAVEPOINT rolled back afterward, so
@@ -934,34 +1022,100 @@ BEGIN
 END
 $ponr$;
 
-ROLLBACK;  -- discard the TEST-ONLY canonical_active fixture
+-- 6.D NO-DRIFT PROOF — during the runtime matrix, no business/receipt/ledger/
+--     movement/inventory/grant/function-metadata/policy drift occurred (compared
+--     to the pre-fixture capture); the ONLY change is the intended synthetic
+--     cutover fixture fields, which live entirely inside this savepoint.
+DO $no_drift$
+DECLARE v RECORD;
+BEGIN
+  SELECT * INTO v FROM c3dd_capture WHERE label='pre_fixture';
+  IF pg_temp.c3dd_fp_business() IS DISTINCT FROM v.fp_business THEN
+    RAISE EXCEPTION 'FAIL[6/no-drift]: business/receipt/ledger/movement fingerprint changed during the runtime matrix';
+  END IF;
+  IF pg_temp.c3dd_fp_all() IS DISTINCT FROM v.fp_all THEN
+    RAISE EXCEPTION 'FAIL[6/no-drift]: ACL/policy/function-metadata fingerprint changed during the runtime matrix';
+  END IF;
+  RAISE NOTICE 'PASS[6/no-drift]: during the runtime matrix no business/receipt/ledger/movement/inventory/grant/function-metadata/policy drift occurred; the only change is the intended synthetic cutover fixture fields inside the savepoint';
+END
+$no_drift$;
+
+-- 6.E ROLLBACK TO SAVEPOINT — revert the synthetic canonical_active markers while
+--     the outer simulated closure (revokes + dropped PUBLIC policies) stays active.
+ROLLBACK TO SAVEPOINT c3dd_runtime_fixture;
+
+-- 6.F POST-SAVEPOINT PROOF — synthetic markers NULL again, cutover byte-identical
+--     to its pre-fixture state, and the simulated closure still materially active
+--     (0 PUBLIC policy, no direct table privilege, Component A/B authenticated-only,
+--     ACL/policy + business fingerprints unchanged from pre-fixture).
+DO $post_sp$
+DECLARE v RECORD; v_pub INT; v_role TEXT;
+  v_roles TEXT[] := ARRAY['public','anon','authenticated','service_role'];
+BEGIN
+  SELECT * INTO v FROM c3dd_capture WHERE label='pre_fixture';
+  IF (SELECT md5(c::text) FROM public.ordem_compra_cutover c WHERE c.id=1) IS DISTINCT FROM v.cutover_md5 THEN
+    RAISE EXCEPTION 'FAIL[6/post-sp]: cutover singleton not byte-identical to its pre-fixture state after savepoint rollback';
+  END IF;
+  IF (SELECT final_acl_closed_at FROM public.ordem_compra_cutover WHERE id=1) IS NOT NULL
+     OR (SELECT canonical_activated_at FROM public.ordem_compra_cutover WHERE id=1) IS NOT NULL
+     OR (SELECT productive_receipt_started_at FROM public.ordem_compra_cutover WHERE id=1) IS NOT NULL THEN
+    RAISE EXCEPTION 'FAIL[6/post-sp]: a synthetic cutover marker survived the savepoint rollback';
+  END IF;
+  SELECT count(*) INTO v_pub
+  FROM pg_policy pol JOIN pg_class c ON c.oid=pol.polrelid
+  JOIN pg_namespace n ON n.oid=c.relnamespace AND n.nspname='public'
+  WHERE 0::oid = ANY(pol.polroles) AND c.relname IN (SELECT name FROM c3dd_tables);
+  IF v_pub <> 0 THEN RAISE EXCEPTION 'FAIL[6/post-sp]: PUBLIC policy reappeared after savepoint rollback'; END IF;
+  FOREACH v_role IN ARRAY v_roles LOOP
+    IF has_table_privilege(v_role,'public.ordens_compra_fio','SELECT')
+       OR has_table_privilege(v_role,'public.ordens_compra_fio','UPDATE') THEN
+      RAISE EXCEPTION 'FAIL[6/post-sp]: % regained a direct privilege on ordens_compra_fio after savepoint rollback', v_role;
+    END IF;
+  END LOOP;
+  IF pg_temp.c3dd_fp_all() IS DISTINCT FROM v.fp_all THEN
+    RAISE EXCEPTION 'FAIL[6/post-sp]: ACL/policy/function-grant fingerprint drifted across the savepoint (Component A/B grants must stay authenticated-only)';
+  END IF;
+  IF pg_temp.c3dd_fp_business() IS DISTINCT FROM v.fp_business THEN
+    RAISE EXCEPTION 'FAIL[6/post-sp]: business fingerprint changed across the savepoint';
+  END IF;
+  RAISE NOTICE 'PASS[6/post-sp]: savepoint rollback restored the cutover markers (final_acl_closed_at/canonical_activated_at/productive_receipt_started_at NULL, cutover byte-identical to pre-fixture) while the simulated closure (0 PUBLIC policy, no direct table privilege, Component A/B authenticated-only) and business fingerprints stay active';
+END
+$post_sp$;
+
+RELEASE SAVEPOINT c3dd_runtime_fixture;  -- savepoint no longer needed
+
+ROLLBACK;  -- discard the entire outer closure simulation
 
 -- ===========================================================================
--- 7. Post-fixture restoration + lock/backend cleanup evidence.
+-- 7. Post-outer-rollback restoration proof: the real closure was never invoked,
+--    so the outer ROLLBACK must restore the exact pre-simulation catalog +
+--    business + cutover state byte-for-byte.
 -- ===========================================================================
-DO $restore2$
+DO $restore_final$
 DECLARE v RECORD; v_state TEXT;
 BEGIN
   SELECT * INTO v FROM c3dd_capture WHERE label='pre_sim';
+  IF pg_temp.c3dd_fp_all() IS DISTINCT FROM v.fp_all THEN
+    RAISE EXCEPTION 'FAIL[7/restore]: table/sequence/column/function/policy ACL fingerprint not byte-identical after outer rollback';
+  END IF;
+  IF pg_temp.c3dd_fp_business() IS DISTINCT FROM v.fp_business THEN
+    RAISE EXCEPTION 'FAIL[7/restore]: business-data fingerprint changed across the simulation';
+  END IF;
+  IF (SELECT md5(c::text) FROM public.ordem_compra_cutover c WHERE c.id=1) IS DISTINCT FROM v.cutover_md5 THEN
+    RAISE EXCEPTION 'FAIL[7/restore]: cutover singleton not byte-identical after outer rollback';
+  END IF;
   SELECT status||'/'||read_authority||'/'||reconciliation_status INTO v_state FROM public.ordem_compra_cutover WHERE id=1;
   IF v_state <> 'legacy_active/flat/not_started' THEN
     RAISE EXCEPTION 'FAIL[7/restore]: cutover singleton not restored to legacy_active/flat/not_started (got %)', v_state;
   END IF;
-  IF (SELECT final_acl_closed_at FROM public.ordem_compra_cutover WHERE id=1) IS NOT NULL THEN
-    RAISE EXCEPTION 'FAIL[7/restore]: final_acl_closed_at not NULL after fixture rollback';
+  IF (SELECT final_acl_closed_at FROM public.ordem_compra_cutover WHERE id=1) IS NOT NULL
+     OR (SELECT canonical_activated_at FROM public.ordem_compra_cutover WHERE id=1) IS NOT NULL
+     OR (SELECT productive_receipt_started_at FROM public.ordem_compra_cutover WHERE id=1) IS NOT NULL THEN
+    RAISE EXCEPTION 'FAIL[7/restore]: a cutover marker (final_acl_closed_at/canonical_activated_at/productive_receipt_started_at) is not NULL after outer rollback';
   END IF;
-  IF (SELECT productive_receipt_started_at FROM public.ordem_compra_cutover WHERE id=1) IS NOT NULL THEN
-    RAISE EXCEPTION 'FAIL[7/restore]: productive_receipt_started_at not NULL after fixture rollback';
-  END IF;
-  IF pg_temp.c3dd_fp_business() IS DISTINCT FROM v.fp_business THEN
-    RAISE EXCEPTION 'FAIL[7/restore]: business-data fingerprint changed across the runtime matrix';
-  END IF;
-  IF pg_temp.c3dd_fp_all() IS DISTINCT FROM v.fp_all THEN
-    RAISE EXCEPTION 'FAIL[7/restore]: ACL/policy/function fingerprint changed across the runtime matrix';
-  END IF;
-  RAISE NOTICE 'PASS[7/restore]: after fixture rollback the cutover singleton is legacy_active/flat/not_started, final_acl_closed_at/PONR NULL, business + ACL fingerprints byte-identical to pre-simulation';
+  RAISE NOTICE 'PASS[7/restore]: after the outer rollback the table/column/sequence/function grants+metadata, all RLS policies, the 14 protected tables, business/receipt/ledger/movement data and the cutover singleton are byte-identical to pre-simulation; cutover=legacy_active/flat/not_started; final_acl_closed_at/canonical_activated_at/productive_receipt_started_at NULL';
 END
-$restore2$;
+$restore_final$;
 
 DO $locks$
 DECLARE v_n INT;

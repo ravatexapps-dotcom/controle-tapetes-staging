@@ -7140,3 +7140,78 @@ product file they depend on, was modified by this pass or the prior one):
   ACL-closure invocation, cutover, C4, C5, production access, Supabase write,
   `main`, `origin`/`production` remote mutation, or any further push beyond the
   one authorized `staging/dev` fast-forward for this pass is authorized.
+
+## 2026-07-21 — PHASE-C3D-D — Targeted evidence correction (bind runtime role matrix to the simulated ACL closure)
+
+- **Authorization:** the "PHASE-C3D-D — TARGETED CORRECTION — BIND RUNTIME ROLE
+  MATRIX TO THE SIMULATED ACL CLOSURE" order (forward correction of the §V
+  evidence). Entry checkpoint `b808a5ea832b5038495afe80e492de724835cae6`, branch
+  `dev`, `staging/dev` equal to HEAD at entry. Primary requirement
+  `OC-C3D-ACL-001` (§13.15.2). Protected residue preserved and untouched:
+  `M .gitignore`, `?? .codex/config.toml`, `?? .mcp.json`.
+- **CHANGES_REQUIRED finding (BLOCKING):** the §V implementation proved the
+  catalog post-closure matrix (table/column/sequence/policy/function + four-actor
+  direct-table `42501` probes) and proved the Component A/B runtime role matrix,
+  but the two executed in **separate transactions** (one `BEGIN … ROLLBACK` for
+  the simulation, a second independent `BEGIN … ROLLBACK` for the runtime
+  fixture/matrix). The simulated ACL closure had therefore already been rolled
+  back before the runtime matrix ran, so the runtime matrix never executed while
+  the revokes and PUBLIC-policy drops were in force.
+- **Artifact:** exactly one modified file
+  `tests/ordem-compra-c3d-acl.integration.sql` (the sole authorized technical
+  artifact). No `db/*.sql` (db/75/db/76 byte-unchanged),
+  `scripts/c3d/bootstrap-disposable-cluster.mjs`, any other test, script,
+  validator, fixture, or product file was modified.
+- **Corrected structure:** one outer closure-simulation transaction (`BEGIN`)
+  holding the manual db/75 ACL revokes + PUBLIC-policy drops and the
+  already-passing catalog matrices; a pre-runtime proof that the closure is still
+  materially active; **one nested savepoint `c3dd_runtime_fixture`** setting the
+  minimum valid synthetic `canonical_active` state (status/read_authority/
+  reconciliation_status/cutover_generation 930004001/synthetic
+  `final_acl_closed_at`+`canonical_activated_at`/`productive_receipt_started_at`
+  NULL) required by the installed db/75 CHECK **without invoking**
+  `ordem_compra_c3c_close_final_acl` or `ordem_compra_c3c_activate`; the complete
+  Component A/B eight-actor runtime role matrix executed while the simulated
+  closure remains active, with a mid-runtime re-assertion and a no-drift proof;
+  `ROLLBACK TO SAVEPOINT c3dd_runtime_fixture` restoring the synthetic markers
+  (proven NULL again, cutover byte-identical to pre-fixture) while the simulated
+  ACL stays active; `RELEASE SAVEPOINT`; and the outer `ROLLBACK` restoring the
+  pre-simulation catalog + business + cutover state byte-for-byte.
+- **Evidence:** executed twice against two independently bootstrapped fresh
+  disposable, isolated local PostgreSQL 18.4 clusters (same ephemeral uncommitted
+  Supabase-platform preamble + classification-shape-only synthetic 64-row corpus
+  as the §V rehearsal; `db/67` self-check 64/27/12/13/12; reconciliation
+  64/51/51/51/51). Both runs emitted `C3D_D_ACL_INTEGRATION_PASS` under the
+  corrected structure (36 `PASS[...]` assertions incl. the new pre-runtime,
+  mid-runtime, no-drift, post-savepoint-rollback, and post-outer-rollback
+  proofs). After each run the bootstrap `stop()` proved postmaster-PID absence,
+  port closure, and data-directory removal (all `true`); a separate connection
+  after `psql` exit proved the captured test-backend PID absent from
+  `pg_stat_activity` with zero advisory locks. `node --check` bootstrap +
+  deploy-smoke; `node --test` deploy-smoke (24/24) and receipt-cutover (43/43)
+  PASS; `node scripts/validate-spec-custody.mjs` PASS; `git diff --check` /
+  `git diff --cached --check` clean. Full mandatory Node suite differential
+  (detached temporary worktree at baseline
+  `b808a5ea832b5038495afe80e492de724835cae6`, `node --test tests/**/*.js`):
+  baseline 141 failing identities, final 122, **added (final − baseline) =
+  empty** (the corrected artifact is a `.sql` file, never run by the Node suite;
+  the 19 baseline-only identities are pre-existing suite non-determinism).
+  Validator self-test: the known active-contract fixture-harness failure only,
+  byte-identical material output on baseline and final (paths aside); validator/
+  fixtures unmodified. The temporary worktree and every scratch
+  orchestrator/preamble/corpus artifact were removed and proven absent before
+  commit.
+- **Disposition:** `PHASE-C3D-D` = `IMPLEMENTED / LOCALLY VERIFIED /
+  CHANGES_REQUIRED RESOLVED / AWAITING SUPERVISOR ACCEPTANCE` — not
+  self-accepted. `OC-C3D-ACL-001` = `PARTIALLY_SATISFIED` (not advanced);
+  `OC-C3D-FENCE-001` = `SATISFIED`; `OC-C3D-LOCK-001` = `PARTIALLY_SATISFIED`.
+  `PHASE-C3D-E`/`C3D-F` remain NOT AUTHORIZED. Full detail: contract §W.
+- **Exact accounting subject:** `fix: bind C3D ACL role matrix to closure simulation`.
+- **NEXT_AUTHORIZABLE_ACTION:** read-only supervisor review of the corrected
+  `PHASE-C3D-D` evidence (contract §V, corrected §W). No `PHASE-C3D-E`/`C3D-F`
+  implementation, environment mutation, branch creation, staging
+  validation/application of `db/76`, activation, real snapshot/import, fence
+  transition, read switch, final ACL-closure invocation, cutover, C4, C5,
+  production access, Supabase write, `main`, `origin`/`production` remote
+  mutation, or any further push beyond the one authorized `staging/dev`
+  fast-forward for this pass is authorized.

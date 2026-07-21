@@ -8,6 +8,43 @@
 > `PROJECT_STATE.md`. Phase sequence, dependencies, backlog items, and accepted
 > architecture in this file remain authoritative; live operational status does not.
 
+# Update 2026-07-21 - PHASE-C3D-D Targeted Evidence Correction (bind runtime role matrix to the simulated ACL closure)
+
+Phase: `PHASE-C3D-D` (targeted correction). Historical closeout note — live
+state belongs to `PROJECT_STATE.md`.
+
+A read-only supervisor review of the `PHASE-C3D-D` evidence at checkpoint
+`b808a5ea832b5038495afe80e492de724835cae6` returned `CHANGES_REQUIRED` on one
+BLOCKING evidence defect: the catalog post-closure matrix and the Component A/B
+runtime role matrix were each individually proven, but they executed in
+**separate transactions**, so the runtime role matrix ran *after* the simulated
+ACL closure had already been rolled back — it therefore never ran while the
+revokes and PUBLIC-policy drops were in force. The correction (contract §W)
+rebuilds the single authorized file
+`tests/ordem-compra-c3d-acl.integration.sql` into **one outer
+closure-simulation transaction** carrying the manual db/75 ACL revokes +
+PUBLIC-policy drops and the already-passing catalog matrices, with the TEST-ONLY
+`canonical_active` fixture and the complete Component A/B runtime role matrix now
+inside **one nested savepoint (`c3dd_runtime_fixture`)** of that same
+transaction; the matrix executes while the simulated closure remains active
+(added pre-runtime, mid-runtime, no-drift, post-savepoint-rollback, and
+post-outer-rollback proofs). `ROLLBACK TO SAVEPOINT` restores the synthetic
+canonical_active markers (proven NULL again) while the simulated ACL stays
+active; the outer `ROLLBACK` restores the original catalog byte-for-byte.
+`ordem_compra_c3c_close_final_acl` and `_activate` are still never invoked;
+`db/75`/`db/76` and every other file are byte-unchanged (only the one test file
+changed). Re-validated across two fresh disposable local PostgreSQL 18.4
+clusters (`C3D_D_ACL_INTEGRATION_PASS` both), full process/port/directory
+cleanup and separate-connection backend absence proven; deploy smoke 24/24 and
+receipt-cutover smoke 43/43 PASS; `validate-spec-custody` PASS; full-suite
+failing-identity differential vs. `b808a5e` = empty added; validator self-test
+the identical pre-existing fixture-harness failure only. `PHASE-C3D-D` is
+`IMPLEMENTED / LOCALLY VERIFIED / CHANGES_REQUIRED RESOLVED / AWAITING SUPERVISOR
+ACCEPTANCE` — not self-accepted; `OC-C3D-ACL-001` remains
+`PARTIALLY_SATISFIED`. Sequence/architecture in this file are unchanged. Full
+evidence: contract §W and `docs/ledgers/G28_LEDGER.md` (2026-07-21, this
+correction's own entry).
+
 # Update 2026-07-21 - PHASE-C3D-D Effective ACL and Role-Matrix Rehearsal
 
 Phase: `PHASE-C3D-D` (the fourth `PHASE-C3D` sublot). Historical closeout

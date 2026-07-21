@@ -20,7 +20,7 @@ LAST_ACCEPTED_PHASE: PHASE-C3C-B
 ACTIVE_PHASE: PHASE-C3D
 ACTIVE_PHASE_CONTRACT: docs/architecture/ORDEM_COMPRA_C3D_PHASE_CONTRACT.md
 ACTIVE_TRACK: PURCHASE_ORDER_PHASE_C
-NEXT_AUTHORIZABLE_ACTION: read-only supervisor review of the PHASE-C3D-D effective-ACL and role-matrix rehearsal evidence (docs/architecture/ORDEM_COMPRA_C3D_PHASE_CONTRACT.md §V); PHASE-C3D-E and every later C3D sublot remain unauthorized
+NEXT_AUTHORIZABLE_ACTION: read-only supervisor review of the corrected PHASE-C3D-D effective-ACL and role-matrix rehearsal evidence (docs/architecture/ORDEM_COMPRA_C3D_PHASE_CONTRACT.md §V, corrected §W — runtime role matrix bound to the simulated ACL closure); PHASE-C3D-E and every later C3D sublot remain unauthorized
 GOVERNING_SPEC: docs/architecture/ORDEM_COMPRA_LIFECYCLE_SPEC_PROPOSED.md
 TECHNICAL_CONTRACT: docs/architecture/PEDIDO_OP_SCHEMA_CONTRACT.md
 SEQUENCE_AUTHORITY: docs/architecture/PEDIDO_PRODUCTION_FLOW_BACKLOG.md
@@ -381,8 +381,9 @@ ACCEPTED_CHECKPOINT: 6fd63a56a123d6d006353c6ae629611cbc7c01e9
   evidence advanced `OC-C3D-FENCE-001` to `SATISFIED` (traceability updated);
   `OC-C3D-ACL-001`/`OC-C3D-LOCK-001` unchanged.
 - **`PHASE-C3D-D` (effective ACL and role-matrix rehearsal):** `IMPLEMENTED /
-  LOCALLY VERIFIED / AWAITING SUPERVISOR ACCEPTANCE` (contract §V), entry
-  checkpoint `6fd63a56a123d6d006353c6ae629611cbc7c01e9`. One authorized file,
+  LOCALLY VERIFIED / CHANGES_REQUIRED RESOLVED / AWAITING SUPERVISOR ACCEPTANCE`
+  (contract §V, corrected §W), correction entry checkpoint
+  `b808a5ea832b5038495afe80e492de724835cae6`. One authorized file,
   `tests/ordem-compra-c3d-acl.integration.sql`, was validated across two fresh
   disposable local PostgreSQL 18.4 clusters: the exact 14-table / 7-sequence /
   11-column / function inventories; an empirical `pg_get_functiondef` proof that
@@ -409,11 +410,29 @@ ACCEPTED_CHECKPOINT: 6fd63a56a123d6d006353c6ae629611cbc7c01e9
   advisory locks). Full-suite differential (detached worktree vs. entry
   checkpoint): final minus baseline = empty. `OC-C3D-ACL-001` remains
   `PARTIALLY_SATISFIED` — not self-accepted; `OC-C3D-FENCE-001` is `SATISFIED`
-  (via §U); `OC-C3D-LOCK-001` unchanged. See contract §V and
-  `docs/ledgers/G28_LEDGER.md` for the full closeout.
-- **NEXT_AUTHORIZABLE_ACTION:** **read-only supervisor review of the
+  (via §U); `OC-C3D-LOCK-001` unchanged. **Targeted correction (contract §W,
+  entry checkpoint `b808a5e`):** a read-only supervisor review of the §V evidence
+  returned `CHANGES_REQUIRED` on one blocking evidence defect — the catalog
+  post-closure matrix and the Component A/B runtime role matrix were each proven
+  but ran in **separate transactions**, so the runtime matrix executed *after*
+  the simulated ACL closure had already been rolled back. The correction rebuilds
+  `tests/ordem-compra-c3d-acl.integration.sql` as **one outer closure-simulation
+  transaction** carrying the manual db/75 ACL revokes + PUBLIC-policy drops, with
+  the TEST-ONLY `canonical_active` fixture and the complete Component A/B runtime
+  matrix now inside **one nested savepoint (`c3dd_runtime_fixture`)** of that same
+  transaction, so the runtime matrix executes while the simulated closure remains
+  active (new pre-runtime, mid-runtime, no-drift, post-savepoint, and
+  post-outer-rollback proofs). `ROLLBACK TO SAVEPOINT` restores the synthetic
+  markers (proven NULL again) while the simulated ACL stays active; the outer
+  `ROLLBACK` restores the original catalog byte-for-byte. No `db/*.sql` (db/75/76
+  unchanged), script, other test, or product file was touched; `close_final_acl`
+  and `activate` are still never invoked. Re-validated across two fresh disposable
+  PostgreSQL 18.4 clusters; full-suite failing-identity differential vs. `b808a5e`
+  = empty added. `OC-C3D-ACL-001` remains `PARTIALLY_SATISFIED` (not advanced).
+  See contract §V/§W and `docs/ledgers/G28_LEDGER.md` for the full closeout.
+- **NEXT_AUTHORIZABLE_ACTION:** **read-only supervisor review of the corrected
   `PHASE-C3D-D` evidence** (`docs/architecture/ORDEM_COMPRA_C3D_PHASE_CONTRACT.md`
-  §V). `PHASE-C3D-E`/`C3D-F` implementation, environment mutation,
+  §V, corrected §W). `PHASE-C3D-E`/`C3D-F` implementation, environment mutation,
   branch creation, staging validation/application of `db/76`, deployment,
   activation, real snapshot/import, fence transition, read switch, final
   ACL-closure invocation, cutover, C4, C5, production access, Supabase write,
