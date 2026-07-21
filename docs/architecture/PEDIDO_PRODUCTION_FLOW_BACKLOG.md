@@ -8,6 +8,46 @@
 > `PROJECT_STATE.md`. Phase sequence, dependencies, backlog items, and accepted
 > architecture in this file remain authoritative; live operational status does not.
 
+# Update 2026-07-21 - PHASE-C3D-D Effective ACL and Role-Matrix Rehearsal
+
+Phase: `PHASE-C3D-D` (the fourth `PHASE-C3D` sublot). Historical closeout
+note — live state belongs to `PROJECT_STATE.md`.
+
+This pass first recorded the supervisor's acceptance of `PHASE-C3D-C` (fence
+and pre-PONR rollback rehearsal) — `CLOSED / TECHNICALLY ACCEPTED / LOCALLY
+VERIFIED` at accepted checkpoint `6fd63a56a123d6d006353c6ae629611cbc7c01e9`
+(contract §U), advancing `OC-C3D-FENCE-001` to `SATISFIED`. It then executed
+`PHASE-C3D-D` (primary requirement `OC-C3D-ACL-001`, §13.15.2), adding one
+authorized file `tests/ordem-compra-c3d-acl.integration.sql` validated across
+two fresh disposable local PostgreSQL 18.4 clusters (entry checkpoint
+`6fd63a56a123d6d006353c6ae629611cbc7c01e9`): the exact 14-table / 7-sequence /
+11-column / function inventories; an empirical `pg_get_functiondef` proof that
+the installed `ordem_compra_c3c_close_final_acl(bigint)` embeds the exact db/75
+table/column/sequence revokes and the `0::oid = ANY (p.polroles)` PUBLIC-policy
+drop loop; a simulated closure reproducing those ACL effects in one rolled-back
+transaction WITHOUT invoking `close_final_acl`, with `final_acl_closed_at`
+proven NULL throughout; post-simulation table (7 grant-revoked → zero for
+public/anon/authenticated/service_role; 7 retained canonical tables' grants
+byte-identical), column, sequence, RLS-policy (zero PUBLIC / non-PUBLIC
+byte-identical), and function (owner-only no-EXECUTE vs Component A/B
+authenticated-only) matrices; four-actor direct-table `42501` probes; a
+Component A/B eight-actor runtime matrix under a TEST-ONLY canonical_active
+fixture with `productive_receipt_started_at` NULL and no productive receipt;
+and byte-identical catalog/business rollback. A reported DOCUMENTARY deviation
+(§V.3): the db/75 `canonical_active` CHECK requires `final_acl_closed_at IS NOT
+NULL`, so the TEST-ONLY runtime fixture sets synthetic markers (rolled back)
+while the closure simulation keeps it NULL and never invokes the real closure.
+Both runs proved full process/port/directory cleanup and separate-connection
+backend absence; the read-only `ucrjtfswnfdlxwtmxnoo` inspection was
+byte-identical before/after; full-suite differential against the entry
+checkpoint empty; validator self-test the identical pre-existing failure only.
+`PHASE-C3D-D` is `IMPLEMENTED / LOCALLY VERIFIED / AWAITING SUPERVISOR
+ACCEPTANCE` — not self-accepted; `OC-C3D-ACL-001` remains
+`PARTIALLY_SATISFIED`; `OC-C3D-FENCE-001` is `SATISFIED` (via §U);
+`OC-C3D-LOCK-001` unchanged. `PHASE-C3D-E` and `C3D-F` remain unauthorized.
+Sequence/architecture in this file are unchanged. Full evidence: contract
+§U/§V and `docs/ledgers/G28_LEDGER.md` (2026-07-21, this pass's own entries).
+
 # Update 2026-07-21 - PHASE-C3D-C Targeted Evidence Correction
 
 Phase: `PHASE-C3D-C` targeted evidence correction. Historical closeout
