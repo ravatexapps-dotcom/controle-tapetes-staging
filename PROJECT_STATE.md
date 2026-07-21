@@ -17,10 +17,10 @@ directly (`git rev-parse HEAD`, `git status --short --untracked-files=all`).
 <!-- SPEC_CUSTODY_BOOTSTRAP:BEGIN -->
 ```text
 LAST_ACCEPTED_PHASE: PHASE-C3C-B
-ACTIVE_PHASE: PHASE-C3D
+ACTIVE_PHASE: PHASE-C3D-A
 ACTIVE_PHASE_CONTRACT: docs/architecture/ORDEM_COMPRA_C3D_PHASE_CONTRACT.md
 ACTIVE_TRACK: PURCHASE_ORDER_PHASE_C
-NEXT_AUTHORIZABLE_ACTION: read-only supervisor review of the PHASE-C3D-A implementation evidence (docs/architecture/ORDEM_COMPRA_C3D_PHASE_CONTRACT.md §O; STATUS: PHASE-C3D-A IMPLEMENTED / LOCALLY VERIFIED / AWAITING SUPERVISOR ACCEPTANCE); PHASE-C3D-B and every later C3D sublot remain unauthorized
+NEXT_AUTHORIZABLE_ACTION: read-only supervisor review of the corrected PHASE-C3D-A evidence; PHASE-C3D-B and every later C3D sublot remain unauthorized
 GOVERNING_SPEC: docs/architecture/ORDEM_COMPRA_LIFECYCLE_SPEC_PROPOSED.md
 TECHNICAL_CONTRACT: docs/architecture/PEDIDO_OP_SCHEMA_CONTRACT.md
 SEQUENCE_AUTHORITY: docs/architecture/PEDIDO_PRODUCTION_FLOW_BACKLOG.md
@@ -70,8 +70,9 @@ ACCEPTED_CHECKPOINT: 22bfb192c6c2ad10ccd2b2883d54c3a17e40cc9f
   resource locks, ACL-closure command, recovery boundaries). Lifecycle §R.29 and
   schema §13.15 are unchanged. Local technical acceptance only — no staging
   validation/application, deployment, activation, cutover, or product acceptance.
-- **Active product phase:** `PHASE-C3D` (sublot `PHASE-C3D-A` implemented;
-  `PHASE-C3D-B`…`C3D-F` not authorized). **Active phase contract:**
+- **Active product phase:** `PHASE-C3D-A` (the currently active implementation
+  sublot within the overall `PHASE-C3D` contract; `PHASE-C3D-B`…`C3D-F` not
+  authorized). **Active phase contract:**
   `docs/architecture/ORDEM_COMPRA_C3D_PHASE_CONTRACT.md`
   (`STATUS: ACCEPTED — PHASE-C3D-A: IMPLEMENTED / LOCALLY VERIFIED / AWAITING
   SUPERVISOR ACCEPTANCE`, §O). `PHASE-C3D-A` is not self-accepted by this
@@ -266,6 +267,28 @@ ACCEPTED_CHECKPOINT: 22bfb192c6c2ad10ccd2b2883d54c3a17e40cc9f
   that or any other `OC-C3D-*` requirement `SATISFIED`, and is not
   self-accepted by this pass. `PHASE-C3D-B` (inactive migration/application
   presence validation) and every later sublot remain separately unauthorized.
+  **Supervisor-review correction (contract §P):** a read-only review of the
+  `PHASE-C3D-A` evidence at commit `dd7f6739082d32dc5df849a9e69eaf1ee651f4cb`
+  returned `CHANGES_REQUIRED` for three findings, all corrected in this pass
+  — (1) the canonical `ACTIVE_PHASE` identity is now `PHASE-C3D-A` (not the
+  overall `PHASE-C3D` contract label) everywhere it is tracked, including
+  this file's `SPEC_CUSTODY_BOOTSTRAP` block and this contract's own
+  `PHASE_ID` marker; (2) `scripts/c3d/bootstrap-disposable-cluster.mjs`'s
+  shutdown now proves — never infers — captured-postmaster-PID absence, port
+  closure, and directory removal, in that order, fails closed with a stable
+  `C3D_BOOTSTRAP_*` error on any unproven step, preserves both the original
+  and any cleanup failure on the bootstrap-failure path, and remains
+  retry-safe without ever poisoning a failed attempt; (3) an exact,
+  worktree-based, byte-for-byte failing-test-identity differential against
+  the `ab30c5115bb79c8952cc5575b68f8b976497699d` baseline replaced the prior
+  count-only comparison — baseline 137 failing identities, corrected
+  workspace 122, **added = 0** (empty, the required result), 15 pre-existing
+  identities absent now (unrelated to any file this pass or the prior one
+  touched; reported as pre-existing test-suite non-determinism, not claimed
+  as a fix). `PHASE-C3D-A` remains `IMPLEMENTED / LOCALLY VERIFIED / AWAITING
+  SUPERVISOR ACCEPTANCE` — the `CHANGES_REQUIRED` verdict is resolved, not a
+  new self-acceptance. Full evidence: contract §P;
+  `docs/ledgers/G28_LEDGER.md` (2026-07-21, this correction's own entry).
 - **NEXT_AUTHORIZABLE_ACTION:** **read-only supervisor review of the
   `PHASE-C3D-A` implementation evidence**
   (`docs/architecture/ORDEM_COMPRA_C3D_PHASE_CONTRACT.md` §O). No

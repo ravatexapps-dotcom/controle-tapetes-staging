@@ -6,9 +6,13 @@
 // rehearsal/testing only: resolves local binaries, allocates a temp data
 // directory outside the repository, picks a distinct non-default port,
 // initializes and starts the cluster, proves readiness and a connection,
-// and exposes a `stop()` that shuts the cluster down and deletes the data
-// directory. Fails closed: any startup/readiness failure still tears down
-// whatever was created before rethrowing.
+// and exposes a `stop()` that shuts the cluster down and proves -- never
+// infers -- that the captured postmaster PID is gone, the port is closed,
+// and the data directory is removed, in that order, before reporting
+// success. Fails closed: any startup/readiness failure, or any failed
+// shutdown/port/process proof, tears down whatever can be torn down and
+// rejects with a stable `C3D_BOOTSTRAP_*` error rather than silently
+// reporting success; a failed attempt never blocks a later retry.
 //
 // Out of scope by design: no migration application, no fixture loading, no
 // connection of any kind to a managed/hosted/shared/remote backend, no
@@ -141,6 +145,50 @@ async function waitForPortClosed(host, port, timeoutMs = 10000) {
   return false;
 }
 
+// Reads the disposable cluster's own postmaster PID from its data
+// directory -- never from global process-name enumeration, which could
+// match an unrelated PostgreSQL installation on the host. Safe to call only
+// after `pg_ctl start -w` has returned successfully, since `-w` waits for
+// the server to reach a state where this file is guaranteed to exist.
+export function readPostmasterPid(dataDir) {
+  const pidFile = path.join(dataDir, 'postmaster.pid');
+  let raw;
+  try {
+    raw = readFileSync(pidFile, 'utf8');
+  } catch (err) {
+    throw new Error(`C3D_BOOTSTRAP_PID_UNREADABLE: could not read ${pidFile}: ${err.message}`);
+  }
+  const firstLine = raw.split(/\r?\n/)[0].trim();
+  const pid = Number(firstLine);
+  if (!Number.isInteger(pid) || pid <= 0) {
+    throw new Error(`C3D_BOOTSTRAP_PID_UNREADABLE: could not parse a postmaster PID from ${pidFile}`);
+  }
+  return pid;
+}
+
+// Cross-platform process-existence check (works on Windows and POSIX):
+// signal 0 never actually signals the process, it only probes whether the
+// OS still has a process table entry for this exact PID.
+export function isPidAlive(pid) {
+  try {
+    process.kill(pid, 0);
+    return true;
+  } catch (err) {
+    if (err.code === 'ESRCH') return false;
+    if (err.code === 'EPERM') return true;
+    throw err;
+  }
+}
+
+async function waitForPidExit(pid, timeoutMs = 10000) {
+  const deadline = Date.now() + timeoutMs;
+  while (Date.now() < deadline) {
+    if (!isPidAlive(pid)) return true;
+    await delay(200);
+  }
+  return !isPidAlive(pid);
+}
+
 // A Windows-specific race: `pg_ctl stop -w` returning success only means
 // the postmaster removed its PID file, not that every auxiliary worker
 // process (checkpointer, background writer, ...) has fully exited and
@@ -223,12 +271,24 @@ function runPgCtlStart({ pgCtl, dataDir, logFile, port, host, startTimeoutSec })
   }
 }
 
+// `pg_ctl stop` (unlike `pg_ctl start`) never leaves a detached grandchild
+// behind -- it only signals the already-running postmaster and waits for it
+// to exit -- so capturing its own stdout/stderr via pipes is safe here and
+// carries none of `runPgCtlStart`'s inherited-handle hang risk. The full
+// result (exit status, spawn error, diagnostic text) is returned rather
+// than collapsed to a boolean, so a caller can report *why* shutdown failed
+// without exposing any secret (there is none under local trust auth).
 function runPgCtlStop({ pgCtl, dataDir }) {
   const result = spawnSync(pgCtl, ['stop', '-D', dataDir, '-m', 'fast', '-w', '-t', '30'], {
-    stdio: 'ignore',
+    encoding: 'utf8',
+    stdio: ['ignore', 'pipe', 'pipe'],
     timeout: 45000,
   });
-  return result.status === 0;
+  return {
+    ok: result.status === 0,
+    status: result.status,
+    diagnostic: result.error ? result.error.message : result.stderr || result.stdout || null,
+  };
 }
 
 async function waitForReady({ pgIsReady, psql, host, port, user, database, timeoutMs }) {
@@ -289,24 +349,76 @@ export async function bootstrapCluster(options = {}) {
   }
 
   let started = false;
-  const cleanup = async () => {
+  let postmasterPid = null;
+
+  // Attempts one full cleanup pass and returns a proof object once every
+  // step is genuinely confirmed, or throws a stable `C3D_BOOTSTRAP_*` error
+  // with the partial proof attached the moment any step fails -- directory
+  // removal never runs until shutdown, port closure, and process exit are
+  // all independently proven (never inferred from one another). `overrides`
+  // exists solely for deterministic fault injection in tests (forcing one
+  // step to behave as if it failed) and defaults to the real checks.
+  // Idempotent and retry-safe: `started`/`postmasterPid` are only cleared
+  // once a step is genuinely proven, so a failed attempt changes nothing
+  // that a later real attempt still needs to check.
+  const attemptCleanup = async (overrides = {}) => {
+    const proof = { stopResult: null, portClosed: null, pidAbsent: null, dirAbsent: null };
+
     if (started) {
-      runPgCtlStop({ pgCtl: binaries.pgCtl, dataDir });
-      await waitForPortClosed(host, port, 10000).catch(() => {});
-      // Grace period for Windows auxiliary worker processes (checkpointer,
-      // background writer, ...) to finish exiting and release their open
-      // handles inside the data directory after the listener has already
-      // closed -- see `removeWithRetry`.
-      await delay(500);
+      const alreadyStopped = postmasterPid !== null && !isPidAlive(postmasterPid);
+      if (alreadyStopped) {
+        proof.stopResult = { ok: true, status: 0, diagnostic: 'already stopped' };
+      } else {
+        const stopResult = overrides.forceStopFailure
+          ? { ok: false, status: null, diagnostic: 'C3D_TEST_INJECTED_STOP_FAILURE' }
+          : runPgCtlStop({ pgCtl: binaries.pgCtl, dataDir });
+        proof.stopResult = stopResult;
+        if (!stopResult.ok) {
+          const err = new Error(
+            `C3D_BOOTSTRAP_STOP_FAILED: pg_ctl stop did not report success (status=${stopResult.status}, diagnostic=${
+              stopResult.diagnostic || 'none'
+            })`
+          );
+          err.proof = proof;
+          throw err;
+        }
+      }
+
+      const portClosed = overrides.forcePortStillOpen ? false : await waitForPortClosed(host, port, 10000);
+      proof.portClosed = portClosed;
+      if (!portClosed) {
+        const err = new Error(`C3D_BOOTSTRAP_PORT_STILL_OPEN: ${host}:${port} did not close after shutdown was requested`);
+        err.proof = proof;
+        throw err;
+      }
+
+      const pidAbsent = overrides.forceProcessStillAlive
+        ? false
+        : postmasterPid === null || (await waitForPidExit(postmasterPid, 10000));
+      proof.pidAbsent = pidAbsent;
+      if (!pidAbsent) {
+        const err = new Error(`C3D_BOOTSTRAP_PROCESS_STILL_ALIVE: postmaster PID ${postmasterPid} still exists after shutdown was requested`);
+        err.proof = proof;
+        throw err;
+      }
+
       started = false;
+    } else {
+      proof.stopResult = { ok: true, status: 0, diagnostic: 'not started' };
+      proof.portClosed = true;
+      proof.pidAbsent = true;
     }
+
     await removeWithRetry(base);
+    proof.dirAbsent = true;
+    return proof;
   };
 
   try {
     runInitdb({ initdb: binaries.initdb, dataDir, user });
     runPgCtlStart({ pgCtl: binaries.pgCtl, dataDir, logFile, port, host, startTimeoutSec });
     started = true;
+    postmasterPid = readPostmasterPid(dataDir);
     if (options.simulateReadinessFailure) {
       // `pg_ctl start -w` already waits for the server's own internal
       // readiness, so a real slow/unreachable readiness check cannot be
@@ -318,21 +430,38 @@ export async function bootstrapCluster(options = {}) {
     }
     await waitForReady({ pgIsReady: binaries.pgIsReady, psql: binaries.psql, host, port, user, database, timeoutMs: readinessTimeoutMs });
   } catch (err) {
-    await cleanup();
-    const wrapped = new Error(`C3D_BOOTSTRAP_FAILED: ${err.message}`);
+    let cleanupError = null;
+    try {
+      await attemptCleanup({});
+    } catch (innerErr) {
+      cleanupError = innerErr;
+    }
+    // Both facts are preserved even when cleanup itself also fails -- the
+    // original bootstrap error is never discarded by a secondary cleanup
+    // failure, and vice versa.
+    const wrapped = new Error(
+      `C3D_BOOTSTRAP_FAILED: ${err.message}${cleanupError ? ` | CLEANUP_ALSO_FAILED: ${cleanupError.message}` : ''}`
+    );
     wrapped.dataDir = base;
     wrapped.port = port;
+    wrapped.postmasterPid = postmasterPid;
     wrapped.cause = err;
+    wrapped.cleanupError = cleanupError;
     throw wrapped;
   }
 
-  let stopped = false;
-  const stop = async () => {
-    if (stopped) return;
-    stopped = true;
-    // `cleanup()` (via `removeWithRetry`) throws if `base` cannot be proven
-    // removed, so a successful return here already guarantees cleanup.
-    await cleanup();
+  let cleanedUp = false;
+  let lastCleanupProof = null;
+  const stop = async (overrides = {}) => {
+    if (cleanedUp) return lastCleanupProof;
+    // Throws (and leaves `cleanedUp` false) on any failed proof, so a
+    // caller can freely retry -- a failed attempt never poisons the
+    // ability to try again, and a genuinely successful attempt is cached
+    // so a second call is a safe no-op rather than re-running anything.
+    const proof = await attemptCleanup(overrides);
+    cleanedUp = true;
+    lastCleanupProof = proof;
+    return proof;
   };
 
   return {
@@ -343,6 +472,7 @@ export async function bootstrapCluster(options = {}) {
     port,
     user,
     database,
+    postmasterPid,
     pgBinDir: binaries.dir,
     pgVersion: binaries.version,
     stop,

@@ -369,19 +369,33 @@ test('the bootstrap script never references a shared, remote, or Supabase databa
 // Disposable-cluster lifecycle (real PostgreSQL processes; DB-backed)
 // ---------------------------------------------------------------------------
 
+// Asserts the three independent cleanup proofs a stop()/failed-bootstrap
+// cleanup must establish: the captured postmaster PID is gone (checked via
+// the cross-platform `process.kill(pid, 0)` probe, never a process-name
+// listing that could match an unrelated PostgreSQL installation), the port
+// is closed, and the temp directory no longer exists.
+async function assertFullyCleanedUp(mod, { postmasterPid, host, port, dataDir }) {
+  if (postmasterPid) {
+    assert.equal(mod.isPidAlive(postmasterPid), false, `postmaster PID ${postmasterPid} must no longer exist`);
+  }
+  const stillOpen = await mod.isPortOpen(host, port, 1000);
+  assert.equal(stillOpen, false, `${host}:${port} must no longer be listening`);
+  await assert.rejects(fsp.access(dataDir), /ENOENT/, `${dataDir} must no longer exist`);
+}
+
 test('bootstrap creates a fresh disposable cluster outside the repository, on a distinct port, with readiness/connection proof and clean shutdown', async () => {
   const mod = await loadBootstrapModule();
   const repoRoot = mod.getRepoRoot();
   assert.equal(normalizePath(repoRoot), normalizePath(REPO_ROOT));
 
   const handle = await mod.bootstrapCluster({});
-  let dataDirDuringRun;
   try {
-    dataDirDuringRun = handle.dataDir;
     assert.ok(!normalizePath(handle.dataDir).startsWith(normalizePath(repoRoot)), 'disposable data directory must be outside the repository');
     assert.ok(fs.existsSync(handle.dataDir), 'data directory must exist while the cluster is running');
     assert.notEqual(handle.port, mod.FORBIDDEN_DEFAULT_PORT, 'the cluster must not bind the conventional default PostgreSQL port');
     assert.equal(handle.host, '127.0.0.1', 'no shared or remote host is ever used');
+    assert.ok(Number.isInteger(handle.postmasterPid) && handle.postmasterPid > 0, 'the postmaster PID must be captured from postmaster.pid');
+    assert.equal(mod.isPidAlive(handle.postmasterPid), true, 'the captured postmaster PID must be alive while the cluster is running');
 
     const psqlPath = path.join(handle.pgBinDir, process.platform === 'win32' ? 'psql.exe' : 'psql');
     const check = spawnSync(
@@ -392,27 +406,27 @@ test('bootstrap creates a fresh disposable cluster outside the repository, on a 
     assert.equal(check.status, 0, `psql connection check failed: ${check.stderr}`);
     assert.equal(check.stdout.trim(), '1');
   } finally {
-    await handle.stop();
+    const proof = await handle.stop();
+    assert.equal(proof.stopResult.ok, true);
+    assert.equal(proof.portClosed, true);
+    assert.equal(proof.pidAbsent, true);
+    assert.equal(proof.dirAbsent, true);
   }
 
-  await assert.rejects(fsp.access(dataDirDuringRun), /ENOENT/, 'the temporary data directory must be gone after stop()');
-  const stillOpen = await mod.isPortOpen(handle.host, handle.port, 1000);
-  assert.equal(stillOpen, false, 'the PostgreSQL process must no longer be listening after stop()');
+  await assertFullyCleanedUp(mod, handle);
 });
 
 test('repeated bootstrap runs do not reuse the same data directory', async () => {
   const mod = await loadBootstrapModule();
   const first = await mod.bootstrapCluster({});
-  const firstDataDir = first.dataDir;
   await first.stop();
 
   const second = await mod.bootstrapCluster({});
-  const secondDataDir = second.dataDir;
   await second.stop();
 
-  assert.notEqual(firstDataDir, secondDataDir);
-  await assert.rejects(fsp.access(firstDataDir), /ENOENT/);
-  await assert.rejects(fsp.access(secondDataDir), /ENOENT/);
+  assert.notEqual(first.dataDir, second.dataDir);
+  await assertFullyCleanedUp(mod, first);
+  await assertFullyCleanedUp(mod, second);
 });
 
 test('an injected readiness failure still cleans up the process and the data directory', async () => {
@@ -426,11 +440,100 @@ test('an injected readiness failure still cleans up the process and the data dir
   assert.ok(caught, 'an injected readiness failure must cause bootstrapCluster to reject');
   assert.match(caught.message, /C3D_BOOTSTRAP_FAILED/);
   assert.ok(caught.dataDir, 'the thrown error must report the data directory it attempted to clean up');
-  await assert.rejects(fsp.access(caught.dataDir), /ENOENT/, 'the data directory must not survive a failed bootstrap');
-  if (caught.port) {
-    const stillOpen = await mod.isPortOpen('127.0.0.1', caught.port, 1000);
-    assert.equal(stillOpen, false, 'no process may remain listening after a failed bootstrap');
+  assert.ok(Number.isInteger(caught.postmasterPid) && caught.postmasterPid > 0, 'the thrown error must report the captured postmaster PID');
+  assert.equal(caught.cleanupError, null, 'cleanup itself must have succeeded cleanly for this injected failure');
+  await assertFullyCleanedUp(mod, { postmasterPid: caught.postmasterPid, host: '127.0.0.1', port: caught.port, dataDir: caught.dataDir });
+});
+
+// ---------------------------------------------------------------------------
+// Fail-closed shutdown proof: controlled stop/port/process failure injection
+// ---------------------------------------------------------------------------
+
+test('a controlled pg_ctl-stop failure causes stop() to reject, and a real retry then fully cleans up', async () => {
+  const mod = await loadBootstrapModule();
+  const handle = await mod.bootstrapCluster({});
+
+  let caught = null;
+  try {
+    await handle.stop({ forceStopFailure: true });
+  } catch (err) {
+    caught = err;
   }
+  assert.ok(caught, 'an injected pg_ctl-stop failure must cause stop() to reject rather than report success');
+  assert.match(caught.message, /C3D_BOOTSTRAP_STOP_FAILED/);
+  assert.equal(caught.proof.stopResult.ok, false, 'the discarded pg_ctl stop result must be captured, not silently ignored');
+  // The real command was never issued for this injected failure, so the
+  // process must genuinely still be alive -- proving stop() did not lie.
+  assert.equal(mod.isPidAlive(handle.postmasterPid), true, 'the real process must be untouched by an injected stop failure');
+
+  // A failed cleanup attempt can be retried, and a real (non-injected)
+  // retry must genuinely finish the job.
+  const proof = await handle.stop({});
+  assert.equal(proof.stopResult.ok, true);
+  assert.equal(proof.portClosed, true);
+  assert.equal(proof.pidAbsent, true);
+  assert.equal(proof.dirAbsent, true);
+  await assertFullyCleanedUp(mod, handle);
+});
+
+test('a controlled persistent-open-port proof failure causes stop() to reject, and a real retry then fully cleans up', async () => {
+  const mod = await loadBootstrapModule();
+  const handle = await mod.bootstrapCluster({});
+
+  let caught = null;
+  try {
+    await handle.stop({ forcePortStillOpen: true });
+  } catch (err) {
+    caught = err;
+  }
+  assert.ok(caught, 'a persistent-open-port proof failure must cause stop() to reject rather than report success');
+  assert.match(caught.message, /C3D_BOOTSTRAP_PORT_STILL_OPEN/);
+  assert.equal(caught.proof.portClosed, false, 'the false port-closed result must be captured, not silently ignored');
+  // Unlike the stop-failure injection, this path lets the real `pg_ctl
+  // stop` run -- only the port-closed *proof* is forced false -- so the
+  // process is genuinely already gone by the time this rejects.
+  assert.equal(mod.isPidAlive(handle.postmasterPid), false, 'the real shutdown must have already happened despite the forced proof failure');
+
+  const proof = await handle.stop({});
+  assert.equal(proof.dirAbsent, true);
+  await assertFullyCleanedUp(mod, handle);
+});
+
+test('a controlled process-still-alive proof failure causes stop() to reject, and a real retry then fully cleans up', async () => {
+  const mod = await loadBootstrapModule();
+  const handle = await mod.bootstrapCluster({});
+
+  let caught = null;
+  try {
+    await handle.stop({ forceProcessStillAlive: true });
+  } catch (err) {
+    caught = err;
+  }
+  assert.ok(caught, 'a process-still-alive proof failure must cause stop() to reject rather than report success');
+  assert.match(caught.message, /C3D_BOOTSTRAP_PROCESS_STILL_ALIVE/);
+  assert.equal(caught.proof.pidAbsent, false, 'the false pid-absent result must be captured, not silently ignored');
+  assert.equal(mod.isPidAlive(handle.postmasterPid), false, 'the real shutdown must have already happened despite the forced proof failure');
+
+  const proof = await handle.stop({});
+  assert.equal(proof.dirAbsent, true);
+  await assertFullyCleanedUp(mod, handle);
+});
+
+test('a second stop() call after a genuinely successful cleanup is a safe no-op', async () => {
+  const mod = await loadBootstrapModule();
+  const handle = await mod.bootstrapCluster({});
+  const first = await handle.stop({});
+  const second = await handle.stop({});
+  assert.equal(second, first, 'a second call after success must return the cached proof, not re-run cleanup');
+  await assertFullyCleanedUp(mod, handle);
+});
+
+test('the bootstrap script identifies the disposable process only by its own captured PID, never by process-name enumeration', () => {
+  assert.doesNotMatch(BOOTSTRAP_SOURCE, /tasklist/i);
+  assert.doesNotMatch(BOOTSTRAP_SOURCE, /taskkill/i);
+  assert.doesNotMatch(BOOTSTRAP_SOURCE, /\bpkill\b/i);
+  assert.match(BOOTSTRAP_SOURCE, /readPostmasterPid/);
+  assert.match(BOOTSTRAP_SOURCE, /process\.kill\(pid, 0\)/);
 });
 
 test('no shared or remote database connection is attempted (runtime host assertion)', async () => {

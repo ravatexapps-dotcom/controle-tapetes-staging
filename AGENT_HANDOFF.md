@@ -38,9 +38,10 @@
 - **Prior accepted product phase:** `PHASE-C3C-A` — `CLOSED / TECHNICALLY
   ACCEPTED — LOCALLY VERIFIED / INACTIVE / NOT APPLIED TO STAGING` (2026-07-20),
   technical checkpoint `89123729b3529fff6e4a2336bfec2907c4b94b4c`.
-- **Active product phase:** `PHASE-C3D` (sublot `PHASE-C3D-A` — environment &
-  deployment-manifest qualification — `IMPLEMENTED / LOCALLY VERIFIED /
-  AWAITING SUPERVISOR ACCEPTANCE`; `PHASE-C3D-B`…`C3D-F` not authorized).
+- **Active product phase:** `PHASE-C3D-A` — environment & deployment-manifest
+  qualification, the currently active implementation sublot within the
+  overall `PHASE-C3D` contract — `IMPLEMENTED / LOCALLY VERIFIED / AWAITING
+  SUPERVISOR ACCEPTANCE`; `PHASE-C3D-B`…`C3D-F` not authorized.
 - **Active phase contract:** `docs/architecture/ORDEM_COMPRA_C3D_PHASE_CONTRACT.md`
   (`ACCEPTED`, §0c; `PHASE-C3D-A` evidence at §O).
 - **Active track:** `PURCHASE_ORDER_PHASE_C`.
@@ -136,9 +137,23 @@
   validation/application of `db/76`, activation, cutover, C4, C5, production
   access, Supabase write, or any further push beyond the one authorized
   `staging/dev` fast-forward for this pass is authorized. **`ACTIVE_PHASE`/
-  `ACTIVE_PHASE_CONTRACT` are `PHASE-C3D` /
+  `ACTIVE_PHASE_CONTRACT` are `PHASE-C3D-A` /
   `docs/architecture/ORDEM_COMPRA_C3D_PHASE_CONTRACT.md`**, pending that
   review; no product phase chains automatically beyond `PHASE-C3D-A`.
+  **Supervisor-review correction (contract §P), on top of commit
+  `dd7f6739082d32dc5df849a9e69eaf1ee651f4cb`:** `CHANGES_REQUIRED` for three
+  findings, all corrected — canonical `ACTIVE_PHASE` identity is
+  `PHASE-C3D-A` everywhere (bootstrap block and this contract's own
+  `PHASE_ID` marker); the bootstrap script's shutdown now proves captured
+  postmaster-PID absence, port closure, and directory removal in that order,
+  fails closed on any unproven step, preserves both the original and any
+  cleanup error on the bootstrap-failure path, and stays retry-safe without
+  poisoning a failed attempt; and an exact worktree-based failing-identity
+  differential against the `ab30c511` baseline replaced the prior count-only
+  comparison (baseline 137, corrected 122, added = 0, 15 pre-existing
+  identities absent and reported as non-determinism, not claimed as a fix).
+  `PHASE-C3D-A` remains `IMPLEMENTED / LOCALLY VERIFIED / AWAITING
+  SUPERVISOR ACCEPTANCE`.
 
 ## Governing specifications and contracts
 

@@ -1,9 +1,9 @@
 # PHASE-C3D Material Phase Contract — Inactive Deployment & Rehearsal
 
 <!-- MATERIAL_PHASE_CONTRACT:BEGIN -->
-PHASE_ID: PHASE-C3D
+PHASE_ID: PHASE-C3D-A
 <!-- MATERIAL_PHASE_CONTRACT:END -->
-STATUS: ACCEPTED — PHASE-C3D-A: IMPLEMENTED / LOCALLY VERIFIED / AWAITING SUPERVISOR ACCEPTANCE — C3D-B THROUGH C3D-F: NOT AUTHORIZED
+STATUS: ACCEPTED — PHASE-C3D-A: IMPLEMENTED / LOCALLY VERIFIED / CHANGES_REQUIRED RESOLVED / AWAITING SUPERVISOR ACCEPTANCE — C3D-B THROUGH C3D-F: NOT AUTHORIZED
 
 > **Role of this document.** This is a **material phase contract**, authored
 > under `docs/governance/DOCUMENTATION_MODEL.md` §19 and
@@ -1015,3 +1015,115 @@ evidence. `PHASE-C3D-B` (inactive migration/application presence validation
 against a real applied `db/01`…`db/76` sequence) remains a separate,
 not-yet-authorized gate; nothing in this pass applies a migration to any
 cluster, activates canonical reads, or advances any `OC-C3D-*` disposition.
+
+## P. Supervisor-review correction (verdict: CHANGES_REQUIRED at dd7f6739082d32dc5df849a9e69eaf1ee651f4cb)
+
+> Correction, authored under the "PHASE-C3D-A TARGETED CORRECTION — CLEANUP
+> PROOF, CANONICAL STATE, AND EXACT SUITE DIFFERENTIAL" order. The supervisor
+> reviewed the `PHASE-C3D-A` evidence in §O, recorded at commit
+> `dd7f6739082d32dc5df849a9e69eaf1ee651f4cb`, and returned **`CHANGES_REQUIRED`**
+> for three findings, corrected below. `PHASE-C3D-A` remains `IMPLEMENTED /
+> LOCALLY VERIFIED / CHANGES_REQUIRED / AWAITING SUPERVISOR ACCEPTANCE` — not
+> self-accepted. This correction does not begin `PHASE-C3D-B` and changes no
+> `OC-C3D-*` disposition.
+
+**Finding 1 — canonical active-phase identity.** §O and `PROJECT_STATE.md`
+recorded `ACTIVE_PHASE: PHASE-C3D` after `dd7f673`, but the authorization
+explicitly required `ACTIVE_PHASE: PHASE-C3D-A` (the currently active
+implementation sublot, distinct from the overall `PHASE-C3D` contract this
+file continues to describe). Corrected: `PROJECT_STATE.md` and
+`AGENT_HANDOFF.md` now record `ACTIVE_PHASE: PHASE-C3D-A` everywhere the
+active operational phase is represented; `ACTIVE_PHASE_CONTRACT` remains this
+file's path. This file's own machine-readable `PHASE_ID` marker (head of
+file) is corrected from `PHASE-C3D` to `PHASE-C3D-A` to match — required by
+`scripts/validate-spec-custody.mjs`'s exact-match rule between
+`ACTIVE_PHASE` and the active contract's `PHASE_ID`, confirmed by rerunning
+the validator after the correction (`PASS`). This file's title and prose
+continue to describe the full `PHASE-C3D` sublot family (A…F); only the
+tracked "currently active" identity changed.
+
+**Finding 2 — fail-closed PostgreSQL shutdown proof.**
+`scripts/c3d/bootstrap-disposable-cluster.mjs`'s cleanup previously discarded
+the boolean results of `runPgCtlStop()` and `waitForPortClosed()`, and
+inferred process death only from directory removal succeeding — never from
+proving the actual postmaster process was gone. Corrected:
+
+1. **Captured PID.** `readPostmasterPid(dataDir)` reads the disposable
+   cluster's own `postmaster.pid` immediately after `pg_ctl start -w`
+   returns successfully — never from process-name enumeration, which could
+   match an unrelated PostgreSQL installation on the host.
+2. **Shutdown result captured.** `runPgCtlStop()` now returns
+   `{ ok, status, diagnostic }` (exit status, spawn error, or stderr/stdout
+   text) instead of a discarded boolean; a non-`ok` result throws
+   `C3D_BOOTSTRAP_STOP_FAILED` with that diagnostic attached.
+3. **Port closure is a hard gate.** `waitForPortClosed()` returning `false`
+   now throws `C3D_BOOTSTRAP_PORT_STILL_OPEN` instead of being silently
+   discarded via a swallowed rejection handler.
+4. **Process exit is proven, not inferred.** `isPidAlive(pid)` uses the
+   cross-platform `process.kill(pid, 0)` existence probe (works on this
+   Windows host and on POSIX); `waitForPidExit()` polls it with a bounded
+   timeout. A still-alive PID throws `C3D_BOOTSTRAP_PROCESS_STILL_ALIVE`.
+5. **Ordering enforced.** Directory removal (`removeWithRetry`, bounded
+   retry, unchanged) now runs only after shutdown, port-closure, and
+   process-exit are all independently proven — never before, never inferred
+   from one another.
+6. **Combined proof required for success.** `stop()` resolves only once
+   `{ stopResult.ok, portClosed, pidAbsent, dirAbsent }` are all true; any
+   failed step rejects with a stable `C3D_BOOTSTRAP_*` error carrying the
+   partial proof, never silently reporting success.
+7. **Bootstrap-failure path preserves both facts.** The `init`/`start`/
+   `readiness` catch path now wraps its own cleanup attempt in its own
+   `try`/`catch`; if cleanup also fails, the thrown error's message and
+   `.cleanupError` property carry both the original failure and the cleanup
+   failure — neither discards the other.
+8. **Idempotent and retry-safe.** `started`/`postmasterPid` are only cleared
+   once a step is genuinely proven; a failed `stop()` attempt never sets the
+   `cleanedUp` flag, so a later real retry re-examines exactly what still
+   needs proving (skipping a re-`pg_ctl stop` call only when the PID is
+   independently confirmed already dead) and completes the job. A second
+   `stop()` call after genuine success returns the cached proof without
+   re-running anything.
+
+Narrowly-scoped fault injection (`stop({ forceStopFailure })`,
+`stop({ forcePortStillOpen })`, `stop({ forceProcessStillAlive })`) was added
+to `bootstrapCluster`'s existing `stop()` for deterministic test coverage of
+each failure path — no new file was created.
+
+**Finding 3 — exact full-suite failure-name differential.** The prior pass
+compared only failure *counts* (122 baseline vs. 122 current) inherited from
+an earlier commit's (`22bfb192`) historical record, never verified directly
+against the `ab30c511` entry checkpoint, and never disambiguated same-named
+tests across different files. Corrected: a detached Git worktree was created
+outside the repository at `ab30c5115bb79c8952cc5575b68f8b976497699d`; the
+identical mandatory suite command (`node --test tests/**/*.js`) was run in
+that worktree and in the corrected current workspace; every failing test's
+identity was captured as `<repo-relative file path>:<line>:<col>\t<full test
+name>` (tab-separated, taken from each TAP record's own `location:` field,
+which disambiguates identically-named tests in different files); both lists
+were sorted and compared byte-for-byte. Result: baseline **137** failing
+identities, current **122** failing identities, **added = 0** (empty — no
+new failing identity), **removed = 15** (present at baseline, absent now).
+The 15 removed identities span `tests/documents-ingestor-ui-smoke.test.js`,
+`tests/pedido-detail-linked-ops.smoke.js`, `tests/pedido-detail.smoke.js`,
+and `tests/tec-to-acabamento-flow.smoke.js` — none of which, nor any file
+they depend on, was touched by this pass or the prior one (this pass's
+manifest is exactly `scripts/c3d/bootstrap-disposable-cluster.mjs`,
+`tests/ordem-compra-c3d-deploy.smoke.js`, and the documentary paths listed
+in §I). Reported as pre-existing test-suite non-determinism (consistent with
+this repository's already-documented `:8765`-fixed-port and test-fidelity
+debt classes), not claimed as a fix. The temporary worktree and the scratch
+differential-capture script were both created outside the repository and
+removed after use; neither is part of any commit.
+
+**Documentary record location.** Full technical evidence for all three
+findings — exact commands, exact counts, the full added/removed lists, and
+the worktree-removal proof — is recorded in the
+`docs/ledgers/G28_LEDGER.md` entry dated 2026-07-21 for this correction pass
+(commit `fix: prove C3D disposable cluster cleanup`).
+
+**Status after this correction.** `PHASE-C3D-A` remains `IMPLEMENTED /
+LOCALLY VERIFIED / AWAITING SUPERVISOR ACCEPTANCE` (the `CHANGES_REQUIRED`
+verdict is resolved by this correction, not by a new self-acceptance).
+`OC-C3D-DEPLOY-001` remains `PLANNED`; `OC-C3D-FENCE-001`, `OC-C3D-ACL-001`,
+`OC-C3D-LOCK-001` remain `PARTIALLY_SATISFIED` — unchanged by this
+correction. **Hard stop before `PHASE-C3D-B`.**

@@ -6333,3 +6333,169 @@ MATERIAL_DIVERGENCES: NONE
   final ACL-closure invocation, cutover, production access, Supabase write,
   `main`, `origin`/`production` remote mutation, or any further push is
   authorized; one fast-forward push to `staging/dev` records this pass.
+
+## 2026-07-21 — PHASE-C3D-A TARGETED CORRECTION — CLEANUP PROOF, CANONICAL STATE, AND EXACT SUITE DIFFERENTIAL — CHANGES_REQUIRED RESOLVED / IMPLEMENTED / LOCALLY VERIFIED / AWAITING SUPERVISOR ACCEPTANCE
+
+- **Order:** "PHASE-C3D-A TARGETED CORRECTION — CLEANUP PROOF, CANONICAL
+  STATE, AND EXACT SUITE DIFFERENTIAL". Entry checkpoint: branch `dev`, HEAD
+  `dd7f6739082d32dc5df849a9e69eaf1ee651f4cb`, `staging/dev` equal to HEAD,
+  index empty, preserved residue exactly modified `.gitignore` (unstaged),
+  untracked `.mcp.json`, untracked `.codex/config.toml` — none touched.
+- **Supervisor verdict:** read-only review of the `PHASE-C3D-A` evidence
+  recorded at commit `dd7f6739082d32dc5df849a9e69eaf1ee651f4cb` returned
+  `CHANGES_REQUIRED` for three findings. `PHASE-C3D-A` remained `IMPLEMENTED
+  / LOCALLY VERIFIED / CHANGES_REQUIRED / AWAITING SUPERVISOR ACCEPTANCE`
+  pending this correction; `PHASE-C3D-B` was not begun.
+
+**Finding 1 — canonical `ACTIVE_PHASE` identity (corrected).** The
+authorization required `ACTIVE_PHASE: PHASE-C3D-A`; `PROJECT_STATE.md` and
+`AGENT_HANDOFF.md` incorrectly recorded `ACTIVE_PHASE: PHASE-C3D` after the
+prior commit. Corrected in both files, every occurrence representing the
+active operational phase. `ACTIVE_PHASE_CONTRACT` unchanged
+(`docs/architecture/ORDEM_COMPRA_C3D_PHASE_CONTRACT.md`). Because
+`scripts/validate-spec-custody.mjs` requires the active contract's own
+`PHASE_ID` marker to equal `ACTIVE_PHASE` exactly (`R2`), the contract's
+`PHASE_ID` marker (head of file) was also corrected from `PHASE-C3D` to
+`PHASE-C3D-A`; the document's title and prose continue to describe the full
+`PHASE-C3D` sublot family (A…F) — only the machine-tracked "currently
+active" identity changed. Re-running `node scripts/validate-spec-custody.mjs`
+after the correction: `PASS`.
+
+**Finding 2 — fail-closed PostgreSQL shutdown proof (corrected).**
+`scripts/c3d/bootstrap-disposable-cluster.mjs`'s cleanup previously discarded
+the boolean results of `runPgCtlStop()`/`waitForPortClosed()` and inferred
+process death from directory removal succeeding, never from proving the
+process itself was gone. Corrected: `readPostmasterPid(dataDir)` captures
+the disposable cluster's own postmaster PID from its `postmaster.pid` file
+immediately after `pg_ctl start -w` returns (never from process-name
+enumeration); `runPgCtlStop()` now returns a captured
+`{ ok, status, diagnostic }` result instead of a discarded boolean, and a
+non-`ok` result throws `C3D_BOOTSTRAP_STOP_FAILED`; `waitForPortClosed()`
+returning `false` is now a hard `C3D_BOOTSTRAP_PORT_STILL_OPEN` failure
+instead of a swallowed rejection; `isPidAlive(pid)` (`process.kill(pid, 0)`,
+cross-platform) plus a bounded `waitForPidExit()` poll proves the captured
+PID is gone, throwing `C3D_BOOTSTRAP_PROCESS_STILL_ALIVE` if not; directory
+removal now runs only after shutdown/port/process are all independently
+proven; a successful `stop()` requires all four proofs
+(`stopResult.ok`, `portClosed`, `pidAbsent`, `dirAbsent`) and rejects with a
+stable `C3D_BOOTSTRAP_*` error otherwise; the bootstrap-failure (`init`/
+`start`/`readiness`) catch path wraps its own cleanup attempt so a cleanup
+failure never discards the original error (both are preserved, via
+`.cleanupError`); `started`/`postmasterPid` are only cleared once genuinely
+proven, so a failed `stop()` attempt never poisons a later real retry, while
+a second call after genuine success returns the cached proof as a no-op.
+Narrowly-scoped fault-injection options
+(`stop({ forceStopFailure })`/`stop({ forcePortStillOpen })`/
+`stop({ forceProcessStillAlive })`) were added to the existing `stop()` for
+deterministic coverage — no new file was created.
+`tests/ordem-compra-c3d-deploy.smoke.js` gained 5 new tests (24 total, up
+from 19) proving: normal stop verifies PID/port/directory; readiness-failure
+cleanup verifies the same three; each of the three controlled failures
+causes `stop()` to reject with the matching stable error and an attached
+partial proof, while the *other* two proofs plus a real underlying
+shutdown/removal are genuinely completed by a subsequent real retry; a
+second call after genuine success is a no-op; and a structural test proves
+the script identifies the process only via its own captured PID
+(`process.kill(pid, 0)` + `readPostmasterPid`), never via `tasklist`/
+`taskkill`/`pkill`-style process-name enumeration that could touch an
+unrelated PostgreSQL installation.
+
+**Finding 3 — exact full-suite failure-name differential (corrected).** The
+prior pass compared only failure *counts* (122 vs. 122) inherited from an
+earlier commit's (`22bfb192`) historical record, never verified directly
+against the `ab30c511` entry checkpoint, and never disambiguated same-named
+tests in different files. Corrected: a detached Git worktree was created
+outside the repository (`%TEMP%\c3d-baseline-ab30c511-<random>`) at
+`ab30c5115bb79c8952cc5575b68f8b976497699d`; a scratch differential-capture
+script (also outside the repository, not part of any commit) ran the
+identical mandatory suite command (`node --test tests/**/*.js`) in that
+worktree and in the corrected current workspace, capturing every failing
+test's identity as `<repo-relative file path>:<line>:<col><TAB><full test
+name>` from each TAP record's own `location:` field (disambiguates
+identically-named tests across files); both lists were sorted and diffed
+byte-for-byte. Both sides were run twice to confirm stability before
+recording: baseline **137** failing identities (byte-identical both runs),
+corrected workspace **122** failing identities (byte-identical both runs).
+**Added (corrected − baseline) = 0** — the required result, no new failing
+identity. **Removed (baseline − corrected) = 15**, reported separately, not
+claimed as a fix (this pass's technical manifest touched only
+`scripts/c3d/bootstrap-disposable-cluster.mjs` and
+`tests/ordem-compra-c3d-deploy.smoke.js`; none of the files below, or any
+product file they depend on, was modified by this pass or the prior one):
+  - `tests/documents-ingestor-ui-smoke.test.js:237:1` — `ingestor-ui-source: botao Ver com window.open seguro`
+  - `tests/documents-ingestor-ui-smoke.test.js:670:1` — `ingestor-ui-source: SVG_FILE icone presente na linha do documento`
+  - `tests/pedido-detail-linked-ops.smoke.js:213:1` — `Render: fallback global "Nao foi possivel consolidar" só ocorre sob opsLoadError`
+  - `tests/pedido-detail-linked-ops.smoke.js:225:1` — `Render: opsEnrichError mostra aviso restrito e NÃO esconde os cards de OP`
+  - `tests/pedido-detail.smoke.js:1210:1` — `FIRST-OP-CTA: CTA destacado fica no cabecalho do bloco OPs vinculadas`
+  - `tests/pedido-detail.smoke.js:1231:1` — `pedido-detail.js: se OP já existir não sugere gerar duplicada; mostra OP existente`
+  - `tests/pedido-detail.smoke.js:354:1` — `pedido-detail: conectores do progresso usam labels visuais curtos`
+  - `tests/pedido-detail.smoke.js:376:1` — `pedido-detail: pipeline nao renderiza textos longos da matriz nos conectores`
+  - `tests/pedido-detail.smoke.js:389:1` — `pedido-detail: conectores continuam como setas integradas, nao badges soltos`
+  - `tests/pedido-detail.smoke.js:411:1` — `pedido-detail: setas de transicao abrem modal de movimento; bolinhas mantem hub`
+  - `tests/tec-to-acabamento-flow.smoke.js:300:1` — `D-B caso 1 (estático): buildEntregaHistorico aplica gate latexOpPorEntrega`
+  - `tests/tec-to-acabamento-flow.smoke.js:335:1` — `TEC-STAGE-FINALIZATION-A-B: OP Tecelagem finaliza via RPC canonica`
+  - `tests/tec-to-acabamento-flow.smoke.js:348:1` — `ADMIN-TEC-FINALIZE-CTA-R1: CTA destacado exige saldo zerado`
+  - `tests/tec-to-acabamento-flow.smoke.js:589:1` — `split-UI-B caso 10: estático — op-tecelagem-producao-admin.js buildBlocoTecelagem passa comOpcaoSplit:true`
+  - `tests/tec-to-acabamento-flow.smoke.js:600:1` — `split-UI-B caso 11: estático — abrirEdicaoAdmin NÃO passa comOpcaoSplit (edição não troca split)`
+
+  Most plausible explanation: the corrected workspace's invocation includes
+  one additional resource-heavy DB-backed test file
+  (`tests/ordem-compra-c3d-deploy.smoke.js`, real PostgreSQL clusters across
+  24 tests) absent from the baseline, changing `node --test`'s per-invocation
+  concurrency/timing profile enough to shift a handful of pre-existing
+  timing-sensitive tests — consistent with this repository's already-recorded
+  test-suite non-determinism debt (`TEST-MOCK-FIDELITY-AUDIT`, the
+  documented fixed-`:8765`-port class). Not investigated further or fixed;
+  out of this pass's scope.
+- **Temporary-worktree removal proof:** the detached baseline worktree and
+  the scratch differential-capture script (both outside the repository) are
+  removed before commit; `git worktree list` shows only the main working
+  tree, the worktree directory no longer exists, and `git worktree prune`
+  (dry run) reports nothing to prune — see the validation section of this
+  pass's final report for the exact commands and output.
+- **Files materially changed:** `scripts/c3d/bootstrap-disposable-cluster.mjs`
+  (Finding 2 rewrite); `tests/ordem-compra-c3d-deploy.smoke.js` (Finding 2
+  test coverage, +5 tests); `docs/architecture/ORDEM_COMPRA_C3D_PHASE_CONTRACT.md`
+  (§P appended; `STATUS` and `PHASE_ID` markers corrected); `PROJECT_STATE.md`;
+  `AGENT_HANDOFF.md`; this ledger.
+  `docs/architecture/ORDEM_COMPRA_C3_TRACEABILITY.md` and
+  `docs/architecture/PEDIDO_PRODUCTION_FLOW_BACKLOG.md` intentionally **not**
+  touched — no `OC-C3D-*` disposition or sequence fact changed by this
+  correction. No `db/*.sql`, other existing test, product `js/*`,
+  `index.html`, CSS, package/lockfile, CI, deployment config, Supabase
+  config, MCP config, `.gitignore`, normative specification, or validator
+  modified; `tests/ordem-compra-c3d-deploy.integration.sql` was **not**
+  created; the three preserved residue paths are excluded from the commit.
+- **State after this pass:** `LAST_ACCEPTED_PHASE: PHASE-C3C-B` (unchanged).
+  `ACTIVE_PHASE: PHASE-C3D-A` (corrected). `ACTIVE_PHASE_CONTRACT:
+  docs/architecture/ORDEM_COMPRA_C3D_PHASE_CONTRACT.md` (unchanged).
+  `ACCEPTED_CHECKPOINT: 22bfb192c6c2ad10ccd2b2883d54c3a17e40cc9f` (unchanged).
+  Requirement disposition unchanged: `OC-C3D-DEPLOY-001` = `PLANNED`;
+  `OC-C3D-FENCE-001`/`OC-C3D-ACL-001`/`OC-C3D-LOCK-001` = `PARTIALLY_SATISFIED`.
+- **Validation:** `node --check` on both changed technical files; `node --test
+  tests/ordem-compra-c3d-deploy.smoke.js` 24/24, three consecutive clean runs
+  (zero leftover captured-PID-alive process, zero open disposable port, zero
+  `c3d-disposable-pg-*` directory after each, proven via `process.kill(pid,0)`,
+  a port probe, and `fs.access` respectively); `node
+  scripts/validate-spec-custody.mjs` PASS (both `R2` PHASE_ID-identity and
+  `R4` later-commit-accounted-for findings resolved); `node
+  scripts/validate-spec-custody.mjs --self-test` 47/47 PASS (run against the
+  tool's own quiescent `ACTIVE_PHASE_CONTRACT: NONE` baseline precondition by
+  temporarily stashing the `PROJECT_STATE.md` edit, as in the prior pass; the
+  validator itself was not modified); `git diff --check` / `git diff
+  --cached --check` clean; the exact full-suite differential above
+  (baseline 137, corrected 122, added 0, removed 15, both sides confirmed
+  stable across two runs each).
+- **Exact accounting subject:** `fix: prove C3D disposable cluster cleanup`.
+- **Status after this commit:** `PHASE-C3D-A` = `IMPLEMENTED / LOCALLY
+  VERIFIED / AWAITING SUPERVISOR ACCEPTANCE` (the `CHANGES_REQUIRED` verdict
+  recorded against `dd7f6739082d32dc5df849a9e69eaf1ee651f4cb` is resolved by
+  this correction; no self-acceptance occurred). `PHASE-C3D-B` through
+  `C3D-F` remain unauthorized.
+- **NEXT_AUTHORIZABLE_ACTION:** read-only supervisor review of the corrected
+  `PHASE-C3D-A` evidence (contract §P). No `PHASE-C3D-B` implementation,
+  environment mutation, branch creation, staging validation/application of
+  `db/76`, activation, real snapshot/import, fence transition, read switch,
+  final ACL-closure invocation, cutover, production access, Supabase write,
+  `main`, `origin`/`production` remote mutation, or any further push is
+  authorized; one fast-forward push to `staging/dev` records this pass.
