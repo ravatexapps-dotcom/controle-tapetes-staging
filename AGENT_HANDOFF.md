@@ -155,6 +155,21 @@
   test, script, migration, or protected-residue change; no database,
   environment, or deployment action. `OC-C4-ADMIN-001` remains `PLANNED`;
   `ACTIVE_PHASE`/`ACTIVE_PHASE_CONTRACT` remain `NONE`.
+- **`C4-CONTRACT-CORRECTION-R1` (documentation-only, this pass):** corrected
+  a non-compliant supervisor review response and restated the C4 contract's
+  file manifest in an unambiguous two-list form
+  (`docs/architecture/ORDEM_COMPRA_C4_PHASE_CONTRACT.md` §10/§11 —
+  `js/screens/ordem-compra.js` is authorized for additive modification only).
+  **RATIFIED**, no longer open: administrator reversal ownership (§2) and the
+  row-level compact icon-only reversal-button pattern
+  (`UI_VISUAL_CONTRACT.md` §8.1, §13.1). **Recorded** a pre-existing,
+  out-of-scope defect,
+  `ORDEM_COMPRA_CANCEL_HANDLER_STALE_ORDER_CAPTURE` — `createEvents()`
+  captures a stale `state.ordem` snapshot before `loadOrdemDetail()` runs,
+  so the cancel handler on `#/ordens-compra/:id` calls
+  `cancelar_ordem_compra` with `p_ordem_id: undefined`; see
+  `PROJECT_STATE.md` POST-LAUNCH DEBT REGISTER item 15 and contract §21.
+  Not part of `PHASE-C4`; requires its own separate correction order.
 - **Next authorizable action:** **supervisor review and acceptance/rejection
   of the proposed `PHASE-C4` material contract**
   (`docs/architecture/ORDEM_COMPRA_C4_PHASE_CONTRACT.md`). `PHASE-C3D` is

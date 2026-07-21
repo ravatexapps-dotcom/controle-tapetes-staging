@@ -7606,3 +7606,89 @@ product file they depend on, was modified by this pass or the prior one):
   behind the 13-row completeness disposition) remain unauthorized; a fresh
   session must re-read the canonical repository before executing any
   `PHASE-C4` implementation order. **No push is authorized by this pass.**
+
+## 2026-07-21 — C4-CONTRACT-CORRECTION-R1 — C4 contract manifest correction + cancel-debt record
+
+- **Authorization:** `C4-CONTRACT-CORRECTION-R1` — documentation-only
+  correction, ordered after a supervisor evidence-review packet
+  (`C4-CONTRACT-SUPERVISOR-REVIEW-PACKET-R1`) found the prior review
+  response non-compliant. Explicitly does not authorize `PHASE-C4`
+  implementation. Files authorized for this pass:
+  `docs/architecture/ORDEM_COMPRA_C4_PHASE_CONTRACT.md`, `PROJECT_STATE.md`,
+  `AGENT_HANDOFF.md`, this ledger — exactly four, no other file changed.
+- **Entry checkpoint:** `HEAD` `67fb71176e5629494f5f4600944ed8d2daad6b10`;
+  `git status --short --untracked-files=all` = `M .gitignore`, `?? .codex/`,
+  `?? .mcp.json` (expected protected residue, untouched throughout).
+- **Findings on the two review-compliance defects:** (1) the prior review
+  response did not reproduce the contract's complete text nor the full
+  commit diff in-band as the review order required — a review-response
+  defect, not a defect in the contract's own content; (2) the claimed
+  "manifest contradiction" between `js/screens/ordem-compra.js`'s treatment
+  in different sections was investigated by direct `grep` against the
+  committed file (`grep -n "ordem-compra\.js"
+  docs/architecture/ORDEM_COMPRA_C4_PHASE_CONTRACT.md`, commit `67fb711`):
+  the bare orchestrator file was found listed only in the modified-files
+  manifest, never in the unchanged/prohibited list (which named three
+  distinct sibling files —`-render.js`/`-data.js`/`-events.js` — not
+  `ordem-compra.js` itself). No literal contradiction existed in the
+  committed text; §10/§11 were nonetheless restated in the exact two-list
+  form (`AUTHORIZED PRODUCT FILES` / `UNCHANGED PRODUCT FILES`) mandated by
+  the correction order, to remove any possibility of future misreading, and
+  an explicit "deliberately absent from this list" note was added for
+  `ordem-compra.js` in §11.
+- **Ratified (no longer open supervisor decisions):** administrator reversal
+  ownership for `OC-C4-ADMIN-001` (contract §2 — the mandatory order stated
+  this must not be reopened); the row-level reversal-button interaction
+  pattern — compact icon-only, `UI_VISUAL_CONTRACT.md` §8.1, all seven
+  guards mandatory (30×30px; functional icon; complete `title`; matching
+  `aria-label`; visually hidden accessible text; `confirmDialog` before
+  execution; disabled state derived from the server-provided action model)
+  — contract §13.1, revised.
+- **Visual authority reconfirmed, unchanged in substance:** `.claude/design-skill/`
+  remains absent from the canonical workspace and is not a prerequisite;
+  `docs/architecture/UI_VISUAL_CONTRACT.md` remains the sole binding
+  versioned visual authority; no untracked asset was restored or copied
+  from any other workspace during this correction (contract §0a).
+- **Recorded — `ORDEM_COMPRA_CANCEL_HANDLER_STALE_ORDER_CAPTURE`:**
+  `createEvents()` (`js/screens/ordem-compra-events.js:30`) captures
+  `state.ordem || {}` before `loadOrdemDetail()`
+  (`js/screens/ordem-compra.js:45`) replaces `state.ordem`; the returned
+  `cancelar` handler (zero parameters) ignores the current-order argument
+  passed by `js/screens/ordem-compra-render.js:156` and reads the stale
+  closure variable instead — every real click of "Cancelar ordem" on
+  `#/ordens-compra/:id` calls `cancelar_ordem_compra` with `p_ordem_id:
+  undefined`. Confirmed by direct code trace (not by execution). Disposition:
+  genuine pre-existing defect; not part of `PHASE-C4` (the affected file is
+  on the unchanged/prohibited list, §11); does not block the `PHASE-C4`
+  receipt UI contract; requires a separate, localized correction order;
+  must not be silently fixed during `PHASE-C4` implementation. Recorded in
+  `PROJECT_STATE.md` POST-LAUNCH DEBT REGISTER item 15,
+  `AGENT_HANDOFF.md`, and contract §21 (new section).
+- **Files (exactly four documents; zero technical file):**
+  `docs/architecture/ORDEM_COMPRA_C4_PHASE_CONTRACT.md`, `PROJECT_STATE.md`,
+  `AGENT_HANDOFF.md`, this ledger. No `db/*.sql`, test, script, product,
+  validator, or normative file modified; `docs/DOCUMENTATION_INDEX.md`,
+  `docs/architecture/ORDEM_COMPRA_C3_TRACEABILITY.md`, and
+  `docs/architecture/PEDIDO_PRODUCTION_FLOW_BACKLOG.md` were **not**
+  touched this pass (outside this pass's authorized-file list); the three
+  protected residue paths (`.gitignore`, `.codex/config.toml`, `.mcp.json`)
+  untouched.
+- **Validation:** `node scripts/validate-spec-custody.mjs` PASS;
+  `node scripts/validate-spec-custody.mjs --self-test` 47/47 PASS; `git diff
+  --check` clean; documentary manifest verified against the exact four-file
+  list above; no product, test, script, migration, configuration, or
+  protected-residue path changed.
+- **State after this pass:** `LAST_ACCEPTED_PHASE: PHASE-C3D`; `ACTIVE_PHASE:
+  NONE`; `ACTIVE_PHASE_CONTRACT: NONE`; `ACCEPTED_CHECKPOINT:
+  429aa3980c7027b9d872a1902e2f31f1a4a85a2a` (unchanged); `OC-C4-ADMIN-001`
+  remains `PLANNED`.
+- **Exact accounting subject:** `docs: correct C4 contract manifest and
+  record cancel debt`.
+- **NEXT_AUTHORIZABLE_ACTION:** supervisor review and acceptance/rejection of
+  the proposed `PHASE-C4` material contract, now with its manifest
+  unambiguous and two sub-decisions ratified
+  (`docs/architecture/ORDEM_COMPRA_C4_PHASE_CONTRACT.md`). `PHASE-C4`
+  implementation, `PHASE-C5`, and `REAL_CUTOVER` remain unauthorized; a
+  separate, localized correction order is the next authorizable action for
+  `ORDEM_COMPRA_CANCEL_HANDLER_STALE_ORDER_CAPTURE`, independent of `PHASE-C4`.
+  **No push is authorized by this pass.**

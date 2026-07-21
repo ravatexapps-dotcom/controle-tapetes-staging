@@ -153,6 +153,22 @@ ACCEPTED_CHECKPOINT: 429aa3980c7027b9d872a1902e2f31f1a4a85a2a
   database, environment, or deployment action. `OC-C4-ADMIN-001` remains
   `PLANNED`; `PHASE-C4` implementation remains unauthorized;
   `ACTIVE_PHASE`/`ACTIVE_PHASE_CONTRACT` remain `NONE`.
+- **`C4-CONTRACT-CORRECTION-R1` (documentation-only correction, this pass):**
+  a supervisor evidence-review packet found the prior review response
+  non-compliant (contract text/diff not fully reproduced in-band) and
+  ordered this correction. The C4 contract's file manifest was restated in
+  an unambiguous two-list form (`js/screens/ordem-compra.js` is authorized
+  for additive modification only and was never actually on the unchanged
+  list, contrary to a claimed contradiction not found on re-verification);
+  administrator reversal ownership and the row-level compact icon-only
+  reversal-button pattern (`UI_VISUAL_CONTRACT.md` §8.1, all seven guards
+  mandatory) were **RATIFIED** and are no longer open supervisor decisions.
+  A pre-existing, out-of-scope defect,
+  `ORDEM_COMPRA_CANCEL_HANDLER_STALE_ORDER_CAPTURE` (item 15, POST-LAUNCH
+  DEBT REGISTER above), was recorded. No `.claude/design-skill/` or other
+  untracked asset was restored or copied from any other workspace.
+  `OC-C4-ADMIN-001` remains `PLANNED`; `PHASE-C4` implementation remains
+  unauthorized; `ACTIVE_PHASE`/`ACTIVE_PHASE_CONTRACT` remain `NONE`.
 - **Next authorizable action:** **supervisor review and acceptance/rejection
   of the proposed `PHASE-C4` material contract**
   (`docs/architecture/ORDEM_COMPRA_C4_PHASE_CONTRACT.md`). `PHASE-C4`
@@ -697,6 +713,23 @@ consequence (1 = most consequential). Full narratives: ledger and archives.
 14. **Two stale git-worktree registrations** (`tapetes-baseline-check`,
     `baseline-check-a34`) — prunable; auto-prune blocked by an OneDrive/AV lock;
     await one authorized `git worktree prune`.
+15. **`ORDEM_COMPRA_CANCEL_HANDLER_STALE_ORDER_CAPTURE`** — pre-existing
+    defect discovered during `C4-CONTRACT-CORRECTION-R1` (2026-07-21) code
+    audit of `js/screens/ordem-compra*.js`, unrelated to and predating
+    `PHASE-C4`. `createEvents()` (`js/screens/ordem-compra-events.js:30`)
+    captures `state.ordem || {}` **before** `loadOrdemDetail()`
+    (`js/screens/ordem-compra.js:45`) replaces `state.ordem`; the returned
+    `cancelar` handler (`js/screens/ordem-compra-events.js:32`, zero
+    parameters) ignores the current order argument passed by
+    `js/screens/ordem-compra-render.js:156` and reads the stale closure
+    variable instead — every real click of "Cancelar ordem" on
+    `#/ordens-compra/:id` calls `cancelar_ordem_compra` with `p_ordem_id:
+    undefined`, not the actual order id. Full trace:
+    `docs/architecture/ORDEM_COMPRA_C4_PHASE_CONTRACT.md` §21. **Not part of
+    `PHASE-C4`** — the affected file is on that contract's unchanged/
+    prohibited list (§11); does not block the `PHASE-C4` receipt UI
+    contract; requires a separate, localized correction order; must not be
+    silently fixed during `PHASE-C4` implementation.
 
 - **Purchase-order Phase-C open items:** `HISTORICAL_SALDO_FIOS_PROVENANCE_UNAVAILABLE`
   (nonblocking); `NATIVE_RECEIPT_COMPATIBILITY_MULTI_ORIGIN_UNRESOLVED`; native

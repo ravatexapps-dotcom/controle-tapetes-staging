@@ -49,6 +49,43 @@ STATUS: PROPOSED / AWAITING SUPERVISOR REVIEW / IMPLEMENTATION NOT AUTHORIZED
 
 ---
 
+## 0a. Correction record — `C4-CONTRACT-CORRECTION-R1`
+
+A supervisor evidence-review packet (`C4-CONTRACT-SUPERVISOR-REVIEW-PACKET-R1`)
+found the prior review response non-compliant on two points and ordered this
+documentation-only correction (`C4-CONTRACT-CORRECTION-R1`, read against
+`HEAD` `67fb71176e5629494f5f4600944ed8d2daad6b10`):
+
+1. The review response did not reproduce this contract's complete text
+   in-band, and declined to re-paste the new-file diff hunk for this
+   document — both a failure to follow the review order's explicit "provide
+   directly in the report" / "no changed hunk may be omitted" instructions.
+   Corrected in the resubmitted review; not a defect in this contract's own
+   content.
+2. A claimed "manifest contradiction" between this document's file-manifest
+   sections was investigated by direct `grep` against the committed file
+   (`grep -n "ordem-compra\.js" docs/architecture/ORDEM_COMPRA_C4_PHASE_CONTRACT.md`,
+   run against commit `67fb711`): `js/screens/ordem-compra.js` (the bare
+   orchestrator file) was found listed **only** in the modified-files
+   manifest (§10) and was **never** present in the unchanged/prohibited list
+   (§11), which enumerates `ordem-compra-render.js`/`-data.js`/`-events.js`
+   — three distinct sibling files — not `ordem-compra.js` itself. No literal
+   contradiction existed in the committed text. §10/§11 are nonetheless
+   restated below in the exact two-list form mandated by
+   `C4-CONTRACT-CORRECTION-R1` (§10/§11, revised) to remove any possibility
+   of future misreading.
+
+This correction pass additionally **ratifies** two decisions this contract
+had left open for supervisor confirmation (§2, §13.1 below, both no longer
+listed as open in §20) and **records** a confirmed pre-existing, out-of-scope
+defect (§21) that supervisor review surfaced while auditing the cancel
+handler referenced in §4.4/§11. No `.claude/design-skill/` or other untracked
+asset was restored, copied, or referenced from any other workspace during
+this correction — `docs/architecture/UI_VISUAL_CONTRACT.md` alone remains
+the visual authority (§4.6, §13, unchanged by this pass).
+
+---
+
 ## 1. Dependencies (documents this contract reads and binds to)
 
 Read in full for this pass, per `docs/governance/AGENT_INSTRUCTIONS.md` §2 and
@@ -176,6 +213,12 @@ genuinely unresolved reversal question in the canon is **supplier** reversal
 permission... not part of the first admin receipt UI") — which is out of
 scope for C4 by the same clause. **Disposition: administrator reversal IS
 in scope for PHASE-C4. This is not `UNPROVEN`.**
+
+**RATIFIED (`C4-CONTRACT-CORRECTION-R1`, Mandatory Decision 1):** the
+supervisor confirmed this determination and directed that it not be
+reopened. Administrator reversal is a closed, binding element of
+`OC-C4-ADMIN-001`'s scope; §20 no longer lists it as a decision pending
+supervisor confirmation.
 
 ---
 
@@ -595,41 +638,48 @@ level.
 
 ## 10. Exact projected product-file manifest (reconciliation Q5)
 
-No wildcard or directory-level authorization exists; the list below is
-closed and exact.
+**Revised by `C4-CONTRACT-CORRECTION-R1` (Mandatory Decision 4).** No
+wildcard or directory-level authorization exists; the two lists below
+(§10 = authorized, §11 = unchanged/prohibited) are closed, exact, and
+mutually exclusive by construction — no file appears in both.
 
-**New files (three), justified by `CODE_HEALTH_RULES.md` §6 (screens must
-not become a dump of writes/helpers/functions from other screens) and §9
-(Supabase writes must stay in explicit write modules; render functions must
-not perform DML):**
+### AUTHORIZED PRODUCT FILES
 
-1. `js/screens/ordem-compra-receipt-data.js` — `obter_historico_recebimento_ordem_compra`
-   loader; `registrar_recebimento_ordem_compra` writer;
+Justified by `CODE_HEALTH_RULES.md` §6 (screens must not become a dump of
+writes/helpers/functions from other screens) and §9 (Supabase writes must
+stay in explicit write modules; render functions must not perform DML):
+
+1. **New** `js/screens/ordem-compra-receipt-data.js` —
+   `obter_historico_recebimento_ordem_compra` loader;
+   `registrar_recebimento_ordem_compra` writer;
    `estornar_recebimento_ordem_compra` writer; independent
    idempotency-token/attempt-tracker/transport-ambiguity-classifier
    primitives (§8's binding scoping rule). No DOM code.
-2. `js/screens/ordem-compra-receipt-render.js` — renders the persistent
-   **Recebimentos** section (§R.24.9): item/allocation remaining-quantity
-   table, receipt command history (`comandos[]`), receive/reverse buttons
-   gated strictly by `acoes.receber`/`acoes.estornar` per row/entry. No RPC
-   calls, no DML (pure render, per CODE_HEALTH §9).
-3. `js/screens/ordem-compra-receipt-events.js` — wires the receive button to
-   a dedicated registration modal (allocation-line inputs + one explicit
-   excess line, built from `js/ui.js` primitives) and each reversal button
-   to a dedicated reversal modal (per-`lancamento_id` kg + `motivo`);
-   submits through `ordem-compra-receipt-data.js`; owns the two independent
-   attempt trackers (§12).
-
-**Modified files (one product file + one manifest file):**
-
-4. `js/screens/ordem-compra.js` — additive orchestration only: load receipt
-   history alongside the existing `loadOrdemDetail`/`loadDistribuicao`
-   calls, render the new Recebimentos section into the existing detail
-   container (only when `modelo==='nativo'`), and merge the new module's
-   handlers into the existing `handlers` object alongside the unchanged
-   `cancelar` handler.
-5. `index.html` — three new `<script src="js/screens/ordem-compra-receipt-*.js?v=...">`
-   tags, added among the existing `ordem-compra-*` entries, loaded before
+2. **New** `js/screens/ordem-compra-receipt-render.js` — renders the
+   persistent **Recebimentos** section (§R.24.9): item/allocation
+   remaining-quantity table, receipt command history (`comandos[]`),
+   receive/reverse buttons gated strictly by
+   `acoes.receber`/`acoes.estornar` per row/entry, using the ratified
+   row-level reversal-button pattern (§13.1). No RPC calls, no DML (pure
+   render, per CODE_HEALTH §9).
+3. **New** `js/screens/ordem-compra-receipt-events.js` — wires the receive
+   button to a dedicated registration modal (allocation-line inputs + one
+   explicit excess line, built from `js/ui.js` primitives) and each
+   reversal button to a dedicated reversal modal (per-`lancamento_id` kg +
+   `motivo`); submits through `ordem-compra-receipt-data.js`; owns the two
+   independent attempt trackers (§12).
+4. **Additive integration in** `js/screens/ordem-compra.js` — orchestration
+   only: load receipt history alongside the existing
+   `loadOrdemDetail`/`loadDistribuicao` calls, render the new Recebimentos
+   section into the existing detail container (only when
+   `modelo==='nativo'`), and merge the new module's handlers into the
+   existing `handlers` object alongside the unchanged `cancelar` handler.
+   **`js/screens/ordem-compra.js` is authorized for this additive
+   modification only; it is not, and must never be read as, a member of
+   the unchanged/prohibited list in §11.**
+5. **Additive script registration in** `index.html` — three new
+   `<script src="js/screens/ordem-compra-receipt-*.js?v=...">` tags, added
+   among the existing `ordem-compra-*` entries, loaded before
    `js/screens/ordem-compra.js` (matching the existing file family's own
    load-order convention). No other line changes.
 
@@ -640,32 +690,39 @@ implementation order. §11 makes the negative list explicit.
 
 ## 11. Explicit unchanged-file list (reconciliation Q6)
 
+**Revised by `C4-CONTRACT-CORRECTION-R1` (Mandatory Decision 4).**
+
+### UNCHANGED PRODUCT FILES
+
 **Confirmed unchanged, with evidence (not merely presumed):**
 
+- `js/screens/ordem-compra-data.js` — existing detail-screen data loader;
+  left byte-unchanged; all new receipt data logic lives in the new
+  `ordem-compra-receipt-data.js` (§10 item 1).
+- `js/screens/ordem-compra-render.js` — existing detail-screen renderer;
+  left byte-unchanged; all new receipt render logic lives in the new
+  `ordem-compra-receipt-render.js` (§10 item 2).
+- `js/screens/ordem-compra-events.js` — existing entity-action handlers
+  (`cancelar`); left byte-unchanged; all new receipt/reversal handlers live
+  in the new `ordem-compra-receipt-events.js` (§10 item 3).
+- `js/screens/ordem-compra-distribuicao.js` — distribution ownership stays
+  with F2/Pedido/Insumos; no C4 change.
+- `js/screens/ordem-compra-receipt-cutover.js` — the PHASE-C3C-B
+  legacy-compat adapter; out of C4's call graph entirely (§8's binding
+  scoping rule).
 - `js/router.js` — the dynamic `#/ordens-compra/:id` route already exists
   (§4.4); no change needed.
 - `js/boot.js` — only registers exact-match routes; the dynamic `:id` route
   is handled entirely by `router.js`; no change needed.
 - `js/screens/common.js` — holds only `shellLayout`/`ADMIN_MENU`; nothing
   C4 needs to add or change here.
-
-**Explicitly prohibited from modification by a future C4 implementation
-order** (per the order's list, confirmed applicable):
-
-- `js/screens/fornecedor.js` (supplier UI — deferred, `OC-C4-SUPPLIER-001`).
-- `js/screens/op-writes.js` (OP receipt UI / legacy flat writer).
-- `js/screens/pedido-detail-events.js`,
+- **All Pedido, OP, supplier, and legacy receipt surfaces**, exactly:
+  `js/screens/fornecedor.js` (supplier UI — deferred,
+  `OC-C4-SUPPLIER-001`); `js/screens/op-writes.js` (OP receipt UI / legacy
+  flat writer); `js/screens/pedido-detail-events.js` and
   `js/screens/pedido-detail-data.js` (Pedido transition modals / C3C-B
   compatibility surfaces — the existing modal-embedded receipt UI stays
-  exactly as-is; no decommission decision is made here, §18).
-- `js/screens/ordem-compra-receipt-cutover.js` (C3C-B compatibility
-  adapter — out of C4's call graph, §8).
-- `js/screens/ordem-compra-distribuicao.js` (distribution ownership).
-- `js/screens/ordem-compra-render.js`, `js/screens/ordem-compra-data.js`,
-  `js/screens/ordem-compra-events.js` (existing detail-screen modules —
-  left byte-unchanged; all new logic lives in the three new receipt-\*
-  modules, per §10's manifest, so the existing files need no edits at all,
-  not even additive ones).
+  exactly as-is; no decommission decision is made here, §17 item 3).
 - Emission controls (the disabled Emitir button in
   `js/screens/ordem-compra-render.js`, already covered above).
 - All `db/*.sql` migrations.
@@ -675,9 +732,14 @@ order** (per the order's list, confirmed applicable):
   `acoes` fields it does not yet exercise — to be scoped precisely by the
   future implementation order, not this contract).
 
-If any prohibited file is later found to be genuinely required, the
-implementation order must stop and report the exact architectural reason
-before proceeding — this contract does not pre-authorize that exception.
+**For the avoidance of doubt: `js/screens/ordem-compra.js` (the bare
+orchestrator) is deliberately absent from this list. It is not unchanged —
+see §10 item 4 for its sole authorized (additive) modification.**
+
+If any file on this unchanged list is later found to be genuinely required,
+the implementation order must stop and report the exact architectural
+reason before proceeding — this contract does not pre-authorize that
+exception.
 
 ---
 
@@ -775,18 +837,34 @@ decisions.
   ~38px), placed next to the Recebimentos section header, not competing
   with the screen's existing "Cancelar ordem" action (a different decision
   scope). Per-entry reversal actions are **row-level** actions inside the
-  command-history table — per §8.1 (`COMPONENT-SPECIFIC`), a row-level
-  reversal button MAY be icon-only (exempt from the "destructive always
-  icon+text" rule) **only if all three §8.1 guards hold**: (1) `title` +
-  matching `aria-label` stating the action in full (e.g. `"Estornar
-  recebimento"`), (2) a visually-hidden clip-rect sr-only label (never
-  `display:none`), (3) `confirmDialog` (`js/ui.js`) gates the action before
-  it fires — reversal is destructive and must never execute on a single
-  click. If those three guards are not all implemented, the button must
-  instead follow the entity-level icon+text destructive rule (§8), not the
-  row-level exemption. This choice is left to the implementation order,
-  which must record which pattern it used and why. Both patterns reuse
-  `js/ui.js`'s `actionButton()`/`confirmDialog()` unmodified.
+  command-history table.
+
+  **RATIFIED (`C4-CONTRACT-CORRECTION-R1`, Mandatory Decision 2) — the
+  row-level reversal button uses the compact icon-only pattern
+  (`UI_VISUAL_CONTRACT.md` §8.1, `COMPONENT-SPECIFIC`), not the
+  entity-level icon+text destructive rule.** This is no longer an
+  implementation-order choice (the prior "left open" wording is superseded).
+  The button must satisfy every one of the following, all mandatory:
+  1. **30×30px** size, `--rv-radius-control` (4px) radius — the exact
+     ratified `§8.1` row-action dimensions.
+  2. A **functional icon** (Feather/Lucide, 14px, per `UI_VISUAL_CONTRACT.md`
+     §13) — no emoji, no decorative-only glyph.
+  3. A **complete `title`** attribute stating the action in full (e.g.
+     `"Estornar recebimento"`, never a bare icon with no accessible name).
+  4. A **matching `aria-label`** — identical text to the `title`.
+  5. **Visually hidden accessible text** using the clip-rect sr-only pattern
+     (never `display:none`, which also hides it from assistive tech).
+  6. **`confirmDialog` (`js/ui.js`) before execution** — reversal is
+     destructive and must never fire on a single click.
+  7. **Disabled state derived from the server-provided action model** — the
+     button is disabled/absent exactly when `acoes.estornar` is `false` or
+     the specific `lancamento`'s `kg_reversivel` is `0`; the client never
+     computes this independently (§7).
+
+  Reuses `js/ui.js`'s `actionButton()`/`confirmDialog()` unmodified — both
+  already implement guards 1-6 (`js/ui.js:237-279`); the implementation
+  order's own responsibility is wiring guard 7's disabled predicate and the
+  `onclick`'s call into `ordem-compra-receipt-data.js`'s reversal writer.
 - **`--rv-*` tokens are not used** for this section: `css/tokens.css` is
   explicitly scoped to the OP Acabamento/Látex pilot and is not linked into
   the `ordem-compra*` render path (§4.6). C4 follows the **same** visual
@@ -1092,31 +1170,108 @@ After this contract is authored:
 
 ## 20. Supervisor decisions still required
 
+**Resolved by `C4-CONTRACT-CORRECTION-R1` (no longer open):**
+
+- ~~Confirm or override the reversal-ownership determination in §2~~ —
+  **RATIFIED**: administrator reversal is in scope for `PHASE-C4`, not to be
+  reopened (§2).
+- ~~Confirm or override the row-level reversal button pattern choice~~ —
+  **RATIFIED**: compact row-level icon-only pattern per
+  `UI_VISUAL_CONTRACT.md` §8.1, all seven guards mandatory (§13.1).
+- ~~Decide whether the exact projected manifest (§10) and unchanged-file
+  list (§11) are correctly scoped~~ — **RESOLVED**: the two-list manifest in
+  §10/§11 is the exact, binding scoping (`C4-CONTRACT-CORRECTION-R1`
+  Mandatory Decision 4).
+
+**Still required:**
+
 1. **Accept, reject, or request changes** to this proposed `PHASE-C4`
    material contract as a whole.
-2. **Confirm or override** the reversal-ownership determination in §2 (this
-   contract finds it textually unambiguous — admin reversal in scope,
-   supplier reversal deferred — but it is the architect's call to ratify).
-3. **Confirm or override** the row-level reversal button pattern choice
-   left open in §13.1 (icon-only with the three §8.1 guards, vs. entity-
-   level icon+text) — this contract does not mandate one over the other.
-4. **Confirm or override** the decision in §17 item 3 to leave the existing
+2. **Confirm or override** the decision in §17 item 3 to leave the existing
    Pedido-modal/`fornecedor.js` receipt UI untouched rather than bundling a
    decommission/redirect decision into C4.
-5. **Decide** whether the exact projected manifest (§10) and unchanged-file
-   list (§11) are correctly scoped, or whether any named file needs to move
-   between the two lists before implementation is authorized.
-6. Once accepted, issue a **separate, explicit implementation order** for
+3. **Route** the recorded baseline debt
+   `ORDEM_COMPRA_CANCEL_HANDLER_STALE_ORDER_CAPTURE` (§21) — confirm it
+   should remain a separate, later-authorized localized correction rather
+   than any other disposition.
+4. Once accepted, issue a **separate, explicit implementation order** for
    `PHASE-C4` in a fresh session that re-reads the canonical repository
    first, per `docs/governance/AGENT_INSTRUCTIONS.md` §2/§3 (phases do not
    chain automatically).
 
 ---
 
-## 21. Status and next authorizable action
+## 21. Recorded baseline debt (out of `PHASE-C4` scope)
+
+Added by `C4-CONTRACT-CORRECTION-R1`. Discovered incidentally while auditing
+`js/screens/ordem-compra.js`/`-events.js`/`-render.js` for §4.4/§11 evidence;
+confirmed by direct code trace, not by execution.
+
+**`ORDEM_COMPRA_CANCEL_HANDLER_STALE_ORDER_CAPTURE`**
+
+**Description:** `createEvents()` (`js/screens/ordem-compra-events.js:30`)
+captures `state.ordem || {}` before `loadOrdemDetail()`
+(`js/screens/ordem-compra.js:45`) replaces `state.ordem`. The cancel handler
+ignores the current order argument and may call `cancelar_ordem_compra` with
+`p_ordem_id: undefined`.
+
+**Exact trace:**
+- `js/screens/ordem-compra.js:33` calls `ns.createEvents({ state: state,
+  reload: reload })` **before** `ns.loadOrdemDetail(id, state)` runs
+  (line 45).
+- `js/screens/ordem-compra-data.js:37-47`'s `createInitialState()` seeds
+  `ordem: null`, so at the moment `createEvents` runs, `state.ordem` is
+  `null`.
+- `js/screens/ordem-compra-events.js:30`: `var ordem = state.ordem || {};`
+  evaluates to a **fresh, disconnected `{}`**, captured by the closure of
+  the returned `cancelar` handler.
+- `js/screens/ordem-compra.js:45` later does `await
+  ns.loadOrdemDetail(id, state)`, which reassigns the `state.ordem`
+  *property* to the real, loaded order — it does not, and cannot, mutate
+  the already-captured `{}` object the closure holds.
+- `js/screens/ordem-compra-render.js:156` correctly passes the live, current
+  order to the click handler (`onclick: function () {
+  handlers.cancelar(o); }`), but
+  `js/screens/ordem-compra-events.js:32`'s `cancelar: function ()` has
+  **zero parameters** and ignores it, reading the stale closure variable
+  instead (line 38: `rpcWrite('cancelar_ordem_compra', { p_ordem_id:
+  ordem.ordem_id }, ...)`).
+- Net effect: every real click of "Cancelar ordem" on `#/ordens-compra/:id`
+  calls `cancelar_ordem_compra` with `p_ordem_id: undefined`, not the actual
+  order id.
+
+**Disposition:**
+- Genuine pre-existing defect — confirmed by code trace, not introduced by
+  this contract or by any pass authored under `C4-MATERIAL-PHASE-CONTRACT-R1`
+  or `C4-CONTRACT-SUPERVISOR-REVIEW-PACKET-R1`.
+- **Not part of `PHASE-C4`.** The affected file
+  (`js/screens/ordem-compra-events.js`) is on the unchanged/prohibited list
+  (§11); fixing it would require touching a file this contract's manifest
+  does not authorize.
+- **Does not block the `PHASE-C4` receipt UI contract.** The defect is
+  isolated to the existing `cancelar` handler; it has no interaction with
+  the new receipt/reversal code paths defined in §6-§13.
+- **Requires a separate, localized correction order** — scoped narrowly to
+  `js/screens/ordem-compra-events.js` (and, if the fix requires reordering
+  `createEvents()`/`loadOrdemDetail()`, `js/screens/ordem-compra.js`), with
+  its own test evidence.
+- **Must not be silently fixed during `PHASE-C4` implementation** — a future
+  `PHASE-C4` implementation order that touches this defect without a
+  separate authorization is out of its own manifest (§10/§11) and must stop
+  and report, not proceed.
+
+Recorded proportionally in `PROJECT_STATE.md` (POST-LAUNCH DEBT REGISTER),
+`AGENT_HANDOFF.md` (Blockers and debts), and `docs/ledgers/G28_LEDGER.md`
+(this pass's entry) — see each document's own corresponding entry.
+
+---
+
+## 22. Status and next authorizable action
 
 **STATUS: `PROPOSED / AWAITING SUPERVISOR REVIEW / IMPLEMENTATION NOT
-AUTHORIZED`.**
+AUTHORIZED`** — unchanged by this correction. Two sub-decisions are now
+**RATIFIED** (§2, §13.1) and the manifest is now **RESOLVED** (§10/§11); the
+contract as a whole still awaits supervisor acceptance/rejection (§20 item 1).
 
 `NEXT_AUTHORIZABLE_ACTION`: supervisor review and acceptance/rejection of
 this proposed `PHASE-C4` material contract (§20). `PHASE-C4` implementation,
