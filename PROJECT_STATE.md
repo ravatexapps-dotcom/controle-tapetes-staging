@@ -20,14 +20,14 @@ LAST_ACCEPTED_PHASE: PHASE-C3C-B
 ACTIVE_PHASE: PHASE-C3D
 ACTIVE_PHASE_CONTRACT: docs/architecture/ORDEM_COMPRA_C3D_PHASE_CONTRACT.md
 ACTIVE_TRACK: PURCHASE_ORDER_PHASE_C
-NEXT_AUTHORIZABLE_ACTION: read-only supervisor review of the corrected PHASE-C3D-D effective-ACL and role-matrix rehearsal evidence (docs/architecture/ORDEM_COMPRA_C3D_PHASE_CONTRACT.md §V, corrected §W — runtime role matrix bound to the simulated ACL closure); PHASE-C3D-E and every later C3D sublot remain unauthorized
+NEXT_AUTHORIZABLE_ACTION: read-only supervisor review of the PHASE-C3D-E session/resource-lock and Component B concurrency rehearsal evidence (docs/architecture/ORDEM_COMPRA_C3D_PHASE_CONTRACT.md §Y — session advisory lock, deterministic resource-lock order, Component B concurrency, idempotency, LIFO reversal and imported-balance floor, with exactly one synthetic PONR crossing per disposable cluster followed by mandatory destruction); PHASE-C3D-F and every later C3D sublot remain unauthorized
 GOVERNING_SPEC: docs/architecture/ORDEM_COMPRA_LIFECYCLE_SPEC_PROPOSED.md
 TECHNICAL_CONTRACT: docs/architecture/PEDIDO_OP_SCHEMA_CONTRACT.md
 SEQUENCE_AUTHORITY: docs/architecture/PEDIDO_PRODUCTION_FLOW_BACKLOG.md
 TRACEABILITY: docs/architecture/ORDEM_COMPRA_C3_TRACEABILITY.md
 LEDGER: docs/ledgers/G28_LEDGER.md
 HANDOFF: AGENT_HANDOFF.md
-ACCEPTED_CHECKPOINT: 6fd63a56a123d6d006353c6ae629611cbc7c01e9
+ACCEPTED_CHECKPOINT: 5a2be05c19a62346b906f7b3cbb0b89d07b3a571
 ```
 <!-- SPEC_CUSTODY_BOOTSTRAP:END -->
 
@@ -71,21 +71,24 @@ ACCEPTED_CHECKPOINT: 6fd63a56a123d6d006353c6ae629611cbc7c01e9
   schema §13.15 are unchanged. Local technical acceptance only — no staging
   validation/application, deployment, activation, cutover, or product acceptance.
 - **Active product phase:** `PHASE-C3D` (material-contract identity; the next
-  authorizable implementation sublot is `PHASE-C3D-E`, `NOT AUTHORIZED` — a
-  **fresh Claude session and a separate order are required** — `PHASE-C3D-F` not
-  authorized). **Active phase contract:**
-  `docs/architecture/ORDEM_COMPRA_C3D_PHASE_CONTRACT.md`
+  authorizable implementation sublot is `PHASE-C3D-F`, `NOT AUTHORIZED` — a
+  **fresh Claude session and a separate order are required**). **Active phase
+  contract:** `docs/architecture/ORDEM_COMPRA_C3D_PHASE_CONTRACT.md`
   (`PHASE_ID: PHASE-C3D`; `STATUS`: `PHASE-C3D-A: CLOSED / TECHNICALLY ACCEPTED /
   LOCALLY VERIFIED` at `096cd60325e4987010d328c856ee6a3a51ca66bf`; `PHASE-C3D-B:
   CLOSED / TECHNICALLY ACCEPTED / LOCALLY VERIFIED` at
   `5441321014883c4e8149dc8b20da9d053a193699`, supervisor-accepted §R;
   `PHASE-C3D-C: CLOSED / TECHNICALLY ACCEPTED / LOCALLY VERIFIED` at
   `6fd63a56a123d6d006353c6ae629611cbc7c01e9`, supervisor-accepted §U;
-  `PHASE-C3D-D: IMPLEMENTED / LOCALLY VERIFIED / AWAITING SUPERVISOR ACCEPTANCE`
-  §V). The combined accepted C3D-A + C3D-B evidence advanced `OC-C3D-DEPLOY-001`
-  to `SATISFIED`, and the accepted C3D-C fence/rollback evidence advanced
-  `OC-C3D-FENCE-001` to `SATISFIED`; `OC-C3D-ACL-001`/`OC-C3D-LOCK-001` remain
-  `PARTIALLY_SATISFIED` (`PHASE-C3D` itself is not closed).
+  `PHASE-C3D-D: CLOSED / TECHNICALLY ACCEPTED / LOCALLY VERIFIED` at
+  `5a2be05c19a62346b906f7b3cbb0b89d07b3a571`, supervisor-accepted §X;
+  `PHASE-C3D-E: IMPLEMENTED / LOCALLY VERIFIED / AWAITING SUPERVISOR ACCEPTANCE`
+  §Y). The combined accepted C3D-A + C3D-B evidence advanced `OC-C3D-DEPLOY-001`
+  to `SATISFIED`, the accepted C3D-C fence/rollback evidence advanced
+  `OC-C3D-FENCE-001` to `SATISFIED`, and the accepted C3D-D effective-ACL/
+  role-matrix evidence advanced `OC-C3D-ACL-001` to `SATISFIED`;
+  `OC-C3D-LOCK-001` remains `PARTIALLY_SATISFIED` pending supervisor review of
+  the C3D-E evidence (`PHASE-C3D` itself is not closed).
 - **`PHASE-C3C-B` (application compatibility/adaptation):** `CLOSED /
   ACCEPTED_WITH_NONBLOCKING_DEBT / LOCALLY VERIFIED` — supervisor-accepted
   2026-07-21 at checkpoint `22bfb192c6c2ad10ccd2b2883d54c3a17e40cc9f`
@@ -380,10 +383,11 @@ ACCEPTED_CHECKPOINT: 6fd63a56a123d6d006353c6ae629611cbc7c01e9
   `6fd63a56a123d6d006353c6ae629611cbc7c01e9`; the accepted fence/rollback
   evidence advanced `OC-C3D-FENCE-001` to `SATISFIED` (traceability updated);
   `OC-C3D-ACL-001`/`OC-C3D-LOCK-001` unchanged.
-- **`PHASE-C3D-D` (effective ACL and role-matrix rehearsal):** `IMPLEMENTED /
-  LOCALLY VERIFIED / CHANGES_REQUIRED RESOLVED / AWAITING SUPERVISOR ACCEPTANCE`
-  (contract §V, corrected §W), correction entry checkpoint
-  `b808a5ea832b5038495afe80e492de724835cae6`. One authorized file,
+- **`PHASE-C3D-D` (effective ACL and role-matrix rehearsal):** `CLOSED /
+  TECHNICALLY ACCEPTED / LOCALLY VERIFIED` — supervisor-accepted (contract §X) at
+  accepted checkpoint `5a2be05c19a62346b906f7b3cbb0b89d07b3a571`, advancing
+  `OC-C3D-ACL-001` to `SATISFIED` (contract §V, corrected §W; original evidence
+  checkpoint `b808a5ea832b5038495afe80e492de724835cae6`). One authorized file,
   `tests/ordem-compra-c3d-acl.integration.sql`, was validated across two fresh
   disposable local PostgreSQL 18.4 clusters: the exact 14-table / 7-sequence /
   11-column / function inventories; an empirical `pg_get_functiondef` proof that
@@ -428,18 +432,52 @@ ACCEPTED_CHECKPOINT: 6fd63a56a123d6d006353c6ae629611cbc7c01e9
   unchanged), script, other test, or product file was touched; `close_final_acl`
   and `activate` are still never invoked. Re-validated across two fresh disposable
   PostgreSQL 18.4 clusters; full-suite failing-identity differential vs. `b808a5e`
-  = empty added. `OC-C3D-ACL-001` remains `PARTIALLY_SATISFIED` (not advanced).
-  See contract §V/§W and `docs/ledgers/G28_LEDGER.md` for the full closeout.
-- **NEXT_AUTHORIZABLE_ACTION:** **read-only supervisor review of the corrected
-  `PHASE-C3D-D` evidence** (`docs/architecture/ORDEM_COMPRA_C3D_PHASE_CONTRACT.md`
-  §V, corrected §W). `PHASE-C3D-E`/`C3D-F` implementation, environment mutation,
-  branch creation, staging validation/application of `db/76`, deployment,
-  activation, real snapshot/import, fence transition, read switch, final
-  ACL-closure invocation, cutover, C4, C5, production access, Supabase write,
-  or any further push beyond the one authorized `staging/dev` fast-forward for
-  this pass remain unauthorized. No product phase chains automatically;
-  `ACTIVE_PHASE`/`ACTIVE_PHASE_CONTRACT` are `PHASE-C3D` / this contract's
-  path.
+  = empty added. `OC-C3D-ACL-001` was subsequently advanced to `SATISFIED` by the
+  supervisor acceptance of C3D-D (contract §X). See contract §V/§W/§X and
+  `docs/ledgers/G28_LEDGER.md` for the full closeout.
+- **`PHASE-C3D-E` (session lock, resource lock, and Component B concurrency
+  rehearsal):** `IMPLEMENTED / LOCALLY VERIFIED / AWAITING SUPERVISOR ACCEPTANCE`
+  (contract §X authorizes it; §Y records it), entry checkpoint
+  `5a2be05c19a62346b906f7b3cbb0b89d07b3a571`. One authorized new file,
+  `tests/ordem-compra-c3d-lock-concurrency.mjs`, was validated across two fresh
+  disposable local PostgreSQL 18.4 clusters (`C3D_E_LOCK_CONCURRENCY_PASS` both):
+  the full session advisory-lock matrix (deterministic key, same-generation
+  exclusion, different-generation independence, release/reacquire,
+  backend-disconnect auto-release, owner-only boundary, no leak); the installed
+  Component B resource-lock order (order → item → idempotency advisory → header
+  lookup → allocations asc → ledger asc → inventory advisory) proven by empirical
+  `pg_get_functiondef` and a real staged blocker (rolled back pre-PONR, zero
+  mutation); real session lock + real `fence_and_snapshot` + the accepted
+  synthetic equivalent of `import_and_reconcile` (per-row `import_snapshot_row` +
+  `assert_snapshot_and_live`) establishing a 5.000 kg immutable imported opening
+  balance under a manual TEST-ONLY `canonical_active` state
+  (`close_final_acl`/`activate` never invoked); a two-session Component B sequence
+  crossing exactly one synthetic PONR per cluster (T1 → 10.000; T2 waits then
+  re-evaluates a fresh +5.000 to 15.000 — no stale 20.000, no deadlock);
+  same-key idempotency replay + `idempotencia_conflitante`; the legitimate nested
+  canonical-active `ordem_compra_item`/movement path at `pg_trigger_depth()>1`
+  with depth-1 denial `55000` (`saldo_fios` exception structural-only — this
+  fixture produces no excess; `saldo_fios_op` `NOT_APPLICABLE` — never written by
+  the receipt path); deterministic LIFO reversal 15.000 → 8.000 (T2 5.000 then T1
+  2.000, T1 3.000 remaining, imported line untouched); imported-balance floor
+  rejection at 4.000 (`reducao_abaixo_saldo_importado`, zero mutation); post-PONR
+  prohibition compliance; and mandatory full cluster destruction. Read-only
+  `ucrjtfswnfdlxwtmxnoo` inspection byte-identical before/after; full-suite
+  failing-identity differential (detached worktree at
+  `5a2be05c19a62346b906f7b3cbb0b89d07b3a571`) added = empty. `PHASE-C3D-E` is not
+  self-accepted; `OC-C3D-LOCK-001` remains `PARTIALLY_SATISFIED` pending review
+  (contract §M item 4). See contract §Y and `docs/ledgers/G28_LEDGER.md` for the
+  full closeout.
+- **NEXT_AUTHORIZABLE_ACTION:** **read-only supervisor review of the
+  `PHASE-C3D-E` evidence** (`docs/architecture/ORDEM_COMPRA_C3D_PHASE_CONTRACT.md`
+  §Y). `PHASE-C3D-F` implementation, environment mutation, branch creation,
+  staging validation/application of `db/76`, deployment, activation, real
+  snapshot/import, fence transition, read switch, real final ACL-closure
+  invocation, real activation, cutover, C4, C5, production access, Supabase
+  write, or any further push beyond the one authorized `staging/dev`
+  fast-forward for this pass remain unauthorized. No product phase chains
+  automatically; `ACTIVE_PHASE`/`ACTIVE_PHASE_CONTRACT` are `PHASE-C3D` / this
+  contract's path.
 
 ## Workspace and Git boundaries
 

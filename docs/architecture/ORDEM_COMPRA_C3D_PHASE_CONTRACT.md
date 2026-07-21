@@ -3,7 +3,7 @@
 <!-- MATERIAL_PHASE_CONTRACT:BEGIN -->
 PHASE_ID: PHASE-C3D
 <!-- MATERIAL_PHASE_CONTRACT:END -->
-STATUS: ACCEPTED — PHASE-C3D-A: CLOSED / TECHNICALLY ACCEPTED / LOCALLY VERIFIED (accepted checkpoint 096cd60325e4987010d328c856ee6a3a51ca66bf) — PHASE-C3D-B: CLOSED / TECHNICALLY ACCEPTED / LOCALLY VERIFIED (accepted checkpoint 5441321014883c4e8149dc8b20da9d053a193699) — PHASE-C3D-C: CLOSED / TECHNICALLY ACCEPTED / LOCALLY VERIFIED (accepted checkpoint 6fd63a56a123d6d006353c6ae629611cbc7c01e9, §U) — PHASE-C3D-D: IMPLEMENTED / LOCALLY VERIFIED / AWAITING SUPERVISOR ACCEPTANCE (§V) — C3D-E THROUGH C3D-F: NOT AUTHORIZED
+STATUS: ACCEPTED — PHASE-C3D-A: CLOSED / TECHNICALLY ACCEPTED / LOCALLY VERIFIED (accepted checkpoint 096cd60325e4987010d328c856ee6a3a51ca66bf) — PHASE-C3D-B: CLOSED / TECHNICALLY ACCEPTED / LOCALLY VERIFIED (accepted checkpoint 5441321014883c4e8149dc8b20da9d053a193699) — PHASE-C3D-C: CLOSED / TECHNICALLY ACCEPTED / LOCALLY VERIFIED (accepted checkpoint 6fd63a56a123d6d006353c6ae629611cbc7c01e9, §U) — PHASE-C3D-D: CLOSED / TECHNICALLY ACCEPTED / LOCALLY VERIFIED (accepted checkpoint 5a2be05c19a62346b906f7b3cbb0b89d07b3a571, §V corrected §W, supervisor acceptance §X) — PHASE-C3D-E: IMPLEMENTED / LOCALLY VERIFIED / AWAITING SUPERVISOR ACCEPTANCE (§Y) — C3D-F: NOT AUTHORIZED
 
 > **Material-contract identity (restored §Q.1).** The machine-readable
 > `PHASE_ID` above is `PHASE-C3D` — the identity of the whole material phase
@@ -1927,3 +1927,226 @@ commit.
   AUTHORIZED**. No real cutover, activation, productive receipt, real closure
   invocation, migration/product modification, Supabase branch/write, deployment,
   `main`, `origin`, or unauthorized remote action was performed.
+
+## X. Supervisor acceptance of PHASE-C3D-D and PHASE-C3D-E authorization
+
+> Authored under the "PHASE-C3D-E — SESSION LOCK, RESOURCE LOCK AND CONCURRENCY
+> REHEARSAL" order, which opens by recording the supervisor's ruling on
+> `PHASE-C3D-D`. Entry checkpoint `5a2be05c19a62346b906f7b3cbb0b89d07b3a571`
+> (the corrected `PHASE-C3D-D` evidence checkpoint, §W). This section records the
+> supervisor's acceptance of `PHASE-C3D-D`, advances `OC-C3D-ACL-001` to
+> `SATISFIED`, and authorizes `PHASE-C3D-E` (executed and recorded in §Y). No
+> `db/*.sql`, product, script, migration, or normative file was modified by the
+> acceptance itself.
+
+### X.1 Acceptance record
+
+- `PHASE-C3D-D` (effective ACL and role-matrix rehearsal, §V corrected §W):
+  **CLOSED / TECHNICALLY ACCEPTED / LOCALLY VERIFIED** — accepted checkpoint
+  `5a2be05c19a62346b906f7b3cbb0b89d07b3a571`. Original C3D-D evidence checkpoint
+  `b808a5ea832b5038495afe80e492de724835cae6`; targeted transaction-binding
+  correction `5a2be05c19a62346b906f7b3cbb0b89d07b3a571`.
+- The accepted C3D-D evidence advances **`OC-C3D-ACL-001` to `SATISFIED`**
+  (traceability matrix updated): the exact 14-table / 11-column / seven-sequence
+  protected-object inventories; the empirical `pg_get_functiondef` proof of the
+  installed `close_final_acl` body; the exact table/column/sequence closure
+  simulation; removal of PUBLIC-targeted policies; effective table/column/
+  sequence/function/RLS matrices; direct-table denial for authenticated actors;
+  the Component A/B eight-actor runtime role matrix executed while the simulated
+  closure remained active (one outer closure-simulation transaction + one nested
+  canonical-active fixture savepoint); synthetic `final_acl_closed_at` /
+  `canonical_activated_at` confined to that savepoint with
+  `productive_receipt_started_at` NULL; savepoint rollback restoring the synthetic
+  markers while retaining the simulated closure; outer rollback restoring catalog
+  and business state byte-for-byte; no invocation of
+  `ordem_compra_c3c_close_final_acl` or `ordem_compra_c3c_activate`; two fresh
+  disposable-cluster runs; read-only shared-development invariance; zero
+  persistent database mutation.
+
+### X.2 Residual debt (recorded, non-blocking to this acceptance)
+
+- The real `close_final_acl` invocation, real activation, and real cutover remain
+  separately unauthorized.
+- The 13 unmapped historical rows remain a real-cutover completeness item.
+- The validator active-contract self-test fixture-harness limitation remains
+  governance-harness debt.
+- Concurrency, session/resource locking, legitimate nested
+  `saldo_fios`/`saldo_fios_op` runtime, LIFO reversal, and the imported-balance
+  floor are owned by `PHASE-C3D-E` (§Y), not by C3D-D.
+
+### X.3 Next sublot authorization
+
+- `PHASE-C3D-E` (session advisory lock, deterministic resource locking,
+  Component B concurrency, idempotency, LIFO reversal, imported-balance floor,
+  and the one authorized synthetic PONR crossing per disposable cluster):
+  **AUTHORIZED**; executed and recorded in §Y.
+- `PHASE-C3D-F`: **NOT AUTHORIZED**.
+
+## Y. PHASE-C3D-E implementation — session lock, resource lock, and Component B concurrency rehearsal
+
+> Authored under the "PHASE-C3D-E — SESSION LOCK, RESOURCE LOCK AND CONCURRENCY
+> REHEARSAL" order, executed at entry checkpoint
+> `5a2be05c19a62346b906f7b3cbb0b89d07b3a571` (§X). Implements the single
+> authorized technical artifact `tests/ordem-compra-c3d-lock-concurrency.mjs`
+> (§I). No `db/*.sql`, `scripts/c3d/bootstrap-disposable-cluster.mjs`, any other
+> existing test, validator, fixture, or product file was modified. Primary
+> requirement: `OC-C3D-LOCK-001` (§R.29.5).
+
+### Y.1 Environment
+
+Two independently bootstrapped fresh disposable, isolated local PostgreSQL 18.4
+clusters (`scripts/c3d/bootstrap-disposable-cluster.mjs`, distinct random ports,
+fresh temp data directories outside the repository), each applying the exact
+ordered `db/01`…`db/76` over the same ephemeral uncommitted Supabase-platform
+preamble (roles `anon`/`authenticated`/`service_role`; schema `auth` with
+`auth.uid()`/`auth.users`; schema `extensions` with `pgcrypto`) and the
+classification-faithful synthetic 64-row corpus (loaded after db/66, before
+db/67; `db/67` self-check `64/27/12/13/12`; reconciliation `64/51/51/51/51`;
+target flat row 930000311 = Class B / fornecedor 930000301 / `kg_pedido` 15.500 /
+`kg_recebido` 5.000 / one allocation `kg_alocado` 15.500). The preamble, corpus,
+and actor fixtures live only in OS temp files created by the test and
+deterministically removed before process exit; the test never connects to any
+shared/remote/managed host and contains no credential, token, or project URL.
+Each cluster crosses the synthetic PONR exactly once and is then destroyed
+(§H/§L).
+
+### Y.2 Evidence (both runs, `C3D_E_LOCK_CONCURRENCY_PASS`)
+
+- **Session advisory-lock matrix (Part C).** Deterministic `lock_key` stable
+  across connections, distinct per generation; NULL/0/negative rejected by the
+  owner acquire command (`owner_only_cutover_command`/42501); same-generation
+  exclusion (L2 acquire FALSE while L1 holds it; the granted lock is bound to
+  L1's backend PID); different-generation independence (930005002 acquired
+  concurrently, both visible under their PIDs); release + immediate reacquisition
+  + FALSE on a second release; backend-disconnect auto-release (L3's captured
+  backend PID and its advisory lock proven absent after an abrupt client kill,
+  L4 reacquires); owner-only boundary (no EXECUTE for authenticated/anon/
+  service_role on either session-lock command); zero leaked advisory lock.
+- **Installed resource-lock order (Part D + D.1).** The installed Component B
+  definition locks order row → item row → actor-scoped idempotency advisory →
+  idempotency-header lookup → allocation rows (asc id) → ledger rows (asc id) →
+  inventory advisory, with the idempotency advisory lock proven to precede the
+  header lookup (empirical `pg_get_functiondef` positional proof — the installed
+  database definition is the execution authority). A real staged blocker holds
+  the target order row; a real Component B worker blocks on it
+  (`pg_blocking_pids` contains the blocker, `wait_event_type=Lock`,
+  `wait_event=transactionid`), creates no header while blocked, advances when the
+  blocker releases, and is rolled back pre-PONR with zero mutation and no leaked
+  lock.
+- **Pre-PONR cutover preparation (Part E).** The preparation session acquires and
+  holds the real cutover session lock; the real `fence_and_snapshot(930005001)`
+  fences to `maintenance_fenced` and freezes the 51-mapping snapshot; the accepted
+  synthetic equivalent of `import_and_reconcile` — the real per-snapshot-row
+  `import_snapshot_row` loop over every kg>0 row (40 import headers) plus the real
+  `assert_snapshot_and_live` reconciliation — establishes the target's 5.000 kg
+  received quantity as exactly one immutable imported opening-balance ledger line
+  (`import_saldo_inicial`, `kg_recebido` cache = 5.000), leaving
+  `productive_receipt_started_at` NULL and `final_acl_closed_at` NULL. The
+  corpus-specific 39/44/20221.280/405.980 `assert_import_reconciled` totals gate
+  is deliberately not invoked (the recorded, accepted C3C-A fixture debt,
+  unexecutable on a synthetic corpus). The minimum valid TEST-ONLY
+  `canonical_active` state is then set MANUALLY (`status=canonical_active`,
+  `read_authority=canonical`, `reconciliation_status=reconciled`,
+  `cutover_generation=930005001`, synthetic `final_acl_closed_at` /
+  `canonical_activated_at`, `productive_receipt_started_at` NULL);
+  `ordem_compra_c3c_close_final_acl` and `ordem_compra_c3c_activate` are NEVER
+  invoked (the synthetic markers exist only because the installed db/75
+  `canonical_active` CHECK requires them). Component A resolves target flat row
+  930000311 to its native order/item; the session lock is released with none
+  remaining.
+- **Two-session Component B concurrency and the one synthetic PONR crossing
+  (Part F).** Two real matching-supplier sessions on target flat row 930000311:
+  T1 (distinct backend PID) increases to an absolute 10.000 kg and holds its
+  transaction open; T2 (distinct backend PID) increases to 15.000 kg and enters a
+  real row-lock wait (`pg_blocking_pids(T2)` contains T1, `wait_event_type=Lock`,
+  no header created, no deadlock, observable nonzero wait). Committing T1 sets
+  `productive_receipt_started_at` non-NULL — the one authorized synthetic PONR
+  crossing in this disposable cluster. T2 then resumes, re-reads the committed
+  10.000 kg total under lock, re-evaluates its absolute-total delta as a fresh
+  +5.000 kg (never the stale +10.000 → 20.000), and commits. Final: imported
+  5.000 + T1 5.000 + T2 5.000 = item `kg_recebido` 15.000; exactly two productive
+  compat receipt headers and two `tipo=recebimento` ledger lines; imported line
+  untouched at 5.000; `pg_stat_database.deadlocks` unchanged.
+- **Idempotency (Part G).** Same key + same payload deterministically replays the
+  existing result with no new header/ledger line and no item/PONR change; same
+  key + different payload returns `idempotencia_conflitante` with zero mutation;
+  identity is scoped as `(idempotency_namespace='legacy_compat_receipt_v1',
+  ator_tipo, ator_id, idempotency_key)`.
+- **Legitimate nested canonical-active path (Part H).** Each productive receipt/
+  reversal mutates `ordem_compra_item.kg_recebido` through the SECURITY DEFINER
+  Component B path at `pg_trigger_depth()>1` (a direct depth-1 client UPDATE of
+  `ordem_compra_item` and of `saldo_fios` is denied `legacy_receipt_fenced`/
+  `55000`) and writes exactly one inventory movement row per line; item, ledger,
+  and movement totals reconcile exactly. The installed protected guard gates the
+  `saldo_fios`/`saldo_fios_op` exception on exactly
+  `pg_trigger_depth()>1 AND v_state='canonical_active'` (empirical catalog proof).
+  `saldo_fios` is **not empirically mutated** by this fixture — the target
+  allocation capacity (`kg_alocado`=15.500) exceeds the maximum total (15.000),
+  so no excess line is ever produced and `derive_state`'s `saldo_fios` branch
+  (conditional on `kg_excesso<>0`) is never reached; the exception is therefore
+  proven structurally and by the depth-1 denial probe. `saldo_fios_op` is
+  **`NOT_APPLICABLE`** — no receipt/reversal/import path writes it (the installed
+  trigger topology writes only `saldo_fios`); proven from the installed trigger
+  definitions and the zero `saldo_fios_op` row count after the scenario. No
+  trigger bypass broader than the accepted installed exception was observed.
+- **Deterministic LIFO reversal (Part I).** An admin reduction to an absolute
+  8.000 kg (delta −7.000) reverses all 5.000 kg of T2's latest productive receipt
+  first, then exactly 2.000 kg of T1's earlier receipt, leaving 3.000 kg of T1
+  unreversed and the imported 5.000 kg opening balance untouched (no reversal
+  references the import line); reversal source ordering is id-descending
+  deterministic (no earlier line reversed before a later reversible line);
+  header/ledger/item/movement totals reconcile; the reduction key replays
+  idempotently with zero extra mutation; `productive_receipt_started_at` stays
+  non-NULL; no deadlock.
+- **Imported-balance immutable floor (Part J).** An admin reduction to an
+  absolute 4.000 kg is rejected with `reducao_abaixo_saldo_importado` reporting
+  the installed 5.000 kg floor; zero mutation of headers, ledger lines, item
+  total, inventory movements, the imported line, `productive_receipt_started_at`,
+  or idempotency identities; the item total remains 8.000 kg.
+- **Post-PONR compliance (Part K) and destruction (Part L).**
+  `productive_receipt_started_at` remains non-NULL; the cluster stays
+  `canonical_active` with the source/inventory snapshots present;
+  `ordem_compra_c3c_pre_ponr_rollback` is never invoked and no `legacy_active`
+  regression is attempted; no advisory lock remains; no backend is idle in
+  transaction; `pg_stat_database.deadlocks` unchanged; every T1/T2/observer/
+  administrative client session is explicitly closed. The bootstrap `stop()`
+  then proves postmaster-PID absence, port closure, and data-directory removal
+  (all `true`), with the captured postmaster PID and the TCP port independently
+  proven absent/closed, and no `c3d-disposable-pg-*` directory or scratch
+  SQL/preamble/corpus file from the run remaining.
+
+### Y.3 Validation
+
+`node --check` on `scripts/c3d/bootstrap-disposable-cluster.mjs` and
+`tests/ordem-compra-c3d-lock-concurrency.mjs`; `node
+tests/ordem-compra-c3d-lock-concurrency.mjs` (two complete fresh-cluster proofs,
+`C3D_E_LOCK_CONCURRENCY_PASS`, exit 0); `node --test
+tests/ordem-compra-c3d-deploy.smoke.js` and
+`tests/ordem-compra-receipt-cutover.smoke.js` PASS; `node
+scripts/validate-spec-custody.mjs` PASS; `git diff --check` / `git diff --cached
+--check` clean. Full mandatory Node suite differential (detached temporary
+worktree at entry checkpoint `5a2be05c19a62346b906f7b3cbb0b89d07b3a571`, `node
+--test tests/**/*.js`): final failing identities minus baseline failing
+identities = empty (the new artifact is a `.mjs` file, never executed by the
+`tests/**/*.js` Node suite). Validator self-test: the known active-contract
+fixture-harness failure only, identical on both sides. The read-only
+`ucrjtfswnfdlxwtmxnoo` inspection was byte-identical before/after this pass; the
+temporary worktree and every scratch artifact were removed and proven absent
+before commit.
+
+### Y.4 Disposition
+
+- `PHASE-C3D-E`: **IMPLEMENTED / LOCALLY VERIFIED / AWAITING SUPERVISOR
+  ACCEPTANCE**. Not self-accepted.
+- `OC-C3D-LOCK-001`: remains **`PARTIALLY_SATISFIED`** — proven by the
+  isolated-rehearsal evidence above, not advanced to `SATISFIED` by this pass;
+  only the supervisor may advance it after review (§M item 4).
+- `OC-C3D-ACL-001`: `SATISFIED` (via §X); `OC-C3D-DEPLOY-001` /
+  `OC-C3D-FENCE-001`: `SATISFIED`; `OC-CUTOVER-001` / `OC-CUTOVER-PONR-001` /
+  `OC-C4-ADMIN-001` / `OC-C4-SUPPLIER-001` / `OC-C5-EMISSION-001`: **unchanged**.
+- **NEXT_AUTHORIZABLE_ACTION:** read-only supervisor review of the `PHASE-C3D-E`
+  evidence; `PHASE-C3D-F` remains **NOT AUTHORIZED**. No `PHASE-C3D-F`, real
+  `close_final_acl` invocation, real activation, real cutover, shared-database
+  write, migration/product/existing-test modification, persistent receipt,
+  deployment, `main`, `origin`/`production` remote mutation, or any push beyond
+  the one authorized `staging/dev` fast-forward for this pass was performed.

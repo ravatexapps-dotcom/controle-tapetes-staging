@@ -8,6 +8,55 @@
 > `PROJECT_STATE.md`. Phase sequence, dependencies, backlog items, and accepted
 > architecture in this file remain authoritative; live operational status does not.
 
+# Update 2026-07-21 - PHASE-C3D-E Session Lock, Resource Lock and Component B Concurrency Rehearsal
+
+Phase: `PHASE-C3D-E` (the fifth `PHASE-C3D` sublot). Historical closeout note —
+live state belongs to `PROJECT_STATE.md`.
+
+This pass first recorded the supervisor's acceptance of `PHASE-C3D-D` (effective
+ACL and role-matrix rehearsal, contract §V corrected §W) as `CLOSED /
+TECHNICALLY ACCEPTED / LOCALLY VERIFIED` at accepted checkpoint
+`5a2be05c19a62346b906f7b3cbb0b89d07b3a571` (contract §X), advancing
+`OC-C3D-ACL-001` to `SATISFIED`. It then executed `PHASE-C3D-E` (primary
+requirement `OC-C3D-LOCK-001`, §R.29.5), adding one authorized new file
+`tests/ordem-compra-c3d-lock-concurrency.mjs` (contract §Y). Validated across two
+independently bootstrapped fresh disposable local PostgreSQL 18.4 clusters
+(`C3D_E_LOCK_CONCURRENCY_PASS` both), each applying the exact ordered
+`db/01`…`db/76` over an ephemeral uncommitted Supabase preamble + the
+classification-faithful synthetic 64-row corpus (`db/67` self-check
+64/27/12/13/12; reconciliation 64/51/51/51/51): the full session advisory-lock
+matrix (deterministic key, same-generation exclusion, different-generation
+independence, release/reacquire, backend-disconnect auto-release, owner-only
+boundary, no leak); the installed Component B resource-lock order (order → item →
+idempotency advisory → header lookup → allocations asc → ledger asc → inventory
+advisory) proven by empirical `pg_get_functiondef` and a real staged blocker
+(rolled back pre-PONR, zero mutation); real session lock + real
+`fence_and_snapshot` + the accepted synthetic equivalent of
+`import_and_reconcile` establishing a 5.000 kg immutable imported opening balance
+under a manual TEST-ONLY `canonical_active` state (`close_final_acl`/`activate`
+never invoked); a two-session Component B sequence crossing exactly one synthetic
+PONR per cluster (T1 → 10.000; T2 waits then re-evaluates a fresh +5.000 to
+15.000, no stale 20.000, no deadlock); same-key idempotency replay +
+`idempotencia_conflitante`; the legitimate nested canonical-active
+`ordem_compra_item`/movement path at `pg_trigger_depth()>1` with depth-1 denial
+`55000` (`saldo_fios` exception structural-only — no excess in this fixture;
+`saldo_fios_op` `NOT_APPLICABLE`); deterministic LIFO reversal 15.000 → 8.000
+(T2 5.000 then T1 2.000, T1 3.000 remaining, imported line untouched);
+imported-balance floor rejection at 4.000 (`reducao_abaixo_saldo_importado`);
+post-PONR prohibition compliance; and mandatory full cluster destruction. Deploy
+smoke and receipt-cutover smoke PASS; `validate-spec-custody` PASS; full-suite
+failing-identity differential vs. `5a2be05c19a62346b906f7b3cbb0b89d07b3a571` =
+empty added (the new artifact is a `.mjs`, never executed by the Node suite);
+validator self-test the identical pre-existing fixture-harness failure only;
+read-only `ucrjtfswnfdlxwtmxnoo` inspection byte-identical before/after.
+`PHASE-C3D-E` is `IMPLEMENTED / LOCALLY VERIFIED / AWAITING SUPERVISOR
+ACCEPTANCE` — not self-accepted; `OC-C3D-LOCK-001` remains
+`PARTIALLY_SATISFIED`; `OC-C3D-ACL-001` is now `SATISFIED` (via §X);
+`OC-C3D-DEPLOY-001`/`OC-C3D-FENCE-001` `SATISFIED`. `PHASE-C3D-F` remains
+unauthorized. Sequence/architecture in this file are unchanged. Full evidence:
+contract §X/§Y and `docs/ledgers/G28_LEDGER.md` (2026-07-21, this pass's own
+entries).
+
 # Update 2026-07-21 - PHASE-C3D-D Targeted Evidence Correction (bind runtime role matrix to the simulated ACL closure)
 
 Phase: `PHASE-C3D-D` (targeted correction). Historical closeout note — live
