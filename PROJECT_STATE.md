@@ -20,7 +20,7 @@ LAST_ACCEPTED_PHASE: PHASE-C3C-B
 ACTIVE_PHASE: PHASE-C3D
 ACTIVE_PHASE_CONTRACT: docs/architecture/ORDEM_COMPRA_C3D_PHASE_CONTRACT.md
 ACTIVE_TRACK: PURCHASE_ORDER_PHASE_C
-NEXT_AUTHORIZABLE_ACTION: execute PHASE-C3D-C from a fresh Claude session using this documentation-only checkpoint HEAD as the exact Git baseline; PHASE-C3D-D and every later C3D sublot remain unauthorized
+NEXT_AUTHORIZABLE_ACTION: read-only supervisor review of the PHASE-C3D-C fence/rollback rehearsal evidence (docs/architecture/ORDEM_COMPRA_C3D_PHASE_CONTRACT.md §S); PHASE-C3D-D and every later C3D sublot remain unauthorized
 GOVERNING_SPEC: docs/architecture/ORDEM_COMPRA_LIFECYCLE_SPEC_PROPOSED.md
 TECHNICAL_CONTRACT: docs/architecture/PEDIDO_OP_SCHEMA_CONTRACT.md
 SEQUENCE_AUTHORITY: docs/architecture/PEDIDO_PRODUCTION_FLOW_BACKLOG.md
@@ -334,17 +334,42 @@ ACCEPTED_CHECKPOINT: 5441321014883c4e8149dc8b20da9d053a193699
   **not** return to `legacy_active` and does **not** restore flat
   grants/policies). `PHASE-C3D-C` is `AUTHORIZED / NOT STARTED` (a fresh Claude
   session is required); `PHASE-C3D-D`…`C3D-F` remain unauthorized.
-- **NEXT_AUTHORIZABLE_ACTION:** **execute `PHASE-C3D-C` from a fresh Claude
-  session** at this documentation-only checkpoint's final HEAD as the exact Git
-  baseline (`docs/architecture/ORDEM_COMPRA_C3D_PHASE_CONTRACT.md` §R.3). No
-  `PHASE-C3D-C` command, `PHASE-C3D-D`/`C3D-E`/`C3D-F` implementation,
-  environment mutation, branch creation, staging validation/application of
-  `db/76`, deployment, activation, real snapshot/import, fence transition, read
-  switch, final ACL-closure invocation, cutover, C4, C5, production access,
-  Supabase write, or any further push beyond the one authorized `staging/dev`
-  fast-forward for this pass is authorized. No product phase chains
-  automatically; `ACTIVE_PHASE`/`ACTIVE_PHASE_CONTRACT` are `PHASE-C3D` / this
-  contract's path.
+- **`PHASE-C3D-C` (fence and pre-PONR rollback rehearsal):** `IMPLEMENTED /
+  LOCALLY VERIFIED / AWAITING SUPERVISOR ACCEPTANCE` (contract §S), entry
+  checkpoint `7f73b4d8210da249ddd5b085c7c3b59244afd72b`. One authorized new
+  file, `tests/ordem-compra-c3d-fence.integration.sql`, was validated across
+  two fresh disposable local PostgreSQL 18.4 clusters: pre-fence admin/
+  matching-supplier authorization controls; the fence transition to
+  `maintenance_fenced/flat/previewed`; the database-faithful authenticated
+  actor-context fence-denial proof (Evidence 5A — exact
+  `legacy_receipt_fenced`/`55000`, no `42501`, zero mutation, `auth.uid()`
+  still resolving) for both actors; the eight-table × three-operation
+  structural fence matrix (Evidence 5B — 24/24 probes, exact
+  `legacy_receipt_fenced`/`55000`, zero mutation), with the internal
+  `saldo_fios`/`saldo_fios_op` trigger-depth exception's nested-path runtime
+  correctly deferred (not fabricated) to `PHASE-C3D-E`; and the pre-PONR
+  rollback rehearsal (test-only fixture, `pre_ponr_rollback` restoring
+  `flat` reads while `status` stays `maintenance_fenced`, byte-identical
+  grants/policies, no `legacy_active` regression, clean lock release). Both
+  runs proved full process/port/directory cleanup. A read-only
+  `ucrjtfswnfdlxwtmxnoo` inspection before/after was byte-identical (zero
+  DDL/DML/mutating RPC). Full-suite differential (detached temporary
+  worktree vs. this pass's entry checkpoint): 141 baseline / 122 here,
+  **added = 0**. Validator self-test: identical pre-existing active-contract
+  fixture-harness failure on both sides, no new failure. `OC-C3D-FENCE-001`
+  remains `PARTIALLY_SATISFIED` — not self-accepted; `OC-C3D-ACL-001`/
+  `OC-C3D-LOCK-001` unchanged. See contract §S and
+  `docs/ledgers/G28_LEDGER.md` for the full closeout.
+- **NEXT_AUTHORIZABLE_ACTION:** **read-only supervisor review of the
+  `PHASE-C3D-C` evidence** (`docs/architecture/ORDEM_COMPRA_C3D_PHASE_CONTRACT.md`
+  §S). `PHASE-C3D-D`/`C3D-E`/`C3D-F` implementation, environment mutation,
+  branch creation, staging validation/application of `db/76`, deployment,
+  activation, real snapshot/import, fence transition, read switch, final
+  ACL-closure invocation, cutover, C4, C5, production access, Supabase write,
+  or any further push beyond the one authorized `staging/dev` fast-forward for
+  this pass remain unauthorized. No product phase chains automatically;
+  `ACTIVE_PHASE`/`ACTIVE_PHASE_CONTRACT` are `PHASE-C3D` / this contract's
+  path.
 
 ## Workspace and Git boundaries
 

@@ -42,11 +42,13 @@
   `PHASE-C3D-A` and `PHASE-C3D-B` are both `CLOSED / TECHNICALLY ACCEPTED /
   LOCALLY VERIFIED` (supervisor-accepted §R; checkpoints
   `096cd60325e4987010d328c856ee6a3a51ca66bf` /
-  `5441321014883c4e8149dc8b20da9d053a193699`). The next authorizable sublot is
-  `PHASE-C3D-C`, `AUTHORIZED / NOT STARTED` — a **fresh Claude session is
-  required**; `PHASE-C3D-D`…`C3D-F` not authorized. `OC-C3D-DEPLOY-001` is now
+  `5441321014883c4e8149dc8b20da9d053a193699`). `PHASE-C3D-C` (fence and
+  pre-PONR rollback rehearsal) is now `IMPLEMENTED / LOCALLY VERIFIED /
+  AWAITING SUPERVISOR ACCEPTANCE` (contract §S) — not self-accepted;
+  `PHASE-C3D-D`…`C3D-F` not authorized. `OC-C3D-DEPLOY-001` is
   `SATISFIED`; `OC-C3D-FENCE-001`/`OC-C3D-ACL-001`/`OC-C3D-LOCK-001` remain
-  `PARTIALLY_SATISFIED` (`PHASE-C3D` itself is not closed).
+  `PARTIALLY_SATISFIED` (`PHASE-C3D` itself is not closed; only the
+  supervisor may advance `OC-C3D-FENCE-001` after reviewing §S).
 - **Active phase contract:** `docs/architecture/ORDEM_COMPRA_C3D_PHASE_CONTRACT.md`
   (`PHASE_ID: PHASE-C3D`; `ACCEPTED`, §0c; C3D-A evidence §O/§P; C3D-B evidence
   §Q; supervisor acceptance + pre-PONR rollback correction §R).
@@ -119,10 +121,11 @@
   (3993 tests, +8) has the same 122-failure set as the `f9b1a54` baseline —
   byte-identical failing-name set, zero regressions; validator PASS. No
   dependent `OC-C3-*` requirement is `SATISFIED`.
-- **Next authorizable action:** **execute `PHASE-C3D-C` from a fresh Claude
-  session** at this documentation-only checkpoint's final HEAD as the exact Git
-  baseline (`docs/architecture/ORDEM_COMPRA_C3D_PHASE_CONTRACT.md` §R.3;
-  `PHASE-C3D-C` is `AUTHORIZED / NOT STARTED`). `PHASE-C3D-A` and `PHASE-C3D-B`
+- **Next authorizable action:** **read-only supervisor review of the
+  `PHASE-C3D-C` fence/rollback rehearsal evidence**
+  (`docs/architecture/ORDEM_COMPRA_C3D_PHASE_CONTRACT.md` §S; `PHASE-C3D-C`
+  is `IMPLEMENTED / LOCALLY VERIFIED / AWAITING SUPERVISOR ACCEPTANCE`).
+  `PHASE-C3D-A` and `PHASE-C3D-B`
   are supervisor-accepted (§R, checkpoints `096cd603…` / `5441321…`) and
   `OC-C3D-DEPLOY-001` is `SATISFIED`; `PHASE-C3D-D`…`C3D-F` remain unauthorized.
   The `PHASE-C3D` contract
@@ -184,8 +187,34 @@
   combined C3D-A + C3D-B evidence advanced `OC-C3D-DEPLOY-001` to `SATISFIED`,
   and the §G item 9 pre-PONR rollback wording was corrected (§R.2: restores
   `flat` reads only, keeps `maintenance_fenced`, does not restore
-  `legacy_active` or flat grants). `PHASE-C3D-C` is `AUTHORIZED / NOT STARTED`
-  (fresh session required).
+  `legacy_active` or flat grants). `PHASE-C3D-C` was then `AUTHORIZED / NOT
+  STARTED` (fresh session required).
+  **`PHASE-C3D-C` (contract §S):** implemented from a fresh session at entry
+  checkpoint `7f73b4d8210da249ddd5b085c7c3b59244afd72b`. One authorized new
+  file, `tests/ordem-compra-c3d-fence.integration.sql`, was validated across
+  two fresh disposable local PostgreSQL 18.4 clusters: pre-fence admin/
+  matching-supplier authorization controls (rolled back, byte-identical
+  target row after); fence entry to `maintenance_fenced/flat/previewed`
+  (`cutover_generation=930003001`, `source_snapshot_count=51`); Evidence 5A
+  (database-faithful authenticated admin + matching-supplier actor-context
+  UPDATE probes, exact `legacy_receipt_fenced`/`55000`, no `42501`, zero
+  mutation, `auth.uid()` still resolving); Evidence 5B (8-table × 3-operation
+  = 24 owner-level structural probes, all exact `legacy_receipt_fenced`/
+  `55000`, zero mutation; the `saldo_fios`/`saldo_fios_op` internal
+  trigger-depth exception's nested-path runtime deferred, not fabricated, to
+  `PHASE-C3D-E`); and a pre-PONR rollback rehearsal (test-only fixture,
+  `ordem_compra_c3c_pre_ponr_rollback` restoring `flat` reads while `status`
+  stays `maintenance_fenced`, byte-identical grants/policies, no
+  `legacy_active` regression, clean advisory-lock release). Both runs proved
+  full process/port/directory cleanup; `ucrjtfswnfdlxwtmxnoo` read-only
+  inspection was byte-identical before/after. Full-suite differential
+  (detached temporary worktree at the entry checkpoint): baseline 141 /
+  workspace 122 failing identities, **added = 0**. Validator self-test:
+  identical pre-existing active-contract fixture-harness failure both sides,
+  no new failure. `PHASE-C3D-C` is `IMPLEMENTED / LOCALLY VERIFIED /
+  AWAITING SUPERVISOR ACCEPTANCE` — not self-accepted. `OC-C3D-FENCE-001`
+  remains `PARTIALLY_SATISFIED`; `OC-C3D-ACL-001`/`OC-C3D-LOCK-001`
+  unchanged.
 
 ## Governing specifications and contracts
 
@@ -261,10 +290,13 @@ Full matrix and normative anchors: `docs/architecture/ORDEM_COMPRA_C3_TRACEABILI
 ## Push, remote, main and deployment limits
 
 - **No push** is authorized by this handoff by default. The `M0` full-history
-  push to `production` was single-use; the `PHASE-C3D-A` order separately
-  authorized exactly one clean fast-forward push to `staging/dev` for this
-  pass's single commit (`test: qualify C3D disposable rehearsal environment`)
-  — that authorization does not extend to any future push.
+  push to `production` was single-use; each prior C3D order separately
+  authorized exactly one clean fast-forward push to `staging/dev` for that
+  pass's own single commit — none of those authorizations extend to any
+  future push. The `PHASE-C3D-C` order separately authorized exactly one
+  clean fast-forward push to `staging/dev` for this pass's single commit
+  (`test: rehearse C3D purchase-order fence`) — that authorization does not
+  extend to any future push.
 - **Remotes:** `production` = `inttexsystem/inttracker` (fetch+push, `main`
   only); `origin` = `grupoterrabranca/controle-tapetes`; `staging` =
   `ravatexapps-dotcom/controle-tapetes-staging` (historical backup only). No

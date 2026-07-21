@@ -6710,3 +6710,160 @@ product file they depend on, was modified by this pass or the prior one):
   at the final documentation-only HEAD produced by this pass; `PHASE-C3D-D` and
   every later sublot remain unauthorized. One fast-forward push to `staging/dev`
   records this pass.
+
+## 2026-07-21 — PHASE-C3D-C — Fence and pre-PONR rollback rehearsal
+
+- **Phase:** `PHASE-C3D-C` (fence and pre-PONR rollback rehearsal), the third
+  sublot of the `PHASE-C3D` material phase contract
+  (`docs/architecture/ORDEM_COMPRA_C3D_PHASE_CONTRACT.md` §C, corrected §0
+  Findings 2 & 6).
+- **Authorization:** the "PHASE-C3D-C — FENCE AND PRE-PONR ROLLBACK
+  REHEARSAL" order, a fresh Claude session as required. Entry checkpoint
+  `7f73b4d8210da249ddd5b085c7c3b59244afd72b` (the accepted `PHASE-C3D-B`
+  documentation-only checkpoint), branch `dev`, `staging/dev` equal to HEAD,
+  preserved residue exactly `.gitignore` (modified, unstaged),
+  `.codex/config.toml` (untracked), `.mcp.json` (untracked).
+- **Entry state verified:** `docs/architecture/ORDEM_COMPRA_C3D_PHASE_CONTRACT.md`
+  recorded `PHASE-C3D-A`/`PHASE-C3D-B` `CLOSED / TECHNICALLY ACCEPTED /
+  LOCALLY VERIFIED` at checkpoints `096cd603…`/`5441321…`, `OC-C3D-DEPLOY-001`
+  `SATISFIED`, `PHASE-C3D-C` `AUTHORIZED / NOT STARTED` — matching
+  `PROJECT_STATE.md`/`AGENT_HANDOFF.md`.
+- **Implementation:** one authorized new file,
+  `tests/ordem-compra-c3d-fence.integration.sql`. No `db/*.sql`,
+  `scripts/c3d/bootstrap-disposable-cluster.mjs`,
+  `tests/ordem-compra-c3d-deploy.smoke.js`,
+  `tests/ordem-compra-c3d-deploy.integration.sql`, or product file modified.
+- **Isolated environment:** two fresh, disposable, isolated local PostgreSQL
+  18.4 clusters via the unmodified `scripts/c3d/bootstrap-disposable-cluster.mjs`
+  (ports 61812, 57100 across the two runs) each carrying the full ordered
+  `db/01`…`db/76` sequence plus an ephemeral, uncommitted rehearsal preamble
+  (roles `anon`/`authenticated`/`service_role`; `auth` schema with
+  `auth.uid()`/`auth.users`; `extensions` schema with `pgcrypto` — same class
+  of preamble as the accepted `PHASE-C3D-B` run; modifies no `db/*.sql`, not
+  committed) and an ephemeral, uncommitted classification-shape-only
+  synthetic 64-row `ordens_compra_fio` corpus loaded before `db/67` (27 A /
+  12 B / 13 C / 12 D; `db/67`'s self-check and reconciliation confirmed
+  `64/51/51/51/51`), carrying the order's reserved synthetic identities
+  (admin `00000000-0000-4000-8000-00000000c3a1`; matching supplier
+  `00000000-0000-4000-8000-00000000c3b1`; fornecedor `930000301`; target
+  flat row `930000311`, Class B, `kg_pedido=15.500`, one of the 51 mapped
+  rows; cutover generation `930003001`).
+- **Pre-fence authorization controls:** for the admin and matching-supplier
+  identities independently, a rolled-back transaction proved `auth.uid()`
+  resolved to the intended actor and the exact real writer-shape
+  `UPDATE public.ordens_compra_fio SET kg_recebido=…, data_recebimento=…,
+  status=… WHERE id=930000311` affected exactly one row with no `42501`/RLS/
+  grant failure; the target row returned byte-identical to its initial state
+  after rollback.
+- **Fence entry:** `ordem_compra_c3c_fence_and_snapshot(930003001)`, after
+  acquiring the session advisory lock, transitioned
+  `legacy_active/flat/not_started/all-null` to
+  `maintenance_fenced/flat/previewed`, `cutover_generation=930003001`,
+  `source_snapshot_count=51`, non-null source/inventory hashes,
+  `productive_receipt_started_at` NULL, session lock held, live
+  source/inventory counts matching the frozen counts.
+- **Evidence Class 5A (database-faithful authenticated actor-context fence
+  proof):** the same real flat-table UPDATE shape, under authenticated admin
+  and matching-supplier contexts independently, denied with exact `SQLSTATE
+  55000` / message `legacy_receipt_fenced` (never `42501`, never a silent
+  zero-row result); zero mutation across every business/cutover fingerprint;
+  `auth.uid()` still resolved to the intended actor after the caught
+  exception. Database-only — no JavaScript/browser/PostgREST execution;
+  `js/screens/op-writes.js`/`js/screens/fornecedor.js` were read-only shape
+  references.
+- **Evidence Class 5B (eight-table structural fence):** all eight
+  `trg_c3c_protected_mutation_guard` installations confirmed
+  `BEFORE INSERT OR UPDATE OR DELETE`; the full 8-table × 3-operation matrix
+  (24 controlled, savepoint-isolated probes) each returned exact
+  `legacy_receipt_fenced`/`55000`; zero mutation across every fingerprint.
+  Three tables (`ordem_compra_item_alocacao`, `ordem_compra_item`) carry
+  additional upstream BEFORE ROW guards (`alocacao_origem_guard`,
+  `alocacao_rascunho_guard`, `item_quantidade_rascunho_guard`) requiring a
+  consistent, rascunho-status parent order; probes for those two tables
+  clone real Class-D (rascunho) rows so the fence guard — not an unrelated
+  upstream guard — is the one that denies. Internal trigger-depth exception
+  (`saldo_fios`/`saldo_fios_op`, `pg_trigger_depth() > 1 AND status =
+  canonical_active`): the direct depth-1 denial is proven by the 24-probe
+  matrix; no `SECURITY DEFINER` function was fabricated to synthesize a
+  nested caller; the legitimate nested-path runtime is recorded as belonging
+  to `PHASE-C3D-E`, not claimed as covered here.
+- **Pre-PONR rollback rehearsal:** a test-only owner-level fixture set
+  `read_authority='canonical'`, `reconciliation_status='reconciled'`
+  (`productive_receipt_started_at`/`canonical_activated_at`/
+  `final_acl_closed_at` remained NULL; not a claim of real
+  import/reconciliation — the real historical totals are unavailable to
+  this synthetic corpus). `ordem_compra_c3c_pre_ponr_rollback(930003001)`
+  produced `status=maintenance_fenced`, `read_authority=flat`,
+  `canonical_activated_at` NULL, `productive_receipt_started_at` NULL,
+  `cutover_generation` unchanged, snapshot/inventory-baseline row counts and
+  effective grants/policies byte-identical before/after, no transition to
+  `legacy_active`, direct protected-table writes still fenced after
+  rollback. The advisory lock was released and proven absent (`pg_locks`
+  count 0); the script issues no unterminated `BEGIN`, leaving no open
+  transaction.
+- **Cleanup (both runs):** `scripts/c3d/bootstrap-disposable-cluster.mjs`'s
+  own audited `stop()` proved postmaster PID absent, port closed, temp
+  directory removed after each run; zero leftover disposable process or
+  `c3d-disposable-pg-*` directory afterward.
+- **Shared development database (`ucrjtfswnfdlxwtmxnoo`) read-only:**
+  migrations `75`(`20260720234958`)/`76`(`20260720235820`) present; cutover
+  singleton `legacy_active`/`flat`/`not_started`, all markers NULL;
+  fingerprint `ordens_compra_fio=64`, `ordem_compra=51`,
+  `ordem_compra_item=51`, `ordem_compra_item_alocacao=51`,
+  `ordem_compra_item_compat_fio=51`, `necessidade_compra_fio=64`,
+  `ordem_compra_recebimentos=0`, `ordem_compra_fio_lancamentos=0`,
+  `ordem_compra_fio_movimentos_estoque=0`, `saldo_fios=5`,
+  `saldo_fios_op=0`, zero advisory locks — captured before and after the
+  local rehearsals, byte-identical. No DDL/DML/mutating RPC; only
+  `execute_sql` read-only `SELECT` queries via the pre-scoped
+  `supabase-dev-g28` MCP connection.
+- **Files materially changed:** `tests/ordem-compra-c3d-fence.integration.sql`
+  (new); `docs/architecture/ORDEM_COMPRA_C3D_PHASE_CONTRACT.md` (§S
+  appended; `STATUS` marker corrected); `PROJECT_STATE.md`;
+  `AGENT_HANDOFF.md`; `docs/architecture/ORDEM_COMPRA_C3_TRACEABILITY.md`
+  (`OC-C3D-FENCE-001` evidence/debt columns updated — disposition and
+  accepted checkpoint held unchanged, pending supervisor review);
+  `docs/architecture/PEDIDO_PRODUCTION_FLOW_BACKLOG.md` (one dated closeout
+  note); this ledger. `docs/DOCUMENTATION_INDEX.md` not touched (no indexed
+  status materially changed beyond the C3D contract row's own STATUS text,
+  already covered by the contract itself). No `db/*.sql`, product `js/*`/
+  `index.html`/CSS, existing test, validator, package/lockfile, CI,
+  deployment/Supabase/MCP config, or `.gitignore` modified; the three
+  preserved residue paths are excluded from the commit.
+- **Validation:** `node --check` on `scripts/c3d/bootstrap-disposable-cluster.mjs`
+  and `tests/ordem-compra-c3d-deploy.smoke.js`; `node --test
+  tests/ordem-compra-c3d-deploy.smoke.js` (24/24); `node --test
+  tests/ordem-compra-receipt-cutover.smoke.js` (43/43); `node
+  scripts/validate-spec-custody.mjs` PASS; the disposable-cluster fence/
+  rollback proof executed twice from fresh clusters (both
+  `C3D_C_FENCE_INTEGRATION_PASS`); `git diff --check` / `git diff --cached
+  --check` clean; the full mandatory Node suite differential against the
+  entry checkpoint `7f73b4d8210da249ddd5b085c7c3b59244afd72b` in a temporary
+  detached worktree outside the canonical workspace (removed and pruned
+  after) — 141 baseline failing identities, 122 in this workspace, **final
+  minus baseline = empty** (added = 0; the 19 baseline-only identities are
+  pre-existing non-determinism, not claimed as a fix). `node
+  scripts/validate-spec-custody.mjs --self-test` fails identically at the
+  entry checkpoint and here (`R1: ACTIVE_PHASE_CONTRACT is not an existing
+  file` — the same pre-existing active-contract fixture-harness limitation
+  recorded at `PHASE-C3D-B`); no new validator/self-test failure; the
+  validator itself was not modified.
+- **State after this pass:** `PHASE_ID: PHASE-C3D`; `ACTIVE_PHASE:
+  PHASE-C3D`; `LAST_ACCEPTED_PHASE: PHASE-C3C-B` (unchanged);
+  `ACCEPTED_CHECKPOINT: 5441321014883c4e8149dc8b20da9d053a193699`
+  (unchanged — `PHASE-C3D-C` is not self-accepted). `PHASE-C3D-A`/
+  `PHASE-C3D-B` = CLOSED / TECHNICALLY ACCEPTED / LOCALLY VERIFIED;
+  `PHASE-C3D-C` = IMPLEMENTED / LOCALLY VERIFIED / AWAITING SUPERVISOR
+  ACCEPTANCE. `OC-C3D-DEPLOY-001` = SATISFIED (unchanged); `OC-C3D-FENCE-001`
+  = `PARTIALLY_SATISFIED` (unchanged — only the supervisor may advance it
+  after review); `OC-C3D-ACL-001`/`OC-C3D-LOCK-001` = `PARTIALLY_SATISFIED`
+  (unchanged).
+- **Exact accounting subject:** `test: rehearse C3D purchase-order fence`.
+- **NEXT_AUTHORIZABLE_ACTION:** read-only supervisor review of the
+  `PHASE-C3D-C` evidence (contract §S). No `PHASE-C3D-D`/`C3D-E`/`C3D-F`
+  implementation, environment mutation, branch creation, staging
+  validation/application of `db/76`, activation, real snapshot/import, fence
+  transition, read switch, final ACL-closure invocation, cutover, C4, C5,
+  production access, Supabase write, `main`, `origin`/`production` remote
+  mutation, or any further push beyond the one authorized `staging/dev`
+  fast-forward for this pass is authorized.

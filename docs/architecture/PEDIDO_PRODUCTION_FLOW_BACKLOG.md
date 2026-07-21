@@ -8,6 +8,37 @@
 > `PROJECT_STATE.md`. Phase sequence, dependencies, backlog items, and accepted
 > architecture in this file remain authoritative; live operational status does not.
 
+# Update 2026-07-21 - PHASE-C3D-C Fence and Pre-PONR Rollback Rehearsal
+
+Phase: `PHASE-C3D-C` (the third `PHASE-C3D` sublot). Historical closeout
+note — live state belongs to `PROJECT_STATE.md`.
+
+Executed from a fresh Claude session at entry checkpoint
+`7f73b4d8210da249ddd5b085c7c3b59244afd72b`. `PHASE-C3D-C` added one
+authorized file, `tests/ordem-compra-c3d-fence.integration.sql`, validated
+across two fresh disposable local PostgreSQL 18.4 clusters: pre-fence
+admin/matching-supplier authorization controls; fence entry to
+`maintenance_fenced/flat/previewed`; a database-faithful authenticated
+actor-context fence-denial proof (Evidence 5A — exact
+`legacy_receipt_fenced`/`55000` for both actors, zero mutation, no
+JavaScript/browser/PostgREST execution); the eight-table × three-operation
+structural fence matrix (Evidence 5B — 24/24 probes, exact
+`legacy_receipt_fenced`/`55000`, with the `saldo_fios`/`saldo_fios_op`
+internal trigger-depth exception's nested-path runtime correctly deferred,
+not fabricated, to `PHASE-C3D-E`); and a pre-PONR rollback rehearsal
+(test-only fixture, `ordem_compra_c3c_pre_ponr_rollback` restoring `flat`
+reads while `status` stays `maintenance_fenced`, byte-identical
+grants/policies, no `legacy_active` regression). Both runs proved full
+process/port/directory cleanup; a read-only `ucrjtfswnfdlxwtmxnoo`
+inspection was byte-identical before/after. Full-suite differential
+(detached temporary worktree at the entry checkpoint): 141 baseline / 122
+here, added = 0. `PHASE-C3D-C` is `IMPLEMENTED / LOCALLY VERIFIED /
+AWAITING SUPERVISOR ACCEPTANCE` — not self-accepted; `OC-C3D-FENCE-001`
+remains `PARTIALLY_SATISFIED` pending supervisor review; `OC-C3D-ACL-001`/
+`OC-C3D-LOCK-001` unchanged. Sequence/architecture in this file are
+unchanged. Full evidence: contract §S and `docs/ledgers/G28_LEDGER.md`
+(2026-07-21, this pass's own entry).
+
 # Update 2026-07-21 - PHASE-C3D-B Supervisor Acceptance & Documentary Reconciliation
 
 Phase: `PHASE-C3D-B` supervisor acceptance (documentation-only). Historical
