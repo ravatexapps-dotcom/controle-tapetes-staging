@@ -8,6 +8,52 @@
 > `PROJECT_STATE.md`. Phase sequence, dependencies, backlog items, and accepted
 > architecture in this file remain authoritative; live operational status does not.
 
+# Update 2026-07-21 - PHASE-C3C-B Supervisor Acceptance + PHASE-C3D Contract Authored
+
+Phase: `PHASE-C3C-B` acceptance closeout + `PHASE-C3D` material phase contract
+authoring.
+Type: documentation-only + read-only diagnosis; no product, test, migration,
+database, environment, deployment, or configuration change.
+
+The supervisor **ACCEPTED** `PHASE-C3C-B` (application compatibility/adaptation)
+as `CLOSED / ACCEPTED_WITH_NONBLOCKING_DEBT / LOCALLY VERIFIED` at checkpoint
+`22bfb192c6c2ad10ccd2b2883d54c3a17e40cc9f`
+(`docs/architecture/ORDEM_COMPRA_C3C_B_PHASE_CONTRACT.md` §36), over the initial
+implementation (`ee5e87c`) and the two corrections (`f9b1a54` then `22bfb192`):
+the exact finite RPC-error classifier, real call-site idempotency retention, the
+`pedido-detail-events.js` runtime proof, UI-inertness, and the empty full-suite
+failing-name differential (122 = 122). The four `OC-C3-*` requirements stay
+`PARTIALLY_SATISFIED` (not `SATISFIED`): real `canonical_active` proof and the
+real cutover boundary are owned by `PHASE-C3D` / real cutover, and `db/76`
+remains unapplied to any staging database.
+
+The `PHASE-C3D` material phase contract was authored at
+`docs/architecture/ORDEM_COMPRA_C3D_PHASE_CONTRACT.md`
+(`STATUS: PROPOSED / AWAITING SUPERVISOR ACCEPTANCE / IMPLEMENTATION NOT
+AUTHORIZED`). It binds the four already-ratified `OC-C3D-*` requirements to an
+isolated-rehearsal scope — six proposed sublots (C3D-A environment/deploy
+manifest, C3D-B inactive presence, C3D-C fence & rollback, C3D-D ACL/role
+matrix, C3D-E concurrency/locks, C3D-F closeout) — an environment strategy
+(disposable local PostgreSQL + read-only shared-DB inspection recommended; an
+isolated Supabase branch is UNPROVEN and not created; no state-changing
+rehearsal against the shared `ucrjtfswnfdlxwtmxnoo`), entry/exit gates, a test
+matrix, the recovery/PONR model, exact future manifests, and the mandatory
+supervisor decisions. It creates no requirement, changes no anchor, and
+authorizes no implementation, migration, branch creation, deployment, or
+environment action; no `OC-C3D-*` disposition changes.
+
+A read-only Supabase premise audit against `ucrjtfswnfdlxwtmxnoo` empirically
+re-confirmed the inert state (`legacy_active`/`flat`/`not_started`, all markers
+null), migration history `74 → 75 → 76`, 64 flat rows = 51 mapped + 13 unmapped
+(ids 153–165), 0 receipt rows, and both `db/76` functions present. Branch
+availability is `UNPROVEN` (no authorized read-only MCP path could enumerate
+branches; none assumed or created).
+
+This entry changes no backlog sequence, dependency, or accepted architecture
+(the live-state owner is `PROJECT_STATE.md`): `PHASE-C3C-B` accepted; `PHASE-C3D`
+`PROPOSED`. Next authorizable action: read-only supervisor review of the
+`PHASE-C3D` contract. `validate-spec-custody` PASS; `git diff --check` clean.
+
 # Update 2026-07-20 - PHASE-C3C-B Final Targeted Correction (Finite RPC-Error Classification + Runtime Idempotency Proof)
 
 Phase: `PHASE-C3C-B` (application compatibility/adaptation).

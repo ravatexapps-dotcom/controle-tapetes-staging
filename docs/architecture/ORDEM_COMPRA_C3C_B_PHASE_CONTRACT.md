@@ -3,7 +3,7 @@
 <!-- MATERIAL_PHASE_CONTRACT:BEGIN -->
 PHASE_ID: PHASE-C3C-B
 <!-- MATERIAL_PHASE_CONTRACT:END -->
-STATUS: IMPLEMENTED / LOCALLY VERIFIED / AWAITING SUPERVISOR ACCEPTANCE (§35, corrected)
+STATUS: CLOSED / ACCEPTED_WITH_NONBLOCKING_DEBT / LOCALLY VERIFIED (§36)
 
 > **Role of this document.** This is a **material phase contract**, authored under
 > `docs/governance/DOCUMENTATION_MODEL.md` §19 and
@@ -1802,3 +1802,152 @@ supervisor acceptance of the implementation. The next authorizable action
 after the push is supervisor review/acceptance of this corrected
 implementation. **HARD STOP** — `PHASE-C3D` is not started by this
 correction.
+
+## 36. Supervisor acceptance record — PHASE-C3C-B application adaptation (governs on conflict)
+
+> **Append-only closeout (`PHASE_CLOSEOUT` per
+> `docs/governance/DOCUMENTATION_MODEL.md` §19; `FORWARD_CORRECTION` for the
+> superseded status marker).** Recorded under architect order
+> `docs: accept C3C-B and define C3D contract`, documentation-only. This
+> disposition is recorded by the delegated technical supervisor; it is not
+> attributed to Kleber. §§0–35 are preserved verbatim (no history rewrite).
+> **Where §§1–35 and this §36 conflict, §36 governs.** This section records
+> supervisor acceptance of the `PHASE-C3C-B` application-adapter implementation
+> as corrected through §35. It touches no product, test, `db/*.sql`, migration,
+> Supabase, environment, or configuration file, and performs no database,
+> deployment, activation, or cutover action.
+
+### 36.1 Verdict
+
+**`ACCEPTED_WITH_NONBLOCKING_DEBT`.** The supervisor **ACCEPTS**
+`PHASE-C3C-B` (application compatibility/adaptation) as implemented in §33 and
+corrected in §34 (idempotency-attempt retention + exact `42883`) and §35
+(finite RPC-error classification + runtime idempotency proof).
+
+- **Accepted checkpoint:** `22bfb192c6c2ad10ccd2b2883d54c3a17e40cc9f`.
+- **Accepted commit chain:**
+  - initial implementation `ee5e87cd90f9e418925a99d6d51ad43cd38bedf0`
+    (`feat: adapt legacy purchase-order receipts for cutover`, §33);
+  - first correction `f9b1a54cc7b185a5e72f50209322d1473e93e850`
+    (`fix: preserve C3C-B receipt idempotency attempts`, §34);
+  - final correction `22bfb192c6c2ad10ccd2b2883d54c3a17e40cc9f`
+    (`fix: complete C3C-B retry classification proof`, §35).
+- **Status:** `CLOSED / ACCEPTED_WITH_NONBLOCKING_DEBT / LOCALLY VERIFIED`
+  (machine-readable marker at the head of this file updated accordingly).
+
+### 36.2 Basis for acceptance — the two prior blocking findings are closed
+
+- **Exact finite RPC-error policy (§35.4).** The classifier resolves every RPC
+  outcome to exactly one of three branches, grounded in the real
+  `@supabase/postgrest-js` response shape: `legacy_fallback` only on a
+  documented inactive signal (`listar_compat_inativo` `55000` /
+  `{ok:false,codigo:'recebimento_compat_inativo'}`) or the bounded exact
+  `error.code === '42883'` missing-function interval (§32.4); `ambiguous_failure`
+  only on `!!res.error && res.status === 0` (a genuine transport ambiguity — the
+  `fetch()` promise itself rejected, no HTTP response received), which fails
+  closed and **retains** the attempt; and `hard_failure` for every other
+  received response (permission `42501`, data `22P02`, PGRST/schema errors, any
+  `{ok:false,codigo:...}` other than the inactive code, and every unrecognized
+  non-zero-status response), which fails closed and **closes** the attempt.
+  Ambiguity is never inferred from `error.message` text in either direction.
+- **Real-call-site idempotency retention (§34.3/§35.6).** Each real receipt UI
+  closure owns exactly one `createAttemptTracker()` for the lifetime of its
+  control, resolves the attempt by intent (`{ordemId, kg, dataRec}`) before each
+  submission, reuses the retained token verbatim on a retry of unchanged intent
+  after an ambiguous transport failure, and mints a new token after any changed
+  field or any deterministic outcome. The token is random; intent decides reuse
+  only; state lives solely in the caller-owned closure with no global
+  persistence.
+- **Runtime proof for `pedido-detail-events.js` (§35.6).** `makeHubRuntime()` in
+  `tests/pedido-detail.smoke.js` loads the real adapter and real
+  `js/screens/op-writes.js`; two runtime tests drive
+  `handlers.openMovementModal(...)`'s real "Registrar recebimento" button
+  through real DOM clicks against a stateful mocked `window.supa`, proving token
+  retention/renewal across ambiguous/deterministic/success outcomes with zero
+  flat writes, and exactly one flat write on the documented inactive signal. All
+  three real receipt-writing call-sites (`op-nova.js`, `fornecedor.js`,
+  `pedido-detail-events.js`) now have real DOM-click + stateful-mock runtime
+  proof; none relies on static assertion alone. §34.9's disclosed static-only
+  debt is resolved.
+
+### 36.3 UI-inertness (`OC-C3-NOUI-001`)
+
+`js/router.js` and `js/boot.js` are byte-unchanged. Every adapted call-site
+keeps its exact existing inputs, outputs, and rendering; the only new code path
+is an internal state-check-then-fallback branch, unreachable in observable
+behavior while `legacy_active` (the permanent, database-confirmed state through
+this phase — development database `ucrjtfswnfdlxwtmxnoo` remains
+`legacy_active`/`flat`). `index.html`'s diff is exactly one added `<script>`
+line. Proven by diff, not screenshot, since no pixel is expected to change.
+
+### 36.4 No database / environment / deployment action
+
+This acceptance repeats no technical validation and performs no database,
+Supabase, staging, deployment, activation, snapshot/import, fence transition,
+read switch, ACL-closure invocation, or cutover action. `db/75`/`db/76` remain
+installed **inert** in the development database `ucrjtfswnfdlxwtmxnoo` (both
+functions return/raise their inactive signals; `status=legacy_active`,
+`read_authority=flat`); they are **not applied to any staging database**. The
+adapter's canonical branches remain unexercised against a live `canonical_active`
+state — that empirical proof is C3D/real-cutover territory (§36.6).
+
+### 36.5 Full-suite differential evidence
+
+Carried from §35.5, accepted as-is (no rerun by this documentation pass): the
+full mandatory Node suite before this correction (`f9b1a54`, via `git stash` of
+the six changed tracked test/product files) was 3985 tests / 3863 pass / 122
+fail; after (this correction) 3993 tests / 3871 pass / 122 fail; the sorted
+failing-test-name lists `diff` **empty** — the 122 failing names are
+byte-identical before and after, zero regressions anywhere in the repository,
+the 8 additional passing tests being exactly this correction's own new/extended
+tests. The 122 baseline failures are pre-existing, unrelated debt (documented
+`ADMIN_MENU`/dead-code assertions and `ECONNREFUSED 127.0.0.1:8765` tests that
+require a local static server). `node scripts/validate-spec-custody.mjs` PASS;
+`git diff --check` clean.
+
+### 36.6 Accepted nonblocking debts
+
+Carried forward unchanged from §35.9, accepted as **nonblocking**:
+
+- `HISTORICAL_SALDO_FIOS_PROVENANCE_UNAVAILABLE`;
+- `NATIVE_RECEIPT_COMPATIBILITY_MULTI_ORIGIN_UNRESOLVED`;
+- the adapters' canonical-branch code paths remain **unverified against a live
+  `canonical_active` state** — C3D/real-cutover territory (owned by
+  `OC-C3D-FENCE-001`/`OC-C3D-DEPLOY-001` and real cutover), explicitly out of
+  scope here;
+- `op-recalculo.js`'s saldo-write path has no canonical RPC replacement
+  (DB-fence-only disablement accepted as sufficient for `PHASE-C3C-B`, §7 row
+  10/§10.3);
+- `pedido-detail-events.js` exceeding `op-nova.js` in size without a
+  frozen-exception label remains a pre-existing governance gap, unresolved by
+  this phase.
+
+### 36.7 Requirement disposition (no inflation)
+
+This acceptance does **not** mark any dependent requirement `SATISFIED`.
+`OC-C3-READ-001`, `OC-C3-WRITE-001`, `OC-C3-COMPAT-001`, and `OC-C3-NOUI-001`
+remain `PARTIALLY_SATISFIED` in
+`docs/architecture/ORDEM_COMPRA_C3_TRACEABILITY.md`: the empirical
+`canonical_active` read/write proof and the real cutover boundary are owned by
+`PHASE-C3D` / real cutover, and `db/76` remains unapplied to any staging
+database. Acceptance of the local application-adapter implementation is not
+acceptance of a live cutover.
+
+### 36.8 Final state and next authorizable action
+
+`LAST_ACCEPTED_PHASE: PHASE-C3C-B`. `ACTIVE_PHASE: NONE`.
+`ACTIVE_PHASE_CONTRACT: NONE`. `ACCEPTED_CHECKPOINT:
+22bfb192c6c2ad10ccd2b2883d54c3a17e40cc9f`. No dependent `OC-C3-*` requirement is
+`SATISFIED`; no phase chains automatically.
+
+`NEXT_AUTHORIZABLE_ACTION`: **read-only authoring and supervisor review of the
+`PHASE-C3D` material phase contract**
+(`docs/architecture/ORDEM_COMPRA_C3D_PHASE_CONTRACT.md`, authored in the same
+pass as this acceptance, `STATUS: PROPOSED / AWAITING SUPERVISOR ACCEPTANCE /
+IMPLEMENTATION NOT AUTHORIZED`). No `PHASE-C3D` implementation, staging
+validation/application of `db/76`, deployment, activation, real snapshot/import,
+fence transition, read switch, final ACL-closure invocation, cutover, C4, C5,
+production access, Supabase write, `main`, or `origin`/`production` remote
+mutation is authorized; one fast-forward push to `staging/dev` records this
+acceptance and the C3D contract. Accounting subject:
+`docs: accept C3C-B and define C3D contract`.

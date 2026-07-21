@@ -23,11 +23,18 @@
 
 ## Phase status
 
-- **Last accepted product phase:** `PHASE-C3C-B-DB-PREREQ` — `CLOSED /
-  TECHNICALLY ACCEPTED / LOCAL DB VERIFIED / NOT APPLIED TO STAGING DATABASE`
-  (2026-07-20), technical checkpoint `34d7d231d0875093bc2091f385c61cf35fa0b5cb`
-  (contract §37). Validation occurred only in a disposable local PostgreSQL
-  18.4 cluster; `db/76` is not applied to any staging database.
+- **Last accepted product phase:** `PHASE-C3C-B` (application compatibility/
+  adaptation) — `CLOSED / ACCEPTED_WITH_NONBLOCKING_DEBT / LOCALLY VERIFIED`
+  (2026-07-21), accepted checkpoint `22bfb192c6c2ad10ccd2b2883d54c3a17e40cc9f`
+  (`docs/architecture/ORDEM_COMPRA_C3C_B_PHASE_CONTRACT.md` §36). No database,
+  environment, or deployment action; the adapters' canonical branches remain
+  unverified against a live `canonical_active` state (C3D/real cutover).
+- **Prior accepted database-prerequisites phase:** `PHASE-C3C-B-DB-PREREQ` —
+  `CLOSED / TECHNICALLY ACCEPTED / LOCAL DB VERIFIED / NOT APPLIED TO STAGING
+  DATABASE` (2026-07-20), technical checkpoint
+  `34d7d231d0875093bc2091f385c61cf35fa0b5cb` (contract §37). Validation occurred
+  only in a disposable local PostgreSQL 18.4 cluster; `db/76` is not applied to
+  any staging database.
 - **Prior accepted product phase:** `PHASE-C3C-A` — `CLOSED / TECHNICALLY
   ACCEPTED — LOCALLY VERIFIED / INACTIVE / NOT APPLIED TO STAGING` (2026-07-20),
   technical checkpoint `89123729b3529fff6e4a2336bfec2907c4b94b4c`.
@@ -67,10 +74,11 @@
   inactive-signal-only readers/writers; zero business-data mutation). Recorded in
   `docs/architecture/ORDEM_COMPRA_C3C_B_DB_PREREQUISITES_PHASE_CONTRACT.md` §39 as
   supervisor-**ACCEPTED**.
-- **`PHASE-C3C-B` (application compatibility/adaptation, 2026-07-20):**
-  `IMPLEMENTED / LOCALLY VERIFIED / AWAITING SUPERVISOR ACCEPTANCE`
-  (`docs/architecture/ORDEM_COMPRA_C3C_B_PHASE_CONTRACT.md` §§33–34, activated
-  by its §32 forward correction). New shared adapter
+- **`PHASE-C3C-B` (application compatibility/adaptation):** `CLOSED /
+  ACCEPTED_WITH_NONBLOCKING_DEBT / LOCALLY VERIFIED` — supervisor-accepted
+  2026-07-21 at `22bfb192c6c2ad10ccd2b2883d54c3a17e40cc9f`
+  (`docs/architecture/ORDEM_COMPRA_C3C_B_PHASE_CONTRACT.md` §36, over §§33–35;
+  activated by its §32 forward correction). New shared adapter
   `js/screens/ordem-compra-receipt-cutover.js` plus nine adapted call-sites
   (`js/screens/op-writes.js`, `js/screens/fornecedor.js`,
   `js/screens/pedido-detail-data.js`, `js/screens/op-nova.js`,
@@ -101,11 +109,14 @@
   (3993 tests, +8) has the same 122-failure set as the `f9b1a54` baseline —
   byte-identical failing-name set, zero regressions; validator PASS. No
   dependent `OC-C3-*` requirement is `SATISFIED`.
-- **Next authorizable action:** **supervisor review/acceptance of the
-  `PHASE-C3C-B` application-adapter implementation.** Only after that
-  acceptance may staging validation/application of `db/76`, C3D, cutover, C4,
-  C5, production access, or any further push beyond the one authorized
-  `staging/dev` fast-forward be authorized. **`ACTIVE_PHASE`/
+- **Next authorizable action:** **read-only supervisor review of the
+  `PHASE-C3D` material phase contract**
+  (`docs/architecture/ORDEM_COMPRA_C3D_PHASE_CONTRACT.md`, `PROPOSED / AWAITING
+  SUPERVISOR ACCEPTANCE / IMPLEMENTATION NOT AUTHORIZED`, authored 2026-07-21).
+  No `PHASE-C3D` implementation, environment mutation, branch creation, staging
+  validation/application of `db/76`, activation, cutover, C4, C5, production
+  access, Supabase write, or any further push beyond the one authorized
+  `staging/dev` fast-forward is authorized. **`ACTIVE_PHASE`/
   `ACTIVE_PHASE_CONTRACT` remain `NONE`**; no product phase chains
   automatically; the current product phase remains `NONE`.
 
@@ -133,14 +144,16 @@ Full matrix and normative anchors: `docs/architecture/ORDEM_COMPRA_C3_TRACEABILI
   (`db/76`) are `CLOSED / TECHNICALLY ACCEPTED / LOCAL DB VERIFIED`, applied
   and supervisor-accepted inert in the development database (contract §§35–39);
   the `PHASE-C3C-B` application-adapter layer that consumes them is now
-  `IMPLEMENTED / LOCALLY VERIFIED / AWAITING SUPERVISOR ACCEPTANCE`
-  (`docs/architecture/ORDEM_COMPRA_C3C_B_PHASE_CONTRACT.md` §33). Not
+  `CLOSED / ACCEPTED_WITH_NONBLOCKING_DEBT / LOCALLY VERIFIED`, supervisor-
+  accepted 2026-07-21 at `22bfb192`
+  (`docs/architecture/ORDEM_COMPRA_C3C_B_PHASE_CONTRACT.md` §36). Not
   `SATISFIED` — real `canonical_active` verification is C3D/real-cutover
-  territory; `db/76` remains unapplied to staging; this implementation itself
-  awaits supervisor acceptance.
+  territory; `db/76` remains unapplied to staging.
 - `OC-C3D-DEPLOY-001` — `PLANNED`; `OC-C3D-FENCE-001`, `OC-C3D-ACL-001`,
-  `OC-C3D-LOCK-001` — `PARTIALLY_SATISFIED` (C3D; inactive staging rehearsal /
-  role matrix pending).
+  `OC-C3D-LOCK-001` — `PARTIALLY_SATISFIED` (C3D; inactive isolated-rehearsal
+  proofs / role matrix pending). The `PHASE-C3D` material phase contract
+  (`docs/architecture/ORDEM_COMPRA_C3D_PHASE_CONTRACT.md`, `PROPOSED`) now scopes
+  these proofs; authoring it changed no `OC-C3D-*` disposition.
 - `OC-CUTOVER-001` — `PLANNED`; `OC-CUTOVER-PONR-001` — `PARTIALLY_SATISFIED`
   (real cutover unauthorized).
 - `OC-C4-ADMIN-001` — `PLANNED`; `OC-C4-SUPPLIER-001` — `DEFERRED`;
@@ -217,12 +230,16 @@ Full matrix and normative anchors: `docs/architecture/ORDEM_COMPRA_C3_TRACEABILI
 17. `docs/closeouts/AGENT_HANDOFF_ARCHIVE_2026-07.md` (historical handoff stack)
 18. `docs/closeouts/PROJECT_STATE_ARCHIVE_2026-07.md` (historical state closeouts)
 19. `docs/architecture/ORDEM_COMPRA_C3C_B_PHASE_CONTRACT.md` (C3C-B material
-    phase contract, accepted with blocking database prerequisites — not active)
+    phase contract; application adaptation `CLOSED /
+    ACCEPTED_WITH_NONBLOCKING_DEBT / LOCALLY VERIFIED` at §36 — not active)
 20. `docs/architecture/ORDEM_COMPRA_C3C_B_DB_PREREQUISITES_PHASE_CONTRACT.md`
     (C3C-B database prerequisites contract; `PHASE-C3C-B-DB-PREREQ` closed /
     technically accepted / local DB verified / not applied to staging
     database — §§35–37; `db/76` exists, DB-backed tests pass against an
     isolated disposable local cluster; not active)
+21. `docs/architecture/ORDEM_COMPRA_C3D_PHASE_CONTRACT.md` (C3D material phase
+    contract — inactive deployment & rehearsal; `PROPOSED / AWAITING SUPERVISOR
+    ACCEPTANCE / IMPLEMENTATION NOT AUTHORIZED`; not active)
 
 > Bootstrap first through `docs/governance/AGENT_INSTRUCTIONS.md` and the
 > `SPEC_CUSTODY_BOOTSTRAP` block in `PROJECT_STATE.md`. Private conversation,

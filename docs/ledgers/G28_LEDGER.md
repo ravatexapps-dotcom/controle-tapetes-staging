@@ -5951,3 +5951,91 @@ MATERIAL_DIVERGENCES: NONE
   fast-forward push to `staging/dev` authorized by this correction's order
   (carrying both `f9b1a54` and this correction's own commit) records this
   closeout.
+
+## 2026-07-21 — PHASE-C3C-B SUPERVISOR ACCEPTANCE + PHASE-C3D CONTRACT AUTHORED — CLOSED / ACCEPTED_WITH_NONBLOCKING_DEBT / LOCALLY VERIFIED
+
+- **Order:** `docs: accept C3C-B and define C3D contract` — documentation-only
+  supervisor-acceptance closeout of `PHASE-C3C-B` (application compatibility/
+  adaptation) plus read-only-diagnosis authoring of the `PHASE-C3D` material
+  phase contract. No product, test, `db/*.sql`, migration, Supabase config, MCP
+  config, or environment file is touched; no database, deployment, activation,
+  or cutover action is taken.
+- **Entry checkpoint:** branch `dev`, HEAD
+  `22bfb192c6c2ad10ccd2b2883d54c3a17e40cc9f`, `staging/dev` equal to HEAD,
+  preserved residue exactly: modified `.gitignore` (unstaged), untracked
+  `.mcp.json`, untracked `.codex/config.toml` — none staged, restored, cleaned,
+  or otherwise touched. Matched the expected baseline exactly.
+- **C3C-B acceptance recorded (contract §36):** the supervisor **ACCEPTS**
+  `PHASE-C3C-B` as `CLOSED / ACCEPTED_WITH_NONBLOCKING_DEBT / LOCALLY VERIFIED`
+  at accepted checkpoint `22bfb192c6c2ad10ccd2b2883d54c3a17e40cc9f`. Accepted
+  commit chain: initial implementation `ee5e87cd90f9e418925a99d6d51ad43cd38bedf0`
+  (`feat: adapt legacy purchase-order receipts for cutover`, §33), first
+  correction `f9b1a54cc7b185a5e72f50209322d1473e93e850` (`fix: preserve C3C-B
+  receipt idempotency attempts`, §34), final correction
+  `22bfb192c6c2ad10ccd2b2883d54c3a17e40cc9f` (`fix: complete C3C-B retry
+  classification proof`, §35). Basis: the exact finite RPC-error policy
+  (`legacy_fallback` on documented inactive/bounded-`42883`;
+  `ambiguous_failure` only on `!!res.error && res.status===0`; `hard_failure`
+  otherwise — grounded in the real `@supabase/postgrest-js` shape), real
+  call-site idempotency-attempt retention, the `pedido-detail-events.js` runtime
+  DOM-click proof, UI-inertness (`js/router.js`/`js/boot.js` byte-unchanged,
+  `index.html` one added line), and the empty full-suite failing-name
+  differential (3985→3993 tests, 122 fail both before and after, `diff` empty).
+- **Requirement disposition (no inflation):** the four `OC-C3-*` requirements
+  (`OC-C3-READ-001`, `OC-C3-WRITE-001`, `OC-C3-COMPAT-001`, `OC-C3-NOUI-001`)
+  remain `PARTIALLY_SATISFIED`, not `SATISFIED` — real `canonical_active`
+  read/write proof and the real cutover boundary are owned by `PHASE-C3D` / real
+  cutover; `db/76` remains unapplied to any staging database.
+- **PHASE-C3D contract authored:**
+  `docs/architecture/ORDEM_COMPRA_C3D_PHASE_CONTRACT.md`
+  (`PHASE_ID: PHASE-C3D`, `STATUS: PROPOSED / AWAITING SUPERVISOR ACCEPTANCE /
+  IMPLEMENTATION NOT AUTHORIZED`). Binds the four already-ratified `OC-C3D-*`
+  requirements (`OC-C3D-DEPLOY-001` §R.29, `OC-C3D-FENCE-001` §R.29.3,
+  `OC-C3D-ACL-001` §13.15.2, `OC-C3D-LOCK-001` §R.29.5) to an isolated-rehearsal
+  scope: six proposed sublots (C3D-A…C3D-F), an environment strategy (disposable
+  local PostgreSQL + read-only shared-DB inspection recommended; isolated
+  Supabase branch UNPROVEN and not created; no state-changing rehearsal against
+  the shared `ucrjtfswnfdlxwtmxnoo`), entry/exit gates, a test matrix, the
+  recovery/PONR model, exact future manifests, and the mandatory supervisor
+  decisions. Creates no requirement, changes no anchor, authorizes no
+  implementation/environment action; no `OC-C3D-*` disposition changes.
+- **Read-only Supabase premise audit (`ucrjtfswnfdlxwtmxnoo` only, SELECT/list
+  only):** cutover singleton `legacy_active`/`flat`/`not_started`, all markers
+  null; migration history `74 → 75 → 76` (versions
+  `20260720234958`/`20260720235820`); 64 flat rows = 51 mapped + 13 unmapped
+  (`ordens_compra_fio` ids 153–165); 0 `ordem_compra_recebimentos` rows; both
+  `db/76` functions present; `idempotency_namespace` CHECK admits
+  `legacy_compat_receipt_v1`. **Branch availability UNPROVEN** — neither
+  authorized read-only MCP path could enumerate branches; none assumed or
+  created. No production or prohibited project accessed; no mutation.
+- **13 unmapped rows:** DOCUMENTARY real-cutover/C3D completeness finding (bound
+  explicitly by C3D contract §F; not blocking inactive deployment or fence
+  rehearsal; a real-cutover completeness precondition).
+- **Files materially changed (documentation-only):** `PROJECT_STATE.md`;
+  `AGENT_HANDOFF.md`; `docs/DOCUMENTATION_INDEX.md`;
+  `docs/architecture/ORDEM_COMPRA_C3C_B_PHASE_CONTRACT.md` (§36 appended, head
+  `STATUS` marker updated);
+  `docs/architecture/ORDEM_COMPRA_C3D_PHASE_CONTRACT.md` (new);
+  `docs/architecture/ORDEM_COMPRA_C3_TRACEABILITY.md`;
+  `docs/architecture/PEDIDO_PRODUCTION_FLOW_BACKLOG.md`; this ledger. No
+  `db/*.sql`, test, product, runtime, or configuration file modified; the three
+  preserved residue paths are excluded from the commit.
+- **State after this pass:** `LAST_ACCEPTED_PHASE: PHASE-C3C-B`.
+  `ACTIVE_PHASE: NONE`. `ACTIVE_PHASE_CONTRACT: NONE`. `ACCEPTED_CHECKPOINT:
+  22bfb192c6c2ad10ccd2b2883d54c3a17e40cc9f`. No dependent `OC-C3-*`/`OC-C3D-*`
+  requirement is `SATISFIED`; no phase chains automatically.
+- **Validation (documentation-proportional):** `node
+  scripts/validate-spec-custody.mjs` PASS; `git diff --check` /
+  `git diff --cached --check` clean. No technical, database, environment, or
+  runtime test suite was rerun.
+- **Exact accounting subject:** `docs: accept C3C-B and define C3D contract`.
+- **Status after this commit:** `PHASE-C3C-B` = `CLOSED /
+  ACCEPTED_WITH_NONBLOCKING_DEBT / LOCALLY VERIFIED`; `PHASE-C3D` = `PROPOSED /
+  AWAITING SUPERVISOR ACCEPTANCE / IMPLEMENTATION NOT AUTHORIZED`.
+- **NEXT_AUTHORIZABLE_ACTION:** read-only supervisor review of the `PHASE-C3D`
+  material phase contract. No `PHASE-C3D` implementation, environment mutation,
+  branch creation, staging validation/application of `db/76`, deployment,
+  activation, real snapshot/import, fence transition, read switch, final
+  ACL-closure invocation, cutover, C4, C5, production access, Supabase write,
+  `main`, or `origin`/`production` remote mutation is authorized; one
+  fast-forward push to `staging/dev` records this closeout.
