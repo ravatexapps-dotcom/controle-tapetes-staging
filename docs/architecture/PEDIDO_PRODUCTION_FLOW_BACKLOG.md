@@ -8,6 +8,59 @@
 > `PROJECT_STATE.md`. Phase sequence, dependencies, backlog items, and accepted
 > architecture in this file remain authoritative; live operational status does not.
 
+# Update 2026-07-21 - PHASE-C3D Material Contract Final Forward Correction (R2)
+
+Phase: `PHASE-C3D` material phase contract correction (second).
+Type: documentation-only; no product, test, script, migration, database,
+environment, deployment, or configuration change.
+
+A second read-only supervisor review of the R1-corrected `PHASE-C3D` contract
+(commit `6b7d48a238a5008e02168557b27bc27def3946d1`) returned `CHANGES_REQUIRED`
+for two remaining operational contradictions plus one wording correction, all
+corrected in place (new §0b in
+`docs/architecture/ORDEM_COMPRA_C3D_PHASE_CONTRACT.md`):
+
+1. **Common documentary manifest for C3D-A…E (Finding 5, §C/§I).** The R1
+   contract allowed canonical documentation writes only in C3D-F. Corrected:
+   §I now defines an exact common documentary manifest (`PROJECT_STATE.md`,
+   `AGENT_HANDOFF.md`, the C3D contract, the C3_TRACEABILITY matrix, this
+   backlog, `docs/ledgers/G28_LEDGER.md`, and `docs/DOCUMENTATION_INDEX.md`
+   only if materially required) applicable to each of C3D-A, C3D-B, C3D-C,
+   C3D-D, and C3D-E. Each such sublot's future authorization comprises its
+   exact technical artifact manifest plus that common documentary manifest, so
+   it records its own technical checkpoint, evidence, affected requirement
+   rows, current/next state, handoff, and hard stop — never self-accepting or
+   authorizing the next sublot. C3D-F remains the final aggregate closeout but
+   is no longer the first time canonical evidence may be recorded. No wildcard
+   or directory-level path added.
+2. **C3D-C reclassified as a database-faithful authenticated actor-context
+   proof (Finding 6, §C/§E/§G.5A/§I/§M).** §G.5A had labeled the C3D-C fence
+   proof "application/browser end-to-end," but the exact C3D-C manifest
+   authorizes only `tests/ordem-compra-c3d-fence.integration.sql` (no
+   JavaScript/browser/PostgREST harness). Corrected: C3D-C is a SQL-only
+   `DATABASE-FAITHFUL AUTHENTICATED ACTOR-CONTEXT PROOF` in the disposable
+   cluster — synthetic authenticated admin and matching-supplier contexts
+   (same role + `auth.uid()` claim mechanism as the repo's DB-backed auth
+   tests) reproducing the exact application flat-`UPDATE public.ordens_compra_fio
+   SET kg_recebido=…, data_recebimento=…, status=… WHERE id=…` shapes (admin
+   `js/screens/op-writes.js` L92–99; matching-supplier `js/screens/fornecedor.js`
+   L523–525), both denied `legacy_receipt_fenced`/`SQLSTATE 55000`, zero
+   mutation, fingerprints unchanged, no client-grant widening. The JS files
+   remain read-only evidence of the mutation shape; no browser/app/PostgREST/UI
+   execution is claimed. §G.5B remains the separate owner-level structural
+   eight-table probe; the C3D-C technical manifest is unchanged.
+3. **Wildcard-wording correction.** Absolute "no wildcard anywhere" claims
+   replaced by `NO WILDCARD OR DIRECTORY-LEVEL WRITE AUTHORIZATION EXISTS`;
+   wildcard notation is retained only in read-only/reference and
+   prohibited-path descriptions (`any db/*.sql`, `any js/**`, `.codex/*`).
+
+`STATUS` remains `PROPOSED / AWAITING SUPERVISOR ACCEPTANCE / IMPLEMENTATION
+NOT AUTHORIZED` (unchanged); `ACTIVE_PHASE`/`ACTIVE_PHASE_CONTRACT` remain
+`NONE`; no `OC-C3D-*` disposition changed; `PHASE-C3C-B`'s accepted §36
+closeout is untouched. `validate-spec-custody` PASS; `git diff --check` clean.
+Next authorizable action: read-only supervisor review of the final corrected
+`PHASE-C3D` contract.
+
 # Update 2026-07-21 - PHASE-C3D Material Contract Forward Correction
 
 Phase: `PHASE-C3D` material phase contract correction.

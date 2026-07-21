@@ -20,7 +20,7 @@ LAST_ACCEPTED_PHASE: PHASE-C3C-B
 ACTIVE_PHASE: NONE
 ACTIVE_PHASE_CONTRACT: NONE
 ACTIVE_TRACK: PURCHASE_ORDER_PHASE_C
-NEXT_AUTHORIZABLE_ACTION: read-only supervisor review of the corrected PHASE-C3D material phase contract (docs/architecture/ORDEM_COMPRA_C3D_PHASE_CONTRACT.md, PROPOSED / AWAITING SUPERVISOR ACCEPTANCE / IMPLEMENTATION NOT AUTHORIZED); no C3D implementation or environment mutation authorized
+NEXT_AUTHORIZABLE_ACTION: read-only supervisor review of the final corrected PHASE-C3D material phase contract (docs/architecture/ORDEM_COMPRA_C3D_PHASE_CONTRACT.md, PROPOSED / AWAITING SUPERVISOR ACCEPTANCE / IMPLEMENTATION NOT AUTHORIZED); no C3D implementation or environment mutation authorized
 GOVERNING_SPEC: docs/architecture/ORDEM_COMPRA_LIFECYCLE_SPEC_PROPOSED.md
 TECHNICAL_CONTRACT: docs/architecture/PEDIDO_OP_SCHEMA_CONTRACT.md
 SEQUENCE_AUTHORITY: docs/architecture/PEDIDO_PRODUCTION_FLOW_BACKLOG.md
@@ -231,25 +231,29 @@ ACCEPTED_CHECKPOINT: 22bfb192c6c2ad10ccd2b2883d54c3a17e40cc9f
 - **`PHASE-C3D` (inactive deployment & rehearsal):** `PROPOSED / AWAITING
   SUPERVISOR ACCEPTANCE / IMPLEMENTATION NOT AUTHORIZED`
   (`docs/architecture/ORDEM_COMPRA_C3D_PHASE_CONTRACT.md`, authored 2026-07-21 in
-  the same pass as the C3C-B acceptance; a read-only supervisor review of that
-  proposal returned `CHANGES_REQUIRED` for four material contradictions, and the
-  contract's §0/§§A–N were forward-corrected the same day — §0 records the four
-  findings; the `STATUS` marker is unchanged, `PROPOSED`). It binds the four
-  already-ratified `OC-C3D-*` requirements to an isolated-rehearsal scope (six
-  proposed sublots C3D-A…C3D-F), an environment strategy (disposable local
-  PostgreSQL + read-only shared-DB inspection recommended; an isolated Supabase
-  branch is `UNPROVEN` and not created), entry/exit gates, a test matrix — now
-  distinguishing a real actor-path fence proof (`ordens_compra_fio` only) from
-  an owner-level structural eight-table probe, and a single authorized
+  the same pass as the C3C-B acceptance; two successive read-only supervisor
+  reviews returned `CHANGES_REQUIRED` and the contract was forward-corrected
+  twice the same day — §0 (R1) records four findings, §0b (R2) records two more
+  plus a wildcard-wording correction; the `STATUS` marker is unchanged,
+  `PROPOSED`). It binds the four already-ratified `OC-C3D-*` requirements to an
+  isolated-rehearsal scope (six proposed sublots C3D-A…C3D-F), an environment
+  strategy (disposable local PostgreSQL + read-only shared-DB inspection
+  recommended; an isolated Supabase branch is `UNPROVEN` and not created),
+  entry/exit gates, a test matrix — now distinguishing a **database-faithful
+  authenticated actor-context** fence proof (SQL-only, exact application
+  flat-`UPDATE` shape on `ordens_compra_fio`, no browser/app execution) from an
+  owner-level structural eight-table probe, and a single authorized
   disposable-cluster-only synthetic PONR crossing confined to C3D-E followed by
   mandatory cluster destruction — the recovery/PONR model, exact future
-  manifests (no directory-level authorization), and the mandatory supervisor
-  decisions. Each `OC-C3D-*` requirement may become `SATISFIED` by its own
-  isolated-rehearsal evidence, independent of the real cutover requirements. It
-  creates no requirement, authorizes no implementation or environment action,
-  and changes no `OC-C3D-*` disposition.
-- **NEXT_AUTHORIZABLE_ACTION:** **read-only supervisor review of the corrected
-  `PHASE-C3D` material phase contract**
+  manifests (no wildcard/directory-level write authorization; each C3D-A…E
+  sublot carries a technical artifact manifest plus a common documentary
+  manifest so it can record its own canonical evidence), and the mandatory
+  supervisor decisions. Each `OC-C3D-*` requirement may become `SATISFIED` by
+  its own isolated-rehearsal evidence, independent of the real cutover
+  requirements. It creates no requirement, authorizes no implementation or
+  environment action, and changes no `OC-C3D-*` disposition.
+- **NEXT_AUTHORIZABLE_ACTION:** **read-only supervisor review of the final
+  corrected `PHASE-C3D` material phase contract**
   (`docs/architecture/ORDEM_COMPRA_C3D_PHASE_CONTRACT.md`). No `PHASE-C3D`
   implementation, environment mutation, branch creation, staging validation/
   application of `db/76`, deployment, activation, real snapshot/import, fence

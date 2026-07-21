@@ -6133,3 +6133,100 @@ MATERIAL_DIVERGENCES: NONE
   switch, final ACL-closure invocation, cutover, C4, C5, production access,
   Supabase write, `main`, or `origin`/`production` remote mutation is
   authorized; one fast-forward push to `staging/dev` records this correction.
+
+## 2026-07-21 — PHASE-C3D MATERIAL CONTRACT FINAL FORWARD CORRECTION (R2) — CHANGES_REQUIRED RESOLVED / PROPOSED / AWAITING SUPERVISOR ACCEPTANCE
+
+- **Order:** `docs: finalize C3D contract execution boundaries` —
+  documentation-only second forward correction of the `PHASE-C3D` material
+  phase contract after a second read-only supervisor review returned
+  `CHANGES_REQUIRED`. No product, test, script, migration, database, Supabase,
+  branch, deployment, activation, fence, receipt, or cutover action is taken.
+  `PHASE-C3C-B`'s accepted §36 closeout is not reopened.
+- **Entry checkpoint:** branch `dev`, HEAD
+  `6b7d48a238a5008e02168557b27bc27def3946d1`, `staging/dev` equal to HEAD (`0`
+  ahead / `0` behind), preserved residue exactly: modified `.gitignore`
+  (unstaged), untracked `.mcp.json`, untracked `.codex/config.toml` — none
+  staged, restored, cleaned, or otherwise touched. Matched the expected
+  baseline exactly.
+- **Supervisor verdict on the R1 correction:** the contract at `6b7d48a`
+  correctly resolved the four §0 (R1) findings but received a second
+  **`CHANGES_REQUIRED`** for two remaining operational contradictions plus one
+  wording correction, all corrected in place (new `§0b`):
+  1. **Common documentary manifest for C3D-A…E (Finding 5, §C/§I).** R1
+     allowed canonical documentation writes only in C3D-F. Corrected: §I now
+     defines an exact common documentary manifest (`PROJECT_STATE.md`,
+     `AGENT_HANDOFF.md`, `docs/architecture/ORDEM_COMPRA_C3D_PHASE_CONTRACT.md`,
+     `docs/architecture/ORDEM_COMPRA_C3_TRACEABILITY.md`,
+     `docs/architecture/PEDIDO_PRODUCTION_FLOW_BACKLOG.md`,
+     `docs/ledgers/G28_LEDGER.md`, and `docs/DOCUMENTATION_INDEX.md` only if an
+     indexed path/status materially changes) applicable to each of C3D-A, C3D-B,
+     C3D-C, C3D-D, C3D-E. Each sublot's future authorization comprises its exact
+     technical artifact manifest plus that common documentary manifest; a
+     completed sublot records its technical checkpoint, evidence, materially
+     affected requirement rows, current/next state, handoff, and hard stop, and
+     never self-accepts or authorizes the next sublot. C3D-F remains the final
+     aggregate closeout but is no longer the first time canonical evidence may be
+     recorded. No wildcard/directory-level/"related documents" path added.
+  2. **C3D-C reclassified as a database-faithful authenticated actor-context
+     proof (Finding 6, §C/§E/§G.5A/§I/§M).** §G.5A had labeled the C3D-C fence
+     proof application/browser end-to-end while the exact C3D-C manifest
+     authorizes only `tests/ordem-compra-c3d-fence.integration.sql` (no
+     JavaScript/browser/PostgREST harness). Architect decision: C3D-C is a
+     SQL-only `DATABASE-FAITHFUL AUTHENTICATED ACTOR-CONTEXT PROOF` in the
+     disposable cluster — synthetic authenticated admin and matching-supplier
+     contexts (same role + `auth.uid()` claim mechanism as the repo's DB-backed
+     authorization tests) reproducing the exact application flat-`UPDATE
+     public.ordens_compra_fio SET kg_recebido=…, data_recebimento=…, status=…
+     WHERE id=…` shapes (admin `js/screens/op-writes.js` L92–99;
+     matching-supplier `js/screens/fornecedor.js` L523–525), both denied
+     `legacy_receipt_fenced`/`SQLSTATE 55000`, zero flat/canonical/inventory
+     mutation, fingerprints unchanged, RLS/grants preserved exactly, no
+     client-grant widening, no fabricated actor path. The JS files remain
+     read-only evidence of the mutation shape; no browser/application/PostgREST/
+     real-UI execution is claimed. §G.5B remains the separate owner-level
+     structural eight-table probe; the C3D-C technical manifest is unchanged
+     (`tests/ordem-compra-c3d-fence.integration.sql`, no additional harness).
+  3. **Wildcard-wording correction.** Every absolute "no wildcard anywhere"
+     claim replaced by `NO WILDCARD OR DIRECTORY-LEVEL WRITE AUTHORIZATION
+     EXISTS`; wildcard notation is retained only in read-only/reference and
+     prohibited-path descriptions (`any db/*.sql`, `any js/**`, `.codex/*`),
+     which are prohibition/reference patterns, not authorized write manifests
+     (§I heading, §I intro, §0 Finding 4).
+- **Read-only evidence verified this pass:** `js/screens/op-writes.js`
+  (`registrarRecebimentoOrdemFio`, L92–99) and `js/screens/fornecedor.js`
+  (writer, L523–525) both issue the identical flat-table
+  `UPDATE public.ordens_compra_fio SET kg_recebido, data_recebimento, status
+  WHERE id` shape and neither has direct client DML on any other protected
+  table — confirming the actor-context proof premise. No file modified.
+- **Files materially changed (documentation-only):**
+  `docs/architecture/ORDEM_COMPRA_C3D_PHASE_CONTRACT.md` (§0b appended; §0
+  Finding 4 wording, §C, §E, §G items 4/5A, §I, §M, §N corrected in place;
+  `STATUS` marker unchanged); `PROJECT_STATE.md`; `AGENT_HANDOFF.md`;
+  `docs/DOCUMENTATION_INDEX.md`;
+  `docs/architecture/ORDEM_COMPRA_C3_TRACEABILITY.md`;
+  `docs/architecture/PEDIDO_PRODUCTION_FLOW_BACKLOG.md`; this ledger. No
+  `db/*.sql`, test, script, product, CSS/HTML/JS, migration, Supabase config,
+  MCP config, CI, or package file modified; the three preserved residue paths
+  are excluded from the commit.
+- **State after this pass (unchanged, per the order's explicit "Keep"):**
+  `LAST_ACCEPTED_PHASE: PHASE-C3C-B`. `ACTIVE_PHASE: NONE`.
+  `ACTIVE_PHASE_CONTRACT: NONE`. `ACCEPTED_CHECKPOINT:
+  22bfb192c6c2ad10ccd2b2883d54c3a17e40cc9f`. No `OC-C3D-*`/`OC-C3-*`
+  requirement disposition changed; no phase chains automatically.
+- **Validation (documentation-proportional):** `node
+  scripts/validate-spec-custody.mjs` PASS; `node
+  scripts/validate-spec-custody.mjs --self-test` 47/47 PASS; `git diff --check`
+  / `git diff --cached --check` clean. No technical, database, environment, or
+  runtime test suite was run (none required or authorized).
+- **Exact accounting subject:** `docs: finalize C3D contract execution boundaries`.
+- **Status after this commit:** `PHASE-C3D` = `PROPOSED / AWAITING SUPERVISOR
+  ACCEPTANCE / IMPLEMENTATION NOT AUTHORIZED` (unchanged marker; corrected
+  content). `PHASE-C3C-B` = `CLOSED / ACCEPTED_WITH_NONBLOCKING_DEBT / LOCALLY
+  VERIFIED` (unchanged, not reopened).
+- **NEXT_AUTHORIZABLE_ACTION:** read-only supervisor review of the final
+  corrected `PHASE-C3D` material phase contract. No `PHASE-C3D` implementation,
+  environment mutation, branch creation, staging validation/application of
+  `db/76`, deployment, activation, real snapshot/import, fence transition, read
+  switch, final ACL-closure invocation, cutover, C4, C5, production access,
+  Supabase write, `main`, or `origin`/`production` remote mutation is
+  authorized; one fast-forward push to `staging/dev` records this correction.

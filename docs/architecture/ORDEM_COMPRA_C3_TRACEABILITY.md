@@ -10,7 +10,7 @@ ACTIVE_TRACK: PURCHASE_ORDER_PHASE_C
 LAST_ACCEPTED_PHASE: PHASE-C3C-B
 ACTIVE_PHASE: NONE
 CLOSED_MATERIAL_PHASES: PHASE-C3C-A, PHASE-C3C-B-DB-PREREQ, PHASE-C3C-B
-NEXT_AUTHORIZABLE_ACTION: read-only supervisor review of the corrected PHASE-C3D material phase contract (docs/architecture/ORDEM_COMPRA_C3D_PHASE_CONTRACT.md, PROPOSED / AWAITING SUPERVISOR ACCEPTANCE / IMPLEMENTATION NOT AUTHORIZED); no C3D implementation or environment mutation authorized
+NEXT_AUTHORIZABLE_ACTION: read-only supervisor review of the final corrected PHASE-C3D material phase contract (docs/architecture/ORDEM_COMPRA_C3D_PHASE_CONTRACT.md, PROPOSED / AWAITING SUPERVISOR ACCEPTANCE / IMPLEMENTATION NOT AUTHORIZED); no C3D implementation or environment mutation authorized
 VALIDATION_ACCOUNTING_SUBJECT: fix: harden spec custody validation
 VALIDATION_ACCOUNTING_SUBJECT_R2: fix: reject detached spec custody rows
 VALIDATION_ACCOUNTING_SUBJECT_R3: fix: distinguish prose from detached tables
@@ -29,6 +29,7 @@ VALIDATION_ACCOUNTING_SUBJECT_R15: feat: adapt legacy purchase-order receipts fo
 VALIDATION_ACCOUNTING_SUBJECT_R16: fix: preserve C3C-B receipt idempotency attempts
 VALIDATION_ACCOUNTING_SUBJECT_R17: docs: accept C3C-B and define C3D contract
 VALIDATION_ACCOUNTING_SUBJECT_R18: docs: correct C3D contract boundaries
+VALIDATION_ACCOUNTING_SUBJECT_R19: docs: finalize C3D contract execution boundaries
 ```
 
 ## Accepted foundation
@@ -170,9 +171,25 @@ isolated rehearsal cluster, exclusively for the C3D-E concurrency proof,
 followed by mandatory full cluster destruction, forbidden on any shared or
 real environment (§H/§L); (4) the exact-manifest section authorized the open
 directory `scripts/c3d/` — corrected to the exact file
-`scripts/c3d/bootstrap-disposable-cluster.mjs`, no directory-level or wildcard
-authorization remaining (§I). No `OC-C3D-*` disposition changed by either the
-authoring or the correction pass. `STATUS: PROPOSED / AWAITING SUPERVISOR
-ACCEPTANCE / IMPLEMENTATION NOT AUTHORIZED` (unchanged);
-`ACTIVE_PHASE`/`ACTIVE_PHASE_CONTRACT` remain `NONE`; read-only supervisor
-review of the corrected contract is the next authorizable action.
+`scripts/c3d/bootstrap-disposable-cluster.mjs` (§I). A **second** read-only
+supervisor review of the R1-corrected contract (commit `6b7d48a`) returned
+`CHANGES_REQUIRED` again, forward-corrected the same day
+(`docs: finalize C3D contract execution boundaries`, contract §0b): (5) added
+an exact **common documentary manifest** applicable to each of C3D-A…E so a
+completed sublot may record its technical checkpoint, evidence, affected
+requirement rows, current/next state, and handoff without waiting for C3D-F —
+without self-accepting or authorizing the next sublot (§C, §I); (6) reclassified
+the C3D-C fence proof from an application/browser end-to-end proof to a
+**`DATABASE-FAITHFUL AUTHENTICATED ACTOR-CONTEXT PROOF`** — a SQL-only test in
+the disposable cluster reproducing the exact application flat-`UPDATE` shape on
+`ordens_compra_fio` (admin `js/screens/op-writes.js` L92–99; matching-supplier
+`js/screens/fornecedor.js` L523–525) under synthetic authenticated admin and
+supplier contexts, denied `legacy_receipt_fenced`/`55000`, with no browser/app
+execution and no client-grant widening (§C, §E, §G.5A, §I, §M); plus a
+wildcard-wording correction (wildcards appear only in read-only/prohibited
+patterns — `NO WILDCARD OR DIRECTORY-LEVEL WRITE AUTHORIZATION EXISTS`). No
+`OC-C3D-*` disposition changed by the authoring or either correction pass.
+`STATUS: PROPOSED / AWAITING SUPERVISOR ACCEPTANCE / IMPLEMENTATION NOT
+AUTHORIZED` (unchanged); `ACTIVE_PHASE`/`ACTIVE_PHASE_CONTRACT` remain `NONE`;
+read-only supervisor review of the final corrected contract is the next
+authorizable action.

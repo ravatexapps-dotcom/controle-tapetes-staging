@@ -75,8 +75,74 @@ any other persistent or shared environment.
 `§I` manifest authorized the directory `scripts/c3d/` without an exact
 filename, violating the no-wildcard rule. Corrected: replaced with the exact
 proposed file `scripts/c3d/bootstrap-disposable-cluster.mjs` and an otherwise
-unchanged exact-path list; no directory-level or wildcard authorization
-remains anywhere in this contract.
+unchanged exact-path list; **no wildcard or directory-level write
+authorization exists** in this contract (wildcard notation survives only in
+read-only/reference and prohibited-path descriptions — R2 wording correction
+below).
+
+## 0b. Supervisor forward correction R2 (verdict: CHANGES_REQUIRED)
+
+> **Second forward correction, authored under the "PHASE-C3D CONTRACT FINAL
+> FORWARD CORRECTION" order (documentation-only, `FORWARD_CORRECTION` per
+> `docs/governance/DOCUMENTATION_MODEL.md` §19).** The R1-corrected contract
+> committed at `6b7d48a238a5008e02168557b27bc27def3946d1` correctly resolved
+> the four §0 (R1) findings but received a second read-only supervisor review
+> that returned **`CHANGES_REQUIRED`** for two remaining operational
+> contradictions, plus one wording correction. This section records that
+> verdict; the two findings are corrected in place in the sections named below.
+> Where any surviving pre-correction phrasing conflicts with the corrected
+> text, **the corrected text governs**. This correction changes no `OC-C3D-*`
+> disposition, activates no phase, does **not** reopen the accepted
+> `PHASE-C3C-B` §36 closeout, and authorizes no implementation, migration,
+> branch creation, deployment, or environment action.
+
+**Finding 5 — no common documentary manifest for C3D-A…E (corrected in §C,
+§I).** The R1 contract authorized canonical documentation writes only in
+C3D-F, while stating C3D-A…E are separately authorized and independently
+reviewable with only test/script technical artifacts in their manifests. That
+would prevent each completed sublot from recording its technical checkpoint,
+evidence and findings, requirement disposition, current active/next state,
+handoff continuity, and the explicit hard stop before the next
+separately-authorized sublot. Corrected: §I now defines an exact **common
+documentary manifest** applicable to each of C3D-A, C3D-B, C3D-C, C3D-D, and
+C3D-E; each such sublot's future authorization comprises (1) its exact
+technical artifact manifest and (2) that common documentary manifest. C3D-F
+remains the final aggregate closeout, but is no longer the first time
+canonical evidence may be recorded. No wildcard, directory-level, or "related
+documents" path is added.
+
+**Finding 6 — C3D-C mislabeled as application/browser end-to-end (corrected in
+§C, §E, §G.5A, §I, §M).** §G.5A described the C3D-C fence proof as an
+"end-to-end real application-path proof" referencing the JavaScript writers,
+while the exact C3D-C technical manifest authorizes only
+`tests/ordem-compra-c3d-fence.integration.sql` — no JavaScript, browser,
+PostgREST harness, or product modification. **Architect decision:** C3D-C does
+not require execution of the browser or application JavaScript. Its required
+proof classification is a **`DATABASE-FAITHFUL AUTHENTICATED ACTOR-CONTEXT
+PROOF`** — a SQL test, in the disposable rehearsal cluster only, that
+establishes the same authenticated database context the repository's existing
+DB-backed authorization tests use (the authenticated role + the exact
+JWT/`auth.uid()` claim mechanism the installed policies and `SECURITY DEFINER`
+functions require), and reproduces exactly the two real application flat-table
+`UPDATE public.ordens_compra_fio SET kg_recebido=…, data_recebimento=…,
+status=… WHERE id=…` mutation shapes (admin shared writer,
+`js/screens/op-writes.js` L92–99; matching-supplier independent writer,
+`js/screens/fornecedor.js` L523–525) under the admin and matching-supplier
+authenticated contexts, proving the database fence rejects both with
+`legacy_receipt_fenced` / `SQLSTATE 55000`. The JavaScript files remain
+**read-only evidence** identifying the mutation shape only; the contract makes
+no claim that the application JavaScript, browser, PostgREST, or real UI was
+executed. §G.5B remains the separate owner-level structural eight-table trigger
+proof; the exact C3D-C technical manifest is unchanged
+(`tests/ordem-compra-c3d-fence.integration.sql`, no additional harness).
+
+**Wording correction — wildcard notation.** Wildcard notation is retained only
+in **read-only/reference or prohibited-path** descriptions (e.g. `any
+db/*.sql`, `any js/**`, `.codex/*`), which are prohibition/reference patterns,
+**not** authorized write manifests. Every absolute "no wildcard exists
+anywhere" claim is replaced by the precise invariant: **`NO WILDCARD OR
+DIRECTORY-LEVEL WRITE AUTHORIZATION EXISTS`** (applied in the §I heading, the
+§I intro, and §0 Finding 4).
 
 ## 1. Authorization source and entry checkpoint
 
@@ -211,7 +277,7 @@ automatically.
 |---|---|---|---|
 | **C3D-A** — Environment & deployment-manifest qualification | Establish and prove the isolated rehearsal environment (§D); assemble the exact inactive deployment manifest (app artifact `22bfb192` + `db/75` + `db/76`); no state change. | `OC-C3D-DEPLOY-001` | Environment teardown (disposable cluster) / no-op (read-only shared-DB inspection). |
 | **C3D-B** — Inactive migration/application presence validation | Prove `db/75`/`db/76` present and idempotent in the rehearsal environment; prove both new functions inert (inactive signals) while `legacy_active`; prove the application adapter's flat fallback path is byte-identical to pre-phase. | `OC-C3D-DEPLOY-001` | Transaction rollback / environment teardown. |
-| **C3D-C** — Fence & rollback rehearsal (corrected, §0 Finding 2) | Two distinct evidence classes (§G.5A/§G.5B): **(A)** a real authorized admin-path receipt attempt and a real matching-supplier-path receipt attempt, each issuing exactly the write shape the accepted application code issues against the real flat receipt surface (`ordens_compra_fio` only — neither real path has direct client DML on the other seven protected tables), each denied `legacy_receipt_fenced`; **(B)** owner-level structural probes in the disposable cluster proving the installed guard denies mutation on all eight protected tables. Source/inventory hashes unchanged across both classes; rehearses pre-PONR rollback (this sublot never crosses the PONR). | `OC-C3D-FENCE-001` | Pre-PONR rollback + transaction rollback / environment reset. |
+| **C3D-C** — Fence & rollback rehearsal (corrected, §0 Findings 2 & 6) | Two distinct evidence classes (§G.5A/§G.5B), a SQL-only proof in the disposable cluster (no JavaScript/browser/PostgREST execution): **(A)** a **database-faithful authenticated actor-context proof** — under a synthetic authenticated admin context and a synthetic matching-supplier context (the same role + `auth.uid()` claim mechanism the installed policies/functions require), reproduce exactly the two real application flat-table `UPDATE public.ordens_compra_fio SET kg_recebido=…, data_recebimento=…, status=… WHERE id=…` writer shapes (`ordens_compra_fio` only — neither real path has direct client DML on the other seven protected tables), each denied `legacy_receipt_fenced` (`55000`); **(B)** owner-level structural probes proving the installed guard denies mutation on all eight protected tables. Source/inventory hashes unchanged across both classes; rehearses pre-PONR rollback (this sublot never crosses the PONR). | `OC-C3D-FENCE-001` | Pre-PONR rollback + transaction rollback / environment reset. |
 | **C3D-D** — ACL / role-matrix rehearsal | Rehearse the complete effective ACL closure (table/column/sequence/function/RLS) **without invoking** `ordem_compra_c3c_close_final_acl`; exercise the full role matrix (§G). | `OC-C3D-ACL-001` | No-op (inspection-only) / transaction rollback. |
 | **C3D-E** — Concurrency / session / resource-lock rehearsal (corrected, §0 Finding 3) | Prove session advisory-lock exclusion, deterministic resource-lock order, short transactions, release/reacquire; concurrent Component B behavior under lock, including exactly one authorized synthetic-PONR-crossing sequence (§H) confined to a disposable cluster and followed by mandatory full cluster destruction. | `OC-C3D-LOCK-001` | Mandatory full disposable-cluster destruction after the synthetic PONR crossing (§H) — pre-PONR rollback is not used once the crossing has occurred; transaction rollback / environment reset for every pre-crossing probe. |
 | **C3D-F** — Closeout & readiness disposition (corrected, §0 Finding 1) | Aggregate the evidence from C3D-A…E; for each `OC-C3D-*` requirement whose §M exit criteria were met, record it `SATISFIED`; prove zero business-data mutation on any shared environment; disposition the 13 unmapped rows for real cutover (§F). Does **not** satisfy, partially satisfy, or execute `OC-CUTOVER-001`/`OC-CUTOVER-PONR-001` — the real cutover window remains its own, separately authorized gate. | all four (closeout) | Documentation-only. |
@@ -220,6 +286,16 @@ automatically.
 `OC-C3D-ACL-001` is C3D-D; `OC-C3D-LOCK-001` is C3D-E; C3D-F is the closeout.
 The order in which C3D-C/D/E run after C3D-B is a supervisor decision (§J); they
 are independent given a clean rehearsal environment.
+
+**Each of C3D-A…E records its own canonical evidence (corrected, §0 Finding
+5).** Every one of C3D-A, C3D-B, C3D-C, C3D-D, and C3D-E, when separately
+authorized, may write the exact **common documentary manifest** in §I — to
+record its technical checkpoint, environment evidence and findings, the
+requirement rows it materially affects, the current active/next state, handoff
+continuity, and the explicit hard stop before the next separately-authorized
+sublot. A completed sublot never self-accepts itself or the phase, and never
+authorizes the next sublot. **C3D-F remains the final aggregate closeout, but
+is no longer the first time canonical evidence may be recorded.**
 
 ## D. Exact environment strategy (mandatory supervisor decision — §J)
 
@@ -323,11 +399,15 @@ re-verify and record:
     client grant or RLS policy, or fabricating a non-existent admin/supplier
     client path; environment identity unproven.
 
-**C3D-C-specific note (§0 Finding 2):** for C3D-C, gate 9 (mandatory evidence)
-comprises both evidence classes in §G.5A (real actor-path proof, confined to
-`ordens_compra_fio`) and §G.5B (structural eight-table probe, disposable
-cluster only, owner-level); gates 6 (business-data fingerprints) and 7 (active
-sessions/locks) apply identically to both classes.
+**C3D-C-specific note (§0 Findings 2 & 6):** for C3D-C, gate 9 (mandatory
+evidence) comprises both evidence classes in §G.5A (**database-faithful
+authenticated actor-context proof**, SQL-only in the disposable cluster,
+reproducing the exact application flat-`UPDATE` shape on `ordens_compra_fio`
+under synthetic admin and matching-supplier authenticated contexts — no
+JavaScript/browser/PostgREST execution) and §G.5B (structural eight-table
+probe, disposable cluster only, owner-level); gates 6 (business-data
+fingerprints) and 7 (active sessions/locks) apply identically to both classes.
+The exact C3D-C technical manifest remains a single SQL file (§I).
 
 **C3D-E-specific note (§0 Finding 3):** for C3D-E, gate 4 (cutover singleton
 state) applies to the disposable cluster only for the synthetic-PONR-crossing
@@ -377,26 +457,48 @@ proofs never on the shared DB). The rehearsal test files are named in §I.
    `usuarios.fornecedor_id = ordem_compra.fornecedor_id`; non-matching supplier
    sees zero rows / denied; authenticated-without-supplier denied; anon and
    unauthenticated denied (`sem_permissao`); `service_role` not granted. This
-   proof is distinct from item 5A below: it exercises the two `db/76` RPCs
-   directly (Component A read, Component B write), not the real UI/write-path
-   fence-denial proof.
+   proof is distinct from item 5 below: it exercises the two `db/76` RPCs
+   directly (Component A read, Component B write), not the §G.5A
+   database-faithful actor-context fence-denial proof or the §G.5B structural
+   eight-table probe.
 5. **Protected-table fence denial** (`OC-C3D-FENCE-001`, corrected — §0
    Finding 2) — two distinct evidence classes; neither substitutes for the
    other:
-   - **5A. Real actor-path proof (end-to-end).** In `maintenance_fenced`
-     (rehearsal cluster only), one authenticated-admin receipt attempt through
-     the real authorized legacy receipt path and one authenticated
-     matching-supplier receipt attempt through the real independent supplier
-     path — both targeting the real flat receipt surface `ordens_compra_fio`
-     (the exact write shape `js/screens/op-writes.js`'s
-     `registrarRecebimentoOrdemFio` and `js/screens/fornecedor.js`'s writer
-     issue, verified read-only against those two files as neither exposes
-     direct client DML to any other protected table) — are each denied with
-     `legacy_receipt_fenced` (`55000`); no canonical receipt, flat write,
-     inventory write, or partial mutation occurs; source and inventory
-     fingerprints unchanged. This proof does **not** require these
-     application actors to hold direct DML authority over the other seven
-     protected tables.
+   - **5A. Database-faithful authenticated actor-context proof** (corrected —
+     §0 Finding 6; **not** an application/browser/PostgREST/real-UI proof).
+     A SQL test, in the disposable rehearsal cluster only, that:
+     1. creates or uses synthetic, nonproductive fixture identities — one
+        active admin user and one active supplier user whose `fornecedor_id`
+        matches the target order;
+     2. establishes the same authenticated database context the repository's
+        existing DB-backed authorization tests use — the authenticated role
+        plus the exact JWT/`auth.uid()` claim mechanism the installed RLS
+        policies and `SECURITY DEFINER` functions require;
+     3. reproduces exactly the two real application mutation shapes against the
+        real flat receipt surface `ordens_compra_fio`:
+        - **admin shared writer shape** (`js/screens/op-writes.js`
+          `registrarRecebimentoOrdemFio`, L92–99):
+          `UPDATE public.ordens_compra_fio SET kg_recebido = <v>,
+          data_recebimento = <v>, status = <v> WHERE id = <v>;`
+        - **matching-supplier independent writer shape**
+          (`js/screens/fornecedor.js`, L523–525): the **same** flat-table
+          `UPDATE` shape, executed under the matching-supplier authenticated
+          context;
+     4. runs both attempts while the disposable cluster is in
+        `maintenance_fenced`;
+     5. proves, for **both** actor contexts: the database returns
+        `legacy_receipt_fenced` / `SQLSTATE 55000`; zero flat mutation; zero
+        canonical receipt or ledger mutation; zero inventory mutation; source
+        and inventory fingerprints unchanged;
+     6. preserves RLS and grants exactly as installed — **no client grant is
+        widened**, **no direct client DML is granted to any other protected
+        table**, and **no fake admin or supplier client path is invented**.
+     The `js/screens/op-writes.js` and `js/screens/fornecedor.js` files remain
+     **read-only evidence** identifying the exact mutation shape; this proof
+     makes **no claim** that the application JavaScript, browser, PostgREST, or
+     real UI was executed. It exercises the fence at the database layer under
+     the real authenticated actor classes, which is exactly what
+     `OC-C3D-FENCE-001` requires.
    - **5B. Structural eight-table fence coverage.** Owner-level controlled
      probes in the disposable rehearsal cluster only: `INSERT`/`UPDATE`/
      `DELETE` probes sufficient to exercise the installed guard on each of the
@@ -530,12 +632,23 @@ proofs never on the shared DB). The rehearsal test files are named in §I.
   disposable cluster, the shared DB is expected to be **untouched**, and the
   fingerprints prove it.
 
-## I. Exact authorized future manifests (no wildcards, corrected — §0 Finding 4)
+## I. Exact authorized future manifests (corrected — §0 Findings 4, 5 & 6)
 
-Each future sublot may touch **only** the exact paths listed for it — exact
-proposed **files**, no directory-level or wildcard authorization anywhere in
-this section. These are the paths a future, separately-authorized C3D
-implementation order may act on; this contract authorizes none of it now.
+**`NO WILDCARD OR DIRECTORY-LEVEL WRITE AUTHORIZATION EXISTS.`** Each future
+sublot may touch **only** the exact **files** listed for it. Wildcard notation
+appears in this section **only** inside read-only/reference or prohibited-path
+descriptions (e.g. `any db/*.sql`, `any js/**`, `.codex/*`) — those are
+prohibition/reference patterns identifying what must **not** be written, never
+an authorized write manifest. These are the paths a future,
+separately-authorized C3D implementation order may act on; this contract
+authorizes none of it now.
+
+Each of **C3D-A, C3D-B, C3D-C, C3D-D, and C3D-E**, when separately authorized,
+comprises **two exact manifests**: (1) its **technical artifact manifest**
+(the exact test/script files listed per-sublot below) and (2) the **common
+documentary manifest** (defined once below, applicable to each of them). C3D-F
+is documentation-only (its manifest is the common documentary manifest plus
+this contract's `STATUS` marker).
 
 - **Read-only reference (never modified by any C3D sublot):**
   `db/75_ordem_compra_c3c_inactive_cutover.sql`,
@@ -551,11 +664,15 @@ implementation order may act on; this contract authorizes none of it now.
   accepted `db/01…db/76` to a **disposable** cluster and/or **read-only**
   inspect `ucrjtfswnfdlxwtmxnoo` (migration presence, inert signals,
   fingerprints).
-- **C3D-C (`OC-C3D-FENCE-001`):** exactly one new file —
-  `tests/ordem-compra-c3d-fence.integration.sql` (both evidence classes §G.5A
-  real actor-path proof and §G.5B structural eight-table probe, plus
-  hash-invariance and pre-PONR rollback). Environment action: disposable
-  cluster only; shared-DB inspection read-only.
+- **C3D-C (`OC-C3D-FENCE-001`):** technical artifact manifest is exactly one
+  new file — `tests/ordem-compra-c3d-fence.integration.sql`, covering both
+  evidence classes: §G.5A the **database-faithful authenticated actor-context
+  proof** (SQL-only; reproduces the exact application flat-`UPDATE` shape under
+  synthetic admin and matching-supplier authenticated contexts) and §G.5B the
+  owner-level structural eight-table probe, plus hash-invariance and pre-PONR
+  rollback. **No additional JavaScript/MJS/browser/PostgREST harness is
+  authorized** (§0 Finding 6). Environment action: disposable cluster only;
+  shared-DB inspection read-only.
 - **C3D-D (`OC-C3D-ACL-001`):** exactly one new file —
   `tests/ordem-compra-c3d-acl.integration.sql` (effective-closure simulation,
   rolled back; role matrix). Environment action: disposable cluster +
@@ -565,13 +682,33 @@ implementation order may act on; this contract authorizes none of it now.
   deterministic order, concurrent Component B, and the one authorized
   synthetic-PONR-crossing sequence, §H). Environment action: disposable
   cluster only, including its mandatory post-proof destruction.
-- **C3D-F (closeout):** documentation only, exactly these files —
-  `docs/architecture/ORDEM_COMPRA_C3_TRACEABILITY.md`, `PROJECT_STATE.md`,
-  `AGENT_HANDOFF.md`, `docs/ledgers/G28_LEDGER.md`,
-  `docs/architecture/PEDIDO_PRODUCTION_FLOW_BACKLOG.md`,
-  `docs/architecture/ORDEM_COMPRA_C3D_PHASE_CONTRACT.md` (this contract's
-  `STATUS` marker), and `docs/DOCUMENTATION_INDEX.md` **only if** an indexed
-  path or status materially changes.
+- **Common documentary manifest (corrected — §0 Finding 5; applies to each of
+  C3D-A, C3D-B, C3D-C, C3D-D, C3D-E, and to C3D-F).** When a sublot is
+  separately authorized, its order may authorize — in addition to that
+  sublot's exact technical artifact manifest — exactly these documentary
+  paths:
+  - `PROJECT_STATE.md`
+  - `AGENT_HANDOFF.md`
+  - `docs/architecture/ORDEM_COMPRA_C3D_PHASE_CONTRACT.md`
+  - `docs/architecture/ORDEM_COMPRA_C3_TRACEABILITY.md`
+  - `docs/architecture/PEDIDO_PRODUCTION_FLOW_BACKLOG.md`
+  - `docs/ledgers/G28_LEDGER.md`
+  - `docs/DOCUMENTATION_INDEX.md` — **only if** an indexed path or document
+    status materially changes.
+
+  The documentary updates for a completed C3D-A…E sublot must: append that
+  sublot's implementation/evidence record to this contract; update current
+  state (`PROJECT_STATE.md`) and handoff (`AGENT_HANDOFF.md`); update **only**
+  the requirement rows materially affected by that sublot; record the exact
+  technical checkpoint and environment evidence (append-only ledger entry);
+  keep the next sublot **unauthorized** until a separate architect order; and
+  **never self-accept** the sublot or the overall phase. No wildcard,
+  directory-level, or "related documents" path may be added to this manifest.
+- **C3D-F (closeout):** documentation only — the **common documentary
+  manifest** above (its `docs/architecture/ORDEM_COMPRA_C3D_PHASE_CONTRACT.md`
+  entry being this contract's `STATUS` marker plus the aggregate closeout
+  record). C3D-F is the final aggregate closeout, not the first time canonical
+  evidence may be recorded.
 - **Prohibited from modification by every C3D sublot:** any `db/*.sql`, any
   `js/**`/`index.html`/CSS product file, `scripts/validate-spec-custody.mjs` and
   `scripts/spec-custody/*`, `.claude/*`, `.mcp.json`, `.codex/*`,
@@ -676,9 +813,10 @@ separately governed real-cutover requirements:
    complete their accepted deployment-manifest, inactive-presence,
    idempotency, and fallback evidence (§G items 1–3).
 2. **`OC-C3D-FENCE-001` may become `SATISFIED`** once C3D-C proves the
-   required real actor paths (§G.5A), the structural eight-table trigger
-   coverage (§G.5B), unchanged source/inventory hashes, and the pre-PONR
-   rollback/reset evidence (§G item 9).
+   database-faithful authenticated actor-context fence denial (§G.5A —
+   SQL-only, no application/browser execution), the owner-level structural
+   eight-table trigger coverage (§G.5B), unchanged source/inventory hashes,
+   and the pre-PONR rollback/reset evidence (§G item 9).
 3. **`OC-C3D-ACL-001` may become `SATISFIED`** once C3D-D proves the complete
    effective ACL matrix (§G item 6) in the isolated rehearsal environment
    without invoking the real irreversible closure on any shared or real
@@ -707,10 +845,12 @@ separately governed real-cutover requirements:
 AUTHORIZED`** (machine-readable marker at the head of this file).
 `ACTIVE_PHASE`/`ACTIVE_PHASE_CONTRACT` remain `NONE` in `PROJECT_STATE.md`.
 
-`NEXT_AUTHORIZABLE_ACTION`: **read-only supervisor review of this corrected
-contract** (§0 records that the prior proposal, committed at `fc53f9d`,
-received `CHANGES_REQUIRED` and identifies the four findings this pass
-corrects). No `PHASE-C3D` sublot implementation, environment mutation, branch
+`NEXT_AUTHORIZABLE_ACTION`: **read-only supervisor review of the final
+corrected `PHASE-C3D` material phase contract** (§0 records the R1
+`CHANGES_REQUIRED` verdict on the `fc53f9d` proposal and its four findings;
+§0b records the R2 `CHANGES_REQUIRED` verdict on the `6b7d48a` correction and
+its two findings plus the wildcard-wording correction — all corrected in
+place). No `PHASE-C3D` sublot implementation, environment mutation, branch
 creation, deployment, staging validation/application of `db/76`, activation,
 real snapshot/import, fence transition, read switch, final ACL-closure
 invocation, cutover, C4, C5, production access, or Supabase write is

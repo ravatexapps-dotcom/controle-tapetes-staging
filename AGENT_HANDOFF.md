@@ -109,19 +109,22 @@
   (3993 tests, +8) has the same 122-failure set as the `f9b1a54` baseline —
   byte-identical failing-name set, zero regressions; validator PASS. No
   dependent `OC-C3-*` requirement is `SATISFIED`.
-- **Next authorizable action:** **read-only supervisor review of the corrected
-  `PHASE-C3D` material phase contract**
+- **Next authorizable action:** **read-only supervisor review of the final
+  corrected `PHASE-C3D` material phase contract**
   (`docs/architecture/ORDEM_COMPRA_C3D_PHASE_CONTRACT.md`, `PROPOSED / AWAITING
   SUPERVISOR ACCEPTANCE / IMPLEMENTATION NOT AUTHORIZED`, authored 2026-07-21;
-  a read-only supervisor review returned `CHANGES_REQUIRED` for four material
-  contradictions the same day — requirement disposition, the real-actor-path
-  vs. structural eight-table fence proof split, disposable-cluster-only PONR
-  semantics for the C3D-E concurrency proof, and the exact future manifest —
-  all corrected in place, §0 of that contract). No `PHASE-C3D` implementation,
-  environment mutation, branch creation, staging validation/application of
-  `db/76`, activation, cutover, C4, C5, production access, Supabase write, or
-  any further push beyond the one authorized `staging/dev` fast-forward is
-  authorized. **`ACTIVE_PHASE`/
+  two successive read-only supervisor reviews returned `CHANGES_REQUIRED` the
+  same day — §0 (R1): requirement disposition, the actor-path vs. structural
+  eight-table fence proof split, disposable-cluster-only PONR semantics for the
+  C3D-E concurrency proof, and the exact future manifest; §0b (R2): a common
+  documentary manifest so each C3D-A…E sublot can record its own canonical
+  evidence, reclassification of the C3D-C fence proof as a **database-faithful
+  authenticated actor-context** SQL proof (no browser/app execution), and a
+  wildcard-wording correction — all corrected in place). No `PHASE-C3D`
+  implementation, environment mutation, branch creation, staging
+  validation/application of `db/76`, activation, cutover, C4, C5, production
+  access, Supabase write, or any further push beyond the one authorized
+  `staging/dev` fast-forward is authorized. **`ACTIVE_PHASE`/
   `ACTIVE_PHASE_CONTRACT` remain `NONE`**; no product phase chains
   automatically; the current product phase remains `NONE`.
 
