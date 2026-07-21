@@ -17,10 +17,10 @@ directly (`git rev-parse HEAD`, `git status --short --untracked-files=all`).
 <!-- SPEC_CUSTODY_BOOTSTRAP:BEGIN -->
 ```text
 LAST_ACCEPTED_PHASE: PHASE-C3C-B
-ACTIVE_PHASE: NONE
-ACTIVE_PHASE_CONTRACT: NONE
+ACTIVE_PHASE: PHASE-C3D
+ACTIVE_PHASE_CONTRACT: docs/architecture/ORDEM_COMPRA_C3D_PHASE_CONTRACT.md
 ACTIVE_TRACK: PURCHASE_ORDER_PHASE_C
-NEXT_AUTHORIZABLE_ACTION: read-only supervisor review of the final corrected PHASE-C3D material phase contract (docs/architecture/ORDEM_COMPRA_C3D_PHASE_CONTRACT.md, PROPOSED / AWAITING SUPERVISOR ACCEPTANCE / IMPLEMENTATION NOT AUTHORIZED); no C3D implementation or environment mutation authorized
+NEXT_AUTHORIZABLE_ACTION: read-only supervisor review of the PHASE-C3D-A implementation evidence (docs/architecture/ORDEM_COMPRA_C3D_PHASE_CONTRACT.md §O; STATUS: PHASE-C3D-A IMPLEMENTED / LOCALLY VERIFIED / AWAITING SUPERVISOR ACCEPTANCE); PHASE-C3D-B and every later C3D sublot remain unauthorized
 GOVERNING_SPEC: docs/architecture/ORDEM_COMPRA_LIFECYCLE_SPEC_PROPOSED.md
 TECHNICAL_CONTRACT: docs/architecture/PEDIDO_OP_SCHEMA_CONTRACT.md
 SEQUENCE_AUTHORITY: docs/architecture/PEDIDO_PRODUCTION_FLOW_BACKLOG.md
@@ -70,7 +70,13 @@ ACCEPTED_CHECKPOINT: 22bfb192c6c2ad10ccd2b2883d54c3a17e40cc9f
   resource locks, ACL-closure command, recovery boundaries). Lifecycle §R.29 and
   schema §13.15 are unchanged. Local technical acceptance only — no staging
   validation/application, deployment, activation, cutover, or product acceptance.
-- **Active product phase:** `NONE`. **Active phase contract:** `NONE`.
+- **Active product phase:** `PHASE-C3D` (sublot `PHASE-C3D-A` implemented;
+  `PHASE-C3D-B`…`C3D-F` not authorized). **Active phase contract:**
+  `docs/architecture/ORDEM_COMPRA_C3D_PHASE_CONTRACT.md`
+  (`STATUS: ACCEPTED — PHASE-C3D-A: IMPLEMENTED / LOCALLY VERIFIED / AWAITING
+  SUPERVISOR ACCEPTANCE`, §O). `PHASE-C3D-A` is not self-accepted by this
+  pass; it provides only the environment and deployment-manifest portion of
+  `OC-C3D-DEPLOY-001` and marks no requirement `SATISFIED`.
 - **`PHASE-C3C-B` (application compatibility/adaptation):** `CLOSED /
   ACCEPTED_WITH_NONBLOCKING_DEBT / LOCALLY VERIFIED` — supervisor-accepted
   2026-07-21 at checkpoint `22bfb192c6c2ad10ccd2b2883d54c3a17e40cc9f`
@@ -228,39 +234,49 @@ ACCEPTED_CHECKPOINT: 22bfb192c6c2ad10ccd2b2883d54c3a17e40cc9f
   stands). Recorded in contract §38 as `APPLIED / DEVELOPMENT DB VERIFIED /
   AWAITING SUPERVISOR ACCEPTANCE`. **No dependent `OC-C3-*` requirement is
   `SATISFIED`.**
-- **`PHASE-C3D` (inactive deployment & rehearsal):** `PROPOSED / AWAITING
-  SUPERVISOR ACCEPTANCE / IMPLEMENTATION NOT AUTHORIZED`
-  (`docs/architecture/ORDEM_COMPRA_C3D_PHASE_CONTRACT.md`, authored 2026-07-21 in
-  the same pass as the C3C-B acceptance; two successive read-only supervisor
-  reviews returned `CHANGES_REQUIRED` and the contract was forward-corrected
-  twice the same day — §0 (R1) records four findings, §0b (R2) records two more
-  plus a wildcard-wording correction; the `STATUS` marker is unchanged,
-  `PROPOSED`). It binds the four already-ratified `OC-C3D-*` requirements to an
-  isolated-rehearsal scope (six proposed sublots C3D-A…C3D-F), an environment
-  strategy (disposable local PostgreSQL + read-only shared-DB inspection
-  recommended; an isolated Supabase branch is `UNPROVEN` and not created),
-  entry/exit gates, a test matrix — now distinguishing a **database-faithful
-  authenticated actor-context** fence proof (SQL-only, exact application
-  flat-`UPDATE` shape on `ordens_compra_fio`, no browser/app execution) from an
-  owner-level structural eight-table probe, and a single authorized
-  disposable-cluster-only synthetic PONR crossing confined to C3D-E followed by
-  mandatory cluster destruction — the recovery/PONR model, exact future
-  manifests (no wildcard/directory-level write authorization; each C3D-A…E
-  sublot carries a technical artifact manifest plus a common documentary
-  manifest so it can record its own canonical evidence), and the mandatory
-  supervisor decisions. Each `OC-C3D-*` requirement may become `SATISFIED` by
-  its own isolated-rehearsal evidence, independent of the real cutover
-  requirements. It creates no requirement, authorizes no implementation or
-  environment action, and changes no `OC-C3D-*` disposition.
-- **NEXT_AUTHORIZABLE_ACTION:** **read-only supervisor review of the final
-  corrected `PHASE-C3D` material phase contract**
-  (`docs/architecture/ORDEM_COMPRA_C3D_PHASE_CONTRACT.md`). No `PHASE-C3D`
-  implementation, environment mutation, branch creation, staging validation/
-  application of `db/76`, deployment, activation, real snapshot/import, fence
-  transition, read switch, final ACL-closure invocation, cutover, C4, C5,
-  production access, Supabase write, or any further push beyond the authorized
-  `staging/dev` fast-forward is authorized. No product phase chains
-  automatically; `ACTIVE_PHASE`/`ACTIVE_PHASE_CONTRACT` remain `NONE`.
+- **`PHASE-C3D` (inactive deployment & rehearsal):** contract `ACCEPTED`
+  (`docs/architecture/ORDEM_COMPRA_C3D_PHASE_CONTRACT.md` §0c, supervisor
+  ruling under the "PHASE-C3D-A — ENVIRONMENT AND DEPLOYMENT-MANIFEST
+  QUALIFICATION" order, entry checkpoint
+  `ab30c5115bb79c8952cc5575b68f8b976497699d`, execution strategy §D Option 2 —
+  disposable isolated local PostgreSQL plus a separately-scoped read-only
+  proof against `ucrjtfswnfdlxwtmxnoo`). It binds the four already-ratified
+  `OC-C3D-*` requirements to an isolated-rehearsal scope (six sublots
+  C3D-A…C3D-F), the same environment strategy, entry/exit gates, test matrix,
+  recovery/PONR model, exact future manifests, and mandatory supervisor
+  decisions recorded in §§A–M (unchanged by acceptance). **`PHASE-C3D-A`
+  (environment & deployment-manifest qualification) is now `IMPLEMENTED /
+  LOCALLY VERIFIED / AWAITING SUPERVISOR ACCEPTANCE`** (contract §O):
+  `scripts/c3d/bootstrap-disposable-cluster.mjs` (disposable local PostgreSQL
+  18.4 cluster — fresh temp directory outside the repository, distinct
+  non-default port, initdb/pg_ctl lifecycle, readiness + real connection
+  proof, bounded-retry cleanup that fails closed) and
+  `tests/ordem-compra-c3d-deploy.smoke.js` (19/19 passing across three
+  consecutive runs, zero leftover process or directory after each; deployment
+  manifest resolves exactly `db/01`…`db/76`, terminal `db/75`/`db/76` hash-
+  matched to the HEAD checkpoint and byte-stable for the run, application
+  artifact `22bfb192` proven an ancestor, fail-closed unit coverage for every
+  malformed-manifest condition). Read-only inspection of
+  `ucrjtfswnfdlxwtmxnoo` succeeded (not `UNPROVEN`): migration history ends
+  `75`/`76` at the recorded versions, cutover singleton
+  `legacy_active`/`flat`/`not_started` with every marker `NULL`, business
+  fingerprint `64`/`51`/`51`/`51`/`51`/`64`/`5` — zero DDL/DML/mutating RPC
+  attempted. `PHASE-C3D-A` alone provides only the environment and
+  deployment-manifest portion of `OC-C3D-DEPLOY-001`; it does **not** mark
+  that or any other `OC-C3D-*` requirement `SATISFIED`, and is not
+  self-accepted by this pass. `PHASE-C3D-B` (inactive migration/application
+  presence validation) and every later sublot remain separately unauthorized.
+- **NEXT_AUTHORIZABLE_ACTION:** **read-only supervisor review of the
+  `PHASE-C3D-A` implementation evidence**
+  (`docs/architecture/ORDEM_COMPRA_C3D_PHASE_CONTRACT.md` §O). No
+  `PHASE-C3D-B`/`C3D-C`/`C3D-D`/`C3D-E`/`C3D-F` implementation, environment
+  mutation, branch creation, staging validation/application of `db/76`,
+  deployment, activation, real snapshot/import, fence transition, read
+  switch, final ACL-closure invocation, cutover, C4, C5, production access,
+  Supabase write, or any further push beyond the one authorized `staging/dev`
+  fast-forward for this pass is authorized. No product phase chains
+  automatically; `ACTIVE_PHASE`/`ACTIVE_PHASE_CONTRACT` are `PHASE-C3D-A` /
+  this contract's path, pending that review.
 
 ## Workspace and Git boundaries
 
@@ -400,6 +416,30 @@ production access, Supabase writes, `main`, `origin`/`production` remote
 mutation, and any further push all remain **UNAUTHORIZED**. Production
 `bhgifjrfagkzubpyqpew` must not be accessed.
 
+**Supervisor acceptance of the `PHASE-C3D` contract and `PHASE-C3D-A`
+authorization/implementation (this pass):** the "PHASE-C3D-A — ENVIRONMENT
+AND DEPLOYMENT-MANIFEST QUALIFICATION" order recorded the supervisor's
+acceptance of `docs/architecture/ORDEM_COMPRA_C3D_PHASE_CONTRACT.md` at
+entry checkpoint `ab30c5115bb79c8952cc5575b68f8b976497699d` (§0c) and
+explicitly authorized `PHASE-C3D-A` alone (§D Option 2 — disposable isolated
+local PostgreSQL plus read-only shared-DB inspection). `PHASE-C3D-A` is now
+`IMPLEMENTED / LOCALLY VERIFIED / AWAITING SUPERVISOR ACCEPTANCE` (contract
+§O): `scripts/c3d/bootstrap-disposable-cluster.mjs` and
+`tests/ordem-compra-c3d-deploy.smoke.js` only; `db/01`…`db/76` were **not**
+applied to any cluster or database by this pass; the disposable local
+PostgreSQL cluster and its temp directory were destroyed after every run
+(verified across three consecutive smoke-test runs); the shared development
+database `ucrjtfswnfdlxwtmxnoo` received only read-only inspection (zero
+DDL/DML/mutating RPC). This pass changes only the affected canonical
+current-state, traceability (untouched — no `OC-C3D-*` disposition changes),
+ledger, and phase-contract owners, and records one authorized fast-forward
+push to `staging/dev`. `PHASE-C3D-B` and every later sublot, staging
+application/validation of `db/76`, activation, deployment, real
+snapshot/import, fence transition, read switch, final ACL-closure
+invocation, cutover, branch creation, C4, C5, production access, Supabase
+writes, `main`, `origin`/`production` remote mutation, and any further push
+all remain **UNAUTHORIZED**.
+
 ## Accepted-phase index (concise)
 
 Full closeout narratives are in `docs/ledgers/G28_LEDGER.md` and the archives.
@@ -458,9 +498,10 @@ Commit SHAs there are the accepted technical commits; consult HEAD via Git.
 - C3C-B material phase contract (`CLOSED / ACCEPTED_WITH_NONBLOCKING_DEBT /
   LOCALLY VERIFIED` — application adaptation supervisor-accepted at §36, not
   active): `docs/architecture/ORDEM_COMPRA_C3C_B_PHASE_CONTRACT.md`
-- C3D material phase contract (`PROPOSED / AWAITING SUPERVISOR ACCEPTANCE /
-  IMPLEMENTATION NOT AUTHORIZED` — inactive deployment & rehearsal, not active):
-  `docs/architecture/ORDEM_COMPRA_C3D_PHASE_CONTRACT.md`
+- C3D material phase contract (`ACCEPTED` — inactive deployment & rehearsal;
+  `PHASE-C3D-A` `IMPLEMENTED / LOCALLY VERIFIED / AWAITING SUPERVISOR
+  ACCEPTANCE`, §O; `PHASE-C3D-B`…`C3D-F` not authorized; active — see
+  `SPEC_CUSTODY_BOOTSTRAP`): `docs/architecture/ORDEM_COMPRA_C3D_PHASE_CONTRACT.md`
 - C3C-B database prerequisites contract (closed / technically accepted / local DB verified / not applied to staging database; §35 records the implementation closeout, §36 records DB-backed validation completion, §37 records supervisor acceptance, not active): `docs/architecture/ORDEM_COMPRA_C3C_B_DB_PREREQUISITES_PHASE_CONTRACT.md`
 - Append-only ledger: `docs/ledgers/G28_LEDGER.md`
 - Derived operational handoff: `AGENT_HANDOFF.md`

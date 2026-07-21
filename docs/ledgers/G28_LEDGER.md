@@ -6230,3 +6230,106 @@ MATERIAL_DIVERGENCES: NONE
   switch, final ACL-closure invocation, cutover, C4, C5, production access,
   Supabase write, `main`, or `origin`/`production` remote mutation is
   authorized; one fast-forward push to `staging/dev` records this correction.
+
+## 2026-07-21 — PHASE-C3D-A ENVIRONMENT AND DEPLOYMENT-MANIFEST QUALIFICATION — IMPLEMENTED / LOCALLY VERIFIED / AWAITING SUPERVISOR ACCEPTANCE
+
+- **Order:** "PHASE-C3D-A — ENVIRONMENT AND DEPLOYMENT-MANIFEST
+  QUALIFICATION". Entry checkpoint: branch `dev`, HEAD
+  `ab30c5115bb79c8952cc5575b68f8b976497699d`, `staging/dev` equal to HEAD,
+  index empty, preserved residue exactly modified `.gitignore` (unstaged),
+  untracked `.mcp.json`, untracked `.codex/config.toml` — none touched.
+- **Supervisor ruling recorded (contract §0c):** the R2-corrected
+  `docs/architecture/ORDEM_COMPRA_C3D_PHASE_CONTRACT.md` (committed at
+  `ab30c511`) is **ACCEPTED**; execution strategy §D Option 2 (disposable
+  isolated local PostgreSQL + separately-scoped read-only inspection of
+  `ucrjtfswnfdlxwtmxnoo`) is selected; `PHASE-C3D-A` is explicitly
+  authorized. No later C3D sublot chains automatically.
+- **Implemented (contract §O):** exactly two files —
+  `scripts/c3d/bootstrap-disposable-cluster.mjs` (resolves local PostgreSQL
+  18.4 binaries; allocates a fresh `fs.mkdtemp` temp data directory outside
+  the repository and a distinct non-default TCP port; `initdb`/`pg_ctl
+  start` with a reduced-shared-memory option set; proves readiness via
+  `pg_isready` + a real `psql SELECT 1`; `stop()` runs `pg_ctl stop -m fast`,
+  waits for the port to close, and removes the temp directory with a bounded
+  retry, failing closed if removal cannot be proven; never applies a
+  migration, never loads a fixture, never connects to Supabase or any
+  shared/remote host, never writes a repository file, never registers a
+  Windows service) and `tests/ordem-compra-c3d-deploy.smoke.js` (19/19
+  `node --test`, run three consecutive times with zero leftover
+  `postgres.exe` process or `c3d-disposable-pg-*` temp directory after each
+  run; proves the deployment manifest resolves exactly `db/01`…`db/76`
+  contiguous/unique with `db/75`/`db/76` as the terminal two, hash-matched to
+  the HEAD checkpoint and byte-stable for the run; proves application
+  artifact `22bfb192c6c2ad10ccd2b2883d54c3a17e40cc9f` is a branch ancestor;
+  fails closed on synthetic duplicate/gap/missing-start/unexpected-trailing/
+  hash-mismatch/non-ancestor/identity-mismatch fixtures, never against the
+  real `db/*.sql` files; exercises the disposable-cluster lifecycle including
+  an explicit `simulateReadinessFailure` fault-injection hook proving cleanup
+  still removes a real process/directory after a forced readiness failure).
+  `tests/ordem-compra-c3d-deploy.integration.sql` was **not** created — it is
+  `PHASE-C3D-B` territory, not authorized by this order.
+- **Implementation-time finding (in-scope, corrected):** the first cleanup
+  implementation removed the temp directory immediately after `pg_ctl stop`
+  reported success and the listening port closed; empirically (three full
+  smoke-test runs) this occasionally left a `postgres.exe` auxiliary worker
+  process alive and its directory undeleted for longer than the test run
+  itself — a Windows-specific race where `pg_ctl stop -w` success does not
+  guarantee every auxiliary process has released its open handles yet.
+  Corrected with a 500 ms grace delay plus a bounded retry
+  (`removeWithRetry`, up to 10 attempts) around the removal, failing closed
+  if it still cannot be proven. Re-verified clean across three consecutive
+  full smoke-test runs after the fix.
+- **Read-only shared-development-database evidence (`ucrjtfswnfdlxwtmxnoo`,
+  scoped read-only Supabase MCP connection; not `UNPROVEN`):** migration
+  history confirmed ending at `75`/`76` with the exact recorded versions
+  `20260720234958`/`20260720235820`; cutover singleton `id=1`:
+  `status='legacy_active'`, `read_authority='flat'`,
+  `reconciliation_status='not_started'`, every
+  activation/snapshot/import/final-ACL/productive-receipt marker `NULL`;
+  business fingerprint `ordens_compra_fio=64`, `ordem_compra=51`,
+  `ordem_compra_item=51`, `ordem_compra_item_alocacao=51`,
+  `ordem_compra_item_compat_fio=51`, `necessidade_compra_fio=64`,
+  `saldo_fios=5`. Zero DDL, DML, or state-mutating RPC invoked.
+- **Files materially changed:** `scripts/c3d/bootstrap-disposable-cluster.mjs`
+  (new); `tests/ordem-compra-c3d-deploy.smoke.js` (new);
+  `docs/architecture/ORDEM_COMPRA_C3D_PHASE_CONTRACT.md` (§0c and §O
+  appended; `STATUS` marker updated; §N updated in place); `PROJECT_STATE.md`;
+  `AGENT_HANDOFF.md`; this ledger. `docs/architecture/ORDEM_COMPRA_C3_TRACEABILITY.md`
+  and `docs/architecture/PEDIDO_PRODUCTION_FLOW_BACKLOG.md` intentionally
+  **not** touched — no `OC-C3D-*` disposition changed and no sequence fact
+  changed. No `db/*.sql`, existing test, product `js/*`, `index.html`, CSS,
+  package/lockfile, CI, deployment config, Supabase config, MCP config,
+  `.gitignore`, normative specification, or validator modified; the three
+  preserved residue paths are excluded from the commit.
+- **State after this pass:** `LAST_ACCEPTED_PHASE: PHASE-C3C-B` (unchanged —
+  `PHASE-C3D-A` is implemented, not yet accepted). `ACTIVE_PHASE: PHASE-C3D`.
+  `ACTIVE_PHASE_CONTRACT: docs/architecture/ORDEM_COMPRA_C3D_PHASE_CONTRACT.md`.
+  `ACCEPTED_CHECKPOINT: 22bfb192c6c2ad10ccd2b2883d54c3a17e40cc9f` (unchanged).
+  No `OC-C3D-*`/`OC-C3-*` requirement disposition changed;
+  `OC-C3D-DEPLOY-001` remains `PLANNED` (contract §M unchanged — C3D-A alone
+  does not satisfy it, only C3D-A **and** C3D-B together may).
+- **Validation:** `node --check` on both new files; `node --test
+  tests/ordem-compra-c3d-deploy.smoke.js` 19/19, three consecutive clean
+  runs; `node scripts/validate-spec-custody.mjs` PASS (against the final
+  edited state); `node scripts/validate-spec-custody.mjs --self-test` 47/47
+  PASS (run against the tool's own quiescent `ACTIVE_PHASE_CONTRACT: NONE`
+  baseline precondition, by design — verified by temporarily stashing the
+  `PROJECT_STATE.md` edit, running self-test, then restoring it; the
+  validator itself was not modified); `git diff --check` / `git diff
+  --cached --check` clean; full mandatory Node suite 4012 tests (3993
+  baseline + 19 new), 122 failures — same count as the documented baseline,
+  zero among them C3D-related (no stored exact prior failing-name list exists
+  in canonical docs to diff byte-for-byte, only the count).
+- **Exact accounting subject:** `test: qualify C3D disposable rehearsal
+  environment`.
+- **Status after this commit:** `PHASE-C3D` contract = `ACCEPTED`;
+  `PHASE-C3D-A` = `IMPLEMENTED / LOCALLY VERIFIED / AWAITING SUPERVISOR
+  ACCEPTANCE`. `PHASE-C3D-B` through `C3D-F` remain unauthorized. No
+  self-acceptance of `PHASE-C3D-A` or the phase occurred.
+- **NEXT_AUTHORIZABLE_ACTION:** read-only supervisor review of the
+  `PHASE-C3D-A` evidence (contract §O). No `PHASE-C3D-B` implementation,
+  environment mutation, branch creation, staging validation/application of
+  `db/76`, activation, real snapshot/import, fence transition, read switch,
+  final ACL-closure invocation, cutover, production access, Supabase write,
+  `main`, `origin`/`production` remote mutation, or any further push is
+  authorized; one fast-forward push to `staging/dev` records this pass.

@@ -38,8 +38,11 @@
 - **Prior accepted product phase:** `PHASE-C3C-A` — `CLOSED / TECHNICALLY
   ACCEPTED — LOCALLY VERIFIED / INACTIVE / NOT APPLIED TO STAGING` (2026-07-20),
   technical checkpoint `89123729b3529fff6e4a2336bfec2907c4b94b4c`.
-- **Active product phase:** `NONE`.
-- **Active phase contract:** `NONE`.
+- **Active product phase:** `PHASE-C3D` (sublot `PHASE-C3D-A` — environment &
+  deployment-manifest qualification — `IMPLEMENTED / LOCALLY VERIFIED /
+  AWAITING SUPERVISOR ACCEPTANCE`; `PHASE-C3D-B`…`C3D-F` not authorized).
+- **Active phase contract:** `docs/architecture/ORDEM_COMPRA_C3D_PHASE_CONTRACT.md`
+  (`ACCEPTED`, §0c; `PHASE-C3D-A` evidence at §O).
 - **Active track:** `PURCHASE_ORDER_PHASE_C`.
 - **Current governance status:** `GOVERNANCE-SPEC-CUSTODY-FOUNDATION-R1`
   **ACCEPTED**; `GOVERNANCE-STATE-HANDOFF-COMPACTION-R1` **ACCEPTED** by the
@@ -109,24 +112,33 @@
   (3993 tests, +8) has the same 122-failure set as the `f9b1a54` baseline —
   byte-identical failing-name set, zero regressions; validator PASS. No
   dependent `OC-C3-*` requirement is `SATISFIED`.
-- **Next authorizable action:** **read-only supervisor review of the final
-  corrected `PHASE-C3D` material phase contract**
-  (`docs/architecture/ORDEM_COMPRA_C3D_PHASE_CONTRACT.md`, `PROPOSED / AWAITING
-  SUPERVISOR ACCEPTANCE / IMPLEMENTATION NOT AUTHORIZED`, authored 2026-07-21;
-  two successive read-only supervisor reviews returned `CHANGES_REQUIRED` the
-  same day — §0 (R1): requirement disposition, the actor-path vs. structural
-  eight-table fence proof split, disposable-cluster-only PONR semantics for the
-  C3D-E concurrency proof, and the exact future manifest; §0b (R2): a common
-  documentary manifest so each C3D-A…E sublot can record its own canonical
-  evidence, reclassification of the C3D-C fence proof as a **database-faithful
-  authenticated actor-context** SQL proof (no browser/app execution), and a
-  wildcard-wording correction — all corrected in place). No `PHASE-C3D`
+- **Next authorizable action:** **read-only supervisor review of the
+  `PHASE-C3D-A` implementation evidence**
+  (`docs/architecture/ORDEM_COMPRA_C3D_PHASE_CONTRACT.md` §O). The contract
+  (two forward-corrected `PROPOSED` rounds — §0 R1: requirement disposition,
+  the actor-path vs. structural eight-table fence proof split,
+  disposable-cluster-only PONR semantics for the C3D-E concurrency proof, and
+  the exact future manifest; §0b R2: a common documentary manifest so each
+  C3D-A…E sublot can record its own canonical evidence, reclassification of
+  the C3D-C fence proof as a **database-faithful authenticated actor-context**
+  SQL proof, and a wildcard-wording correction) was **`ACCEPTED`** by the
+  supervisor (§0c) at entry checkpoint
+  `ab30c5115bb79c8952cc5575b68f8b976497699d`, with `PHASE-C3D-A` (environment
+  & deployment-manifest qualification, §D Option 2 — disposable isolated
+  local PostgreSQL + read-only shared-DB inspection) explicitly authorized.
+  `PHASE-C3D-A` is now `IMPLEMENTED / LOCALLY VERIFIED / AWAITING SUPERVISOR
+  ACCEPTANCE` (§O): `scripts/c3d/bootstrap-disposable-cluster.mjs` +
+  `tests/ordem-compra-c3d-deploy.smoke.js` only, no migration applied to any
+  cluster or database, disposable-cluster process/directory proven removed
+  after every run, read-only shared-DB inspection succeeded (not
+  `UNPROVEN`). No `PHASE-C3D-B`/`C3D-C`/`C3D-D`/`C3D-E`/`C3D-F`
   implementation, environment mutation, branch creation, staging
   validation/application of `db/76`, activation, cutover, C4, C5, production
   access, Supabase write, or any further push beyond the one authorized
-  `staging/dev` fast-forward is authorized. **`ACTIVE_PHASE`/
-  `ACTIVE_PHASE_CONTRACT` remain `NONE`**; no product phase chains
-  automatically; the current product phase remains `NONE`.
+  `staging/dev` fast-forward for this pass is authorized. **`ACTIVE_PHASE`/
+  `ACTIVE_PHASE_CONTRACT` are `PHASE-C3D` /
+  `docs/architecture/ORDEM_COMPRA_C3D_PHASE_CONTRACT.md`**, pending that
+  review; no product phase chains automatically beyond `PHASE-C3D-A`.
 
 ## Governing specifications and contracts
 
@@ -201,21 +213,27 @@ Full matrix and normative anchors: `docs/architecture/ORDEM_COMPRA_C3_TRACEABILI
 
 ## Push, remote, main and deployment limits
 
-- **No push** is authorized by this handoff. The `M0` full-history push to
-  `production` was single-use.
+- **No push** is authorized by this handoff by default. The `M0` full-history
+  push to `production` was single-use; the `PHASE-C3D-A` order separately
+  authorized exactly one clean fast-forward push to `staging/dev` for this
+  pass's single commit (`test: qualify C3D disposable rehearsal environment`)
+  — that authorization does not extend to any future push.
 - **Remotes:** `production` = `inttexsystem/inttracker` (fetch+push, `main`
   only); `origin` = `grupoterrabranca/controle-tapetes`; `staging` =
   `ravatexapps-dotcom/controle-tapetes-staging` (historical backup only). No
   branch other than `main` is pushed to `production`.
 - **`main` is forbidden** as a working/target branch here; no push to
   `origin`/`staging` without separate express authorization.
-- **Unauthorized (each a separate gate):** C3D, staging application/validation
-  of `db/76`, activation, deployment, real snapshot/import, fence transition,
-  read switch, final ACL-closure invocation, cutover, C4, C5, production
-  access, remote mutation, and push. `PHASE-C3C-B` application implementation
-  is complete (`IMPLEMENTED / LOCALLY VERIFIED / AWAITING SUPERVISOR
-  ACCEPTANCE`) but that acceptance itself remains a separate, not-yet-granted
-  gate.
+- **Unauthorized (each a separate gate):** `PHASE-C3D-B`/`C3D-C`/`C3D-D`/
+  `C3D-E`/`C3D-F`, staging application/validation of `db/76`, activation,
+  deployment, real snapshot/import, fence transition, read switch, final
+  ACL-closure invocation, cutover, C4, C5, production access, remote
+  mutation beyond the one authorized `staging/dev` fast-forward above, and
+  any further push. `PHASE-C3C-B` application implementation is complete
+  (`IMPLEMENTED / LOCALLY VERIFIED / AWAITING SUPERVISOR ACCEPTANCE`) but
+  that acceptance itself remains a separate, not-yet-granted gate.
+  `PHASE-C3D-A` is likewise `IMPLEMENTED / LOCALLY VERIFIED / AWAITING
+  SUPERVISOR ACCEPTANCE` (§O) — its acceptance is a separate gate too.
 
 ## Canonical paths — RETRANSMIT ALL OF THESE IN EVERY FUTURE HANDOFF
 
@@ -246,8 +264,9 @@ Full matrix and normative anchors: `docs/architecture/ORDEM_COMPRA_C3_TRACEABILI
     database — §§35–37; `db/76` exists, DB-backed tests pass against an
     isolated disposable local cluster; not active)
 21. `docs/architecture/ORDEM_COMPRA_C3D_PHASE_CONTRACT.md` (C3D material phase
-    contract — inactive deployment & rehearsal; `PROPOSED / AWAITING SUPERVISOR
-    ACCEPTANCE / IMPLEMENTATION NOT AUTHORIZED`; not active)
+    contract — inactive deployment & rehearsal; `ACCEPTED`, §0c; `PHASE-C3D-A`
+    `IMPLEMENTED / LOCALLY VERIFIED / AWAITING SUPERVISOR ACCEPTANCE`, §O;
+    active)
 
 > Bootstrap first through `docs/governance/AGENT_INSTRUCTIONS.md` and the
 > `SPEC_CUSTODY_BOOTSTRAP` block in `PROJECT_STATE.md`. Private conversation,

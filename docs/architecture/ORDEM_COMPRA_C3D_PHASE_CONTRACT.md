@@ -3,7 +3,7 @@
 <!-- MATERIAL_PHASE_CONTRACT:BEGIN -->
 PHASE_ID: PHASE-C3D
 <!-- MATERIAL_PHASE_CONTRACT:END -->
-STATUS: PROPOSED / AWAITING SUPERVISOR ACCEPTANCE / IMPLEMENTATION NOT AUTHORIZED
+STATUS: ACCEPTED — PHASE-C3D-A: IMPLEMENTED / LOCALLY VERIFIED / AWAITING SUPERVISOR ACCEPTANCE — C3D-B THROUGH C3D-F: NOT AUTHORIZED
 
 > **Role of this document.** This is a **material phase contract**, authored
 > under `docs/governance/DOCUMENTATION_MODEL.md` §19 and
@@ -143,6 +143,27 @@ db/*.sql`, `any js/**`, `.codex/*`), which are prohibition/reference patterns,
 anywhere" claim is replaced by the precise invariant: **`NO WILDCARD OR
 DIRECTORY-LEVEL WRITE AUTHORIZATION EXISTS`** (applied in the §I heading, the
 §I intro, and §0 Finding 4).
+
+## 0c. Supervisor acceptance and PHASE-C3D-A authorization (verdict: ACCEPTED)
+
+> **Supervisor ruling, recorded under the "PHASE-C3D-A — ENVIRONMENT AND
+> DEPLOYMENT-MANIFEST QUALIFICATION" order.** The R2-corrected contract
+> committed at `ab30c5115bb79c8952cc5575b68f8b976497699d` (`docs: finalize
+> C3D contract execution boundaries`) is **ACCEPTED**. The accepted execution
+> strategy is **§D Option 2** (disposable isolated local PostgreSQL plus a
+> separately-scoped read-only inspection of the shared development database).
+> `PHASE-C3D-A` is explicitly authorized by this ruling. No later C3D sublot
+> (`C3D-B`, `C3D-C`, `C3D-D`, `C3D-E`, `C3D-F`) chains automatically from this
+> authorization — each remains its own, separately unauthorized gate per §J
+> and `docs/governance/AGENT_INSTRUCTIONS.md` §3.
+
+Entry baseline for this authorization: branch `dev`, HEAD
+`ab30c5115bb79c8952cc5575b68f8b976497699d`, `staging/dev` equal to HEAD,
+preserved residue exactly modified `.gitignore` (unstaged), untracked
+`.mcp.json`, untracked `.codex/config.toml` — verified unchanged by §O below.
+This acceptance changes no `OC-C3D-*` requirement disposition (§M) and
+authorizes only the exact `PHASE-C3D-A` technical manifest and common
+documentary manifest in §I.
 
 ## 1. Authorization source and entry checkpoint
 
@@ -841,19 +862,156 @@ separately governed real-cutover requirements:
 
 ## N. Status and next authorizable action
 
-`STATUS`: **`PROPOSED / AWAITING SUPERVISOR ACCEPTANCE / IMPLEMENTATION NOT
-AUTHORIZED`** (machine-readable marker at the head of this file).
-`ACTIVE_PHASE`/`ACTIVE_PHASE_CONTRACT` remain `NONE` in `PROJECT_STATE.md`.
+`STATUS`: **`ACCEPTED — PHASE-C3D-A: IMPLEMENTED / LOCALLY VERIFIED /
+AWAITING SUPERVISOR ACCEPTANCE — C3D-B THROUGH C3D-F: NOT AUTHORIZED`**
+(machine-readable marker at the head of this file). §0c records the
+supervisor's acceptance of this contract and explicit authorization of
+`PHASE-C3D-A` alone. `ACTIVE_PHASE`/`ACTIVE_PHASE_CONTRACT` in
+`PROJECT_STATE.md` are `PHASE-C3D-A` / this file's path, pending the
+supervisor's review of §O below; neither is self-accepted by this pass.
 
-`NEXT_AUTHORIZABLE_ACTION`: **read-only supervisor review of the final
-corrected `PHASE-C3D` material phase contract** (§0 records the R1
-`CHANGES_REQUIRED` verdict on the `fc53f9d` proposal and its four findings;
-§0b records the R2 `CHANGES_REQUIRED` verdict on the `6b7d48a` correction and
-its two findings plus the wildcard-wording correction — all corrected in
-place). No `PHASE-C3D` sublot implementation, environment mutation, branch
-creation, deployment, staging validation/application of `db/76`, activation,
-real snapshot/import, fence transition, read switch, final ACL-closure
-invocation, cutover, C4, C5, production access, or Supabase write is
-authorized by this correction pass. No phase chains automatically; each
-sublot in §C requires its own explicit architect authorization and the
-resolution of the §J decisions it depends on.
+`NEXT_AUTHORIZABLE_ACTION`: **read-only supervisor review of the `PHASE-C3D-A`
+implementation evidence (§O)**. `PHASE-C3D-A` alone provides only the
+environment and deployment-manifest portion of `OC-C3D-DEPLOY-001`; it does
+not mark that requirement, or any other `OC-C3D-*` requirement, `SATISFIED`
+(§M is unchanged by this pass). No `PHASE-C3D-B`/`C3D-C`/`C3D-D`/`C3D-E`/
+`C3D-F` implementation, environment mutation, branch creation, migration
+application to any persistent environment, activation, real snapshot/import,
+fence transition, read switch, final ACL-closure invocation, cutover,
+production access, or Supabase write is authorized by this pass. No phase
+chains automatically; each remaining sublot in §C requires its own explicit
+architect authorization and the resolution of the §J decisions it depends on.
+
+## O. PHASE-C3D-A implementation and evidence
+
+**Scope executed:** exactly the `PHASE-C3D-A` — "Environment and
+deployment-manifest qualification" — subset of the combined C3D-A/C3D-B
+technical manifest in §I: `scripts/c3d/bootstrap-disposable-cluster.mjs` and
+`tests/ordem-compra-c3d-deploy.smoke.js`. `tests/ordem-compra-c3d-deploy.integration.sql`
+(the remaining C3D-A/C3D-B manifest member) is **not** created by this pass —
+migration application and inactive-function behavioral validation are
+`PHASE-C3D-B` territory (§C), a separate, not-yet-authorized gate.
+
+**Environment identity:** disposable, isolated local PostgreSQL cluster,
+never the host's persistent scoop-installed cluster
+(`C:\Users\<host-user>\scoop\apps\postgresql\*\data`, unused and untouched).
+PostgreSQL version detected and used: **18.4** (`initdb --version`), matching
+the version proven in `ORDEM_COMPRA_C3C_B_DB_PREREQUISITES_PHASE_CONTRACT.md`
+§36.1. Binary directory resolved from `PATH`/`C3D_PG_BIN_DIR` at bootstrap
+time; no path, credential, key, token, or connection string is printed or
+persisted (the disposable cluster uses local trust authentication with no
+password of any kind).
+
+**Temporary-directory policy:** `fs.mkdtemp(os.tmpdir() + 'c3d-disposable-pg-<random>')`
+— a fresh, uniquely-suffixed directory under the OS temp path, verified
+outside the repository root on every bootstrap (`scripts/c3d/bootstrap-disposable-cluster.mjs`
+throws `C3D_BOOTSTRAP_DATA_DIR_INSIDE_REPOSITORY` otherwise). Repeated
+bootstraps never reuse a directory (`fs.mkdtemp` guarantees a fresh suffix);
+proven empirically in `tests/ordem-compra-c3d-deploy.smoke.js` ("repeated
+bootstrap runs do not reuse the same data directory").
+
+**Port policy:** allocated via an OS ephemeral-port probe (bind to port 0,
+read the assigned port, close), explicitly rejecting the conventional
+default port 5432 if ever returned. Empirically distinct from 5432 on every
+run (`tests/ordem-compra-c3d-deploy.smoke.js`, "the cluster uses a distinct
+port" assertion inside the lifecycle test).
+
+**Deployment manifest:** application artifact
+`22bfb192c6c2ad10ccd2b2883d54c3a17e40cc9f` (confirmed an ancestor of the
+current branch by `git merge-base --is-ancestor`); ordered database
+migration sequence `db/01`…`db/76` (76 primary numbered migrations, `.verify.sql`
+siblings and `setup_completo.sql` correctly excluded by the filename
+pattern); exact terminal migrations `db/75_ordem_compra_c3c_inactive_cutover.sql`
+and `db/76_ordem_compra_c3c_b_db_prerequisites.sql`; both files' working-tree
+SHA-256 hashes proven byte-identical to their `git show HEAD:<path>` blob
+content (i.e. unmodified relative to the repository checkpoint) and
+byte-stable for the whole smoke-test run. The manifest resolver fails closed
+(proven against synthetic fixtures only, never against the real `db/*.sql`
+files) on: a duplicate migration number, a non-contiguous sequence, a
+sequence not starting at 1, an unexpected migration after the expected
+terminal, a hash diverging from the repository checkpoint, an application
+artifact absent from branch ancestry, and a repository/branch identity
+mismatch. `PHASE-C3D-A` does **not** apply `db/01`…`db/76` to any cluster or
+database — this manifest is deployment-planning evidence only.
+
+**Bootstrap and cleanup evidence:** `scripts/c3d/bootstrap-disposable-cluster.mjs`
+resolves local PostgreSQL binaries, allocates the temp directory and port
+above, runs `initdb`/`pg_ctl start` (reduced-shared-memory options mitigating
+the Windows shared-memory reservation crash recorded in
+`ORDEM_COMPRA_C3C_B_DB_PREREQUISITES_PHASE_CONTRACT.md` §35.5/§36.1), proves
+readiness via `pg_isready` + a real `psql -c "SELECT 1"` connection, and
+exposes a `stop()` that runs `pg_ctl stop -m fast`, waits for the port to
+close, and removes the temporary directory with a bounded retry (absorbing a
+observed Windows race where a still-exiting auxiliary worker process can
+briefly keep the directory listed after `pg_ctl stop -w` already reports
+success), failing closed (throwing `C3D_BOOTSTRAP_CLEANUP_INCOMPLETE`) if
+removal cannot be proven. It never applies a migration, never loads a
+fixture, never connects to Supabase or any shared/remote host, never writes
+a repository file, and never uses `pg_ctl register` (no Windows service is
+created).
+
+**Tests and failure injection:** `tests/ordem-compra-c3d-deploy.smoke.js`,
+19/19 passing, `node --test`, run three consecutive times with an explicit
+post-run check for leftover `postgres.exe` processes and leftover
+`c3d-disposable-pg-*` temp directories (none found on any of the three runs
+after a bounded-retry cleanup fix — see §O's implementation-time finding
+below). Covers: the full happy-path lifecycle (fresh directory outside the
+repository, distinct port, readiness, real connection, clean shutdown,
+process and directory gone); two repeated bootstraps proving no directory
+reuse; and an explicit fault-injection hook
+(`bootstrapCluster({ simulateReadinessFailure: true })`) that lets a real
+cluster genuinely start and then forces the readiness step to fail, proving
+cleanup still removes the real process and directory it created — a plain
+short `readinessTimeoutMs` was tried first and found unreliable, because
+`pg_ctl start -w` already waits for the server's own internal readiness, so
+the first poll inside the timeout window usually still succeeds.
+
+**Implementation-time finding (in-scope defect, corrected):** the first
+cleanup implementation called `fs.rm(dataDir, { recursive: true, force: true })`
+immediately after `pg_ctl stop` reported success and the listening port
+closed. Empirically (three full smoke-test runs), this occasionally left a
+`postgres.exe` auxiliary worker process alive and its data directory
+undeleted for longer than the test run itself — a Windows-specific race
+where `pg_ctl stop -w` returning success (the postmaster removed its PID
+file) does not guarantee every auxiliary process has finished exiting and
+released its open handles yet. Corrected with a 500 ms grace delay after the
+port closes plus a bounded retry (`removeWithRetry`, up to 10 attempts at
+300 ms) around the directory removal, failing closed if removal still cannot
+be proven after all attempts. Re-verified clean (zero leftover process, zero
+leftover directory) across three consecutive full smoke-test runs after the
+fix.
+
+**Read-only shared-development-database evidence
+(`ucrjtfswnfdlxwtmxnoo`, via the repository's scoped read-only Supabase MCP
+connection):**
+
+- migration history confirmed ending at `75`/`76` with the exact recorded
+  versions `20260720234958`/`20260720235820` (`list_migrations`);
+- cutover singleton (`public.ordem_compra_cutover`, `id=1`):
+  `status='legacy_active'`, `read_authority='flat'`,
+  `reconciliation_status='not_started'`; `canonical_activated_at`,
+  `snapshot_captured_at`, `import_started_at`, `import_completed_at`,
+  `final_acl_closed_at`, `productive_receipt_started_at`,
+  `source_snapshot_count`, `inventory_baseline_count` all `NULL`;
+- business fingerprint (single read-only pass; no mutation was attempted, so
+  no before/after drift is possible): `ordens_compra_fio=64`,
+  `ordem_compra=51`, `ordem_compra_item=51`,
+  `ordem_compra_item_alocacao=51`, `ordem_compra_item_compat_fio=51`,
+  `necessidade_compra_fio=64`, `saldo_fios=5` — consistent with the fixed
+  64-row/51-mapped corpus recorded elsewhere (§F).
+
+No DDL, DML, or state-mutating RPC was invoked against this database. This
+evidence is **not** `UNPROVEN` — the scoped read-only tooling performed it
+cleanly without exposing any credential.
+
+**Exact technical checkpoint:** entry HEAD
+`ab30c5115bb79c8952cc5575b68f8b976497699d` (§0c); this section is appended,
+and the single authorized commit `test: qualify C3D disposable rehearsal
+environment` is created, on top of that checkpoint — see `PROJECT_STATE.md`
+and `docs/ledgers/G28_LEDGER.md` for the exact resulting HEAD.
+
+**Hard stop before C3D-B.** This section provides only the `PHASE-C3D-A`
+evidence. `PHASE-C3D-B` (inactive migration/application presence validation
+against a real applied `db/01`…`db/76` sequence) remains a separate,
+not-yet-authorized gate; nothing in this pass applies a migration to any
+cluster, activates canonical reads, or advances any `OC-C3D-*` disposition.
