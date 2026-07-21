@@ -6867,3 +6867,135 @@ product file they depend on, was modified by this pass or the prior one):
   production access, Supabase write, `main`, `origin`/`production` remote
   mutation, or any further push beyond the one authorized `staging/dev`
   fast-forward for this pass is authorized.
+
+## 2026-07-21 — PHASE-C3D-C — Targeted evidence correction
+
+- **Phase:** `PHASE-C3D-C` targeted evidence correction (§T), correcting
+  four incomplete-evidence findings identified against the §S
+  implementation; does not redesign or repeat the already-passing
+  actor-context, 24-probe, fence, or rollback behavior.
+- **Authorization:** the "PHASE-C3D-C TARGETED EVIDENCE CORRECTION" order.
+  Entry checkpoint `a4b2e13bf0d9fb19b0ee69196f21d86f4904961e` (the accepted
+  `PHASE-C3D-C` implementation checkpoint), branch `dev`, `staging/dev`
+  equal to HEAD, preserved residue exactly `.gitignore` (modified,
+  unstaged), `.codex/config.toml` (untracked), `.mcp.json` (untracked).
+- **Implementation:** modified exactly
+  `tests/ordem-compra-c3d-fence.integration.sql`. No `db/*.sql`, product
+  file, other test, or script modified.
+- **Finding 1 (exact live-versus-frozen hash proof):** added
+  `public.ordem_compra_c3c_assert_snapshot_and_live(930003001)` invocations
+  post-fence, post-Evidence-5A, post-24-probe-matrix, and post-rollback,
+  each required to succeed. Added a session `TEMP` evidence anchor
+  (`source_snapshot_count`/`_total_kg`/`_serialization`, `snapshot_hash`,
+  `inventory_baseline_count`/`_total_kg`/`_serialization`,
+  `inventory_baseline_hash`, plus `md5(string_agg(row::text, ... ORDER BY
+  stable_position))` full-row hashes of both
+  `ordem_compra_cutover_source_snapshot` and
+  `ordem_compra_cutover_inventory_baseline`) captured once post-fence and
+  compared byte-for-byte at every later checkpoint — all four comparisons
+  passed with zero drift in both runs. Replaced the prior counts-only
+  business fingerprint with a full-content fingerprint (row-cast hashes,
+  deterministic primary-key ordering) for all eleven listed tables,
+  captured pre-Evidence-5A and re-verified after 5A, after the 24-probe
+  matrix, and — newly — after the test-only pre-PONR fixture and rollback,
+  proving zero mutation of any real business table across the entire test.
+  The cutover singleton itself is excluded from both the fingerprint and
+  the snapshot/inventory anchor; its exact expected state at each
+  checkpoint (including the intentional `reconciliation_status`-stays-
+  `reconciled` / `read_authority` canonical→flat rollback transition) is
+  asserted field-by-field by the existing per-checkpoint state checks, per
+  the order's explicit instruction not to compare the whole cutover row as
+  if those intended differences should disappear.
+- **Finding 2 (installed trigger-depth exception):** added an empirical
+  catalog assertion against
+  `pg_get_functiondef('public.trg_c3c_protected_mutation_guard()'::regprocedure)`,
+  normalized-whitespace-matched: exactly one `saldo_fios`/`saldo_fios_op`
+  branch; exactly one `pg_trigger_depth() > 1 AND v_state =
+  'canonical_active'` gate; the gate, its pass-through `RETURN`, and the
+  `ELSE`-path `RAISE EXCEPTION 'legacy_receipt_fenced' USING ERRCODE =
+  '55000'` proven as one contiguous block; `'canonical_active'` referenced
+  exactly once in the whole guard body (no broader pass-through); the
+  literal `maintenance_fenced` never referenced anywhere in the guard
+  (proving it cannot satisfy the gate regardless of trigger depth). No
+  `SECURITY DEFINER` function was fabricated to synthesize a depth>1
+  caller; combined with the direct depth-1 denial already proven by the
+  24-probe matrix, the finding is closed without exercising the legitimate
+  nested-path runtime, which remains `PHASE-C3D-E` scope.
+- **Finding 3 (test-backend termination proof):** removed the prior
+  overstated in-session "idle" claim. The test file's final section now
+  emits its own `pg_backend_pid()` as a stable `NOTICE`
+  (`TEST_BACKEND_PID=<n>`) and in its final result row. The ephemeral
+  orchestration runner (scratch, outside the repository, removed after
+  validation) parses that PID from the exited `psql` process's combined
+  output, then opens a **separate** connection — proving `pg_stat_activity`
+  has zero rows and `pg_locks` has zero advisory locks for that PID —
+  before any cluster teardown. Both runs: PID captured, zero
+  `pg_stat_activity` rows, zero advisory locks, confirmed via the separate
+  connection.
+- **Finding 4 (traceability correction):** `OC-C3D-FENCE-001`'s
+  residual-debt column no longer states a real, non-disposable-local
+  admin/supplier fence rehearsal is pending. It now records: Option 2
+  (disposable local PostgreSQL + read-only shared-DB inspection) is the
+  selected and sole environment strategy for this requirement; every
+  state-changing fence exercise is confined to disposable local PostgreSQL
+  18.4; the shared development database is read-only only; no
+  remote/shared `maintenance_fenced` exercise is required or authorized by
+  `PHASE-C3D-C`; only supervisor acceptance of the corrected evidence
+  remains pending. Disposition remains `PARTIALLY_SATISFIED` — not
+  advanced by this pass; `OC-C3D-ACL-001`/`OC-C3D-LOCK-001` untouched.
+- **Two fresh-cluster re-validation:** both runs green
+  (`C3D_C_FENCE_INTEGRATION_PASS`), including all four new evidence
+  classes; both proved full postmaster-PID/port/directory cleanup after
+  teardown; zero leftover `c3d-disposable-pg-*` directory.
+- **Files materially changed:**
+  `tests/ordem-compra-c3d-fence.integration.sql` (corrected, not
+  recreated); `docs/architecture/ORDEM_COMPRA_C3D_PHASE_CONTRACT.md` (§T
+  appended; `STATUS` marker corrected); `PROJECT_STATE.md`;
+  `AGENT_HANDOFF.md`; `docs/architecture/ORDEM_COMPRA_C3_TRACEABILITY.md`
+  (`OC-C3D-FENCE-001` evidence/residual-debt columns corrected per Finding
+  4 — disposition/checkpoint held unchanged); `docs/architecture/
+  PEDIDO_PRODUCTION_FLOW_BACKLOG.md` (one dated closeout note); this
+  ledger. `docs/DOCUMENTATION_INDEX.md` not touched (no indexed status
+  materially changed beyond the C3D contract row's own STATUS text, already
+  covered by the contract itself). No `db/*.sql`, product `js/*`/
+  `index.html`/CSS, other existing test, validator, package/lockfile, CI,
+  deployment/Supabase/MCP config, or `.gitignore` modified; the three
+  preserved residue paths excluded from the commit.
+- **Validation:** `node --check` on
+  `scripts/c3d/bootstrap-disposable-cluster.mjs` and
+  `tests/ordem-compra-c3d-deploy.smoke.js` (unmodified); `node --test
+  tests/ordem-compra-c3d-deploy.smoke.js` (24/24); `node --test
+  tests/ordem-compra-receipt-cutover.smoke.js` (43/43); `node
+  scripts/validate-spec-custody.mjs` PASS; the corrected disposable-cluster
+  fence/rollback proof executed twice from fresh clusters (both
+  `C3D_C_FENCE_INTEGRATION_PASS` with all new gates passing); `git diff
+  --check` / `git diff --cached --check` clean; the full mandatory Node
+  suite differential against the entry checkpoint
+  `a4b2e13bf0d9fb19b0ee69196f21d86f4904961e` in a temporary detached
+  worktree outside the canonical workspace (removed and pruned after) —
+  final minus baseline = empty (added = 0). `node
+  scripts/validate-spec-custody.mjs --self-test` fails identically at the
+  entry checkpoint and here (`R1: ACTIVE_PHASE_CONTRACT is not an existing
+  file` — the same pre-existing active-contract fixture-harness limitation
+  recorded at `PHASE-C3D-B`/`PHASE-C3D-C`); no new validator/self-test
+  failure; the validator itself was not modified.
+- **State after this pass:** `PHASE_ID: PHASE-C3D`; `ACTIVE_PHASE:
+  PHASE-C3D`; `LAST_ACCEPTED_PHASE: PHASE-C3C-B` (unchanged);
+  `ACCEPTED_CHECKPOINT: 5441321014883c4e8149dc8b20da9d053a193699`
+  (unchanged — `PHASE-C3D-C` is not self-accepted). `PHASE-C3D-A`/
+  `PHASE-C3D-B` = CLOSED / TECHNICALLY ACCEPTED / LOCALLY VERIFIED;
+  `PHASE-C3D-C` = IMPLEMENTED / LOCALLY VERIFIED / CHANGES_REQUIRED
+  RESOLVED / AWAITING SUPERVISOR ACCEPTANCE. `OC-C3D-DEPLOY-001` =
+  SATISFIED (unchanged); `OC-C3D-FENCE-001` = `PARTIALLY_SATISFIED`
+  (unchanged disposition; residual-debt language corrected per Finding 4 —
+  only the supervisor may advance the disposition after review);
+  `OC-C3D-ACL-001`/`OC-C3D-LOCK-001` = `PARTIALLY_SATISFIED` (unchanged).
+- **Exact accounting subject:** `fix: complete C3D fence evidence`.
+- **NEXT_AUTHORIZABLE_ACTION:** read-only supervisor review of the
+  corrected `PHASE-C3D-C` evidence (contract §T). No `PHASE-C3D-D`/`C3D-E`/
+  `C3D-F` implementation, environment mutation, branch creation, staging
+  validation/application of `db/76`, activation, real snapshot/import, fence
+  transition, read switch, final ACL-closure invocation, cutover, C4, C5,
+  production access, Supabase write, `main`, `origin`/`production` remote
+  mutation, or any further push beyond the one authorized `staging/dev`
+  fast-forward for this pass is authorized.

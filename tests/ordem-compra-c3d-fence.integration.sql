@@ -236,28 +236,76 @@ BEGIN
 END
 $fe_verify$;
 
+-- Exact live-versus-frozen hash evidence anchor. assert_snapshot_and_live
+-- re-derives both the row-level canonical lines/hashes and the full live
+-- source/inventory serialization+hash from the live tables and compares
+-- them against the frozen ordem_compra_cutover columns — proving the
+-- snapshot was not merely written but is byte-faithful to its own live
+-- source at capture time. The anchor additionally captures every frozen
+-- field plus a full-row hash of both snapshot tables (ordered by
+-- stable_position) so later checkpoints can prove byte-for-byte identity,
+-- not just re-pass the same internal function.
+DO $anchor_capture$
+DECLARE
+  v_row public.ordem_compra_cutover%ROWTYPE;
+  v_source_rows_hash TEXT;
+  v_inventory_rows_hash TEXT;
+BEGIN
+  PERFORM public.ordem_compra_c3c_assert_snapshot_and_live(930003001);
+
+  SELECT * INTO v_row FROM public.ordem_compra_cutover WHERE id = 1;
+  SELECT md5(string_agg(s::text, E'\n' ORDER BY s.stable_position)) INTO v_source_rows_hash
+  FROM public.ordem_compra_cutover_source_snapshot s WHERE s.cutover_id = 1;
+  SELECT md5(string_agg(b::text, E'\n' ORDER BY b.stable_position)) INTO v_inventory_rows_hash
+  FROM public.ordem_compra_cutover_inventory_baseline b WHERE b.cutover_id = 1;
+
+  CREATE TEMP TABLE c3dc_anchor (
+    label TEXT PRIMARY KEY,
+    source_count INT, source_total NUMERIC, source_serialization TEXT, source_hash TEXT,
+    inventory_count INT, inventory_total NUMERIC, inventory_serialization TEXT, inventory_hash TEXT,
+    source_rows_hash TEXT, inventory_rows_hash TEXT
+  );
+  INSERT INTO c3dc_anchor VALUES (
+    'post_fence', v_row.source_snapshot_count, v_row.source_snapshot_total_kg,
+    v_row.source_snapshot_serialization, v_row.snapshot_hash,
+    v_row.inventory_baseline_count, v_row.inventory_baseline_total_kg,
+    v_row.inventory_baseline_serialization, v_row.inventory_baseline_hash,
+    v_source_rows_hash, v_inventory_rows_hash
+  );
+  RAISE NOTICE 'PASS[2/anchor]: ordem_compra_c3c_assert_snapshot_and_live(930003001) passed post-fence (row-level re-hash + live-vs-frozen drift check); evidence anchor captured — source_count=%, source_rows_hash=%, inventory_count=%, inventory_rows_hash=%',
+    v_row.source_snapshot_count, v_source_rows_hash, v_row.inventory_baseline_count, v_inventory_rows_hash;
+END
+$anchor_capture$;
+
 -- ===========================================================================
 -- 3. Evidence Class 5A — authenticated actor-context fence proof
 --    (database-faithful; no JavaScript/PostgREST/browser execution).
 -- ===========================================================================
+-- Full-content business fingerprint (deterministic PK ordering, canonical
+-- row serialization via the row-to-text cast, not row counts). The cutover
+-- singleton itself is intentionally excluded here — its expected exact
+-- state at each checkpoint is already asserted field-by-field above/below;
+-- this fingerprint exists to prove zero mutation of every real receipt/
+-- ledger/movement/business table, including through the test-only pre-PONR
+-- fixture and rollback (§ Finding 1 item 4), where the cutover row itself
+-- legitimately changes (reconciliation_status stays reconciled;
+-- read_authority goes canonical → flat) and must not be compared as if
+-- those intended differences should disappear.
 DO $fp_capture$
 DECLARE v_fp TEXT;
 BEGIN
   SELECT string_agg(f, E'\n' ORDER BY f) INTO v_fp FROM (
-    SELECT 'cutover=' || md5(c::text) AS f FROM public.ordem_compra_cutover c WHERE c.id = 1
-    UNION ALL SELECT 'snapshot_hash=' || COALESCE(snapshot_hash,'') FROM public.ordem_compra_cutover WHERE id = 1
-    UNION ALL SELECT 'inventory_hash=' || COALESCE(inventory_baseline_hash,'') FROM public.ordem_compra_cutover WHERE id = 1
-    UNION ALL SELECT 'ordens_compra_fio=' || count(*) || ':' || COALESCE(md5(string_agg(id::text||status||COALESCE(kg_recebido::text,''), ',' ORDER BY id)),'') FROM public.ordens_compra_fio
-    UNION ALL SELECT 'ordem_compra=' || count(*) FROM public.ordem_compra
-    UNION ALL SELECT 'ordem_compra_item=' || count(*) FROM public.ordem_compra_item
-    UNION ALL SELECT 'alocacao=' || count(*) FROM public.ordem_compra_item_alocacao
-    UNION ALL SELECT 'compat_fio=' || count(*) FROM public.ordem_compra_item_compat_fio
-    UNION ALL SELECT 'necessidade=' || count(*) FROM public.necessidade_compra_fio
-    UNION ALL SELECT 'saldo_fios=' || count(*) || ':' || COALESCE(md5(string_agg(kg_total::text, ',' ORDER BY cor_id)),'') FROM public.saldo_fios
-    UNION ALL SELECT 'saldo_fios_op=' || count(*) || ':' || COALESCE(md5(string_agg(kg_sobra::text, ',' ORDER BY id)),'') FROM public.saldo_fios_op
-    UNION ALL SELECT 'recebimentos=' || count(*) FROM public.ordem_compra_recebimentos
-    UNION ALL SELECT 'lancamentos=' || count(*) FROM public.ordem_compra_fio_lancamentos
-    UNION ALL SELECT 'movimentos=' || count(*) FROM public.ordem_compra_fio_movimentos_estoque
+    SELECT 'ordens_compra_fio=' || COALESCE(md5(string_agg(t::text, E'\n' ORDER BY t.id)), 'EMPTY') AS f FROM public.ordens_compra_fio t
+    UNION ALL SELECT 'ordem_compra=' || COALESCE(md5(string_agg(t::text, E'\n' ORDER BY t.id)), 'EMPTY') FROM public.ordem_compra t
+    UNION ALL SELECT 'ordem_compra_item=' || COALESCE(md5(string_agg(t::text, E'\n' ORDER BY t.id)), 'EMPTY') FROM public.ordem_compra_item t
+    UNION ALL SELECT 'alocacao=' || COALESCE(md5(string_agg(t::text, E'\n' ORDER BY t.id)), 'EMPTY') FROM public.ordem_compra_item_alocacao t
+    UNION ALL SELECT 'compat_fio=' || COALESCE(md5(string_agg(t::text, E'\n' ORDER BY t.id)), 'EMPTY') FROM public.ordem_compra_item_compat_fio t
+    UNION ALL SELECT 'necessidade=' || COALESCE(md5(string_agg(t::text, E'\n' ORDER BY t.id)), 'EMPTY') FROM public.necessidade_compra_fio t
+    UNION ALL SELECT 'saldo_fios=' || COALESCE(md5(string_agg(t::text, E'\n' ORDER BY t.cor_id, t.cor_poliester, t.tipo)), 'EMPTY') FROM public.saldo_fios t
+    UNION ALL SELECT 'saldo_fios_op=' || COALESCE(md5(string_agg(t::text, E'\n' ORDER BY t.id)), 'EMPTY') FROM public.saldo_fios_op t
+    UNION ALL SELECT 'recebimentos=' || COALESCE(md5(string_agg(t::text, E'\n' ORDER BY t.id)), 'EMPTY') FROM public.ordem_compra_recebimentos t
+    UNION ALL SELECT 'lancamentos=' || COALESCE(md5(string_agg(t::text, E'\n' ORDER BY t.id)), 'EMPTY') FROM public.ordem_compra_fio_lancamentos t
+    UNION ALL SELECT 'movimentos=' || COALESCE(md5(string_agg(t::text, E'\n' ORDER BY t.id)), 'EMPTY') FROM public.ordem_compra_fio_movimentos_estoque t
   ) s;
   -- No ON COMMIT DROP: each top-level statement in this autocommit script is
   -- its own transaction, so an ON COMMIT DROP temp table would vanish before
@@ -345,28 +393,58 @@ DECLARE v_before TEXT; v_after TEXT;
 BEGIN
   SELECT fp INTO v_before FROM c3dc_fp WHERE label = 'pre_5a';
   SELECT string_agg(f, E'\n' ORDER BY f) INTO v_after FROM (
-    SELECT 'cutover=' || md5(c::text) AS f FROM public.ordem_compra_cutover c WHERE c.id = 1
-    UNION ALL SELECT 'snapshot_hash=' || COALESCE(snapshot_hash,'') FROM public.ordem_compra_cutover WHERE id = 1
-    UNION ALL SELECT 'inventory_hash=' || COALESCE(inventory_baseline_hash,'') FROM public.ordem_compra_cutover WHERE id = 1
-    UNION ALL SELECT 'ordens_compra_fio=' || count(*) || ':' || COALESCE(md5(string_agg(id::text||status||COALESCE(kg_recebido::text,''), ',' ORDER BY id)),'') FROM public.ordens_compra_fio
-    UNION ALL SELECT 'ordem_compra=' || count(*) FROM public.ordem_compra
-    UNION ALL SELECT 'ordem_compra_item=' || count(*) FROM public.ordem_compra_item
-    UNION ALL SELECT 'alocacao=' || count(*) FROM public.ordem_compra_item_alocacao
-    UNION ALL SELECT 'compat_fio=' || count(*) FROM public.ordem_compra_item_compat_fio
-    UNION ALL SELECT 'necessidade=' || count(*) FROM public.necessidade_compra_fio
-    UNION ALL SELECT 'saldo_fios=' || count(*) || ':' || COALESCE(md5(string_agg(kg_total::text, ',' ORDER BY cor_id)),'') FROM public.saldo_fios
-    UNION ALL SELECT 'saldo_fios_op=' || count(*) || ':' || COALESCE(md5(string_agg(kg_sobra::text, ',' ORDER BY id)),'') FROM public.saldo_fios_op
-    UNION ALL SELECT 'recebimentos=' || count(*) FROM public.ordem_compra_recebimentos
-    UNION ALL SELECT 'lancamentos=' || count(*) FROM public.ordem_compra_fio_lancamentos
-    UNION ALL SELECT 'movimentos=' || count(*) FROM public.ordem_compra_fio_movimentos_estoque
+    SELECT 'ordens_compra_fio=' || COALESCE(md5(string_agg(t::text, E'\n' ORDER BY t.id)), 'EMPTY') AS f FROM public.ordens_compra_fio t
+    UNION ALL SELECT 'ordem_compra=' || COALESCE(md5(string_agg(t::text, E'\n' ORDER BY t.id)), 'EMPTY') FROM public.ordem_compra t
+    UNION ALL SELECT 'ordem_compra_item=' || COALESCE(md5(string_agg(t::text, E'\n' ORDER BY t.id)), 'EMPTY') FROM public.ordem_compra_item t
+    UNION ALL SELECT 'alocacao=' || COALESCE(md5(string_agg(t::text, E'\n' ORDER BY t.id)), 'EMPTY') FROM public.ordem_compra_item_alocacao t
+    UNION ALL SELECT 'compat_fio=' || COALESCE(md5(string_agg(t::text, E'\n' ORDER BY t.id)), 'EMPTY') FROM public.ordem_compra_item_compat_fio t
+    UNION ALL SELECT 'necessidade=' || COALESCE(md5(string_agg(t::text, E'\n' ORDER BY t.id)), 'EMPTY') FROM public.necessidade_compra_fio t
+    UNION ALL SELECT 'saldo_fios=' || COALESCE(md5(string_agg(t::text, E'\n' ORDER BY t.cor_id, t.cor_poliester, t.tipo)), 'EMPTY') FROM public.saldo_fios t
+    UNION ALL SELECT 'saldo_fios_op=' || COALESCE(md5(string_agg(t::text, E'\n' ORDER BY t.id)), 'EMPTY') FROM public.saldo_fios_op t
+    UNION ALL SELECT 'recebimentos=' || COALESCE(md5(string_agg(t::text, E'\n' ORDER BY t.id)), 'EMPTY') FROM public.ordem_compra_recebimentos t
+    UNION ALL SELECT 'lancamentos=' || COALESCE(md5(string_agg(t::text, E'\n' ORDER BY t.id)), 'EMPTY') FROM public.ordem_compra_fio_lancamentos t
+    UNION ALL SELECT 'movimentos=' || COALESCE(md5(string_agg(t::text, E'\n' ORDER BY t.id)), 'EMPTY') FROM public.ordem_compra_fio_movimentos_estoque t
   ) s;
   IF v_after IS DISTINCT FROM v_before THEN
-    RAISE EXCEPTION 'FAIL[3/mutation]: a fingerprint changed across Evidence 5A. before=[%] after=[%]', v_before, v_after;
+    RAISE EXCEPTION 'FAIL[3/mutation]: a full-content business fingerprint changed across Evidence 5A. before=[%] after=[%]', v_before, v_after;
   END IF;
   INSERT INTO c3dc_fp VALUES ('post_5a', v_after);
-  RAISE NOTICE 'PASS[3/mutation]: zero mutation across Evidence 5A (source/inventory hashes and every business fingerprint unchanged)';
+  RAISE NOTICE 'PASS[3/mutation]: zero mutation across Evidence 5A (every business table full-content fingerprint unchanged)';
 END
 $fp_verify_5a$;
+
+-- Snapshot/inventory evidence anchor re-check: assert_snapshot_and_live
+-- re-passes and every frozen field + full-row hash is byte-identical to the
+-- post-fence capture.
+DO $anchor_verify_5a$
+DECLARE
+  v_before c3dc_anchor%ROWTYPE;
+  v_row public.ordem_compra_cutover%ROWTYPE;
+  v_source_rows_hash TEXT;
+  v_inventory_rows_hash TEXT;
+BEGIN
+  PERFORM public.ordem_compra_c3c_assert_snapshot_and_live(930003001);
+  SELECT * INTO v_before FROM c3dc_anchor WHERE label = 'post_fence';
+  SELECT * INTO v_row FROM public.ordem_compra_cutover WHERE id = 1;
+  SELECT md5(string_agg(s::text, E'\n' ORDER BY s.stable_position)) INTO v_source_rows_hash
+  FROM public.ordem_compra_cutover_source_snapshot s WHERE s.cutover_id = 1;
+  SELECT md5(string_agg(b::text, E'\n' ORDER BY b.stable_position)) INTO v_inventory_rows_hash
+  FROM public.ordem_compra_cutover_inventory_baseline b WHERE b.cutover_id = 1;
+  IF v_row.source_snapshot_count IS DISTINCT FROM v_before.source_count
+     OR v_row.source_snapshot_total_kg IS DISTINCT FROM v_before.source_total
+     OR v_row.source_snapshot_serialization IS DISTINCT FROM v_before.source_serialization
+     OR v_row.snapshot_hash IS DISTINCT FROM v_before.source_hash
+     OR v_row.inventory_baseline_count IS DISTINCT FROM v_before.inventory_count
+     OR v_row.inventory_baseline_total_kg IS DISTINCT FROM v_before.inventory_total
+     OR v_row.inventory_baseline_serialization IS DISTINCT FROM v_before.inventory_serialization
+     OR v_row.inventory_baseline_hash IS DISTINCT FROM v_before.inventory_hash
+     OR v_source_rows_hash IS DISTINCT FROM v_before.source_rows_hash
+     OR v_inventory_rows_hash IS DISTINCT FROM v_before.inventory_rows_hash THEN
+    RAISE EXCEPTION 'FAIL[3/anchor]: snapshot/inventory evidence anchor changed across Evidence 5A';
+  END IF;
+  RAISE NOTICE 'PASS[3/anchor]: assert_snapshot_and_live(930003001) passed after Evidence 5A; evidence anchor byte-identical to the post-fence capture';
+END
+$anchor_verify_5a$;
 
 -- ===========================================================================
 -- 4. Evidence Class 5B — eight-table structural fence (8 tables x 3 ops =
@@ -668,48 +746,119 @@ BEGIN
 END
 $probes$;
 
--- Internal trigger-depth exception (saldo_fios/saldo_fios_op): the guard's
--- own source (db/75) requires BOTH pg_trigger_depth() > 1 AND
--- status = canonical_active to pass a nested write through. This sublot
--- never reaches canonical_active (no import/read-switch/activation is
--- authorized), so no real nested call site exists to exercise that path
--- without fabricating a SECURITY DEFINER function whose sole purpose would
--- be to synthesize a depth>1 caller — which is explicitly prohibited. The
--- direct depth-1 denial is proven above (24-probe matrix); the legitimate
--- nested-path runtime is out of scope here and belongs to PHASE-C3D-E.
-DO $depth_note$
+-- Internal trigger-depth exception (saldo_fios/saldo_fios_op) — empirical
+-- catalog proof against the installed function, not a design restatement.
+-- No SECURITY DEFINER function is fabricated to synthesize a depth>1
+-- caller; the legitimate nested-path runtime remains PHASE-C3D-E scope.
+DO $depth_catalog$
+DECLARE
+  v_def TEXT;
+  v_norm TEXT;
+  v_needle_pat CONSTANT TEXT := 'IF TG_TABLE_NAME IN (''saldo_fios'', ''saldo_fios_op'') THEN';
+  v_gate_pat CONSTANT TEXT := 'IF pg_trigger_depth() > 1 AND v_state = ''canonical_active'' THEN';
+  v_exact_block CONSTANT TEXT :=
+    'IF TG_TABLE_NAME IN (''saldo_fios'', ''saldo_fios_op'') THEN IF pg_trigger_depth() > 1 AND v_state = ''canonical_active'' THEN RETURN CASE WHEN TG_OP = ''DELETE'' THEN OLD ELSE NEW END; END IF; RAISE EXCEPTION ''legacy_receipt_fenced'' USING ERRCODE = ''55000''; END IF;';
+  v_branch_count INT;
+  v_gate_count INT;
+  v_canonical_active_count INT;
 BEGIN
-  RAISE NOTICE 'NOTE[4/depth]: internal trigger-depth exception (pg_trigger_depth()>1 AND status=canonical_active) requires a real nested canonical-active call site not reachable pre-PONR; direct depth-1 denial proven above; nested-path runtime deferred to PHASE-C3D-E, not claimed as covered here';
+  SELECT pg_get_functiondef('public.trg_c3c_protected_mutation_guard()'::regprocedure) INTO v_def;
+  IF v_def IS NULL THEN
+    RAISE EXCEPTION 'FAIL[4/depth-catalog]: trg_c3c_protected_mutation_guard() function definition not found';
+  END IF;
+  v_norm := regexp_replace(v_def, '\s+', ' ', 'g');
+
+  v_branch_count := (length(v_norm) - length(replace(v_norm, v_needle_pat, ''))) / length(v_needle_pat);
+  IF v_branch_count <> 1 THEN
+    RAISE EXCEPTION 'FAIL[4/depth-catalog]: expected exactly one saldo_fios/saldo_fios_op branch, found %', v_branch_count;
+  END IF;
+
+  v_gate_count := (length(v_norm) - length(replace(v_norm, v_gate_pat, ''))) / length(v_gate_pat);
+  IF v_gate_count <> 1 THEN
+    RAISE EXCEPTION 'FAIL[4/depth-catalog]: expected exactly one pg_trigger_depth()>1 AND v_state=canonical_active gate, found %', v_gate_count;
+  END IF;
+
+  -- The gate is the exact conjunction, immediately followed by the
+  -- pass-through RETURN, then (as the ELSE / non-matching path) the exact
+  -- legacy_receipt_fenced raise closing the same outer IF.
+  IF v_norm NOT LIKE '%' || v_exact_block || '%' THEN
+    RAISE EXCEPTION 'FAIL[4/depth-catalog]: installed saldo_fios/saldo_fios_op branch does not match the exact expected structure (gate -> pass-through RETURN -> ELSE raises legacy_receipt_fenced). Normalized definition: %', v_norm;
+  END IF;
+
+  -- No broader saldo_fios/saldo_fios_op pass-through condition exists:
+  -- 'canonical_active' is referenced exactly once in the whole guard body,
+  -- and only inside the proven gate above.
+  v_canonical_active_count := (length(v_norm) - length(replace(v_norm, 'canonical_active', ''))) / length('canonical_active');
+  IF v_canonical_active_count <> 1 THEN
+    RAISE EXCEPTION 'FAIL[4/depth-catalog]: ''canonical_active'' referenced % times in the guard body (expected exactly 1 — no broader pass-through)', v_canonical_active_count;
+  END IF;
+
+  -- maintenance_fenced cannot satisfy the exception gate: the guard body
+  -- never references the literal at all, so the only exit from
+  -- maintenance_fenced through this branch is the RAISE.
+  IF v_norm LIKE '%maintenance_fenced%' THEN
+    RAISE EXCEPTION 'FAIL[4/depth-catalog]: guard body unexpectedly references maintenance_fenced — a pass-through condition may exist for the fenced state';
+  END IF;
+
+  RAISE NOTICE 'PASS[4/depth-catalog]: installed trg_c3c_protected_mutation_guard() saldo_fios/saldo_fios_op exception is exactly one gate (pg_trigger_depth()>1 AND v_state=canonical_active), ELSE raises legacy_receipt_fenced, no broader pass-through, no maintenance_fenced reference. Combined with the direct depth-1 denial already proven by the 24-probe matrix (Class 5B, saldo_fios/saldo_fios_op INSERT/UPDATE/DELETE), this proves maintenance_fenced cannot use the exception regardless of trigger depth. Legitimate nested-path runtime (a real depth>1 canonical_active caller) is out of scope here and belongs to PHASE-C3D-E — no SECURITY DEFINER function was fabricated to synthesize one.';
 END
-$depth_note$;
+$depth_catalog$;
 
 DO $fp_verify_5b$
 DECLARE v_before TEXT; v_after TEXT;
 BEGIN
   SELECT fp INTO v_before FROM c3dc_fp WHERE label = 'post_5a';
   SELECT string_agg(f, E'\n' ORDER BY f) INTO v_after FROM (
-    SELECT 'cutover=' || md5(c::text) AS f FROM public.ordem_compra_cutover c WHERE c.id = 1
-    UNION ALL SELECT 'snapshot_hash=' || COALESCE(snapshot_hash,'') FROM public.ordem_compra_cutover WHERE id = 1
-    UNION ALL SELECT 'inventory_hash=' || COALESCE(inventory_baseline_hash,'') FROM public.ordem_compra_cutover WHERE id = 1
-    UNION ALL SELECT 'ordens_compra_fio=' || count(*) || ':' || COALESCE(md5(string_agg(id::text||status||COALESCE(kg_recebido::text,''), ',' ORDER BY id)),'') FROM public.ordens_compra_fio
-    UNION ALL SELECT 'ordem_compra=' || count(*) FROM public.ordem_compra
-    UNION ALL SELECT 'ordem_compra_item=' || count(*) FROM public.ordem_compra_item
-    UNION ALL SELECT 'alocacao=' || count(*) FROM public.ordem_compra_item_alocacao
-    UNION ALL SELECT 'compat_fio=' || count(*) FROM public.ordem_compra_item_compat_fio
-    UNION ALL SELECT 'necessidade=' || count(*) FROM public.necessidade_compra_fio
-    UNION ALL SELECT 'saldo_fios=' || count(*) || ':' || COALESCE(md5(string_agg(kg_total::text, ',' ORDER BY cor_id)),'') FROM public.saldo_fios
-    UNION ALL SELECT 'saldo_fios_op=' || count(*) || ':' || COALESCE(md5(string_agg(kg_sobra::text, ',' ORDER BY id)),'') FROM public.saldo_fios_op
-    UNION ALL SELECT 'recebimentos=' || count(*) FROM public.ordem_compra_recebimentos
-    UNION ALL SELECT 'lancamentos=' || count(*) FROM public.ordem_compra_fio_lancamentos
-    UNION ALL SELECT 'movimentos=' || count(*) FROM public.ordem_compra_fio_movimentos_estoque
+    SELECT 'ordens_compra_fio=' || COALESCE(md5(string_agg(t::text, E'\n' ORDER BY t.id)), 'EMPTY') AS f FROM public.ordens_compra_fio t
+    UNION ALL SELECT 'ordem_compra=' || COALESCE(md5(string_agg(t::text, E'\n' ORDER BY t.id)), 'EMPTY') FROM public.ordem_compra t
+    UNION ALL SELECT 'ordem_compra_item=' || COALESCE(md5(string_agg(t::text, E'\n' ORDER BY t.id)), 'EMPTY') FROM public.ordem_compra_item t
+    UNION ALL SELECT 'alocacao=' || COALESCE(md5(string_agg(t::text, E'\n' ORDER BY t.id)), 'EMPTY') FROM public.ordem_compra_item_alocacao t
+    UNION ALL SELECT 'compat_fio=' || COALESCE(md5(string_agg(t::text, E'\n' ORDER BY t.id)), 'EMPTY') FROM public.ordem_compra_item_compat_fio t
+    UNION ALL SELECT 'necessidade=' || COALESCE(md5(string_agg(t::text, E'\n' ORDER BY t.id)), 'EMPTY') FROM public.necessidade_compra_fio t
+    UNION ALL SELECT 'saldo_fios=' || COALESCE(md5(string_agg(t::text, E'\n' ORDER BY t.cor_id, t.cor_poliester, t.tipo)), 'EMPTY') FROM public.saldo_fios t
+    UNION ALL SELECT 'saldo_fios_op=' || COALESCE(md5(string_agg(t::text, E'\n' ORDER BY t.id)), 'EMPTY') FROM public.saldo_fios_op t
+    UNION ALL SELECT 'recebimentos=' || COALESCE(md5(string_agg(t::text, E'\n' ORDER BY t.id)), 'EMPTY') FROM public.ordem_compra_recebimentos t
+    UNION ALL SELECT 'lancamentos=' || COALESCE(md5(string_agg(t::text, E'\n' ORDER BY t.id)), 'EMPTY') FROM public.ordem_compra_fio_lancamentos t
+    UNION ALL SELECT 'movimentos=' || COALESCE(md5(string_agg(t::text, E'\n' ORDER BY t.id)), 'EMPTY') FROM public.ordem_compra_fio_movimentos_estoque t
   ) s;
   IF v_after IS DISTINCT FROM v_before THEN
-    RAISE EXCEPTION 'FAIL[4/mutation]: a fingerprint changed across the 24-probe matrix. before=[%] after=[%]', v_before, v_after;
+    RAISE EXCEPTION 'FAIL[4/mutation]: a full-content business fingerprint changed across the 24-probe matrix. before=[%] after=[%]', v_before, v_after;
   END IF;
   INSERT INTO c3dc_fp VALUES ('post_5b', v_after);
-  RAISE NOTICE 'PASS[4/mutation]: zero mutation across the 24-probe matrix (source/inventory hashes and every business fingerprint unchanged)';
+  RAISE NOTICE 'PASS[4/mutation]: zero mutation across the 24-probe matrix (every business table full-content fingerprint unchanged)';
 END
 $fp_verify_5b$;
+
+-- Snapshot/inventory evidence anchor re-check after the full 24-probe matrix.
+DO $anchor_verify_5b$
+DECLARE
+  v_before c3dc_anchor%ROWTYPE;
+  v_row public.ordem_compra_cutover%ROWTYPE;
+  v_source_rows_hash TEXT;
+  v_inventory_rows_hash TEXT;
+BEGIN
+  PERFORM public.ordem_compra_c3c_assert_snapshot_and_live(930003001);
+  SELECT * INTO v_before FROM c3dc_anchor WHERE label = 'post_fence';
+  SELECT * INTO v_row FROM public.ordem_compra_cutover WHERE id = 1;
+  SELECT md5(string_agg(s::text, E'\n' ORDER BY s.stable_position)) INTO v_source_rows_hash
+  FROM public.ordem_compra_cutover_source_snapshot s WHERE s.cutover_id = 1;
+  SELECT md5(string_agg(b::text, E'\n' ORDER BY b.stable_position)) INTO v_inventory_rows_hash
+  FROM public.ordem_compra_cutover_inventory_baseline b WHERE b.cutover_id = 1;
+  IF v_row.source_snapshot_count IS DISTINCT FROM v_before.source_count
+     OR v_row.source_snapshot_total_kg IS DISTINCT FROM v_before.source_total
+     OR v_row.source_snapshot_serialization IS DISTINCT FROM v_before.source_serialization
+     OR v_row.snapshot_hash IS DISTINCT FROM v_before.source_hash
+     OR v_row.inventory_baseline_count IS DISTINCT FROM v_before.inventory_count
+     OR v_row.inventory_baseline_total_kg IS DISTINCT FROM v_before.inventory_total
+     OR v_row.inventory_baseline_serialization IS DISTINCT FROM v_before.inventory_serialization
+     OR v_row.inventory_baseline_hash IS DISTINCT FROM v_before.inventory_hash
+     OR v_source_rows_hash IS DISTINCT FROM v_before.source_rows_hash
+     OR v_inventory_rows_hash IS DISTINCT FROM v_before.inventory_rows_hash THEN
+    RAISE EXCEPTION 'FAIL[4/anchor]: snapshot/inventory evidence anchor changed across the 24-probe matrix';
+  END IF;
+  RAISE NOTICE 'PASS[4/anchor]: assert_snapshot_and_live(930003001) passed after the 24-probe matrix; evidence anchor byte-identical to the post-fence capture';
+END
+$anchor_verify_5b$;
 
 -- ===========================================================================
 -- 5. Pre-PONR rollback rehearsal.
@@ -817,6 +966,71 @@ BEGIN
 END
 $rollback_verify$;
 
+-- Snapshot/inventory evidence anchor re-check after rollback: the frozen
+-- snapshot/baseline fields and full-row hashes are untouched by the
+-- test-only fixture or the rollback itself (only read_authority/
+-- reconciliation_status/canonical_activated_at on the cutover row move, and
+-- those are asserted separately above/below — this anchor never includes
+-- them).
+DO $anchor_verify_rollback$
+DECLARE
+  v_before c3dc_anchor%ROWTYPE;
+  v_row public.ordem_compra_cutover%ROWTYPE;
+  v_source_rows_hash TEXT;
+  v_inventory_rows_hash TEXT;
+BEGIN
+  PERFORM public.ordem_compra_c3c_assert_snapshot_and_live(930003001);
+  SELECT * INTO v_before FROM c3dc_anchor WHERE label = 'post_fence';
+  SELECT * INTO v_row FROM public.ordem_compra_cutover WHERE id = 1;
+  SELECT md5(string_agg(s::text, E'\n' ORDER BY s.stable_position)) INTO v_source_rows_hash
+  FROM public.ordem_compra_cutover_source_snapshot s WHERE s.cutover_id = 1;
+  SELECT md5(string_agg(b::text, E'\n' ORDER BY b.stable_position)) INTO v_inventory_rows_hash
+  FROM public.ordem_compra_cutover_inventory_baseline b WHERE b.cutover_id = 1;
+  IF v_row.source_snapshot_count IS DISTINCT FROM v_before.source_count
+     OR v_row.source_snapshot_total_kg IS DISTINCT FROM v_before.source_total
+     OR v_row.source_snapshot_serialization IS DISTINCT FROM v_before.source_serialization
+     OR v_row.snapshot_hash IS DISTINCT FROM v_before.source_hash
+     OR v_row.inventory_baseline_count IS DISTINCT FROM v_before.inventory_count
+     OR v_row.inventory_baseline_total_kg IS DISTINCT FROM v_before.inventory_total
+     OR v_row.inventory_baseline_serialization IS DISTINCT FROM v_before.inventory_serialization
+     OR v_row.inventory_baseline_hash IS DISTINCT FROM v_before.inventory_hash
+     OR v_source_rows_hash IS DISTINCT FROM v_before.source_rows_hash
+     OR v_inventory_rows_hash IS DISTINCT FROM v_before.inventory_rows_hash THEN
+    RAISE EXCEPTION 'FAIL[5/anchor]: snapshot/inventory evidence anchor changed across the pre-PONR rollback';
+  END IF;
+  RAISE NOTICE 'PASS[5/anchor]: assert_snapshot_and_live(930003001) passed after pre_ponr_rollback; evidence anchor byte-identical to the post-fence capture';
+END
+$anchor_verify_rollback$;
+
+-- Full-content business fingerprint after rollback: every real receipt/
+-- ledger/movement/business table remains byte-identical to before Evidence
+-- 5A/5B, including through the test-only pre-PONR fixture and rollback
+-- (neither of which touches any business table — only the cutover
+-- singleton's read_authority/reconciliation_status/canonical_activated_at).
+DO $fp_verify_rollback$
+DECLARE v_before TEXT; v_after TEXT;
+BEGIN
+  SELECT fp INTO v_before FROM c3dc_fp WHERE label = 'post_5b';
+  SELECT string_agg(f, E'\n' ORDER BY f) INTO v_after FROM (
+    SELECT 'ordens_compra_fio=' || COALESCE(md5(string_agg(t::text, E'\n' ORDER BY t.id)), 'EMPTY') AS f FROM public.ordens_compra_fio t
+    UNION ALL SELECT 'ordem_compra=' || COALESCE(md5(string_agg(t::text, E'\n' ORDER BY t.id)), 'EMPTY') FROM public.ordem_compra t
+    UNION ALL SELECT 'ordem_compra_item=' || COALESCE(md5(string_agg(t::text, E'\n' ORDER BY t.id)), 'EMPTY') FROM public.ordem_compra_item t
+    UNION ALL SELECT 'alocacao=' || COALESCE(md5(string_agg(t::text, E'\n' ORDER BY t.id)), 'EMPTY') FROM public.ordem_compra_item_alocacao t
+    UNION ALL SELECT 'compat_fio=' || COALESCE(md5(string_agg(t::text, E'\n' ORDER BY t.id)), 'EMPTY') FROM public.ordem_compra_item_compat_fio t
+    UNION ALL SELECT 'necessidade=' || COALESCE(md5(string_agg(t::text, E'\n' ORDER BY t.id)), 'EMPTY') FROM public.necessidade_compra_fio t
+    UNION ALL SELECT 'saldo_fios=' || COALESCE(md5(string_agg(t::text, E'\n' ORDER BY t.cor_id, t.cor_poliester, t.tipo)), 'EMPTY') FROM public.saldo_fios t
+    UNION ALL SELECT 'saldo_fios_op=' || COALESCE(md5(string_agg(t::text, E'\n' ORDER BY t.id)), 'EMPTY') FROM public.saldo_fios_op t
+    UNION ALL SELECT 'recebimentos=' || COALESCE(md5(string_agg(t::text, E'\n' ORDER BY t.id)), 'EMPTY') FROM public.ordem_compra_recebimentos t
+    UNION ALL SELECT 'lancamentos=' || COALESCE(md5(string_agg(t::text, E'\n' ORDER BY t.id)), 'EMPTY') FROM public.ordem_compra_fio_lancamentos t
+    UNION ALL SELECT 'movimentos=' || COALESCE(md5(string_agg(t::text, E'\n' ORDER BY t.id)), 'EMPTY') FROM public.ordem_compra_fio_movimentos_estoque t
+  ) s;
+  IF v_after IS DISTINCT FROM v_before THEN
+    RAISE EXCEPTION 'FAIL[5/mutation]: a full-content business fingerprint changed across the test-only fixture and rollback. before=[%] after=[%]', v_before, v_after;
+  END IF;
+  RAISE NOTICE 'PASS[5/mutation]: zero mutation of every real business table across the test-only pre-PONR fixture and rollback (full-content fingerprint unchanged since before Evidence 5A)';
+END
+$fp_verify_rollback$;
+
 DO $direct_write_still_fenced$
 DECLARE v_msg TEXT; v_caught BOOLEAN := FALSE;
 BEGIN
@@ -834,7 +1048,17 @@ END
 $direct_write_still_fenced$;
 
 -- ===========================================================================
--- 6. Lock release and backend-idle proof.
+-- 6. Lock release and test-backend termination evidence.
+--
+-- This script does not claim the current backend is "idle" while it is the
+-- one executing the assertion — that claim is true trivially and proves
+-- nothing. Instead it emits its own backend PID in stable, greppable
+-- output; the orchestrating caller (outside this file, after this psql
+-- process exits and before cluster teardown) opens a separate connection
+-- and proves that PID is absent from pg_stat_activity, that no advisory
+-- lock or transaction is attributable to it, then performs the accepted
+-- postmaster-PID/port/directory teardown. Backend absence after client
+-- disconnect is stronger evidence than an in-session "idle" claim.
 -- ===========================================================================
 DO $lock_release$
 DECLARE v_released BOOLEAN;
@@ -853,8 +1077,13 @@ DECLARE v_n INT;
 BEGIN
   SELECT count(*) INTO v_n FROM pg_locks WHERE locktype = 'advisory' AND pid = pg_backend_pid();
   IF v_n <> 0 THEN RAISE EXCEPTION 'FAIL[6/final]: % advisory lock(s) leaked', v_n; END IF;
-  RAISE NOTICE 'PASS[6/final]: zero leaked advisory lock; this script issues no unterminated BEGIN, so no open transaction is left by the test backend';
+  RAISE NOTICE 'PASS[6/final]: zero advisory lock held by this backend immediately before disconnect';
 END
 $lock_final$;
 
-SELECT 'C3D_C_FENCE_INTEGRATION_PASS' AS result;
+SELECT 'C3D_C_FENCE_INTEGRATION_PASS' AS result, pg_backend_pid() AS test_backend_pid;
+DO $emit_pid$
+BEGIN
+  RAISE NOTICE 'TEST_BACKEND_PID=%', pg_backend_pid();
+END
+$emit_pid$;

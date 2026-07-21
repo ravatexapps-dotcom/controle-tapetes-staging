@@ -44,11 +44,12 @@
   `096cd60325e4987010d328c856ee6a3a51ca66bf` /
   `5441321014883c4e8149dc8b20da9d053a193699`). `PHASE-C3D-C` (fence and
   pre-PONR rollback rehearsal) is now `IMPLEMENTED / LOCALLY VERIFIED /
-  AWAITING SUPERVISOR ACCEPTANCE` (contract §S) — not self-accepted;
-  `PHASE-C3D-D`…`C3D-F` not authorized. `OC-C3D-DEPLOY-001` is
-  `SATISFIED`; `OC-C3D-FENCE-001`/`OC-C3D-ACL-001`/`OC-C3D-LOCK-001` remain
-  `PARTIALLY_SATISFIED` (`PHASE-C3D` itself is not closed; only the
-  supervisor may advance `OC-C3D-FENCE-001` after reviewing §S).
+  CHANGES_REQUIRED RESOLVED / AWAITING SUPERVISOR ACCEPTANCE` (contract §S,
+  corrected §T) — not self-accepted; `PHASE-C3D-D`…`C3D-F` not authorized.
+  `OC-C3D-DEPLOY-001` is `SATISFIED`; `OC-C3D-FENCE-001`/`OC-C3D-ACL-001`/
+  `OC-C3D-LOCK-001` remain `PARTIALLY_SATISFIED` (`PHASE-C3D` itself is not
+  closed; only the supervisor may advance `OC-C3D-FENCE-001` after
+  reviewing §S/§T).
 - **Active phase contract:** `docs/architecture/ORDEM_COMPRA_C3D_PHASE_CONTRACT.md`
   (`PHASE_ID: PHASE-C3D`; `ACCEPTED`, §0c; C3D-A evidence §O/§P; C3D-B evidence
   §Q; supervisor acceptance + pre-PONR rollback correction §R).
@@ -122,10 +123,11 @@
   byte-identical failing-name set, zero regressions; validator PASS. No
   dependent `OC-C3-*` requirement is `SATISFIED`.
 - **Next authorizable action:** **read-only supervisor review of the
-  `PHASE-C3D-C` fence/rollback rehearsal evidence**
-  (`docs/architecture/ORDEM_COMPRA_C3D_PHASE_CONTRACT.md` §S; `PHASE-C3D-C`
-  is `IMPLEMENTED / LOCALLY VERIFIED / AWAITING SUPERVISOR ACCEPTANCE`).
-  `PHASE-C3D-A` and `PHASE-C3D-B`
+  corrected `PHASE-C3D-C` fence/rollback rehearsal evidence**
+  (`docs/architecture/ORDEM_COMPRA_C3D_PHASE_CONTRACT.md` §S/§T;
+  `PHASE-C3D-C` is `IMPLEMENTED / LOCALLY VERIFIED / CHANGES_REQUIRED
+  RESOLVED / AWAITING SUPERVISOR ACCEPTANCE`). `PHASE-C3D-A` and
+  `PHASE-C3D-B`
   are supervisor-accepted (§R, checkpoints `096cd603…` / `5441321…`) and
   `OC-C3D-DEPLOY-001` is `SATISFIED`; `PHASE-C3D-D`…`C3D-F` remain unauthorized.
   The `PHASE-C3D` contract
@@ -211,10 +213,26 @@
   (detached temporary worktree at the entry checkpoint): baseline 141 /
   workspace 122 failing identities, **added = 0**. Validator self-test:
   identical pre-existing active-contract fixture-harness failure both sides,
-  no new failure. `PHASE-C3D-C` is `IMPLEMENTED / LOCALLY VERIFIED /
-  AWAITING SUPERVISOR ACCEPTANCE` — not self-accepted. `OC-C3D-FENCE-001`
-  remains `PARTIALLY_SATISFIED`; `OC-C3D-ACL-001`/`OC-C3D-LOCK-001`
-  unchanged.
+  no new failure.
+  **Targeted correction (contract §T):** closed four incomplete-evidence
+  findings without redesigning the already-passing behavior — four
+  `ordem_compra_c3c_assert_snapshot_and_live` invocations plus a
+  byte-compared snapshot/inventory evidence anchor (exact live-versus-frozen
+  hash proof); an empirical `pg_get_functiondef` catalog proof that the
+  installed `saldo_fios`/`saldo_fios_op` trigger-depth exception is exactly
+  one `pg_trigger_depth()>1 AND v_state='canonical_active'` gate with no
+  broader pass-through (nested-path runtime still deferred, not fabricated,
+  to `PHASE-C3D-E`); replaced the overstated in-session "idle" claim with a
+  captured test-backend PID proven absent from `pg_stat_activity` via a
+  separate connection after `psql` exit; and corrected the
+  `OC-C3D-FENCE-001` traceability language (Option 2 — disposable-local-only
+  — is the selected and sole environment strategy; no real/staging fence
+  rehearsal required or authorized by C3D-C). Re-validated across two fresh
+  disposable clusters, full-suite differential still empty, validator
+  self-test still identical pre-existing failure only. `PHASE-C3D-C` is
+  `IMPLEMENTED / LOCALLY VERIFIED / CHANGES_REQUIRED RESOLVED / AWAITING
+  SUPERVISOR ACCEPTANCE` — not self-accepted. `OC-C3D-FENCE-001` remains
+  `PARTIALLY_SATISFIED`; `OC-C3D-ACL-001`/`OC-C3D-LOCK-001` unchanged.
 
 ## Governing specifications and contracts
 
@@ -290,13 +308,15 @@ Full matrix and normative anchors: `docs/architecture/ORDEM_COMPRA_C3_TRACEABILI
 ## Push, remote, main and deployment limits
 
 - **No push** is authorized by this handoff by default. The `M0` full-history
-  push to `production` was single-use; each prior C3D order separately
-  authorized exactly one clean fast-forward push to `staging/dev` for that
-  pass's own single commit — none of those authorizations extend to any
-  future push. The `PHASE-C3D-C` order separately authorized exactly one
-  clean fast-forward push to `staging/dev` for this pass's single commit
-  (`test: rehearse C3D purchase-order fence`) — that authorization does not
-  extend to any future push.
+  push to `production` was single-use; each prior C3D order (including the
+  `PHASE-C3D-C` implementation order, `test: rehearse C3D purchase-order
+  fence`) separately authorized exactly one clean fast-forward push to
+  `staging/dev` for that pass's own single commit — none of those
+  authorizations extend to any future push. The "PHASE-C3D-C TARGETED
+  EVIDENCE CORRECTION" order separately authorized exactly one clean
+  fast-forward push to `staging/dev` for this pass's single commit
+  (`fix: complete C3D fence evidence`) — that authorization does not extend
+  to any future push.
 - **Remotes:** `production` = `inttexsystem/inttracker` (fetch+push, `main`
   only); `origin` = `grupoterrabranca/controle-tapetes`; `staging` =
   `ravatexapps-dotcom/controle-tapetes-staging` (historical backup only). No

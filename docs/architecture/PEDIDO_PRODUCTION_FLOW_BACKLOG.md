@@ -8,6 +8,42 @@
 > `PROJECT_STATE.md`. Phase sequence, dependencies, backlog items, and accepted
 > architecture in this file remain authoritative; live operational status does not.
 
+# Update 2026-07-21 - PHASE-C3D-C Targeted Evidence Correction
+
+Phase: `PHASE-C3D-C` targeted evidence correction. Historical closeout
+note — live state belongs to `PROJECT_STATE.md`.
+
+Corrected four incomplete-evidence findings in the already-implemented
+`tests/ordem-compra-c3d-fence.integration.sql` at entry checkpoint
+`a4b2e13bf0d9fb19b0ee69196f21d86f4904961e`, without redesigning the
+already-passing actor-context, 24-probe, fence, or rollback behavior: (1)
+exact live-versus-frozen hash evidence — four
+`ordem_compra_c3c_assert_snapshot_and_live` invocations plus a
+byte-compared snapshot/inventory evidence anchor and full-content business
+fingerprints (row-cast hashes, not counts) through Evidence 5A, the
+24-probe matrix, and the rollback; (2) an empirical
+`pg_get_functiondef`-based catalog proof that the installed
+`saldo_fios`/`saldo_fios_op` trigger-depth exception is exactly one
+`pg_trigger_depth()>1 AND v_state='canonical_active'` gate with no broader
+pass-through (nested-path runtime still correctly deferred, not
+fabricated, to `PHASE-C3D-E`); (3) replaced an overstated in-session
+"idle" claim with a captured test-backend PID proven absent from
+`pg_stat_activity` (zero advisory locks) via a separate connection opened
+after the test's `psql` process exited, before cluster teardown; (4)
+corrected `OC-C3D-FENCE-001`'s residual-debt language — Option 2
+(disposable local PostgreSQL + read-only shared-DB inspection) is the
+selected and sole environment strategy, no real/staging fence rehearsal is
+required or authorized by C3D-C, only supervisor acceptance remains
+pending. Re-validated across two fresh disposable local PostgreSQL 18.4
+clusters (both green, full cleanup proven); full-suite differential
+against the entry checkpoint still empty; validator self-test still the
+identical pre-existing active-contract fixture-harness failure only.
+`PHASE-C3D-C` is `IMPLEMENTED / LOCALLY VERIFIED / CHANGES_REQUIRED
+RESOLVED / AWAITING SUPERVISOR ACCEPTANCE` — not self-accepted;
+`OC-C3D-FENCE-001` remains `PARTIALLY_SATISFIED`. Sequence/architecture in
+this file are unchanged. Full evidence: contract §T and
+`docs/ledgers/G28_LEDGER.md` (2026-07-21, this pass's own entry).
+
 # Update 2026-07-21 - PHASE-C3D-C Fence and Pre-PONR Rollback Rehearsal
 
 Phase: `PHASE-C3D-C` (the third `PHASE-C3D` sublot). Historical closeout
