@@ -8,6 +8,33 @@
 > `PROJECT_STATE.md`. Phase sequence, dependencies, backlog items, and accepted
 > architecture in this file remain authoritative; live operational status does not.
 
+# Update 2026-07-21 - PHASE-C3D-B Inactive Migration & Application-Presence Validation
+
+Phase: `PHASE-C3D-B` (the second `PHASE-C3D` sublot; sequence per the C3D
+contract §C). Historical closeout note — live state belongs to `PROJECT_STATE.md`.
+
+The material-contract identity was restored to `PHASE-C3D` (the §P change to
+`PHASE-C3D-A` was a documentary identity error; §Q.1), and `PHASE-C3D-A` was
+recorded `CLOSED / TECHNICALLY ACCEPTED / LOCALLY VERIFIED` at the accepted
+checkpoint `096cd60325e4987010d328c856ee6a3a51ca66bf`. `PHASE-C3D-B` added one
+authorized file — `tests/ordem-compra-c3d-deploy.integration.sql` — and
+validated, across two fresh disposable local PostgreSQL 18.4 clusters (no
+real/copied business data), that the exact ordered `db/01`…`db/76` applies
+cleanly (a classification-shape-only synthetic 64-row corpus loaded before
+`db/67`; reconciliation `64/51/51/51/51`), that `db/75`/`db/76` are terminal,
+that the cutover singleton is `legacy_active`/`flat`/`not_started`/all-null,
+that Component A raises `listar_compat_inativo`/`55000` and Component B returns
+`recebimento_compat_inativo` with zero mutation, PONR NULL, and no leaked
+advisory lock, that `db/76` reapplies idempotently while `db/75` is a
+single-application ordered migration, and that each disposable cluster was
+proven destroyed. Application fallback was proven by the unmodified accepted
+adapter (`22bfb192`) and existing tests; `ucrjtfswnfdlxwtmxnoo` was re-confirmed
+inert by read-only inspection only. Sequence/architecture in this file are
+unchanged; no `OC-C3D-*` disposition changed; `PHASE-C3D-B` is
+`IMPLEMENTED / LOCALLY VERIFIED / AWAITING SUPERVISOR ACCEPTANCE`, and
+`PHASE-C3D-C`…`C3D-F` remain separately unauthorized. Full evidence: contract
+§Q and `docs/ledgers/G28_LEDGER.md` (2026-07-21, this pass's entry).
+
 # Update 2026-07-21 - PHASE-C3D Material Contract Final Forward Correction (R2)
 
 Phase: `PHASE-C3D` material phase contract correction (second).

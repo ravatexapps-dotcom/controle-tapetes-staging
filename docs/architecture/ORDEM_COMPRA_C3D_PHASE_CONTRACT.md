@@ -1,9 +1,18 @@
 # PHASE-C3D Material Phase Contract — Inactive Deployment & Rehearsal
 
 <!-- MATERIAL_PHASE_CONTRACT:BEGIN -->
-PHASE_ID: PHASE-C3D-A
+PHASE_ID: PHASE-C3D
 <!-- MATERIAL_PHASE_CONTRACT:END -->
-STATUS: ACCEPTED — PHASE-C3D-A: IMPLEMENTED / LOCALLY VERIFIED / CHANGES_REQUIRED RESOLVED / AWAITING SUPERVISOR ACCEPTANCE — C3D-B THROUGH C3D-F: NOT AUTHORIZED
+STATUS: ACCEPTED — PHASE-C3D-A: CLOSED / TECHNICALLY ACCEPTED / LOCALLY VERIFIED (accepted checkpoint 096cd60325e4987010d328c856ee6a3a51ca66bf) — PHASE-C3D-B: IMPLEMENTED / LOCALLY VERIFIED / AWAITING SUPERVISOR ACCEPTANCE — C3D-C THROUGH C3D-F: NOT AUTHORIZED
+
+> **Material-contract identity (restored §Q.1).** The machine-readable
+> `PHASE_ID` above is `PHASE-C3D` — the identity of the whole material phase
+> contract governing sublots C3D-A…C3D-F. The `§P` change that set it (and
+> `ACTIVE_PHASE`) to `PHASE-C3D-A` was a documentary identity error, corrected
+> in `§Q.1`; the active **sublot** is tracked through this `STATUS` marker, the
+> append-only sections below, `PROJECT_STATE.md`/`AGENT_HANDOFF.md` prose, and
+> `NEXT_AUTHORIZABLE_ACTION`, not through `PHASE_ID`. No technical C3D-A
+> evidence is invalidated by this restoration.
 
 > **Role of this document.** This is a **material phase contract**, authored
 > under `docs/governance/DOCUMENTATION_MODEL.md` §19 and
@@ -1127,3 +1136,163 @@ verdict is resolved by this correction, not by a new self-acceptance).
 `OC-C3D-DEPLOY-001` remains `PLANNED`; `OC-C3D-FENCE-001`, `OC-C3D-ACL-001`,
 `OC-C3D-LOCK-001` remain `PARTIALLY_SATISFIED` — unchanged by this
 correction. **Hard stop before `PHASE-C3D-B`.**
+
+## Q. Material-contract identity restoration and PHASE-C3D-B implementation
+
+> Authored under the "PHASE-C3D-B — INACTIVE MIGRATION AND APPLICATION-PRESENCE
+> VALIDATION" order (a combined material-contract identity correction plus the
+> `PHASE-C3D-B` implementation). Entry checkpoint
+> `096cd60325e4987010d328c856ee6a3a51ca66bf` — the supervisor-accepted
+> `PHASE-C3D-A` technical checkpoint. This section restores a documentary
+> identity error and records the `PHASE-C3D-B` evidence; it advances **no**
+> `OC-C3D-*` disposition and self-accepts nothing.
+
+### Q.1 Material-contract identity restored to PHASE-C3D (STEP 1)
+
+The material contract for the entire `PHASE-C3D` family (sublots C3D-A…C3D-F)
+is this file. Its machine-readable `PHASE_ID` marker (head of file) and the
+canonical `ACTIVE_PHASE` (`PROJECT_STATE.md` `SPEC_CUSTODY_BOOTSTRAP`) are
+restored to **`PHASE-C3D`**; `ACTIVE_PHASE_CONTRACT` remains this file's path.
+The `§P` Finding 1 change that set both to `PHASE-C3D-A` was a **documentary
+identity error** — the active *sublot* is tracked through the `STATUS` marker,
+this contract's append-only sections, `PROJECT_STATE.md`/`AGENT_HANDOFF.md`
+prose, and `NEXT_AUTHORIZABLE_ACTION`, not through the material contract's
+`PHASE_ID`. No technical `PHASE-C3D-A` evidence (`§O`, `§P`) is invalidated by
+restoring the `PHASE-C3D` identity; `scripts/validate-spec-custody.mjs` passes
+with `PHASE_ID: PHASE-C3D` / `ACTIVE_PHASE: PHASE-C3D`. `PHASE-C3D-A` is
+recorded **CLOSED / TECHNICALLY ACCEPTED / LOCALLY VERIFIED**; accepted
+technical checkpoint `096cd60325e4987010d328c856ee6a3a51ca66bf`.
+
+### Q.2 PHASE-C3D-B implementation and evidence (STEP 2)
+
+**Scope executed:** exactly the `PHASE-C3D-B` — "Inactive migration/application
+presence validation" — sublot (`§C`). One authorized new technical file,
+`tests/ordem-compra-c3d-deploy.integration.sql`, plus the common documentary
+manifest (`§I`). No `db/*.sql`, product file, validator, or accepted C3D-A
+technical file (`scripts/c3d/bootstrap-disposable-cluster.mjs`,
+`tests/ordem-compra-c3d-deploy.smoke.js`) was modified.
+
+**Isolated environment:** two fresh, disposable, isolated local PostgreSQL
+**18.4** clusters (`scripts/c3d/bootstrap-disposable-cluster.mjs`), each in its
+own temp directory outside the repository, on a distinct non-default port
+(runs observed on 64228 and 60491); no real or copied business data; no
+Supabase branch; no shared/persistent database mutated. Each cluster held
+**zero** public application tables before migration
+(`to_regclass('public.ordem_compra_cutover')` NULL). The Supabase platform
+objects the migrations assume the host provides (roles
+`anon`/`authenticated`/`service_role`; schema `auth` with
+`auth.uid()`/`auth.role()`/`auth.users`; schema `extensions` with `pgcrypto`
+for `extensions.digest`) were supplied by an ephemeral, outside-repository
+rehearsal shim — the same class of preamble the accepted
+`PHASE-C3C-B-DB-PREREQ` `§36` disposable-cluster run relied on; it modifies no
+`db/*.sql` and is not committed.
+
+**Full ordered migration application:** the exact `db/01`…`db/76` sequence (76
+primary numbered migrations; `db/75`/`db/76` terminal) applied cleanly to each
+disposable cluster; all 76 completed. `db/67`'s REFUND-A migration-time
+self-check requires the ratified classification counts (64/27/12/13/12/0) and
+51 converted headers, so a **classification-shape-only synthetic corpus** of 64
+legacy `ordens_compra_fio` rows (27 A / 12 B / 13 C / 12 D — synthetic values
+only; `§D` known-limitation: the exact-total/51-mapping proofs are **not**
+attempted against a synthetic corpus) was loaded before `db/67`; `db/67`'s own
+reconciliation then confirmed `needs=64 headers=51 items=51 mappings=51`. No
+migration was applied to `ucrjtfswnfdlxwtmxnoo`, `gqmpsxkxynrjvidfmojk`,
+`bhgifjrfagkzubpyqpew`, or any persistent cluster.
+
+**Object inventory (both runs):** Component A
+`listar_ordens_compra_fio_compat(uuid,bigint)` and Component B
+`registrar_recebimento_ordem_compra_fio_compat(bigint,numeric,date,text,text,text)`
+present (SECURITY DEFINER, owner `postgres`); the additive
+`ordem_compra_recebimentos_c3a_namespace_check` and
+`ordem_compra_recebimentos_c3c_hash_check` both admit `legacy_compat_receipt_v1`
+(32-hex); 17 `ordem_compra_c3c_*` cutover functions; the
+`trg_c3c_protected_mutation_guard` fence on all eight protected tables and the
+`trg_c3c_command_state_guard`; the two snapshot/baseline tables and the cutover
+state/singleton CHECK constraints.
+
+**Initial cutover singleton:** `id=1`, `status=legacy_active`,
+`read_authority=flat`, `reconciliation_status=not_started`; every
+snapshot/import/read-switch/final-ACL/activation/`productive_receipt_started_at`
+marker and both baseline counts NULL.
+
+**Inactive Component A:** raises SQLSTATE **55000**, message
+**`listar_compat_inativo`**. **Inactive Component B:** returns
+**`{"ok": false, "codigo": "recebimento_compat_inativo", "erro": "Legacy-compat
+receipt adapter is inactive"}`**. Both under `legacy_active`/`flat`, synthetic
+identifiers only.
+
+**Zero mutation / locks:** an explicit before/after fingerprint (the cutover
+singleton `md5` plus counts of every receipt/ledger/movement/business table)
+was byte-identical across all probes; `productive_receipt_started_at` stayed
+NULL; zero advisory locks held; no open transaction left. The authorized
+`tests/ordem-compra-c3d-deploy.integration.sql` (its own internal before/after
+fingerprint, PONR-null and no-lock-leak checks) emitted `PASS[1..5]` and
+`C3D_B_DEPLOY_INTEGRATION_PASS` in both runs.
+
+**db/76 reapplication / idempotency:** reapplying `db/76` against the
+already-migrated cluster succeeded with no error; Component A/B function
+definitions and both CHECK definitions were byte-identical before/after; each
+constraint occurs exactly once (no duplicate); the integration SQL still
+PASSED. **db/75 reapplication classification — SINGLE-APPLICATION (ordered).**
+From the actual SQL, `db/75` DROPs and re-ADDs
+`ordem_compra_recebimentos_c3c_hash_check` with the two-branch definition
+(native + `legacy_initial_balance_v1` only); `db/76` later extends it to admit
+`legacy_compat_receipt_v1`. A full standalone `db/75` reapply after `db/76`
+would therefore **revert** `db/76`'s additive extension — a predictable
+ordered-sequence divergence, not idempotent convergence — so `db/75` is **not**
+reapplied in full; migration-history presence and object convergence (all 17
+`db/75` objects present and stable) are its valid proof, exactly as the order
+provides for a single-application migration.
+
+**Two fresh-cluster runs + cleanup:** both runs produced identical inactive
+results and zero mutation; after each, the bootstrap module's audited `stop()`
+**proved** (never inferred) the captured postmaster PID absent, the port
+closed, and the temp directory removed — independently re-confirmed
+(`process.kill(pid,0)` false, port probe closed, directory absent). No
+disposable process or `c3d-disposable-pg-*` directory remained.
+
+**Application fallback evidence (existing tests + static/hash):** the accepted
+application artifact remains `22bfb192c6c2ad10ccd2b2883d54c3a17e40cc9f`.
+`git diff --stat 22bfb192 HEAD -- js/ index.html` and `-- '*.css'` are
+**empty** — no product file, and specifically not the adapter
+`js/screens/ordem-compra-receipt-cutover.js`, changed after the accepted
+checkpoint; the flat read/write query shapes remain byte-identical to the
+accepted C3C-B implementation. The adapter routes the inactive Component A
+signal (55000 + `listar_compat_inativo`) and the exact `42883` interval to the
+flat reader, and the inactive Component B envelope to exactly one flat writer;
+only exact `42883` triggers the missing-function fallback; deterministic
+database/server failures (a real HTTP status) and transport-ambiguous failures
+(`status===0`) do **not** fall back; canonical success performs zero flat
+writes — proven by the unmodified existing tests
+(`tests/ordem-compra-receipt-cutover.smoke.js` 43/43, plus the call-site
+routers in `tests/op-writes.smoke.js`, `tests/fornecedor-screens.smoke.js`,
+`tests/op-nova.smoke.js`, `tests/pedido-detail.smoke.js`). No new JavaScript
+harness was created; no existing application or C3C-B test file was modified.
+
+**Shared development database (`ucrjtfswnfdlxwtmxnoo`) read-only evidence (not
+UNPROVEN):** via the repository's scoped read-only Supabase MCP,
+`list_migrations` confirms the history ends at `75` (`20260720234958`) / `76`
+(`20260720235820`); the cutover singleton is `legacy_active` / `flat` /
+`not_started` with every snapshot/import/read-switch/final-ACL/activation/
+`productive_receipt_started_at` marker and both baseline counts NULL; business
+fingerprint `ordens_compra_fio=64`, `ordem_compra=51`, `ordem_compra_item=51`,
+`ordem_compra_item_alocacao=51`, `ordem_compra_item_compat_fio=51`,
+`necessidade_compra_fio=64`, `saldo_fios=5`, `ordem_compra_recebimentos=0`,
+`ordem_compra_fio_lancamentos=0` — identical to the `PHASE-C3D-A` `§O` reading.
+No DDL, DML, or mutating RPC was issued; a single read-only pass, so no
+before/after drift is possible.
+
+### Q.3 Documentary state after this pass
+
+`PHASE_ID: PHASE-C3D`; `ACTIVE_PHASE: PHASE-C3D`; `ACTIVE_PHASE_CONTRACT:
+docs/architecture/ORDEM_COMPRA_C3D_PHASE_CONTRACT.md`. `PHASE-C3D-A` = CLOSED /
+TECHNICALLY ACCEPTED / LOCALLY VERIFIED (accepted checkpoint
+`096cd60325e4987010d328c856ee6a3a51ca66bf`). `PHASE-C3D-B` = IMPLEMENTED /
+LOCALLY VERIFIED / AWAITING SUPERVISOR ACCEPTANCE. `OC-C3D-DEPLOY-001` remains
+`PLANNED`; `OC-C3D-FENCE-001`, `OC-C3D-ACL-001`, `OC-C3D-LOCK-001` remain
+`PARTIALLY_SATISFIED` — unchanged (the traceability matrix is intentionally
+untouched: no disposition materially changes, and `OC-C3D-DEPLOY-001` may be
+advanced only by the supervisor after accepting the combined C3D-A + C3D-B
+evidence). **NEXT_AUTHORIZABLE_ACTION:** read-only supervisor review of the
+`PHASE-C3D-B` evidence; `PHASE-C3D-C` and every later sublot remain
+unauthorized. **Hard stop before `PHASE-C3D-C`.**

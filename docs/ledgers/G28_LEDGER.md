@@ -6499,3 +6499,143 @@ product file they depend on, was modified by this pass or the prior one):
   final ACL-closure invocation, cutover, production access, Supabase write,
   `main`, `origin`/`production` remote mutation, or any further push is
   authorized; one fast-forward push to `staging/dev` records this pass.
+
+## 2026-07-21 — PHASE-C3D-B — Inactive migration and application-presence validation
+
+- **Phase:** `PHASE-C3D-B` (inactive migration/application-presence validation),
+  the second sublot of the `PHASE-C3D` material phase contract
+  (`docs/architecture/ORDEM_COMPRA_C3D_PHASE_CONTRACT.md` §C). Combined in one
+  pass with a material-contract identity correction (STEP 1).
+- **Authorization:** the "PHASE-C3D-B — INACTIVE MIGRATION AND
+  APPLICATION-PRESENCE VALIDATION" order. Entry checkpoint
+  `096cd60325e4987010d328c856ee6a3a51ca66bf` (the supervisor-accepted
+  `PHASE-C3D-A` technical checkpoint), branch `dev`, `staging/dev` equal to
+  HEAD, preserved residue exactly `.gitignore` (modified, unstaged),
+  `.codex/config.toml` (untracked), `.mcp.json` (untracked).
+- **STEP 1 — material-contract identity restored.** The contract's
+  machine-readable `PHASE_ID` marker and the canonical `ACTIVE_PHASE` were
+  restored to `PHASE-C3D` (the §P change to `PHASE-C3D-A` was a documentary
+  identity error; the active sublot is tracked through the STATUS marker,
+  append-only sections, `PROJECT_STATE.md`/`AGENT_HANDOFF.md` prose, and
+  `NEXT_AUTHORIZABLE_ACTION`, not through `PHASE_ID`). No technical C3D-A
+  evidence is invalidated. `PHASE-C3D-A` recorded `CLOSED / TECHNICALLY
+  ACCEPTED / LOCALLY VERIFIED` at `096cd603…`. `scripts/validate-spec-custody.mjs`
+  PASS with `PHASE_ID: PHASE-C3D` / `ACTIVE_PHASE: PHASE-C3D`.
+- **STEP 2 — implementation.** One authorized new file:
+  `tests/ordem-compra-c3d-deploy.integration.sql` (deterministic, rerunnable
+  against a freshly migrated disposable cluster). No `db/*.sql`, product,
+  validator, or accepted C3D-A technical file modified.
+- **Isolated environment:** two fresh, disposable, isolated local PostgreSQL
+  18.4 clusters via `scripts/c3d/bootstrap-disposable-cluster.mjs` — each in a
+  temp directory outside the repository, distinct non-default port (64228,
+  60491), zero public application tables before migration; no real/copied
+  business data; no Supabase branch; no shared/persistent DB mutated. The
+  platform preamble the migrations assume (roles
+  `anon`/`authenticated`/`service_role`; `auth` schema with
+  `auth.uid()`/`auth.role()`/`auth.users`; `extensions` schema with `pgcrypto`)
+  was supplied by an ephemeral, outside-repository rehearsal shim — same class
+  of preamble as the accepted `PHASE-C3C-B-DB-PREREQ` §36 run; it modifies no
+  `db/*.sql` and is not committed.
+- **Full ordered migration application:** the exact `db/01`…`db/76` (76 primary
+  numbered migrations; `db/75`/`db/76` terminal) applied cleanly; all 76
+  completed. A classification-shape-only synthetic 64-row `ordens_compra_fio`
+  corpus (27 A / 12 B / 13 C / 12 D — synthetic values; §D known-limitation: no
+  exact-total/51-mapping proof attempted) was loaded before `db/67` so its
+  REFUND-A self-check (64/27/12/13/12/0) passed; `db/67` reconciliation
+  `needs=64 headers=51 items=51 mappings=51`.
+- **Object inventory + initial state:** Component A
+  `listar_ordens_compra_fio_compat(uuid,bigint)` and Component B
+  `registrar_recebimento_ordem_compra_fio_compat(bigint,numeric,date,text,text,text)`
+  present (SECURITY DEFINER, owner postgres); both `c3a_namespace_check` and
+  `c3c_hash_check` admit `legacy_compat_receipt_v1`; 17 `ordem_compra_c3c_*`
+  functions; `trg_c3c_protected_mutation_guard` on all 8 protected tables +
+  `trg_c3c_command_state_guard`. Cutover singleton
+  `legacy_active`/`flat`/`not_started`, every marker NULL.
+- **Inactive behavior + zero mutation:** Component A raised
+  `listar_compat_inativo` / SQLSTATE `55000`; Component B returned
+  `{ok:false, codigo:"recebimento_compat_inativo"}`; explicit before/after
+  fingerprint identical (zero mutation); `productive_receipt_started_at` NULL;
+  zero advisory locks; no open transaction. The integration SQL emitted
+  `PASS[1..5]` and `C3D_B_DEPLOY_INTEGRATION_PASS` in both runs.
+- **Idempotency:** `db/76` reapplied against the migrated cluster with no error,
+  no drift (Component A/B function defs + both CHECK defs byte-identical), no
+  duplicate constraint; integration SQL still PASS. `db/75` classified
+  single-application (ordered): it re-ADDs `c3c_hash_check` with the two-branch
+  definition, which a full reapply after `db/76` would use to revert `db/76`'s
+  additive `legacy_compat_receipt_v1` extension (proven from the SQL); object
+  convergence (17 objects present/stable), not full reapply, is its valid proof
+  — no fabricated idempotency.
+- **Cleanup (both runs):** the audited `stop()` proved (not inferred) captured
+  postmaster PID absent, port closed, temp directory removed; independently
+  re-confirmed (`process.kill(pid,0)` false, port probe closed, `fs.access`
+  ENOENT). Zero leftover disposable process or `c3d-disposable-pg-*` directory
+  afterward.
+- **Application fallback (existing tests + static/hash):** accepted artifact
+  `22bfb192c6c2ad10ccd2b2883d54c3a17e40cc9f`. `git diff --stat 22bfb192 HEAD --
+  js/ index.html` and `-- '*.css'` empty (adapter
+  `js/screens/ordem-compra-receipt-cutover.js` byte-unchanged; flat query shapes
+  byte-identical). Inactive Component A signal + exact `42883` → flat reader;
+  inactive Component B envelope → exactly one flat writer; only exact `42883`
+  falls back; deterministic (real HTTP status) and transport-ambiguous
+  (`status===0`) failures do not; canonical success writes zero flat rows —
+  proven by unmodified `tests/ordem-compra-receipt-cutover.smoke.js` (43/43) and
+  the call-site routers (`tests/op-writes.smoke.js`,
+  `tests/fornecedor-screens.smoke.js`, `tests/op-nova.smoke.js`,
+  `tests/pedido-detail.smoke.js`). No new JS harness; no existing app/C3C-B test
+  modified.
+- **Shared development database (`ucrjtfswnfdlxwtmxnoo`) read-only (not
+  UNPROVEN):** `list_migrations` ends `75` (`20260720234958`)/`76`
+  (`20260720235820`); cutover singleton `legacy_active`/`flat`/`not_started`,
+  all markers NULL; fingerprint `ordens_compra_fio=64`, `ordem_compra=51`,
+  `ordem_compra_item=51`, `ordem_compra_item_alocacao=51`,
+  `ordem_compra_item_compat_fio=51`, `necessidade_compra_fio=64`,
+  `saldo_fios=5`, `ordem_compra_recebimentos=0`, `ordem_compra_fio_lancamentos=0`
+  — identical to the C3D-A §O reading. No DDL/DML/mutating RPC; single read-only
+  pass.
+- **Files materially changed:** `tests/ordem-compra-c3d-deploy.integration.sql`
+  (new); `docs/architecture/ORDEM_COMPRA_C3D_PHASE_CONTRACT.md` (§Q appended;
+  `PHASE_ID`/`STATUS` markers corrected); `PROJECT_STATE.md`; `AGENT_HANDOFF.md`;
+  `docs/DOCUMENTATION_INDEX.md` (C3D contract row status); this ledger.
+  `docs/architecture/ORDEM_COMPRA_C3_TRACEABILITY.md` and
+  `docs/architecture/PEDIDO_PRODUCTION_FLOW_BACKLOG.md` — the traceability matrix
+  is intentionally not touched (no `OC-C3D-*` disposition materially changed;
+  supervisor advances `OC-C3D-DEPLOY-001` after accepting combined C3D-A + C3D-B
+  evidence); the backlog receives one dated closeout note only. No `db/*.sql`,
+  product `js/*`/`index.html`/CSS, existing test, validator, package/lockfile,
+  CI, deployment/Supabase/MCP config, or `.gitignore` modified; the three
+  preserved residue paths are excluded from the commit.
+- **Validation:** `node --check` on `scripts/c3d/bootstrap-disposable-cluster.mjs`
+  and `tests/ordem-compra-c3d-deploy.smoke.js`; `node --test
+  tests/ordem-compra-c3d-deploy.smoke.js`; `node --test
+  tests/ordem-compra-receipt-cutover.smoke.js` (adapter fallback);
+  `node scripts/validate-spec-custody.mjs` PASS; the disposable-cluster
+  migration/application proof executed twice from fresh clusters (both green);
+  `git diff --check` / `git diff --cached --check` clean; the full mandatory
+  Node suite differential against the accepted checkpoint
+  `096cd60325e4987010d328c856ee6a3a51ca66bf` in a temporary detached worktree
+  outside the canonical workspace — final failing identities minus
+  accepted-checkpoint identities = empty (added = 0). `node
+  scripts/validate-spec-custody.mjs --self-test` fails identically at `096cd60`
+  and here (its `createFixture` provisions no active phase contract, so any
+  non-`NONE` `ACTIVE_PHASE` — true since C3D-A — makes the fixture baseline fail
+  on the missing contract file); this is a pre-existing self-test-harness
+  limitation, not a C3D-B regression, and the validator was not modified to
+  accommodate the phase state.
+- **State after this pass:** `PHASE_ID: PHASE-C3D`; `LAST_ACCEPTED_PHASE:
+  PHASE-C3C-B` (unchanged); `ACTIVE_PHASE: PHASE-C3D`; `ACTIVE_PHASE_CONTRACT:
+  docs/architecture/ORDEM_COMPRA_C3D_PHASE_CONTRACT.md`; `ACCEPTED_CHECKPOINT:
+  096cd60325e4987010d328c856ee6a3a51ca66bf`. `PHASE-C3D-A` = CLOSED /
+  TECHNICALLY ACCEPTED / LOCALLY VERIFIED. `PHASE-C3D-B` = IMPLEMENTED /
+  LOCALLY VERIFIED / AWAITING SUPERVISOR ACCEPTANCE. `OC-C3D-DEPLOY-001` =
+  `PLANNED`; `OC-C3D-FENCE-001`/`OC-C3D-ACL-001`/`OC-C3D-LOCK-001` =
+  `PARTIALLY_SATISFIED` — unchanged. `OC-C3D-DEPLOY-001` is not marked
+  `SATISFIED`.
+- **Exact accounting subject:** `test: validate C3D inactive deployment stack`.
+- **NEXT_AUTHORIZABLE_ACTION:** read-only supervisor review of the
+  `PHASE-C3D-B` evidence (contract §Q). No `PHASE-C3D-C`/`C3D-D`/`C3D-E`/`C3D-F`
+  implementation, environment mutation, branch creation, staging
+  validation/application of `db/76`, activation, real snapshot/import, fence
+  transition, read switch, final ACL-closure invocation, cutover, production
+  access, Supabase write, `main`, `origin`/`production` remote mutation, or any
+  further push is authorized; one fast-forward push to `staging/dev` records
+  this pass.

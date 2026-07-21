@@ -38,12 +38,15 @@
 - **Prior accepted product phase:** `PHASE-C3C-A` — `CLOSED / TECHNICALLY
   ACCEPTED — LOCALLY VERIFIED / INACTIVE / NOT APPLIED TO STAGING` (2026-07-20),
   technical checkpoint `89123729b3529fff6e4a2336bfec2907c4b94b4c`.
-- **Active product phase:** `PHASE-C3D-A` — environment & deployment-manifest
-  qualification, the currently active implementation sublot within the
-  overall `PHASE-C3D` contract — `IMPLEMENTED / LOCALLY VERIFIED / AWAITING
-  SUPERVISOR ACCEPTANCE`; `PHASE-C3D-B`…`C3D-F` not authorized.
+- **Active product phase:** `PHASE-C3D` (material-contract identity). The
+  currently active implementation sublot is `PHASE-C3D-B` (inactive
+  migration/application-presence validation) — `IMPLEMENTED / LOCALLY VERIFIED
+  / AWAITING SUPERVISOR ACCEPTANCE` (§Q). `PHASE-C3D-A` (environment &
+  deployment-manifest qualification) is `CLOSED / TECHNICALLY ACCEPTED /
+  LOCALLY VERIFIED` at checkpoint `096cd60325e4987010d328c856ee6a3a51ca66bf`;
+  `PHASE-C3D-C`…`C3D-F` not authorized.
 - **Active phase contract:** `docs/architecture/ORDEM_COMPRA_C3D_PHASE_CONTRACT.md`
-  (`ACCEPTED`, §0c; `PHASE-C3D-A` evidence at §O).
+  (`PHASE_ID: PHASE-C3D`; `ACCEPTED`, §0c; C3D-A evidence §O/§P; C3D-B evidence §Q).
 - **Active track:** `PURCHASE_ORDER_PHASE_C`.
 - **Current governance status:** `GOVERNANCE-SPEC-CUSTODY-FOUNDATION-R1`
   **ACCEPTED**; `GOVERNANCE-STATE-HANDOFF-COMPACTION-R1` **ACCEPTED** by the
@@ -114,8 +117,11 @@
   byte-identical failing-name set, zero regressions; validator PASS. No
   dependent `OC-C3-*` requirement is `SATISFIED`.
 - **Next authorizable action:** **read-only supervisor review of the
-  `PHASE-C3D-A` implementation evidence**
-  (`docs/architecture/ORDEM_COMPRA_C3D_PHASE_CONTRACT.md` §O). The contract
+  `PHASE-C3D-B` implementation evidence**
+  (`docs/architecture/ORDEM_COMPRA_C3D_PHASE_CONTRACT.md` §Q; `PHASE-C3D-A` is
+  now `CLOSED / TECHNICALLY ACCEPTED / LOCALLY VERIFIED` at checkpoint
+  `096cd60325e4987010d328c856ee6a3a51ca66bf`, and the material-contract
+  identity is restored to `PHASE-C3D`, §Q.1). The `PHASE-C3D` contract
   (two forward-corrected `PROPOSED` rounds — §0 R1: requirement disposition,
   the actor-path vs. structural eight-table fence proof split,
   disposable-cluster-only PONR semantics for the C3D-E concurrency proof, and
@@ -154,6 +160,23 @@
   identities absent and reported as non-determinism, not claimed as a fix).
   `PHASE-C3D-A` remains `IMPLEMENTED / LOCALLY VERIFIED / AWAITING
   SUPERVISOR ACCEPTANCE`.
+  **`PHASE-C3D-B` (contract §Q):** the supervisor-accepted `PHASE-C3D-A`
+  (checkpoint `096cd603…`) is now closed and the material-contract identity
+  restored to `PHASE-C3D` (§Q.1). One authorized new file,
+  `tests/ordem-compra-c3d-deploy.integration.sql`, was validated across two
+  fresh disposable local PostgreSQL 18.4 clusters that each applied the exact
+  ordered `db/01`…`db/76` (a classification-shape-only synthetic 64-row corpus
+  loaded before `db/67`; reconciliation `64/51/51/51/51`; no real/copied data),
+  proved `db/75`/`db/76` terminal, the cutover singleton
+  `legacy_active`/`flat`/`not_started`/all-null, Component A →
+  `listar_compat_inativo`/`55000`, Component B → `recebimento_compat_inativo`,
+  zero mutation / PONR NULL / no advisory-lock leak, `db/76` idempotent reapply
+  (no drift/duplicate) and `db/75` single-application (object convergence, not
+  full reapply — a full reapply would revert `db/76`'s additive `c3c_hash_check`
+  extension), and proven process/port/temp-directory destruction after each
+  run. Application fallback proven by the unmodified accepted adapter (`22bfb192`)
+  + existing tests; `ucrjtfswnfdlxwtmxnoo` re-confirmed inert read-only. No
+  `OC-C3D-*` disposition changed; `PHASE-C3D-B` is not self-accepted.
 
 ## Governing specifications and contracts
 

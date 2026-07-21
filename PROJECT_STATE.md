@@ -17,17 +17,17 @@ directly (`git rev-parse HEAD`, `git status --short --untracked-files=all`).
 <!-- SPEC_CUSTODY_BOOTSTRAP:BEGIN -->
 ```text
 LAST_ACCEPTED_PHASE: PHASE-C3C-B
-ACTIVE_PHASE: PHASE-C3D-A
+ACTIVE_PHASE: PHASE-C3D
 ACTIVE_PHASE_CONTRACT: docs/architecture/ORDEM_COMPRA_C3D_PHASE_CONTRACT.md
 ACTIVE_TRACK: PURCHASE_ORDER_PHASE_C
-NEXT_AUTHORIZABLE_ACTION: read-only supervisor review of the corrected PHASE-C3D-A evidence; PHASE-C3D-B and every later C3D sublot remain unauthorized
+NEXT_AUTHORIZABLE_ACTION: read-only supervisor review of the PHASE-C3D-B evidence; PHASE-C3D-C and every later C3D sublot remain unauthorized
 GOVERNING_SPEC: docs/architecture/ORDEM_COMPRA_LIFECYCLE_SPEC_PROPOSED.md
 TECHNICAL_CONTRACT: docs/architecture/PEDIDO_OP_SCHEMA_CONTRACT.md
 SEQUENCE_AUTHORITY: docs/architecture/PEDIDO_PRODUCTION_FLOW_BACKLOG.md
 TRACEABILITY: docs/architecture/ORDEM_COMPRA_C3_TRACEABILITY.md
 LEDGER: docs/ledgers/G28_LEDGER.md
 HANDOFF: AGENT_HANDOFF.md
-ACCEPTED_CHECKPOINT: 22bfb192c6c2ad10ccd2b2883d54c3a17e40cc9f
+ACCEPTED_CHECKPOINT: 096cd60325e4987010d328c856ee6a3a51ca66bf
 ```
 <!-- SPEC_CUSTODY_BOOTSTRAP:END -->
 
@@ -70,14 +70,17 @@ ACCEPTED_CHECKPOINT: 22bfb192c6c2ad10ccd2b2883d54c3a17e40cc9f
   resource locks, ACL-closure command, recovery boundaries). Lifecycle §R.29 and
   schema §13.15 are unchanged. Local technical acceptance only — no staging
   validation/application, deployment, activation, cutover, or product acceptance.
-- **Active product phase:** `PHASE-C3D-A` (the currently active implementation
-  sublot within the overall `PHASE-C3D` contract; `PHASE-C3D-B`…`C3D-F` not
-  authorized). **Active phase contract:**
+- **Active product phase:** `PHASE-C3D` (material-contract identity; the
+  currently active implementation sublot is `PHASE-C3D-B` — `PHASE-C3D-C`…`C3D-F`
+  not authorized). **Active phase contract:**
   `docs/architecture/ORDEM_COMPRA_C3D_PHASE_CONTRACT.md`
-  (`STATUS: ACCEPTED — PHASE-C3D-A: IMPLEMENTED / LOCALLY VERIFIED / AWAITING
-  SUPERVISOR ACCEPTANCE`, §O). `PHASE-C3D-A` is not self-accepted by this
-  pass; it provides only the environment and deployment-manifest portion of
-  `OC-C3D-DEPLOY-001` and marks no requirement `SATISFIED`.
+  (`PHASE_ID: PHASE-C3D`; `STATUS`: `PHASE-C3D-A: CLOSED / TECHNICALLY ACCEPTED
+  / LOCALLY VERIFIED` at checkpoint `096cd60325e4987010d328c856ee6a3a51ca66bf`;
+  `PHASE-C3D-B: IMPLEMENTED / LOCALLY VERIFIED / AWAITING SUPERVISOR
+  ACCEPTANCE`, §Q). The prior tracked `ACTIVE_PHASE: PHASE-C3D-A` was a
+  documentary identity error, restored to `PHASE-C3D` (§Q.1); no C3D-A
+  technical evidence is invalidated. `PHASE-C3D-B` is not self-accepted by this
+  pass and marks no `OC-C3D-*` requirement `SATISFIED`.
 - **`PHASE-C3C-B` (application compatibility/adaptation):** `CLOSED /
   ACCEPTED_WITH_NONBLOCKING_DEBT / LOCALLY VERIFIED` — supervisor-accepted
   2026-07-21 at checkpoint `22bfb192c6c2ad10ccd2b2883d54c3a17e40cc9f`
@@ -289,16 +292,46 @@ ACCEPTED_CHECKPOINT: 22bfb192c6c2ad10ccd2b2883d54c3a17e40cc9f
   SUPERVISOR ACCEPTANCE` — the `CHANGES_REQUIRED` verdict is resolved, not a
   new self-acceptance. Full evidence: contract §P;
   `docs/ledgers/G28_LEDGER.md` (2026-07-21, this correction's own entry).
+  **`PHASE-C3D-B` (inactive migration & application-presence validation)** is
+  now `IMPLEMENTED / LOCALLY VERIFIED / AWAITING SUPERVISOR ACCEPTANCE`
+  (contract §Q). The material-contract identity was restored from the
+  documentary-error `PHASE-C3D-A` to `PHASE-C3D` (§Q.1); `PHASE-C3D-A` is
+  recorded `CLOSED / TECHNICALLY ACCEPTED / LOCALLY VERIFIED` at accepted
+  checkpoint `096cd60325e4987010d328c856ee6a3a51ca66bf`. One authorized new
+  file — `tests/ordem-compra-c3d-deploy.integration.sql` — proves, across
+  **two** fresh disposable local PostgreSQL 18.4 clusters, that the exact
+  ordered `db/01`…`db/76` sequence applies cleanly (a classification-shape-only
+  synthetic 64-row corpus loaded before `db/67`'s REFUND-A self-check; `db/67`
+  reconciliation `64/51/51/51/51`; no real/copied business data), that `db/75`
+  and `db/76` are terminal, that the cutover singleton is
+  `legacy_active`/`flat`/`not_started`/all-null, that Component A raises
+  `listar_compat_inativo`/`55000` and Component B returns
+  `recebimento_compat_inativo` with zero mutation / PONR NULL / no leaked
+  advisory lock, that `db/76` reapplies idempotently (no drift, no duplicate
+  constraint) while `db/75` is a single-application ordered migration (a full
+  reapply would revert `db/76`'s additive `c3c_hash_check` extension — proven
+  from the SQL — so object convergence, not full reapply, is its valid proof),
+  and that each disposable cluster's process/port/temp-directory were proven
+  removed. The accepted application adapter (`22bfb192`,
+  `js/screens/ordem-compra-receipt-cutover.js`, byte-unchanged) routes the
+  inactive signals and exact `42883` to the flat reader/one flat writer and
+  never falls back on deterministic/transport-ambiguous failures — proven by
+  the unmodified existing tests. A separately-scoped read-only inspection of
+  `ucrjtfswnfdlxwtmxnoo` re-confirmed migrations `75`/`76` present, the cutover
+  singleton `legacy_active`/`flat`/`not_started`/all-null, and the
+  `64/51/51/51/51/64/5/0/0` fingerprint unchanged (no DDL/DML/mutating RPC). No
+  `OC-C3D-*` disposition changed. See contract §Q and `docs/ledgers/G28_LEDGER.md`
+  (2026-07-21, this pass's own entry).
 - **NEXT_AUTHORIZABLE_ACTION:** **read-only supervisor review of the
-  `PHASE-C3D-A` implementation evidence**
-  (`docs/architecture/ORDEM_COMPRA_C3D_PHASE_CONTRACT.md` §O). No
-  `PHASE-C3D-B`/`C3D-C`/`C3D-D`/`C3D-E`/`C3D-F` implementation, environment
+  `PHASE-C3D-B` implementation evidence**
+  (`docs/architecture/ORDEM_COMPRA_C3D_PHASE_CONTRACT.md` §Q). No
+  `PHASE-C3D-C`/`C3D-D`/`C3D-E`/`C3D-F` implementation, environment
   mutation, branch creation, staging validation/application of `db/76`,
   deployment, activation, real snapshot/import, fence transition, read
   switch, final ACL-closure invocation, cutover, C4, C5, production access,
   Supabase write, or any further push beyond the one authorized `staging/dev`
   fast-forward for this pass is authorized. No product phase chains
-  automatically; `ACTIVE_PHASE`/`ACTIVE_PHASE_CONTRACT` are `PHASE-C3D-A` /
+  automatically; `ACTIVE_PHASE`/`ACTIVE_PHASE_CONTRACT` are `PHASE-C3D` /
   this contract's path, pending that review.
 
 ## Workspace and Git boundaries
