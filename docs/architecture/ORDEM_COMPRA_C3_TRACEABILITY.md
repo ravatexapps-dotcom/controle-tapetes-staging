@@ -10,7 +10,7 @@ ACTIVE_TRACK: PURCHASE_ORDER_PHASE_C
 LAST_ACCEPTED_PHASE: PHASE-C3C-B
 ACTIVE_PHASE: NONE
 CLOSED_MATERIAL_PHASES: PHASE-C3C-A, PHASE-C3C-B-DB-PREREQ, PHASE-C3C-B
-NEXT_AUTHORIZABLE_ACTION: read-only supervisor review of the PHASE-C3D material phase contract (docs/architecture/ORDEM_COMPRA_C3D_PHASE_CONTRACT.md, PROPOSED / AWAITING SUPERVISOR ACCEPTANCE / IMPLEMENTATION NOT AUTHORIZED); no C3D implementation, environment mutation, branch creation, or staging validation of db/76 is authorized
+NEXT_AUTHORIZABLE_ACTION: read-only supervisor review of the corrected PHASE-C3D material phase contract (docs/architecture/ORDEM_COMPRA_C3D_PHASE_CONTRACT.md, PROPOSED / AWAITING SUPERVISOR ACCEPTANCE / IMPLEMENTATION NOT AUTHORIZED); no C3D implementation or environment mutation authorized
 VALIDATION_ACCOUNTING_SUBJECT: fix: harden spec custody validation
 VALIDATION_ACCOUNTING_SUBJECT_R2: fix: reject detached spec custody rows
 VALIDATION_ACCOUNTING_SUBJECT_R3: fix: distinguish prose from detached tables
@@ -28,6 +28,7 @@ VALIDATION_ACCOUNTING_SUBJECT_R14: docs: authorize C3C-B application adaptation
 VALIDATION_ACCOUNTING_SUBJECT_R15: feat: adapt legacy purchase-order receipts for cutover
 VALIDATION_ACCOUNTING_SUBJECT_R16: fix: preserve C3C-B receipt idempotency attempts
 VALIDATION_ACCOUNTING_SUBJECT_R17: docs: accept C3C-B and define C3D contract
+VALIDATION_ACCOUNTING_SUBJECT_R18: docs: correct C3D contract boundaries
 ```
 
 ## Accepted foundation
@@ -150,7 +151,28 @@ recommended; an isolated Supabase branch is `UNPROVEN` and not created),
 entry/exit gates, a test matrix, the recovery/PONR model, exact future manifests,
 and the mandatory supervisor decisions. It creates no requirement, changes no
 anchor, and authorizes no implementation or environment action; every `OC-C3D-*`
-disposition above is unchanged. `STATUS: PROPOSED / AWAITING SUPERVISOR
-ACCEPTANCE / IMPLEMENTATION NOT AUTHORIZED`;
-`ACTIVE_PHASE`/`ACTIVE_PHASE_CONTRACT` remain `NONE`; its read-only supervisor
-review is the next authorizable action.
+disposition above is unchanged.
+
+A read-only supervisor review of that proposal returned **`CHANGES_REQUIRED`**
+for four material contradictions, forward-corrected the same day
+(`docs: correct C3D contract boundaries`, contract §0): (1) the proposal
+incorrectly implied no `OC-C3D-*` requirement could become `SATISFIED` before
+real cutover — corrected so each is owned by `PHASE-C3D` and may become
+`SATISFIED` by its own isolated-rehearsal evidence (§M); (2) the fence proof
+conflated the real admin/supplier application paths (which write only
+`ordens_compra_fio`, verified read-only against `js/screens/op-writes.js` and
+`js/screens/fornecedor.js`) with direct client authority over all eight
+protected tables — corrected into two evidence classes, a real actor-path
+proof and an owner-level structural eight-table probe (§G.5A/§G.5B); (3) a
+required concurrent-Component-B proof contradicted an unqualified "PONR = NONE
+in C3D" — corrected: C3D may cross the receipt PONR only inside a disposable,
+isolated rehearsal cluster, exclusively for the C3D-E concurrency proof,
+followed by mandatory full cluster destruction, forbidden on any shared or
+real environment (§H/§L); (4) the exact-manifest section authorized the open
+directory `scripts/c3d/` — corrected to the exact file
+`scripts/c3d/bootstrap-disposable-cluster.mjs`, no directory-level or wildcard
+authorization remaining (§I). No `OC-C3D-*` disposition changed by either the
+authoring or the correction pass. `STATUS: PROPOSED / AWAITING SUPERVISOR
+ACCEPTANCE / IMPLEMENTATION NOT AUTHORIZED` (unchanged);
+`ACTIVE_PHASE`/`ACTIVE_PHASE_CONTRACT` remain `NONE`; read-only supervisor
+review of the corrected contract is the next authorizable action.

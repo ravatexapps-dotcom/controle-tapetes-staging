@@ -8,6 +8,54 @@
 > `PROJECT_STATE.md`. Phase sequence, dependencies, backlog items, and accepted
 > architecture in this file remain authoritative; live operational status does not.
 
+# Update 2026-07-21 - PHASE-C3D Material Contract Forward Correction
+
+Phase: `PHASE-C3D` material phase contract correction.
+Type: documentation-only; no product, test, script, migration, database,
+environment, deployment, or configuration change.
+
+A read-only supervisor review of the `PHASE-C3D` material phase contract
+proposed at commit `fc53f9d43bbd28e47c3e84e3893082cc41c41fcf` returned
+`CHANGES_REQUIRED` for four material contradictions. All four were corrected
+in place, appended as a new §0 in
+`docs/architecture/ORDEM_COMPRA_C3D_PHASE_CONTRACT.md`:
+
+1. **Requirement disposition.** The proposal incorrectly implied no
+   `OC-C3D-*` requirement could become `SATISFIED` before real cutover.
+   Corrected (§M): each of `OC-C3D-DEPLOY-001`, `OC-C3D-FENCE-001`,
+   `OC-C3D-ACL-001`, `OC-C3D-LOCK-001` is owned by `PHASE-C3D` and may become
+   `SATISFIED` by its own isolated-rehearsal evidence, independent of
+   `OC-CUTOVER-001`/`OC-CUTOVER-PONR-001`. No disposition changed by this
+   correction itself.
+2. **Fence proof scope.** The proposal required the real admin/supplier
+   application paths to write directly to all eight protected tables.
+   Verified read-only against `js/screens/op-writes.js` and
+   `js/screens/fornecedor.js`: both real paths write only
+   `ordens_compra_fio`. Corrected (§C, §E, §G, §I) into two evidence classes
+   — a real actor-path proof confined to the flat receipt surface, and a
+   separate owner-level structural probe of all eight tables in the
+   disposable cluster only.
+3. **PONR semantics.** The proposal required a concurrent Component B proof
+   whose successful commit sets `productive_receipt_started_at` (the PONR)
+   while simultaneously claiming an unqualified "PONR = NONE" everywhere in
+   C3D. Corrected (§A, §B, §H, §L): a synthetic PONR crossing is permitted
+   only inside a disposable rehearsal cluster, exclusively for the C3D-E
+   concurrency proof, followed by mandatory full cluster destruction;
+   forbidden on `ucrjtfswnfdlxwtmxnoo`, `gqmpsxkxynrjvidfmojk`,
+   `bhgifjrfagkzubpyqpew`, and any other shared/persistent environment.
+4. **Exact future manifests.** The proposal authorized the open directory
+   `scripts/c3d/`, violating the no-wildcard rule. Corrected (§I): replaced
+   with the exact file `scripts/c3d/bootstrap-disposable-cluster.mjs`; no
+   directory-level or wildcard authorization remains anywhere in the
+   contract.
+
+`STATUS` remains `PROPOSED / AWAITING SUPERVISOR ACCEPTANCE / IMPLEMENTATION
+NOT AUTHORIZED` (unchanged); `ACTIVE_PHASE`/`ACTIVE_PHASE_CONTRACT` remain
+`NONE`; no `OC-C3D-*` disposition changed; `PHASE-C3C-B`'s accepted §36
+closeout is untouched. `validate-spec-custody` PASS; `git diff --check`
+clean. Next authorizable action: read-only supervisor review of the
+corrected `PHASE-C3D` contract.
+
 # Update 2026-07-21 - PHASE-C3C-B Supervisor Acceptance + PHASE-C3D Contract Authored
 
 Phase: `PHASE-C3C-B` acceptance closeout + `PHASE-C3D` material phase contract
