@@ -7692,3 +7692,91 @@ product file they depend on, was modified by this pass or the prior one):
   separate, localized correction order is the next authorizable action for
   `ORDEM_COMPRA_CANCEL_HANDLER_STALE_ORDER_CAPTURE`, independent of `PHASE-C4`.
   **No push is authorized by this pass.**
+
+## 2026-07-21 — C4-ADMIN-RECEIPT-UI-IMPLEMENTATION-R1 — Supervisor acceptance + PHASE-C4 implementation authorization
+
+- **Authorization:** `C4-ADMIN-RECEIPT-UI-IMPLEMENTATION-R1` — the supervisor
+  **ACCEPTED** the PHASE-C4 material phase contract
+  (`docs/architecture/ORDEM_COMPRA_C4_PHASE_CONTRACT.md`) and **AUTHORIZED**
+  local `PHASE-C4` / `OC-C4-ADMIN-001` admin receipt UI implementation. This
+  documentation-only authorization commit records that decision in the
+  repository (the prior recorded state, at HEAD
+  `d98c498e62b640ea160a7bbe2d71231751a5b9b6`, was `PROPOSED / AWAITING
+  SUPERVISOR REVIEW / IMPLEMENTATION NOT AUTHORIZED`, `ACTIVE_PHASE`/
+  `ACTIVE_PHASE_CONTRACT` `NONE`, `OC-C4-ADMIN-001` `PLANNED`). Per
+  `docs/governance/AGENT_INSTRUCTIONS.md` §1 a chat order cannot by itself
+  establish authorization; this commit promotes the supervisor's explicit
+  acceptance into the canonical owners so the audit trail is complete before
+  any product code is written.
+- **Entry checkpoint:** `HEAD` `d98c498e62b640ea160a7bbe2d71231751a5b9b6`;
+  parent `67fb71176e5629494f5f4600944ed8d2daad6b10`; branch `dev`;
+  `git status --short --untracked-files=all` = `M .gitignore`,
+  `?? .codex/config.toml`, `?? .mcp.json` (expected protected residue,
+  untouched throughout); single worktree; `staging/dev`
+  `0df4228f903ae68c7e8b240e69ff3b37df9ebd86` (behind by the two local C4
+  documentation commits — expected, not a blocker); accepted checkpoint
+  `429aa3980c7027b9d872a1902e2f31f1a4a85a2a` unchanged.
+- **Contract status change:** `docs/architecture/ORDEM_COMPRA_C4_PHASE_CONTRACT.md`
+  `STATUS: PROPOSED / AWAITING SUPERVISOR REVIEW / IMPLEMENTATION NOT
+  AUTHORIZED` → `STATUS: ACCEPTED / IMPLEMENTATION AUTHORIZED`; new §0b records
+  the bounded supervisor acceptance; §22 restated. No ratified decision and no
+  accepted manifest changed: the functional scope (§6), actor/state/action
+  matrix (§7), native-RPC-only API ownership matrix (§8), the closed five-file
+  manifest (§10) and unchanged/prohibited list (§11), the idempotency/error
+  contract (§12), the visual contract (§13), and the test manifest (§15) are
+  binding and unchanged; the two RATIFIED sub-decisions (§2 administrator
+  reversal in scope; §13.1 compact icon-only row-level reversal button, all
+  seven guards) remain ratified and are not reopened. One latent
+  validator-blocking defect was corrected as a necessary consequence of
+  activation: contract §4.1 had quoted the `MATERIAL_PHASE_CONTRACT` marker
+  convention as a second verbatim literal marker pair, harmless while
+  `ACTIVE_PHASE` was `NONE` but tripping spec-custody R2 ("exactly one
+  well-formed material-phase marker") the moment the C4 contract becomes the
+  active contract; §4.1 now describes the convention (pointing to the
+  authoritative `docs/governance/DOCUMENTATION_MODEL.md:605-609`) instead of
+  re-pasting the literal markers, leaving exactly one marker (the header
+  block). This changes no scope, decision, or manifest.
+- **Bounded scope of the acceptance:** local implementation only. No database
+  migration, environment mutation, staging application, deployment,
+  activation, REAL_CUTOVER, `PHASE-C5`, branch creation, or push is
+  authorized. The two writer RPCs remain inert under the live `legacy_active`
+  cutover state (contract §17) — a recorded risk, not a blocker; fixture-level
+  DOM/mocked-RPC evidence is the implementation proof (contract §13.4, §15).
+  The implementation may **not** be self-accepted or closed and may **not**
+  mark `OC-C4-ADMIN-001` `SATISFIED` — it stops at `IMPLEMENTED / LOCALLY
+  VERIFIED / AWAITING SUPERVISOR REVIEW`, pending supervisor review and the
+  mandatory architect visual validation (`SUPERVISION_PROTOCOL.md` §4). The
+  pre-existing out-of-scope defect
+  `ORDEM_COMPRA_CANCEL_HANDLER_STALE_ORDER_CAPTURE` (PROJECT_STATE POST-LAUNCH
+  DEBT REGISTER item 15, contract §21) stays out of scope and must not be
+  fixed during this implementation.
+- **State after this pass:** `LAST_ACCEPTED_PHASE: PHASE-C3D` (unchanged — C4
+  is not yet accepted-as-complete); `ACTIVE_PHASE: PHASE-C4`;
+  `ACTIVE_PHASE_CONTRACT: docs/architecture/ORDEM_COMPRA_C4_PHASE_CONTRACT.md`;
+  `ACCEPTED_CHECKPOINT: 429aa3980c7027b9d872a1902e2f31f1a4a85a2a` (unchanged);
+  `OC-C4-ADMIN-001` is `ACTIVE / IN IMPLEMENTATION` — its traceability-matrix
+  disposition is held at the valid `PLANNED` enum at authorization (the enum
+  set is `SATISFIED`/`PARTIALLY_SATISFIED`/`PLANNED`/`DEFERRED`/`BLOCKED`/
+  `NOT_APPLICABLE`/`SUPERSEDED`; `ACTIVE / IN IMPLEMENTATION` is a status, not
+  an allowed disposition value), advancing to `PARTIALLY_SATISFIED` with
+  implementation artifact, test evidence, and residual debt at the
+  implementation commit.
+- **Files (exactly five documents; zero technical file):**
+  `docs/architecture/ORDEM_COMPRA_C4_PHASE_CONTRACT.md`, `PROJECT_STATE.md`,
+  `docs/architecture/ORDEM_COMPRA_C3_TRACEABILITY.md`, `AGENT_HANDOFF.md`, and
+  this ledger. No `db/*.sql`, test, script, product, validator, normative, or
+  configuration file modified; the three protected-residue paths
+  (`.gitignore`, `.codex/config.toml`, `.mcp.json`) untouched. No push.
+- **Note on validator R4 accounting:** the pre-existing baseline
+  `node scripts/validate-spec-custody.mjs` failure at HEAD
+  `d98c498e62b640ea160a7bbe2d71231751a5b9b6` (its own ledger `Exact accounting
+  subject` was line-wrapped, so no single added line carried the full subject)
+  is cleared by this entry referencing that commit's full SHA — the append-only
+  historical entry is not edited or normalized.
+- **Exact accounting subject:** `docs: authorize PHASE-C4 admin receipt UI implementation`
+- **NEXT_AUTHORIZABLE_ACTION:** execute the authorized local `PHASE-C4` admin
+  receipt UI implementation per the contract §10 manifest and §15 test
+  manifest, then stop at `IMPLEMENTED / LOCALLY VERIFIED / AWAITING SUPERVISOR
+  REVIEW`. `PHASE-C5`, `REAL_CUTOVER`, staging validation/application of
+  `db/76`, activation, deployment, branch creation, production access, and any
+  push remain unauthorized. **No push is authorized by this pass.**

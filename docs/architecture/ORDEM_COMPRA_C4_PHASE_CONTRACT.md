@@ -3,7 +3,7 @@
 <!-- MATERIAL_PHASE_CONTRACT:BEGIN -->
 PHASE_ID: PHASE-C4
 <!-- MATERIAL_PHASE_CONTRACT:END -->
-STATUS: PROPOSED / AWAITING SUPERVISOR REVIEW / IMPLEMENTATION NOT AUTHORIZED
+STATUS: ACCEPTED / IMPLEMENTATION AUTHORIZED
 
 > **Role of this document.** This is a **material phase contract**, authored under
 > `C4-MATERIAL-PHASE-CONTRACT-R1` as **read-only repository reconciliation +
@@ -83,6 +83,44 @@ handler referenced in §4.4/§11. No `.claude/design-skill/` or other untracked
 asset was restored, copied, or referenced from any other workspace during
 this correction — `docs/architecture/UI_VISUAL_CONTRACT.md` alone remains
 the visual authority (§4.6, §13, unchanged by this pass).
+
+---
+
+## 0b. Supervisor acceptance and implementation authorization — `C4-ADMIN-RECEIPT-UI-IMPLEMENTATION-R1`
+
+On 2026-07-21 the supervisor **ACCEPTED** this material phase contract and
+**AUTHORIZED** local implementation of `PHASE-C4` / `OC-C4-ADMIN-001` under
+order `C4-ADMIN-RECEIPT-UI-IMPLEMENTATION-R1`, entry checkpoint `HEAD`
+`d98c498e62b640ea160a7bbe2d71231751a5b9b6`. The acceptance is bounded and
+does **not** alter any ratified decision or the accepted manifest:
+
+- The functional scope (§6), actor/state/action matrix (§7), API ownership
+  matrix (§8, native RPCs only — the PHASE-C3C-B legacy-compat adapter stays
+  out of C4's call graph), the closed five-file manifest (§10) and
+  unchanged-file list (§11), the idempotency/error contract (§12), the visual
+  contract (§13), and the test manifest (§15) are binding and unchanged.
+- The two RATIFIED sub-decisions (§2 administrator reversal in scope; §13.1
+  compact icon-only row-level reversal button, all seven guards) remain
+  ratified and must not be reopened.
+- Local implementation only: **no** database migration, environment mutation,
+  staging application, deployment, activation, REAL_CUTOVER, `PHASE-C5`,
+  branch creation, or push is authorized by this acceptance. The writer RPCs
+  remain inert under the live `legacy_active` cutover state (§17) — a
+  recorded risk, not a blocker; fixture-level DOM/mocked-RPC evidence is the
+  implementation proof (§13.4, §15).
+- The implementation may **not** be self-accepted or closed. Implementation
+  status stops at `IMPLEMENTED / LOCALLY VERIFIED / AWAITING SUPERVISOR
+  REVIEW`; `OC-C4-ADMIN-001` may not be marked `SATISFIED`; only the
+  supervisor may accept and close the phase (§14 exit gates).
+- The pre-existing out-of-scope defect
+  `ORDEM_COMPRA_CANCEL_HANDLER_STALE_ORDER_CAPTURE` (§21) stays out of scope
+  and must not be fixed during this implementation.
+
+`ACTIVE_PHASE`/`ACTIVE_PHASE_CONTRACT` become `PHASE-C4` /
+`docs/architecture/ORDEM_COMPRA_C4_PHASE_CONTRACT.md`. This authorization is
+recorded proportionally in `PROJECT_STATE.md`,
+`docs/architecture/ORDEM_COMPRA_C3_TRACEABILITY.md`, `AGENT_HANDOFF.md`, and
+`docs/ledgers/G28_LEDGER.md` (this authorization's own entry).
 
 ---
 
@@ -256,13 +294,15 @@ supervisor confirmation.
   not-yet-implemented material phase contract as `READ_ONLY_RECONCILIATION`
   — "no canonical mutation" beyond the new contract file and its index
   registration.
-- The `MATERIAL_PHASE_CONTRACT` marker convention (verified at
-  `docs/governance/DOCUMENTATION_MODEL.md:605-609`):
-  ```text
-  <!-- MATERIAL_PHASE_CONTRACT:BEGIN -->
-  PHASE_ID: <exact ACTIVE_PHASE value>
-  <!-- MATERIAL_PHASE_CONTRACT:END -->
-  ```
+- The `MATERIAL_PHASE_CONTRACT` marker convention — the exact literal form
+  (an HTML-comment `BEGIN` marker, a `PHASE_ID:` line carrying the exact
+  `ACTIVE_PHASE` value, and a matching HTML-comment `END` marker) is
+  authoritatively defined at `docs/governance/DOCUMENTATION_MODEL.md:605-609`,
+  and is reproduced verbatim in this document only once, in its header block
+  (above §0), so the spec-custody validator (R2) counts exactly one
+  well-formed marker when this contract is the active phase contract. (It is
+  described here rather than re-pasted: a second verbatim marker copy would
+  make R2 count two markers once `ACTIVE_PHASE` becomes `PHASE-C4`.)
   This document carries `PHASE_ID: PHASE-C4`, matching the convention used by
   every prior contract (`ORDEM_COMPRA_C3D_PHASE_CONTRACT.md`,
   `ORDEM_COMPRA_C3C_B_PHASE_CONTRACT.md`,
@@ -1268,13 +1308,17 @@ Recorded proportionally in `PROJECT_STATE.md` (POST-LAUNCH DEBT REGISTER),
 
 ## 22. Status and next authorizable action
 
-**STATUS: `PROPOSED / AWAITING SUPERVISOR REVIEW / IMPLEMENTATION NOT
-AUTHORIZED`** — unchanged by this correction. Two sub-decisions are now
-**RATIFIED** (§2, §13.1) and the manifest is now **RESOLVED** (§10/§11); the
-contract as a whole still awaits supervisor acceptance/rejection (§20 item 1).
+**STATUS: `ACCEPTED / IMPLEMENTATION AUTHORIZED`** — the supervisor accepted
+this contract and authorized local `PHASE-C4` implementation on 2026-07-21
+under `C4-ADMIN-RECEIPT-UI-IMPLEMENTATION-R1` (§0b). Two sub-decisions are
+**RATIFIED** (§2, §13.1) and the manifest is **RESOLVED** (§10/§11), all
+unchanged by the acceptance.
 
-`NEXT_AUTHORIZABLE_ACTION`: supervisor review and acceptance/rejection of
-this proposed `PHASE-C4` material contract (§20). `PHASE-C4` implementation,
-`PHASE-C5`, `REAL_CUTOVER`, any database migration, any environment
-mutation, any staging/production/deployment action, branch creation, and any
-push remain unauthorized by this pass.
+`NEXT_AUTHORIZABLE_ACTION`: execute the authorized local `PHASE-C4`
+implementation per the §10 manifest and §15 test manifest, then stop at
+`IMPLEMENTED / LOCALLY VERIFIED / AWAITING SUPERVISOR REVIEW` for supervisor
+review and the mandatory architect visual validation (§14 exit gates). The
+implementation must not be self-accepted or closed, and must not mark
+`OC-C4-ADMIN-001` `SATISFIED`. `PHASE-C5`, `REAL_CUTOVER`, any database
+migration, any environment mutation, any staging/production/deployment
+action, branch creation, and any push remain unauthorized.

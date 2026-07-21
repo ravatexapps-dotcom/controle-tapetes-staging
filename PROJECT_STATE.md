@@ -17,10 +17,10 @@ directly (`git rev-parse HEAD`, `git status --short --untracked-files=all`).
 <!-- SPEC_CUSTODY_BOOTSTRAP:BEGIN -->
 ```text
 LAST_ACCEPTED_PHASE: PHASE-C3D
-ACTIVE_PHASE: NONE
-ACTIVE_PHASE_CONTRACT: NONE
+ACTIVE_PHASE: PHASE-C4
+ACTIVE_PHASE_CONTRACT: docs/architecture/ORDEM_COMPRA_C4_PHASE_CONTRACT.md
 ACTIVE_TRACK: PURCHASE_ORDER_PHASE_C
-NEXT_AUTHORIZABLE_ACTION: supervisor review and acceptance/rejection of the proposed PHASE-C4 material contract (docs/architecture/ORDEM_COMPRA_C4_PHASE_CONTRACT.md, STATUS: PROPOSED / AWAITING SUPERVISOR REVIEW / IMPLEMENTATION NOT AUTHORIZED); PHASE-C4 implementation, PHASE-C5, the REAL_CUTOVER window (OC-CUTOVER-001/OC-CUTOVER-PONR-001 — hard-gated behind the mandatory separate read-only completeness disposition of the 13 unmapped ordens_compra_fio rows ids 153–165), real close_final_acl invocation, real activation, the real read-authority switch, staging validation/application of db/76, and any productive receipt on a shared or real environment all remain unauthorized; a fresh session must re-read the canonical repository before executing any PHASE-C4 implementation order
+NEXT_AUTHORIZABLE_ACTION: execute the authorized local PHASE-C4 admin receipt UI implementation (OC-C4-ADMIN-001) per docs/architecture/ORDEM_COMPRA_C4_PHASE_CONTRACT.md (STATUS: ACCEPTED / IMPLEMENTATION AUTHORIZED, §0b — supervisor-accepted 2026-07-21 under C4-ADMIN-RECEIPT-UI-IMPLEMENTATION-R1): the three new js/screens/ordem-compra-receipt-*.js files, additive ordem-compra.js/index.html touches, and the §15 tests, then stop at IMPLEMENTED / LOCALLY VERIFIED / AWAITING SUPERVISOR REVIEW for supervisor review and the mandatory architect visual validation (do not self-accept, do not mark OC-C4-ADMIN-001 SATISFIED); PHASE-C5, the REAL_CUTOVER window (OC-CUTOVER-001/OC-CUTOVER-PONR-001 — hard-gated behind the mandatory separate read-only completeness disposition of the 13 unmapped ordens_compra_fio rows ids 153–165), real close_final_acl invocation, real activation, the real read-authority switch, staging validation/application of db/76, and any productive receipt on a shared or real environment all remain unauthorized
 GOVERNING_SPEC: docs/architecture/ORDEM_COMPRA_LIFECYCLE_SPEC_PROPOSED.md
 TECHNICAL_CONTRACT: docs/architecture/PEDIDO_OP_SCHEMA_CONTRACT.md
 SEQUENCE_AUTHORITY: docs/architecture/PEDIDO_PRODUCTION_FLOW_BACKLOG.md
@@ -169,13 +169,46 @@ ACCEPTED_CHECKPOINT: 429aa3980c7027b9d872a1902e2f31f1a4a85a2a
   untracked asset was restored or copied from any other workspace.
   `OC-C4-ADMIN-001` remains `PLANNED`; `PHASE-C4` implementation remains
   unauthorized; `ACTIVE_PHASE`/`ACTIVE_PHASE_CONTRACT` remain `NONE`.
-- **Next authorizable action:** **supervisor review and acceptance/rejection
-  of the proposed `PHASE-C4` material contract**
-  (`docs/architecture/ORDEM_COMPRA_C4_PHASE_CONTRACT.md`). `PHASE-C4`
-  implementation is **not** authorized by this pass; `PHASE-C5` is not
-  authorized; `REAL_CUTOVER` is not authorized. A fresh session must re-read
-  the canonical repository before executing any `PHASE-C4` implementation
-  order.
+- **`C4-ADMIN-RECEIPT-UI-IMPLEMENTATION-R1` — supervisor acceptance +
+  PHASE-C4 implementation authorization (this pass, documentation-only
+  authorization commit):** the supervisor **ACCEPTED**
+  `docs/architecture/ORDEM_COMPRA_C4_PHASE_CONTRACT.md` (flipped `STATUS:
+  PROPOSED / AWAITING SUPERVISOR REVIEW / IMPLEMENTATION NOT AUTHORIZED` →
+  `STATUS: ACCEPTED / IMPLEMENTATION AUTHORIZED`, contract §0b/§22) and
+  authorized **local** `PHASE-C4` / `OC-C4-ADMIN-001` implementation, entry
+  checkpoint `HEAD` `d98c498e62b640ea160a7bbe2d71231751a5b9b6`.
+  `ACTIVE_PHASE`/`ACTIVE_PHASE_CONTRACT` become `PHASE-C4` /
+  `docs/architecture/ORDEM_COMPRA_C4_PHASE_CONTRACT.md`. The acceptance
+  changes no ratified decision and no accepted manifest: the closed five-file
+  manifest (contract §10), the unchanged/prohibited list (§11), the native
+  RPC-only call graph (§8), the idempotency/error contract (§12), the visual
+  contract (§13), the test manifest (§15), and the two RATIFIED sub-decisions
+  (§2 administrator reversal in scope; §13.1 compact icon-only reversal
+  button) all remain binding and unchanged. **Local implementation only** — no
+  migration, environment mutation, staging application, deployment,
+  activation, REAL_CUTOVER, `PHASE-C5`, branch creation, or push is
+  authorized; the writer RPCs stay inert under `legacy_active` (fixture-level
+  DOM/mocked-RPC proof is the implementation evidence). The implementation may
+  **not** be self-accepted or closed and may **not** mark `OC-C4-ADMIN-001`
+  `SATISFIED` (stops at `IMPLEMENTED / LOCALLY VERIFIED / AWAITING SUPERVISOR
+  REVIEW`). The pre-existing out-of-scope defect
+  `ORDEM_COMPRA_CANCEL_HANDLER_STALE_ORDER_CAPTURE` (item 15 below) stays out
+  of scope and must not be fixed during this implementation. Documentation-only
+  authorization commit: only `docs/architecture/ORDEM_COMPRA_C4_PHASE_CONTRACT.md`,
+  `PROJECT_STATE.md`, `docs/architecture/ORDEM_COMPRA_C3_TRACEABILITY.md`,
+  `AGENT_HANDOFF.md`, and `docs/ledgers/G28_LEDGER.md` change; no product,
+  test, script, migration, configuration, or protected-residue change; no
+  push. `OC-C4-ADMIN-001` disposition stays the valid enum `PLANNED` in the
+  traceability matrix at authorization (recorded there as authorized / in
+  implementation; it moves to `PARTIALLY_SATISFIED` with implementation
+  artifact and evidence at the implementation commit).
+- **Next authorizable action:** **execute the authorized local `PHASE-C4`
+  admin receipt UI implementation** (`OC-C4-ADMIN-001`) per the contract §10
+  manifest and §15 test manifest, then stop at `IMPLEMENTED / LOCALLY VERIFIED
+  / AWAITING SUPERVISOR REVIEW` for supervisor review and the mandatory
+  architect visual validation. `PHASE-C5`, `REAL_CUTOVER`, staging
+  validation/application of `db/76`, activation, deployment, branch creation,
+  production access, and any push remain **unauthorized**.
 - **Prior accepted product phase:** `PHASE-C3C-B` (application compatibility/
   adaptation) — `CLOSED / ACCEPTED_WITH_NONBLOCKING_DEBT / LOCALLY VERIFIED`
   (2026-07-21), accepted checkpoint
@@ -619,21 +652,24 @@ ACCEPTED_CHECKPOINT: 429aa3980c7027b9d872a1902e2f31f1a4a85a2a
   receipt/reversal/import topology — neither an `OC-C3D-LOCK-001` §M exit
   criterion. See contract §Y/§Z and `docs/ledgers/G28_LEDGER.md` for the full
   closeout.
-- **NEXT_AUTHORIZABLE_ACTION:** **supervisor review and acceptance/rejection of
-  the proposed `PHASE-C4` material contract**
-  (`docs/architecture/ORDEM_COMPRA_C4_PHASE_CONTRACT.md`, `STATUS: PROPOSED /
-  AWAITING SUPERVISOR REVIEW / IMPLEMENTATION NOT AUTHORIZED`, authored by
-  `C4-MATERIAL-PHASE-CONTRACT-R1`). `PHASE-C3D` is closed; `PHASE-C4`
-  implementation, `PHASE-C5`, environment mutation, branch creation, staging
-  validation/application of `db/76`, deployment, real snapshot/import, fence
-  transition, read switch, real final ACL-closure invocation, real activation,
-  the real cutover (`OC-CUTOVER-001`/`OC-CUTOVER-PONR-001`, additionally
-  hard-gated behind the mandatory read-only completeness disposition of the 13
-  unmapped `ordens_compra_fio` rows ids 153–165), production access, Supabase
-  write, and any further push all remain unauthorized. No product phase chains
-  automatically; `ACTIVE_PHASE`/`ACTIVE_PHASE_CONTRACT` are `NONE`. A fresh
-  session must re-read the canonical repository before executing any
-  `PHASE-C4` implementation order.
+- **NEXT_AUTHORIZABLE_ACTION:** **execute the authorized local `PHASE-C4`
+  admin receipt UI implementation** (`OC-C4-ADMIN-001`) per
+  `docs/architecture/ORDEM_COMPRA_C4_PHASE_CONTRACT.md` (`STATUS: ACCEPTED /
+  IMPLEMENTATION AUTHORIZED`, §0b — supervisor-accepted 2026-07-21 under
+  `C4-ADMIN-RECEIPT-UI-IMPLEMENTATION-R1`), then stop at `IMPLEMENTED /
+  LOCALLY VERIFIED / AWAITING SUPERVISOR REVIEW` for supervisor review and the
+  mandatory architect visual validation (no self-acceptance; no
+  `OC-C4-ADMIN-001` `SATISFIED`). `PHASE-C3D` is closed;
+  `ACTIVE_PHASE`/`ACTIVE_PHASE_CONTRACT` are now `PHASE-C4` /
+  `docs/architecture/ORDEM_COMPRA_C4_PHASE_CONTRACT.md`. `PHASE-C5`,
+  environment mutation, branch creation, staging validation/application of
+  `db/76`, deployment, real snapshot/import, fence transition, read switch,
+  real final ACL-closure invocation, real activation, the real cutover
+  (`OC-CUTOVER-001`/`OC-CUTOVER-PONR-001`, additionally hard-gated behind the
+  mandatory read-only completeness disposition of the 13 unmapped
+  `ordens_compra_fio` rows ids 153–165), production access, Supabase write,
+  and any further push all remain unauthorized. No product phase chains
+  automatically beyond this authorized `PHASE-C4` implementation.
 
 ## Workspace and Git boundaries
 
@@ -817,10 +853,15 @@ checkpoint `429aa3980c7027b9d872a1902e2f31f1a4a85a2a` (§Z). This `PHASE-C3D-F`
 pass is **documentation-only**: it changes only the seven authorized canonical
 owners (state, handoff, documentation index, C3D contract, traceability,
 backlog, ledger) and records one authorized fast-forward push to `staging/dev`.
-`PHASE-C3D` performed **no real cutover**. Beyond this closeout, `PHASE-C4` and
-`PHASE-C5`, staging application/validation of `db/76`, activation, deployment,
-real snapshot/import, fence transition, read switch, real final ACL-closure
-invocation, real activation, the real cutover
+`PHASE-C3D` performed **no real cutover**. `PHASE-C4` admin receipt UI
+**local implementation** is now authorized (supervisor acceptance
+`C4-ADMIN-RECEIPT-UI-IMPLEMENTATION-R1`, 2026-07-21; contract §0b, `STATUS:
+ACCEPTED / IMPLEMENTATION AUTHORIZED`) — local-only, native RPCs only, no
+migration/environment/staging/deployment action, stopping at `IMPLEMENTED /
+LOCALLY VERIFIED / AWAITING SUPERVISOR REVIEW`. Beyond that authorized
+implementation, `PHASE-C5`, staging application/validation of `db/76`,
+activation, deployment, real snapshot/import, fence transition, read switch,
+real final ACL-closure invocation, real activation, the real cutover
 (`OC-CUTOVER-001`/`OC-CUTOVER-PONR-001`, additionally hard-gated behind the
 mandatory read-only completeness disposition of the 13 unmapped
 `ordens_compra_fio` rows ids 153–165), branch creation, production access,
@@ -919,9 +960,10 @@ Commit SHAs there are the accepted technical commits; consult HEAD via Git.
   `ACTIVE_PHASE_CONTRACT` are `NONE`):
   `docs/architecture/ORDEM_COMPRA_C3D_PHASE_CONTRACT.md`
 - C3C-B database prerequisites contract (closed / technically accepted / local DB verified / not applied to staging database; §35 records the implementation closeout, §36 records DB-backed validation completion, §37 records supervisor acceptance, not active): `docs/architecture/ORDEM_COMPRA_C3C_B_DB_PREREQUISITES_PHASE_CONTRACT.md`
-- C4 material phase contract (`PROPOSED / AWAITING SUPERVISOR REVIEW /
-  IMPLEMENTATION NOT AUTHORIZED` — admin receipt UI at `#/ordens-compra/:id`;
-  not active): `docs/architecture/ORDEM_COMPRA_C4_PHASE_CONTRACT.md`
+- C4 material phase contract (`ACCEPTED / IMPLEMENTATION AUTHORIZED` — admin
+  receipt UI at `#/ordens-compra/:id`; **active** phase, supervisor-accepted
+  2026-07-21 under `C4-ADMIN-RECEIPT-UI-IMPLEMENTATION-R1`, §0b):
+  `docs/architecture/ORDEM_COMPRA_C4_PHASE_CONTRACT.md`
 - Append-only ledger: `docs/ledgers/G28_LEDGER.md`
 - Derived operational handoff: `AGENT_HANDOFF.md`
 - Documentation authority arbiter: `docs/DOCUMENTATION_INDEX.md`
