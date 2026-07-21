@@ -139,10 +139,29 @@
   (3993 tests, +8) has the same 122-failure set as the `f9b1a54` baseline —
   byte-identical failing-name set, zero regressions; validator PASS. No
   dependent `OC-C3-*` requirement is `SATISFIED`.
-- **Next authorizable action:** **architect authorization decision for
-  `PHASE-C4` — ADMIN RECEIPT UI** (`OC-C4-ADMIN-001`). `PHASE-C3D` is closed;
-  a **fresh session and a separate architect order** are required to open
-  `PHASE-C4`, and that next chat must re-read the canonical repository first.
+- **`C4-MATERIAL-PHASE-CONTRACT-R1` (this pass, read-only reconciliation +
+  documentation-only phase-contract authoring):** authored
+  `docs/architecture/ORDEM_COMPRA_C4_PHASE_CONTRACT.md` (`PHASE_ID: PHASE-C4`,
+  `STATUS: PROPOSED / AWAITING SUPERVISOR REVIEW / IMPLEMENTATION NOT
+  AUTHORIZED`). Full canonical reread performed (governance, lifecycle spec,
+  schema contract, traceability, backlog, C3D/C3C-B precedent contracts,
+  ledger tail, and — for the visual contract specifically —
+  `docs/architecture/UI_VISUAL_CONTRACT.md`, confirmed authoritative in place
+  of the untracked `.claude/design-skill/`, verified absent from this
+  worktree). Reversal ownership resolved as in-scope from explicit anchors
+  (`§R.24.9`/`§R.24.10`/`§R.25.4`/`§R.29.6`/`§R.31`), not left `UNPROVEN`. No
+  database prerequisite found necessary; a closed three-new-file product
+  manifest and an explicit unchanged-file list were defined. No product,
+  test, script, migration, or protected-residue change; no database,
+  environment, or deployment action. `OC-C4-ADMIN-001` remains `PLANNED`;
+  `ACTIVE_PHASE`/`ACTIVE_PHASE_CONTRACT` remain `NONE`.
+- **Next authorizable action:** **supervisor review and acceptance/rejection
+  of the proposed `PHASE-C4` material contract**
+  (`docs/architecture/ORDEM_COMPRA_C4_PHASE_CONTRACT.md`). `PHASE-C3D` is
+  closed; a **fresh session and a separate architect implementation order**
+  are required to begin `PHASE-C4` implementation once the contract is
+  accepted, and that next session must re-read the canonical repository
+  first.
   `PHASE-C3D-A`/`PHASE-C3D-B` are supervisor-accepted (§R, checkpoints
   `096cd603…` / `5441321…`), `PHASE-C3D-C` (§U, `6fd63a56…`), `PHASE-C3D-D` (§X,
   `5a2be05…`), and `PHASE-C3D-E` (§Z, `429aa39…`) are all `CLOSED / TECHNICALLY
@@ -474,6 +493,9 @@ summary.
     `096cd60`/`5441321`/`6fd63a5`/`5a2be05`/`429aa39`); `PHASE-C3D-F` `CLOSED /
     ACCEPTED / DOCUMENTATION-ONLY` (§Z); all four `OC-C3D-*` `SATISFIED`; not
     active — `ACTIVE_PHASE`/`ACTIVE_PHASE_CONTRACT` are `NONE`)
+22. `docs/architecture/ORDEM_COMPRA_C4_PHASE_CONTRACT.md` (C4 material phase
+    contract — admin receipt UI at `#/ordens-compra/:id`; `PROPOSED / AWAITING
+    SUPERVISOR REVIEW / IMPLEMENTATION NOT AUTHORIZED`; not active)
 
 > Bootstrap first through `docs/governance/AGENT_INSTRUCTIONS.md` and the
 > `SPEC_CUSTODY_BOOTSTRAP` block in `PROJECT_STATE.md`. Private conversation,

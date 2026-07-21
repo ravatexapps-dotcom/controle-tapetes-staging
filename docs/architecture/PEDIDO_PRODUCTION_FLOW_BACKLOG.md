@@ -8,6 +8,38 @@
 > `PROJECT_STATE.md`. Phase sequence, dependencies, backlog items, and accepted
 > architecture in this file remain authoritative; live operational status does not.
 
+# Update 2026-07-21 - C4-MATERIAL-PHASE-CONTRACT-R1 (Admin Receipt UI contract, proposed)
+
+Phase: read-only repository reconciliation + documentation-only PHASE-C4
+material contract authoring. Type: docs-only; no product, test, script,
+migration, database, environment, deployment, or configuration change.
+Historical closeout note — live state belongs to `PROJECT_STATE.md`.
+
+Authored `docs/architecture/ORDEM_COMPRA_C4_PHASE_CONTRACT.md`
+(`PHASE_ID: PHASE-C4`, `STATUS: PROPOSED / AWAITING SUPERVISOR REVIEW /
+IMPLEMENTATION NOT AUTHORIZED`), binding `OC-C4-ADMIN-001` to an exact
+functional scope, actor/state/action matrix, API ownership matrix, a closed
+three-new-file product manifest
+(`js/screens/ordem-compra-receipt-data.js`/`-render.js`/`-events.js`, plus
+additive `js/screens/ordem-compra.js`/`index.html` touches), an explicit
+unchanged-file list (`js/router.js`, `js/boot.js`, `js/screens/common.js`,
+all legacy/compat surfaces, all `db/*.sql`), an idempotency/error contract,
+and a visual contract authored against the tracked
+`docs/architecture/UI_VISUAL_CONTRACT.md`. Administrator reversal was
+determined in-scope for `OC-C4-ADMIN-001` from explicit lifecycle-spec
+anchors (`§R.24.9`/`§R.24.10`/`§R.25.4`/`§R.29.6`/`§R.31`), not left
+`UNPROVEN`; supplier reversal/UI remains separately deferred
+(`OC-C4-SUPPLIER-001`). No database prerequisite was found necessary — the
+existing `db/70`/`db/75`/`db/76`-installed RPCs and read model are already
+sufficient for a correct UI; the writer RPCs remain inert under the live
+`legacy_active` cutover state (documented as a risk, not a blocker).
+
+`OC-C4-ADMIN-001` remains `PLANNED`; `PHASE-C4` implementation remains
+unauthorized; `ACTIVE_PHASE`/`ACTIVE_PHASE_CONTRACT` remain `NONE`. Sequence/
+architecture in this file are unchanged. Full evidence:
+`docs/architecture/ORDEM_COMPRA_C4_PHASE_CONTRACT.md` and
+`docs/ledgers/G28_LEDGER.md`.
+
 # Update 2026-07-21 - PHASE-C3D Aggregate Closeout (PHASE-C3D-F) & PHASE-C3D-E Acceptance
 
 Phase: `PHASE-C3D-F` (the sixth and final `PHASE-C3D` sublot — aggregate closeout

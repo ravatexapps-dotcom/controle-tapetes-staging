@@ -12,7 +12,7 @@ ACTIVE_PHASE: NONE
 ACTIVE_PHASE_CONTRACT: NONE
 CLOSED_MATERIAL_PHASES: PHASE-C3C-A, PHASE-C3C-B-DB-PREREQ, PHASE-C3C-B, PHASE-C3D
 ACCEPTED_C3D_SUBLOTS: PHASE-C3D-A (096cd60325e4987010d328c856ee6a3a51ca66bf), PHASE-C3D-B (5441321014883c4e8149dc8b20da9d053a193699), PHASE-C3D-C (6fd63a56a123d6d006353c6ae629611cbc7c01e9), PHASE-C3D-D (5a2be05c19a62346b906f7b3cbb0b89d07b3a571), PHASE-C3D-E (429aa3980c7027b9d872a1902e2f31f1a4a85a2a) — all CLOSED / TECHNICALLY ACCEPTED / LOCALLY VERIFIED (C3D-D supervisor-accepted contract §X advancing OC-C3D-ACL-001 to SATISFIED; C3D-E supervisor-accepted contract §Z advancing OC-C3D-LOCK-001 to SATISFIED). PHASE-C3D-F (aggregate closeout, contract §Z) is CLOSED / ACCEPTED / DOCUMENTATION-ONLY; the aggregate PHASE-C3D material phase is CLOSED / ACCEPTED_WITH_NONBLOCKING_DEBT / LOCALLY VERIFIED at accepted technical checkpoint 429aa3980c7027b9d872a1902e2f31f1a4a85a2a, all four OC-C3D-* SATISFIED
-NEXT_AUTHORIZABLE_ACTION: architect authorization decision for PHASE-C4 — ADMIN RECEIPT UI (OC-C4-ADMIN-001); PHASE-C4, PHASE-C5, and the REAL_CUTOVER window (OC-CUTOVER-001/OC-CUTOVER-PONR-001, hard-gated behind the mandatory separate read-only completeness disposition of the 13 unmapped ordens_compra_fio rows ids 153–165) remain unauthorized
+NEXT_AUTHORIZABLE_ACTION: supervisor review and acceptance/rejection of the proposed PHASE-C4 material contract (docs/architecture/ORDEM_COMPRA_C4_PHASE_CONTRACT.md, STATUS: PROPOSED / AWAITING SUPERVISOR REVIEW / IMPLEMENTATION NOT AUTHORIZED); PHASE-C4 implementation, PHASE-C5, and the REAL_CUTOVER window (OC-CUTOVER-001/OC-CUTOVER-PONR-001, hard-gated behind the mandatory separate read-only completeness disposition of the 13 unmapped ordens_compra_fio rows ids 153–165) remain unauthorized
 VALIDATION_ACCOUNTING_SUBJECT: fix: harden spec custody validation
 VALIDATION_ACCOUNTING_SUBJECT_R2: fix: reject detached spec custody rows
 VALIDATION_ACCOUNTING_SUBJECT_R3: fix: distinguish prose from detached tables
@@ -63,7 +63,7 @@ Allowed dispositions: `SATISFIED`, `PARTIALLY_SATISFIED`, `PLANNED`, `DEFERRED`,
 | OC-C3D-LOCK-001 | docs/architecture/ORDEM_COMPRA_LIFECYCLE_SPEC_PROPOSED.md::§R.29.5 | C3D | SATISFIED | db/75_ordem_compra_c3c_inactive_cutover.sql; tests/ordem-compra-c3d-lock-concurrency.mjs (PHASE-C3D-E, contract §Y evidence, §Z acceptance) | tests/ordem-compra-c3c-inactive-concurrency.mjs; tests/ordem-compra-c3d-lock-concurrency.mjs — two fresh disposable local PostgreSQL 18.4 clusters: session advisory-lock deterministic key / same-generation exclusion / different-generation independence / release+reacquire / backend-disconnect auto-release / owner-only boundary / no-leak; the installed Component B resource-lock order (order → item → idempotency advisory → header lookup → allocations asc → ledger asc → inventory advisory) proven by empirical pg_get_functiondef and a real staged blocker (pg_blocking_pids, wait_event Lock/transactionid, rolled back pre-PONR, zero mutation); real session lock + real fence_and_snapshot + the accepted synthetic equivalent of import_and_reconcile (per-row import_snapshot_row + assert_snapshot_and_live) establishing a 5.000 kg immutable imported opening balance under a manual TEST-ONLY canonical_active state (close_final_acl/activate never invoked); a two-session Component B sequence crossing exactly one synthetic PONR per cluster with independent observer connections confirming the T1/T2 blocking relationship (T1 commits to 10.000; T2 waits then re-evaluates a fresh +5.000 to 15.000 — no stale 20.000, no deadlock); same-key idempotency replay + idempotencia_conflitante; the legitimate nested canonical-active ordem_compra_item/movement path at pg_trigger_depth()>1 with depth-1 denial 55000 (saldo_fios exception proven structurally — this fixture produces no excess; saldo_fios_op NOT_APPLICABLE — never written by the receipt path); deterministic LIFO reversal 15.000 → 8.000 (T2 5.000 then T1 2.000; T1 3.000 remaining; imported line untouched); imported-balance floor rejection at 4.000 (reducao_abaixo_saldo_importado, zero mutation); post-PONR prohibition compliance; mandatory full cluster destruction; read-only shared-development invariance | DISPOSABLE_LOCAL_POSTGRES_18_4 + DEVELOPMENT_DB_UCRJTFSWNFDLXWTMXNOO_READ_ONLY | 429aa3980c7027b9d872a1902e2f31f1a4a85a2a | PHASE-C3D-E (contract §Y evidence, §Z acceptance) is CLOSED / TECHNICALLY ACCEPTED / LOCALLY VERIFIED at accepted checkpoint 429aa3980c7027b9d872a1902e2f31f1a4a85a2a — supervisor-accepted §Z, advancing OC-C3D-LOCK-001 to SATISFIED (its §M item 4 exit criteria met). Documentary precision: independent observer connections confirmed the T1/T2 blocking relationship — the captured observer marker session is closed before the pg_blocking_pids/pg_stat_activity observations, which run through independent transient queries. saldo_fios's excess branch was not empirically executed (kg_alocado 15.500 > maximum tested total 15.000, so no excess line was produced; the exception proven structurally and by the direct depth-1 denial) and saldo_fios_op is NOT_APPLICABLE to the installed receipt/reversal/import write topology — neither an OC-C3D-LOCK-001 §M exit criterion. Option 2 (disposable local PostgreSQL + read-only shared-DB inspection) is the selected and sole environment strategy. Real cutover, real close_final_acl/activate invocation, staging rehearsal, and shared-database state change remain separately unauthorized. |
 | OC-CUTOVER-001 | docs/architecture/ORDEM_COMPRA_LIFECYCLE_SPEC_PROPOSED.md::§R.29.5 | REAL_CUTOVER | PLANNED | — | — | NOT_EXECUTED | — | Single-window cutover remains separately unauthorized. Additionally BLOCKED from authorization until a separate read-only completeness diagnosis dispositions every one of the 13 unmapped ordens_compra_fio rows (exact ids 153–165, all rascunho/pendente/nao_recebido, kg_recebido NULL, outside the 51-row mapped/frozen corpus; Component A cannot project them and Component B fails mapeamento_compat_ausente) by exactly one of (1) authorized mapping/backfill and re-baseline, (2) documented exclusion with business-owner approval, or (3) cancellation/removal via a separately authorized business-data action — a residual-debt authorization prerequisite recorded at the PHASE-C3D-F closeout (contract §Z.3, 2026-07-21), not a requirement-disposition change (stays PLANNED). |
 | OC-CUTOVER-PONR-001 | docs/architecture/ORDEM_COMPRA_LIFECYCLE_SPEC_PROPOSED.md::§R.29.6 | REAL_CUTOVER | PARTIALLY_SATISFIED | db/75_ordem_compra_c3c_inactive_cutover.sql | tests/ordem-compra-c3c-inactive.integration.sql | LOCAL_POSTGRES_18_4_ONLY | 89123729b3529fff6e4a2336bfec2907c4b94b4c | Real pre-PONR rollback and post-PONR operation are not authorized. |
-| OC-C4-ADMIN-001 | docs/architecture/ORDEM_COMPRA_LIFECYCLE_SPEC_PROPOSED.md::§R.29.6 | C4 | PLANNED | — | — | NOT_IMPLEMENTED | — | Admin receipt UI requires its own later phase. |
+| OC-C4-ADMIN-001 | docs/architecture/ORDEM_COMPRA_LIFECYCLE_SPEC_PROPOSED.md::§R.29.6 | C4 | PLANNED | docs/architecture/ORDEM_COMPRA_C4_PHASE_CONTRACT.md (PHASE_ID: PHASE-C4, PROPOSED / AWAITING SUPERVISOR REVIEW / IMPLEMENTATION NOT AUTHORIZED) | — | NOT_IMPLEMENTED | — | Material phase contract authored by C4-MATERIAL-PHASE-CONTRACT-R1 (docs-only); admin receipt UI implementation requires a separate architect authorization and a fresh session. |
 | OC-C4-SUPPLIER-001 | docs/architecture/ORDEM_COMPRA_LIFECYCLE_SPEC_PROPOSED.md::§R.29.6 | C4 | DEFERRED | — | — | NOT_IMPLEMENTED | — | Supplier UI remains explicitly deferred. |
 | OC-C5-EMISSION-001 | docs/architecture/ORDEM_COMPRA_LIFECYCLE_SPEC_PROPOSED.md::§R.24.10 | C5 | PLANNED | — | — | NOT_ACTIVATED | — | Native emission remains a separate post-C4 gate. |
 
@@ -115,9 +115,15 @@ checkpoint `429aa3980c7027b9d872a1902e2f31f1a4a85a2a`), advancing
 closeout, contract §Z) is **`CLOSED / ACCEPTED / DOCUMENTATION-ONLY`**, and the
 aggregate `PHASE-C3D` material phase is **`CLOSED /
 ACCEPTED_WITH_NONBLOCKING_DEBT / LOCALLY VERIFIED`** — all four `OC-C3D-*`
-requirements `SATISFIED`. The next authorizable action is the **architect
-authorization decision for `PHASE-C4` — ADMIN RECEIPT UI** (`OC-C4-ADMIN-001`).
-`PHASE-C4`, `PHASE-C5`, staging validation/application of `db/76`, activation,
+requirements `SATISFIED`. `C4-MATERIAL-PHASE-CONTRACT-R1` (docs-only,
+2026-07-21) subsequently authored
+`docs/architecture/ORDEM_COMPRA_C4_PHASE_CONTRACT.md` (`PHASE_ID: PHASE-C4`,
+`STATUS: PROPOSED / AWAITING SUPERVISOR REVIEW / IMPLEMENTATION NOT
+AUTHORIZED`) — see "Material phase contract reference" below. The next
+authorizable action is **supervisor review and acceptance/rejection of that
+proposed contract**; `PHASE-C4` implementation remains unauthorized.
+`PHASE-C4` implementation, `PHASE-C5`, staging validation/application of
+`db/76`, activation,
 deployment, real snapshot/import, fence transition, read switch, real final
 ACL-closure invocation, real activation, the real cutover
 (`OC-CUTOVER-001`/`OC-CUTOVER-PONR-001`, additionally hard-gated behind the
@@ -127,6 +133,21 @@ Supabase writes to any target, `main`, other remotes, and any push beyond the
 authorized `staging/dev` fast-forward for this pass remain **unauthorized**.
 
 ## Material phase contract reference
+
+`docs/architecture/ORDEM_COMPRA_C4_PHASE_CONTRACT.md` (`PHASE_ID: PHASE-C4`,
+authored by `C4-MATERIAL-PHASE-CONTRACT-R1`, docs-only read-only
+reconciliation, 2026-07-21) binds the `OC-C4-ADMIN-001` row above to an exact
+functional scope, actor/state/action matrix, API ownership matrix (native
+`registrar_recebimento_ordem_compra`/`estornar_recebimento_ordem_compra`/
+`obter_historico_recebimento_ordem_compra`, excluding the PHASE-C3C-B
+legacy-compat adapter from C4's call graph), a closed three-new-file product
+manifest, an explicit unchanged-file list, an idempotency/error contract,
+and a visual contract authored against `docs/architecture/UI_VISUAL_CONTRACT.md`.
+Reversal ownership was resolved as in-scope from explicit lifecycle-spec
+anchors (`§R.24.9`/`§R.24.10`/`§R.25.4`/`§R.29.6`/`§R.31`), not left
+`UNPROVEN`. `STATUS: PROPOSED / AWAITING SUPERVISOR REVIEW / IMPLEMENTATION
+NOT AUTHORIZED`. `ACTIVE_PHASE`/`ACTIVE_PHASE_CONTRACT` remain `NONE` in
+`PROJECT_STATE.md`; `OC-C4-ADMIN-001` remains `PLANNED`.
 
 `docs/architecture/ORDEM_COMPRA_C3C_B_PHASE_CONTRACT.md` (authored by
 `C3C-B-MATERIAL-PHASE-CONTRACT-R1`, docs-only) binds the four `OC-C3-*` rows
@@ -246,7 +267,10 @@ technical checkpoint `429aa3980c7027b9d872a1902e2f31f1a4a85a2a`, all four
 `OC-C3D-*` `SATISFIED`. The 13 unmapped `ordens_compra_fio` rows (ids 153–165)
 are DEFERRED to the `REAL_CUTOVER` readiness gate — a binding authorization
 prerequisite recorded in the `OC-CUTOVER-001` residual debt.
-`ACTIVE_PHASE`/`ACTIVE_PHASE_CONTRACT` are `NONE` in `PROJECT_STATE.md`. The
-architect authorization decision for `PHASE-C4` — ADMIN RECEIPT UI is the next
-authorizable action; `PHASE-C4`, `PHASE-C5`, and `REAL_CUTOVER` remain
+`ACTIVE_PHASE`/`ACTIVE_PHASE_CONTRACT` are `NONE` in `PROJECT_STATE.md`.
+`C4-MATERIAL-PHASE-CONTRACT-R1` (docs-only, 2026-07-21) authored
+`docs/architecture/ORDEM_COMPRA_C4_PHASE_CONTRACT.md` (`PROPOSED / AWAITING
+SUPERVISOR REVIEW / IMPLEMENTATION NOT AUTHORIZED`); supervisor review and
+acceptance/rejection of that contract is the next authorizable action;
+`PHASE-C4` implementation, `PHASE-C5`, and `REAL_CUTOVER` remain
 unauthorized.

@@ -7473,3 +7473,136 @@ product file they depend on, was modified by this pass or the prior one):
   unauthorized; the next chat must re-read the canonical repository before
   authoring or executing any `PHASE-C4` order. One clean fast-forward push to
   `staging/dev` is authorized for the single closeout commit.
+
+## 2026-07-21 — C4-MATERIAL-PHASE-CONTRACT-R1 — Admin Receipt UI material contract (proposed)
+
+- **Authorization:** `C4-MATERIAL-PHASE-CONTRACT-R1` — read-only repository
+  reconciliation + documentation-only PHASE-C4 material phase contract
+  authoring. Explicitly does **not** authorize product implementation,
+  database migration, environment mutation, staging application, deployment,
+  activation, cutover, or push beyond the one authorized documentation
+  commit (no push authorized this pass — see below).
+- **Entry checkpoint:** workspace `D:\Programação\controle-tapetes-g28`; git
+  dir `.git` (normal repository); branch `dev`; `HEAD`
+  `0df4228f903ae68c7e8b240e69ff3b37df9ebd86`; `HEAD^`
+  `429aa3980c7027b9d872a1902e2f31f1a4a85a2a`; `git status --short
+  --untracked-files=all` = `M .gitignore`, `?? .codex/`, `?? .mcp.json`
+  (expected protected residue, untouched); `staging/dev` after `git fetch
+  staging` = `0df4228f903ae68c7e8b240e69ff3b37df9ebd86`, identical to `HEAD`
+  (`git rev-list --left-right --count staging/dev...HEAD` = `0 0`); one
+  worktree. All baseline facts matched the order's expected values exactly.
+- **Canonical reread:** full read of `docs/governance/AGENT_INSTRUCTIONS.md`,
+  `PROJECT_STATE.md` (both halves), `AGENT_HANDOFF.md`, `CLAUDE.md`,
+  `docs/DOCUMENTATION_INDEX.md`, `docs/governance/DOCUMENTATION_MODEL.md`,
+  `docs/governance/SUPERVISION_PROTOCOL.md`,
+  `docs/architecture/CODE_HEALTH_RULES.md`,
+  `docs/architecture/ORDEM_COMPRA_LIFECYCLE_SPEC_PROPOSED.md` (3,750 lines,
+  full), `docs/architecture/PEDIDO_OP_SCHEMA_CONTRACT.md` (1,318 lines,
+  full), `docs/architecture/PEDIDO_PRODUCTION_FLOW_BACKLOG.md`,
+  `docs/architecture/ORDEM_COMPRA_C3_TRACEABILITY.md`,
+  `docs/architecture/ORDEM_COMPRA_C3D_PHASE_CONTRACT.md`,
+  `docs/architecture/ORDEM_COMPRA_C3C_B_PHASE_CONTRACT.md`, and the ledger
+  tail. Also read, in response to an explicit mid-task instruction to ground
+  the visual contract in the applicable governance:
+  `docs/architecture/UI_VISUAL_CONTRACT.md` (354 lines, full) — confirmed
+  authoritative in place of the untracked `.claude/design-skill/` (`inttex-ui`
+  skill), which this pass confirmed **absent** from this worktree
+  (`find .claude -iname "*design*" -o -iname "*skill*"` and
+  `find .claude -iname preview` both empty) — exactly the condition that
+  document's own header anticipates. Also read `js/ui.js` (310 lines) and
+  `css/tokens.css` to ground the visual contract in the real, currently-wired
+  component/token surface (confirming `--rv-*` tokens are pilot-scoped only
+  and not yet linked into the `ordem-compra*` render path).
+- **Targeted inventory (read-only, no mutation):** all fourteen named
+  application files
+  (`js/screens/ordem-compra.js`/`-data.js`/`-render.js`/`-events.js`/
+  `-distribuicao.js`/`-receipt-cutover.js`, `js/screens/op-writes.js`,
+  `js/screens/fornecedor.js`, `js/screens/pedido-detail-data.js`,
+  `js/screens/pedido-detail-events.js`, `js/router.js`, `js/boot.js`,
+  `js/screens/common.js`, `index.html`); the full `db/68`-`db/76` migration
+  sequence (confirmed terminal at `db/76`; no `db/77`+) with exact effective
+  signatures/grants/gates for `registrar_recebimento_ordem_compra`,
+  `estornar_recebimento_ordem_compra`,
+  `obter_historico_recebimento_ordem_compra`, `obter_ordem_compra_admin`,
+  `registrar_recebimento_ordem_compra_fio_compat`; and all twenty
+  `tests/*ordem*compra*` files plus `tests/fornecedor-screens.smoke.js`,
+  `tests/boot.smoke.js`, `tests/router.smoke.js` for existing coverage.
+- **Evidence — artifact created:** exactly one new file,
+  `docs/architecture/ORDEM_COMPRA_C4_PHASE_CONTRACT.md` (`PHASE_ID:
+  PHASE-C4`, `STATUS: PROPOSED / AWAITING SUPERVISOR REVIEW / IMPLEMENTATION
+  NOT AUTHORIZED`). Binds `OC-C4-ADMIN-001` to: an exact functional scope
+  (admin receipt registration, item/allocation remaining quantities,
+  explicit excess entry with no fabricated OP, receipt command history,
+  administrator reversal, document/origin metadata, replay/idempotency
+  behavior); an actor/state/action matrix keyed to the real
+  `status_administrativo`/`status_aceite`/`legado` vocabulary and the
+  server-derived `acoes.receber`/`acoes.estornar` flags (verified from the
+  installed `obter_historico_recebimento_ordem_compra` body — `acoes.receber
+  = NOT legado AND status_administrativo='emitida' AND status_aceite IN
+  ('nao_aplicavel','aceita')`; `acoes.estornar = is_admin() AND EXISTS(a
+  reversible positive line)`, independent of order status); an API ownership
+  matrix (native `registrar_recebimento_ordem_compra`/
+  `estornar_recebimento_ordem_compra`/
+  `obter_historico_recebimento_ordem_compra`, explicitly excluding the
+  PHASE-C3C-B legacy-compat adapter `js/screens/ordem-compra-receipt-cutover.js`
+  from C4's call graph, with a binding scoping rule requiring C4 to
+  reimplement — not import — the idempotency-lifecycle pattern
+  independently); a closed three-new-file product manifest
+  (`js/screens/ordem-compra-receipt-data.js`/`-render.js`/`-events.js`, plus
+  additive `js/screens/ordem-compra.js`/`index.html` touches); an explicit
+  unchanged-file list (`js/router.js` — route already exists;
+  `js/boot.js` — no exact-match route needed; `js/screens/common.js`; all
+  legacy/compat surfaces; all existing `ordem-compra-data/render/events.js`;
+  all `db/*.sql`); a two-independent-tracker idempotency/error contract; and
+  a visual contract (§13) authored against `docs/architecture/UI_VISUAL_CONTRACT.md`'s
+  rule taxonomy (component structure, interaction pattern, responsive
+  behavior deferred to the existing `OPEN` cockpit/breakpoint points, and a
+  visual-validation procedure using the existing `tests/ordem-compra.smoke.js`
+  VM/DOM render-harness pattern in place of the confirmed-absent
+  `.claude/preview` harness, per `UI_VISUAL_CONTRACT.md` §18's own fallback).
+- **Reversal-ownership determination:** resolved as in-scope for C4, not
+  `UNPROVEN`, from five independent textual anchors — `§R.24.9` (creation and
+  reversal open "a dedicated modal" as one bundled admin receipt UI),
+  `§R.24.10` ("C4: admin receipt UI," undifferentiated), `§R.25.4`
+  (`estornar_recebimento_ordem_compra` is a real, shipped, admin-gated RPC),
+  `§R.29.6` ("C4 exclusively owns the new admin receipt UI... supplier UI is
+  deferred" — the only named carve-out is supplier), and `§R.31`'s registry
+  row for `OC-C4-ADMIN-001`. Only **supplier** reversal remains textually
+  unresolved (`§R.24.6`), and that is out of C4's scope regardless
+  (`OC-C4-SUPPLIER-001` `DEFERRED`).
+- **Database-prerequisite disposition:** none required. The installed
+  `db/70`/`db/75`/`db/76` RPCs and read model are already complete, signed,
+  ACL'd, and sufficient for a correct UI. Documented as risks, not blockers:
+  all three receipt-family writer RPCs are currently inert
+  (`ordem_compra_cutover.status='legacy_active'` as of `db/76`; only a
+  separate, owner-only `REAL_CUTOVER` runbook can flip it), and no native
+  order can currently reach `status_administrativo='emitida'`
+  (`emitir_ordem_compra` is granted to no client role at all, `db/74`).
+- **Files (exactly seven documents; zero technical file):**
+  `docs/architecture/ORDEM_COMPRA_C4_PHASE_CONTRACT.md` (new), `PROJECT_STATE.md`,
+  `AGENT_HANDOFF.md`, `docs/DOCUMENTATION_INDEX.md`,
+  `docs/architecture/ORDEM_COMPRA_C3_TRACEABILITY.md`,
+  `docs/architecture/PEDIDO_PRODUCTION_FLOW_BACKLOG.md`, this ledger. No
+  `db/*.sql`, test, script, product, validator, or normative
+  (`ORDEM_COMPRA_LIFECYCLE_SPEC_PROPOSED.md`/`PEDIDO_OP_SCHEMA_CONTRACT.md`)
+  file modified; the three protected residue paths (`.gitignore`,
+  `.codex/config.toml`, `.mcp.json`) untouched.
+- **Validation:** `node scripts/validate-spec-custody.mjs` PASS (vacuous on
+  the `MATERIAL_PHASE_CONTRACT` marker check — `ACTIVE_PHASE` remains `NONE`,
+  so no active-phase/marker mismatch is possible); `git diff --check` /
+  `git diff --cached --check` clean; documentary manifest verified against
+  the exact seven-file list above; no product, test, script, migration,
+  configuration, or protected-residue path changed.
+- **State after this pass:** `LAST_ACCEPTED_PHASE: PHASE-C3D`; `ACTIVE_PHASE:
+  NONE`; `ACTIVE_PHASE_CONTRACT: NONE`; `ACTIVE_TRACK:
+  PURCHASE_ORDER_PHASE_C`; `ACCEPTED_CHECKPOINT:
+  429aa3980c7027b9d872a1902e2f31f1a4a85a2a` (unchanged — this pass adds no
+  new technical evidence checkpoint); `OC-C4-ADMIN-001` remains `PLANNED`.
+- **Exact accounting subject:** `docs: define C4 admin receipt UI contract`.
+- **NEXT_AUTHORIZABLE_ACTION:** supervisor review and acceptance/rejection of
+  the proposed `PHASE-C4` material contract
+  (`docs/architecture/ORDEM_COMPRA_C4_PHASE_CONTRACT.md`). `PHASE-C4`
+  implementation, `PHASE-C5`, and `REAL_CUTOVER` (blocked from authorization
+  behind the 13-row completeness disposition) remain unauthorized; a fresh
+  session must re-read the canonical repository before executing any
+  `PHASE-C4` implementation order. **No push is authorized by this pass.**

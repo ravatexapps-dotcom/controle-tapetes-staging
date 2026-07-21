@@ -20,7 +20,7 @@ LAST_ACCEPTED_PHASE: PHASE-C3D
 ACTIVE_PHASE: NONE
 ACTIVE_PHASE_CONTRACT: NONE
 ACTIVE_TRACK: PURCHASE_ORDER_PHASE_C
-NEXT_AUTHORIZABLE_ACTION: architect authorization decision for PHASE-C4 — ADMIN RECEIPT UI (OC-C4-ADMIN-001); PHASE-C4, PHASE-C5, the REAL_CUTOVER window (OC-CUTOVER-001/OC-CUTOVER-PONR-001 — hard-gated behind the mandatory separate read-only completeness disposition of the 13 unmapped ordens_compra_fio rows ids 153–165), real close_final_acl invocation, real activation, the real read-authority switch, staging validation/application of db/76, and any productive receipt on a shared or real environment all remain unauthorized; the next chat must re-read the canonical repository before authoring or executing any PHASE-C4 order
+NEXT_AUTHORIZABLE_ACTION: supervisor review and acceptance/rejection of the proposed PHASE-C4 material contract (docs/architecture/ORDEM_COMPRA_C4_PHASE_CONTRACT.md, STATUS: PROPOSED / AWAITING SUPERVISOR REVIEW / IMPLEMENTATION NOT AUTHORIZED); PHASE-C4 implementation, PHASE-C5, the REAL_CUTOVER window (OC-CUTOVER-001/OC-CUTOVER-PONR-001 — hard-gated behind the mandatory separate read-only completeness disposition of the 13 unmapped ordens_compra_fio rows ids 153–165), real close_final_acl invocation, real activation, the real read-authority switch, staging validation/application of db/76, and any productive receipt on a shared or real environment all remain unauthorized; a fresh session must re-read the canonical repository before executing any PHASE-C4 implementation order
 GOVERNING_SPEC: docs/architecture/ORDEM_COMPRA_LIFECYCLE_SPEC_PROPOSED.md
 TECHNICAL_CONTRACT: docs/architecture/PEDIDO_OP_SCHEMA_CONTRACT.md
 SEQUENCE_AUTHORITY: docs/architecture/PEDIDO_PRODUCTION_FLOW_BACKLOG.md
@@ -122,11 +122,44 @@ ACCEPTED_CHECKPOINT: 429aa3980c7027b9d872a1902e2f31f1a4a85a2a
   (3) cancellation/removal through a separately authorized business-data action.
   `REAL_CUTOVER` stays BLOCKED from authorization until that disposition is
   recorded.
-- **Next authorizable action:** **architect authorization decision for `PHASE-C4`
-  — ADMIN RECEIPT UI** (`OC-C4-ADMIN-001`). `PHASE-C4` is **not** authorized by
-  this pass; `PHASE-C5` is not authorized; `REAL_CUTOVER` is not authorized. The
-  next chat must re-read the canonical repository before authoring or executing
-  any `PHASE-C4` order.
+- **`C4-MATERIAL-PHASE-CONTRACT-R1` (read-only reconciliation + documentation-only
+  phase-contract authoring, this pass):** authored
+  `docs/architecture/ORDEM_COMPRA_C4_PHASE_CONTRACT.md`
+  (`PHASE_ID: PHASE-C4`, `STATUS: PROPOSED / AWAITING SUPERVISOR REVIEW /
+  IMPLEMENTATION NOT AUTHORIZED`). Binds `OC-C4-ADMIN-001` to an exact
+  functional scope (admin receipt registration, item/allocation remaining
+  quantities, explicit excess entry, receipt command history, administrator
+  reversal — reversal ownership resolved from explicit textual anchors
+  `§R.24.9`/`§R.24.10`/`§R.25.4`/`§R.29.6`/`§R.31`, not `UNPROVEN`), an
+  actor/state/action matrix keyed to the real `status_administrativo`/
+  `status_aceite`/`legado` vocabulary and the server-derived `acoes.receber`/
+  `acoes.estornar` flags, an API ownership matrix (native RPCs
+  `registrar_recebimento_ordem_compra`/`estornar_recebimento_ordem_compra`/
+  `obter_historico_recebimento_ordem_compra` — explicitly excluding the
+  PHASE-C3C-B legacy-compat adapter `ordem-compra-receipt-cutover.js` from
+  C4's call graph), a closed three-new-file product manifest
+  (`js/screens/ordem-compra-receipt-data.js`/`-render.js`/`-events.js`) plus
+  additive `ordem-compra.js`/`index.html` touches, an explicit unchanged-file
+  list (`router.js`, `boot.js`, `common.js`, all legacy/compat surfaces, all
+  `db/*.sql`), an idempotency/error contract (two independent attempt
+  trackers), and a visual contract authored against the tracked
+  `docs/architecture/UI_VISUAL_CONTRACT.md` (confirmed authoritative in place
+  of the untracked `.claude/design-skill/`, which this pass confirmed absent
+  from the worktree). No database prerequisite was found necessary — the
+  existing `db/70`/`db/75`/`db/76`-installed RPCs and read model are already
+  sufficient; the writer RPCs remain inert under the live `legacy_active`
+  cutover state (documented as a risk, not a blocker). Documentation-only:
+  no product, test, script, migration, or protected-residue change; no
+  database, environment, or deployment action. `OC-C4-ADMIN-001` remains
+  `PLANNED`; `PHASE-C4` implementation remains unauthorized;
+  `ACTIVE_PHASE`/`ACTIVE_PHASE_CONTRACT` remain `NONE`.
+- **Next authorizable action:** **supervisor review and acceptance/rejection
+  of the proposed `PHASE-C4` material contract**
+  (`docs/architecture/ORDEM_COMPRA_C4_PHASE_CONTRACT.md`). `PHASE-C4`
+  implementation is **not** authorized by this pass; `PHASE-C5` is not
+  authorized; `REAL_CUTOVER` is not authorized. A fresh session must re-read
+  the canonical repository before executing any `PHASE-C4` implementation
+  order.
 - **Prior accepted product phase:** `PHASE-C3C-B` (application compatibility/
   adaptation) — `CLOSED / ACCEPTED_WITH_NONBLOCKING_DEBT / LOCALLY VERIFIED`
   (2026-07-21), accepted checkpoint
@@ -570,18 +603,21 @@ ACCEPTED_CHECKPOINT: 429aa3980c7027b9d872a1902e2f31f1a4a85a2a
   receipt/reversal/import topology — neither an `OC-C3D-LOCK-001` §M exit
   criterion. See contract §Y/§Z and `docs/ledgers/G28_LEDGER.md` for the full
   closeout.
-- **NEXT_AUTHORIZABLE_ACTION:** **architect authorization decision for
-  `PHASE-C4` — ADMIN RECEIPT UI** (`OC-C4-ADMIN-001`). `PHASE-C3D` is closed;
-  `PHASE-C4`, `PHASE-C5`, environment mutation, branch creation, staging
+- **NEXT_AUTHORIZABLE_ACTION:** **supervisor review and acceptance/rejection of
+  the proposed `PHASE-C4` material contract**
+  (`docs/architecture/ORDEM_COMPRA_C4_PHASE_CONTRACT.md`, `STATUS: PROPOSED /
+  AWAITING SUPERVISOR REVIEW / IMPLEMENTATION NOT AUTHORIZED`, authored by
+  `C4-MATERIAL-PHASE-CONTRACT-R1`). `PHASE-C3D` is closed; `PHASE-C4`
+  implementation, `PHASE-C5`, environment mutation, branch creation, staging
   validation/application of `db/76`, deployment, real snapshot/import, fence
   transition, read switch, real final ACL-closure invocation, real activation,
   the real cutover (`OC-CUTOVER-001`/`OC-CUTOVER-PONR-001`, additionally
   hard-gated behind the mandatory read-only completeness disposition of the 13
   unmapped `ordens_compra_fio` rows ids 153–165), production access, Supabase
   write, and any further push all remain unauthorized. No product phase chains
-  automatically; `ACTIVE_PHASE`/`ACTIVE_PHASE_CONTRACT` are `NONE`. The next chat
-  must re-read the canonical repository before authoring or executing any
-  `PHASE-C4` order.
+  automatically; `ACTIVE_PHASE`/`ACTIVE_PHASE_CONTRACT` are `NONE`. A fresh
+  session must re-read the canonical repository before executing any
+  `PHASE-C4` implementation order.
 
 ## Workspace and Git boundaries
 
@@ -850,6 +886,9 @@ Commit SHAs there are the accepted technical commits; consult HEAD via Git.
   `ACTIVE_PHASE_CONTRACT` are `NONE`):
   `docs/architecture/ORDEM_COMPRA_C3D_PHASE_CONTRACT.md`
 - C3C-B database prerequisites contract (closed / technically accepted / local DB verified / not applied to staging database; §35 records the implementation closeout, §36 records DB-backed validation completion, §37 records supervisor acceptance, not active): `docs/architecture/ORDEM_COMPRA_C3C_B_DB_PREREQUISITES_PHASE_CONTRACT.md`
+- C4 material phase contract (`PROPOSED / AWAITING SUPERVISOR REVIEW /
+  IMPLEMENTATION NOT AUTHORIZED` — admin receipt UI at `#/ordens-compra/:id`;
+  not active): `docs/architecture/ORDEM_COMPRA_C4_PHASE_CONTRACT.md`
 - Append-only ledger: `docs/ledgers/G28_LEDGER.md`
 - Derived operational handoff: `AGENT_HANDOFF.md`
 - Documentation authority arbiter: `docs/DOCUMENTATION_INDEX.md`
