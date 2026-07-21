@@ -2,8 +2,8 @@
 
 <!-- MATERIAL_PHASE_CONTRACT:BEGIN -->
 PHASE_ID: PHASE-C3C-B
-STATUS: AUTHORIZED / IMPLEMENTATION AUTHORIZED (§32) — NOT YET IMPLEMENTED
 <!-- MATERIAL_PHASE_CONTRACT:END -->
+STATUS: IMPLEMENTED / LOCALLY VERIFIED / AWAITING SUPERVISOR ACCEPTANCE (§33)
 
 > **Role of this document.** This is a **material phase contract**, authored under
 > `docs/governance/DOCUMENTATION_MODEL.md` §19 and
@@ -1104,3 +1104,173 @@ and idempotency lifecycle in §§32.2–32.7 above.
 `PROJECT_STATE.md`'s `ACTIVE_PHASE` is set to `PHASE-C3C-B` and
 `ACTIVE_PHASE_CONTRACT` to this file's path in the same commit that appends
 this section (companion contract §39.4).
+
+## 33. Implementation closeout (governs on conflict)
+
+> **Append-only forward correction (`PHASE_CLOSEOUT` per
+> `docs/governance/DOCUMENTATION_MODEL.md` §19).** Recorded under the same
+> order that authorized §32, implementation commit
+> `feat: adapt legacy purchase-order receipts for cutover`. §§0–32 are
+> preserved verbatim (no history rewrite). **Where §§1–32 and this §33
+> conflict, §33 governs.**
+
+### 33.1 Disposition
+
+**`IMPLEMENTED / LOCALLY VERIFIED / AWAITING SUPERVISOR ACCEPTANCE`.** All
+ten authorized product paths (§8.1) and all eight authorized test paths
+(§8.2) were exercised exactly as scoped; no file outside the manifest was
+touched; no `db/*.sql`, CSS, router, boot, package, CI, tooling, or MCP file
+changed.
+
+### 33.2 Implementation summary
+
+- **New adapter (§8.1 item 9):** `js/screens/ordem-compra-receipt-cutover.js`
+  — pure, no DOM access, no rendering, no route logic. Knows only the two
+  `db/76` RPC names, their parameter contracts, success shapes, inactive
+  signals (`listar_compat_inativo` SQLSTATE 55000;
+  `{ok:false,codigo:'recebimento_compat_inativo'}`), the bounded `42883`
+  interval (§32.4), and the fail-closed code set (§32.5). Exports
+  `attemptCanonicalRead`, `attemptCanonicalReceipt`,
+  `createReceiptAttempt`/`newIdempotencyToken`, `isLegacyReceiptFenced`, and
+  the shared canonical-row-to-legacy-shape mapper (§32.6). Every function
+  returns an explicit `{ outcome: 'canonical_success' | 'legacy_fallback' |
+  'hard_failure' }` the caller branches on; the adapter never owns fallback
+  content.
+- **§9 readers (`op-writes.js` §10.1 n/a — readers are #4/#5):**
+  `pedido-detail-data.js` (`loadPedidoDetailData`) attempts
+  `listar_ordens_compra_fio_compat({p_pedido_id})`; on `legacy_fallback` runs
+  the exact pre-phase `.select(...)` unchanged; `state.ordensFio` populated
+  either way with the same field names. `op-nova.js`
+  (`fetchOrdensCompraFio`) attempts the same RPC scoped by `p_op_id`; minimal
+  wiring only (frozen-exception file, +17 lines), falls back to the exact
+  pre-phase dim/legacy select unchanged.
+- **§10 writers:** `op-writes.js` (`registrarRecebimentoOrdemFio`) attempts
+  `registrar_recebimento_ordem_compra_fio_compat` first, falls back to the
+  exact pre-phase flat `UPDATE` on inactive/bounded-42883, never issues both
+  writes. `fornecedor.js` (`screenFornecedorOrdens`) has its own independent
+  reader and writer, not routed through `op-writes.js`; a canonical
+  `decremento_exige_admin` (or any other recognized code) fails closed,
+  never falls back to a flat decrease. `op-persistir.js`'s legacy source-row
+  branch and `op-recalculo.js`'s saldo writes are unchanged except for a new
+  `clearFenceError()` helper that replaces a raw `legacy_receipt_fenced`
+  Postgres error with a clear message through the exact same
+  `{ error, step, partial }` return shape — no bridge, mapping, canonical
+  order creation, or `db/76` RPC call added to either file.
+- **Verification-only (no code change):** `pedido-detail-events.js` (its
+  writer already reaches `op-writes.js`'s adapted
+  `registrarRecebimentoOrdemFio`; confirmed statically — this file does not
+  grow) and `js/delete-helpers.js` (its one `ordens_compra_fio` reference is
+  a display-name string, not a live query).
+- **`index.html`:** exactly one line added — the cache-busted adapter
+  `<script>` tag, immediately after `js/supabase-client.js` and before every
+  consumer.
+
+### 33.3 UI-inertness proof (`OC-C3-NOUI-001`)
+
+`js/router.js` and `js/boot.js` are byte-unchanged (not in the manifest, not
+touched). Every adapted call-site's rendering, inputs, and outputs are
+unchanged; the only new code path is an internal state-check-then-fallback
+branch, unreachable in observable behavior while `legacy_active` (the
+permanent state through this phase). `index.html`'s diff is exactly one
+added line (verified by `git diff -- index.html`); loaded in the browser
+preview with zero new console errors and a `200 OK` network response for the
+new script.
+
+### 33.4 Idempotency lifecycle proof
+
+`tests/ordem-compra-receipt-cutover.smoke.js` proves: (a) `createReceiptAttempt()`
+mints a non-empty token; (b) reusing the same returned attempt object across
+two calls to `attemptCanonicalReceipt` sends the identical
+`p_idempotency_key` both times (retry of the same attempt); (c) two separate
+`createReceiptAttempt()` calls yield different tokens (new submission); (d)
+two distinct submissions dated the same day never share a token (identity is
+the attempt, not the date) — directly proving §32.7.
+
+### 33.5 Fallback and fail-closed matrix — tested
+
+- `listar_compat_inativo` / `recebimento_compat_inativo` → `legacy_fallback`,
+  exactly one byte-identical flat query/mutation follows.
+- Bounded `42883 undefined_function` → `legacy_fallback`, identically.
+- `sem_permissao`, `estado_invalido`, `mapeamento_compat_ausente`,
+  `decremento_exige_admin`, `reducao_abaixo_saldo_importado`,
+  `excede_estornavel`, `kg_absoluto_invalido`, `idempotencia_conflitante`,
+  `erro_interno`, and every unrecognized transport error → `hard_failure`,
+  no flat mutation follows, error surfaced to the caller.
+- Canonical success → `canonical_success`, the flat mutation is never
+  issued (proved directly by call-count assertions in
+  `tests/op-writes.smoke.js` and `tests/fornecedor-screens.smoke.js`).
+- `legacy_receipt_fenced` on `op-persistir.js`'s source write and
+  `op-recalculo.js`'s saldo write → clear, non-crashing error through the
+  existing `{ error, step, partial }` shape; a different `55000` message is
+  never rewritten (proved by dedicated negative tests in both files' smoke
+  suites).
+
+### 33.6 Line-count and code-health report
+
+| File | Before | After | Δ | Tier | Note |
+|---|---|---|---|---|---|
+| `js/screens/ordem-compra-receipt-cutover.js` (new) | 0 | 179 | +179 | ideal (≤250) | — |
+| `js/screens/op-writes.js` | 97 | 133 | +36 | ideal (≤250) | — |
+| `js/screens/fornecedor.js` | 536 | 583 | +47 | exceptional (≤900) | Already over the 500-line acceptable ceiling before this phase; no new tier boundary crossed by this phase. Splitting is out of scope (would mix refactor with this compatibility-adaptation phase, `CODE_HEALTH_RULES.md` §14). |
+| `js/screens/op-persistir.js` | 284 | 306 | +22 | acceptable (≤500) | Already over the 250-line ideal ceiling before this phase; no new tier crossed. |
+| `js/screens/pedido-detail-data.js` | 371 | 387 | +16 | acceptable (≤500) | No new tier crossed. |
+| `js/screens/op-nova.js` | 1476 | 1493 | +17 | frozen exception (already >900) | Minimal wiring only, per §7 item 5; not used as precedent for new large screens. |
+| `js/screens/op-recalculo.js` | 214 | 232 | +18 | ideal (≤250) | — |
+| `js/screens/pedido-detail-events.js` | 2691 | 2691 | 0 | (pre-existing, ungoverned by a frozen-exception label — §18 residual debt, unresolved by this phase) | **Did not grow**, per contract §7 row 6 requirement. |
+| `js/delete-helpers.js` | 255 | 255 | 0 | ideal (≤250) | Verification-only, no code change, as expected. |
+| `index.html` | 110 | 111 | +1 | n/a | Exactly one line, as authorized. |
+
+No new function exceeds 150 lines. No file outside this table changed.
+
+### 33.7 Test evidence
+
+- `node --check`: clean on all ten touched/new product files and all eight
+  authorized test files.
+- `node --test` on the eight authorized test files: all pass except two
+  pre-existing, unrelated failures already present in the pre-phase baseline
+  (`tests/op-writes.smoke.js` test 9 and test 24 — confirmed via `git stash`
+  comparison, both about `atribuirFornecedorFioOp`/`ADMIN_MENU` counts,
+  unrelated to receipts) and 39 pre-existing failures in
+  `tests/pedido-detail.smoke.js` (confirmed identical via the same `git
+  stash` comparison).
+- Full mandatory Node suite (`node --test "tests/**/*.js"`): 3960 tests,
+  3836 pass, 124 fail; the set of 124 failing test names is byte-for-byte
+  identical to the pre-phase baseline (`git stash` + rerun + diff of sorted
+  failing-test-name lists, `diff` exit code 0) — zero regressions
+  introduced anywhere in the repository by this phase. The 124 baseline
+  failures are pre-existing debt: known code-health gaps (stale `ADMIN_MENU`
+  counts, `atribuirFornecedorFioOp` dead-code assertions) and
+  `ECONNREFUSED 127.0.0.1:8765` in tests that require a running local static
+  server not started for this run.
+- `node scripts/validate-spec-custody.mjs`: **PASS**. (`--self-test` mode
+  fails for an unrelated, pre-existing reason — its fixture harness does not
+  copy an active `ACTIVE_PHASE_CONTRACT` target file into its synthetic
+  repository, a limitation of `scripts/spec-custody/self-tests.mjs` predating
+  this phase; `--self-test` is not part of this contract's required test
+  contract and the validator scripts are explicitly prohibited from
+  modification, §8.3.)
+- `git diff --check` / `git diff --cached --check`: clean throughout.
+
+### 33.8 Residual debts (unchanged from §18)
+
+`HISTORICAL_SALDO_FIOS_PROVENANCE_UNAVAILABLE`,
+`NATIVE_RECEIPT_COMPATIBILITY_MULTI_ORIGIN_UNRESOLVED`, the adapters'
+canonical-branch code paths remain unverified against a live
+`canonical_active` state (explicitly C3D/real-cutover territory, out of
+scope here), `op-recalculo.js`'s saldo-write path has no canonical RPC
+replacement (DB-fence-only disablement accepted as sufficient, §7 row
+10/§10.3), and `pedido-detail-events.js` exceeding `op-nova.js` in size
+without a frozen-exception label remains a pre-existing governance gap this
+contract does not resolve.
+
+### 33.9 Final state and next authorizable action
+
+`LAST_ACCEPTED_PHASE: PHASE-C3C-B-DB-PREREQ` (unchanged — this closeout
+records implementation, not supervisor acceptance, of `PHASE-C3C-B`).
+`ACTIVE_PHASE: NONE`. `ACTIVE_PHASE_CONTRACT: NONE`. `PHASE-C3C-B:
+IMPLEMENTED / LOCALLY VERIFIED / AWAITING SUPERVISOR ACCEPTANCE`. No
+dependent `OC-C3-*` requirement is `SATISFIED`. The next authorizable
+action is supervisor review/acceptance of this implementation; only after
+that acceptance may staging validation/application of `db/76`, C3D, cutover,
+C4, C5, production access, or any further push beyond the one authorized
+`staging/dev` fast-forward be authorized.

@@ -979,3 +979,134 @@ test('49. boot chain com todos os helpers não lança SyntaxError', () => {
   assert.equal(typeof vm.runInContext('window.registrarRecebimentoOrdemFio', sandbox), 'function');
   assert.equal(typeof vm.runInContext('window.atribuirFornecedorFioOp', sandbox), 'function');
 });
+
+// -----------------------------------------------------------------------------
+// 5. PHASE-C3C-B: registrarRecebimentoOrdemFio canonical-first adaptation
+// (docs/architecture/ORDEM_COMPRA_C3C_B_PHASE_CONTRACT.md §32)
+// -----------------------------------------------------------------------------
+
+const CUTOVER = path.join(ROOT, 'js', 'screens', 'ordem-compra-receipt-cutover.js');
+const cutoverSrc = fs.readFileSync(CUTOVER, 'utf8');
+
+function makeOpWCutoverSandbox({ rpcResult, updateResult = { data: null, error: null } } = {}) {
+  const document = {
+    createElement: (t) => new FakeNode(t),
+    createTextNode: (t) => ({ textContent: t, appendChild() {}, setAttribute() {} }),
+    querySelector: () => new FakeNode('div'),
+    querySelectorAll: () => [],
+    addEventListener: () => {}, removeEventListener: () => {},
+    body: new FakeNode('body'),
+  };
+  const calls = [];
+  const fakeSupa = {
+    from: (table) => {
+      calls.push({ op: 'from', table });
+      const chain = {
+        _table: table, _lastUpdate: null,
+        update(payload) { calls.push({ op: 'update', table, args: [payload] }); chain._lastUpdate = payload; return chain; },
+        eq(col, val) {
+          calls.push({ op: 'eq', col, val });
+          if (chain._lastUpdate != null) return Promise.resolve(updateResult);
+          return chain;
+        },
+        select() { return chain; }, delete() { return chain; }, order() { return chain; }, in() { return chain; },
+      };
+      return chain;
+    },
+    rpc: (name, params) => {
+      calls.push({ op: 'rpc', name, params });
+      return Promise.resolve(rpcResult);
+    },
+    _calls: calls,
+  };
+  const sandbox = {
+    document, console, setTimeout, clearTimeout, URL, URLSearchParams,
+    Node: FakeNode, supa: fakeSupa,
+    crypto: { randomUUID: () => 'uuid-' + Math.random().toString(36).slice(2) },
+  };
+  sandbox.window = sandbox;
+  sandbox.globalThis = sandbox;
+  vm.createContext(sandbox);
+  vm.runInContext(uiSrc, sandbox, { filename: 'js/ui.js' });
+  vm.runInContext(calcSrc, sandbox, { filename: 'js/calculo-op.js' });
+  vm.runInContext(cutoverSrc, sandbox, { filename: 'js/screens/ordem-compra-receipt-cutover.js' });
+  vm.runInContext(opwSrc, sandbox, { filename: 'js/screens/op-writes.js' });
+  return { sandbox, fakeSupa };
+}
+
+test('50. canonical success never performs the flat mutation', async () => {
+  const { sandbox, fakeSupa } = makeOpWCutoverSandbox({
+    rpcResult: { data: { ok: true, codigo: 'ok', recebimento_id: 1, ordem_compra_id: 9 }, error: null },
+  });
+  const result = await vm.runInContext(
+    'window.registrarRecebimentoOrdemFio({ ordemId: 42, kgRecebido: 40, dataRecebimento: "2026-07-20", status: "recebido_parcial" })',
+    sandbox);
+  assert.equal(result.error, null);
+  const updateCalls = fakeSupa._calls.filter((c) => c.op === 'update' && c.table === 'ordens_compra_fio');
+  assert.equal(updateCalls.length, 0, 'canonical success must never issue the flat update');
+});
+
+test('51. recebimento_compat_inativo falls back to exactly one byte-identical flat update', async () => {
+  const { sandbox, fakeSupa } = makeOpWCutoverSandbox({
+    rpcResult: { data: { ok: false, codigo: 'recebimento_compat_inativo' }, error: null },
+  });
+  const result = await vm.runInContext(
+    'window.registrarRecebimentoOrdemFio({ ordemId: 42, kgRecebido: 40, dataRecebimento: "2026-07-20", status: "recebido_parcial" })',
+    sandbox);
+  assert.equal(result.error, null);
+  const updateCalls = fakeSupa._calls.filter((c) => c.op === 'update' && c.table === 'ordens_compra_fio');
+  assert.equal(updateCalls.length, 1, 'inactive fallback must perform exactly one flat mutation');
+  // JSON round-trip strips the vm.Context's separate Object realm (see the
+  // identical note in tests/ordem-compra-receipt-cutover.smoke.js).
+  assert.deepEqual(JSON.parse(JSON.stringify(updateCalls[0].args[0])), { kg_recebido: 40, data_recebimento: '2026-07-20', status: 'recebido_parcial' });
+  const eqCalls = fakeSupa._calls.filter((c) => c.op === 'eq' && c.col === 'id' && c.val === 42);
+  assert.ok(eqCalls.length >= 1);
+});
+
+test('52. bounded 42883 (undefined_function) also falls back to the flat update', async () => {
+  const { sandbox, fakeSupa } = makeOpWCutoverSandbox({
+    rpcResult: { data: null, error: { code: '42883', message: 'function public.registrar_recebimento_ordem_compra_fio_compat(...) does not exist' } },
+  });
+  await vm.runInContext(
+    'window.registrarRecebimentoOrdemFio({ ordemId: 42, kgRecebido: 40, dataRecebimento: "2026-07-20", status: "recebido_parcial" })',
+    sandbox);
+  const updateCalls = fakeSupa._calls.filter((c) => c.op === 'update' && c.table === 'ordens_compra_fio');
+  assert.equal(updateCalls.length, 1);
+});
+
+test('53. a fail-closed canonical error (sem_permissao) surfaces the error and never issues the flat update', async () => {
+  const { sandbox, fakeSupa } = makeOpWCutoverSandbox({
+    rpcResult: { data: { ok: false, codigo: 'sem_permissao' }, error: null },
+  });
+  const result = await vm.runInContext(
+    'window.registrarRecebimentoOrdemFio({ ordemId: 42, kgRecebido: 40, dataRecebimento: "2026-07-20", status: "recebido_parcial" })',
+    sandbox);
+  assert.ok(result.error, 'expected a surfaced error, not a silent fallback');
+  const updateCalls = fakeSupa._calls.filter((c) => c.op === 'update' && c.table === 'ordens_compra_fio');
+  assert.equal(updateCalls.length, 0, 'fail-closed must never issue the flat mutation');
+});
+
+test('54. calls the canonical RPC with the flat row id and the requested absolute kg total', async () => {
+  const { sandbox } = makeOpWCutoverSandbox({
+    rpcResult: { data: { ok: false, codigo: 'recebimento_compat_inativo' }, error: null },
+  });
+  await vm.runInContext(
+    'window.registrarRecebimentoOrdemFio({ ordemId: 77, kgRecebido: 12.5, dataRecebimento: "2026-07-20", status: "recebido_parcial" })',
+    sandbox);
+  const rpcCall = sandbox.supa._calls.find((c) => c.op === 'rpc' && c.name === 'registrar_recebimento_ordem_compra_fio_compat');
+  assert.ok(rpcCall, 'expected a call to registrar_recebimento_ordem_compra_fio_compat');
+  assert.equal(rpcCall.params.p_ordens_compra_fio_id, 77);
+  assert.equal(rpcCall.params.p_kg_total_absoluto, 12.5);
+});
+
+test('55. no adapter loaded (window.RAVATEX_SCREENS.ordemCompraReceiptCutover absent) preserves the pre-phase behavior exactly', async () => {
+  const { sandbox, fakeSupa } = makeOpWSandbox({ updateResult: { data: { id: 7 }, error: null } });
+  const result = await vm.runInContext(
+    'window.registrarRecebimentoOrdemFio({ ordemId: 7, kgRecebido: 3, dataRecebimento: "2026-06-23", status: "recebido_total" })',
+    sandbox);
+  assert.equal(result.error, null);
+  const rpcCalls = fakeSupa._calls.filter((c) => c.op === 'rpc');
+  assert.equal(rpcCalls.length, 0, 'without the adapter module loaded, no rpc must be attempted');
+  const updateCalls = fakeSupa._calls.filter((c) => c.op === 'update' && c.table === 'ordens_compra_fio');
+  assert.equal(updateCalls.length, 1);
+});

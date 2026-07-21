@@ -324,17 +324,33 @@
       }
     }
 
-    var ordensRes = await window.supa
-      .from('ordens_compra_fio')
-      .select('id, op_id, tipo, cor_id, cor_poliester, kg_pedido, kg_recebido, status, cores:cor_id(id, nome)')
-      .in('op_id', opIds);
-
-    if (ordensRes.error) {
+    // PHASE-C3C-B (docs/architecture/ORDEM_COMPRA_C3C_B_PHASE_CONTRACT.md
+    // §32): attempts the canonical legacy-compat projection scoped by
+    // p_pedido_id first; falls back to the exact pre-phase flat select,
+    // byte-identical, only on the documented inactive signal or the bounded
+    // missing-function condition. state.ordensFio's field names/shape are
+    // preserved exactly for every downstream consumer either way.
+    var cutover = window.RAVATEX_SCREENS && window.RAVATEX_SCREENS.ordemCompraReceiptCutover;
+    var canonicalOrdens = cutover ? await cutover.attemptCanonicalRead({ pedidoId: pedidoId }) : null;
+    if (canonicalOrdens && canonicalOrdens.outcome === 'canonical_success') {
+      state.ordensFio = canonicalOrdens.rows;
+    } else if (canonicalOrdens && canonicalOrdens.outcome === 'hard_failure') {
       state.ordensFio = [];
       state.docsLoadError = true;
-      console.error('pedido-detail: erro ao carregar ordens_compra_fio', ordensRes.error);
+      console.error('pedido-detail: erro ao carregar ordens_compra_fio (canonico)', canonicalOrdens.error);
     } else {
-      state.ordensFio = ordensRes.data || [];
+      var ordensRes = await window.supa
+        .from('ordens_compra_fio')
+        .select('id, op_id, tipo, cor_id, cor_poliester, kg_pedido, kg_recebido, status, cores:cor_id(id, nome)')
+        .in('op_id', opIds);
+
+      if (ordensRes.error) {
+        state.ordensFio = [];
+        state.docsLoadError = true;
+        console.error('pedido-detail: erro ao carregar ordens_compra_fio', ordensRes.error);
+      } else {
+        state.ordensFio = ordensRes.data || [];
+      }
     }
 
     if (state.parciais.length > 0) {

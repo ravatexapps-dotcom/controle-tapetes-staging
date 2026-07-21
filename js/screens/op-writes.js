@@ -14,9 +14,15 @@
 //
 // Dependências resolvidas em tempo de chamada (não no load):
 //   - window.supa (js/supabase-client.js) — client Supabase + write-guard
+//   - window.RAVATEX_SCREENS.ordemCompraReceiptCutover
+//     (js/screens/ordem-compra-receipt-cutover.js) — PHASE-C3C-B legacy-compat
+//     receipt adapter; registrarRecebimentoOrdemFio attempts it first and
+//     falls back to the exact pre-phase flat UPDATE (§32 of
+//     docs/architecture/ORDEM_COMPRA_C3C_B_PHASE_CONTRACT.md)
 //
 // NÃO depende de: window.toast, window.navigate, window.CURRENT_USER.
-// NÃO faz select / rpc — apenas update, delete, insert.
+// NÃO faz select ou rpc diretamente — apenas update, delete, insert, e a
+// delegação ao adapter acima (que por sua vez isola o único rpc do arquivo).
 //
 // Compatibilidade: window.registrarRecebimentoOrdemFio e
 // window.atribuirFornecedorFioOp seguem disponíveis para os
@@ -26,12 +32,42 @@
 (function (window) {
   'use strict';
 
+  // PHASE-C3C-B (docs/architecture/ORDEM_COMPRA_C3C_B_PHASE_CONTRACT.md §32):
+  // attempts the canonical legacy-compat receipt adapter first; falls back to
+  // the exact pre-phase flat UPDATE, byte-identical, only on the documented
+  // inactive signal or the bounded missing-function condition. Never issues
+  // both writes for one successful attempt. The adapter is resolved at call
+  // time (not module load), matching this file's existing window.supa
+  // convention.
   async function registrarRecebimentoOrdemFio({
     ordemId,
     kgRecebido,
     dataRecebimento,
     status,
   }) {
+    var cutover = window.RAVATEX_SCREENS && window.RAVATEX_SCREENS.ordemCompraReceiptCutover;
+    if (cutover) {
+      var attempt = cutover.createReceiptAttempt();
+      var canonical = await cutover.attemptCanonicalReceipt({
+        ordensCompraFioId: ordemId,
+        kgTotalAbsoluto: kgRecebido,
+        dataRecebimento: dataRecebimento,
+      }, attempt);
+      if (canonical.outcome === 'canonical_success') {
+        return { data: canonical.result, error: null };
+      }
+      if (canonical.outcome === 'hard_failure') {
+        return {
+          data: null,
+          error: canonical.error || Object.assign(
+            new Error((canonical.result && (canonical.result.erro || canonical.result.codigo)) || 'Falha ao registrar recebimento'),
+            { codigo: canonical.result && canonical.result.codigo }
+          ),
+        };
+      }
+      // outcome === 'legacy_fallback' — fall through to the exact existing
+      // flat write below.
+    }
     return await window.supa
       .from('ordens_compra_fio')
       .update({

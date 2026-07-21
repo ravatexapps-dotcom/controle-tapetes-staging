@@ -437,6 +437,24 @@
         );
         return;
       }
+      // PHASE-C3C-B (docs/architecture/ORDEM_COMPRA_C3C_B_PHASE_CONTRACT.md
+      // §32): independent reader, not unified with pedido-detail-data.js /
+      // op-nova.js. Attempts the canonical legacy-compat projection first;
+      // falls back to the exact pre-phase flat select, byte-identical, only
+      // on the documented inactive signal or the bounded missing-function
+      // condition.
+      const cutover = window.RAVATEX_SCREENS && window.RAVATEX_SCREENS.ordemCompraReceiptCutover;
+      if (cutover) {
+        const canonical = await cutover.attemptCanonicalRead({});
+        if (canonical.outcome === 'canonical_success') { render(canonical.rows); return; }
+        if (canonical.outcome === 'hard_failure') {
+          window.toast('Erro ao carregar ordens', 'error');
+          console.error(canonical.error);
+          return;
+        }
+        // outcome === 'legacy_fallback' — fall through to the exact existing
+        // flat read below.
+      }
       const { data, error } = await window.supa.from('ordens_compra_fio')
         .select('id, tipo, cor_poliester, kg_pedido, kg_recebido, data_recebimento, status, ops(numero, ano), cores:cor_id(id, nome)')
         .order('id', { ascending: true });
@@ -458,6 +476,35 @@
           const dataRec = dataInput.value || new Date().toISOString().slice(0, 10);
           const status = kg < Number(ordem.kg_pedido) ? 'recebido_parcial' : 'recebido_total';
           btn.disabled = true;
+
+          // PHASE-C3C-B §32: independent writer (own idempotency attempt,
+          // not routed through op-writes.js's registrarRecebimentoOrdemFio).
+          // A canonical decremento_exige_admin (or any other recognized
+          // error code) fails closed here — never falls back to a flat
+          // decrease after a canonical-active response.
+          const cutover = window.RAVATEX_SCREENS && window.RAVATEX_SCREENS.ordemCompraReceiptCutover;
+          if (cutover) {
+            const attempt = cutover.createReceiptAttempt();
+            const canonical = await cutover.attemptCanonicalReceipt({
+              ordensCompraFioId: ordem.id,
+              kgTotalAbsoluto: kg,
+              dataRecebimento: dataRec,
+            }, attempt);
+            if (canonical.outcome === 'canonical_success') {
+              window.toast('Recebimento registrado', 'success');
+              reload();
+              return;
+            }
+            if (canonical.outcome === 'hard_failure') {
+              window.toast('Erro ao registrar recebimento', 'error');
+              console.error(canonical.error || canonical.result);
+              btn.disabled = false;
+              return;
+            }
+            // outcome === 'legacy_fallback' — fall through to the exact
+            // existing flat write below.
+          }
+
           const { error } = await window.supa.from('ordens_compra_fio')
             .update({ kg_recebido: kg, data_recebimento: dataRec, status })
             .eq('id', ordem.id);

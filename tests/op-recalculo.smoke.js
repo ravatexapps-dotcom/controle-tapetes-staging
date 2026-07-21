@@ -54,6 +54,7 @@ const OPPDF = path.join(ROOT, 'js', 'screens', 'op-pdf.js');
 const PAINEL= path.join(ROOT, 'js', 'screens', 'painel.js');
 const OLA   = path.join(ROOT, 'js', 'screens', 'op-latex-admin.js');
 const OPW   = path.join(ROOT, 'js', 'screens', 'op-writes.js');
+const CUTOVER = path.join(ROOT, 'js', 'screens', 'ordem-compra-receipt-cutover.js');
 const OFH   = path.join(ROOT, 'js', 'screens', 'op-form-helpers.js');
 const EF    = path.join(ROOT, 'js', 'screens', 'entrega-form.js');
 const EW    = path.join(ROOT, 'js', 'screens', 'entrega-writes.js');
@@ -75,6 +76,7 @@ const opPdfSrc  = fs.readFileSync(OPPDF, 'utf8');
 const painelSrc = fs.readFileSync(PAINEL,'utf8');
 const olaSrc    = fs.readFileSync(OLA,   'utf8');
 const opwSrc    = fs.readFileSync(OPW,   'utf8');
+const cutoverSrc = fs.readFileSync(CUTOVER, 'utf8');
 const ofhSrc    = fs.readFileSync(OFH,   'utf8');
 const efSrc     = fs.readFileSync(EF,    'utf8');
 const uiSrc     = fs.readFileSync(UI,    'utf8');
@@ -342,6 +344,7 @@ function makeFullBootSandbox() {
   vm.runInContext(ewSrc,     sandbox, { filename: 'js/screens/entrega-writes.js' });
   vm.runInContext(fornSrc,   sandbox, { filename: 'js/screens/fornecedor.js' });
   vm.runInContext(ofhSrc,    sandbox, { filename: 'js/screens/op-form-helpers.js' });
+  vm.runInContext(cutoverSrc, sandbox, { filename: 'js/screens/ordem-compra-receipt-cutover.js' });
   vm.runInContext(opwSrc,    sandbox, { filename: 'js/screens/op-writes.js' });
   vm.runInContext(olaSrc,    sandbox, { filename: 'js/screens/op-latex-admin.js' });
   vm.runInContext(painelSrc, sandbox, { filename: 'js/screens/painel.js' });
@@ -629,21 +632,24 @@ function makeRecalculoSandbox({
           if (chain._table === 'saldo_fios_op' && chain._lastMutation === 'insert') {
             calls.push({ op: 'saldo_fios_op_insert', payload: chain._payload });
             if (saldoFiosOpFailAlways) {
-              return Promise.resolve({ data: null, error: new Error('mock saldo_fios_op') }).then(resolve, reject);
+              const err = typeof saldoFiosOpFailAlways === 'object' ? saldoFiosOpFailAlways : new Error('mock saldo_fios_op');
+              return Promise.resolve({ data: null, error: err }).then(resolve, reject);
             }
             return Promise.resolve({ data: null, error: null }).then(resolve, reject);
           }
           if (chain._table === 'saldo_fios' && chain._lastMutation === 'update') {
             calls.push({ op: 'saldo_fios_update', eq: chain._eqFilter, is: chain._isFilter, payload: chain._payload });
             if (saldoFiosUpdateError) {
-              return Promise.resolve({ data: null, error: new Error('mock saldo_fios_update') }).then(resolve, reject);
+              const err = typeof saldoFiosUpdateError === 'object' ? saldoFiosUpdateError : new Error('mock saldo_fios_update');
+              return Promise.resolve({ data: null, error: err }).then(resolve, reject);
             }
             return Promise.resolve({ data: null, error: null }).then(resolve, reject);
           }
           if (chain._table === 'saldo_fios' && chain._lastMutation === 'insert') {
             calls.push({ op: 'saldo_fios_insert', payload: chain._payload });
             if (saldoFiosInsertError) {
-              return Promise.resolve({ data: null, error: new Error('mock saldo_fios_insert') }).then(resolve, reject);
+              const err = typeof saldoFiosInsertError === 'object' ? saldoFiosInsertError : new Error('mock saldo_fios_insert');
+              return Promise.resolve({ data: null, error: err }).then(resolve, reject);
             }
             return Promise.resolve({ data: null, error: null }).then(resolve, reject);
           }
@@ -689,6 +695,7 @@ function makeRecalculoSandbox({
   vm.runInContext(ewSrc,     sandbox, { filename: 'js/screens/entrega-writes.js' });
   vm.runInContext(fornSrc,   sandbox, { filename: 'js/screens/fornecedor.js' });
   vm.runInContext(ofhSrc,    sandbox, { filename: 'js/screens/op-form-helpers.js' });
+  vm.runInContext(cutoverSrc, sandbox, { filename: 'js/screens/ordem-compra-receipt-cutover.js' });
   vm.runInContext(opwSrc,    sandbox, { filename: 'js/screens/op-writes.js' });
   vm.runInContext(olaSrc,    sandbox, { filename: 'js/screens/op-latex-admin.js' });
   vm.runInContext(painelSrc, sandbox, { filename: 'js/screens/painel.js' });
@@ -901,6 +908,58 @@ test('39. falha em saldo_fios.insert retorna step "saldo_fios_insert"', async ()
   );
   assert.equal(result.step, 'saldo_fios_insert');
   assert.equal(result.partial, true);
+});
+
+// PHASE-C3C-B (docs/architecture/ORDEM_COMPRA_C3C_B_PHASE_CONTRACT.md §32):
+// clearFenceError() replaces a raw legacy_receipt_fenced Postgres error
+// (db/75's protected-mutation guard on saldo_fios/saldo_fios_op) with a
+// clear, non-crashing message, through the exact same
+// { error, step, partial } shape — no canonical RPC is called here, and
+// op-recalculo.js's exact current saldo write logic is unchanged. Not
+// reachable while legacy_active; unit-tested with a mocked fence signal.
+test('39b. legacy_receipt_fenced no insert de saldo_fios_op: erro claro, sem crash, mesmo { step, partial }', async () => {
+  const { sandbox } = makeRecalculoSandbox({
+    saldoFiosOpFailAlways: { code: '55000', message: 'legacy_receipt_fenced' },
+  });
+  sandbox.resultado = resultadoAceitar();
+  sandbox.ordens = ordensManter();
+  const result = await vm.runInContext(
+    'window.aplicarRecalculoOP({ opId: 42, resultado: resultado, modo: "aceitar", ordens: ordens })',
+    sandbox
+  );
+  assert.equal(result.step, 'saldo_fios_op_insert');
+  assert.equal(result.partial, true);
+  assert.ok(result.error);
+  assert.notEqual(result.error.message, 'legacy_receipt_fenced', 'deve substituir a mensagem crua do Postgres por uma mensagem clara');
+  assert.equal(result.error.codigo, 'legacy_receipt_fenced');
+});
+
+test('39c. legacy_receipt_fenced no update de saldo_fios: erro claro, sem crash', async () => {
+  const { sandbox } = makeRecalculoSandbox({
+    saldoFiosExistingData: { kg_total: 100 },
+    saldoFiosUpdateError: { code: '55000', message: 'legacy_receipt_fenced' },
+  });
+  sandbox.resultado = resultadoAceitar();
+  sandbox.ordens = ordensManter();
+  const result = await vm.runInContext(
+    'window.aplicarRecalculoOP({ opId: 42, resultado: resultado, modo: "aceitar", ordens: ordens })',
+    sandbox
+  );
+  assert.equal(result.step, 'saldo_fios_update');
+  assert.equal(result.error.codigo, 'legacy_receipt_fenced');
+});
+
+test('39d. um erro 55000 diferente (nao legacy_receipt_fenced) permanece intacto, sem reescrita', async () => {
+  const { sandbox } = makeRecalculoSandbox({
+    saldoFiosOpFailAlways: { code: '55000', message: 'estado_cutover_invalido' },
+  });
+  sandbox.resultado = resultadoAceitar();
+  sandbox.ordens = ordensManter();
+  const result = await vm.runInContext(
+    'window.aplicarRecalculoOP({ opId: 42, resultado: resultado, modo: "aceitar", ordens: ordens })',
+    sandbox
+  );
+  assert.equal(result.error.message, 'estado_cutover_invalido', 'apenas legacy_receipt_fenced deve ser reescrito');
 });
 
 // ---- 14: ops.update status -------------------------------------------

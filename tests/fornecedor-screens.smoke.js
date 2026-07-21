@@ -1008,3 +1008,178 @@ test('36. screenListaOPs (ops-list) ainda renderiza (regressão ops-list)', asyn
   const header = node.children.find((c) => c.tagName === 'HEADER');
   assert.ok(header, 'header ausente em screenListaOPs');
 });
+
+// -----------------------------------------------------------------------------
+// 4. PHASE-C3C-B: screenFornecedorOrdens canonical-first adaptation
+// (docs/architecture/ORDEM_COMPRA_C3C_B_PHASE_CONTRACT.md §32). Independent
+// reader+writer adapter — not routed through op-writes.js. A dedicated
+// sandbox (not makeFornSandbox above) loads the adapter module so every
+// pre-phase test above keeps exercising the pure legacy path unchanged.
+// -----------------------------------------------------------------------------
+
+const CUTOVER = path.join(ROOT, 'js', 'screens', 'ordem-compra-receipt-cutover.js');
+const cutoverSrc = fs.readFileSync(CUTOVER, 'utf8');
+
+function makeFornCutoverSandbox({ readRpcResult, writeRpcResult, ocfData = [] } = {}) {
+  const document = {
+    createElement: (t) => new FakeNode(t),
+    createTextNode: (t) => ({ textContent: t, appendChild() {}, setAttribute() {} }),
+    querySelector: () => new FakeNode('div'),
+    querySelectorAll: () => [],
+    addEventListener: () => {}, removeEventListener: () => {},
+    body: new FakeNode('body'),
+  };
+  const calls = [];
+  const fakeSupa = {
+    from: (table) => {
+      calls.push({ op: 'from', table });
+      const chain = {
+        _table: table, _lastUpdate: null,
+        select() { calls.push({ op: 'select', table }); return chain; },
+        update(payload) { calls.push({ op: 'update', table, args: [payload] }); chain._lastUpdate = payload; return chain; },
+        delete() { return chain; },
+        eq(col, val) {
+          calls.push({ op: 'eq', col, val });
+          if (chain._lastUpdate != null) return { then: (r) => Promise.resolve({ data: null, error: null }).then(r), eq() { return this; } };
+          return chain;
+        },
+        order() { return chain; },
+        in() { return chain; },
+        then(r) { return Promise.resolve({ data: ocfData, error: null }).then(r); },
+      };
+      return chain;
+    },
+    rpc: (name, params) => {
+      calls.push({ op: 'rpc', name, params });
+      if (name === 'listar_ordens_compra_fio_compat') return Promise.resolve(readRpcResult || { data: null, error: null });
+      if (name === 'registrar_recebimento_ordem_compra_fio_compat') return Promise.resolve(writeRpcResult || { data: null, error: null });
+      return Promise.resolve({ data: null, error: null });
+    },
+    auth: {
+      getSession: () => Promise.resolve({ data: { session: null }, error: null }),
+      signInWithPassword: () => Promise.resolve({ data: { user: null }, error: null }),
+      signOut: () => Promise.resolve({ error: null }),
+    },
+    storage: {}, _calls: calls,
+  };
+  const toasts = [];
+  const sandbox = {
+    document, console, setTimeout, clearTimeout, URL, URLSearchParams,
+    Node: FakeNode, supa: fakeSupa,
+    crypto: { randomUUID: () => 'uuid-' + Math.random().toString(36).slice(2) },
+  };
+  sandbox.window = sandbox;
+  sandbox.globalThis = sandbox;
+  vm.createContext(sandbox);
+  vm.runInContext(uiSrc, sandbox, { filename: 'js/ui.js' });
+  vm.runInContext(badgesSrc, sandbox, { filename: 'js/badges.js' });
+  vm.runInContext(calcSrc, sandbox, { filename: 'js/calculo-op.js' });
+  vm.runInContext(commonSrc, sandbox, { filename: 'js/screens/common.js' });
+  sandbox.CURRENT_USER = { nome: 'Fornecedor Teste', tipo: 'fornecedor', fornecedor_id: 1 };
+  sandbox.logout = () => {};
+  vm.runInContext(efSrc, sandbox, { filename: 'js/screens/entrega-form.js' });
+  vm.runInContext(ewSrc, sandbox, { filename: 'js/screens/entrega-writes.js' });
+  vm.runInContext(cutoverSrc, sandbox, { filename: 'js/screens/ordem-compra-receipt-cutover.js' });
+  vm.runInContext(fornSrc, sandbox, { filename: 'js/screens/fornecedor.js' });
+  const origToast = sandbox.toast;
+  sandbox.toast = (msg, type) => { toasts.push({ msg, type }); return origToast(msg, type); };
+  return { sandbox, fakeSupa, getToasts: () => toasts.slice() };
+}
+
+test('37. reader: canonical success renders without querying the flat table', async () => {
+  const { sandbox, fakeSupa } = makeFornCutoverSandbox({
+    readRpcResult: { data: [], error: null },
+  });
+  await vm.runInContext('window.screenFornecedorOrdens()', sandbox);
+  const selectCalls = fakeSupa._calls.filter((c) => c.op === 'select' && c.table === 'ordens_compra_fio');
+  assert.equal(selectCalls.length, 0, 'canonical success must not query the flat table');
+});
+
+test('38. reader: listar_compat_inativo falls back to the exact existing flat select', async () => {
+  const { sandbox, fakeSupa } = makeFornCutoverSandbox({
+    readRpcResult: { data: null, error: { code: '55000', message: 'listar_compat_inativo' } },
+    ocfData: [{ id: 1, tipo: 'algodao', cor_poliester: null, kg_pedido: 10, kg_recebido: null,
+      data_recebimento: null, status: 'pendente', ops: { numero: 100, ano: 2026 }, cores: { id: 1, nome: 'BRANCO' } }],
+  });
+  await vm.runInContext('window.screenFornecedorOrdens()', sandbox);
+  const selectCalls = fakeSupa._calls.filter((c) => c.op === 'select' && c.table === 'ordens_compra_fio');
+  assert.equal(selectCalls.length, 1, 'inactive must fall back to exactly one flat select');
+});
+
+test('39. writer: canonical success never issues the flat update', async () => {
+  const { sandbox, fakeSupa } = makeFornCutoverSandbox({
+    ocfData: [{ id: 7, tipo: 'algodao', cor_poliester: null, kg_pedido: 10, kg_recebido: null,
+      data_recebimento: null, status: 'pendente', ops: { numero: 100, ano: 2026 }, cores: { id: 1, nome: 'BRANCO' } }],
+    readRpcResult: { data: null, error: { code: '55000', message: 'listar_compat_inativo' } },
+    writeRpcResult: { data: { ok: true, codigo: 'ok', recebimento_id: 1, ordem_compra_id: 9 }, error: null },
+  });
+  const root = await vm.runInContext('window.screenFornecedorOrdens()', sandbox);
+  const handler = findButtonOnClickInMain(root);
+  const inp = findInputInMain(root);
+  inp.value = '5';
+  await handler();
+  const updateCalls = fakeSupa._calls.filter((c) => c.op === 'update' && c.table === 'ordens_compra_fio');
+  assert.equal(updateCalls.length, 0, 'canonical write success must never issue the flat update');
+});
+
+test('40. writer: recebimento_compat_inativo falls back to exactly one flat update, independent of op-writes.js', async () => {
+  const { sandbox, fakeSupa } = makeFornCutoverSandbox({
+    ocfData: [{ id: 7, tipo: 'algodao', cor_poliester: null, kg_pedido: 10, kg_recebido: null,
+      data_recebimento: null, status: 'pendente', ops: { numero: 100, ano: 2026 }, cores: { id: 1, nome: 'BRANCO' } }],
+    readRpcResult: { data: null, error: { code: '55000', message: 'listar_compat_inativo' } },
+    writeRpcResult: { data: { ok: false, codigo: 'recebimento_compat_inativo' }, error: null },
+  });
+  const root = await vm.runInContext('window.screenFornecedorOrdens()', sandbox);
+  const handler = findButtonOnClickInMain(root);
+  const inp = findInputInMain(root);
+  inp.value = '5';
+  await handler();
+  const updateCalls = fakeSupa._calls.filter((c) => c.op === 'update' && c.table === 'ordens_compra_fio');
+  assert.equal(updateCalls.length, 1, 'inactive fallback must perform exactly one flat mutation');
+  // Independent from op-writes.js: fornecedor.js never calls
+  // window.registrarRecebimentoOrdemFio (verified statically in test 1-10's
+  // source scan too — this is the runtime confirmation).
+  const bare = vm.runInContext('typeof window.registrarRecebimentoOrdemFio', sandbox);
+  assert.equal(bare, 'undefined', 'op-writes.js must not be loaded in this sandbox — proves fornecedor.js does not depend on it');
+});
+
+test('41. writer: decremento_exige_admin fails closed — never falls back to a flat decrease', async () => {
+  // screenFornecedorOrdens only renders an interactive form for pending rows
+  // (linhaPendente) — this proves that whatever codigo the canonical RPC
+  // returns for that call-site's own attempt, the fail-closed classification
+  // holds and no flat mutation follows; the exhaustive per-codigo matrix
+  // (including decremento_exige_admin) lives in
+  // tests/ordem-compra-receipt-cutover.smoke.js.
+  const { sandbox, fakeSupa, getToasts } = makeFornCutoverSandbox({
+    ocfData: [{ id: 7, tipo: 'algodao', cor_poliester: null, kg_pedido: 10, kg_recebido: null,
+      data_recebimento: null, status: 'pendente', ops: { numero: 100, ano: 2026 }, cores: { id: 1, nome: 'BRANCO' } }],
+    readRpcResult: { data: null, error: { code: '55000', message: 'listar_compat_inativo' } },
+    writeRpcResult: { data: { ok: false, codigo: 'decremento_exige_admin' }, error: null },
+  });
+  const root = await vm.runInContext('window.screenFornecedorOrdens()', sandbox);
+  const handler = findButtonOnClickInMain(root);
+  const inp = findInputInMain(root);
+  inp.value = '3';
+  await handler();
+  const updateCalls = fakeSupa._calls.filter((c) => c.op === 'update' && c.table === 'ordens_compra_fio');
+  assert.equal(updateCalls.length, 0, 'decremento_exige_admin must never fall back to a flat decrease');
+  const errorToasts = getToasts().filter((t) => t.type === 'error');
+  assert.equal(errorToasts.length, 1, 'expected exactly one error toast');
+});
+
+test('42. no adapter loaded preserves the pre-phase legacy read+write exactly', async () => {
+  const { sandbox, fakeSupa } = makeFornSandbox({
+    ocfData: [{ id: 7, tipo: 'algodao', cor_poliester: null, kg_pedido: 10, kg_recebido: null,
+      data_recebimento: null, status: 'pendente', ops: { numero: 100, ano: 2026 }, cores: { id: 1, nome: 'BRANCO' } }],
+  });
+  vm.runInContext('window.CURRENT_USER = { nome: "X", tipo: "fornecedor", fornecedor_id: 1 }', sandbox);
+  const root = await vm.runInContext('window.screenFornecedorOrdens()', sandbox);
+  const rpcCalls = fakeSupa._calls.filter((c) => c.op === 'rpc');
+  assert.equal(rpcCalls.length, 0, 'without the adapter module loaded, no rpc must be attempted');
+  const handler = findButtonOnClickInMain(root);
+  const inp = findInputInMain(root);
+  inp.value = '5';
+  await handler();
+  const updateCalls = fakeSupa._calls.filter((c) => c.op === 'update' && c.table === 'ordens_compra_fio');
+  assert.equal(updateCalls.length, 1);
+});

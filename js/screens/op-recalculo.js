@@ -27,6 +27,24 @@
 (function (window) {
   'use strict';
 
+  // PHASE-C3C-B (docs/architecture/ORDEM_COMPRA_C3C_B_PHASE_CONTRACT.md §32):
+  // replaces a raw legacy_receipt_fenced Postgres error (db/75's
+  // protected-mutation guard on saldo_fios/saldo_fios_op) with a clear
+  // message, through the caller's existing non-crashing { error, ... }
+  // return shape. Not reachable while legacy_active; no canonical RPC is
+  // called here — op-recalculo.js still owns its exact current saldo_fios /
+  // saldo_fios_op writes unchanged.
+  function clearFenceError(error) {
+    var cutover = window.RAVATEX_SCREENS && window.RAVATEX_SCREENS.ordemCompraReceiptCutover;
+    if (cutover && cutover.isLegacyReceiptFenced(error)) {
+      return Object.assign(
+        new Error('Ajuste de saldo de fio bloqueado pelo fechamento do cutover legado.'),
+        { code: '55000', codigo: 'legacy_receipt_fenced', cause: error }
+      );
+    }
+    return error;
+  }
+
   function maxMetrosItem(item, modelosById, parametrosByLargura, ordens) {
     const modelo = modelosById[item.modelo_id];
     const p = parametrosByLargura[window.larguraKey(modelo.largura)];
@@ -115,7 +133,7 @@
         op_id: opId, cor_id: s.cor_id, cor_poliester: s.cor_poliester, tipo: s.tipo, kg_sobra: s.kg_sobra,
       });
       if (insOp.error) {
-        return { error: insOp.error, step: 'saldo_fios_op_insert', partial: true };
+        return { error: clearFenceError(insOp.error), step: 'saldo_fios_op_insert', partial: true };
       }
 
       // totalizador saldo_fios: lê (filtrando por cor/tipo), soma e grava
@@ -155,7 +173,7 @@
         });
       }
       if (saveTotal.error) {
-        return { error: saveTotal.error, step: cur.data ? 'saldo_fios_update' : 'saldo_fios_insert', partial: true };
+        return { error: clearFenceError(saveTotal.error), step: cur.data ? 'saldo_fios_update' : 'saldo_fios_insert', partial: true };
       }
     }
 

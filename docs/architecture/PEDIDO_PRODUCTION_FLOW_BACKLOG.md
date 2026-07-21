@@ -8,6 +8,37 @@
 > `PROJECT_STATE.md`. Phase sequence, dependencies, backlog items, and accepted
 > architecture in this file remain authoritative; live operational status does not.
 
+# Update 2026-07-20 - PHASE-C3C-B Application-Adapter Implementation
+
+Phase: `PHASE-C3C-B` (application compatibility/adaptation).
+Type: local JS application-adapter implementation, no database/environment/
+migration-file change.
+
+Activated by `docs/architecture/ORDEM_COMPRA_C3C_B_PHASE_CONTRACT.md` §32
+(forward correction closing the §25/§26 database blockers, once
+`docs/architecture/ORDEM_COMPRA_C3C_B_DB_PREREQUISITES_PHASE_CONTRACT.md` §39
+recorded supervisor acceptance of the applied `db/75`+`db/76`
+development-database stack). Implemented the shared adapter
+`js/screens/ordem-compra-receipt-cutover.js` (pure, no DOM; knows only
+`listar_ordens_compra_fio_compat`/`registrar_recebimento_ordem_compra_fio_compat`,
+their inactive signals, the bounded `42883` interval, and the fail-closed
+error set) and adapted the nine other authorized product paths
+(`js/screens/op-writes.js`, `js/screens/fornecedor.js`,
+`js/screens/pedido-detail-data.js`, `js/screens/op-nova.js`,
+`js/screens/op-persistir.js`, `js/screens/op-recalculo.js`, `index.html`;
+`pedido-detail-events.js`/`delete-helpers.js` required no change).
+Full mandatory Node suite (3960 tests) has the identical 124-failure set as
+the pre-phase baseline (`git stash` comparison, byte-identical failing-test
+list) — zero regressions; `validate-spec-custody` PASS; `git diff --check`
+clean. `STATUS: IMPLEMENTED / LOCALLY VERIFIED / AWAITING SUPERVISOR
+ACCEPTANCE` (contract §33). No dependent `OC-C3-*` requirement is
+`SATISFIED`. This entry changes no backlog sequence, dependency, or accepted
+architecture — the earlier "C3C-B remains the next product implementation
+lot but is not authorized" framing further below in this file is superseded
+by this entry per the live-state banner above (`PROJECT_STATE.md` remains the
+sole live-state owner). Next authorizable action: supervisor review/
+acceptance of this implementation.
+
 # Update 2026-07-20 - db/75+db/76 Applied to Development Database (Inert)
 
 Phase: development/legacy-database application of the accepted inactive C3C stack

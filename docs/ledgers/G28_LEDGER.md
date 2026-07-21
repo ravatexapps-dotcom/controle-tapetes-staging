@@ -5688,3 +5688,123 @@ MATERIAL_DIVERGENCES: NONE
   ACL-closure invocation, cutover, C3D, C4, C5, production access, `main`, and
   `origin`/`production` remote mutation remain unauthorized; one fast-forward
   push to `staging/dev` records this closeout.
+
+## 2026-07-20 — PHASE-C3C-B APPLICATION-ADAPTER IMPLEMENTATION — IMPLEMENTED / LOCALLY VERIFIED / AWAITING SUPERVISOR ACCEPTANCE
+
+- **Order:** PHASE-C3C-B application-compatibility/adaptation local
+  implementation, authorized in a single pass with the governing forward
+  correction that activated it (§39 of
+  `docs/architecture/ORDEM_COMPRA_C3C_B_DB_PREREQUISITES_PHASE_CONTRACT.md`,
+  supervisor acceptance of the applied `db/75`+`db/76` development-database
+  stack; §32 of `docs/architecture/ORDEM_COMPRA_C3C_B_PHASE_CONTRACT.md`,
+  corrected application RPC targets/inactive signals/error matrix/idempotency
+  lifecycle). Two commits: the authorization/forward-correction checkpoint,
+  then this implementation.
+- **Entry checkpoint:** branch `dev`, HEAD
+  `6cd70d7503f7f020b5c948c96fef0b095b0f1211`, preserved residue modified
+  `.gitignore` only (plus the untracked `.mcp.json`, never staged).
+- **Authorization commit:** `07fb4903eda67ac5e570ca505e09185b688b5277`
+  (`docs: authorize C3C-B application adaptation`) — appended §39/§32,
+  activated `ACTIVE_PHASE: PHASE-C3C-B` in `PROJECT_STATE.md`. No product,
+  test, or `db/*.sql` file touched by that commit.
+- **Implementation (this commit):** new shared adapter
+  `js/screens/ordem-compra-receipt-cutover.js` (pure, no DOM, no rendering;
+  knows only `public.listar_ordens_compra_fio_compat` and
+  `public.registrar_recebimento_ordem_compra_fio_compat`, their inactive
+  signals `listar_compat_inativo`/`recebimento_compat_inativo`, the bounded
+  `42883` interval, and the fail-closed code set). Call-sites adapted:
+  `js/screens/op-writes.js` (`registrarRecebimentoOrdemFio` attempts the
+  canonical writer first, falls back to the byte-identical flat `UPDATE`),
+  `js/screens/fornecedor.js` (independent reader+writer, not routed through
+  `op-writes.js`; `decremento_exige_admin` fails closed),
+  `js/screens/pedido-detail-data.js` (reader scoped by `p_pedido_id`,
+  `state.ordensFio` shape preserved), `js/screens/op-nova.js` (minimal
+  wiring only, frozen-exception file, `fetchOrdensCompraFio` scoped by
+  `p_op_id`), `js/screens/op-persistir.js` and `js/screens/op-recalculo.js`
+  (defensive `legacy_receipt_fenced` clear-error handling only, no bridge/
+  mapping/canonical write added). `js/screens/pedido-detail-events.js` and
+  `js/delete-helpers.js` required no change (writer already reaches
+  `op-writes.js`; label-only reference respectively) — verification-only, as
+  contracted. `index.html` changed by exactly one added `<script>` line.
+- **No-new-UI proof:** `js/router.js`/`js/boot.js` byte-unchanged; every
+  adapted call-site keeps its exact existing inputs/outputs/rendering; the
+  only new branch is an internal state-check-then-fallback that is
+  unreachable in observable behavior while `legacy_active` (the permanent
+  state through this entire phase).
+- **Idempotency lifecycle:** `createReceiptAttempt()` mints one token per
+  user-initiated submission; the returned attempt object is reused verbatim
+  across retries of that same attempt; a genuinely new submission calls
+  `createReceiptAttempt()` again; the token is never derived from date,
+  timestamp, order id, or quantity — proved in
+  `tests/ordem-compra-receipt-cutover.smoke.js` (same-attempt-retry reuse,
+  new-attempt distinct token, same-date-distinct-submissions distinct token).
+- **Tests:** eight authorized test files, one new
+  (`tests/ordem-compra-receipt-cutover.smoke.js`, 29/29) plus additions to
+  `tests/op-writes.smoke.js`, `tests/fornecedor-screens.smoke.js`,
+  `tests/pedido-detail.smoke.js`, `tests/op-nova.smoke.js`,
+  `tests/op-recalculo.smoke.js`, `tests/op-persistir.smoke.js`;
+  `tests/controlled-delete.smoke.js` verification-only, unmodified. Every
+  fail-closed code (`sem_permissao`, `estado_invalido`,
+  `mapeamento_compat_ausente`, `decremento_exige_admin`,
+  `reducao_abaixo_saldo_importado`, `excede_estornavel`,
+  `kg_absoluto_invalido`, `idempotencia_conflitante`, `erro_interno`, every
+  unrecognized response) proved never to fall back; canonical success proved
+  to never issue the flat mutation; inactive/bounded-42883 fallback proved to
+  perform exactly one byte-identical flat mutation.
+- **Validation:** `node --check` clean on every touched/new file; full
+  mandatory Node suite (`node --test "tests/**/*.js"`) — 3960 tests, 3836
+  pass, 124 fail, and the failing-test-name set is byte-for-byte identical to
+  the pre-phase baseline (`git stash` comparison) — zero regressions
+  introduced; `node scripts/validate-spec-custody.mjs` PASS; `git diff
+  --check` / `git diff --cached --check` clean. 124 baseline failures are
+  pre-existing, unrelated debt (documented code-health gaps in
+  `js/screens/op-nova.js`/`js/screens/painel.js` ADMIN_MENU counts, and
+  `ECONNREFUSED 127.0.0.1:8765` in `write-guard.smoke.js`-family tests that
+  require a running local static server) — not caused by, and not repaired
+  by, this phase.
+- **Findings:** `js/screens/fornecedor.js` was already 536 lines (over the
+  `CODE_HEALTH_RULES.md` §7 500-line acceptable ceiling, already in the
+  900-line exceptional tier) before this phase; this phase adds 47 lines
+  (independent reader+writer adapter block), ending at 583 — no new tier
+  boundary crossed by this phase, but flagged for transparency; splitting
+  `fornecedor.js` is out of scope (would mix refactor with this
+  compatibility-adaptation phase, `CODE_HEALTH_RULES.md` §14).
+  `js/screens/op-nova.js` grew by 17 lines (1476→1493, minimal wiring only,
+  frozen exception preserved). `js/screens/pedido-detail-events.js` did not
+  grow (2691→2691, unchanged, per contract §7 row 6).
+- **Residual debts (carried forward, unchanged):**
+  `HISTORICAL_SALDO_FIOS_PROVENANCE_UNAVAILABLE`,
+  `NATIVE_RECEIPT_COMPATIBILITY_MULTI_ORIGIN_UNRESOLVED`, the adapters'
+  canonical-branch code paths remain unverified against a live
+  `canonical_active` state (C3D/real-cutover territory), and
+  `op-recalculo.js`'s saldo-write path has no canonical RPC replacement
+  (DB-fence-only disablement, per contract §7 row 10/§10.3).
+- **Files materially changed (product + tests):** `index.html`;
+  `js/screens/ordem-compra-receipt-cutover.js` (new);
+  `js/screens/op-writes.js`; `js/screens/fornecedor.js`;
+  `js/screens/pedido-detail-data.js`; `js/screens/op-nova.js`;
+  `js/screens/op-persistir.js`; `js/screens/op-recalculo.js`;
+  `tests/ordem-compra-receipt-cutover.smoke.js` (new);
+  `tests/op-writes.smoke.js`; `tests/fornecedor-screens.smoke.js`;
+  `tests/pedido-detail.smoke.js`; `tests/op-nova.smoke.js`;
+  `tests/op-recalculo.smoke.js`; `tests/op-persistir.smoke.js`.
+- **Files materially changed (documentation, this closeout):**
+  `PROJECT_STATE.md`; `AGENT_HANDOFF.md`;
+  `docs/architecture/ORDEM_COMPRA_C3C_B_PHASE_CONTRACT.md` (implementation
+  closeout appended, top `STATUS` marker updated);
+  `docs/architecture/ORDEM_COMPRA_C3_TRACEABILITY.md`; this ledger. No
+  `db/*.sql`, CSS, router, boot, package, CI, tooling, or MCP file modified;
+  `.gitignore` and `.mcp.json` excluded from the commit.
+- **State after this pass:** `LAST_ACCEPTED_PHASE: PHASE-C3C-B-DB-PREREQ`
+  (unchanged — this closeout records implementation, not supervisor
+  acceptance, of `PHASE-C3C-B`). `ACTIVE_PHASE: NONE`.
+  `ACTIVE_PHASE_CONTRACT: NONE`. `PHASE-C3C-B: IMPLEMENTED / LOCALLY
+  VERIFIED / AWAITING SUPERVISOR ACCEPTANCE`. No dependent `OC-C3-*`
+  requirement is `SATISFIED`.
+- **Exact accounting subject:** `feat: adapt legacy purchase-order receipts
+  for cutover`.
+- **NEXT_AUTHORIZABLE_ACTION:** supervisor review/acceptance of this
+  `PHASE-C3C-B` application-adapter implementation. Only after that
+  acceptance does staging validation/application of `db/76`, C3D, cutover,
+  C4, C5, production access, or any further push beyond the one authorized
+  `staging/dev` fast-forward become authorizable.

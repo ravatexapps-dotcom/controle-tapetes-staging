@@ -65,16 +65,27 @@
   verified** against `ucrjtfswnfdlxwtmxnoo` — `db/75` (version `20260720234958`)
   and `db/76` (version `20260720235820`), both **inert** (`legacy_active`/`flat`;
   inactive-signal-only readers/writers; zero business-data mutation). Recorded in
-  `docs/architecture/ORDEM_COMPRA_C3C_B_DB_PREREQUISITES_PHASE_CONTRACT.md` §38 as
-  `APPLIED / DEVELOPMENT DB VERIFIED / AWAITING SUPERVISOR ACCEPTANCE`.
-- **Next authorizable action:** **supervisor review/acceptance of that applied
-  `db/75`+`db/76` development-database stack** (no existing canonical
-  phase/action ID names this environment step; recorded descriptively). Only
-  after supervisor acceptance does the later `PHASE-C3C-B` application-adaptation
-  lot become authorizable. **C3C-B application implementation remains
-  UNAUTHORIZED and has no ACTIVE phase contract**
-  (`ACTIVE_PHASE`/`ACTIVE_PHASE_CONTRACT` remain `NONE`); no product phase
-  chains automatically; the current product phase remains `NONE`.
+  `docs/architecture/ORDEM_COMPRA_C3C_B_DB_PREREQUISITES_PHASE_CONTRACT.md` §39 as
+  supervisor-**ACCEPTED**.
+- **`PHASE-C3C-B` (application compatibility/adaptation, 2026-07-20):**
+  `IMPLEMENTED / LOCALLY VERIFIED / AWAITING SUPERVISOR ACCEPTANCE`
+  (`docs/architecture/ORDEM_COMPRA_C3C_B_PHASE_CONTRACT.md` §33, activated by
+  its §32 forward correction). New shared adapter
+  `js/screens/ordem-compra-receipt-cutover.js` plus nine adapted call-sites
+  (`js/screens/op-writes.js`, `js/screens/fornecedor.js`,
+  `js/screens/pedido-detail-data.js`, `js/screens/op-nova.js`,
+  `js/screens/op-persistir.js`, `js/screens/op-recalculo.js`, `index.html`;
+  `pedido-detail-events.js`/`delete-helpers.js` required no change). Full
+  mandatory Node suite (3960 tests) has the identical 124-failure set as the
+  pre-phase baseline (zero regressions); validator PASS. No dependent
+  `OC-C3-*` requirement is `SATISFIED`.
+- **Next authorizable action:** **supervisor review/acceptance of the
+  `PHASE-C3C-B` application-adapter implementation.** Only after that
+  acceptance may staging validation/application of `db/76`, C3D, cutover, C4,
+  C5, production access, or any further push beyond the one authorized
+  `staging/dev` fast-forward be authorized. **`ACTIVE_PHASE`/
+  `ACTIVE_PHASE_CONTRACT` remain `NONE`**; no product phase chains
+  automatically; the current product phase remains `NONE`.
 
 ## Governing specifications and contracts
 
@@ -95,16 +106,16 @@
 Full matrix and normative anchors: `docs/architecture/ORDEM_COMPRA_C3_TRACEABILITY.md`
 (section "Requirement matrix"). Summary of active Phase-C continuation requirements:
 
-- `OC-C3-READ-001`, `OC-C3-WRITE-001`, `OC-C3-NOUI-001` — `PARTIALLY_SATISFIED`
-  (owning phase C3C-B; inactive `db/75`, `LOCAL_POSTGRES_18_4_ONLY`; application
-  consumers/routing not migrated).
-- `OC-C3-COMPAT-001` — `BLOCKED`. The database prerequisites are now
-  **CLOSED / TECHNICALLY ACCEPTED / LOCAL DB VERIFIED / NOT APPLIED TO STAGING
-  DATABASE** in `db/76`
-  (`docs/architecture/ORDEM_COMPRA_C3C_B_DB_PREREQUISITES_PHASE_CONTRACT.md`
-  §§35–37; `§R.29.7`/`§13.18` applied); the requirement remains blocked pending
-  separately authorized staging validation/application of `db/76` and the later
-  C3C-B application adaptation.
+- `OC-C3-READ-001`, `OC-C3-WRITE-001`, `OC-C3-COMPAT-001`, `OC-C3-NOUI-001` —
+  `PARTIALLY_SATISFIED` (owning phase C3C-B). The database prerequisites
+  (`db/76`) are `CLOSED / TECHNICALLY ACCEPTED / LOCAL DB VERIFIED`, applied
+  and supervisor-accepted inert in the development database (contract §§35–39);
+  the `PHASE-C3C-B` application-adapter layer that consumes them is now
+  `IMPLEMENTED / LOCALLY VERIFIED / AWAITING SUPERVISOR ACCEPTANCE`
+  (`docs/architecture/ORDEM_COMPRA_C3C_B_PHASE_CONTRACT.md` §33). Not
+  `SATISFIED` — real `canonical_active` verification is C3D/real-cutover
+  territory; `db/76` remains unapplied to staging; this implementation itself
+  awaits supervisor acceptance.
 - `OC-C3D-DEPLOY-001` — `PLANNED`; `OC-C3D-FENCE-001`, `OC-C3D-ACL-001`,
   `OC-C3D-LOCK-001` — `PARTIALLY_SATISFIED` (C3D; inactive staging rehearsal /
   role matrix pending).
@@ -139,8 +150,10 @@ Full matrix and normative anchors: `docs/architecture/ORDEM_COMPRA_C3_TRACEABILI
   here; **`db/75` (C3C-A) and `db/76` (C3C-B DB prerequisites) are now applied
   (2026-07-20; versions `20260720234958`/`20260720235820`), installed inert —
   `legacy_active`/`flat`, both `db/76` functions returning only their inactive
-  signals, zero business-data mutation** (contract §38; `APPLIED / DEVELOPMENT
-  DB VERIFIED / AWAITING SUPERVISOR ACCEPTANCE`).
+  signals, zero business-data mutation** (contract §38; supervisor-**ACCEPTED**
+  at §39). The `PHASE-C3C-B` JS application-adapter layer consuming these two
+  functions is now implemented (see Phase status above) but remains
+  unauthorized to route to `canonical_active`.
 - **PROHIBITED / never accessed:** production `bhgifjrfagkzubpyqpew`.
 
 ## Push, remote, main and deployment limits
@@ -153,10 +166,13 @@ Full matrix and normative anchors: `docs/architecture/ORDEM_COMPRA_C3_TRACEABILI
   branch other than `main` is pushed to `production`.
 - **`main` is forbidden** as a working/target branch here; no push to
   `origin`/`staging` without separate express authorization.
-- **Unauthorized (each a separate gate):** C3C-B implementation, C3D, staging
-  application/validation, activation, deployment, real snapshot/import, fence
-  transition, read switch, final ACL-closure invocation, cutover, C4, C5,
-  production access, remote mutation, and push.
+- **Unauthorized (each a separate gate):** C3D, staging application/validation
+  of `db/76`, activation, deployment, real snapshot/import, fence transition,
+  read switch, final ACL-closure invocation, cutover, C4, C5, production
+  access, remote mutation, and push. `PHASE-C3C-B` application implementation
+  is complete (`IMPLEMENTED / LOCALLY VERIFIED / AWAITING SUPERVISOR
+  ACCEPTANCE`) but that acceptance itself remains a separate, not-yet-granted
+  gate.
 
 ## Canonical paths — RETRANSMIT ALL OF THESE IN EVERY FUTURE HANDOFF
 

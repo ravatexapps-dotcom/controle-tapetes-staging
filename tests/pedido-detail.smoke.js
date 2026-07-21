@@ -897,6 +897,34 @@ test('pedido-detail.js: consolida leitura de lote/OP/entregas sem writes operaci
   assert.doesNotMatch(detailBundle, /persistirOP/);
 });
 
+// ---------------------------------------------------------------------
+// PHASE-C3C-B: pedido-detail-data.js canonical-first ordensFio adaptation
+// (docs/architecture/ORDEM_COMPRA_C3C_B_PHASE_CONTRACT.md §32). Static,
+// proportional to risk: this reader's canonical/fallback branching and the
+// shared row-mapping logic are exhaustively runtime-tested in
+// tests/ordem-compra-receipt-cutover.smoke.js; here we only confirm the
+// exact pre-phase flat select is preserved byte-identical and that the
+// adapter is attempted first, scoped by p_pedido_id.
+// ---------------------------------------------------------------------
+
+test('pedido-detail-data.js: attempts the canonical adapter (p_pedido_id scoped) before the flat select', () => {
+  assert.match(detailData, /ordemCompraReceiptCutover/,
+    'loadPedidoDetailData deve tentar o adapter PHASE-C3C-B antes do select flat');
+  assert.match(detailData, /attemptCanonicalRead\(\{\s*pedidoId:\s*pedidoId\s*\}\)/,
+    'attemptCanonicalRead deve ser escopado por p_pedido_id (grain por item, nao por OP)');
+});
+
+test('pedido-detail-data.js: exact pre-phase flat select preserved byte-identical as the fallback body', () => {
+  assert.match(detailData,
+    /\.from\(\s*['"]ordens_compra_fio['"]\s*\)\s*\.select\(\s*['"]id, op_id, tipo, cor_id, cor_poliester, kg_pedido, kg_recebido, status, cores:cor_id\(id, nome\)['"]\s*\)\s*\.in\(\s*['"]op_id['"]\s*,\s*opIds\s*\)/,
+    'o select flat de ordens_compra_fio deve permanecer byte-identico ao pre-fase');
+});
+
+test('pedido-detail-data.js: state.ordensFio is populated on both the canonical and the fallback branch', () => {
+  assert.match(detailData, /state\.ordensFio\s*=\s*canonicalOrdens\.rows/);
+  assert.match(detailData, /state\.ordensFio\s*=\s*ordensRes\.data\s*\|\|\s*\[\]/);
+});
+
 test('pedido-detail.js: NÃO referencia arquivos críticos de OP', () => {
   assert.doesNotMatch(detailBundle, /op-nova\.js/);
   assert.doesNotMatch(detailBundle, /op-persistir\.js/);

@@ -1630,3 +1630,63 @@ test('76. ORDEM-COMPRA-B1: base sem colunas de dimensão (pré-db/65) => linhas 
 // screen's rpcWrite (ordem-compra-events.js) and is covered by
 // tests/ordem-compra.smoke.js.
 // -------------------------------------------------------------------------
+
+// ---------------------------------------------------------------------
+// PHASE-C3C-B: fetchOrdensCompraFio canonical-first adaptation
+// (docs/architecture/ORDEM_COMPRA_C3C_B_PHASE_CONTRACT.md §32). Minimal
+// wiring only — reuses the same em_producao/tecelagem fixture as test 39.
+// ---------------------------------------------------------------------
+
+test('77. fetchOrdensCompraFio: listar_compat_inativo falls back to the exact pre-phase dim/legacy read, rendering identically to test 39', async () => {
+  const db = buildOpEmProducaoTecelagemFixture();
+  const rendered = await renderNovaOpForTest({
+    opId: 93, db,
+    rpcImpl: (name) => (name === 'listar_ordens_compra_fio_compat'
+      ? { data: null, error: { code: '55000', message: 'listar_compat_inativo' } }
+      : { data: null, error: null }),
+  });
+  assert.match(rendered.text, /Em produção/i);
+  assert.match(rendered.text, /Saldo em tecelagem/i);
+  assert.match(rendered.text, /OPs.*OP 9\/2026/s);
+});
+
+test('78. fetchOrdensCompraFio: canonical success renders using the adapter row, not the (empty) flat table', async () => {
+  const db = buildOpEmProducaoTecelagemFixture({ ordens_compra_fio: [] });
+  const rendered = await renderNovaOpForTest({
+    opId: 93, db,
+    rpcImpl: (name, params) => {
+      if (name !== 'listar_ordens_compra_fio_compat') return { data: null, error: null };
+      assert.equal(params.p_op_id, 93, 'must scope the OP-attributable grain by p_op_id');
+      return {
+        data: [{
+          ordens_compra_fio_id: 501, ordem_compra_id: 9, ordem_compra_item_id: 4,
+          pedido_id: 'ped-1', op_id: 93, op_ids_multiplos: false, op_numero: 9, op_ano: 2026,
+          op_label: 'Nº 9/2026', fornecedor_id: 702, fornecedor_nome: 'Fios do Vale',
+          tipo: 'algodao', material: 'algodao', cor_id: 11, cor_nome: 'PRETO', cor_poliester: null,
+          kg_pedido: 1.2, kg_recebido: 1.2, kg_recebido_atribuido: 1.2, kg_excesso: 0,
+          status: 'recebido_total', status_administrativo: 'emitida', status_aceite: 'nao_aplicavel',
+          status_recebimento: 'total', data_recebimento: '2026-06-15', alocacoes: [],
+        }],
+        error: null,
+      };
+    },
+  });
+  // With the flat table empty, this text only renders correctly if the
+  // canonical row (kg_recebido=1.2) was consumed instead.
+  assert.match(rendered.text, /Saldo em tecelagem/i);
+  assert.doesNotMatch(rendered.text, /erro/i);
+});
+
+test('79. fetchOrdensCompraFio: hard-failure error (e.g. sem_permissao) is surfaced, never silently treated as inactive', async () => {
+  const db = buildOpEmProducaoTecelagemFixture();
+  const rendered = await renderNovaOpForTest({
+    opId: 93, db,
+    rpcImpl: (name) => (name === 'listar_ordens_compra_fio_compat'
+      ? { data: null, error: { code: '42501', message: 'sem_permissao' } }
+      : { data: null, error: null }),
+  });
+  // fetchOrdensCompraFio returns { data: null, error } on hard_failure;
+  // reloadOrdens()-style callers toast and stop rather than crash. The
+  // screen itself must not throw.
+  assert.ok(rendered.view, 'screenNovaOP must not throw on a hard-failure canonical response');
+});

@@ -17,10 +17,10 @@ directly (`git rev-parse HEAD`, `git status --short --untracked-files=all`).
 <!-- SPEC_CUSTODY_BOOTSTRAP:BEGIN -->
 ```text
 LAST_ACCEPTED_PHASE: PHASE-C3C-B-DB-PREREQ
-ACTIVE_PHASE: PHASE-C3C-B
-ACTIVE_PHASE_CONTRACT: docs/architecture/ORDEM_COMPRA_C3C_B_PHASE_CONTRACT.md
+ACTIVE_PHASE: NONE
+ACTIVE_PHASE_CONTRACT: NONE
 ACTIVE_TRACK: PURCHASE_ORDER_PHASE_C
-NEXT_AUTHORIZABLE_ACTION: PHASE-C3C-B application compatibility/adaptation implementation, per that contract's §§1-24 as corrected by its §32 (docs/architecture/ORDEM_COMPRA_C3C_B_DB_PREREQUISITES_PHASE_CONTRACT.md §39 records supervisor acceptance of the applied db/75+db/76 development-database stack, ucrjtfswnfdlxwtmxnoo, that authorizes this action)
+NEXT_AUTHORIZABLE_ACTION: supervisor review/acceptance of the PHASE-C3C-B application-adapter implementation (docs/architecture/ORDEM_COMPRA_C3C_B_PHASE_CONTRACT.md, IMPLEMENTED / LOCALLY VERIFIED / AWAITING SUPERVISOR ACCEPTANCE); only after that acceptance may staging validation/application of db/76 or C3D be authorized
 GOVERNING_SPEC: docs/architecture/ORDEM_COMPRA_LIFECYCLE_SPEC_PROPOSED.md
 TECHNICAL_CONTRACT: docs/architecture/PEDIDO_OP_SCHEMA_CONTRACT.md
 SEQUENCE_AUTHORITY: docs/architecture/PEDIDO_PRODUCTION_FLOW_BACKLOG.md
@@ -55,12 +55,28 @@ ACCEPTED_CHECKPOINT: 34d7d231d0875093bc2091f385c61cf35fa0b5cb
   resource locks, ACL-closure command, recovery boundaries). Lifecycle §R.29 and
   schema §13.15 are unchanged. Local technical acceptance only — no staging
   validation/application, deployment, activation, cutover, or product acceptance.
-- **Active product phase:** `PHASE-C3C-B` (application compatibility/adaptation).
-  **Active phase contract:** `docs/architecture/ORDEM_COMPRA_C3C_B_PHASE_CONTRACT.md`,
-  authorized by that contract's §32 forward correction and
+- **Active product phase:** `NONE`. **Active phase contract:** `NONE`.
+- **`PHASE-C3C-B` (application compatibility/adaptation):** `IMPLEMENTED /
+  LOCALLY VERIFIED / AWAITING SUPERVISOR ACCEPTANCE`. Authorized by
+  `docs/architecture/ORDEM_COMPRA_C3C_B_PHASE_CONTRACT.md` §32 (forward
+  correction, commit `07fb4903eda67ac5e570ca505e09185b688b5277`,
+  `docs: authorize C3C-B application adaptation`) and
   `docs/architecture/ORDEM_COMPRA_C3C_B_DB_PREREQUISITES_PHASE_CONTRACT.md`
   §39 (supervisor acceptance of the applied `db/75`+`db/76`
-  development-database stack), both 2026-07-20.
+  development-database stack), both 2026-07-20. Implemented the shared
+  adapter `js/screens/ordem-compra-receipt-cutover.js` and adapted the nine
+  other authorized product paths (`js/screens/op-writes.js`,
+  `js/screens/fornecedor.js`, `js/screens/pedido-detail-data.js`,
+  `js/screens/op-nova.js`, `js/screens/op-persistir.js`,
+  `js/screens/op-recalculo.js`, `index.html`;
+  `js/screens/pedido-detail-events.js` and `js/delete-helpers.js` required
+  no change). Full mandatory Node suite (3960 tests) has the identical
+  124-failure set as the pre-phase baseline — zero regressions;
+  `node scripts/validate-spec-custody.mjs` PASS. No dependent `OC-C3-*`
+  requirement is `SATISFIED`. See
+  `docs/architecture/ORDEM_COMPRA_C3C_B_PHASE_CONTRACT.md` §33 and
+  `docs/ledgers/G28_LEDGER.md` (2026-07-20, `PHASE-C3C-B
+  APPLICATION-ADAPTER IMPLEMENTATION`) for the full closeout.
 - **Governance status:**
   - `GOVERNANCE-SPEC-CUSTODY-FOUNDATION-R1`: **ACCEPTED**.
   - `GOVERNANCE-STATE-HANDOFF-COMPACTION-R1`: **ACCEPTED** by the supervisor at
@@ -160,17 +176,16 @@ ACCEPTED_CHECKPOINT: 34d7d231d0875093bc2091f385c61cf35fa0b5cb
   stands). Recorded in contract §38 as `APPLIED / DEVELOPMENT DB VERIFIED /
   AWAITING SUPERVISOR ACCEPTANCE`. **No dependent `OC-C3-*` requirement is
   `SATISFIED`.**
-- **NEXT_AUTHORIZABLE_ACTION:** the applied `db/75`+`db/76` development-database
-  stack was supervisor-accepted
-  (`docs/architecture/ORDEM_COMPRA_C3C_B_DB_PREREQUISITES_PHASE_CONTRACT.md`
-  §39); `PHASE-C3C-B` application-adaptation implementation is now
-  **authorized** and **active**, exactly as scoped by
-  `docs/architecture/ORDEM_COMPRA_C3C_B_PHASE_CONTRACT.md` §§1–24 as corrected
-  by its §32 (corrected application RPC targets, inactive signals, error
-  matrix, idempotency lifecycle). Deployment, activation, real snapshot/import,
-  fence transition, read switch, final ACL-closure invocation, cutover, C3D,
-  C4, C5, production access, and push beyond the authorized `staging/dev`
-  fast-forward remain unauthorized.
+- **NEXT_AUTHORIZABLE_ACTION:** `PHASE-C3C-B` application-adapter
+  implementation is `IMPLEMENTED / LOCALLY VERIFIED / AWAITING SUPERVISOR
+  ACCEPTANCE` (`docs/architecture/ORDEM_COMPRA_C3C_B_PHASE_CONTRACT.md` §33).
+  The next authorizable action is **supervisor review/acceptance of this
+  implementation**. Only after that acceptance may staging validation/
+  application of `db/76`, deployment, activation, real snapshot/import, fence
+  transition, read switch, final ACL-closure invocation, cutover, C3D, C4,
+  C5, production access, or any further push beyond the authorized
+  `staging/dev` fast-forward be authorized. No product phase chains
+  automatically; `ACTIVE_PHASE`/`ACTIVE_PHASE_CONTRACT` remain `NONE`.
 
 ## Workspace and Git boundaries
 
@@ -292,19 +307,20 @@ and `docs/ledgers/G28_LEDGER.md`; in any wording divergence the archive/ledger w
 DB VERIFIED`, and `db/75`+`db/76` are now **applied to the development/legacy
 database `ucrjtfswnfdlxwtmxnoo`, inert and supervisor-accepted**
 (`docs/architecture/ORDEM_COMPRA_C3C_B_DB_PREREQUISITES_PHASE_CONTRACT.md`
-§39) — `PHASE-C3C-B` application compatibility/adaptation implementation is
-now **AUTHORIZED and ACTIVE**, scoped exactly by
-`docs/architecture/ORDEM_COMPRA_C3C_B_PHASE_CONTRACT.md` §§1–24 as corrected
-by its §32 (ten authorized product paths, eight authorized test paths, no new
-UI, no database or environment action — §8 of that contract). Beyond that
-authorized local application-adapter implementation and the one authorized
-fast-forward push to `staging/dev` recording each closeout, no migration,
-validator, lifecycle/schema semantic, or traceability change is authorized.
-C3D, staging application/validation of `db/76`, activation, deployment, real
-snapshot/import, fence transition, read switch, final ACL-closure invocation,
-cutover, C4, C5, production access, Supabase writes, `main`,
-`origin`/`production` remote mutation, and any further push all remain
-**UNAUTHORIZED**. Production `bhgifjrfagkzubpyqpew` must not be accessed.
+§39). `PHASE-C3C-B` application compatibility/adaptation is now
+**`IMPLEMENTED / LOCALLY VERIFIED / AWAITING SUPERVISOR ACCEPTANCE`**
+(`docs/architecture/ORDEM_COMPRA_C3C_B_PHASE_CONTRACT.md` §33), scoped exactly
+by that contract's §§1–24 as corrected by its §32 (ten authorized product
+paths, eight authorized test paths, no new UI, no database or environment
+action — §8 of that contract). Beyond that local application-adapter
+implementation and the one authorized fast-forward push to `staging/dev`
+recording each closeout, no migration, validator, lifecycle/schema semantic,
+or traceability change is authorized. C3D, staging application/validation of
+`db/76`, activation, deployment, real snapshot/import, fence transition, read
+switch, final ACL-closure invocation, cutover, C4, C5, production access,
+Supabase writes, `main`, `origin`/`production` remote mutation, and any
+further push all remain **UNAUTHORIZED**. Production `bhgifjrfagkzubpyqpew`
+must not be accessed.
 
 ## Accepted-phase index (concise)
 

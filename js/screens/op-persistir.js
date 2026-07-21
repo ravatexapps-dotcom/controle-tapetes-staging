@@ -34,6 +34,22 @@
 (function (window) {
   'use strict';
 
+  // PHASE-C3C-B (docs/architecture/ORDEM_COMPRA_C3C_B_PHASE_CONTRACT.md §32):
+  // replaces a raw legacy_receipt_fenced Postgres error with a clear message,
+  // through the caller's existing non-crashing { error, ... } return shape.
+  // Not reachable while legacy_active; returns the original error unchanged
+  // for every other condition.
+  function clearFenceError(error) {
+    var cutover = window.RAVATEX_SCREENS && window.RAVATEX_SCREENS.ordemCompraReceiptCutover;
+    if (cutover && cutover.isLegacyReceiptFenced(error)) {
+      return Object.assign(
+        new Error('Recebimento de fio bloqueado pelo fechamento do cutover legado.'),
+        { code: '55000', codigo: 'legacy_receipt_fenced', cause: error }
+      );
+    }
+    return error;
+  }
+
   function itensValidosOP(itens) {
     return (itens || []).filter((item) => item && item.modeloId && Number(item.metros) > 0);
   }
@@ -240,6 +256,12 @@
       }
 
       // legacy: preserve the existing flat-row creation/deletion EXACTLY.
+      // PHASE-C3C-B (docs/architecture/ORDEM_COMPRA_C3C_B_PHASE_CONTRACT.md
+      // §32): no bridge, mapping, canonical order creation, or db/76 RPC
+      // call is added here. clearFenceError() only replaces a raw
+      // legacy_receipt_fenced Postgres error (db/75's protected-mutation
+      // guard, not reachable while legacy_active) with a clear message,
+      // through the exact same non-crashing { error, step, partial } shape.
       const calc = window.calcularFiosOP(validos, modelosById, parametrosByLargura);
       const ordens = window.montarOrdensCompraFio(calc).map((o) => ({
         op_id: opIdSalvo,
@@ -250,12 +272,12 @@
       const delOrd = await supa.from('ordens_compra_fio').delete().eq('op_id', opIdSalvo);
       if (delOrd.error) {
         await supa.from('ops').update({ status: 'simulada' }).eq('id', opIdSalvo);
-        return { error: delOrd.error, step: 'ordens_compra_fio_delete', partial: true, opId: opIdSalvo };
+        return { error: clearFenceError(delOrd.error), step: 'ordens_compra_fio_delete', partial: true, opId: opIdSalvo };
       }
       const ordRes = await supa.from('ordens_compra_fio').insert(ordens);
       if (ordRes.error) {
         await supa.from('ops').update({ status: 'simulada' }).eq('id', opIdSalvo);
-        return { error: ordRes.error, step: 'ordens_compra_fio_insert', partial: true, opId: opIdSalvo };
+        return { error: clearFenceError(ordRes.error), step: 'ordens_compra_fio_insert', partial: true, opId: opIdSalvo };
       }
       return { error: null, step: 'ok', partial: false, opId: opIdSalvo, numero: numeroPersistido, modelo: 'legacy' };
     }

@@ -990,7 +990,24 @@
   // (non-missing-column) errors are surfaced unchanged, as before.
   // OCF_SELECT_LEGACY/OCF_SELECT_DIM are module-level constants (top of the
   // IIFE) so the initial-load call site is never in their TDZ.
+  // PHASE-C3C-B (docs/architecture/ORDEM_COMPRA_C3C_B_PHASE_CONTRACT.md §32):
+  // minimal wiring only — attempts the canonical legacy-compat projection
+  // (item x OP grain, scoped by p_op_id) first; falls back to the exact
+  // pre-phase dim/legacy select below, unchanged, on the documented inactive
+  // signal or the bounded missing-function condition. ordensDimDisponivel is
+  // deliberately left at its default (false) on a canonical response: the
+  // canonical projection does not project legado_recebimento_automatico
+  // (§32.6), and ocfIsLegacy's read-only fallback is the conservative choice
+  // rather than guessing that field's value.
   async function fetchOrdensCompraFio(opId) {
+    const cutover = window.RAVATEX_SCREENS && window.RAVATEX_SCREENS.ordemCompraReceiptCutover;
+    if (cutover) {
+      const canonical = await cutover.attemptCanonicalRead({ opId: opId });
+      if (canonical.outcome === 'canonical_success') return { data: canonical.rows, error: null };
+      if (canonical.outcome === 'hard_failure') return { data: null, error: canonical.error };
+      // outcome === 'legacy_fallback' — fall through to the exact existing
+      // dim/legacy read below.
+    }
     const dimRes = await supa.from('ordens_compra_fio').select(OCF_SELECT_DIM).eq('op_id', opId);
     if (!dimRes.error) { ordensDimDisponivel = true; return dimRes; }
     const semColuna = dimRes.error.code === '42703'
