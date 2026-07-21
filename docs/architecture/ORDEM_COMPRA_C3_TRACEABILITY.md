@@ -8,9 +8,11 @@
 ```text
 ACTIVE_TRACK: PURCHASE_ORDER_PHASE_C
 LAST_ACCEPTED_PHASE: PHASE-C3C-B
-ACTIVE_PHASE: NONE
+ACTIVE_PHASE: PHASE-C3D
+ACTIVE_PHASE_CONTRACT: docs/architecture/ORDEM_COMPRA_C3D_PHASE_CONTRACT.md
 CLOSED_MATERIAL_PHASES: PHASE-C3C-A, PHASE-C3C-B-DB-PREREQ, PHASE-C3C-B
-NEXT_AUTHORIZABLE_ACTION: read-only supervisor review of the final corrected PHASE-C3D material phase contract (docs/architecture/ORDEM_COMPRA_C3D_PHASE_CONTRACT.md, PROPOSED / AWAITING SUPERVISOR ACCEPTANCE / IMPLEMENTATION NOT AUTHORIZED); no C3D implementation or environment mutation authorized
+ACCEPTED_C3D_SUBLOTS: PHASE-C3D-A (096cd60325e4987010d328c856ee6a3a51ca66bf), PHASE-C3D-B (5441321014883c4e8149dc8b20da9d053a193699) — CLOSED / TECHNICALLY ACCEPTED / LOCALLY VERIFIED accepted sublots inside the active PHASE-C3D material contract; PHASE-C3D itself is NOT closed
+NEXT_AUTHORIZABLE_ACTION: execute PHASE-C3D-C from a fresh Claude session using this documentation-only checkpoint as the exact Git baseline; PHASE-C3D-D and every later sublot remain unauthorized
 VALIDATION_ACCOUNTING_SUBJECT: fix: harden spec custody validation
 VALIDATION_ACCOUNTING_SUBJECT_R2: fix: reject detached spec custody rows
 VALIDATION_ACCOUNTING_SUBJECT_R3: fix: distinguish prose from detached tables
@@ -53,7 +55,7 @@ Allowed dispositions: `SATISFIED`, `PARTIALLY_SATISFIED`, `PLANNED`, `DEFERRED`,
 | OC-C3-WRITE-001 | docs/architecture/ORDEM_COMPRA_LIFECYCLE_SPEC_PROPOSED.md::§R.29.1; docs/architecture/ORDEM_COMPRA_LIFECYCLE_SPEC_PROPOSED.md::§R.29.3 | C3C-B | PARTIALLY_SATISFIED | db/75_ordem_compra_c3c_inactive_cutover.sql; js/screens/ordem-compra-receipt-cutover.js, js/screens/op-writes.js, js/screens/fornecedor.js, js/screens/op-persistir.js, js/screens/op-recalculo.js (PHASE-C3C-B §32 canonical-first writer adaptation + legacy_receipt_fenced defensive handling) | tests/ordem-compra-c3c-inactive.integration.sql; tests/ordem-compra-receipt-cutover.smoke.js, tests/op-writes.smoke.js, tests/fornecedor-screens.smoke.js, tests/op-persistir.smoke.js, tests/op-recalculo.smoke.js | LOCAL_POSTGRES_18_4_ONLY (db/76) plus LOCAL_ONLY (application adapter, faithful Node test doubles) | 22bfb192c6c2ad10ccd2b2883d54c3a17e40cc9f | PHASE-C3C-B application adaptation is CLOSED / ACCEPTED_WITH_NONBLOCKING_DEBT / LOCALLY VERIFIED (supervisor-accepted 2026-07-21, contract §36): all three independent writer call-sites (op-writes.js, fornecedor.js, op-persistir.js source rows) route through the state-aware pattern or carry an explicit DB-fence-only disablement (op-recalculo.js saldo write); every fail-closed code (`sem_permissao`, `estado_invalido`, `mapeamento_compat_ausente`, `decremento_exige_admin`, `reducao_abaixo_saldo_importado`, `idempotencia_conflitante`, etc.) never falls back. Not SATISFIED — real `canonical_active` verification is C3D/real-cutover territory (owned by PHASE-C3D); db/76 remains unapplied to any staging database. |
 | OC-C3-COMPAT-001 | docs/architecture/ORDEM_COMPRA_LIFECYCLE_SPEC_PROPOSED.md::§R.29.1 | C3C-B | PARTIALLY_SATISFIED | docs/architecture/ORDEM_COMPRA_C3C_B_PHASE_CONTRACT.md §§32/34/35/36 (activation + supervisor-review corrections + acceptance) + the ten authorized product paths | Full mandatory Node suite: 122-failure set, byte-identical failing-name differential before/after the final correction (zero regressions); node scripts/validate-spec-custody.mjs PASS | LOCAL_ONLY | 22bfb192c6c2ad10ccd2b2883d54c3a17e40cc9f | The two database prerequisites (db/76 Component A/B) are CLOSED / TECHNICALLY ACCEPTED / LOCAL DB VERIFIED and applied+accepted inert in the development database (contract §§35–39); §32 activated and this pass's implementation (contract §33), corrected by §34/§35, was supervisor-accepted by §36 (CLOSED / ACCEPTED_WITH_NONBLOCKING_DEBT / LOCALLY VERIFIED, 2026-07-21). Every discovered dependency carries an explicit disposition (adapter, verification-only, or out-of-scope); no undisposed direct legacy caller remains. Not SATISFIED — mapping completeness/freeze/re-baseline remain C3D/real-cutover scope; db/76 remains unapplied to any staging database. |
 | OC-C3-NOUI-001 | docs/architecture/ORDEM_COMPRA_LIFECYCLE_SPEC_PROPOSED.md::§R.29.6 | C3C-B | PARTIALLY_SATISFIED | No UI artifact in C3C-A; PHASE-C3C-B added no route, screen, modal, or interaction — js/router.js and js/boot.js are byte-unchanged | Static manifest verification; index.html diff is exactly one added `<script>` line, no other line changed; UI-inertness accepted at contract §36.3 | LOCAL_ONLY | 22bfb192c6c2ad10ccd2b2883d54c3a17e40cc9f | The no-new-UI boundary remains binding through later C3 work; PHASE-C3C-B preserved it (supervisor-accepted 2026-07-21, contract §36) — verified by diff, not screenshot, since no pixel was expected to change. Not SATISFIED — later C3D/C4 UI boundaries remain owned by their phases. |
-| OC-C3D-DEPLOY-001 | docs/architecture/ORDEM_COMPRA_LIFECYCLE_SPEC_PROPOSED.md::§R.29 | C3D | PLANNED | — | — | STAGING_NOT_APPLIED | — | Inactive deployment manifest and rehearsal remain unauthorized. |
+| OC-C3D-DEPLOY-001 | docs/architecture/ORDEM_COMPRA_LIFECYCLE_SPEC_PROPOSED.md::§R.29 | C3D | SATISFIED | scripts/c3d/bootstrap-disposable-cluster.mjs; tests/ordem-compra-c3d-deploy.smoke.js; tests/ordem-compra-c3d-deploy.integration.sql; db/75_ordem_compra_c3c_inactive_cutover.sql; db/76_ordem_compra_c3c_b_db_prerequisites.sql; accepted application artifact 22bfb192c6c2ad10ccd2b2883d54c3a17e40cc9f | C3D-A checkpoint 096cd60325e4987010d328c856ee6a3a51ca66bf; C3D-B checkpoint 5441321014883c4e8149dc8b20da9d053a193699; two fresh PostgreSQL 18.4 disposable-cluster rehearsals; complete ordered db/01…db/76 application; inactive Component A/B evidence; db/76 reapplication evidence; db/75 ordered-single-application classification; application fallback evidence; shared-development read-only evidence; exact full-suite added-failure set = empty | DISPOSABLE_LOCAL_POSTGRES_18_4 + DEVELOPMENT_DB_UCRJTFSWNFDLXWTMXNOO_READ_ONLY | 5441321014883c4e8149dc8b20da9d053a193699 | no state-changing rehearsal against a shared or production database; the validator self-test active-contract fixture limitation remains a pre-existing governance-harness debt; real cutover remains separately unauthorized |
 | OC-C3D-FENCE-001 | docs/architecture/ORDEM_COMPRA_LIFECYCLE_SPEC_PROPOSED.md::§R.29.3 | C3D | PARTIALLY_SATISFIED | db/75_ordem_compra_c3c_inactive_cutover.sql | tests/ordem-compra-c3c-inactive.integration.sql | LOCAL_POSTGRES_18_4_ONLY | 89123729b3529fff6e4a2336bfec2907c4b94b4c | Required staging admin and matching-supplier empirical proof is pending. |
 | OC-C3D-ACL-001 | docs/architecture/PEDIDO_OP_SCHEMA_CONTRACT.md::13.15.2 | C3D | PARTIALLY_SATISFIED | db/75_ordem_compra_c3c_inactive_cutover.sql | tests/ordem-compra-c3c-inactive.smoke.js and tests/ordem-compra-c3c-inactive.integration.sql | LOCAL_POSTGRES_18_4_ONLY | 89123729b3529fff6e4a2336bfec2907c4b94b4c | Staging role matrix and non-invoking closure rehearsal are pending. |
 | OC-C3D-LOCK-001 | docs/architecture/ORDEM_COMPRA_LIFECYCLE_SPEC_PROPOSED.md::§R.29.5 | C3D | PARTIALLY_SATISFIED | db/75_ordem_compra_c3c_inactive_cutover.sql | tests/ordem-compra-c3c-inactive-concurrency.mjs | LOCAL_POSTGRES_18_4_ONLY | 89123729b3529fff6e4a2336bfec2907c4b94b4c | Inactive staging rehearsal remains pending. |
@@ -83,17 +85,23 @@ above remain `PARTIALLY_SATISFIED`, because real `canonical_active` read/write
 proof and the real cutover boundary are owned by `PHASE-C3D` / real cutover and
 `db/76` remains unapplied to any staging database.
 
-The next authorizable action is **read-only supervisor review of the
-`PHASE-C3D` material phase contract**
-(`docs/architecture/ORDEM_COMPRA_C3D_PHASE_CONTRACT.md`, `PROPOSED / AWAITING
-SUPERVISOR ACCEPTANCE / IMPLEMENTATION NOT AUTHORIZED`), which binds the four
-`OC-C3D-*` requirements to an isolated-rehearsal scope without changing any
-disposition. `PHASE-C3D` implementation and every sublot, staging
-validation/application of `db/76`, activation, deployment, real snapshot/import,
-fence transition, read switch, final ACL-closure invocation, cutover, branch
-creation, C4, C5, production access, Supabase writes to any target, `main`,
-remotes, and any push beyond the authorized `staging/dev` fast-forward remain
-unauthorized.
+The `PHASE-C3D` material phase contract
+(`docs/architecture/ORDEM_COMPRA_C3D_PHASE_CONTRACT.md`) is **ACCEPTED** and
+active. Its sublots `PHASE-C3D-A` (checkpoint
+`096cd60325e4987010d328c856ee6a3a51ca66bf`) and `PHASE-C3D-B` (checkpoint
+`5441321014883c4e8149dc8b20da9d053a193699`) are both **CLOSED / TECHNICALLY
+ACCEPTED / LOCALLY VERIFIED** (contract §R); their combined accepted evidence
+advanced `OC-C3D-DEPLOY-001` to **`SATISFIED`** (row above). `PHASE-C3D` itself
+is **not** closed — `OC-C3D-FENCE-001`/`OC-C3D-ACL-001`/`OC-C3D-LOCK-001` remain
+`PARTIALLY_SATISFIED`. The next authorizable action is **executing
+`PHASE-C3D-C` from a fresh Claude session** (contract §R.3) using this
+documentation-only checkpoint's final HEAD as the exact Git baseline;
+`PHASE-C3D-C` is `AUTHORIZED / NOT STARTED`. `PHASE-C3D-D` through `C3D-F`,
+staging validation/application of `db/76`, activation, deployment, real
+snapshot/import, fence transition, read switch, final ACL-closure invocation,
+cutover, branch creation, C4, C5, production access, Supabase writes to any
+target, `main`, other remotes, and any push beyond the authorized `staging/dev`
+fast-forward remain **unauthorized**.
 
 ## Material phase contract reference
 
@@ -189,7 +197,15 @@ execution and no client-grant widening (§C, §E, §G.5A, §I, §M); plus a
 wildcard-wording correction (wildcards appear only in read-only/prohibited
 patterns — `NO WILDCARD OR DIRECTORY-LEVEL WRITE AUTHORIZATION EXISTS`). No
 `OC-C3D-*` disposition changed by the authoring or either correction pass.
-`STATUS: PROPOSED / AWAITING SUPERVISOR ACCEPTANCE / IMPLEMENTATION NOT
-AUTHORIZED` (unchanged); `ACTIVE_PHASE`/`ACTIVE_PHASE_CONTRACT` remain `NONE`;
-read-only supervisor review of the final corrected contract is the next
-authorizable action.
+The contract was subsequently **accepted** (§0c) and executed sublot by sublot:
+`PHASE-C3D-A` (environment & deployment-manifest qualification, §O/§P) and
+`PHASE-C3D-B` (inactive migration & application-presence validation, §Q) are
+both `CLOSED / TECHNICALLY ACCEPTED / LOCALLY VERIFIED` (supervisor acceptance
+recorded at §R, checkpoints `096cd603…` and `5441321…`); `OC-C3D-DEPLOY-001` is
+now `SATISFIED`; the §G item 9 pre-PONR rollback semantics were corrected (§R.2:
+rollback restores `flat` read authority only, keeps `status=maintenance_fenced`,
+does not return to `legacy_active`, and does not restore flat grants/policies).
+`PHASE-C3D-C` is `AUTHORIZED / NOT STARTED` (fresh Claude session required, §R.3);
+`ACTIVE_PHASE`/`ACTIVE_PHASE_CONTRACT` are `PHASE-C3D` / this contract's path in
+`PROJECT_STATE.md`. Executing `PHASE-C3D-C` from a fresh session is the next
+authorizable action; `PHASE-C3D-D` and every later sublot remain unauthorized.

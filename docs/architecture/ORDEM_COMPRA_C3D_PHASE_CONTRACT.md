@@ -3,7 +3,7 @@
 <!-- MATERIAL_PHASE_CONTRACT:BEGIN -->
 PHASE_ID: PHASE-C3D
 <!-- MATERIAL_PHASE_CONTRACT:END -->
-STATUS: ACCEPTED — PHASE-C3D-A: CLOSED / TECHNICALLY ACCEPTED / LOCALLY VERIFIED (accepted checkpoint 096cd60325e4987010d328c856ee6a3a51ca66bf) — PHASE-C3D-B: IMPLEMENTED / LOCALLY VERIFIED / AWAITING SUPERVISOR ACCEPTANCE — C3D-C THROUGH C3D-F: NOT AUTHORIZED
+STATUS: ACCEPTED — PHASE-C3D-A: CLOSED / TECHNICALLY ACCEPTED / LOCALLY VERIFIED (accepted checkpoint 096cd60325e4987010d328c856ee6a3a51ca66bf) — PHASE-C3D-B: CLOSED / TECHNICALLY ACCEPTED / LOCALLY VERIFIED (accepted checkpoint 5441321014883c4e8149dc8b20da9d053a193699) — PHASE-C3D-C: AUTHORIZED / NOT STARTED (fresh Claude session required) — C3D-D THROUGH C3D-F: NOT AUTHORIZED
 
 > **Material-contract identity (restored §Q.1).** The machine-readable
 > `PHASE_ID` above is `PHASE-C3D` — the identity of the whole material phase
@@ -580,8 +580,19 @@ proofs never on the shared DB). The rehearsal test files are named in §I.
 9. **Failure injection & rollback (pre-PONR only, C3D-C)** — inject a
    mid-rehearsal failure **before** any successful Component B receipt and
    prove the pre-PONR rollback (`ordem_compra_c3c_pre_ponr_rollback`) restores
-   `flat`/`legacy_active` while retaining the fence and **not** restoring flat
-   grants (§R.29.6); no partial state. This proof is distinct from item 8:
+   **`flat` read authority only** while the cutover **remains
+   `maintenance_fenced`** — it does **not** return to `legacy_active` — clears
+   `canonical_activated_at` to `NULL`, keeps `productive_receipt_started_at`
+   `NULL`, retains the recorded `cutover_generation` and the frozen source
+   snapshot / inventory baseline / committed import-reconciliation history, and
+   leaves the database-owned mutation fence active with grants and RLS policies
+   **byte-identical to their immediate pre-rollback state** (it does **not**
+   restore or widen flat mutation grants and does **not** restore any removed
+   `PUBLIC`-targeted policy). Returning to `legacy_active` or re-enabling flat
+   mutation would require a separately authorized recovery procedure with an
+   explicit generation/idempotency plan (§R.29.6; db/75
+   `public.ordem_compra_c3c_pre_ponr_rollback(BIGINT)`); no partial state. This
+   proof is distinct from item 8:
    it never crosses the PONR, and `ordem_compra_c3c_pre_ponr_rollback` is
    **not** invoked after item 8's successful Component B receipt — it is no
    longer a valid rollback path once the PONR has been crossed (§H).
@@ -1296,3 +1307,87 @@ advanced only by the supervisor after accepting the combined C3D-A + C3D-B
 evidence). **NEXT_AUTHORIZABLE_ACTION:** read-only supervisor review of the
 `PHASE-C3D-B` evidence; `PHASE-C3D-C` and every later sublot remain
 unauthorized. **Hard stop before `PHASE-C3D-C`.**
+
+## R. Supervisor acceptance of PHASE-C3D-B and pre-PONR rollback correction
+
+> Authored under the "PHASE-C3D-B SUPERVISOR ACCEPTANCE AND DOCUMENTARY
+> RECONCILIATION" order (documentation-only). Entry checkpoint
+> `5441321014883c4e8149dc8b20da9d053a193699`. This section records the
+> supervisor's acceptance of `PHASE-C3D-A` + `PHASE-C3D-B`, advances
+> `OC-C3D-DEPLOY-001` to `SATISFIED`, corrects the pre-PONR rollback semantics
+> (§R.2), and records `PHASE-C3D-C` as separately authorized but NOT STARTED.
+> No product, test, script, migration, database, Supabase, or environment
+> action is taken.
+
+### R.1 Acceptance record
+
+- `PHASE-C3D-A`: **CLOSED / TECHNICALLY ACCEPTED / LOCALLY VERIFIED** —
+  accepted technical checkpoint `096cd60325e4987010d328c856ee6a3a51ca66bf`.
+- `PHASE-C3D-B`: **CLOSED / TECHNICALLY ACCEPTED / LOCALLY VERIFIED** —
+  accepted technical checkpoint `5441321014883c4e8149dc8b20da9d053a193699`.
+
+The combined accepted C3D-A + C3D-B evidence satisfies `OC-C3D-DEPLOY-001`
+(now `SATISFIED`; traceability matrix updated). Accepted evidence: the exact
+`db/01`…`db/76` application in two fresh disposable PostgreSQL 18.4 clusters;
+`db/75`/`db/76` terminal; `db/75` correctly classified as ordered
+single-application; `db/76` deterministic reapplication with no drift; the exact
+inactive Component A (`listar_compat_inativo`/`55000`) and Component B
+(`recebimento_compat_inativo`) results; zero mutation and zero lock leakage;
+application flat-fallback compatibility evidence; zero newly failing full-suite
+identity; shared-development migrations/state/fingerprints re-confirmed
+read-only; and no persistent database mutation. `OC-C3D-FENCE-001`,
+`OC-C3D-ACL-001`, `OC-C3D-LOCK-001`, `OC-CUTOVER-001`, and `OC-CUTOVER-PONR-001`
+dispositions are **unchanged**.
+
+### R.2 Pre-PONR rollback semantics correction
+
+The prior §G item 9 wording that pre-PONR rollback "restores
+`flat`/`legacy_active`" was **incorrect**. The normative and implemented result
+(spec §R.29.6; db/75 `public.ordem_compra_c3c_pre_ponr_rollback(BIGINT)`,
+`SET read_authority='flat', status='maintenance_fenced',
+canonical_activated_at=NULL WHERE … productive_receipt_started_at IS NULL`) is:
+
+- pre-PONR rollback restores **`flat` read authority only**;
+- the database-owned mutation fence **remains active**;
+- `status` **remains `maintenance_fenced`** — it does **not** return to
+  `legacy_active`;
+- it does **not** restore or widen flat mutation grants;
+- it does **not** restore removed `PUBLIC`-targeted policies;
+- grants and RLS policies remain **byte-identical to their immediate
+  pre-rollback state**;
+- `cutover_generation` remains recorded;
+- the frozen source snapshot and inventory-baseline records remain;
+- committed import/reconciliation history remains;
+- `productive_receipt_started_at` remains `NULL`;
+- `canonical_activated_at` is cleared to `NULL`;
+- returning to `legacy_active` or re-enabling flat mutation would require a
+  separately authorized recovery procedure with an explicit
+  generation/idempotency plan.
+
+§G item 9 is corrected in place accordingly; the normative specification and
+`db/75` are read-only references and were not modified.
+
+### R.3 Next sublot authorization
+
+- `PHASE-C3D-C`: **AUTHORIZED / NOT STARTED**. **Execution context: a fresh
+  Claude session is required**, beginning only after this documentation-only
+  checkpoint is committed and confirmed on `staging/dev`, using its final HEAD
+  as the exact Git baseline. The authorization permits only the separately
+  supplied `PHASE-C3D-C` execution order.
+- `PHASE-C3D-D` through `PHASE-C3D-F`: **NOT AUTHORIZED**.
+
+No `PHASE-C3D-C` command, test file, PostgreSQL start, Supabase access, or fence
+transition is performed in this pass.
+
+### R.4 Documentary state after this pass
+
+`PHASE_ID: PHASE-C3D`; `ACTIVE_PHASE: PHASE-C3D`; `ACTIVE_PHASE_CONTRACT:
+docs/architecture/ORDEM_COMPRA_C3D_PHASE_CONTRACT.md`; `LAST_ACCEPTED_PHASE:
+PHASE-C3C-B`; `ACCEPTED_CHECKPOINT: 5441321014883c4e8149dc8b20da9d053a193699`.
+`PHASE-C3D-A` = CLOSED / TECHNICALLY ACCEPTED / LOCALLY VERIFIED; `PHASE-C3D-B`
+= CLOSED / TECHNICALLY ACCEPTED / LOCALLY VERIFIED; `OC-C3D-DEPLOY-001` =
+SATISFIED; `PHASE-C3D-C` = AUTHORIZED / NOT STARTED.
+**NEXT_AUTHORIZABLE_ACTION:** execute `PHASE-C3D-C` from a fresh Claude session
+at the final documentation-only HEAD produced by this pass; `PHASE-C3D-D` and
+every later sublot remain unauthorized. **Hard stop; `PHASE-C3D-C` is not begun
+in this session.**

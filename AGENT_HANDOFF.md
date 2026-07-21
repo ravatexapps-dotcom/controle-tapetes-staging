@@ -38,15 +38,18 @@
 - **Prior accepted product phase:** `PHASE-C3C-A` — `CLOSED / TECHNICALLY
   ACCEPTED — LOCALLY VERIFIED / INACTIVE / NOT APPLIED TO STAGING` (2026-07-20),
   technical checkpoint `89123729b3529fff6e4a2336bfec2907c4b94b4c`.
-- **Active product phase:** `PHASE-C3D` (material-contract identity). The
-  currently active implementation sublot is `PHASE-C3D-B` (inactive
-  migration/application-presence validation) — `IMPLEMENTED / LOCALLY VERIFIED
-  / AWAITING SUPERVISOR ACCEPTANCE` (§Q). `PHASE-C3D-A` (environment &
-  deployment-manifest qualification) is `CLOSED / TECHNICALLY ACCEPTED /
-  LOCALLY VERIFIED` at checkpoint `096cd60325e4987010d328c856ee6a3a51ca66bf`;
-  `PHASE-C3D-C`…`C3D-F` not authorized.
+- **Active product phase:** `PHASE-C3D` (material-contract identity).
+  `PHASE-C3D-A` and `PHASE-C3D-B` are both `CLOSED / TECHNICALLY ACCEPTED /
+  LOCALLY VERIFIED` (supervisor-accepted §R; checkpoints
+  `096cd60325e4987010d328c856ee6a3a51ca66bf` /
+  `5441321014883c4e8149dc8b20da9d053a193699`). The next authorizable sublot is
+  `PHASE-C3D-C`, `AUTHORIZED / NOT STARTED` — a **fresh Claude session is
+  required**; `PHASE-C3D-D`…`C3D-F` not authorized. `OC-C3D-DEPLOY-001` is now
+  `SATISFIED`; `OC-C3D-FENCE-001`/`OC-C3D-ACL-001`/`OC-C3D-LOCK-001` remain
+  `PARTIALLY_SATISFIED` (`PHASE-C3D` itself is not closed).
 - **Active phase contract:** `docs/architecture/ORDEM_COMPRA_C3D_PHASE_CONTRACT.md`
-  (`PHASE_ID: PHASE-C3D`; `ACCEPTED`, §0c; C3D-A evidence §O/§P; C3D-B evidence §Q).
+  (`PHASE_ID: PHASE-C3D`; `ACCEPTED`, §0c; C3D-A evidence §O/§P; C3D-B evidence
+  §Q; supervisor acceptance + pre-PONR rollback correction §R).
 - **Active track:** `PURCHASE_ORDER_PHASE_C`.
 - **Current governance status:** `GOVERNANCE-SPEC-CUSTODY-FOUNDATION-R1`
   **ACCEPTED**; `GOVERNANCE-STATE-HANDOFF-COMPACTION-R1` **ACCEPTED** by the
@@ -116,12 +119,13 @@
   (3993 tests, +8) has the same 122-failure set as the `f9b1a54` baseline —
   byte-identical failing-name set, zero regressions; validator PASS. No
   dependent `OC-C3-*` requirement is `SATISFIED`.
-- **Next authorizable action:** **read-only supervisor review of the
-  `PHASE-C3D-B` implementation evidence**
-  (`docs/architecture/ORDEM_COMPRA_C3D_PHASE_CONTRACT.md` §Q; `PHASE-C3D-A` is
-  now `CLOSED / TECHNICALLY ACCEPTED / LOCALLY VERIFIED` at checkpoint
-  `096cd60325e4987010d328c856ee6a3a51ca66bf`, and the material-contract
-  identity is restored to `PHASE-C3D`, §Q.1). The `PHASE-C3D` contract
+- **Next authorizable action:** **execute `PHASE-C3D-C` from a fresh Claude
+  session** at this documentation-only checkpoint's final HEAD as the exact Git
+  baseline (`docs/architecture/ORDEM_COMPRA_C3D_PHASE_CONTRACT.md` §R.3;
+  `PHASE-C3D-C` is `AUTHORIZED / NOT STARTED`). `PHASE-C3D-A` and `PHASE-C3D-B`
+  are supervisor-accepted (§R, checkpoints `096cd603…` / `5441321…`) and
+  `OC-C3D-DEPLOY-001` is `SATISFIED`; `PHASE-C3D-D`…`C3D-F` remain unauthorized.
+  The `PHASE-C3D` contract
   (two forward-corrected `PROPOSED` rounds — §0 R1: requirement disposition,
   the actor-path vs. structural eight-table fence proof split,
   disposable-cluster-only PONR semantics for the C3D-E concurrency proof, and
@@ -175,8 +179,13 @@
   full reapply — a full reapply would revert `db/76`'s additive `c3c_hash_check`
   extension), and proven process/port/temp-directory destruction after each
   run. Application fallback proven by the unmodified accepted adapter (`22bfb192`)
-  + existing tests; `ucrjtfswnfdlxwtmxnoo` re-confirmed inert read-only. No
-  `OC-C3D-*` disposition changed; `PHASE-C3D-B` is not self-accepted.
+  + existing tests; `ucrjtfswnfdlxwtmxnoo` re-confirmed inert read-only.
+  **Supervisor-accepted (§R, 2026-07-21)** at checkpoint `5441321…`; the
+  combined C3D-A + C3D-B evidence advanced `OC-C3D-DEPLOY-001` to `SATISFIED`,
+  and the §G item 9 pre-PONR rollback wording was corrected (§R.2: restores
+  `flat` reads only, keeps `maintenance_fenced`, does not restore
+  `legacy_active` or flat grants). `PHASE-C3D-C` is `AUTHORIZED / NOT STARTED`
+  (fresh session required).
 
 ## Governing specifications and contracts
 

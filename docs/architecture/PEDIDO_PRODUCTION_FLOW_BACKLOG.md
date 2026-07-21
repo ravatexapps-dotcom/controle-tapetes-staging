@@ -8,6 +8,28 @@
 > `PROJECT_STATE.md`. Phase sequence, dependencies, backlog items, and accepted
 > architecture in this file remain authoritative; live operational status does not.
 
+# Update 2026-07-21 - PHASE-C3D-B Supervisor Acceptance & Documentary Reconciliation
+
+Phase: `PHASE-C3D-B` supervisor acceptance (documentation-only). Historical
+closeout note — live state belongs to `PROJECT_STATE.md`.
+
+The supervisor accepted `PHASE-C3D-A` (checkpoint
+`096cd60325e4987010d328c856ee6a3a51ca66bf`) and `PHASE-C3D-B` (checkpoint
+`5441321014883c4e8149dc8b20da9d053a193699`), both `CLOSED / TECHNICALLY ACCEPTED
+/ LOCALLY VERIFIED` (contract §R). The combined accepted evidence advanced
+`OC-C3D-DEPLOY-001` to `SATISFIED` (traceability matrix updated); the stale
+traceability header (`ACTIVE_PHASE: NONE`, C3D described as `PROPOSED`) was
+reconciled to `ACTIVE_PHASE: PHASE-C3D`. The §G item 9 pre-PONR rollback wording
+was corrected (§R.2): pre-PONR rollback restores `flat` read authority only,
+keeps `status = maintenance_fenced` (does **not** return to `legacy_active`),
+and does not restore flat grants/policies (grounded in spec §R.29.6 and
+`db/75 ordem_compra_c3c_pre_ponr_rollback`; neither modified). `PHASE-C3D-C` is
+`AUTHORIZED / NOT STARTED` and must begin only in a fresh Claude session using
+this documentation-only checkpoint as the exact Git baseline; `PHASE-C3D-D`
+through `C3D-F` remain unauthorized. Sequence/architecture in this file are
+unchanged. Full evidence: contract §R and `docs/ledgers/G28_LEDGER.md`
+(2026-07-21, acceptance entry).
+
 # Update 2026-07-21 - PHASE-C3D-B Inactive Migration & Application-Presence Validation
 
 Phase: `PHASE-C3D-B` (the second `PHASE-C3D` sublot; sequence per the C3D

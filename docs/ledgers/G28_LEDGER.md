@@ -6639,3 +6639,74 @@ product file they depend on, was modified by this pass or the prior one):
   access, Supabase write, `main`, `origin`/`production` remote mutation, or any
   further push is authorized; one fast-forward push to `staging/dev` records
   this pass.
+
+## 2026-07-21 — PHASE-C3D-B — Supervisor acceptance and documentary reconciliation
+
+- **Type:** documentation-only checkpoint under the "PHASE-C3D-B SUPERVISOR
+  ACCEPTANCE AND DOCUMENTARY RECONCILIATION" order. Entry checkpoint
+  `5441321014883c4e8149dc8b20da9d053a193699`, branch `dev`, `staging/dev` equal
+  to HEAD, preserved residue exactly `.gitignore` (modified, unstaged),
+  `.codex/config.toml` (untracked), `.mcp.json` (untracked). No product, test,
+  script, migration, database, Supabase, or environment action.
+- **Supervisor ruling:** `PHASE-C3D-A` = `CLOSED / TECHNICALLY ACCEPTED /
+  LOCALLY VERIFIED` (accepted checkpoint
+  `096cd60325e4987010d328c856ee6a3a51ca66bf`); `PHASE-C3D-B` = `CLOSED /
+  TECHNICALLY ACCEPTED / LOCALLY VERIFIED` (accepted checkpoint
+  `5441321014883c4e8149dc8b20da9d053a193699`). Recorded in the contract §R.
+- **OC-C3D-DEPLOY-001 advanced to SATISFIED** (traceability matrix updated) on
+  the combined accepted C3D-A + C3D-B evidence: exact `db/01…db/76` application
+  in two fresh disposable PostgreSQL 18.4 clusters; `db/75`/`db/76` terminal;
+  `db/75` ordered single-application; `db/76` deterministic reapplication with
+  no drift; exact inactive Component A/B results; zero mutation and zero lock
+  leakage; application flat-fallback compatibility; zero newly failing
+  full-suite identity; shared-development migrations/state/fingerprints
+  re-confirmed read-only; no persistent database mutation.
+  `OC-C3D-FENCE-001`/`OC-C3D-ACL-001`/`OC-C3D-LOCK-001`/`OC-CUTOVER-001`/
+  `OC-CUTOVER-PONR-001` dispositions unchanged.
+- **Traceability reconciliation:** the stale header (`ACTIVE_PHASE: NONE`, C3D
+  contract described as `PROPOSED`, `OC-C3D-DEPLOY-001 PLANNED`, C3D awaiting
+  review) was corrected to `ACTIVE_PHASE: PHASE-C3D` with C3D-A/C3D-B recorded
+  as accepted sublots inside the active (not closed) `PHASE-C3D` contract;
+  `CLOSED_MATERIAL_PHASES` unchanged; `NEXT_AUTHORIZABLE_ACTION` = execute
+  `PHASE-C3D-C` from a fresh Claude session.
+- **Pre-PONR rollback correction (§G item 9 / §R.2):** the wording that pre-PONR
+  rollback restores `flat`/`legacy_active` was corrected. Grounded in spec
+  §R.29.6 and `db/75 public.ordem_compra_c3c_pre_ponr_rollback(BIGINT)` (`SET
+  read_authority='flat', status='maintenance_fenced', canonical_activated_at=NULL
+  WHERE … productive_receipt_started_at IS NULL`): rollback restores `flat` read
+  authority only; the mutation fence stays active; `status` stays
+  `maintenance_fenced` (never returns to `legacy_active`); it does not restore
+  or widen flat mutation grants or removed `PUBLIC` policies; grants/policies
+  stay byte-identical to their pre-rollback state; `cutover_generation`, frozen
+  snapshot/inventory baseline, and committed import/reconciliation history
+  remain; `productive_receipt_started_at` stays NULL; `canonical_activated_at`
+  is cleared. The normative spec and `db/75` were not modified.
+- **Next sublot:** `PHASE-C3D-C` = `AUTHORIZED / NOT STARTED`, execution context
+  a fresh Claude session required (contract §R.3); `PHASE-C3D-D`…`C3D-F` not
+  authorized. No C3D-C command, test file, PostgreSQL start, Supabase access, or
+  fence transition performed this pass.
+- **Files changed:** `docs/architecture/ORDEM_COMPRA_C3D_PHASE_CONTRACT.md`
+  (§R appended; §G item 9 corrected; STATUS marker), `PROJECT_STATE.md`,
+  `AGENT_HANDOFF.md`, `docs/architecture/ORDEM_COMPRA_C3_TRACEABILITY.md`
+  (header + `OC-C3D-DEPLOY-001` row + boundary prose),
+  `docs/architecture/PEDIDO_PRODUCTION_FLOW_BACKLOG.md`, this ledger,
+  `docs/DOCUMENTATION_INDEX.md` (C3D contract row status). No `db/*.sql`,
+  `tests/*`, `scripts/*`, `js/*`, HTML/CSS, package/lock, CI, validator,
+  normative spec, Supabase/MCP config, or protected residue modified.
+- **Validation:** `node scripts/validate-spec-custody.mjs` PASS at entry and
+  final; `node scripts/validate-spec-custody.mjs --self-test` fails identically
+  at entry and final with the known pre-existing active-contract fixture
+  limitation (`R1: ACTIVE_PHASE_CONTRACT is not an existing file: …C3D_PHASE_CONTRACT.md`);
+  validator/fixtures not modified; `git diff --check` / `git diff --cached
+  --check` clean.
+- **State after this pass:** `PHASE_ID: PHASE-C3D`; `ACTIVE_PHASE: PHASE-C3D`;
+  `LAST_ACCEPTED_PHASE: PHASE-C3C-B`; `ACCEPTED_CHECKPOINT:
+  5441321014883c4e8149dc8b20da9d053a193699`. `PHASE-C3D-A` = CLOSED /
+  TECHNICALLY ACCEPTED / LOCALLY VERIFIED; `PHASE-C3D-B` = CLOSED / TECHNICALLY
+  ACCEPTED / LOCALLY VERIFIED; `OC-C3D-DEPLOY-001` = SATISFIED; `PHASE-C3D-C` =
+  AUTHORIZED / NOT STARTED.
+- **Exact accounting subject:** `docs: accept C3D-B and correct rollback semantics`.
+- **NEXT_AUTHORIZABLE_ACTION:** execute `PHASE-C3D-C` from a fresh Claude session
+  at the final documentation-only HEAD produced by this pass; `PHASE-C3D-D` and
+  every later sublot remain unauthorized. One fast-forward push to `staging/dev`
+  records this pass.
