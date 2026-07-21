@@ -5877,3 +5877,77 @@ MATERIAL_DIVERGENCES: NONE
   ACL-closure invocation, cutover, C3D, C4, C5, production access, `main`,
   and `origin`/`production` remote mutation remain unauthorized; one
   fast-forward push to `staging/dev` records this closeout.
+
+## 2026-07-20 — PHASE-C3C-B FINAL TARGETED CORRECTION — IMPLEMENTED / LOCALLY VERIFIED / AWAITING SUPERVISOR ACCEPTANCE
+
+- **Order:** "FINAL TARGETED PHASE-C3C-B CORRECTION", issued against local
+  commit `f9b1a54cc7b185a5e72f50209322d1473e93e850` (not yet pushed at order
+  time; expected remote `staging/dev`
+  `ee5e87cd90f9e418925a99d6d51ad43cd38bedf0`). Two gates, both within the
+  already-authorized `PHASE-C3C-B` scope; no new phase, no C3D, no
+  database/environment action.
+  (`docs/architecture/ORDEM_COMPRA_C3C_B_PHASE_CONTRACT.md` §35.)
+- **Entry checkpoint:** branch `dev`, HEAD `f9b1a54cc7b185a5e72f50209322d147
+  3e93e850`, preserved residue modified `.gitignore` only (plus untracked
+  `.mcp.json`, never staged).
+- **Gate 1 (finite RPC-error classification):** §34's "any RPC-call-level
+  error except exact `42883` ⇒ `ambiguous_failure`" rule was overbroad.
+  Replaced with a finite predicate grounded in the real
+  `@supabase/postgrest-js` response shape (verified against the vendored
+  copy in `services/documents-ingestor/node_modules/`): `status === 0` is
+  the only signal produced by `PostgrestBuilder.then()`'s own fetch-rejection
+  `.catch()` handler (network failure, DNS failure, timeout, abort, CORS) —
+  every deterministic server response, success or error, carries a real HTTP
+  status. `isTransportAmbiguous(res)` now checks `!!res.error && res.status
+  === 0` exactly; every other error (permission `42501`, data `22P02`,
+  PGRST-prefixed, or any other received response) is `hard_failure`.
+- **Gate 2 (runtime proof for `pedido-detail-events.js`):** the prior
+  static-only proof (§34.7/§34.9's disclosed debt) was supplemented with a
+  real DOM-click + stateful-mock runtime proof: `makeHubRuntime()` in
+  `tests/pedido-detail.smoke.js` now also loads the real adapter and the
+  real `js/screens/op-writes.js`, and two new tests drive
+  `handlers.openMovementModal(...)`'s real "Registrar recebimento" button
+  through seven real clicks (token retention/renewal across ambiguous/
+  deterministic outcomes, zero flat writes) plus one dedicated inactive-
+  signal test (exactly one flat write). No product-code extraction was
+  needed; the order's fallback-of-last-resort was not used.
+- **Files changed (product):** `js/screens/ordem-compra-receipt-cutover.js`
+  (257→298 lines) only. No other product path required a change for either
+  gate.
+- **Files changed (tests):** `tests/ordem-compra-receipt-cutover.smoke.js`
+  (366→475), `tests/op-writes.smoke.js` (1194→1196),
+  `tests/fornecedor-screens.smoke.js` (1296→1296, net-zero fixture-shape
+  correction), `tests/op-nova.smoke.js` (1878→1878, net-zero fixture-shape
+  correction), `tests/pedido-detail.smoke.js` (3034→3279, runtime-harness
+  extension + two new runtime tests). No other test file touched.
+- **Validation:** `node --check` clean on all six changed files;
+  `node --test` on each corrected/new test file passes except the same
+  pre-existing, unrelated failures already on record (`tests/pedido-detail.
+  smoke.js` in isolation: 189 tests, 152 pass, 37 fail — the identical 37
+  pre-existing failures confirmed via `git stash`/`stash pop` against the
+  unmodified file at `f9b1a54`); full mandatory Node suite (`node --test
+  "tests/**/*.js"`) — 3993 tests (+8 from this correction's own tests), 3871
+  pass, 122 fail — the failing-test-name set is byte-for-byte identical to
+  the `f9b1a54` baseline (empty `diff` of sorted failing-name lists) — zero
+  regressions attributable to this correction; `node
+  scripts/validate-spec-custody.mjs` PASS; `git diff --check` / `git diff
+  --cached --check` clean.
+- **Findings:** none new. §34.9's disclosed debt ("`pedido-detail-events.js`'s
+  retry behavior is proven statically, not via a real runtime click") is
+  resolved by this correction's Gate-2 proof and removed from the residual
+  list; all other residual debts carried forward unchanged.
+- **State after this pass:** `LAST_ACCEPTED_PHASE: PHASE-C3C-B-DB-PREREQ`
+  (unchanged). `ACTIVE_PHASE: NONE`. `ACTIVE_PHASE_CONTRACT: NONE`.
+  `PHASE-C3C-B: IMPLEMENTED / LOCALLY VERIFIED / AWAITING SUPERVISOR
+  ACCEPTANCE` — unchanged; this correction does **not** record supervisor
+  acceptance. No dependent `OC-C3-*` requirement is `SATISFIED`.
+- **Exact accounting subject:** `fix: complete C3C-B retry classification
+  proof`.
+- **NEXT_AUTHORIZABLE_ACTION:** supervisor review/acceptance of this
+  corrected `PHASE-C3C-B` application-adapter implementation. Deployment,
+  activation, real snapshot/import, fence transition, read switch, final
+  ACL-closure invocation, cutover, C3D, C4, C5, production access, `main`,
+  and `origin`/`production` remote mutation remain unauthorized; the one
+  fast-forward push to `staging/dev` authorized by this correction's order
+  (carrying both `f9b1a54` and this correction's own commit) records this
+  closeout.

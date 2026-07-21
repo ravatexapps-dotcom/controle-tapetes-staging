@@ -1208,7 +1208,7 @@ test('43. writer: retry of unchanged intent after an ambiguous transport failure
     writeRpcResult: (params) => {
       writeCallCount += 1;
       seenKeys.push(params.p_idempotency_key);
-      if (writeCallCount === 1) return { data: null, error: { code: '08006', message: 'connection timeout' } };
+      if (writeCallCount === 1) return { data: null, error: { code: '', message: 'TypeError: Failed to fetch' }, status: 0, statusText: '' };
       return { data: { ok: true, codigo: 'ok', recebimento_id: 1, ordem_compra_id: 9 }, error: null };
     },
   });
@@ -1236,7 +1236,7 @@ test('44. writer: changing kg before retrying mints a new idempotency token', as
     writeRpcResult: (params) => {
       writeCallCount += 1;
       seenKeys.push(params.p_idempotency_key);
-      return { data: null, error: { code: '08006', message: 'connection timeout' } };
+      return { data: null, error: { code: '', message: 'TypeError: Failed to fetch' }, status: 0, statusText: '' };
     },
   });
   vm.runInContext('window.CURRENT_USER = { nome: "X", tipo: "fornecedor", fornecedor_id: 1 }', sandbox);

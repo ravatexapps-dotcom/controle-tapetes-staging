@@ -92,6 +92,24 @@ ACCEPTED_CHECKPOINT: 34d7d231d0875093bc2091f385c61cf35fa0b5cb
   `docs/architecture/ORDEM_COMPRA_C3C_B_PHASE_CONTRACT.md` §§33–34 and
   `docs/ledgers/G28_LEDGER.md` (2026-07-20, `PHASE-C3C-B
   APPLICATION-ADAPTER IMPLEMENTATION`) for the full closeout.
+  **Further supervisor-review correction (§35, commit
+  `fix: complete C3C-B retry classification proof`, on top of `f9b1a54cc7b18
+  5a5e72f50209322d1473e93e850`):** two further gates — the RPC-call-level
+  error classifier's "any error except 42883 ⇒ ambiguous" rule was replaced
+  with a finite predicate grounded in the real `@supabase/postgrest-js`
+  response shape (`status === 0` is the only signal for a genuine transport
+  ambiguity; every other error, including permission/data/schema errors with
+  a real HTTP status, is now `hard_failure`), and a real DOM-click +
+  stateful-mock runtime proof was added for `pedido-detail-events.js`'s
+  `buildInsumosTransferForm` (previously proven only statically) — was
+  corrected in `js/screens/ordem-compra-receipt-cutover.js` and five test
+  files (no other product path required a change). Full mandatory Node suite
+  (3993 tests, +8 from this correction's own tests) has the same 122-failure
+  set as the `f9b1a54` baseline — `diff` of sorted failing-name lists is
+  empty, zero regressions; `node scripts/validate-spec-custody.mjs` PASS. No
+  dependent `OC-C3-*` requirement is `SATISFIED`. See
+  `docs/architecture/ORDEM_COMPRA_C3C_B_PHASE_CONTRACT.md` §35 for the full
+  closeout.
 - **Governance status:**
   - `GOVERNANCE-SPEC-CUSTODY-FOUNDATION-R1`: **ACCEPTED**.
   - `GOVERNANCE-STATE-HANDOFF-COMPACTION-R1`: **ACCEPTED** by the supervisor at

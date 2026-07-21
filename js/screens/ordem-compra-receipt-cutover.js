@@ -20,22 +20,42 @@
 //   - 'hard_failure'      — every other error; the caller must surface it,
 //                           never silently fall back.
 // attemptCanonicalReceipt additionally distinguishes, per the supervisor
-// correction recorded in PHASE_CONTRACT.md §34:
-//   - 'ambiguous_failure' — the RPC call itself errored (network failure,
-//                           timeout, aborted response — anything other than
-//                           the bounded missing-function case) and the
-//                           server's commit status is unknown. The caller
+// correction recorded in PHASE_CONTRACT.md §§34–35, a FINITE classification
+// grounded in the real @supabase/postgrest-js response shape (verified
+// directly against services/documents-ingestor/node_modules/@supabase/
+// postgrest-js/dist/cjs/PostgrestBuilder.js — the same client library
+// window.supa wraps, per js/supabase-client.js):
+//   - 'legacy_fallback'   — the exact bounded missing-function SQLSTATE
+//                           (42883) or a documented inactive signal.
+//   - 'ambiguous_failure' — the fetch() call itself never received an HTTP
+//                           response (connection refused, DNS failure,
+//                           timeout, aborted request, CORS failure).
+//                           PostgrestBuilder.then()'s own .catch(fetchError)
+//                           handler is the ONLY code path that produces
+//                           `status: 0` — every deterministic server
+//                           response (success or error) sets a real HTTP
+//                           status from the fetch Response. `status === 0`
+//                           is therefore the exact, finite signal: server
+//                           commit status is genuinely unknown. The caller
 //                           must fail closed (no flat fallback) and RETAIN
 //                           the same attempt object for a retry of
 //                           unchanged intent.
-//   - 'hard_failure'      — a JSONB envelope was received (db/76's outer
-//                           EXCEPTION WHEN OTHERS guarantees this instead of
-//                           a raised error for every business-logic
-//                           condition), so the request completed
-//                           deterministically with `{ok:false,codigo:...}`.
-//                           The caller must surface it and may close the
-//                           attempt (a further submission, even of the same
-//                           intent, is a new attempt).
+//   - 'hard_failure'      — every other error: any received JSONB envelope
+//                           (db/76's outer EXCEPTION WHEN OTHERS guarantees
+//                           this instead of a raised error for every
+//                           business-logic condition) with `{ok:false,
+//                           codigo:...}`, or any RPC-call-level error that
+//                           DID receive a real HTTP status (permission
+//                           errors such as 42501, data errors such as
+//                           22P02, PGRST-prefixed API/schema errors, RPC
+//                           signature/payload errors, or any other
+//                           recognized or unrecognized server-originated
+//                           response). The request completed
+//                           deterministically. The caller must surface it
+//                           and close the attempt (a further submission,
+//                           even of the same intent, is a new attempt).
+//                           Ambiguity is never inferred from message text
+//                           alone.
 //
 // Idempotency: createReceiptAttempt() mints one token per user-initiated
 // submission. createAttemptTracker() is the intent-aware helper real UI
@@ -134,6 +154,21 @@
     return !!error && error.code === '42883';
   }
 
+  // isTransportAmbiguous(res) — the FINITE signal for "the server's commit
+  // status is genuinely unknown," grounded in @supabase/postgrest-js's real
+  // PostgrestBuilder.then() implementation: a fetch() rejection (network
+  // failure, DNS failure, timeout, abort, CORS) is caught by the builder's
+  // own `res.catch((fetchError) => ({ error: {...}, data: null, count: null,
+  // status: 0, statusText: '' }))` handler — the ONLY code path that
+  // produces `status: 0`. Every deterministic response, success or error,
+  // carries the real HTTP status from the fetch Response object (e.g. 200,
+  // 400, 401, 403, 404, 406, 409, 500...). `res.status === 0` combined with
+  // a present `res.error` is therefore exact and finite — never inferred
+  // from `error.message` text.
+  function isTransportAmbiguous(res) {
+    return !!res && !!res.error && res.status === 0;
+  }
+
   // Defensive detection for the db/75 protected-mutation-guard error a
   // future real fence activation could raise against the still-live legacy
   // write paths (op-persistir.js source rows, op-recalculo.js saldo writes).
@@ -216,14 +251,19 @@
       if (isMissingCompatFunction(res.error)) {
         return { outcome: 'legacy_fallback', error: res.error };
       }
-      // Every other RPC-call-level error (network failure, timeout, aborted
-      // response, connection drop) — db/76's own outer EXCEPTION WHEN OTHERS
-      // guarantees the function never raises for a business-logic condition,
-      // so an error at this layer means the call never completed and the
-      // server's commit status is unknown. Fail closed (no flat fallback);
-      // the caller must retain the same attempt for a retry of unchanged
-      // intent (createAttemptTracker() above).
-      return { outcome: 'ambiguous_failure', error: res.error };
+      if (isTransportAmbiguous(res)) {
+        // fetch() itself never received an HTTP response (status: 0) — the
+        // server's commit status is genuinely unknown. Fail closed (no flat
+        // fallback); the caller must retain the same attempt for a retry of
+        // unchanged intent (createAttemptTracker() above).
+        return { outcome: 'ambiguous_failure', error: res.error };
+      }
+      // A real HTTP status was received — the request completed
+      // deterministically (permission errors such as 42501, data errors
+      // such as 22P02, PGRST-prefixed API/schema errors, RPC signature/
+      // payload errors, or any other recognized/unrecognized
+      // server-originated response). Fails closed; never ambiguous.
+      return { outcome: 'hard_failure', error: res.error };
     }
     const result = res.data;
     if (isCanonicalWriterInactiveResult(result)) {
@@ -249,6 +289,7 @@
     isCanonicalReaderInactive,
     isCanonicalWriterInactiveResult,
     isMissingCompatFunction,
+    isTransportAmbiguous,
     isLegacyReceiptFenced,
     mapCanonicalRowToLegacyShape,
     attemptCanonicalRead,

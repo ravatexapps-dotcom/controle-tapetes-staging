@@ -83,6 +83,11 @@ const opnSrc = fs.readFileSync(path.join(ROOT, 'js', 'screens', 'op-nova.js'), '
 // YARN-BUTTONS-FINAL-CONTRACT: builder de distribuição COMPARTILHADO
 // consumido pelo painel do Pedido (mesmo módulo da tela da OP).
 const oduSrc = fs.readFileSync(path.join(ROOT, 'js', 'screens', 'op-distribuicao-ui.js'), 'utf8');
+// PHASE-C3C-B §35 (Gate 2 runtime proof): carrega o adapter real e o
+// helper real de escrita para exercitar window.registrarRecebimentoOrdemFio
+// de ponta a ponta (sem stub) dentro do runtime hub do Pedido.
+const cutoverSrc = fs.readFileSync(path.join(ROOT, 'js', 'screens', 'ordem-compra-receipt-cutover.js'), 'utf8');
+const opwSrc = fs.readFileSync(path.join(ROOT, 'js', 'screens', 'op-writes.js'), 'utf8');
 const opDisplay = readOrFail(path.join(ROOT, 'js', 'op-display.js'));
 const detailBundle = [
   opDisplay,
@@ -2126,9 +2131,19 @@ function makeHubRuntime() {
   sandbox.window.larguraKey = (l) => Number(l);
   sandbox.window.salvarDistribuicaoOP = async () => { events.push('salvarDistribuicaoOP'); return { error: null, step: 'ok' }; };
   sandbox.window.iniciarProducaoOP = async () => { events.push('iniciarProducaoOP'); return { error: null, step: 'ok' }; };
+  // PHASE-C3C-B §35 (Gate 2): crypto.randomUUID determinístico para tornar
+  // os tokens de idempotência gerados em runtime observáveis/asseráveis.
+  let hubUuidCounter = 0;
+  sandbox.window.crypto = { randomUUID: () => 'hub-uuid-' + (++hubUuidCounter) };
   vm.runInContext(detailBundle, sandbox);
   // Carrega o builder COMPARTILHADO no sandbox do hub (mesmo módulo da OP).
   vm.runInContext(oduSrc, sandbox, { filename: 'js/screens/op-distribuicao-ui.js' });
+  // PHASE-C3C-B §35 (Gate 2): carrega o adapter real + op-writes.js real,
+  // para que window.registrarRecebimentoOrdemFio exercite a classificação
+  // canônica de verdade (sem stub) quando os testes de runtime chamam
+  // handlers.openMovementModal(...) e clicam em "Salvar".
+  vm.runInContext(cutoverSrc, sandbox, { filename: 'js/screens/ordem-compra-receipt-cutover.js' });
+  vm.runInContext(opwSrc, sandbox, { filename: 'js/screens/op-writes.js' });
   const ns = sandbox.window.RAVATEX_SCREENS.pedidoDetail;
   return { sandbox, ns, events, node };
 }
@@ -2571,6 +2586,236 @@ test('INSUMOS-TECELAGEM modal: registrar recebimento atualiza para proposta sem 
   assert.equal(findHubBtn(cap, /Aceitar proposta/i), null, '"Aceitar proposta" não existe mais');
   assert.doesNotMatch(updatedText, /Registrar nova transferencia/,
     'modal nao deve manter formulario antigo stale apos recebimento');
+});
+
+// ---------------------------------------------------------------------
+// PHASE-C3C-B §35 (Gate 2 — supervisor correction): prova em RUNTIME de
+// que a fiação de idempotência de buildInsumosTransferForm funciona de
+// ponta a ponta, atravessando o window.registrarRecebimentoOrdemFio REAL
+// (op-writes.js) e o adapter REAL (ordem-compra-receipt-cutover.js) — sem
+// stub do helper canonico. Apenas window.supa e mockado na fronteira
+// rpc/query-builder. Inspecao estatica isoladamente e insuficiente
+// (exigencia explicita da ordem); toda asserção abaixo observa valores de
+// retorno reais capturados de uma execucao ao vivo de vm.createContext
+// dos modulos de producao.
+// ---------------------------------------------------------------------
+
+function findNumberInput(n) {
+  return findNode(n, function (x) { return x.tagName === 'INPUT' && x.getAttribute('type') === 'number'; });
+}
+function findDateInput(n) {
+  return findNode(n, function (x) { return x.tagName === 'INPUT' && x.getAttribute('type') === 'date'; });
+}
+function insumosReceiptState(rt, kgRecebido) {
+  var s = hubBase(rt.ns);
+  s.ops = [{
+    id: 29,
+    tipo: 'tecelagem',
+    numero: 18,
+    ano: 2026,
+    status: 'aberta',
+    op_fornecedores: [{ fornecedor_id: 5, etapa: 'cima' }],
+    op_itens: [{ id: 290, modelo_id: 7, metros_pedidos: 1000, pedido_item_id: 'pi1' }],
+  }];
+  s.ordensFio = [{ id: 'fio1', op_id: 29, tipo: 'algodao', kg_pedido: 10, kg_recebido: kgRecebido }];
+  return s;
+}
+
+test('PHASE-C3C-B §35 runtime: buildInsumosTransferForm retem/renova o token de idempotencia atraves do window.registrarRecebimentoOrdemFio real', async () => {
+  const rt = makeHubRuntime();
+  const s = insumosReceiptState(rt, 0);
+  const rpcCalls = [];
+  const fromCalls = [];
+  let nextRpcResult = null;
+  rt.sandbox.window.supa = {
+    rpc: async (fn, params) => {
+      rpcCalls.push({ fn: fn, params: params });
+      return nextRpcResult;
+    },
+    from: function (table) {
+      return {
+        update: function (patch) {
+          return {
+            eq: async function (col, val) {
+              fromCalls.push({ table: table, patch: patch, col: col, val: val });
+              return { data: null, error: null };
+            },
+          };
+        },
+      };
+    },
+  };
+  const handlers = rt.ns.createPedidoDetailEvents({
+    pedidoId: s.pedido.id,
+    state: s,
+    reload: async () => {
+      rt.events.push('reload');
+      const last = rpcCalls[rpcCalls.length - 1];
+      if (last && last.params && typeof last.params.p_kg_total_absoluto === 'number') {
+        s.ordensFio[0].kg_recebido = last.params.p_kg_total_absoluto;
+      }
+    },
+    render: () => { rt.events.push('render'); },
+    getLoadingError: () => null,
+    setLoadingError: () => {},
+  });
+  handlers.currentView = rt.ns.computeViewModel(s);
+  const cap = rt.node('body');
+  rt.sandbox.document.body = cap;
+  handlers.openMovementModal(handlers.currentView.stepper[0].transfer);
+
+  let salvar = findHubBtn(cap, /^Registrar recebimento$/i);
+  assert.ok(salvar, 'com OP aberta e saldo de fio deve permitir recebimento canonico');
+  let kgInput = findNumberInput(cap);
+  let dateInput = findDateInput(cap);
+  assert.ok(kgInput && dateInput, 'formulario de recebimento deve expor input de kg e de data');
+  assert.equal(kgInput.value, '10', 'saldo inicial (10-0) deve preencher o input por padrao');
+  const dateA = dateInput.value;
+
+  function ambiguous() {
+    return { data: null, error: { message: 'TypeError: Failed to fetch', details: '', hint: '', code: '' }, status: 0, statusText: '', count: null };
+  }
+  function hardFailure() {
+    return { data: null, error: { code: '42501', message: 'permission denied for function registrar_recebimento_ordem_compra_fio_compat' }, status: 403, statusText: 'Forbidden', count: null };
+  }
+  function success(total) {
+    return { data: { ok: true, ordem_id: 'fio1', kg_total_absoluto: total }, error: null, status: 200, statusText: 'OK', count: null };
+  }
+
+  // click 1: primeira submissao (qtd padrao = saldo = 10) -> token A.
+  nextRpcResult = ambiguous();
+  await salvar._listeners.click({ currentTarget: salvar });
+  assert.equal(rpcCalls.length, 1);
+  assert.equal(rpcCalls[0].fn, 'registrar_recebimento_ordem_compra_fio_compat');
+  const tokenA = rpcCalls[0].params.p_idempotency_key;
+  assert.ok(tokenA, 'primeira submissao deve gerar um token de idempotencia');
+  assert.equal(fromCalls.length, 0, 'falha ambigua nao pode disparar escrita legada plana');
+  assert.equal(salvar.disabled, false, 'apos falha, botao deve reabilitar para permitir retry');
+  assert.ok(findHubBtn(cap, /^Registrar recebimento$/i), 'falha ambigua nao pode remontar/fechar o modal');
+
+  // click 2: retry com a MESMA intencao (mesmo kg, mesma data) -> reusa
+  // token A. So e possivel porque o attemptTracker sobrevive fora do
+  // invocation do onSave (linhas e construido uma unica vez ao abrir o
+  // formulario) — se fosse recriado a cada clique, nunca haveria reuso.
+  nextRpcResult = ambiguous();
+  await salvar._listeners.click({ currentTarget: salvar });
+  assert.equal(rpcCalls.length, 2);
+  assert.equal(rpcCalls[1].params.p_idempotency_key, tokenA,
+    'retry com intencao inalterada deve reusar o mesmo token (prova de que o tracker vive fora do clique)');
+  assert.equal(fromCalls.length, 0);
+
+  // click 3: muda o kg (7 em vez de 10) -> nova intencao -> token B.
+  kgInput.value = '7';
+  nextRpcResult = ambiguous();
+  await salvar._listeners.click({ currentTarget: salvar });
+  assert.equal(rpcCalls.length, 3);
+  const tokenB = rpcCalls[2].params.p_idempotency_key;
+  assert.notEqual(tokenB, tokenA, 'mudar o kg deve gerar um novo token (token B)');
+  assert.equal(fromCalls.length, 0);
+
+  // click 4: mantem kg=7, muda a data -> nova intencao -> token C.
+  dateInput.value = dateA === '2026-01-01' ? '2026-01-02' : '2026-01-01';
+  nextRpcResult = ambiguous();
+  await salvar._listeners.click({ currentTarget: salvar });
+  assert.equal(rpcCalls.length, 4);
+  const tokenC = rpcCalls[3].params.p_idempotency_key;
+  assert.notEqual(tokenC, tokenB, 'mudar a data deve gerar um novo token (token C)');
+  assert.notEqual(tokenC, tokenA);
+  assert.equal(fromCalls.length, 0);
+
+  // click 5: retry com a MESMA intencao do click 4 (kg=7, mesma data) ->
+  // reusa token C -> desta vez uma falha DETERMINISTICA (42501, com
+  // status HTTP real) -> deve fechar o attempt.
+  nextRpcResult = hardFailure();
+  await salvar._listeners.click({ currentTarget: salvar });
+  assert.equal(rpcCalls.length, 5);
+  assert.equal(rpcCalls[4].params.p_idempotency_key, tokenC,
+    'retry antes da falha deterministica ainda deve reusar o token C');
+  assert.equal(fromCalls.length, 0, 'falha deterministica (42501) jamais aciona fallback plano');
+  assert.equal(salvar.disabled, false, 'apos falha deterministica, botao reabilita para nova tentativa');
+
+  // click 6: MESMA intencao do click 5 (kg=7, mesma data) -> deveria
+  // reusar o token SE o attempt continuasse aberto; como o click 5 fechou
+  // o attempt (falha deterministica), este clique deve gerar um token
+  // NOVO (D) mesmo com intencao inalterada. Desta vez sucesso canonico.
+  nextRpcResult = success(7);
+  await salvar._listeners.click({ currentTarget: salvar });
+  assert.equal(rpcCalls.length, 6);
+  const tokenD = rpcCalls[5].params.p_idempotency_key;
+  assert.notEqual(tokenD, tokenC,
+    'apos falha deterministica, a proxima submissao (mesma intencao) deve gerar um token novo — prova de que a falha deterministica fechou o attempt anterior');
+  assert.equal(fromCalls.length, 0, 'sucesso canonico jamais aciona fallback plano');
+  assert.ok(rt.events.includes('reload'), 'sucesso deve recarregar os dados');
+  assert.ok(rt.events.includes('render'), 'sucesso deve re-renderizar a tela');
+
+  // Sucesso remonta o modal inteiro (refreshPedidoTransitionModal): uma
+  // nova submissao apos a conclusao deve usar um tracker novo -> token E.
+  salvar = findHubBtn(cap, /^Registrar recebimento$/i);
+  assert.ok(salvar, 'saldo restante (3kg) deve continuar oferecendo recebimento apos o sucesso parcial');
+  kgInput = findNumberInput(cap);
+  assert.equal(kgInput.value, '3', 'saldo apos receber 7 de 10 deve ser 3');
+  nextRpcResult = success(10);
+  await salvar._listeners.click({ currentTarget: salvar });
+  assert.equal(rpcCalls.length, 7);
+  const tokenE = rpcCalls[6].params.p_idempotency_key;
+  assert.notEqual(tokenE, tokenD,
+    'submissao apos conclusao (sucesso + remontagem) deve gerar um token novo, nunca reusar um attempt encerrado');
+  assert.equal(fromCalls.length, 0, 'nenhuma das 7 submissoes canonicas deve ter acionado o fallback plano');
+});
+
+test('PHASE-C3C-B §35 runtime: sinal de escritor inativo aciona exatamente um fallback plano via window.registrarRecebimentoOrdemFio real', async () => {
+  const rt = makeHubRuntime();
+  const s = insumosReceiptState(rt, 2);
+  const rpcCalls = [];
+  const fromCalls = [];
+  rt.sandbox.window.supa = {
+    rpc: async (fn, params) => {
+      rpcCalls.push({ fn: fn, params: params });
+      return { data: { ok: false, codigo: 'recebimento_compat_inativo' }, error: null, status: 200, statusText: 'OK', count: null };
+    },
+    from: function (table) {
+      return {
+        update: function (patch) {
+          return {
+            eq: async function (col, val) {
+              fromCalls.push({ table: table, patch: patch, col: col, val: val });
+              return { data: null, error: null };
+            },
+          };
+        },
+      };
+    },
+  };
+  const handlers = rt.ns.createPedidoDetailEvents({
+    pedidoId: s.pedido.id,
+    state: s,
+    reload: async () => { rt.events.push('reload'); },
+    render: () => { rt.events.push('render'); },
+    getLoadingError: () => null,
+    setLoadingError: () => {},
+  });
+  handlers.currentView = rt.ns.computeViewModel(s);
+  const cap = rt.node('body');
+  rt.sandbox.document.body = cap;
+  handlers.openMovementModal(handlers.currentView.stepper[0].transfer);
+
+  const salvar = findHubBtn(cap, /^Registrar recebimento$/i);
+  assert.ok(salvar);
+  const dateInput = findDateInput(cap);
+  const savedDate = dateInput.value;
+  await salvar._listeners.click({ currentTarget: salvar });
+
+  assert.equal(rpcCalls.length, 1, 'deve tentar a rota canonica primeiro');
+  assert.equal(rpcCalls[0].fn, 'registrar_recebimento_ordem_compra_fio_compat');
+  assert.equal(fromCalls.length, 1, 'sinal de escritor inativo deve acionar exatamente um fallback plano');
+  assert.equal(fromCalls[0].table, 'ordens_compra_fio');
+  assert.equal(fromCalls[0].col, 'id');
+  assert.equal(fromCalls[0].val, 'fio1');
+  assert.equal(fromCalls[0].patch.kg_recebido, 10, 'fallback plano deve usar o total absoluto (2 + saldo 8)');
+  assert.equal(fromCalls[0].patch.data_recebimento, savedDate);
+  assert.equal(fromCalls[0].patch.status, 'recebido_total');
+  assert.ok(rt.events.includes('reload'), 'fallback bem-sucedido ainda deve recarregar/re-renderizar como um sucesso normal');
+  assert.ok(rt.events.includes('render'));
 });
 
 test('TRANSITION runtime: Acabamento aberto com saldo movimenta para Expedicao pelo modal da seta', async () => {

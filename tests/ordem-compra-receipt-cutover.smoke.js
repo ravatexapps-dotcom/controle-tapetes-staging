@@ -226,9 +226,43 @@ for (const codigo of [
   });
 }
 
-test('22. writer transport-level unrecognized error is ambiguous (server commit status unknown), not a deterministic hard failure', async () => {
+// -----------------------------------------------------------------------------
+// §35 supervisor correction: finite ambiguous/deterministic classification,
+// grounded in the real @supabase/postgrest-js response shape (verified
+// directly against services/documents-ingestor/node_modules/@supabase/
+// postgrest-js/dist/cjs/PostgrestBuilder.js). A genuine transport failure —
+// fetch() never received an HTTP response — is the ONLY condition that
+// resolves with `status: 0`; every deterministic response (success or
+// error) carries a real HTTP status. isTransportAmbiguous() checks exactly
+// that, never message text.
+// -----------------------------------------------------------------------------
+
+test('22h. isTransportAmbiguous: true only when error is present AND status is exactly 0', async () => {
+  const { sandbox } = makeSandbox({});
+  const ambiguous = await vm.runInContext(
+    "window.RAVATEX_SCREENS.ordemCompraReceiptCutover.isTransportAmbiguous({ error: { message: 'x' }, status: 0 })", sandbox);
+  assert.equal(ambiguous, true);
+  const noError = await vm.runInContext(
+    "window.RAVATEX_SCREENS.ordemCompraReceiptCutover.isTransportAmbiguous({ error: null, status: 0 })", sandbox);
+  assert.equal(noError, false, 'status 0 alone (no error) is not ambiguous');
+  const realStatus = await vm.runInContext(
+    "window.RAVATEX_SCREENS.ordemCompraReceiptCutover.isTransportAmbiguous({ error: { message: 'x' }, status: 403 })", sandbox);
+  assert.equal(realStatus, false, 'a real HTTP status means a deterministic response was received');
+  const noStatus = await vm.runInContext(
+    "window.RAVATEX_SCREENS.ordemCompraReceiptCutover.isTransportAmbiguous({ error: { message: 'x' } })", sandbox);
+  assert.equal(noStatus, false, 'a missing status must never default to ambiguous');
+});
+
+test('22. writer: an actual simulated network failure (fetch rejection, status:0) is ambiguous_failure', async () => {
   const { sandbox } = makeSandbox({
-    registrar_recebimento_ordem_compra_fio_compat: () => ({ data: null, error: { code: '08006', message: 'connection timeout' } }),
+    // Mirrors @supabase/postgrest-js's own PostgrestBuilder.then() .catch()
+    // handler shape for a rejected fetch(): status 0, statusText '', a
+    // constructed error with no real Postgres/PostgREST code.
+    registrar_recebimento_ordem_compra_fio_compat: () => ({
+      data: null,
+      error: { message: 'TypeError: Failed to fetch', details: '', hint: '', code: '' },
+      status: 0, statusText: '', count: null,
+    }),
   });
   const attempt = await vm.runInContext('window.RAVATEX_SCREENS.ordemCompraReceiptCutover.createReceiptAttempt()', sandbox);
   sandbox.__attempt = attempt;
@@ -237,15 +271,90 @@ test('22. writer transport-level unrecognized error is ambiguous (server commit 
   assert.equal(result.outcome, 'ambiguous_failure');
 });
 
-test('22b. writer: a non-42883 code carrying the missing-function message text is ambiguous, not a bounded fallback', async () => {
+test('22a. writer: a timeout/abort (AbortError, status:0) is ambiguous_failure', async () => {
   const { sandbox } = makeSandbox({
-    registrar_recebimento_ordem_compra_fio_compat: () => ({ data: null, error: { code: '57014', message: 'function public.registrar_recebimento_ordem_compra_fio_compat(...) does not exist' } }),
+    registrar_recebimento_ordem_compra_fio_compat: () => ({
+      data: null,
+      error: { message: 'AbortError: The operation was aborted', details: '', hint: '', code: '' },
+      status: 0, statusText: '', count: null,
+    }),
   });
   const attempt = await vm.runInContext('window.RAVATEX_SCREENS.ordemCompraReceiptCutover.createReceiptAttempt()', sandbox);
   sandbox.__attempt = attempt;
   const result = await vm.runInContext(
     `window.RAVATEX_SCREENS.ordemCompraReceiptCutover.attemptCanonicalReceipt(${JSON.stringify(receiptParams())}, __attempt)`, sandbox);
-  assert.equal(result.outcome, 'ambiguous_failure', 'message text alone must not trigger the bounded 42883 fallback');
+  assert.equal(result.outcome, 'ambiguous_failure');
+});
+
+test('22b. writer: a non-42883 code carrying missing-function-like message text, WITH a real HTTP status, is hard_failure (deterministic, not ambiguous, not a bounded fallback)', async () => {
+  const { sandbox } = makeSandbox({
+    registrar_recebimento_ordem_compra_fio_compat: () => ({
+      data: null,
+      error: { code: '57014', message: 'function public.registrar_recebimento_ordem_compra_fio_compat(...) does not exist' },
+      status: 400, statusText: 'Bad Request',
+    }),
+  });
+  const attempt = await vm.runInContext('window.RAVATEX_SCREENS.ordemCompraReceiptCutover.createReceiptAttempt()', sandbox);
+  sandbox.__attempt = attempt;
+  const result = await vm.runInContext(
+    `window.RAVATEX_SCREENS.ordemCompraReceiptCutover.attemptCanonicalReceipt(${JSON.stringify(receiptParams())}, __attempt)`, sandbox);
+  assert.equal(result.outcome, 'hard_failure', 'a received deterministic response must never be classified as ambiguous, regardless of message text');
+});
+
+test('22i. writer: 42501 (permission denied) with a real HTTP status is hard_failure', async () => {
+  const { sandbox } = makeSandbox({
+    registrar_recebimento_ordem_compra_fio_compat: () => ({
+      data: null, error: { code: '42501', message: 'permission denied for function registrar_recebimento_ordem_compra_fio_compat' },
+      status: 403, statusText: 'Forbidden',
+    }),
+  });
+  const attempt = await vm.runInContext('window.RAVATEX_SCREENS.ordemCompraReceiptCutover.createReceiptAttempt()', sandbox);
+  sandbox.__attempt = attempt;
+  const result = await vm.runInContext(
+    `window.RAVATEX_SCREENS.ordemCompraReceiptCutover.attemptCanonicalReceipt(${JSON.stringify(receiptParams())}, __attempt)`, sandbox);
+  assert.equal(result.outcome, 'hard_failure');
+});
+
+test('22j. writer: 22P02 (invalid text representation) with a real HTTP status is hard_failure', async () => {
+  const { sandbox } = makeSandbox({
+    registrar_recebimento_ordem_compra_fio_compat: () => ({
+      data: null, error: { code: '22P02', message: 'invalid input syntax for type numeric' },
+      status: 400, statusText: 'Bad Request',
+    }),
+  });
+  const attempt = await vm.runInContext('window.RAVATEX_SCREENS.ordemCompraReceiptCutover.createReceiptAttempt()', sandbox);
+  sandbox.__attempt = attempt;
+  const result = await vm.runInContext(
+    `window.RAVATEX_SCREENS.ordemCompraReceiptCutover.attemptCanonicalReceipt(${JSON.stringify(receiptParams())}, __attempt)`, sandbox);
+  assert.equal(result.outcome, 'hard_failure');
+});
+
+test('22k. writer: a representative PGRST-prefixed API/schema error with a real HTTP status is hard_failure', async () => {
+  const { sandbox } = makeSandbox({
+    registrar_recebimento_ordem_compra_fio_compat: () => ({
+      data: null, error: { code: 'PGRST202', message: 'Could not find the function public.registrar_recebimento_ordem_compra_fio_compat in the schema cache' },
+      status: 404, statusText: 'Not Found',
+    }),
+  });
+  const attempt = await vm.runInContext('window.RAVATEX_SCREENS.ordemCompraReceiptCutover.createReceiptAttempt()', sandbox);
+  sandbox.__attempt = attempt;
+  const result = await vm.runInContext(
+    `window.RAVATEX_SCREENS.ordemCompraReceiptCutover.attemptCanonicalReceipt(${JSON.stringify(receiptParams())}, __attempt)`, sandbox);
+  assert.equal(result.outcome, 'hard_failure', 'PGRST202 is a deterministic schema-cache response, not the bounded 42883 case, and never ambiguous');
+});
+
+test('22l. writer: a deterministic HTTP rejection with no parseable JSON body (real status, no code) is hard_failure', async () => {
+  const { sandbox } = makeSandbox({
+    registrar_recebimento_ordem_compra_fio_compat: () => ({
+      data: null, error: { message: '<html>502 Bad Gateway</html>' },
+      status: 502, statusText: 'Bad Gateway',
+    }),
+  });
+  const attempt = await vm.runInContext('window.RAVATEX_SCREENS.ordemCompraReceiptCutover.createReceiptAttempt()', sandbox);
+  sandbox.__attempt = attempt;
+  const result = await vm.runInContext(
+    `window.RAVATEX_SCREENS.ordemCompraReceiptCutover.attemptCanonicalReceipt(${JSON.stringify(receiptParams())}, __attempt)`, sandbox);
+  assert.equal(result.outcome, 'hard_failure', 'a real (non-zero) HTTP status was received — the request completed, even without a recognized SQLSTATE');
 });
 
 // -----------------------------------------------------------------------------

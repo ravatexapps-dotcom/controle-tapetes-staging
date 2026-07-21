@@ -89,6 +89,18 @@
   touched); every other failure is the same pre-existing, unrelated set —
   zero regressions attributable to this correction; validator PASS. No
   dependent `OC-C3-*` requirement is `SATISFIED`.
+  **§35 further correction** (commit `fix: complete C3C-B retry
+  classification proof`, on top of `f9b1a54cc7b185a5e72f50209322d1473e93e8
+  50`): the RPC-call-level error classifier's "any error except 42883 ⇒
+  ambiguous" rule was replaced with a finite predicate (`status === 0` is
+  the only genuine-transport-ambiguity signal, grounded in the real
+  `@supabase/postgrest-js` response shape); a real DOM-click + stateful-mock
+  runtime proof was added for `pedido-detail-events.js`'s receipt form
+  (previously proven only statically). Only `js/screens/ordem-compra-
+  receipt-cutover.js` and five test files changed. Full mandatory Node suite
+  (3993 tests, +8) has the same 122-failure set as the `f9b1a54` baseline —
+  byte-identical failing-name set, zero regressions; validator PASS. No
+  dependent `OC-C3-*` requirement is `SATISFIED`.
 - **Next authorizable action:** **supervisor review/acceptance of the
   `PHASE-C3C-B` application-adapter implementation.** Only after that
   acceptance may staging validation/application of `db/76`, C3D, cutover, C4,

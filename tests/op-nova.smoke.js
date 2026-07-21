@@ -1774,7 +1774,7 @@ test('80. buildOrdemPendenteRow: retry of unchanged intent after an ambiguous tr
         writeCallCount += 1;
         seenKeys.push(params.p_idempotency_key);
         if (writeCallCount === 1) {
-          return { data: null, error: { code: '08006', message: 'connection timeout' } };
+          return { data: null, error: { code: '', message: 'TypeError: Failed to fetch' }, status: 0, statusText: '' };
         }
         return { data: { ok: true, codigo: 'ok', recebimento_id: 1, ordem_compra_id: 9 }, error: null };
       }
@@ -1807,7 +1807,7 @@ test('81. buildOrdemPendenteRow: changing kg before retrying mints a new idempot
       if (name === 'registrar_recebimento_ordem_compra_fio_compat') {
         writeCallCount += 1;
         seenKeys.push(params.p_idempotency_key);
-        return { data: null, error: { code: '08006', message: 'connection timeout' } };
+        return { data: null, error: { code: '', message: 'TypeError: Failed to fetch' }, status: 0, statusText: '' };
       }
       return { data: null, error: null };
     },

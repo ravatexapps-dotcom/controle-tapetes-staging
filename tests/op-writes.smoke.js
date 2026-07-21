@@ -1151,7 +1151,9 @@ test('57. retrying with the exact same caller-supplied attempt sends the identic
 
 test('58. an ambiguous transport failure (server commit status unknown) surfaces ambiguous:true and never issues the flat fallback', async () => {
   const { sandbox, fakeSupa } = makeOpWCutoverSandbox({
-    rpcResult: { data: null, error: { code: '08006', message: 'connection timeout' } },
+    // status:0 is the exact, finite signal @supabase/postgrest-js uses for
+    // "fetch() never received an HTTP response" (§35 correction).
+    rpcResult: { data: null, error: { code: '', message: 'TypeError: Failed to fetch' }, status: 0, statusText: '' },
   });
   const result = await vm.runInContext(
     'window.registrarRecebimentoOrdemFio({ ordemId: 42, kgRecebido: 40, dataRecebimento: "2026-07-20", status: "recebido_parcial" })',

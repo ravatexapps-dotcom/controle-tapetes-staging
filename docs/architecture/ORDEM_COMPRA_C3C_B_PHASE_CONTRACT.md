@@ -3,7 +3,7 @@
 <!-- MATERIAL_PHASE_CONTRACT:BEGIN -->
 PHASE_ID: PHASE-C3C-B
 <!-- MATERIAL_PHASE_CONTRACT:END -->
-STATUS: IMPLEMENTED / LOCALLY VERIFIED / AWAITING SUPERVISOR ACCEPTANCE (§34, corrected)
+STATUS: IMPLEMENTED / LOCALLY VERIFIED / AWAITING SUPERVISOR ACCEPTANCE (§35, corrected)
 
 > **Role of this document.** This is a **material phase contract**, authored under
 > `docs/governance/DOCUMENTATION_MODEL.md` §19 and
@@ -1515,3 +1515,290 @@ VERIFIED / AWAITING SUPERVISOR ACCEPTANCE` — unchanged; this correction does
 **not** record supervisor acceptance. No dependent `OC-C3-*` requirement is
 `SATISFIED`. The next authorizable action is supervisor review/acceptance of
 this corrected implementation.
+
+## 35. Supervisor-review correction — finite RPC-error classification + runtime idempotency proof (governs on conflict)
+
+> **Append-only forward correction (`FORWARD_CORRECTION` per
+> `docs/governance/DOCUMENTATION_MODEL.md` §19).** Recorded under the
+> "FINAL TARGETED PHASE-C3C-B CORRECTION" order, issued against local commit
+> `f9b1a54cc7b185a5e72f50209322d1473e93e850` (not yet pushed at order time;
+> expected remote `staging/dev` at `ee5e87cd90f9e418925a99d6d51ad43cd38bedf0`).
+> §§0–34 are preserved verbatim (no history rewrite). **Where §§1–34 and this
+> §35 conflict, §35 governs.** Correction commit:
+> `fix: complete C3C-B retry classification proof`, committed directly on top
+> of `f9b1a54` without amending it. This section does **not** record
+> supervisor acceptance — status remains `IMPLEMENTED / LOCALLY VERIFIED /
+> AWAITING SUPERVISOR ACCEPTANCE`.
+
+### 35.1 Supervisor finding
+
+The correction at `f9b1a54` was still not accepted as final. Two further
+gates, both within the existing `PHASE-C3C-B` scope:
+
+1. **Gate 1 — RPC error classification was still too broad.** §34.4's policy
+   classified every RPC-call-level error except the exact `42883` case as
+   `'ambiguous_failure'` (retain-and-retry). The order identified this as
+   incorrect: only a genuine transport ambiguity (no deterministic server
+   response received at all) may be treated as retry-safe/attempt-retaining.
+   Every other server-originated error — including permission errors
+   (`42501`), data errors (`22P02`), PostgREST/schema errors, and any other
+   recognized or unrecognized *received* response — is a **deterministic**
+   outcome and must close the attempt, never silently retain it under the
+   `'ambiguous_failure'` umbrella. The order required a finite,
+   client-library-grounded predicate, not a "not-42883" catch-all.
+2. **Gate 2 — no runtime proof for `pedido-detail-events.js`.** §34.7/§34.9
+   disclosed that `buildInsumosTransferForm`'s idempotency wiring was proven
+   only by static source-pattern assertions (regex-sliced text), unlike the
+   other two real call-sites (`op-nova.js`, `fornecedor.js`), which already
+   had real DOM-click + stateful-mock runtime tests. The order required an
+   actual executed proof through the real save path — "static inspection is
+   insufficient" — covering token retention/renewal, zero-flat-write on
+   ambiguous/deterministic outcomes, and exactly-one-flat-write on the
+   documented inactive signal.
+
+### 35.2 Root cause
+
+**Gate 1.** §34's classification was designed around the single fact pattern
+it had evidence for at the time (the exact `42883` bounded-deployment
+signal) and defaulted every other error to the retry-safe branch out of
+caution, without grounding that default in the actual transport-level
+semantics of the client library in use. This produced a policy that was
+*safe* (never silently drops a write) but *incorrect* (treats deterministic
+server rejections — e.g. a real permission denial — as if the server's
+commit status were unknown, which both misinforms the caller and keeps a
+stale attempt token alive indefinitely for an error that will never resolve
+differently on retry).
+
+**Gate 2.** §34.7 explicitly disclosed the static-only scope decision for
+`pedido-detail-events.js`, reasoning that no runtime-test harness existed for
+its bespoke `openMovementModal` overlay. This was true when §34 was written,
+but a full runtime harness (`makeHubRuntime()`, already used by ~30
+pre-existing `tests/pedido-detail.smoke.js` tests for this exact file's
+other modals) already existed in the same test file and had simply not yet
+been extended to load the receipt-cutover adapter and `op-writes.js`, nor to
+drive `openMovementModal`'s Insumos→Tecelagem transfer form specifically.
+
+### 35.3 Correction — files and behavior
+
+- **`js/screens/ordem-compra-receipt-cutover.js`** (257→298 lines): replaced
+  the "any error except 42883 ⇒ ambiguous" rule with a finite three-way
+  classification, grounded in the real `@supabase/postgrest-js` response
+  shape (verified directly against the vendored copy at
+  `services/documents-ingestor/node_modules/@supabase/postgrest-js/dist/cjs/PostgrestBuilder.js`,
+  the same client library `window.supa` wraps per `js/supabase-client.js`):
+  `PostgrestBuilder.then()` performs `fetch()`; every deterministic HTTP
+  response — success or error, since the server actually replied — resolves
+  with the real HTTP `status` from the `Response` object. Only when the
+  `fetch()` promise itself **rejects** (network failure, DNS failure,
+  timeout, abort, CORS) does the builder's own
+  `.catch((fetchError) => ({ error: {...}, data: null, count: null, status: 0,
+  statusText: '' }))` handler fire — the **only** code path that produces
+  `status: 0`. `isTransportAmbiguous(res)` therefore checks `!!res.error &&
+  res.status === 0` — exact and finite, never inferred from `error.message`
+  text. Every other `res.error` (any status other than exactly `0`, or the
+  bounded exact-`42883` missing-function signal, or the documented inactive
+  envelope) is `'hard_failure'` or `'legacy_fallback'` per §35.4, never
+  `'ambiguous_failure'`.
+- **`tests/ordem-compra-receipt-cutover.smoke.js`** (366→475 lines): renamed/
+  rewrote the transport-ambiguity tests to simulate an actual `status: 0`
+  fetch-rejection shape instead of a bare `{code, message}` object; added
+  dedicated tests for a timeout/abort (`AbortError`, `status: 0`), for a
+  non-`42883` code carrying missing-function-like message text but a real
+  HTTP status (`hard_failure`, proving message-text is never sufficient),
+  for `isTransportAmbiguous`'s own exact truth table (error+status:0 only —
+  a missing `status` must never default to ambiguous), and for four
+  representative deterministic server rejections (`42501`, `22P02`, a
+  PGRST-prefixed schema error, and a bodyless-but-real HTTP rejection) all
+  asserting `'hard_failure'`.
+- **`tests/op-writes.smoke.js`**, **`tests/fornecedor-screens.smoke.js`**,
+  **`tests/op-nova.smoke.js`**: the existing ambiguous-transport-failure test
+  fixtures (previously a bare `{code:'08006', message:'connection timeout'}`
+  object with no `status` field) were updated to the real fetch-rejection
+  shape (`status: 0, statusText: ''`), since under the corrected, stricter
+  predicate a `res` without `status: 0` is no longer classified ambiguous —
+  these fixtures needed to match the real transport-level shape they are
+  meant to simulate, not just any error object.
+- **`tests/pedido-detail.smoke.js`** (3034→3279 lines): extended
+  `makeHubRuntime()` to also load the real adapter
+  (`js/screens/ordem-compra-receipt-cutover.js`) and the real
+  `js/screens/op-writes.js` into the same `vm.createContext` sandbox
+  (previously it loaded only the detail-screen bundle and the shared
+  distribution-UI builder), plus a deterministic `window.crypto.randomUUID`
+  stub so generated idempotency tokens are observable/assertable. Added two
+  new runtime tests (§35.6) that call `handlers.openMovementModal(...)` for
+  real and drive `window.registrarRecebimentoOrdemFio` end-to-end through
+  the real adapter — no stubbed helper, only `window.supa` mocked at the
+  `rpc`/`from` boundary — satisfying Gate 2 without any product-code
+  extraction (the order's fallback-of-last-resort was not needed).
+- **No product path other than the adapter was touched** (`op-writes.js`,
+  `fornecedor.js`, `op-nova.js`, `pedido-detail-events.js`, `index.html`
+  required no change for either gate — both gates were satisfiable entirely
+  within the adapter's classification logic and the test suite).
+
+### 35.4 Finite RPC-error classification — final policy
+
+- **`legacy_fallback`** — exactly one of: `error.code === '42883'` (the
+  bounded missing-function deployment-sequencing signal, unchanged from
+  §32.4/§34); the documented canonical-reader-inactive signal
+  (`error.code === '55000'` with the `listar_compat_inativo` message,
+  unchanged); the documented canonical-writer-inactive result envelope
+  (`{ok:false, codigo:'recebimento_compat_inativo'}`, unchanged). The caller
+  runs its exact existing legacy fallback.
+- **`ambiguous_failure`** — exactly `!!res.error && res.status === 0`: the
+  `fetch()` call itself never received an HTTP response (connection refused,
+  DNS failure, timeout, aborted request, CORS failure). Server commit status
+  is genuinely unknown. The caller fails closed (no flat fallback) and its
+  tracker **retains** the current attempt so a retry of unchanged intent
+  reuses the same idempotency token.
+- **`hard_failure`** — every other `res.error`: any received JSONB envelope
+  with `{ok:false, codigo:...}` other than the documented inactive code
+  (`db/76`'s outer `EXCEPTION WHEN OTHERS` guarantees this instead of a
+  raised error for every business-logic condition), or any RPC-call-level
+  error that **did** receive a real HTTP status (permission errors such as
+  `42501`, data errors such as `22P02`, PGRST-prefixed API/schema errors,
+  RPC signature/payload errors, or any other recognized or unrecognized
+  server-originated response with a non-zero status). The request completed
+  deterministically. The caller surfaces it and its tracker **closes** the
+  attempt — a further submission, even of byte-identical intent, is a new
+  attempt with a new token. Ambiguity is never inferred from `error.message`
+  text alone, in either direction.
+
+This supersedes §34.4's "any error except 42883 ⇒ ambiguous" wording; §34.4
+is preserved above as authored (append-only), superseded by this §35.4 per
+the governs-on-conflict rule.
+
+### 35.5 Corrected evidence
+
+- `node --check`: clean on all six changed files (one product file, five
+  test files).
+- Per-file `node --test`: all pass except the same pre-existing, unrelated
+  failures already documented in §33.7/§34.5 — no new per-file failure
+  introduced by this correction. `tests/pedido-detail.smoke.js` run in
+  isolation: 189 tests, 152 pass, 37 fail (the exact same 37 pre-existing,
+  unrelated failures present before this correction, confirmed by a
+  `git stash`/`stash pop` differential run against the unmodified file at
+  `f9b1a54` — 187 tests, 150 pass, 37 fail, byte-identical failing-name set).
+- Full mandatory Node suite (`node --test "tests/**/*.js"`): **before**
+  (`f9b1a54`, via `git stash` of only the six changed tracked files, `.gitignore`
+  and `.mcp.json` residue untouched): 3985 tests, 3863 pass, 122 fail.
+  **After** (this correction, stash popped): 3993 tests, 3871 pass, 122 fail.
+  `diff` of the sorted failing-test-name lists between the two runs is
+  **empty** — the 122 failing names are byte-identical before and after;
+  zero regressions anywhere in the repository; the 8 additional passing
+  tests are exactly this correction's own new/extended tests.
+- `node scripts/validate-spec-custody.mjs`: **PASS**.
+- `git diff --check` / `git diff --cached --check`: clean.
+
+### 35.6 Runtime idempotency proof for `pedido-detail-events.js` (Gate 2, corrected)
+
+Two new tests in `tests/pedido-detail.smoke.js`, both calling the real
+`handlers.openMovementModal(view.stepper[0].transfer)` against a real
+Insumos→Tecelagem receipt form, clicking the real "Registrar recebimento"
+button (`_listeners.click`), and reading/writing the real kg/date `<input>`
+nodes found in the rendered DOM tree — `window.supa` is mocked only at the
+`rpc`/`from` boundary, never the helper itself:
+
+1. **"...retem/renova o token de idempotencia..."** — a sequence of seven
+   real clicks against one ordem-fio line proves, in order: (a) the first
+   submission mints a token; (b) an ambiguous transport failure
+   (`status: 0`) causes zero flat writes and a retry with unchanged kg/date
+   resends the identical token — this is only possible because the tracker
+   lives in `buildInsumosTransferForm`'s closure, outside `onSave`, and is
+   never recreated per click; (c) changing only the kg value mints a new
+   token; (d) changing only the date (kg unchanged) mints another new token;
+   (e) a retry of that same intent still reuses that token, but this time a
+   **deterministic** rejection (`42501`, real HTTP status) closes the
+   attempt; (f) the next submission, even with byte-identical intent, mints
+   a fresh token — proving the deterministic failure actually closed the
+   prior attempt rather than merely coincidentally differing — and this
+   time a canonical success is returned, which reloads/re-renders the whole
+   modal (`refreshPedidoTransitionModal`); (g) a further submission after
+   that success/remount (against the freshly rebuilt tracker, saldo now
+   reduced) mints yet another new token, proving a submission after
+   completion never reuses a closed attempt. Zero flat (`window.supa.from`)
+   writes occur across all seven submissions.
+2. **"...sinal de escritor inativo aciona exatamente um fallback plano..."**
+   — a single real click, with the mocked RPC returning the documented
+   `{ok:false, codigo:'recebimento_compat_inativo'}` envelope, proves the
+   canonical RPC is attempted first (exactly one call) and the flat fallback
+   (`window.supa.from('ordens_compra_fio').update(...).eq('id', ...)`) fires
+   **exactly once**, with the correct absolute kg/date/status payload.
+
+This closes §34.9's disclosed non-blocking debt
+("`pedido-detail-events.js`'s ... retry-of-unchanged-intent behavior is
+proven statically, not by a real DOM/runtime click simulation") for this
+specific call-site: all three real receipt-writing call-sites
+(`op-nova.js`, `fornecedor.js`, `pedido-detail-events.js`) now have real
+DOM-click + stateful-mock runtime proof, none relies on static/regex
+assertion alone for its idempotency retention behavior. The three
+pre-existing static §34.7 tests in `tests/pedido-detail.smoke.js` (tracker
+construction, `resolveAttempt` call shape, retain/complete branching by
+source pattern) are left in place, unmodified — they are still true and
+proportionate as a fast structural check, now supplemented (not replaced)
+by the runtime proof above, per the order's own "supplemented, not
+necessarily replaced" framing was not required verbatim but is the natural
+reading of "static inspection is insufficient" alongside an already-passing
+static suite.
+
+### 35.7 Test corrections and additions
+
+- `tests/ordem-compra-receipt-cutover.smoke.js`: see §35.3's bullet above —
+  net effect is the writer's ambiguous-failure test now simulates a real
+  `status: 0` fetch-rejection; a sibling test added for the timeout/abort
+  variant; a test added proving a non-`42883` code with missing-function-like
+  message text but a real HTTP status is `hard_failure`; a dedicated
+  `isTransportAmbiguous` truth-table test; four new deterministic-rejection
+  tests (`42501`, `22P02`, PGRST-prefixed, bodyless real HTTP rejection).
+- `tests/op-writes.smoke.js`, `tests/fornecedor-screens.smoke.js`,
+  `tests/op-nova.smoke.js`: existing ambiguous-transport-failure fixtures
+  updated to the real `status: 0` shape (no test behavior/assertion added or
+  removed, only the simulated transport shape corrected to match what it
+  claims to simulate).
+- `tests/pedido-detail.smoke.js`: `makeHubRuntime()` extended to load the
+  real adapter and `op-writes.js` plus a deterministic `crypto.randomUUID`
+  stub; two new runtime tests added (§35.6). No pre-existing test in this
+  file was removed or weakened.
+- No other test file required a change for either gate
+  (`tests/op-persistir.smoke.js`, `tests/op-recalculo.smoke.js`,
+  `tests/controlled-delete.smoke.js` remain unmodified, verified green).
+
+### 35.8 Line-count and code-health report (corrected)
+
+| File | §34 | §35 | Δ | Tier | Note |
+|---|---|---|---|---|---|
+| `js/screens/ordem-compra-receipt-cutover.js` | 257 | 298 | +41 | acceptable (≤500) | Still well under 500; no new tier crossed. |
+| `tests/ordem-compra-receipt-cutover.smoke.js` | 366 | 475 | +109 | test file, no product tier | New classification/tracker tests. |
+| `tests/op-writes.smoke.js` | 1194 | 1196 | +2 | test file, no product tier | Fixture shape correction only. |
+| `tests/fornecedor-screens.smoke.js` | 1296 | 1296 | 0 | test file, no product tier | Fixture shape correction only (net-zero). |
+| `tests/op-nova.smoke.js` | 1878 | 1878 | 0 | test file, no product tier | Fixture shape correction only (net-zero). |
+| `tests/pedido-detail.smoke.js` | 3034 | 3279 | +245 | test file, no product tier | Runtime-harness extension + two new runtime tests. |
+
+No product file other than the adapter changed in this correction. No new
+function exceeds 150 lines.
+
+### 35.9 Residual debts (updated from §34.9)
+
+Unchanged: `HISTORICAL_SALDO_FIOS_PROVENANCE_UNAVAILABLE`,
+`NATIVE_RECEIPT_COMPATIBILITY_MULTI_ORIGIN_UNRESOLVED`, the adapters'
+canonical-branch code paths remain unverified against a live
+`canonical_active` state, `op-recalculo.js`'s saldo-write path has no
+canonical RPC replacement, and `pedido-detail-events.js` exceeding
+`op-nova.js` in size without a frozen-exception label remains a pre-existing
+governance gap. **Resolved by this correction:** §34.9's disclosed debt
+("`pedido-detail-events.js`'s `onSave` retry-of-unchanged-intent behavior is
+proven statically, not by a real DOM/runtime click simulation") — §35.6 now
+provides that runtime proof; the debt entry is removed, not carried forward.
+
+### 35.10 Final state and next authorizable action
+
+`LAST_ACCEPTED_PHASE: PHASE-C3C-B-DB-PREREQ` (unchanged). `ACTIVE_PHASE:
+NONE`. `ACTIVE_PHASE_CONTRACT: NONE`. `PHASE-C3C-B: IMPLEMENTED / LOCALLY
+VERIFIED / AWAITING SUPERVISOR ACCEPTANCE` — unchanged; this correction does
+**not** record supervisor acceptance. No dependent `OC-C3-*` requirement is
+`SATISFIED`. Per the issuing order, a fast-forward push of both `f9b1a54`
+and this correction's commit to `staging/dev` is authorized once all gates
+pass (§35.5); this authorization is explicit and does not itself constitute
+supervisor acceptance of the implementation. The next authorizable action
+after the push is supervisor review/acceptance of this corrected
+implementation. **HARD STOP** — `PHASE-C3D` is not started by this
+correction.

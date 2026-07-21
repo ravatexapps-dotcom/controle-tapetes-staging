@@ -8,6 +8,51 @@
 > `PROJECT_STATE.md`. Phase sequence, dependencies, backlog items, and accepted
 > architecture in this file remain authoritative; live operational status does not.
 
+# Update 2026-07-20 - PHASE-C3C-B Final Targeted Correction (Finite RPC-Error Classification + Runtime Idempotency Proof)
+
+Phase: `PHASE-C3C-B` (application compatibility/adaptation).
+Type: local JS correction, no database/environment/migration-file change.
+
+A further supervisor order, issued against local commit
+`f9b1a54cc7b185a5e72f50209322d1473e93e850`, required two additional gates,
+corrected in commit `fix: complete C3C-B retry classification proof`
+(`docs/architecture/ORDEM_COMPRA_C3C_B_PHASE_CONTRACT.md` §35):
+
+1. **Finite RPC-error classification.** §34's "any RPC-call-level error
+   except exact `42883` ⇒ `ambiguous_failure`" rule was overbroad. Replaced
+   with a finite predicate grounded in the real `@supabase/postgrest-js`
+   response shape (the vendored copy in
+   `services/documents-ingestor/node_modules/` was inspected directly):
+   `status === 0` is the only signal produced when the `fetch()` call itself
+   never receives an HTTP response (network failure, DNS failure, timeout,
+   abort, CORS); every deterministic server response — success or error —
+   carries a real HTTP status. `isTransportAmbiguous(res)` now checks
+   `!!res.error && res.status === 0` exactly; every other error (permission
+   `42501`, data `22P02`, PGRST-prefixed, or any other received response) is
+   `hard_failure` and closes the attempt, never retains it.
+2. **Runtime idempotency proof for `pedido-detail-events.js`.** The prior
+   proof for this call-site's `buildInsumosTransferForm` was static-only
+   (source-pattern regex assertions). `tests/pedido-detail.smoke.js`'s
+   existing `makeHubRuntime()` harness was extended to also load the real
+   adapter and `js/screens/op-writes.js`; two new tests now drive the real
+   `handlers.openMovementModal(...)`'s "Registrar recebimento" button
+   through real DOM clicks against a stateful mocked `window.supa`, proving
+   token retention/renewal across ambiguous/deterministic/success outcomes
+   and exactly-one-flat-write on the inactive signal, at runtime. No
+   product-code extraction was needed.
+
+Only `js/screens/ordem-compra-receipt-cutover.js` (product) and five test
+files changed. Full mandatory Node suite (3993 tests, +8 from this
+correction's own tests) has the same 122-failure set as the `f9b1a54`
+baseline — byte-for-byte identical failing-name set, zero regressions
+attributable to this correction; `validate-spec-custody` PASS; `git diff
+--check` clean.
+`STATUS: IMPLEMENTED / LOCALLY VERIFIED / AWAITING SUPERVISOR ACCEPTANCE`
+(contract §35) — unchanged; this correction does not record supervisor
+acceptance. No dependent `OC-C3-*` requirement is `SATISFIED`. Next
+authorizable action: supervisor review/acceptance of this corrected
+implementation.
+
 # Update 2026-07-20 - PHASE-C3C-B Supervisor-Review Correction (Idempotency Retention + Exact 42883)
 
 Phase: `PHASE-C3C-B` (application compatibility/adaptation).
