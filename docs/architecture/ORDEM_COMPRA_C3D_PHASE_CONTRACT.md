@@ -3,7 +3,7 @@
 <!-- MATERIAL_PHASE_CONTRACT:BEGIN -->
 PHASE_ID: PHASE-C3D
 <!-- MATERIAL_PHASE_CONTRACT:END -->
-STATUS: ACCEPTED — PHASE-C3D-A: CLOSED / TECHNICALLY ACCEPTED / LOCALLY VERIFIED (accepted checkpoint 096cd60325e4987010d328c856ee6a3a51ca66bf) — PHASE-C3D-B: CLOSED / TECHNICALLY ACCEPTED / LOCALLY VERIFIED (accepted checkpoint 5441321014883c4e8149dc8b20da9d053a193699) — PHASE-C3D-C: CLOSED / TECHNICALLY ACCEPTED / LOCALLY VERIFIED (accepted checkpoint 6fd63a56a123d6d006353c6ae629611cbc7c01e9, §U) — PHASE-C3D-D: CLOSED / TECHNICALLY ACCEPTED / LOCALLY VERIFIED (accepted checkpoint 5a2be05c19a62346b906f7b3cbb0b89d07b3a571, §V corrected §W, supervisor acceptance §X) — PHASE-C3D-E: IMPLEMENTED / LOCALLY VERIFIED / AWAITING SUPERVISOR ACCEPTANCE (§Y) — C3D-F: NOT AUTHORIZED
+STATUS: CLOSED / ACCEPTED_WITH_NONBLOCKING_DEBT / LOCALLY VERIFIED — accepted technical checkpoint 429aa3980c7027b9d872a1902e2f31f1a4a85a2a — PHASE-C3D-A: CLOSED / TECHNICALLY ACCEPTED / LOCALLY VERIFIED (accepted checkpoint 096cd60325e4987010d328c856ee6a3a51ca66bf) — PHASE-C3D-B: CLOSED / TECHNICALLY ACCEPTED / LOCALLY VERIFIED (accepted checkpoint 5441321014883c4e8149dc8b20da9d053a193699) — PHASE-C3D-C: CLOSED / TECHNICALLY ACCEPTED / LOCALLY VERIFIED (accepted checkpoint 6fd63a56a123d6d006353c6ae629611cbc7c01e9, §U) — PHASE-C3D-D: CLOSED / TECHNICALLY ACCEPTED / LOCALLY VERIFIED (accepted checkpoint 5a2be05c19a62346b906f7b3cbb0b89d07b3a571, §V corrected §W, supervisor acceptance §X) — PHASE-C3D-E: CLOSED / TECHNICALLY ACCEPTED / LOCALLY VERIFIED (accepted checkpoint 429aa3980c7027b9d872a1902e2f31f1a4a85a2a, §Y evidence, §Z acceptance) — PHASE-C3D-F: CLOSED / ACCEPTED / DOCUMENTATION-ONLY (§Z) — OC-C3D-DEPLOY-001/OC-C3D-FENCE-001/OC-C3D-ACL-001/OC-C3D-LOCK-001: SATISFIED — ACTIVE_PHASE/ACTIVE_PHASE_CONTRACT: NONE (this contract is closed)
 
 > **Material-contract identity (restored §Q.1).** The machine-readable
 > `PHASE_ID` above is `PHASE-C3D` — the identity of the whole material phase
@@ -2150,3 +2150,248 @@ before commit.
   write, migration/product/existing-test modification, persistent receipt,
   deployment, `main`, `origin`/`production` remote mutation, or any push beyond
   the one authorized `staging/dev` fast-forward for this pass was performed.
+
+## Z. PHASE-C3D-E supervisor acceptance and PHASE-C3D-F aggregate closeout
+
+> Authored under the "PHASE-C3D-F — AGGREGATE CLOSEOUT AND READINESS
+> DISPOSITION" order (documentation-only closeout). Entry checkpoint
+> `429aa3980c7027b9d872a1902e2f31f1a4a85a2a`, branch `dev`, `staging/dev` equal
+> to HEAD at entry; preserved protected residue untouched (`M .gitignore`,
+> `?? .codex/config.toml`, `?? .mcp.json`). This section records the supervisor's
+> acceptance of `PHASE-C3D-E`, executes `PHASE-C3D-F` (aggregate closeout of the
+> `PHASE-C3D` material phase), dispositions the remaining debts and the readiness
+> boundaries, and leaves the repository ready for a separately authorized
+> `PHASE-C4`. **No `PHASE-C4`, no `PHASE-C5`, and no `REAL_CUTOVER` is begun,
+> authorized, or executed. No technical file is created or modified; every
+> accepted technical artifact is byte-identical.**
+
+### Z.1 PHASE-C3D-E supervisor acceptance (STEP 1)
+
+- `PHASE-C3D-E` (session lock, resource lock, and Component B concurrency
+  rehearsal, §Y): **CLOSED / TECHNICALLY ACCEPTED / LOCALLY VERIFIED** — accepted
+  checkpoint `429aa3980c7027b9d872a1902e2f31f1a4a85a2a`.
+- The accepted `PHASE-C3D-E` evidence satisfies **`OC-C3D-LOCK-001`** (its §M
+  item 4 exit criteria — session exclusion, deterministic resource locking, short
+  transactions, release/reacquisition, and the authorized concurrency behavior
+  including the one authorized synthetic-PONR-crossing sequence and its mandatory
+  cluster destruction — are met). `OC-C3D-LOCK-001` is advanced from
+  `PARTIALLY_SATISFIED` to **`SATISFIED`** (traceability matrix updated; accepted
+  checkpoint recorded as `429aa3980c7027b9d872a1902e2f31f1a4a85a2a`).
+- **Accepted evidence** includes: two independently bootstrapped fresh disposable
+  PostgreSQL 18.4 clusters; exact ordered `db/01` through `db/76` application;
+  classification-faithful 64-row synthetic corpus; deterministic session
+  advisory-lock key; same-generation exclusion; different-generation
+  independence; release and reacquisition; automatic advisory-lock release on
+  backend disconnect; owner-only lock-command boundary; zero advisory-lock
+  leakage; the installed Component B resource-lock order; a real staged blocker
+  and `pg_blocking_pids` evidence; two real T1/T2 sessions with a real PostgreSQL
+  lock wait; T2's fresh post-commit absolute-total delta re-evaluation; no
+  stale-delta result; unchanged deadlock counter; exactly one synthetic PONR
+  crossing per disposable cluster; idempotent replay; idempotency-conflict
+  rejection; deterministic LIFO reversal; the immutable imported-balance floor;
+  direct depth-1 fence denial; the legitimate nested `ordem_compra_item` and
+  movement runtime; mandatory destruction of both post-PONR clusters; read-only
+  shared-development invariance; zero persistent database mutation.
+- **Traceability row updated** (`OC-C3D-LOCK-001`): `IMPLEMENTATION_ARTIFACT` =
+  `db/75_ordem_compra_c3c_inactive_cutover.sql` + `tests/ordem-compra-c3d-lock-concurrency.mjs`;
+  `TEST_OR_EVIDENCE` = the session advisory-lock matrix, installed deterministic
+  Component B resource-lock order, staged blocker and independent observer-query
+  evidence, two real T1/T2 sessions, real PostgreSQL lock wait, fresh post-commit
+  absolute-total delta, no stale delta, idempotent replay and idempotency
+  conflict, deterministic LIFO reversal, imported-balance floor, depth-1 denial,
+  nested item/movement runtime, one synthetic PONR crossing per cluster,
+  mandatory complete cluster destruction, two fresh-cluster passes, read-only
+  shared-development invariance; `ENVIRONMENT` = `DISPOSABLE_LOCAL_POSTGRES_18_4 +
+  DEVELOPMENT_DB_UCRJTFSWNFDLXWTMXNOO_READ_ONLY`; `ACCEPTED_CHECKPOINT` =
+  `429aa3980c7027b9d872a1902e2f31f1a4a85a2a`.
+
+**Z.1.a Documentary precision correction (non-blocking).** The `PHASE-C3D-E`
+two-session blocking evidence was **not** produced by one fixed observer backend
+running every blocking query. The test:
+
+- creates and captures a backend PID labelled *observer*;
+- **closes that marker session**;
+- performs the actual `pg_blocking_pids` / `pg_stat_activity` observations
+  through independent transient observer queries.
+
+Recorded accurately as: **INDEPENDENT OBSERVER CONNECTIONS CONFIRMED THE T1/T2
+BLOCKING RELATIONSHIP.** This is a non-blocking documentary precision correction;
+the accepted technical artifact (`tests/ordem-compra-c3d-lock-concurrency.mjs`)
+is **not** changed.
+
+**Z.1.b `saldo_fios` / `saldo_fios_op` disposition.**
+
+- `ordem_compra_item` and inventory-movement runtime were empirically exercised;
+- direct depth-1 `saldo_fios` mutation was denied with `55000`;
+- the installed `saldo_fios`/`saldo_fios_op` exception was structurally proven to
+  require `pg_trigger_depth() > 1 AND canonical_active`;
+- the fixed target scenario produced no excess because `kg_alocado` 15.500 was
+  greater than the maximum tested total 15.000;
+- therefore `saldo_fios`'s excess branch was **not empirically executed** in this
+  scenario (proven structurally and by the direct depth-1 denial, not claimed as
+  a mutation that did not occur);
+- `saldo_fios_op` is **`NOT_APPLICABLE`** to the installed receipt/reversal/import
+  write topology;
+- this does **not** block `OC-C3D-LOCK-001`, whose accepted §M exit criteria are
+  session exclusion, deterministic locking, short transactions,
+  release/reacquisition, authorized concurrency, synthetic PONR crossing, and
+  cluster destruction.
+
+### Z.2 Aggregate PHASE-C3D closeout (STEP 2)
+
+All accepted sublots:
+
+- `PHASE-C3D-A`: **CLOSED / TECHNICALLY ACCEPTED / LOCALLY VERIFIED** — accepted
+  checkpoint `096cd60325e4987010d328c856ee6a3a51ca66bf`.
+- `PHASE-C3D-B`: **CLOSED / TECHNICALLY ACCEPTED / LOCALLY VERIFIED** — accepted
+  checkpoint `5441321014883c4e8149dc8b20da9d053a193699`.
+- `PHASE-C3D-C`: **CLOSED / TECHNICALLY ACCEPTED / LOCALLY VERIFIED** — accepted
+  checkpoint `6fd63a56a123d6d006353c6ae629611cbc7c01e9`.
+- `PHASE-C3D-D`: **CLOSED / TECHNICALLY ACCEPTED / LOCALLY VERIFIED** — accepted
+  checkpoint `5a2be05c19a62346b906f7b3cbb0b89d07b3a571`.
+- `PHASE-C3D-E`: **CLOSED / TECHNICALLY ACCEPTED / LOCALLY VERIFIED** — accepted
+  checkpoint `429aa3980c7027b9d872a1902e2f31f1a4a85a2a`.
+
+All `PHASE-C3D` requirements:
+
+- `OC-C3D-DEPLOY-001`: **SATISFIED**.
+- `OC-C3D-FENCE-001`: **SATISFIED**.
+- `OC-C3D-ACL-001`: **SATISFIED**.
+- `OC-C3D-LOCK-001`: **SATISFIED**.
+
+- `PHASE-C3D-F` (aggregate closeout & readiness disposition): **CLOSED / ACCEPTED
+  / DOCUMENTATION-ONLY**. The final `PHASE-C3D-F` documentation commit is the
+  **closeout-documentation checkpoint, not a new technical evidence checkpoint**.
+- Aggregate material phase — `PHASE-C3D`: **CLOSED /
+  ACCEPTED_WITH_NONBLOCKING_DEBT / LOCALLY VERIFIED**. `ACCEPTED_TECHNICAL_CHECKPOINT`:
+  `429aa3980c7027b9d872a1902e2f31f1a4a85a2a`.
+
+`PHASE-C3D` did **not** execute a real cutover. This closeout does **not** advance
+or satisfy `OC-CUTOVER-001`, `OC-CUTOVER-PONR-001`, `OC-C4-ADMIN-001`,
+`OC-C4-SUPPLIER-001`, or `OC-C5-EMISSION-001`; each remains as previously
+dispositioned (`PLANNED` / `PARTIALLY_SATISFIED` / `PLANNED` / `DEFERRED` /
+`PLANNED` respectively) and separately governed.
+
+### Z.3 Thirteen unmapped rows — supervisor disposition (STEP 3)
+
+**Supervisor decision: the 13 unmapped legacy rows are DEFERRED to the
+`REAL_CUTOVER` readiness gate. They do not block `PHASE-C3D` closeout.**
+
+- exact ids: **`153` through `165`**;
+- all are `rascunho` / `pendente` / `nao_recebido`;
+- `kg_recebido` is NULL;
+- they remained outside the 51-row mapped/frozen canonical corpus;
+- Component A cannot project them;
+- Component B must fail `mapeamento_compat_ausente` if invoked for them;
+- `PHASE-C3D` creates **no** mapping, bridge, migration, backfill, or exclusion
+  record for them.
+
+Before `REAL_CUTOVER` may be authorized, a separate read-only completeness
+diagnosis must disposition **every one** of the 13 rows by exactly one of:
+
+1. authorized mapping/backfill and re-baseline;
+2. documented exclusion from the cutover corpus with business-owner approval;
+3. cancellation/removal through a separately authorized business-data action.
+
+`REAL_CUTOVER` remains **BLOCKED from authorization** until that disposition is
+recorded. This is a binding prerequisite and hard authorization gate recorded in
+`PROJECT_STATE.md` (open items), `AGENT_HANDOFF.md`,
+`docs/architecture/PEDIDO_PRODUCTION_FLOW_BACKLOG.md`, this contract closeout, the
+`OC-CUTOVER-001` traceability residual debt, and `docs/ledgers/G28_LEDGER.md`.
+`OC-CUTOVER-001` is **not** marked `BLOCKED` — its canonical allowed disposition
+remains `PLANNED` and the gate is recorded as a residual-debt authorization
+prerequisite (the governance model prefers residual-debt gating over a
+disposition change).
+
+### Z.4 Residual debt (STEP 4)
+
+Non-blocking `PHASE-C3D` debts:
+
+1. The 13 unmapped rows are a binding `REAL_CUTOVER` completeness gate.
+2. The exact real historical reconciliation totals remain real-cutover evidence:
+   39 headers; 44 entries; 20,221.280 kg; 405.980 kg excess.
+3. The synthetic corpus does not substitute for the real-cutover totals proof.
+4. Real `close_final_acl` invocation remains unauthorized.
+5. Real activation remains unauthorized.
+6. Real read-authority switch remains unauthorized.
+7. Any productive receipt on a shared or real environment remains unauthorized.
+8. The validator active-contract self-test fixture limitation remains
+   governance-harness debt.
+9. The mandatory Node suite retains pre-existing nondeterminism; no accepted C3D
+   pass introduced a new failing identity.
+10. The C3D-E fixed scenario did not produce an excess line and therefore did not
+    empirically mutate `saldo_fios`; the installed exception and direct denial
+    were proven, and this is not an `OC-C3D-LOCK-001` exit criterion.
+11. `saldo_fios_op` is not part of the installed receipt/reversal/import write
+    topology and is `NOT_APPLICABLE` to C3D-E.
+
+Separately governed real-cutover work is **not** described as incomplete C3D
+implementation.
+
+### Z.5 Final canonical state (STEP 5)
+
+- `LAST_ACCEPTED_PHASE`: **PHASE-C3D**.
+- `ACTIVE_PHASE`: **NONE**.
+- `ACTIVE_PHASE_CONTRACT`: **NONE**.
+- `ACTIVE_TRACK`: **PURCHASE_ORDER_PHASE_C**.
+- `ACCEPTED_CHECKPOINT`: **429aa3980c7027b9d872a1902e2f31f1a4a85a2a**.
+- `PHASE-C3D`: **CLOSED / ACCEPTED_WITH_NONBLOCKING_DEBT / LOCALLY VERIFIED**.
+- `NEXT_AUTHORIZABLE_ACTION`: **architect authorization decision for `PHASE-C4` —
+  ADMIN RECEIPT UI**.
+
+`PHASE-C4` is not authorized by this pass; `PHASE-C5` is not authorized;
+`REAL_CUTOVER` is not authorized. The next chat must re-read the canonical
+repository before authoring or executing any `PHASE-C4` order.
+
+### Z.6 Read-only shared-development closeout check
+
+Using SELECT-only access to `ucrjtfswnfdlxwtmxnoo`, confirmed once during this
+pass (no DDL, no DML, no mutating RPC, no role/policy mutation, no remote fence/
+activation/receipt/cutover action):
+
+- migrations `75` (`20260720234958`) and `76` (`20260720235820`) present;
+- cutover singleton `legacy_active` / `flat` / `not_started`; every
+  snapshot/import/final-ACL/activation/PONR/generation/count marker NULL;
+- business counts: `ordens_compra_fio` = 64; `ordem_compra` = 51;
+  `ordem_compra_item` = 51; `ordem_compra_item_alocacao` = 51;
+  `ordem_compra_item_compat_fio` = 51; `necessidade_compra_fio` = 64;
+  `saldo_fios` = 5; `saldo_fios_op` = 0; `ordem_compra_recebimentos` = 0;
+  `ordem_compra_fio_lancamentos` = 0; `ordem_compra_fio_movimentos_estoque` = 0;
+- advisory locks = 0.
+
+### Z.7 Validation and custody
+
+Documentation-only closeout. `node scripts/validate-spec-custody.mjs` PASS;
+`git diff --check` and `git diff --cached --check` clean; the known
+active-contract self-test fixture-harness limitation surfaced only at the baseline
+checkpoint `429aa3980c7027b9d872a1902e2f31f1a4a85a2a` as `R1: ACTIVE_PHASE_CONTRACT is not an existing file` and no longer triggers at final (`ACTIVE_PHASE_CONTRACT` is `NONE`) — a baseline-only artifact, not a new self-test failure and not a claimed fix. Full mandatory Node-suite failing-identity
+differential (detached temporary worktree at
+`429aa3980c7027b9d872a1902e2f31f1a4a85a2a`, `node --test tests/**/*.js`): final
+failing identities minus baseline failing identities = empty (no new failing
+identity). Exactly seven authorized documents changed
+(`PROJECT_STATE.md`, `AGENT_HANDOFF.md`, `docs/DOCUMENTATION_INDEX.md`, this
+contract, `docs/architecture/ORDEM_COMPRA_C3_TRACEABILITY.md`,
+`docs/architecture/PEDIDO_PRODUCTION_FLOW_BACKLOG.md`,
+`docs/ledgers/G28_LEDGER.md`); zero technical file changed; zero new/deleted file;
+every accepted technical artifact byte-identical. The single closeout commit is
+`docs: close C3D purchase-order rehearsal`; one clean fast-forward push to
+`staging/dev` is authorized for it.
+
+### Z.8 Disposition
+
+- `PHASE-C3D-E`: **CLOSED / TECHNICALLY ACCEPTED / LOCALLY VERIFIED**
+  (`429aa3980c7027b9d872a1902e2f31f1a4a85a2a`).
+- `PHASE-C3D-F`: **CLOSED / ACCEPTED / DOCUMENTATION-ONLY**.
+- `PHASE-C3D` (aggregate): **CLOSED / ACCEPTED_WITH_NONBLOCKING_DEBT / LOCALLY
+  VERIFIED**; accepted technical checkpoint
+  `429aa3980c7027b9d872a1902e2f31f1a4a85a2a`.
+- `OC-C3D-DEPLOY-001` / `OC-C3D-FENCE-001` / `OC-C3D-ACL-001` /
+  `OC-C3D-LOCK-001`: all **SATISFIED**.
+- `OC-CUTOVER-001` (`PLANNED`), `OC-CUTOVER-PONR-001` (`PARTIALLY_SATISFIED`),
+  `OC-C4-ADMIN-001` (`PLANNED`), `OC-C4-SUPPLIER-001` (`DEFERRED`),
+  `OC-C5-EMISSION-001` (`PLANNED`): **unchanged**.
+- **NEXT_AUTHORIZABLE_ACTION:** architect authorization decision for `PHASE-C4` —
+  ADMIN RECEIPT UI. `PHASE-C4`, `PHASE-C5`, and `REAL_CUTOVER` are not authorized;
+  the `REAL_CUTOVER` window stays BLOCKED from authorization until the 13-row
+  completeness disposition is recorded. **HARD STOP — `PHASE-C4` is not begun in
+  this pass.**

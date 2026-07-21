@@ -8,6 +8,68 @@
 > `PROJECT_STATE.md`. Phase sequence, dependencies, backlog items, and accepted
 > architecture in this file remain authoritative; live operational status does not.
 
+# Update 2026-07-21 - PHASE-C3D Aggregate Closeout (PHASE-C3D-F) & PHASE-C3D-E Acceptance
+
+Phase: `PHASE-C3D-F` (the sixth and final `PHASE-C3D` sublot — aggregate closeout
+& readiness disposition). Type: documentation-only closeout; no product, test,
+script, migration, database, environment, deployment, or configuration change.
+Historical closeout note — live state belongs to `PROJECT_STATE.md`.
+
+This pass first recorded the supervisor's acceptance of `PHASE-C3D-E` (session
+advisory lock, deterministic resource-lock order, Component B concurrency,
+idempotency, deterministic LIFO reversal, imported-balance immutable floor, with
+exactly one synthetic PONR crossing per disposable cluster followed by mandatory
+destruction) as `CLOSED / TECHNICALLY ACCEPTED / LOCALLY VERIFIED` at accepted
+checkpoint `429aa3980c7027b9d872a1902e2f31f1a4a85a2a` (contract §Z), advancing
+`OC-C3D-LOCK-001` to `SATISFIED`. A non-blocking documentary precision correction
+records that **independent observer connections confirmed the T1/T2 blocking
+relationship** (the captured *observer* marker session is closed before the
+`pg_blocking_pids`/`pg_stat_activity` observations, which run through independent
+transient queries); `saldo_fios`'s excess branch was not empirically executed
+(`kg_alocado` 15.500 > max total 15.000, no excess line — proven structurally and
+by the depth-1 denial) and `saldo_fios_op` is `NOT_APPLICABLE` to the installed
+receipt/reversal/import topology — neither an `OC-C3D-LOCK-001` §M exit criterion;
+the accepted technical artifact is unchanged.
+
+It then executed `PHASE-C3D-F`, closing the aggregate `PHASE-C3D` material phase.
+All five material sublots are `CLOSED / TECHNICALLY ACCEPTED / LOCALLY VERIFIED` —
+`PHASE-C3D-A` `096cd60`, `PHASE-C3D-B` `5441321`, `PHASE-C3D-C` `6fd63a5`,
+`PHASE-C3D-D` `5a2be05`, `PHASE-C3D-E` `429aa39`; `PHASE-C3D-F` is `CLOSED /
+ACCEPTED / DOCUMENTATION-ONLY`; and `PHASE-C3D` is `CLOSED /
+ACCEPTED_WITH_NONBLOCKING_DEBT / LOCALLY VERIFIED` at accepted technical
+checkpoint `429aa3980c7027b9d872a1902e2f31f1a4a85a2a`. All four `OC-C3D-*`
+requirements are `SATISFIED`. The final `PHASE-C3D-F` documentation commit is the
+closeout-documentation checkpoint, **not** a new technical evidence checkpoint;
+`PHASE-C3D` performed **no real cutover** and this closeout advances no
+real-cutover / C4 / C5 requirement (`OC-CUTOVER-001` `PLANNED`,
+`OC-CUTOVER-PONR-001` `PARTIALLY_SATISFIED`, `OC-C4-ADMIN-001` `PLANNED`,
+`OC-C4-SUPPLIER-001` `DEFERRED`, `OC-C5-EMISSION-001` `PLANNED`).
+
+**13-row `REAL_CUTOVER` completeness gate (supervisor decision).** The development
+database's `ordens_compra_fio` holds 64 rows = 51 mapped (frozen REFUND-A corpus)
++ **13 unmapped, exact ids `153`–`165`**, all `rascunho`/`pendente`/`nao_recebido`,
+`kg_recebido` NULL. Component A cannot project them; Component B must fail
+`mapeamento_compat_ausente` if invoked; `PHASE-C3D` created no
+mapping/bridge/migration/backfill/exclusion record for them. They are **DEFERRED
+to the `REAL_CUTOVER` readiness gate** and did not block `PHASE-C3D` closeout.
+Before `REAL_CUTOVER` may be authorized, a separate read-only completeness
+diagnosis must disposition **every one** of the 13 by exactly one of: (1)
+authorized mapping/backfill and re-baseline; (2) documented exclusion with
+business-owner approval; or (3) cancellation/removal through a separately
+authorized business-data action. `REAL_CUTOVER` stays **BLOCKED from
+authorization** until that disposition is recorded (`OC-CUTOVER-001` remains
+`PLANNED` — the gate is a residual-debt authorization prerequisite, not a
+requirement-disposition change).
+
+`ACTIVE_PHASE`/`ACTIVE_PHASE_CONTRACT` are now `NONE`; the next authorizable
+action is the **architect authorization decision for `PHASE-C4` — ADMIN RECEIPT
+UI** (`OC-C4-ADMIN-001`); `PHASE-C4`, `PHASE-C5`, and `REAL_CUTOVER` remain
+unauthorized. `validate-spec-custody` PASS; `git diff --check` clean; the
+mandatory-suite failing-identity differential vs.
+`429aa3980c7027b9d872a1902e2f31f1a4a85a2a` = empty added. Sequence/architecture in
+this file are unchanged. Full evidence: contract §Z and
+`docs/ledgers/G28_LEDGER.md` (2026-07-21, this pass's own entry).
+
 # Update 2026-07-21 - PHASE-C3D-E Session Lock, Resource Lock and Component B Concurrency Rehearsal
 
 Phase: `PHASE-C3D-E` (the fifth `PHASE-C3D` sublot). Historical closeout note —

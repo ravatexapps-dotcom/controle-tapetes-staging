@@ -16,24 +16,118 @@ directly (`git rev-parse HEAD`, `git status --short --untracked-files=all`).
 
 <!-- SPEC_CUSTODY_BOOTSTRAP:BEGIN -->
 ```text
-LAST_ACCEPTED_PHASE: PHASE-C3C-B
-ACTIVE_PHASE: PHASE-C3D
-ACTIVE_PHASE_CONTRACT: docs/architecture/ORDEM_COMPRA_C3D_PHASE_CONTRACT.md
+LAST_ACCEPTED_PHASE: PHASE-C3D
+ACTIVE_PHASE: NONE
+ACTIVE_PHASE_CONTRACT: NONE
 ACTIVE_TRACK: PURCHASE_ORDER_PHASE_C
-NEXT_AUTHORIZABLE_ACTION: read-only supervisor review of the PHASE-C3D-E session/resource-lock and Component B concurrency rehearsal evidence (docs/architecture/ORDEM_COMPRA_C3D_PHASE_CONTRACT.md §Y — session advisory lock, deterministic resource-lock order, Component B concurrency, idempotency, LIFO reversal and imported-balance floor, with exactly one synthetic PONR crossing per disposable cluster followed by mandatory destruction); PHASE-C3D-F and every later C3D sublot remain unauthorized
+NEXT_AUTHORIZABLE_ACTION: architect authorization decision for PHASE-C4 — ADMIN RECEIPT UI (OC-C4-ADMIN-001); PHASE-C4, PHASE-C5, the REAL_CUTOVER window (OC-CUTOVER-001/OC-CUTOVER-PONR-001 — hard-gated behind the mandatory separate read-only completeness disposition of the 13 unmapped ordens_compra_fio rows ids 153–165), real close_final_acl invocation, real activation, the real read-authority switch, staging validation/application of db/76, and any productive receipt on a shared or real environment all remain unauthorized; the next chat must re-read the canonical repository before authoring or executing any PHASE-C4 order
 GOVERNING_SPEC: docs/architecture/ORDEM_COMPRA_LIFECYCLE_SPEC_PROPOSED.md
 TECHNICAL_CONTRACT: docs/architecture/PEDIDO_OP_SCHEMA_CONTRACT.md
 SEQUENCE_AUTHORITY: docs/architecture/PEDIDO_PRODUCTION_FLOW_BACKLOG.md
 TRACEABILITY: docs/architecture/ORDEM_COMPRA_C3_TRACEABILITY.md
 LEDGER: docs/ledgers/G28_LEDGER.md
 HANDOFF: AGENT_HANDOFF.md
-ACCEPTED_CHECKPOINT: 5a2be05c19a62346b906f7b3cbb0b89d07b3a571
+ACCEPTED_CHECKPOINT: 429aa3980c7027b9d872a1902e2f31f1a4a85a2a
 ```
 <!-- SPEC_CUSTODY_BOOTSTRAP:END -->
 
 ## Active phase and next action
 
-- **Last accepted product phase:** `PHASE-C3C-B` (application compatibility/
+- **Last accepted material phase:** `PHASE-C3D` (inactive deployment &
+  rehearsal) — `CLOSED / ACCEPTED_WITH_NONBLOCKING_DEBT / LOCALLY VERIFIED`
+  (2026-07-21), accepted **technical** checkpoint
+  `429aa3980c7027b9d872a1902e2f31f1a4a85a2a`
+  (`docs/architecture/ORDEM_COMPRA_C3D_PHASE_CONTRACT.md` §Z, the `PHASE-C3D-F`
+  aggregate closeout). `ACTIVE_PHASE`/`ACTIVE_PHASE_CONTRACT` are now `NONE`.
+  **`PHASE-C3D-F` (aggregate closeout & readiness disposition):** `CLOSED /
+  ACCEPTED / DOCUMENTATION-ONLY` — the final `PHASE-C3D` documentation commit is
+  the closeout-documentation checkpoint, **not** a new technical evidence
+  checkpoint; `PHASE-C3D` performed **no real cutover**. All five material
+  sublots are `CLOSED / TECHNICALLY ACCEPTED / LOCALLY VERIFIED` at their accepted
+  checkpoints: `PHASE-C3D-A` `096cd60325e4987010d328c856ee6a3a51ca66bf`;
+  `PHASE-C3D-B` `5441321014883c4e8149dc8b20da9d053a193699`; `PHASE-C3D-C`
+  `6fd63a56a123d6d006353c6ae629611cbc7c01e9`; `PHASE-C3D-D`
+  `5a2be05c19a62346b906f7b3cbb0b89d07b3a571`; `PHASE-C3D-E`
+  `429aa3980c7027b9d872a1902e2f31f1a4a85a2a`. All four `PHASE-C3D` requirements
+  are now `SATISFIED` — `OC-C3D-DEPLOY-001`, `OC-C3D-FENCE-001`,
+  `OC-C3D-ACL-001`, and `OC-C3D-LOCK-001` (the last advanced by the supervisor
+  acceptance of `PHASE-C3D-E` recorded this pass). No separately governed
+  real-cutover / C4 / C5 requirement was advanced: `OC-CUTOVER-001` remains
+  `PLANNED`, `OC-CUTOVER-PONR-001` `PARTIALLY_SATISFIED`, `OC-C4-ADMIN-001`
+  `PLANNED`, `OC-C4-SUPPLIER-001` `DEFERRED`, `OC-C5-EMISSION-001` `PLANNED`.
+- **`PHASE-C3D-E` supervisor acceptance (this pass):** the supervisor accepted
+  `PHASE-C3D-E` (session advisory lock, deterministic resource-lock order,
+  Component B concurrency, idempotency, deterministic LIFO reversal, imported-
+  balance immutable floor, with exactly one synthetic PONR crossing per disposable
+  cluster followed by mandatory destruction) as `CLOSED / TECHNICALLY ACCEPTED /
+  LOCALLY VERIFIED` at accepted checkpoint
+  `429aa3980c7027b9d872a1902e2f31f1a4a85a2a` (contract §Y evidence, §Z
+  acceptance), advancing `OC-C3D-LOCK-001` from `PARTIALLY_SATISFIED` to
+  `SATISFIED`. Accepted evidence: two independently bootstrapped fresh disposable
+  PostgreSQL 18.4 clusters; exact ordered `db/01`…`db/76`; the
+  classification-faithful 64-row synthetic corpus; deterministic session
+  advisory-lock key; same-generation exclusion; different-generation independence;
+  release and reacquisition; automatic advisory-lock release on backend
+  disconnect; owner-only lock-command boundary; zero advisory-lock leakage; the
+  installed Component B resource-lock order; a real staged blocker and
+  `pg_blocking_pids` evidence; two real T1/T2 sessions with a real PostgreSQL lock
+  wait; T2's fresh post-commit absolute-total delta re-evaluation (no stale
+  delta); unchanged deadlock counter; exactly one synthetic PONR crossing per
+  disposable cluster; idempotent replay and `idempotencia_conflitante`;
+  deterministic LIFO reversal; the immutable imported-balance floor; direct
+  depth-1 fence denial `55000`; the legitimate nested `ordem_compra_item`/movement
+  runtime; mandatory destruction of both post-PONR clusters; read-only
+  shared-development invariance; zero persistent database mutation.
+  - **Documentary precision correction (non-blocking).** The `PHASE-C3D-E`
+    two-session blocking evidence was **not** produced by one fixed observer
+    backend running every blocking query. The test creates and captures a backend
+    PID labelled *observer*, then **closes that marker session**, and performs the
+    actual `pg_blocking_pids` / `pg_stat_activity` observations through independent
+    transient observer queries. Recorded accurately: **independent observer
+    connections confirmed the T1/T2 blocking relationship.** The accepted
+    technical artifact is unchanged.
+  - **`saldo_fios` / `saldo_fios_op` disposition.** `ordem_compra_item` and
+    inventory-movement runtime were empirically exercised; direct depth-1
+    `saldo_fios` mutation was denied `55000`; the installed
+    `saldo_fios`/`saldo_fios_op` exception was structurally proven to require
+    `pg_trigger_depth() > 1 AND canonical_active`. In the fixed target scenario
+    `kg_alocado` 15.500 exceeded the maximum tested total 15.000, so **no excess
+    line was produced and `saldo_fios`'s excess branch was not empirically
+    executed** — proven structurally and by the direct depth-1 denial, not claimed
+    as a mutation that did not occur. `saldo_fios_op` is `NOT_APPLICABLE` to the
+    installed receipt/reversal/import write topology. Neither is an
+    `OC-C3D-LOCK-001` §M exit criterion (session exclusion, deterministic locking,
+    short transactions, release/reacquisition, authorized concurrency, synthetic
+    PONR crossing, and cluster destruction), so neither blocks the requirement.
+- **`PHASE-C3D` aggregate status:** `CLOSED / ACCEPTED_WITH_NONBLOCKING_DEBT /
+  LOCALLY VERIFIED`; accepted technical checkpoint
+  `429aa3980c7027b9d872a1902e2f31f1a4a85a2a`. **`REAL_CUTOVER` remains BLOCKED
+  from authorization** until the 13-row completeness disposition (below) is
+  recorded; the eleven recorded non-blocking `PHASE-C3D` debts and the binding
+  gate live in the "POST-LAUNCH DEBT REGISTER" / Phase-C open items and the
+  residual-debt register.
+- **13 unmapped legacy rows — binding REAL_CUTOVER completeness gate (supervisor
+  decision).** The development database's `ordens_compra_fio` holds 64 rows: 51
+  carry the frozen REFUND-A `ordem_compra_item_compat_fio` mapping; **13 are
+  unmapped, exact ids `153`–`165`**, all `rascunho`/`pendente`/`nao_recebido`
+  with `kg_recebido` NULL. They remained outside the 51-row mapped/frozen
+  canonical corpus; Component A cannot project them; Component B must fail
+  `mapeamento_compat_ausente` if invoked for them; `PHASE-C3D` created no mapping,
+  bridge, migration, backfill, or exclusion record for them. **Supervisor
+  decision: the 13 rows are DEFERRED to the REAL_CUTOVER readiness gate and do
+  not block `PHASE-C3D` closeout.** Before `REAL_CUTOVER` may be authorized, a
+  separate read-only completeness diagnosis must disposition **every one** of the
+  13 rows by exactly one of: (1) authorized mapping/backfill and re-baseline; (2)
+  documented exclusion from the cutover corpus with business-owner approval; or
+  (3) cancellation/removal through a separately authorized business-data action.
+  `REAL_CUTOVER` stays BLOCKED from authorization until that disposition is
+  recorded.
+- **Next authorizable action:** **architect authorization decision for `PHASE-C4`
+  — ADMIN RECEIPT UI** (`OC-C4-ADMIN-001`). `PHASE-C4` is **not** authorized by
+  this pass; `PHASE-C5` is not authorized; `REAL_CUTOVER` is not authorized. The
+  next chat must re-read the canonical repository before authoring or executing
+  any `PHASE-C4` order.
+- **Prior accepted product phase:** `PHASE-C3C-B` (application compatibility/
   adaptation) — `CLOSED / ACCEPTED_WITH_NONBLOCKING_DEBT / LOCALLY VERIFIED`
   (2026-07-21), accepted checkpoint
   `22bfb192c6c2ad10ccd2b2883d54c3a17e40cc9f`
@@ -70,25 +164,22 @@ ACCEPTED_CHECKPOINT: 5a2be05c19a62346b906f7b3cbb0b89d07b3a571
   resource locks, ACL-closure command, recovery boundaries). Lifecycle §R.29 and
   schema §13.15 are unchanged. Local technical acceptance only — no staging
   validation/application, deployment, activation, cutover, or product acceptance.
-- **Active product phase:** `PHASE-C3D` (material-contract identity; the next
-  authorizable implementation sublot is `PHASE-C3D-F`, `NOT AUTHORIZED` — a
-  **fresh Claude session and a separate order are required**). **Active phase
-  contract:** `docs/architecture/ORDEM_COMPRA_C3D_PHASE_CONTRACT.md`
-  (`PHASE_ID: PHASE-C3D`; `STATUS`: `PHASE-C3D-A: CLOSED / TECHNICALLY ACCEPTED /
-  LOCALLY VERIFIED` at `096cd60325e4987010d328c856ee6a3a51ca66bf`; `PHASE-C3D-B:
-  CLOSED / TECHNICALLY ACCEPTED / LOCALLY VERIFIED` at
-  `5441321014883c4e8149dc8b20da9d053a193699`, supervisor-accepted §R;
-  `PHASE-C3D-C: CLOSED / TECHNICALLY ACCEPTED / LOCALLY VERIFIED` at
-  `6fd63a56a123d6d006353c6ae629611cbc7c01e9`, supervisor-accepted §U;
-  `PHASE-C3D-D: CLOSED / TECHNICALLY ACCEPTED / LOCALLY VERIFIED` at
-  `5a2be05c19a62346b906f7b3cbb0b89d07b3a571`, supervisor-accepted §X;
-  `PHASE-C3D-E: IMPLEMENTED / LOCALLY VERIFIED / AWAITING SUPERVISOR ACCEPTANCE`
-  §Y). The combined accepted C3D-A + C3D-B evidence advanced `OC-C3D-DEPLOY-001`
-  to `SATISFIED`, the accepted C3D-C fence/rollback evidence advanced
-  `OC-C3D-FENCE-001` to `SATISFIED`, and the accepted C3D-D effective-ACL/
-  role-matrix evidence advanced `OC-C3D-ACL-001` to `SATISFIED`;
-  `OC-C3D-LOCK-001` remains `PARTIALLY_SATISFIED` pending supervisor review of
-  the C3D-E evidence (`PHASE-C3D` itself is not closed).
+- **Active product phase:** `NONE` (`ACTIVE_PHASE`/`ACTIVE_PHASE_CONTRACT` moved
+  to `NONE` at the `PHASE-C3D` closeout). The `PHASE-C3D` material phase contract
+  `docs/architecture/ORDEM_COMPRA_C3D_PHASE_CONTRACT.md` (`PHASE_ID: PHASE-C3D`)
+  is now a **closed** contract: `PHASE-C3D-A`
+  (`096cd60325e4987010d328c856ee6a3a51ca66bf`), `PHASE-C3D-B`
+  (`5441321014883c4e8149dc8b20da9d053a193699`, supervisor-accepted §R),
+  `PHASE-C3D-C` (`6fd63a56a123d6d006353c6ae629611cbc7c01e9`, supervisor-accepted
+  §U), `PHASE-C3D-D` (`5a2be05c19a62346b906f7b3cbb0b89d07b3a571`,
+  supervisor-accepted §X), and `PHASE-C3D-E`
+  (`429aa3980c7027b9d872a1902e2f31f1a4a85a2a`, supervisor-accepted §Z) are all
+  `CLOSED / TECHNICALLY ACCEPTED / LOCALLY VERIFIED`, and `PHASE-C3D-F` is
+  `CLOSED / ACCEPTED / DOCUMENTATION-ONLY` (§Z). The four `OC-C3D-*` requirements
+  are all `SATISFIED` (`OC-C3D-DEPLOY-001` via C3D-A+B, `OC-C3D-FENCE-001` via
+  C3D-C, `OC-C3D-ACL-001` via C3D-D, `OC-C3D-LOCK-001` via C3D-E). No `PHASE-C4`
+  phase is authorized; a fresh session and a separate architect order are
+  required to open it.
 - **`PHASE-C3C-B` (application compatibility/adaptation):** `CLOSED /
   ACCEPTED_WITH_NONBLOCKING_DEBT / LOCALLY VERIFIED` — supervisor-accepted
   2026-07-21 at checkpoint `22bfb192c6c2ad10ccd2b2883d54c3a17e40cc9f`
@@ -436,9 +527,10 @@ ACCEPTED_CHECKPOINT: 5a2be05c19a62346b906f7b3cbb0b89d07b3a571
   supervisor acceptance of C3D-D (contract §X). See contract §V/§W/§X and
   `docs/ledgers/G28_LEDGER.md` for the full closeout.
 - **`PHASE-C3D-E` (session lock, resource lock, and Component B concurrency
-  rehearsal):** `IMPLEMENTED / LOCALLY VERIFIED / AWAITING SUPERVISOR ACCEPTANCE`
-  (contract §X authorizes it; §Y records it), entry checkpoint
-  `5a2be05c19a62346b906f7b3cbb0b89d07b3a571`. One authorized new file,
+  rehearsal):** `CLOSED / TECHNICALLY ACCEPTED / LOCALLY VERIFIED`
+  (contract §X authorizes it; §Y records the evidence; §Z records supervisor
+  acceptance), accepted checkpoint `429aa3980c7027b9d872a1902e2f31f1a4a85a2a`,
+  entry checkpoint `5a2be05c19a62346b906f7b3cbb0b89d07b3a571`. One authorized new file,
   `tests/ordem-compra-c3d-lock-concurrency.mjs`, was validated across two fresh
   disposable local PostgreSQL 18.4 clusters (`C3D_E_LOCK_CONCURRENCY_PASS` both):
   the full session advisory-lock matrix (deterministic key, same-generation
@@ -464,20 +556,32 @@ ACCEPTED_CHECKPOINT: 5a2be05c19a62346b906f7b3cbb0b89d07b3a571
   prohibition compliance; and mandatory full cluster destruction. Read-only
   `ucrjtfswnfdlxwtmxnoo` inspection byte-identical before/after; full-suite
   failing-identity differential (detached worktree at
-  `5a2be05c19a62346b906f7b3cbb0b89d07b3a571`) added = empty. `PHASE-C3D-E` is not
-  self-accepted; `OC-C3D-LOCK-001` remains `PARTIALLY_SATISFIED` pending review
-  (contract §M item 4). See contract §Y and `docs/ledgers/G28_LEDGER.md` for the
-  full closeout.
-- **NEXT_AUTHORIZABLE_ACTION:** **read-only supervisor review of the
-  `PHASE-C3D-E` evidence** (`docs/architecture/ORDEM_COMPRA_C3D_PHASE_CONTRACT.md`
-  §Y). `PHASE-C3D-F` implementation, environment mutation, branch creation,
-  staging validation/application of `db/76`, deployment, activation, real
-  snapshot/import, fence transition, read switch, real final ACL-closure
-  invocation, real activation, cutover, C4, C5, production access, Supabase
-  write, or any further push beyond the one authorized `staging/dev`
-  fast-forward for this pass remain unauthorized. No product phase chains
-  automatically; `ACTIVE_PHASE`/`ACTIVE_PHASE_CONTRACT` are `PHASE-C3D` / this
-  contract's path.
+  `5a2be05c19a62346b906f7b3cbb0b89d07b3a571`) added = empty. `PHASE-C3D-E` was
+  supervisor-accepted at checkpoint `429aa3980c7027b9d872a1902e2f31f1a4a85a2a`
+  (contract §Z), advancing `OC-C3D-LOCK-001` to `SATISFIED` (its §M item 4 exit
+  criteria met). Documentary precision: the two-session blocking relationship is
+  recorded accurately as confirmed by **independent observer connections** — the
+  captured *observer* marker session is closed before the
+  `pg_blocking_pids`/`pg_stat_activity` observations, which run through
+  independent transient queries — and `saldo_fios`'s excess branch was not
+  empirically executed in the fixed scenario (`kg_alocado` 15.500 > max total
+  15.000, no excess line; the exception proven structurally and by the depth-1
+  denial) while `saldo_fios_op` is `NOT_APPLICABLE` to the installed
+  receipt/reversal/import topology — neither an `OC-C3D-LOCK-001` §M exit
+  criterion. See contract §Y/§Z and `docs/ledgers/G28_LEDGER.md` for the full
+  closeout.
+- **NEXT_AUTHORIZABLE_ACTION:** **architect authorization decision for
+  `PHASE-C4` — ADMIN RECEIPT UI** (`OC-C4-ADMIN-001`). `PHASE-C3D` is closed;
+  `PHASE-C4`, `PHASE-C5`, environment mutation, branch creation, staging
+  validation/application of `db/76`, deployment, real snapshot/import, fence
+  transition, read switch, real final ACL-closure invocation, real activation,
+  the real cutover (`OC-CUTOVER-001`/`OC-CUTOVER-PONR-001`, additionally
+  hard-gated behind the mandatory read-only completeness disposition of the 13
+  unmapped `ordens_compra_fio` rows ids 153–165), production access, Supabase
+  write, and any further push all remain unauthorized. No product phase chains
+  automatically; `ACTIVE_PHASE`/`ACTIVE_PHASE_CONTRACT` are `NONE`. The next chat
+  must re-read the canonical repository before authoring or executing any
+  `PHASE-C4` order.
 
 ## Workspace and Git boundaries
 
@@ -562,6 +666,38 @@ consequence (1 = most consequential). Full narratives: ledger and archives.
   (nonblocking); `NATIVE_RECEIPT_COMPATIBILITY_MULTI_ORIGIN_UNRESOLVED`; native
   emission inactive/ungranted; a contemporaneous read-only production
   `ordens_compra_fio` diagnosis is mandatory before any production promotion.
+- **`C3D-13-UNMAPPED-ROWS-COMPLETENESS-GATE` — binding `REAL_CUTOVER`
+  authorization gate (supervisor decision, `PHASE-C3D` closeout).** The
+  development database's `ordens_compra_fio` holds 64 rows: 51 mapped (frozen
+  REFUND-A corpus) + **13 unmapped, exact ids `153`–`165`**, all
+  `rascunho`/`pendente`/`nao_recebido`, `kg_recebido` NULL. Component A cannot
+  project them; Component B must fail `mapeamento_compat_ausente` if invoked for
+  them; `PHASE-C3D` created no mapping/bridge/migration/backfill/exclusion record
+  for them. They are **DEFERRED to the `REAL_CUTOVER` readiness gate** and did
+  **not** block `PHASE-C3D` closeout. Before `REAL_CUTOVER` may be authorized, a
+  separate read-only completeness diagnosis must disposition **every one** of the
+  13 by exactly one of: (1) authorized mapping/backfill and re-baseline; (2)
+  documented exclusion from the cutover corpus with business-owner approval; or
+  (3) cancellation/removal through a separately authorized business-data action.
+  `REAL_CUTOVER` stays **BLOCKED from authorization** until that disposition is
+  recorded (`OC-CUTOVER-001` remains `PLANNED` — the gate is a residual-debt
+  authorization prerequisite, not a requirement-disposition change).
+- **`PHASE-C3D` residual debt register (non-blocking; full register in
+  `docs/architecture/ORDEM_COMPRA_C3D_PHASE_CONTRACT.md` §Z and the ledger):**
+  (1) the 13-row completeness gate above is a binding `REAL_CUTOVER` prerequisite;
+  (2) the exact real historical reconciliation totals — 39 headers, 44 entries,
+  20,221.280 kg, 405.980 kg excess — remain real-cutover evidence; (3) the
+  synthetic corpus does not substitute for the real-cutover totals proof; (4)
+  real `close_final_acl` invocation, (5) real activation, (6) the real
+  read-authority switch, and (7) any productive receipt on a shared or real
+  environment all remain unauthorized; (8) the validator active-contract
+  self-test fixture limitation remains governance-harness debt; (9) the mandatory
+  Node suite retains pre-existing non-determinism — no accepted C3D pass
+  introduced a new failing identity; (10) the C3D-E fixed scenario did not
+  produce an excess line and therefore did not empirically mutate `saldo_fios`
+  (the installed exception and the direct depth-1 denial were proven; not an
+  `OC-C3D-LOCK-001` exit criterion); (11) `saldo_fios_op` is `NOT_APPLICABLE` to
+  the installed receipt/reversal/import write topology.
 - **Registered for review (read-only):** `production` remote branch
   `v0/administrativointtex-9166-cf89b1d8` — a strict ancestor of `main` with zero
   unique commits (Vercel/v0 import artifact); safe to leave or delete.
@@ -599,23 +735,29 @@ and `docs/ledgers/G28_LEDGER.md`; in any wording divergence the archive/ledger w
 DB VERIFIED`, and `db/75`+`db/76` are now **applied to the development/legacy
 database `ucrjtfswnfdlxwtmxnoo`, inert and supervisor-accepted**
 (`docs/architecture/ORDEM_COMPRA_C3C_B_DB_PREREQUISITES_PHASE_CONTRACT.md`
-§39). `PHASE-C3C-B` application compatibility/adaptation is now
+§39). `PHASE-C3C-B` application compatibility/adaptation is
 **`CLOSED / ACCEPTED_WITH_NONBLOCKING_DEBT / LOCALLY VERIFIED`**
 (`docs/architecture/ORDEM_COMPRA_C3C_B_PHASE_CONTRACT.md` §36, supervisor-accepted
 2026-07-21 at checkpoint `22bfb192c6c2ad10ccd2b2883d54c3a17e40cc9f`). The
 `PHASE-C3D` material phase contract
-(`docs/architecture/ORDEM_COMPRA_C3D_PHASE_CONTRACT.md`) is now authored,
-`PROPOSED / AWAITING SUPERVISOR ACCEPTANCE / IMPLEMENTATION NOT AUTHORIZED`; its
-read-only supervisor review is the next authorizable action. This
-documentation-only + read-only-diagnosis pass changes only the affected
-canonical current-state, traceability, ledger, backlog, and documentation-index
-owners and records one authorized fast-forward push to `staging/dev`. Beyond
-that, `PHASE-C3D` implementation and every sublot, staging application/validation
-of `db/76`, activation, deployment, real snapshot/import, fence transition, read
-switch, final ACL-closure invocation, cutover, branch creation, C4, C5,
-production access, Supabase writes, `main`, `origin`/`production` remote
-mutation, and any further push all remain **UNAUTHORIZED**. Production
-`bhgifjrfagkzubpyqpew` must not be accessed.
+(`docs/architecture/ORDEM_COMPRA_C3D_PHASE_CONTRACT.md`) is now
+**`CLOSED / ACCEPTED_WITH_NONBLOCKING_DEBT / LOCALLY VERIFIED`** — all five
+material sublots (C3D-A…C3D-E) and the `PHASE-C3D-F` documentation-only closeout
+accepted, all four `OC-C3D-*` requirements `SATISFIED`, accepted technical
+checkpoint `429aa3980c7027b9d872a1902e2f31f1a4a85a2a` (§Z). This `PHASE-C3D-F`
+pass is **documentation-only**: it changes only the seven authorized canonical
+owners (state, handoff, documentation index, C3D contract, traceability,
+backlog, ledger) and records one authorized fast-forward push to `staging/dev`.
+`PHASE-C3D` performed **no real cutover**. Beyond this closeout, `PHASE-C4` and
+`PHASE-C5`, staging application/validation of `db/76`, activation, deployment,
+real snapshot/import, fence transition, read switch, real final ACL-closure
+invocation, real activation, the real cutover
+(`OC-CUTOVER-001`/`OC-CUTOVER-PONR-001`, additionally hard-gated behind the
+mandatory read-only completeness disposition of the 13 unmapped
+`ordens_compra_fio` rows ids 153–165), branch creation, production access,
+Supabase writes, `main`, `origin`/`production` remote mutation, and any further
+push all remain **UNAUTHORIZED**. Production `bhgifjrfagkzubpyqpew` must not be
+accessed.
 
 **Supervisor acceptance of the `PHASE-C3D` contract and `PHASE-C3D-A`
 authorization/implementation (this pass):** the "PHASE-C3D-A — ENVIRONMENT
@@ -650,6 +792,7 @@ Commit SHAs there are the accepted technical commits; consult HEAD via Git.
 
 | Phase | Status | Date |
 |---|---|---|
+| `PHASE-C3D` (inactive deployment & rehearsal material phase; sublots C3D-A…C3D-E `CLOSED / TECHNICALLY ACCEPTED / LOCALLY VERIFIED` at `096cd60`/`5441321`/`6fd63a5`/`5a2be05`/`429aa39`; C3D-F documentation-only closeout §Z; all four `OC-C3D-*` `SATISFIED`; accepted technical checkpoint `429aa39`) | `CLOSED / ACCEPTED_WITH_NONBLOCKING_DEBT / LOCALLY VERIFIED` | 2026-07-21 |
 | `PHASE-C3C-B` (application compatibility/adaptation; adapter + 9 call-sites + corrections §34/§35, contract §36 supervisor acceptance, checkpoint `22bfb192`) | `CLOSED / ACCEPTED_WITH_NONBLOCKING_DEBT / LOCALLY VERIFIED` | 2026-07-21 |
 | `PHASE-C3C-B-DB-PREREQ` (implementation + DB-backed validation, `db/76` + 3 tests + `§R.29.7`/`§13.18` + contract §35/§36/§37) | `CLOSED / TECHNICALLY ACCEPTED / LOCAL DB VERIFIED / NOT APPLIED TO STAGING DATABASE` | 2026-07-20 |
 | `C3C-B-DB-COMPATIBILITY-PREREQUISITES-CONTRACT` (ratification closeout / R3 documentary forward correction, §34) | `ACCEPTED_WITH_NONBLOCKING_DOCUMENTARY_DEBT / IMPLEMENTATION NOT YET AUTHORIZED` | 2026-07-20 |
@@ -699,10 +842,13 @@ Commit SHAs there are the accepted technical commits; consult HEAD via Git.
 - C3C-B material phase contract (`CLOSED / ACCEPTED_WITH_NONBLOCKING_DEBT /
   LOCALLY VERIFIED` — application adaptation supervisor-accepted at §36, not
   active): `docs/architecture/ORDEM_COMPRA_C3C_B_PHASE_CONTRACT.md`
-- C3D material phase contract (`ACCEPTED` — inactive deployment & rehearsal;
-  `PHASE-C3D-A` `IMPLEMENTED / LOCALLY VERIFIED / AWAITING SUPERVISOR
-  ACCEPTANCE`, §O; `PHASE-C3D-B`…`C3D-F` not authorized; active — see
-  `SPEC_CUSTODY_BOOTSTRAP`): `docs/architecture/ORDEM_COMPRA_C3D_PHASE_CONTRACT.md`
+- C3D material phase contract (`CLOSED / ACCEPTED_WITH_NONBLOCKING_DEBT /
+  LOCALLY VERIFIED` — inactive deployment & rehearsal; sublots C3D-A…C3D-E
+  `CLOSED / TECHNICALLY ACCEPTED / LOCALLY VERIFIED` (§R/§U/§X/§Z), C3D-F
+  documentation-only closeout (§Z), all four `OC-C3D-*` `SATISFIED`, accepted
+  technical checkpoint `429aa39`; **not active** — `ACTIVE_PHASE`/
+  `ACTIVE_PHASE_CONTRACT` are `NONE`):
+  `docs/architecture/ORDEM_COMPRA_C3D_PHASE_CONTRACT.md`
 - C3C-B database prerequisites contract (closed / technically accepted / local DB verified / not applied to staging database; §35 records the implementation closeout, §36 records DB-backed validation completion, §37 records supervisor acceptance, not active): `docs/architecture/ORDEM_COMPRA_C3C_B_DB_PREREQUISITES_PHASE_CONTRACT.md`
 - Append-only ledger: `docs/ledgers/G28_LEDGER.md`
 - Derived operational handoff: `AGENT_HANDOFF.md`
