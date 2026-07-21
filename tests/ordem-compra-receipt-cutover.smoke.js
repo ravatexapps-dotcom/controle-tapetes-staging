@@ -131,6 +131,27 @@ test('7. reader bounded 42883 (undefined_function) permits fallback', async () =
   assert.equal(result.outcome, 'legacy_fallback');
 });
 
+test('7b. isMissingCompatFunction: a non-42883 code carrying the "function ... does not exist" message text is NOT classified as missing-function (§34 correction — exact SQLSTATE only, message-text alternative removed)', async () => {
+  const { sandbox } = makeSandbox({});
+  const positive = await vm.runInContext(
+    "window.RAVATEX_SCREENS.ordemCompraReceiptCutover.isMissingCompatFunction({ code: '42883', message: 'anything' })", sandbox);
+  assert.equal(positive, true, 'exact code 42883 must still be classified as missing-function');
+  const negative = await vm.runInContext(
+    "window.RAVATEX_SCREENS.ordemCompraReceiptCutover.isMissingCompatFunction({ code: '55000', message: 'function public.listar_ordens_compra_fio_compat(uuid, bigint) does not exist' })", sandbox);
+  assert.equal(negative, false, 'message text alone must never classify as missing-function');
+  const unrecognized = await vm.runInContext(
+    "window.RAVATEX_SCREENS.ordemCompraReceiptCutover.isMissingCompatFunction({ code: '08006', message: 'connection timeout' })", sandbox);
+  assert.equal(unrecognized, false);
+});
+
+test('7c. reader: a non-42883 code carrying the missing-function message text fails closed, not fallback', async () => {
+  const { sandbox } = makeSandbox({
+    listar_ordens_compra_fio_compat: () => ({ data: null, error: { code: '55000', message: 'function public.listar_ordens_compra_fio_compat(uuid, bigint) does not exist' } }),
+  });
+  const result = await vm.runInContext('window.RAVATEX_SCREENS.ordemCompraReceiptCutover.attemptCanonicalRead({ opId: 7 })', sandbox);
+  assert.equal(result.outcome, 'hard_failure', 'message text alone must not trigger the bounded fallback');
+});
+
 test('8. reader sem_permissao (42501) fails closed, never falls back', async () => {
   const { sandbox } = makeSandbox({
     listar_ordens_compra_fio_compat: () => ({ data: null, error: { code: '42501', message: 'sem_permissao' } }),
@@ -205,7 +226,7 @@ for (const codigo of [
   });
 }
 
-test('22. writer transport-level unrecognized error fails closed', async () => {
+test('22. writer transport-level unrecognized error is ambiguous (server commit status unknown), not a deterministic hard failure', async () => {
   const { sandbox } = makeSandbox({
     registrar_recebimento_ordem_compra_fio_compat: () => ({ data: null, error: { code: '08006', message: 'connection timeout' } }),
   });
@@ -213,7 +234,63 @@ test('22. writer transport-level unrecognized error fails closed', async () => {
   sandbox.__attempt = attempt;
   const result = await vm.runInContext(
     `window.RAVATEX_SCREENS.ordemCompraReceiptCutover.attemptCanonicalReceipt(${JSON.stringify(receiptParams())}, __attempt)`, sandbox);
-  assert.equal(result.outcome, 'hard_failure');
+  assert.equal(result.outcome, 'ambiguous_failure');
+});
+
+test('22b. writer: a non-42883 code carrying the missing-function message text is ambiguous, not a bounded fallback', async () => {
+  const { sandbox } = makeSandbox({
+    registrar_recebimento_ordem_compra_fio_compat: () => ({ data: null, error: { code: '57014', message: 'function public.registrar_recebimento_ordem_compra_fio_compat(...) does not exist' } }),
+  });
+  const attempt = await vm.runInContext('window.RAVATEX_SCREENS.ordemCompraReceiptCutover.createReceiptAttempt()', sandbox);
+  sandbox.__attempt = attempt;
+  const result = await vm.runInContext(
+    `window.RAVATEX_SCREENS.ordemCompraReceiptCutover.attemptCanonicalReceipt(${JSON.stringify(receiptParams())}, __attempt)`, sandbox);
+  assert.equal(result.outcome, 'ambiguous_failure', 'message text alone must not trigger the bounded 42883 fallback');
+});
+
+// -----------------------------------------------------------------------------
+// createAttemptTracker — intent-aware idempotency retention (§34)
+// -----------------------------------------------------------------------------
+
+test('22c. createAttemptTracker: resolveAttempt returns the same attempt for unchanged intent', async () => {
+  const { sandbox } = makeSandbox({});
+  sandbox.__tracker = await vm.runInContext('window.RAVATEX_SCREENS.ordemCompraReceiptCutover.createAttemptTracker()', sandbox);
+  const a = await vm.runInContext("__tracker.resolveAttempt({ ordemId: 1, kg: 5, dataRec: '2026-07-20' })", sandbox);
+  const b = await vm.runInContext("__tracker.resolveAttempt({ ordemId: 1, kg: 5, dataRec: '2026-07-20' })", sandbox);
+  assert.equal(a.token, b.token, 'unchanged intent must reuse the same token');
+});
+
+test('22d. createAttemptTracker: resolveAttempt mints a new token when kg changes', async () => {
+  const { sandbox } = makeSandbox({});
+  sandbox.__tracker = await vm.runInContext('window.RAVATEX_SCREENS.ordemCompraReceiptCutover.createAttemptTracker()', sandbox);
+  const a = await vm.runInContext("__tracker.resolveAttempt({ ordemId: 1, kg: 5, dataRec: '2026-07-20' })", sandbox);
+  const b = await vm.runInContext("__tracker.resolveAttempt({ ordemId: 1, kg: 6, dataRec: '2026-07-20' })", sandbox);
+  assert.notEqual(a.token, b.token, 'a changed kg must mint a new token');
+});
+
+test('22e. createAttemptTracker: resolveAttempt mints a new token when the date changes', async () => {
+  const { sandbox } = makeSandbox({});
+  sandbox.__tracker = await vm.runInContext('window.RAVATEX_SCREENS.ordemCompraReceiptCutover.createAttemptTracker()', sandbox);
+  const a = await vm.runInContext("__tracker.resolveAttempt({ ordemId: 1, kg: 5, dataRec: '2026-07-20' })", sandbox);
+  const c = await vm.runInContext("__tracker.resolveAttempt({ ordemId: 1, kg: 5, dataRec: '2026-07-21' })", sandbox);
+  assert.notEqual(a.token, c.token, 'a changed date must mint a new token');
+});
+
+test('22f. createAttemptTracker: complete() closes the attempt so the next resolveAttempt (even unchanged intent) mints a new token', async () => {
+  const { sandbox } = makeSandbox({});
+  sandbox.__tracker = await vm.runInContext('window.RAVATEX_SCREENS.ordemCompraReceiptCutover.createAttemptTracker()', sandbox);
+  const a = await vm.runInContext("__tracker.resolveAttempt({ ordemId: 1, kg: 5, dataRec: '2026-07-20' })", sandbox);
+  await vm.runInContext('__tracker.complete()', sandbox);
+  const b = await vm.runInContext("__tracker.resolveAttempt({ ordemId: 1, kg: 5, dataRec: '2026-07-20' })", sandbox);
+  assert.notEqual(a.token, b.token, 'a completed attempt must never be reused, even for unchanged intent');
+});
+
+test('22g. createAttemptTracker: without a prior resolveAttempt, resolveAttempt mints a fresh token', async () => {
+  const { sandbox } = makeSandbox({});
+  sandbox.__tracker = await vm.runInContext('window.RAVATEX_SCREENS.ordemCompraReceiptCutover.createAttemptTracker()', sandbox);
+  const a = await vm.runInContext("__tracker.resolveAttempt({ ordemId: 1, kg: 5, dataRec: '2026-07-20' })", sandbox);
+  assert.equal(typeof a.token, 'string');
+  assert.ok(a.token.length > 0);
 });
 
 // -----------------------------------------------------------------------------

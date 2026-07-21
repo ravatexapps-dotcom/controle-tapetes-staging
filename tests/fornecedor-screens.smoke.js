@@ -1052,7 +1052,12 @@ function makeFornCutoverSandbox({ readRpcResult, writeRpcResult, ocfData = [] } 
     rpc: (name, params) => {
       calls.push({ op: 'rpc', name, params });
       if (name === 'listar_ordens_compra_fio_compat') return Promise.resolve(readRpcResult || { data: null, error: null });
-      if (name === 'registrar_recebimento_ordem_compra_fio_compat') return Promise.resolve(writeRpcResult || { data: null, error: null });
+      if (name === 'registrar_recebimento_ordem_compra_fio_compat') {
+        // writeRpcResult may be a static object or a function(params) for
+        // stateful per-call responses (retry/intent-change scenarios).
+        const resolved = typeof writeRpcResult === 'function' ? writeRpcResult(params) : writeRpcResult;
+        return Promise.resolve(resolved || { data: null, error: null });
+      }
       return Promise.resolve({ data: null, error: null });
     },
     auth: {
@@ -1182,4 +1187,110 @@ test('42. no adapter loaded preserves the pre-phase legacy read+write exactly', 
   await handler();
   const updateCalls = fakeSupa._calls.filter((c) => c.op === 'update' && c.table === 'ordens_compra_fio');
   assert.equal(updateCalls.length, 1);
+});
+
+// -----------------------------------------------------------------------------
+// PHASE-C3C-B §34 (supervisor correction): screenFornecedorOrdens' writer
+// must own and retain its own receipt-attempt tracker — independently from
+// op-writes.js/op-nova.js. A retry of unchanged intent after an ambiguous
+// transport failure reuses the same token; a changed field mints a new one;
+// a deterministic outcome closes it; never cross-calls or shares state with
+// op-writes.js.
+// -----------------------------------------------------------------------------
+
+test('43. writer: retry of unchanged intent after an ambiguous transport failure reuses the same idempotency token, then succeeds', async () => {
+  let writeCallCount = 0;
+  const seenKeys = [];
+  const { sandbox, fakeSupa } = makeFornCutoverSandbox({
+    ocfData: [{ id: 7, tipo: 'algodao', cor_poliester: null, kg_pedido: 10, kg_recebido: null,
+      data_recebimento: null, status: 'pendente', ops: { numero: 100, ano: 2026 }, cores: { id: 1, nome: 'BRANCO' } }],
+    readRpcResult: { data: null, error: { code: '55000', message: 'listar_compat_inativo' } },
+    writeRpcResult: (params) => {
+      writeCallCount += 1;
+      seenKeys.push(params.p_idempotency_key);
+      if (writeCallCount === 1) return { data: null, error: { code: '08006', message: 'connection timeout' } };
+      return { data: { ok: true, codigo: 'ok', recebimento_id: 1, ordem_compra_id: 9 }, error: null };
+    },
+  });
+  vm.runInContext('window.CURRENT_USER = { nome: "X", tipo: "fornecedor", fornecedor_id: 1 }', sandbox);
+  const root = await vm.runInContext('window.screenFornecedorOrdens()', sandbox);
+  const handler = findButtonOnClickInMain(root);
+  const inp = findInputInMain(root);
+  inp.value = '5';
+  await handler();
+  assert.equal(writeCallCount, 1);
+  await handler(); // retry, unchanged kg
+  assert.equal(writeCallCount, 2);
+  assert.equal(seenKeys[0], seenKeys[1], 'a retry of unchanged intent must reuse the exact same idempotency token');
+  const updateCalls = fakeSupa._calls.filter((c) => c.op === 'update' && c.table === 'ordens_compra_fio');
+  assert.equal(updateCalls.length, 0, 'ambiguous failure and canonical success must never trigger the flat fallback');
+});
+
+test('44. writer: changing kg before retrying mints a new idempotency token', async () => {
+  let writeCallCount = 0;
+  const seenKeys = [];
+  const { sandbox } = makeFornCutoverSandbox({
+    ocfData: [{ id: 7, tipo: 'algodao', cor_poliester: null, kg_pedido: 10, kg_recebido: null,
+      data_recebimento: null, status: 'pendente', ops: { numero: 100, ano: 2026 }, cores: { id: 1, nome: 'BRANCO' } }],
+    readRpcResult: { data: null, error: { code: '55000', message: 'listar_compat_inativo' } },
+    writeRpcResult: (params) => {
+      writeCallCount += 1;
+      seenKeys.push(params.p_idempotency_key);
+      return { data: null, error: { code: '08006', message: 'connection timeout' } };
+    },
+  });
+  vm.runInContext('window.CURRENT_USER = { nome: "X", tipo: "fornecedor", fornecedor_id: 1 }', sandbox);
+  const root = await vm.runInContext('window.screenFornecedorOrdens()', sandbox);
+  const handler = findButtonOnClickInMain(root);
+  const inp = findInputInMain(root);
+  inp.value = '5';
+  await handler();
+  inp.value = '6'; // changed intent
+  await handler();
+  assert.equal(writeCallCount, 2);
+  assert.notEqual(seenKeys[0], seenKeys[1], 'a changed kg value must mint a new token');
+});
+
+test('45. writer: a new completed submission (after a deterministic rejection) receives a new token', async () => {
+  let writeCallCount = 0;
+  const seenKeys = [];
+  const { sandbox } = makeFornCutoverSandbox({
+    ocfData: [{ id: 7, tipo: 'algodao', cor_poliester: null, kg_pedido: 10, kg_recebido: null,
+      data_recebimento: null, status: 'pendente', ops: { numero: 100, ano: 2026 }, cores: { id: 1, nome: 'BRANCO' } }],
+    readRpcResult: { data: null, error: { code: '55000', message: 'listar_compat_inativo' } },
+    writeRpcResult: (params) => {
+      writeCallCount += 1;
+      seenKeys.push(params.p_idempotency_key);
+      return { data: { ok: false, codigo: 'sem_permissao' }, error: null };
+    },
+  });
+  vm.runInContext('window.CURRENT_USER = { nome: "X", tipo: "fornecedor", fornecedor_id: 1 }', sandbox);
+  const root = await vm.runInContext('window.screenFornecedorOrdens()', sandbox);
+  const handler = findButtonOnClickInMain(root);
+  const inp = findInputInMain(root);
+  inp.value = '5';
+  await handler(); // deterministic rejection
+  await handler(); // same intent, but the prior attempt is closed
+  assert.equal(writeCallCount, 2);
+  assert.notEqual(seenKeys[0], seenKeys[1], 'a deterministic rejection closes the attempt; the next submission mints a new token');
+});
+
+test('46. writer: attempt ownership lives in fornecedor.js itself, independent of op-writes.js (no shared/cross-called state)', async () => {
+  const { sandbox } = makeFornCutoverSandbox({
+    ocfData: [{ id: 7, tipo: 'algodao', cor_poliester: null, kg_pedido: 10, kg_recebido: null,
+      data_recebimento: null, status: 'pendente', ops: { numero: 100, ano: 2026 }, cores: { id: 1, nome: 'BRANCO' } }],
+    readRpcResult: { data: null, error: { code: '55000', message: 'listar_compat_inativo' } },
+    writeRpcResult: { data: { ok: true, codigo: 'ok', recebimento_id: 1, ordem_compra_id: 9 }, error: null },
+  });
+  // op-writes.js is not loaded in this sandbox at all — proves fornecedor.js
+  // does not depend on it for attempt ownership or routing.
+  assert.equal(vm.runInContext('typeof window.registrarRecebimentoOrdemFio', sandbox), 'undefined');
+  vm.runInContext('window.CURRENT_USER = { nome: "X", tipo: "fornecedor", fornecedor_id: 1 }', sandbox);
+  const root = await vm.runInContext('window.screenFornecedorOrdens()', sandbox);
+  const handler = findButtonOnClickInMain(root);
+  const inp = findInputInMain(root);
+  inp.value = '5';
+  await handler();
+  assert.equal(vm.runInContext('typeof window.registrarRecebimentoOrdemFio', sandbox), 'undefined',
+    'fornecedor.js must complete its own submission without ever referencing op-writes.js');
 });

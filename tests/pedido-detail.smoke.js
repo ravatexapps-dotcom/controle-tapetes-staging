@@ -925,6 +925,47 @@ test('pedido-detail-data.js: state.ordensFio is populated on both the canonical 
   assert.match(detailData, /state\.ordensFio\s*=\s*ordensRes\.data\s*\|\|\s*\[\]/);
 });
 
+// ---------------------------------------------------------------------
+// PHASE-C3C-B §34 (supervisor correction): buildInsumosTransferForm's
+// onSave loop must own a per-line receipt-attempt tracker outside
+// window.registrarRecebimentoOrdemFio, and pass it into every call. Static,
+// proportional: this file's onSave is exercised at runtime nowhere else in
+// this suite (openMovementModal's custom overlay/card has no existing
+// runtime-test harness — every other reference to it in this file is
+// itself a static source-pattern assertion, the file's dominant
+// convention). The underlying retry/ambiguous-vs-deterministic mechanism
+// this call-site delegates to is exhaustively runtime-proven in
+// tests/op-writes.smoke.js (tests 56-61, the exact function this file
+// calls) and, end-to-end through a real DOM click, in
+// tests/op-nova.smoke.js (tests 80-83) and
+// tests/fornecedor-screens.smoke.js (tests 43-46).
+// ---------------------------------------------------------------------
+
+test('pedido-detail-events.js §34: each line owns its own attemptTracker, created outside registrarRecebimentoOrdemFio, alongside linhas', () => {
+  const slice = (detailEvents.match(/function buildInsumosTransferForm[\s\S]*?\r?\n    \}\r?\n\r?\n    function buildTecelagemTransferForm/) || [''])[0];
+  assert.ok(slice, 'trecho buildInsumosTransferForm nao encontrado');
+  assert.match(slice, /ordemCompraReceiptCutover/,
+    'deve resolver o adapter PHASE-C3C-B para criar o tracker');
+  assert.match(slice, /attemptTracker:\s*cutoverForTracker\s*\?\s*cutoverForTracker\.createAttemptTracker\(\)\s*:\s*null/,
+    'cada linha deve ter seu proprio attemptTracker, criado junto com linhas (fora de registrarRecebimentoOrdemFio)');
+});
+
+test('pedido-detail-events.js §34: onSave resolves the per-line attempt by intent (ordemId/kg/date) and passes it into registrarRecebimentoOrdemFio', () => {
+  const slice = (detailEvents.match(/function buildInsumosTransferForm[\s\S]*?\r?\n    \}\r?\n\r?\n    function buildTecelagemTransferForm/) || [''])[0];
+  assert.match(slice, /tracker\.resolveAttempt\(\{\s*ordemId:\s*linhas\[i\]\.ordem\.id,\s*kg:\s*total,\s*dataRec:\s*dataInput\.value\s*\}\)/,
+    'resolveAttempt deve ser chamado com a intencao completa (ordem, kg absoluto total, data)');
+  assert.match(slice, /window\.registrarRecebimentoOrdemFio\(\{[\s\S]{0,400}?attempt:\s*attempt,?\s*\}\)/,
+    'registrarRecebimentoOrdemFio deve receber o attempt resolvido pelo tracker');
+});
+
+test('pedido-detail-events.js §34: an ambiguous outcome retains the tracker; every other outcome completes it', () => {
+  const slice = (detailEvents.match(/function buildInsumosTransferForm[\s\S]*?\r?\n    \}\r?\n\r?\n    function buildTecelagemTransferForm/) || [''])[0];
+  assert.match(slice, /if\s*\(tracker\s*&&\s*!res\.ambiguous\)\s*tracker\.complete\(\)/,
+    'uma falha ambigua (res.ambiguous===true) NAO deve completar o tracker — deve ser retido para retry');
+  assert.match(slice, /if\s*\(tracker\)\s*tracker\.complete\(\)/,
+    'sucesso deve completar o tracker (proxima submissao gera um novo token)');
+});
+
 test('pedido-detail.js: NÃO referencia arquivos críticos de OP', () => {
   assert.doesNotMatch(detailBundle, /op-nova\.js/);
   assert.doesNotMatch(detailBundle, /op-persistir\.js/);
@@ -1406,7 +1447,7 @@ test('transfer-remaining-B: computePendingByItem retorna pending/target/moved po
 });
 
 test('transfer-remaining-B: buildInsumosTransferForm expoe fillRemaining e hasRemaining', () => {
-  const slice = (detailEvents.match(/function buildInsumosTransferForm[\s\S]*?\n    \}\n\n    function buildTecelagemTransferForm/) || [''])[0];
+  const slice = (detailEvents.match(/function buildInsumosTransferForm[\s\S]*?\r?\n    \}\r?\n\r?\n    function buildTecelagemTransferForm/) || [''])[0];
   assert.match(slice, /fillRemaining:\s*function/,
     'buildInsumosTransferForm deve expor fillRemaining');
   assert.match(slice, /hasRemaining:\s*linhas\.some/,
@@ -2718,7 +2759,7 @@ test('HUB runtime: Pedido sem OP oferece Gerar primeira OP; etapa entrega apto o
 // ---------------------------------------------------------------------
 
 test('INSUMOS-TECELAGEM-UI-FIX-A: buildInsumosTransferForm empilha Data do recebimento + texto auxiliar', () => {
-  const slice = (detailEvents.match(/function buildInsumosTransferForm[\s\S]*?\n    \}\n\n    function buildTecelagemTransferForm/) || [''])[0];
+  const slice = (detailEvents.match(/function buildInsumosTransferForm[\s\S]*?\r?\n    \}\r?\n\r?\n    function buildTecelagemTransferForm/) || [''])[0];
   assert.ok(slice, 'trecho buildInsumosTransferForm nao encontrado');
   assert.doesNotMatch(slice, /grid-template-columns:\s*['"]?180px\s+1fr/,
     'nao deve usar grid 2 colunas (180px 1fr) para alinhar label com texto auxiliar');

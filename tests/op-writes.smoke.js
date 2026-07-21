@@ -1110,3 +1110,85 @@ test('55. no adapter loaded (window.RAVATEX_SCREENS.ordemCompraReceiptCutover ab
   const updateCalls = fakeSupa._calls.filter((c) => c.op === 'update' && c.table === 'ordens_compra_fio');
   assert.equal(updateCalls.length, 1);
 });
+
+// PHASE-C3C-B §34 (supervisor correction): the real UI closure must own and
+// retain the receipt-attempt object across retries of unchanged intent.
+// These tests prove registrarRecebimentoOrdemFio's half of that contract:
+// it accepts a caller-owned attempt, uses it verbatim, and reports whether
+// the outcome was ambiguous (server commit status unknown) so the caller
+// knows whether to retain or close its tracker. Attempt ownership/retention
+// itself is exercised at the real call-sites (tests/op-nova.smoke.js,
+// tests/pedido-detail.smoke.js, tests/fornecedor-screens.smoke.js).
+
+test('56. a caller-supplied attempt is used verbatim as the idempotency key', async () => {
+  const { sandbox } = makeOpWCutoverSandbox({
+    rpcResult: { data: { ok: false, codigo: 'recebimento_compat_inativo' }, error: null },
+  });
+  sandbox.__attempt = { token: 'caller-owned-token-123' };
+  await vm.runInContext(
+    'window.registrarRecebimentoOrdemFio({ ordemId: 42, kgRecebido: 40, dataRecebimento: "2026-07-20", status: "recebido_parcial", attempt: __attempt })',
+    sandbox);
+  const rpcCall = sandbox.supa._calls.find((c) => c.op === 'rpc' && c.name === 'registrar_recebimento_ordem_compra_fio_compat');
+  assert.equal(rpcCall.params.p_idempotency_key, 'caller-owned-token-123');
+});
+
+test('57. retrying with the exact same caller-supplied attempt sends the identical idempotency key both times', async () => {
+  const { sandbox } = makeOpWCutoverSandbox({
+    rpcResult: { data: { ok: false, codigo: 'erro_interno' }, error: null },
+  });
+  sandbox.__attempt = { token: 'retry-token-456' };
+  await vm.runInContext(
+    'window.registrarRecebimentoOrdemFio({ ordemId: 42, kgRecebido: 40, dataRecebimento: "2026-07-20", status: "recebido_parcial", attempt: __attempt })',
+    sandbox);
+  await vm.runInContext(
+    'window.registrarRecebimentoOrdemFio({ ordemId: 42, kgRecebido: 40, dataRecebimento: "2026-07-20", status: "recebido_parcial", attempt: __attempt })',
+    sandbox);
+  const rpcCalls = sandbox.supa._calls.filter((c) => c.op === 'rpc' && c.name === 'registrar_recebimento_ordem_compra_fio_compat');
+  assert.equal(rpcCalls.length, 2);
+  assert.equal(rpcCalls[0].params.p_idempotency_key, 'retry-token-456');
+  assert.equal(rpcCalls[1].params.p_idempotency_key, 'retry-token-456');
+});
+
+test('58. an ambiguous transport failure (server commit status unknown) surfaces ambiguous:true and never issues the flat fallback', async () => {
+  const { sandbox, fakeSupa } = makeOpWCutoverSandbox({
+    rpcResult: { data: null, error: { code: '08006', message: 'connection timeout' } },
+  });
+  const result = await vm.runInContext(
+    'window.registrarRecebimentoOrdemFio({ ordemId: 42, kgRecebido: 40, dataRecebimento: "2026-07-20", status: "recebido_parcial" })',
+    sandbox);
+  assert.ok(result.error, 'expected the transport error to be surfaced');
+  assert.equal(result.ambiguous, true, 'an ambiguous transport failure must be flagged so the caller retains its attempt');
+  const updateCalls = fakeSupa._calls.filter((c) => c.op === 'update' && c.table === 'ordens_compra_fio');
+  assert.equal(updateCalls.length, 0, 'ambiguous failure must never trigger the flat fallback');
+});
+
+test('59. a deterministic outcome (canonical success) reports ambiguous:false', async () => {
+  const { sandbox } = makeOpWCutoverSandbox({
+    rpcResult: { data: { ok: true, codigo: 'ok', recebimento_id: 1, ordem_compra_id: 9 }, error: null },
+  });
+  const result = await vm.runInContext(
+    'window.registrarRecebimentoOrdemFio({ ordemId: 42, kgRecebido: 40, dataRecebimento: "2026-07-20", status: "recebido_parcial" })',
+    sandbox);
+  assert.equal(result.ambiguous, false);
+});
+
+test('60. a deterministic hard failure (recognized server rejection) reports ambiguous:false', async () => {
+  const { sandbox } = makeOpWCutoverSandbox({
+    rpcResult: { data: { ok: false, codigo: 'sem_permissao' }, error: null },
+  });
+  const result = await vm.runInContext(
+    'window.registrarRecebimentoOrdemFio({ ordemId: 42, kgRecebido: 40, dataRecebimento: "2026-07-20", status: "recebido_parcial" })',
+    sandbox);
+  assert.equal(result.ambiguous, false, 'a deterministic server rejection is not ambiguous — the next submission may mint a new token');
+});
+
+test('61. without a caller-supplied attempt, an internal one is still created (backward compatibility)', async () => {
+  const { sandbox } = makeOpWCutoverSandbox({
+    rpcResult: { data: { ok: false, codigo: 'recebimento_compat_inativo' }, error: null },
+  });
+  await vm.runInContext(
+    'window.registrarRecebimentoOrdemFio({ ordemId: 42, kgRecebido: 40, dataRecebimento: "2026-07-20", status: "recebido_parcial" })',
+    sandbox);
+  const rpcCall = sandbox.supa._calls.find((c) => c.op === 'rpc' && c.name === 'registrar_recebimento_ordem_compra_fio_compat');
+  assert.ok(rpcCall.params.p_idempotency_key, 'expected an internally-generated idempotency key when no attempt is supplied');
+});

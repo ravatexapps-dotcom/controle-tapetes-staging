@@ -3,7 +3,7 @@
 <!-- MATERIAL_PHASE_CONTRACT:BEGIN -->
 PHASE_ID: PHASE-C3C-B
 <!-- MATERIAL_PHASE_CONTRACT:END -->
-STATUS: IMPLEMENTED / LOCALLY VERIFIED / AWAITING SUPERVISOR ACCEPTANCE (§33)
+STATUS: IMPLEMENTED / LOCALLY VERIFIED / AWAITING SUPERVISOR ACCEPTANCE (§34, corrected)
 
 > **Role of this document.** This is a **material phase contract**, authored under
 > `docs/governance/DOCUMENTATION_MODEL.md` §19 and
@@ -1274,3 +1274,244 @@ action is supervisor review/acceptance of this implementation; only after
 that acceptance may staging validation/application of `db/76`, C3D, cutover,
 C4, C5, production access, or any further push beyond the one authorized
 `staging/dev` fast-forward be authorized.
+
+## 34. Supervisor-review correction — idempotency attempt retention + exact 42883 (governs on conflict)
+
+> **Append-only forward correction (`FORWARD_CORRECTION` per
+> `docs/governance/DOCUMENTATION_MODEL.md` §19).** Recorded under the
+> targeted-correction order following the supervisor verdict
+> `PHASE-C3C-B: CHANGES_REQUIRED` on the implementation at commit
+> `ee5e87cd90f9e418925a99d6d51ad43cd38bedf0`. §§0–33 are preserved verbatim
+> (no history rewrite). **Where §§1–33 and this §34 conflict, §34 governs.**
+> Correction commit: `fix: preserve C3C-B receipt idempotency attempts`.
+> This section does **not** record supervisor acceptance — status remains
+> `IMPLEMENTED / LOCALLY VERIFIED / AWAITING SUPERVISOR ACCEPTANCE`.
+
+### 34.1 Supervisor finding
+
+The implementation and push at `ee5e87cd90f9e418925a99d6d51ad43cd38bedf0`
+were **not accepted**. Two blocking defects, both within the existing
+`PHASE-C3C-B` scope:
+
+1. **Real call-sites did not retain retry attempts.** §32.7/§33.4 already
+   specified the idempotency lifecycle correctly in the abstract, and the
+   adapter's `createReceiptAttempt()`/`attemptCanonicalReceipt(...)`
+   mechanics were correct and tested — but every real receipt UI closure
+   (`op-writes.js`'s own internal fallback, `fornecedor.js`'s writer,
+   `op-nova.js`'s `buildOrdemPendenteRow`, `pedido-detail-events.js`'s
+   `buildInsumosTransferForm`) created a **new** attempt on every function
+   invocation or click, rather than a real UI closure owning and retaining
+   one attempt object across a retry of unchanged intent. A retry after an
+   ambiguous transport failure therefore received a different idempotency
+   key than the original attempt, defeating the purpose of the idempotency
+   contract.
+2. **The missing-function classifier exceeded the exact 42883 contract.**
+   `isMissingCompatFunction` accepted `error.code === '42883'` **or** a
+   message-text match (`/function .* does not exist/i`), so a differently-
+   coded error carrying similar wording could be misclassified as the
+   bounded deployment-sequencing condition (§32.4) and incorrectly permitted
+   to fall back, rather than failing closed.
+
+### 34.2 Root cause
+
+Both defects trace to the same gap: §32/§33 fully specified the **adapter's**
+contract (token mechanics, the bounded interval, the fail-closed set) but the
+**call-site wiring** implemented in §33 treated `attemptCanonicalReceipt` as
+a one-shot, stateless call — creating a fresh attempt inline on every
+invocation instead of threading a caller-owned, intent-aware attempt object
+through the real UI closure's own persistent scope. Because no real UI
+closure ever retried (no automatic retry loop existed at the time §33 was
+verified), the gap was invisible to §33's tests, which exercised the
+adapter's token-passthrough mechanics directly rather than the real
+call-site's retention behavior end-to-end. `isMissingCompatFunction`'s
+message-text alternative was carried over unreviewed from the earlier §27
+bounded-`42883`-precedent wording, which itself never specified a message-
+only path — an unauthorized broadening introduced during §33's
+implementation, not specified by §32.4.
+
+### 34.3 Correction — files and behavior
+
+- **`js/screens/ordem-compra-receipt-cutover.js`** (179→257 lines):
+  - Added `createAttemptTracker()` — the real UI closure that owns a single
+    "Registrar" control instantiates exactly one tracker, alive for that
+    control's lifetime (never recreated per click/submit). `resolveAttempt(intent)`
+    returns the retained attempt when `intent` (flat order id, requested
+    absolute kg, receipt date) is unchanged from the last unresolved attempt;
+    otherwise mints a fresh one via `createReceiptAttempt()`. `complete()`
+    closes the attempt after any deterministic outcome, so the next
+    `resolveAttempt()` call — even with byte-identical intent — mints a new
+    token (the "previous request received a deterministic server rejection ⇒
+    new attempt" rule). The token itself remains random; intent is used only
+    to decide reuse, never as the token. No global persistence: state lives
+    only inside the tracker closure the caller owns.
+  - `attemptCanonicalReceipt` now distinguishes, on an RPC-call-level error
+    (`res.error`): the bounded `42883` case (`legacy_fallback`, unchanged)
+    versus every other transport-level error, now classified
+    `'ambiguous_failure'` (server commit status unknown — fail closed, no
+    flat fallback, caller must retain its attempt) versus a received JSONB
+    envelope with `ok:false` (`'hard_failure'`, deterministic — db/76's own
+    outer `EXCEPTION WHEN OTHERS` guarantees this envelope for every
+    business-logic condition, never a raised error).
+  - `isMissingCompatFunction` now checks `error.code === '42883'` only; the
+    message-text alternative was removed.
+- **`js/screens/op-writes.js`** (133→155 lines): `registrarRecebimentoOrdemFio`
+  now accepts an optional caller-owned `attempt`; uses it verbatim when
+  supplied, else creates one internally (backward compatible with any caller
+  not yet updated — none remain live). Its return shape gains `ambiguous`
+  (boolean) alongside the existing `{ data, error }` contract every caller
+  already checks, so the caller can decide whether to retain (`ambiguous:
+  true`) or close (`ambiguous: false`) its tracker.
+- **`js/screens/fornecedor.js`** (583→599 lines): `linhaPendente` now
+  instantiates its own `attemptTracker` (independent from `op-writes.js` —
+  still never routed through `registrarRecebimentoOrdemFio`), resolves it by
+  intent before each attempt, retains it on `'ambiguous_failure'`, and calls
+  `.complete()` on `'canonical_success'`/`'hard_failure'`/successful flat
+  fallback.
+- **`js/screens/op-nova.js`** (1493→1511 lines, still the frozen-exception
+  file — minimal wiring only): `buildOrdemPendenteRow` instantiates its own
+  `attemptTracker` at row scope and passes the resolved `attempt` into
+  `registrarRecebimentoOrdemFio`, retaining/completing per the same rule.
+- **`js/screens/pedido-detail-events.js`** (2691→2709 lines — this file's
+  first growth under `PHASE-C3C-B`; explicitly authorized by this correction
+  order, superseding §7 row 6's general "must not grow" default for this
+  narrow, contracted purpose): `buildInsumosTransferForm`'s `linhas` array
+  now carries one `attemptTracker` per line (created alongside `linhas`,
+  outside `registrarRecebimentoOrdemFio`, persisted across multiple `onSave`
+  invocations within the same modal session); `onSave`'s loop resolves each
+  line's attempt by `{ordemId, kg: total, dataRec}` before calling
+  `registrarRecebimentoOrdemFio`, and retains/completes per line
+  independently, so one line's ambiguous failure does not affect another
+  line's already-closed attempt.
+- **No other product path was touched** (`js/screens/pedido-detail-data.js`,
+  `op-persistir.js`, `op-recalculo.js`, `index.html`, `delete-helpers.js`
+  required no change for either defect).
+
+### 34.4 Transport ambiguity behavior — final policy
+
+- **Ambiguous** (ANY RPC-call-level error except the exact `42883` case —
+  network failure, timeout, aborted response, connection drop): fail closed,
+  no flat fallback, error surfaced, the caller's tracker retains the current
+  attempt so a retry of unchanged intent reuses the same token.
+- **Deterministic** (a JSONB envelope was received — success or any
+  `{ok:false,codigo:...}` — or the bounded `42883`/documented-inactive
+  fallback occurred): the caller's tracker closes the attempt; the next
+  submission, even with byte-identical intent, mints a new token.
+
+### 34.5 Corrected evidence
+
+- `node --check`: clean on all five corrected files and all five corrected/
+  new test files.
+- Per-file `node --test`: all pass except the same pre-existing, unrelated
+  failures already documented in §33.7 (`tests/op-writes.smoke.js` tests 9/24;
+  `tests/pedido-detail.smoke.js`'s pre-existing set) — with **two fewer**
+  pre-existing failures than §33.7 recorded, both incidental: this
+  correction's own edit to a shared regex-boundary string (used by three
+  pre-existing, unrelated `tests/pedido-detail.smoke.js` tests to slice
+  `buildInsumosTransferForm`'s source) also fixed that string's missing
+  `\r?` (the file uses CRLF line endings), which had made those assertions
+  never find their slice. Not an intentional scope change; disclosed, not
+  hidden.
+- Full mandatory Node suite (`node --test "tests/**/*.js"`): 3985 tests
+  (+25 from this correction's own new/extended tests), 3863 pass, 122 fail.
+  The 122 failing test names are a **subset** of the prior 124-name
+  baseline (`diff` of sorted failing-name lists shows exactly the same two
+  removed lines, zero added lines) — zero regressions attributable to this
+  correction anywhere in the repository.
+- `node scripts/validate-spec-custody.mjs`: **PASS**.
+- `git diff --check` / `git diff --cached --check`: clean.
+
+### 34.6 Idempotency lifecycle proof (corrected)
+
+`tests/ordem-compra-receipt-cutover.smoke.js` (`createAttemptTracker` unit
+tests) plus real-call-site integration tests with a real DOM click and a
+stateful mocked RPC in `tests/op-nova.smoke.js` (tests 80–83) and
+`tests/fornecedor-screens.smoke.js` (tests 43–46) together prove: (a) a
+retry of unchanged intent after an ambiguous transport failure resends the
+identical idempotency key; (b) changing kg or the date mints a new key; (c)
+after a deterministic outcome (success or a recognized rejection), the next
+submission — even with unchanged intent — mints a new key; (d) canonical
+success never issues the flat fallback. `tests/op-writes.smoke.js` (tests
+56–61) proves the shared helper's half of the contract directly: a
+caller-supplied attempt is used verbatim, a retry with the same attempt
+object sends the identical key twice, an ambiguous outcome is flagged
+(`ambiguous:true`) and never triggers the flat fallback, and a deterministic
+outcome is flagged `ambiguous:false`.
+`tests/pedido-detail.smoke.js` proves, statically (§34.7 below), that the
+same ownership/passing/retention pattern is wired at that call-site too; the
+underlying mechanism it delegates to is the same one runtime-proven above.
+
+### 34.7 Test corrections and additions
+
+- `tests/ordem-compra-receipt-cutover.smoke.js`: fixed test 22 (a transport-
+  level unrecognized error is now `'ambiguous_failure'`, not `'hard_failure'`);
+  added tests 7b/7c/22b (exact-42883-only classification, both for the reader
+  and the writer, message-text-alone no longer triggers fallback) and
+  22c–22g (`createAttemptTracker` unit tests: reuse on unchanged intent, new
+  token on changed kg/date, `complete()` closes the attempt, fresh token with
+  no prior attempt).
+- `tests/op-writes.smoke.js`: added tests 56–61 (caller-supplied attempt used
+  verbatim; retry with the same attempt reuses the key; ambiguous failure
+  flagged and never falls back; deterministic outcomes flagged
+  `ambiguous:false`; backward-compatible internal attempt creation).
+- `tests/op-nova.smoke.js`: added a `withReceiptAdapter` opt-in flag to
+  `makeRenderSandbox`/`renderNovaOpForTest` (loading the adapter and
+  `op-writes.js` unconditionally would have broken unrelated pre-existing
+  tests whose default mocked RPC response is `{data:null,error:null}` — read
+  by the adapter as a canonical success with zero rows instead of falling
+  through to fixture data); opted tests 77–79 into it (fixing a latent gap:
+  those tests previously exercised the flat-fallback path unconditionally,
+  since the adapter was never loaded, so their "canonical" assertions were
+  vacuous); added tests 80–83, each simulating a real DOM click on
+  `buildOrdemPendenteRow`'s "Registrar" button against a stateful mocked RPC.
+- `tests/fornecedor-screens.smoke.js`: extended `makeFornCutoverSandbox`'s
+  `writeRpcResult` to accept a function (stateful per-call responses);
+  added tests 43–46 (retry reuse, intent-change new token, deterministic-
+  rejection new token, independence from `op-writes.js`).
+- `tests/pedido-detail.smoke.js`: added three static tests verifying
+  `buildInsumosTransferForm`'s tracker construction, per-call `resolveAttempt`
+  invocation with the correct intent shape, and the retain-on-ambiguous /
+  complete-on-deterministic branching — static and proportional, per §34.5's
+  disclosed scope decision (no existing runtime-test harness exists for this
+  file's bespoke `openMovementModal` overlay; every other reference to it in
+  this suite is itself a static source-pattern assertion, the file's
+  dominant convention).
+- No other test file required a change for these two defects (`tests/op-persistir.smoke.js`,
+  `tests/op-recalculo.smoke.js`, `tests/controlled-delete.smoke.js` remain
+  unmodified, verified green).
+
+### 34.8 Line-count and code-health report (corrected)
+
+| File | §33 | §34 | Δ | Tier | Note |
+|---|---|---|---|---|---|
+| `js/screens/ordem-compra-receipt-cutover.js` | 179 | 257 | +78 | acceptable (≤500) | Crosses the 250-line ideal ceiling into acceptable; still well under 500. |
+| `js/screens/op-writes.js` | 133 | 155 | +22 | ideal (≤250) | — |
+| `js/screens/fornecedor.js` | 583 | 599 | +16 | exceptional (≤900) | Already over 500 before `PHASE-C3C-B`; no new tier crossed. |
+| `js/screens/op-nova.js` | 1493 | 1511 | +18 | frozen exception (already >900) | Minimal wiring only; not precedent for new large screens. |
+| `js/screens/pedido-detail-events.js` | 2691 | 2709 | +18 | (pre-existing, ungoverned — §18 residual debt) | First growth under this phase; explicitly authorized by this correction order (§ AUTHORIZED PRODUCT SCOPE), superseding §7 row 6's default for this narrow purpose only. |
+
+No new function exceeds 150 lines. No file outside this table changed in
+this correction.
+
+### 34.9 Residual debts (unchanged from §33.8)
+
+Unchanged: `HISTORICAL_SALDO_FIOS_PROVENANCE_UNAVAILABLE`,
+`NATIVE_RECEIPT_COMPATIBILITY_MULTI_ORIGIN_UNRESOLVED`, the adapters'
+canonical-branch code paths remain unverified against a live
+`canonical_active` state, `op-recalculo.js`'s saldo-write path has no
+canonical RPC replacement, and `pedido-detail-events.js` exceeding
+`op-nova.js` in size without a frozen-exception label remains a pre-existing
+governance gap. **New, disclosed (non-blocking):** `pedido-detail-events.js`'s
+`onSave` retry-of-unchanged-intent behavior is proven statically, not by a
+real DOM/runtime click simulation (§34.7) — a future phase may add a runtime
+harness for `openMovementModal` if warranted; the underlying mechanism it
+delegates to is fully runtime-proven at the other two call-sites and at the
+adapter level.
+
+### 34.10 Final state and next authorizable action
+
+`LAST_ACCEPTED_PHASE: PHASE-C3C-B-DB-PREREQ` (unchanged). `ACTIVE_PHASE:
+NONE`. `ACTIVE_PHASE_CONTRACT: NONE`. `PHASE-C3C-B: IMPLEMENTED / LOCALLY
+VERIFIED / AWAITING SUPERVISOR ACCEPTANCE` — unchanged; this correction does
+**not** record supervisor acceptance. No dependent `OC-C3-*` requirement is
+`SATISFIED`. The next authorizable action is supervisor review/acceptance of
+this corrected implementation.

@@ -1030,6 +1030,15 @@
     styleInput(kgInput, 'width:100px;padding:7px 10px;font-size:13px;');
     const dataInput = textInput({ type: 'date', value: new Date().toISOString().slice(0, 10) });
     styleInput(dataInput, 'width:140px;padding:7px 10px;font-size:13px;');
+    // PHASE-C3C-B §34: this row owns its own idempotency-attempt tracker,
+    // alive for the row's lifetime (recreated only when this row itself is
+    // rebuilt, e.g. after a successful reloadOrdens()) — never recreated per
+    // click. A retry of unchanged intent (same kg/date) after an ambiguous
+    // transport failure reuses the same token; any deterministic outcome
+    // closes it, so the next click — even with unchanged values — mints a
+    // new one.
+    const cutoverApi = window.RAVATEX_SCREENS && window.RAVATEX_SCREENS.ordemCompraReceiptCutover;
+    const attemptTracker = cutoverApi ? cutoverApi.createAttemptTracker() : null;
     const btn = el('button', {
       type: 'button', style: BTN_SOLID_SM,
       onclick: async () => {
@@ -1038,13 +1047,22 @@
         const dataRec = dataInput.value || new Date().toISOString().slice(0, 10);
         const status = kg < Number(ordem.kg_pedido) ? 'recebido_parcial' : 'recebido_total';
         btn.disabled = true;
-        const { error } = await window.registrarRecebimentoOrdemFio({
+        const attempt = attemptTracker
+          ? attemptTracker.resolveAttempt({ ordemId: ordem.id, kg: kg, dataRec: dataRec })
+          : undefined;
+        const { error, ambiguous } = await window.registrarRecebimentoOrdemFio({
           ordemId: ordem.id,
           kgRecebido: kg,
           dataRecebimento: dataRec,
           status,
+          attempt,
         });
-        if (error) { toast('Erro ao registrar recebimento', 'error'); console.error(error); btn.disabled = false; return; }
+        if (error) {
+          toast('Erro ao registrar recebimento', 'error'); console.error(error); btn.disabled = false;
+          if (attemptTracker && !ambiguous) attemptTracker.complete();
+          return;
+        }
+        if (attemptTracker) attemptTracker.complete();
         toast('Recebimento registrado', 'success');
         reloadOrdens();
       }

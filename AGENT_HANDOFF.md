@@ -69,16 +69,26 @@
   supervisor-**ACCEPTED**.
 - **`PHASE-C3C-B` (application compatibility/adaptation, 2026-07-20):**
   `IMPLEMENTED / LOCALLY VERIFIED / AWAITING SUPERVISOR ACCEPTANCE`
-  (`docs/architecture/ORDEM_COMPRA_C3C_B_PHASE_CONTRACT.md` §33, activated by
-  its §32 forward correction). New shared adapter
+  (`docs/architecture/ORDEM_COMPRA_C3C_B_PHASE_CONTRACT.md` §§33–34, activated
+  by its §32 forward correction). New shared adapter
   `js/screens/ordem-compra-receipt-cutover.js` plus nine adapted call-sites
   (`js/screens/op-writes.js`, `js/screens/fornecedor.js`,
   `js/screens/pedido-detail-data.js`, `js/screens/op-nova.js`,
-  `js/screens/op-persistir.js`, `js/screens/op-recalculo.js`, `index.html`;
-  `pedido-detail-events.js`/`delete-helpers.js` required no change). Full
-  mandatory Node suite (3960 tests) has the identical 124-failure set as the
-  pre-phase baseline (zero regressions); validator PASS. No dependent
-  `OC-C3-*` requirement is `SATISFIED`.
+  `js/screens/op-persistir.js`, `js/screens/op-recalculo.js`, `index.html`).
+  **§34 supervisor-review correction** (commit
+  `fix: preserve C3C-B receipt idempotency attempts`): real receipt UI
+  closures now own and retain their idempotency-attempt tracker across
+  retries of unchanged intent (`js/screens/op-writes.js`,
+  `js/screens/fornecedor.js`, `js/screens/op-nova.js`,
+  `js/screens/pedido-detail-events.js`), and the missing-function classifier
+  now checks the exact `42883` SQLSTATE only (message-text alternative
+  removed). Full mandatory Node suite (3985 tests, +25 from this
+  correction's own tests) has a 122-failure set — 2 fewer than the prior
+  124-failure baseline (both incidental fixes of pre-existing CRLF-unaware
+  regex assertions sharing a string this correction's test edit also
+  touched); every other failure is the same pre-existing, unrelated set —
+  zero regressions attributable to this correction; validator PASS. No
+  dependent `OC-C3-*` requirement is `SATISFIED`.
 - **Next authorizable action:** **supervisor review/acceptance of the
   `PHASE-C3C-B` application-adapter implementation.** Only after that
   acceptance may staging validation/application of `db/76`, C3D, cutover, C4,

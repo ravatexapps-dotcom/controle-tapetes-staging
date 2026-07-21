@@ -70,11 +70,26 @@ ACCEPTED_CHECKPOINT: 34d7d231d0875093bc2091f385c61cf35fa0b5cb
   `js/screens/op-nova.js`, `js/screens/op-persistir.js`,
   `js/screens/op-recalculo.js`, `index.html`;
   `js/screens/pedido-detail-events.js` and `js/delete-helpers.js` required
-  no change). Full mandatory Node suite (3960 tests) has the identical
-  124-failure set as the pre-phase baseline — zero regressions;
+  no change at that time — §34 below records a later correction that did
+  touch `js/screens/pedido-detail-events.js`).
+  **Supervisor-review correction (§34, commit
+  `fix: preserve C3C-B receipt idempotency attempts`):** two blocking
+  defects — real receipt call-sites did not retain retry attempts across
+  ambiguous transport failures, and the missing-function classifier
+  accepted a message-text alternative beyond the exact `42883` contract —
+  were corrected in `js/screens/ordem-compra-receipt-cutover.js`,
+  `js/screens/op-writes.js`, `js/screens/fornecedor.js`,
+  `js/screens/op-nova.js`, and `js/screens/pedido-detail-events.js`. Full
+  mandatory Node suite (3985 tests, +25 from the correction's own tests) has
+  a 122-failure set — 2 fewer than the prior 124-failure baseline, both
+  incidental fixes of pre-existing CRLF-unaware regex assertions in
+  `tests/pedido-detail.smoke.js` sharing a string this correction's own
+  test edit also touched (not an intentional scope change); every other
+  failure is byte-for-byte the same pre-existing, unrelated set — zero
+  regressions attributable to this correction;
   `node scripts/validate-spec-custody.mjs` PASS. No dependent `OC-C3-*`
   requirement is `SATISFIED`. See
-  `docs/architecture/ORDEM_COMPRA_C3C_B_PHASE_CONTRACT.md` §33 and
+  `docs/architecture/ORDEM_COMPRA_C3C_B_PHASE_CONTRACT.md` §§33–34 and
   `docs/ledgers/G28_LEDGER.md` (2026-07-20, `PHASE-C3C-B
   APPLICATION-ADAPTER IMPLEMENTATION`) for the full closeout.
 - **Governance status:**

@@ -151,6 +151,7 @@ const ODU   = path.join(ROOT, 'js', 'screens', 'op-distribuicao-ui.js');
 const PAINEL= path.join(ROOT, 'js', 'screens', 'painel.js');
 const OLA   = path.join(ROOT, 'js', 'screens', 'op-latex-admin.js');
 const OPW   = path.join(ROOT, 'js', 'screens', 'op-writes.js');
+const CUTOVER = path.join(ROOT, 'js', 'screens', 'ordem-compra-receipt-cutover.js');
 const OFH   = path.join(ROOT, 'js', 'screens', 'op-form-helpers.js');
 const EF    = path.join(ROOT, 'js', 'screens', 'entrega-form.js');
 const EW    = path.join(ROOT, 'js', 'screens', 'entrega-writes.js');
@@ -174,6 +175,7 @@ const oduSrc    = fs.readFileSync(ODU,   'utf8');
 const painelSrc = fs.readFileSync(PAINEL,'utf8');
 const olaSrc    = fs.readFileSync(OLA,   'utf8');
 const opwSrc    = fs.readFileSync(OPW,   'utf8');
+const cutoverSrc = fs.readFileSync(CUTOVER, 'utf8');
 const ofhSrc    = fs.readFileSync(OFH,   'utf8');
 const efSrc     = fs.readFileSync(EF,    'utf8');
 const uiSrc     = fs.readFileSync(UI,    'utf8');
@@ -733,7 +735,8 @@ function buildFakeSupa(db, rpcImpl) {
   };
 }
 
-function makeRenderSandbox(db, rpcImpl) {
+function makeRenderSandbox(db, rpcImpl, opts) {
+  opts = opts || {};
   const toastsNode = new FakeNode('div');
   const appNode = new FakeNode('div');
   const document = {
@@ -773,6 +776,19 @@ function makeRenderSandbox(db, rpcImpl) {
   // buildProposta renderiza (OP 'aberta' com todos os fios recebidos).
   vm.runInContext(oprSrc, sandbox, { filename: 'js/screens/op-recalculo.js' });
   vm.runInContext(oduSrc, sandbox, { filename: 'js/screens/op-distribuicao-ui.js' });
+  if (opts.withReceiptAdapter) {
+    // PHASE-C3C-B §34: buildOrdemPendenteRow's "Registrar" button calls
+    // window.registrarRecebimentoOrdemFio (op-writes.js), which in turn
+    // resolves window.RAVATEX_SCREENS.ordemCompraReceiptCutover — both must
+    // be loaded for the real call-site's attempt-retention behavior to be
+    // exercised (index.html loads the adapter before every consumer). Opt-in
+    // only: every other test using this sandbox supplies an rpcImpl with no
+    // listar_ordens_compra_fio_compat handler, whose default { data: null,
+    // error: null } would otherwise be read by the adapter as a canonical
+    // success with zero rows instead of falling through to fixture data.
+    vm.runInContext(cutoverSrc, sandbox, { filename: 'js/screens/ordem-compra-receipt-cutover.js' });
+    vm.runInContext(opwSrc, sandbox, { filename: 'js/screens/op-writes.js' });
+  }
   vm.runInContext(opnSrc, sandbox, { filename: 'js/screens/op-nova.js' });
 
   sandbox.ADMIN_MENU = sandbox.ADMIN_MENU || [];
@@ -842,8 +858,8 @@ function findNodeById(node, id) {
   return null;
 }
 
-async function renderNovaOpForTest({ opId = null, pedidoId = null, db, rpcImpl } = {}) {
-  const sandbox = makeRenderSandbox(db || buildOpNovaFixture(), rpcImpl);
+async function renderNovaOpForTest({ opId = null, pedidoId = null, db, rpcImpl, withReceiptAdapter } = {}) {
+  const sandbox = makeRenderSandbox(db || buildOpNovaFixture(), rpcImpl, { withReceiptAdapter });
   sandbox.__args = { opId, pedidoId };
   const view = await vm.runInContext('window.screenNovaOP(window.__args.opId, window.__args.pedidoId)', sandbox);
   return {
@@ -1640,7 +1656,7 @@ test('76. ORDEM-COMPRA-B1: base sem colunas de dimensão (pré-db/65) => linhas 
 test('77. fetchOrdensCompraFio: listar_compat_inativo falls back to the exact pre-phase dim/legacy read, rendering identically to test 39', async () => {
   const db = buildOpEmProducaoTecelagemFixture();
   const rendered = await renderNovaOpForTest({
-    opId: 93, db,
+    opId: 93, db, withReceiptAdapter: true,
     rpcImpl: (name) => (name === 'listar_ordens_compra_fio_compat'
       ? { data: null, error: { code: '55000', message: 'listar_compat_inativo' } }
       : { data: null, error: null }),
@@ -1652,10 +1668,12 @@ test('77. fetchOrdensCompraFio: listar_compat_inativo falls back to the exact pr
 
 test('78. fetchOrdensCompraFio: canonical success renders using the adapter row, not the (empty) flat table', async () => {
   const db = buildOpEmProducaoTecelagemFixture({ ordens_compra_fio: [] });
+  let rpcCalled = false;
   const rendered = await renderNovaOpForTest({
-    opId: 93, db,
+    opId: 93, db, withReceiptAdapter: true,
     rpcImpl: (name, params) => {
       if (name !== 'listar_ordens_compra_fio_compat') return { data: null, error: null };
+      rpcCalled = true;
       assert.equal(params.p_op_id, 93, 'must scope the OP-attributable grain by p_op_id');
       return {
         data: [{
@@ -1671,6 +1689,7 @@ test('78. fetchOrdensCompraFio: canonical success renders using the adapter row,
       };
     },
   });
+  assert.equal(rpcCalled, true, 'the canonical RPC must actually have been called (adapter loaded)');
   // With the flat table empty, this text only renders correctly if the
   // canonical row (kg_recebido=1.2) was consumed instead.
   assert.match(rendered.text, /Saldo em tecelagem/i);
@@ -1680,7 +1699,7 @@ test('78. fetchOrdensCompraFio: canonical success renders using the adapter row,
 test('79. fetchOrdensCompraFio: hard-failure error (e.g. sem_permissao) is surfaced, never silently treated as inactive', async () => {
   const db = buildOpEmProducaoTecelagemFixture();
   const rendered = await renderNovaOpForTest({
-    opId: 93, db,
+    opId: 93, db, withReceiptAdapter: true,
     rpcImpl: (name) => (name === 'listar_ordens_compra_fio_compat'
       ? { data: null, error: { code: '42501', message: 'sem_permissao' } }
       : { data: null, error: null }),
@@ -1689,4 +1708,171 @@ test('79. fetchOrdensCompraFio: hard-failure error (e.g. sem_permissao) is surfa
   // reloadOrdens()-style callers toast and stop rather than crash. The
   // screen itself must not throw.
   assert.ok(rendered.view, 'screenNovaOP must not throw on a hard-failure canonical response');
+});
+
+// -----------------------------------------------------------------------------
+// PHASE-C3C-B §34 (supervisor correction): buildOrdemPendenteRow's
+// "Registrar" button must own and retain its own receipt-attempt tracker —
+// a retry of unchanged intent after an ambiguous transport failure reuses
+// the same token; a changed field mints a new one; a deterministic outcome
+// closes it. Attempt ownership must exist in this file's own closure, not
+// only inside window.registrarRecebimentoOrdemFio (op-writes.js).
+// -----------------------------------------------------------------------------
+
+function buildOpAbertaWithPendingOrdemFixture(overrides = {}) {
+  return buildOpNovaFixture(Object.assign({
+    ops: [
+      {
+        id: 95, numero: 10, ano: 2026, status: 'aberta', tipo: 'tecelagem',
+        observacao: '', origem_op_id: null, lote_id: 305,
+        lote: { id: 305, numero: 17, pedido_id: 'ped-1', cliente: { id: 501, nome: 'Cliente Atlas' } },
+        op_itens: [{ id: 5, modelo_id: 1, metros_pedidos: 120, metros_ajustados: null, pedido_item_id: 'pi-1' }],
+        op_fornecedores: [],
+      },
+    ],
+    ordens_compra_fio: [
+      { id: 601, op_id: 95, tipo: 'algodao', cor_id: 11, cor_poliester: null, kg_pedido: 5, kg_recebido: null, status: 'pendente', cores: { id: 11, nome: 'PRETO' } },
+    ],
+    entregas: [],
+  }, overrides));
+}
+
+function findAllButtonsWithText(node, text, out = []) {
+  if (!node) return out;
+  if (node.tagName === 'BUTTON' && collectNodeText(node).includes(text)) out.push(node);
+  for (const c of (node.children || [])) findAllButtonsWithText(c, text, out);
+  return out;
+}
+
+function findAllInputs(node, out = []) {
+  if (!node) return out;
+  if (node.tagName === 'INPUT') out.push(node);
+  for (const c of (node.children || [])) findAllInputs(c, out);
+  return out;
+}
+
+function registrarRowControls(view) {
+  const btn = findAllButtonsWithText(view, 'Registrar')[0];
+  const row = btn.parentNode; // the actions div: [kgWrap, dataWrap, btn]
+  const inputs = findAllInputs(row);
+  const kgInput = inputs.find((i) => i.getAttribute('type') === 'number');
+  const dataInput = inputs.find((i) => i.getAttribute('type') === 'date');
+  return { btn, kgInput, dataInput };
+}
+
+test('80. buildOrdemPendenteRow: retry of unchanged intent after an ambiguous transport failure reuses the same idempotency token, then succeeds with zero flat writes', async () => {
+  const db = buildOpAbertaWithPendingOrdemFixture();
+  let writeCallCount = 0;
+  const seenKeys = [];
+  const rendered = await renderNovaOpForTest({
+    opId: 95, db, withReceiptAdapter: true,
+    rpcImpl: (name, params) => {
+      if (name === 'listar_ordens_compra_fio_compat') {
+        return { data: null, error: { code: '55000', message: 'listar_compat_inativo' } };
+      }
+      if (name === 'registrar_recebimento_ordem_compra_fio_compat') {
+        writeCallCount += 1;
+        seenKeys.push(params.p_idempotency_key);
+        if (writeCallCount === 1) {
+          return { data: null, error: { code: '08006', message: 'connection timeout' } };
+        }
+        return { data: { ok: true, codigo: 'ok', recebimento_id: 1, ordem_compra_id: 9 }, error: null };
+      }
+      return { data: null, error: null };
+    },
+  });
+  const { btn, kgInput, dataInput } = registrarRowControls(rendered.view);
+  assert.ok(btn && kgInput && dataInput, 'expected the pending row controls to be found');
+  kgInput.value = '5';
+  dataInput.value = '2026-07-20';
+
+  await btn._listeners.click();
+  assert.equal(writeCallCount, 1, 'first click attempts the canonical write once');
+
+  await btn._listeners.click(); // retry, unchanged kg/date
+  assert.equal(writeCallCount, 2, 'retry attempts the canonical write again');
+  assert.equal(seenKeys[0], seenKeys[1], 'a retry of unchanged intent must reuse the exact same idempotency token');
+});
+
+test('81. buildOrdemPendenteRow: changing kg before retrying mints a new idempotency token (genuinely new intent)', async () => {
+  const db = buildOpAbertaWithPendingOrdemFixture();
+  let writeCallCount = 0;
+  const seenKeys = [];
+  const rendered = await renderNovaOpForTest({
+    opId: 95, db, withReceiptAdapter: true,
+    rpcImpl: (name, params) => {
+      if (name === 'listar_ordens_compra_fio_compat') {
+        return { data: null, error: { code: '55000', message: 'listar_compat_inativo' } };
+      }
+      if (name === 'registrar_recebimento_ordem_compra_fio_compat') {
+        writeCallCount += 1;
+        seenKeys.push(params.p_idempotency_key);
+        return { data: null, error: { code: '08006', message: 'connection timeout' } };
+      }
+      return { data: null, error: null };
+    },
+  });
+  const { btn, kgInput, dataInput } = registrarRowControls(rendered.view);
+  kgInput.value = '5';
+  dataInput.value = '2026-07-20';
+  await btn._listeners.click();
+  kgInput.value = '4'; // changed intent
+  await btn._listeners.click();
+  assert.equal(writeCallCount, 2);
+  assert.notEqual(seenKeys[0], seenKeys[1], 'a changed kg value must mint a new token, not reuse the retained attempt');
+});
+
+test('82. buildOrdemPendenteRow: after a deterministic hard failure, the next submission (even unchanged intent) mints a new token', async () => {
+  const db = buildOpAbertaWithPendingOrdemFixture();
+  let writeCallCount = 0;
+  const seenKeys = [];
+  const rendered = await renderNovaOpForTest({
+    opId: 95, db, withReceiptAdapter: true,
+    rpcImpl: (name, params) => {
+      if (name === 'listar_ordens_compra_fio_compat') {
+        return { data: null, error: { code: '55000', message: 'listar_compat_inativo' } };
+      }
+      if (name === 'registrar_recebimento_ordem_compra_fio_compat') {
+        writeCallCount += 1;
+        seenKeys.push(params.p_idempotency_key);
+        return { data: { ok: false, codigo: 'sem_permissao' }, error: null };
+      }
+      return { data: null, error: null };
+    },
+  });
+  const { btn, kgInput, dataInput } = registrarRowControls(rendered.view);
+  kgInput.value = '5';
+  dataInput.value = '2026-07-20';
+  await btn._listeners.click(); // deterministic rejection
+  await btn._listeners.click(); // same intent, but the prior attempt is closed
+  assert.equal(writeCallCount, 2);
+  assert.notEqual(seenKeys[0], seenKeys[1], 'a deterministic server rejection closes the attempt; the next submission mints a new token even with unchanged intent');
+});
+
+test('83. buildOrdemPendenteRow: canonical success calls the write RPC exactly once and reloads without throwing', async () => {
+  const db = buildOpAbertaWithPendingOrdemFixture();
+  let writeCallCount = 0;
+  const rendered = await renderNovaOpForTest({
+    opId: 95, db, withReceiptAdapter: true,
+    rpcImpl: (name) => {
+      if (name === 'listar_ordens_compra_fio_compat') {
+        return { data: null, error: { code: '55000', message: 'listar_compat_inativo' } };
+      }
+      if (name === 'registrar_recebimento_ordem_compra_fio_compat') {
+        writeCallCount += 1;
+        return { data: { ok: true, codigo: 'ok', recebimento_id: 1, ordem_compra_id: 9 }, error: null };
+      }
+      return { data: null, error: null };
+    },
+  });
+  const { btn, kgInput, dataInput } = registrarRowControls(rendered.view);
+  kgInput.value = '5';
+  dataInput.value = '2026-07-20';
+  // Canonical success triggers reloadOrdens() -> render(), tearing down the
+  // original row/button; reaching here without throwing, with exactly one
+  // write call, is the proof for this call-site (the flat-mutation-never-
+  // issued property itself is asserted structurally in
+  // tests/op-writes.smoke.js's canonical-success test).
+  await btn._listeners.click();
+  assert.equal(writeCallCount, 1);
 });

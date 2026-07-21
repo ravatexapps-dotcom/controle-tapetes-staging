@@ -468,6 +468,14 @@
     function linhaPendente(ordem) {
       const kgInput = window.textInput({ type: 'number', step: '0.001', value: String(ordem.kg_pedido) });
       const dataInput = window.textInput({ type: 'date', value: new Date().toISOString().slice(0, 10) });
+      // PHASE-C3C-B §34: this row owns its own idempotency-attempt tracker
+      // (independent from op-writes.js/op-nova.js — fornecedor.js remains an
+      // independent writer, never routed through registrarRecebimentoOrdemFio).
+      // Alive for the row's lifetime; a retry of unchanged intent after an
+      // ambiguous transport failure reuses the same token; any deterministic
+      // outcome closes it.
+      const cutover = window.RAVATEX_SCREENS && window.RAVATEX_SCREENS.ordemCompraReceiptCutover;
+      const attemptTracker = cutover ? cutover.createAttemptTracker() : null;
       const btn = window.el('button', {
         class: 'bg-blue-700 hover:bg-blue-800 text-white text-sm font-semibold rounded-lg px-3 py-2',
         onclick: async () => {
@@ -477,25 +485,32 @@
           const status = kg < Number(ordem.kg_pedido) ? 'recebido_parcial' : 'recebido_total';
           btn.disabled = true;
 
-          // PHASE-C3C-B §32: independent writer (own idempotency attempt,
-          // not routed through op-writes.js's registrarRecebimentoOrdemFio).
           // A canonical decremento_exige_admin (or any other recognized
           // error code) fails closed here — never falls back to a flat
           // decrease after a canonical-active response.
-          const cutover = window.RAVATEX_SCREENS && window.RAVATEX_SCREENS.ordemCompraReceiptCutover;
           if (cutover) {
-            const attempt = cutover.createReceiptAttempt();
+            const attempt = attemptTracker.resolveAttempt({ ordemId: ordem.id, kg: kg, dataRec: dataRec });
             const canonical = await cutover.attemptCanonicalReceipt({
               ordensCompraFioId: ordem.id,
               kgTotalAbsoluto: kg,
               dataRecebimento: dataRec,
             }, attempt);
             if (canonical.outcome === 'canonical_success') {
+              attemptTracker.complete();
               window.toast('Recebimento registrado', 'success');
               reload();
               return;
             }
+            if (canonical.outcome === 'ambiguous_failure') {
+              // Server commit status unknown — fail closed, no flat
+              // fallback, retain the attempt for a retry of unchanged intent.
+              window.toast('Erro ao registrar recebimento', 'error');
+              console.error(canonical.error);
+              btn.disabled = false;
+              return;
+            }
             if (canonical.outcome === 'hard_failure') {
+              attemptTracker.complete();
               window.toast('Erro ao registrar recebimento', 'error');
               console.error(canonical.error || canonical.result);
               btn.disabled = false;
@@ -509,6 +524,7 @@
             .update({ kg_recebido: kg, data_recebimento: dataRec, status })
             .eq('id', ordem.id);
           if (error) { window.toast('Erro ao registrar recebimento', 'error'); console.error(error); btn.disabled = false; return; }
+          if (attemptTracker) attemptTracker.complete();
           window.toast('Recebimento registrado', 'success');
           reload();
         }

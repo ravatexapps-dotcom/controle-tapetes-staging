@@ -10,21 +10,39 @@
 // Each call-site (op-writes.js, fornecedor.js, pedido-detail-data.js,
 // op-nova.js) keeps owning its own existing legacy query/mutation as the
 // fallback body; this module only classifies the canonical RPC response and
-// returns an explicit { outcome } the caller branches on:
-//   - 'canonical_success' — canonical RPC succeeded; use `rows`/`result`.
+// returns an explicit { outcome } the caller branches on. attemptCanonicalRead
+// (no idempotency concept — reads are always safe to retry):
+//   - 'canonical_success' — canonical RPC succeeded; use `rows`.
 //   - 'legacy_fallback'   — canonical surface is inactive, or (bounded,
 //                           §32.4) the RPC does not exist yet in this
 //                           environment; the caller must run its exact
 //                           existing legacy path.
 //   - 'hard_failure'      — every other error; the caller must surface it,
 //                           never silently fall back.
+// attemptCanonicalReceipt additionally distinguishes, per the supervisor
+// correction recorded in PHASE_CONTRACT.md §34:
+//   - 'ambiguous_failure' — the RPC call itself errored (network failure,
+//                           timeout, aborted response — anything other than
+//                           the bounded missing-function case) and the
+//                           server's commit status is unknown. The caller
+//                           must fail closed (no flat fallback) and RETAIN
+//                           the same attempt object for a retry of
+//                           unchanged intent.
+//   - 'hard_failure'      — a JSONB envelope was received (db/76's outer
+//                           EXCEPTION WHEN OTHERS guarantees this instead of
+//                           a raised error for every business-logic
+//                           condition), so the request completed
+//                           deterministically with `{ok:false,codigo:...}`.
+//                           The caller must surface it and may close the
+//                           attempt (a further submission, even of the same
+//                           intent, is a new attempt).
 //
 // Idempotency: createReceiptAttempt() mints one token per user-initiated
-// submission. The caller retains the returned attempt object across retries
-// of THAT SAME attempt (network timeout, connection drop, ambiguous
-// response) and reuses attempt.token verbatim; a genuinely new submission
-// calls createReceiptAttempt() again. This module holds no attempt state of
-// its own and never persists a token across distinct user submissions.
+// submission. createAttemptTracker() is the intent-aware helper real UI
+// closures use to decide whether a submission is a retry of the same
+// attempt or a genuinely new one — see its own docstring below. This module
+// holds no attempt state across distinct tracker instances and never
+// persists a token globally.
 //
 // Dependência resolvida em tempo de chamada: window.supa (js/supabase-client.js).
 // =====================================================================
@@ -46,6 +64,56 @@
     return { token: newIdempotencyToken() };
   }
 
+  // createAttemptTracker() — the real UI/form closure that owns a single
+  // "Registrar" control (one row, one line, one form) instantiates exactly
+  // ONE tracker and keeps it alive across re-invocations of its own
+  // onclick/onSave handler (never recreated per click/submit; never shared
+  // across rows, screens, or distinct receipt UI elements — no global
+  // persistence, no localStorage/sessionStorage/database/URL state).
+  //
+  //   resolveAttempt(intent) — returns the retained attempt when `intent`
+  //     (a plain object of primitive fields: at minimum the flat order id,
+  //     the requested absolute kg, the receipt date, and any document/origin
+  //     metadata) is shallow-equal to the intent of the last unresolved
+  //     attempt; otherwise mints a fresh attempt (via createReceiptAttempt)
+  //     and stores it against the new intent. The token itself is always
+  //     random — `intent` is used only to decide whether to reuse it, never
+  //     as the token.
+  //   complete() — call after any DETERMINISTIC outcome (canonical success,
+  //     the legacy-fallback path, or a recognized/unrecognized server
+  //     rejection): closes the current attempt, so the next resolveAttempt()
+  //     call — even with byte-identical intent — mints a new token, per the
+  //     "previous request received a deterministic server rejection ⇒ new
+  //     attempt" rule.
+  //   Not calling complete() (i.e. after an 'ambiguous_failure' outcome)
+  //     retains the attempt, so the next resolveAttempt() call with the same
+  //     intent reuses the same token — the retry-of-unchanged-intent case.
+  function createAttemptTracker() {
+    var attempt = null;
+    var intent = null;
+
+    function sameIntent(a, b) {
+      if (!a || !b) return false;
+      var aKeys = Object.keys(a);
+      var bKeys = Object.keys(b);
+      if (aKeys.length !== bKeys.length) return false;
+      return aKeys.every(function (key) { return a[key] === b[key]; });
+    }
+
+    return {
+      resolveAttempt: function (currentIntent) {
+        if (attempt && sameIntent(intent, currentIntent)) return attempt;
+        attempt = createReceiptAttempt();
+        intent = currentIntent;
+        return attempt;
+      },
+      complete: function () {
+        attempt = null;
+        intent = null;
+      },
+    };
+  }
+
   function isCanonicalReaderInactive(error) {
     return !!error && error.code === '55000'
       && /listar_compat_inativo/i.test(error.message || '');
@@ -55,14 +123,15 @@
     return !!result && result.ok === false && result.codigo === 'recebimento_compat_inativo';
   }
 
-  // Bounded per PHASE_CONTRACT.md §32.4: signals only "db/76 is not yet
+  // Bounded per PHASE_CONTRACT.md §32.4/§34: signals only "db/76 is not yet
   // installed in this environment," never a permanent/unconditional
-  // fallback trigger.
+  // fallback trigger. Exact SQLSTATE only — supervisor correction §34
+  // removed the message-text alternative, which could misclassify an
+  // unrelated error carrying similar wording as a deployment-sequencing
+  // condition. Do not reintroduce PGRST202 or any other code here without a
+  // separate contract correction and supervisor review.
   function isMissingCompatFunction(error) {
-    return !!error && (
-      error.code === '42883'
-      || /function .* does not exist/i.test(error.message || '')
-    );
+    return !!error && error.code === '42883';
   }
 
   // Defensive detection for the db/75 protected-mutation-guard error a
@@ -147,7 +216,14 @@
       if (isMissingCompatFunction(res.error)) {
         return { outcome: 'legacy_fallback', error: res.error };
       }
-      return { outcome: 'hard_failure', error: res.error };
+      // Every other RPC-call-level error (network failure, timeout, aborted
+      // response, connection drop) — db/76's own outer EXCEPTION WHEN OTHERS
+      // guarantees the function never raises for a business-logic condition,
+      // so an error at this layer means the call never completed and the
+      // server's commit status is unknown. Fail closed (no flat fallback);
+      // the caller must retain the same attempt for a retry of unchanged
+      // intent (createAttemptTracker() above).
+      return { outcome: 'ambiguous_failure', error: res.error };
     }
     const result = res.data;
     if (isCanonicalWriterInactiveResult(result)) {
@@ -156,11 +232,12 @@
     if (result && result.ok === true) {
       return { outcome: 'canonical_success', result };
     }
-    // Every other { ok:false, codigo:... } — sem_permissao, estado_invalido,
-    // mapeamento_compat_ausente, decremento_exige_admin,
-    // reducao_abaixo_saldo_importado, excede_estornavel,
-    // kg_absoluto_invalido, idempotencia_conflitante, erro_interno, or any
-    // unrecognized code — fails closed. Never classified as inactive.
+    // A JSONB envelope was received — the request completed
+    // deterministically. Every other { ok:false, codigo:... } — sem_permissao,
+    // estado_invalido, mapeamento_compat_ausente, decremento_exige_admin,
+    // reducao_abaixo_saldo_importado, excede_estornavel, kg_absoluto_invalido,
+    // idempotencia_conflitante, erro_interno, or any unrecognized code —
+    // fails closed. Never classified as inactive or ambiguous.
     return { outcome: 'hard_failure', result };
   }
 
@@ -168,6 +245,7 @@
   window.RAVATEX_SCREENS.ordemCompraReceiptCutover = {
     newIdempotencyToken,
     createReceiptAttempt,
+    createAttemptTracker,
     isCanonicalReaderInactive,
     isCanonicalWriterInactiveResult,
     isMissingCompatFunction,

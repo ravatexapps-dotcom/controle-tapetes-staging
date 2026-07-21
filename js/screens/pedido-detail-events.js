@@ -1291,13 +1291,24 @@
         return opIds.indexOf(ordem.op_id) !== -1;
       });
       var dataInput = window.textInput({ type: 'date', value: new Date().toISOString().slice(0, 10) });
+      // PHASE-C3C-B §34: each line owns its own idempotency-attempt
+      // tracker, alive for the modal's lifetime (linhas is built once when
+      // the form opens; onSave may run multiple times against the same
+      // array on retry) — a retry of unchanged intent (same order, same
+      // requested absolute kg, same date) after an ambiguous transport
+      // failure reuses that line's token; any deterministic outcome closes
+      // it.
+      var cutoverForTracker = window.RAVATEX_SCREENS && window.RAVATEX_SCREENS.ordemCompraReceiptCutover;
       var linhas = ordens.map(function (ordem) {
         var recebido = ns.toFiniteNumber(ordem.kg_recebido);
         var pedido = ns.toFiniteNumber(ordem.kg_pedido);
         var saldo = ns.round2(Math.max(pedido - recebido, 0));
         var input = window.textInput({ type: 'number', step: '0.01', value: saldo > 0 ? String(saldo) : '0' });
         input.disabled = saldo <= 0;
-        return { ordem: ordem, input: input, saldo: saldo, recebido: recebido, pedido: pedido };
+        return {
+          ordem: ordem, input: input, saldo: saldo, recebido: recebido, pedido: pedido,
+          attemptTracker: cutoverForTracker ? cutoverForTracker.createAttemptTracker() : null,
+        };
       });
       return {
         node: window.el('div', {},
@@ -1341,17 +1352,24 @@
             }
             changed = true;
             var total = ns.round2(linhas[i].recebido + qtd);
+            var tracker = linhas[i].attemptTracker;
+            var attempt = tracker
+              ? tracker.resolveAttempt({ ordemId: linhas[i].ordem.id, kg: total, dataRec: dataInput.value })
+              : undefined;
             var res = await window.registrarRecebimentoOrdemFio({
               ordemId: linhas[i].ordem.id,
               kgRecebido: total,
               dataRecebimento: dataInput.value,
               status: total < linhas[i].pedido ? 'recebido_parcial' : 'recebido_total',
+              attempt: attempt,
             });
             if (res && res.error) {
               window.toast('Erro ao registrar recebimento de fio.', 'error');
               console.error(res.error);
+              if (tracker && !res.ambiguous) tracker.complete();
               return false;
             }
+            if (tracker) tracker.complete();
           }
           if (!changed) {
             window.toast('Informe ao menos uma quantidade de fio.', 'error');

@@ -8,6 +8,46 @@
 > `PROJECT_STATE.md`. Phase sequence, dependencies, backlog items, and accepted
 > architecture in this file remain authoritative; live operational status does not.
 
+# Update 2026-07-20 - PHASE-C3C-B Supervisor-Review Correction (Idempotency Retention + Exact 42883)
+
+Phase: `PHASE-C3C-B` (application compatibility/adaptation).
+Type: local JS correction, no database/environment/migration-file change.
+
+A supervisor review of the implementation at commit `ee5e87cd90f9e418925a99d6d51ad43cd38bedf0`
+returned `CHANGES_REQUIRED` for two blocking defects, corrected in commit
+`fix: preserve C3C-B receipt idempotency attempts`
+(`docs/architecture/ORDEM_COMPRA_C3C_B_PHASE_CONTRACT.md` §34):
+
+1. Real receipt UI closures created a new idempotency attempt on every
+   invocation instead of retaining one across a retry of unchanged intent.
+   `js/screens/ordem-compra-receipt-cutover.js` gained `createAttemptTracker()`
+   (intent-aware retention: same intent + a prior ambiguous transport failure
+   reuses the token; a changed field or any deterministic outcome mints a new
+   one); `js/screens/op-writes.js`'s `registrarRecebimentoOrdemFio` now
+   accepts a caller-owned `attempt` and reports `ambiguous` so the caller
+   knows whether to retain or close its tracker; the real call-sites
+   (`js/screens/op-writes.js`'s own internal fallback creation,
+   `js/screens/fornecedor.js`'s independent writer, `js/screens/op-nova.js`'s
+   `buildOrdemPendenteRow`, `js/screens/pedido-detail-events.js`'s
+   per-line `buildInsumosTransferForm`) now each own and pass their tracker.
+2. `isMissingCompatFunction` accepted a message-text alternative
+   (`/function .* does not exist/i`) beyond the contracted exact `42883`
+   SQLSTATE; the alternative was removed — only `error.code === '42883'`
+   now classifies as the bounded missing-function fallback.
+
+Full mandatory Node suite (3985 tests, +25 from this correction's own
+tests) has a 122-failure set — 2 fewer than the 124-failure baseline (both
+incidental fixes of pre-existing CRLF-unaware regex assertions in
+`tests/pedido-detail.smoke.js` sharing a string this correction's test edit
+also touched, not an intentional scope change); every other failure is the
+same pre-existing, unrelated set — zero regressions attributable to this
+correction; `validate-spec-custody` PASS; `git diff --check` clean.
+`STATUS: IMPLEMENTED / LOCALLY VERIFIED / AWAITING SUPERVISOR ACCEPTANCE`
+(contract §34) — unchanged; this correction does not record supervisor
+acceptance. No dependent `OC-C3-*` requirement is `SATISFIED`. Next
+authorizable action: supervisor review/acceptance of this corrected
+implementation.
+
 # Update 2026-07-20 - PHASE-C3C-B Application-Adapter Implementation
 
 Phase: `PHASE-C3C-B` (application compatibility/adaptation).

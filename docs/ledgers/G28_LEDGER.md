@@ -5808,3 +5808,72 @@ MATERIAL_DIVERGENCES: NONE
   acceptance does staging validation/application of `db/76`, C3D, cutover,
   C4, C5, production access, or any further push beyond the one authorized
   `staging/dev` fast-forward become authorizable.
+
+## 2026-07-20 — PHASE-C3C-B SUPERVISOR-REVIEW CORRECTION — IMPLEMENTED / LOCALLY VERIFIED / AWAITING SUPERVISOR ACCEPTANCE
+
+- **Order:** targeted correction of `PHASE-C3C-B` following supervisor
+  verdict `CHANGES_REQUIRED` on the implementation and push at commit
+  `ee5e87cd90f9e418925a99d6d51ad43cd38bedf0`
+  (`docs/architecture/ORDEM_COMPRA_C3C_B_PHASE_CONTRACT.md` §34). Two
+  blocking defects, both within the already-authorized `PHASE-C3C-B` scope;
+  no new phase, no C3D, no database/environment action.
+- **Entry checkpoint:** branch `dev`, HEAD `ee5e87cd90f9e418925a99d6d51ad43cd38bedf0`,
+  remote `staging/dev` equal, preserved residue modified `.gitignore` only
+  (plus untracked `.mcp.json`, never staged).
+- **Blocking defect 1 (idempotency retention):** real receipt UI closures
+  (`op-writes.js`, `fornecedor.js`, `op-nova.js`, `pedido-detail-events.js`)
+  created a new idempotency attempt on every invocation instead of a real UI
+  closure owning and retaining one across a retry of unchanged intent.
+  Corrected via a new `createAttemptTracker()` in
+  `js/screens/ordem-compra-receipt-cutover.js` (intent-aware retention: same
+  intent + a prior ambiguous transport failure reuses the token; a changed
+  field or any deterministic outcome mints a new one; token remains random,
+  intent is used only to decide reuse); `registrarRecebimentoOrdemFio` now
+  accepts a caller-owned `attempt` and reports `ambiguous` in its return
+  shape; all four real call-sites now own and pass their tracker.
+- **Blocking defect 2 (exact 42883):** `isMissingCompatFunction` accepted a
+  message-text alternative beyond the contracted exact `42883` SQLSTATE.
+  Corrected to `error.code === '42883'` only.
+- **Files changed (product):** `js/screens/ordem-compra-receipt-cutover.js`
+  (179→257), `js/screens/op-writes.js` (133→155), `js/screens/fornecedor.js`
+  (583→599), `js/screens/op-nova.js` (1493→1511),
+  `js/screens/pedido-detail-events.js` (2691→2709 — this file's first growth
+  under `PHASE-C3C-B`, explicitly authorized by the correction order for
+  this narrow purpose only). No other product path touched.
+- **Files changed (tests):** `tests/ordem-compra-receipt-cutover.smoke.js`,
+  `tests/op-writes.smoke.js`, `tests/op-nova.smoke.js`,
+  `tests/fornecedor-screens.smoke.js`, `tests/pedido-detail.smoke.js` (the
+  last one statically only — no runtime harness exists for
+  `openMovementModal`'s bespoke overlay in this suite). No other test file
+  touched.
+- **Validation:** `node --check` clean on all corrected files;
+  `node --test` on each corrected/new test file passes except the same
+  pre-existing, unrelated failures already on record; full mandatory Node
+  suite (`node --test "tests/**/*.js"`) — 3985 tests (+25 from this
+  correction's own tests), 3863 pass, 122 fail — the 122 failing names are a
+  strict **subset** of the prior 124-name baseline (two incidental fixes of
+  pre-existing CRLF-unaware regex assertions in
+  `tests/pedido-detail.smoke.js` that shared a string this correction's own
+  test edit also touched — disclosed, not hidden, not an intentional scope
+  change) — **zero regressions attributable to this correction**;
+  `node scripts/validate-spec-custody.mjs` PASS; `git diff --check` /
+  `git diff --cached --check` clean.
+- **Findings:** none new; residual debts carried forward unchanged from the
+  prior closeout, plus one new disclosed item — `pedido-detail-events.js`'s
+  retry behavior is proven statically, not via a real runtime click (no
+  existing harness for its bespoke modal), while the identical underlying
+  mechanism is fully runtime-proven at the other two real call-sites and at
+  the adapter level.
+- **State after this pass:** `LAST_ACCEPTED_PHASE: PHASE-C3C-B-DB-PREREQ`
+  (unchanged). `ACTIVE_PHASE: NONE`. `ACTIVE_PHASE_CONTRACT: NONE`.
+  `PHASE-C3C-B: IMPLEMENTED / LOCALLY VERIFIED / AWAITING SUPERVISOR
+  ACCEPTANCE` — unchanged; this correction does **not** record supervisor
+  acceptance. No dependent `OC-C3-*` requirement is `SATISFIED`.
+- **Exact accounting subject:** `fix: preserve C3C-B receipt idempotency
+  attempts`.
+- **NEXT_AUTHORIZABLE_ACTION:** supervisor review/acceptance of this
+  corrected `PHASE-C3C-B` application-adapter implementation. Deployment,
+  activation, real snapshot/import, fence transition, read switch, final
+  ACL-closure invocation, cutover, C3D, C4, C5, production access, `main`,
+  and `origin`/`production` remote mutation remain unauthorized; one
+  fast-forward push to `staging/dev` records this closeout.
