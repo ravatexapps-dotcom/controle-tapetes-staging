@@ -43,8 +43,10 @@ ACCEPTED_CHECKPOINT: 3405fdab8e05ec0f81cbfe07c63c489e551fee92
   **technical** checkpoint `289b0cca66e9c057330a882f69da3476adf90469`
   (`docs/architecture/ORDEM_COMPRA_C4_PHASE_CONTRACT.md` §0d). `OC-C4-ADMIN-001`
   is `SATISFIED`. `ACTIVE_PHASE`/`ACTIVE_PHASE_CONTRACT` were `NONE` at that
-  point (they are now `PHASE-C5` / `docs/architecture/ORDEM_COMPRA_C5_PHASE_CONTRACT.md`
-  — see the bootstrap block and the tail of this section, which are current).
+  point; they subsequently became `PHASE-C5` /
+  `docs/architecture/ORDEM_COMPRA_C5_PHASE_CONTRACT.md` during `PHASE-C5` and
+  are now `NONE` again after the accepted `PHASE-C5` closeout — see the
+  bootstrap block for current state.
   See the `C4-CLOSEOUT-AND-C5-CONTRACT-R1` bullet below for the full closeout
   record.
 - **Prior accepted material phase:** `PHASE-C3D` (inactive deployment &
