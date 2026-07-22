@@ -9019,3 +9019,113 @@ product file they depend on, was modified by this pass or the prior one):
   chains automatically. This closeout published exactly one documentation-only
   commit through one authorized fast-forward push to `staging/dev`; no further
   push is authorized.
+
+## 2026-07-22 — CLEAN-SLATE-TRANSACTIONAL-RESET-CONTRACT-R1 — Binding clean-slate business-owner ruling recorded; proposed reset contract authored — PROPOSED / AWAITING SUPERVISOR REVIEW / DESTRUCTIVE EXECUTION NOT AUTHORIZED
+
+- **Order:** `CLEAN-SLATE-TRANSACTIONAL-RESET-CONTRACT-R1` — read-only repository +
+  read-only shared-development database + documentation-only destructive-reset
+  contract authoring + one-time fast-forward push. Entry checkpoint HEAD
+  `56f749812c693cea3c81518a139d174e958fbbbf` (parent
+  `5aaea4b9709a33a1514ea737f4a8bfae50b835ef`); `staging/dev` equal to HEAD;
+  divergence 0/0; empty index; only protected residue (`M .gitignore`,
+  `?? .codex/config.toml`, `?? .mcp.json`). Historical record — live state belongs
+  to `PROJECT_STATE.md`.
+- **Binding business-owner ruling:** `CLEAN_SLATE_OPERATIONAL_REBUILD` = **APPROVED
+  AS TARGET STRATEGY**. The current operational transaction corpus in the
+  non-production shared development database `ucrjtfswnfdlxwtmxnoo` does **not** need
+  to survive as live business data; the **approximately two** real business flows
+  will be recreated manually through the new application in the canonical order
+  Pedido → purchasing needs → purchase orders → OPs → subsequent operational
+  updates. The 13 unmapped legacy rows ids `153`–`165`, the 51 mapped legacy rows,
+  and their native projections carry **no** preservation obligation. The prior
+  legacy-data preservation/mapping strategy (incl. the 51-row
+  `ordem_compra_item_compat_fio` bridge and the deferred 13-row mapping/backfill
+  options) is **SUPERSEDED as the target strategy** — not deleted or rewritten.
+  Master/reference data is **preserved by default**.
+- **Database identity (read-only):** project `ucrjtfswnfdlxwtmxnoo` (non-production
+  shared development), PostgreSQL 17.6, `current_database=postgres`, role
+  `postgres`, `session_replication_role=origin`, terminal migration
+  `20260722055832` (`77_ordem_compra_c5a_emission_readiness`), cutover singleton
+  `legacy_active` / `flat` / `not_started` with every snapshot/import/PONR/ACL/
+  activation marker NULL, `source_snapshot`/`inventory_baseline` 0 rows. Production
+  `gqmpsxkxynrjvidfmojk` and the legacy project were never accessed. Only
+  independently read-only statements were issued (`SELECT`/`WITH … SELECT`/
+  `information_schema`/`pg_catalog`); zero `INSERT`/`UPDATE`/`DELETE`/`TRUNCATE`/
+  DDL/`CALL`/`DO`/writer-RPC/temp-table/lock.
+- **Row-count baseline (exact, read-only):** `ordens_compra_fio` 64 (51 mapped +
+  13 unmapped ids 153–165); `necessidade_compra_fio` 64 (all legacy-origin);
+  `ordem_compra`/`ordem_compra_item`/`ordem_compra_item_alocacao`/
+  `ordem_compra_item_compat_fio` 51 each; `ordem_compra_recebimentos`/
+  `ordem_compra_eventos`/`ordem_compra_fio_lancamentos`/
+  `ordem_compra_fio_movimentos_estoque`/`ordem_compra_distribuicao_comandos` all 0;
+  `ordem_compra_cutover` 1 (pristine pre-cutover); `pedidos` 16, `pedido_itens` 18,
+  `ops` 20, `op_itens` 27, `op_fornecedores` 16, `op_eventos` 4, `op_numeros` 2,
+  `lotes` 25, `saldo_fios` 5, `saldo_fios_op` 0; documents front `document_candidates`
+  40, `document_events` 1, `document_link_revisions` 8 (1 Pedido), `document_link_revision_ops`
+  10 (4 OPs), `document_scan_requests` 24, `document_scan_runs` 30; preserved master
+  data `clientes` 6, `fornecedores` 6, `cores` 6, `modelos` 12, `usuarios` 10,
+  `parametros_largura` 2, `ordem_compra_config` 1.
+- **Authored:** `docs/architecture/CLEAN_SLATE_TRANSACTIONAL_RESET_PHASE_CONTRACT.md`
+  (`PHASE_ID: CLEAN-SLATE-TRANSACTIONAL-RESET`, `STATUS: PROPOSED / AWAITING
+  SUPERVISOR REVIEW / DESTRUCTIVE EXECUTION NOT AUTHORIZED`) with all 21 required
+  parts: the binding ruling; scope; preserved master-data boundary; the complete
+  FK/logical-dependency inventory and per-table classification (`PRESERVE_MASTER_DATA`
+  / `PURGE_OPERATIONAL_SOURCE` / `PURGE_OPERATIONAL_DERIVED` / `RESET_CUTOVER_METADATA`
+  / `UNPROVEN`); the row-count baseline; the exact dependency-safe deletion order
+  (Boundary A = the self-contained 332-row yarn-purchasing corpus; Boundary B =
+  `pedidos`/`ops`/`lotes`, only if separately authorized); the mandatory out-of-repo
+  archival evidence plan; the destructive-execution design (single serialized
+  transaction, `DELETE` not `TRUNCATE`, run only while `legacy_active`, no default
+  sequence reset); the sequence policy; the cutover-state strategy (recommended
+  **Option C** — remain `legacy_active`; `db/75`'s 51/39/44/20221.280/405.980
+  constants become SUPERSEDED and a future `REAL_CUTOVER` needs a re-baselined
+  migration); rollback/recovery; the reset PONR (the reset transaction commit,
+  distinct from `OC-CUTOVER-PONR-001`); hard stops; the validation matrix; the
+  evidence packet; the exact future file/migration manifest (**one-time governed
+  administrative operation, not a `db/NN` migration, not the dashboard**); explicit
+  exclusions; the `PHASE-C5B` boundary/sequencing; the production prohibition; and
+  the supervisor decisions still required.
+- **Material entanglement surfaced:** Boundary B deletion of the commercial
+  `pedidos`/`ops` collides with the **binding Controlled-Delete × document-history
+  rule** — 1 Pedido carries `document_link_revisions` (RESTRICT) and 4 OPs carry
+  `document_link_revision_ops` (RESTRICT) — and with the separate documents front;
+  classified `UNPROVEN`, requiring an explicit business-owner disposition before
+  Boundary B.
+- **Former 13-row gate consequence:** `STILL_APPLICABLE_UNTIL_RESET_EXECUTION_COMPLETES`
+  then `SUPERSEDED_BY_CLEAN_SLATE_RESET` — reset execution is the §Z.3 disposition
+  option 3 (cancellation/removal via a separately authorized business-data action)
+  applied to all 64 rows. `OC-CUTOVER-001` stays `PLANNED`; `REAL_CUTOVER` stays
+  `NOT AUTHORIZED` (this pass changes no requirement disposition).
+- **`PHASE-C5B` sequencing:** corpus-independent; not a prerequisite of and not
+  blocked by the reset; best sequenced after the reset and after the two real flows
+  are recreated (with `ordem_compra_config.exige_aceite` preserved FALSE, the
+  recreated flows do not require an acceptance decision).
+- **Documentation manifest (exactly the authorized owners):**
+  `docs/architecture/CLEAN_SLATE_TRANSACTIONAL_RESET_PHASE_CONTRACT.md` (new),
+  `PROJECT_STATE.md`, `AGENT_HANDOFF.md`, `docs/DOCUMENTATION_INDEX.md`,
+  `docs/architecture/ORDEM_COMPRA_C3_TRACEABILITY.md`,
+  `docs/architecture/PEDIDO_PRODUCTION_FLOW_BACKLOG.md`, and this ledger. No
+  product, test, script, migration, `db/*.sql`, configuration, or protected-residue
+  change; no database mutation; no deletion; no phase activated.
+- **Validation:** `node scripts/validate-spec-custody.mjs` PASS; `--self-test`
+  PASS (`ACTIVE_PHASE`/`ACTIVE_PHASE_CONTRACT` are `NONE`); `git diff --check` /
+  `--cached --check` clean; protected residue unchanged.
+- **Exact accounting subject:** `docs: define clean-slate transactional reset contract`
+- **Canonical state after this commit:**
+  ```text
+  LAST_ACCEPTED_PHASE = PHASE-C5
+  ACTIVE_PHASE = NONE
+  ACTIVE_PHASE_CONTRACT = NONE
+  ACTIVE_TRACK = PURCHASE_ORDER_PHASE_C
+  ACCEPTED_CHECKPOINT = 3405fdab8e05ec0f81cbfe07c63c489e551fee92
+
+  CLEAN-SLATE-TRANSACTIONAL-RESET = PROPOSED / AWAITING SUPERVISOR REVIEW / DESTRUCTIVE EXECUTION NOT AUTHORIZED
+  PHASE-C5B-ACCEPTANCE-DECISION = IDENTIFIED / NOT AUTHORIZED
+  REAL_CUTOVER = NOT AUTHORIZED
+  ```
+- **Próxima fase indicada / NEXT_AUTHORIZABLE_ACTION:** direct supervisor review of
+  the proposed `CLEAN-SLATE-TRANSACTIONAL-RESET` contract. No deletion, database
+  mutation, reset execution, phase activation, or continuation is authorized; no
+  phase chains automatically. This pass published exactly one documentation-only
+  commit through one authorized fast-forward push to `staging/dev`; no further push
+  is authorized.

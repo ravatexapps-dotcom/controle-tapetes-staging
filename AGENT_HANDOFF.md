@@ -40,6 +40,45 @@
   narratives) are **historical, point-in-time records** — the same history is
   preserved in `docs/ledgers/G28_LEDGER.md`; live current state is owned solely
   by `PROJECT_STATE.md`.
+- **`CLEAN-SLATE-TRANSACTIONAL-RESET-CONTRACT-R1` (this pass, read-only diagnosis
+  + documentation-only proposed-contract authoring):** the business owner ruled
+  **`CLEAN_SLATE_OPERATIONAL_REBUILD` = APPROVED AS TARGET STRATEGY** — the current
+  operational transaction corpus in the shared-development database need not survive
+  as live business data; the ~2 real flows (Pedido → purchasing needs → purchase
+  orders → OPs → operational updates) will be recreated through the new application.
+  Authored `docs/architecture/CLEAN_SLATE_TRANSACTIONAL_RESET_PHASE_CONTRACT.md`
+  (`PHASE_ID: CLEAN-SLATE-TRANSACTIONAL-RESET`, `STATUS: PROPOSED / AWAITING
+  SUPERVISOR REVIEW / DESTRUCTIVE EXECUTION NOT AUTHORIZED`) from a read-only
+  diagnosis of `ucrjtfswnfdlxwtmxnoo` (PostgreSQL 17.6, terminal migration
+  `20260722055832`, entry checkpoint `56f749812c693cea3c81518a139d174e958fbbbf`):
+  the binding ruling, the full FK/dependency inventory, the exact row-count baseline
+  (`ordens_compra_fio` 64 = 51 mapped + 13 unmapped ids 153–165; native layers 51
+  each; ledgers/receipts/events/movements 0; cutover `legacy_active`/`flat`/
+  `not_started`, all markers NULL), the per-table classification, the exact
+  dependency-safe deletion order (Boundary A = 332-row yarn-purchasing corpus;
+  Boundary B = `pedidos`/`ops`/`lotes` only if separately authorized), the mandatory
+  out-of-repo archival plan, the destructive design (single transaction, `DELETE`
+  not `TRUNCATE`, run only under `legacy_active`, no sequence reset by default), the
+  recommended **Option C** cutover strategy (remain `legacy_active`; `db/75`'s
+  51/39/44/20221.280/405.980 constants superseded, future `REAL_CUTOVER` needs a
+  re-baselined migration), and the mutation mechanism (**one-time governed
+  administrative operation, not a `db/NN` migration, not the dashboard**). Master/
+  reference data is preserved by default. The prior legacy-data mapping strategy is
+  **superseded as the target**, not deleted. The former 13-row `REAL_CUTOVER`
+  completeness gate is `STILL_APPLICABLE_UNTIL_RESET_EXECUTION_COMPLETES` then
+  `SUPERSEDED_BY_CLEAN_SLATE_RESET`. `PHASE-C5B` is corpus-independent (sequence
+  after the reset + real-flow recreation). **Binding entanglement:** Boundary B
+  deletion of `pedidos`/`ops` collides with the Controlled-Delete × document-history
+  rule (1 Pedido + 4 OPs) and the separate documents front — `UNPROVEN`, needing an
+  explicit business-owner disposition. **No deletion, database mutation, migration,
+  cutover, activation, or environment change occurred; the 64/51/13 corpus physically
+  exists; `REAL_CUTOVER` and `PHASE-C5B-ACCEPTANCE-DECISION` remain unauthorized;
+  execution requires a separate explicit order.** Documentation-only, seven authorized
+  owners; `LAST_ACCEPTED_PHASE` stays `PHASE-C5`; `ACTIVE_PHASE`/`ACTIVE_PHASE_CONTRACT`
+  stay `NONE`; one commit + one authorized `staging/dev` fast-forward push. **Next
+  authorizable action: direct supervisor review of the proposed
+  `CLEAN-SLATE-TRANSACTIONAL-RESET` contract** — no deletion, reset execution, phase
+  activation, or continuation is authorized.
 - **Prior accepted product phase:** `PHASE-C3C-B` (application compatibility/
   adaptation) — `CLOSED / ACCEPTED_WITH_NONBLOCKING_DEBT / LOCALLY VERIFIED`
   (2026-07-21), accepted checkpoint `22bfb192c6c2ad10ccd2b2883d54c3a17e40cc9f`

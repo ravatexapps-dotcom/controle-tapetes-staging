@@ -15,7 +15,7 @@ ACCEPTED_C3D_SUBLOTS: PHASE-C3D-A (096cd60325e4987010d328c856ee6a3a51ca66bf), PH
 ACCEPTED_C4: PHASE-C4 (289b0cca66e9c057330a882f69da3476adf90469) — CLOSED / ACCEPTED_WITH_NONBLOCKING_DEBT / DIRECTLY VERIFIED / ARCHITECT VISUAL VALIDATION PASSED (supervisor acceptance + mandatory architect visual validation, C4-CLOSEOUT-AND-C5-CONTRACT-R1 contract §0d, 2026-07-21; disposition restated per the direct-review ruling of C5-AMBIGUOUS-RELOAD-AND-CANONICAL-STATE-CORRECTION-R1, 2026-07-22, which additionally recorded the nonblocking ORDEM_COMPRA_RECEIPT_HARD_FAILURE_RAW_MESSAGE_EXPOSURE debt, not corrected), advancing OC-C4-ADMIN-001 to SATISFIED
 ACCEPTED_C5A: PHASE-C5A-DB-EMISSION-READINESS (implementation e7a8b76152f986c83e4ecfe9827346a4efa5ef08, shared-development validation d17b353ed3eca04225a7decb55f84ccd5817d085) — CLOSED / ACCEPTED / DIRECTLY VERIFIED / SHARED-DEVELOPMENT STATE VERIFIED (supervisor closeout, C5A-CLOSEOUT-AND-C5-AUTHORIZATION-R1, contract §25, 2026-07-22; disposition restated per the direct-review ruling of C5-AMBIGUOUS-RELOAD-AND-CANONICAL-STATE-CORRECTION-R1, 2026-07-22); db/77 grants EXECUTE on emitir_ordem_compra(BIGINT) to authenticated (is_admin() gate unchanged, writer body byte-unchanged) and corrects obter_ordem_compra_admin/listar_ordens_compra_admin readiness derivation; applied byte-identical to ucrjtfswnfdlxwtmxnoo with the full contract §14 shared-environment evidence; resolved the PHASE-C5 §5/§18.2 BLOCKING_DATABASE_PREREQUISITE
 ACCEPTED_C5: PHASE-C5 (3405fdab8e05ec0f81cbfe07c63c489e551fee92) — CLOSED / ACCEPTED_WITH_NONBLOCKING_DEBT / DIRECTLY VERIFIED / ARCHITECT VISUAL VALIDATION PASSED (supervisor acceptance of the targeted-correction commit, C5-DOCUMENTATION-CLOSEOUT-R1, contract §25, 2026-07-22; over the C5-PURCHASE-ORDER-EMISSION-UI-IMPLEMENTATION-R1 implementation and the C5-AMBIGUOUS-RELOAD-AND-CANONICAL-STATE-CORRECTION-R1 targeted correction). PHASE-C5 FUNCTIONAL GATE = PASS (the blocking defect C5_AMBIGUOUS_EMISSION_RELOAD_FALSE_DRAFT_ASSERTION is resolved); PHASE-C5 VISUAL REVIEW = PASS_WITH_NONBLOCKING_COSMETIC_DEBT; advancing OC-C5-EMISSION-001 to SATISFIED
-NEXT_AUTHORIZABLE_ACTION: supervisor read-only sequencing decision between the remaining separately governed continuations — PHASE-C5B-ACCEPTANCE-DECISION (IDENTIFIED / NOT AUTHORIZED) and the REAL_CUTOVER completeness disposition for the 13 unmapped ordens_compra_fio rows ids 153–165. PHASE-C5 is CLOSED / ACCEPTED_WITH_NONBLOCKING_DEBT / DIRECTLY VERIFIED / ARCHITECT VISUAL VALIDATION PASSED at accepted technical checkpoint 3405fdab8e05ec0f81cbfe07c63c489e551fee92 (OC-C5-EMISSION-001 SATISFIED); ACTIVE_PHASE/ACTIVE_PHASE_CONTRACT are NONE. This closeout authorizes neither continuation's implementation; no phase chains automatically. PHASE-C5B-ACCEPTANCE-DECISION, any shared-database apply beyond db/77, staging validation/application of db/76 or db/77, deployment, activation, production access, branch creation, and the REAL_CUTOVER window (OC-CUTOVER-001/OC-CUTOVER-PONR-001, hard-gated behind the mandatory separate read-only completeness disposition of the 13 unmapped rows ids 153–165) remain unauthorized; no push beyond the one authorized staging/dev fast-forward for this closeout's single documentation-only commit
+NEXT_AUTHORIZABLE_ACTION: direct supervisor review of the proposed CLEAN-SLATE-TRANSACTIONAL-RESET contract (docs/architecture/CLEAN_SLATE_TRANSACTIONAL_RESET_PHASE_CONTRACT.md, PROPOSED / AWAITING SUPERVISOR REVIEW / DESTRUCTIVE EXECUTION NOT AUTHORIZED), authored by CLEAN-SLATE-TRANSACTIONAL-RESET-CONTRACT-R1 (2026-07-22, read-only diagnosis of ucrjtfswnfdlxwtmxnoo + documentation-only authoring, entry checkpoint 56f749812c693cea3c81518a139d174e958fbbbf) recording the binding CLEAN_SLATE_OPERATIONAL_REBUILD business-owner ruling. The prior legacy-data preservation/mapping strategy is SUPERSEDED as the target strategy; the current operational transaction corpus is declared disposable as live data and will be recreated (~2 real flows) through the new application. No deletion or database mutation occurred; the 64/51/13 corpus physically exists (ordens_compra_fio 64 = 51 mapped + 13 unmapped ids 153–165; cutover legacy_active/flat/not_started, all markers NULL). The former 13-row REAL_CUTOVER completeness gate is STILL_APPLICABLE_UNTIL_RESET_EXECUTION_COMPLETES then SUPERSEDED_BY_CLEAN_SLATE_RESET; OC-CUTOVER-001 stays PLANNED and REAL_CUTOVER stays NOT AUTHORIZED (this pass changes no requirement disposition). This pass authorizes neither the reset nor any continuation; no phase chains automatically. The clean-slate reset execution, PHASE-C5B-ACCEPTANCE-DECISION, any shared-database apply beyond db/77, staging validation/application of db/76 or db/77, deployment, activation, production access, branch creation, and the REAL_CUTOVER window (OC-CUTOVER-001/OC-CUTOVER-PONR-001) remain unauthorized; no push beyond the one authorized staging/dev fast-forward for this pass's single documentation-only commit
 VALIDATION_ACCOUNTING_SUBJECT: fix: harden spec custody validation
 VALIDATION_ACCOUNTING_SUBJECT_R2: fix: reject detached spec custody rows
 VALIDATION_ACCOUNTING_SUBJECT_R3: fix: distinguish prose from detached tables
@@ -45,6 +45,7 @@ VALIDATION_ACCOUNTING_SUBJECT_R26: docs: accept C5A emission database readiness 
 VALIDATION_ACCOUNTING_SUBJECT_R27: db: add C5A emission readiness
 VALIDATION_ACCOUNTING_SUBJECT_R28: docs: record C5A shared development validation
 VALIDATION_ACCOUNTING_SUBJECT_R29: docs: close C5A and authorize C5 implementation
+VALIDATION_ACCOUNTING_SUBJECT_R30: docs: define clean-slate transactional reset contract
 ```
 
 ## Accepted foundation
@@ -459,3 +460,31 @@ SUPERVISOR REVIEW / IMPLEMENTATION NOT AUTHORIZED`); supervisor review and
 acceptance/rejection of that contract is the next authorizable action;
 `PHASE-C4` implementation, `PHASE-C5`, and `REAL_CUTOVER` remain
 unauthorized.
+
+`docs/architecture/CLEAN_SLATE_TRANSACTIONAL_RESET_PHASE_CONTRACT.md`
+(`PHASE_ID: CLEAN-SLATE-TRANSACTIONAL-RESET`, authored by
+`CLEAN-SLATE-TRANSACTIONAL-RESET-CONTRACT-R1`, docs-only read-only diagnosis of
+`ucrjtfswnfdlxwtmxnoo`, 2026-07-22) is a **proposed** contract (`STATUS: PROPOSED
+/ AWAITING SUPERVISOR REVIEW / DESTRUCTIVE EXECUTION NOT AUTHORIZED`). It records
+the binding `CLEAN_SLATE_OPERATIONAL_REBUILD` business-owner ruling, a complete
+read-only FK/dependency inventory and exact row-count baseline of the operational
+transaction domain, a per-table classification, the exact dependency-safe deletion
+order (Boundary A = the 332-row yarn-purchasing corpus; Boundary B =
+`pedidos`/`ops`/`lotes`, only if separately authorized), a mandatory out-of-repo
+archival evidence plan, the destructive-execution design (single transaction,
+`DELETE` not `TRUNCATE`, run only under `legacy_active`, no default sequence reset,
+a one-time governed administrative operation — not a `db/NN` migration, not the
+dashboard), the recommended Option C cutover strategy, the `PHASE-C5B` sequencing,
+hard stops, and validation/evidence matrices. It **introduces no requirement ID
+and changes no disposition in the matrix above**: the former 13-row completeness
+gate is dispositioned `STILL_APPLICABLE_UNTIL_RESET_EXECUTION_COMPLETES` then
+`SUPERSEDED_BY_CLEAN_SLATE_RESET`, so `OC-CUTOVER-001` stays `PLANNED` and
+`REAL_CUTOVER` stays `NOT AUTHORIZED` (the reset would be `§Z.3` disposition
+option 3 applied to all 64 rows, executed only under a separate order). No
+deletion, database mutation, migration, cutover, activation, or environment change
+occurred; the 64/51/13 corpus physically exists. Boundary B collides with the
+binding Controlled-Delete × document-history rule (1 Pedido + 4 OPs) and the
+separate documents front — recorded `UNPROVEN`, requiring an explicit
+business-owner disposition. `PROJECT_STATE.md` remains the sole owner of
+`ACTIVE_PHASE`/`ACTIVE_PHASE_CONTRACT` (both `NONE`); this contract is **not
+active** and authorizes no implementation.

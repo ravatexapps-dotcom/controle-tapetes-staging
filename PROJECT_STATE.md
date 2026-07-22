@@ -20,7 +20,7 @@ LAST_ACCEPTED_PHASE: PHASE-C5
 ACTIVE_PHASE: NONE
 ACTIVE_PHASE_CONTRACT: NONE
 ACTIVE_TRACK: PURCHASE_ORDER_PHASE_C
-NEXT_AUTHORIZABLE_ACTION: supervisor read-only sequencing decision between the two remaining separately governed continuations — PHASE-C5B-ACCEPTANCE-DECISION (IDENTIFIED / NOT AUTHORIZED) and the REAL_CUTOVER completeness disposition for the 13 unmapped ordens_compra_fio rows ids 153–165. This closeout (C5-DOCUMENTATION-CLOSEOUT-R1, 2026-07-22) recorded direct supervisor acceptance of the PHASE-C5 targeted-correction commit 3405fdab8e05ec0f81cbfe07c63c489e551fee92 (fix: preserve uncertainty after unresolved emission reload; ACCEPTED_WITH_NONBLOCKING_DOCUMENTARY_DEBT): the blocking defect C5_AMBIGUOUS_EMISSION_RELOAD_FALSE_DRAFT_ASSERTION is resolved, PHASE-C5 FUNCTIONAL GATE = PASS, PHASE-C5 VISUAL REVIEW = PASS_WITH_NONBLOCKING_COSMETIC_DEBT, and PHASE-C5 is CLOSED / ACCEPTED_WITH_NONBLOCKING_DEBT / DIRECTLY VERIFIED / ARCHITECT VISUAL VALIDATION PASSED with OC-C5-EMISSION-001 = SATISFIED. PHASE-C4 = CLOSED / ACCEPTED_WITH_NONBLOCKING_DEBT / DIRECTLY VERIFIED / ARCHITECT VISUAL VALIDATION PASSED (OC-C4-ADMIN-001 = SATISFIED); PHASE-C5A-DB-EMISSION-READINESS = CLOSED / ACCEPTED / DIRECTLY VERIFIED / SHARED-DEVELOPMENT STATE VERIFIED. Six nonblocking debts preserved (POST-LAUNCH DEBT REGISTER items 15–20). This closeout authorizes neither continuation's implementation and creates no new phase contract; no phase chains automatically. PHASE-C5B-ACCEPTANCE-DECISION, real snapshot/import, final ACL-closure invocation, real activation, the real read-authority switch, any shared-database apply beyond db/77, staging validation/application of db/76 or db/77, deployment, production access, branch creation, and any push beyond the one authorized staging/dev fast-forward for this closeout's single documentation-only commit remain unauthorized
+NEXT_AUTHORIZABLE_ACTION: DIRECT SUPERVISOR REVIEW OF THE PROPOSED CLEAN-SLATE-TRANSACTIONAL-RESET CONTRACT (docs/architecture/CLEAN_SLATE_TRANSACTIONAL_RESET_PHASE_CONTRACT.md, PROPOSED / AWAITING SUPERVISOR REVIEW / DESTRUCTIVE EXECUTION NOT AUTHORIZED), authored by CLEAN-SLATE-TRANSACTIONAL-RESET-CONTRACT-R1 (2026-07-22, read-only diagnosis of ucrjtfswnfdlxwtmxnoo + documentation-only authoring, entry checkpoint 56f749812c693cea3c81518a139d174e958fbbbf). Binding business-owner ruling recorded: CLEAN_SLATE_OPERATIONAL_REBUILD is the selected TARGET strategy — the current operational transaction corpus does not need to survive as live business data, and the approximately two real flows (Pedido → purchasing needs → purchase orders → OPs → operational updates) will be recreated through the new application; the prior legacy-data preservation/mapping strategy (incl. the 51-row ordem_compra_item_compat_fio bridge and the 13-row completeness mapping/backfill options) is SUPERSEDED as the target strategy but not deleted or rewritten. NO deletion, database mutation, migration, cutover, activation, or environment change has occurred; the 64/51/13 corpus (ordens_compra_fio 64 = 51 mapped + 13 unmapped ids 153–165) physically exists in ucrjtfswnfdlxwtmxnoo (legacy_active/flat/not_started, all cutover markers NULL, zero receipt/ledger/movement/event rows). The former 13-row REAL_CUTOVER completeness gate is STILL_APPLICABLE_UNTIL_RESET_EXECUTION_COMPLETES then SUPERSEDED_BY_CLEAN_SLATE_RESET (reset execution = §Z.3 disposition option 3 applied to all 64 rows). Recommended cutover strategy: Option C — remain legacy_active after reset; db/75's 51/39/44/20221.280/405.980 constants become superseded and a future REAL_CUTOVER needs a re-baselined migration. This pass authorizes neither the reset nor any continuation and creates no active phase; no phase chains automatically. PHASE-C5B-ACCEPTANCE-DECISION (IDENTIFIED / NOT AUTHORIZED), REAL_CUTOVER (NOT AUTHORIZED, additionally hard-gated behind the 13-row disposition until reset), any deletion or database mutation, the clean-slate reset execution, any shared-database apply beyond db/77, staging validation/application of db/76 or db/77, deployment, activation, production access, branch creation, and any push beyond the one authorized staging/dev fast-forward for this pass's single documentation-only commit remain unauthorized
 GOVERNING_SPEC: docs/architecture/ORDEM_COMPRA_LIFECYCLE_SPEC_PROPOSED.md
 TECHNICAL_CONTRACT: docs/architecture/PEDIDO_OP_SCHEMA_CONTRACT.md
 SEQUENCE_AUTHORITY: docs/architecture/PEDIDO_PRODUCTION_FLOW_BACKLOG.md
@@ -1213,15 +1213,83 @@ ACCEPTED_CHECKPOINT: 3405fdab8e05ec0f81cbfe07c63c489e551fee92
   to `staging/dev`. Full record:
   `docs/architecture/ORDEM_COMPRA_C5_PHASE_CONTRACT.md` §25 and
   `docs/ledgers/G28_LEDGER.md`.
-- **Next authorizable action:** a **supervisor read-only sequencing decision**
-  between the two remaining separately governed continuations —
-  `PHASE-C5B-ACCEPTANCE-DECISION` (`IDENTIFIED / NOT AUTHORIZED`) and the
-  `REAL_CUTOVER` completeness disposition for the 13 unmapped
-  `ordens_compra_fio` rows ids 153–165. This closeout authorizes **neither**
-  implementation; no phase chains automatically. `PHASE-C5B-ACCEPTANCE-DECISION`,
-  `REAL_CUTOVER`, any shared-database apply beyond `db/77`, staging
-  validation/application of `db/76`/`db/77`, deployment, activation, production
-  access, branch creation, and any further push remain **unauthorized**.
+- **`CLEAN-SLATE-TRANSACTIONAL-RESET-CONTRACT-R1` — binding business-owner
+  ruling recorded + read-only clean-slate diagnosis + documentation-only
+  proposed-contract authoring (this pass, documentation-only commit `docs: define
+  clean-slate transactional reset contract`):** entry checkpoint `HEAD`
+  `56f749812c693cea3c81518a139d174e958fbbbf`. The business owner ruled
+  **`CLEAN_SLATE_OPERATIONAL_REBUILD` = APPROVED AS TARGET STRATEGY**: the current
+  operational transaction corpus in the shared-development database does **not**
+  need to survive as live business data, and the **approximately two** real
+  business flows will be recreated manually through the new application in the
+  canonical order (Pedido → purchasing needs → purchase orders → OPs → subsequent
+  operational updates). The 13 unmapped legacy rows ids `153`–`165`, the 51 mapped
+  legacy rows, and their native projections carry **no** preservation obligation
+  as live transactions; the prior legacy-data preservation/mapping strategy (incl.
+  the 51-row `ordem_compra_item_compat_fio` bridge and the deferred 13-row
+  mapping/backfill options) is **SUPERSEDED as the target strategy** — not deleted
+  or rewritten. Master/reference data is **preserved by default** (auth/app users
+  and roles, clients, suppliers, materials, `cores`, `modelos`, `parametros_largura`,
+  `precos_terceirizada`, `ordem_compra_config`, schema/migration history); "delete
+  the operational corpus" is **not** "delete everything". Authored
+  `docs/architecture/CLEAN_SLATE_TRANSACTIONAL_RESET_PHASE_CONTRACT.md`
+  (`PHASE_ID: CLEAN-SLATE-TRANSACTIONAL-RESET`, `STATUS: PROPOSED / AWAITING
+  SUPERVISOR REVIEW / DESTRUCTIVE EXECUTION NOT AUTHORIZED`) with: the binding
+  ruling; a complete read-only FK/dependency inventory of the operational
+  transaction domain in `ucrjtfswnfdlxwtmxnoo` (PostgreSQL 17.6, terminal
+  migration `20260722055832`); the exact row-count baseline (`ordens_compra_fio`
+  64 = 51 mapped + 13 unmapped ids 153–165; `necessidade_compra_fio` 64, all
+  legacy-origin; `ordem_compra`/`ordem_compra_item`/`ordem_compra_item_alocacao`/
+  `ordem_compra_item_compat_fio` 51 each; `ordem_compra_recebimentos`/`_eventos`/
+  `ordem_compra_fio_lancamentos`/`_movimentos_estoque`/`ordem_compra_distribuicao_comandos`
+  all 0; cutover singleton `legacy_active`/`flat`/`not_started` with all markers
+  NULL and 0 snapshot/baseline rows); a per-table classification
+  (`PRESERVE_MASTER_DATA` / `PURGE_OPERATIONAL_SOURCE` / `PURGE_OPERATIONAL_DERIVED`
+  / `RESET_CUTOVER_METADATA` / `UNPROVEN`); the exact dependency-safe deletion order
+  (Boundary A — the self-contained yarn-purchasing corpus, 332 rows; Boundary B —
+  `pedidos`/`ops`/`lotes`, only if separately authorized); a mandatory pre-deletion
+  archival evidence plan (outside the repository); the destructive-execution design
+  (single serialized transaction, `DELETE` not `TRUNCATE`, run only while
+  `legacy_active`, no sequence reset by default); a recommended cutover strategy
+  (Option C — remain `legacy_active`; `db/75`'s 51/39/44/20221.280/405.980 constants
+  become SUPERSEDED and a future `REAL_CUTOVER` needs a re-baselined migration); the
+  mutation mechanism (**one-time governed administrative operation, not a `db/NN`
+  migration, not the dashboard**); hard stops; validation/evidence matrices; and the
+  supervisor decisions still required. **Material entanglement surfaced:** deleting
+  the commercial `pedidos`/`ops` (Boundary B) collides with the **binding
+  Controlled-Delete × document-history rule** — 1 Pedido carries
+  `document_link_revisions` (RESTRICT) and 4 OPs carry `document_link_revision_ops`
+  (RESTRICT) — and with the separate documents front (40 candidates, 24/30 scan
+  requests/runs); these are `UNPROVEN` and require an explicit business-owner
+  disposition before Boundary B. Former 13-row gate consequence:
+  `STILL_APPLICABLE_UNTIL_RESET_EXECUTION_COMPLETES` then
+  `SUPERSEDED_BY_CLEAN_SLATE_RESET` (reset = §Z.3 disposition option 3 applied to
+  all 64 rows). `PHASE-C5B-ACCEPTANCE-DECISION` sequencing: corpus-independent, not
+  a prerequisite of and not blocked by the reset; best sequenced after the reset and
+  after the two real flows are recreated. **No deletion, database mutation,
+  migration, cutover, activation, or environment change occurred**; the 64/51/13
+  corpus physically exists; `REAL_CUTOVER` and `PHASE-C5B-ACCEPTANCE-DECISION`
+  remain unauthorized; execution requires a separate explicit order.
+  Documentation-only: only the seven authorized owners changed (this file,
+  `docs/architecture/CLEAN_SLATE_TRANSACTIONAL_RESET_PHASE_CONTRACT.md`,
+  `AGENT_HANDOFF.md`, `docs/DOCUMENTATION_INDEX.md`,
+  `docs/architecture/ORDEM_COMPRA_C3_TRACEABILITY.md`,
+  `docs/architecture/PEDIDO_PRODUCTION_FLOW_BACKLOG.md`, and
+  `docs/ledgers/G28_LEDGER.md`); no product, test, migration, `db/*.sql`,
+  configuration, or protected-residue change; `LAST_ACCEPTED_PHASE` stays
+  `PHASE-C5`; `ACTIVE_PHASE`/`ACTIVE_PHASE_CONTRACT` stay `NONE` (no phase is
+  activated); one documentation-only commit published through one authorized
+  fast-forward push to `staging/dev`.
+- **Next authorizable action:** **direct supervisor review of the proposed
+  `CLEAN-SLATE-TRANSACTIONAL-RESET` contract**
+  (`docs/architecture/CLEAN_SLATE_TRANSACTIONAL_RESET_PHASE_CONTRACT.md`). This
+  pass authorizes **no** deletion, database mutation, reset execution, phase
+  activation, or continuation; no phase chains automatically. The clean-slate reset
+  execution, `PHASE-C5B-ACCEPTANCE-DECISION` (`IDENTIFIED / NOT AUTHORIZED`),
+  `REAL_CUTOVER` (`NOT AUTHORIZED`, additionally hard-gated behind the 13-row
+  disposition until the reset executes), any shared-database apply beyond `db/77`,
+  staging validation/application of `db/76`/`db/77`, deployment, activation,
+  production access, branch creation, and any further push remain **unauthorized**.
 
 ## Workspace and Git boundaries
 

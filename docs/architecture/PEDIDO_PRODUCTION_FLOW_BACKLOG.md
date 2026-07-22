@@ -8,6 +8,61 @@
 > `PROJECT_STATE.md`. Phase sequence, dependencies, backlog items, and accepted
 > architecture in this file remain authoritative; live operational status does not.
 
+# Update 2026-07-22 - CLEAN-SLATE-TRANSACTIONAL-RESET-CONTRACT-R1 (business-owner clean-slate ruling recorded; proposed reset contract authored; no execution)
+
+Phase: read-only diagnosis of the operational transaction domain in the
+non-production shared development database `ucrjtfswnfdlxwtmxnoo` +
+documentation-only authoring of a **proposed** material phase contract. Type:
+docs-only; no product, test, database, migration, environment, deployment, or
+configuration change; database access was strictly READ-ONLY (no
+`INSERT`/`UPDATE`/`DELETE`/`TRUNCATE`/DDL/writer-RPC). Entry checkpoint HEAD
+`56f749812c693cea3c81518a139d174e958fbbbf`. Historical record — live state belongs
+to `PROJECT_STATE.md`.
+
+**Binding business-owner ruling recorded — `CLEAN_SLATE_OPERATIONAL_REBUILD`
+APPROVED AS TARGET STRATEGY.** The current operational transaction corpus does
+**not** need to survive as live business data; the **approximately two** real
+business flows will be recreated manually through the new application in the
+canonical order **Pedido → purchasing needs → purchase orders → OPs → subsequent
+operational updates**. The previous application registered OPs without the new
+canonical Pedido-first workflow, so existing operational records must not be
+promoted merely to preserve their identifiers or historical shape. The prior
+legacy-data preservation/mapping strategy (incl. the 51-row
+`ordem_compra_item_compat_fio` bridge and the deferred 13-row mapping/backfill
+options for ids `153`–`165`) is **SUPERSEDED as the target strategy** — not
+deleted or rewritten. Master/reference data (auth/app users and roles, clients,
+suppliers, materials, `cores`, `modelos`, `parametros_largura`,
+`precos_terceirizada`, `ordem_compra_config`, schema/migration history) is
+**preserved by default**.
+
+**Sequence impact.** This ruling supersedes the *target* for the yarn-purchasing
+corpus but changes **no existing sequence dependency or accepted architecture** in
+this file. It introduces one **proposed, separately-authorizable** sequence item —
+`CLEAN-SLATE-TRANSACTIONAL-RESET` — governed by
+`docs/architecture/CLEAN_SLATE_TRANSACTIONAL_RESET_PHASE_CONTRACT.md` (`STATUS:
+PROPOSED / AWAITING SUPERVISOR REVIEW / DESTRUCTIVE EXECUTION NOT AUTHORIZED`). The
+proposed sequence is: (1) supervisor accepts the reset contract and its scope;
+(2) archive the purged tables outside the repository; (3) execute the one-time
+governed administrative reset (Boundary A = the self-contained yarn-purchasing
+corpus; Boundary B = `pedidos`/`ops`/`lotes` only if separately authorized and the
+binding Controlled-Delete × document-history entanglement — 1 Pedido + 4 OPs — is
+resolved); (4) recreate the two real Pedidos → needs → purchase orders → OPs
+through the application; (5) update subsequent operational states. The former
+13-row `REAL_CUTOVER` completeness gate becomes
+`STILL_APPLICABLE_UNTIL_RESET_EXECUTION_COMPLETES` then
+`SUPERSEDED_BY_CLEAN_SLATE_RESET`; `REAL_CUTOVER` (and any re-baselined cutover
+migration it would then require, since `db/75`'s 51/39/44/20221.280/405.980
+constants are superseded) remains a **separate, `NOT AUTHORIZED`** gate.
+
+`NEXT_AUTHORIZABLE_ACTION`: direct supervisor review of the proposed
+`CLEAN-SLATE-TRANSACTIONAL-RESET` contract — no deletion, database mutation, reset
+execution, phase activation, or continuation is authorized; no phase chains
+automatically. `ACTIVE_PHASE`/`ACTIVE_PHASE_CONTRACT` remain `NONE`;
+`LAST_ACCEPTED_PHASE` stays `PHASE-C5`. One local documentation-only commit
+`docs: define clean-slate transactional reset contract`, published through one
+authorized fast-forward push to `staging/dev`. Full record: the reset contract and
+`docs/ledgers/G28_LEDGER.md`.
+
 # Update 2026-07-22 - C5-DOCUMENTATION-CLOSEOUT-R1 (PHASE-C5 supervisor acceptance and closeout; OC-C5-EMISSION-001 SATISFIED)
 
 Phase: documentation-only supervisor closeout of `PHASE-C5` / `OC-C5-EMISSION-001`
