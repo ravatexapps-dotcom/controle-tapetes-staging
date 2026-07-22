@@ -8,6 +8,59 @@
 > `PROJECT_STATE.md`. Phase sequence, dependencies, backlog items, and accepted
 > architecture in this file remain authoritative; live operational status does not.
 
+# Update 2026-07-21 - C5A-DB-EMISSION-READINESS-IMPLEMENTATION-R1 Part 1 (PHASE-C5A material contract, accepted; local implementation authorized)
+
+Phase: documentation-only supervisor-acceptance closeout of the `PHASE-C5A`
+material contract, with local implementation authorization. Type: docs-only; no
+product, test, script, migration, database, environment, deployment, or
+configuration change. Historical closeout note — live state belongs to
+`PROJECT_STATE.md`.
+
+The supervisor **ACCEPTED**
+`docs/architecture/ORDEM_COMPRA_C5A_DB_EMISSION_READINESS_PHASE_CONTRACT.md` as
+final and binding and **AUTHORIZED local implementation**
+(`STATUS: PROPOSED / AWAITING SUPERVISOR REVIEW / IMPLEMENTATION NOT AUTHORIZED`
+→ `STATUS: ACCEPTED / IMPLEMENTATION AUTHORIZED LOCALLY`, contract §22; entry
+checkpoint / accepted proposal commit
+`a476df3191b914d62acd6718c06771cd1753ac6b`). Ratified §19 decisions:
+
+1. The contract is accepted as a whole.
+2. Prerequisite classification `READ_MODEL_FUNCTION_AND_GRANT_PREREQUISITE` is
+   ratified — one forward-only idempotent migration (`db/77`) grants
+   `EXECUTE ON emitir_ordem_compra(BIGINT) TO authenticated` (keeping the
+   internal `is_admin()` gate authoritative and `PUBLIC`/`anon`/`service_role`
+   revoked), preserves the `emitir_ordem_compra` terminal body byte-equivalent,
+   makes **no** allocation-writer migration, and corrects the two terminal read
+   models so the server-derived emission action can become true. The active
+   canonical allocation writer is `definir_alocacao_necessidade_compra_fio`
+   (already granted to `authenticated`, admin-gated —
+   `ALLOCATION_PATH_READY_AFTER_GRANT`); the legacy
+   `alocar_necessidade_compra_fio` is `SUPERSEDED / REVOKED` and must remain
+   ungranted (not re-granted, called, modified, or rehabilitated).
+3. Acceptance-required-order disposition
+   `EMISSION_ALLOWED_ONLY_WHEN_EXIGE_ACEITE_FALSE` is ratified — no acceptance
+   or rejection is implemented; the read models never expose `acoes.emitir=true`
+   when `exige_aceite=TRUE`; the emission writer body is unchanged. Residual
+   limitation recorded: a privileged direct RPC may still follow the writer
+   contract for `exige_aceite=TRUE`, but the canonical application path must not
+   expose that action before `PHASE-C5B`. `PHASE-C5B-ACCEPTANCE-DECISION`
+   remains `IDENTIFIED / NOT AUTHORIZED`.
+4. The C3C protected-mutation guard is **not** modified — `legacy_active`
+   permits the local writer path; `maintenance_fenced`/`canonical_active`
+   denial is a `REAL_CUTOVER` concern. **C5A local readiness ≠ `REAL_CUTOVER`
+   readiness.**
+
+`ACTIVE_PHASE`/`ACTIVE_PHASE_CONTRACT` become `PHASE-C5A-DB-EMISSION-READINESS`
+/ the contract file; `PHASE-C5A IMPLEMENTATION = NOT YET IMPLEMENTED`;
+`LAST_ACCEPTED_PHASE` stays `PHASE-C4`. `OC-C5-EMISSION-001` stays
+`PLANNED / BLOCKED_BY_C5A_DB_PREREQUISITE`. `NEXT_AUTHORIZABLE_ACTION` becomes
+the local, disposable local PostgreSQL implementation of `db/77` and its
+integration test under the same order (Part 2). `PHASE-C5` UI implementation,
+`PHASE-C5B-ACCEPTANCE-DECISION`, any shared-database apply of `db/77`, staging
+validation/application of `db/76`/`db/77`, activation, deployment,
+`REAL_CUTOVER`, and any push remain unauthorized. Sequence/architecture in this
+file are unchanged. Full evidence: contract §22 and `docs/ledgers/G28_LEDGER.md`.
+
 # Update 2026-07-21 - C5A-DB-EMISSION-READINESS-CONTRACT-R1 (PHASE-C5A material contract, proposed)
 
 Phase: read-only database reconciliation + documentation-only

@@ -87,7 +87,13 @@
   `saldo_fios_op` is `NOT_APPLICABLE` — neither an `OC-C3D-LOCK-001` §M exit
   criterion. `PHASE-C4` is now closed (see above); `PHASE-C5`/`REAL_CUTOVER`
   remain unauthorized.
-- **Active phase contract:** `NONE`. The now-**closed** `PHASE-C4` material
+- **Active phase contract:**
+  `docs/architecture/ORDEM_COMPRA_C5A_DB_EMISSION_READINESS_PHASE_CONTRACT.md`
+  (`PHASE_ID: PHASE-C5A-DB-EMISSION-READINESS`, `STATUS: ACCEPTED /
+  IMPLEMENTATION AUTHORIZED LOCALLY`, §22 — supervisor-accepted under
+  `C5A-DB-EMISSION-READINESS-IMPLEMENTATION-R1` Part 1; local implementation of
+  `db/77` in a disposable local PostgreSQL environment is authorized under Part 2
+  of the same order). The now-**closed** `PHASE-C4` material
   contract is `docs/architecture/ORDEM_COMPRA_C4_PHASE_CONTRACT.md`
   (`PHASE_ID: PHASE-C4`, `STATUS: CLOSED / ACCEPTED / LOCALLY VERIFIED /
   ARCHITECT VISUAL VALIDATION PASSED`, §0d). The now-**closed**
@@ -98,10 +104,14 @@
   §S/§T + acceptance §U; C3D-D evidence §V, targeted correction §W, acceptance
   §X; C3D-E evidence §Y; C3D-E acceptance + aggregate `PHASE-C3D`/`PHASE-C3D-F`
   closeout §Z).
-- **Active track:** `PURCHASE_ORDER_PHASE_C` (no active phase; next
-  authorizable action is supervisor review and acceptance/rejection of the
-  now-authored `PROPOSED` `PHASE-C5A-DB-EMISSION-READINESS` material phase
-  contract, the database prerequisite of `OC-C5-EMISSION-001`).
+- **Active track:** `PURCHASE_ORDER_PHASE_C`. Active phase
+  `PHASE-C5A-DB-EMISSION-READINESS` (`ACCEPTED / IMPLEMENTATION AUTHORIZED
+  LOCALLY`, contract §22). Next authorizable action is the local, disposable
+  local PostgreSQL implementation of `db/77` (grant `emitir_ordem_compra` to
+  `authenticated` + correct the two terminal read models) plus its integration
+  test, under the same `C5A-DB-EMISSION-READINESS-IMPLEMENTATION-R1` order
+  (Part 2) — no shared-database apply, staging, deployment, activation,
+  `REAL_CUTOVER`, `PHASE-C5` UI, `PHASE-C5B`, or push.
 - **Current governance status:** `GOVERNANCE-SPEC-CUSTODY-FOUNDATION-R1`
   **ACCEPTED**; `GOVERNANCE-STATE-HANDOFF-COMPACTION-R1` **ACCEPTED** by the
   supervisor at commit `1157b9e71bc629903c5940ab50d4b370964e560e` (state/handoff
@@ -268,13 +278,37 @@
   database access. `OC-C5-EMISSION-001` stays
   `PLANNED / BLOCKED_BY_C5A_DB_PREREQUISITE`; `ACTIVE_PHASE`/`ACTIVE_PHASE_CONTRACT`
   remain `NONE`.
-- **Next authorizable action:** supervisor review and acceptance/rejection of
-  the now-authored `PROPOSED` `PHASE-C5A-DB-EMISSION-READINESS` material phase
-  contract (`docs/architecture/ORDEM_COMPRA_C5A_DB_EMISSION_READINESS_PHASE_CONTRACT.md`)
-  and its §19 decisions — not self-accepted by this pass; a separate, explicit
-  `PHASE-C5A` implementation order in a fresh session is required after
-  acceptance. `PHASE-C5A` implementation, `PHASE-C5` implementation, and
-  `PHASE-C5B-ACCEPTANCE-DECISION` remain unauthorized.
+- **`C5A-DB-EMISSION-READINESS-IMPLEMENTATION-R1` (Part 1) — supervisor
+  acceptance + local implementation authorization (this pass, docs-only
+  acceptance commit):** the supervisor **ACCEPTED**
+  `docs/architecture/ORDEM_COMPRA_C5A_DB_EMISSION_READINESS_PHASE_CONTRACT.md`
+  (`STATUS: PROPOSED / AWAITING SUPERVISOR REVIEW / IMPLEMENTATION NOT
+  AUTHORIZED` → `STATUS: ACCEPTED / IMPLEMENTATION AUTHORIZED LOCALLY`,
+  contract §22) and authorized **local** `PHASE-C5A` implementation, entry
+  checkpoint `HEAD` `a476df3191b914d62acd6718c06771cd1753ac6b`. Ratified §19
+  decisions: classification `READ_MODEL_FUNCTION_AND_GRANT_PREREQUISITE`
+  (grant `emitir_ordem_compra(BIGINT)` to `authenticated` keeping the internal
+  `is_admin()` gate, correct the two terminal read models, no writer-body
+  change, no allocation migration); `definir_alocacao_necessidade_compra_fio`
+  is the active canonical allocation writer and
+  `alocar_necessidade_compra_fio` is `SUPERSEDED / REVOKED` (stays ungranted);
+  `EMISSION_ALLOWED_ONLY_WHEN_EXIGE_ACEITE_FALSE`; the C3C protected-mutation
+  guard is not modified (C5A local readiness ≠ `REAL_CUTOVER` readiness).
+  `ACTIVE_PHASE`/`ACTIVE_PHASE_CONTRACT` become `PHASE-C5A-DB-EMISSION-READINESS`
+  / the contract file. Docs-only: only the contract, `PROJECT_STATE.md`,
+  `AGENT_HANDOFF.md`, `docs/architecture/ORDEM_COMPRA_C3_TRACEABILITY.md`,
+  `docs/architecture/PEDIDO_PRODUCTION_FLOW_BACKLOG.md`, and
+  `docs/ledgers/G28_LEDGER.md` change; no product/test/script/migration/
+  configuration/database/environment/protected-residue change; no push.
+  `PHASE-C5A IMPLEMENTATION = NOT YET IMPLEMENTED`.
+- **Next authorizable action:** local implementation of
+  `PHASE-C5A-DB-EMISSION-READINESS` in a disposable local PostgreSQL environment
+  under the same `C5A-DB-EMISSION-READINESS-IMPLEMENTATION-R1` order (Part 2) —
+  `db/77_ordem_compra_c5a_emission_readiness.sql` + its integration test, no
+  shared-database apply. `PHASE-C5` implementation,
+  `PHASE-C5B-ACCEPTANCE-DECISION`, staging validation/application of
+  `db/76`/`db/77`, activation, deployment, `REAL_CUTOVER`, branch creation,
+  production access, and any push remain unauthorized.
   `PHASE-C3D-A`/`PHASE-C3D-B` are supervisor-accepted (§R, checkpoints
   `096cd603…` / `5441321…`), `PHASE-C3D-C` (§U, `6fd63a56…`), `PHASE-C3D-D` (§X,
   `5a2be05…`), and `PHASE-C3D-E` (§Z, `429aa39…`) are all `CLOSED / TECHNICALLY
@@ -561,11 +595,13 @@ summary.
   emission (`OC-C5-EMISSION-001`) material contract is `ACCEPTED /
   IMPLEMENTATION BLOCKED BY DATABASE PREREQUISITE`
   (`docs/architecture/ORDEM_COMPRA_C5_PHASE_CONTRACT.md` §21) — implementation
-  is gated behind a separate, not-yet-authored **`PHASE-C5A-DB-EMISSION-READINESS`**
-  database-prerequisite contract, and full acceptance-workflow usability is
-  additionally gated behind **`PHASE-C5B-ACCEPTANCE-DECISION`**
-  (`IDENTIFIED / NOT AUTHORIZED`). Each requires its
-  own explicit architect order and a fresh session.
+  is gated behind the **`PHASE-C5A-DB-EMISSION-READINESS`**
+  database-prerequisite contract, now `ACCEPTED / IMPLEMENTATION AUTHORIZED
+  LOCALLY` and **ACTIVE** (contract §22, `C5A-DB-EMISSION-READINESS-IMPLEMENTATION-R1`
+  Part 1) with local `db/77` implementation in progress; full acceptance-workflow
+  usability is additionally gated behind **`PHASE-C5B-ACCEPTANCE-DECISION`**
+  (`IDENTIFIED / NOT AUTHORIZED`). `PHASE-C5` UI and `PHASE-C5B` each still
+  require their own explicit architect order and a fresh session.
 - **Real-cutover separation.** The `REAL_CUTOVER` window
   (`OC-CUTOVER-001`/`OC-CUTOVER-PONR-001`) is governed **separately** from
   `PHASE-C3D` and from C4/C5. `PHASE-C3D` rehearsed the inactive stack only and
@@ -634,16 +670,18 @@ summary.
     confirmation UX ratified `CONTROLLED_IRREVERSIBLE_TRANSITION`; not
     active)
 24. `docs/architecture/ORDEM_COMPRA_C5A_DB_EMISSION_READINESS_PHASE_CONTRACT.md`
-    (C5A material phase contract — database emission readiness; `PROPOSED /
-    AWAITING SUPERVISOR REVIEW / IMPLEMENTATION NOT AUTHORIZED`; classification
+    (C5A material phase contract — database emission readiness; **ACTIVE**,
+    `ACCEPTED / IMPLEMENTATION AUTHORIZED LOCALLY` (§22, supervisor-accepted
+    under `C5A-DB-EMISSION-READINESS-IMPLEMENTATION-R1` Part 1); classification
     `READ_MODEL_FUNCTION_AND_GRANT_PREREQUISITE` — grant `emitir_ordem_compra`
     to `authenticated` + correct the terminal read models
     `obter_ordem_compra_admin` (`db/69:987`) / `listar_ordens_compra_admin`
     (`db/69:913`); allocation `ALLOCATION_PATH_READY_AFTER_GRANT` via the
     already-granted `definir_alocacao_necessidade_compra_fio`;
-    `alocar_necessidade_compra_fio` `SUPERSEDED`; acceptance disposition
-    `EMISSION_ALLOWED_ONLY_WHEN_EXIGE_ACEITE_FALSE`; not active — resolves the
-    C5 §5(b)/§21 database prerequisite, does not modify the accepted C5 contract)
+    `alocar_necessidade_compra_fio` `SUPERSEDED / REVOKED`; acceptance disposition
+    `EMISSION_ALLOWED_ONLY_WHEN_EXIGE_ACEITE_FALSE`; resolves the C5 §5(b)/§21
+    database prerequisite, does not modify the accepted C5 contract; local `db/77`
+    implementation authorized only in a disposable local PostgreSQL environment)
 
 > Bootstrap first through `docs/governance/AGENT_INSTRUCTIONS.md` and the
 > `SPEC_CUSTODY_BOOTSTRAP` block in `PROJECT_STATE.md`. Private conversation,

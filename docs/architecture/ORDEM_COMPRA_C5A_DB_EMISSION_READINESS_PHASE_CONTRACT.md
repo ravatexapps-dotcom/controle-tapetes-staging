@@ -3,7 +3,17 @@
 <!-- MATERIAL_PHASE_CONTRACT:BEGIN -->
 PHASE_ID: PHASE-C5A-DB-EMISSION-READINESS
 <!-- MATERIAL_PHASE_CONTRACT:END -->
-STATUS: PROPOSED / AWAITING SUPERVISOR REVIEW / IMPLEMENTATION NOT AUTHORIZED
+STATUS: ACCEPTED / IMPLEMENTATION AUTHORIZED LOCALLY
+
+> **Supervisor acceptance (2026-07-21, `C5A-DB-EMISSION-READINESS-IMPLEMENTATION-R1`,
+> Part 1).** This contract is **ACCEPTED** and **local** implementation is
+> **AUTHORIZED**. The classification, allocation-writer ruling, acceptance-required
+> disposition, and cutover boundary below are ratified as final and binding. The
+> full acceptance ruling is recorded at **§22**. This acceptance authorizes only
+> the local disposable-environment implementation of `db/77` and its tests — no
+> `GRANT`/DDL against any shared database, no staging/production apply, no
+> deployment, no activation, no `REAL_CUTOVER`, no `PHASE-C5` UI, no `PHASE-C5B`
+> acceptance-decision work, and no push.
 
 > **Role of this document.** This is a **material phase contract**, authored under
 > the order `C5A-DB-EMISSION-READINESS-CONTRACT-R1` as **read-only database
@@ -788,3 +798,86 @@ new file, §4.7). After authoring: `OC-C5-EMISSION-001` stays
 `PLANNED / BLOCKED_BY_C5A_DB_PREREQUISITE`; no requirement becomes `SATISFIED`;
 `ACTIVE_PHASE`/`ACTIVE_PHASE_CONTRACT` stay `NONE`; `PHASE-C5A` implementation
 remains unauthorized.
+
+---
+
+## 22. Supervisor acceptance — `C5A-DB-EMISSION-READINESS-IMPLEMENTATION-R1` (Part 1)
+
+On 2026-07-21 the supervisor **ACCEPTED** this material phase contract as final
+and binding and **AUTHORIZED local implementation** of `PHASE-C5A-DB-EMISSION-READINESS`.
+Entry checkpoint `HEAD` = `a476df3191b914d62acd6718c06771cd1753ac6b`
+(`docs: define C5A emission database readiness contract`); accepted proposal
+commit = the same `a476df3191b914d62acd6718c06771cd1753ac6b`.
+
+**Contract disposition:** `STATUS: ACCEPTED / IMPLEMENTATION AUTHORIZED LOCALLY`.
+This acceptance changes no ratified decision and no accepted manifest: the closed
+future-implementation manifest (§13), the ACL matrix (§10/§11), the read-model
+readiness logic (§5/§12), the emission-precondition set (§9), the cutover
+boundary (§7), the rollback contract (§15), and the recorded HARD STOPs (§18)
+all remain binding and unchanged.
+
+**§19.1 — accepted as a whole.** The proposed `PHASE-C5A` material contract is
+accepted without change.
+
+**§19.2 — classification ratified: `READ_MODEL_FUNCTION_AND_GRANT_PREREQUISITE`.**
+The read-model correction of `obter_ordem_compra_admin` / `listar_ordens_compra_admin`
+is **in C5A's scope** (not deferred to `PHASE-C5` UI). The allocation path is
+ratified `ALLOCATION_PATH_READY_AFTER_GRANT` via the already-granted
+`definir_alocacao_necessidade_compra_fio` (`db/74:330`/`:1177`), which is the
+**active canonical allocation writer** — already granted to `authenticated` and
+internally administrator-gated. The legacy
+`alocar_necessidade_compra_fio(BIGINT,BIGINT,BIGINT,NUMERIC)` is confirmed
+**SUPERSEDED / REVOKED**; it must remain ungranted, and must not be re-granted,
+called, modified, or rehabilitated. The canonical Pedido/Insumos flow is
+unchanged: need first → supplier + quantity selection → atomic active draft
+create/reuse → item create/reuse → allocation create/update → preserved
+OP/Pedido provenance.
+
+**Prerequisite classification ratified: `READ_MODEL_FUNCTION_AND_GRANT_PREREQUISITE`.**
+C5A requires exactly: (1) `GRANT EXECUTE ON public.emitir_ordem_compra(BIGINT) TO
+authenticated`; (2) preservation of the internal authenticated-administrator gate
+inside the emission writer; (3) correction of the terminal read models
+`public.obter_ordem_compra_admin(...)` / `public.listar_ordens_compra_admin(...)`
+so the server-derived emission action can become true when all canonical
+readiness conditions hold; (4) **no modification** to the terminal body of
+`emitir_ordem_compra(BIGINT)`; (5) **no** allocation-writer migration.
+
+**§19.3 — acceptance-required-order disposition ratified:
+`EMISSION_ALLOWED_ONLY_WHEN_EXIGE_ACEITE_FALSE`.** C5A must not implement
+acceptance or rejection. The read models must never expose `acoes.emitir=true`
+when `exige_aceite = TRUE`. The emission writer body remains unchanged. **Residual
+limitation recorded explicitly:** a privileged direct RPC invocation may still
+follow the existing writer contract for `exige_aceite=TRUE`, but the canonical
+application emission path must not expose that action before `PHASE-C5B` exists.
+`PHASE-C5B-ACCEPTANCE-DECISION` remains `IDENTIFIED / NOT AUTHORIZED`.
+
+**§19.4 — cutover ruling ratified.** C5A must not modify the C3C protected-mutation
+guard. Expected behavior: under `legacy_active`, allocation/emission DML is not
+blocked by the cutover guard; under `maintenance_fenced` and `canonical_active`,
+protected DML is denied. That denial is assigned to `REAL_CUTOVER` architecture;
+it does not block local C5A implementation and local verification under
+`legacy_active`, but it does block any claim that emission is `REAL_CUTOVER`-ready.
+The guard must not be altered, bypassed, disabled, or weakened. **C5A local
+readiness does not equal `REAL_CUTOVER` readiness.**
+
+**Canonical state after this acceptance (Part 1):**
+
+```text
+LAST_ACCEPTED_PHASE = PHASE-C4
+ACTIVE_PHASE = PHASE-C5A-DB-EMISSION-READINESS
+ACTIVE_PHASE_CONTRACT = docs/architecture/ORDEM_COMPRA_C5A_DB_EMISSION_READINESS_PHASE_CONTRACT.md
+
+PHASE-C5A CONTRACT = ACCEPTED / IMPLEMENTATION AUTHORIZED LOCALLY
+PHASE-C5A IMPLEMENTATION = NOT YET IMPLEMENTED
+PHASE-C5 CONTRACT = ACCEPTED / IMPLEMENTATION BLOCKED BY C5A
+OC-C5-EMISSION-001 = PLANNED / BLOCKED_BY_C5A_DB_PREREQUISITE
+PHASE-C5B-ACCEPTANCE-DECISION = IDENTIFIED / NOT AUTHORIZED
+REAL_CUTOVER = NOT AUTHORIZED
+```
+
+`NEXT_AUTHORIZABLE_ACTION` (at the moment of this acceptance): the same
+`C5A-DB-EMISSION-READINESS-IMPLEMENTATION-R1` order continues immediately to
+Part 2 — the local, disposable-environment implementation of `db/77` and its
+tests. This acceptance does **not** authorize any shared-database apply, staging
+validation/application, deployment, activation, `REAL_CUTOVER`, `PHASE-C5` UI,
+`PHASE-C5B`, branch creation, or push.

@@ -17,10 +17,10 @@ directly (`git rev-parse HEAD`, `git status --short --untracked-files=all`).
 <!-- SPEC_CUSTODY_BOOTSTRAP:BEGIN -->
 ```text
 LAST_ACCEPTED_PHASE: PHASE-C4
-ACTIVE_PHASE: NONE
-ACTIVE_PHASE_CONTRACT: NONE
+ACTIVE_PHASE: PHASE-C5A-DB-EMISSION-READINESS
+ACTIVE_PHASE_CONTRACT: docs/architecture/ORDEM_COMPRA_C5A_DB_EMISSION_READINESS_PHASE_CONTRACT.md
 ACTIVE_TRACK: PURCHASE_ORDER_PHASE_C
-NEXT_AUTHORIZABLE_ACTION: supervisor review and acceptance/rejection of the PROPOSED PHASE-C5A-DB-EMISSION-READINESS material phase contract (docs/architecture/ORDEM_COMPRA_C5A_DB_EMISSION_READINESS_PHASE_CONTRACT.md, authored this pass by C5A-DB-EMISSION-READINESS-CONTRACT-R1, not self-accepted) plus its §19 decisions — classification READ_MODEL_FUNCTION_AND_GRANT_PREREQUISITE: one future migration granting EXECUTE on emitir_ordem_compra to authenticated and correcting the terminal read models obter_ordem_compra_admin (db/69:987) / listar_ordens_compra_admin (db/69:913) so pode_emitir/acoes.emitir derive true for a fully-distributed native rascunho with exige_aceite=FALSE; the allocation path is ALLOCATION_PATH_READY_AFTER_GRANT via the already-granted definir_alocacao_necessidade_compra_fio (db/74:1177), so the superseded alocar_necessidade_compra_fio needs no grant; acceptance disposition EMISSION_ALLOWED_ONLY_WHEN_EXIGE_ACEITE_FALSE; PHASE-C5A implementation, PHASE-C5 implementation, PHASE-C5B-ACCEPTANCE-DECISION (IDENTIFIED / NOT AUTHORIZED — the missing status_aceite pendente-to-aceita/rejeitada transition capability), the REAL_CUTOVER window (OC-CUTOVER-001/OC-CUTOVER-PONR-001 — hard-gated behind the mandatory separate read-only completeness disposition of the 13 unmapped ordens_compra_fio rows ids 153–165), real close_final_acl invocation, real activation, the real read-authority switch, staging validation/application of db/76, and any productive receipt on a shared or real environment all remain unauthorized
+NEXT_AUTHORIZABLE_ACTION: local implementation of PHASE-C5A-DB-EMISSION-READINESS in a disposable local PostgreSQL environment under the same C5A-DB-EMISSION-READINESS-IMPLEMENTATION-R1 order (Part 2) — one forward-only idempotent migration db/77_ordem_compra_c5a_emission_readiness.sql granting EXECUTE on emitir_ordem_compra(BIGINT) to authenticated (keeping PUBLIC/anon/service_role revoked and the internal is_admin() gate authoritative), preserving the emitir_ordem_compra body byte-equivalent, preserving definir_alocacao_necessidade_compra_fio granted+admin-gated and alocar_necessidade_compra_fio revoked, and correcting the terminal read models obter_ordem_compra_admin (db/69:987) / listar_ordens_compra_admin (db/69:913) so acoes.emitir/pode_emitir derive true only for a native rascunho with _distribuicao_completa_ordem=TRUE and exige_aceite=FALSE, plus tests/ordem-compra-c5a-emission-readiness.integration.sql; PHASE-C5 UI implementation, PHASE-C5B-ACCEPTANCE-DECISION (IDENTIFIED / NOT AUTHORIZED — the missing status_aceite pendente-to-aceita/rejeitada transition capability), the REAL_CUTOVER window (OC-CUTOVER-001/OC-CUTOVER-PONR-001 — hard-gated behind the mandatory separate read-only completeness disposition of the 13 unmapped ordens_compra_fio rows ids 153–165), real close_final_acl invocation, real activation, the real read-authority switch, any shared-database apply of db/77, staging validation/application of db/76 or db/77, and any productive receipt on a shared or real environment all remain unauthorized
 GOVERNING_SPEC: docs/architecture/ORDEM_COMPRA_LIFECYCLE_SPEC_PROPOSED.md
 TECHNICAL_CONTRACT: docs/architecture/PEDIDO_OP_SCHEMA_CONTRACT.md
 SEQUENCE_AUTHORITY: docs/architecture/PEDIDO_PRODUCTION_FLOW_BACKLOG.md
@@ -401,15 +401,60 @@ ACCEPTED_CHECKPOINT: 289b0cca66e9c057330a882f69da3476adf90469
   `PHASE-C5A`/`PHASE-C5` implementation remain unauthorized;
   `ACTIVE_PHASE`/`ACTIVE_PHASE_CONTRACT` remain `NONE`. Full record: contract
   (all sections) and `docs/ledgers/G28_LEDGER.md`.
-- **Next authorizable action:** supervisor review and acceptance/rejection of
-  the now-authored `PROPOSED` `PHASE-C5A-DB-EMISSION-READINESS` material phase
-  contract (`docs/architecture/ORDEM_COMPRA_C5A_DB_EMISSION_READINESS_PHASE_CONTRACT.md`)
-  and its §19 decisions — not self-accepted by this pass; a separate, explicit
-  `PHASE-C5A` implementation order in a fresh session is required after
-  acceptance. `PHASE-C5A` implementation, `PHASE-C5` implementation,
-  `PHASE-C5B-ACCEPTANCE-DECISION`, `REAL_CUTOVER`, staging
-  validation/application of `db/76`, activation, deployment, branch
-  creation, production access, and any push remain **unauthorized**.
+- **`C5A-DB-EMISSION-READINESS-IMPLEMENTATION-R1` (Part 1) — supervisor
+  acceptance of the `PHASE-C5A` material contract + local implementation
+  authorization (this pass, documentation-only acceptance commit
+  `docs: accept C5A emission database readiness contract`):** the supervisor
+  **ACCEPTED** `docs/architecture/ORDEM_COMPRA_C5A_DB_EMISSION_READINESS_PHASE_CONTRACT.md`
+  (flipped `STATUS: PROPOSED / AWAITING SUPERVISOR REVIEW / IMPLEMENTATION NOT
+  AUTHORIZED` → `STATUS: ACCEPTED / IMPLEMENTATION AUTHORIZED LOCALLY`, contract
+  §22) and authorized **local** `PHASE-C5A` implementation, entry checkpoint
+  `HEAD` `a476df3191b914d62acd6718c06771cd1753ac6b` (accepted proposal commit the
+  same SHA). `ACTIVE_PHASE`/`ACTIVE_PHASE_CONTRACT` become
+  `PHASE-C5A-DB-EMISSION-READINESS` /
+  `docs/architecture/ORDEM_COMPRA_C5A_DB_EMISSION_READINESS_PHASE_CONTRACT.md`.
+  The acceptance changes no ratified decision and no accepted manifest.
+  Ratified §19 decisions: (2) prerequisite classification
+  `READ_MODEL_FUNCTION_AND_GRANT_PREREQUISITE` —
+  `GRANT EXECUTE ON emitir_ordem_compra(BIGINT) TO authenticated` (keeping the
+  internal `is_admin()` gate authoritative), correct the terminal read models so
+  the server-derived emission action can become true, **no** change to the
+  `emitir_ordem_compra` terminal body, **no** allocation-writer migration;
+  allocation ruling — `definir_alocacao_necessidade_compra_fio` is the active
+  canonical writer (already granted to `authenticated`, admin-gated), the legacy
+  `alocar_necessidade_compra_fio` is `SUPERSEDED / REVOKED` and must stay
+  ungranted, `ALLOCATION_PATH_READY_AFTER_GRANT`; (3)
+  `EMISSION_ALLOWED_ONLY_WHEN_EXIGE_ACEITE_FALSE` — read models never expose
+  `acoes.emitir=true` when `exige_aceite=TRUE`, no acceptance/rejection
+  implemented, residual limitation recorded (a privileged direct RPC may still
+  follow the writer contract for `exige_aceite=TRUE`, but the canonical
+  application path must not expose that before `PHASE-C5B`); (4) the C3C
+  protected-mutation guard is **not** modified — `legacy_active` permits the
+  local writer path, `maintenance_fenced`/`canonical_active` denial is a
+  `REAL_CUTOVER` concern; **C5A local readiness ≠ `REAL_CUTOVER` readiness**.
+  Documentation-only acceptance commit: only
+  `docs/architecture/ORDEM_COMPRA_C5A_DB_EMISSION_READINESS_PHASE_CONTRACT.md`,
+  `PROJECT_STATE.md`, `AGENT_HANDOFF.md`,
+  `docs/architecture/ORDEM_COMPRA_C3_TRACEABILITY.md`,
+  `docs/architecture/PEDIDO_PRODUCTION_FLOW_BACKLOG.md`, and
+  `docs/ledgers/G28_LEDGER.md` change; no product, test, script, migration,
+  configuration, lifecycle-specification, schema-contract, visual-contract,
+  protected-residue, database, environment, or deployment change; no push.
+  `PHASE-C5A CONTRACT = ACCEPTED / IMPLEMENTATION AUTHORIZED LOCALLY`;
+  `PHASE-C5A IMPLEMENTATION = NOT YET IMPLEMENTED`;
+  `OC-C5-EMISSION-001` stays `PLANNED / BLOCKED_BY_C5A_DB_PREREQUISITE`;
+  `PHASE-C5 CONTRACT = ACCEPTED / IMPLEMENTATION BLOCKED BY C5A`;
+  `PHASE-C5B` stays `IDENTIFIED / NOT AUTHORIZED`; `REAL_CUTOVER` stays
+  `NOT AUTHORIZED`.
+- **Next authorizable action:** local implementation of
+  `PHASE-C5A-DB-EMISSION-READINESS` in a disposable local PostgreSQL environment
+  under the same `C5A-DB-EMISSION-READINESS-IMPLEMENTATION-R1` order (Part 2) —
+  `db/77_ordem_compra_c5a_emission_readiness.sql` (grant + read-model correction)
+  and `tests/ordem-compra-c5a-emission-readiness.integration.sql`. `PHASE-C5` UI
+  implementation, `PHASE-C5B-ACCEPTANCE-DECISION`, `REAL_CUTOVER`, any
+  shared-database apply of `db/77`, staging validation/application of `db/76` or
+  `db/77`, activation, deployment, branch creation, production access, and any
+  push remain **unauthorized**.
 - **Prior accepted product phase:** `PHASE-C3C-B` (application compatibility/
   adaptation) — `CLOSED / ACCEPTED_WITH_NONBLOCKING_DEBT / LOCALLY VERIFIED`
   (2026-07-21), accepted checkpoint
