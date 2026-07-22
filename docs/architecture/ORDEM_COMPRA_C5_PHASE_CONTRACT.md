@@ -3,7 +3,7 @@
 <!-- MATERIAL_PHASE_CONTRACT:BEGIN -->
 PHASE_ID: PHASE-C5
 <!-- MATERIAL_PHASE_CONTRACT:END -->
-STATUS: ACCEPTED / IMPLEMENTATION AUTHORIZED LOCALLY
+STATUS: ACCEPTED / IMPLEMENTED LOCALLY / AWAITING SUPERVISOR FUNCTIONAL AND VISUAL REVIEW (implementation recorded in §23; C5-PURCHASE-ORDER-EMISSION-UI-IMPLEMENTATION-R1, 2026-07-22)
 
 > **Role of this document.** This is a **material phase contract**, authored under
 > `C4-CLOSEOUT-AND-C5-CONTRACT-R1` (Part 2) as **read-only repository
@@ -911,3 +911,95 @@ REAL_CUTOVER = NOT AUTHORIZED
 `PHASE-C5B`, `REAL_CUTOVER`, staging validation/application of `db/76`/
 `db/77`, deployment, activation, production access, and any push remain
 unauthorized.
+
+---
+
+## 23. Local implementation — `C5-PURCHASE-ORDER-EMISSION-UI-IMPLEMENTATION-R1`
+
+On 2026-07-22 a fresh Claude Code session implemented this contract's §6/§12
+scope locally. **STATUS: IMPLEMENTED / LOCALLY VERIFIED / AWAITING SUPERVISOR
+FUNCTIONAL AND VISUAL REVIEW.** This does **not** self-accept or close
+`PHASE-C5` and does **not** advance `OC-C5-EMISSION-001` to `SATISFIED` (it
+moves to `PARTIALLY_SATISFIED`). No ratified §21 decision is reopened; the
+functional scope (§6), matrix (§7), API ownership (§9), the
+`CONTROLLED_IRREVERSIBLE_TRANSITION` classification (§10/§21), the manifest
+(§12), the idempotency/error contract (§13), and the hard stops (§16) were all
+honoured exactly.
+
+**Entry checkpoint:** `HEAD` `538f4ba7b7aae5d6e9e0efbe29a57e1ef7bbc776`, parent
+`d17b353ed3eca04225a7decb55f84ccd5817d085`, branch `dev`; protected residue
+(`M .gitignore`, `?? .codex/config.toml`, `?? .mcp.json`) preserved untouched.
+
+**Product manifest (additive only, exactly §12):**
+- `js/screens/ordem-compra-data.js` — `ns.emitirOrdem(ordemId)` wrapper on
+  `public.emitir_ordem_compra(BIGINT)` (sends only `p_ordem_id`); local
+  transport-ambiguity classifier (`isEmissionTransportAmbiguous`, `status === 0`
+  only); result classifier (`classifyEmissionResult`); and a structurally
+  independent attempt tracker (`createEmissionAttemptTracker`; local-only token,
+  never transmitted — the RPC has no idempotency parameter, §9).
+- `js/screens/ordem-compra-render.js` — the emit control's enabled state now
+  derives from the server `acoes.emitir` flag (enabled → opens the confirmation
+  modal; disabled → honest disabled state + server `bloqueio_emissao` reason);
+  the `status_aceite` badge and the readiness / pending-acceptance notices.
+- `js/screens/ordem-compra-events.js` — the `emitir(o)` handler: the
+  `CONTROLLED_IRREVERSIBLE_TRANSITION` confirmation modal (`js/ui.js` `modal()`,
+  primary/neutral — not the destructive-red `confirmDialog`), the in-flight
+  duplicate-submit guard, the fixed pt-BR message per deterministic writer
+  `codigo`, the authoritative reload after a deterministic success, and
+  reload-first resolution of an ambiguous transport.
+
+No new product file; `index.html`, `js/router.js`, `js/boot.js`,
+`js/screens/common.js`, `js/ui.js`, the receipt/distribuicao/cutover/op-nova
+surfaces and all `db/*.sql` are byte-unchanged; the
+`ORDEM_COMPRA_CANCEL_HANDLER_STALE_ORDER_CAPTURE` debt is untouched (the new
+`emitir(o)` handler reads the current order from the render layer at click time,
+not a stale closure snapshot, so it does not replicate that debt).
+
+**Tests (exactly §14):** new `tests/ordem-compra-emitir.smoke.js` (faithful
+DOM/VM behavioral suite covering the §14 / order manifest points 1–25); updated
+`tests/ordem-compra.smoke.js` tests 4–5 to the server-derived state (retaining
+the "never calls `emitir_ordem_compra` while disabled" guarantee).
+
+**§8/§9/§13 reconciliation (recorded).** `emitir_ordem_compra` takes no
+`p_idempotency_key`, so the §13 attempt token is a local, never-transmitted
+bookkeeping marker; the server's natural `status_administrativo` re-check plus
+the in-flight confirm-button guard are the idempotency backstop. On an ambiguous
+transport the client follows §8 (reload-first, no auto-retry, no fallback writer;
+if the reload shows `emitida` the server state is authoritative, otherwise the
+reloaded eligible-draft Emitir button is the controlled deliberate retry) — the
+token is retained across the transport ambiguity and released once the reload
+resolves it, with no server-observable difference from §13.
+
+**Evidence.** Targeted suites green (emitir + ordem-compra 48/48; the four C4
+receipt suites 38/38). Full Node-suite differential vs a detached baseline
+worktree at `538f4ba`: baseline 142 / worktree 122 failing identities,
+**added failing identities = empty**. `node scripts/validate-spec-custody.mjs`
+PASS; `--self-test` fails only on the pre-existing active-contract fixture-harness
+limitation (`R1: ACTIVE_PHASE_CONTRACT is not an existing file`), byte-identical
+on the `538f4ba` baseline. `git diff --check` / `--cached --check` clean.
+Deterministic offline visual evidence (`%TEMP%\ravatex-c5-visual-review\`;
+vendored Tailwind + local `playwright-core`, no Supabase/auth/network/DB/
+production) rendered the real product DOM into seven PNGs + a contact sheet with
+an **empty** browser console and no page errors; computed styles: emission
+primary button radius 4px, background `rgb(37,99,235)`/white (primary, not
+destructive-red); confirmation confirm button `rgb(37,99,235)`
+(`is_destructive_red=false`); confirmation card radius 8px + shadow (shared
+`js/ui.js` modal primitive — the `SHARED_UI_MODAL_CONTROL_RADIUS_TOKEN_ALIGNMENT`
+item-16 debt, frozen by this phase); status badge 999px pill; disabled emit
+button opacity 0.6 / cursor `not-allowed` / chip background; narrow 1024 no
+horizontal overflow.
+
+**Risks / debts unchanged.** The writer is not exercisable end-to-end in a
+browser here (fixture-level DOM/mocked-RPC evidence, §10). `index.html`
+cache-bust `?v=` was not bumped because `index.html` is frozen by §12 — a future
+deploy pass must refresh it. `SHARED_UI_MODAL_CONTROL_RADIUS_TOKEN_ALIGNMENT`
+(item 16) and `ORDEM_COMPRA_CANCEL_HANDLER_STALE_ORDER_CAPTURE` (item 15) remain.
+Orders with `exige_aceite=TRUE` are surfaced honestly as not lifecycle-complete
+until `PHASE-C5B`.
+
+**Disposition:** `OC-C5-EMISSION-001` = `PARTIALLY_SATISFIED`; `PHASE-C5B` =
+`IDENTIFIED / NOT AUTHORIZED`; `REAL_CUTOVER` = `NOT AUTHORIZED`. Local commit
+`feat: implement C5 purchase-order emission UI`; no push.
+`NEXT_AUTHORIZABLE_ACTION`: supervisor functional review + mandatory architect
+visual validation (`SUPERVISION_PROTOCOL.md` §4) of this implementation before
+any closeout.

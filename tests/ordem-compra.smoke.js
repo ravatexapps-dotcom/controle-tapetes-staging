@@ -201,7 +201,7 @@ test('3. detalhe (rascunho nativo): mutações manuais desabilitadas; cancelamen
   }
 });
 
-test('4. detalhe: botão Emitir SEMPRE desabilitado e SEM handler (emissão inativa §R.22.5/6)', async () => {
+test('4. detalhe: Emitir desabilitado quando o servidor recusa (acoes.emitir=false) — sem handler, motivo visível (PHASE-C5)', async () => {
   const sandbox = makeSandbox({
     tableData: FORM_REFS,
     rpcImpl: { obter_ordem_compra_admin: () => ({ data: { ok: true, ordem: NATIVE_DRAFT, eventos: [] }, error: null }) },
@@ -209,8 +209,11 @@ test('4. detalhe: botão Emitir SEMPRE desabilitado e SEM handler (emissão inat
   const view = await vm.runInContext('window.screenOrdemCompra(100)', sandbox);
   const emit = findById(view, 'oc-emitir');
   assert.ok(emit, 'botão Emitir deve existir (desabilitado)');
-  assert.equal(emit.disabled, true, 'Emitir deve estar disabled');
-  assert.ok(!emit._listeners || !emit._listeners.click, 'Emitir NÃO pode ter handler de clique (nunca chama emitir_ordem_compra)');
+  assert.equal(emit.disabled, true, 'Emitir deve estar disabled pois o servidor devolve acoes.emitir=false');
+  // Server-derived disablement (not a static literal): NATIVE_DRAFT carries
+  // acoes.emitir=false, so the control is disabled and has NO click handler —
+  // it can never call emitir_ordem_compra while the server withholds the action.
+  assert.ok(!emit._listeners || !emit._listeners.click, 'Emitir desabilitado NÃO pode ter handler de clique (nunca chama emitir_ordem_compra)');
   const bloq = findById(view, 'oc-bloqueio-emissao');
   assert.ok(bloq && /distribui/i.test(bloq.textContent || ''), 'motivo de bloqueio (distribuição pendente) visível');
 });
@@ -227,7 +230,10 @@ test('5. detalhe (legado): read-only — sem adicionar/editar/remover/cancelar',
   assert.ok(!btnByText(detail, /^Editar$/), 'legado NÃO tem "Editar" de item');
   assert.ok(!btnByText(detail, /^Remover$/), 'legado NÃO tem "Remover" de item');
   const emit = findById(view, 'oc-emitir');
-  assert.equal(emit.disabled, true, 'Emitir desabilitado também no legado');
+  assert.equal(emit.disabled, true, 'Emitir desabilitado também no legado (servidor devolve acoes.emitir=false)');
+  assert.ok(!emit._listeners || !emit._listeners.click, 'Emitir no legado não possui handler');
+  // Legacy orders carry no acceptance badge (native-only, PHASE-C5).
+  assert.equal(findById(view, 'oc-status-aceite'), null, 'ordem legado não exibe selo de aceite');
 });
 
 test('6. detalhe degrada com aviso quando db/68 ausente (PGRST202)', async () => {

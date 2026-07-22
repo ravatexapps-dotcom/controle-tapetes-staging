@@ -8,6 +8,51 @@
 > `PROJECT_STATE.md`. Phase sequence, dependencies, backlog items, and accepted
 > architecture in this file remain authoritative; live operational status does not.
 
+# Update 2026-07-22 - C5-PURCHASE-ORDER-EMISSION-UI-IMPLEMENTATION-R1 (PHASE-C5 native purchase-order emission UI implemented, locally verified, awaiting supervisor review)
+
+Phase: local UI implementation of `PHASE-C5` / `OC-C5-EMISSION-001` under the
+accepted material contract `docs/architecture/ORDEM_COMPRA_C5_PHASE_CONTRACT.md`
+(§22). Type: product + tests + docs; no migration, no database, no environment,
+no push. Entry checkpoint HEAD `538f4ba7b7aae5d6e9e0efbe29a57e1ef7bbc776`.
+Historical closeout note — live state belongs to `PROJECT_STATE.md`.
+
+Wired the previously disabled `oc-emitir` control to native
+`public.emitir_ordem_compra(BIGINT)`, driven exclusively by the server
+`acoes.emitir` signal (never recomputed client-side); added the ratified
+`CONTROLLED_IRREVERSIBLE_TRANSITION` confirmation modal (explicit confirmation,
+primary/neutral not destructive-red, in-flight duplicate-submit guard,
+authoritative reload after a deterministic success, reload-first resolution of an
+ambiguous transport with no auto-retry and no fallback writer, fixed pt-BR message
+per deterministic writer `codigo`); surfaced `status_aceite`
+(`nao_aplicavel`/`pendente`/`aceita`/`rejeitada`) with the honest
+not-lifecycle-complete notice for a pending acceptance. No acceptance/rejection
+capability (`PHASE-C5B` untouched).
+
+Manifest exactly contract §12 (additive
+`js/screens/ordem-compra-data.js`/`-render.js`/`-events.js`; no new product file;
+`index.html`, `js/router.js`, `js/boot.js`, `js/screens/common.js`, `js/ui.js`,
+the receipt/distribuicao/cutover/op-nova surfaces and all `db/*.sql`
+byte-unchanged; `ORDEM_COMPRA_CANCEL_HANDLER_STALE_ORDER_CAPTURE` untouched).
+Tests exactly contract §14 (new `tests/ordem-compra-emitir.smoke.js`; updated
+`tests/ordem-compra.smoke.js` tests 4–5).
+
+Evidence: emitir + ordem-compra suites 48/48 and the four C4 receipt suites
+38/38; full Node-suite added-failing-identity differential vs a detached baseline
+worktree at `538f4ba` = empty (baseline 142 / worktree 122; the 20 baseline-only
+identities are pre-existing non-determinism); `node
+scripts/validate-spec-custody.mjs` PASS (`--self-test` fails only on the
+pre-existing active-contract fixture-harness limitation, byte-identical to the
+`538f4ba` baseline); deterministic offline 7-PNG Playwright visual evidence +
+computed styles (`%TEMP%\ravatex-c5-visual-review\`), browser console/page errors
+empty.
+
+`OC-C5-EMISSION-001` advances `PLANNED` → `PARTIALLY_SATISFIED`; not
+self-accepted / not closed. `PHASE-C5B-ACCEPTANCE-DECISION`, `REAL_CUTOVER`, any
+shared-database apply beyond `db/77`, staging validation/application of
+`db/76`/`db/77`, deployment, activation, production access, branch creation, and
+any push remain unauthorized. One local commit `feat: implement C5 purchase-order
+emission UI`; no push.
+
 # Update 2026-07-22 - C5A-CLOSEOUT-AND-C5-AUTHORIZATION-R1 (PHASE-C5A supervisor closeout; PHASE-C5 implementation authorized locally)
 
 Phase: documentation-only supervisor closeout of `PHASE-C5A-DB-EMISSION-READINESS`

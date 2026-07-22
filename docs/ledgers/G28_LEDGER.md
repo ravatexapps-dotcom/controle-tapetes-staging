@@ -8711,3 +8711,93 @@ product file they depend on, was modified by this pass or the prior one):
   beyond `db/77`, staging validation/application of `db/76`/`db/77`,
   deployment, activation, production access, branch creation, and any push
   remain unauthorized. **No push is authorized by this pass.**
+
+---
+
+## 2026-07-22 — C5-PURCHASE-ORDER-EMISSION-UI-IMPLEMENTATION-R1 — PHASE-C5 native purchase-order emission UI (implemented, locally verified, awaiting review)
+
+- **Gate:** `IMPLEMENTED / LOCALLY VERIFIED / AWAITING SUPERVISOR FUNCTIONAL AND
+  VISUAL REVIEW` — not self-accepted, not closed.
+- **Phase:** `PHASE-C5` (`OC-C5-EMISSION-001`), local UI implementation under the
+  accepted material contract `docs/architecture/ORDEM_COMPRA_C5_PHASE_CONTRACT.md`
+  (§22, `ACCEPTED / IMPLEMENTATION AUTHORIZED LOCALLY`). Entry checkpoint HEAD
+  `538f4ba7b7aae5d6e9e0efbe29a57e1ef7bbc776`; parent
+  `d17b353ed3eca04225a7decb55f84ccd5817d085`.
+- **Scope implemented:** wired the previously disabled `oc-emitir` control to
+  native `public.emitir_ordem_compra(BIGINT)` driven EXCLUSIVELY by the server
+  `acoes.emitir` signal (never recomputed client-side); added the ratified
+  `CONTROLLED_IRREVERSIBLE_TRANSITION` confirmation modal (explicit confirmation,
+  primary/neutral — not destructive-red, in-flight duplicate-submit guard,
+  authoritative reload after a deterministic success, reload-first resolution of
+  an ambiguous transport with no auto-retry and no fallback writer, fixed pt-BR
+  message per deterministic writer `codigo`); surfaced `status_aceite`
+  (`nao_aplicavel`/`pendente`/`aceita`/`rejeitada`) on the detail header with the
+  honest "not lifecycle-complete" notice for a pending acceptance. No
+  acceptance/rejection capability built (`PHASE-C5B` untouched).
+- **Product manifest (additive only, exactly contract §12):**
+  `js/screens/ordem-compra-data.js` (emitir wrapper + local
+  transport-ambiguity/attempt-tracker primitives + result classifier),
+  `js/screens/ordem-compra-render.js` (server-derived emit button +
+  `status_aceite` badge + blocker/readiness/pending notices),
+  `js/screens/ordem-compra-events.js` (emitir confirmation-modal handler). No new
+  product file; `index.html`, `js/router.js`, `js/boot.js`,
+  `js/screens/common.js`, `js/ui.js`, the receipt/distribuicao/cutover/op-nova
+  surfaces and all `db/*.sql` byte-unchanged; the
+  `ORDEM_COMPRA_CANCEL_HANDLER_STALE_ORDER_CAPTURE` debt left untouched.
+- **Tests (exactly contract §14):** new `tests/ordem-compra-emitir.smoke.js`
+  (faithful DOM/VM behavioral suite covering the §14 / order manifest points
+  1–25); updated `tests/ordem-compra.smoke.js` tests 4–5 to the server-derived
+  state (retaining the "never calls `emitir_ordem_compra` while disabled"
+  guarantee).
+- **Validation:** targeted suites green (emitir + ordem-compra 48/48; the four C4
+  receipt suites 38/38). Full Node suite differential vs a detached baseline
+  worktree at `538f4ba`: baseline 142 / worktree 122 failing identities,
+  **added failing identities = empty** (zero regressions; the 20 baseline-only
+  identities are pre-existing non-determinism, unrelated to emission).
+  `node scripts/validate-spec-custody.mjs` PASS; `--self-test` fails only on the
+  pre-existing active-contract fixture-harness limitation (`R1:
+  ACTIVE_PHASE_CONTRACT is not an existing file`), proven byte-identical on the
+  `538f4ba` baseline. `git diff --check` / `--cached --check` clean.
+- **Visual evidence (deterministic, offline):** `%TEMP%\ravatex-c5-visual-review\`
+  (vendored Tailwind + local `playwright-core`; no Supabase/auth/network/DB/
+  production) rendered the real product DOM into seven PNGs (`01-eligible-draft`,
+  `02-emission-confirmation`, `03-incomplete-distribution`,
+  `04-acceptance-required`, `05-emitted-order`, `06-narrow-layout` 1024×900,
+  `07-acceptance-states`) + `c5-visual-contact-sheet.png`. Browser console and
+  page errors empty. Computed styles: emission primary button radius 4px
+  (`--rv-radius-control`), background `rgb(37,99,235)`/white (primary, not
+  destructive-red); confirmation confirm button `rgb(37,99,235)`
+  (`is_destructive_red=false`); confirmation card radius 8px + shadow (shared
+  `js/ui.js` modal primitive — `SHARED_UI_MODAL_CONTROL_RADIUS_TOKEN_ALIGNMENT`
+  debt, frozen by this order); status badge radius 999px pill; disabled emit
+  button opacity 0.6 / cursor `not-allowed` / chip background; narrow 1024 no
+  horizontal overflow.
+- **Residual risk / debts:** the feature cannot be exercised end-to-end in a
+  browser here (no auth/Supabase) — evidence is fixture-level DOM/mocked-RPC plus
+  the PHASE-C5A shared-dev DB validation, as contract §10 acknowledges;
+  `index.html` cache-bust `?v=` not bumped (index.html frozen by contract §12 —
+  a future deploy pass must refresh it); shared `js/ui.js` modal 8px radius debt
+  (item 16) and `ORDEM_COMPRA_CANCEL_HANDLER_STALE_ORDER_CAPTURE` (item 15)
+  remain; orders with `exige_aceite=TRUE` are still not lifecycle-complete until
+  `PHASE-C5B` ships (surfaced honestly in the UI).
+- **Next phase indicated at closeout:** supervisor functional + architect visual
+  review of this implementation (`SUPERVISION_PROTOCOL.md` §4).
+- **Exact accounting subject:** `feat: implement C5 purchase-order emission UI`
+- **Canonical state after this commit:**
+  ```text
+  LAST_ACCEPTED_PHASE = PHASE-C5A-DB-EMISSION-READINESS
+  ACTIVE_PHASE = PHASE-C5
+  ACTIVE_PHASE_CONTRACT = docs/architecture/ORDEM_COMPRA_C5_PHASE_CONTRACT.md
+
+  PHASE-C5 CONTRACT = ACCEPTED / IMPLEMENTATION AUTHORIZED LOCALLY
+  PHASE-C5 IMPLEMENTATION = IMPLEMENTED / LOCALLY VERIFIED / AWAITING SUPERVISOR FUNCTIONAL AND VISUAL REVIEW
+  OC-C5-EMISSION-001 = PARTIALLY_SATISFIED
+  PHASE-C5B-ACCEPTANCE-DECISION = IDENTIFIED / NOT AUTHORIZED
+  REAL_CUTOVER = NOT AUTHORIZED
+  ```
+- **NEXT_AUTHORIZABLE_ACTION:** supervisor functional review + mandatory architect
+  visual validation of the `PHASE-C5` implementation; on acceptance a separate
+  closeout advances `OC-C5-EMISSION-001` and closes `PHASE-C5`. `PHASE-C5B`,
+  `REAL_CUTOVER`, staging/deployment/activation, any shared-database apply,
+  production access, branch creation, and any push remain unauthorized. **No push
+  is authorized by this pass.**

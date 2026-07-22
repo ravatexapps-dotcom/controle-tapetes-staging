@@ -1,8 +1,19 @@
 // =====================================================================
 // === ORDEM DE COMPRA — ENTITY ACTIONS =================================
-// Purchase orders retain lifecycle consultation and cancellation only.
-// F2 moved purchasing distribution to Pedido / Insumos; no order-first
-// item or allocation writer remains reachable from this module.
+// Purchase orders retain lifecycle consultation, cancellation, and — from
+// PHASE-C5 (OC-C5-EMISSION-001) — native emission. F2 moved purchasing
+// distribution to Pedido / Insumos; no order-first item or allocation writer
+// remains reachable from this module.
+//
+// Emission (§R.22.5) uses ONLY public.emitir_ordem_compra(BIGINT) via the
+// ordem-compra-data.js wrapper, gated by the server acoes.emitir signal
+// (never recomputed here). It is a CONTROLLED_IRREVERSIBLE_TRANSITION (§21):
+// an explicit confirmation modal (js/ui.js modal(), primary/neutral — NOT the
+// destructive-red confirmDialog), an in-flight duplicate-submit guard, a fixed
+// pt-BR message per deterministic writer codigo (no retry, no fallback writer),
+// an authoritative reload after a deterministic success, and reload-first
+// resolution of an ambiguous transport (§8 — the RPC has no idempotency key).
+// No acceptance/rejection control exists here (PHASE-C5B is not authorized).
 // =====================================================================
 
 (function (window) {
@@ -10,6 +21,32 @@
 
   window.RAVATEX_SCREENS = window.RAVATEX_SCREENS || {};
   var ns = window.RAVATEX_SCREENS.ordemCompra = window.RAVATEX_SCREENS.ordemCompra || {};
+
+  var el = window.el;
+
+  // Fixed pt-BR messages for the emitir_ordem_compra deterministic vocabulary
+  // (db/68 body: the eight ordered codes) plus the call-time permission-denied
+  // (42501) and missing-function (PGRST202) cases. No raw SQL / stack traces are
+  // ever surfaced (§7); any unmapped deterministic result falls back to a clean
+  // generic message.
+  var EMISSAO_CODE_MESSAGES = {
+    sem_permissao: 'Sem permissão para emitir esta ordem.',
+    nao_encontrada: 'Ordem de compra não encontrada.',
+    ordem_legado: 'Ordem legado não pode ser emitida por esta via.',
+    estado_invalido: 'Somente uma ordem em rascunho pode ser emitida.',
+    sem_fornecedor: 'Defina o fornecedor da ordem antes de emitir.',
+    sem_itens: 'A ordem não possui itens para emitir.',
+    alocacao_incompleta: 'A distribuição de necessidades está incompleta; conclua a alocação de todos os itens.',
+    alocacao_incoerente: 'Há alocações incoerentes com o Pedido ou com o material/cor do item.',
+    '42501': 'Sem permissão para emitir esta ordem.',
+  };
+
+  function emissionRejectionMessage(res) {
+    var codigo = res.codigo || (res.result && res.result.codigo);
+    if (codigo && EMISSAO_CODE_MESSAGES[codigo]) return EMISSAO_CODE_MESSAGES[codigo];
+    return 'Não foi possível emitir a ordem.';
+  }
+  ns.emissionRejectionMessage = emissionRejectionMessage;
 
   async function rpcWrite(name, params, successMsg) {
     var result = await window.supa.rpc(name, params);
@@ -28,6 +65,13 @@
     var state = ctx.state || {};
     var reload = ctx.reload;
     var ordem = state.ordem || {};
+
+    // Local, in-memory emission attempt tracker (contract §9/§13). Its token is
+    // NEVER transmitted (emitir_ordem_compra has no idempotency parameter); it is
+    // purely local bookkeeping so a same-attempt transport-ambiguous retry is
+    // distinguished from a new deliberate attempt.
+    var emissionTracker = ns.createEmissionAttemptTracker();
+
     return {
       cancelar: function () {
         window.confirmDialog({
@@ -37,6 +81,90 @@
           onConfirm: async function () {
             var data = await rpcWrite('cancelar_ordem_compra', { p_ordem_id: ordem.ordem_id }, 'Ordem cancelada.');
             if (data) await reload();
+          },
+        });
+      },
+
+      // Emission (PHASE-C5). `o` is the CURRENT order passed by the render layer
+      // (handlers.emitir(o)) — read at click time so a re-render's fresh order is
+      // used, not a stale closure snapshot. Enablement was already decided by the
+      // server acoes.emitir flag in the render layer; this only performs the
+      // controlled irreversible transition behind an explicit confirmation.
+      emitir: function (o) {
+        var order = o || state.ordem || {};
+        var ordemId = order.ordem_id;
+        if (ordemId == null) {
+          window.toast('Ordem de compra inválida.', 'error');
+          return;
+        }
+
+        // CONTROLLED_IRREVERSIBLE_TRANSITION copy (§21): explains the resulting
+        // state (leaves rascunho → emitida; items/allocations frozen), that this
+        // is NOT an edit to items/distribution, and the irreversibility. The
+        // modal holds ONLY this explanation + the confirmation — the
+        // purchase-order entity stays on #/ordens-compra/:id, never duplicated
+        // here (§R.16).
+        var body = el('div', { style: 'color:var(--rv-color-text);font-size:13.5px;line-height:1.55;' });
+        body.appendChild(el('p', { class: 'mb-2' },
+          'Emitir a ordem #' + ordemId + ' a retira do rascunho e a marca como emitida.'));
+        body.appendChild(el('p', { class: 'mb-2' },
+          'Após a emissão, os itens e as alocações ficam congelados. Esta ação não edita itens nem a distribuição.'));
+        body.appendChild(el('p', { class: 'mb-0', style: 'color:var(--rv-color-muted);' },
+          'A emissão é definitiva — o único caminho de reversão é cancelar a ordem. Esta ordem não exige aceite.'));
+
+        // Mint the local attempt on modal open (§13).
+        emissionTracker.resolveAttempt({ ordemId: ordemId });
+
+        // Per-modal in-flight guard: a second confirm click while the first
+        // request is in flight is a no-op (§8, duplicate-submit prevention). The
+        // shared modal() additionally disables its confirm control during onSave.
+        var submitting = false;
+
+        window.modal({
+          title: 'Emitir ordem de compra #' + ordemId,
+          body: body,
+          saveLabel: 'Emitir ordem',
+          // `danger` omitted → primary/neutral (blue) treatment, NOT destructive-red.
+          onClose: function () { emissionTracker.complete(); },
+          onSave: async function () {
+            if (submitting) return false;
+            submitting = true;
+            try {
+              var res = await ns.emitirOrdem(ordemId);
+
+              if (res.outcome === 'success') {
+                emissionTracker.complete();
+                window.toast('Ordem emitida.', 'success');
+                await reload();               // authoritative reload; no local state fabrication
+                return;                        // closes the modal
+              }
+
+              if (res.outcome === 'ambiguous') {
+                // No idempotency key exists (§8/§9): do NOT auto-retry and do NOT
+                // call another writer. Reload authoritatively; the server state
+                // resolves the honest uncertainty. The token is retained across
+                // the ambiguity, then released once the reload resolves it.
+                window.toast('Falha de conexão; o resultado é incerto. Verificando o estado da ordem…', 'error');
+                await reload();
+                emissionTracker.complete();
+                var now = state.ordem || {};
+                if (now.status_administrativo === 'emitida') {
+                  window.toast('A ordem foi emitida.', 'success');
+                  return;                      // closes the modal; the screen shows emitida
+                }
+                window.toast('A ordem continua em rascunho. Você pode tentar emitir novamente.', 'info');
+                return;                        // closes; the reloaded Emitir button is the deliberate retry
+              }
+
+              // Deterministic rejection / hard failure: fixed pt-BR message, no
+              // retry, no fallback writer, new token next attempt. Keep the modal
+              // open so the user reads the reason and cancels deliberately.
+              emissionTracker.complete();
+              window.toast(emissionRejectionMessage(res), 'error');
+              return false;
+            } finally {
+              submitting = false;
+            }
           },
         });
       },

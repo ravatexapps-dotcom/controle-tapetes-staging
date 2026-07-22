@@ -127,14 +127,19 @@
   apply + idempotent reapply; `emitir` body byte-unchanged grant-only; read
   models corrected; exact grant matrix; full behavioral evidence; zero
   residue; cutover unchanged `legacy_active`. This resolves the `PHASE-C5`
-  database prerequisite. Next authorizable action is a **fresh Claude Code
-  session** performing `PHASE-C5` / `OC-C5-EMISSION-001` local UI
-  implementation (wire the disabled `oc-emitir` button to native
-  `emitir_ordem_compra` via the server-derived `acoes.emitir` signal, add the
-  `CONTROLLED_IRREVERSIBLE_TRANSITION` confirmation modal, surface
-  `status_aceite`), strictly within the closed three-file manifest
+  database prerequisite, and under `C5-PURCHASE-ORDER-EMISSION-UI-IMPLEMENTATION-R1`
+  (2026-07-22, local commit `feat: implement C5 purchase-order emission UI`) the
+  `PHASE-C5` UI is now `IMPLEMENTED / LOCALLY VERIFIED / AWAITING SUPERVISOR
+  FUNCTIONAL AND VISUAL REVIEW`: the disabled `oc-emitir` button was wired to
+  native `emitir_ordem_compra` via the server-derived `acoes.emitir` signal, the
+  `CONTROLLED_IRREVERSIBLE_TRANSITION` confirmation modal was added, and
+  `status_aceite` was surfaced, strictly within the closed three-file manifest
   (`ordem-compra-data.js`/`-render.js`/`-events.js`) and the contract's entry
-  gates (§15) and hard stops (§16). `PHASE-C5B-ACCEPTANCE-DECISION`, any
+  gates (§15) and hard stops (§16). The next authorizable action is supervisor
+  functional review + mandatory architect visual validation
+  (`SUPERVISION_PROTOCOL.md` §4); on acceptance a separate closeout advances
+  `OC-C5-EMISSION-001` (now `PARTIALLY_SATISFIED`) and closes `PHASE-C5`.
+  `PHASE-C5B-ACCEPTANCE-DECISION`, any
   shared-database apply beyond `db/77`, staging application of `db/76`/`db/77`,
   deployment, activation, `REAL_CUTOVER`, production access, and push remain
   unauthorized.

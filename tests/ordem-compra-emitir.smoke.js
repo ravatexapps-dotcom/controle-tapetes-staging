@@ -1,0 +1,421 @@
+// =====================================================================
+// === tests/ordem-compra-emitir.smoke.js ==============================
+// PHASE-C5 (OC-C5-EMISSION-001) — behavioral smokes for native purchase-
+// order emission on the dedicated detail screen (#/ordens-compra/:id).
+//
+// VM-loads js/ui.js + common.js + the ordem-compra detail modules into one
+// context (shared canonical doubles, tests/_doubles.js), then drives the REAL
+// render → click → confirmation-modal → RPC flow through the faithful DOM
+// double (real boolean-attr + _listeners.click semantics) against a mocked
+// supa.rpc. No source-text greps stand in for behavior.
+//
+// Proves the contract §14 / order TEST MANIFEST points 1–25:
+//   server-derived acoes.emitir enable/disable (no client-computed readiness
+//   substitute); explicit non-destructive confirmation; cancel performs no RPC;
+//   confirm invokes emitir_ordem_compra exactly once with the correct id;
+//   duplicate-submit prevention; authoritative reload with no local final-state
+//   fabrication; the full deterministic writer error vocabulary (no retry, no
+//   fallback writer); ambiguous transport reloads before any retry;
+//   exige_aceite / legacy / emitted / cancelled cannot emit; status_aceite
+//   renders for every value; and no acceptance/rejection control exists.
+// =====================================================================
+
+'use strict';
+
+const test = require('node:test');
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const path = require('node:path');
+const vm = require('node:vm');
+
+const { createDocument, makeFakeSupa } = require('./_doubles.js');
+
+const ROOT = path.resolve(__dirname, '..');
+const read = (rel) => fs.readFileSync(path.join(ROOT, rel), 'utf8');
+const files = [
+  'js/ui.js', 'js/screens/common.js',
+  'js/screens/ordem-compra-data.js', 'js/screens/ordem-compra-distribuicao.js',
+  'js/screens/ordem-compra-render.js', 'js/screens/ordem-compra-events.js',
+  'js/screens/ordens-compra-list.js', 'js/screens/ordem-compra.js',
+];
+const srcs = files.map((f) => [f, read(f)]);
+
+function makeSandbox(rpcImpl) {
+  const document = createDocument();
+  const supa = makeFakeSupa({ rpcImpl });
+  let uuid = 0;
+  const navCalls = [];
+  const sandbox = {
+    document, console, setTimeout, clearTimeout, supa,
+    crypto: { randomUUID: () => 'uuid-' + (++uuid) },
+    location: { hash: '#/ordens-compra/100' },
+    navigate: (h) => navCalls.push(h),
+    CURRENT_USER: { nome: 'Tester', tipo: 'admin' }, logout: () => {},
+  };
+  sandbox.window = sandbox;
+  sandbox.globalThis = sandbox;
+  vm.createContext(sandbox);
+  for (const [f, s] of srcs) vm.runInContext(s, sandbox, { filename: f });
+  sandbox.window.navigate = sandbox.navigate;
+  return { sandbox, supa, ns: sandbox.RAVATEX_SCREENS.ordemCompra, navCalls };
+}
+
+// ---- DOM walk helpers (faithful double) -----------------------------
+function walk(node, fn) { if (!node) return; fn(node); for (const c of (node.children || [])) walk(c, fn); }
+function findAll(node, pred) { const out = []; walk(node, (n) => { if (pred(n)) out.push(n); }); return out; }
+function findButtons(node) { return findAll(node, (n) => n.tagName === 'BUTTON'); }
+function findById(node, id) { return findAll(node, (n) => typeof n.getAttribute === 'function' && n.getAttribute('id') === id)[0] || null; }
+function btnByText(node, re) { return findButtons(node).find((b) => re.test(b.textContent || '')); }
+function text(node) { let s = ''; walk(node, (n) => { if (n && n._text != null) s += ' ' + n._text; }); return s; }
+function overlays(sandbox) { return (sandbox.document.body.children || []).filter((n) => !n._removed); }
+function overlayByTitle(sandbox, re) { return overlays(sandbox).find((o) => re.test(text(o))); }
+function toasts(sandbox) { return sandbox.document._toastsNode.children; }
+function lastToast(sandbox) { const t = toasts(sandbox); return t[t.length - 1]; }
+function rpcCalls(supa, name) { return supa._calls.filter((c) => c.op === 'rpc' && c.name === name); }
+function allRpcNames(supa) { return supa._calls.filter((c) => c.op === 'rpc').map((c) => c.name); }
+
+async function renderScreen(rpcImpl) {
+  const env = makeSandbox(rpcImpl);
+  const view = await vm.runInContext('window.screenOrdemCompra(100)', env.sandbox);
+  return Object.assign(env, { view });
+}
+
+// obter_ordem_compra_admin that returns each order once, repeating the last —
+// lets a test see a different (server-authoritative) order on the post-emission
+// reload than on the initial mount.
+function sequencedObter(...orders) {
+  let i = 0;
+  return () => {
+    const ordem = orders[Math.min(i, orders.length - 1)];
+    i += 1;
+    return { data: { ok: true, ordem, eventos: ordem.__eventos || [] }, error: null };
+  };
+}
+
+// ---- Fixtures (obter_ordem_compra_admin `ordem` shape, db/77) --------
+function order(over) {
+  return Object.assign({
+    ordem_id: 4210, modelo: 'nativo', pedido_id: 'p1', fornecedor_id: 7, fornecedor_nome: 'Fios Premium Ltda',
+    status_administrativo: 'rascunho', status_aceite: 'nao_aplicavel', status_recebimento: 'nao_recebido',
+    legado: false, legado_provenance: null, emitida_em: null, cancelada_em: null, itens_total: 1,
+    itens: [{ item_id: 10, material: 'poliester', cor_id: 3, cor_poliester: 'Azul Marinho', cor_nome: null, kg_pedido: 183, kg_recebido: 0, alocacoes: 1, kg_alocado: 183 }],
+    acoes: { editar_itens: true, remover_itens: true, cancelar: true, distribuir: true, emitir: false, receber: false },
+    distribuicao_completa: true, pronta_para_emissao: true, pode_emitir: false, bloqueio_emissao: null,
+  }, over || {});
+}
+const ELIGIBLE = order({ acoes: { editar_itens: true, remover_itens: true, cancelar: true, distribuir: true, emitir: true, receber: false }, pode_emitir: true, bloqueio_emissao: null });
+const INCOMPLETE = order({
+  acoes: { editar_itens: true, remover_itens: true, cancelar: true, distribuir: true, emitir: false, receber: false },
+  distribuicao_completa: false, pronta_para_emissao: false, pode_emitir: false, bloqueio_emissao: 'distribuicao_necessidades_pendente',
+  itens: [{ item_id: 10, material: 'poliester', cor_id: 3, cor_poliester: 'Azul Marinho', cor_nome: null, kg_pedido: 183, kg_recebido: 0, alocacoes: 1, kg_alocado: 100 }],
+});
+const ACEITE_REQUIRED = order({
+  acoes: { editar_itens: true, remover_itens: true, cancelar: true, distribuir: true, emitir: false, receber: false },
+  pode_emitir: false, bloqueio_emissao: 'emissao_bloqueada_exige_aceite',
+});
+function emitted(statusAceite) {
+  return order({
+    status_administrativo: 'emitida', status_aceite: statusAceite, emitida_em: '2026-07-22T12:00:00Z',
+    acoes: { editar_itens: false, remover_itens: false, cancelar: false, distribuir: false, emitir: false, receber: false },
+    pode_emitir: false, bloqueio_emissao: null,
+    __eventos: [{ id: 1, dimensao: 'administrativo', tipo_evento: 'emitida', valor_anterior: 'rascunho', valor_novo: 'emitida', criado_em: '2026-07-22T12:00:00Z' }],
+  });
+}
+const CANCELLED = order({
+  status_administrativo: 'cancelada', cancelada_em: '2026-07-10T00:00:00Z',
+  acoes: { editar_itens: false, remover_itens: false, cancelar: false, distribuir: false, emitir: false, receber: false },
+  pode_emitir: false, bloqueio_emissao: null,
+});
+const LEGACY = order({
+  modelo: 'legado', legado: true, legado_provenance: 'emitido_recebido', status_administrativo: 'emitida',
+  acoes: { editar_itens: false, remover_itens: false, cancelar: false, distribuir: false, emitir: false, receber: false },
+  pode_emitir: false, bloqueio_emissao: null,
+});
+
+const okResult = () => ({ data: { ok: true, codigo: 'ok', ordem_compra_id: 4210, status_administrativo: 'emitida', status_aceite: 'nao_aplicavel' }, error: null });
+
+// ============================ ENABLEMENT (server-derived) ============
+test('1. acoes.emitir=true renders an ENABLED emit action wired to a click handler', async () => {
+  const env = await renderScreen({ obter_ordem_compra_admin: sequencedObter(ELIGIBLE) });
+  const emit = findById(env.view, 'oc-emitir');
+  assert.ok(emit, 'emit control exists');
+  assert.equal(emit.disabled, false, 'enabled when acoes.emitir=true');
+  assert.ok(emit._listeners && emit._listeners.click, 'enabled control is wired to a click handler');
+  assert.ok(findById(env.view, 'oc-emissao-pronta'), 'readiness context is visible');
+});
+
+test('2. acoes.emitir=false prevents emission (disabled, no handler)', async () => {
+  const env = await renderScreen({ obter_ordem_compra_admin: sequencedObter(INCOMPLETE) });
+  const emit = findById(env.view, 'oc-emitir');
+  assert.equal(emit.disabled, true, 'disabled when acoes.emitir=false');
+  assert.ok(!emit._listeners || !emit._listeners.click, 'disabled control has no click handler');
+});
+
+test('3. no client-computed readiness substitute: acoes.emitir is authoritative over local item sums', async () => {
+  // (a) Server says emitir=false even though local item sums look complete
+  //     (kg_alocado === kg_pedido, distribuicao_completa=true) → still disabled.
+  const localLooksComplete = order({ acoes: { emitir: false }, distribuicao_completa: true, pode_emitir: false, bloqueio_emissao: 'emissao_bloqueada_exige_aceite' });
+  const a = await renderScreen({ obter_ordem_compra_admin: sequencedObter(localLooksComplete) });
+  assert.equal(findById(a.view, 'oc-emitir').disabled, true, 'client does not enable from local sums when the server withholds acoes.emitir');
+  // (b) Server says emitir=true even though local item sums look INCOMPLETE
+  //     (kg_alocado < kg_pedido) → still enabled (server authority).
+  const localLooksIncomplete = order({ acoes: { emitir: true }, pode_emitir: true, itens: [{ item_id: 10, material: 'poliester', cor_poliester: 'Azul', kg_pedido: 183, kg_alocado: 5, alocacoes: 1 }] });
+  const b = await renderScreen({ obter_ordem_compra_admin: sequencedObter(localLooksIncomplete) });
+  assert.equal(findById(b.view, 'oc-emitir').disabled, false, 'client trusts acoes.emitir=true and does not disable from local sums');
+});
+
+// ============================ CONFIRMATION UX =======================
+test('4. eligible draft: clicking Emitir opens an explicit confirmation modal (irreversible-transition copy)', async () => {
+  const env = await renderScreen({ obter_ordem_compra_admin: sequencedObter(ELIGIBLE) });
+  findById(env.view, 'oc-emitir')._listeners.click();
+  const modal = overlayByTitle(env.sandbox, /Emitir ordem de compra #4210/);
+  assert.ok(modal, 'confirmation modal opened');
+  const copy = text(modal);
+  assert.match(copy, /retira do rascunho/i, 'explains leaving draft → emitida');
+  assert.match(copy, /congelad/i, 'explains items/allocations are frozen');
+  assert.match(copy, /definitiva/i, 'explains irreversibility');
+  assert.equal(rpcCalls(env.supa, 'emitir_ordem_compra').length, 0, 'opening the modal performs NO RPC');
+});
+
+test('5. confirmation is NOT styled as destructive deletion (primary/neutral, not red)', async () => {
+  const env = await renderScreen({ obter_ordem_compra_admin: sequencedObter(ELIGIBLE) });
+  findById(env.view, 'oc-emitir')._listeners.click();
+  const modal = overlayByTitle(env.sandbox, /Emitir ordem de compra/);
+  const confirm = btnByText(modal, /^Emitir ordem$/);
+  assert.ok(confirm, 'confirm control present');
+  assert.match(confirm.className, /bg-\[#2563eb\]/, 'confirm uses the primary/neutral treatment');
+  assert.doesNotMatch(confirm.className, /bg-red-600/, 'confirm is NOT the destructive-red treatment');
+});
+
+test('6. cancelling the confirmation performs NO RPC and closes the surface', async () => {
+  const env = await renderScreen({ obter_ordem_compra_admin: sequencedObter(ELIGIBLE), emitir_ordem_compra: okResult });
+  findById(env.view, 'oc-emitir')._listeners.click();
+  const modal = overlayByTitle(env.sandbox, /Emitir ordem de compra/);
+  btnByText(modal, /^Cancelar$/)._listeners.click();
+  assert.equal(rpcCalls(env.supa, 'emitir_ordem_compra').length, 0, 'cancel performs no emission RPC');
+  assert.ok(!overlayByTitle(env.sandbox, /Emitir ordem de compra/), 'modal closed after cancel');
+});
+
+// ============================ CONFIRM → RPC → RELOAD =================
+test('7+8. confirming invokes emitir_ordem_compra exactly once with the correct order id', async () => {
+  const env = await renderScreen({ obter_ordem_compra_admin: sequencedObter(ELIGIBLE, emitted('nao_aplicavel')), emitir_ordem_compra: okResult });
+  findById(env.view, 'oc-emitir')._listeners.click();
+  const modal = overlayByTitle(env.sandbox, /Emitir ordem de compra/);
+  await btnByText(modal, /^Emitir ordem$/)._listeners.click();
+  const calls = rpcCalls(env.supa, 'emitir_ordem_compra');
+  assert.equal(calls.length, 1, 'exactly one emission RPC');
+  // JSON round-trip normalises the cross-realm (VM-context) params object.
+  assert.deepEqual(JSON.parse(JSON.stringify(calls[0].params)), { p_ordem_id: 4210 }, 'only the canonical p_ordem_id is sent (no idempotency key)');
+});
+
+test('9. duplicate confirm clicks while in flight fire only ONE emission RPC', async () => {
+  let resolveRpc;
+  const gate = new Promise((r) => { resolveRpc = r; });
+  const env = await renderScreen({
+    obter_ordem_compra_admin: sequencedObter(ELIGIBLE, emitted('nao_aplicavel')),
+    emitir_ordem_compra: async () => { await gate; return okResult(); },
+  });
+  findById(env.view, 'oc-emitir')._listeners.click();
+  const modal = overlayByTitle(env.sandbox, /Emitir ordem de compra/);
+  const confirm = btnByText(modal, /^Emitir ordem$/);
+  const p1 = confirm._listeners.click();   // in flight (awaiting the gate)
+  const p2 = confirm._listeners.click();   // duplicate while in flight → blocked
+  assert.equal(rpcCalls(env.supa, 'emitir_ordem_compra').length, 1, 'the in-flight guard blocks the duplicate submission');
+  resolveRpc();
+  await Promise.all([p1, p2]);
+  assert.equal(rpcCalls(env.supa, 'emitir_ordem_compra').length, 1, 'still exactly one emission RPC after both resolve');
+});
+
+test('10+11. success triggers an authoritative reload and renders the SERVER state (no local fabrication)', async () => {
+  const env = await renderScreen({ obter_ordem_compra_admin: sequencedObter(ELIGIBLE, emitted('nao_aplicavel')), emitir_ordem_compra: okResult });
+  assert.equal(rpcCalls(env.supa, 'obter_ordem_compra_admin').length, 1, 'one detail load on mount');
+  findById(env.view, 'oc-emitir')._listeners.click();
+  await btnByText(overlayByTitle(env.sandbox, /Emitir ordem de compra/), /^Emitir ordem$/)._listeners.click();
+  assert.equal(rpcCalls(env.supa, 'obter_ordem_compra_admin').length, 2, 'authoritative reload re-fetched the detail after success');
+  // The re-rendered screen shows the SERVER reload payload (emitida), not a
+  // locally-patched object: emit is now disabled and the emitida status shows.
+  assert.equal(findById(env.view, 'oc-emitir').disabled, true, 'reloaded emitida order can no longer emit');
+  assert.match(text(findById(env.view, 'ordem-compra-detail')), /Emitida/, 'server emitida state rendered');
+  assert.ok(!overlayByTitle(env.sandbox, /Emitir ordem de compra/), 'modal closed on success');
+});
+
+// ============================ DETERMINISTIC ERROR VOCABULARY =========
+const DENIALS = [
+  ['12. wrong state', 'estado_invalido', /rascunho pode ser emitida/i],
+  ['13. permission denied (codigo)', 'sem_permissao', /Sem permissão/i],
+  ['14. missing supplier', 'sem_fornecedor', /fornecedor/i],
+  ['15. missing items', 'sem_itens', /não possui itens/i],
+  ['16. incomplete allocation', 'alocacao_incompleta', /distribuição.*incompleta/i],
+  ['17a. order not found', 'nao_encontrada', /não encontrada/i],
+  ['17b. legacy order', 'ordem_legado', /legado/i],
+  ['17c. incoherent allocation', 'alocacao_incoerente', /incoerentes/i],
+];
+for (const [label, codigo, re] of DENIALS) {
+  test(`${label}: deterministic denial (${codigo}) shows a fixed pt-BR message, no retry, no fallback writer`, async () => {
+    const env = await renderScreen({
+      obter_ordem_compra_admin: sequencedObter(ELIGIBLE),
+      emitir_ordem_compra: () => ({ data: { ok: false, codigo, erro: 'raw sql/internal detail' }, error: null }),
+    });
+    findById(env.view, 'oc-emitir')._listeners.click();
+    await btnByText(overlayByTitle(env.sandbox, /Emitir ordem de compra/), /^Emitir ordem$/)._listeners.click();
+    assert.equal(rpcCalls(env.supa, 'emitir_ordem_compra').length, 1, 'no retry — exactly one emission RPC');
+    assert.match(lastToast(env.sandbox).className, /bg-red-600/, 'error toast');
+    assert.match(lastToast(env.sandbox).textContent, re, 'fixed pt-BR message');
+    assert.doesNotMatch(lastToast(env.sandbox).textContent, /raw sql\/internal detail/i, 'never surfaces raw internal detail');
+    assert.deepEqual(allRpcNames(env.supa).filter((n) => /emitir/.test(n)), ['emitir_ordem_compra'], 'no legacy/compat emission fallback');
+    assert.ok(overlayByTitle(env.sandbox, /Emitir ordem de compra/), 'modal stays open on a deterministic denial');
+  });
+}
+
+test('13b. call-time permission denied (42501 hard failure) is a deterministic denial, never retried', async () => {
+  const env = await renderScreen({
+    obter_ordem_compra_admin: sequencedObter(ELIGIBLE),
+    emitir_ordem_compra: () => ({ data: null, error: { code: '42501', message: 'permission denied for function emitir_ordem_compra' }, status: 403 }),
+  });
+  findById(env.view, 'oc-emitir')._listeners.click();
+  await btnByText(overlayByTitle(env.sandbox, /Emitir ordem de compra/), /^Emitir ordem$/)._listeners.click();
+  assert.equal(rpcCalls(env.supa, 'emitir_ordem_compra').length, 1, 'no retry on a 42501 hard failure');
+  assert.match(lastToast(env.sandbox).textContent, /Sem permissão/i, 'fixed permission message');
+  assert.doesNotMatch(lastToast(env.sandbox).textContent, /function emitir_ordem_compra/i, 'never leaks the internal SQL error text');
+});
+
+test('17d. unmapped deterministic result falls back to a clean generic message (no raw error)', async () => {
+  const env = await renderScreen({
+    obter_ordem_compra_admin: sequencedObter(ELIGIBLE),
+    emitir_ordem_compra: () => ({ data: { ok: false, codigo: 'algum_codigo_novo', erro: 'internal' }, error: null }),
+  });
+  findById(env.view, 'oc-emitir')._listeners.click();
+  await btnByText(overlayByTitle(env.sandbox, /Emitir ordem de compra/), /^Emitir ordem$/)._listeners.click();
+  assert.match(lastToast(env.sandbox).textContent, /Não foi possível emitir a ordem/i, 'clean generic deterministic message');
+});
+
+// ============================ AMBIGUOUS TRANSPORT ====================
+test('18+19. ambiguous transport (status===0) reloads BEFORE any retry, never falls back to another writer', async () => {
+  // The reload resolves the order to emitida → the emission actually landed.
+  const env = await renderScreen({
+    obter_ordem_compra_admin: sequencedObter(ELIGIBLE, emitted('nao_aplicavel')),
+    emitir_ordem_compra: () => ({ data: null, error: { message: 'Failed to fetch' }, status: 0 }),
+  });
+  findById(env.view, 'oc-emitir')._listeners.click();
+  await btnByText(overlayByTitle(env.sandbox, /Emitir ordem de compra/), /^Emitir ordem$/)._listeners.click();
+  assert.equal(rpcCalls(env.supa, 'emitir_ordem_compra').length, 1, 'the emission writer is NOT re-called automatically');
+  assert.equal(rpcCalls(env.supa, 'obter_ordem_compra_admin').length, 2, 'an authoritative reload runs before any retry');
+  assert.deepEqual(allRpcNames(env.supa).filter((n) => /emitir/.test(n)), ['emitir_ordem_compra'], 'no legacy/compat fallback writer');
+  assert.match(text(findById(env.view, 'ordem-compra-detail')), /Emitida/, 'server state (emitida) is treated as authoritative after the reload');
+});
+
+test('18b. ambiguous transport that stays a draft preserves honest uncertainty and offers a deliberate retry', async () => {
+  const env = await renderScreen({
+    obter_ordem_compra_admin: sequencedObter(ELIGIBLE, ELIGIBLE),  // reload still shows an eligible draft
+    emitir_ordem_compra: () => ({ data: null, error: { message: 'Failed to fetch' }, status: 0 }),
+  });
+  findById(env.view, 'oc-emitir')._listeners.click();
+  await btnByText(overlayByTitle(env.sandbox, /Emitir ordem de compra/), /^Emitir ordem$/)._listeners.click();
+  assert.equal(rpcCalls(env.supa, 'emitir_ordem_compra').length, 1, 'no automatic re-emission');
+  assert.equal(rpcCalls(env.supa, 'obter_ordem_compra_admin').length, 2, 'reload performed');
+  assert.match(text(env.sandbox.document._toastsNode), /continua em rascunho/i, 'honest uncertainty surfaced');
+  // The reloaded screen still offers the emit action as a NEW deliberate retry.
+  assert.equal(findById(env.view, 'oc-emitir').disabled, false, 'the reloaded Emitir button is the controlled deliberate retry');
+});
+
+// ============================ STATE MATRIX (cannot emit) =============
+for (const [label, fx] of [
+  ['20. exige_aceite draft', ACEITE_REQUIRED],
+  ['23. legacy order', LEGACY],
+  ['24. emitted order', emitted('nao_aplicavel')],
+  ['25. cancelled order', CANCELLED],
+]) {
+  test(`${label} cannot emit (disabled, no handler)`, async () => {
+    const env = await renderScreen({ obter_ordem_compra_admin: sequencedObter(fx) });
+    const emit = findById(env.view, 'oc-emitir');
+    assert.equal(emit.disabled, true, 'emit control disabled');
+    assert.ok(!emit._listeners || !emit._listeners.click, 'no click handler');
+  });
+}
+
+test('20b. exige_aceite draft shows the canonical blocker and offers NO acceptance override', async () => {
+  const env = await renderScreen({ obter_ordem_compra_admin: sequencedObter(ACEITE_REQUIRED) });
+  const bloq = findById(env.view, 'oc-bloqueio-emissao');
+  assert.ok(bloq && /exige aceite/i.test(bloq.textContent), 'canonical exige_aceite blocker shown');
+  assert.equal(findButtons(env.view).find((b) => /aceit|rejeit|aprovar|recusar/i.test(b.textContent || '')), undefined, 'no acceptance/override control');
+});
+
+// ============================ status_aceite RENDERING ================
+for (const [statusAceite, re, notLabel] of [
+  ['nao_aplicavel', /não aplicável/i, null],
+  ['pendente', /aguardando aceite/i, /confirmado/i],
+  ['aceita', /aceite confirmado/i, null],
+  ['rejeitada', /aceite rejeitado/i, null],
+]) {
+  test(`21. status_aceite='${statusAceite}' renders a distinct acceptance badge`, async () => {
+    const env = await renderScreen({ obter_ordem_compra_admin: sequencedObter(emitted(statusAceite)) });
+    const badge = findById(env.view, 'oc-status-aceite');
+    assert.ok(badge, 'acceptance badge rendered for a native emitted order');
+    assert.equal(badge.getAttribute('data-status-aceite'), statusAceite, 'badge carries the exact status value');
+    assert.match(badge.textContent, re, 'correct label');
+    if (notLabel) assert.doesNotMatch(badge.textContent, notLabel, 'pendente is never presented as accepted');
+  });
+}
+
+test('21b. emitted + pendente surfaces the "not lifecycle-complete" notice (PHASE-C5B limitation)', async () => {
+  const env = await renderScreen({ obter_ordem_compra_admin: sequencedObter(emitted('pendente')) });
+  const aviso = findById(env.view, 'oc-aceite-pendente-aviso');
+  assert.ok(aviso, 'pending-acceptance notice present');
+  assert.match(aviso.textContent, /ainda não está concluída/i, 'states the order is not complete');
+});
+
+test('22. no acceptance/rejection control exists on the detail screen (any acceptance state)', async () => {
+  for (const sa of ['nao_aplicavel', 'pendente', 'aceita', 'rejeitada']) {
+    const env = await renderScreen({ obter_ordem_compra_admin: sequencedObter(emitted(sa)) });
+    const control = findButtons(env.view).find((b) => /aceitar|rejeitar|aprovar|recusar|decidir aceite/i.test(b.textContent || ''));
+    assert.equal(control, undefined, `no acceptance/rejection button for status_aceite=${sa}`);
+  }
+});
+
+// ============================ DATA-LAYER PRIMITIVES ==================
+test('data: classifyEmissionResult maps every outcome deterministically', () => {
+  const { ns } = makeSandbox({});
+  assert.equal(ns.classifyEmissionResult({ data: { ok: true, codigo: 'ok' }, error: null }).outcome, 'success');
+  const rej = ns.classifyEmissionResult({ data: { ok: false, codigo: 'estado_invalido' }, error: null });
+  assert.equal(rej.outcome, 'rejected'); assert.equal(rej.codigo, 'estado_invalido');
+  const hard = ns.classifyEmissionResult({ data: null, error: { code: '42501' }, status: 403 });
+  assert.equal(hard.outcome, 'hard_failure'); assert.equal(hard.codigo, '42501');
+  assert.equal(ns.classifyEmissionResult({ data: null, error: { message: 'net' }, status: 0 }).outcome, 'ambiguous');
+});
+
+test('data: isEmissionTransportAmbiguous is TRUE only for an error with status===0', () => {
+  const { ns } = makeSandbox({});
+  assert.equal(ns.isEmissionTransportAmbiguous({ error: { message: 'x' }, status: 0 }), true);
+  assert.equal(ns.isEmissionTransportAmbiguous({ error: { code: '42501' }, status: 403 }), false);
+  assert.equal(ns.isEmissionTransportAmbiguous({ data: { ok: true }, error: null }), false);
+});
+
+test('data: emitirOrdem sends only p_ordem_id to the canonical writer', async () => {
+  const env = makeSandbox({ emitir_ordem_compra: okResult });
+  const res = await env.ns.emitirOrdem(4210);
+  assert.equal(res.outcome, 'success');
+  const call = rpcCalls(env.supa, 'emitir_ordem_compra')[0];
+  assert.deepEqual(JSON.parse(JSON.stringify(call.params)), { p_ordem_id: 4210 }, 'exact canonical payload, no invented idempotency key');
+});
+
+test('data: the emission attempt tracker is a local, independent copy (never the receipt tracker)', () => {
+  const { ns } = makeSandbox({});
+  const t = ns.createEmissionAttemptTracker();
+  const a1 = t.resolveAttempt({ ordemId: 1 });
+  assert.equal(t.resolveAttempt({ ordemId: 1 }), a1, 'same intent → same in-flight attempt token');
+  t.complete();
+  assert.notEqual(t.resolveAttempt({ ordemId: 1 }).token, a1.token, 'a new deliberate attempt mints a fresh token');
+  assert.notEqual(ns.createEmissionAttemptTracker, ns.createReceiptAttemptTracker, 'structurally independent from the receipt tracker');
+});
+
+// ============================ CANCELLATION HANDLER PRESERVED =========
+test('27. the existing cancellation handler is preserved (still calls cancelar_ordem_compra)', async () => {
+  const env = await renderScreen({
+    obter_ordem_compra_admin: sequencedObter(ELIGIBLE, CANCELLED),
+    cancelar_ordem_compra: () => ({ data: { ok: true }, error: null }),
+  });
+  findById(env.view, 'oc-cancelar')._listeners.click();
+  await btnByText(overlayByTitle(env.sandbox, /Cancelar ordem de compra/), /^Cancelar ordem$/)._listeners.click();
+  assert.equal(rpcCalls(env.supa, 'cancelar_ordem_compra').length, 1, 'cancellation still routes to cancelar_ordem_compra');
+  assert.equal(rpcCalls(env.supa, 'emitir_ordem_compra').length, 0, 'cancellation never calls the emission writer');
+});

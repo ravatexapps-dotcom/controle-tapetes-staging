@@ -100,6 +100,107 @@
     return null;
   };
 
+  // ---- Emission (PHASE-C5, OC-C5-EMISSION-001) -------------------------
+  // Wraps the ONLY canonical emission writer public.emitir_ordem_compra(BIGINT)
+  // (db/68 body, activated for `authenticated` by db/77; internal is_admin()
+  // gate authoritative). Action availability is NEVER decided here — it is read
+  // from the server `acoes.emitir` flag in obter_ordem_compra_admin (§R.22.10);
+  // this layer only performs the transition and classifies its result.
+  //
+  // Idempotency posture (contract §9/§13): emitir_ordem_compra takes NO
+  // p_idempotency_key parameter — none is invented. The attempt token below is a
+  // LOCAL, in-memory, never-transmitted bookkeeping marker (mint-on-open, reused
+  // only across a genuine status===0 transport-ambiguous retry of the same
+  // attempt, new token after any deterministic outcome). The server's natural
+  // idempotency backstop is its own status_administrativo re-check
+  // (a replay of an already-emitida order deterministically returns
+  // 'estado_invalido'), plus the in-flight confirm-button guard in the events
+  // layer. These primitives are a structurally INDEPENDENT re-implementation of
+  // the ordem-compra-receipt-data.js pattern (contract §3): this module never
+  // imports, calls, or extends it, and emitirOrdem never falls back to any other
+  // writer (no emitir_ordem_compra_fio, no table write) after any outcome.
+  function newEmissionAttemptToken() {
+    if (window.crypto && typeof window.crypto.randomUUID === 'function') {
+      return window.crypto.randomUUID();
+    }
+    return 'c5-emit-' + Date.now() + '-' + Math.random().toString(36).slice(2);
+  }
+  ns.newEmissionAttemptToken = newEmissionAttemptToken;
+
+  function createEmissionAttemptTracker() {
+    var attempt = null;
+    var intent = null;
+
+    function sameIntent(a, b) {
+      if (!a || !b) return false;
+      var aKeys = Object.keys(a);
+      var bKeys = Object.keys(b);
+      if (aKeys.length !== bKeys.length) return false;
+      return aKeys.every(function (key) { return a[key] === b[key]; });
+    }
+
+    return {
+      resolveAttempt: function (currentIntent) {
+        if (attempt && sameIntent(intent, currentIntent)) return attempt;
+        attempt = { token: newEmissionAttemptToken() };
+        intent = currentIntent;
+        return attempt;
+      },
+      complete: function () {
+        attempt = null;
+        intent = null;
+      },
+    };
+  }
+  ns.createEmissionAttemptTracker = createEmissionAttemptTracker;
+
+  // The FINITE "commit status genuinely unknown" signal, grounded in the real
+  // @supabase/postgrest-js response shape: a fetch() rejection (network/DNS/
+  // timeout/abort/CORS) is the ONLY path that yields status === 0 with a present
+  // error. Every deterministic server response carries a real HTTP status. Never
+  // inferred from message text.
+  function isEmissionTransportAmbiguous(res) {
+    return !!res && !!res.error && res.status === 0;
+  }
+  ns.isEmissionTransportAmbiguous = isEmissionTransportAmbiguous;
+
+  // Classifies a window.supa.rpc('emitir_ordem_compra') result into exactly one
+  // deterministic-or-ambiguous outcome:
+  //   'success'      — data.ok === true (deterministic): mint a new token next.
+  //   'rejected'     — data.ok === false with a business codigo (deterministic;
+  //                    the eight writer codes sem_permissao / nao_encontrada /
+  //                    ordem_legado / estado_invalido / sem_fornecedor /
+  //                    sem_itens / alocacao_incompleta / alocacao_incoerente):
+  //                    fixed message, new token.
+  //   'hard_failure' — an RPC error carrying a real HTTP status (deterministic;
+  //                    e.g. permission-denied 42501, missing function PGRST202):
+  //                    fixed message, no fallback writer, new token.
+  //   'ambiguous'    — status === 0 (transport unknown): RETAIN the token; the
+  //                    events layer reloads authoritatively before any retry and
+  //                    never falls back to another path (§8).
+  function classifyEmissionResult(res) {
+    if (res && res.error) {
+      if (isEmissionTransportAmbiguous(res)) {
+        return { outcome: 'ambiguous', error: res.error };
+      }
+      return { outcome: 'hard_failure', error: res.error, codigo: (res.error.code || null) };
+    }
+    var data = (res && res.data) || {};
+    if (data.ok === true) return { outcome: 'success', result: data };
+    return { outcome: 'rejected', result: data, codigo: (data.codigo || null) };
+  }
+  ns.classifyEmissionResult = classifyEmissionResult;
+
+  // Native emission writer. Sends ONLY the canonical p_ordem_id (BIGINT) — no
+  // idempotency key exists on this RPC and none is invented. Returns the
+  // classified outcome; the caller (events layer) owns the confirmation UX,
+  // the in-flight guard, the fixed pt-BR error messages, and the authoritative
+  // reload.
+  ns.emitirOrdem = async function (ordemId) {
+    var res = await window.supa.rpc('emitir_ordem_compra', { p_ordem_id: ordemId });
+    return classifyEmissionResult(res);
+  };
+
   // Reference data for the create/edit forms. Best-effort: a failure here
   // does not block rendering the (read-only) order view — the pickers just
   // stay empty and the write actions surface their own errors.

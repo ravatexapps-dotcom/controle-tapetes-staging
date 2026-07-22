@@ -20,7 +20,7 @@ LAST_ACCEPTED_PHASE: PHASE-C5A-DB-EMISSION-READINESS
 ACTIVE_PHASE: PHASE-C5
 ACTIVE_PHASE_CONTRACT: docs/architecture/ORDEM_COMPRA_C5_PHASE_CONTRACT.md
 ACTIVE_TRACK: PURCHASE_ORDER_PHASE_C
-NEXT_AUTHORIZABLE_ACTION: a fresh Claude Code session performs PHASE-C5 / OC-C5-EMISSION-001 local UI implementation — under C5A-CLOSEOUT-AND-C5-AUTHORIZATION-R1 (2026-07-22) the supervisor CLOSED PHASE-C5A-DB-EMISSION-READINESS as CLOSED / ACCEPTED / LOCALLY VERIFIED / SHARED-DEVELOPMENT VERIFIED (contract §25, ratifying the db/77 grant + read-model correction and its full contract §14/§24 shared-development evidence on ucrjtfswnfdlxwtmxnoo as final) and, with that database prerequisite resolved, authorized docs/architecture/ORDEM_COMPRA_C5_PHASE_CONTRACT.md for local implementation (STATUS: ACCEPTED / IMPLEMENTATION AUTHORIZED LOCALLY, contract §22) — wire the existing disabled oc-emitir button to native emitir_ordem_compra via the server-derived acoes.emitir signal, add the ratified CONTROLLED_IRREVERSIBLE_TRANSITION confirmation modal, and surface status_aceite, strictly within the closed purely-additive three-file manifest (ordem-compra-data.js/-render.js/-events.js only, contract §12) and its §15 entry/exit gates and §16 hard stops. PHASE-C5B-ACCEPTANCE-DECISION (IDENTIFIED / NOT AUTHORIZED — the missing status_aceite pendente-to-aceita/rejeitada transition capability), the REAL_CUTOVER window (OC-CUTOVER-001/OC-CUTOVER-PONR-001 — hard-gated behind the mandatory separate read-only completeness disposition of the 13 unmapped ordens_compra_fio rows ids 153–165), real close_final_acl invocation, real activation, the real read-authority switch, any shared-database apply beyond db/77, staging validation/application of db/76 or db/77, deployment, production access, and any push remain unauthorized
+NEXT_AUTHORIZABLE_ACTION: supervisor functional review + mandatory architect visual validation (SUPERVISION_PROTOCOL §4) of the now IMPLEMENTED / LOCALLY VERIFIED PHASE-C5 / OC-C5-EMISSION-001 UI (local commit feat: implement C5 purchase-order emission UI, C5-PURCHASE-ORDER-EMISSION-UI-IMPLEMENTATION-R1, 2026-07-22) — the enabling C5A closeout: under C5A-CLOSEOUT-AND-C5-AUTHORIZATION-R1 (2026-07-22) the supervisor CLOSED PHASE-C5A-DB-EMISSION-READINESS as CLOSED / ACCEPTED / LOCALLY VERIFIED / SHARED-DEVELOPMENT VERIFIED (contract §25, ratifying the db/77 grant + read-model correction and its full contract §14/§24 shared-development evidence on ucrjtfswnfdlxwtmxnoo as final) and, with that database prerequisite resolved, authorized docs/architecture/ORDEM_COMPRA_C5_PHASE_CONTRACT.md for local implementation (STATUS: ACCEPTED / IMPLEMENTATION AUTHORIZED LOCALLY, contract §22). The implementation is now done and locally verified: the disabled oc-emitir button was wired to native emitir_ordem_compra via the server-derived acoes.emitir signal, the ratified CONTROLLED_IRREVERSIBLE_TRANSITION confirmation modal was added, and status_aceite was surfaced, strictly within the closed purely-additive three-file manifest (ordem-compra-data.js/-render.js/-events.js only, contract §12) and its §15 entry/exit gates and §16 hard stops; on acceptance a separate closeout advances OC-C5-EMISSION-001 (now PARTIALLY_SATISFIED) and closes PHASE-C5. PHASE-C5B-ACCEPTANCE-DECISION (IDENTIFIED / NOT AUTHORIZED — the missing status_aceite pendente-to-aceita/rejeitada transition capability), the REAL_CUTOVER window (OC-CUTOVER-001/OC-CUTOVER-PONR-001 — hard-gated behind the mandatory separate read-only completeness disposition of the 13 unmapped ordens_compra_fio rows ids 153–165), real close_final_acl invocation, real activation, the real read-authority switch, any shared-database apply beyond db/77, staging validation/application of db/76 or db/77, deployment, production access, and any push remain unauthorized
 GOVERNING_SPEC: docs/architecture/ORDEM_COMPRA_LIFECYCLE_SPEC_PROPOSED.md
 TECHNICAL_CONTRACT: docs/architecture/PEDIDO_OP_SCHEMA_CONTRACT.md
 SEQUENCE_AUTHORITY: docs/architecture/PEDIDO_PRODUCTION_FLOW_BACKLOG.md
@@ -1067,9 +1067,46 @@ ACCEPTED_CHECKPOINT: 289b0cca66e9c057330a882f69da3476adf90469
   no push. Full record: `docs/architecture/ORDEM_COMPRA_C5A_DB_EMISSION_READINESS_PHASE_CONTRACT.md`
   §25, `docs/architecture/ORDEM_COMPRA_C5_PHASE_CONTRACT.md` §22, and
   `docs/ledgers/G28_LEDGER.md`.
-- **Next authorizable action:** a **fresh Claude Code session** performs
-  `PHASE-C5` / `OC-C5-EMISSION-001` local UI implementation per
-  `docs/architecture/ORDEM_COMPRA_C5_PHASE_CONTRACT.md` (§6/§12/§14/§15/§16).
+- **`C5-PURCHASE-ORDER-EMISSION-UI-IMPLEMENTATION-R1` — PHASE-C5 native emission
+  UI (this pass, product + tests + docs, local commit `feat: implement C5
+  purchase-order emission UI`):** `IMPLEMENTED / LOCALLY VERIFIED / AWAITING
+  SUPERVISOR FUNCTIONAL AND VISUAL REVIEW`. Entry checkpoint HEAD
+  `538f4ba7b7aae5d6e9e0efbe29a57e1ef7bbc776`. Wired the previously disabled
+  `oc-emitir` control to native `public.emitir_ordem_compra(BIGINT)` driven
+  exclusively by the server `acoes.emitir` signal (never recomputed
+  client-side); added the ratified `CONTROLLED_IRREVERSIBLE_TRANSITION`
+  confirmation modal (explicit confirmation, primary/neutral — not
+  destructive-red; in-flight duplicate-submit guard; authoritative reload after
+  a deterministic success; reload-first resolution of an ambiguous transport
+  with no auto-retry and no fallback writer; fixed pt-BR message per
+  deterministic writer `codigo`); surfaced `status_aceite`
+  (`nao_aplicavel`/`pendente`/`aceita`/`rejeitada`) with the honest
+  not-lifecycle-complete notice for a pending acceptance. Manifest exactly
+  contract §12 (additive `ordem-compra-data.js`/`-render.js`/`-events.js`; no new
+  product file; `index.html`/`router.js`/`boot.js`/`common.js`/`ui.js` and all
+  `db/*.sql` byte-unchanged; `ORDEM_COMPRA_CANCEL_HANDLER_STALE_ORDER_CAPTURE`
+  untouched). Tests exactly contract §14 (new
+  `tests/ordem-compra-emitir.smoke.js`; updated `tests/ordem-compra.smoke.js`
+  4–5). Evidence: emitir+ordem-compra 48/48 and the four C4 receipt suites 38/38;
+  full-suite added-failing-identity differential vs a detached baseline worktree
+  at `538f4ba` = empty (baseline 142 / worktree 122; the 20 baseline-only
+  identities are pre-existing non-determinism); `node
+  scripts/validate-spec-custody.mjs` PASS (`--self-test` fails only on the
+  pre-existing active-contract fixture-harness limitation, byte-identical to the
+  `538f4ba` baseline); deterministic offline 7-PNG Playwright visual evidence +
+  computed styles (`%TEMP%\ravatex-c5-visual-review\`), browser console/page
+  errors empty. Local only — no migration, database, environment, staging,
+  deployment, activation, cutover, branch, or push. Not self-accepted:
+  `OC-C5-EMISSION-001` advances `PLANNED` → `PARTIALLY_SATISFIED` (traceability),
+  never `SATISFIED`. Nonblocking debts unchanged
+  (`SHARED_UI_MODAL_CONTROL_RADIUS_TOKEN_ALIGNMENT` item 16,
+  `ORDEM_COMPRA_CANCEL_HANDLER_STALE_ORDER_CAPTURE` item 15); `index.html`
+  cache-bust `?v=` not bumped (index.html frozen by contract §12). `PHASE-C5B`
+  stays `IDENTIFIED / NOT AUTHORIZED`; `REAL_CUTOVER` stays `NOT AUTHORIZED`.
+- **Next authorizable action:** supervisor functional review + mandatory
+  architect visual validation (`SUPERVISION_PROTOCOL.md` §4) of the now
+  `IMPLEMENTED / LOCALLY VERIFIED` `PHASE-C5` implementation; on acceptance a
+  separate closeout advances `OC-C5-EMISSION-001` and closes `PHASE-C5`.
   `PHASE-C5B-ACCEPTANCE-DECISION`, `REAL_CUTOVER`, any shared-database apply
   beyond `db/77`, staging validation/application of `db/76`/`db/77`,
   deployment, activation, production access, branch creation, and any push
