@@ -47,14 +47,21 @@
   `PHASE-C4` / `docs/architecture/ORDEM_COMPRA_C4_PHASE_CONTRACT.md` (they were
   `NONE` at the prior `PHASE-C3D` closeout, moved to `PHASE-C4` at this
   authorization). The implementation
-  (`C4-ADMIN-RECEIPT-UI-IMPLEMENTATION-R1`, contract §0c) is now **`IMPLEMENTED
-  / LOCALLY VERIFIED / AWAITING SUPERVISOR REVIEW`** — three new
+  (`C4-ADMIN-RECEIPT-UI-IMPLEMENTATION-R1`, contract §0c) plus the visual-gate
+  correction (`C4-ADMIN-RECEIPT-UI-VISUAL-GATE-R1`) are now **`IMPLEMENTED /
+  LOCALLY VERIFIED / AWAITING ARCHITECT VISUAL VALIDATION`** — three new
   `ordem-compra-receipt-*.js` files + additive `ordem-compra.js`/`index.html`,
-  native RPCs only, two independent idempotency trackers, four new smoke suites
-  (37/37 pass), empty added-failing-identity differential vs `bdd4c7d`,
-  validator PASS; local only (no migration/environment/staging/deployment/push).
-  Not self-accepted; the mandatory architect visual validation
-  (`SUPERVISION_PROTOCOL.md` §4) is pending. **`PHASE-C3D` (inactive deployment
+  native RPCs only, two independent idempotency trackers, four smoke suites
+  (38/38 pass), empty added-failing-identity differential vs `bdd4c7d`
+  (implementation) and `25cbdd6` (visual correction), validator PASS; local
+  only (no migration/environment/staging/deployment/push). The visual-gate pass
+  aligned the render/events modules to the canonical `--rv-*` tokens (card 6px,
+  neutral section chip, sticky total; correcting the contract §13.1 factual
+  claim that tokens.css was not linked — it is, globally at `index.html:11`)
+  and produced six deterministic Playwright screenshots + computed-style
+  evidence (`%TEMP%\\ravatex-c4-visual-review\\`). Not self-accepted; the
+  mandatory architect visual validation (`SUPERVISION_PROTOCOL.md` §4) is
+  pending. **`PHASE-C3D` (inactive deployment
   & rehearsal material phase)** is `CLOSED / ACCEPTED_WITH_NONBLOCKING_DEBT /
   LOCALLY VERIFIED`, accepted **technical** checkpoint
   `429aa3980c7027b9d872a1902e2f31f1a4a85a2a` (contract §Z). All five material

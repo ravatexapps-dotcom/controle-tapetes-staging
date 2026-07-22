@@ -117,7 +117,14 @@
         }));
       });
 
-      var totalEl = el('div', { id: 'oc-reg-total', class: 'mt-3 text-sm text-gray-700', style: 'font-variant-numeric:tabular-nums;' });
+      // Sticky total summary — stays visible above the modal footer even when
+      // a multi-item order makes the body scroll (VISUAL-GATE-R1). Token colors.
+      var totalEl = el('div', {
+        id: 'oc-reg-total', class: 'text-sm font-semibold',
+        style: 'position:sticky;bottom:0;margin:12px -24px 0;padding:10px 24px;'
+          + 'background:var(--rv-color-surface);border-top:1px solid var(--rv-color-line-200);'
+          + 'color:var(--rv-color-value);font-variant-numeric:tabular-nums;',
+      });
       body.appendChild(totalEl);
       function recompute() {
         var aloc = 0, exc = 0;
@@ -189,7 +196,8 @@
       var kgInput = window.textInput({ value: '', placeholder: '0,000' });
       kgInput.setAttribute('data-reversal-kg', String(lanc.id));
       var motivoInput = el('textarea', {
-        class: 'w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500',
+        class: 'w-full px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500',
+        style: 'border:1px solid var(--rv-color-input-border);border-radius:var(--rv-radius-control);',
         placeholder: 'Motivo do estorno',
         rows: '3',
       });

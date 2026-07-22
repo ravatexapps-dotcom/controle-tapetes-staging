@@ -236,13 +236,35 @@ ACCEPTED_CHECKPOINT: 429aa3980c7027b9d872a1902e2f31f1a4a85a2a
   advances `PLANNED` → `PARTIALLY_SATISFIED` (traceability), never `SATISFIED`;
   no migration, database write, environment mutation, staging, deployment,
   activation, cutover, branch, or push occurred.
-- **Next authorizable action:** **supervisor review and the mandatory architect
-  visual validation** (`SUPERVISION_PROTOCOL.md` §4) of the implemented
-  `PHASE-C4` admin receipt UI, then **supervisor acceptance/close** (supervisor
-  only — the implementation is not self-accepted and `OC-C4-ADMIN-001` is not
-  `SATISFIED`). `PHASE-C5`, `REAL_CUTOVER`, staging validation/application of
-  `db/76`, activation, deployment, branch creation, production access, and any
-  push remain **unauthorized**.
+- **`C4-ADMIN-RECEIPT-UI-VISUAL-GATE-R1` — visual-contract correction +
+  evidence (this pass):** audited the implemented UI against
+  `UI_VISUAL_CONTRACT.md` and applied objective token corrections in the
+  render/events modules only. Corrected a factual error in contract §13.1/§4.6
+  (`css/tokens.css` IS linked globally at `index.html:11` on `:root`, so
+  `--rv-*` tokens are resolvable here): the section card now uses
+  `--rv-radius-card` (computed **6px**, fixing `rounded-lg`=8px), a flat
+  `--rv-color-line-200` hairline border, no shadow; the section chip uses the
+  neutral `--rv-color-chip-bg`/`--rv-color-chip-glyph` (§6); tables/text/accent
+  use canonical tokens; the reversal `motivo` textarea uses
+  `--rv-radius-control`; the live Alocado/Excesso/Total summary is now sticky
+  above the modal footer. No ratified decision reopened, no data behavior
+  changed; the shared `js/ui.js` `modal()`/`textInput()` primitives (8px) are
+  outside the C4 manifest and left unchanged. Deterministic Playwright
+  screenshots (six PNGs, real system Chrome, offline, no Supabase/auth/network
+  at render) + computed-style evidence recorded in the ledger; browser console
+  empty. Tests 38/38; full-suite added-failing-identity differential vs
+  `25cbdd6` = empty; validator PASS; `--self-test` fails only on the
+  byte-identical pre-existing active-contract fixture-harness identity. Status
+  unchanged: `IMPLEMENTED / LOCALLY VERIFIED / AWAITING ARCHITECT VISUAL
+  VALIDATION`; `OC-C4-ADMIN-001` stays `PARTIALLY_SATISFIED` (not advanced).
+  One local correction commit; no push/migration/environment/deployment.
+- **Next authorizable action:** **the mandatory architect visual validation**
+  (`SUPERVISION_PROTOCOL.md` §4) of the `PHASE-C4` admin receipt UI (six-PNG
+  evidence packet from `C4-ADMIN-RECEIPT-UI-VISUAL-GATE-R1`), then **supervisor
+  acceptance/close** (supervisor only — the implementation is not self-accepted
+  and `OC-C4-ADMIN-001` is not `SATISFIED`). `PHASE-C5`, `REAL_CUTOVER`, staging
+  validation/application of `db/76`, activation, deployment, branch creation,
+  production access, and any push remain **unauthorized**.
 - **Prior accepted product phase:** `PHASE-C3C-B` (application compatibility/
   adaptation) — `CLOSED / ACCEPTED_WITH_NONBLOCKING_DEBT / LOCALLY VERIFIED`
   (2026-07-21), accepted checkpoint

@@ -168,6 +168,30 @@ strictly within the §10 manifest:
   the 19 baseline-only failures are pre-existing non-determinism, not fixes);
   `node scripts/validate-spec-custody.mjs` PASS; `git diff --check` clean.
 
+**Visual-gate correction (`C4-ADMIN-RECEIPT-UI-VISUAL-GATE-R1`, 2026-07-21).**
+The mandatory visual-validation pass audited the implemented UI and applied
+objective visual-contract corrections within the render/events modules only.
+It also corrects a **factual error** in §13.1/§4.6 of this contract: those
+sections claimed `css/tokens.css` "is not linked into the ordem-compra* render
+path," so C4 used literal values. In fact `css/tokens.css` is linked globally
+at `index.html:11` and defines the `--rv-*` tokens on `:root`, so they ARE
+resolvable on this screen. Accordingly the literals were replaced with the
+canonical tokens: the section card now uses `--rv-radius-card` (computed
+**6px**, correcting `rounded-lg`=8px) with a flat `--rv-color-line-200`
+hairline border and no shadow; the section icon chip uses the neutral
+`--rv-color-chip-bg`/`--rv-color-chip-glyph` (§6, correcting the accent-blue
+chip); table borders/dividers, muted/strong text, header surfaces and the
+accent action use `--rv-color-line-200`/`line-100`/`muted`/`value`/
+`bg-header`/`section-label`/`accent` and `--rv-radius-control`; the reversal
+`motivo` textarea uses `--rv-radius-control`; and the live Alocado/Excesso/
+Total summary is sticky above the modal footer. No ratified design decision
+was reopened; no receipt data behavior changed. The shared `js/ui.js`
+`modal()`/`textInput()` primitives (still 8px) are outside the C4 manifest and
+left unchanged (a separate `js/ui.js` token migration decision). Computed-style
+and six-PNG screenshot evidence is recorded in `docs/ledgers/G28_LEDGER.md`
+(`C4-ADMIN-RECEIPT-UI-VISUAL-GATE-R1`). Full suite added-failing-identity
+differential vs `25cbdd6` = empty; validator PASS.
+
 **Pending (exit gates not yet satisfied):** the mandatory architect visual
 validation (`SUPERVISION_PROTOCOL.md` §4, §14 exit gate 6) and supervisor
 acceptance (§14 exit gate 7). Only the supervisor may accept and close the

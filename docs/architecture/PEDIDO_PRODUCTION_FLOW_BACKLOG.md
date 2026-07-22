@@ -8,6 +8,34 @@
 > `PROJECT_STATE.md`. Phase sequence, dependencies, backlog items, and accepted
 > architecture in this file remain authoritative; live operational status does not.
 
+# Update 2026-07-21 - C4-ADMIN-RECEIPT-UI-VISUAL-GATE-R1 (Admin Receipt UI visual-contract correction + evidence)
+
+Phase: `PHASE-C4` / `OC-C4-ADMIN-001` mandatory visual-validation preparation —
+audit + objective visual-contract correction (render/events modules + their
+two smoke suites only) + deterministic screenshots. Status unchanged:
+`IMPLEMENTED / LOCALLY VERIFIED / AWAITING ARCHITECT VISUAL VALIDATION`.
+Historical closeout note — live state belongs to `PROJECT_STATE.md`.
+
+Corrected a factual error in contract §13.1/§4.6: `css/tokens.css` IS linked
+globally at `index.html:11` and defines the `--rv-*` tokens on `:root`, so they
+are resolvable on the ordem-compra screen. The render/events modules were
+re-tokenized accordingly — the section card now uses `--rv-radius-card`
+(computed 6px, correcting `rounded-lg`=8px), a flat `--rv-color-line-200`
+hairline border and no shadow; the section icon chip uses the neutral
+`--rv-color-chip-bg`/`--rv-color-chip-glyph` (§6); tables/text/dividers/accent/
+control radius use the canonical tokens; the reversal `motivo` textarea uses
+`--rv-radius-control`; and the live Alocado/Excesso/Total summary is sticky
+above the modal footer. No ratified design decision was reopened and no
+receipt data behavior changed; the shared `js/ui.js` `modal()`/`textInput()`
+primitives (8px) are outside the C4 manifest and left unchanged. Six
+deterministic Playwright screenshots (real system Chrome, offline, no
+Supabase/auth/network at render) + computed-style evidence were produced;
+browser console empty. Tests 38/38; full-suite added-failing-identity
+differential vs `25cbdd6` = empty; validator PASS. `OC-C4-ADMIN-001` remains
+`PARTIALLY_SATISFIED` (not advanced). Full evidence:
+`docs/ledgers/G28_LEDGER.md` (`C4-ADMIN-RECEIPT-UI-VISUAL-GATE-R1`) and contract
+§0c.
+
 # Update 2026-07-21 - C4-ADMIN-RECEIPT-UI-IMPLEMENTATION-R1 (Admin Receipt UI implementation)
 
 Phase: `PHASE-C4` / `OC-C4-ADMIN-001` local implementation —

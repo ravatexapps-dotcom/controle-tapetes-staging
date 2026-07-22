@@ -99,6 +99,9 @@ test('registration modal opens with allocation + excess inputs and metadata fiel
   assert.ok(inputByAttr(modal, 'data-alocacao-id', 42), 'allocation 42 input');
   assert.ok(inputByAttr(modal, 'data-alocacao-id', 43), 'shared allocation 43 input');
   assert.ok(inputByAttr(modal, 'data-excesso-item', 7), 'per-item excess input');
+  const total = findAll(modal, (n) => n.getAttribute && n.getAttribute('id') === 'oc-reg-total')[0];
+  assert.ok(total, 'live total summary present');
+  assert.match(total.getAttribute('style') || '', /position:sticky/, 'total summary is sticky above the footer (VISUAL-GATE-R1)');
 });
 
 test('registration success: allocation + explicit-excess payload; authoritative reload; modal closes', async () => {
@@ -191,6 +194,8 @@ test('reversal flow: modal payload (lancamento_id + motivo), confirmDialog gate,
   env.handlers.estornarLancamento(RECV_CMD, LANC);
   const modal = overlayByTitle(env.sandbox, /Estornar recebimento/);
   assert.ok(modal, 'reversal modal open');
+  const motivoEl = findAll(modal, (n) => n.tagName === 'TEXTAREA')[0];
+  assert.match(motivoEl.getAttribute('style') || '', /border-radius:var\(--rv-radius-control\)/, 'reversal motivo textarea uses --rv-radius-control (VISUAL-GATE-R1)');
   inputByAttr(modal, 'data-reversal-kg', 800).value = '8';
   // motivo textarea
   findAll(modal, (n) => n.tagName === 'TEXTAREA')[0].value = 'devolução parcial';

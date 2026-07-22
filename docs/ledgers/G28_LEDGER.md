@@ -7877,3 +7877,79 @@ product file they depend on, was modified by this pass or the prior one):
   `REAL_CUTOVER`, staging validation/application of `db/76`, activation,
   deployment, branch creation, production access, and any push remain
   unauthorized. **No push is authorized by this pass.**
+
+## 2026-07-21 — C4-ADMIN-RECEIPT-UI-VISUAL-GATE-R1 — PHASE-C4 visual-contract correction + evidence
+
+- **Authorization:** `C4-ADMIN-RECEIPT-UI-VISUAL-GATE-R1` — mandatory
+  architect visual-validation preparation: audit + objective visual-contract
+  correction (authorized manifest: `js/screens/ordem-compra-receipt-render.js`,
+  `js/screens/ordem-compra-receipt-events.js`, and their two smoke suites
+  only) plus deterministic Playwright screenshots. Entry checkpoint `HEAD`
+  `25cbdd6f6128744a8668b034c192c7d012e58171`; protected residue
+  (`M .gitignore`, `?? .codex/config.toml`, `?? .mcp.json`) untouched.
+- **Pivotal audit finding (factual correction of contract §13.1):** contract
+  §13.1/§4.6 claimed `css/tokens.css` "is not linked into the ordem-compra*
+  render path," so C4 used literal values. That premise is **factually
+  wrong**: `css/tokens.css` is linked globally at `index.html:11` and defines
+  every `--rv-*` token on `:root`, so the canonical tokens ARE resolvable on
+  this screen. Per this order's audit item 1 (use `--rv-*` where a canonical
+  token exists) and `UI_VISUAL_CONTRACT.md`'s precedence, the literals were
+  replaced with tokens. No ratified design decision (reversal ownership,
+  row-level action, reversal flow, deferred legacy/supplier UI) was reopened.
+- **Objective violations found and corrected** (render module):
+  (1) the section card used `rounded-lg` = **8px**; the contract requires card
+  **6px** — replaced with `border-radius:var(--rv-radius-card)` (computed
+  **6px**, verified). (2) The section icon chip used accent-blue
+  (`#eaf1fd`/`#2563eb`); §6 designates the neutral chip tokens — replaced with
+  `--rv-color-chip-bg`/`--rv-color-chip-glyph`. (3) Literal hex/gray values
+  (`#eceef1`, `text-gray-*`, `bg-gray-50`, `divide-gray-*`) replaced with the
+  canonical tokens (`--rv-color-line-200`/`line-100`, `--rv-color-value`,
+  `--rv-color-muted`, `--rv-color-bg-header`, `--rv-color-section-label`,
+  `--rv-color-accent`, `--rv-radius-control`); layout/spacing/type-size
+  utilities kept (no canonical token exists for those). (events module) the
+  reversal `motivo` textarea used `rounded-lg` = 8px → `--rv-radius-control`;
+  the live Alocado/Excesso/Total summary was below the fold on multi-item
+  orders → made **sticky** above the modal footer (token colors). No receipt
+  data behavior changed; no functional defect was found.
+- **Out of scope (correctly not touched):** the shared `js/ui.js` `modal()`
+  card and `textInput()` still use `rounded-lg` (8px) — inherited primitives
+  outside the C4 manifest; a global `js/ui.js` token migration is a separate
+  authorized decision. The row-level reversal button (`js/ui.js`
+  `actionButton()`) is already token-equivalent (30×30, 4px, correct colors).
+- **Computed-style evidence (real Chrome via Playwright, history scenario):**
+  card border-radius `6px`; card box-shadow `none`; card border `1px solid
+  rgb(231,234,238)` (= `--rv-color-line-200` `#e7eaee`); primary button radius
+  `4px`; reversal button `30px × 30px`, radius `4px`; numeric cell + header
+  `text-align:right`; numeric `font-variant-numeric:tabular-nums`; overflow
+  container `overflow-x:auto`.
+- **Screenshots (deterministic, offline, no Supabase/auth/network at render;
+  `%TEMP%\ravatex-c4-visual-review\`):** `01-desktop-receipt-history.png`,
+  `02-registration-modal.png`, `03-reversal-modal.png`,
+  `04-disabled-and-empty-states.png`, `05-narrow-layout.png`, and
+  `c4-visual-contact-sheet.png`. Rendered the ACTUAL C4 product modules (not a
+  mock) via `playwright-core` driving the system Chrome, Tailwind bundled
+  locally, `--rv-*` tokens from `css/tokens.css`, and representative fixture
+  data (multi-item, NULL-op/Pedido-origin allocation, explicit excess,
+  receipt + reversal commands, server-derived enabled/disabled actions).
+  Browser console/pageerror: **empty** across all scenarios.
+- **Tests:** the two authorized suites gained token/sticky assertions;
+  `tests/ordem-compra-receipt-{data,render,events,routing}.smoke.js` = **38/38
+  pass**. Full suite `node --test tests/*.js`: worktree 4055/3933/122; detached
+  baseline worktree at `25cbdd6` 4054/3913/141; **added failing identities =
+  EMPTY** (zero regressions; the baseline-only failures are the documented
+  pre-existing non-determinism). `node scripts/validate-spec-custody.mjs` PASS;
+  `--self-test` fails only on the byte-identical pre-existing identity
+  `R1: ACTIVE_PHASE_CONTRACT is not an existing file: docs/architecture/ORDEM_COMPRA_C4_PHASE_CONTRACT.md`
+  (the synthetic-fixture harness does not copy the active phase contract into
+  its temp root — identical at `25cbdd6`, not a new failure). `git diff --check`
+  / `--cached --check` clean.
+- **Status unchanged:** `PHASE-C4` / `OC-C4-ADMIN-001` remains **IMPLEMENTED /
+  LOCALLY VERIFIED / AWAITING ARCHITECT VISUAL VALIDATION**; `OC-C4-ADMIN-001`
+  stays `PARTIALLY_SATISFIED` (not advanced, not `SATISFIED`); the phase is not
+  self-accepted or closed. One local correction commit only; no push, no
+  migration, no environment/shared-database/activation/deployment action.
+- **Exact accounting subject:** `fix: align C4 receipt UI with visual contract`
+- **NEXT_AUTHORIZABLE_ACTION:** architect visual validation of the six-PNG
+  evidence packet, then supervisor acceptance/close (supervisor only).
+  `PHASE-C5`, `REAL_CUTOVER`, staging/deployment/activation, branch creation,
+  and any push remain unauthorized. **No push is authorized by this pass.**

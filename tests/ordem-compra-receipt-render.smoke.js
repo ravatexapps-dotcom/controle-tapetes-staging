@@ -179,6 +179,32 @@ test('reversal button disabled when kg_reversivel === 0 or acoes.estornar === fa
   assert.equal(b2.disabled, true, 'disabled when acoes.estornar === false');
 });
 
+test('visual tokens: flat card at --rv-radius-card, neutral chip tokens, accent action, token numerics (VISUAL-GATE-R1)', () => {
+  const s = makeSandbox();
+  const view = render(s, { modelo: 'nativo', status_administrativo: 'emitida' }, projection());
+  // Card: canonical card radius + hairline line-200 border, flat (no shadow, no rounded-lg 8px).
+  const card = findById(view, 'oc-recebimentos');
+  const cardStyle = card.getAttribute('style') || '';
+  assert.match(cardStyle, /border-radius:var\(--rv-radius-card\)/, 'card uses --rv-radius-card (6px), not rounded-lg (8px)');
+  assert.match(cardStyle, /border:1px solid var\(--rv-color-line-200\)/, 'card uses the hairline line-200 border token');
+  assert.doesNotMatch(cardStyle, /shadow|box-shadow/, 'flat card, no shadow');
+  assert.doesNotMatch(card.className, /rounded-lg|shadow/, 'no residual rounded-lg / shadow utility classes');
+  // Section chip: neutral --rv-color-chip-bg / --rv-color-chip-glyph, control radius.
+  const chip = findAll(view, (n) => /var\(--rv-color-chip-bg\)/.test(n.getAttribute && n.getAttribute('style') || ''))[0];
+  assert.ok(chip, 'section chip uses --rv-color-chip-bg');
+  assert.match(chip.getAttribute('style'), /color:var\(--rv-color-chip-glyph\)/, 'chip glyph token');
+  assert.match(chip.getAttribute('style'), /border-radius:var\(--rv-radius-control\)/, 'chip control radius');
+  // Section label token.
+  assert.ok(findAll(view, (n) => /color:var\(--rv-color-section-label\)/.test(n.getAttribute && n.getAttribute('style') || '')).length > 0, 'section label uses --rv-color-section-label');
+  // Dominant action: accent bg + control radius.
+  const reg = findById(view, 'oc-registrar-recebimento');
+  assert.match(reg.getAttribute('style'), /background:var\(--rv-color-accent\)/, 'registrar uses --rv-color-accent');
+  assert.match(reg.getAttribute('style'), /border-radius:var\(--rv-radius-control\)/, 'registrar uses control radius');
+  // Numeric cells: strong value token + tabular numerals.
+  const numCell = findAll(view, (n) => n.tagName === 'TD' && /var\(--rv-color-value\)/.test(n.getAttribute('style') || '') && /tabular-nums/.test(n.getAttribute('style') || ''))[0];
+  assert.ok(numCell, 'numeric value cell uses --rv-color-value + tabular-nums');
+});
+
 test('reversal control absent on estorno (negative) command rows', () => {
   const s = makeSandbox();
   const estornoCmd = {
