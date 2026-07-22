@@ -8,6 +8,60 @@
 > `PROJECT_STATE.md`. Phase sequence, dependencies, backlog items, and accepted
 > architecture in this file remain authoritative; live operational status does not.
 
+# Update 2026-07-22 - CLEAN-SLATE-TRANSACTIONAL-RESET-EXECUTION-ACCEPTANCE-CLOSEOUT-R1 (direct supervisor acceptance of the executed clean-slate shared-development reset; checkpoint 770772548baf04c52e9ef020ff94f8bdabf77f03 ACCEPTED / DIRECTLY VERIFIED; phase CLOSED; documentation-only closeout commit)
+
+Phase: documentation-only supervisor-acceptance recording (direct supervisor
+acceptance of the executed shared-development clean-slate reset at checkpoint
+`770772548baf04c52e9ef020ff94f8bdabf77f03`) and phase closeout.
+
+**Sequence effect.** The `CLEAN-SLATE-TRANSACTIONAL-RESET` sequence item is now
+**closed**. The executed, transactionally-verified reset against
+`ucrjtfswnfdlxwtmxnoo` (canonical authorization checkpoint
+`9706ec75c10bf811abf67e4cfcabb19aa64cbeeb`) — which purged 64 legacy orders, 64
+needs, 51 native purchase orders, 16 Pedidos, 20 OPs, 25 lotes, and the exact
+synthetic B6-VERIFY fixture, with post-state proven zero and master/reference
+data, `saldo_fios`, `saldo_fios_op`, `op_numeros`, the documents front excluding
+B6, the `legacy_active` cutover, migration history, sequences, and triggers
+preserved unchanged — was reviewed and **ACCEPTED** by the supervisor. The
+`CLEAN-SLATE-TRANSACTIONAL-RESET` sequence item's disposition becomes `CLOSED /
+ACCEPTED / DIRECTLY VERIFIED`.
+
+**Next sequenced action.** The read-only `GOVERNANCE-EFFICIENCY-REFOUNDATION-DIAGNOSIS-R1`
+— a read-only inventory and classification of all current governance
+documents (line counts and file sizes, current authority and ownership,
+unique information held by each document, duplicated facts and duplicated
+narratives, documents required during normal bootstrap vs. only for
+historical audit, manual versus generated documents, consumers and inbound
+references, ledger partitioning and rollover options, archive and compaction
+candidates, safe deprecation candidates, documents that must remain
+normative, documents that may become generated views, information-loss risks,
+and link/reference migration requirements); the diagnosis must not delete,
+archive, split, compact, or generate replacement files. This supersedes the
+prior `REAL-BUSINESS-FLOW-RECREATION-DIAGNOSIS-R1` framing of the next
+sequenced action; real business-flow recreation stays a separate,
+still-unauthorized track. The previously emitted but unexecuted order
+`CLEAN-SLATE-CLOSEOUT-AND-GOVERNANCE-EFFICIENCY-REFOUNDATION-SHADOW-R1` is
+superseded and must not be executed. Not defined or guessed by this closeout.
+`REAL_CUTOVER` (`NOT
+AUTHORIZED / NOT EXECUTED`), `PHASE-C5B-ACCEPTANCE-DECISION` (`IDENTIFIED / NOT
+AUTHORIZED / NOT IMPLEMENTED`), real business-flow recreation (`NOT YET
+AUTHORIZED`), any shared-database apply beyond `db/77`, staging
+validation/application, deployment, activation, production access, the
+forbidden project, governance-efficiency refoundation implementation (`NOT YET
+AUTHORIZED`), document cleanup/compaction (`NOT YET AUTHORIZED`), and branch
+creation remain **unauthorized**; the accepted
+product checkpoint stays `3405fdab8e05ec0f81cbfe07c63c489e551fee92` and no
+phase chains automatically.
+
+**Non-mutation of the repository / product.** This pass performed **no database
+access**. Documentation-only closeout commit: only the seven authorized
+canonical documents change; no product/test/script/migration/config change;
+the external archive and execution evidence remain outside the repository,
+unchanged; the protected residue is untouched. Commit `docs: accept clean-slate
+shared-dev reset`, published through one authorized `staging/dev` fast-forward
+push. Full record: contract §26, `PROJECT_STATE.md`, and
+`docs/ledgers/G28_LEDGER.md`.
+
 # Update 2026-07-22 - CLEAN-SLATE-TRANSACTIONAL-RESET-SHARED-DEV-EXECUTION-R1 (governed destructive execution of the accepted clean-slate reset; EXECUTED / TRANSACTIONALLY VERIFIED against ucrjtfswnfdlxwtmxnoo / awaiting direct supervisor review; documentation-only closeout commit)
 
 Phase: governed destructive execution of the accepted, validation-gate-closed

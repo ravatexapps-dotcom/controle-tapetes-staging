@@ -294,15 +294,24 @@ function collectBootstrapNegatives(source) {
   }));
 
   results.push(expectFailure(source, 'ACTIVE_PHASE_WITHOUT_CONTRACT', 'R2', (fixture) => {
-    // Forces the real (whatever it currently is) active phase's CONTRACT to
-    // NONE, leaving ACTIVE_PHASE itself untouched — generic across phases.
-    mutateState(fixture, (text) => setBootstrapLine(text, 'ACTIVE_PHASE_CONTRACT', 'NONE'));
+    // Explicitly constructs the invalid combination (a named phase with
+    // ACTIVE_PHASE_CONTRACT forced to NONE) instead of depending on the
+    // source repository's own current ACTIVE_PHASE — stays meaningful
+    // whether the live baseline has an active phase or is itself NONE/NONE.
+    mutateState(fixture, (text) => setBootstrapLine(setBootstrapLine(
+      text, 'ACTIVE_PHASE', 'TEST-PHASE-NO-CONTRACT',
+    ), 'ACTIVE_PHASE_CONTRACT', 'NONE'));
   }));
 
   results.push(expectFailure(source, 'NONE_PHASE_WITH_CONTRACT', 'R2', (fixture) => {
-    // Forces ACTIVE_PHASE to NONE while leaving the real ACTIVE_PHASE_CONTRACT
-    // (already copied/tracked by createFixture) pointed at a real, valid file.
-    mutateState(fixture, (text) => setBootstrapLine(text, 'ACTIVE_PHASE', 'NONE'));
+    // Explicitly constructs the invalid combination (ACTIVE_PHASE forced to
+    // NONE while ACTIVE_PHASE_CONTRACT points at a real, tracked file)
+    // instead of depending on the source repository's own current
+    // ACTIVE_PHASE_CONTRACT — stays meaningful whether the live baseline has
+    // an active phase or is itself NONE/NONE.
+    mutateState(fixture, (text) => setBootstrapLine(setBootstrapLine(
+      text, 'ACTIVE_PHASE', 'NONE',
+    ), 'ACTIVE_PHASE_CONTRACT', 'AGENT_HANDOFF.md'));
   }));
 
   return results;

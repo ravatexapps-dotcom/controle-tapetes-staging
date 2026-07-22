@@ -6,7 +6,7 @@ PHASE_ID: CLEAN-SLATE-TRANSACTIONAL-RESET
 
 ```text
 PHASE_ID: CLEAN-SLATE-TRANSACTIONAL-RESET
-STATUS: CONTRACT ACCEPTED / TOOLING IMPLEMENTED / REAL ARCHIVE GENERATED READ-ONLY / DISPOSABLE RESTORE DRILL PASSED / VALIDATION GATES CLOSED / READINESS ACCEPTED / DIRECTLY VERIFIED AT 62bdcc75c335e3881adb1af6350de801675aa788 / SHARED-DEVELOPMENT RESET EXECUTED / TRANSACTIONALLY VERIFIED (CLEAN-SLATE-TRANSACTIONAL-RESET-SHARED-DEV-EXECUTION-R1, execution artifact 20260722T202717Z, §25) / AWAITING DIRECT SUPERVISOR REVIEW / PHASE NOT CLOSED
+STATUS: CLOSED / ACCEPTED / DIRECTLY VERIFIED (CLEAN-SLATE-TRANSACTIONAL-RESET-EXECUTION-ACCEPTANCE-CLOSEOUT-R1, executed-reset checkpoint 770772548baf04c52e9ef020ff94f8bdabf77f03, §26) — SHARED-DEVELOPMENT RESET EXECUTED / TRANSACTIONALLY VERIFIED / ACCEPTED; PHASE CLOSED
 AUTHORED_BY: CLEAN-SLATE-TRANSACTIONAL-RESET-CONTRACT-R1 (read-only diagnosis + documentation-only authoring)
 CORRECTED_BY: CLEAN-SLATE-TRANSACTIONAL-RESET-CONTRACT-CORRECTION-R1 (documentation-only, over the accepted CLEAN-SLATE-DOCUMENT-HISTORY-AND-RESIDUAL-BOUNDARY-DIAGNOSIS-R1)
 CONTRACT BASELINE CORRECTION: ACCEPTED ARCHITECT RULING — CLEAN-SLATE-TRANSACTIONAL-RESET-B6-ROW-BASELINE-FORWARD-CORRECTION-R1 (documentation-only): document_link_revision_ops corrected from 4 to 10 rows; 4 distinct OPs remain 55, 57, 61, 63
@@ -16,8 +16,8 @@ CORRECTED_BY_R1: CLEAN-SLATE-TRANSACTIONAL-RESET-FINAL-VALIDATION-GATES-CORRECTI
 CONTRACT_ACCEPTANCE: ACCEPTED / DIRECTLY VERIFIED AT 21fe32bc4b37773d93cabeac3e7e09aca9079037
 ENTRY_CHECKPOINT: 9eeff7d5a97e25cf676d54afcd4510816a8648fb
 DATABASE_DIAGNOSED: ucrjtfswnfdlxwtmxnoo (non-production shared development, PostgreSQL 17.6, terminal migration 20260722055832) — READ-ONLY
-ACTIVE_PHASE: CLEAN-SLATE-TRANSACTIONAL-RESET
-ACTIVE_PHASE_CONTRACT: docs/architecture/CLEAN_SLATE_TRANSACTIONAL_RESET_PHASE_CONTRACT.md
+ACTIVE_PHASE: NONE
+ACTIVE_PHASE_CONTRACT: NONE
 ```
 
 > **Role.** This was, at the R1/correction-pass point in time, a *corrected
@@ -1058,5 +1058,93 @@ the accepted product checkpoint stays `3405fdab8e05ec0f81cbfe07c63c489e551fee92`
 (`IDENTIFIED / NOT AUTHORIZED / NOT IMPLEMENTED`), real business-flow recreation
 (`NOT YET AUTHORIZED`), production access, forbidden-project access, deployment,
 staging application, and application implementation remain **unauthorized and not
-performed**. `PROJECT_STATE.md` remains the sole owner of `ACTIVE_PHASE`/
-`ACTIVE_PHASE_CONTRACT` (`CLEAN-SLATE-TRANSACTIONAL-RESET` / this contract).
+performed**. `PROJECT_STATE.md` remained the sole owner of `ACTIVE_PHASE`/
+`ACTIVE_PHASE_CONTRACT` (`CLEAN-SLATE-TRANSACTIONAL-RESET` / this contract) at
+that point in time; see §26 for the current, superseding state.
+
+## 26. Direct supervisor acceptance of reset execution (R1) — CLOSED / ACCEPTED / DIRECTLY VERIFIED
+
+Authored by `CLEAN-SLATE-TRANSACTIONAL-RESET-EXECUTION-ACCEPTANCE-CLOSEOUT-R1`
+(documentation-only). The supervisor performed the direct review of the executed,
+transactionally-verified §25 shared-development reset and **ACCEPTED** it at
+executed-reset checkpoint `770772548baf04c52e9ef020ff94f8bdabf77f03`:
+`ACCEPTED / DIRECTLY VERIFIED`. `SHARED-DEVELOPMENT RESET = EXECUTED /
+TRANSACTIONALLY VERIFIED / ACCEPTED`.
+
+### 26.1 Directly verified final database state (as recorded at §25, re-affirmed here)
+
+`ucrjtfswnfdlxwtmxnoo` (PostgreSQL 17.6, terminal migration `20260722055832`).
+Purged: 64 legacy purchase-order rows, 64 purchase needs, 51 native purchase
+orders, 16 Pedidos, 20 OPs, 25 lotes, and the exact synthetic
+`G28-B6-VERIFY-c63b6c2c8aff4da58e87d1e75f7a9236-DOCUMENT` fixture. Zero-state:
+all 24 purge tables `count(*) = 0`; all six B6 fixture tables `count(*) = 0`.
+Preserved: master/reference records; `saldo_fios` exact five rows/quantities;
+`saldo_fios_op = 0`; `op_numeros` `latex`/2026/18 and `tecelagem`/2026/41; the
+documents front excluding B6 = 39/1/24/30; the
+`legacy_active`/`flat`/`not_started` cutover with all governed cutover markers
+NULL; migration history; sequence high-water states (hash `c210b65d…`); all user
+triggers enabled (hash `7060ba455…`, the four temporarily-disabled guards
+re-enabled byte-identical); all C3C protected mutation guards enabled.
+
+### 26.2 External artifacts (authoritative and unchanged)
+
+Archive: `D:\Programação\controle-tapetes-g28-artifacts\clean-slate-reset\20260722T183846Z`
+(aggregate SHA-256 `5221cd4753157ba426cee978b43d8b0107a42a5f08f6e23c96503ee92d7399dc`).
+Execution evidence:
+`D:\Programação\controle-tapetes-g28-artifacts\clean-slate-reset\execution\20260722T202717Z`.
+Neither was modified by this pass.
+
+### 26.3 Phase closure
+
+`CLEAN-SLATE-TRANSACTIONAL-RESET: CLOSED / ACCEPTED / DIRECTLY VERIFIED`.
+`PROJECT_STATE.md`'s `ACTIVE_PHASE`/`ACTIVE_PHASE_CONTRACT` become `NONE`/`NONE`.
+`LAST_ACCEPTED_PHASE` stays `PHASE-C5`; the product `ACCEPTED_CHECKPOINT` stays
+`3405fdab8e05ec0f81cbfe07c63c489e551fee92` — never repurposed for the reset.
+Recorded separately: `ACCEPTED_CLEAN_SLATE_RESET_EXECUTION_CHECKPOINT =
+770772548baf04c52e9ef020ff94f8bdabf77f03`.
+
+### 26.4 Next authorizable action
+
+`NEXT_AUTHORIZABLE_ACTION: GOVERNANCE-EFFICIENCY-REFOUNDATION-DIAGNOSIS-R1` —
+`READ-ONLY DOCUMENT INVENTORY AND REFOUNDATION DIAGNOSIS AUTHORIZED /
+IMPLEMENTATION NOT YET AUTHORIZED`. The diagnosis must inventory and classify
+all current governance documents: line counts and file sizes, current
+authority and ownership, unique information held by each document, duplicated
+facts and duplicated narratives, documents required during normal bootstrap
+vs. only for historical audit, manual versus generated documents, consumers
+and inbound references, ledger partitioning and rollover options, archive and
+compaction candidates, safe deprecation candidates, documents that must remain
+normative, documents that may become generated views, information-loss risks,
+and link/reference migration requirements. The diagnosis must not delete,
+archive, split, compact, or generate replacement files. This closeout defines
+or guesses none of those results.
+
+The prior `REAL-BUSINESS-FLOW-RECREATION-DIAGNOSIS-R1` framing of the next
+action (recorded when this section was first drafted) is **SUPERSEDED** by
+this reissued closeout order; real business-flow recreation stays a separate,
+still-unauthorized track, not the live next action. The previously emitted but
+unexecuted order `CLEAN-SLATE-CLOSEOUT-AND-GOVERNANCE-EFFICIENCY-
+REFOUNDATION-SHADOW-R1` is **SUPERSEDED** and must not be executed.
+
+### 26.5 Remaining prohibitions
+
+`REAL_CUTOVER: NOT AUTHORIZED / NOT EXECUTED`.
+`PHASE-C5B-ACCEPTANCE-DECISION: IDENTIFIED / NOT AUTHORIZED / NOT IMPLEMENTED`.
+Real business-flow recreation: `NOT YET AUTHORIZED`. Production: `NOT ACCESSED /
+NOT AUTHORIZED`. The forbidden project: `NOT ACCESSED`. Deployment/activation:
+`NOT AUTHORIZED`. Governance-efficiency refoundation implementation: `NOT YET
+AUTHORIZED`. Document cleanup/compaction: `NOT YET AUTHORIZED`.
+Documentary-authority cutover: `NOT AUTHORIZED`. This closeout's acceptance of
+the clean-slate reset does not authorize any of the above.
+
+### 26.6 Pass scope
+
+This pass performed **no** database access, **no** SQL, **no** business-flow
+recreation, and **no** modification to the archive, the execution evidence, the
+reset/restore tooling, product code, or migrations. Documentation-only: exactly
+seven canonical documents changed (`PROJECT_STATE.md`, `AGENT_HANDOFF.md`,
+`docs/DOCUMENTATION_INDEX.md`, this contract,
+`docs/architecture/ORDEM_COMPRA_C3_TRACEABILITY.md`,
+`docs/architecture/PEDIDO_PRODUCTION_FLOW_BACKLOG.md`,
+`docs/ledgers/G28_LEDGER.md`); protected residue (`.gitignore`,
+`.codex/config.toml`, `.mcp.json`) untouched.

@@ -25,7 +25,56 @@
 
 ## Phase status
 
-- **`CLEAN-SLATE-TRANSACTIONAL-RESET-SHARED-DEV-EXECUTION-R1` (current —
+- **`CLEAN-SLATE-TRANSACTIONAL-RESET-EXECUTION-ACCEPTANCE-CLOSEOUT-R1` (current —
+  direct supervisor acceptance of the executed shared-development clean-slate
+  reset; documentation-only closeout):** the supervisor **ACCEPTED** executed
+  reset checkpoint `770772548baf04c52e9ef020ff94f8bdabf77f03` —
+  `ACCEPTED / DIRECTLY VERIFIED`. `SHARED-DEVELOPMENT RESET = EXECUTED /
+  TRANSACTIONALLY VERIFIED / ACCEPTED`. Directly verified final database state of
+  `ucrjtfswnfdlxwtmxnoo`: purged 64 legacy purchase-order rows, 64 purchase
+  needs, 51 native purchase orders, 16 Pedidos, 20 OPs, 25 lotes, and the exact
+  synthetic B6-VERIFY fixture; all 24 purge tables and all six B6 fixture tables
+  are zero; preserved unchanged — master/reference records, `saldo_fios` (exact
+  five rows/quantities), `saldo_fios_op` (0), `op_numeros` (latex/2026/18,
+  tecelagem/2026/41), the documents front excluding B6 (39/1/24/30), the
+  `legacy_active`/`flat`/`not_started` cutover with all markers NULL, migration
+  history, sequence high-water states, all user triggers enabled, all C3C
+  protected mutation guards enabled. The archive `20260722T183846Z` (aggregate
+  SHA-256 `5221cd4753157ba426cee978b43d8b0107a42a5f08f6e23c96503ee92d7399dc`) and
+  the execution evidence `…/clean-slate-reset/execution/20260722T202717Z/` remain
+  authoritative and unchanged outside the repository. **`CLEAN-SLATE-TRANSACTIONAL-RESET`
+  phase: `CLOSED / ACCEPTED / DIRECTLY VERIFIED`.** `ACTIVE_PHASE`/
+  `ACTIVE_PHASE_CONTRACT` become `NONE`/`NONE`; `LAST_ACCEPTED_PHASE` stays
+  `PHASE-C5`; the product `ACCEPTED_CHECKPOINT` stays
+  `3405fdab8e05ec0f81cbfe07c63c489e551fee92` (never repurposed) —
+  `ACCEPTED_CLEAN_SLATE_RESET_EXECUTION_CHECKPOINT =
+  770772548baf04c52e9ef020ff94f8bdabf77f03` is recorded separately. **Next
+  authorizable action:** `GOVERNANCE-EFFICIENCY-REFOUNDATION-DIAGNOSIS-R1` —
+  `READ-ONLY DOCUMENT INVENTORY AND REFOUNDATION DIAGNOSIS AUTHORIZED /
+  IMPLEMENTATION NOT YET AUTHORIZED`: a read-only inventory and classification
+  of all current governance documents — line counts and file sizes, current
+  authority and ownership, unique information held by each document,
+  duplicated facts and duplicated narratives, documents required during normal
+  bootstrap vs. only for historical audit, manual versus generated documents,
+  consumers and inbound references, ledger partitioning and rollover options,
+  archive and compaction candidates, safe deprecation candidates, documents
+  that must remain normative, documents that may become generated views,
+  information-loss risks, and link/reference migration requirements — the
+  diagnosis must not delete, archive, split, compact, or generate replacement
+  files. The prior `REAL-BUSINESS-FLOW-RECREATION-DIAGNOSIS-R1` framing of the
+  next action is **SUPERSEDED**; real business-flow recreation stays a
+  separate, still-unauthorized track, not the live next action. The previously
+  emitted but unexecuted order
+  `CLEAN-SLATE-CLOSEOUT-AND-GOVERNANCE-EFFICIENCY-REFOUNDATION-SHADOW-R1` is
+  **SUPERSEDED** and must not be executed.
+  `REAL_CUTOVER`, `PHASE-C5B-ACCEPTANCE-DECISION`, real business-flow
+  recreation, production access, the forbidden project,
+  deployment/activation, governance-efficiency refoundation implementation,
+  and document cleanup/compaction remain unauthorized; no phase chains
+  automatically. This pass performed **no database access**. Documentation-only: seven
+  authorized canonical documents only; protected residue untouched. Full
+  record: contract §26, `PROJECT_STATE.md`, and `docs/ledgers/G28_LEDGER.md`.
+- **`CLEAN-SLATE-TRANSACTIONAL-RESET-SHARED-DEV-EXECUTION-R1` (prior —
   governed destructive execution of the accepted clean-slate reset):**
   `SHARED-DEVELOPMENT RESET = EXECUTED / TRANSACTIONALLY VERIFIED / AWAITING
   DIRECT SUPERVISOR REVIEW`. One serialized `SERIALIZABLE` DELETE transaction
