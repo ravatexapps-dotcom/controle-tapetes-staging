@@ -17,15 +17,30 @@
   treat any copied HEAD as canonical. Compaction baseline HEAD (reference only):
   `17ff8adddaa9f2fd3bc61af7261d9ebaad275f08`.
 - **Accepted checkpoint (stable, from the bootstrap):**
-  `429aa3980c7027b9d872a1902e2f31f1a4a85a2a` (the accepted `PHASE-C3D` technical
-  checkpoint; the `PHASE-C3D-F` documentation-only closeout commit is the
-  closeout-documentation checkpoint, not a new technical evidence checkpoint).
+  `3405fdab8e05ec0f81cbfe07c63c489e551fee92` (the accepted `PHASE-C5` technical
+  checkpoint — the targeted-correction commit accepted at the `PHASE-C5`
+  closeout; consult Git for live `HEAD`).
 - **Current Git residue:** modified `.gitignore` only (pre-existing, preserved,
   unstaged). No other tracked residue.
 
 ## Phase status
 
-- **Last accepted product phase:** `PHASE-C3C-B` (application compatibility/
+- **Last accepted phase (current):** `PHASE-C5` (native purchase-order emission
+  UI at `#/ordens-compra/:id`) — `CLOSED / ACCEPTED_WITH_NONBLOCKING_DEBT /
+  DIRECTLY VERIFIED / ARCHITECT VISUAL VALIDATION PASSED` (supervisor acceptance
+  + closeout `C5-DOCUMENTATION-CLOSEOUT-R1`, 2026-07-22, contract §25). Accepted
+  `PHASE-C5` technical checkpoint `3405fdab8e05ec0f81cbfe07c63c489e551fee92`;
+  `OC-C5-EMISSION-001` is `SATISFIED`. `ACTIVE_PHASE`/`ACTIVE_PHASE_CONTRACT`
+  are `NONE`. The blocking defect `C5_AMBIGUOUS_EMISSION_RELOAD_FALSE_DRAFT_ASSERTION`
+  is resolved (`PHASE-C5 FUNCTIONAL GATE = PASS`; `PHASE-C5 VISUAL REVIEW =
+  PASS_WITH_NONBLOCKING_COSMETIC_DEBT`). `PHASE-C5B-ACCEPTANCE-DECISION`
+  (`IDENTIFIED / NOT AUTHORIZED`) and `REAL_CUTOVER` (`NOT AUTHORIZED`) remain
+  **separate, unauthorized** gates; no phase chains automatically. The
+  per-pass bullets further below (governance status, C3C-B/C3D/C4/C5A/C5
+  narratives) are **historical, point-in-time records** — the same history is
+  preserved in `docs/ledgers/G28_LEDGER.md`; live current state is owned solely
+  by `PROJECT_STATE.md`.
+- **Prior accepted product phase:** `PHASE-C3C-B` (application compatibility/
   adaptation) — `CLOSED / ACCEPTED_WITH_NONBLOCKING_DEBT / LOCALLY VERIFIED`
   (2026-07-21), accepted checkpoint `22bfb192c6c2ad10ccd2b2883d54c3a17e40cc9f`
   (`docs/architecture/ORDEM_COMPRA_C3C_B_PHASE_CONTRACT.md` §36). No database,
@@ -40,10 +55,14 @@
 - **Prior accepted product phase:** `PHASE-C3C-A` — `CLOSED / TECHNICALLY
   ACCEPTED — LOCALLY VERIFIED / INACTIVE / NOT APPLIED TO STAGING` (2026-07-20),
   technical checkpoint `89123729b3529fff6e4a2336bfec2907c4b94b4c`.
-- **Last accepted product phase:** `PHASE-C4` (admin receipt UI at
+- **Prior accepted material phase (historical detail):** `PHASE-C4` (admin
+  receipt UI at
   `#/ordens-compra/:id`) — supervisor-accepted and architect-visual-validated
-  2026-07-21 under `C4-CLOSEOUT-AND-C5-CONTRACT-R1` (contract §0d, `STATUS:
-  CLOSED / ACCEPTED / LOCALLY VERIFIED / ARCHITECT VISUAL VALIDATION PASSED`).
+  2026-07-21 under `C4-CLOSEOUT-AND-C5-CONTRACT-R1` (contract §0d; disposition
+  restated per the direct-review ruling of
+  `C5-AMBIGUOUS-RELOAD-AND-CANONICAL-STATE-CORRECTION-R1`, 2026-07-22, to `CLOSED
+  / ACCEPTED_WITH_NONBLOCKING_DEBT / DIRECTLY VERIFIED / ARCHITECT VISUAL
+  VALIDATION PASSED`).
   `OC-C4-ADMIN-001` is `SATISFIED`. Accepted technical checkpoint
   `289b0cca66e9c057330a882f69da3476adf90469`. `ACTIVE_PHASE`/
   `ACTIVE_PHASE_CONTRACT` are `NONE` (moved back to `NONE` at this closeout).
@@ -85,67 +104,50 @@
   independent transient queries); `saldo_fios`'s excess branch was not
   empirically executed (`kg_alocado` 15.500 > max total 15.000) and
   `saldo_fios_op` is `NOT_APPLICABLE` — neither an `OC-C3D-LOCK-001` §M exit
-  criterion. `PHASE-C4` is now closed (see above); `PHASE-C5`/`REAL_CUTOVER`
-  remain unauthorized.
-- **Active phase contract:**
-  `docs/architecture/ORDEM_COMPRA_C5_PHASE_CONTRACT.md` (`PHASE_ID: PHASE-C5`,
-  `STATUS: ACCEPTED / IMPLEMENTED LOCALLY / TARGETED CORRECTION IMPLEMENTED /
-  AWAITING SUPERVISOR RE-REVIEW`, §22/§23/§24 — the database prerequisite was
-  resolved by the `PHASE-C5A` closeout below; local UI implementation is now
-  **IMPLEMENTED / TARGETED CORRECTION IMPLEMENTED / LOCALLY VERIFIED /
-  AWAITING SUPERVISOR RE-REVIEW** under
-  `C5-PURCHASE-ORDER-EMISSION-UI-IMPLEMENTATION-R1` then
-  `C5-AMBIGUOUS-RELOAD-AND-CANONICAL-STATE-CORRECTION-R1`, 2026-07-22 — not
-  self-accepted, not closed). The now-**closed**
-  `PHASE-C5A-DB-EMISSION-READINESS` material contract is
+  criterion. `PHASE-C4` is now closed; `PHASE-C5` is now closed and accepted
+  (`OC-C5-EMISSION-001` `SATISFIED` — see the current lead at the top of this
+  section); `PHASE-C5B-ACCEPTANCE-DECISION` and `REAL_CUTOVER` remain separate,
+  unauthorized gates.
+- **Active phase contract:** `NONE`. The `PHASE-C5` material contract
+  `docs/architecture/ORDEM_COMPRA_C5_PHASE_CONTRACT.md` (`PHASE_ID: PHASE-C5`)
+  is now **closed** — `STATUS: CLOSED / ACCEPTED_WITH_NONBLOCKING_DEBT /
+  DIRECTLY VERIFIED / ARCHITECT VISUAL VALIDATION PASSED` (§25, supervisor
+  acceptance + closeout `C5-DOCUMENTATION-CLOSEOUT-R1`, 2026-07-22; accepted
+  technical checkpoint `3405fdab8e05ec0f81cbfe07c63c489e551fee92`;
+  `OC-C5-EMISSION-001` `SATISFIED`). The other material phase contracts are
+  likewise closed and **not active**:
   `docs/architecture/ORDEM_COMPRA_C5A_DB_EMISSION_READINESS_PHASE_CONTRACT.md`
   (`STATUS: CLOSED / ACCEPTED / LOCALLY VERIFIED / SHARED-DEVELOPMENT
-  VERIFIED`, §25 — supervisor-accepted then locally implemented under
-  `C5A-DB-EMISSION-READINESS-IMPLEMENTATION-R1` Parts 1/2, applied
-  byte-identical and §14-validated on the authorized non-production shared
-  development database `ucrjtfswnfdlxwtmxnoo` (PostgreSQL 17.6, terminal
-  migration `20260722055832`) under `C5A-DB77-SHARED-DEV-VALIDATION-R1`
-  (2026-07-22), then **closed** by the supervisor under
-  `C5A-CLOSEOUT-AND-C5-AUTHORIZATION-R1` (2026-07-22, contract §25)). The
-  now-**closed**
-  `PHASE-C4` material
-  contract is `docs/architecture/ORDEM_COMPRA_C4_PHASE_CONTRACT.md`
-  (`PHASE_ID: PHASE-C4`, `STATUS: CLOSED / ACCEPTED / LOCALLY VERIFIED /
-  ARCHITECT VISUAL VALIDATION PASSED`, §0d). The now-**closed**
-  `PHASE-C3D` material
-  contract is `docs/architecture/ORDEM_COMPRA_C3D_PHASE_CONTRACT.md`
-  (`PHASE_ID: PHASE-C3D`; `ACCEPTED`, §0c; C3D-A evidence §O/§P; C3D-B evidence
-  §Q; C3D-A/B acceptance + pre-PONR rollback correction §R; C3D-C evidence
-  §S/§T + acceptance §U; C3D-D evidence §V, targeted correction §W, acceptance
-  §X; C3D-E evidence §Y; C3D-E acceptance + aggregate `PHASE-C3D`/`PHASE-C3D-F`
-  closeout §Z).
-- **Active track:** `PURCHASE_ORDER_PHASE_C`. Active phase `PHASE-C5` —
-  contract `ACCEPTED / IMPLEMENTATION AUTHORIZED LOCALLY` (contract §22).
-  `PHASE-C5A-DB-EMISSION-READINESS` is now `CLOSED / ACCEPTED / LOCALLY
-  VERIFIED / SHARED-DEVELOPMENT VERIFIED` (contract §25, supervisor closeout
-  under `C5A-CLOSEOUT-AND-C5-AUTHORIZATION-R1`, 2026-07-22): `db/77` applied
-  byte-identical + §14-validated on the authorized non-production shared
-  development database `ucrjtfswnfdlxwtmxnoo`, PostgreSQL 17.6, terminal
-  migration `20260722055832`, under `C5A-DB77-SHARED-DEV-VALIDATION-R1`; clean
-  apply + idempotent reapply; `emitir` body byte-unchanged grant-only; read
-  models corrected; exact grant matrix; full behavioral evidence; zero
-  residue; cutover unchanged `legacy_active`. This resolves the `PHASE-C5`
-  database prerequisite, and under `C5-PURCHASE-ORDER-EMISSION-UI-IMPLEMENTATION-R1`
-  (2026-07-22, local commit `feat: implement C5 purchase-order emission UI`) the
-  `PHASE-C5` UI is now `IMPLEMENTED / LOCALLY VERIFIED / AWAITING SUPERVISOR
-  FUNCTIONAL AND VISUAL REVIEW`: the disabled `oc-emitir` button was wired to
-  native `emitir_ordem_compra` via the server-derived `acoes.emitir` signal, the
-  `CONTROLLED_IRREVERSIBLE_TRANSITION` confirmation modal was added, and
-  `status_aceite` was surfaced, strictly within the closed three-file manifest
-  (`ordem-compra-data.js`/`-render.js`/`-events.js`) and the contract's entry
-  gates (§15) and hard stops (§16). The next authorizable action is supervisor
-  functional review + mandatory architect visual validation
-  (`SUPERVISION_PROTOCOL.md` §4); on acceptance a separate closeout advances
-  `OC-C5-EMISSION-001` (now `PARTIALLY_SATISFIED`) and closes `PHASE-C5`.
-  `PHASE-C5B-ACCEPTANCE-DECISION`, any
-  shared-database apply beyond `db/77`, staging application of `db/76`/`db/77`,
-  deployment, activation, `REAL_CUTOVER`, production access, and push remain
-  unauthorized.
+  VERIFIED`, §25; disposition restated `CLOSED / ACCEPTED / DIRECTLY VERIFIED /
+  SHARED-DEVELOPMENT STATE VERIFIED` at the C5 direct review);
+  `docs/architecture/ORDEM_COMPRA_C4_PHASE_CONTRACT.md` (`PHASE_ID: PHASE-C4`,
+  §0d — disposition restated `CLOSED / ACCEPTED_WITH_NONBLOCKING_DEBT /
+  DIRECTLY VERIFIED / ARCHITECT VISUAL VALIDATION PASSED`); and
+  `docs/architecture/ORDEM_COMPRA_C3D_PHASE_CONTRACT.md` (`PHASE_ID: PHASE-C3D`,
+  §Z aggregate closeout).
+- **Active track:** `PURCHASE_ORDER_PHASE_C`. **Active phase `NONE`; active
+  phase contract `NONE`.** `PHASE-C5` (native purchase-order emission UI) is
+  **closed and accepted** — supervisor acceptance + closeout
+  `C5-DOCUMENTATION-CLOSEOUT-R1` (2026-07-22, contract §25) of the targeted
+  correction commit `3405fdab8e05ec0f81cbfe07c63c489e551fee92`; the blocking
+  defect `C5_AMBIGUOUS_EMISSION_RELOAD_FALSE_DRAFT_ASSERTION` is resolved
+  (`PHASE-C5 FUNCTIONAL GATE = PASS`, `PHASE-C5 VISUAL REVIEW =
+  PASS_WITH_NONBLOCKING_COSMETIC_DEBT`), `OC-C5-EMISSION-001` is `SATISFIED`.
+  The predecessor contracts are likewise closed: `PHASE-C5A-DB-EMISSION-READINESS`
+  = `CLOSED / ACCEPTED / DIRECTLY VERIFIED / SHARED-DEVELOPMENT STATE VERIFIED`
+  (contract §25, `C5A-CLOSEOUT-AND-C5-AUTHORIZATION-R1`, 2026-07-22; `db/77`
+  applied byte-identical + §14-validated on the shared development database
+  `ucrjtfswnfdlxwtmxnoo`, PostgreSQL 17.6, terminal migration `20260722055832`);
+  `PHASE-C4` = `CLOSED / ACCEPTED_WITH_NONBLOCKING_DEBT / DIRECTLY VERIFIED /
+  ARCHITECT VISUAL VALIDATION PASSED` (`OC-C4-ADMIN-001` `SATISFIED`). The next
+  authorizable action is a **supervisor read-only sequencing decision** between
+  the two remaining separately governed continuations —
+  `PHASE-C5B-ACCEPTANCE-DECISION` (`IDENTIFIED / NOT AUTHORIZED`) and the
+  `REAL_CUTOVER` completeness disposition for the 13 unmapped
+  `ordens_compra_fio` rows ids 153–165 — not automatic execution; no phase
+  chains automatically. `PHASE-C5B-ACCEPTANCE-DECISION`, any shared-database
+  apply beyond `db/77`, staging application of `db/76`/`db/77`, deployment,
+  activation, `REAL_CUTOVER`, production access, and push remain unauthorized.
 - **Current governance status:** `GOVERNANCE-SPEC-CUSTODY-FOUNDATION-R1`
   **ACCEPTED**; `GOVERNANCE-STATE-HANDOFF-COMPACTION-R1` **ACCEPTED** by the
   supervisor at commit `1157b9e71bc629903c5940ab50d4b370964e560e` (state/handoff
@@ -552,10 +554,11 @@ Full matrix and normative anchors: `docs/architecture/ORDEM_COMPRA_C3_TRACEABILI
   `C4-CLOSEOUT-AND-C5-CONTRACT-R1`, contract §0d; accepted checkpoint
   `289b0cca66e9c057330a882f69da3476adf90469` — was previously (superseded)
   pending supervisor acceptance + architect visual validation);
-  `OC-C4-SUPPLIER-001` — `DEFERRED`; `OC-C5-EMISSION-001` —
-  `PLANNED / BLOCKED_BY_C5A_DB_PREREQUISITE` (post-C4 emission gate;
-  contract accepted, implementation blocked by the database prerequisite,
-  `docs/architecture/ORDEM_COMPRA_C5_PHASE_CONTRACT.md` §21).
+  `OC-C4-SUPPLIER-001` — `DEFERRED`; `OC-C5-EMISSION-001` — `SATISFIED`
+  (owning phase C5; `CLOSED / ACCEPTED_WITH_NONBLOCKING_DEBT / DIRECTLY VERIFIED
+  / ARCHITECT VISUAL VALIDATION PASSED` under `C5-DOCUMENTATION-CLOSEOUT-R1`,
+  `docs/architecture/ORDEM_COMPRA_C5_PHASE_CONTRACT.md` §25; accepted technical
+  checkpoint `3405fdab8e05ec0f81cbfe07c63c489e551fee92`).
 
 ## Blockers and debts (live)
 
@@ -636,12 +639,16 @@ Full matrix and normative anchors: `docs/architecture/ORDEM_COMPRA_C3_TRACEABILI
   REGISTER item 17). **`PHASE-C5A-DB-EMISSION-READINESS` is now `CLOSED /
   ACCEPTED / DIRECTLY VERIFIED / SHARED-DEVELOPMENT STATE VERIFIED`**
   (`C5A-CLOSEOUT-AND-C5-AUTHORIZATION-R1`, contract §25), and `PHASE-C5` is now
-  `IMPLEMENTED / TARGETED CORRECTION IMPLEMENTED / LOCALLY VERIFIED / AWAITING
-  SUPERVISOR RE-REVIEW` (contract §22/§23/§24) — local UI implementation
-  landed under `C5-PURCHASE-ORDER-EMISSION-UI-IMPLEMENTATION-R1` and was then
+  **`CLOSED / ACCEPTED_WITH_NONBLOCKING_DEBT / DIRECTLY VERIFIED / ARCHITECT
+  VISUAL VALIDATION PASSED`** (supervisor acceptance + closeout
+  `C5-DOCUMENTATION-CLOSEOUT-R1`, 2026-07-22, contract §25; accepted technical
+  checkpoint `3405fdab8e05ec0f81cbfe07c63c489e551fee92`; `OC-C5-EMISSION-001`
+  `SATISFIED`; `PHASE-C5 FUNCTIONAL GATE = PASS`, `PHASE-C5 VISUAL REVIEW =
+  PASS_WITH_NONBLOCKING_COSMETIC_DEBT`) — local UI implementation landed under
+  `C5-PURCHASE-ORDER-EMISSION-UI-IMPLEMENTATION-R1`, was
   functionally/visually reviewed and targeted-corrected under
-  `C5-AMBIGUOUS-RELOAD-AND-CANONICAL-STATE-CORRECTION-R1` (2026-07-22); not
-  self-accepted, not closed. **Still unauthorized (each a separate gate):**
+  `C5-AMBIGUOUS-RELOAD-AND-CANONICAL-STATE-CORRECTION-R1` (2026-07-22), then
+  accepted and closed. **Still unauthorized (each a separate gate):**
   `PHASE-C5B-ACCEPTANCE-DECISION`, any shared-database apply beyond `db/77`,
   staging application/validation of `db/76`/`db/77`, activation, deployment,
   real snapshot/import, fence transition, read switch, final ACL-closure
@@ -672,18 +679,21 @@ summary.
   corrects the terminal read models, applied byte-identical and §14-validated
   on the authorized shared development database `ucrjtfswnfdlxwtmxnoo`. With
   that prerequisite resolved, **`PHASE-C5`** native emission
-  (`OC-C5-EMISSION-001`, `PARTIALLY_SATISFIED`) material contract is now
-  `ACCEPTED / IMPLEMENTED LOCALLY / TARGETED CORRECTION IMPLEMENTED / AWAITING
-  SUPERVISOR RE-REVIEW` (`docs/architecture/ORDEM_COMPRA_C5_PHASE_CONTRACT.md`
-  §22/§23/§24) and **ACTIVE** — local UI implementation landed under
-  `C5-PURCHASE-ORDER-EMISSION-UI-IMPLEMENTATION-R1`, then underwent direct
-  supervisor functional/visual review (`PHASE-C5 VISUAL REVIEW =
+  (`OC-C5-EMISSION-001`, `SATISFIED`) material contract is now
+  `CLOSED / ACCEPTED_WITH_NONBLOCKING_DEBT / DIRECTLY VERIFIED / ARCHITECT
+  VISUAL VALIDATION PASSED` (`docs/architecture/ORDEM_COMPRA_C5_PHASE_CONTRACT.md`
+  §25, accepted technical checkpoint
+  `3405fdab8e05ec0f81cbfe07c63c489e551fee92`) and **not active** — local UI
+  implementation landed under `C5-PURCHASE-ORDER-EMISSION-UI-IMPLEMENTATION-R1`,
+  underwent direct supervisor functional/visual review (`PHASE-C5 VISUAL REVIEW =
   PASS_WITH_NONBLOCKING_COSMETIC_DEBT`; `PHASE-C5 FUNCTIONAL REVIEW =
-  CHANGES_REQUIRED` on `C5_AMBIGUOUS_EMISSION_RELOAD_FALSE_DRAFT_ASSERTION`)
-  and a targeted correction under
+  CHANGES_REQUIRED` on `C5_AMBIGUOUS_EMISSION_RELOAD_FALSE_DRAFT_ASSERTION`),
+  was targeted-corrected under
   `C5-AMBIGUOUS-RELOAD-AND-CANONICAL-STATE-CORRECTION-R1` (2026-07-22, within
-  the same closed three-file manifest) — not self-accepted, `PHASE-C5` not
-  closed. Full acceptance-workflow usability is additionally gated behind
+  the same closed three-file manifest), then **accepted and closed** under
+  `C5-DOCUMENTATION-CLOSEOUT-R1` (2026-07-22): the defect is resolved and
+  `PHASE-C5 FUNCTIONAL GATE = PASS`. Full acceptance-workflow usability is
+  additionally gated behind
   **`PHASE-C5B-ACCEPTANCE-DECISION`** (`IDENTIFIED / NOT AUTHORIZED`), which
   still requires its own explicit architect order and a fresh session; no
   `PHASE-C5` implementation order may build any acceptance-decision
@@ -752,19 +762,21 @@ summary.
     `ORDEM_COMPRA_RECEIPT_HARD_FAILURE_RAW_MESSAGE_EXPOSURE` (recorded, not
     corrected); not active — `ACTIVE_PHASE`/`ACTIVE_PHASE_CONTRACT` are `NONE`)
 23. `docs/architecture/ORDEM_COMPRA_C5_PHASE_CONTRACT.md` (C5 material phase
-    contract — purchase-order emission; **ACTIVE**, `ACCEPTED / IMPLEMENTED
-    LOCALLY / TARGETED CORRECTION IMPLEMENTED / AWAITING SUPERVISOR RE-REVIEW`
-    (§22/§23/§24 — the database prerequisite is resolved by item 24 below);
-    `OC-C5-EMISSION-001` `PARTIALLY_SATISFIED`; `PHASE-C5B-ACCEPTANCE-DECISION`
-    (`IDENTIFIED / NOT AUTHORIZED`); emission confirmation UX ratified
-    `CONTROLLED_IRREVERSIBLE_TRANSITION`; local UI implementation landed under
+    contract — purchase-order emission; **not active**, `CLOSED /
+    ACCEPTED_WITH_NONBLOCKING_DEBT / DIRECTLY VERIFIED / ARCHITECT VISUAL
+    VALIDATION PASSED` (§25, supervisor acceptance + closeout
+    `C5-DOCUMENTATION-CLOSEOUT-R1`, 2026-07-22; accepted technical checkpoint
+    `3405fdab8e05ec0f81cbfe07c63c489e551fee92`); `OC-C5-EMISSION-001`
+    `SATISFIED`; `PHASE-C5B-ACCEPTANCE-DECISION` (`IDENTIFIED / NOT AUTHORIZED`);
+    emission confirmation UX ratified `CONTROLLED_IRREVERSIBLE_TRANSITION`;
+    local UI implementation landed under
     `C5-PURCHASE-ORDER-EMISSION-UI-IMPLEMENTATION-R1` within the closed
-    three-file manifest (§12) and the entry/exit gates (§15) and hard stops
-    (§16); direct supervisor review then found `PHASE-C5 VISUAL REVIEW =
-    PASS_WITH_NONBLOCKING_COSMETIC_DEBT` and `PHASE-C5 FUNCTIONAL REVIEW =
-    CHANGES_REQUIRED` on `C5_AMBIGUOUS_EMISSION_RELOAD_FALSE_DRAFT_ASSERTION`,
-    corrected under `C5-AMBIGUOUS-RELOAD-AND-CANONICAL-STATE-CORRECTION-R1`
-    (2026-07-22, §24) — not self-accepted, not closed)
+    three-file manifest (§12), targeted-corrected under
+    `C5-AMBIGUOUS-RELOAD-AND-CANONICAL-STATE-CORRECTION-R1` (2026-07-22, §24) on
+    the blocking defect `C5_AMBIGUOUS_EMISSION_RELOAD_FALSE_DRAFT_ASSERTION`
+    (`PHASE-C5 FUNCTIONAL GATE = PASS`; `PHASE-C5 VISUAL REVIEW =
+    PASS_WITH_NONBLOCKING_COSMETIC_DEBT`), then supervisor-accepted and closed
+    (§25))
 24. `docs/architecture/ORDEM_COMPRA_C5A_DB_EMISSION_READINESS_PHASE_CONTRACT.md`
     (C5A material phase contract — database emission readiness; **not
     active**, `CLOSED / ACCEPTED / DIRECTLY VERIFIED / SHARED-DEVELOPMENT STATE

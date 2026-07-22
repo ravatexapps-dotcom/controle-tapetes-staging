@@ -8,6 +8,46 @@
 > `PROJECT_STATE.md`. Phase sequence, dependencies, backlog items, and accepted
 > architecture in this file remain authoritative; live operational status does not.
 
+# Update 2026-07-22 - C5-DOCUMENTATION-CLOSEOUT-R1 (PHASE-C5 supervisor acceptance and closeout; OC-C5-EMISSION-001 SATISFIED)
+
+Phase: documentation-only supervisor closeout of `PHASE-C5` / `OC-C5-EMISSION-001`
+after direct supervisor acceptance of the targeted-correction commit
+`3405fdab8e05ec0f81cbfe07c63c489e551fee92`
+(`fix: preserve uncertainty after unresolved emission reload`). Type: docs-only;
+no product, test, database, migration, environment, deployment, or configuration
+change; no database or shared-environment access. Historical closeout note — live
+state belongs to `PROJECT_STATE.md`.
+
+The supervisor **ACCEPTED** the targeted-correction commit
+(`ACCEPTED_WITH_NONBLOCKING_DOCUMENTARY_DEBT`) and **CLOSED** `PHASE-C5`:
+`CLOSED / ACCEPTED_WITH_NONBLOCKING_DEBT / DIRECTLY VERIFIED / ARCHITECT VISUAL
+VALIDATION PASSED`, accepted PHASE-C5 technical checkpoint
+`3405fdab8e05ec0f81cbfe07c63c489e551fee92`. The blocking defect
+`C5_AMBIGUOUS_EMISSION_RELOAD_FALSE_DRAFT_ASSERTION` is resolved:
+`PHASE-C5 FUNCTIONAL GATE = PASS`; `PHASE-C5 VISUAL REVIEW =
+PASS_WITH_NONBLOCKING_COSMETIC_DEBT`. `OC-C5-EMISSION-001` advances to
+**`SATISFIED`**.
+
+`LAST_ACCEPTED_PHASE` becomes `PHASE-C5`; `ACTIVE_PHASE`/`ACTIVE_PHASE_CONTRACT`
+return to `NONE`. `PHASE-C5B-ACCEPTANCE-DECISION` remains `IDENTIFIED / NOT
+AUTHORIZED` (orders with `exige_aceite=TRUE` are still not lifecycle-complete
+until it ships); `REAL_CUTOVER` remains a **separate**, `NOT AUTHORIZED` gate,
+additionally hard-gated behind the mandatory read-only completeness disposition
+of the 13 unmapped `ordens_compra_fio` rows ids 153–165 (each dispositioned by
+exactly one of authorized mapping/backfill + re-baseline, documented exclusion
+with business-owner approval, or cancellation/removal). This closeout selects
+neither continuation and creates no new phase contract; every existing sequence
+constraint and dependency in this file is unchanged. Six nonblocking debts are
+preserved unchanged (`PROJECT_STATE.md` POST-LAUNCH DEBT REGISTER items 15–20).
+
+`NEXT_AUTHORIZABLE_ACTION`: a supervisor read-only sequencing decision between
+the remaining separately governed continuations (`PHASE-C5B-ACCEPTANCE-DECISION`
+and the `REAL_CUTOVER` 13-row completeness disposition) — no implementation
+authorized; no phase chains automatically. One local documentation-only commit
+`docs: close C5 purchase-order emission phase`, published through one authorized
+fast-forward push to `staging/dev`. Sequence/architecture in this file are
+unchanged. Full evidence: contract §25 and `docs/ledgers/G28_LEDGER.md`.
+
 # Update 2026-07-22 - C5-PURCHASE-ORDER-EMISSION-UI-IMPLEMENTATION-R1 (PHASE-C5 native purchase-order emission UI implemented, locally verified, awaiting supervisor review)
 
 Phase: local UI implementation of `PHASE-C5` / `OC-C5-EMISSION-001` under the

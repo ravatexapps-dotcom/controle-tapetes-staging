@@ -8930,3 +8930,92 @@ product file they depend on, was modified by this pass or the prior one):
   branch creation, and any further push remain unauthorized. **No further push
   is authorized by this pass beyond the one single fast-forward of this pass's
   own commit.**
+
+---
+
+## 2026-07-22 — C5-DOCUMENTATION-CLOSEOUT-R1 — Close PHASE-C5 purchase-order emission phase
+
+- **Gate:** `CLOSED / ACCEPTED_WITH_NONBLOCKING_DEBT / DIRECTLY VERIFIED /
+  ARCHITECT VISUAL VALIDATION PASSED` — documentation-only closeout after direct
+  supervisor acceptance of the targeted-correction commit.
+- **Binding supervisor ruling.** The supervisor performed direct re-review of
+  the `PHASE-C5` targeted-correction commit
+  `3405fdab8e05ec0f81cbfe07c63c489e551fee92`
+  (`fix: preserve uncertainty after unresolved emission reload`, parent
+  `e25361be80eed0c33f2544c58d2273572d0bd588`) and **ACCEPTED** it as final and
+  binding: `ACCEPTED_WITH_NONBLOCKING_DOCUMENTARY_DEBT`; `PHASE-C5 FUNCTIONAL
+  GATE = PASS`; `PHASE-C5 VISUAL REVIEW = PASS_WITH_NONBLOCKING_COSMETIC_DEBT`.
+- **Defect corrected (resolved).** `C5_AMBIGUOUS_EMISSION_RELOAD_FALSE_DRAFT_ASSERTION`.
+  Direct review confirmed the corrected ambiguous-transport branch of
+  `js/screens/ordem-compra-events.js` `emitir(o)`: exactly one authoritative
+  reload; resolves emitted only for the same order with
+  `status_administrativo='emitida'`; resolves draft only for the same order with
+  `status_administrativo='rascunho'`; offers a deliberate retry only when the
+  reloaded server object exposes `acoes.emitir=true`; preserves honest
+  uncertainty for reload failure, `null`, a mismatched order, or an unresolved
+  state; no automatic retry; no fallback or legacy writer call; the existing
+  canonical RPC/payload preserved.
+- **Final PHASE-C5 status:** `CLOSED / ACCEPTED_WITH_NONBLOCKING_DEBT / DIRECTLY
+  VERIFIED / ARCHITECT VISUAL VALIDATION PASSED`; accepted PHASE-C5 technical
+  checkpoint `3405fdab8e05ec0f81cbfe07c63c489e551fee92`.
+- **Requirement disposition:** `OC-C5-EMISSION-001` = **`SATISFIED`** (advanced
+  from `PARTIALLY_SATISFIED`).
+- **Ancillary directly-reviewed dispositions (recorded as binding, not
+  reopened):** `PHASE-C4` = `CLOSED / ACCEPTED_WITH_NONBLOCKING_DEBT / DIRECTLY
+  VERIFIED / ARCHITECT VISUAL VALIDATION PASSED` (`OC-C4-ADMIN-001` =
+  `SATISFIED`); `PHASE-C5A-DB-EMISSION-READINESS` = `CLOSED / ACCEPTED /
+  DIRECTLY VERIFIED / SHARED-DEVELOPMENT STATE VERIFIED`.
+- **Boundaries (each a separate, still-unauthorized gate).**
+  `PHASE-C5B-ACCEPTANCE-DECISION` = `IDENTIFIED / NOT AUTHORIZED` (no
+  acceptance-decision capability may be built; `exige_aceite=TRUE` orders remain
+  not lifecycle-complete). `REAL_CUTOVER` = `NOT AUTHORIZED`, additionally
+  hard-gated behind the mandatory read-only completeness disposition of the 13
+  unmapped `ordens_compra_fio` rows ids 153–165. No architecture reopened.
+- **Nonblocking debts preserved (recorded, not implemented):**
+  `ORDEM_COMPRA_CANCEL_HANDLER_STALE_ORDER_CAPTURE` (15);
+  `SHARED_UI_MODAL_CONTROL_RADIUS_TOKEN_ALIGNMENT` (16);
+  `ORDEM_COMPRA_RECEIPT_HARD_FAILURE_RAW_MESSAGE_EXPOSURE` (17);
+  `C5_ORDEM_COMPRA_JS_STALE_EMISSION_COMMENT` (18);
+  `C5_INDEX_HTML_CACHE_BUST_PENDING_DEPLOY` (19);
+  `C5_COSMETIC_UI_CONSOLIDATION` (20).
+- **Documentation-only manifest:** `PROJECT_STATE.md`, `AGENT_HANDOFF.md`,
+  `docs/DOCUMENTATION_INDEX.md`,
+  `docs/architecture/ORDEM_COMPRA_C3_TRACEABILITY.md`,
+  `docs/architecture/PEDIDO_PRODUCTION_FLOW_BACKLOG.md`,
+  `docs/architecture/ORDEM_COMPRA_C5_PHASE_CONTRACT.md` (§25 closeout;
+  `STATUS` header), and this ledger. No product, test, migration, `db/*.sql`,
+  `index.html`, CSS, configuration, or protected-residue change; no database,
+  Supabase, environment, deployment, activation, cutover, `main`, `origin`,
+  production, or branch action.
+- **Validação:** `node scripts/validate-spec-custody.mjs` PASS; `--self-test`
+  fails only on the pre-existing active-contract fixture-harness limitation
+  (`R1: ACTIVE_PHASE_CONTRACT is not an existing file`) — expected once
+  `ACTIVE_PHASE_CONTRACT` is `NONE`, byte-consistent with the `3405fda`
+  baseline; `git diff --check` / `--cached --check` clean; exact
+  documentation-only manifest; protected residue (`M .gitignore`,
+  `?? .codex/config.toml`, `?? .mcp.json`) unchanged.
+- **Risco residual:** the six nonblocking debts above; the two separately
+  governed continuations (`PHASE-C5B-ACCEPTANCE-DECISION`; the `REAL_CUTOVER`
+  13-row completeness disposition) remain unauthorized.
+- **Exact accounting subject:** `docs: close C5 purchase-order emission phase`
+- **Canonical state after this commit:**
+  ```text
+  LAST_ACCEPTED_PHASE = PHASE-C5
+  ACTIVE_PHASE = NONE
+  ACTIVE_PHASE_CONTRACT = NONE
+  ACTIVE_TRACK = PURCHASE_ORDER_PHASE_C
+  ACCEPTED_CHECKPOINT = 3405fdab8e05ec0f81cbfe07c63c489e551fee92
+
+  PHASE-C5 = CLOSED / ACCEPTED_WITH_NONBLOCKING_DEBT / DIRECTLY VERIFIED / ARCHITECT VISUAL VALIDATION PASSED
+  OC-C5-EMISSION-001 = SATISFIED
+  PHASE-C5B-ACCEPTANCE-DECISION = IDENTIFIED / NOT AUTHORIZED
+  REAL_CUTOVER = NOT AUTHORIZED
+  ```
+- **Próxima fase indicada no fechamento / NEXT_AUTHORIZABLE_ACTION:** a
+  supervisor read-only sequencing decision between the remaining separately
+  governed continuations — `PHASE-C5B-ACCEPTANCE-DECISION` and the
+  `REAL_CUTOVER` completeness disposition for the 13 unmapped
+  `ordens_compra_fio` rows ids 153–165. No implementation authorized; no phase
+  chains automatically. This closeout published exactly one documentation-only
+  commit through one authorized fast-forward push to `staging/dev`; no further
+  push is authorized.

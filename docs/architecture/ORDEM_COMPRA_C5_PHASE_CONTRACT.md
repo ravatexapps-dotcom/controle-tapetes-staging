@@ -3,7 +3,7 @@
 <!-- MATERIAL_PHASE_CONTRACT:BEGIN -->
 PHASE_ID: PHASE-C5
 <!-- MATERIAL_PHASE_CONTRACT:END -->
-STATUS: ACCEPTED / IMPLEMENTED LOCALLY / TARGETED CORRECTION IMPLEMENTED / AWAITING SUPERVISOR RE-REVIEW (implementation recorded in §23; direct-review ruling + targeted correction recorded in §24; C5-AMBIGUOUS-RELOAD-AND-CANONICAL-STATE-CORRECTION-R1, 2026-07-22)
+STATUS: CLOSED / ACCEPTED_WITH_NONBLOCKING_DEBT / DIRECTLY VERIFIED / ARCHITECT VISUAL VALIDATION PASSED (closeout recorded in §25; C5-DOCUMENTATION-CLOSEOUT-R1, 2026-07-22 — supersedes the §23/§24 in-review dispositions; PROJECT_STATE.md is the sole current-state owner)
 
 > **Role of this document.** This is a **material phase contract**, authored under
 > `C4-CLOSEOUT-AND-C5-CONTRACT-R1` (Part 2) as **read-only repository
@@ -1102,3 +1102,107 @@ correction's manifest), `C5_INDEX_HTML_CACHE_BUST_PENDING_DEPLOY` (item 19),
 correction commit. Local only — no migration, database, environment,
 staging, deployment, activation, cutover, branch, or push beyond the one
 authorized `staging/dev` fast-forward for this pass's single commit.
+
+---
+
+## 25. Supervisor acceptance and PHASE-C5 closeout — `C5-DOCUMENTATION-CLOSEOUT-R1`
+
+**Precedence.** This section is the current, binding disposition of `PHASE-C5`.
+It supersedes the in-review dispositions recorded at §20 (proposal), §21
+(contract acceptance, database-prerequisite blocked), §22 (implementation
+authorized locally), §23 (implemented / awaiting functional & visual review),
+and §24 (targeted correction / awaiting re-review). §§20–24 are retained
+verbatim as historical, point-in-time evidence and are **not** rewritten. Where
+any earlier section reads as current state, this §25 governs. `PROJECT_STATE.md`
+remains the sole owner of live current state.
+
+On 2026-07-22 the supervisor performed direct re-review of the targeted
+correction commit `3405fdab8e05ec0f81cbfe07c63c489e551fee92`
+(`fix: preserve uncertainty after unresolved emission reload`, parent
+`e25361be80eed0c33f2544c58d2273572d0bd588`) and **ACCEPTED** it as final and
+binding.
+
+**Commit disposition:** `ACCEPTED_WITH_NONBLOCKING_DOCUMENTARY_DEBT`.
+
+**Blocking defect resolved.** `C5_AMBIGUOUS_EMISSION_RELOAD_FALSE_DRAFT_ASSERTION`
+(§24) is resolved. Direct review confirmed that the corrected
+ambiguous-transport branch (`js/screens/ordem-compra-events.js`):
+
+- performs exactly one authoritative reload;
+- resolves **emitted** only for the same order with
+  `status_administrativo='emitida'`;
+- resolves **draft** only for the same order with
+  `status_administrativo='rascunho'`;
+- offers a deliberate retry only when the reloaded server object exposes
+  `acoes.emitir=true`;
+- preserves honest uncertainty for reload failure, `null` state, a mismatched
+  order, or an unresolved state;
+- performs no automatic retry;
+- performs no fallback or legacy writer call;
+- preserves the existing canonical RPC and payload
+  (`emitir_ordem_compra(BIGINT)` / `{ p_ordem_id }`).
+
+**Gate dispositions (binding).**
+
+- `PHASE-C5 FUNCTIONAL GATE` = `PASS`.
+- `PHASE-C5 VISUAL REVIEW` = `PASS_WITH_NONBLOCKING_COSMETIC_DEBT`.
+
+**Final PHASE-C5 disposition:** `CLOSED / ACCEPTED_WITH_NONBLOCKING_DEBT /
+DIRECTLY VERIFIED / ARCHITECT VISUAL VALIDATION PASSED`. Accepted PHASE-C5
+technical checkpoint `3405fdab8e05ec0f81cbfe07c63c489e551fee92`.
+
+**Requirement disposition:** `OC-C5-EMISSION-001` advances to **`SATISFIED`**
+(from `PARTIALLY_SATISFIED`).
+
+**Phase-state transition.** `ACTIVE_PHASE` returns to `NONE`;
+`ACTIVE_PHASE_CONTRACT` returns to `NONE`; `LAST_ACCEPTED_PHASE` becomes
+`PHASE-C5`. This contract is no longer the active phase contract; it is a
+closed material phase contract.
+
+**Boundaries preserved (each a separate, still-unauthorized gate).**
+`PHASE-C5B-ACCEPTANCE-DECISION` remains `IDENTIFIED / NOT AUTHORIZED` — no order
+may build any acceptance-decision capability, and an order with
+`exige_aceite=TRUE` must still be presented as not lifecycle-complete (§21).
+`REAL_CUTOVER` remains `NOT AUTHORIZED` (and is additionally hard-gated behind
+the mandatory read-only completeness disposition of the 13 unmapped
+`ordens_compra_fio` rows ids 153–165). No architecture is reopened by this
+closeout.
+
+**Nonblocking debts preserved (recorded, not implemented; full narratives in
+`PROJECT_STATE.md`'s POST-LAUNCH DEBT REGISTER).**
+`ORDEM_COMPRA_CANCEL_HANDLER_STALE_ORDER_CAPTURE` (item 15);
+`SHARED_UI_MODAL_CONTROL_RADIUS_TOKEN_ALIGNMENT` (item 16);
+`ORDEM_COMPRA_RECEIPT_HARD_FAILURE_RAW_MESSAGE_EXPOSURE` (item 17);
+`C5_ORDEM_COMPRA_JS_STALE_EMISSION_COMMENT` (item 18);
+`C5_INDEX_HTML_CACHE_BUST_PENDING_DEPLOY` (item 19);
+`C5_COSMETIC_UI_CONSOLIDATION` (item 20).
+
+**Documentation-only closeout.** No product, test, database, migration,
+environment, deployment, production, `main`, or `origin` action occurred in this
+closeout. It changed only the seven authorized documentation owners
+(`PROJECT_STATE.md`, `AGENT_HANDOFF.md`, `docs/DOCUMENTATION_INDEX.md`,
+`docs/architecture/ORDEM_COMPRA_C3_TRACEABILITY.md`,
+`docs/architecture/PEDIDO_PRODUCTION_FLOW_BACKLOG.md`, this contract, and
+`docs/ledgers/G28_LEDGER.md`) and published exactly one documentation-only
+commit through one authorized fast-forward push to `staging/dev`.
+
+**Canonical state after this closeout:**
+
+```text
+LAST_ACCEPTED_PHASE = PHASE-C5
+ACTIVE_PHASE = NONE
+ACTIVE_PHASE_CONTRACT = NONE
+ACTIVE_TRACK = PURCHASE_ORDER_PHASE_C
+ACCEPTED_CHECKPOINT = 3405fdab8e05ec0f81cbfe07c63c489e551fee92
+
+PHASE-C5 = CLOSED / ACCEPTED_WITH_NONBLOCKING_DEBT / DIRECTLY VERIFIED / ARCHITECT VISUAL VALIDATION PASSED
+OC-C5-EMISSION-001 = SATISFIED
+PHASE-C5B-ACCEPTANCE-DECISION = IDENTIFIED / NOT AUTHORIZED
+REAL_CUTOVER = NOT AUTHORIZED
+```
+
+`NEXT_AUTHORIZABLE_ACTION`: a supervisor read-only sequencing decision between
+the remaining separately governed continuations — `PHASE-C5B-ACCEPTANCE-DECISION`
+and the `REAL_CUTOVER` completeness disposition for the 13 unmapped
+`ordens_compra_fio` rows ids 153–165. This closeout authorizes neither
+implementation; no phase chains automatically.
