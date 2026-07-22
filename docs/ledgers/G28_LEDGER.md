@@ -8212,3 +8212,105 @@ product file they depend on, was modified by this pass or the prior one):
   `PHASE-C5A-DB-EMISSION-READINESS` — not issued or executed by this
   session. `PHASE-C5` implementation, `PHASE-C5B`, `REAL_CUTOVER`, and any
   push remain unauthorized. **No push is authorized by this pass.**
+
+## 2026-07-21 — C5A-DB-EMISSION-READINESS-CONTRACT-R1 — PHASE-C5A database emission readiness material contract authored
+
+- **Authorization:** `C5A-DB-EMISSION-READINESS-CONTRACT-R1` — read-only
+  database reconciliation + documentation-only authoring of the
+  `PHASE-C5A-DB-EMISSION-READINESS` material phase contract. Entry checkpoint
+  `HEAD` `b4e8cd5825ef6f263a589e8e012dff7733bcb2d5` (`docs: accept C5 emission
+  contract`); `HEAD^` `f9fa97703d2724d62a0d916cca7b9637d54a1e08`. Protected
+  residue (`M .gitignore`, `?? .codex/config.toml`, `?? .mcp.json`) untouched.
+  Preflight confirmed branch `dev`, `HEAD`/`HEAD^` matching the order's expected
+  SHAs, and `staging/dev` (`0df4228f903ae68c7e8b240e69ff3b37df9ebd86`) behind
+  local `HEAD` by eight commits (`git rev-list --left-right --count
+  staging/dev...HEAD` = `0	8`) — no `HARD STOP`. **No database, Supabase, or
+  shared-environment access; no migration application; no push.** Every database
+  fact below is derived from the tracked migration files.
+- **Artifact:** new
+  `docs/architecture/ORDEM_COMPRA_C5A_DB_EMISSION_READINESS_PHASE_CONTRACT.md`
+  (`PHASE_ID: PHASE-C5A-DB-EMISSION-READINESS`, `STATUS: PROPOSED / AWAITING
+  SUPERVISOR REVIEW / IMPLEMENTATION NOT AUTHORIZED`). It introduces **no new
+  requirement ID** — it is the database prerequisite of the existing
+  `OC-C5-EMISSION-001` — and does not self-accept.
+- **Terminal emission-writer contract (`emitir_ordem_compra(BIGINT)`,
+  `db/68:247`):** `SECURITY DEFINER`, `SET search_path = public`, owner
+  `postgres`; internal `is_admin()` gate; native + rascunho + fornecedor + ≥1
+  item + full allocation (`SUM(active alloc)=kg_pedido`) + Pedido/material/color
+  coherence; eight deterministic `codigo` values; one `administrativo/'emitida'`
+  audit event; acceptance snapshot frozen from `ordem_compra_config.exige_aceite`;
+  natural idempotency (`estado_invalido` on replay); no cutover reference in-body.
+  **Terminal ACL: `REVOKE ALL` from PUBLIC/anon/authenticated/service_role with
+  no `GRANT` anywhere** (`db/68:347-350`, restated `db/70:1203-1206`, terminal
+  `db/74:1192-1193`). Body complete and byte-equivalent-preservable.
+- **Terminal allocation-writer contract:** the live, **already-granted**
+  (`authenticated`, `db/74:1177`) canonical allocation writer is
+  `definir_alocacao_necessidade_compra_fio(BIGINT,BIGINT,NUMERIC,TEXT)`
+  (`db/74:330`) — `SECURITY DEFINER`, `search_path=''`, internal
+  authenticated-admin gate, need-first, atomic draft-order/item/allocation
+  create-or-reuse under advisory locks, immutable actor-scoped idempotency
+  journal (`ordem_compra_distribuicao_comandos`), coherence + need-cap enforced
+  on write, wired at `js/screens/pedido-insumos-distribuicao.js:135`. The older
+  `alocar_necessidade_compra_fio(BIGINT,BIGINT,BIGINT,NUMERIC)` is
+  `SUPERSEDED / INTERNAL_FUNCTION_ONLY` (revoked, no re-grant, `db/74:1182`; not
+  called from `js/`).
+- **Terminal read model:** `obter_ordem_compra_admin` (`db/69:987`) and
+  `listar_ordens_compra_admin` (`db/69:913`) — the terminal versions (superseding
+  `db/68`, not redefined through `db/76`) — hard-code
+  `pode_emitir=false`/`acoes.emitir=false` in every branch with no path to true
+  ("pode_emitir stays false; emission awaits Phase C native receipt,"
+  `db/69:1073-1075`); allocation completeness is already computed by
+  `_distribuicao_completa_ordem` (`db/69:889`, byte-equivalent to the writer's
+  `alocacao_incompleta` check) but not routed into `pode_emitir`/`acoes.emitir`.
+- **Overall prerequisite classification:**
+  `READ_MODEL_FUNCTION_AND_GRANT_PREREQUISITE` — one future migration (`db/77`,
+  not created) grants `EXECUTE ON emitir_ordem_compra(BIGINT) TO authenticated`
+  and corrects the two read models to derive `pode_emitir`/`acoes.emitir=true`
+  (and clear `bloqueio_emissao`) for a fully-distributed native rascunho with
+  `exige_aceite=FALSE`; no writer-body change, no allocation grant, no acceptance
+  RPC. Grant and read-model correction are interdependent (one migration).
+- **Actor ownership:** `emitir_ordem_compra = AUTHENTICATED_ADMIN_ONLY`;
+  `definir_alocacao_necessidade_compra_fio = AUTHENTICATED_ADMIN_ONLY` (already
+  granted); `alocar_necessidade_compra_fio = INTERNAL_FUNCTION_ONLY (SUPERSEDED)`.
+- **Allocation-readiness:** `ALLOCATION_PATH_READY_AFTER_GRANT` (the grant already
+  exists on the live writer).
+- **Acceptance-required-order disposition:**
+  `EMISSION_ALLOWED_ONLY_WHEN_EXIGE_ACEITE_FALSE` — already structurally
+  server-enforced (`ordem_compra_config.exige_aceite` `DEFAULT FALSE`, seeded
+  FALSE, `SELECT`-only, no client UPDATE path — `db/65:174,182,192`; no
+  `pendente→aceita/rejeitada` RPC anywhere, the `PHASE-C5B` gap).
+- **Cutover boundary:** both writer bodies never check cutover; the `db/75`
+  `trg_c3c_protected_mutation_guard` (8 tables incl. `ordem_compra`/`_item`/
+  `_item_alocacao`/`necessidade_compra_fio`) permits their DML under
+  `legacy_active` (current) and denies it (`legacy_receipt_fenced`/`55000`) under
+  `maintenance_fenced`/`canonical_active` (a `REAL_CUTOVER` question, recorded as
+  an open item, out of C5A scope — not activated).
+- **Reconciliation with the accepted C5 contract:** resolves the exact question
+  C5 §5(b) deferred to C5A and adds the read-model prerequisite C5 §5 did not
+  surface, grounded in §R.23.8/§R.23.9 — not a normative contradiction, so no
+  `HARD STOP`; the accepted `PHASE-C5` contract is **not** modified.
+- **Manifest (exact):**
+  `docs/architecture/ORDEM_COMPRA_C5A_DB_EMISSION_READINESS_PHASE_CONTRACT.md`
+  (new), `PROJECT_STATE.md`, `AGENT_HANDOFF.md`, `docs/DOCUMENTATION_INDEX.md`,
+  `docs/architecture/ORDEM_COMPRA_C3_TRACEABILITY.md`,
+  `docs/architecture/PEDIDO_PRODUCTION_FLOW_BACKLOG.md`,
+  `docs/ledgers/G28_LEDGER.md` (this entry). No product, test, script, migration,
+  configuration, or normative-contract (lifecycle spec / schema contract / UI
+  visual contract) file changed; the accepted C5/C4 contracts are read-only
+  references.
+- **Validation:** `node scripts/validate-spec-custody.mjs` PASS;
+  `node scripts/validate-spec-custody.mjs --self-test` — exact result recorded at
+  commit time below; `git diff --check` / `git diff --cached --check` clean.
+  Protected residue unstaged and untouched.
+- **State after this pass:** `LAST_ACCEPTED_PHASE = PHASE-C4`; `ACTIVE_PHASE =
+  NONE`; `ACTIVE_PHASE_CONTRACT = NONE`. `PHASE-C5A` contract = `PROPOSED /
+  AWAITING SUPERVISOR REVIEW`. `OC-C5-EMISSION-001` stays
+  `PLANNED / BLOCKED_BY_C5A_DB_PREREQUISITE`. `PHASE-C5A`/`PHASE-C5`
+  implementation remain unauthorized.
+- **Exact accounting subject:** `docs: define C5A emission database readiness contract`
+- **NEXT_AUTHORIZABLE_ACTION:** supervisor review and acceptance/rejection of the
+  proposed `PHASE-C5A-DB-EMISSION-READINESS` material contract and its §19
+  decisions; then, if accepted, a separate explicit `PHASE-C5A` implementation
+  order in a fresh session. `PHASE-C5A`/`PHASE-C5` implementation, `PHASE-C5B`,
+  `REAL_CUTOVER`, staging validation/application of `db/76`, and any push remain
+  unauthorized. **No push is authorized by this pass.**

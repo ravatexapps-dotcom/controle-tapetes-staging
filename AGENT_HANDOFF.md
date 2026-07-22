@@ -99,8 +99,9 @@
   §X; C3D-E evidence §Y; C3D-E acceptance + aggregate `PHASE-C3D`/`PHASE-C3D-F`
   closeout §Z).
 - **Active track:** `PURCHASE_ORDER_PHASE_C` (no active phase; next
-  authorizable action is read-only diagnosis and documentation-only authoring
-  of the `PHASE-C5` material contract, `OC-C5-EMISSION-001`).
+  authorizable action is supervisor review and acceptance/rejection of the
+  now-authored `PROPOSED` `PHASE-C5A-DB-EMISSION-READINESS` material phase
+  contract, the database prerequisite of `OC-C5-EMISSION-001`).
 - **Current governance status:** `GOVERNANCE-SPEC-CUSTODY-FOUNDATION-R1`
   **ACCEPTED**; `GOVERNANCE-STATE-HANDOFF-COMPACTION-R1` **ACCEPTED** by the
   supervisor at commit `1157b9e71bc629903c5940ab50d4b370964e560e` (state/handoff
@@ -245,11 +246,35 @@
   single-click, primary/neutral not destructive-red styling, authoritative
   reload). `OC-C5-EMISSION-001` becomes
   `PLANNED / BLOCKED_BY_C5A_DB_PREREQUISITE`.
-- **Next authorizable action:** a fresh Claude Code session performs
-  read-only diagnosis and documentation-only material-contract authoring of
-  `PHASE-C5A-DB-EMISSION-READINESS` — not issued or executed by this
-  closeout. `PHASE-C5` implementation and `PHASE-C5B-ACCEPTANCE-DECISION`
-  remain unauthorized.
+- **`C5A-DB-EMISSION-READINESS-CONTRACT-R1` (this pass, read-only database
+  reconciliation + documentation-only phase-contract authoring):** authored
+  `docs/architecture/ORDEM_COMPRA_C5A_DB_EMISSION_READINESS_PHASE_CONTRACT.md`
+  (`PHASE_ID: PHASE-C5A-DB-EMISSION-READINESS`, `STATUS: PROPOSED / AWAITING
+  SUPERVISOR REVIEW / IMPLEMENTATION NOT AUTHORIZED`). Overall classification
+  `READ_MODEL_FUNCTION_AND_GRANT_PREREQUISITE`: one future migration grants
+  `EXECUTE ON emitir_ordem_compra(BIGINT)` to `authenticated` (terminally
+  `REVOKE ALL`, no grant anywhere, `db/74:1192-1193`) and corrects the terminal
+  read models `obter_ordem_compra_admin` (`db/69:987`) / `listar_ordens_compra_admin`
+  (`db/69:913`) — which hard-code `pode_emitir=false`/`acoes.emitir=false` — so
+  they derive true for a fully-distributed native rascunho with
+  `exige_aceite=FALSE`. The allocation path is `ALLOCATION_PATH_READY_AFTER_GRANT`
+  via the already-granted, wired `definir_alocacao_necessidade_compra_fio`
+  (`db/74:330`/`:1177`; `pedido-insumos-distribuicao.js:135`); the older
+  `alocar_necessidade_compra_fio` is `SUPERSEDED`. Actor:
+  `emitir_ordem_compra = AUTHENTICATED_ADMIN_ONLY`. Acceptance disposition
+  `EMISSION_ALLOWED_ONLY_WHEN_EXIGE_ACEITE_FALSE` (config structurally frozen
+  FALSE; no `pendente→aceita/rejeitada` RPC — `PHASE-C5B`). No product, test,
+  script, migration, database, environment, or protected-residue change; no
+  database access. `OC-C5-EMISSION-001` stays
+  `PLANNED / BLOCKED_BY_C5A_DB_PREREQUISITE`; `ACTIVE_PHASE`/`ACTIVE_PHASE_CONTRACT`
+  remain `NONE`.
+- **Next authorizable action:** supervisor review and acceptance/rejection of
+  the now-authored `PROPOSED` `PHASE-C5A-DB-EMISSION-READINESS` material phase
+  contract (`docs/architecture/ORDEM_COMPRA_C5A_DB_EMISSION_READINESS_PHASE_CONTRACT.md`)
+  and its §19 decisions — not self-accepted by this pass; a separate, explicit
+  `PHASE-C5A` implementation order in a fresh session is required after
+  acceptance. `PHASE-C5A` implementation, `PHASE-C5` implementation, and
+  `PHASE-C5B-ACCEPTANCE-DECISION` remain unauthorized.
   `PHASE-C3D-A`/`PHASE-C3D-B` are supervisor-accepted (§R, checkpoints
   `096cd603…` / `5441321…`), `PHASE-C3D-C` (§U, `6fd63a56…`), `PHASE-C3D-D` (§X,
   `5a2be05…`), and `PHASE-C3D-E` (§Z, `429aa39…`) are all `CLOSED / TECHNICALLY
@@ -608,6 +633,17 @@ summary.
     `PHASE-C5B-ACCEPTANCE-DECISION` (`IDENTIFIED / NOT AUTHORIZED`); emission
     confirmation UX ratified `CONTROLLED_IRREVERSIBLE_TRANSITION`; not
     active)
+24. `docs/architecture/ORDEM_COMPRA_C5A_DB_EMISSION_READINESS_PHASE_CONTRACT.md`
+    (C5A material phase contract — database emission readiness; `PROPOSED /
+    AWAITING SUPERVISOR REVIEW / IMPLEMENTATION NOT AUTHORIZED`; classification
+    `READ_MODEL_FUNCTION_AND_GRANT_PREREQUISITE` — grant `emitir_ordem_compra`
+    to `authenticated` + correct the terminal read models
+    `obter_ordem_compra_admin` (`db/69:987`) / `listar_ordens_compra_admin`
+    (`db/69:913`); allocation `ALLOCATION_PATH_READY_AFTER_GRANT` via the
+    already-granted `definir_alocacao_necessidade_compra_fio`;
+    `alocar_necessidade_compra_fio` `SUPERSEDED`; acceptance disposition
+    `EMISSION_ALLOWED_ONLY_WHEN_EXIGE_ACEITE_FALSE`; not active — resolves the
+    C5 §5(b)/§21 database prerequisite, does not modify the accepted C5 contract)
 
 > Bootstrap first through `docs/governance/AGENT_INSTRUCTIONS.md` and the
 > `SPEC_CUSTODY_BOOTSTRAP` block in `PROJECT_STATE.md`. Private conversation,

@@ -20,7 +20,7 @@ LAST_ACCEPTED_PHASE: PHASE-C4
 ACTIVE_PHASE: NONE
 ACTIVE_PHASE_CONTRACT: NONE
 ACTIVE_TRACK: PURCHASE_ORDER_PHASE_C
-NEXT_AUTHORIZABLE_ACTION: a fresh Claude Code session performs read-only diagnosis and documentation-only material-contract authoring of PHASE-C5A-DB-EMISSION-READINESS (the database-grant prerequisite for emitir_ordem_compra and alocar_necessidade_compra_fio, both terminally REVOKE ALL as of db/74's exact final execution ACL matrix, reaffirmed absent through db/76) — not issued or executed by this closeout; C5 implementation, PHASE-C5B-ACCEPTANCE-DECISION (IDENTIFIED / NOT AUTHORIZED — the missing status_aceite pendente-to-aceita/rejeitada transition capability), the REAL_CUTOVER window (OC-CUTOVER-001/OC-CUTOVER-PONR-001 — hard-gated behind the mandatory separate read-only completeness disposition of the 13 unmapped ordens_compra_fio rows ids 153–165), real close_final_acl invocation, real activation, the real read-authority switch, staging validation/application of db/76, and any productive receipt on a shared or real environment all remain unauthorized
+NEXT_AUTHORIZABLE_ACTION: supervisor review and acceptance/rejection of the PROPOSED PHASE-C5A-DB-EMISSION-READINESS material phase contract (docs/architecture/ORDEM_COMPRA_C5A_DB_EMISSION_READINESS_PHASE_CONTRACT.md, authored this pass by C5A-DB-EMISSION-READINESS-CONTRACT-R1, not self-accepted) plus its §19 decisions — classification READ_MODEL_FUNCTION_AND_GRANT_PREREQUISITE: one future migration granting EXECUTE on emitir_ordem_compra to authenticated and correcting the terminal read models obter_ordem_compra_admin (db/69:987) / listar_ordens_compra_admin (db/69:913) so pode_emitir/acoes.emitir derive true for a fully-distributed native rascunho with exige_aceite=FALSE; the allocation path is ALLOCATION_PATH_READY_AFTER_GRANT via the already-granted definir_alocacao_necessidade_compra_fio (db/74:1177), so the superseded alocar_necessidade_compra_fio needs no grant; acceptance disposition EMISSION_ALLOWED_ONLY_WHEN_EXIGE_ACEITE_FALSE; PHASE-C5A implementation, PHASE-C5 implementation, PHASE-C5B-ACCEPTANCE-DECISION (IDENTIFIED / NOT AUTHORIZED — the missing status_aceite pendente-to-aceita/rejeitada transition capability), the REAL_CUTOVER window (OC-CUTOVER-001/OC-CUTOVER-PONR-001 — hard-gated behind the mandatory separate read-only completeness disposition of the 13 unmapped ordens_compra_fio rows ids 153–165), real close_final_acl invocation, real activation, the real read-authority switch, staging validation/application of db/76, and any productive receipt on a shared or real environment all remain unauthorized
 GOVERNING_SPEC: docs/architecture/ORDEM_COMPRA_LIFECYCLE_SPEC_PROPOSED.md
 TECHNICAL_CONTRACT: docs/architecture/PEDIDO_OP_SCHEMA_CONTRACT.md
 SEQUENCE_AUTHORITY: docs/architecture/PEDIDO_PRODUCTION_FLOW_BACKLOG.md
@@ -355,11 +355,58 @@ ACCEPTED_CHECKPOINT: 289b0cca66e9c057330a882f69da3476adf90469
   product, test, script, migration, or protected-residue change; no
   database, environment, or deployment action. Full record: contract §21
   and `docs/ledgers/G28_LEDGER.md`.
-- **Next authorizable action:** a fresh Claude Code session performs
-  read-only diagnosis and documentation-only material-contract authoring of
-  `PHASE-C5A-DB-EMISSION-READINESS` (the database-grant prerequisite for
-  `emitir_ordem_compra` and `alocar_necessidade_compra_fio`) — not issued or
-  executed by this closeout. `PHASE-C5` implementation,
+- **`C5A-DB-EMISSION-READINESS-CONTRACT-R1` — PHASE-C5A material contract
+  authored (this pass, read-only database reconciliation + documentation-only
+  phase-contract authoring):** authored
+  `docs/architecture/ORDEM_COMPRA_C5A_DB_EMISSION_READINESS_PHASE_CONTRACT.md`
+  (`PHASE_ID: PHASE-C5A-DB-EMISSION-READINESS`, `STATUS: PROPOSED / AWAITING
+  SUPERVISOR REVIEW / IMPLEMENTATION NOT AUTHORIZED`). Independent
+  migration-chain reconciliation (`db/65`–`db/76`, no database access)
+  confirmed `emitir_ordem_compra` (`db/68:247`) terminally `REVOKE ALL` from
+  every role with **no `GRANT` anywhere** (`db/68:347-350`, restated
+  `db/70:1203-1206`, terminal `db/74:1192-1193`), body complete and
+  byte-equivalent-preservable, `SECURITY DEFINER`, internally `is_admin()`-gated.
+  **Two material refinements to the accepted C5 §5(b)/§21 premise, found by this
+  diagnosis (the exact question C5 §5(b) deferred to C5A — resolved, not a
+  normative contradiction):** (1) the live, **already-granted**
+  (`authenticated`, `db/74:1177`) canonical allocation writer is
+  `definir_alocacao_necessidade_compra_fio` (`db/74:330`) — need-first, atomic
+  draft-order/item/allocation create-or-reuse, wired at
+  `js/screens/pedido-insumos-distribuicao.js:135` — so the allocation path is
+  `ALLOCATION_PATH_READY_AFTER_GRANT` and the older `alocar_necessidade_compra_fio`
+  (revoked `db/74:1182`) is `SUPERSEDED / INTERNAL_FUNCTION_ONLY`, needing no
+  grant; (2) the **terminal** read models `obter_ordem_compra_admin`
+  (`db/69:987`) and `listar_ordens_compra_admin` (`db/69:913`) hard-code
+  `pode_emitir=false`/`acoes.emitir=false` with no path to true ("pode_emitir
+  stays false; emission awaits Phase C native receipt", `db/69:1073-1075`), so a
+  grant-only change could never enable the button. **Overall classification:
+  `READ_MODEL_FUNCTION_AND_GRANT_PREREQUISITE`** — one future migration (`db/77`,
+  not created) granting `EXECUTE ON emitir_ordem_compra(BIGINT) TO authenticated`
+  and correcting the two read models to route the existing
+  `_distribuicao_completa_ordem` (`db/69:889`) + `exige_aceite=FALSE` signal into
+  `pode_emitir`/`acoes.emitir`; no writer-body change, no allocation grant, no
+  acceptance RPC. Actor ownership: `emitir_ordem_compra` =
+  `AUTHENTICATED_ADMIN_ONLY`. Acceptance-required-order disposition:
+  `EMISSION_ALLOWED_ONLY_WHEN_EXIGE_ACEITE_FALSE` — already structurally
+  server-enforced because `ordem_compra_config.exige_aceite` is `DEFAULT FALSE`,
+  seeded FALSE, `SELECT`-only with no client UPDATE path (`db/65:174,182,192`),
+  and no RPC anywhere transitions `status_aceite` `pendente`→`aceita`/`rejeitada`
+  (`PHASE-C5B` gap). Cutover: both writer bodies never check cutover; the
+  `db/75` table fence (`trg_c3c_protected_mutation_guard`, 8 tables) permits
+  their DML under `legacy_active` (current) and denies it under
+  `maintenance_fenced`/`canonical_active` (a `REAL_CUTOVER` concern, out of C5A
+  scope). Documentation-only: no product, test, script, migration, database,
+  environment, or protected-residue change; no database or shared-environment
+  access. `OC-C5-EMISSION-001` stays `PLANNED / BLOCKED_BY_C5A_DB_PREREQUISITE`;
+  `PHASE-C5A`/`PHASE-C5` implementation remain unauthorized;
+  `ACTIVE_PHASE`/`ACTIVE_PHASE_CONTRACT` remain `NONE`. Full record: contract
+  (all sections) and `docs/ledgers/G28_LEDGER.md`.
+- **Next authorizable action:** supervisor review and acceptance/rejection of
+  the now-authored `PROPOSED` `PHASE-C5A-DB-EMISSION-READINESS` material phase
+  contract (`docs/architecture/ORDEM_COMPRA_C5A_DB_EMISSION_READINESS_PHASE_CONTRACT.md`)
+  and its §19 decisions — not self-accepted by this pass; a separate, explicit
+  `PHASE-C5A` implementation order in a fresh session is required after
+  acceptance. `PHASE-C5A` implementation, `PHASE-C5` implementation,
   `PHASE-C5B-ACCEPTANCE-DECISION`, `REAL_CUTOVER`, staging
   validation/application of `db/76`, activation, deployment, branch
   creation, production access, and any push remain **unauthorized**.

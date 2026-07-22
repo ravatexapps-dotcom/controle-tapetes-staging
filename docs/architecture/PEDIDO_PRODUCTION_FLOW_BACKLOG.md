@@ -8,6 +8,68 @@
 > `PROJECT_STATE.md`. Phase sequence, dependencies, backlog items, and accepted
 > architecture in this file remain authoritative; live operational status does not.
 
+# Update 2026-07-21 - C5A-DB-EMISSION-READINESS-CONTRACT-R1 (PHASE-C5A material contract, proposed)
+
+Phase: read-only database reconciliation + documentation-only
+`PHASE-C5A-DB-EMISSION-READINESS` material-contract authoring. Type: docs-only;
+no product, test, script, migration, database, environment, deployment, or
+configuration change; **no database, Supabase, or shared-environment access**
+(every database fact derived from the tracked migration files). Historical
+closeout note — live state belongs to `PROJECT_STATE.md`.
+
+Authored `docs/architecture/ORDEM_COMPRA_C5A_DB_EMISSION_READINESS_PHASE_CONTRACT.md`
+(`PHASE_ID: PHASE-C5A-DB-EMISSION-READINESS`, `STATUS: PROPOSED / AWAITING
+SUPERVISOR REVIEW / IMPLEMENTATION NOT AUTHORIZED`), specifying the database,
+ACL, writer-readiness, read-model, testing, rollback, and shared-environment
+evidence required before `PHASE-C5` emission UI may be authorized — the database
+prerequisite of the existing `OC-C5-EMISSION-001` (**no new requirement ID**).
+
+**Overall classification: `READ_MODEL_FUNCTION_AND_GRANT_PREREQUISITE`.** Direct
+migration-chain reconciliation (`db/65`–`db/76`) confirmed `emitir_ordem_compra`
+(`db/68:247`) terminally `REVOKE ALL` from every role with **no `GRANT` anywhere**
+(`db/68:347-350`, restated `db/70:1203-1206`, terminal `db/74:1192-1193`); its
+body is complete and byte-equivalent-preservable (`SECURITY DEFINER`, internal
+`is_admin()` gate). One future migration (`db/77`, not created) must grant
+`EXECUTE ON emitir_ordem_compra(BIGINT) TO authenticated` **and** correct the
+terminal read models `obter_ordem_compra_admin` (`db/69:987`) /
+`listar_ordens_compra_admin` (`db/69:913`) — which hard-code
+`pode_emitir=false`/`acoes.emitir=false` ("pode_emitir stays false; emission
+awaits Phase C native receipt," `db/69:1073-1075`) — so they derive true for a
+fully-distributed native rascunho with `exige_aceite=FALSE`, routing the existing
+`_distribuicao_completa_ordem` (`db/69:889`) signal. Grant and read-model
+correction are interdependent (one migration, not two).
+
+**Two material refinements to the accepted C5 §5(b)/§21 premise** (the exact
+question C5 §5(b) deferred to C5A — resolved, grounded in §R.23.8/§R.23.9, not a
+normative contradiction, and the accepted C5 contract is not modified): (1) the
+live, already-granted (`authenticated`, `db/74:1177`) canonical allocation writer
+is `definir_alocacao_necessidade_compra_fio` (`db/74:330`) — need-first, atomic
+draft-order/item/allocation create-or-reuse, wired at
+`js/screens/pedido-insumos-distribuicao.js:135` — so allocation is
+`ALLOCATION_PATH_READY_AFTER_GRANT` and the older `alocar_necessidade_compra_fio`
+(revoked `db/74:1182`) is `SUPERSEDED / INTERNAL_FUNCTION_ONLY`, needing no
+grant; (2) the read-model prerequisite (above) was not surfaced by C5 §5.
+
+Actor ownership: `emitir_ordem_compra = AUTHENTICATED_ADMIN_ONLY`.
+Acceptance-required-order disposition: `EMISSION_ALLOWED_ONLY_WHEN_EXIGE_ACEITE_FALSE`
+— already structurally server-enforced (`ordem_compra_config.exige_aceite`
+`DEFAULT FALSE`, seeded FALSE, `SELECT`-only with no client UPDATE path,
+`db/65:174,182,192`; and no RPC anywhere transitions `status_aceite`
+`pendente`→`aceita`/`rejeitada`, the `PHASE-C5B` gap). Cutover: both writer
+bodies never check cutover; the `db/75` fence (`trg_c3c_protected_mutation_guard`,
+8 tables) permits their DML under `legacy_active` (current) and denies it under
+`maintenance_fenced`/`canonical_active` (a `REAL_CUTOVER` question, out of C5A
+scope). Recorded supervisor decisions (contract §19): accept/reject the contract;
+ratify the classification and the allocation-ready finding; ratify the
+`exige_aceite=FALSE` disposition; rule on the `canonical_active` fence question
+(for `REAL_CUTOVER`).
+
+`OC-C5-EMISSION-001` stays `PLANNED / BLOCKED_BY_C5A_DB_PREREQUISITE`; `PHASE-C5A`
+and `PHASE-C5` implementation remain unauthorized;
+`ACTIVE_PHASE`/`ACTIVE_PHASE_CONTRACT` remain `NONE`. Sequence/architecture in
+this file are unchanged. Full evidence: contract (all sections) and
+`docs/ledgers/G28_LEDGER.md`.
+
 # Update 2026-07-21 - C5-CONTRACT-ACCEPTANCE-CLOSEOUT-R1 (PHASE-C5 material contract, accepted)
 
 Phase: documentation-only supervisor-acceptance closeout of the `PHASE-C5`
