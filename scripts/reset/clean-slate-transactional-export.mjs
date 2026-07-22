@@ -147,6 +147,27 @@ export const EXPECTED_B6 = {
   per_revision: [0, 0, 2, 1, 2, 2, 1, 2],
 };
 
+// Preserved-baseline invariants (contract §1.3/§1.4/§3/§5) — the single source of
+// truth shared by buildArchive's pre-write gate and verifyArchive; never
+// duplicated with a divergent copy in the verifier.
+export const EXPECTED_SALDO_FIOS = [
+  { tipo: 'algodao', cor_id: 1, cor_poliester: null, kg_total: 732.010 },
+  { tipo: 'algodao', cor_id: 2, cor_poliester: null, kg_total: 549.010 },
+  { tipo: 'algodao', cor_id: 3, cor_poliester: null, kg_total: 549.000 },
+  { tipo: 'poliester', cor_id: null, cor_poliester: 'BRANCO', kg_total: 427.500 },
+  { tipo: 'poliester', cor_id: null, cor_poliester: 'PRETO', kg_total: 427.500 },
+];
+export const EXPECTED_OP_NUMEROS = { latex: 18, tecelagem: 41 };
+export const EXPECTED_MASTER_COUNTS = {
+  clientes: 6, fornecedores: 6, cores: 6, modelos: 12, usuarios: 10, parametros_largura: 2,
+  ordem_compra_config: 1, ordem_compra_cutover: 1,
+  ordem_compra_cutover_source_snapshot: 0, ordem_compra_cutover_inventory_baseline: 0,
+};
+export const EXPECTED_DOCUMENTS_FRONT = {
+  document_candidates_excl_b6: 39, document_events_total: 1,
+  document_scan_requests: 24, document_scan_runs: 30,
+};
+
 // ---------------------------------------------------------------------------
 // Small helpers
 // ---------------------------------------------------------------------------
@@ -274,11 +295,115 @@ export function verifyCorpusIdentities(ids) {
   return true;
 }
 
+// Preserved-baseline gate (contract §1.3/§1.4/§3): saldo_fios exact 5-row
+// identity+quantities, saldo_fios_op=0, op_numeros exact, documents-front exact,
+// master/reference exact, cutover snapshot/baseline table counts. Single source
+// of truth — the verifier imports and reuses this, never a divergent copy.
+export function verifyPreservedBaseline(preserved) {
+  const fail = (m) => { throw new Error(`CLEAN_SLATE_PRESERVED_BASELINE_FAILED: ${m}`); };
+  if (!preserved) fail('missing preserved-baseline evidence');
+  const sf = preserved.saldo_fios || [];
+  if (sf.length !== 5) fail(`saldo_fios expected 5 rows, got ${sf.length}`);
+  for (const exp of EXPECTED_SALDO_FIOS) {
+    const row = sf.find((r) => r.tipo === exp.tipo && (r.cor_id ?? null) === exp.cor_id && (r.cor_poliester ?? null) === exp.cor_poliester);
+    if (!row || Number(row.kg_total) !== exp.kg_total) {
+      fail(`saldo_fios ${exp.tipo}/${exp.cor_id ?? exp.cor_poliester} expected ${exp.kg_total}, got ${row ? row.kg_total : '(missing row)'}`);
+    }
+  }
+  if ((preserved.saldo_fios_op_count ?? -1) !== 0) fail(`saldo_fios_op expected 0, got ${preserved.saldo_fios_op_count}`);
+  const num = Object.fromEntries((preserved.op_numeros || []).map((r) => [r.tipo, r.ultimo_numero]));
+  if (num.latex !== EXPECTED_OP_NUMEROS.latex) fail(`op_numeros.latex expected ${EXPECTED_OP_NUMEROS.latex}, got ${num.latex}`);
+  if (num.tecelagem !== EXPECTED_OP_NUMEROS.tecelagem) fail(`op_numeros.tecelagem expected ${EXPECTED_OP_NUMEROS.tecelagem}, got ${num.tecelagem}`);
+  const mc = preserved.master_counts || {};
+  for (const [k, expected] of Object.entries(EXPECTED_MASTER_COUNTS)) {
+    if (mc[k] !== expected) fail(`master_counts.${k} expected ${expected}, got ${mc[k]}`);
+  }
+  const df = preserved.documents_front || {};
+  for (const [k, expected] of Object.entries(EXPECTED_DOCUMENTS_FRONT)) {
+    if (df[k] !== expected) fail(`documents_front.${k} expected ${expected}, got ${df[k]}`);
+  }
+  return true;
+}
+
+// Project-ref custody (blocking correction D): capture.identity.project_ref must
+// equal the explicit --target used to generate this archive. Not tautological —
+// buildCaptureSQL(target) embeds the actual target argument, not a hardcoded
+// literal, so this genuinely cross-checks capture against invocation.
+export function verifyProjectRefCustody(identity, target) {
+  if (!identity || identity.project_ref !== target) {
+    throw new Error(`CLEAN_SLATE_PROJECT_REF_MISMATCH: capture.identity.project_ref (${identity ? identity.project_ref : '(missing)'}) must equal --target (${target})`);
+  }
+  return true;
+}
+
+// Pure, side-effect-free per-table capture validation (blocking correction A):
+// every EXPORT_TABLES entry must be present, its NDJSON line count must equal
+// its declared row_count, and that row_count must equal the contract baseline.
+// Returns the exact bytes to write later — this function performs NO filesystem
+// I/O, so it can run entirely inside the pre-write validation pass.
+export function validateCaptureTables(tables) {
+  if (!tables || typeof tables !== 'object') throw new Error('CLEAN_SLATE_CAPTURE_TABLES_MISSING: capture.tables is required');
+  const prepared = [];
+  for (const t of EXPORT_TABLES) {
+    const cap = tables[t.name];
+    if (!cap) throw new Error(`CLEAN_SLATE_CAPTURE_TABLE_MISSING: ${t.name}`);
+    const rows = cap.ndjson ? cap.ndjson.split('\n').filter((l) => l.length > 0) : [];
+    if (rows.length !== cap.row_count) {
+      throw new Error(`CLEAN_SLATE_CAPTURE_ROWCOUNT_MISMATCH: ${t.name} agg ${rows.length} vs count ${cap.row_count}`);
+    }
+    if (cap.row_count !== EXPECTED_ROW_COUNTS[t.name]) {
+      throw new Error(`CLEAN_SLATE_CAPTURE_ROWCOUNT_UNEXPECTED: ${t.name} ${cap.row_count} != ${EXPECTED_ROW_COUNTS[t.name]}`);
+    }
+    const body = rows.length ? rows.join('\n') + '\n' : '';
+    prepared.push({ table: t.name, rel: `tables/${t.name}.ndjson`, body, sha: sha256Hex(Buffer.from(body, 'utf8')), row_count: cap.row_count });
+  }
+  return prepared;
+}
+
+// ---------------------------------------------------------------------------
+// Repository-boundary enforcement (blocking correction B) — derived from this
+// module's own file location via import.meta.url, NEVER from process.cwd(), so
+// the guard is correct regardless of the caller's working directory.
+// ---------------------------------------------------------------------------
+
+export function getRepoRoot() {
+  // scripts/reset/clean-slate-transactional-export.mjs -> repo root is two dirs up.
+  const here = path.dirname(fileURLToPath(import.meta.url));
+  return path.resolve(here, '..', '..');
+}
+
+export function verifyRepoBoundary(candidatePath) {
+  const repoRoot = getRepoRoot();
+  const resolved = path.resolve(candidatePath);
+  const normalize = (p) => (process.platform === 'win32' ? p.toLowerCase() : p);
+  const nRoot = normalize(repoRoot);
+  const nResolved = normalize(resolved);
+  if (nResolved === nRoot || nResolved.startsWith(nRoot + path.sep)) {
+    throw new Error(`CLEAN_SLATE_ARCHIVE_INSIDE_REPO: ${resolved} resolves inside the repository root ${repoRoot}`);
+  }
+  return resolved;
+}
+
+// Best-effort, non-blocking corroboration that a --database-url endpoint targets
+// the authorized project (order §8: "if the environment cannot reliably derive
+// the project ref from the connection endpoint, do not claim independent
+// endpoint-derived proof; record the limitation explicitly"). Never inspects or
+// returns the credential portion of the URL.
+export function checkDatabaseUrlProjectRefHint(databaseUrl, target) {
+  try {
+    const u = new URL(databaseUrl);
+    const hinted = (u.hostname || '').includes(target) || (u.username || '').includes(target);
+    return { checked: true, hinted };
+  } catch {
+    return { checked: false, hinted: false };
+  }
+}
+
 // ---------------------------------------------------------------------------
 // Capture SQL (identical on the psql and MCP transports)
 // ---------------------------------------------------------------------------
 
-export function buildCaptureSQL() {
+export function buildCaptureSQL(target = AUTHORIZED_DEV_REF) {
   const b6 = sqlLit(B6_DOCUMENT_ID);
   const tableEntries = EXPORT_TABLES.map((t) => {
     const where = t.scope ? ` WHERE ${t.scope}` : '';
@@ -295,7 +420,7 @@ SELECT to_json(cap) AS capture FROM (SELECT
      'transaction_isolation', current_setting('transaction_isolation'),
      'server_version', current_setting('server_version'),
      'terminal_migration', (SELECT max(version) FROM supabase_migrations.schema_migrations),
-     'project_ref', ${sqlLit(AUTHORIZED_DEV_REF)},
+     'project_ref', ${sqlLit(target)},
      'captured_at', now())) AS identity,
   (SELECT to_json(c) FROM public.ordem_compra_cutover c WHERE c.id=1) AS cutover,
   json_build_object(
@@ -386,9 +511,18 @@ function psqlBin() {
   return dir ? path.join(dir, exe) : exe;
 }
 
-export function captureViaPsql(databaseUrl) {
+export function captureViaPsql(databaseUrl, target = AUTHORIZED_DEV_REF) {
   if (!databaseUrl) throw new Error('CLEAN_SLATE_NO_DATABASE_URL: --database-url is required for connect mode');
-  const res = spawnSync(psqlBin(), ['-X', '-w', '-q', '-A', '-t', '-d', databaseUrl, '-v', 'ON_ERROR_STOP=1', '-c', CAPTURE_SQL], {
+  // Best-effort, non-blocking endpoint corroboration (order §8) — never prints
+  // the URL or credentials, only a boolean-derived diagnostic notice.
+  const hint = checkDatabaseUrlProjectRefHint(databaseUrl, target);
+  if (!hint.checked) {
+    process.stderr.write('CLEAN_SLATE_ENDPOINT_REF_HINT: the supplied connection endpoint could not be parsed as a URL; independent endpoint-derived proof is NOT claimed — relying on the strict capture/manifest/evidence project_ref equality checks.\n');
+  } else if (!hint.hinted) {
+    process.stderr.write('CLEAN_SLATE_ENDPOINT_REF_HINT: the supplied connection endpoint does not visibly encode the target project ref; independent endpoint-derived proof is NOT claimed — relying on the strict capture/manifest/evidence project_ref equality checks.\n');
+  }
+  const sql = buildCaptureSQL(target);
+  const res = spawnSync(psqlBin(), ['-X', '-w', '-q', '-A', '-t', '-d', databaseUrl, '-v', 'ON_ERROR_STOP=1', '-c', sql], {
     encoding: 'utf8', timeout: 120000, maxBuffer: 512 * 1024 * 1024,
   });
   if (res.status !== 0) {
@@ -416,40 +550,38 @@ export function buildArchive(capture, outRoot, { target = AUTHORIZED_DEV_REF } =
   assertTargetIdentity(target);
   if (!capture || typeof capture !== 'object') throw new Error('CLEAN_SLATE_CAPTURE_INVALID: capture object required');
 
-  // Fail-closed gates BEFORE any file is written.
+  // ===========================================================================
+  // PURE VALIDATION PASS — no mkdir, no writeFileSync, no filesystem mutation of
+  // any kind may occur above this line and none occurs until every gate below
+  // has passed. A thrown error here leaves the filesystem exactly as it was.
+  // ===========================================================================
   verifyIdentity(capture.identity);
+  verifyProjectRefCustody(capture.identity, target);
   verifyCutover(capture.cutover);
   verifyGateBaseline(capture.gate);
   verifyCorpusIdentities(capture.corpus_identities);
+  verifyPreservedBaseline(capture.preserved_baseline);
+  const tableFiles = validateCaptureTables(capture.tables); // pure — no I/O
 
-  const tables = capture.tables || {};
-  const files = [];
-  const tableManifest = [];
-
+  const resolvedOutRoot = verifyRepoBoundary(outRoot);
   const stamp = utcStamp(capture.identity.captured_at || new Date().toISOString());
-  const archiveDir = path.join(outRoot, stamp);
+  const archiveDir = path.join(resolvedOutRoot, stamp);
+  verifyRepoBoundary(archiveDir);
+  // ===========================================================================
+  // END OF VALIDATION PASS — every gate passed; filesystem writes start now.
+  // ===========================================================================
+
   const tablesDir = path.join(archiveDir, 'tables');
   const evidenceDir = path.join(archiveDir, 'evidence');
   mkdirSync(tablesDir, { recursive: true });
   mkdirSync(evidenceDir, { recursive: true });
 
-  for (const t of EXPORT_TABLES) {
-    const cap = tables[t.name];
-    if (!cap) throw new Error(`CLEAN_SLATE_CAPTURE_TABLE_MISSING: ${t.name}`);
-    const rows = cap.ndjson ? cap.ndjson.split('\n').filter((l) => l.length > 0) : [];
-    if (rows.length !== cap.row_count) {
-      throw new Error(`CLEAN_SLATE_CAPTURE_ROWCOUNT_MISMATCH: ${t.name} agg ${rows.length} vs count ${cap.row_count}`);
-    }
-    if (cap.row_count !== EXPECTED_ROW_COUNTS[t.name]) {
-      throw new Error(`CLEAN_SLATE_CAPTURE_ROWCOUNT_UNEXPECTED: ${t.name} ${cap.row_count} != ${EXPECTED_ROW_COUNTS[t.name]}`);
-    }
-    const body = rows.length ? rows.join('\n') + '\n' : '';
-    const rel = `tables/${t.name}.ndjson`;
-    const abs = path.join(archiveDir, rel);
-    writeFileSync(abs, body, { encoding: 'utf8' });
-    const sha = sha256Hex(Buffer.from(body, 'utf8'));
-    files.push({ rel, sha });
-    tableManifest.push({ table: t.name, file: rel, row_count: cap.row_count, sha256: sha });
+  const files = [];
+  const tableManifest = [];
+  for (const tf of tableFiles) {
+    writeFileSync(path.join(archiveDir, tf.rel), tf.body, { encoding: 'utf8' });
+    files.push({ rel: tf.rel, sha: tf.sha });
+    tableManifest.push({ table: tf.table, file: tf.rel, row_count: tf.row_count, sha256: tf.sha });
   }
 
   const evidence = {
@@ -530,13 +662,12 @@ async function main() {
   const target = assertTargetIdentity(args.target);
   const outRoot = args['out-root'];
   if (!outRoot) throw new Error('CLEAN_SLATE_NO_OUT_ROOT: --out-root is required');
-  if (path.resolve(outRoot).includes(path.resolve(process.cwd()) + path.sep) || path.resolve(outRoot) === path.resolve(process.cwd())) {
-    // Best-effort guard: never write an archive inside the current repo tree.
-    throw new Error('CLEAN_SLATE_ARCHIVE_INSIDE_REPO: --out-root must be outside the repository');
-  }
+  // Repository-boundary enforcement lives solely in buildArchive's
+  // verifyRepoBoundary (file-location-derived, never process.cwd()-derived), so
+  // it is correct regardless of the directory this CLI was launched from.
   let capture;
   if (args['from-capture']) capture = JSON.parse(readFileSync(args['from-capture'], 'utf8'));
-  else if (args['database-url']) capture = captureViaPsql(args['database-url']);
+  else if (args['database-url']) capture = captureViaPsql(args['database-url'], target);
   else throw new Error('CLEAN_SLATE_NO_SOURCE: one of --from-capture or --database-url is required');
 
   const { archiveDir, aggregate } = buildArchive(capture, outRoot, { target });

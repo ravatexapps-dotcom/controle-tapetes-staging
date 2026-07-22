@@ -22,8 +22,8 @@
 //      then destroy the cluster with proof.
 
 import { spawnSync } from 'node:child_process';
-import { mkdtemp, writeFile, rm, readFile, readdir, access } from 'node:fs/promises';
-import { constants as fsC } from 'node:fs';
+import { mkdtemp, writeFile, rm, readFile, readdir, access, mkdir } from 'node:fs/promises';
+import { constants as fsC, existsSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -216,6 +216,72 @@ async function runFixtureSuite() {
   b6four.gate.b6.document_link_revision_ops = 4;
   throws(() => buildArchive(b6four, outRoot, { target: AUTHORIZED_DEV_REF }), 'buildArchive rejects wrong B6 value 4');
 
+  // --- Blocking correction A: pre-write gate — every rejection below must leave
+  // NO archive directory / partial file on disk (proven via a never-created,
+  // dedicated out-root per case). ---
+  const neverCreated = (label) => path.join(scratch, `never-created-${label}`);
+  const rejectsBeforeWrite = (mutate, outRootLabel, name) => {
+    const cap = syntheticCapture();
+    mutate(cap);
+    const badOutRoot = neverCreated(outRootLabel);
+    throws(() => buildArchive(cap, badOutRoot, { target: AUTHORIZED_DEV_REF }), name);
+    check(!existsSync(badOutRoot), `no filesystem residue after: ${name}`, badOutRoot);
+  };
+  rejectsBeforeWrite((cap) => { cap.preserved_baseline.saldo_fios[0].kg_total = 999.999; }, 'a',
+    'buildArchive rejects a wrong saldo_fios quantity before filesystem creation');
+  rejectsBeforeWrite((cap) => { cap.preserved_baseline.saldo_fios.pop(); }, 'b',
+    'buildArchive rejects wrong saldo_fios row count before filesystem creation');
+  rejectsBeforeWrite((cap) => { cap.preserved_baseline.op_numeros[0].ultimo_numero = 999; }, 'c',
+    'buildArchive rejects wrong op_numeros before filesystem creation');
+  rejectsBeforeWrite((cap) => { cap.preserved_baseline.documents_front.document_candidates_excl_b6 = 40; }, 'd',
+    'buildArchive rejects wrong documents-front count before filesystem creation');
+  rejectsBeforeWrite((cap) => { cap.preserved_baseline.master_counts.clientes = 7; }, 'e',
+    'buildArchive rejects wrong master count before filesystem creation');
+  rejectsBeforeWrite((cap) => { cap.identity.project_ref = 'wrong-project-ref-value'; }, 'f',
+    'buildArchive rejects capture project_ref mismatch');
+
+  // --- Blocking correction B: repository-boundary guard is file-location-derived
+  // (getRepoRoot() via import.meta.url), never process.cwd()-derived — must
+  // reject an in-repo out-root regardless of the caller's working directory. ---
+  const savedCwd = process.cwd();
+  try {
+    process.chdir(REPO_ROOT);
+    const inRepoFromRoot = path.join(REPO_ROOT, 'clean-slate-illegal-artifact-root-cwd');
+    throws(() => buildArchive(syntheticCapture(), inRepoFromRoot, { target: AUTHORIZED_DEV_REF }),
+      'out-root inside repo is rejected when cwd is repo root');
+    check(!existsSync(inRepoFromRoot), 'no filesystem residue after in-repo rejection (cwd=repo root)', inRepoFromRoot);
+
+    process.chdir(path.join(REPO_ROOT, 'scripts', 'reset'));
+    const inRepoFromScriptsReset = path.join(REPO_ROOT, 'clean-slate-illegal-artifact-scripts-reset-cwd');
+    throws(() => buildArchive(syntheticCapture(), inRepoFromScriptsReset, { target: AUTHORIZED_DEV_REF }),
+      'out-root inside repo is rejected when cwd is scripts/reset');
+    check(!existsSync(inRepoFromScriptsReset), 'no filesystem residue after in-repo rejection (cwd=scripts/reset)', inRepoFromScriptsReset);
+
+    // Positive complement: a genuinely external out-root must still be accepted
+    // even when cwd is the repo root — proves the guard checks the PATH, not cwd.
+    const externalFromRepoCwd = path.join(scratch, 'external-out-from-repo-cwd');
+    process.chdir(REPO_ROOT);
+    const builtExternal = buildArchive(syntheticCapture(), externalFromRepoCwd, { target: AUTHORIZED_DEV_REF });
+    check(existsSync(builtExternal.archiveDir), 'external out-root is still accepted when cwd is repo root');
+  } finally {
+    process.chdir(savedCwd);
+  }
+
+  // CLI-level: launched from an unrelated EXTERNAL working directory, targeting
+  // an in-repo out-root — must still be rejected (proves the guard is correct
+  // for the actual CLI entrypoint, not just the library function).
+  const extCwd = await mkdtemp(path.join(tmpdir(), 'clean-slate-extcwd-'));
+  const cliCaptureFile = path.join(scratch, 'cli-capture.json');
+  await writeFile(cliCaptureFile, JSON.stringify(syntheticCapture()), 'utf8');
+  const illegalCliOutRoot = path.join(REPO_ROOT, 'clean-slate-illegal-artifact-external-cwd');
+  const cliResult = spawnSync(process.execPath, [
+    path.join(REPO_ROOT, 'scripts/reset/clean-slate-transactional-export.mjs'),
+    'export', '--target', AUTHORIZED_DEV_REF, '--from-capture', cliCaptureFile, '--out-root', illegalCliOutRoot,
+  ], { cwd: extCwd, encoding: 'utf8', timeout: 30000 });
+  check(cliResult.status !== 0, 'CLI export rejects in-repo out-root launched from an unrelated external cwd', cliResult.stderr);
+  check(!existsSync(illegalCliOutRoot), 'no archive directory created for the rejected in-repo out-root (CLI)', illegalCliOutRoot);
+  await rm(extCwd, { recursive: true, force: true });
+
   // Build a valid archive and verify it (correct B6 value 10 acceptance + manifest validation).
   const { archiveDir } = buildArchive(syntheticCapture(), outRoot, { target: AUTHORIZED_DEV_REF });
   const v = verifyArchive(archiveDir);
@@ -283,6 +349,64 @@ async function runFixtureSuite() {
     await writeFile(f, body.replace('732.01', '999.99'));
   });
   check(verifyArchive(cPreserve).failed > 0, 'reject preservation-invariant violation');
+
+  // --- Blocking correction D: project-ref custody in the verifier. ---
+  const cBadRef = await clone(async (dir) => {
+    const f = path.join(dir, 'manifest.json');
+    const body = (await readFile(f, 'utf8')).replaceAll(AUTHORIZED_DEV_REF, 'other-project-ref-xxxx');
+    await writeFile(f, body);
+  });
+  check(verifyArchive(cBadRef).failed > 0, 'verifyArchive rejects manifest project_ref mismatch');
+
+  // --- Blocking correction C: exact archive inventory — unexpected content. ---
+  const cExtraRoot = await clone(async (dir) => { await writeFile(path.join(dir, 'unexpected-root-file.txt'), 'x'); });
+  check(verifyArchive(cExtraRoot).failed > 0, 'reject unexpected root file');
+
+  const cExtraEvidence = await clone(async (dir) => { await writeFile(path.join(dir, 'evidence/extra-unexpected.json'), '{}'); });
+  check(verifyArchive(cExtraEvidence).failed > 0, 'reject unexpected evidence file');
+
+  const cExtraNested = await clone(async (dir) => {
+    await mkdir(path.join(dir, 'tables', 'nested'), { recursive: true });
+    await writeFile(path.join(dir, 'tables', 'nested', 'extra.ndjson'), '{}\n');
+  });
+  check(verifyArchive(cExtraNested).failed > 0, 'reject unexpected nested file');
+
+  // --- Blocking correction C: checksums.sha256 strictness. ---
+  const cExtraChecksum = await clone(async (dir) => {
+    const f = path.join(dir, 'checksums.sha256');
+    const body = await readFile(f, 'utf8');
+    await writeFile(f, `${body}e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b85  tables/public.op_eventos.ndjson.bak\n`);
+  });
+  check(verifyArchive(cExtraChecksum).failed > 0, 'reject extra checksums entry');
+
+  const cDupChecksum = await clone(async (dir) => {
+    const f = path.join(dir, 'checksums.sha256');
+    const lines = (await readFile(f, 'utf8')).split('\n').filter(Boolean);
+    await writeFile(f, [...lines, lines[0]].join('\n') + '\n');
+  });
+  check(verifyArchive(cDupChecksum).failed > 0, 'reject duplicate checksums entry');
+
+  const cMalformedChecksum = await clone(async (dir) => {
+    const f = path.join(dir, 'checksums.sha256');
+    const lines = (await readFile(f, 'utf8')).split('\n').filter(Boolean);
+    lines[0] = 'this-line-is-not-a-valid-checksums-entry';
+    await writeFile(f, lines.join('\n') + '\n');
+  });
+  check(verifyArchive(cMalformedChecksum).failed > 0, 'reject malformed checksums line');
+
+  const cMissingChecksum = await clone(async (dir) => {
+    const f = path.join(dir, 'checksums.sha256');
+    const lines = (await readFile(f, 'utf8')).split('\n').filter(Boolean);
+    lines.shift();
+    await writeFile(f, lines.join('\n') + '\n');
+  });
+  check(verifyArchive(cMissingChecksum).failed > 0, 'reject missing checksums entry');
+
+  // The original, untouched archive must still verify clean after every clone
+  // above — proves none of the negative-case fixtures mutated the source archive.
+  const finalCheck = verifyArchive(archiveDir);
+  check(finalCheck.failed === 0, 'valid archive still passes after all negative-case testing',
+    finalCheck.checks.filter((c) => !c.ok).map((c) => c.name).join('; '));
 
   // Reset/restore SQL static guard-presence.
   const resetSql = await readFile(RESET_SQL, 'utf8');

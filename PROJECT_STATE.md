@@ -20,7 +20,7 @@ LAST_ACCEPTED_PHASE: PHASE-C5
 ACTIVE_PHASE: CLEAN-SLATE-TRANSACTIONAL-RESET
 ACTIVE_PHASE_CONTRACT: docs/architecture/CLEAN_SLATE_TRANSACTIONAL_RESET_PHASE_CONTRACT.md
 ACTIVE_TRACK: PURCHASE_ORDER_PHASE_C
-NEXT_AUTHORIZABLE_ACTION: DIRECT SUPERVISOR REVIEW OF THE CLEAN-SLATE RESET TOOLING, REAL ARCHIVE, AND DISPOSABLE RESTORE-DRILL EVIDENCE implemented by CLEAN-SLATE-TRANSACTIONAL-RESET-TOOLING-AND-DRILL-R2 (docs/architecture/CLEAN_SLATE_TRANSACTIONAL_RESET_PHASE_CONTRACT.md §21, entry checkpoint 21fe32bc4b37773d93cabeac3e7e09aca9079037): the 5 technical files (scripts/reset/clean-slate-transactional-{export,verify}.mjs + clean-slate-transactional-{reset,restore}.sql + tests/clean-slate-transactional-reset.smoke.mjs) are TOOLING_IMPLEMENTED; a real deterministic archive was generated READ-ONLY from ucrjtfswnfdlxwtmxnoo inside one REPEATABLE READ READ ONLY transaction (rolled back, zero mutation) at D:/Programação/controle-tapetes-g28-artifacts/clean-slate-reset/20260722T173607Z (aggregate SHA-256 337d23cd6426287053dcffe02512253c0e9e96874c6362d2823186b52094f593, verify-archive 330/330), B6 document_link_revision_ops = 10 across 4 distinct OPs 55/57/61/63, targets 16 Pedidos/20 OPs/25 lotes; the DISPOSABLE_RESTORE_DRILL PASSED on a fresh PostgreSQL 18.4 cluster (preamble + db/01..77, terminal migration 20260722055832, restore→reset→restore→reset with exact affected-row sequences 0,0,0,0,0,51,51,51,64,51,64 / 0,0,10,8,0,1 / 27,16,4,18,0,0,0,0,0,0,20,16,25, all counts/identities/B6/FK proven, cluster destroyed with proof; smoke+drill 56/56). The shared-development database ucrjtfswnfdlxwtmxnoo was NOT mutated and its clean-slate reset was NOT executed or authorized. The clean-slate reset execution/shared-development deletion, PHASE-C5B-ACCEPTANCE-DECISION (IDENTIFIED / NOT AUTHORIZED), REAL_CUTOVER (NOT AUTHORIZED), any shared-database apply beyond db/77, staging validation/application, deployment, activation, production access, branch creation, and any push beyond the one authorized staging/dev fast-forward for this pass single commit remain unauthorized; the phase is not CLOSED and no phase chains automatically
+NEXT_AUTHORIZABLE_ACTION: DIRECT SUPERVISOR REVIEW of the hardened clean-slate reset tooling, the replacement authoritative real archive, and the disposable restore-drill re-validation implemented by CLEAN-SLATE-TRANSACTIONAL-RESET-ARCHIVE-SAFETY-CORRECTION-R1 (docs/architecture/CLEAN_SLATE_TRANSACTIONAL_RESET_PHASE_CONTRACT.md §22, entry checkpoint 6d1c647de9b43088feced6a0632df8123afb1e07), which RATIFIED the emitted-order trigger-handling mechanism (contract §21.4) and fixed 4 blocking archive-tooling safety gaps (pre-write preserved-baseline gate, file-location-derived repository-boundary guard, exact recursive archive-inventory + strict checksums parsing, project-ref custody cross-checks) in scripts/reset/clean-slate-transactional-{export,verify}.mjs; clean-slate-transactional-{reset,restore}.sql stay byte-identical, unchanged; fixture suite 49/49; the replacement authoritative archive was generated READ-ONLY from ucrjtfswnfdlxwtmxnoo at D:/Programação/controle-tapetes-g28-artifacts/clean-slate-reset/20260722T183846Z (aggregate SHA-256 5221cd4753157ba426cee978b43d8b0107a42a5f08f6e23c96503ee92d7399dc, verify-archive 395/395), with all 30 tables/*.ndjson hashes identical to the prior superseded archive 20260722T173607Z (no corpus drift); the disposable restore/reset drill re-passed against the replacement archive (84/84, cluster destroyed with proof). The shared-development database ucrjtfswnfdlxwtmxnoo was NOT mutated and its clean-slate reset was NOT executed or authorized. The clean-slate reset execution/shared-development deletion, PHASE-C5B-ACCEPTANCE-DECISION (IDENTIFIED / NOT AUTHORIZED), REAL_CUTOVER (NOT AUTHORIZED), any shared-database apply beyond db/77, staging validation/application, deployment, activation, production access, branch creation, and any push beyond the one authorized staging/dev fast-forward for this pass single commit remain unauthorized; the phase is not CLOSED and no phase chains automatically
 GOVERNING_SPEC: docs/architecture/ORDEM_COMPRA_LIFECYCLE_SPEC_PROPOSED.md
 TECHNICAL_CONTRACT: docs/architecture/PEDIDO_OP_SCHEMA_CONTRACT.md
 SEQUENCE_AUTHORITY: docs/architecture/PEDIDO_PRODUCTION_FLOW_BACKLOG.md
@@ -64,9 +64,40 @@ ACCEPTED_CHECKPOINT: 3405fdab8e05ec0f81cbfe07c63c489e551fee92
   remain unauthorized; no phase chains automatically. **Recorded implementation
   note:** the reset transactionally disables the emitted-order
   `*_rascunho_guard` business triggers (39 of 51 orders are `emitida`) while FK
-  enforcement and the C3C cutover fence stay ACTIVE — the future real-reset order
-  must ratify this guard-handling (contract §7 "plain DELETE" prose omits it).
+  enforcement and the C3C cutover fence stay ACTIVE — **RATIFIED BY DIRECT
+  SUPERVISOR REVIEW** as an accepted architectural mechanism (see the next
+  bullet; contract §21.4); the future real-reset order must revalidate, not
+  re-decide, this guard-handling (contract §7 "plain DELETE" prose omits it).
   Full record: contract §21 and `docs/ledgers/G28_LEDGER.md`.
+- **`CLEAN-SLATE-TRANSACTIONAL-RESET-ARCHIVE-SAFETY-CORRECTION-R1` (this pass —
+  direct supervisor review of `6d1c647`; localized safety patch + read-only
+  archive regeneration + full disposable revalidation):** **RATIFIED** the exact
+  emitted-order trigger-handling mechanism as an accepted architectural mechanism
+  (contract §21.4). Found and fixed 4 blocking gaps in the archive tooling
+  (`scripts/reset/clean-slate-transactional-export.mjs` and
+  `-verify.mjs`; `clean-slate-transactional-reset.sql` and `-restore.sql` stay
+  **byte-identical**, unchanged): (A) the pre-write validation gate now covers
+  the full preserved baseline (`saldo_fios`/`op_numeros`/master/documents-front)
+  via one shared `verifyPreservedBaseline()`, and completes entirely — zero
+  filesystem writes — before any `mkdir`; (B) the repository-boundary guard is
+  now derived from this module's own file location (`import.meta.url`), never
+  `process.cwd()`; (C) `verifyArchive` now recursively enumerates the complete
+  archive and strictly parses `checksums.sha256`, rejecting any unexpected file/
+  directory/symlink and any malformed/duplicate/extra/missing checksum entry;
+  (D) `capture.identity.project_ref` is now cross-checked against the actual
+  `--target` argument (previously tautological), with manifest/evidence
+  agreement enforced by the verifier. Added 16 tests (fixture suite 49/49, zero
+  regressions). Regenerated the **replacement authoritative archive**, read-only,
+  at `D:/Programação/controle-tapetes-g28-artifacts/clean-slate-reset/20260722T183846Z`
+  (aggregate SHA-256 `5221cd4753157ba426cee978b43d8b0107a42a5f08f6e23c96503ee92d7399dc`;
+  `verify-archive` 395/395); all 30 `tables/*.ndjson` hashes are **identical** to
+  the prior (superseded, retained) archive `20260722T173607Z` — no corpus drift.
+  Full disposable drill re-passed against the replacement archive (84/84);
+  shared-development database re-confirmed **unmutated**. `ACTIVE_PHASE`/
+  `ACTIVE_PHASE_CONTRACT` stay `CLEAN-SLATE-TRANSACTIONAL-RESET` / the contract;
+  the phase is **not CLOSED**; shared-development reset/`REAL_CUTOVER`/
+  `PHASE-C5B-ACCEPTANCE-DECISION` remain unauthorized. Full record: contract §22
+  and `docs/ledgers/G28_LEDGER.md`.
 - **(Historical, at the `PHASE-C4` closeout point-in-time — superseded by the
   `PHASE-C5A`/`PHASE-C5` bullets later in this section and by the bootstrap
   block above, which are current.)** Last accepted material phase at that

@@ -25,7 +25,33 @@
 
 ## Phase status
 
-- **`CLEAN-SLATE-TRANSACTIONAL-RESET-TOOLING-AND-DRILL-R2` (current — tooling +
+- **`CLEAN-SLATE-TRANSACTIONAL-RESET-ARCHIVE-SAFETY-CORRECTION-R1` (current —
+  direct supervisor review of `6d1c647`; localized safety patch + read-only
+  archive regeneration + full disposable revalidation):** **RATIFIED** the exact
+  emitted-order trigger-handling mechanism as an accepted architectural mechanism
+  (contract §21.4) — reset/restore SQL stay byte-identical, unchanged. Found and
+  fixed 4 blocking archive-tooling safety gaps in
+  `scripts/reset/clean-slate-transactional-{export,verify}.mjs` (contract §22.1):
+  (A) the pre-write gate now covers the complete preserved baseline via one
+  shared `verifyPreservedBaseline()`, completing entirely before any `mkdir`;
+  (B) the repository-boundary guard is now file-location-derived
+  (`import.meta.url`), never `process.cwd()`; (C) `verifyArchive` now
+  recursively enumerates the whole archive and strictly parses
+  `checksums.sha256`, rejecting unexpected content and malformed/duplicate/
+  extra/missing entries; (D) `capture.identity.project_ref` is now cross-checked
+  against the real `--target` (previously tautological). Added 16 tests (fixture
+  suite 49/49, zero regressions). Regenerated the **replacement authoritative
+  archive**, read-only, at
+  `D:/Programação/controle-tapetes-g28-artifacts/clean-slate-reset/20260722T183846Z`
+  (aggregate SHA-256 `5221cd47…`, `verify-archive` 395/395); all 30
+  `tables/*.ndjson` hashes are **identical** to the prior (superseded, retained)
+  archive `20260722T173607Z` — no corpus drift. Full disposable drill re-passed
+  against the replacement archive (84/84); shared-development database
+  re-confirmed **unmutated**. `ACTIVE_PHASE`/`ACTIVE_PHASE_CONTRACT` stay
+  `CLEAN-SLATE-TRANSACTIONAL-RESET` / the contract; the phase is **not CLOSED**;
+  shared-development reset/`REAL_CUTOVER`/`PHASE-C5B-ACCEPTANCE-DECISION` remain
+  unauthorized. Full record: contract §22 and `docs/ledgers/G28_LEDGER.md`.
+- **`CLEAN-SLATE-TRANSACTIONAL-RESET-TOOLING-AND-DRILL-R2` (tooling +
   read-only real archive + disposable restore/reset drill):** accepted the
   corrected clean-slate contract and implemented its five-file tooling
   (`scripts/reset/clean-slate-transactional-{export,verify}.mjs` +

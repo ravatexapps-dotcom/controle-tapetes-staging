@@ -8,6 +8,49 @@
 > `PROJECT_STATE.md`. Phase sequence, dependencies, backlog items, and accepted
 > architecture in this file remain authoritative; live operational status does not.
 
+# Update 2026-07-22 - CLEAN-SLATE-TRANSACTIONAL-RESET-ARCHIVE-SAFETY-CORRECTION-R1 (trigger-handling ratified by direct supervisor review; 4 blocking archive-tooling safety gaps fixed; replacement authoritative archive generated read-only; disposable drill re-passed; no shared-development execution)
+
+Phase: localized safety patch + read-only archive regeneration + full disposable
+revalidation (direct supervisor review of `6d1c647de9b43088feced6a0632df8123afb1e07`).
+
+**Trigger-handling ratification.** The emitted-order trigger-handling mechanism
+implemented in `clean-slate-transactional-reset.sql` (temporarily disabling
+`item_quantidade_rascunho_guard` / `alocacao_rascunho_guard` /
+`trg_alocacao_kg_alocado_cache` / `pedido_itens_sync_parciais_after_change_trigger`
+inside the same transaction as the `DELETE`, with FK enforcement and the C3C
+cutover fence kept active throughout) is **RATIFIED BY DIRECT SUPERVISOR REVIEW**
+as an accepted architectural mechanism (contract §21.4) — no longer merely
+proposed. The future real-reset order must revalidate (not re-decide) it.
+
+**Archive-tooling safety corrections (contract §22.1).** Four blocking gaps found
+and fixed in `scripts/reset/clean-slate-transactional-{export,verify}.mjs`
+(`clean-slate-transactional-{reset,restore}.sql` stay byte-identical, unchanged):
+(A) the pre-write validation gate now completes fully — including the preserved
+baseline via one shared `verifyPreservedBaseline()` — before any filesystem
+write; (B) the repository-boundary guard is now derived from this module's own
+file location, never `process.cwd()`; (C) `verifyArchive` now recursively
+enumerates the complete archive and strictly parses `checksums.sha256`,
+rejecting unexpected content and malformed/duplicate/extra/missing entries;
+(D) `capture.identity.project_ref` is now cross-checked against the real
+`--target` argument. 16 new tests added; fixture suite 49/49, zero regressions.
+
+**Replacement authoritative archive.** Regenerated read-only from
+`ucrjtfswnfdlxwtmxnoo` at
+`D:/Programação/controle-tapetes-g28-artifacts/clean-slate-reset/20260722T183846Z`
+(aggregate SHA-256 `5221cd4753157ba426cee978b43d8b0107a42a5f08f6e23c96503ee92d7399dc`;
+`verify-archive` 395/395); all 30 `tables/*.ndjson` hashes are **identical** to the
+prior (superseded, retained) archive `20260722T173607Z` — no corpus drift. The
+disposable restore/reset drill re-passed against the replacement archive (84/84,
+cluster destroyed with proof).
+
+**No execution / no mutation.** The shared-development database was **not
+mutated** (re-confirmed post-drill); its clean-slate reset was **not executed or
+authorized**. The phase is not CLOSED; `REAL_CUTOVER` and
+`PHASE-C5B-ACCEPTANCE-DECISION` stay unauthorized; no phase chains automatically.
+Commit `fix: harden clean-slate archive safety gates`, published through one
+authorized `staging/dev` fast-forward push. Full record: contract §22,
+`PROJECT_STATE.md`, and `docs/ledgers/G28_LEDGER.md`.
+
 # Update 2026-07-22 - CLEAN-SLATE-TRANSACTIONAL-RESET-TOOLING-AND-DRILL-R2 (reset tooling implemented; real archive generated read-only; disposable restore/reset drill passed; no shared-development execution)
 
 Phase: controlled tooling implementation + read-only shared-development export +

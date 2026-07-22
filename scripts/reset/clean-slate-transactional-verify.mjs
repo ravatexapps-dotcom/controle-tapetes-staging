@@ -16,19 +16,12 @@ import { fileURLToPath } from 'node:url';
 import {
   sha256Hex, canonicalJSON,
   EXPORT_TABLES, EXPECTED_ROW_COUNTS, EXPECTED_OP_IDS, EXPECTED_LOTE_IDS, EXPECTED_PEDIDO_IDS,
-  EXPECTED_B6, B6_DOCUMENT_ID, TERMINAL_MIGRATION, ARCHIVE_KIND,
-  verifyIdentity, verifyCutover, verifyCorpusIdentities,
+  EXPECTED_B6, B6_DOCUMENT_ID, TERMINAL_MIGRATION, ARCHIVE_KIND, AUTHORIZED_DEV_REF,
+  verifyIdentity, verifyCutover, verifyCorpusIdentities, verifyPreservedBaseline,
 } from './clean-slate-transactional-export.mjs';
-
-// Preserved-baseline invariants (contract §5/§1.3/§1.4).
-export const EXPECTED_SALDO_FIOS = [
-  { tipo: 'algodao', cor_id: 1, cor_poliester: null, kg_total: 732.010 },
-  { tipo: 'algodao', cor_id: 2, cor_poliester: null, kg_total: 549.010 },
-  { tipo: 'algodao', cor_id: 3, cor_poliester: null, kg_total: 549.000 },
-  { tipo: 'poliester', cor_id: null, cor_poliester: 'BRANCO', kg_total: 427.500 },
-  { tipo: 'poliester', cor_id: null, cor_poliester: 'PRETO', kg_total: 427.500 },
-];
-export const EXPECTED_OP_NUMEROS = { latex: 18, tecelagem: 41 };
+// Preserved-baseline constants (EXPECTED_SALDO_FIOS/EXPECTED_OP_NUMEROS/etc.) and
+// their validation logic live ONLY in clean-slate-transactional-export.mjs
+// (verifyPreservedBaseline) — imported above, never duplicated here.
 
 class Verifier {
   constructor() { this.checks = []; this.failed = 0; }
@@ -58,6 +51,52 @@ function parseNdjson(abs) {
   return { rows, lines: rows.length, body: raw };
 }
 
+// Recursively enumerates every entry under `root`, rejecting symlinks and any
+// entry type other than plain file/directory. Returns POSIX-style relative
+// paths so exact-inventory comparison is platform-independent (blocking
+// correction C — the verifier must not rely on a shallow, single-level scan).
+function walkArchive(root) {
+  const files = [];
+  const dirs = [];
+  const stack = [{ abs: root, rel: '' }];
+  while (stack.length) {
+    const { abs, rel } = stack.pop();
+    for (const entry of readdirSync(abs, { withFileTypes: true })) {
+      const entryAbs = path.join(abs, entry.name);
+      const entryRel = rel ? `${rel}/${entry.name}` : entry.name;
+      if (entry.isSymbolicLink()) throw new Error(`CLEAN_SLATE_SYMLINK_REJECTED: ${entryRel}`);
+      if (entry.isDirectory()) { dirs.push(entryRel); stack.push({ abs: entryAbs, rel: entryRel }); }
+      else if (entry.isFile()) files.push(entryRel);
+      else throw new Error(`CLEAN_SLATE_UNEXPECTED_ENTRY_TYPE: ${entryRel}`);
+    }
+  }
+  return { files: files.sort(), dirs: dirs.sort() };
+}
+
+// Strict checksums.sha256 parser (blocking correction C): every non-empty line
+// must match exactly `<64-hex-sha>  <relative-path>`; rejects malformed lines
+// (never silently skips them), duplicate paths, and unsafe paths (backslash,
+// `..` traversal, leading `/`, or a Windows drive letter).
+function parseChecksumsFile(abs) {
+  const raw = readFileSync(abs, 'utf8');
+  if (raw.length === 0) throw new Error('checksums.sha256 is empty');
+  if (!raw.endsWith('\n')) throw new Error('checksums.sha256 must be LF-terminated');
+  const lines = raw.slice(0, -1).split('\n');
+  const declared = new Map();
+  lines.forEach((line, i) => {
+    if (line.length === 0) throw new Error(`checksums.sha256 malformed blank line at ${i + 1}`);
+    const m = line.match(/^([0-9a-f]{64}) {2}(.+)$/);
+    if (!m) throw new Error(`checksums.sha256 malformed line at ${i + 1}: ${JSON.stringify(line)}`);
+    const [, sha, relPath] = m;
+    if (relPath.includes('\\') || relPath.includes('..') || relPath.startsWith('/') || /^[A-Za-z]:/.test(relPath)) {
+      throw new Error(`checksums.sha256 unsafe path at line ${i + 1}: ${relPath}`);
+    }
+    if (declared.has(relPath)) throw new Error(`checksums.sha256 duplicate entry at line ${i + 1}: ${relPath}`);
+    declared.set(relPath, sha);
+  });
+  return declared;
+}
+
 export function verifyArchive(archiveDir) {
   const v = new Verifier();
   const rel = (r) => path.join(archiveDir, r);
@@ -77,15 +116,35 @@ export function verifyArchive(archiveDir) {
   v.assert(manifest.archive_kind === ARCHIVE_KIND, 'manifest.archive_kind', manifest.archive_kind);
   v.assert(manifest.database?.terminal_migration === TERMINAL_MIGRATION, 'terminal migration evidence', manifest.database?.terminal_migration);
 
-  // --- Prohibited content: only the exact public.* purge tables, no extras ---
-  const expectedTables = new Set(EXPORT_TABLES.map((t) => t.name));
-  const tableFiles = readdirSync(rel('tables')).filter((f) => f.endsWith('.ndjson'));
-  for (const f of tableFiles) {
-    const name = f.replace(/\.ndjson$/, '');
-    v.assert(expectedTables.has(name), `no prohibited/unexpected table file: ${f}`, name);
-    v.assert(name.startsWith('public.'), `no non-public schema exported: ${f}`, name);
-    v.assert(!/^auth\./.test(name), `no auth.* content: ${f}`, name);
+  // --- Exact archive inventory (blocking correction C): recursively enumerate
+  // the COMPLETE archive and reject anything beyond exactly the permitted set
+  // (no unexpected root/nested files, no unexpected directories, no auth.*
+  // content, no symlinks, no duplicate/missing paths). ---
+  let walk;
+  try { walk = walkArchive(archiveDir); v.ok('archive recursively enumerable (no symlinks/unexpected entry types)'); }
+  catch (e) { v.fail('archive recursively enumerable (no symlinks/unexpected entry types)', e.message); walk = { files: [], dirs: [] }; }
+
+  const expectedDirs = new Set(['tables', 'evidence']);
+  for (const d of walk.dirs) v.assert(expectedDirs.has(d), `no unexpected directory: ${d}`, d);
+  v.assert(walk.dirs.length === expectedDirs.size, 'exact directory count', `${walk.dirs.length} != ${expectedDirs.size}`);
+
+  const expectedFiles = new Set([
+    'manifest.json', 'checksums.sha256',
+    'evidence/database-identity.json', 'evidence/cutover-state.json',
+    'evidence/preserved-baseline.json', 'evidence/corpus-identities.json',
+    ...EXPORT_TABLES.map((t) => `tables/${t.name}.ndjson`),
+  ]);
+  for (const f of walk.files) {
+    v.assert(expectedFiles.has(f), `no unexpected file: ${f}`, f);
+    if (f.startsWith('tables/')) {
+      const name = f.slice('tables/'.length).replace(/\.ndjson$/, '');
+      v.assert(name.startsWith('public.'), `no non-public schema exported: ${f}`, name);
+      v.assert(!/^auth\./.test(name), `no auth.* content: ${f}`, name);
+    }
   }
+  for (const f of expectedFiles) v.assert(walk.files.includes(f), `expected file present: ${f}`, f);
+  v.assert(walk.files.length === expectedFiles.size, 'exact file count', `${walk.files.length} != ${expectedFiles.size}`);
+  const tableFiles = walk.files.filter((f) => f.startsWith('tables/')).map((f) => f.slice('tables/'.length).replace(/\.ndjson$/, ''));
   v.assert(tableFiles.length === EXPORT_TABLES.length, 'exact table-file count', `${tableFiles.length} != ${EXPORT_TABLES.length}`);
 
   // --- Per-table: parseable NDJSON, row counts, per-file checksum ---
@@ -111,17 +170,22 @@ export function verifyArchive(archiveDir) {
     fileShas.set(`evidence/${e}`, sha256Hex(Buffer.from(body, 'utf8')));
   }
 
-  // --- checksums.sha256 cross-check (every listed file matches recomputation) ---
+  // --- checksums.sha256 strict cross-check (blocking correction C): malformed
+  // lines, duplicates, unsafe paths, extra entries, and missing entries are all
+  // rejected — never silently ignored. ---
   const manifestBodySha = sha256Hex(Buffer.from(readFileSync(rel('manifest.json'), 'utf8'), 'utf8'));
-  const declared = new Map();
-  for (const line of readFileSync(rel('checksums.sha256'), 'utf8').split('\n')) {
-    const m = line.match(/^([0-9a-f]{64})\s{2}(.+)$/);
-    if (m) declared.set(m[2], m[1]);
-  }
+  let declared = new Map();
+  try { declared = parseChecksumsFile(rel('checksums.sha256')); v.ok('checksums.sha256 strictly parseable'); }
+  catch (e) { v.fail('checksums.sha256 strictly parseable', e.message); }
+
   for (const [p, sha] of fileShas) {
     v.assert(declared.get(p) === sha, `checksums.sha256 entry: ${p}`, `declared ${declared.get(p)} vs actual ${sha}`);
   }
   v.assert(declared.get('manifest.json') === manifestBodySha, 'checksums.sha256 entry: manifest.json', 'manifest sha mismatch');
+  for (const p of declared.keys()) {
+    v.assert(fileShas.has(p) || p === 'manifest.json', `no extra checksums.sha256 entry: ${p}`, p);
+  }
+  v.assert(declared.size === fileShas.size + 1, 'exact checksums.sha256 entry count', `${declared.size} != ${fileShas.size + 1}`);
 
   // --- Aggregate checksum recomputation ---
   const aggFiles = [...fileShas.entries()].map(([r, sha]) => ({ rel: r, sha }))
@@ -130,13 +194,28 @@ export function verifyArchive(archiveDir) {
   v.assert(manifest.aggregate_sha256 === aggregate, 'aggregate checksum', `${manifest.aggregate_sha256} != ${aggregate}`);
 
   // --- Identity / cutover / preserved-baseline evidence ---
-  try { verifyIdentity(readJSON(rel('evidence/database-identity.json'))); v.ok('database identity evidence'); }
-  catch (e) { v.fail('database identity evidence', e.message); }
+  let identityEvidence;
+  try {
+    identityEvidence = readJSON(rel('evidence/database-identity.json'));
+    verifyIdentity(identityEvidence);
+    v.ok('database identity evidence');
+  } catch (e) { v.fail('database identity evidence', e.message); }
   try { verifyCutover(readJSON(rel('evidence/cutover-state.json'))); v.ok('cutover evidence'); }
   catch (e) { v.fail('cutover evidence', e.message); }
 
-  const preserved = readJSON(rel('evidence/preserved-baseline.json'));
-  verifyPreserved(v, preserved);
+  // --- Project-ref custody (blocking correction D): manifest.database.project_ref,
+  // evidence/database-identity.json's project_ref, and the authorized shared-dev
+  // ref must all agree — no archive may verify clean for any other project. ---
+  v.assert(manifest.database?.project_ref === AUTHORIZED_DEV_REF, `manifest project_ref = ${AUTHORIZED_DEV_REF}`, manifest.database?.project_ref);
+  v.assert(identityEvidence?.project_ref === AUTHORIZED_DEV_REF, `evidence project_ref = ${AUTHORIZED_DEV_REF}`, identityEvidence?.project_ref);
+  v.assert(manifest.database?.project_ref === identityEvidence?.project_ref, 'manifest/evidence project_ref match', `${manifest.database?.project_ref} vs ${identityEvidence?.project_ref}`);
+
+  try {
+    verifyPreservedBaseline(readJSON(rel('evidence/preserved-baseline.json')));
+    v.ok('preserved baseline evidence (saldo_fios/op_numeros/master/documents-front)');
+  } catch (e) {
+    v.fail('preserved baseline evidence (saldo_fios/op_numeros/master/documents-front)', e.message);
+  }
 
   // --- Corpus identities (16/20/25 + B6) from evidence AND manifest ---
   try { verifyCorpusIdentities(readJSON(rel('evidence/corpus-identities.json'))); v.ok('corpus identities evidence'); }
@@ -152,28 +231,6 @@ export function verifyArchive(archiveDir) {
   verifyNoDuplicates(v, archiveDir);
 
   return v;
-}
-
-function verifyPreserved(v, preserved) {
-  const sf = preserved?.saldo_fios || [];
-  v.assert(sf.length === 5, 'preserved saldo_fios = 5 rows', sf.length);
-  for (const exp of EXPECTED_SALDO_FIOS) {
-    const row = sf.find((r) => r.tipo === exp.tipo && (r.cor_id ?? null) === exp.cor_id && (r.cor_poliester ?? null) === exp.cor_poliester);
-    v.assert(row && Number(row.kg_total) === exp.kg_total,
-      `saldo_fios ${exp.tipo}/${exp.cor_id ?? exp.cor_poliester} = ${exp.kg_total}`, row?.kg_total);
-  }
-  v.assert((preserved?.saldo_fios_op_count ?? -1) === 0, 'preserved saldo_fios_op empty', preserved?.saldo_fios_op_count);
-  const num = Object.fromEntries((preserved?.op_numeros || []).map((r) => [r.tipo, r.ultimo_numero]));
-  v.assert(num.latex === EXPECTED_OP_NUMEROS.latex, 'op_numeros latex = 18', num.latex);
-  v.assert(num.tecelagem === EXPECTED_OP_NUMEROS.tecelagem, 'op_numeros tecelagem = 41', num.tecelagem);
-  const mc = preserved?.master_counts || {};
-  for (const [k, expected] of Object.entries({ clientes: 6, fornecedores: 6, cores: 6, modelos: 12, usuarios: 10, parametros_largura: 2, ordem_compra_config: 1, ordem_compra_cutover: 1, ordem_compra_cutover_source_snapshot: 0, ordem_compra_cutover_inventory_baseline: 0 })) {
-    v.assert(mc[k] === expected, `preserved master ${k} = ${expected}`, mc[k]);
-  }
-  const df = preserved?.documents_front || {};
-  for (const [k, expected] of Object.entries({ document_candidates_excl_b6: 39, document_events_total: 1, document_scan_requests: 24, document_scan_runs: 30 })) {
-    v.assert(df[k] === expected, `documents front ${k} = ${expected}`, df[k]);
-  }
 }
 
 function verifyB6(v, archiveDir, manifest) {

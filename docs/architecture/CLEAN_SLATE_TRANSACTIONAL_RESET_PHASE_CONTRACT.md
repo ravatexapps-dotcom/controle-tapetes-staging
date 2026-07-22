@@ -18,12 +18,18 @@ ACTIVE_PHASE: CLEAN-SLATE-TRANSACTIONAL-RESET
 ACTIVE_PHASE_CONTRACT: docs/architecture/CLEAN_SLATE_TRANSACTIONAL_RESET_PHASE_CONTRACT.md
 ```
 
-> **Role.** This is a *corrected proposed* material phase contract. It authorizes
-> **no** deletion, **no** database mutation, **no** archive creation, **no**
-> reset-script implementation, **no** migration, **no** cutover, **no**
-> activation, and **no** environment change. Every reset-boundary decision that
-> was previously optional, ambiguous, or `UNPROVEN` is now **binding** per the
-> supervisor rulings in §1, grounded in the accepted evidence of
+> **Role.** This was, at the R1/correction-pass point in time, a *corrected
+> proposed* material phase contract authorizing **no** deletion, **no** database
+> mutation, **no** archive creation, **no** reset-script implementation, **no**
+> migration, **no** cutover, **no** activation, and **no** environment change.
+> **Superseded for archive creation and reset-script implementation by R2 (§21,
+> RATIFIED BY DIRECT SUPERVISOR REVIEW):** the tooling is now implemented, a real
+> archive has been generated read-only, and the disposable restore/reset drill has
+> passed. **Still authorizes no shared-development deletion, mutation, migration,
+> cutover, activation, or environment change** — those remain a separate,
+> unauthorized future order. Every reset-boundary decision that was previously
+> optional, ambiguous, or `UNPROVEN` is now **binding** per the supervisor rulings
+> in §1, grounded in the accepted evidence of
 > `CLEAN-SLATE-DOCUMENT-HISTORY-AND-RESIDUAL-BOUNDARY-DIAGNOSIS-R1`. Normative
 > product/technical semantics remain owned by
 > `docs/architecture/ORDEM_COMPRA_LIFECYCLE_SPEC_PROPOSED.md` and
@@ -543,8 +549,11 @@ part of the `ordens_compra_fio` purge (§7.1) — disposition option (3) of the 
 
 ## 17. Explicit exclusions
 
-Not performed and not authorized: any deletion or DB mutation; archive creation;
-reset-script implementation; migration authoring; cutover/fence/snapshot/import/
+**Archive creation and reset-script implementation are no longer excluded** —
+both are IMPLEMENTED and evidenced at §21 (RATIFIED BY DIRECT SUPERVISOR REVIEW),
+using a real, read-only-generated archive; no shared-development mutation
+occurred. Not performed and not authorized: any shared-development deletion or DB
+mutation; migration authoring; cutover/fence/snapshot/import/
 read-switch/ACL-closure/activation; `REAL_CUTOVER`; `PHASE-C5B` design/
 implementation; master-data disposition beyond "preserve"; broad documents-front
 deletion; staging, deployment, production, branch, or any push beyond this pass's
@@ -552,14 +561,24 @@ single documentation-only commit and its one fast-forward push to `staging/dev`.
 
 ---
 
-## 18. Production prohibition
+## 18. Production and forbidden-project prohibition
 
-Production `bhgifjrfagkzubpyqpew` and the production project `gqmpsxkxynrjvidfmojk`
-must not be accessed or mutated by this front. The clean-slate reset is authorized
-(when it is authorized) **only** against the non-production shared development
-database `ucrjtfswnfdlxwtmxnoo`. A separate contemporaneous read-only production
-diagnosis remains mandatory before any production promotion of the purchase-order
-front (unchanged, unrelated to this reset).
+**Corrected (R1 archive-safety-correction): `bhgifjrfagkzubpyqpew` is the
+forbidden project, not production** — the two must never be conflated. Three
+distinct projects govern this front:
+
+```text
+shared development (authorized, this front): ucrjtfswnfdlxwtmxnoo
+production (prohibited): gqmpsxkxynrjvidfmojk
+forbidden project (prohibited, NOT production): bhgifjrfagkzubpyqpew
+```
+
+Neither production `gqmpsxkxynrjvidfmojk` nor the forbidden project
+`bhgifjrfagkzubpyqpew` must be accessed or mutated by this front. The clean-slate
+reset is authorized (when it is authorized) **only** against the non-production
+shared development database `ucrjtfswnfdlxwtmxnoo`. A separate contemporaneous
+read-only production diagnosis remains mandatory before any production promotion
+of the purchase-order front (unchanged, unrelated to this reset).
 
 ---
 
@@ -636,17 +655,50 @@ identities (16/20/25) / B6 (8 revisions, 10 revision-op rows across 55/57/61/63)
 FK validity proven, reset #2 proved re-deletability, cluster destroyed with PID/port/
 directory-absence proof. Smoke + drill = 56/56 checks passed.
 
-### 21.4 Recorded implementation notes (for the future real-reset order)
+### 21.4 Emitted-order trigger-handling mechanism — RATIFIED BY DIRECT SUPERVISOR REVIEW
 
-- **Emitted-order guard handling.** 39 of 51 orders are `status_administrativo =
-  emitida`; the per-row `item_quantidade_rascunho_guard` / `alocacao_rascunho_guard`
-  reject deleting an emitted order's items/allocations. The reset therefore
-  temporarily disables exactly those blocking business guards (plus the allocation
-  cache and the pedido-parciais sync side-effect triggers) via table-owner
-  `DISABLE TRIGGER`, keeps FK enforcement and the C3C cutover fence ACTIVE, and
-  re-enables them before COMMIT (`SET CONSTRAINTS ALL IMMEDIATE` flushes the
-  deferred `kg_pedido` guard first). The future real-reset order must ratify this
-  guard-handling — the contract §7 "plain DELETE" prose does not mention it.
+`CLEAN-SLATE-TRANSACTIONAL-RESET-ARCHIVE-SAFETY-CORRECTION-R1` (§2) **RATIFIED**
+the exact emitted-order trigger-handling mechanism implemented in
+`clean-slate-transactional-reset.sql` as an **ACCEPTED ARCHITECTURAL MECHANISM**.
+This is now binding, not merely proposed:
+
+```text
+ACCEPTED ARCHITECTURAL MECHANISM
+
+public.ordem_compra_item:
+  item_quantidade_rascunho_guard
+
+public.ordem_compra_item_alocacao:
+  alocacao_rascunho_guard
+  trg_alocacao_kg_alocado_cache
+
+public.pedido_itens:
+  pedido_itens_sync_parciais_after_change_trigger
+```
+
+Binding conditions (all satisfied by the implemented reset SQL, unchanged, byte-
+identical since the tooling-and-drill pass): same transaction as the `DELETE`
+operation; FK enforcement remains active; `trg_c3c_protected_mutation_guard`
+remains active; cutover remains `legacy_active`; `SET CONSTRAINTS ALL IMMEDIATE`
+occurs before re-enabling; all disabled triggers are re-enabled before `COMMIT`;
+any error rolls back trigger state and data changes together. **The future
+real-reset order must revalidate the existence, table ownership, enabled state,
+and definitions of these exact triggers before executing** — no additional
+trigger may be disabled without a new HARD STOP and architect decision.
+
+### 21.5 Recorded implementation notes (for the future real-reset order)
+
+- **Emitted-order guard handling — RATIFIED BY DIRECT SUPERVISOR REVIEW (§21.4).**
+  39 of 51 orders are `status_administrativo = emitida`; the per-row
+  `item_quantidade_rascunho_guard` / `alocacao_rascunho_guard` reject deleting an
+  emitted order's items/allocations. The reset therefore temporarily disables
+  exactly those blocking business guards (plus the allocation cache and the
+  pedido-parciais sync side-effect triggers) via table-owner `DISABLE TRIGGER`,
+  keeps FK enforcement and the C3C cutover fence ACTIVE, and re-enables them
+  before COMMIT (`SET CONSTRAINTS ALL IMMEDIATE` flushes the deferred `kg_pedido`
+  guard first). The contract §7 "plain DELETE" prose does not mention this
+  mechanism; §21.4 above is now the binding, ratified disposition — the future
+  real-reset order must revalidate (not re-decide) it per §21.4.
 - **Restore mechanism** loads the consistent snapshot under transaction-scoped
   `session_replication_role = replica` and proves FK validity afterwards with
   triggers back on; it never permanently disables triggers/RLS and leaves no
@@ -656,3 +708,105 @@ directory-absence proof. Smoke + drill = 56/56 checks passed.
   terminal migration; the classification 64-row corpus needed only so `db/67`'s
   migration self-check applies) is confined to the destroyed cluster and excluded
   from every archive identity claim.
+
+---
+
+## 22. Archive safety hardening & replacement authoritative archive (R1 correction)
+
+Authored by `CLEAN-SLATE-TRANSACTIONAL-RESET-ARCHIVE-SAFETY-CORRECTION-R1`
+(entry checkpoint `6d1c647de9b43088feced6a0632df8123afb1e07`), a direct supervisor
+review of the R2 tooling. §21.4 ratifies the trigger-handling mechanism unchanged.
+Four blocking gaps in the export/verify tooling were found and fixed
+— `clean-slate-transactional-reset.sql` and `clean-slate-transactional-restore.sql`
+are **byte-identical**, unchanged.
+
+### 22.1 Blocking corrections applied
+
+- **A — complete pre-write gate.** `buildArchive` previously validated identity/
+  cutover/gate/corpus-identities before writing, but validated per-table row
+  counts and never validated `saldo_fios`/`op_numeros`/master/documents-front
+  counts until *after* `mkdirSync` had already run — a failing capture could leave
+  a partial directory on disk. Fixed: a new shared `verifyPreservedBaseline()`
+  (the single source of truth for `EXPECTED_SALDO_FIOS`/`EXPECTED_OP_NUMEROS`/
+  `EXPECTED_MASTER_COUNTS`/`EXPECTED_DOCUMENTS_FRONT`, imported by both the
+  exporter and the verifier — no divergent copy) and a pure, side-effect-free
+  `validateCaptureTables()` now run to completion, with zero filesystem writes,
+  before any `mkdirSync`/`writeFileSync`.
+- **B — repository-boundary enforcement.** The guard previously compared
+  `--out-root` against `process.cwd()`, which is wrong by construction (cwd is
+  caller-controlled, not a stable authority). Fixed: `getRepoRoot()` derives the
+  repository root from this module's own `import.meta.url`, and
+  `verifyRepoBoundary()` rejects an out-root (and the computed archive directory)
+  equal to or under that root — correct regardless of the caller's working
+  directory, proven by tests launched with `cwd` at the repo root, at
+  `scripts/reset/`, and (via the actual CLI subprocess) an unrelated external
+  directory.
+- **C — exact archive inventory.** `verifyArchive` previously only checked that
+  the *expected* files existed and that `tables/` held no extra `.ndjson`; it
+  never recursively walked the archive, so an unexpected root file, an extra
+  `evidence/` file, a nested subdirectory, or a symlink would verify clean.
+  `checksums.sha256` was parsed line-by-line but a non-matching line was silently
+  skipped rather than rejected, and extra/duplicate entries were never detected.
+  Fixed: a recursive `walkArchive()` enumerates every entry and rejects symlinks
+  and any entry outside the exact permitted set; a strict `parseChecksumsFile()`
+  rejects malformed lines, duplicate paths, unsafe paths (backslash/`..`/leading
+  `/`/drive-letter), and now also rejects extra or missing entries via set
+  equality against the recomputed file list.
+- **D — project-ref custody.** `capture.identity.project_ref` was a hardcoded
+  literal (`AUTHORIZED_DEV_REF`) baked into `CAPTURE_SQL`, so comparing it to
+  `--target` was tautological, not a real cross-check. Fixed: `buildCaptureSQL`
+  and `captureViaPsql` are now parametrized by the actual `target` argument, and
+  a new `verifyProjectRefCustody()` explicitly rejects a mismatch between
+  `capture.identity.project_ref` and `--target` before any write; `verifyArchive`
+  independently cross-checks `manifest.database.project_ref`,
+  `evidence/database-identity.json`'s `project_ref`, and the authorized
+  `ucrjtfswnfdlxwtmxnoo` all agree. For the (unused in this session)
+  `--database-url` path, a best-effort, non-blocking endpoint-ref hint is logged
+  to stderr (never the URL/credentials) when the target ref is not visibly
+  encoded in the endpoint — no independent endpoint-derived proof is claimed;
+  the strict capture/manifest/evidence equality checks remain authoritative.
+
+### 22.2 Tests added
+
+16 new fixture-suite cases (all passing, zero regressions in the 21 pre-existing
+cases): pre-write rejection of a wrong `saldo_fios` quantity / row count / wrong
+`op_numeros` / wrong documents-front count / wrong master count / capture
+`project_ref` mismatch (each proving no filesystem residue); repository-boundary
+rejection with `cwd` at the repo root and at `scripts/reset/`, a positive
+external-out-root-still-accepted complement, and a CLI-subprocess rejection
+launched from an unrelated external working directory; `verifyArchive` rejection
+of a manifest `project_ref` mismatch, an unexpected root file, an unexpected
+evidence file, an unexpected nested file, an extra checksums entry, a duplicate
+checksums entry, a malformed checksums line, and a missing checksums entry; and a
+final re-verification that the untouched valid archive still passes after every
+negative-case clone. Fixture suite: 49/49.
+
+### 22.3 Replacement authoritative archive
+
+The prior archive (`20260722T173607Z`, aggregate SHA-256 `337d23cd…`) is
+**superseded, not deleted** — retained on disk. The **new, replacement
+authoritative archive** was regenerated read-only with the corrected tooling:
+
+```text
+path: D:\Programação\controle-tapetes-g28-artifacts\clean-slate-reset\20260722T183846Z
+aggregate SHA-256: 5221cd4753157ba426cee978b43d8b0107a42a5f08f6e23c96503ee92d7399dc
+verify-archive: 395/395 checks passed
+```
+
+All 30 `tables/*.ndjson` SHA-256 hashes are **identical** to the prior archive
+(the shared-development corpus is unchanged; only `evidence/database-identity.json`'s
+`captured_at` and the manifest/aggregate hashes differ, as expected). No corpus
+drift; no HARD STOP triggered.
+
+### 22.4 Disposable revalidation against the replacement archive
+
+Full drill re-run against `20260722T183846Z`: preamble + `db/01..77`; terminal
+migration `20260722055832` proven; restore (prepare) → reset #1 (exact sequences
+`0,0,0,0,0,51,51,51,64,51,64` / `0,0,10,8,0,1` /
+`27,16,4,18,0,0,0,0,0,0,20,16,25`) → zero + preserved intact → restore →
+counts/identities (16 Pedidos / 20 OPs / 25 lotes) / B6 (8 revisions, 10
+revision-op rows, OPs 55/57/61/63) / FK validity proven → reset #2 (re-deletable)
+→ zero → execution-mode-guard and incorrect-delete-count negatives proven →
+cluster destroyed with PID/port/directory-absence proof. Smoke + drill: 84/84.
+The ratified §21.4 trigger-handling mechanism ran unchanged (reset SQL
+byte-identical). Shared-development database re-confirmed unmutated post-drill.
