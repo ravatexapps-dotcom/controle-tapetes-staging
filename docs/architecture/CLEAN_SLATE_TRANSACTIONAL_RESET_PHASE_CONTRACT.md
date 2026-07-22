@@ -11,6 +11,8 @@ AUTHORED_BY: CLEAN-SLATE-TRANSACTIONAL-RESET-CONTRACT-R1 (read-only diagnosis + 
 CORRECTED_BY: CLEAN-SLATE-TRANSACTIONAL-RESET-CONTRACT-CORRECTION-R1 (documentation-only, over the accepted CLEAN-SLATE-DOCUMENT-HISTORY-AND-RESIDUAL-BOUNDARY-DIAGNOSIS-R1)
 CONTRACT BASELINE CORRECTION: ACCEPTED ARCHITECT RULING — CLEAN-SLATE-TRANSACTIONAL-RESET-B6-ROW-BASELINE-FORWARD-CORRECTION-R1 (documentation-only): document_link_revision_ops corrected from 4 to 10 rows; 4 distinct OPs remain 55, 57, 61, 63
 IMPLEMENTED_BY: CLEAN-SLATE-TRANSACTIONAL-RESET-TOOLING-AND-DRILL-R2 (§21) — tooling + read-only real archive + disposable restore/reset drill; no shared-development mutation
+HARDENED_BY: CLEAN-SLATE-TRANSACTIONAL-RESET-ARCHIVE-SAFETY-CORRECTION-R1 (§22) — trigger-handling ratified, 4 blocking archive-tooling gaps fixed, replacement archive generated
+CORRECTED_BY_R1: CLEAN-SLATE-TRANSACTIONAL-RESET-FINAL-VALIDATION-GATES-CORRECTION-R1 (§23) — checkpoint f165302c1c542aa26e9ae78464d260c81eda6415 NOT ACCEPTED (mandatory spec-custody self-test failed); 2 blocking validation-gate defects fixed; archive-safety technical patch reviewed and RETAINED; authoritative archive 20260722T183846Z revalidated, not regenerated
 CONTRACT_ACCEPTANCE: ACCEPTED / DIRECTLY VERIFIED AT 21fe32bc4b37773d93cabeac3e7e09aca9079037
 ENTRY_CHECKPOINT: 9eeff7d5a97e25cf676d54afcd4510816a8648fb
 DATABASE_DIAGNOSED: ucrjtfswnfdlxwtmxnoo (non-production shared development, PostgreSQL 17.6, terminal migration 20260722055832) — READ-ONLY
@@ -810,3 +812,110 @@ revision-op rows, OPs 55/57/61/63) / FK validity proven → reset #2 (re-deletab
 cluster destroyed with PID/port/directory-absence proof. Smoke + drill: 84/84.
 The ratified §21.4 trigger-handling mechanism ran unchanged (reset SQL
 byte-identical). Shared-development database re-confirmed unmutated post-drill.
+
+---
+
+## 23. Final validation-gates correction (R1) — checkpoint `f165302c` NOT ACCEPTED
+
+Authored by `CLEAN-SLATE-TRANSACTIONAL-RESET-FINAL-VALIDATION-GATES-CORRECTION-R1`
+(entry checkpoint `f165302c1c542aa26e9ae78464d260c81eda6415`), a direct supervisor
+review that found the §22 archive-safety technical patch itself sound (reviewed
+and **RETAINED** — no change required to it) but identified two remaining
+blocking validation-gate defects that made the mandatory `--self-test` fail.
+**`f165302c1c542aa26e9ae78464d260c81eda6415` is NOT ACCEPTED** as a checkpoint —
+the mandatory spec-custody self-test did not pass at that commit.
+
+### 23.1 Root cause A — active contract omitted from the self-test fixture
+
+`scripts/spec-custody/self-tests.mjs`'s `createFixture()` never copied
+`ACTIVE_PHASE_CONTRACT` into its synthetic temporary repository. While
+`ACTIVE_PHASE` was `NONE` (pre-clean-slate era) this was invisible; once this
+contract became the active phase (`CLEAN-SLATE-TRANSACTIONAL-RESET-TOOLING-AND-
+DRILL-R2`), the self-test's own **baseline** fixture started failing R2
+(`ACTIVE_PHASE_CONTRACT is not an existing file: ...`) as an **uncaught**
+exception — the harness crashed (exit 1, zero PASS lines printed) rather than
+reporting a graceful per-case failure. **Fixed:** `createFixture()` now reads the
+source `PROJECT_STATE.md` bootstrap directly (via a local, minimal, non-
+duplicated field extraction — `validation-core.mjs` is untouched), and:
+generically copies and tracks whatever file `ACTIVE_PHASE_CONTRACT` currently
+points to when `ACTIVE_PHASE != NONE` (never hardcoding a specific phase or
+contract path); requires the `NONE`/`NONE` combination otherwise; and throws
+before building a fixture at all if the source's own bootstrap combination is
+internally invalid (one `NONE`, the other not) — the fixture never makes invalid
+source state look valid. Two **pre-existing** tests
+(`UNRELATED_CONTRACT_SUBSTRING`, `DUPLICATE_CONTRACT_MARKERS`) also silently
+no-op'd their intended mutation once the baseline stopped being `NONE`/`NONE`
+(they hardcoded a literal `'ACTIVE_PHASE: NONE'` string replace) — corrected to
+use the same generic line-setting helper.
+
+### 23.2 Self-test coverage added
+
+7 new cases (54 total, up from 47 — the increase reflects genuine new coverage,
+not a forced count): `POSITIVE_ACTIVE_CONTRACT_BASELINE` (renamed from the now-
+inaccurate `POSITIVE_NONE_CONTRACT`, since the baseline now represents an
+active-phase state, not `NONE`/`NONE`), `POSITIVE_ACTIVE_CONTRACT_TRACKED`,
+`POSITIVE_NONE_NONE_STATE`, `MISSING_ACTIVE_CONTRACT_FILE` (R1),
+`UNTRACKED_ACTIVE_CONTRACT_FILE` (R1), `ACTIVE_CONTRACT_PHASE_ID_MISMATCH` (R2),
+`ACTIVE_PHASE_WITHOUT_CONTRACT` (R2), `NONE_PHASE_WITH_CONTRACT` (R2).
+`node scripts/validate-spec-custody.mjs --self-test` now exits **0** with all
+**54/54** lines `=PASS` and no uncaught baseline-fixture error.
+
+### 23.3 Root cause B — op_numeros preserved-gate was a loose map, not an exact set
+
+`verifyPreservedBaseline()`'s `op_numeros` check built a `tipo -> ultimo_numero`
+map and only compared the two known keys — it silently ignored `ano` (year)
+entirely, silently collapsed a duplicate `tipo` to whichever row appeared last,
+and never checked the row count, so an extra third row or a wrong year passed
+undetected. **Fixed:** `EXPECTED_OP_NUMEROS` is now the exact canonical two-row
+set `{tipo: 'latex', ano: 2026, ultimo_numero: 18}` /
+`{tipo: 'tecelagem', ano: 2026, ultimo_numero: 41}`, and the check requires an
+exact row count of 2, rejects any `NULL` field, rejects a duplicate `(tipo, ano)`
+identity, rejects any row whose `(tipo, ano)` is not in the expected set (wrong
+tipo or wrong year), and requires an exact `ultimo_numero` match for each
+expected row. This remains the single shared source imported by the archive
+verifier (`clean-slate-transactional-verify.mjs` required no change — it already
+delegates entirely to `verifyPreservedBaseline()`).
+
+### 23.4 Archive-tooling tests added
+
+Pre-write (each proving no output directory was created): extra op_numeros row,
+missing op_numeros row, duplicate op_numeros identity, wrong op_numeros year
+(the pre-existing wrong-value case was retitled for clarity, not re-authored).
+Archive-verifier negatives (each followed by re-confirming the untouched valid
+archive still passes): extra op_numeros row in preserved-baseline evidence,
+wrong op_numeros year in preserved-baseline evidence. Fixture suite: **61/61**.
+
+### 23.5 Existing authoritative archive — retained, revalidated, not regenerated
+
+Per this order's explicit instruction, the existing archive was **not**
+modified, rewritten, regenerated, or deleted:
+
+```text
+path: D:\Programação\controle-tapetes-g28-artifacts\clean-slate-reset\20260722T183846Z
+aggregate SHA-256 before this pass: 5221cd4753157ba426cee978b43d8b0107a42a5f08f6e23c96503ee92d7399dc
+aggregate SHA-256 after this pass:  5221cd4753157ba426cee978b43d8b0107a42a5f08f6e23c96503ee92d7399dc  (UNCHANGED)
+corrected verify-archive result: 395/395 checks passed (exact op_numeros two-row identity PASS, exact archive inventory PASS, project-ref custody PASS, all table/count/B6/preserved checks PASS)
+```
+
+The full disposable restore/reset drill was re-run against this **same**
+archive (no regeneration): preamble + `db/01..77`; terminal migration
+`20260722055832` proven; restore → reset #1 (exact sequences
+`0,0,0,0,0,51,51,51,64,51,64` / `0,0,10,8,0,1` /
+`27,16,4,18,0,0,0,0,0,0,20,16,25`) → zero + preserved state (including the exact
+two `op_numeros` rows with year) intact → restore → counts/identities/B6/FK
+proven → reset #2 → zero → negatives proven → cluster destroyed with proof.
+Smoke + drill: **96/96**. `clean-slate-transactional-reset.sql` and
+`-restore.sql` remained **byte-identical** throughout (confirmed via `git diff
+--stat`, empty). The ratified §21.4 trigger-handling mechanism is unchanged. No
+shared-development access of any kind occurred in this pass.
+
+### 23.6 Status
+
+`CONTRACT ACCEPTED / TOOLING IMPLEMENTED / REAL ARCHIVE GENERATED READ-ONLY /
+DISPOSABLE RESTORE DRILL PASSED / VALIDATION GATES CLOSED / AWAITING DIRECT
+SUPERVISOR REVIEW / SHARED-DEVELOPMENT RESET NOT AUTHORIZED`. Checkpoint
+`f165302c1c542aa26e9ae78464d260c81eda6415` is **NOT ACCEPTED**; the §22 archive-
+safety technical patch is **reviewed and retained**. `ACTIVE_PHASE`/
+`ACTIVE_PHASE_CONTRACT` stay `CLEAN-SLATE-TRANSACTIONAL-RESET` / this contract;
+the phase is **not CLOSED**; shared-development reset, `REAL_CUTOVER`, and
+`PHASE-C5B-ACCEPTANCE-DECISION` remain unauthorized.

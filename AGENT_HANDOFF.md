@@ -25,7 +25,36 @@
 
 ## Phase status
 
-- **`CLEAN-SLATE-TRANSACTIONAL-RESET-ARCHIVE-SAFETY-CORRECTION-R1` (current —
+- **`CLEAN-SLATE-TRANSACTIONAL-RESET-FINAL-VALIDATION-GATES-CORRECTION-R1`
+  (current — direct supervisor review of `f165302c`; localized forward
+  correction + existing-archive revalidation):**
+  `f165302c1c542aa26e9ae78464d260c81eda6415` checkpoint is **NOT ACCEPTED** — the
+  mandatory `node scripts/validate-spec-custody.mjs --self-test` failed there
+  (uncaught crash, exit 1, zero PASS lines). The §22 archive-safety technical
+  patch was reviewed and is **RETAINED**. Fixed **root cause A**
+  (`scripts/spec-custody/self-tests.mjs`'s `createFixture()` never copied
+  `ACTIVE_PHASE_CONTRACT` into its synthetic fixture, so the self-test baseline
+  crashed as an uncaught R2 exception once this contract became the active
+  phase) generically — reads the source bootstrap, copies/tracks whichever
+  contract is currently active, never hardcoding a phase or path — plus 7 new
+  test cases; `--self-test` now exits **0** with **54/54 PASS**. Fixed **root
+  cause B** (`verifyPreservedBaseline`'s `op_numeros` check was a loose
+  `tipo->value` map ignoring the year, silently collapsing duplicates, never
+  checking row count) to an exact canonical two-row identity set (`latex`/2026/
+  18, `tecelagem`/2026/41) rejecting missing/extra/duplicate/wrong-tipo/wrong-
+  year/wrong-value/`NULL` rows, with 6 new archive-tooling tests; fixture suite
+  **61/61**. The existing authoritative archive `20260722T183846Z` was
+  **retained and revalidated, NOT regenerated** — aggregate SHA-256
+  `5221cd47…` unchanged before/after; corrected `verify-archive` **395/395**;
+  the full disposable restore/reset drill re-passed against this same archive
+  (**96/96**); reset/restore SQL byte-identical throughout; the ratified §21.4
+  trigger-handling mechanism unchanged. **No shared-development access of any
+  kind occurred.** `ACTIVE_PHASE`/`ACTIVE_PHASE_CONTRACT` stay
+  `CLEAN-SLATE-TRANSACTIONAL-RESET` / the contract; the phase is **not
+  CLOSED**; shared-development reset/`REAL_CUTOVER`/
+  `PHASE-C5B-ACCEPTANCE-DECISION` remain unauthorized. Full record: contract
+  §23 and `docs/ledgers/G28_LEDGER.md`.
+- **`CLEAN-SLATE-TRANSACTIONAL-RESET-ARCHIVE-SAFETY-CORRECTION-R1` (prior pass —
   direct supervisor review of `6d1c647`; localized safety patch + read-only
   archive regeneration + full disposable revalidation):** **RATIFIED** the exact
   emitted-order trigger-handling mechanism as an accepted architectural mechanism

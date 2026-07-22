@@ -232,13 +232,21 @@ async function runFixtureSuite() {
   rejectsBeforeWrite((cap) => { cap.preserved_baseline.saldo_fios.pop(); }, 'b',
     'buildArchive rejects wrong saldo_fios row count before filesystem creation');
   rejectsBeforeWrite((cap) => { cap.preserved_baseline.op_numeros[0].ultimo_numero = 999; }, 'c',
-    'buildArchive rejects wrong op_numeros before filesystem creation');
+    'buildArchive rejects wrong op_numeros value before filesystem creation');
   rejectsBeforeWrite((cap) => { cap.preserved_baseline.documents_front.document_candidates_excl_b6 = 40; }, 'd',
     'buildArchive rejects wrong documents-front count before filesystem creation');
   rejectsBeforeWrite((cap) => { cap.preserved_baseline.master_counts.clientes = 7; }, 'e',
     'buildArchive rejects wrong master count before filesystem creation');
   rejectsBeforeWrite((cap) => { cap.identity.project_ref = 'wrong-project-ref-value'; }, 'f',
     'buildArchive rejects capture project_ref mismatch');
+  rejectsBeforeWrite((cap) => { cap.preserved_baseline.op_numeros.push({ tipo: 'acabamento', ano: 2026, ultimo_numero: 1 }); }, 'g',
+    'buildArchive rejects extra op_numeros row before filesystem creation');
+  rejectsBeforeWrite((cap) => { cap.preserved_baseline.op_numeros.pop(); }, 'h',
+    'buildArchive rejects missing op_numeros row before filesystem creation');
+  rejectsBeforeWrite((cap) => { cap.preserved_baseline.op_numeros[1] = { ...cap.preserved_baseline.op_numeros[0] }; }, 'i',
+    'buildArchive rejects duplicate op_numeros identity before filesystem creation');
+  rejectsBeforeWrite((cap) => { cap.preserved_baseline.op_numeros[0].ano = 2025; }, 'j',
+    'buildArchive rejects wrong op_numeros year before filesystem creation');
 
   // --- Blocking correction B: repository-boundary guard is file-location-derived
   // (getRepoRoot() via import.meta.url), never process.cwd()-derived — must
@@ -349,6 +357,33 @@ async function runFixtureSuite() {
     await writeFile(f, body.replace('732.01', '999.99'));
   });
   check(verifyArchive(cPreserve).failed > 0, 'reject preservation-invariant violation');
+
+  // --- Correction B (op_numeros exact identity): archive-verifier negatives. ---
+  const cOpnExtra = await clone(async (dir) => {
+    const f = path.join(dir, 'evidence/preserved-baseline.json');
+    const body = JSON.parse(await readFile(f, 'utf8'));
+    body.op_numeros.push({ tipo: 'acabamento', ano: 2026, ultimo_numero: 1 });
+    await writeFile(f, JSON.stringify(body));
+  });
+  const vOpnExtra = verifyArchive(cOpnExtra);
+  check(
+    vOpnExtra.failed > 0 && vOpnExtra.checks.some((c) => !c.ok && c.name.includes('preserved baseline evidence')),
+    'reject extra op_numeros row in preserved-baseline evidence',
+  );
+  check(verifyArchive(archiveDir).failed === 0, 'valid archive still passes after extra-op_numeros-row negative clone');
+
+  const cOpnYear = await clone(async (dir) => {
+    const f = path.join(dir, 'evidence/preserved-baseline.json');
+    const body = JSON.parse(await readFile(f, 'utf8'));
+    body.op_numeros[0].ano = 2025;
+    await writeFile(f, JSON.stringify(body));
+  });
+  const vOpnYear = verifyArchive(cOpnYear);
+  check(
+    vOpnYear.failed > 0 && vOpnYear.checks.some((c) => !c.ok && c.name.includes('preserved baseline evidence')),
+    'reject wrong op_numeros year in preserved-baseline evidence',
+  );
+  check(verifyArchive(archiveDir).failed === 0, 'valid archive still passes after wrong-op_numeros-year negative clone');
 
   // --- Blocking correction D: project-ref custody in the verifier. ---
   const cBadRef = await clone(async (dir) => {

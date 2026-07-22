@@ -157,7 +157,12 @@ export const EXPECTED_SALDO_FIOS = [
   { tipo: 'poliester', cor_id: null, cor_poliester: 'BRANCO', kg_total: 427.500 },
   { tipo: 'poliester', cor_id: null, cor_poliester: 'PRETO', kg_total: 427.500 },
 ];
-export const EXPECTED_OP_NUMEROS = { latex: 18, tecelagem: 41 };
+// Exact canonical op_numeros identity set (contract §1.4/§5) — exactly these two
+// rows, no more, no less, including the year. Not a loose tipo->value map.
+export const EXPECTED_OP_NUMEROS = [
+  { tipo: 'latex', ano: 2026, ultimo_numero: 18 },
+  { tipo: 'tecelagem', ano: 2026, ultimo_numero: 41 },
+];
 export const EXPECTED_MASTER_COUNTS = {
   clientes: 6, fornecedores: 6, cores: 6, modelos: 12, usuarios: 10, parametros_largura: 2,
   ordem_compra_config: 1, ordem_compra_cutover: 1,
@@ -311,9 +316,35 @@ export function verifyPreservedBaseline(preserved) {
     }
   }
   if ((preserved.saldo_fios_op_count ?? -1) !== 0) fail(`saldo_fios_op expected 0, got ${preserved.saldo_fios_op_count}`);
-  const num = Object.fromEntries((preserved.op_numeros || []).map((r) => [r.tipo, r.ultimo_numero]));
-  if (num.latex !== EXPECTED_OP_NUMEROS.latex) fail(`op_numeros.latex expected ${EXPECTED_OP_NUMEROS.latex}, got ${num.latex}`);
-  if (num.tecelagem !== EXPECTED_OP_NUMEROS.tecelagem) fail(`op_numeros.tecelagem expected ${EXPECTED_OP_NUMEROS.tecelagem}, got ${num.tecelagem}`);
+
+  // op_numeros: exact canonical identity set — exact row count, exact identity
+  // (tipo+ano), exact value; rejects missing/extra/duplicate/wrong-tipo/
+  // wrong-year/wrong-value/NULL rows (not a loose tipo->value map).
+  const opn = preserved.op_numeros || [];
+  if (opn.length !== EXPECTED_OP_NUMEROS.length) {
+    fail(`op_numeros expected exactly ${EXPECTED_OP_NUMEROS.length} rows, got ${opn.length}`);
+  }
+  const opnSeen = new Set();
+  for (const r of opn) {
+    if (r == null || r.tipo == null || r.ano == null || r.ultimo_numero == null) {
+      fail(`op_numeros row has a NULL field: ${JSON.stringify(r)}`);
+    }
+    const key = `${r.tipo}|${r.ano}`;
+    if (opnSeen.has(key)) fail(`op_numeros duplicate identity: ${key}`);
+    opnSeen.add(key);
+  }
+  const opnExpectedKeys = new Set(EXPECTED_OP_NUMEROS.map((e) => `${e.tipo}|${e.ano}`));
+  for (const r of opn) {
+    const key = `${r.tipo}|${r.ano}`;
+    if (!opnExpectedKeys.has(key)) fail(`op_numeros unexpected identity (wrong tipo or year): ${key}`);
+  }
+  for (const exp of EXPECTED_OP_NUMEROS) {
+    const row = opn.find((r) => r.tipo === exp.tipo && r.ano === exp.ano);
+    if (!row) fail(`op_numeros missing required row: tipo=${exp.tipo} ano=${exp.ano}`);
+    if (row.ultimo_numero !== exp.ultimo_numero) {
+      fail(`op_numeros ${exp.tipo}/${exp.ano} expected ultimo_numero=${exp.ultimo_numero}, got ${row.ultimo_numero}`);
+    }
+  }
   const mc = preserved.master_counts || {};
   for (const [k, expected] of Object.entries(EXPECTED_MASTER_COUNTS)) {
     if (mc[k] !== expected) fail(`master_counts.${k} expected ${expected}, got ${mc[k]}`);

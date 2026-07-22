@@ -8,6 +8,62 @@
 > `PROJECT_STATE.md`. Phase sequence, dependencies, backlog items, and accepted
 > architecture in this file remain authoritative; live operational status does not.
 
+# Update 2026-07-22 - CLEAN-SLATE-TRANSACTIONAL-RESET-FINAL-VALIDATION-GATES-CORRECTION-R1 (checkpoint f165302c NOT ACCEPTED — mandatory self-test failed; 2 blocking validation-gate defects fixed; archive-safety technical patch retained; authoritative archive revalidated, not regenerated)
+
+Phase: localized forward correction + existing-archive revalidation (direct
+supervisor review of `f165302c1c542aa26e9ae78464d260c81eda6415`).
+
+**Checkpoint disposition.** `f165302c1c542aa26e9ae78464d260c81eda6415` is **NOT
+ACCEPTED** — the mandatory `node scripts/validate-spec-custody.mjs --self-test`
+failed at that commit with an **uncaught crash** (exit 1, zero PASS lines
+printed), not a graceful per-case failure. The prior §22 archive-safety
+technical patch itself was reviewed and is **RETAINED** (no change required to
+it).
+
+**Root cause A — active contract omitted from the self-test fixture.**
+`scripts/spec-custody/self-tests.mjs`'s `createFixture()` never copied
+`ACTIVE_PHASE_CONTRACT` into its synthetic temporary repository. This was
+invisible while `ACTIVE_PHASE` was `NONE`; once this contract became active
+(via `CLEAN-SLATE-TRANSACTIONAL-RESET-TOOLING-AND-DRILL-R2`), the self-test's
+own baseline fixture began failing R2 as an uncaught exception. Fixed
+generically: `createFixture()` now reads the source `PROJECT_STATE.md`
+bootstrap directly, copies and tracks whatever file `ACTIVE_PHASE_CONTRACT`
+currently points to when `ACTIVE_PHASE != NONE` (never hardcoding a specific
+phase or contract path), requires the `NONE`/`NONE` combination otherwise, and
+throws if the source's own bootstrap combination is itself invalid. Two
+pre-existing tests that hardcoded a literal `'ACTIVE_PHASE: NONE'` string
+replace (silently no-op once the baseline stopped being `NONE`/`NONE`) were
+corrected to use a generic line-setting helper. 7 new test cases added;
+`node scripts/validate-spec-custody.mjs --self-test` now exits **0** with
+**54/54 PASS** and no uncaught baseline-fixture error.
+
+**Root cause B — op_numeros preserved-gate was a loose map, not an exact set.**
+`verifyPreservedBaseline()`'s `op_numeros` check built a `tipo -> ultimo_numero`
+map, ignoring `ano` (year) entirely, silently collapsing a duplicate `tipo` to
+whichever row appeared last, and never checking row count. Fixed:
+`EXPECTED_OP_NUMEROS` is now the exact canonical two-row identity set
+(`latex`/2026/18, `tecelagem`/2026/41), rejecting missing/extra/duplicate/
+wrong-tipo/wrong-year/wrong-value/`NULL` rows, with an exact row-count
+requirement. Remains the single shared source imported by the archive verifier
+(no divergent copy). 6 new archive-tooling tests added; fixture suite **61/61**.
+
+**Existing authoritative archive — retained, revalidated, not regenerated.**
+Per this order's explicit instruction, `20260722T183846Z` was not modified,
+rewritten, regenerated, or deleted: aggregate SHA-256
+`5221cd4753157ba426cee978b43d8b0107a42a5f08f6e23c96503ee92d7399dc` unchanged
+before and after this pass; the corrected `verify-archive` passed **395/395**;
+the full disposable restore/reset drill was re-run against this **same**
+archive (**96/96**), with `clean-slate-transactional-reset.sql`/`-restore.sql`
+byte-identical throughout and the ratified contract §21.4 trigger-handling
+mechanism unchanged. **No shared-development access of any kind occurred** in
+this pass; the shared-development reset remains **not authorized**.
+
+**Scope / disposition.** The phase is not CLOSED; `REAL_CUTOVER` and
+`PHASE-C5B-ACCEPTANCE-DECISION` stay unauthorized; no phase chains
+automatically. Commit `fix: close clean-slate validation gates`, published
+through one authorized `staging/dev` fast-forward push. Full record: contract
+§23, `PROJECT_STATE.md`, and `docs/ledgers/G28_LEDGER.md`.
+
 # Update 2026-07-22 - CLEAN-SLATE-TRANSACTIONAL-RESET-ARCHIVE-SAFETY-CORRECTION-R1 (trigger-handling ratified by direct supervisor review; 4 blocking archive-tooling safety gaps fixed; replacement authoritative archive generated read-only; disposable drill re-passed; no shared-development execution)
 
 Phase: localized safety patch + read-only archive regeneration + full disposable
