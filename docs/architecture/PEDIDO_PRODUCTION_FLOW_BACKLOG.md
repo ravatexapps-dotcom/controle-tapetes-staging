@@ -8,6 +8,55 @@
 > `PROJECT_STATE.md`. Phase sequence, dependencies, backlog items, and accepted
 > architecture in this file remain authoritative; live operational status does not.
 
+# Update 2026-07-22 - C5A-CLOSEOUT-AND-C5-AUTHORIZATION-R1 (PHASE-C5A supervisor closeout; PHASE-C5 implementation authorized locally)
+
+Phase: documentation-only supervisor closeout of `PHASE-C5A-DB-EMISSION-READINESS`
+plus local-implementation authorization of `PHASE-C5`. Type: docs-only; no
+product, test, script, migration, database, environment, deployment, or
+configuration change; no database or shared-environment access; no push.
+Historical closeout note — live state belongs to `PROJECT_STATE.md`.
+
+The supervisor **CLOSED** `docs/architecture/ORDEM_COMPRA_C5A_DB_EMISSION_READINESS_PHASE_CONTRACT.md`
+as final and binding: `STATUS: CLOSED / ACCEPTED / LOCALLY VERIFIED /
+SHARED-DEVELOPMENT VERIFIED` (contract §25), ratifying every disposition
+recorded at §22/§23/§24 (terminal grant matrix; read-model readiness
+derivation; unchanged writer bodies; `EMISSION_ALLOWED_ONLY_WHEN_EXIGE_ACEITE_FALSE`;
+unmodified C3C protected-mutation guard) as final. Accepted commits:
+`a476df3191b914d62acd6718c06771cd1753ac6b` (proposed contract),
+`27464520af2afa3c46d547ffaf76328df70b1889` (contract acceptance),
+`e7a8b76152f986c83e4ecfe9827346a4efa5ef08` (`db/77` local implementation),
+`d17b353ed3eca04225a7decb55f84ccd5817d085` (shared-development validation
+evidence). The §14 shared-development transport adaptation (`SET ROLE` +
+custom-GUC capture in place of unavailable `psql` meta-commands/
+`session_replication_role`) is ratified as sufficient, non-blocking evidence.
+Post-C5A debts (`PHASE-C5B` gap, `REAL_CUTOVER` mutation-fence question,
+active-contract self-test fixture limitation, the 13 unmapped legacy rows,
+the shared UI-radius debt, the cancel-handler stale-capture debt) are
+recorded as nonblocking and separately owned.
+
+With that database prerequisite resolved, the same pass **authorized**
+`docs/architecture/ORDEM_COMPRA_C5_PHASE_CONTRACT.md` for local
+implementation: `STATUS: ACCEPTED / IMPLEMENTATION AUTHORIZED LOCALLY`
+(contract §22). Every ratified §21 decision (functional scope, actor/state/
+action matrix, API ownership, the `CONTROLLED_IRREVERSIBLE_TRANSITION`
+confirmation classification, the closed purely-additive three-file manifest,
+idempotency/error contract, test/evidence contract, and hard stops) remains
+binding and unchanged; `PHASE-C5B-ACCEPTANCE-DECISION` remains
+`IDENTIFIED / NOT AUTHORIZED`. `LAST_ACCEPTED_PHASE` becomes
+`PHASE-C5A-DB-EMISSION-READINESS`; `ACTIVE_PHASE`/`ACTIVE_PHASE_CONTRACT`
+become `PHASE-C5` / `docs/architecture/ORDEM_COMPRA_C5_PHASE_CONTRACT.md`.
+`OC-C5-EMISSION-001` becomes `PLANNED / AUTHORIZED_FOR_IMPLEMENTATION` — not
+`SATISFIED`, not `ACTIVE`, not `IMPLEMENTED`; `PHASE-C5` UI implementation
+itself remains **NOT YET IMPLEMENTED**, requiring a fresh Claude Code session
+that re-verifies the Git baseline first
+(`docs/governance/AGENT_INSTRUCTIONS.md` §2/§3) and stays within the
+contract's §12 manifest, §15 entry/exit gates, and §16 hard stops.
+`PHASE-C5B`, `REAL_CUTOVER`, any shared-database apply beyond `db/77`,
+staging validation/application, deployment, activation, production access,
+and any push remain unauthorized. Sequence/architecture in this file are
+unchanged. One local documentation-only commit `docs: close C5A and
+authorize C5 implementation`; no push.
+
 # Update 2026-07-22 - C5A-DB77-SHARED-DEV-VALIDATION-R1 (PHASE-C5A shared development database apply + §14 evidence, shared-development verified)
 
 Phase: authorized apply of the locally accepted `db/77` to the **shared development**

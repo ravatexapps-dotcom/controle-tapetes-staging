@@ -3,7 +3,7 @@
 <!-- MATERIAL_PHASE_CONTRACT:BEGIN -->
 PHASE_ID: PHASE-C5A-DB-EMISSION-READINESS
 <!-- MATERIAL_PHASE_CONTRACT:END -->
-STATUS: ACCEPTED / IMPLEMENTATION AUTHORIZED LOCALLY
+STATUS: CLOSED / ACCEPTED / LOCALLY VERIFIED / SHARED-DEVELOPMENT VERIFIED
 
 > **Supervisor acceptance (2026-07-21, `C5A-DB-EMISSION-READINESS-IMPLEMENTATION-R1`,
 > Part 1).** This contract is **ACCEPTED** and **local** implementation is
@@ -1023,3 +1023,85 @@ staging, and **not** `REAL_CUTOVER` readiness; supervisor closeout remains pendi
   `docs: record C5A shared development validation`; no push. `OC-C5-EMISSION-001`
   stays `PLANNED / BLOCKED_BY_C5A_DB_PREREQUISITE`; `PHASE-C5` UI, `PHASE-C5B`, and
   `REAL_CUTOVER` remain unauthorized; not self-accepted, not closed.
+
+---
+
+## 25. Supervisor closeout — `C5A-CLOSEOUT-AND-C5-AUTHORIZATION-R1`
+
+On 2026-07-22 the supervisor **ACCEPTED and CLOSED** this material phase
+contract as final and binding: `STATUS: CLOSED / ACCEPTED / LOCALLY VERIFIED /
+SHARED-DEVELOPMENT VERIFIED`. This closeout ratifies every disposition already
+recorded at §22/§23/§24 as final; no ratified decision, no accepted manifest,
+and no evidence claim is revised or reopened.
+
+**Accepted commits (final):**
+
+- `a476df3191b914d62acd6718c06771cd1753ac6b` — proposed C5A contract (§19).
+- `27464520af2afa3c46d547ffaf76328df70b1889` — C5A contract acceptance (§22).
+- `e7a8b76152f986c83e4ecfe9827346a4efa5ef08` — `db/77` local implementation (§23).
+- `d17b353ed3eca04225a7decb55f84ccd5817d085` — shared-development validation
+  evidence (§24).
+
+**Accepted database scope (ratified, final).** `db/77` applied byte-identical
+to the authorized shared development database `ucrjtfswnfdlxwtmxnoo`;
+`emitir_ordem_compra(BIGINT)` body remained unchanged; `authenticated` is the
+only executable application principal; the internal `is_admin()` authorization
+remains binding; `PUBLIC`, `anon`, and `service_role` remain without `EXECUTE`;
+`definir_alocacao_necessidade_compra_fio` remains the active canonical
+allocation writer; `alocar_necessidade_compra_fio` remains superseded and
+ungranted; `obter_ordem_compra_admin` and `listar_ordens_compra_admin` now
+expose server-derived emission readiness; `exige_aceite=TRUE` remains
+emission-ineligible in the canonical application path; `PHASE-C5B` remains
+responsible for acceptance/rejection capability; the C3C protected-mutation
+guard remains unchanged. **C5A readiness does not equal `REAL_CUTOVER`
+readiness.**
+
+**Evidence-method ruling (final).** The §24 shared-development §14 transport
+adaptation is **ratified as sufficient, non-blocking evidence**. The canonical
+psql test file could not run verbatim through the available project-scoped
+MCP because `psql` meta-commands and `session_replication_role` are
+unavailable there; the adapted pure-SQL transactions are accepted because
+every required assertion was preserved, real authenticated and anonymous
+authorization paths were exercised, every transaction was rolled back, zero
+persistent fixture residue was proven, no shared business record was
+modified, and no production or prohibited project was accessed.
+
+**Post-C5A debts (recorded, nonblocking, separately owned — not scheduled or
+implemented by this closeout):** the `PHASE-C5B` acceptance-decision gap; the
+`REAL_CUTOVER` mutation-fence alignment question (§7/§16); the
+active-contract self-test fixture-harness limitation (pre-existing governance
+debt); the 13 unmapped legacy `ordens_compra_fio` rows gating `REAL_CUTOVER`
+(ids 153–165); the shared global UI-radius debt
+(`SHARED_UI_MODAL_CONTROL_RADIUS_TOKEN_ALIGNMENT`); the
+`ORDEM_COMPRA_CANCEL_HANDLER_STALE_ORDER_CAPTURE` debt.
+
+**PHASE-C5 authorization (ratified by this closeout).** The former C5A
+database-prerequisite blocker on `docs/architecture/ORDEM_COMPRA_C5_PHASE_CONTRACT.md`
+is resolved. That contract's `STATUS` becomes `ACCEPTED / IMPLEMENTATION
+AUTHORIZED LOCALLY` (its own §22) — implementation is authorized only for a
+**fresh Claude Code session**, governed exactly by that contract's manifest,
+hard stops, and entry/exit gates; this closeout does not itself implement
+`PHASE-C5`.
+
+**Canonical state after this closeout:**
+
+```text
+LAST_ACCEPTED_PHASE = PHASE-C5A-DB-EMISSION-READINESS
+ACTIVE_PHASE = PHASE-C5
+ACTIVE_PHASE_CONTRACT = docs/architecture/ORDEM_COMPRA_C5_PHASE_CONTRACT.md
+
+PHASE-C5A = CLOSED / ACCEPTED / LOCALLY VERIFIED / SHARED-DEVELOPMENT VERIFIED
+PHASE-C5 CONTRACT = ACCEPTED / IMPLEMENTATION AUTHORIZED LOCALLY
+PHASE-C5 IMPLEMENTATION = NOT YET IMPLEMENTED
+OC-C5-EMISSION-001 = PLANNED / AUTHORIZED_FOR_IMPLEMENTATION
+PHASE-C5B-ACCEPTANCE-DECISION = IDENTIFIED / NOT AUTHORIZED
+REAL_CUTOVER = NOT AUTHORIZED
+```
+
+`NEXT_AUTHORIZABLE_ACTION`: a fresh Claude Code session performs `PHASE-C5` /
+`OC-C5-EMISSION-001` local UI implementation, governed by
+`docs/architecture/ORDEM_COMPRA_C5_PHASE_CONTRACT.md` (entry gates §15,
+manifest §12, hard stops §16). `PHASE-C5B`, `REAL_CUTOVER`, any
+shared-database apply beyond `db/77`, staging validation/application,
+deployment, activation, production access, and any push remain unauthorized.
+No push is authorized by this pass.

@@ -88,16 +88,23 @@
   criterion. `PHASE-C4` is now closed (see above); `PHASE-C5`/`REAL_CUTOVER`
   remain unauthorized.
 - **Active phase contract:**
+  `docs/architecture/ORDEM_COMPRA_C5_PHASE_CONTRACT.md` (`PHASE_ID: PHASE-C5`,
+  `STATUS: ACCEPTED / IMPLEMENTATION AUTHORIZED LOCALLY`, §22 — the database
+  prerequisite was resolved by the `PHASE-C5A` closeout below; local UI
+  implementation is authorized only for a **fresh Claude Code session**, per
+  §6/§12/§14/§15/§16; `PHASE-C5` implementation itself is **NOT YET
+  IMPLEMENTED**). The now-**closed**
+  `PHASE-C5A-DB-EMISSION-READINESS` material contract is
   `docs/architecture/ORDEM_COMPRA_C5A_DB_EMISSION_READINESS_PHASE_CONTRACT.md`
-  (`PHASE_ID: PHASE-C5A-DB-EMISSION-READINESS`, `STATUS: ACCEPTED /
-  IMPLEMENTATION AUTHORIZED LOCALLY`, §22; implementation `IMPLEMENTED / LOCALLY
-  VERIFIED / SHARED-DEVELOPMENT VERIFIED / AWAITING SUPERVISOR CLOSEOUT`, §23/§24 —
-  supervisor-accepted then locally implemented under
-  `C5A-DB-EMISSION-READINESS-IMPLEMENTATION-R1` Parts 1/2, then applied
+  (`STATUS: CLOSED / ACCEPTED / LOCALLY VERIFIED / SHARED-DEVELOPMENT
+  VERIFIED`, §25 — supervisor-accepted then locally implemented under
+  `C5A-DB-EMISSION-READINESS-IMPLEMENTATION-R1` Parts 1/2, applied
   byte-identical and §14-validated on the authorized non-production shared
-  development database `ucrjtfswnfdlxwtmxnoo` (PostgreSQL 17.6, terminal migration
-  `20260722055832`) under `C5A-DB77-SHARED-DEV-VALIDATION-R1` (2026-07-22); not
-  closed). The now-**closed**
+  development database `ucrjtfswnfdlxwtmxnoo` (PostgreSQL 17.6, terminal
+  migration `20260722055832`) under `C5A-DB77-SHARED-DEV-VALIDATION-R1`
+  (2026-07-22), then **closed** by the supervisor under
+  `C5A-CLOSEOUT-AND-C5-AUTHORIZATION-R1` (2026-07-22, contract §25)). The
+  now-**closed**
   `PHASE-C4` material
   contract is `docs/architecture/ORDEM_COMPRA_C4_PHASE_CONTRACT.md`
   (`PHASE_ID: PHASE-C4`, `STATUS: CLOSED / ACCEPTED / LOCALLY VERIFIED /
@@ -109,20 +116,28 @@
   §S/§T + acceptance §U; C3D-D evidence §V, targeted correction §W, acceptance
   §X; C3D-E evidence §Y; C3D-E acceptance + aggregate `PHASE-C3D`/`PHASE-C3D-F`
   closeout §Z).
-- **Active track:** `PURCHASE_ORDER_PHASE_C`. Active phase
-  `PHASE-C5A-DB-EMISSION-READINESS` — implementation `IMPLEMENTED / LOCALLY
-  VERIFIED / SHARED-DEVELOPMENT VERIFIED / AWAITING SUPERVISOR CLOSEOUT` (contract
-  §23/§24; `db/77` applied byte-identical + §14-validated on the authorized
-  non-production shared development database `ucrjtfswnfdlxwtmxnoo`, PostgreSQL
-  17.6, terminal migration `20260722055832`, under
-  `C5A-DB77-SHARED-DEV-VALIDATION-R1`; clean apply + idempotent reapply; `emitir`
-  body byte-unchanged grant-only; read models corrected; exact grant matrix; full
-  behavioral evidence; zero residue; cutover unchanged `legacy_active`).
-  Next authorizable action is supervisor review/closeout of that
-  shared-development-verified implementation (including the forced
-  `tests/ordem-compra-c3d-deploy.smoke.js` migration-manifest fixture update).
-  Staging application of `db/76`/`db/77`, deployment, activation, `REAL_CUTOVER`,
-  `PHASE-C5` UI, `PHASE-C5B`, production access, and push remain unauthorized.
+- **Active track:** `PURCHASE_ORDER_PHASE_C`. Active phase `PHASE-C5` —
+  contract `ACCEPTED / IMPLEMENTATION AUTHORIZED LOCALLY` (contract §22).
+  `PHASE-C5A-DB-EMISSION-READINESS` is now `CLOSED / ACCEPTED / LOCALLY
+  VERIFIED / SHARED-DEVELOPMENT VERIFIED` (contract §25, supervisor closeout
+  under `C5A-CLOSEOUT-AND-C5-AUTHORIZATION-R1`, 2026-07-22): `db/77` applied
+  byte-identical + §14-validated on the authorized non-production shared
+  development database `ucrjtfswnfdlxwtmxnoo`, PostgreSQL 17.6, terminal
+  migration `20260722055832`, under `C5A-DB77-SHARED-DEV-VALIDATION-R1`; clean
+  apply + idempotent reapply; `emitir` body byte-unchanged grant-only; read
+  models corrected; exact grant matrix; full behavioral evidence; zero
+  residue; cutover unchanged `legacy_active`. This resolves the `PHASE-C5`
+  database prerequisite. Next authorizable action is a **fresh Claude Code
+  session** performing `PHASE-C5` / `OC-C5-EMISSION-001` local UI
+  implementation (wire the disabled `oc-emitir` button to native
+  `emitir_ordem_compra` via the server-derived `acoes.emitir` signal, add the
+  `CONTROLLED_IRREVERSIBLE_TRANSITION` confirmation modal, surface
+  `status_aceite`), strictly within the closed three-file manifest
+  (`ordem-compra-data.js`/`-render.js`/`-events.js`) and the contract's entry
+  gates (§15) and hard stops (§16). `PHASE-C5B-ACCEPTANCE-DECISION`, any
+  shared-database apply beyond `db/77`, staging application of `db/76`/`db/77`,
+  deployment, activation, `REAL_CUTOVER`, production access, and push remain
+  unauthorized.
 - **Current governance status:** `GOVERNANCE-SPEC-CUSTODY-FOUNDATION-R1`
   **ACCEPTED**; `GOVERNANCE-STATE-HANDOFF-COMPACTION-R1` **ACCEPTED** by the
   supervisor at commit `1157b9e71bc629903c5940ab50d4b370964e560e` (state/handoff
@@ -601,8 +616,14 @@ Full matrix and normative anchors: `docs/architecture/ORDEM_COMPRA_C3_TRACEABILI
   ARCHITECT VISUAL VALIDATION PASSED`** (`C4-CLOSEOUT-AND-C5-CONTRACT-R1`,
   contract §0d) — local-only, native RPCs, no
   migration/environment/staging/deployment/push; `OC-C4-ADMIN-001` is
-  `SATISFIED`. **Still unauthorized (each a separate gate):**
-  `PHASE-C5`, staging application/validation of `db/76`, activation, deployment,
+  `SATISFIED`. **`PHASE-C5A-DB-EMISSION-READINESS` is now `CLOSED / ACCEPTED /
+  LOCALLY VERIFIED / SHARED-DEVELOPMENT VERIFIED`** (`C5A-CLOSEOUT-AND-C5-AUTHORIZATION-R1`,
+  contract §25), and `PHASE-C5` is now `ACCEPTED / IMPLEMENTATION AUTHORIZED
+  LOCALLY` (contract §22) — local implementation itself is **NOT YET
+  IMPLEMENTED** and requires a fresh Claude Code session within the closed
+  three-file manifest. **Still unauthorized (each a separate gate):**
+  `PHASE-C5B-ACCEPTANCE-DECISION`, any shared-database apply beyond `db/77`,
+  staging application/validation of `db/76`/`db/77`, activation, deployment,
   real snapshot/import, fence transition, read switch, final ACL-closure
   invocation, cutover (`OC-CUTOVER-001`/`OC-CUTOVER-PONR-001`, additionally
   hard-gated behind the 13-row completeness disposition), branch creation,
@@ -619,17 +640,25 @@ summary.
 - **C4/C5 roadmap.** `PHASE-C4` — **ADMIN RECEIPT UI** (`OC-C4-ADMIN-001`,
   admin receipt UI `#/ordens-compra/:id`) is `CLOSED / ACCEPTED / LOCALLY
   VERIFIED / ARCHITECT VISUAL VALIDATION PASSED` (`C4-CLOSEOUT-AND-C5-CONTRACT-R1`,
-  contract §0d). `OC-C4-SUPPLIER-001` (supplier UI) is `DEFERRED`; **`PHASE-C5`** native
-  emission (`OC-C5-EMISSION-001`) material contract is `ACCEPTED /
-  IMPLEMENTATION BLOCKED BY DATABASE PREREQUISITE`
-  (`docs/architecture/ORDEM_COMPRA_C5_PHASE_CONTRACT.md` §21) — implementation
-  is gated behind the **`PHASE-C5A-DB-EMISSION-READINESS`**
-  database-prerequisite contract, now `ACCEPTED / IMPLEMENTATION AUTHORIZED
-  LOCALLY` and **ACTIVE** (contract §22, `C5A-DB-EMISSION-READINESS-IMPLEMENTATION-R1`
-  Part 1) with local `db/77` implementation in progress; full acceptance-workflow
-  usability is additionally gated behind **`PHASE-C5B-ACCEPTANCE-DECISION`**
-  (`IDENTIFIED / NOT AUTHORIZED`). `PHASE-C5` UI and `PHASE-C5B` each still
-  require their own explicit architect order and a fresh session.
+  contract §0d). `OC-C4-SUPPLIER-001` (supplier UI) is `DEFERRED`. The
+  **`PHASE-C5A-DB-EMISSION-READINESS`** database-prerequisite contract is now
+  `CLOSED / ACCEPTED / LOCALLY VERIFIED / SHARED-DEVELOPMENT VERIFIED`
+  (contract §25, `C5A-CLOSEOUT-AND-C5-AUTHORIZATION-R1`, 2026-07-22): `db/77`
+  grants `EXECUTE` on `emitir_ordem_compra(BIGINT)` to `authenticated` and
+  corrects the terminal read models, applied byte-identical and §14-validated
+  on the authorized shared development database `ucrjtfswnfdlxwtmxnoo`. With
+  that prerequisite resolved, **`PHASE-C5`** native emission
+  (`OC-C5-EMISSION-001`, `PLANNED / AUTHORIZED_FOR_IMPLEMENTATION`) material
+  contract is now `ACCEPTED / IMPLEMENTATION AUTHORIZED LOCALLY`
+  (`docs/architecture/ORDEM_COMPRA_C5_PHASE_CONTRACT.md` §22) and **ACTIVE** —
+  local UI implementation itself is **NOT YET IMPLEMENTED** and requires a
+  **fresh Claude Code session** that re-verifies the Git baseline first,
+  within the closed three-file manifest and the contract's entry/exit gates
+  and hard stops. Full acceptance-workflow usability is additionally gated
+  behind **`PHASE-C5B-ACCEPTANCE-DECISION`** (`IDENTIFIED / NOT AUTHORIZED`),
+  which still requires its own explicit architect order and a fresh session;
+  no `PHASE-C5` implementation order may build any acceptance-decision
+  capability.
 - **Real-cutover separation.** The `REAL_CUTOVER` window
   (`OC-CUTOVER-001`/`OC-CUTOVER-PONR-001`) is governed **separately** from
   `PHASE-C3D` and from C4/C5. `PHASE-C3D` rehearsed the inactive stack only and
@@ -690,28 +719,32 @@ summary.
     `OC-C4-ADMIN-001` `SATISFIED`; accepted checkpoint `289b0cca66e9c057330a882f69da3476adf90469`;
     not active — `ACTIVE_PHASE`/`ACTIVE_PHASE_CONTRACT` are `NONE`)
 23. `docs/architecture/ORDEM_COMPRA_C5_PHASE_CONTRACT.md` (C5 material phase
-    contract — purchase-order emission; `ACCEPTED / IMPLEMENTATION BLOCKED
-    BY DATABASE PREREQUISITE` (§21); `OC-C5-EMISSION-001`
-    `PLANNED / BLOCKED_BY_C5A_DB_PREREQUISITE`; identifies
-    `PHASE-C5A-DB-EMISSION-READINESS` (next authorizable contract phase) and
+    contract — purchase-order emission; **ACTIVE**, `ACCEPTED /
+    IMPLEMENTATION AUTHORIZED LOCALLY` (§22, `C5A-CLOSEOUT-AND-C5-AUTHORIZATION-R1`,
+    2026-07-22 — the database prerequisite is resolved by item 24 below);
+    `OC-C5-EMISSION-001` `PLANNED / AUTHORIZED_FOR_IMPLEMENTATION`;
     `PHASE-C5B-ACCEPTANCE-DECISION` (`IDENTIFIED / NOT AUTHORIZED`); emission
-    confirmation UX ratified `CONTROLLED_IRREVERSIBLE_TRANSITION`; not
-    active)
+    confirmation UX ratified `CONTROLLED_IRREVERSIBLE_TRANSITION`; local UI
+    implementation itself is **NOT YET IMPLEMENTED**, requires a fresh Claude
+    Code session within the closed three-file manifest (§12) and the entry/exit
+    gates (§15) and hard stops (§16))
 24. `docs/architecture/ORDEM_COMPRA_C5A_DB_EMISSION_READINESS_PHASE_CONTRACT.md`
-    (C5A material phase contract — database emission readiness; **ACTIVE**,
-    `ACCEPTED / IMPLEMENTATION AUTHORIZED LOCALLY` (§22) + implementation
-    `IMPLEMENTED / LOCALLY VERIFIED / AWAITING SUPERVISOR REVIEW` (§23,
-    `db/77` + integration test on disposable local PostgreSQL 18.4, under
-    `C5A-DB-EMISSION-READINESS-IMPLEMENTATION-R1` Parts 1/2); classification
+    (C5A material phase contract — database emission readiness; **not
+    active**, `CLOSED / ACCEPTED / LOCALLY VERIFIED / SHARED-DEVELOPMENT
+    VERIFIED` (§25, supervisor closeout under `C5A-CLOSEOUT-AND-C5-AUTHORIZATION-R1`,
+    2026-07-22, over the §23 local implementation and the §24
+    shared-development validation); classification
     `READ_MODEL_FUNCTION_AND_GRANT_PREREQUISITE` — grant `emitir_ordem_compra`
     to `authenticated` + correct the terminal read models
     `obter_ordem_compra_admin` (`db/69:987`) / `listar_ordens_compra_admin`
     (`db/69:913`); allocation `ALLOCATION_PATH_READY_AFTER_GRANT` via the
     already-granted `definir_alocacao_necessidade_compra_fio`;
     `alocar_necessidade_compra_fio` `SUPERSEDED / REVOKED`; acceptance disposition
-    `EMISSION_ALLOWED_ONLY_WHEN_EXIGE_ACEITE_FALSE`; resolves the C5 §5(b)/§21
-    database prerequisite, does not modify the accepted C5 contract; local `db/77`
-    implementation authorized only in a disposable local PostgreSQL environment)
+    `EMISSION_ALLOWED_ONLY_WHEN_EXIGE_ACEITE_FALSE`; `db/77` applied
+    byte-identical to the authorized shared development database
+    `ucrjtfswnfdlxwtmxnoo` with the full §14 evidence; resolves the C5
+    `BLOCKING_DATABASE_PREREQUISITE`, does not modify the accepted C5
+    contract's ratified decisions)
 
 > Bootstrap first through `docs/governance/AGENT_INSTRUCTIONS.md` and the
 > `SPEC_CUSTODY_BOOTSTRAP` block in `PROJECT_STATE.md`. Private conversation,

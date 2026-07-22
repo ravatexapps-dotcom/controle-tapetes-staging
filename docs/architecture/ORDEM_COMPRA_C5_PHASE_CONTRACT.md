@@ -3,7 +3,7 @@
 <!-- MATERIAL_PHASE_CONTRACT:BEGIN -->
 PHASE_ID: PHASE-C5
 <!-- MATERIAL_PHASE_CONTRACT:END -->
-STATUS: ACCEPTED / IMPLEMENTATION BLOCKED BY DATABASE PREREQUISITE
+STATUS: ACCEPTED / IMPLEMENTATION AUTHORIZED LOCALLY
 
 > **Role of this document.** This is a **material phase contract**, authored under
 > `C4-CLOSEOUT-AND-C5-CONTRACT-R1` (Part 2) as **read-only repository
@@ -848,4 +848,66 @@ diagnosis and documentation-only material-contract authoring of
 §5 of this contract). That phase is **not** issued or executed by this
 closeout. `PHASE-C5` implementation, `PHASE-C5B`, `REAL_CUTOVER`, any
 database migration, any environment mutation, and any push remain
+unauthorized.
+
+---
+
+## 22. Database prerequisite resolved — implementation authorized locally (`C5A-CLOSEOUT-AND-C5-AUTHORIZATION-R1`)
+
+On 2026-07-22 the supervisor **CLOSED** `PHASE-C5A-DB-EMISSION-READINESS` as
+`CLOSED / ACCEPTED / LOCALLY VERIFIED / SHARED-DEVELOPMENT VERIFIED`
+(`docs/architecture/ORDEM_COMPRA_C5A_DB_EMISSION_READINESS_PHASE_CONTRACT.md`
+§25): `db/77` grants `EXECUTE ON emitir_ordem_compra(BIGINT) TO authenticated`
+(internal `is_admin()` gate unchanged, writer body byte-unchanged) and
+corrects the terminal read models `obter_ordem_compra_admin`/
+`listar_ordens_compra_admin` so `pode_emitir`/`acoes.emitir` derive true for
+an eligible native draft with `exige_aceite=FALSE`, applied byte-identical to
+the authorized shared development database `ucrjtfswnfdlxwtmxnoo` with the
+full §14 behavioral evidence. **The §5/§18.2 `BLOCKING_DATABASE_PREREQUISITE`
+is resolved.**
+
+**Contract disposition:** `STATUS: ACCEPTED / IMPLEMENTATION AUTHORIZED
+LOCALLY`. This does not reopen or change any ratified §21 decision: the
+functional scope (§6), actor/state/action matrix (§7), API ownership (§9),
+visual contract including the `CONTROLLED_IRREVERSIBLE_TRANSITION`
+confirmation classification (§10, §21), closed implementation manifest
+(§12), idempotency/error contract (§13), test/evidence contract (§14), and
+hard stops (§16) all remain binding and unchanged. `PHASE-C5B-ACCEPTANCE-DECISION`
+remains `IDENTIFIED / NOT AUTHORIZED` — no implementation order may build any
+acceptance-decision capability, and any order with `exige_aceite=TRUE` must
+still be presented as not lifecycle-complete (§21).
+
+**`OC-C5-EMISSION-001` disposition:** `PLANNED / AUTHORIZED_FOR_IMPLEMENTATION`
+— not `SATISFIED`, not `ACTIVE`, not `IMPLEMENTED`.
+
+**Authorization boundary (unchanged from the §15 entry gates).** A **fresh
+Claude Code session** must re-verify the Git baseline and canonical
+repository state (`docs/governance/AGENT_INSTRUCTIONS.md` §2) before
+implementing. That implementation is bounded to exactly this contract's §12
+manifest (additive changes to `ordem-compra-data.js`/`-render.js`/
+`-events.js` only), must use `public.emitir_ordem_compra(BIGINT)` and the
+server-derived `acoes.emitir` signal, must not compute readiness
+client-side, must not bypass `exige_aceite=TRUE`, must not use any direct
+table write or a legacy fallback, must not implement `PHASE-C5B`, must not
+modify `db/77` or apply any migration, must not begin `REAL_CUTOVER`, must
+not access production, and must not push.
+
+**Canonical state after this authorization:**
+
+```text
+LAST_ACCEPTED_PHASE = PHASE-C5A-DB-EMISSION-READINESS
+ACTIVE_PHASE = PHASE-C5
+ACTIVE_PHASE_CONTRACT = docs/architecture/ORDEM_COMPRA_C5_PHASE_CONTRACT.md
+
+PHASE-C5 CONTRACT = ACCEPTED / IMPLEMENTATION AUTHORIZED LOCALLY
+PHASE-C5 IMPLEMENTATION = NOT YET IMPLEMENTED
+OC-C5-EMISSION-001 = PLANNED / AUTHORIZED_FOR_IMPLEMENTATION
+PHASE-C5B-ACCEPTANCE-DECISION = IDENTIFIED / NOT AUTHORIZED
+REAL_CUTOVER = NOT AUTHORIZED
+```
+
+`NEXT_AUTHORIZABLE_ACTION`: a fresh Claude Code session performs `PHASE-C5` /
+`OC-C5-EMISSION-001` local UI implementation per this contract's §6/§12/§14/§15.
+`PHASE-C5B`, `REAL_CUTOVER`, staging validation/application of `db/76`/
+`db/77`, deployment, activation, production access, and any push remain
 unauthorized.

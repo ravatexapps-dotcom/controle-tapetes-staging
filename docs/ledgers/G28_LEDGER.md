@@ -8622,3 +8622,92 @@ product file they depend on, was modified by this pass or the prior one):
   implementation, `PHASE-C5B-ACCEPTANCE-DECISION`, `REAL_CUTOVER`, staging
   application of `db/76`/`db/77`, activation, deployment, production access, and
   any push remain unauthorized. **No push is authorized by this pass.**
+
+## 2026-07-22 — C5A-CLOSEOUT-AND-C5-AUTHORIZATION-R1 — PHASE-C5A supervisor closeout; PHASE-C5 implementation authorized locally
+
+- **Authorization:** `C5A-CLOSEOUT-AND-C5-AUTHORIZATION-R1` — documentation-only
+  supervisor closeout of `PHASE-C5A-DB-EMISSION-READINESS`, plus
+  local-implementation authorization of `PHASE-C5`, in the same commit. Type:
+  docs-only; no product, test, script, migration, database, environment,
+  deployment, or configuration change; no database or shared-environment
+  access; no push. Does **not** implement `PHASE-C5` itself.
+- **Entry baseline:** branch `dev`; `HEAD` `d17b353ed3eca04225a7decb55f84ccd5817d085`
+  (parent `e7a8b76152f986c83e4ecfe9827346a4efa5ef08`); protected residue
+  `M .gitignore`, `?? .codex/config.toml`, `?? .mcp.json` (untouched); `staging/dev`
+  `0df4228f903ae68c7e8b240e69ff3b37df9ebd86` (0/12 behind local `dev` — expected,
+  non-blocking).
+- **`PHASE-C5A` closeout (final):** the supervisor **ACCEPTED and CLOSED**
+  `docs/architecture/ORDEM_COMPRA_C5A_DB_EMISSION_READINESS_PHASE_CONTRACT.md`
+  as final and binding: `STATUS: CLOSED / ACCEPTED / LOCALLY VERIFIED /
+  SHARED-DEVELOPMENT VERIFIED` (contract §25), ratifying every disposition
+  already recorded at §22/§23/§24 — the terminal grant matrix (`emitir_ordem_compra`
+  → `authenticated` only, `is_admin()` gate unchanged, writer body byte-unchanged);
+  the read-model readiness derivation for `obter_ordem_compra_admin`/
+  `listar_ordens_compra_admin`; `definir_alocacao_necessidade_compra_fio` staying
+  granted and `alocar_necessidade_compra_fio` staying superseded/ungranted;
+  `EMISSION_ALLOWED_ONLY_WHEN_EXIGE_ACEITE_FALSE`; and the unmodified C3C
+  protected-mutation guard — as final. Accepted commits:
+  `a476df3191b914d62acd6718c06771cd1753ac6b` (proposed contract),
+  `27464520af2afa3c46d547ffaf76328df70b1889` (contract acceptance),
+  `e7a8b76152f986c83e4ecfe9827346a4efa5ef08` (`db/77` local implementation),
+  `d17b353ed3eca04225a7decb55f84ccd5817d085` (shared-development validation
+  evidence).
+- **Evidence-method ruling (final):** the §24 shared-development §14 transport
+  adaptation (`SET ROLE` + custom-GUC capture in place of the unavailable `psql`
+  meta-commands and superuser `session_replication_role`) is **ratified as
+  sufficient, non-blocking evidence** — every required assertion was preserved,
+  real authenticated and anonymous authorization paths were exercised, every
+  transaction was rolled back, zero persistent fixture residue was proven, no
+  shared business record was modified, and no production or prohibited project
+  was accessed.
+- **Post-C5A debts (recorded, nonblocking, separately owned — not scheduled or
+  implemented by this pass):** `PHASE-C5B-ACCEPTANCE-DECISION` gap; the
+  `REAL_CUTOVER` mutation-fence alignment question; the active-contract
+  self-test fixture-harness limitation; the 13 unmapped legacy
+  `ordens_compra_fio` rows (ids 153–165); `SHARED_UI_MODAL_CONTROL_RADIUS_TOKEN_ALIGNMENT`;
+  `ORDEM_COMPRA_CANCEL_HANDLER_STALE_ORDER_CAPTURE`.
+- **`PHASE-C5` implementation authorization (this pass):** with the database
+  prerequisite resolved, `docs/architecture/ORDEM_COMPRA_C5_PHASE_CONTRACT.md`
+  is authorized for local implementation: `STATUS: ACCEPTED / IMPLEMENTATION
+  AUTHORIZED LOCALLY` (contract §22). No ratified §21 decision is reopened:
+  functional scope (§6), actor/state/action matrix (§7), API ownership (§9),
+  the `CONTROLLED_IRREVERSIBLE_TRANSITION` confirmation classification (§10),
+  the closed purely-additive three-file manifest
+  (`ordem-compra-data.js`/`-render.js`/`-events.js`, §12), idempotency/error
+  contract (§13), test/evidence contract (§14), and hard stops (§16) all
+  remain binding. `PHASE-C5B-ACCEPTANCE-DECISION` remains `IDENTIFIED / NOT
+  AUTHORIZED` — no `PHASE-C5` implementation order may build any
+  acceptance-decision capability. This pass does **not** implement `PHASE-C5`;
+  a **fresh Claude Code session** must re-verify the Git baseline first
+  (`docs/governance/AGENT_INSTRUCTIONS.md` §2/§3).
+- **Manifest (exact):** modified
+  `docs/architecture/ORDEM_COMPRA_C5A_DB_EMISSION_READINESS_PHASE_CONTRACT.md`
+  (§25), `docs/architecture/ORDEM_COMPRA_C5_PHASE_CONTRACT.md` (§22),
+  `PROJECT_STATE.md`, `AGENT_HANDOFF.md`,
+  `docs/architecture/ORDEM_COMPRA_C3_TRACEABILITY.md`,
+  `docs/architecture/PEDIDO_PRODUCTION_FLOW_BACKLOG.md`,
+  `docs/ledgers/G28_LEDGER.md` (this entry). No product, test, script,
+  migration, configuration, lifecycle-specification, schema-contract,
+  visual-contract, or protected-residue change; no database, environment, or
+  deployment action; no push.
+- **Exact accounting subject:** `docs: close C5A and authorize C5 implementation`
+- **Canonical state after this commit:**
+  ```text
+  LAST_ACCEPTED_PHASE = PHASE-C5A-DB-EMISSION-READINESS
+  ACTIVE_PHASE = PHASE-C5
+  ACTIVE_PHASE_CONTRACT = docs/architecture/ORDEM_COMPRA_C5_PHASE_CONTRACT.md
+
+  PHASE-C5A = CLOSED / ACCEPTED / LOCALLY VERIFIED / SHARED-DEVELOPMENT VERIFIED
+  PHASE-C5 CONTRACT = ACCEPTED / IMPLEMENTATION AUTHORIZED LOCALLY
+  PHASE-C5 IMPLEMENTATION = NOT YET IMPLEMENTED
+  OC-C5-EMISSION-001 = PLANNED / AUTHORIZED_FOR_IMPLEMENTATION
+  PHASE-C5B-ACCEPTANCE-DECISION = IDENTIFIED / NOT AUTHORIZED
+  REAL_CUTOVER = NOT AUTHORIZED
+  ```
+- **NEXT_AUTHORIZABLE_ACTION:** a fresh Claude Code session performs `PHASE-C5` /
+  `OC-C5-EMISSION-001` local UI implementation per
+  `docs/architecture/ORDEM_COMPRA_C5_PHASE_CONTRACT.md` (§6/§12/§14/§15/§16).
+  `PHASE-C5B-ACCEPTANCE-DECISION`, `REAL_CUTOVER`, any shared-database apply
+  beyond `db/77`, staging validation/application of `db/76`/`db/77`,
+  deployment, activation, production access, branch creation, and any push
+  remain unauthorized. **No push is authorized by this pass.**
