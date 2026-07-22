@@ -8399,3 +8399,115 @@ product file they depend on, was modified by this pass or the prior one):
   validation/application of `db/76`/`db/77`, activation, deployment,
   `REAL_CUTOVER`, and any push remain unauthorized. **No push is authorized by
   this pass.**
+
+## 2026-07-22 — C5A-DB-EMISSION-READINESS-IMPLEMENTATION-R1 (Part 2) — PHASE-C5A local database implementation (locally verified)
+
+- **Authorization:** `C5A-DB-EMISSION-READINESS-IMPLEMENTATION-R1` (Part 2) —
+  local disposable-environment implementation of `PHASE-C5A-DB-EMISSION-READINESS`,
+  authorized by the Part 1 acceptance (contract §22). Entry checkpoint (Part 2)
+  `HEAD` `27464520af2afa3c46d547ffaf76328df70b1889` (the Part 1 acceptance commit);
+  `HEAD^` `a476df3191b914d62acd6718c06771cd1753ac6b`. Protected residue
+  (`M .gitignore`, `?? .codex/config.toml`, `?? .mcp.json`) untouched. **No
+  shared/remote/managed database, Supabase, staging, production, deployment,
+  activation, `REAL_CUTOVER`, or push.**
+- **Status:** `IMPLEMENTED / LOCALLY VERIFIED / AWAITING SUPERVISOR REVIEW`
+  (contract §23). Not self-accepted, not closed, not shared-environment verified,
+  not staging applied, not production ready, not `REAL_CUTOVER` ready.
+- **Migration `db/77_ordem_compra_c5a_emission_readiness.sql` (forward-only,
+  idempotent):**
+  1. `REVOKE ALL ON FUNCTION public.emitir_ordem_compra(BIGINT) FROM PUBLIC, anon,
+     authenticated, service_role;` then `GRANT EXECUTE … TO authenticated;` — the
+     exact final ACL (only `authenticated`). The writer body is **not** redefined
+     (grant-only; grep-verified no `CREATE … FUNCTION emitir_ordem_compra`); the
+     internal `is_admin()` gate remains the authoritative actor check.
+  2. `CREATE OR REPLACE` of the two terminal read models
+     `obter_ordem_compra_admin(BIGINT)` / `listar_ordens_compra_admin(UUID)`,
+     byte-preserving every field except `pode_emitir`/`acoes.emitir`/`bloqueio_emissao`,
+     which now derive TRUE iff a native rascunho is fully distributed
+     (`_distribuicao_completa_ordem`) AND `ordem_compra_config.exige_aceite=FALSE`;
+     `bloqueio_emissao` is `distribuicao_necessidades_pendente` when incomplete,
+     the new UI-enablement blocker `emissao_bloqueada_exige_aceite` when complete
+     but acceptance is required (`PHASE-C5B` gap), else NULL.
+  - No allocation-writer migration: `definir_alocacao_necessidade_compra_fio`
+    stays granted to `authenticated`, the superseded `alocar_necessidade_compra_fio`
+    stays revoked; the C3C protected-mutation guard (`db/75`) is untouched.
+- **Terminal grant matrix (verified):** `emitir_ordem_compra(bigint)` —
+  authenticated=true, anon=false, service_role=false, PUBLIC=false;
+  `definir_alocacao_necessidade_compra_fio(...)` — authenticated=true, others false;
+  `alocar_necessidade_compra_fio(...)` — all false; both read models —
+  authenticated=true, others false.
+- **Test `tests/ordem-compra-c5a-emission-readiness.integration.sql`:** one
+  transaction, self-planted Pedido-origin polyester fixtures, `ROLLBACK` (zero
+  persistent mutation). Proves the order's 35 points (grant matrix; emitir body
+  unchanged; allocation create/over-alloc/idempotency; read-model readiness true
+  only for an eligible `exige_aceite=FALSE` native draft in detail and list; the
+  `exige_aceite=TRUE` gate; deterministic denials + atomic failure invariance;
+  authenticated-non-admin internal denial + anon ACL denial; authorized emission
+  with `status_aceite='nao_aplicavel'` + exactly one `administrativo/'emitida'`
+  event + deterministic `estado_invalido` duplicate replay + no fabricated
+  acceptance; inert read models for legacy/emitted/cancelled/incomplete; receipt
+  writers unchanged; audit preserved; the cutover fence permits/denies matrix).
+  Sentinel `C5A_EMISSION_READINESS_INTEGRATION_PASS`.
+- **Local environment (LOCAL only; contract §14 shared-environment evidence still
+  owed to a future authorized non-production pass):** a fresh disposable local
+  PostgreSQL **18.4** cluster (`initdb`/`pg_ctl`, non-default port, outside the
+  repository); Supabase-platform preamble + ordered `db/01…db/77` (64-row corpus
+  after `db/66` before `db/67`, reconciliation `64/51/51/51/51`); `db/77` applied
+  cleanly after the full chain and reapplied idempotently; the integration test
+  passes. No shared/remote host, no staging/production access, `REAL_CUTOVER` not
+  activated.
+- **Forced migration-manifest fixture update (deviation from the literal Part 2
+  manifest — flagged for supervisor review):** adding the authorized `db/77`
+  advanced the migration terminal 76→77, deterministically invalidating the frozen
+  `PHASE-C3D-A` deployment-manifest guard `tests/ordem-compra-c3d-deploy.smoke.js`
+  (`EXPECTED_TERMINAL = 76`, asserting exactly 76 migrations). That guard is a
+  repo-wide migration-count bookkeeping test — not a UI/product/protected file and
+  not a test of `db/77`'s behavior. It was updated minimally to the real terminal
+  (`77`; terminal two `db/76`/`db/77`; a `db/77` checkpoint-hash + byte-stability
+  check added), fail-closed mechanism unchanged. No optional concurrency file was
+  created (`db/77` changes no writer body/locking; `PHASE-C3D-E` allocation-
+  concurrency evidence + this test's idempotency proofs cover the unchanged
+  allocation writer). Full same-branch Node-suite differential (db/77 present vs.
+  absent): the only db/77-attributable added failures were the three C3D
+  deploy-manifest assertions (resolved by the fixture update) plus one
+  `document-decision` `git status --porcelain db/` guard failure that resolves once
+  `db/77` is tracked; the post-commit differential is clean.
+- **Manifest (exact):** created `db/77_ordem_compra_c5a_emission_readiness.sql`,
+  `tests/ordem-compra-c5a-emission-readiness.integration.sql`; modified (forced)
+  `tests/ordem-compra-c3d-deploy.smoke.js`; docs
+  `docs/architecture/ORDEM_COMPRA_C5A_DB_EMISSION_READINESS_PHASE_CONTRACT.md`
+  (§23), `PROJECT_STATE.md`, `AGENT_HANDOFF.md`,
+  `docs/architecture/ORDEM_COMPRA_C3_TRACEABILITY.md`,
+  `docs/architecture/PEDIDO_PRODUCTION_FLOW_BACKLOG.md`,
+  `docs/ledgers/G28_LEDGER.md` (this entry). No `js/` product file, UI test,
+  `index.html`, `router.js`, `boot.js`, `common.js`, C4 receipt module, Pedido/
+  supplier/OP UI, lifecycle spec, schema contract, visual contract, protected
+  residue, or production configuration changed.
+- **Validation:** targeted integration test PASS; `db/77` clean apply + idempotent
+  reapply; terminal ACL matrix + function-definition evidence captured;
+  `node scripts/validate-spec-custody.mjs` PASS; `--self-test` fails only on the
+  pre-existing active-contract fixture-harness identity (an active phase exists);
+  `git diff --check` / `git diff --cached --check` clean; exact result recorded at
+  commit time below.
+- **Exact accounting subject:** `db: add C5A emission readiness`
+- **Canonical state after this implementation:**
+  ```text
+  LAST_ACCEPTED_PHASE = PHASE-C4
+  ACTIVE_PHASE = PHASE-C5A-DB-EMISSION-READINESS
+  ACTIVE_PHASE_CONTRACT = docs/architecture/ORDEM_COMPRA_C5A_DB_EMISSION_READINESS_PHASE_CONTRACT.md
+
+  PHASE-C5A CONTRACT = ACCEPTED / IMPLEMENTATION AUTHORIZED LOCALLY
+  PHASE-C5A IMPLEMENTATION = IMPLEMENTED / LOCALLY VERIFIED / AWAITING SUPERVISOR REVIEW
+  OC-C5-EMISSION-001 = PLANNED / BLOCKED_BY_C5A_DB_PREREQUISITE
+  PHASE-C5 UI = NOT AUTHORIZED
+  PHASE-C5B-ACCEPTANCE-DECISION = IDENTIFIED / NOT AUTHORIZED
+  REAL_CUTOVER = NOT AUTHORIZED
+  ```
+- **NEXT_AUTHORIZABLE_ACTION:** supervisor review and acceptance/closeout of the
+  `PHASE-C5A` implementation (contract §23), including review of the forced
+  `tests/ordem-compra-c3d-deploy.smoke.js` migration-manifest fixture update; then
+  a separately authorized non-production apply of `db/77` with the contract §14
+  shared-environment evidence. `PHASE-C5` UI, `PHASE-C5B`, `REAL_CUTOVER`, any
+  shared-database apply of `db/77`, staging validation/application of
+  `db/76`/`db/77`, and any push remain unauthorized. **No push is authorized by
+  this pass.**

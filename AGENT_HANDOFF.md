@@ -90,10 +90,12 @@
 - **Active phase contract:**
   `docs/architecture/ORDEM_COMPRA_C5A_DB_EMISSION_READINESS_PHASE_CONTRACT.md`
   (`PHASE_ID: PHASE-C5A-DB-EMISSION-READINESS`, `STATUS: ACCEPTED /
-  IMPLEMENTATION AUTHORIZED LOCALLY`, §22 — supervisor-accepted under
-  `C5A-DB-EMISSION-READINESS-IMPLEMENTATION-R1` Part 1; local implementation of
-  `db/77` in a disposable local PostgreSQL environment is authorized under Part 2
-  of the same order). The now-**closed** `PHASE-C4` material
+  IMPLEMENTATION AUTHORIZED LOCALLY`, §22; implementation `IMPLEMENTED / LOCALLY
+  VERIFIED / AWAITING SUPERVISOR REVIEW`, §23 — supervisor-accepted then locally
+  implemented under `C5A-DB-EMISSION-READINESS-IMPLEMENTATION-R1` Parts 1/2;
+  `db/77` + integration test verified on a disposable local PostgreSQL 18.4
+  cluster; not closed, not shared-environment verified). The now-**closed**
+  `PHASE-C4` material
   contract is `docs/architecture/ORDEM_COMPRA_C4_PHASE_CONTRACT.md`
   (`PHASE_ID: PHASE-C4`, `STATUS: CLOSED / ACCEPTED / LOCALLY VERIFIED /
   ARCHITECT VISUAL VALIDATION PASSED`, §0d). The now-**closed**
@@ -105,13 +107,14 @@
   §X; C3D-E evidence §Y; C3D-E acceptance + aggregate `PHASE-C3D`/`PHASE-C3D-F`
   closeout §Z).
 - **Active track:** `PURCHASE_ORDER_PHASE_C`. Active phase
-  `PHASE-C5A-DB-EMISSION-READINESS` (`ACCEPTED / IMPLEMENTATION AUTHORIZED
-  LOCALLY`, contract §22). Next authorizable action is the local, disposable
-  local PostgreSQL implementation of `db/77` (grant `emitir_ordem_compra` to
-  `authenticated` + correct the two terminal read models) plus its integration
-  test, under the same `C5A-DB-EMISSION-READINESS-IMPLEMENTATION-R1` order
-  (Part 2) — no shared-database apply, staging, deployment, activation,
-  `REAL_CUTOVER`, `PHASE-C5` UI, `PHASE-C5B`, or push.
+  `PHASE-C5A-DB-EMISSION-READINESS` — implementation `IMPLEMENTED / LOCALLY
+  VERIFIED / AWAITING SUPERVISOR REVIEW` (contract §23; `db/77` + integration test
+  verified on disposable local PostgreSQL 18.4). Next authorizable action is
+  supervisor review/closeout of that implementation (including the forced
+  `tests/ordem-compra-c3d-deploy.smoke.js` migration-manifest fixture update),
+  then a separately authorized non-production apply of `db/77` (contract §14).
+  No shared-database apply, staging, deployment, activation, `REAL_CUTOVER`,
+  `PHASE-C5` UI, `PHASE-C5B`, or push is authorized.
 - **Current governance status:** `GOVERNANCE-SPEC-CUSTODY-FOUNDATION-R1`
   **ACCEPTED**; `GOVERNANCE-STATE-HANDOFF-COMPACTION-R1` **ACCEPTED** by the
   supervisor at commit `1157b9e71bc629903c5940ab50d4b370964e560e` (state/handoff
@@ -301,14 +304,31 @@
   `docs/ledgers/G28_LEDGER.md` change; no product/test/script/migration/
   configuration/database/environment/protected-residue change; no push.
   `PHASE-C5A IMPLEMENTATION = NOT YET IMPLEMENTED`.
-- **Next authorizable action:** local implementation of
-  `PHASE-C5A-DB-EMISSION-READINESS` in a disposable local PostgreSQL environment
-  under the same `C5A-DB-EMISSION-READINESS-IMPLEMENTATION-R1` order (Part 2) —
-  `db/77_ordem_compra_c5a_emission_readiness.sql` + its integration test, no
-  shared-database apply. `PHASE-C5` implementation,
-  `PHASE-C5B-ACCEPTANCE-DECISION`, staging validation/application of
-  `db/76`/`db/77`, activation, deployment, `REAL_CUTOVER`, branch creation,
-  production access, and any push remain unauthorized.
+- **`C5A-DB-EMISSION-READINESS-IMPLEMENTATION-R1` (Part 2) — PHASE-C5A local DB
+  implementation (this pass):** `IMPLEMENTED / LOCALLY VERIFIED / AWAITING
+  SUPERVISOR REVIEW`. `db/77_ordem_compra_c5a_emission_readiness.sql` grants
+  `EXECUTE` on `emitir_ordem_compra(BIGINT)` to `authenticated` (writer body
+  unchanged, `is_admin()` gate authoritative) and `CREATE OR REPLACE`s the two
+  terminal read models so `pode_emitir`/`acoes.emitir`/`bloqueio_emissao` derive
+  from `_distribuicao_completa_ordem` + `exige_aceite=FALSE`;
+  `definir_alocacao_necessidade_compra_fio` stays granted,
+  `alocar_necessidade_compra_fio` stays revoked, the cutover guard untouched.
+  `tests/ordem-compra-c5a-emission-readiness.integration.sql` proves the 35 order
+  points on a disposable local PostgreSQL 18.4 cluster (`db/01…db/77` + 64-row
+  corpus, `64/51/51/51/51`; `db/77` clean apply + idempotent reapply). A forced,
+  non-weakening migration-manifest fixture update to
+  `tests/ordem-compra-c3d-deploy.smoke.js` (terminal 76→77) was required by the
+  new migration — one file beyond the literal Part 2 manifest, flagged for
+  supervisor review. No shared/remote host, no staging/production, no
+  `REAL_CUTOVER`, no push. `OC-C5-EMISSION-001` stays `PLANNED /
+  BLOCKED_BY_C5A_DB_PREREQUISITE`; not self-accepted / not closed.
+- **Next authorizable action:** supervisor review/closeout of the
+  `PHASE-C5A` implementation (contract §23, incl. the forced C3D deploy-manifest
+  fixture update), then a separately authorized non-production apply of `db/77`
+  (contract §14). `PHASE-C5` implementation, `PHASE-C5B-ACCEPTANCE-DECISION`,
+  staging validation/application of `db/76`/`db/77`, activation, deployment,
+  `REAL_CUTOVER`, branch creation, production access, and any push remain
+  unauthorized.
   `PHASE-C3D-A`/`PHASE-C3D-B` are supervisor-accepted (§R, checkpoints
   `096cd603…` / `5441321…`), `PHASE-C3D-C` (§U, `6fd63a56…`), `PHASE-C3D-D` (§X,
   `5a2be05…`), and `PHASE-C3D-E` (§Z, `429aa39…`) are all `CLOSED / TECHNICALLY
@@ -671,8 +691,10 @@ summary.
     active)
 24. `docs/architecture/ORDEM_COMPRA_C5A_DB_EMISSION_READINESS_PHASE_CONTRACT.md`
     (C5A material phase contract — database emission readiness; **ACTIVE**,
-    `ACCEPTED / IMPLEMENTATION AUTHORIZED LOCALLY` (§22, supervisor-accepted
-    under `C5A-DB-EMISSION-READINESS-IMPLEMENTATION-R1` Part 1); classification
+    `ACCEPTED / IMPLEMENTATION AUTHORIZED LOCALLY` (§22) + implementation
+    `IMPLEMENTED / LOCALLY VERIFIED / AWAITING SUPERVISOR REVIEW` (§23,
+    `db/77` + integration test on disposable local PostgreSQL 18.4, under
+    `C5A-DB-EMISSION-READINESS-IMPLEMENTATION-R1` Parts 1/2); classification
     `READ_MODEL_FUNCTION_AND_GRANT_PREREQUISITE` — grant `emitir_ordem_compra`
     to `authenticated` + correct the terminal read models
     `obter_ordem_compra_admin` (`db/69:987`) / `listar_ordens_compra_admin`

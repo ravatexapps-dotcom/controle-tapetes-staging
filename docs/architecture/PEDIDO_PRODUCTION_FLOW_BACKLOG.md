@@ -8,6 +8,64 @@
 > `PROJECT_STATE.md`. Phase sequence, dependencies, backlog items, and accepted
 > architecture in this file remain authoritative; live operational status does not.
 
+# Update 2026-07-22 - C5A-DB-EMISSION-READINESS-IMPLEMENTATION-R1 Part 2 (PHASE-C5A local DB implementation, locally verified)
+
+Phase: local disposable-environment implementation of `PHASE-C5A-DB-EMISSION-READINESS`.
+Type: one migration + one integration test + docs; no shared-database, Supabase,
+staging, production, deployment, activation, or `REAL_CUTOVER` access. Historical
+closeout note — live state belongs to `PROJECT_STATE.md`.
+
+Status: `IMPLEMENTED / LOCALLY VERIFIED / AWAITING SUPERVISOR REVIEW` (contract §23).
+
+Created `db/77_ordem_compra_c5a_emission_readiness.sql` (forward-only, idempotent):
+(1) `REVOKE ALL … FROM PUBLIC, anon, authenticated, service_role` then
+`GRANT EXECUTE … TO authenticated` on `emitir_ordem_compra(BIGINT)` — the writer
+body is **not** redefined (grant-only; the internal `is_admin()` gate stays
+authoritative); (2) `CREATE OR REPLACE` of the two terminal read models
+`obter_ordem_compra_admin(BIGINT)` / `listar_ordens_compra_admin(UUID)`,
+byte-preserving every field except `pode_emitir`/`acoes.emitir`/`bloqueio_emissao`,
+which now derive from `_distribuicao_completa_ordem` AND
+`ordem_compra_config.exige_aceite = FALSE` (new UI-enablement blocker
+`emissao_bloqueada_exige_aceite`). No allocation-writer DDL/grant
+(`definir_alocacao_necessidade_compra_fio` stays granted, the superseded
+`alocar_necessidade_compra_fio` stays revoked); the C3C protected-mutation guard
+(`db/75`) is untouched.
+
+Created `tests/ordem-compra-c5a-emission-readiness.integration.sql` (single
+transaction, self-planted Pedido-origin polyester fixtures, `ROLLBACK`) proving
+the order's 35 points on a disposable local PostgreSQL **18.4** cluster: terminal
+grant matrix, unchanged emitir body, allocation create/over-alloc/idempotency,
+read-model readiness true only for an eligible `exige_aceite=FALSE` native draft
+(detail + list), the `exige_aceite=TRUE` gate, deterministic denials + atomic
+failure invariance, authenticated-non-admin and anon denials, authorized emission
+(`status_aceite='nao_aplicavel'`, one audit event, deterministic duplicate replay,
+no fabricated acceptance), inert read models for legacy/emitted/cancelled/incomplete,
+receipt writers unchanged, audit preserved, and the cutover fence permits/denies
+matrix. Environment: Supabase-platform preamble + ordered `db/01…db/77` (64-row
+corpus after `db/66` before `db/67`, reconciliation `64/51/51/51/51`); `db/77`
+clean apply + idempotent reapply; test PASS.
+
+**Forced migration-manifest fixture update (deviation recorded, flagged for
+supervisor review):** the authorized `db/77` advanced the migration terminal 76→77,
+deterministically invalidating the frozen `PHASE-C3D-A` deployment-manifest guard
+`tests/ordem-compra-c3d-deploy.smoke.js` (`EXPECTED_TERMINAL = 76`). That guard —
+a repo-wide migration-count bookkeeping test, not a UI/product/protected file and
+not a test of `db/77`'s behavior — was updated minimally (terminal 76→77, terminal
+two `db/76`/`db/77`, a `db/77` checkpoint-hash + byte-stability check), keeping its
+fail-closed mechanism unchanged. This is one file beyond the order's literal Part 2
+manifest; it is a necessary, non-weakening consequence of the authorized migration.
+No optional concurrency file was created (`db/77` changes no writer body/locking;
+the accepted `PHASE-C3D-E` allocation-concurrency evidence + this test's idempotency
+proofs cover the unchanged allocation writer).
+
+`OC-C5-EMISSION-001` stays `PLANNED / BLOCKED_BY_C5A_DB_PREREQUISITE`;
+`ACTIVE_PHASE`/`ACTIVE_PHASE_CONTRACT` stay `PHASE-C5A-DB-EMISSION-READINESS` / the
+contract. `PHASE-C5` UI implementation, `PHASE-C5B-ACCEPTANCE-DECISION`, any
+shared-database apply of `db/77`, staging validation/application of `db/76`/`db/77`,
+activation, deployment, `REAL_CUTOVER`, and any push remain unauthorized.
+Sequence/architecture in this file are unchanged. Full evidence: contract §23 and
+`docs/ledgers/G28_LEDGER.md`.
+
 # Update 2026-07-21 - C5A-DB-EMISSION-READINESS-IMPLEMENTATION-R1 Part 1 (PHASE-C5A material contract, accepted; local implementation authorized)
 
 Phase: documentation-only supervisor-acceptance closeout of the `PHASE-C5A`

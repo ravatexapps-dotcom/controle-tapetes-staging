@@ -20,7 +20,7 @@ LAST_ACCEPTED_PHASE: PHASE-C4
 ACTIVE_PHASE: PHASE-C5A-DB-EMISSION-READINESS
 ACTIVE_PHASE_CONTRACT: docs/architecture/ORDEM_COMPRA_C5A_DB_EMISSION_READINESS_PHASE_CONTRACT.md
 ACTIVE_TRACK: PURCHASE_ORDER_PHASE_C
-NEXT_AUTHORIZABLE_ACTION: local implementation of PHASE-C5A-DB-EMISSION-READINESS in a disposable local PostgreSQL environment under the same C5A-DB-EMISSION-READINESS-IMPLEMENTATION-R1 order (Part 2) — one forward-only idempotent migration db/77_ordem_compra_c5a_emission_readiness.sql granting EXECUTE on emitir_ordem_compra(BIGINT) to authenticated (keeping PUBLIC/anon/service_role revoked and the internal is_admin() gate authoritative), preserving the emitir_ordem_compra body byte-equivalent, preserving definir_alocacao_necessidade_compra_fio granted+admin-gated and alocar_necessidade_compra_fio revoked, and correcting the terminal read models obter_ordem_compra_admin (db/69:987) / listar_ordens_compra_admin (db/69:913) so acoes.emitir/pode_emitir derive true only for a native rascunho with _distribuicao_completa_ordem=TRUE and exige_aceite=FALSE, plus tests/ordem-compra-c5a-emission-readiness.integration.sql; PHASE-C5 UI implementation, PHASE-C5B-ACCEPTANCE-DECISION (IDENTIFIED / NOT AUTHORIZED — the missing status_aceite pendente-to-aceita/rejeitada transition capability), the REAL_CUTOVER window (OC-CUTOVER-001/OC-CUTOVER-PONR-001 — hard-gated behind the mandatory separate read-only completeness disposition of the 13 unmapped ordens_compra_fio rows ids 153–165), real close_final_acl invocation, real activation, the real read-authority switch, any shared-database apply of db/77, staging validation/application of db/76 or db/77, and any productive receipt on a shared or real environment all remain unauthorized
+NEXT_AUTHORIZABLE_ACTION: supervisor review and acceptance/closeout of the IMPLEMENTED / LOCALLY VERIFIED / AWAITING SUPERVISOR REVIEW PHASE-C5A-DB-EMISSION-READINESS implementation (db/77_ordem_compra_c5a_emission_readiness.sql — grant EXECUTE on emitir_ordem_compra(BIGINT) to authenticated with the internal is_admin() gate authoritative + read-model correction of obter_ordem_compra_admin/listar_ordens_compra_admin; tests/ordem-compra-c5a-emission-readiness.integration.sql; contract §23), including review of the forced migration-manifest fixture update to tests/ordem-compra-c3d-deploy.smoke.js (frozen PHASE-C3D-A guard advanced terminal 76→77, one file beyond the order's literal Part 2 manifest, non-weakening); then a separately authorized non-production apply of db/77 with the contract §14 shared-environment evidence. PHASE-C5 UI implementation, PHASE-C5B-ACCEPTANCE-DECISION (IDENTIFIED / NOT AUTHORIZED — the missing status_aceite pendente-to-aceita/rejeitada transition capability), the REAL_CUTOVER window (OC-CUTOVER-001/OC-CUTOVER-PONR-001 — hard-gated behind the mandatory separate read-only completeness disposition of the 13 unmapped ordens_compra_fio rows ids 153–165), real close_final_acl invocation, real activation, the real read-authority switch, any shared-database apply of db/77, staging validation/application of db/76 or db/77, and any push remain unauthorized
 GOVERNING_SPEC: docs/architecture/ORDEM_COMPRA_LIFECYCLE_SPEC_PROPOSED.md
 TECHNICAL_CONTRACT: docs/architecture/PEDIDO_OP_SCHEMA_CONTRACT.md
 SEQUENCE_AUTHORITY: docs/architecture/PEDIDO_PRODUCTION_FLOW_BACKLOG.md
@@ -446,15 +446,68 @@ ACCEPTED_CHECKPOINT: 289b0cca66e9c057330a882f69da3476adf90469
   `PHASE-C5 CONTRACT = ACCEPTED / IMPLEMENTATION BLOCKED BY C5A`;
   `PHASE-C5B` stays `IDENTIFIED / NOT AUTHORIZED`; `REAL_CUTOVER` stays
   `NOT AUTHORIZED`.
-- **Next authorizable action:** local implementation of
-  `PHASE-C5A-DB-EMISSION-READINESS` in a disposable local PostgreSQL environment
-  under the same `C5A-DB-EMISSION-READINESS-IMPLEMENTATION-R1` order (Part 2) —
-  `db/77_ordem_compra_c5a_emission_readiness.sql` (grant + read-model correction)
-  and `tests/ordem-compra-c5a-emission-readiness.integration.sql`. `PHASE-C5` UI
-  implementation, `PHASE-C5B-ACCEPTANCE-DECISION`, `REAL_CUTOVER`, any
-  shared-database apply of `db/77`, staging validation/application of `db/76` or
-  `db/77`, activation, deployment, branch creation, production access, and any
-  push remain **unauthorized**.
+- **`C5A-DB-EMISSION-READINESS-IMPLEMENTATION-R1` (Part 2) — PHASE-C5A local
+  database implementation (this pass, migration + test + docs, implementation
+  commit `db: add C5A emission readiness`):** `IMPLEMENTED / LOCALLY VERIFIED /
+  AWAITING SUPERVISOR REVIEW`. Created
+  `db/77_ordem_compra_c5a_emission_readiness.sql` (forward-only, idempotent):
+  (1) `REVOKE ALL … FROM PUBLIC, anon, authenticated, service_role` then
+  `GRANT EXECUTE … TO authenticated` on `emitir_ordem_compra(BIGINT)` — the
+  writer body is **not** redefined (grant-only; the internal `is_admin()` gate
+  stays authoritative); (2) `CREATE OR REPLACE` of the two terminal read models
+  `obter_ordem_compra_admin(BIGINT)` / `listar_ordens_compra_admin(UUID)`,
+  byte-preserving every field except `pode_emitir`/`acoes.emitir`/`bloqueio_emissao`,
+  which now derive from `_distribuicao_completa_ordem` AND
+  `ordem_compra_config.exige_aceite = FALSE` (new UI-enablement blocker
+  `emissao_bloqueada_exige_aceite` for a complete draft withheld because
+  `exige_aceite=TRUE`). No allocation-writer DDL/grant
+  (`definir_alocacao_necessidade_compra_fio` stays granted to `authenticated`,
+  `alocar_necessidade_compra_fio` stays revoked); the C3C protected-mutation guard
+  is untouched. Created `tests/ordem-compra-c5a-emission-readiness.integration.sql`
+  (single transaction, self-planted Pedido-origin polyester fixtures, `ROLLBACK`;
+  proves the terminal grant matrix, unchanged emitir body, allocation
+  create/over-alloc/idempotency, read-model readiness true only for an eligible
+  `exige_aceite=FALSE` native draft in both models, the `exige_aceite=TRUE` gate,
+  deterministic denials + atomic failure invariance, authenticated-non-admin and
+  anon denials, authorized emission with `status_aceite='nao_aplicavel'` + exactly
+  one audit event + deterministic duplicate replay + no fabricated acceptance,
+  inert read models for legacy/emitted/cancelled/incomplete, receipt writers
+  unchanged, audit preserved, and the cutover fence permits/denies matrix). Local
+  environment: a fresh disposable local PostgreSQL **18.4** cluster applied the
+  Supabase-platform preamble + ordered `db/01…db/77` (64-row corpus after `db/66`
+  before `db/67`, reconciliation `64/51/51/51/51`); `db/77` applied cleanly and
+  reapplied idempotently; the integration test passes
+  (`C5A_EMISSION_READINESS_INTEGRATION_PASS`). No shared/remote/managed host; no
+  staging/production access; `REAL_CUTOVER` not activated. **Forced
+  migration-manifest fixture update (deviation recorded):**
+  `tests/ordem-compra-c3d-deploy.smoke.js` — the frozen `PHASE-C3D-A`
+  deployment-manifest guard hard-coded `EXPECTED_TERMINAL = 76`; adding the
+  authorized `db/77` advanced the terminal to 77, so the guard was updated
+  minimally (terminal 76→77, terminal two `db/76`/`db/77`, added a `db/77`
+  checkpoint-hash + byte-stability check), fail-closed mechanism unchanged. This
+  is one file beyond the order's literal Part 2 manifest (`db/77` + the integration
+  test) — a necessary, non-weakening consequence of the authorized migration,
+  flagged for supervisor review. No optional concurrency file was created (`db/77`
+  changes no writer body/locking; `PHASE-C3D-E` evidence + this test's idempotency
+  proofs cover the unchanged allocation writer). Full Node suite differential
+  (same-branch, db/77 present vs. absent): the only db/77-attributable added
+  failures were the three C3D deploy-manifest assertions (resolved by the fixture
+  update) plus one `document-decision` `db/`-status guard failure that resolves
+  once `db/77` is tracked; post-commit differential clean. `OC-C5-EMISSION-001`
+  stays `PLANNED / BLOCKED_BY_C5A_DB_PREREQUISITE`; `PHASE-C5` UI stays `NOT
+  AUTHORIZED`; `PHASE-C5B` stays `IDENTIFIED / NOT AUTHORIZED`; `REAL_CUTOVER`
+  stays `NOT AUTHORIZED`. Not self-accepted / not closed. Full record: contract
+  §23 and `docs/ledgers/G28_LEDGER.md`.
+- **Next authorizable action:** supervisor review and acceptance/closeout of the
+  `IMPLEMENTED / LOCALLY VERIFIED / AWAITING SUPERVISOR REVIEW` `PHASE-C5A`
+  implementation (contract §23) — including review of the forced
+  `tests/ordem-compra-c3d-deploy.smoke.js` migration-manifest fixture update —
+  then a separately authorized non-production apply of `db/77` with the
+  contract §14 shared-environment evidence. `PHASE-C5` UI implementation,
+  `PHASE-C5B-ACCEPTANCE-DECISION`, `REAL_CUTOVER`, any shared-database apply of
+  `db/77`, staging validation/application of `db/76` or `db/77`, activation,
+  deployment, branch creation, production access, and any push remain
+  **unauthorized**.
 - **Prior accepted product phase:** `PHASE-C3C-B` (application compatibility/
   adaptation) — `CLOSED / ACCEPTED_WITH_NONBLOCKING_DEBT / LOCALLY VERIFIED`
   (2026-07-21), accepted checkpoint

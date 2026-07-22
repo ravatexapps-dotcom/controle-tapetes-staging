@@ -881,3 +881,77 @@ Part 2 — the local, disposable-environment implementation of `db/77` and its
 tests. This acceptance does **not** authorize any shared-database apply, staging
 validation/application, deployment, activation, `REAL_CUTOVER`, `PHASE-C5` UI,
 `PHASE-C5B`, branch creation, or push.
+
+---
+
+## 23. Implementation evidence — `C5A-DB-EMISSION-READINESS-IMPLEMENTATION-R1` (Part 2)
+
+**STATUS: IMPLEMENTED / LOCALLY VERIFIED / AWAITING SUPERVISOR REVIEW.** Local
+disposable-environment implementation only; **not** shared-environment verified,
+**not** staging applied, **not** production ready, **not** `REAL_CUTOVER` ready.
+
+- **Migration:** `db/77_ordem_compra_c5a_emission_readiness.sql` (forward-only,
+  idempotent). It (1) `REVOKE ALL … FROM PUBLIC, anon, authenticated,
+  service_role` then `GRANT EXECUTE … TO authenticated` on
+  `emitir_ordem_compra(BIGINT)` — the emission writer body is **not** redefined
+  (grant-only; grep-verified the migration contains no `CREATE … FUNCTION
+  emitir_ordem_compra`); (2) `CREATE OR REPLACE` `obter_ordem_compra_admin(BIGINT)`
+  and `listar_ordens_compra_admin(UUID)`, byte-preserving every field except
+  `pode_emitir`/`acoes.emitir`/`bloqueio_emissao`, which now derive from the
+  existing `_distribuicao_completa_ordem` signal AND
+  `ordem_compra_config.exige_aceite = FALSE`. No allocation-writer DDL/grant; the
+  active writer `definir_alocacao_necessidade_compra_fio` stays granted to
+  `authenticated`, the superseded `alocar_necessidade_compra_fio` stays revoked;
+  the C3C protected-mutation guard (`db/75`) is untouched. A new UI-enablement
+  blocker code `emissao_bloqueada_exige_aceite` is emitted for a fully-distributed
+  draft whose emission is withheld because `exige_aceite=TRUE` (defensive;
+  currently unreachable through any client path, `db/65`).
+- **Test:** `tests/ordem-compra-c5a-emission-readiness.integration.sql` — a single
+  transaction that plants its own fixtures (Pedido-origin polyester needs, a
+  `fio_poliester` fornecedor, an admin and an inactive-admin non-admin) and
+  `ROLLBACK`s (zero persistent mutation). It proves, on PostgreSQL 18.4:
+  the terminal grant matrix; `emitir` body unchanged; allocation-writer
+  create/over-allocation-denial/idempotent-replay/conflicting-key; read-model
+  `emitir=true` only for an eligible `exige_aceite=FALSE` native draft (detail and
+  list); the `exige_aceite=TRUE` gate; deterministic emission denials
+  (missing-supplier/zero-item/wrong-state/incomplete-allocation) with atomic
+  failure invariance; authenticated-non-admin internal denial and anon ACL
+  denial; authorized emission through the real `authenticated` grant with
+  `status_aceite='nao_aplicavel'`, exactly one `administrativo/'emitida'` audit
+  event, deterministic `estado_invalido` duplicate replay, and no fabricated
+  acceptance decision; read models inert for legacy/emitted/cancelled/incomplete;
+  receipt writers unchanged; audit preserved; and the cutover fence
+  (`legacy_active` permits, `maintenance_fenced`/`canonical_active` deny protected
+  DML `55000`).
+- **Local environment (§14 subset, local only):** a fresh disposable local
+  PostgreSQL **18.4** cluster (`initdb`/`pg_ctl`, non-default port, outside the
+  repository), Supabase-platform preamble + ordered `db/01…db/77` (the
+  classification-faithful 64-row corpus loaded after `db/66` before `db/67`,
+  reconciliation `64/51/51/51/51`), then the integration test. `db/77` applied
+  cleanly after the full chain and reapplied idempotently. No shared/remote/managed
+  host was contacted; no staging/production access; `REAL_CUTOVER` not activated
+  (cutover singleton `legacy_active`/`flat` except the test's own rolled-back
+  fence probes). The remaining §14 shared-environment evidence items stay **owed**
+  to a future, separately authorized non-production apply pass.
+- **Forced migration-manifest fixture update (deviation recorded):** adding the
+  authorized `db/77` advances the migration terminal 76 → 77, which
+  deterministically invalidated the frozen `PHASE-C3D-A` deployment-manifest guard
+  `tests/ordem-compra-c3d-deploy.smoke.js` (it hard-coded `EXPECTED_TERMINAL = 76`
+  and asserted exactly 76 migrations). That guard is a repo-wide migration-count
+  bookkeeping test — not a UI/product/protected file and not a test of `db/77`'s
+  behavior. It was updated minimally to the real terminal (`77`; terminal two now
+  `db/76`/`db/77`; a `db/77` checkpoint-hash + byte-stability check added),
+  keeping its fail-closed mechanism (duplicate/gap/missing-start/unexpected-trailing
+  synthetic proofs) unchanged. This is one file beyond the order's literal Part 2
+  manifest (`db/77` + the integration test); it is a necessary, non-weakening
+  consequence of the authorized migration and is flagged for supervisor review
+  (§19-adjacent). No optional concurrency file was created: `db/77` changes no
+  writer body and no locking, and the accepted `PHASE-C3D-E` allocation-concurrency
+  evidence plus this test's idempotency/duplicate proofs already cover the
+  unchanged allocation writer.
+- **Disposition unchanged:** `OC-C5-EMISSION-001` stays `PLANNED /
+  BLOCKED_BY_C5A_DB_PREREQUISITE`; `PHASE-C5` UI stays `NOT AUTHORIZED`;
+  `PHASE-C5B` stays `IDENTIFIED / NOT AUTHORIZED`; `REAL_CUTOVER` stays `NOT
+  AUTHORIZED`. `ACTIVE_PHASE`/`ACTIVE_PHASE_CONTRACT` remain
+  `PHASE-C5A-DB-EMISSION-READINESS` / this contract, awaiting supervisor review
+  and closeout.
