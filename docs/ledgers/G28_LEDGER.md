@@ -8801,3 +8801,132 @@ product file they depend on, was modified by this pass or the prior one):
   `REAL_CUTOVER`, staging/deployment/activation, any shared-database apply,
   production access, branch creation, and any push remain unauthorized. **No push
   is authorized by this pass.**
+
+---
+
+## 2026-07-22 — C5-AMBIGUOUS-RELOAD-AND-CANONICAL-STATE-CORRECTION-R1 — direct supervisor functional/visual review + targeted PHASE-C5 correction + canonical-state forward correction
+
+- **Gate:** `IMPLEMENTED / TARGETED CORRECTION IMPLEMENTED / LOCALLY VERIFIED /
+  AWAITING SUPERVISOR RE-REVIEW` — not self-accepted, `PHASE-C5` not closed.
+- **Direct-review ruling (recorded as binding):** `PHASE-C4` =
+  `CLOSED / ACCEPTED_WITH_NONBLOCKING_DEBT / DIRECTLY VERIFIED / ARCHITECT
+  VISUAL VALIDATION PASSED`, accepted technical checkpoint
+  `289b0cca66e9c057330a882f69da3476adf90469`; `OC-C4-ADMIN-001` = `SATISFIED`.
+  A nonblocking C4 debt was additionally found by this direct review,
+  `ORDEM_COMPRA_RECEIPT_HARD_FAILURE_RAW_MESSAGE_EXPOSURE` (the receipt action
+  layer may expose `res.error.message` for an unmapped `hard_failure`),
+  recorded only — **not corrected in this pass** (out of scope). `PHASE-C5A-
+  DB-EMISSION-READINESS` = `CLOSED / ACCEPTED / DIRECTLY VERIFIED /
+  SHARED-DEVELOPMENT STATE VERIFIED`. `PHASE-C5 VISUAL REVIEW` =
+  `PASS_WITH_NONBLOCKING_COSMETIC_DEBT`. `PHASE-C5 FUNCTIONAL REVIEW` =
+  `CHANGES_REQUIRED` on exactly one blocking defect,
+  `C5_AMBIGUOUS_EMISSION_RELOAD_FALSE_DRAFT_ASSERTION`: after an ambiguous
+  `emitir_ordem_compra` transport result, the UI performed the required
+  authoritative reload but, if that reload itself failed, returned `null`,
+  returned a different order, or returned an unresolved state, it incorrectly
+  asserted the order remained a draft. Honest uncertainty must be preserved
+  until an authoritative reload actually resolves the state.
+- **Phase:** `PHASE-C5` (`OC-C5-EMISSION-001`), targeted correction of the
+  `C5-PURCHASE-ORDER-EMISSION-UI-IMPLEMENTATION-R1` implementation under the
+  accepted material contract
+  `docs/architecture/ORDEM_COMPRA_C5_PHASE_CONTRACT.md` (§22/§23, now §24).
+  Entry checkpoint HEAD `e25361be80eed0c33f2544c58d2273572d0bd588`; parent
+  `538f4ba7b7aae5d6e9e0efbe29a57e1ef7bbc776`; branch `dev`. Protected residue
+  (`M .gitignore`, `?? .codex/config.toml`, `?? .mcp.json`) preserved
+  untouched.
+- **Correction implemented (`js/screens/ordem-compra-events.js` only, no other
+  product file):** the ambiguous-transport branch of `emitir(o)` now, after
+  the single authoritative reload, resolves success only when `state.ordem`
+  exists, its `ordem_id` equals the attempted order, and
+  `status_administrativo === 'emitida'`; resolves "still a draft" only when
+  `state.ordem` exists, its `ordem_id` equals the attempted order, and
+  `status_administrativo === 'rascunho'` (offering the deliberate-retry
+  message only when the reloaded order's own `acoes.emitir === true`);
+  otherwise (reload failure, `null`, a different order, or an unrecognized
+  state) shows the fixed pt-BR message "Não foi possível confirmar o
+  resultado da emissão. Recarregue a ordem antes de tentar novamente." — never
+  claiming draft or emitted, no automatic retry, no fallback writer. The RPC
+  (`window.supa.rpc('emitir_ordem_compra', { p_ordem_id: ordemId })`), the
+  deterministic-success branch, and the deterministic-rejection branch are
+  unchanged. No other product file touched;
+  `js/screens/ordem-compra-data.js`/`-render.js`, `js/screens/ordem-compra.js`,
+  all receipt modules, `js/ui.js`, `index.html`, `router.js`, `boot.js`, and
+  `common.js` are byte-unchanged.
+- **Tests (exactly `tests/ordem-compra-emitir.smoke.js`):** six new behavioral
+  cases — an authoritative reload that itself fails after an ambiguous
+  transport; a reload to a draft the server itself still withholds
+  (`acoes.emitir=false`, no false retry offer); a reload to a non-draft/
+  non-emitted state (cancelled); a reload returning a mismatched order id; and
+  the existing ambiguous-success / ambiguous-stays-draft cases strengthened —
+  proving `emitir_ordem_compra` is called exactly once,
+  `obter_ordem_compra_admin` is attempted exactly twice, no fallback/legacy
+  writer is called, no automatic retry occurs, "continua em rascunho" is never
+  shown when the state is actually unresolved, and no enabled `Emitir` control
+  is reconstructed from stale pre-reload state. Every existing `PHASE-C5` test
+  retained (41/41 pass).
+- **Validation:** targeted suites green (emitir 41/41; ordem-compra 11/11; the
+  four C4 receipt suites 38/38). Full Node suite differential vs a detached
+  baseline worktree at `e25361b`: baseline 142 / worktree 122 failing
+  identities, **added failing identities = empty** (zero regressions; the
+  20 baseline-only identities are pre-existing non-determinism).
+  `node scripts/validate-spec-custody.mjs` PASS; `--self-test` fails only on
+  the pre-existing active-contract fixture-harness limitation (`R1:
+  ACTIVE_PHASE_CONTRACT is not an existing file`), byte-identical to the
+  `e25361b` baseline. `git diff --check` / `--cached --check` clean.
+- **Canonical documentation forward-correction:** corrected the stale
+  "`PHASE-C5` not yet implemented" / "`ACTIVE_PHASE` is `NONE`" contradictions
+  in `PROJECT_STATE.md` (the `PHASE-C4`-closeout-era bullet was temporalized
+  as historical; the tail "Next authorizable action" and a new correction
+  bullet were added), `AGENT_HANDOFF.md` (four stale spots corrected: the
+  active-phase-contract bullet, the push/remote/deployment-limits bullet, the
+  C4/C5 roadmap bullet, and canonical-paths items 22/23), and the
+  `docs/DOCUMENTATION_INDEX.md` C5 row (no longer says "not yet implemented").
+  `docs/architecture/ORDEM_COMPRA_C3_TRACEABILITY.md`'s `NEXT_AUTHORIZABLE_ACTION`
+  and `OC-C5-EMISSION-001` residual-debt text were updated to the current
+  disposition. `docs/architecture/ORDEM_COMPRA_C5_PHASE_CONTRACT.md` gained
+  §24 recording this ruling and correction; its `STATUS` line was updated.
+  `docs/architecture/PEDIDO_PRODUCTION_FLOW_BACKLOG.md` required no correction
+  (its governance banner already temporalizes historical entries and its
+  newest entry was already accurate). No historical entry was rewritten;
+  every correction is additive or explicitly marked historical.
+- **New nonblocking debts recorded** (`PROJECT_STATE.md` POST-LAUNCH DEBT
+  REGISTER items 17–20; items 15/16 unchanged):
+  `ORDEM_COMPRA_RECEIPT_HARD_FAILURE_RAW_MESSAGE_EXPOSURE` (17),
+  `C5_ORDEM_COMPRA_JS_STALE_EMISSION_COMMENT` (18) — `js/screens/ordem-compra.js`'s
+  header comment still says emission is installed-but-inactive/never wired,
+  stale since the prior pass, out of this correction's manifest,
+  `C5_INDEX_HTML_CACHE_BUST_PENDING_DEPLOY` (19), `C5_COSMETIC_UI_CONSOLIDATION`
+  (20).
+- **Residual risk / debts unchanged:** `SHARED_UI_MODAL_CONTROL_RADIUS_TOKEN_ALIGNMENT`
+  (item 16), `ORDEM_COMPRA_CANCEL_HANDLER_STALE_ORDER_CAPTURE` (item 15); the
+  writer still cannot be exercised end-to-end in a browser here (fixture-level
+  DOM/mocked-RPC evidence); orders with `exige_aceite=TRUE` remain not
+  lifecycle-complete until `PHASE-C5B` ships.
+- **Next phase indicated at closeout:** direct supervisor re-review of this
+  single correction commit (`SUPERVISION_PROTOCOL.md` §4). `PHASE-C5` remains
+  open; `PHASE-C5B`, `REAL_CUTOVER`, staging validation/application of
+  `db/76`/`db/77`, deployment, activation, production access, branch
+  creation, and any further push remain unauthorized.
+- **Exact accounting subject:** `fix: preserve uncertainty after unresolved
+  emission reload`
+- **Canonical state after this commit:**
+  ```text
+  LAST_ACCEPTED_PHASE = PHASE-C5A-DB-EMISSION-READINESS
+  ACTIVE_PHASE = PHASE-C5
+  ACTIVE_PHASE_CONTRACT = docs/architecture/ORDEM_COMPRA_C5_PHASE_CONTRACT.md
+
+  PHASE-C4 = CLOSED / ACCEPTED_WITH_NONBLOCKING_DEBT / DIRECTLY VERIFIED / ARCHITECT VISUAL VALIDATION PASSED
+  OC-C4-ADMIN-001 = SATISFIED
+  PHASE-C5A-DB-EMISSION-READINESS = CLOSED / ACCEPTED / DIRECTLY VERIFIED / SHARED-DEVELOPMENT STATE VERIFIED
+  PHASE-C5 = IMPLEMENTED / TARGETED CORRECTION IMPLEMENTED / LOCALLY VERIFIED / AWAITING SUPERVISOR RE-REVIEW
+  PHASE-C5 VISUAL REVIEW = PASS_WITH_NONBLOCKING_COSMETIC_DEBT
+  OC-C5-EMISSION-001 = PARTIALLY_SATISFIED
+  PHASE-C5B-ACCEPTANCE-DECISION = IDENTIFIED / NOT AUTHORIZED
+  REAL_CUTOVER = NOT AUTHORIZED
+  ```
+- **NEXT_AUTHORIZABLE_ACTION:** direct supervisor re-review of this single
+  correction commit. `PHASE-C5B`, `REAL_CUTOVER`, staging/deployment/
+  activation, any shared-database apply beyond `db/77`, production access,
+  branch creation, and any further push remain unauthorized. **No further push
+  is authorized by this pass beyond the one single fast-forward of this pass's
+  own commit.**

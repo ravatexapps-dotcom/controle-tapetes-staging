@@ -141,19 +141,42 @@
 
               if (res.outcome === 'ambiguous') {
                 // No idempotency key exists (§8/§9): do NOT auto-retry and do NOT
-                // call another writer. Reload authoritatively; the server state
-                // resolves the honest uncertainty. The token is retained across
-                // the ambiguity, then released once the reload resolves it.
+                // call another writer. Reload authoritatively exactly once; the
+                // server state resolves the honest uncertainty. The token is
+                // retained across the ambiguity, then released once the reload
+                // resolves it.
                 window.toast('Falha de conexão; o resultado é incerto. Verificando o estado da ordem…', 'error');
                 await reload();
                 emissionTracker.complete();
-                var now = state.ordem || {};
-                if (now.status_administrativo === 'emitida') {
+                var now = state.ordem;
+                var sameOrder = !!now && now.ordem_id === ordemId;
+
+                if (sameOrder && now.status_administrativo === 'emitida') {
                   window.toast('A ordem foi emitida.', 'success');
                   return;                      // closes the modal; the screen shows emitida
                 }
-                window.toast('A ordem continua em rascunho. Você pode tentar emitir novamente.', 'info');
-                return;                        // closes; the reloaded Emitir button is the deliberate retry
+
+                if (sameOrder && now.status_administrativo === 'rascunho') {
+                  // The reloaded Emitir button (render layer, gated on the
+                  // server acoes.emitir flag) is the deliberate retry — only
+                  // describe it as available when the server itself says so.
+                  var podeReemitir = !!(now.acoes && now.acoes.emitir === true);
+                  window.toast(
+                    podeReemitir
+                      ? 'A ordem continua em rascunho. Você pode tentar emitir novamente.'
+                      : 'A ordem continua em rascunho.',
+                    'info'
+                  );
+                  return;
+                }
+
+                // The reload failed, returned no order, returned a different
+                // order, or returned an unrecognized state: the emission
+                // result is genuinely unknown. Never assert draft or emitted —
+                // preserve honest uncertainty. No automatic retry, no
+                // fallback writer, no raw transport detail exposed.
+                window.toast('Não foi possível confirmar o resultado da emissão. Recarregue a ordem antes de tentar novamente.', 'error');
+                return;
               }
 
               // Deterministic rejection / hard failure: fixed pt-BR message, no

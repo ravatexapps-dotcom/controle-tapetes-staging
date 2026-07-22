@@ -20,7 +20,7 @@ LAST_ACCEPTED_PHASE: PHASE-C5A-DB-EMISSION-READINESS
 ACTIVE_PHASE: PHASE-C5
 ACTIVE_PHASE_CONTRACT: docs/architecture/ORDEM_COMPRA_C5_PHASE_CONTRACT.md
 ACTIVE_TRACK: PURCHASE_ORDER_PHASE_C
-NEXT_AUTHORIZABLE_ACTION: supervisor functional review + mandatory architect visual validation (SUPERVISION_PROTOCOL §4) of the now IMPLEMENTED / LOCALLY VERIFIED PHASE-C5 / OC-C5-EMISSION-001 UI (local commit feat: implement C5 purchase-order emission UI, C5-PURCHASE-ORDER-EMISSION-UI-IMPLEMENTATION-R1, 2026-07-22) — the enabling C5A closeout: under C5A-CLOSEOUT-AND-C5-AUTHORIZATION-R1 (2026-07-22) the supervisor CLOSED PHASE-C5A-DB-EMISSION-READINESS as CLOSED / ACCEPTED / LOCALLY VERIFIED / SHARED-DEVELOPMENT VERIFIED (contract §25, ratifying the db/77 grant + read-model correction and its full contract §14/§24 shared-development evidence on ucrjtfswnfdlxwtmxnoo as final) and, with that database prerequisite resolved, authorized docs/architecture/ORDEM_COMPRA_C5_PHASE_CONTRACT.md for local implementation (STATUS: ACCEPTED / IMPLEMENTATION AUTHORIZED LOCALLY, contract §22). The implementation is now done and locally verified: the disabled oc-emitir button was wired to native emitir_ordem_compra via the server-derived acoes.emitir signal, the ratified CONTROLLED_IRREVERSIBLE_TRANSITION confirmation modal was added, and status_aceite was surfaced, strictly within the closed purely-additive three-file manifest (ordem-compra-data.js/-render.js/-events.js only, contract §12) and its §15 entry/exit gates and §16 hard stops; on acceptance a separate closeout advances OC-C5-EMISSION-001 (now PARTIALLY_SATISFIED) and closes PHASE-C5. PHASE-C5B-ACCEPTANCE-DECISION (IDENTIFIED / NOT AUTHORIZED — the missing status_aceite pendente-to-aceita/rejeitada transition capability), the REAL_CUTOVER window (OC-CUTOVER-001/OC-CUTOVER-PONR-001 — hard-gated behind the mandatory separate read-only completeness disposition of the 13 unmapped ordens_compra_fio rows ids 153–165), real close_final_acl invocation, real activation, the real read-authority switch, any shared-database apply beyond db/77, staging validation/application of db/76 or db/77, deployment, production access, and any push remain unauthorized
+NEXT_AUTHORIZABLE_ACTION: direct supervisor re-review (SUPERVISION_PROTOCOL §4) of the single PHASE-C5 targeted-correction commit fix: preserve uncertainty after unresolved emission reload (C5-AMBIGUOUS-RELOAD-AND-CANONICAL-STATE-CORRECTION-R1, 2026-07-22). The prior C5-PURCHASE-ORDER-EMISSION-UI-IMPLEMENTATION-R1 implementation (local commit feat: implement C5 purchase-order emission UI) underwent direct supervisor functional and visual review this pass: PHASE-C4 = CLOSED / ACCEPTED_WITH_NONBLOCKING_DEBT / DIRECTLY VERIFIED / ARCHITECT VISUAL VALIDATION PASSED (OC-C4-ADMIN-001 = SATISFIED; a nonblocking C4 debt was additionally found and recorded, not corrected, ORDEM_COMPRA_RECEIPT_HARD_FAILURE_RAW_MESSAGE_EXPOSURE); PHASE-C5A-DB-EMISSION-READINESS = CLOSED / ACCEPTED / DIRECTLY VERIFIED / SHARED-DEVELOPMENT STATE VERIFIED (contract §25); PHASE-C5 VISUAL REVIEW = PASS_WITH_NONBLOCKING_COSMETIC_DEBT; PHASE-C5 FUNCTIONAL REVIEW = CHANGES_REQUIRED on exactly one blocking defect, C5_AMBIGUOUS_EMISSION_RELOAD_FALSE_DRAFT_ASSERTION — after an ambiguous emitir_ordem_compra transport result, if the mandatory single authoritative reload itself failed, returned null, returned a different order, or returned an unresolved state, the prior implementation incorrectly asserted the order remained a draft. This pass corrected exactly that defect in js/screens/ordem-compra-events.js only (no other product file), added faithful behavioral coverage in tests/ordem-compra-emitir.smoke.js (every existing PHASE-C5 test retained), and forward-corrected this canonical-state contradiction plus the stale AGENT_HANDOFF.md/DOCUMENTATION_INDEX.md passages that still described PHASE-C5 as not yet implemented. PHASE-C5 = IMPLEMENTED / TARGETED CORRECTION IMPLEMENTED / LOCALLY VERIFIED / AWAITING SUPERVISOR RE-REVIEW — not self-accepted, not closed. OC-C5-EMISSION-001 stays PARTIALLY_SATISFIED (not SATISFIED). PHASE-C5B-ACCEPTANCE-DECISION stays IDENTIFIED / NOT AUTHORIZED. REAL_CUTOVER stays NOT AUTHORIZED. Nonblocking debts recorded this pass (full narratives in the POST-LAUNCH DEBT REGISTER): ORDEM_COMPRA_RECEIPT_HARD_FAILURE_RAW_MESSAGE_EXPOSURE, C5_ORDEM_COMPRA_JS_STALE_EMISSION_COMMENT, C5_INDEX_HTML_CACHE_BUST_PENDING_DEPLOY, C5_COSMETIC_UI_CONSOLIDATION — alongside the unchanged pre-existing SHARED_UI_MODAL_CONTROL_RADIUS_TOKEN_ALIGNMENT (item 16) and ORDEM_COMPRA_CANCEL_HANDLER_STALE_ORDER_CAPTURE (item 15). Real snapshot/import, final ACL-closure invocation, real activation, the real read-authority switch, any shared-database apply beyond db/77, staging validation/application of db/76 or db/77, deployment, production access, branch creation, and any push beyond the one authorized staging/dev fast-forward for this pass's single commit remain unauthorized
 GOVERNING_SPEC: docs/architecture/ORDEM_COMPRA_LIFECYCLE_SPEC_PROPOSED.md
 TECHNICAL_CONTRACT: docs/architecture/PEDIDO_OP_SCHEMA_CONTRACT.md
 SEQUENCE_AUTHORITY: docs/architecture/PEDIDO_PRODUCTION_FLOW_BACKLOG.md
@@ -33,13 +33,20 @@ ACCEPTED_CHECKPOINT: 289b0cca66e9c057330a882f69da3476adf90469
 
 ## Active phase and next action
 
-- **Last accepted material phase:** `PHASE-C4` (admin receipt UI) — `CLOSED /
-  ACCEPTED / LOCALLY VERIFIED / ARCHITECT VISUAL VALIDATION PASSED`
-  (2026-07-21), accepted **technical** checkpoint
-  `289b0cca66e9c057330a882f69da3476adf90469`
+- **(Historical, at the `PHASE-C4` closeout point-in-time — superseded by the
+  `PHASE-C5A`/`PHASE-C5` bullets later in this section and by the bootstrap
+  block above, which are current.)** Last accepted material phase at that
+  point: `PHASE-C4` (admin receipt UI) — `CLOSED / ACCEPTED_WITH_NONBLOCKING_DEBT
+  / DIRECTLY VERIFIED / ARCHITECT VISUAL VALIDATION PASSED` (2026-07-21,
+  disposition restated per the direct-review ruling of
+  `C5-AMBIGUOUS-RELOAD-AND-CANONICAL-STATE-CORRECTION-R1`, 2026-07-22), accepted
+  **technical** checkpoint `289b0cca66e9c057330a882f69da3476adf90469`
   (`docs/architecture/ORDEM_COMPRA_C4_PHASE_CONTRACT.md` §0d). `OC-C4-ADMIN-001`
-  is `SATISFIED`. `ACTIVE_PHASE`/`ACTIVE_PHASE_CONTRACT` are now `NONE`. See the
-  `C4-CLOSEOUT-AND-C5-CONTRACT-R1` bullet below for the full closeout record.
+  is `SATISFIED`. `ACTIVE_PHASE`/`ACTIVE_PHASE_CONTRACT` were `NONE` at that
+  point (they are now `PHASE-C5` / `docs/architecture/ORDEM_COMPRA_C5_PHASE_CONTRACT.md`
+  — see the bootstrap block and the tail of this section, which are current).
+  See the `C4-CLOSEOUT-AND-C5-CONTRACT-R1` bullet below for the full closeout
+  record.
 - **Prior accepted material phase:** `PHASE-C3D` (inactive deployment &
   rehearsal) — `CLOSED / ACCEPTED_WITH_NONBLOCKING_DEBT / LOCALLY VERIFIED`
   (2026-07-21), accepted **technical** checkpoint
@@ -1103,14 +1110,77 @@ ACCEPTED_CHECKPOINT: 289b0cca66e9c057330a882f69da3476adf90469
   `ORDEM_COMPRA_CANCEL_HANDLER_STALE_ORDER_CAPTURE` item 15); `index.html`
   cache-bust `?v=` not bumped (index.html frozen by contract §12). `PHASE-C5B`
   stays `IDENTIFIED / NOT AUTHORIZED`; `REAL_CUTOVER` stays `NOT AUTHORIZED`.
-- **Next authorizable action:** supervisor functional review + mandatory
-  architect visual validation (`SUPERVISION_PROTOCOL.md` §4) of the now
-  `IMPLEMENTED / LOCALLY VERIFIED` `PHASE-C5` implementation; on acceptance a
-  separate closeout advances `OC-C5-EMISSION-001` and closes `PHASE-C5`.
+- **`C5-AMBIGUOUS-RELOAD-AND-CANONICAL-STATE-CORRECTION-R1` — direct supervisor
+  functional/visual review + targeted C5 correction + canonical-state forward
+  correction (this pass, product + tests + docs, local commit `fix: preserve
+  uncertainty after unresolved emission reload`):** the supervisor performed
+  direct review of the `C5-PURCHASE-ORDER-EMISSION-UI-IMPLEMENTATION-R1`
+  implementation and ruled: `PHASE-C4` = `CLOSED / ACCEPTED_WITH_NONBLOCKING_DEBT
+  / DIRECTLY VERIFIED / ARCHITECT VISUAL VALIDATION PASSED` (`OC-C4-ADMIN-001` =
+  `SATISFIED`; a nonblocking C4 debt was additionally found —
+  `ORDEM_COMPRA_RECEIPT_HARD_FAILURE_RAW_MESSAGE_EXPOSURE`, recorded only, not
+  corrected in this pass); `PHASE-C5A-DB-EMISSION-READINESS` = `CLOSED /
+  ACCEPTED / DIRECTLY VERIFIED / SHARED-DEVELOPMENT STATE VERIFIED`; `PHASE-C5
+  VISUAL REVIEW` = `PASS_WITH_NONBLOCKING_COSMETIC_DEBT`; `PHASE-C5 FUNCTIONAL
+  REVIEW` = `CHANGES_REQUIRED` on exactly one blocking defect,
+  `C5_AMBIGUOUS_EMISSION_RELOAD_FALSE_DRAFT_ASSERTION` — after an ambiguous
+  `emitir_ordem_compra` transport result, if the mandatory single authoritative
+  reload itself failed, returned `null`, returned a different order, or
+  returned an unresolved state, the prior implementation's `emitir(o)` handler
+  incorrectly asserted "a ordem continua em rascunho" (the order remains a
+  draft), an unproven and potentially false claim.
+  **Correction (`js/screens/ordem-compra-events.js` only, no other product
+  file):** the ambiguous-transport branch now resolves "still a draft" only
+  when the reloaded `state.ordem` exists, its `ordem_id` matches the attempted
+  order, and `status_administrativo === 'rascunho'` — offering the reloaded
+  `Emitir` action as a deliberate retry in that message only when the reloaded
+  order's own `acoes.emitir === true`; resolves success only under the
+  equivalent match with `status_administrativo === 'emitida'`; and otherwise
+  (reload failure, `null`, a different order, or an unrecognized state) shows
+  the fixed pt-BR message "Não foi possível confirmar o resultado da emissão.
+  Recarregue a ordem antes de tentar novamente." — never claiming draft or
+  emitted, with no automatic retry and no fallback writer. The RPC/payload,
+  the deterministic-success branch, and the deterministic-rejection branch are
+  unchanged. **Tests:** `tests/ordem-compra-emitir.smoke.js` gained six new
+  behavioral cases (reload failure; reload to a draft the server itself still
+  withholds; reload to a non-draft/non-emitted state; reload to a mismatched
+  order id; the existing ambiguous-success and ambiguous-stays-draft cases
+  strengthened) proving `emitir_ordem_compra` is called exactly once,
+  `obter_ordem_compra_admin` exactly twice, no fallback/legacy writer is
+  called, no automatic retry occurs, "continua em rascunho" is never shown
+  when the state is actually unresolved, and no enabled `Emitir` control is
+  reconstructed from stale pre-reload state; every existing test retained
+  (41/41 pass). **Evidence:** targeted suites green (emitir 41/41, ordem-compra
+  11/11, the four C4 receipt suites 38/38); full Node-suite differential vs a
+  detached baseline worktree at `e25361b` = **added failing identities empty**
+  (baseline 142 / worktree 122 failing identities — the same pre-existing
+  non-determinism, not a fix); `node scripts/validate-spec-custody.mjs` PASS
+  (`--self-test` fails only on the same pre-existing active-contract
+  fixture-harness limitation); `git diff --check` / `--cached --check` clean.
+  **Documentation forward-correction:** corrected the stale "PHASE-C5 not yet
+  implemented" / "`ACTIVE_PHASE` is `NONE`" contradictions in this file (above),
+  `AGENT_HANDOFF.md`, and the `docs/DOCUMENTATION_INDEX.md` C5 row; recorded
+  the direct-review ruling and the correction in
+  `docs/architecture/ORDEM_COMPRA_C5_PHASE_CONTRACT.md` §24 and in
+  `docs/ledgers/G28_LEDGER.md`. **Disposition:** `PHASE-C5` = `IMPLEMENTED /
+  TARGETED CORRECTION IMPLEMENTED / LOCALLY VERIFIED / AWAITING SUPERVISOR
+  RE-REVIEW` — not self-accepted, not closed. `OC-C5-EMISSION-001` stays
+  `PARTIALLY_SATISFIED`. `PHASE-C5B-ACCEPTANCE-DECISION` stays `IDENTIFIED /
+  NOT AUTHORIZED`. `REAL_CUTOVER` stays `NOT AUTHORIZED`. New nonblocking debts
+  recorded (register items 17–20 below):
+  `ORDEM_COMPRA_RECEIPT_HARD_FAILURE_RAW_MESSAGE_EXPOSURE`,
+  `C5_ORDEM_COMPRA_JS_STALE_EMISSION_COMMENT`,
+  `C5_INDEX_HTML_CACHE_BUST_PENDING_DEPLOY`, `C5_COSMETIC_UI_CONSOLIDATION`;
+  items 15/16 unchanged. Local only — no migration, database, environment,
+  staging, deployment, activation, cutover, branch access, or push beyond the
+  one authorized `staging/dev` fast-forward for this pass's single commit.
+- **Next authorizable action:** direct supervisor re-review of the single
+  `C5-AMBIGUOUS-RELOAD-AND-CANONICAL-STATE-CORRECTION-R1` correction commit
+  (`SUPERVISION_PROTOCOL.md` §4). `PHASE-C5` remains open (not closed);
   `PHASE-C5B-ACCEPTANCE-DECISION`, `REAL_CUTOVER`, any shared-database apply
   beyond `db/77`, staging validation/application of `db/76`/`db/77`,
-  deployment, activation, production access, branch creation, and any push
-  remain **unauthorized**.
+  deployment, activation, production access, branch creation, and any further
+  push remain **unauthorized**.
 
 ## Workspace and Git boundaries
 
@@ -1214,6 +1284,35 @@ consequence (1 = most consequential). Full narratives: ledger and archives.
     `--rv-radius-control`). Inherited application-wide behavior, outside the
     accepted `PHASE-C4` correction manifest, does not block `PHASE-C4`.
     Requires a separately authorized global UI pass; not scheduled or
+    implemented by this pass.
+17. **`ORDEM_COMPRA_RECEIPT_HARD_FAILURE_RAW_MESSAGE_EXPOSURE`** — found during
+    direct supervisor review of `PHASE-C4` under
+    `C5-AMBIGUOUS-RELOAD-AND-CANONICAL-STATE-CORRECTION-R1` (2026-07-22). The
+    admin receipt action layer may expose `res.error.message` for an unmapped
+    `hard_failure` outcome instead of a fixed pt-BR message. Nonblocking to
+    `PHASE-C4`'s closed acceptance; not corrected in this pass (explicitly
+    out of that order's scope); requires its own separate correction order.
+18. **`C5_ORDEM_COMPRA_JS_STALE_EMISSION_COMMENT`** — recorded at
+    `C5-AMBIGUOUS-RELOAD-AND-CANONICAL-STATE-CORRECTION-R1` (2026-07-22).
+    `js/screens/ordem-compra.js`'s header comment still reads "Emission is
+    installed-but-inactive (§R.22.5/§R.22.6) — the Emitir control is always
+    disabled and never wired", which is stale since
+    `C5-PURCHASE-ORDER-EMISSION-UI-IMPLEMENTATION-R1` wired native emission.
+    `ordem-compra.js` is outside this correction's authorized product manifest
+    (`js/screens/ordem-compra-events.js` only); not corrected in this pass.
+19. **`C5_INDEX_HTML_CACHE_BUST_PENDING_DEPLOY`** — recorded at
+    `C5-PURCHASE-ORDER-EMISSION-UI-IMPLEMENTATION-R1` (2026-07-22) and
+    reiterated at `C5-AMBIGUOUS-RELOAD-AND-CANONICAL-STATE-CORRECTION-R1`
+    (2026-07-22). `index.html`'s cache-bust `?v=` query strings for the C5
+    product files were not bumped because `index.html` is frozen by the
+    `PHASE-C5` contract's closed manifest (§12); a future deploy pass must
+    refresh them before real browser cache invalidation.
+20. **`C5_COSMETIC_UI_CONSOLIDATION`** — recorded at the direct-review
+    functional/visual gate of `C5-AMBIGUOUS-RELOAD-AND-CANONICAL-STATE-CORRECTION-R1`
+    (2026-07-22): `PHASE-C5 VISUAL REVIEW` passed
+    `PASS_WITH_NONBLOCKING_COSMETIC_DEBT`. Nonblocking cosmetic UI
+    consolidation opportunities on the `PHASE-C5` emission surface were noted
+    but must not be expanded into a global UI redesign; not scheduled or
     implemented by this pass.
 
 - **Purchase-order Phase-C open items:** `HISTORICAL_SALDO_FIOS_PROVENANCE_UNAVAILABLE`

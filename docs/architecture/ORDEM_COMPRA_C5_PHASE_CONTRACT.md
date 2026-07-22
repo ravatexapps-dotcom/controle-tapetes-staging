@@ -3,7 +3,7 @@
 <!-- MATERIAL_PHASE_CONTRACT:BEGIN -->
 PHASE_ID: PHASE-C5
 <!-- MATERIAL_PHASE_CONTRACT:END -->
-STATUS: ACCEPTED / IMPLEMENTED LOCALLY / AWAITING SUPERVISOR FUNCTIONAL AND VISUAL REVIEW (implementation recorded in §23; C5-PURCHASE-ORDER-EMISSION-UI-IMPLEMENTATION-R1, 2026-07-22)
+STATUS: ACCEPTED / IMPLEMENTED LOCALLY / TARGETED CORRECTION IMPLEMENTED / AWAITING SUPERVISOR RE-REVIEW (implementation recorded in §23; direct-review ruling + targeted correction recorded in §24; C5-AMBIGUOUS-RELOAD-AND-CANONICAL-STATE-CORRECTION-R1, 2026-07-22)
 
 > **Role of this document.** This is a **material phase contract**, authored under
 > `C4-CLOSEOUT-AND-C5-CONTRACT-R1` (Part 2) as **read-only repository
@@ -1003,3 +1003,102 @@ until `PHASE-C5B`.
 `NEXT_AUTHORIZABLE_ACTION`: supervisor functional review + mandatory architect
 visual validation (`SUPERVISION_PROTOCOL.md` §4) of this implementation before
 any closeout.
+
+---
+
+## 24. Supervisor functional/visual review + targeted correction — `C5-AMBIGUOUS-RELOAD-AND-CANONICAL-STATE-CORRECTION-R1`
+
+On 2026-07-22 the supervisor performed direct functional and visual review of
+the `§23` implementation and ruled:
+
+- **`PHASE-C5 VISUAL REVIEW` = `PASS_WITH_NONBLOCKING_COSMETIC_DEBT`.** The
+  visual debt recorded at `§23` (`SHARED_UI_MODAL_CONTROL_RADIUS_TOKEN_ALIGNMENT`,
+  `PROJECT_STATE.md` POST-LAUNCH DEBT REGISTER item 16) does not block this
+  phase and must not be expanded into a global UI redesign.
+- **`PHASE-C5 FUNCTIONAL REVIEW` = `CHANGES_REQUIRED`** on exactly one
+  blocking defect: **`C5_AMBIGUOUS_EMISSION_RELOAD_FALSE_DRAFT_ASSERTION`.**
+  After an ambiguous `emitir_ordem_compra` transport result, the `§23`
+  implementation performed the required single authoritative reload but, if
+  that reload itself failed, returned `null`, returned a different order, or
+  returned an unresolved state, the `emitir(o)` handler in
+  `js/screens/ordem-compra-events.js` fell through to asserting "a ordem
+  continua em rascunho" (the order remains a draft) — an unproven and
+  potentially false claim. Honest uncertainty must be preserved until an
+  authoritative reload actually resolves the state.
+
+**Correction (this pass, product + tests + docs, commit `fix: preserve
+uncertainty after unresolved emission reload`).**
+`js/screens/ordem-compra-events.js` `emitir(o)`'s ambiguous-transport branch
+now, after the single authoritative reload:
+
+- resolves **success** only when `state.ordem` exists, its `ordem_id` equals
+  the attempted order id, and `status_administrativo === 'emitida'`;
+- resolves **"still a draft"** only when `state.ordem` exists, its `ordem_id`
+  equals the attempted order id, and `status_administrativo === 'rascunho'` —
+  and offers the reloaded `Emitir` action as a deliberate retry in that
+  message only when the reloaded order's own `acoes.emitir === true` (the
+  render layer already gates the actual control on this same server-derived
+  flag; the message now agrees with it instead of assuming it);
+- otherwise (reload failed, returned `null`, returned a different order, or an
+  unrecognized/unresolved state) shows the fixed pt-BR message "Não foi
+  possível confirmar o resultado da emissão. Recarregue a ordem antes de
+  tentar novamente." — never claiming draft or emitted, with no automatic
+  retry and no fallback writer.
+
+No other product file changed; the RPC and payload
+(`window.supa.rpc('emitir_ordem_compra', { p_ordem_id: ordemId })`) are
+unchanged; the existing deterministic-success and deterministic-rejection
+branches are unchanged; `js/screens/ordem-compra-data.js`, `-render.js`,
+`js/screens/ordem-compra.js`, all receipt modules, `js/ui.js`, `index.html`,
+`router.js`, `boot.js`, and `common.js` are byte-unchanged.
+
+**Tests.** `tests/ordem-compra-emitir.smoke.js` gained faithful behavioral
+coverage proving: an authoritative reload that itself fails after an
+ambiguous transport shows the fixed unresolved-result message and never
+"continua em rascunho"; `emitir_ordem_compra` is called exactly once and
+`obter_ordem_compra_admin` exactly twice; no fallback/legacy writer is
+called; no automatic retry occurs; no enabled `Emitir` control is
+reconstructed from stale pre-reload state; and an authoritative
+non-draft/non-emitted result (and a mismatched order identity) is never
+described as a draft. Every existing `PHASE-C5` test is retained unchanged
+(41/41 pass).
+
+**Ancillary rulings recorded (binding, not reopened here).** `PHASE-C4` =
+`CLOSED / ACCEPTED_WITH_NONBLOCKING_DEBT / DIRECTLY VERIFIED / ARCHITECT
+VISUAL VALIDATION PASSED`; `OC-C4-ADMIN-001` = `SATISFIED`; a nonblocking C4
+debt was additionally found by this direct review —
+`ORDEM_COMPRA_RECEIPT_HARD_FAILURE_RAW_MESSAGE_EXPOSURE` (the receipt action
+layer may expose `res.error.message` for an unmapped `hard_failure`),
+recorded only, **not corrected in this pass** (out of this contract's C4
+scope and manifest). `PHASE-C5A-DB-EMISSION-READINESS` = `CLOSED / ACCEPTED /
+DIRECTLY VERIFIED / SHARED-DEVELOPMENT STATE VERIFIED`. Full current-state
+record: `PROJECT_STATE.md` and `docs/ledgers/G28_LEDGER.md`.
+
+**Evidence.** Targeted suites green (emitir 41/41; ordem-compra 11/11; the
+four C4 receipt suites 38/38). Full Node-suite differential vs a detached
+baseline worktree at `e25361b`: baseline 142 / worktree 122 failing
+identities, **added failing identities = empty**. `node
+scripts/validate-spec-custody.mjs` PASS; `--self-test` fails only on the
+pre-existing active-contract fixture-harness limitation (`R1:
+ACTIVE_PHASE_CONTRACT is not an existing file`), byte-identical to the
+`e25361b` baseline. `git diff --check` / `--cached --check` clean.
+
+**Disposition.** `PHASE-C5` = `IMPLEMENTED / TARGETED CORRECTION IMPLEMENTED /
+LOCALLY VERIFIED / AWAITING SUPERVISOR RE-REVIEW` — not self-accepted, not
+closed. `OC-C5-EMISSION-001` stays `PARTIALLY_SATISFIED` (not `SATISFIED`).
+`PHASE-C5B-ACCEPTANCE-DECISION` stays `IDENTIFIED / NOT AUTHORIZED`.
+`REAL_CUTOVER` stays `NOT AUTHORIZED`. Nonblocking debts unchanged/recorded:
+`SHARED_UI_MODAL_CONTROL_RADIUS_TOKEN_ALIGNMENT` (item 16),
+`ORDEM_COMPRA_CANCEL_HANDLER_STALE_ORDER_CAPTURE` (item 15),
+`ORDEM_COMPRA_RECEIPT_HARD_FAILURE_RAW_MESSAGE_EXPOSURE` (new, item 17,
+`PHASE-C4` receipt layer, out of this contract's manifest, not corrected
+here), `C5_ORDEM_COMPRA_JS_STALE_EMISSION_COMMENT` (new, item 18 — the
+`js/screens/ordem-compra.js` header comment still says emission is
+installed-but-inactive/never wired, stale since `§23`, out of this
+correction's manifest), `C5_INDEX_HTML_CACHE_BUST_PENDING_DEPLOY` (item 19),
+`C5_COSMETIC_UI_CONSOLIDATION` (item 20) — full narratives in
+`PROJECT_STATE.md`'s POST-LAUNCH DEBT REGISTER.
+`NEXT_AUTHORIZABLE_ACTION`: direct supervisor re-review of this single
+correction commit. Local only — no migration, database, environment,
+staging, deployment, activation, cutover, branch, or push beyond the one
+authorized `staging/dev` fast-forward for this pass's single commit.

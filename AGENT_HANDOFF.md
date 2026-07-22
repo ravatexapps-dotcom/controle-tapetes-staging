@@ -89,11 +89,14 @@
   remain unauthorized.
 - **Active phase contract:**
   `docs/architecture/ORDEM_COMPRA_C5_PHASE_CONTRACT.md` (`PHASE_ID: PHASE-C5`,
-  `STATUS: ACCEPTED / IMPLEMENTATION AUTHORIZED LOCALLY`, §22 — the database
-  prerequisite was resolved by the `PHASE-C5A` closeout below; local UI
-  implementation is authorized only for a **fresh Claude Code session**, per
-  §6/§12/§14/§15/§16; `PHASE-C5` implementation itself is **NOT YET
-  IMPLEMENTED**). The now-**closed**
+  `STATUS: ACCEPTED / IMPLEMENTED LOCALLY / TARGETED CORRECTION IMPLEMENTED /
+  AWAITING SUPERVISOR RE-REVIEW`, §22/§23/§24 — the database prerequisite was
+  resolved by the `PHASE-C5A` closeout below; local UI implementation is now
+  **IMPLEMENTED / TARGETED CORRECTION IMPLEMENTED / LOCALLY VERIFIED /
+  AWAITING SUPERVISOR RE-REVIEW** under
+  `C5-PURCHASE-ORDER-EMISSION-UI-IMPLEMENTATION-R1` then
+  `C5-AMBIGUOUS-RELOAD-AND-CANONICAL-STATE-CORRECTION-R1`, 2026-07-22 — not
+  self-accepted, not closed). The now-**closed**
   `PHASE-C5A-DB-EMISSION-READINESS` material contract is
   `docs/architecture/ORDEM_COMPRA_C5A_DB_EMISSION_READINESS_PHASE_CONTRACT.md`
   (`STATUS: CLOSED / ACCEPTED / LOCALLY VERIFIED / SHARED-DEVELOPMENT
@@ -350,13 +353,18 @@
   supervisor review. No shared/remote host, no staging/production, no
   `REAL_CUTOVER`, no push. `OC-C5-EMISSION-001` stays `PLANNED /
   BLOCKED_BY_C5A_DB_PREREQUISITE`; not self-accepted / not closed.
-- **Next authorizable action:** supervisor review/closeout of the now
+- **(Historical, at the `PHASE-C5A` Part 2 point-in-time — superseded by the
+  "Active track" section above and by the "Push, remote, main and deployment
+  limits" section below, which are current.)** Next authorizable action at
+  that point: supervisor review/closeout of the then
   `SHARED-DEVELOPMENT VERIFIED` `PHASE-C5A` implementation (contract §23/§24 —
   `db/77` applied + §14-validated on `ucrjtfswnfdlxwtmxnoo`, incl. the forced C3D
-  deploy-manifest fixture update). `PHASE-C5` implementation,
-  `PHASE-C5B-ACCEPTANCE-DECISION`, staging validation/application of
-  `db/76`/`db/77`, activation, deployment, `REAL_CUTOVER`, branch creation,
-  production access, and any push remain unauthorized.
+  deploy-manifest fixture update). `PHASE-C5A` was subsequently closed and
+  `PHASE-C5` was subsequently implemented, functionally/visually reviewed, and
+  targeted-corrected (see above); `PHASE-C5B-ACCEPTANCE-DECISION`, staging
+  validation/application of `db/76`/`db/77`, activation, deployment,
+  `REAL_CUTOVER`, branch creation, production access, and any push remain
+  unauthorized.
   `PHASE-C3D-A`/`PHASE-C3D-B` are supervisor-accepted (§R, checkpoints
   `096cd603…` / `5441321…`), `PHASE-C3D-C` (§U, `6fd63a56…`), `PHASE-C3D-D` (§X,
   `5a2be05…`), and `PHASE-C3D-E` (§Z, `429aa39…`) are all `CLOSED / TECHNICALLY
@@ -617,16 +625,23 @@ Full matrix and normative anchors: `docs/architecture/ORDEM_COMPRA_C3_TRACEABILI
   branch other than `main` is pushed to `production`.
 - **`main` is forbidden** as a working/target branch here; no push to
   `origin`/`staging` without separate express authorization.
-- **`PHASE-C4` admin receipt UI is `CLOSED / ACCEPTED / LOCALLY VERIFIED /
-  ARCHITECT VISUAL VALIDATION PASSED`** (`C4-CLOSEOUT-AND-C5-CONTRACT-R1`,
-  contract §0d) — local-only, native RPCs, no
-  migration/environment/staging/deployment/push; `OC-C4-ADMIN-001` is
-  `SATISFIED`. **`PHASE-C5A-DB-EMISSION-READINESS` is now `CLOSED / ACCEPTED /
-  LOCALLY VERIFIED / SHARED-DEVELOPMENT VERIFIED`** (`C5A-CLOSEOUT-AND-C5-AUTHORIZATION-R1`,
-  contract §25), and `PHASE-C5` is now `ACCEPTED / IMPLEMENTATION AUTHORIZED
-  LOCALLY` (contract §22) — local implementation itself is **NOT YET
-  IMPLEMENTED** and requires a fresh Claude Code session within the closed
-  three-file manifest. **Still unauthorized (each a separate gate):**
+- **`PHASE-C4` admin receipt UI is `CLOSED / ACCEPTED_WITH_NONBLOCKING_DEBT /
+  DIRECTLY VERIFIED / ARCHITECT VISUAL VALIDATION PASSED`** (`C4-CLOSEOUT-AND-C5-CONTRACT-R1`,
+  contract §0d; disposition restated per the direct-review ruling of
+  `C5-AMBIGUOUS-RELOAD-AND-CANONICAL-STATE-CORRECTION-R1`, 2026-07-22) —
+  local-only, native RPCs, no migration/environment/staging/deployment/push;
+  `OC-C4-ADMIN-001` is `SATISFIED`. A nonblocking C4 debt was additionally
+  found and recorded (not corrected) by that same direct review:
+  `ORDEM_COMPRA_RECEIPT_HARD_FAILURE_RAW_MESSAGE_EXPOSURE` (POST-LAUNCH DEBT
+  REGISTER item 17). **`PHASE-C5A-DB-EMISSION-READINESS` is now `CLOSED /
+  ACCEPTED / DIRECTLY VERIFIED / SHARED-DEVELOPMENT STATE VERIFIED`**
+  (`C5A-CLOSEOUT-AND-C5-AUTHORIZATION-R1`, contract §25), and `PHASE-C5` is now
+  `IMPLEMENTED / TARGETED CORRECTION IMPLEMENTED / LOCALLY VERIFIED / AWAITING
+  SUPERVISOR RE-REVIEW` (contract §22/§23/§24) — local UI implementation
+  landed under `C5-PURCHASE-ORDER-EMISSION-UI-IMPLEMENTATION-R1` and was then
+  functionally/visually reviewed and targeted-corrected under
+  `C5-AMBIGUOUS-RELOAD-AND-CANONICAL-STATE-CORRECTION-R1` (2026-07-22); not
+  self-accepted, not closed. **Still unauthorized (each a separate gate):**
   `PHASE-C5B-ACCEPTANCE-DECISION`, any shared-database apply beyond `db/77`,
   staging application/validation of `db/76`/`db/77`, activation, deployment,
   real snapshot/import, fence transition, read switch, final ACL-closure
@@ -643,26 +658,35 @@ next authorizable work; do not reconstruct or shorten them into an ambiguous
 summary.
 
 - **C4/C5 roadmap.** `PHASE-C4` — **ADMIN RECEIPT UI** (`OC-C4-ADMIN-001`,
-  admin receipt UI `#/ordens-compra/:id`) is `CLOSED / ACCEPTED / LOCALLY
-  VERIFIED / ARCHITECT VISUAL VALIDATION PASSED` (`C4-CLOSEOUT-AND-C5-CONTRACT-R1`,
-  contract §0d). `OC-C4-SUPPLIER-001` (supplier UI) is `DEFERRED`. The
+  admin receipt UI `#/ordens-compra/:id`) is `CLOSED / ACCEPTED_WITH_NONBLOCKING_DEBT
+  / DIRECTLY VERIFIED / ARCHITECT VISUAL VALIDATION PASSED` (`C4-CLOSEOUT-AND-C5-CONTRACT-R1`,
+  contract §0d; disposition restated per the direct-review ruling of
+  `C5-AMBIGUOUS-RELOAD-AND-CANONICAL-STATE-CORRECTION-R1`, 2026-07-22, which
+  additionally recorded the nonblocking
+  `ORDEM_COMPRA_RECEIPT_HARD_FAILURE_RAW_MESSAGE_EXPOSURE` debt without
+  correcting it). `OC-C4-SUPPLIER-001` (supplier UI) is `DEFERRED`. The
   **`PHASE-C5A-DB-EMISSION-READINESS`** database-prerequisite contract is now
-  `CLOSED / ACCEPTED / LOCALLY VERIFIED / SHARED-DEVELOPMENT VERIFIED`
+  `CLOSED / ACCEPTED / DIRECTLY VERIFIED / SHARED-DEVELOPMENT STATE VERIFIED`
   (contract §25, `C5A-CLOSEOUT-AND-C5-AUTHORIZATION-R1`, 2026-07-22): `db/77`
   grants `EXECUTE` on `emitir_ordem_compra(BIGINT)` to `authenticated` and
   corrects the terminal read models, applied byte-identical and §14-validated
   on the authorized shared development database `ucrjtfswnfdlxwtmxnoo`. With
   that prerequisite resolved, **`PHASE-C5`** native emission
-  (`OC-C5-EMISSION-001`, `PLANNED / AUTHORIZED_FOR_IMPLEMENTATION`) material
-  contract is now `ACCEPTED / IMPLEMENTATION AUTHORIZED LOCALLY`
-  (`docs/architecture/ORDEM_COMPRA_C5_PHASE_CONTRACT.md` §22) and **ACTIVE** —
-  local UI implementation itself is **NOT YET IMPLEMENTED** and requires a
-  **fresh Claude Code session** that re-verifies the Git baseline first,
-  within the closed three-file manifest and the contract's entry/exit gates
-  and hard stops. Full acceptance-workflow usability is additionally gated
-  behind **`PHASE-C5B-ACCEPTANCE-DECISION`** (`IDENTIFIED / NOT AUTHORIZED`),
-  which still requires its own explicit architect order and a fresh session;
-  no `PHASE-C5` implementation order may build any acceptance-decision
+  (`OC-C5-EMISSION-001`, `PARTIALLY_SATISFIED`) material contract is now
+  `ACCEPTED / IMPLEMENTED LOCALLY / TARGETED CORRECTION IMPLEMENTED / AWAITING
+  SUPERVISOR RE-REVIEW` (`docs/architecture/ORDEM_COMPRA_C5_PHASE_CONTRACT.md`
+  §22/§23/§24) and **ACTIVE** — local UI implementation landed under
+  `C5-PURCHASE-ORDER-EMISSION-UI-IMPLEMENTATION-R1`, then underwent direct
+  supervisor functional/visual review (`PHASE-C5 VISUAL REVIEW =
+  PASS_WITH_NONBLOCKING_COSMETIC_DEBT`; `PHASE-C5 FUNCTIONAL REVIEW =
+  CHANGES_REQUIRED` on `C5_AMBIGUOUS_EMISSION_RELOAD_FALSE_DRAFT_ASSERTION`)
+  and a targeted correction under
+  `C5-AMBIGUOUS-RELOAD-AND-CANONICAL-STATE-CORRECTION-R1` (2026-07-22, within
+  the same closed three-file manifest) — not self-accepted, `PHASE-C5` not
+  closed. Full acceptance-workflow usability is additionally gated behind
+  **`PHASE-C5B-ACCEPTANCE-DECISION`** (`IDENTIFIED / NOT AUTHORIZED`), which
+  still requires its own explicit architect order and a fresh session; no
+  `PHASE-C5` implementation order may build any acceptance-decision
   capability.
 - **Real-cutover separation.** The `REAL_CUTOVER` window
   (`OC-CUTOVER-001`/`OC-CUTOVER-PONR-001`) is governed **separately** from
@@ -720,22 +744,30 @@ summary.
     active — `ACTIVE_PHASE`/`ACTIVE_PHASE_CONTRACT` are `NONE`)
 22. `docs/architecture/ORDEM_COMPRA_C4_PHASE_CONTRACT.md` (C4 material phase
     contract — admin receipt UI at `#/ordens-compra/:id`; **closed**: `CLOSED /
-    ACCEPTED / LOCALLY VERIFIED / ARCHITECT VISUAL VALIDATION PASSED` (§0d);
+    ACCEPTED_WITH_NONBLOCKING_DEBT / DIRECTLY VERIFIED / ARCHITECT VISUAL
+    VALIDATION PASSED` (§0d; disposition restated per the direct-review ruling
+    of `C5-AMBIGUOUS-RELOAD-AND-CANONICAL-STATE-CORRECTION-R1`, 2026-07-22);
     `OC-C4-ADMIN-001` `SATISFIED`; accepted checkpoint `289b0cca66e9c057330a882f69da3476adf90469`;
-    not active — `ACTIVE_PHASE`/`ACTIVE_PHASE_CONTRACT` are `NONE`)
+    a nonblocking debt was found by that direct review,
+    `ORDEM_COMPRA_RECEIPT_HARD_FAILURE_RAW_MESSAGE_EXPOSURE` (recorded, not
+    corrected); not active — `ACTIVE_PHASE`/`ACTIVE_PHASE_CONTRACT` are `NONE`)
 23. `docs/architecture/ORDEM_COMPRA_C5_PHASE_CONTRACT.md` (C5 material phase
-    contract — purchase-order emission; **ACTIVE**, `ACCEPTED /
-    IMPLEMENTATION AUTHORIZED LOCALLY` (§22, `C5A-CLOSEOUT-AND-C5-AUTHORIZATION-R1`,
-    2026-07-22 — the database prerequisite is resolved by item 24 below);
-    `OC-C5-EMISSION-001` `PLANNED / AUTHORIZED_FOR_IMPLEMENTATION`;
-    `PHASE-C5B-ACCEPTANCE-DECISION` (`IDENTIFIED / NOT AUTHORIZED`); emission
-    confirmation UX ratified `CONTROLLED_IRREVERSIBLE_TRANSITION`; local UI
-    implementation itself is **NOT YET IMPLEMENTED**, requires a fresh Claude
-    Code session within the closed three-file manifest (§12) and the entry/exit
-    gates (§15) and hard stops (§16))
+    contract — purchase-order emission; **ACTIVE**, `ACCEPTED / IMPLEMENTED
+    LOCALLY / TARGETED CORRECTION IMPLEMENTED / AWAITING SUPERVISOR RE-REVIEW`
+    (§22/§23/§24 — the database prerequisite is resolved by item 24 below);
+    `OC-C5-EMISSION-001` `PARTIALLY_SATISFIED`; `PHASE-C5B-ACCEPTANCE-DECISION`
+    (`IDENTIFIED / NOT AUTHORIZED`); emission confirmation UX ratified
+    `CONTROLLED_IRREVERSIBLE_TRANSITION`; local UI implementation landed under
+    `C5-PURCHASE-ORDER-EMISSION-UI-IMPLEMENTATION-R1` within the closed
+    three-file manifest (§12) and the entry/exit gates (§15) and hard stops
+    (§16); direct supervisor review then found `PHASE-C5 VISUAL REVIEW =
+    PASS_WITH_NONBLOCKING_COSMETIC_DEBT` and `PHASE-C5 FUNCTIONAL REVIEW =
+    CHANGES_REQUIRED` on `C5_AMBIGUOUS_EMISSION_RELOAD_FALSE_DRAFT_ASSERTION`,
+    corrected under `C5-AMBIGUOUS-RELOAD-AND-CANONICAL-STATE-CORRECTION-R1`
+    (2026-07-22, §24) — not self-accepted, not closed)
 24. `docs/architecture/ORDEM_COMPRA_C5A_DB_EMISSION_READINESS_PHASE_CONTRACT.md`
     (C5A material phase contract — database emission readiness; **not
-    active**, `CLOSED / ACCEPTED / LOCALLY VERIFIED / SHARED-DEVELOPMENT
+    active**, `CLOSED / ACCEPTED / DIRECTLY VERIFIED / SHARED-DEVELOPMENT STATE
     VERIFIED` (§25, supervisor closeout under `C5A-CLOSEOUT-AND-C5-AUTHORIZATION-R1`,
     2026-07-22, over the §23 local implementation and the §24
     shared-development validation); classification

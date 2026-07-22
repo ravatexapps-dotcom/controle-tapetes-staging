@@ -314,8 +314,71 @@ test('18b. ambiguous transport that stays a draft preserves honest uncertainty a
   assert.equal(rpcCalls(env.supa, 'emitir_ordem_compra').length, 1, 'no automatic re-emission');
   assert.equal(rpcCalls(env.supa, 'obter_ordem_compra_admin').length, 2, 'reload performed');
   assert.match(text(env.sandbox.document._toastsNode), /continua em rascunho/i, 'honest uncertainty surfaced');
+  assert.match(lastToast(env.sandbox).textContent, /tentar emitir novamente/i, 'a deliberate retry is offered because the reloaded order itself has acoes.emitir=true');
   // The reloaded screen still offers the emit action as a NEW deliberate retry.
   assert.equal(findById(env.view, 'oc-emitir').disabled, false, 'the reloaded Emitir button is the controlled deliberate retry');
+});
+
+test('18c. ambiguous transport reload to a draft that the server itself still withholds does not falsely offer a retry', async () => {
+  const env = await renderScreen({
+    obter_ordem_compra_admin: sequencedObter(ELIGIBLE, INCOMPLETE),  // reload: still rascunho, but acoes.emitir=false
+    emitir_ordem_compra: () => ({ data: null, error: { message: 'Failed to fetch' }, status: 0 }),
+  });
+  findById(env.view, 'oc-emitir')._listeners.click();
+  await btnByText(overlayByTitle(env.sandbox, /Emitir ordem de compra/), /^Emitir ordem$/)._listeners.click();
+  assert.match(lastToast(env.sandbox).textContent, /continua em rascunho/i, 'still honestly reports the draft state');
+  assert.doesNotMatch(lastToast(env.sandbox).textContent, /tentar emitir novamente/i, 'never offers a retry the reloaded server object itself withholds (acoes.emitir=false)');
+  assert.equal(findById(env.view, 'oc-emitir').disabled, true, 'the reloaded Emitir control is honestly disabled, not reconstructed as enabled from stale pre-reload state');
+});
+
+test('18d. an authoritative reload that itself fails after an ambiguous transport preserves honest uncertainty (never a false draft claim)', async () => {
+  let obterCalls = 0;
+  const env = await renderScreen({
+    obter_ordem_compra_admin: () => {
+      obterCalls += 1;
+      if (obterCalls === 1) return { data: { ok: true, ordem: ELIGIBLE, eventos: [] }, error: null };
+      return { data: null, error: { message: 'Erro de rede' }, status: 500 };  // the reload itself fails
+    },
+    emitir_ordem_compra: () => ({ data: null, error: { message: 'Failed to fetch' }, status: 0 }),
+  });
+  findById(env.view, 'oc-emitir')._listeners.click();
+  await btnByText(overlayByTitle(env.sandbox, /Emitir ordem de compra/), /^Emitir ordem$/)._listeners.click();
+  assert.equal(rpcCalls(env.supa, 'emitir_ordem_compra').length, 1, 'emitir_ordem_compra was called exactly once — no automatic retry');
+  assert.equal(rpcCalls(env.supa, 'obter_ordem_compra_admin').length, 2, 'obter_ordem_compra_admin was attempted exactly twice (mount + one authoritative reload)');
+  assert.deepEqual(allRpcNames(env.supa).filter((n) => /emitir/.test(n)), ['emitir_ordem_compra'], 'no fallback or legacy emission writer was called');
+  const toastText = text(env.sandbox.document._toastsNode);
+  assert.doesNotMatch(toastText, /continua em rascunho/i, 'the UI never claims the order remains a draft when the reload itself failed');
+  assert.doesNotMatch(toastText, /foi emitida/i, 'the UI never claims the order was emitted when the reload itself failed');
+  assert.match(lastToast(env.sandbox).textContent, /Não foi possível confirmar o resultado da emissão\. Recarregue a ordem antes de tentar novamente\./, 'the UI displays the fixed unresolved-result message');
+  assert.equal(findById(env.view, 'oc-emitir'), null, 'no enabled Emitir control is reconstructed from stale pre-reload state — the failed-reload screen shows no order at all');
+});
+
+test('18e. an authoritative reload to a non-draft, non-emitted state (e.g. cancelled) after an ambiguous transport is never described as a draft', async () => {
+  const env = await renderScreen({
+    obter_ordem_compra_admin: sequencedObter(ELIGIBLE, CANCELLED),
+    emitir_ordem_compra: () => ({ data: null, error: { message: 'Failed to fetch' }, status: 0 }),
+  });
+  findById(env.view, 'oc-emitir')._listeners.click();
+  await btnByText(overlayByTitle(env.sandbox, /Emitir ordem de compra/), /^Emitir ordem$/)._listeners.click();
+  assert.equal(rpcCalls(env.supa, 'emitir_ordem_compra').length, 1, 'no automatic re-emission');
+  assert.equal(rpcCalls(env.supa, 'obter_ordem_compra_admin').length, 2, 'exactly one authoritative reload');
+  const toastText = text(env.sandbox.document._toastsNode);
+  assert.doesNotMatch(toastText, /continua em rascunho/i, 'a cancelled order is never described as remaining a draft');
+  assert.doesNotMatch(toastText, /foi emitida/i, 'a cancelled order is never described as emitted');
+  assert.match(lastToast(env.sandbox).textContent, /Não foi possível confirmar o resultado da emissão/i, 'shows the fixed unresolved-result message for an unrecognized post-reload state');
+});
+
+test('18f. an authoritative reload returning a different order id after an ambiguous transport preserves honest uncertainty', async () => {
+  const otherOrder = order({ ordem_id: 9999, status_administrativo: 'rascunho' });
+  const env = await renderScreen({
+    obter_ordem_compra_admin: sequencedObter(ELIGIBLE, otherOrder),
+    emitir_ordem_compra: () => ({ data: null, error: { message: 'Failed to fetch' }, status: 0 }),
+  });
+  findById(env.view, 'oc-emitir')._listeners.click();
+  await btnByText(overlayByTitle(env.sandbox, /Emitir ordem de compra/), /^Emitir ordem$/)._listeners.click();
+  const toastText = text(env.sandbox.document._toastsNode);
+  assert.doesNotMatch(toastText, /continua em rascunho/i, 'a mismatched order id is never described as the attempted order remaining a draft');
+  assert.match(lastToast(env.sandbox).textContent, /Não foi possível confirmar o resultado da emissão/i, 'shows the fixed unresolved-result message when the reload returns a different order');
 });
 
 // ============================ STATE MATRIX (cannot emit) =============
