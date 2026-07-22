@@ -1,0 +1,310 @@
+// =====================================================================
+// === tests/ordem-compra-receipt-events.smoke.js ======================
+// PHASE-C4 (OC-C4-ADMIN-001) — events/interaction smokes. VM-loads js/ui.js
+// + op-form-helpers.js + the three receipt modules, then drives the real
+// registration and reversal modal flows through the faithful DOM double
+// (real _listeners.click / value semantics) against a mocked supa.rpc.
+//
+// Proves, per contract §15: registration modal payload (allocation-shaped +
+// explicit excess, no fabricated OP); authoritative reload after success;
+// deterministic validation & RPC-error toasts with the form kept open;
+// ambiguous-transport retry with the SAME token; a NEW token after a
+// deterministic outcome; duplicate-submit prevention; independent receipt vs
+// reversal trackers; reversal modal payload; the confirmDialog gate before
+// execution; the client-side reversal cap; and the server over-reversal
+// (excede_estornavel) denial presentation.
+// =====================================================================
+
+'use strict';
+
+const test = require('node:test');
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const path = require('node:path');
+const vm = require('node:vm');
+
+const { createDocument, makeFakeSupa } = require('./_doubles.js');
+
+const ROOT = path.resolve(__dirname, '..');
+const read = (rel) => fs.readFileSync(path.join(ROOT, rel), 'utf8');
+const files = [
+  'js/ui.js', 'js/screens/op-form-helpers.js',
+  'js/screens/ordem-compra-receipt-data.js',
+  'js/screens/ordem-compra-receipt-render.js',
+  'js/screens/ordem-compra-receipt-events.js',
+];
+const srcs = files.map((f) => [f, read(f)]);
+
+function makeSandbox(rpcImpl) {
+  const document = createDocument();
+  const supa = makeFakeSupa({ rpcImpl });
+  let uuid = 0;
+  const sandbox = { document, console, setTimeout, clearTimeout, supa, crypto: { randomUUID: () => 'uuid-' + (++uuid) } };
+  sandbox.window = sandbox;
+  sandbox.globalThis = sandbox;
+  vm.createContext(sandbox);
+  for (const [f, s] of srcs) vm.runInContext(s, sandbox, { filename: f });
+  return { sandbox, supa, ns: sandbox.RAVATEX_SCREENS.ordemCompra };
+}
+
+function walk(node, fn) { if (!node) return; fn(node); for (const c of (node.children || [])) walk(c, fn); }
+function findAll(node, pred) { const out = []; walk(node, (n) => { if (pred(n)) out.push(n); }); return out; }
+function findButtons(node) { return findAll(node, (n) => n.tagName === 'BUTTON'); }
+function btnByText(node, re) { return findButtons(node).find((b) => re.test(b.textContent || '')); }
+function text(node) { let s = ''; walk(node, (n) => { if (n && n._text != null) s += ' ' + n._text; }); return s; }
+function inputByAttr(node, attr, val) { return findAll(node, (n) => (n.tagName === 'INPUT' || n.tagName === 'TEXTAREA') && n.getAttribute(attr) === String(val))[0]; }
+function overlays(sandbox) { return (sandbox.document.body.children || []).filter((n) => !n._removed); }
+function overlayByTitle(sandbox, re) { return overlays(sandbox).find((o) => re.test(text(o))); }
+function toasts(sandbox) { return sandbox.document._toastsNode.children; }
+function lastToast(sandbox) { const t = toasts(sandbox); return t[t.length - 1]; }
+function rpcCalls(supa, name) { return supa._calls.filter((c) => c.op === 'rpc' && c.name === name); }
+
+function projection(overrides) {
+  return Object.assign({
+    ok: true, codigo: 'ok', ordem_compra_id: 100,
+    status_administrativo: 'emitida', status_aceite: 'nao_aplicavel', ator_tipo: 'admin',
+    acoes: { receber: true, estornar: true },
+    itens: [{
+      item_id: 7, material: 'poliester', cor_id: 3, cor_poliester: 'Azul',
+      kg_pedido: 100, kg_recebido: 20, kg_restante: 80, kg_excesso: 0,
+      alocacoes: [
+        { alocacao_id: 42, op_id: 900, kg_alocado: 60, kg_recebido: 20, kg_restante: 40 },
+        { alocacao_id: 43, op_id: null, kg_alocado: 40, kg_recebido: 0, kg_restante: 40 },
+      ],
+    }],
+    comandos: [],
+  }, overrides || {});
+}
+const LANC = {
+  id: 800, linha_indice: 0, item_id: 7, alocacao_id: 42, op_id: 900,
+  material: 'poliester', cor_id: 3, cor_poliester: 'Azul', kg: 20, kg_excesso: 0,
+  estorno_de_id: null, kg_reversivel: 20, movimento_estoque: null,
+};
+const RECV_CMD = { id: 500, comando_tipo: 'recebimento', ator_tipo: 'admin', ocorrido_em: '2026-07-20T13:00:00+00:00', documento_ref: 'NF', origem_tipo: 'nf', origem_ref: 'R', lancamentos: [LANC] };
+
+function setup(rpcImpl, hist) {
+  const env = makeSandbox(rpcImpl);
+  const reloadCalls = [];
+  const state = { ordem: { modelo: 'nativo', status_administrativo: 'emitida' }, receiptHistory: hist || projection() };
+  async function reload() { reloadCalls.push(1); }
+  const handlers = env.ns.createReceiptEvents({ state, reload, ordemId: 100 });
+  return Object.assign(env, { state, reload, reloadCalls, handlers });
+}
+
+test('registration modal opens with allocation + excess inputs and metadata fields', () => {
+  const env = setup({});
+  env.handlers.abrirRegistroRecebimento();
+  const modal = overlayByTitle(env.sandbox, /Registrar recebimento/);
+  assert.ok(modal, 'registration modal open');
+  assert.ok(inputByAttr(modal, 'data-alocacao-id', 42), 'allocation 42 input');
+  assert.ok(inputByAttr(modal, 'data-alocacao-id', 43), 'shared allocation 43 input');
+  assert.ok(inputByAttr(modal, 'data-excesso-item', 7), 'per-item excess input');
+});
+
+test('registration success: allocation + explicit-excess payload; authoritative reload; modal closes', async () => {
+  const env = setup({ registrar_recebimento_ordem_compra: () => ({ data: { ok: true, codigo: 'ok' }, error: null }) });
+  env.handlers.abrirRegistroRecebimento();
+  const modal = overlayByTitle(env.sandbox, /Registrar recebimento/);
+  inputByAttr(modal, 'data-alocacao-id', 42).value = '10';
+  inputByAttr(modal, 'data-excesso-item', 7).value = '2,5';
+  await btnByText(modal, /^Registrar$/)._listeners.click();
+  const call = rpcCalls(env.supa, 'registrar_recebimento_ordem_compra')[0];
+  assert.ok(call, 'native writer invoked');
+  const linhas = JSON.parse(JSON.stringify(call.params.p_linhas));
+  assert.deepEqual(linhas, [
+    { item_id: 7, destino: 'alocacao', alocacao_id: 42, kg: 10 },
+    { item_id: 7, destino: 'excesso', kg: 2.5 },
+  ]);
+  assert.equal(Object.prototype.hasOwnProperty.call(linhas[1], 'alocacao_id'), false, 'excess line carries no allocation');
+  assert.equal(env.reloadCalls.length, 1, 'authoritative reload after success');
+  assert.match(lastToast(env.sandbox).className, /bg-green-600/);
+  assert.equal(overlayByTitle(env.sandbox, /Registrar recebimento/), undefined, 'modal closed on success');
+});
+
+test('registration excess-only payload has no allocation, no fabricated OP', async () => {
+  const env = setup({ registrar_recebimento_ordem_compra: () => ({ data: { ok: true }, error: null }) });
+  env.handlers.abrirRegistroRecebimento();
+  const modal = overlayByTitle(env.sandbox, /Registrar recebimento/);
+  inputByAttr(modal, 'data-excesso-item', 7).value = '5';
+  await btnByText(modal, /^Registrar$/)._listeners.click();
+  const linhas = JSON.parse(JSON.stringify(rpcCalls(env.supa, 'registrar_recebimento_ordem_compra')[0].params.p_linhas));
+  assert.deepEqual(linhas, [{ item_id: 7, destino: 'excesso', kg: 5 }]);
+});
+
+test('empty registration: deterministic validation error, no RPC, modal stays open', async () => {
+  const env = setup({ registrar_recebimento_ordem_compra: () => ({ data: { ok: true }, error: null }) });
+  env.handlers.abrirRegistroRecebimento();
+  const modal = overlayByTitle(env.sandbox, /Registrar recebimento/);
+  await btnByText(modal, /^Registrar$/)._listeners.click();
+  assert.equal(rpcCalls(env.supa, 'registrar_recebimento_ordem_compra').length, 0, 'no writer call');
+  assert.match(lastToast(env.sandbox).className, /bg-red-600/);
+  assert.match(lastToast(env.sandbox).textContent, /ao menos uma quantidade/i);
+  assert.ok(overlayByTitle(env.sandbox, /Registrar recebimento/), 'modal stays open');
+});
+
+test('deterministic RPC rejection (recebimento_canonico_inativo): error toast, no reload, form kept open', async () => {
+  const env = setup({ registrar_recebimento_ordem_compra: () => ({ data: { ok: false, codigo: 'recebimento_canonico_inativo', erro: 'x' }, error: null }) });
+  env.handlers.abrirRegistroRecebimento();
+  const modal = overlayByTitle(env.sandbox, /Registrar recebimento/);
+  inputByAttr(modal, 'data-alocacao-id', 42).value = '5';
+  await btnByText(modal, /^Registrar$/)._listeners.click();
+  assert.equal(env.reloadCalls.length, 0, 'no reload on rejection');
+  assert.match(lastToast(env.sandbox).className, /bg-red-600/);
+  assert.match(lastToast(env.sandbox).textContent, /inativo/i);
+  assert.ok(overlayByTitle(env.sandbox, /Registrar recebimento/), 'form kept open with values');
+  assert.equal(inputByAttr(modal, 'data-alocacao-id', 42).value, '5', 'entered value retained');
+});
+
+test('ambiguous transport retains the SAME token on same-intent retry (no fallback)', async () => {
+  const env = setup({ registrar_recebimento_ordem_compra: () => ({ data: null, error: { message: 'Failed to fetch' }, status: 0, statusText: '', count: null }) });
+  env.handlers.abrirRegistroRecebimento();
+  const modal = overlayByTitle(env.sandbox, /Registrar recebimento/);
+  inputByAttr(modal, 'data-alocacao-id', 42).value = '5';
+  await btnByText(modal, /^Registrar$/)._listeners.click();
+  await btnByText(modal, /^Registrar$/)._listeners.click();
+  const calls = rpcCalls(env.supa, 'registrar_recebimento_ordem_compra');
+  assert.equal(calls.length, 2, 'two attempts (original + retry)');
+  assert.equal(calls[0].params.p_idempotency_key, calls[1].params.p_idempotency_key, 'same token reused on ambiguous retry');
+  // Never falls back to the legacy compat writer.
+  assert.equal(env.supa._calls.some((c) => /fio_compat/.test(c.name || '')), false);
+});
+
+test('a NEW token is minted after a deterministic outcome (rejection then success)', async () => {
+  let n = 0;
+  const env = setup({
+    registrar_recebimento_ordem_compra: () => { n += 1; return n === 1
+      ? { data: { ok: false, codigo: 'excede_alocacao' }, error: null }
+      : { data: { ok: true }, error: null }; },
+  });
+  env.handlers.abrirRegistroRecebimento();
+  const modal = overlayByTitle(env.sandbox, /Registrar recebimento/);
+  inputByAttr(modal, 'data-alocacao-id', 42).value = '5';
+  await btnByText(modal, /^Registrar$/)._listeners.click(); // deterministic rejection -> complete()
+  await btnByText(modal, /^Registrar$/)._listeners.click(); // same intent, but new token expected
+  const calls = rpcCalls(env.supa, 'registrar_recebimento_ordem_compra');
+  assert.equal(calls.length, 2);
+  assert.notEqual(calls[0].params.p_idempotency_key, calls[1].params.p_idempotency_key, 'new token after a deterministic outcome');
+});
+
+test('reversal flow: modal payload (lancamento_id + motivo), confirmDialog gate, reload after success', async () => {
+  const env = setup({ estornar_recebimento_ordem_compra: () => ({ data: { ok: true }, error: null }) }, projection({ comandos: [RECV_CMD] }));
+  env.handlers.estornarLancamento(RECV_CMD, LANC);
+  const modal = overlayByTitle(env.sandbox, /Estornar recebimento/);
+  assert.ok(modal, 'reversal modal open');
+  inputByAttr(modal, 'data-reversal-kg', 800).value = '8';
+  // motivo textarea
+  findAll(modal, (n) => n.tagName === 'TEXTAREA')[0].value = 'devolução parcial';
+  btnByText(modal, /^Estornar$/)._listeners.click(); // opens confirmDialog; RPC NOT yet fired
+  assert.equal(rpcCalls(env.supa, 'estornar_recebimento_ordem_compra').length, 0, 'no execution before confirmation');
+  const confirm = overlayByTitle(env.sandbox, /Confirmar estorno/);
+  assert.ok(confirm, 'confirmDialog before execution (guard 6)');
+  await btnByText(confirm, /^Estornar$/)._listeners.click();
+  const call = rpcCalls(env.supa, 'estornar_recebimento_ordem_compra')[0];
+  assert.ok(call, 'reversal executed after confirmation');
+  assert.deepEqual(JSON.parse(JSON.stringify(call.params.p_linhas)), [{ lancamento_id: 800, kg: 8 }]);
+  assert.equal(call.params.p_motivo, 'devolução parcial');
+  assert.equal(env.reloadCalls.length, 1, 'authoritative reload after reversal');
+  assert.match(lastToast(env.sandbox).className, /bg-green-600/);
+});
+
+test('reversal client cap: kg above kg_reversivel is rejected before any RPC/confirm', async () => {
+  const env = setup({ estornar_recebimento_ordem_compra: () => ({ data: { ok: true }, error: null }) }, projection({ comandos: [RECV_CMD] }));
+  env.handlers.estornarLancamento(RECV_CMD, LANC);
+  const modal = overlayByTitle(env.sandbox, /Estornar recebimento/);
+  inputByAttr(modal, 'data-reversal-kg', 800).value = '25'; // > 20 reversível
+  findAll(modal, (n) => n.tagName === 'TEXTAREA')[0].value = 'x';
+  btnByText(modal, /^Estornar$/)._listeners.click();
+  assert.equal(overlayByTitle(env.sandbox, /Confirmar estorno/), undefined, 'no confirmDialog for an over-cap kg');
+  assert.equal(rpcCalls(env.supa, 'estornar_recebimento_ordem_compra').length, 0);
+  assert.match(lastToast(env.sandbox).textContent, /saldo reversível/i);
+});
+
+test('reversal server over-reversal denial (excede_estornavel) is presented as a toast', async () => {
+  const env = setup({ estornar_recebimento_ordem_compra: () => ({ data: { ok: false, codigo: 'excede_estornavel', disponivel: 5 }, error: null }) }, projection({ comandos: [RECV_CMD] }));
+  env.handlers.estornarLancamento(RECV_CMD, LANC);
+  const modal = overlayByTitle(env.sandbox, /Estornar recebimento/);
+  inputByAttr(modal, 'data-reversal-kg', 800).value = '8';
+  findAll(modal, (n) => n.tagName === 'TEXTAREA')[0].value = 'motivo';
+  btnByText(modal, /^Estornar$/)._listeners.click();
+  await btnByText(overlayByTitle(env.sandbox, /Confirmar estorno/), /^Estornar$/)._listeners.click();
+  assert.equal(env.reloadCalls.length, 0, 'no reload on denial');
+  assert.match(lastToast(env.sandbox).className, /bg-red-600/);
+  assert.match(lastToast(env.sandbox).textContent, /saldo reversível/i);
+});
+
+test('receipt and reversal use INDEPENDENT trackers (distinct tokens)', async () => {
+  const env = setup({
+    registrar_recebimento_ordem_compra: () => ({ data: { ok: true }, error: null }),
+    estornar_recebimento_ordem_compra: () => ({ data: { ok: true }, error: null }),
+  }, projection({ comandos: [RECV_CMD] }));
+  // registration
+  env.handlers.abrirRegistroRecebimento();
+  let modal = overlayByTitle(env.sandbox, /Registrar recebimento/);
+  inputByAttr(modal, 'data-alocacao-id', 42).value = '5';
+  await btnByText(modal, /^Registrar$/)._listeners.click();
+  // reversal
+  env.handlers.estornarLancamento(RECV_CMD, LANC);
+  modal = overlayByTitle(env.sandbox, /Estornar recebimento/);
+  inputByAttr(modal, 'data-reversal-kg', 800).value = '8';
+  findAll(modal, (n) => n.tagName === 'TEXTAREA')[0].value = 'm';
+  btnByText(modal, /^Estornar$/)._listeners.click();
+  await btnByText(overlayByTitle(env.sandbox, /Confirmar estorno/), /^Estornar$/)._listeners.click();
+  const regTok = rpcCalls(env.supa, 'registrar_recebimento_ordem_compra')[0].params.p_idempotency_key;
+  const revTok = rpcCalls(env.supa, 'estornar_recebimento_ordem_compra')[0].params.p_idempotency_key;
+  assert.notEqual(regTok, revTok, 'receipt and reversal never share a token');
+});
+
+// --- Full-screen integration: the additive orchestration on #/ordens-compra/:id.
+const fullFiles = [
+  'js/ui.js', 'js/screens/common.js',
+  'js/screens/ordem-compra-data.js', 'js/screens/ordem-compra-distribuicao.js',
+  'js/screens/ordem-compra-render.js', 'js/screens/ordem-compra-events.js',
+  'js/screens/ordem-compra-receipt-data.js', 'js/screens/ordem-compra-receipt-render.js',
+  'js/screens/ordem-compra-receipt-events.js', 'js/screens/ordens-compra-list.js',
+  'js/screens/ordem-compra.js',
+];
+const fullSrcs = fullFiles.map((f) => [f, read(f)]);
+
+function makeFullSandbox(rpcImpl) {
+  const document = createDocument();
+  const supa = makeFakeSupa({ rpcImpl });
+  let uuid = 0;
+  const sandbox = {
+    document, console, setTimeout, clearTimeout, supa,
+    crypto: { randomUUID: () => 'uuid-' + (++uuid) },
+    location: { hash: '#/ordens-compra/100' },
+    navigate: () => {}, CURRENT_USER: { nome: 'T', tipo: 'admin' }, logout: () => {},
+  };
+  sandbox.window = sandbox;
+  sandbox.globalThis = sandbox;
+  vm.createContext(sandbox);
+  for (const [f, s] of fullSrcs) vm.runInContext(s, sandbox, { filename: f });
+  return { sandbox, supa };
+}
+
+function findById(node, id) {
+  let f = null;
+  walk(node, (n) => { if (!f && typeof n.getAttribute === 'function' && n.getAttribute('id') === id) f = n; });
+  return f;
+}
+
+test('integration: screenOrdemCompra renders the Recebimentos section and reloads authoritatively after a receipt', async () => {
+  let histCalls = 0;
+  const env = makeFullSandbox({
+    obter_ordem_compra_admin: () => ({ data: { ok: true, ordem: { ordem_id: 100, modelo: 'nativo', status_administrativo: 'emitida', fornecedor_nome: 'Fornecedor X', itens: [], acoes: {}, pode_emitir: false }, eventos: [] }, error: null }),
+    obter_historico_recebimento_ordem_compra: () => { histCalls += 1; return { data: projection({ comandos: [RECV_CMD] }), error: null }; },
+    registrar_recebimento_ordem_compra: () => ({ data: { ok: true }, error: null }),
+  });
+  const view = await vm.runInContext('window.screenOrdemCompra(100)', env.sandbox);
+  assert.ok(findById(view, 'oc-recebimentos'), 'Recebimentos section rendered on #/ordens-compra/:id');
+  const registrar = findById(view, 'oc-registrar-recebimento');
+  assert.ok(registrar, 'Registrar action rendered from the server acoes model');
+  assert.equal(histCalls, 1, 'receipt history loaded once on mount');
+
+  registrar._listeners.click();
+  const modal = overlayByTitle(env.sandbox, /Registrar recebimento/);
+  inputByAttr(modal, 'data-alocacao-id', 42).value = '5';
+  await btnByText(modal, /^Registrar$/)._listeners.click();
+  assert.equal(rpcCalls(env.supa, 'registrar_recebimento_ordem_compra').length, 1, 'native writer invoked');
+  assert.equal(histCalls, 2, 'authoritative server reload re-fetched the history after success');
+});

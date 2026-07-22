@@ -7780,3 +7780,100 @@ product file they depend on, was modified by this pass or the prior one):
   REVIEW`. `PHASE-C5`, `REAL_CUTOVER`, staging validation/application of
   `db/76`, activation, deployment, branch creation, production access, and any
   push remain unauthorized. **No push is authorized by this pass.**
+
+## 2026-07-21 — C4-ADMIN-RECEIPT-UI-IMPLEMENTATION-R1 — PHASE-C4 admin receipt UI implementation
+
+- **Authorization:** `C4-ADMIN-RECEIPT-UI-IMPLEMENTATION-R1` — local `PHASE-C4`
+  / `OC-C4-ADMIN-001` implementation, authorized by the 2026-07-21 supervisor
+  acceptance recorded in the immediately preceding ledger entry and contract
+  §0b. Local implementation only; no migration, database write, environment
+  mutation, staging, deployment, activation, cutover, branch, or push.
+- **Entry checkpoint:** `HEAD` `bdd4c7d2bc43bd054d7cbb2b0bd70e6234160c24` (the
+  authorization commit), parent `d98c498e62b640ea160a7bbe2d71231751a5b9b6`;
+  branch `dev`; protected residue `M .gitignore`, `?? .codex/config.toml`,
+  `?? .mcp.json` untouched throughout; accepted checkpoint
+  `429aa3980c7027b9d872a1902e2f31f1a4a85a2a` unchanged.
+- **RPC re-verification (contract §14 entry gate 3):** the three native RPC
+  input/return shapes were re-verified against the `db/70`/`db/74`/`db/75`
+  bodies at this HEAD before writing product code — `registrar_recebimento_ordem_compra`
+  `p_linhas` element `{item_id, destino('alocacao'|'excesso'), alocacao_id
+  (allocation only), kg}` (closed key allowlist); `estornar_recebimento_ordem_compra`
+  `p_linhas` element `{lancamento_id, kg}` (admin-only; over-cap
+  `excede_estornavel`, not `reducao_abaixo_saldo_importado`, which belongs to a
+  different legacy function); `obter_historico_recebimento_ordem_compra` return
+  shape exactly as §4.3, `op_id` nullable, `acoes.receber`/`acoes.estornar`
+  gate-agnostic. No schema drift; no migration.
+- **Product manifest (exact, closed):** NEW
+  `js/screens/ordem-compra-receipt-data.js` (native read-model loader +
+  `registrar`/`estornar` writers + INDEPENDENT idempotency-token /
+  attempt-tracker / transport-ambiguity primitives + pure payload builders; no
+  DOM); NEW `js/screens/ordem-compra-receipt-render.js` (persistent
+  Recebimentos section — item/allocation saldos, receipt/estorno command
+  history, server-gated `Registrar recebimento` dominant action, and the
+  ratified compact icon-only row-level reversal button §8.1; pure render, no
+  RPC/DML); NEW `js/screens/ordem-compra-receipt-events.js` (registration and
+  reversal action modals; the two independent attempt trackers). Additive:
+  `js/screens/ordem-compra.js` (+21/-1 — load receipt history, append the
+  section, merge receipt handlers alongside the unchanged `cancelar`) and
+  `index.html` (+3 cache-busted `?v=20260721-c4` script tags, ordered
+  data → render → events before `ordem-compra.js`). No other product file
+  changed.
+- **Unchanged/prohibited surfaces confirmed byte-unchanged:**
+  `ordem-compra-data.js`/`-render.js`/`-events.js`/`-distribuicao.js`,
+  `ordem-compra-receipt-cutover.js`, `js/router.js`, `js/boot.js`,
+  `js/screens/common.js`, `fornecedor.js`, `op-writes.js`,
+  `pedido-detail-*.js`, all `db/*.sql`. The pre-existing out-of-scope defect
+  `ORDEM_COMPRA_CANCEL_HANDLER_STALE_ORDER_CAPTURE` was NOT touched.
+- **API ownership (contract §8):** native RPCs only —
+  `obter_historico_recebimento_ordem_compra` /
+  `registrar_recebimento_ordem_compra` / `estornar_recebimento_ordem_compra`
+  via direct `window.supa.rpc`; the PHASE-C3C-B legacy-compat adapter and every
+  `*_fio_compat` RPC are absent from the C4 call graph; no flat-table fallback
+  after any deterministic or ambiguous failure (proven by test).
+- **Idempotency (contract §12):** two independent in-memory attempt trackers
+  (registration, reversal), one fresh token per deliberate attempt, reused
+  verbatim only on a genuinely ambiguous transport (`status === 0`), a new
+  token after any deterministic success/rejection, never persisted
+  (no localStorage/sessionStorage/URL/global), never shared between the two,
+  never a fallback to another RPC after ambiguity.
+- **Tests (NEW, exact):** `tests/ordem-compra-receipt-data.smoke.js` (12),
+  `-render.smoke.js` (10), `-events.smoke.js` (12, incl. a full-screen
+  `screenOrdemCompra(100)` integration proof), `-routing.smoke.js` (3) —
+  **37/37 pass**. The §15 obligations are covered as faithful DOM/VM behavior,
+  not source-text-only assertions. (Deviation from §15: the router/index.html
+  coverage is a new `-routing.smoke.js` file rather than an edit to
+  `boot.smoke.js`/`router.smoke.js`, to keep existing suites byte-unchanged;
+  the proven obligations are identical.)
+- **Full-suite differential (contract §14 exit gate 3):**
+  `node --test tests/*.js` on the working tree = 4054 tests / 3932 pass / 122
+  fail; a detached temporary worktree at the entry checkpoint
+  `bdd4c7d2bc43bd054d7cbb2b0bd70e6234160c24` = 4017 / 3876 / 141;
+  **added failing identities (worktree minus baseline) = EMPTY** (zero
+  regressions). The 19 baseline-only failures (admin-tec-finalize,
+  pedido-detail render, ingestor-ui, C3D-deploy hash checks, split-UI) are
+  the documented pre-existing suite non-determinism — absent from the worktree
+  run by timing, **not** claimed as fixes. `node scripts/validate-spec-custody.mjs`
+  PASS; `--self-test` fails only on the pre-existing active-contract
+  fixture-harness limitation (the self-test builder does not copy the active
+  phase contract into its synthetic root — re-surfaced, not introduced, by
+  activating `PHASE-C4`, identical to every prior active-phase pass);
+  `git diff --check` / `git diff --cached --check` clean.
+- **Environment:** the writer RPCs remain inert under the live `legacy_active`
+  cutover state — `recebimento_canonico_inativo` is rendered as a normal
+  deterministic business-rejection toast; implementation evidence is
+  fixture-level DOM/mocked-RPC (contract §13.4/§15/§17), no live database
+  round-trip. No shared or real environment was mutated.
+- **Status:** `PHASE-C4` / `OC-C4-ADMIN-001` = **IMPLEMENTED / LOCALLY VERIFIED
+  / AWAITING SUPERVISOR REVIEW**. Not self-accepted; not `CLOSED`/`ACCEPTED`/
+  `SATISFIED`. The traceability disposition advances `PLANNED` →
+  `PARTIALLY_SATISFIED` with implementation artifact, test evidence, and
+  residual debt. The mandatory architect visual validation
+  (`SUPERVISION_PROTOCOL.md` §4) is pending — the executor report stops at
+  `IMPLEMENTAÇÃO VALIDADA / AGUARDANDO VALIDAÇÃO VISUAL DO ARQUITETO`.
+- **Exact accounting subject:** `feat: add C4 admin purchase-order receipt UI`
+- **NEXT_AUTHORIZABLE_ACTION:** supervisor review and the mandatory architect
+  visual validation of the implemented `PHASE-C4` admin receipt UI, then
+  supervisor acceptance/close (supervisor only — not self-accepted). `PHASE-C5`,
+  `REAL_CUTOVER`, staging validation/application of `db/76`, activation,
+  deployment, branch creation, production access, and any push remain
+  unauthorized. **No push is authorized by this pass.**

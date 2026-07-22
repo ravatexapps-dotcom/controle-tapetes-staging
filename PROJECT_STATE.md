@@ -20,7 +20,7 @@ LAST_ACCEPTED_PHASE: PHASE-C3D
 ACTIVE_PHASE: PHASE-C4
 ACTIVE_PHASE_CONTRACT: docs/architecture/ORDEM_COMPRA_C4_PHASE_CONTRACT.md
 ACTIVE_TRACK: PURCHASE_ORDER_PHASE_C
-NEXT_AUTHORIZABLE_ACTION: execute the authorized local PHASE-C4 admin receipt UI implementation (OC-C4-ADMIN-001) per docs/architecture/ORDEM_COMPRA_C4_PHASE_CONTRACT.md (STATUS: ACCEPTED / IMPLEMENTATION AUTHORIZED, §0b — supervisor-accepted 2026-07-21 under C4-ADMIN-RECEIPT-UI-IMPLEMENTATION-R1): the three new js/screens/ordem-compra-receipt-*.js files, additive ordem-compra.js/index.html touches, and the §15 tests, then stop at IMPLEMENTED / LOCALLY VERIFIED / AWAITING SUPERVISOR REVIEW for supervisor review and the mandatory architect visual validation (do not self-accept, do not mark OC-C4-ADMIN-001 SATISFIED); PHASE-C5, the REAL_CUTOVER window (OC-CUTOVER-001/OC-CUTOVER-PONR-001 — hard-gated behind the mandatory separate read-only completeness disposition of the 13 unmapped ordens_compra_fio rows ids 153–165), real close_final_acl invocation, real activation, the real read-authority switch, staging validation/application of db/76, and any productive receipt on a shared or real environment all remain unauthorized
+NEXT_AUTHORIZABLE_ACTION: supervisor review and the mandatory architect visual validation of the IMPLEMENTED / LOCALLY VERIFIED PHASE-C4 admin receipt UI (OC-C4-ADMIN-001, C4-ADMIN-RECEIPT-UI-IMPLEMENTATION-R1, contract §0c — three new js/screens/ordem-compra-receipt-*.js files + additive ordem-compra.js/index.html + four new smoke suites at 37/37 pass, empty added-failing-identity differential vs bdd4c7d, validator PASS), then supervisor acceptance/close (supervisor only — do not self-accept, do not mark OC-C4-ADMIN-001 SATISFIED); PHASE-C5, the REAL_CUTOVER window (OC-CUTOVER-001/OC-CUTOVER-PONR-001 — hard-gated behind the mandatory separate read-only completeness disposition of the 13 unmapped ordens_compra_fio rows ids 153–165), real close_final_acl invocation, real activation, the real read-authority switch, staging validation/application of db/76, and any productive receipt on a shared or real environment all remain unauthorized
 GOVERNING_SPEC: docs/architecture/ORDEM_COMPRA_LIFECYCLE_SPEC_PROPOSED.md
 TECHNICAL_CONTRACT: docs/architecture/PEDIDO_OP_SCHEMA_CONTRACT.md
 SEQUENCE_AUTHORITY: docs/architecture/PEDIDO_PRODUCTION_FLOW_BACKLOG.md
@@ -202,13 +202,47 @@ ACCEPTED_CHECKPOINT: 429aa3980c7027b9d872a1902e2f31f1a4a85a2a
   traceability matrix at authorization (recorded there as authorized / in
   implementation; it moves to `PARTIALLY_SATISFIED` with implementation
   artifact and evidence at the implementation commit).
-- **Next authorizable action:** **execute the authorized local `PHASE-C4`
-  admin receipt UI implementation** (`OC-C4-ADMIN-001`) per the contract §10
-  manifest and §15 test manifest, then stop at `IMPLEMENTED / LOCALLY VERIFIED
-  / AWAITING SUPERVISOR REVIEW` for supervisor review and the mandatory
-  architect visual validation. `PHASE-C5`, `REAL_CUTOVER`, staging
-  validation/application of `db/76`, activation, deployment, branch creation,
-  production access, and any push remain **unauthorized**.
+- **`C4-ADMIN-RECEIPT-UI-IMPLEMENTATION-R1` — PHASE-C4 admin receipt UI
+  implementation (this pass, product + tests + docs):** `IMPLEMENTED / LOCALLY
+  VERIFIED / AWAITING SUPERVISOR REVIEW`. Created the three new files
+  `js/screens/ordem-compra-receipt-data.js` (native read-model loader +
+  `registrar`/`estornar` writers + independent idempotency/attempt-tracker/
+  transport-ambiguity primitives + pure payload builders), `-render.js` (the
+  persistent Recebimentos section — item/allocation saldos, receipt/estorno
+  command history, server-gated `Registrar` action, ratified compact icon-only
+  row-level reversal button §8.1), and `-events.js` (registration + reversal
+  action modals; two independent attempt trackers), plus additive
+  `js/screens/ordem-compra.js` (+21/-1) and `index.html` (+3 cache-busted
+  script tags). API graph is native RPCs only
+  (`obter_historico_recebimento_ordem_compra`/`registrar_recebimento_ordem_compra`/
+  `estornar_recebimento_ordem_compra` via `window.supa.rpc`) — no `*_fio_compat`
+  RPC, no flat fallback (proven by test); action availability is rendered from
+  the server `acoes` model, never recomputed; `recebimento_canonico_inativo`
+  (the live `legacy_active` outcome) is a normal deterministic rejection.
+  Idempotency: two independent in-memory trackers, token reused only on a
+  `status === 0` ambiguous transport, new token after any deterministic
+  outcome, never persisted/shared, never a post-ambiguity fallback. Tests: four
+  new suites `tests/ordem-compra-receipt-{data,render,events,routing}.smoke.js`
+  (37/37 pass, faithful DOM/VM). Evidence: `node --test tests/*.js` worktree
+  4054/3932/122, detached baseline worktree at `bdd4c7d` 4017/3876/141, **added
+  failing identities = empty** (zero regressions; the 19 baseline-only failures
+  are pre-existing non-determinism, not fixes); `node scripts/validate-spec-custody.mjs`
+  PASS (`--self-test` fails only on the pre-existing active-contract
+  fixture-harness limitation re-surfaced by having any active phase);
+  `git diff --check` clean. Every §11 unchanged/prohibited file (the legacy
+  adapter, `router.js`, `boot.js`, `common.js`, supplier/Pedido surfaces, all
+  `db/*.sql`) is byte-unchanged; the `ORDEM_COMPRA_CANCEL_HANDLER_STALE_ORDER_CAPTURE`
+  debt (item 15) was not touched. **Not self-accepted**: `OC-C4-ADMIN-001`
+  advances `PLANNED` → `PARTIALLY_SATISFIED` (traceability), never `SATISFIED`;
+  no migration, database write, environment mutation, staging, deployment,
+  activation, cutover, branch, or push occurred.
+- **Next authorizable action:** **supervisor review and the mandatory architect
+  visual validation** (`SUPERVISION_PROTOCOL.md` §4) of the implemented
+  `PHASE-C4` admin receipt UI, then **supervisor acceptance/close** (supervisor
+  only — the implementation is not self-accepted and `OC-C4-ADMIN-001` is not
+  `SATISFIED`). `PHASE-C5`, `REAL_CUTOVER`, staging validation/application of
+  `db/76`, activation, deployment, branch creation, production access, and any
+  push remain **unauthorized**.
 - **Prior accepted product phase:** `PHASE-C3C-B` (application compatibility/
   adaptation) — `CLOSED / ACCEPTED_WITH_NONBLOCKING_DEBT / LOCALLY VERIFIED`
   (2026-07-21), accepted checkpoint
@@ -960,9 +994,10 @@ Commit SHAs there are the accepted technical commits; consult HEAD via Git.
   `ACTIVE_PHASE_CONTRACT` are `NONE`):
   `docs/architecture/ORDEM_COMPRA_C3D_PHASE_CONTRACT.md`
 - C3C-B database prerequisites contract (closed / technically accepted / local DB verified / not applied to staging database; §35 records the implementation closeout, §36 records DB-backed validation completion, §37 records supervisor acceptance, not active): `docs/architecture/ORDEM_COMPRA_C3C_B_DB_PREREQUISITES_PHASE_CONTRACT.md`
-- C4 material phase contract (`ACCEPTED / IMPLEMENTATION AUTHORIZED` — admin
-  receipt UI at `#/ordens-compra/:id`; **active** phase, supervisor-accepted
-  2026-07-21 under `C4-ADMIN-RECEIPT-UI-IMPLEMENTATION-R1`, §0b):
+- C4 material phase contract (`ACCEPTED / IMPLEMENTATION AUTHORIZED`; admin
+  receipt UI at `#/ordens-compra/:id` **IMPLEMENTED / LOCALLY VERIFIED /
+  AWAITING SUPERVISOR REVIEW** under `C4-ADMIN-RECEIPT-UI-IMPLEMENTATION-R1`,
+  §0b/§0c; **active** phase):
   `docs/architecture/ORDEM_COMPRA_C4_PHASE_CONTRACT.md`
 - Append-only ledger: `docs/ledgers/G28_LEDGER.md`
 - Derived operational handoff: `AGENT_HANDOFF.md`

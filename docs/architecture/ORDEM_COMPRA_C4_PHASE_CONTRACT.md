@@ -124,6 +124,57 @@ recorded proportionally in `PROJECT_STATE.md`,
 
 ---
 
+## 0c. Implementation record — `C4-ADMIN-RECEIPT-UI-IMPLEMENTATION-R1`
+
+STATUS: **IMPLEMENTED / LOCALLY VERIFIED / AWAITING SUPERVISOR REVIEW** — not
+self-accepted, not `CLOSED`/`ACCEPTED`, `OC-C4-ADMIN-001` not `SATISFIED`.
+
+The authorized local implementation was executed at entry checkpoint `HEAD`
+`bdd4c7d2bc43bd054d7cbb2b0bd70e6234160c24` (the §0b authorization commit),
+strictly within the §10 manifest:
+
+- **New product files:** `js/screens/ordem-compra-receipt-data.js` (native
+  read-model loader + `registrar`/`estornar` writers + independent
+  idempotency/attempt-tracker/transport-ambiguity primitives + pure payload
+  builders — no DOM); `js/screens/ordem-compra-receipt-render.js` (the
+  persistent Recebimentos section, pure render); `js/screens/ordem-compra-receipt-events.js`
+  (registration + reversal action modals, the two independent attempt
+  trackers).
+- **Additive:** `js/screens/ordem-compra.js` (+21/-1: load receipt history,
+  append the section, merge receipt handlers alongside the unchanged
+  `cancelar`) and `index.html` (+3 cache-busted script tags before
+  `ordem-compra.js`). Every §11 unchanged/prohibited file — including the
+  legacy adapter `ordem-compra-receipt-cutover.js`, `router.js`, `boot.js`,
+  and all `db/*.sql` — is byte-unchanged; the §21 cancel-handler defect was
+  not touched.
+- **API graph (§8):** native RPCs only, via direct `window.supa.rpc`; no
+  `*_fio_compat` RPC and no flat fallback anywhere in the C4 call graph
+  (proven by test).
+- **Actor/state/action (§7):** action availability is rendered from the
+  server `acoes` model, never recomputed; no section for legacy or native-draft
+  orders; `recebimento_canonico_inativo` (the live `legacy_active` outcome) is
+  handled as a normal deterministic rejection.
+- **Idempotency (§12):** two independent trackers; token reused only on
+  `status === 0` ambiguous transport; new token after any deterministic
+  outcome; never persisted, never shared, never a post-ambiguity fallback.
+- **Tests (§15):** `tests/ordem-compra-receipt-data.smoke.js`,
+  `-render.smoke.js`, `-events.smoke.js` (incl. a full-screen integration
+  proof), `-routing.smoke.js` — **37/37 pass** as faithful DOM/VM behavior.
+  Deviation: the router/`index.html` coverage is a new `-routing.smoke.js`
+  file, not an edit to `boot.smoke.js`/`router.smoke.js`, to keep existing
+  suites byte-unchanged; the §15 obligations are identical.
+- **Evidence (§14 exit gates):** full-suite added-failing-identity differential
+  vs. `bdd4c7d…` = **empty** (worktree 4054/3932/122; baseline 4017/3876/141;
+  the 19 baseline-only failures are pre-existing non-determinism, not fixes);
+  `node scripts/validate-spec-custody.mjs` PASS; `git diff --check` clean.
+
+**Pending (exit gates not yet satisfied):** the mandatory architect visual
+validation (`SUPERVISION_PROTOCOL.md` §4, §14 exit gate 6) and supervisor
+acceptance (§14 exit gate 7). Only the supervisor may accept and close the
+phase and advance `OC-C4-ADMIN-001` beyond `PARTIALLY_SATISFIED`.
+
+---
+
 ## 1. Dependencies (documents this contract reads and binds to)
 
 Read in full for this pass, per `docs/governance/AGENT_INSTRUCTIONS.md` §2 and

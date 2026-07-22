@@ -46,9 +46,15 @@
   IMPLEMENTATION AUTHORIZED`). `ACTIVE_PHASE`/`ACTIVE_PHASE_CONTRACT` are
   `PHASE-C4` / `docs/architecture/ORDEM_COMPRA_C4_PHASE_CONTRACT.md` (they were
   `NONE` at the prior `PHASE-C3D` closeout, moved to `PHASE-C4` at this
-  authorization). Local implementation only — no migration/environment/staging/
-  deployment/push; stops at `IMPLEMENTED / LOCALLY VERIFIED / AWAITING
-  SUPERVISOR REVIEW`. **`PHASE-C3D` (inactive deployment
+  authorization). The implementation
+  (`C4-ADMIN-RECEIPT-UI-IMPLEMENTATION-R1`, contract §0c) is now **`IMPLEMENTED
+  / LOCALLY VERIFIED / AWAITING SUPERVISOR REVIEW`** — three new
+  `ordem-compra-receipt-*.js` files + additive `ordem-compra.js`/`index.html`,
+  native RPCs only, two independent idempotency trackers, four new smoke suites
+  (37/37 pass), empty added-failing-identity differential vs `bdd4c7d`,
+  validator PASS; local only (no migration/environment/staging/deployment/push).
+  Not self-accepted; the mandatory architect visual validation
+  (`SUPERVISION_PROTOCOL.md` §4) is pending. **`PHASE-C3D` (inactive deployment
   & rehearsal material phase)** is `CLOSED / ACCEPTED_WITH_NONBLOCKING_DEBT /
   LOCALLY VERIFIED`, accepted **technical** checkpoint
   `429aa3980c7027b9d872a1902e2f31f1a4a85a2a` (contract §Z). All five material
@@ -182,14 +188,13 @@
   `cancelar_ordem_compra` with `p_ordem_id: undefined`; see
   `PROJECT_STATE.md` POST-LAUNCH DEBT REGISTER item 15 and contract §21.
   Not part of `PHASE-C4`; requires its own separate correction order.
-- **Next authorizable action:** **execute the authorized local `PHASE-C4`
-  admin receipt UI implementation** (`OC-C4-ADMIN-001`) per
-  `docs/architecture/ORDEM_COMPRA_C4_PHASE_CONTRACT.md` (§10 five-file
-  manifest, §15 test manifest), then stop at `IMPLEMENTED / LOCALLY VERIFIED /
-  AWAITING SUPERVISOR REVIEW` for supervisor review and the mandatory
-  architect visual validation (`SUPERVISION_PROTOCOL.md` §4). `PHASE-C3D` is
-  closed; the implementation must not be self-accepted and must not mark
-  `OC-C4-ADMIN-001` `SATISFIED`.
+- **Next authorizable action:** **supervisor review and the mandatory architect
+  visual validation** (`SUPERVISION_PROTOCOL.md` §4) of the `IMPLEMENTED /
+  LOCALLY VERIFIED` `PHASE-C4` admin receipt UI
+  (`C4-ADMIN-RECEIPT-UI-IMPLEMENTATION-R1`, contract §0c), then **supervisor
+  acceptance/close** (supervisor only). `PHASE-C3D` is closed; the
+  implementation is not self-accepted and `OC-C4-ADMIN-001` is not marked
+  `SATISFIED`.
   `PHASE-C3D-A`/`PHASE-C3D-B` are supervisor-accepted (§R, checkpoints
   `096cd603…` / `5441321…`), `PHASE-C3D-C` (§U, `6fd63a56…`), `PHASE-C3D-D` (§X,
   `5a2be05…`), and `PHASE-C3D-E` (§Z, `429aa39…`) are all `CLOSED / TECHNICALLY
@@ -372,12 +377,12 @@ Full matrix and normative anchors: `docs/architecture/ORDEM_COMPRA_C3_TRACEABILI
   read-only completeness disposition of the 13 unmapped `ordens_compra_fio` rows
   ids 153–165 — see Blockers and debts below); `OC-CUTOVER-PONR-001` —
   `PARTIALLY_SATISFIED` (real cutover unauthorized).
-- `OC-C4-ADMIN-001` — `ACTIVE / IN IMPLEMENTATION` (owning phase C4;
-  supervisor-accepted 2026-07-21 under `C4-ADMIN-RECEIPT-UI-IMPLEMENTATION-R1`;
-  traceability disposition held at the valid `PLANNED` enum at authorization,
-  advancing to `PARTIALLY_SATISFIED` with artifact + evidence at the
-  implementation commit); `OC-C4-SUPPLIER-001` — `DEFERRED`;
-  `OC-C5-EMISSION-001` — `PLANNED` (post-C4 emission gate).
+- `OC-C4-ADMIN-001` — `PARTIALLY_SATISFIED` (owning phase C4; `IMPLEMENTED /
+  LOCALLY VERIFIED / AWAITING SUPERVISOR REVIEW` under
+  `C4-ADMIN-RECEIPT-UI-IMPLEMENTATION-R1`, contract §0c; not `SATISFIED` —
+  pending supervisor acceptance + architect visual validation);
+  `OC-C4-SUPPLIER-001` — `DEFERRED`; `OC-C5-EMISSION-001` — `PLANNED`
+  (post-C4 emission gate).
 
 ## Blockers and debts (live)
 
@@ -447,11 +452,11 @@ Full matrix and normative anchors: `docs/architecture/ORDEM_COMPRA_C3_TRACEABILI
   branch other than `main` is pushed to `production`.
 - **`main` is forbidden** as a working/target branch here; no push to
   `origin`/`staging` without separate express authorization.
-- **`PHASE-C4` admin receipt UI local implementation is authorized**
-  (supervisor-accepted 2026-07-21 under `C4-ADMIN-RECEIPT-UI-IMPLEMENTATION-R1`,
-  contract §0b) — local-only, native RPCs, no migration/environment/staging/
-  deployment/push, stopping at `IMPLEMENTED / LOCALLY VERIFIED / AWAITING
-  SUPERVISOR REVIEW`. **Still unauthorized (each a separate gate):**
+- **`PHASE-C4` admin receipt UI is `IMPLEMENTED / LOCALLY VERIFIED / AWAITING
+  SUPERVISOR REVIEW`** (`C4-ADMIN-RECEIPT-UI-IMPLEMENTATION-R1`, contract §0c) —
+  local-only, native RPCs, no migration/environment/staging/deployment/push;
+  awaiting supervisor acceptance and the mandatory architect visual validation
+  (`SUPERVISION_PROTOCOL.md` §4). **Still unauthorized (each a separate gate):**
   `PHASE-C5`, staging application/validation of `db/76`, activation, deployment,
   real snapshot/import, fence transition, read switch, final ACL-closure
   invocation, cutover (`OC-CUTOVER-001`/`OC-CUTOVER-PONR-001`, additionally
@@ -528,7 +533,8 @@ summary.
     active — `ACTIVE_PHASE`/`ACTIVE_PHASE_CONTRACT` are `NONE`)
 22. `docs/architecture/ORDEM_COMPRA_C4_PHASE_CONTRACT.md` (C4 material phase
     contract — admin receipt UI at `#/ordens-compra/:id`; `ACCEPTED /
-    IMPLEMENTATION AUTHORIZED`, §0b; **active** phase)
+    IMPLEMENTATION AUTHORIZED`, §0b; implementation `IMPLEMENTED / LOCALLY
+    VERIFIED / AWAITING SUPERVISOR REVIEW`, §0c; **active** phase)
 
 > Bootstrap first through `docs/governance/AGENT_INSTRUCTIONS.md` and the
 > `SPEC_CUSTODY_BOOTSTRAP` block in `PROJECT_STATE.md`. Private conversation,

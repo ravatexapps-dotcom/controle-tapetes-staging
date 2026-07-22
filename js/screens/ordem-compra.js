@@ -22,17 +22,35 @@
     var handlers;
 
     function render() {
-      container.replaceChildren(ns.renderDetail(state, handlers));
+      // Additive PHASE-C4 integration: the base detail is unchanged; the
+      // persistent Recebimentos section (native, post-draft orders only) is
+      // appended as a sibling. renderReceiptSection returns null when no
+      // section must exist, so nothing changes for legacy/draft orders.
+      var nodes = [ns.renderDetail(state, handlers)];
+      if (typeof ns.renderReceiptSection === 'function') {
+        var receiptSection = ns.renderReceiptSection(state, handlers);
+        if (receiptSection) nodes.push(receiptSection);
+      }
+      container.replaceChildren.apply(container, nodes);
     }
     async function reload() {
       await ns.loadOrdemDetail(id, state);
       await ns.loadDistribuicao(id, state);
+      if (typeof ns.loadReceiptHistory === 'function') await ns.loadReceiptHistory(id, state);
       render();
     }
 
     handlers = ns.createEvents({ state: state, reload: reload });
     handlers.voltar = function () { window.navigate('#/ordens-compra'); };
     handlers.verPedido = function (pedidoId) { window.navigate('#/pedidos/' + pedidoId); };
+    // Merge the PHASE-C4 receipt/reversal handlers alongside the unchanged
+    // entity handlers (cancelar). The existing cancelar handler is untouched.
+    if (typeof ns.createReceiptEvents === 'function') {
+      var receiptHandlers = ns.createReceiptEvents({ state: state, reload: reload, ordemId: id });
+      for (var k in receiptHandlers) {
+        if (Object.prototype.hasOwnProperty.call(receiptHandlers, k)) handlers[k] = receiptHandlers[k];
+      }
+    }
 
     if (!Number.isFinite(id) || id <= 0) {
       window.toast('Ordem de compra inválida.', 'error');
@@ -44,6 +62,7 @@
     await ns.loadFormRefs(state);
     await ns.loadOrdemDetail(id, state);
     await ns.loadDistribuicao(id, state);
+    if (typeof ns.loadReceiptHistory === 'function') await ns.loadReceiptHistory(id, state);
     render();
 
     return window.shellLayout(window.ADMIN_MENU, container);

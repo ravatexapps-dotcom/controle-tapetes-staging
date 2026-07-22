@@ -8,6 +8,44 @@
 > `PROJECT_STATE.md`. Phase sequence, dependencies, backlog items, and accepted
 > architecture in this file remain authoritative; live operational status does not.
 
+# Update 2026-07-21 - C4-ADMIN-RECEIPT-UI-IMPLEMENTATION-R1 (Admin Receipt UI implementation)
+
+Phase: `PHASE-C4` / `OC-C4-ADMIN-001` local implementation —
+`IMPLEMENTED / LOCALLY VERIFIED / AWAITING SUPERVISOR REVIEW`. Type: product +
+tests + proportional docs; no migration, database write, environment,
+deployment, staging, activation, cutover, branch, or push. Historical closeout
+note — live state belongs to `PROJECT_STATE.md`.
+
+Implemented the admin receipt UI at `#/ordens-compra/:id` strictly within the
+accepted contract §10 manifest: new `js/screens/ordem-compra-receipt-data.js`
+(native read-model loader + `registrar`/`estornar` writers + independent
+idempotency/attempt-tracker/transport-ambiguity primitives + pure payload
+builders), `js/screens/ordem-compra-receipt-render.js` (persistent
+Recebimentos section — item/allocation saldos, receipt/estorno command history,
+server-gated `Registrar recebimento`, ratified compact icon-only row-level
+reversal button §8.1), `js/screens/ordem-compra-receipt-events.js`
+(registration + reversal action modals, two independent attempt trackers);
+additive `js/screens/ordem-compra.js` and `index.html`. Native RPCs only
+(`obter_historico_recebimento_ordem_compra` / `registrar_recebimento_ordem_compra`
+/ `estornar_recebimento_ordem_compra`); no `*_fio_compat` RPC and no flat
+fallback in the C4 call graph; action availability rendered from the server
+`acoes` model (never recomputed); excess is explicit; NULL-op / Pedido-origin
+allocations render as `Pedido (compartilhada)` with no fabricated OP. Four new
+smoke suites `tests/ordem-compra-receipt-{data,render,events,routing}.smoke.js`
+(37/37 pass); full-suite added-failing-identity differential vs `bdd4c7d` =
+empty; `node scripts/validate-spec-custody.mjs` PASS. Every §11
+unchanged/prohibited surface (the legacy adapter, `router.js`, `boot.js`,
+`common.js`, supplier/Pedido surfaces, all `db/*.sql`) is byte-unchanged; the
+`ORDEM_COMPRA_CANCEL_HANDLER_STALE_ORDER_CAPTURE` debt was not touched.
+
+`OC-C4-ADMIN-001` advances `PLANNED` → `PARTIALLY_SATISFIED`; **not**
+`SATISFIED` (pending supervisor acceptance and the mandatory architect visual
+validation, `SUPERVISION_PROTOCOL.md` §4). `OC-C4-SUPPLIER-001` remains
+`DEFERRED`; `OC-C5-EMISSION-001` `PLANNED`. Sequence/architecture in this file
+are unchanged. Full evidence:
+`docs/architecture/ORDEM_COMPRA_C4_PHASE_CONTRACT.md` §0c and
+`docs/ledgers/G28_LEDGER.md`.
+
 # Update 2026-07-21 - C4-MATERIAL-PHASE-CONTRACT-R1 (Admin Receipt UI contract, proposed)
 
 Phase: read-only repository reconciliation + documentation-only PHASE-C4
