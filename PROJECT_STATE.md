@@ -20,7 +20,7 @@ LAST_ACCEPTED_PHASE: PHASE-C5
 ACTIVE_PHASE: CLEAN-SLATE-TRANSACTIONAL-RESET
 ACTIVE_PHASE_CONTRACT: docs/architecture/CLEAN_SLATE_TRANSACTIONAL_RESET_PHASE_CONTRACT.md
 ACTIVE_TRACK: PURCHASE_ORDER_PHASE_C
-NEXT_AUTHORIZABLE_ACTION: EXECUTE the authorized clean-slate shared-development transactional reset under the separate governed destructive order CLEAN-SLATE-TRANSACTIONAL-RESET-SHARED-DEV-EXECUTION-R1 (AUTHORIZED AS A SEPARATE GOVERNED DESTRUCTIVE ORDER / NOT EXECUTED). The validation-gate-closed clean-slate reset tooling, the accepted contract, the retained authoritative archive 20260722T183846Z (aggregate SHA-256 5221cd4753157ba426cee978b43d8b0107a42a5f08f6e23c96503ee92d7399dc, verify-archive 395/395), the passed disposable restore/reset drill (96/96), the closed validation gates (--self-test 54/54, fixture suite 61/61), and the ratified contract §21.4 trigger-handling mechanism were ACCEPTED / DIRECTLY VERIFIED at checkpoint 62bdcc75c335e3881adb1af6350de801675aa788 by CLEAN-SLATE-TRANSACTIONAL-RESET-READINESS-ACCEPTANCE-CLOSEOUT-R1 (docs/architecture/CLEAN_SLATE_TRANSACTIONAL_RESET_PHASE_CONTRACT.md §24); checkpoint f165302c1c542aa26e9ae78464d260c81eda6415 remains NOT ACCEPTED with its retained technical corrections incorporated into and superseded by 62bdcc75c335e3881adb1af6350de801675aa788; the phase is not CLOSED and no phase chains automatically; PHASE-C5B-ACCEPTANCE-DECISION (IDENTIFIED / NOT AUTHORIZED), REAL_CUTOVER (NOT AUTHORIZED), real business-flow recreation (NOT AUTHORIZED UNTIL RESET EXECUTION IS ACCEPTED), any shared-database apply beyond db/77, staging validation/application, deployment, activation, production access, and branch creation remain unauthorized
+NEXT_AUTHORIZABLE_ACTION: DIRECT SUPERVISOR REVIEW of the executed clean-slate shared-development transactional reset — EXECUTED against the authorized non-production shared-development project ucrjtfswnfdlxwtmxnoo and TRANSACTIONALLY VERIFIED under CLEAN-SLATE-TRANSACTIONAL-RESET-SHARED-DEV-EXECUTION-R1 (canonical authorization checkpoint 9706ec75c10bf811abf67e4cfcabb19aa64cbeeb; one serialized SERIALIZABLE DELETE transaction purged 64 legacy orders + 64 needs + 51 native purchase orders + 16 Pedidos + 20 OPs + 25 lotes + the exact synthetic B6-VERIFY fixture; post-state proven zero; master/reference data, saldo_fios, saldo_fios_op empty state, op_numeros, the documents front excluding B6, the legacy_active cutover, migration history, and all sequence high-water marks preserved unchanged; the four temporarily-disabled business guards re-enabled with byte-identical definitions; external SQL + all pre/post evidence stored outside the repository at …/clean-slate-reset/execution/20260722T202717Z/). The reset is NOT self-accepted and the phase is NOT CLOSED. The validation-gate-closed clean-slate reset tooling, the accepted contract, the retained authoritative archive 20260722T183846Z (aggregate SHA-256 5221cd4753157ba426cee978b43d8b0107a42a5f08f6e23c96503ee92d7399dc, verify-archive 395/395), the passed disposable restore/reset drill (96/96), the closed validation gates (--self-test 54/54, fixture suite 61/61), and the ratified contract §21.4 trigger-handling mechanism were ACCEPTED / DIRECTLY VERIFIED at checkpoint 62bdcc75c335e3881adb1af6350de801675aa788 by CLEAN-SLATE-TRANSACTIONAL-RESET-READINESS-ACCEPTANCE-CLOSEOUT-R1 (docs/architecture/CLEAN_SLATE_TRANSACTIONAL_RESET_PHASE_CONTRACT.md §24); checkpoint f165302c1c542aa26e9ae78464d260c81eda6415 remains NOT ACCEPTED with its retained technical corrections incorporated into and superseded by 62bdcc75c335e3881adb1af6350de801675aa788; the phase is not CLOSED and no phase chains automatically; PHASE-C5B-ACCEPTANCE-DECISION (IDENTIFIED / NOT AUTHORIZED), REAL_CUTOVER (NOT AUTHORIZED), real business-flow recreation (NOT AUTHORIZED UNTIL RESET EXECUTION IS ACCEPTED), any shared-database apply beyond db/77, staging validation/application, deployment, activation, production access, and branch creation remain unauthorized
 GOVERNING_SPEC: docs/architecture/ORDEM_COMPRA_LIFECYCLE_SPEC_PROPOSED.md
 TECHNICAL_CONTRACT: docs/architecture/PEDIDO_OP_SCHEMA_CONTRACT.md
 SEQUENCE_AUTHORITY: docs/architecture/PEDIDO_PRODUCTION_FLOW_BACKLOG.md
@@ -33,7 +33,46 @@ ACCEPTED_CHECKPOINT: 3405fdab8e05ec0f81cbfe07c63c489e551fee92
 
 ## Active phase and next action
 
-- **`CLEAN-SLATE-TRANSACTIONAL-RESET-READINESS-ACCEPTANCE-CLOSEOUT-R1` (current —
+- **`CLEAN-SLATE-TRANSACTIONAL-RESET-SHARED-DEV-EXECUTION-R1` (current — governed
+  destructive execution of the accepted clean-slate reset; DELETE-only, one
+  serialized transaction):** `SHARED-DEVELOPMENT RESET = EXECUTED / TRANSACTIONALLY
+  VERIFIED / AWAITING DIRECT SUPERVISOR REVIEW`. Under the separate governed
+  destructive order (canonical authorization checkpoint
+  `9706ec75c10bf811abf67e4cfcabb19aa64cbeeb`; accepted readiness checkpoint
+  `62bdcc75c335e3881adb1af6350de801675aa788`; authoritative archive
+  `20260722T183846Z`, aggregate SHA-256
+  `5221cd4753157ba426cee978b43d8b0107a42a5f08f6e23c96503ee92d7399dc`,
+  `verify-archive` 395/395), a single `SERIALIZABLE` transaction against the
+  authorized non-production shared-development project `ucrjtfswnfdlxwtmxnoo`
+  (PostgreSQL 17.6, terminal migration `20260722055832`) executed the exact
+  contract §7 deletion order with per-statement affected-row assertions —
+  Boundary A `0,0,0,0,0,51,51,51,64,51,64`, B6 `0,0,10,8,0,1`, Boundary B
+  `27,16,4,18,0,0,0,0,0,0,20,16,25` — purging **64 legacy orders, 64 needs, 51
+  native purchase orders, 16 Pedidos, 20 OPs, 25 lotes, and the exact synthetic
+  B6-VERIFY fixture**, then re-enabled the four temporarily-disabled business
+  guards and committed. Post-state proved (read-only, repeatable-read): every
+  purge table zero; the B6 fixture absent; **preserved unchanged** —
+  master/reference data, `saldo_fios` (5 rows/quantities), `saldo_fios_op` empty,
+  `op_numeros` (latex/2026/18, tecelagem/2026/41), the documents front excluding
+  B6 (39/1/24/30), the `legacy_active`/`flat`/`not_started` cutover with all
+  markers NULL, terminal migration, all 35 sequences (state hash `c210b65d…`),
+  and all 35 user triggers (state hash `7060ba455…`; the four guards re-enabled
+  with byte-identical definitions; C3C fence enabled). The external one-time
+  execution artifact, its canonical-to-execution diff (protected
+  DELETE/DISABLE/ENABLE/SET-CONSTRAINTS core byte-identical), and all pre/post
+  evidence are stored **outside the repository** at
+  `…/controle-tapetes-g28-artifacts/clean-slate-reset/execution/20260722T202717Z/`.
+  **Documentation-only commit** (no technical/product/test/script/migration
+  change; external SQL + evidence stay outside the repo; the archive is
+  unchanged). The reset is **not self-accepted** and the phase is **not CLOSED**;
+  `LAST_ACCEPTED_PHASE` stays `PHASE-C5`; `ACTIVE_PHASE`/`ACTIVE_PHASE_CONTRACT`
+  stay `CLEAN-SLATE-TRANSACTIONAL-RESET` / the contract; the accepted product
+  checkpoint stays `3405fdab8e05ec0f81cbfe07c63c489e551fee92`; `REAL_CUTOVER`
+  (`NOT AUTHORIZED / NOT EXECUTED`), `PHASE-C5B-ACCEPTANCE-DECISION`
+  (`IDENTIFIED / NOT AUTHORIZED / NOT IMPLEMENTED`), and real business-flow
+  recreation (`NOT YET AUTHORIZED`) remain unauthorized; no phase chains
+  automatically. Full record: contract §25 and `docs/ledgers/G28_LEDGER.md`.
+- **`CLEAN-SLATE-TRANSACTIONAL-RESET-READINESS-ACCEPTANCE-CLOSEOUT-R1` (prior —
   direct supervisor acceptance of the validation-gate-closed clean-slate reset
   readiness; documentation-only):** `CLEAN-SLATE RESET READINESS = ACCEPTED /
   DIRECTLY VERIFIED`. The architect performed the direct supervisor review and

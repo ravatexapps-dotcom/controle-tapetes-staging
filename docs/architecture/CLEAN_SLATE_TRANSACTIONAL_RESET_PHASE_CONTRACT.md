@@ -6,7 +6,7 @@ PHASE_ID: CLEAN-SLATE-TRANSACTIONAL-RESET
 
 ```text
 PHASE_ID: CLEAN-SLATE-TRANSACTIONAL-RESET
-STATUS: CONTRACT ACCEPTED / TOOLING IMPLEMENTED / REAL ARCHIVE GENERATED READ-ONLY / DISPOSABLE RESTORE DRILL PASSED / VALIDATION GATES CLOSED / READINESS ACCEPTED / DIRECTLY VERIFIED AT 62bdcc75c335e3881adb1af6350de801675aa788 / SHARED-DEVELOPMENT RESET AUTHORIZED AS THE NEXT SEPARATE GOVERNED DESTRUCTIVE ORDER / NOT EXECUTED
+STATUS: CONTRACT ACCEPTED / TOOLING IMPLEMENTED / REAL ARCHIVE GENERATED READ-ONLY / DISPOSABLE RESTORE DRILL PASSED / VALIDATION GATES CLOSED / READINESS ACCEPTED / DIRECTLY VERIFIED AT 62bdcc75c335e3881adb1af6350de801675aa788 / SHARED-DEVELOPMENT RESET EXECUTED / TRANSACTIONALLY VERIFIED (CLEAN-SLATE-TRANSACTIONAL-RESET-SHARED-DEV-EXECUTION-R1, execution artifact 20260722T202717Z, §25) / AWAITING DIRECT SUPERVISOR REVIEW / PHASE NOT CLOSED
 AUTHORED_BY: CLEAN-SLATE-TRANSACTIONAL-RESET-CONTRACT-R1 (read-only diagnosis + documentation-only authoring)
 CORRECTED_BY: CLEAN-SLATE-TRANSACTIONAL-RESET-CONTRACT-CORRECTION-R1 (documentation-only, over the accepted CLEAN-SLATE-DOCUMENT-HISTORY-AND-RESIDUAL-BOUNDARY-DIAGNOSIS-R1)
 CONTRACT BASELINE CORRECTION: ACCEPTED ARCHITECT RULING — CLEAN-SLATE-TRANSACTIONAL-RESET-B6-ROW-BASELINE-FORWARD-CORRECTION-R1 (documentation-only): document_link_revision_ops corrected from 4 to 10 rows; 4 distinct OPs remain 55, 57, 61, 63
@@ -978,6 +978,85 @@ stays `3405fdab8e05ec0f81cbfe07c63c489e551fee92`. No phase chains automatically.
 `CONTRACT ACCEPTED / TOOLING IMPLEMENTED / REAL ARCHIVE GENERATED READ-ONLY /
 DISPOSABLE RESTORE DRILL PASSED / VALIDATION GATES CLOSED / READINESS ACCEPTED /
 DIRECTLY VERIFIED AT 62bdcc75c335e3881adb1af6350de801675aa788 / SHARED-DEVELOPMENT
-RESET AUTHORIZED AS THE NEXT SEPARATE GOVERNED DESTRUCTIVE ORDER / NOT EXECUTED`.
+RESET AUTHORIZED AS THE NEXT SEPARATE GOVERNED DESTRUCTIVE ORDER / NOT EXECUTED`
+(at the readiness-acceptance point-in-time; superseded by §25, which records the
+executed reset).
 `PROJECT_STATE.md` remains the sole owner of `ACTIVE_PHASE`/`ACTIVE_PHASE_CONTRACT`
 (`CLEAN-SLATE-TRANSACTIONAL-RESET` / this contract).
+
+---
+
+## 25. Shared-development reset execution (R1) — EXECUTED / TRANSACTIONALLY VERIFIED
+
+Authored by `CLEAN-SLATE-TRANSACTIONAL-RESET-SHARED-DEV-EXECUTION-R1` (canonical
+authorization checkpoint `9706ec75c10bf811abf67e4cfcabb19aa64cbeeb`; accepted
+readiness checkpoint `62bdcc75c335e3881adb1af6350de801675aa788`). The one-time
+governed destructive reset was **executed exactly once** against the authorized
+non-production shared-development project `ucrjtfswnfdlxwtmxnoo` (PostgreSQL 17.6,
+terminal migration `20260722055832`) and is **TRANSACTIONALLY VERIFIED**. This
+section records a **material state change**; it does **not** close the phase or
+self-accept the reset.
+
+### 25.1 Execution mechanism
+One serialized `BEGIN TRANSACTION ISOLATION LEVEL SERIALIZABLE`, submitted in a
+single project-scoped SQL invocation via the `supabase-dev-g28` transport (target
+identity proven by content fingerprint — the synthetic B6-VERIFY fixture and the
+exact §5 corpus — matching the archive manifest `project_ref` `ucrjtfswnfdlxwtmxnoo`;
+no production or forbidden project was accessed). Bounded `lock_timeout`/
+`statement_timeout`/`idle_in_transaction_session_timeout`; a transaction advisory
+lock (`pg_try_advisory_xact_lock`); deterministic `SHARE ROW EXCLUSIVE … NOWAIT`
+locks over the full §10 table set (45 tables); complete in-transaction
+re-verification of identity, cutover + NULL markers, the whole §5 corpus and
+identities, the preserved baseline, and the trigger catalog **after** locks were
+held. The committed `scripts/reset/clean-slate-transactional-reset.sql` was **not**
+used or changed; the external execution artifact removed the disposable-drill
+sentinel and added the real-execution gates while keeping the four DISABLE, the
+entire `$reset$` DELETE block (order + every ROW_COUNT assertion + expected
+value), `SET CONSTRAINTS ALL IMMEDIATE`, the four ENABLE, and rollback-on-error
+**byte-identical** (proven by the canonical-to-execution diff).
+
+### 25.2 Affected-row sequences (each a COMMIT-gating assertion)
+```text
+Boundary A: 0,0,0,0,0,51,51,51,64,51,64
+B6 fixture: 0,0,10,8,0,1
+Boundary B: 27,16,4,18,0,0,0,0,0,0,20,16,25
+```
+Purged: 64 legacy orders, 64 needs, 51 native purchase orders (+ items /
+allocations / compat), 16 Pedidos, 20 OPs, 25 lotes, and the exact synthetic
+`G28-B6-VERIFY-c63b6c2c8aff4da58e87d1e75f7a9236-DOCUMENT` fixture.
+
+### 25.3 Post-state proof (read-only repeatable-read)
+Every purge table `count(*) = 0`; the B6 fixture absent across all six tables;
+**preserved unchanged** — `saldo_fios` (5 rows/quantities), `saldo_fios_op` (0),
+`op_numeros` (latex/2026/18, tecelagem/2026/41), the documents front excluding B6
+(39 candidates / 1 event / 24 scan-req / 30 scan-run), master/reference counts,
+the `legacy_active`/`flat`/`not_started` cutover with all markers NULL, terminal
+migration `20260722055832`; **sequence invariance** (full state hash
+`c210b65d60b5bafee526d4306fdbe946`, unchanged; no sequence reset); **trigger
+invariance** (full user-trigger state hash `7060ba455cbdf769f0eb0d71a5e8d6eb`,
+unchanged; the four temporarily-disabled guards re-enabled with byte-identical
+definitions; `trg_c3c_protected_mutation_guard` enabled on all required tables;
+zero user triggers left disabled). PONR (`productive_receipt_started_at`) remains
+NULL.
+
+### 25.4 Evidence (outside the repository)
+`…/controle-tapetes-g28-artifacts/clean-slate-reset/execution/20260722T202717Z/`:
+`shared-development-reset.sql` (sha256 `73c08150cac1cebeae7fb3eb86271da7b72c9003561395ffe984d060f3930a12`),
+`canonical-reset-source.sha256` (`33096194…`), `shared-development-reset.sha256`,
+`canonical-to-execution.diff`, `preflight.json`, `trigger-catalog.json`,
+`sequence-baseline.json`, `post-state.json`, `post-trigger-catalog.json`,
+`sequence-after.json`, `execution-result.txt`. The authoritative archive
+`20260722T183846Z` (aggregate SHA-256
+`5221cd4753157ba426cee978b43d8b0107a42a5f08f6e23c96503ee92d7399dc`,
+`verify-archive` 395/395) is **unchanged**.
+
+### 25.5 Status
+`SHARED-DEVELOPMENT RESET = EXECUTED / TRANSACTIONALLY VERIFIED / AWAITING DIRECT
+SUPERVISOR REVIEW`. The phase is **not CLOSED** and no phase chains automatically;
+the accepted product checkpoint stays `3405fdab8e05ec0f81cbfe07c63c489e551fee92`.
+`REAL_CUTOVER` (`NOT AUTHORIZED / NOT EXECUTED`), `PHASE-C5B-ACCEPTANCE-DECISION`
+(`IDENTIFIED / NOT AUTHORIZED / NOT IMPLEMENTED`), real business-flow recreation
+(`NOT YET AUTHORIZED`), production access, forbidden-project access, deployment,
+staging application, and application implementation remain **unauthorized and not
+performed**. `PROJECT_STATE.md` remains the sole owner of `ACTIVE_PHASE`/
+`ACTIVE_PHASE_CONTRACT` (`CLEAN-SLATE-TRANSACTIONAL-RESET` / this contract).

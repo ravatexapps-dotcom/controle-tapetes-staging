@@ -8,6 +8,65 @@
 > `PROJECT_STATE.md`. Phase sequence, dependencies, backlog items, and accepted
 > architecture in this file remain authoritative; live operational status does not.
 
+# Update 2026-07-22 - CLEAN-SLATE-TRANSACTIONAL-RESET-SHARED-DEV-EXECUTION-R1 (governed destructive execution of the accepted clean-slate reset; EXECUTED / TRANSACTIONALLY VERIFIED against ucrjtfswnfdlxwtmxnoo / awaiting direct supervisor review; documentation-only closeout commit)
+
+Phase: governed destructive execution of the accepted, validation-gate-closed
+clean-slate reset (the separate order authorized at the readiness acceptance).
+
+**Sequence effect.** The `CLEAN-SLATE-TRANSACTIONAL-RESET` sequence item's
+destructive execution — the action that was `AUTHORIZED AS THE NEXT SEPARATE
+GOVERNED DESTRUCTIVE ORDER / NOT EXECUTED` at the readiness acceptance — has now
+**executed exactly once** and is **TRANSACTIONALLY VERIFIED**. Under canonical
+authorization checkpoint `9706ec75c10bf811abf67e4cfcabb19aa64cbeeb` (accepted
+readiness checkpoint `62bdcc75c335e3881adb1af6350de801675aa788`; authoritative
+archive `20260722T183846Z`, aggregate SHA-256 `5221cd47…`, `verify-archive`
+395/395), one serialized `BEGIN TRANSACTION ISOLATION LEVEL SERIALIZABLE` against
+the authorized non-production shared-development project `ucrjtfswnfdlxwtmxnoo`
+(PostgreSQL 17.6, terminal migration `20260722055832`) executed the exact contract
+§7 deletion order with per-statement affected-row assertions (Boundary A
+`0,0,0,0,0,51,51,51,64,51,64`, B6 `0,0,10,8,0,1`, Boundary B
+`27,16,4,18,0,0,0,0,0,0,20,16,25`), purging **64 legacy orders, 64 needs, 51
+native purchase orders, 16 Pedidos, 20 OPs, 25 lotes, and the exact synthetic
+B6-VERIFY fixture**, then re-enabled the four temporarily-disabled business guards
+and committed.
+
+**Post-state (proven read-only).** Every purge table zero; the B6 fixture absent;
+**preserved unchanged** — master/reference data, `saldo_fios`, `saldo_fios_op`
+empty state, `op_numeros` (latex/2026/18, tecelagem/2026/41), the documents front
+excluding B6 (39/1/24/30), the `legacy_active`/`flat`/`not_started` cutover with
+all markers NULL, terminal migration, all 35 sequences (state hash `c210b65d…`,
+no reset), and all 35 user triggers (state hash `7060ba455…`; the four guards
+re-enabled with byte-identical definitions; C3C fence enabled). The 13 unmapped
+`ordens_compra_fio` rows (ids 153–165) were removed as part of the
+`ordens_compra_fio` purge — the contract §16 `SUPERSEDED_BY_CLEAN_SLATE_RESET`
+disposition is now realised.
+
+**Evidence / non-repo.** The external one-time execution artifact
+(`shared-development-reset.sql`, sha256 `73c08150…`; canonical-to-execution diff
+with the DELETE/DISABLE/ENABLE/SET-CONSTRAINTS core byte-identical), preflight /
+trigger-catalog / sequence-baseline captures, and the post-state / post-trigger /
+sequence-after / execution-result proofs are stored **outside the repository** at
+`…/controle-tapetes-g28-artifacts/clean-slate-reset/execution/20260722T202717Z/`.
+The authoritative archive `20260722T183846Z` is unchanged.
+
+**Next sequenced action.** `DIRECT SUPERVISOR REVIEW` of the executed
+shared-development reset. The reset is **not self-accepted** and the phase is
+**not CLOSED**; `REAL_CUTOVER` (`NOT AUTHORIZED / NOT EXECUTED`),
+`PHASE-C5B-ACCEPTANCE-DECISION` (`IDENTIFIED / NOT AUTHORIZED / NOT IMPLEMENTED`),
+real business-flow recreation (`NOT YET AUTHORIZED`), any shared-database apply
+beyond `db/77`, staging validation/application, deployment, activation, production
+access, forbidden-project access, and branch creation remain **unauthorized**; the
+accepted product checkpoint stays `3405fdab8e05ec0f81cbfe07c63c489e551fee92` and no
+phase chains automatically.
+
+**Non-mutation of the repository / product.** Documentation-only closeout commit:
+only the seven authorized canonical documents change; no product/test/script/
+migration/config change; the external SQL and evidence remain outside the
+repository; the protected residue is untouched. Commit
+`docs: record clean-slate shared-dev reset`, published through one authorized
+`staging/dev` fast-forward push. Full record: contract §25, `PROJECT_STATE.md`,
+and `docs/ledgers/G28_LEDGER.md`.
+
 # Update 2026-07-22 - CLEAN-SLATE-TRANSACTIONAL-RESET-READINESS-ACCEPTANCE-CLOSEOUT-R1 (direct supervisor acceptance of the validation-gate-closed clean-slate reset readiness; checkpoint 62bdcc75 ACCEPTED / DIRECTLY VERIFIED; shared-development reset authorized as the next separate governed destructive order, not executed; documentation-only)
 
 Phase: documentation-only supervisor-acceptance recording (direct supervisor

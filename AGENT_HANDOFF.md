@@ -25,8 +25,37 @@
 
 ## Phase status
 
+- **`CLEAN-SLATE-TRANSACTIONAL-RESET-SHARED-DEV-EXECUTION-R1` (current —
+  governed destructive execution of the accepted clean-slate reset):**
+  `SHARED-DEVELOPMENT RESET = EXECUTED / TRANSACTIONALLY VERIFIED / AWAITING
+  DIRECT SUPERVISOR REVIEW`. One serialized `SERIALIZABLE` DELETE transaction
+  against the authorized non-production shared-development project
+  `ucrjtfswnfdlxwtmxnoo` (canonical authorization checkpoint
+  `9706ec75c10bf811abf67e4cfcabb19aa64cbeeb`; accepted readiness checkpoint
+  `62bdcc75c335e3881adb1af6350de801675aa788`; authoritative archive
+  `20260722T183846Z`, aggregate SHA-256 `5221cd47…`, `verify-archive` 395/395)
+  purged 64 legacy orders + 64 needs + 51 native purchase orders + 16 Pedidos +
+  20 OPs + 25 lotes + the exact synthetic B6-VERIFY fixture (affected-row
+  sequences `0,0,0,0,0,51,51,51,64,51,64` / `0,0,10,8,0,1` /
+  `27,16,4,18,0,0,0,0,0,0,20,16,25`) and re-enabled the four temporarily-disabled
+  guards before COMMIT. Post-state proven (read-only, repeatable-read): zero-state
+  exact; master/reference data, `saldo_fios`, `saldo_fios_op` empty state,
+  `op_numeros`, the documents front excluding B6, the `legacy_active` cutover,
+  migration history, all 35 sequences (state hash `c210b65d…`), and all 35 user
+  triggers (state hash `7060ba455…`; the four guards re-enabled with
+  byte-identical definitions) unchanged. External SQL + all pre/post evidence are
+  stored **outside the repository** at
+  `…/clean-slate-reset/execution/20260722T202717Z/`. Documentation-only commit; no
+  technical/product/test/script/migration change; the archive is unchanged. The
+  reset is **not self-accepted**; the phase is **not CLOSED**; `LAST_ACCEPTED_PHASE`
+  stays `PHASE-C5`; `ACTIVE_PHASE`/`ACTIVE_PHASE_CONTRACT` stay
+  `CLEAN-SLATE-TRANSACTIONAL-RESET` / the contract; the accepted product checkpoint
+  stays `3405fdab8e05ec0f81cbfe07c63c489e551fee92`; `REAL_CUTOVER`,
+  `PHASE-C5B-ACCEPTANCE-DECISION`, and real business-flow recreation remain
+  unauthorized; no phase chains automatically. Full record: contract §25,
+  `PROJECT_STATE.md`, and `docs/ledgers/G28_LEDGER.md`.
 - **`CLEAN-SLATE-TRANSACTIONAL-RESET-READINESS-ACCEPTANCE-CLOSEOUT-R1`
-  (current — direct supervisor acceptance of the validation-gate-closed
+  (prior — direct supervisor acceptance of the validation-gate-closed
   clean-slate reset readiness; documentation-only):** the architect performed the
   direct supervisor review and **ACCEPTED** checkpoint
   `62bdcc75c335e3881adb1af6350de801675aa788` — the clean-slate contract, the reset
