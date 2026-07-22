@@ -955,3 +955,71 @@ disposable-environment implementation only; **not** shared-environment verified,
   AUTHORIZED`. `ACTIVE_PHASE`/`ACTIVE_PHASE_CONTRACT` remain
   `PHASE-C5A-DB-EMISSION-READINESS` / this contract, awaiting supervisor review
   and closeout.
+
+---
+
+## 24. Shared-development validation evidence — `C5A-DB77-SHARED-DEV-VALIDATION-R1` (§14 fulfillment)
+
+**STATUS: IMPLEMENTED / LOCALLY VERIFIED / SHARED-DEVELOPMENT VERIFIED / AWAITING
+SUPERVISOR CLOSEOUT.** Under the separately authorized order
+`C5A-DB77-SHARED-DEV-VALIDATION-R1` (2026-07-22), `db/77` was applied to the
+explicitly authorized **shared development** Supabase project `ucrjtfswnfdlxwtmxnoo`
+(non-production) and the complete §14 shared-environment evidence contract was
+executed. This is **not** a self-acceptance or closeout, **not** production, **not**
+staging, and **not** `REAL_CUTOVER` readiness; supervisor closeout remains pending.
+
+- **Identity gate (read-only).** Project-scoped `supabase-dev-g28` MCP → Supabase
+  **PostgreSQL 17.6**, role `postgres`. Identity proven by the canonical migration
+  fingerprint (terminal `db/76`=`20260720235820`, full `65..76` stack,
+  `db/75`=`20260720234958`) that uniquely matches the recorded state of
+  `ucrjtfswnfdlxwtmxnoo`; production and the forbidden project were never accessed
+  (management `get_project` permission-denied; Supabase exposes no project-ref
+  GUC). Pre-apply cutover `legacy_active`/`flat`/`not_started`; pre-apply grant
+  matrix and function definitions matched the accepted db/68/db/69/db/74 source
+  (emitir md5 `495692f2…`, no read-model logic in the writer; read models the
+  db/69 terminal; guard md5 `00ea8e98…`).
+- **Apply + idempotent reapply.** `db/77` applied byte-identical to `e7a8b761…`
+  (SHA-256 `9628a947…b9919`, 16781 bytes; transmitted string hash-verified before
+  apply) → terminal migration `20260722055832` (one record); byte-identical DDL
+  reapplied → deterministic convergence (identical md5s, no duplicate overloads,
+  no broader grants, still one `db/77` row).
+- **Post-apply terminal verification.** `emitir` body **byte-unchanged**
+  (md5 `495692f2…`, grant-only, `is_admin()` gate intact); `emitir` EXECUTE granted
+  to `authenticated` only (PUBLIC/anon/service_role revoked); the two read models
+  now derive `pode_emitir`/`acoes.emitir`/`bloqueio_emissao` from
+  `_distribuicao_completa_ordem` + `exige_aceite=FALSE` (md5s changed to
+  `36409f50…`/`4815373b…`, byte-preserving every other field); `definir` still
+  granted (md5 `6dd5d945…` unchanged), `alocar` still revoked; the C3C
+  protected-mutation guard untouched (md5 `00ea8e98…`); cutover kept `legacy_active`.
+- **§14 behavioral evidence** (two atomic self-planting `ROLLBACK`'d transactions;
+  because `execute_sql` cannot run the canonical psql script's meta-commands or the
+  superuser `session_replication_role`, the transport was adapted — `SET ROLE` +
+  custom-GUC capture, deferred kg_pedido guard avoided by rollback — with every
+  assertion preserved). `C5A_SCRIPT_A_PASS`: allocation-writer create/idempotency/
+  conflicting-key/over-allocation; detail+list read-model readiness for the eligible
+  `exige_aceite=FALSE` native draft; authenticated non-admin `sem_permissao`; anon
+  `42501`; authorized emission through the **real `authenticated` grant** with
+  `status_aceite='nao_aplicavel'`, one `administrativo/emitida` audit event,
+  deterministic `estado_invalido` duplicate replay, no fabricated acceptance
+  decision; receipt writer ACL unchanged. `C5A_SCRIPT_B_PASS`: `sem_fornecedor`,
+  `sem_itens`, wrong-state and incomplete-allocation denials with atomic invariance;
+  `exige_aceite=TRUE` gates both projections off (`emissao_bloqueada_exige_aceite`)
+  and restores; inert `emitir=false` for legacy/emitted/cancelled/incomplete;
+  cutover fence permits under `legacy_active` and denies protected DML `55000` under
+  `maintenance_fenced`/`canonical_active`, restoring `legacy_active`. The fence
+  proof was fully non-persistent (no triggers on `ordem_compra_cutover`), so
+  **no `DEFERRED_TO_REAL_CUTOVER` classification was required** (§14 item 19 / the
+  cutover limit satisfied in-environment).
+- **Test-data isolation / zero residue.** Uniquely identifiable fixtures
+  (`c5a-int-*@example.invalid`, `C5A %` names, uuids `…0c5a01`/`…0c5a02`), every
+  script `BEGIN…ROLLBACK`. Read-only closeout confirmed zero residue (0 test
+  users/usuarios/clientes/fornecedores/needs), business data intact
+  (`ordens_compra_fio`=64 incl. ids 153–165; `ordem_compra_eventos`=0; 39
+  pre-existing emitida orders), cutover `legacy_active` — **REAL_CUTOVER not
+  activated**, **production not accessed**, **no unrelated shared data modified**
+  (only sequence values advanced by rolled-back inserts — harmless gaps).
+- **Full record:** `docs/ledgers/G28_LEDGER.md` (`2026-07-22 —
+  C5A-DB77-SHARED-DEV-VALIDATION-R1`). Documentation-only local evidence commit
+  `docs: record C5A shared development validation`; no push. `OC-C5-EMISSION-001`
+  stays `PLANNED / BLOCKED_BY_C5A_DB_PREREQUISITE`; `PHASE-C5` UI, `PHASE-C5B`, and
+  `REAL_CUTOVER` remain unauthorized; not self-accepted, not closed.

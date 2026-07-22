@@ -91,10 +91,13 @@
   `docs/architecture/ORDEM_COMPRA_C5A_DB_EMISSION_READINESS_PHASE_CONTRACT.md`
   (`PHASE_ID: PHASE-C5A-DB-EMISSION-READINESS`, `STATUS: ACCEPTED /
   IMPLEMENTATION AUTHORIZED LOCALLY`, §22; implementation `IMPLEMENTED / LOCALLY
-  VERIFIED / AWAITING SUPERVISOR REVIEW`, §23 — supervisor-accepted then locally
-  implemented under `C5A-DB-EMISSION-READINESS-IMPLEMENTATION-R1` Parts 1/2;
-  `db/77` + integration test verified on a disposable local PostgreSQL 18.4
-  cluster; not closed, not shared-environment verified). The now-**closed**
+  VERIFIED / SHARED-DEVELOPMENT VERIFIED / AWAITING SUPERVISOR CLOSEOUT`, §23/§24 —
+  supervisor-accepted then locally implemented under
+  `C5A-DB-EMISSION-READINESS-IMPLEMENTATION-R1` Parts 1/2, then applied
+  byte-identical and §14-validated on the authorized non-production shared
+  development database `ucrjtfswnfdlxwtmxnoo` (PostgreSQL 17.6, terminal migration
+  `20260722055832`) under `C5A-DB77-SHARED-DEV-VALIDATION-R1` (2026-07-22); not
+  closed). The now-**closed**
   `PHASE-C4` material
   contract is `docs/architecture/ORDEM_COMPRA_C4_PHASE_CONTRACT.md`
   (`PHASE_ID: PHASE-C4`, `STATUS: CLOSED / ACCEPTED / LOCALLY VERIFIED /
@@ -108,13 +111,18 @@
   closeout §Z).
 - **Active track:** `PURCHASE_ORDER_PHASE_C`. Active phase
   `PHASE-C5A-DB-EMISSION-READINESS` — implementation `IMPLEMENTED / LOCALLY
-  VERIFIED / AWAITING SUPERVISOR REVIEW` (contract §23; `db/77` + integration test
-  verified on disposable local PostgreSQL 18.4). Next authorizable action is
-  supervisor review/closeout of that implementation (including the forced
-  `tests/ordem-compra-c3d-deploy.smoke.js` migration-manifest fixture update),
-  then a separately authorized non-production apply of `db/77` (contract §14).
-  No shared-database apply, staging, deployment, activation, `REAL_CUTOVER`,
-  `PHASE-C5` UI, `PHASE-C5B`, or push is authorized.
+  VERIFIED / SHARED-DEVELOPMENT VERIFIED / AWAITING SUPERVISOR CLOSEOUT` (contract
+  §23/§24; `db/77` applied byte-identical + §14-validated on the authorized
+  non-production shared development database `ucrjtfswnfdlxwtmxnoo`, PostgreSQL
+  17.6, terminal migration `20260722055832`, under
+  `C5A-DB77-SHARED-DEV-VALIDATION-R1`; clean apply + idempotent reapply; `emitir`
+  body byte-unchanged grant-only; read models corrected; exact grant matrix; full
+  behavioral evidence; zero residue; cutover unchanged `legacy_active`).
+  Next authorizable action is supervisor review/closeout of that
+  shared-development-verified implementation (including the forced
+  `tests/ordem-compra-c3d-deploy.smoke.js` migration-manifest fixture update).
+  Staging application of `db/76`/`db/77`, deployment, activation, `REAL_CUTOVER`,
+  `PHASE-C5` UI, `PHASE-C5B`, production access, and push remain unauthorized.
 - **Current governance status:** `GOVERNANCE-SPEC-CUSTODY-FOUNDATION-R1`
   **ACCEPTED**; `GOVERNANCE-STATE-HANDOFF-COMPACTION-R1` **ACCEPTED** by the
   supervisor at commit `1157b9e71bc629903c5940ab50d4b370964e560e` (state/handoff
@@ -322,13 +330,13 @@
   supervisor review. No shared/remote host, no staging/production, no
   `REAL_CUTOVER`, no push. `OC-C5-EMISSION-001` stays `PLANNED /
   BLOCKED_BY_C5A_DB_PREREQUISITE`; not self-accepted / not closed.
-- **Next authorizable action:** supervisor review/closeout of the
-  `PHASE-C5A` implementation (contract §23, incl. the forced C3D deploy-manifest
-  fixture update), then a separately authorized non-production apply of `db/77`
-  (contract §14). `PHASE-C5` implementation, `PHASE-C5B-ACCEPTANCE-DECISION`,
-  staging validation/application of `db/76`/`db/77`, activation, deployment,
-  `REAL_CUTOVER`, branch creation, production access, and any push remain
-  unauthorized.
+- **Next authorizable action:** supervisor review/closeout of the now
+  `SHARED-DEVELOPMENT VERIFIED` `PHASE-C5A` implementation (contract §23/§24 —
+  `db/77` applied + §14-validated on `ucrjtfswnfdlxwtmxnoo`, incl. the forced C3D
+  deploy-manifest fixture update). `PHASE-C5` implementation,
+  `PHASE-C5B-ACCEPTANCE-DECISION`, staging validation/application of
+  `db/76`/`db/77`, activation, deployment, `REAL_CUTOVER`, branch creation,
+  production access, and any push remain unauthorized.
   `PHASE-C3D-A`/`PHASE-C3D-B` are supervisor-accepted (§R, checkpoints
   `096cd603…` / `5441321…`), `PHASE-C3D-C` (§U, `6fd63a56…`), `PHASE-C3D-D` (§X,
   `5a2be05…`), and `PHASE-C3D-E` (§Z, `429aa39…`) are all `CLOSED / TECHNICALLY

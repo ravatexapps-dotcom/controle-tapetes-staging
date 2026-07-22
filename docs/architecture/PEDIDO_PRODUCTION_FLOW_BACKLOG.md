@@ -8,6 +8,45 @@
 > `PROJECT_STATE.md`. Phase sequence, dependencies, backlog items, and accepted
 > architecture in this file remain authoritative; live operational status does not.
 
+# Update 2026-07-22 - C5A-DB77-SHARED-DEV-VALIDATION-R1 (PHASE-C5A shared development database apply + §14 evidence, shared-development verified)
+
+Phase: authorized apply of the locally accepted `db/77` to the **shared development**
+database `ucrjtfswnfdlxwtmxnoo` (non-production) plus the complete contract §14
+shared-environment evidence. Type: database apply/validation + one docs-only evidence
+commit; no staging, deployment, activation, `REAL_CUTOVER`, production access,
+`PHASE-C5` UI, `PHASE-C5B`, or push. Historical closeout note — live state belongs to
+`PROJECT_STATE.md`.
+
+Status: `IMPLEMENTED / LOCALLY VERIFIED / SHARED-DEVELOPMENT VERIFIED / AWAITING
+SUPERVISOR CLOSEOUT` (contract §24).
+
+`db/77` was applied byte-identical to `e7a8b761` (SHA-256 `9628a947…`; terminal
+migration `20260722055832`) to `ucrjtfswnfdlxwtmxnoo` (PostgreSQL 17.6) via the
+project-scoped `supabase-dev-g28` MCP, then reapplied idempotently (deterministic
+convergence; exactly one migration row). Identity was proven read-only by the
+canonical migration/cutover/grant fingerprint; production `gqmpsxkxynrjvidfmojk` and
+the forbidden project were never accessed. Post-apply: `emitir_ordem_compra` body
+byte-unchanged (grant-only; `is_admin()` gate intact; EXECUTE granted to
+`authenticated` only, PUBLIC/anon/service_role revoked); the two terminal read models
+corrected to derive `pode_emitir`/`acoes.emitir`/`bloqueio_emissao` from
+`_distribuicao_completa_ordem` + `exige_aceite=FALSE`;
+`definir_alocacao_necessidade_compra_fio` still granted; the superseded
+`alocar_necessidade_compra_fio` still revoked; the C3C protected-mutation guard
+untouched. The complete §14 behavioral evidence passed on PG 17.6 in two atomic
+self-planting `ROLLBACK`'d transactions (allocation writer; authorized authenticated
+emission; non-admin/anon denials; wrong-state/incomplete/missing-supplier/zero-item/
+over-allocation denials; duplicate allocation/emission idempotency; one audit event;
+`nao_aplicavel` acceptance with no fabricated decision; detail+list read-model
+readiness; `exige_aceite` gate; inert states; atomic invariance; and the
+`legacy_active`-permit / `maintenance_fenced`+`canonical_active`-deny cutover fence
+proved non-persistently). Zero validation-fixture residue; business data intact
+(`ordens_compra_fio`=64 incl. the 13 unmapped ids 153–165); cutover unchanged
+`legacy_active` — `REAL_CUTOVER` not activated. `OC-C5-EMISSION-001` stays
+`PLANNED / BLOCKED_BY_C5A_DB_PREREQUISITE`; `PHASE-C5` UI, `PHASE-C5B`, and
+`REAL_CUTOVER` remain unauthorized. Sequence/architecture in this file are unchanged.
+Not self-accepted / not closed. One local docs-only commit
+`docs: record C5A shared development validation`; no push.
+
 # Update 2026-07-22 - C5A-DB-EMISSION-READINESS-IMPLEMENTATION-R1 Part 2 (PHASE-C5A local DB implementation, locally verified)
 
 Phase: local disposable-environment implementation of `PHASE-C5A-DB-EMISSION-READINESS`.

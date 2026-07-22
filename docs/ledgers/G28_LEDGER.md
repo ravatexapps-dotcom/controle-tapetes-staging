@@ -8511,3 +8511,114 @@ product file they depend on, was modified by this pass or the prior one):
   shared-database apply of `db/77`, staging validation/application of
   `db/76`/`db/77`, and any push remain unauthorized. **No push is authorized by
   this pass.**
+
+## 2026-07-22 — C5A-DB77-SHARED-DEV-VALIDATION-R1 — PHASE-C5A shared development database apply + §14 evidence (shared-development verified)
+
+- **Authorization:** `C5A-DB77-SHARED-DEV-VALIDATION-R1` — controlled apply of the
+  already locally accepted `db/77_ordem_compra_c5a_emission_readiness.sql` to the
+  explicitly authorized **shared development** Supabase project
+  `ucrjtfswnfdlxwtmxnoo` (non-production), the complete contract §14
+  shared-environment evidence, proportional documentation, and one local
+  documentation-only evidence commit. **Not** a self-acceptance or closeout of
+  `PHASE-C5A`; no `PHASE-C5` UI, no `PHASE-C5B`, no `REAL_CUTOVER`, no production
+  access, no staging, no deployment, no push.
+- **Entry baseline:** branch `dev`; `HEAD`
+  `e7a8b76152f986c83e4ecfe9827346a4efa5ef08` (parent
+  `27464520af2afa3c46d547ffaf76328df70b1889`); protected residue `M .gitignore`,
+  `?? .codex/config.toml`, `?? .mcp.json` (untouched); `staging/dev`
+  `0df4228f903ae68c7e8b240e69ff3b37df9ebd86` (0/11 behind local `dev` — expected,
+  non-blocking).
+- **Database identity gate (read-only):** connected via the project-scoped
+  `supabase-dev-g28` MCP to Supabase **PostgreSQL 17.6** (role `postgres`,
+  database `postgres`). The migration history matched the canonical dev-DB record
+  exactly — terminal `db/76` = version `20260720235820`, the full `65..76`
+  purchase-order stack, `db/75` = `20260720234958` — uniquely identifying
+  `ucrjtfswnfdlxwtmxnoo`; production `gqmpsxkxynrjvidfmojk` and the forbidden
+  project were never accessed (the management API `get_project` was
+  permission-denied; no project ref GUC is exposed by Supabase). Pre-apply:
+  cutover `legacy_active`/`flat`/`not_started` (nulls); grant matrix
+  `emitir_ordem_compra` no application-role EXECUTE,
+  `definir_alocacao_necessidade_compra_fio` authenticated-only,
+  `alocar_necessidade_compra_fio` ungranted; pre-apply function md5s
+  `emitir`=495692f2033cc4abdf9231fcf8c3f01f (db/68 body markers present, no
+  read-model logic), `obter`=3a8032cd21a9eeb4e1d9e3e8e7338075,
+  `listar`=8e67ce86ae28dcb8a39f9d1d9eafd1fd (db/69 terminal), guard
+  `trg_c3c_protected_mutation_guard`=00ea8e9827dd53ca3b33cd5db2337b6b.
+- **Apply:** `db/77` applied byte-identical to commit `e7a8b761…` (local SHA-256
+  `9628a947ea930ad0f16c0135c9f9a5ef782c7c01e5d3fe71512f0c2fc0ab9919`, 16781 bytes,
+  git-blob-verified; the transmitted migration string was hash-verified equal to
+  the file before apply) via
+  `apply_migration('77_ordem_compra_c5a_emission_readiness', …)` → success;
+  resulting terminal migration `20260722055832`
+  `77_ordem_compra_c5a_emission_readiness` (one record). Idempotent reapply
+  (byte-identical DDL via `execute_sql`) → deterministic convergence: all function
+  md5s identical, no duplicate overloads (emitir/obter/listar = 1 each), no broader
+  grants, still exactly one `db/77` migration row.
+- **Post-apply verification:** `emitir` md5 `495692f2…` **byte-unchanged**
+  (grant-only; internal `is_admin()` gate intact); `definir` md5 `6dd5d945…` and
+  `_distribuicao_completa_ordem` md5 `2e4ac3c4…` unchanged; read models updated to
+  the readiness derivation (`obter`=36409f503cb03e1ce405a2856120b542,
+  `listar`=4815373b1676a9f9ea394bfcd8759417; `exige_aceite` +
+  `emissao_bloqueada_exige_aceite` present, old `recebimento_nativo_ainda_inativo`
+  blocker gone); guard md5 `00ea8e98…` unchanged; grant matrix `emitir`→
+  authenticated only (PUBLIC/anon/service_role revoked), obter/listar
+  authenticated-only, definir authenticated, alocar revoked.
+- **Shared-environment §14 behavioral evidence** (two atomic, self-planting,
+  `ROLLBACK`'d transactions on PG 17.6; `execute_sql` cannot run the canonical psql
+  script's meta-commands or superuser `session_replication_role`, so the transport
+  was adapted — `SET ROLE` + custom-GUC capture, the deferred kg_pedido guard
+  avoided by rollback — with every assertion preserved): `C5A_SCRIPT_A_PASS` —
+  allocation-writer create `ok`, idempotent replay identical +
+  `idempotencia_conflitante`, over-allocation `excede_saldo`; detail read model
+  `acoes.emitir`/`pode_emitir`=true, `bloqueio_emissao`=NULL, `acoes.receber`=false;
+  list read model `emitir`=true; authenticated non-admin `sem_permissao`; anon
+  `42501`; authorized emission through the real `authenticated` grant `ok`/`emitida`,
+  `status_aceite`='nao_aplicavel', duplicate `estado_invalido`, exactly one
+  `administrativo/emitida` audit event, zero fabricated acceptance decision (writer
+  carries no `aceita`/`rejeitada` literal); receipt writer ACL authenticated-only.
+  `C5A_SCRIPT_B_PASS` — `sem_fornecedor`, `sem_itens`, wrong-state `estado_invalido`,
+  `alocacao_incompleta` with atomic invariance (status stays `rascunho`, 0 events);
+  `exige_aceite=TRUE` gates both projections off (`emissao_bloqueada_exige_aceite`)
+  and restores; inert `emitir=false` for legacy/emitted/cancelled/incomplete
+  (`distribuicao_necessidades_pendente`); cutover fence permits under `legacy_active`
+  (all writes ran) and denies protected DML `55000` under `maintenance_fenced` and
+  `canonical_active`, then restores `legacy_active`. The fence proof used only a
+  non-persistent transactional mechanism (no triggers on `ordem_compra_cutover`),
+  so **no `DEFERRED_TO_REAL_CUTOVER` classification was needed**.
+- **Cleanup / zero residue (read-only closeout):** cutover unchanged
+  `legacy_active`/`flat`/`not_started` (nulls) — **REAL_CUTOVER not activated**;
+  zero validation-fixture residue (0 test auth.users/usuarios/clientes/fornecedores/
+  needs); `ordem_compra_config.exige_aceite`=false; business data intact
+  (`ordens_compra_fio`=64 incl. the 13 unmapped ids 153–165; 39 pre-existing
+  emitida orders; `ordem_compra_eventos`=0 — none existed and `db/77` does no event
+  DML); terminal `20260722055832` (one `db/77` row). Every validation transaction
+  was `BEGIN…ROLLBACK`; sequence values advanced by the rolled-back inserts
+  (harmless gaps; zero rows persisted).
+- **Documentation:** proportional updates to this ledger,
+  `docs/architecture/ORDEM_COMPRA_C5A_DB_EMISSION_READINESS_PHASE_CONTRACT.md`
+  (§24), `PROJECT_STATE.md`, `AGENT_HANDOFF.md`,
+  `docs/architecture/ORDEM_COMPRA_C3_TRACEABILITY.md`, and
+  `docs/architecture/PEDIDO_PRODUCTION_FLOW_BACKLOG.md`. No product, test, script,
+  migration, configuration, or protected-residue change; `db/77` remains
+  byte-identical to `e7a8b761…`. `node scripts/validate-spec-custody.mjs` PASS;
+  `--self-test` unchanged pre-existing active-contract fixture-harness identity
+  only; `git diff --check` / `git diff --cached --check` clean.
+- **Exact accounting subject:** `docs: record C5A shared development validation`
+- **Canonical state after this validation:**
+  ```text
+  LAST_ACCEPTED_PHASE = PHASE-C4
+  ACTIVE_PHASE = PHASE-C5A-DB-EMISSION-READINESS
+  ACTIVE_PHASE_CONTRACT = docs/architecture/ORDEM_COMPRA_C5A_DB_EMISSION_READINESS_PHASE_CONTRACT.md
+
+  PHASE-C5A IMPLEMENTATION = IMPLEMENTED / LOCALLY VERIFIED / SHARED-DEVELOPMENT VERIFIED / AWAITING SUPERVISOR CLOSEOUT
+  OC-C5-EMISSION-001 = PLANNED / BLOCKED_BY_C5A_DB_PREREQUISITE
+  PHASE-C5 UI = NOT AUTHORIZED
+  PHASE-C5B-ACCEPTANCE-DECISION = IDENTIFIED / NOT AUTHORIZED
+  REAL_CUTOVER = NOT AUTHORIZED
+  ```
+- **NEXT_AUTHORIZABLE_ACTION:** supervisor review and acceptance/closeout of the
+  now SHARED-DEVELOPMENT VERIFIED `PHASE-C5A` implementation (`db/77` applied to
+  `ucrjtfswnfdlxwtmxnoo` + contract §14/§24 evidence). `PHASE-C5` UI
+  implementation, `PHASE-C5B-ACCEPTANCE-DECISION`, `REAL_CUTOVER`, staging
+  application of `db/76`/`db/77`, activation, deployment, production access, and
+  any push remain unauthorized. **No push is authorized by this pass.**
