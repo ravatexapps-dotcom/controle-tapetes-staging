@@ -8,6 +8,45 @@
 > `PROJECT_STATE.md`. Phase sequence, dependencies, backlog items, and accepted
 > architecture in this file remain authoritative; live operational status does not.
 
+# Update 2026-07-22 - CLEAN-SLATE-TRANSACTIONAL-RESET-READINESS-ACCEPTANCE-CLOSEOUT-R1 (direct supervisor acceptance of the validation-gate-closed clean-slate reset readiness; checkpoint 62bdcc75 ACCEPTED / DIRECTLY VERIFIED; shared-development reset authorized as the next separate governed destructive order, not executed; documentation-only)
+
+Phase: documentation-only supervisor-acceptance recording (direct supervisor
+acceptance of the clean-slate reset readiness at checkpoint
+`62bdcc75c335e3881adb1af6350de801675aa788`).
+
+**Sequence effect.** The `CLEAN-SLATE-TRANSACTIONAL-RESET` sequence item's
+mandatory archive-and-restore-drill HARD STOP and its validation gates are closed
+and the readiness is **accepted**. The architect performed the direct supervisor
+review and **ACCEPTED** the accepted clean-slate contract, the implemented +
+hardened reset tooling, the retained authoritative archive `20260722T183846Z`
+(aggregate SHA-256 `5221cd4753157ba426cee978b43d8b0107a42a5f08f6e23c96503ee92d7399dc`;
+`verify-archive` 395/395), the passed disposable restore/reset drill (96/96), the
+closed validation gates (`--self-test` 54/54; fixture suite 61/61), and the
+ratified contract §21.4 trigger-handling mechanism (reset/restore SQL
+byte-identical) — all `ACCEPTED / DIRECTLY VERIFIED` at checkpoint
+`62bdcc75c335e3881adb1af6350de801675aa788`.
+
+**Superseded checkpoint.** `f165302c1c542aa26e9ae78464d260c81eda6415` remains
+**NOT ACCEPTED**; its retained technical corrections are incorporated into and
+superseded by `62bdcc75…`.
+
+**Next sequenced action.** The destructive shared-development reset is now
+`AUTHORIZED AS THE NEXT SEPARATE GOVERNED DESTRUCTIVE ORDER`
+(`CLEAN-SLATE-TRANSACTIONAL-RESET-SHARED-DEV-EXECUTION-R1`) and has **not** been
+executed. `REAL_CUTOVER` (`NOT AUTHORIZED`), `PHASE-C5B-ACCEPTANCE-DECISION`
+(`IDENTIFIED / NOT AUTHORIZED`), real business-flow recreation (`NOT AUTHORIZED
+UNTIL RESET EXECUTION IS ACCEPTED`), any shared-database apply beyond `db/77`,
+staging validation/application, deployment, activation, production access, and
+branch creation remain **unauthorized**. The phase is not CLOSED and no phase
+chains automatically; the accepted product checkpoint stays
+`3405fdab8e05ec0f81cbfe07c63c489e551fee92`.
+
+**Non-mutation.** Documentation-only: no database access, SQL, reset execution,
+archive change, migration, product/test/script change, or protected-residue change
+occurred. Commit `docs: accept clean-slate reset readiness`, published through one
+authorized `staging/dev` fast-forward push. Full record: contract §24,
+`PROJECT_STATE.md`, and `docs/ledgers/G28_LEDGER.md`.
+
 # Update 2026-07-22 - CLEAN-SLATE-TRANSACTIONAL-RESET-FINAL-VALIDATION-GATES-CORRECTION-R1 (checkpoint f165302c NOT ACCEPTED — mandatory self-test failed; 2 blocking validation-gate defects fixed; archive-safety technical patch retained; authoritative archive revalidated, not regenerated)
 
 Phase: localized forward correction + existing-archive revalidation (direct

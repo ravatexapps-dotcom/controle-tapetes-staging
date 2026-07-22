@@ -6,7 +6,7 @@ PHASE_ID: CLEAN-SLATE-TRANSACTIONAL-RESET
 
 ```text
 PHASE_ID: CLEAN-SLATE-TRANSACTIONAL-RESET
-STATUS: CONTRACT ACCEPTED / TOOLING IMPLEMENTED / REAL ARCHIVE GENERATED READ-ONLY / DISPOSABLE RESTORE DRILL PASSED / AWAITING DIRECT SUPERVISOR REVIEW / SHARED-DEVELOPMENT RESET NOT AUTHORIZED
+STATUS: CONTRACT ACCEPTED / TOOLING IMPLEMENTED / REAL ARCHIVE GENERATED READ-ONLY / DISPOSABLE RESTORE DRILL PASSED / VALIDATION GATES CLOSED / READINESS ACCEPTED / DIRECTLY VERIFIED AT 62bdcc75c335e3881adb1af6350de801675aa788 / SHARED-DEVELOPMENT RESET AUTHORIZED AS THE NEXT SEPARATE GOVERNED DESTRUCTIVE ORDER / NOT EXECUTED
 AUTHORED_BY: CLEAN-SLATE-TRANSACTIONAL-RESET-CONTRACT-R1 (read-only diagnosis + documentation-only authoring)
 CORRECTED_BY: CLEAN-SLATE-TRANSACTIONAL-RESET-CONTRACT-CORRECTION-R1 (documentation-only, over the accepted CLEAN-SLATE-DOCUMENT-HISTORY-AND-RESIDUAL-BOUNDARY-DIAGNOSIS-R1)
 CONTRACT BASELINE CORRECTION: ACCEPTED ARCHITECT RULING — CLEAN-SLATE-TRANSACTIONAL-RESET-B6-ROW-BASELINE-FORWARD-CORRECTION-R1 (documentation-only): document_link_revision_ops corrected from 4 to 10 rows; 4 distinct OPs remain 55, 57, 61, 63
@@ -600,16 +600,20 @@ execution.
 ## 20. Status
 
 `CONTRACT ACCEPTED / TOOLING IMPLEMENTED / REAL ARCHIVE GENERATED READ-ONLY /
-DISPOSABLE RESTORE DRILL PASSED / AWAITING DIRECT SUPERVISOR REVIEW /
-SHARED-DEVELOPMENT RESET NOT AUTHORIZED` (updated by R2, §21). **No deletion or
-database mutation of the shared-development database has occurred**; the 64/51/13
-corpus, the 16 Pedidos, the 20 OPs, the 25 lotes, and the synthetic B6-VERIFY
-fixture all physically exist unchanged in `ucrjtfswnfdlxwtmxnoo`. `REAL_CUTOVER`
-and `PHASE-C5B-ACCEPTANCE-DECISION` remain unauthorized. The destructive
-shared-development reset still requires a **separate** explicit order; the §8
-archive-and-restore drill HARD STOP is now satisfied by proven tooling (§21).
-`PROJECT_STATE.md` remains the sole owner of `ACTIVE_PHASE`/`ACTIVE_PHASE_CONTRACT`
-(now `CLEAN-SLATE-TRANSACTIONAL-RESET` / this contract).
+DISPOSABLE RESTORE DRILL PASSED / VALIDATION GATES CLOSED / READINESS ACCEPTED /
+DIRECTLY VERIFIED / SHARED-DEVELOPMENT RESET AUTHORIZED AS THE NEXT SEPARATE
+GOVERNED DESTRUCTIVE ORDER / NOT EXECUTED` (updated by R2 §21; readiness accepted
+by §24). **No deletion or database mutation of the shared-development database has
+occurred**; the 64/51/13 corpus, the 16 Pedidos, the 20 OPs, the 25 lotes, and the
+synthetic B6-VERIFY fixture all physically exist unchanged in
+`ucrjtfswnfdlxwtmxnoo`. `REAL_CUTOVER` and `PHASE-C5B-ACCEPTANCE-DECISION` remain
+unauthorized. The destructive shared-development reset is now **authorized as the
+next separate governed destructive order**
+(`CLEAN-SLATE-TRANSACTIONAL-RESET-SHARED-DEV-EXECUTION-R1`, §24) and has **not**
+been executed; the §8 archive-and-restore drill HARD STOP is satisfied by proven
+tooling (§21). `PROJECT_STATE.md` remains the sole owner of
+`ACTIVE_PHASE`/`ACTIVE_PHASE_CONTRACT` (now `CLEAN-SLATE-TRANSACTIONAL-RESET` /
+this contract).
 
 ---
 
@@ -919,3 +923,61 @@ safety technical patch is **reviewed and retained**. `ACTIVE_PHASE`/
 `ACTIVE_PHASE_CONTRACT` stay `CLEAN-SLATE-TRANSACTIONAL-RESET` / this contract;
 the phase is **not CLOSED**; shared-development reset, `REAL_CUTOVER`, and
 `PHASE-C5B-ACCEPTANCE-DECISION` remain unauthorized.
+
+---
+
+## 24. Direct supervisor acceptance of clean-slate reset readiness (R1) — checkpoint `62bdcc75` ACCEPTED
+
+Authored by `CLEAN-SLATE-TRANSACTIONAL-RESET-READINESS-ACCEPTANCE-CLOSEOUT-R1`
+(entry checkpoint `62bdcc75c335e3881adb1af6350de801675aa788`), a **documentation-only**
+supervisor-acceptance pass. **No shared-development access, SQL, reset execution,
+archive regeneration, or environment change occurred.** This section supersedes the
+"awaiting direct supervisor review / shared-development reset not authorized"
+disposition previously recorded in the top STATUS line, §20, and §23.6.
+
+### 24.1 Binding supervisor acceptance
+
+```text
+CHECKPOINT:                       62bdcc75c335e3881adb1af6350de801675aa788
+SUPERVISOR DISPOSITION:           ACCEPTED / DIRECTLY VERIFIED
+CLEAN-SLATE RESET READINESS:      ACCEPTED
+CONTRACT:                         ACCEPTED
+TOOLING:                          ACCEPTED
+ARCHIVE:                          ACCEPTED (20260722T183846Z, aggregate SHA-256
+                                  5221cd4753157ba426cee978b43d8b0107a42a5f08f6e23c96503ee92d7399dc)
+DISPOSABLE RESTORE/RESET DRILL:   ACCEPTED (96/96)
+VALIDATION GATES:                 CLOSED (--self-test 54/54; fixture suite 61/61; verify-archive 395/395)
+TRIGGER-HANDLING MECHANISM:       RATIFIED / ACCEPTED (§21.4, reset/restore SQL byte-identical)
+SHARED-DEVELOPMENT RESET:         AUTHORIZED AS THE NEXT SEPARATE GOVERNED DESTRUCTIVE ORDER
+                                  (CLEAN-SLATE-TRANSACTIONAL-RESET-SHARED-DEV-EXECUTION-R1) / NOT EXECUTED BY THIS ORDER
+```
+
+### 24.2 Superseded-checkpoint disposition
+
+Checkpoint `f165302c1c542aa26e9ae78464d260c81eda6415` **remains NOT ACCEPTED** (its
+mandatory `--self-test` failed there, §23). Its retained technical corrections (the
+§22 archive-safety patch and the §23 validation-gate fixes) are **incorporated into
+and superseded by** the accepted checkpoint
+`62bdcc75c335e3881adb1af6350de801675aa788`.
+
+### 24.3 What remains unauthorized
+
+This acceptance authorizes only the **existence** of a separate governed execution
+order; it does **not** execute anything. The following remain unauthorized and
+unchanged: the destructive reset execution itself (until it runs under
+`CLEAN-SLATE-TRANSACTIONAL-RESET-SHARED-DEV-EXECUTION-R1` with every §12/§13 gate
+satisfied); `REAL_CUTOVER` (`NOT AUTHORIZED`); `PHASE-C5B-ACCEPTANCE-DECISION`
+(`IDENTIFIED / NOT AUTHORIZED`); real business-flow recreation (`NOT AUTHORIZED
+UNTIL RESET EXECUTION IS ACCEPTED`); any shared-database apply beyond `db/77`;
+staging validation/application; deployment; activation; production access; and
+branch creation. The phase is **not CLOSED** and the accepted product checkpoint
+stays `3405fdab8e05ec0f81cbfe07c63c489e551fee92`. No phase chains automatically.
+
+### 24.4 Status
+
+`CONTRACT ACCEPTED / TOOLING IMPLEMENTED / REAL ARCHIVE GENERATED READ-ONLY /
+DISPOSABLE RESTORE DRILL PASSED / VALIDATION GATES CLOSED / READINESS ACCEPTED /
+DIRECTLY VERIFIED AT 62bdcc75c335e3881adb1af6350de801675aa788 / SHARED-DEVELOPMENT
+RESET AUTHORIZED AS THE NEXT SEPARATE GOVERNED DESTRUCTIVE ORDER / NOT EXECUTED`.
+`PROJECT_STATE.md` remains the sole owner of `ACTIVE_PHASE`/`ACTIVE_PHASE_CONTRACT`
+(`CLEAN-SLATE-TRANSACTIONAL-RESET` / this contract).

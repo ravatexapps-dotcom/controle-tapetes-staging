@@ -20,7 +20,7 @@ LAST_ACCEPTED_PHASE: PHASE-C5
 ACTIVE_PHASE: CLEAN-SLATE-TRANSACTIONAL-RESET
 ACTIVE_PHASE_CONTRACT: docs/architecture/CLEAN_SLATE_TRANSACTIONAL_RESET_PHASE_CONTRACT.md
 ACTIVE_TRACK: PURCHASE_ORDER_PHASE_C
-NEXT_AUTHORIZABLE_ACTION: DIRECT SUPERVISOR REVIEW of the validation-gate-closed clean-slate reset tooling implemented by CLEAN-SLATE-TRANSACTIONAL-RESET-FINAL-VALIDATION-GATES-CORRECTION-R1 (docs/architecture/CLEAN_SLATE_TRANSACTIONAL_RESET_PHASE_CONTRACT.md §23, entry checkpoint f165302c1c542aa26e9ae78464d260c81eda6415): checkpoint f165302c1c542aa26e9ae78464d260c81eda6415 is NOT ACCEPTED because the mandatory node scripts/validate-spec-custody.mjs --self-test failed at that commit (uncaught crash, exit 1, zero PASS lines); the §22 archive-safety technical patch was reviewed and is RETAINED (no change required). Root cause A (scripts/spec-custody/self-tests.mjs createFixture() never copied ACTIVE_PHASE_CONTRACT into its synthetic fixture, causing the self-test baseline to crash as an uncaught R2 exception once this contract became the active phase) is fixed generically (reads the source bootstrap, copies/tracks whichever contract is currently active, never hardcoding a phase or path), plus 7 new test cases; --self-test now exits 0 with 54/54 PASS. Root cause B (verifyPreservedBaseline op_numeros check was a loose tipo->value map ignoring the year, silently collapsing duplicates, never checking row count) is fixed to an exact canonical two-row identity set (latex/2026/18, tecelagem/2026/41) rejecting missing/extra/duplicate/wrong-tipo/wrong-year/wrong-value/NULL rows, with 6 new archive-tooling tests; fixture suite 61/61. The existing authoritative archive 20260722T183846Z was retained and revalidated, NOT regenerated: aggregate SHA-256 5221cd4753157ba426cee978b43d8b0107a42a5f08f6e23c96503ee92d7399dc unchanged before/after this pass; corrected verify-archive 395/395; the full disposable restore/reset drill was re-run against this same archive (96/96), clean-slate-transactional-reset.sql/-restore.sql byte-identical throughout, the ratified contract §21.4 trigger-handling mechanism unchanged. No shared-development access of any kind occurred in this pass. The clean-slate reset execution/shared-development deletion, PHASE-C5B-ACCEPTANCE-DECISION (IDENTIFIED / NOT AUTHORIZED), REAL_CUTOVER (NOT AUTHORIZED), any shared-database apply beyond db/77, staging validation/application, deployment, activation, production access, branch creation, and any push beyond the one authorized staging/dev fast-forward for this pass single commit remain unauthorized; the phase is not CLOSED and no phase chains automatically
+NEXT_AUTHORIZABLE_ACTION: EXECUTE the authorized clean-slate shared-development transactional reset under the separate governed destructive order CLEAN-SLATE-TRANSACTIONAL-RESET-SHARED-DEV-EXECUTION-R1 (AUTHORIZED AS A SEPARATE GOVERNED DESTRUCTIVE ORDER / NOT EXECUTED). The validation-gate-closed clean-slate reset tooling, the accepted contract, the retained authoritative archive 20260722T183846Z (aggregate SHA-256 5221cd4753157ba426cee978b43d8b0107a42a5f08f6e23c96503ee92d7399dc, verify-archive 395/395), the passed disposable restore/reset drill (96/96), the closed validation gates (--self-test 54/54, fixture suite 61/61), and the ratified contract §21.4 trigger-handling mechanism were ACCEPTED / DIRECTLY VERIFIED at checkpoint 62bdcc75c335e3881adb1af6350de801675aa788 by CLEAN-SLATE-TRANSACTIONAL-RESET-READINESS-ACCEPTANCE-CLOSEOUT-R1 (docs/architecture/CLEAN_SLATE_TRANSACTIONAL_RESET_PHASE_CONTRACT.md §24); checkpoint f165302c1c542aa26e9ae78464d260c81eda6415 remains NOT ACCEPTED with its retained technical corrections incorporated into and superseded by 62bdcc75c335e3881adb1af6350de801675aa788; the phase is not CLOSED and no phase chains automatically; PHASE-C5B-ACCEPTANCE-DECISION (IDENTIFIED / NOT AUTHORIZED), REAL_CUTOVER (NOT AUTHORIZED), real business-flow recreation (NOT AUTHORIZED UNTIL RESET EXECUTION IS ACCEPTED), any shared-database apply beyond db/77, staging validation/application, deployment, activation, production access, and branch creation remain unauthorized
 GOVERNING_SPEC: docs/architecture/ORDEM_COMPRA_LIFECYCLE_SPEC_PROPOSED.md
 TECHNICAL_CONTRACT: docs/architecture/PEDIDO_OP_SCHEMA_CONTRACT.md
 SEQUENCE_AUTHORITY: docs/architecture/PEDIDO_PRODUCTION_FLOW_BACKLOG.md
@@ -33,6 +33,35 @@ ACCEPTED_CHECKPOINT: 3405fdab8e05ec0f81cbfe07c63c489e551fee92
 
 ## Active phase and next action
 
+- **`CLEAN-SLATE-TRANSACTIONAL-RESET-READINESS-ACCEPTANCE-CLOSEOUT-R1` (current —
+  direct supervisor acceptance of the validation-gate-closed clean-slate reset
+  readiness; documentation-only):** `CLEAN-SLATE RESET READINESS = ACCEPTED /
+  DIRECTLY VERIFIED`. The architect performed the direct supervisor review and
+  **ACCEPTED** checkpoint `62bdcc75c335e3881adb1af6350de801675aa788` — the accepted
+  clean-slate contract, the implemented + hardened reset tooling, the retained
+  authoritative archive `20260722T183846Z` (aggregate SHA-256
+  `5221cd4753157ba426cee978b43d8b0107a42a5f08f6e23c96503ee92d7399dc`;
+  `verify-archive` 395/395), the passed disposable restore/reset drill (96/96), the
+  closed validation gates (`--self-test` 54/54, fixture suite 61/61), and the
+  ratified §21.4 trigger-handling mechanism (reset/restore SQL byte-identical) are
+  all `ACCEPTED`. Checkpoint `f165302c1c542aa26e9ae78464d260c81eda6415` remains
+  **NOT ACCEPTED**; its retained technical corrections are incorporated into and
+  superseded by the accepted checkpoint `62bdcc75…`.
+  `ACCEPTED_CLEAN_SLATE_READINESS_CHECKPOINT = 62bdcc75c335e3881adb1af6350de801675aa788`
+  (a readiness/authorization checkpoint recorded here in prose — the bootstrap
+  `ACCEPTED_CHECKPOINT` product checkpoint stays
+  `3405fdab8e05ec0f81cbfe07c63c489e551fee92`). The `SHARED-DEVELOPMENT RESET` is now
+  `AUTHORIZED AS THE NEXT SEPARATE GOVERNED DESTRUCTIVE ORDER`
+  (`CLEAN-SLATE-TRANSACTIONAL-RESET-SHARED-DEV-EXECUTION-R1`) / **NOT EXECUTED BY
+  THIS ORDER**. `LAST_ACCEPTED_PHASE` stays `PHASE-C5`;
+  `ACTIVE_PHASE`/`ACTIVE_PHASE_CONTRACT` stay `CLEAN-SLATE-TRANSACTIONAL-RESET` /
+  the contract; the phase is **not CLOSED** (the destructive reset has not executed)
+  and no phase chains automatically. `REAL_CUTOVER` (`NOT AUTHORIZED`),
+  `PHASE-C5B-ACCEPTANCE-DECISION` (`IDENTIFIED / NOT AUTHORIZED`), and real
+  business-flow recreation (`NOT AUTHORIZED UNTIL RESET EXECUTION IS ACCEPTED`)
+  remain unauthorized. **No database access, SQL, reset execution, archive change,
+  or environment change occurred in this pass** (documentation-only). Full record:
+  contract §24 and `docs/ledgers/G28_LEDGER.md`.
 - **`CLEAN-SLATE-TRANSACTIONAL-RESET-TOOLING-AND-DRILL-R2` (this pass — tooling +
   read-only real archive + disposable restore/reset drill):**
   `TOOLING_IMPLEMENTED / REAL_ARCHIVE_GENERATED_READ_ONLY /

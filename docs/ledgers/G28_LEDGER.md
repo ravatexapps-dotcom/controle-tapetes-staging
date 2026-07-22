@@ -9415,3 +9415,29 @@ product file they depend on, was modified by this pass or the prior one):
   REAL_CUTOVER = NOT AUTHORIZED
   ```
 - **Próxima fase indicada / NEXT_AUTHORIZABLE_ACTION:** direct supervisor review of the validation-gate-closed clean-slate reset tooling, with the existing authoritative archive revalidated (not regenerated). The destructive shared-development reset requires a separate explicit order; no deletion, database mutation, phase closure, or continuation is authorized; no phase chains automatically. This pass publishes exactly one commit through one authorized fast-forward push to `staging/dev`; no further push is authorized.
+
+---
+
+## 2026-07-22 — CLEAN-SLATE-TRANSACTIONAL-RESET-READINESS-ACCEPTANCE-CLOSEOUT-R1 — direct supervisor acceptance of clean-slate reset readiness (checkpoint 62bdcc75 ACCEPTED); shared-development reset authorized as the next separate governed destructive order, not executed — DOCUMENTATION-ONLY
+
+- **Order / scope.** Documentation-only supervisor-acceptance recording. Record, in the canonical repository, the direct supervisor acceptance of checkpoint `62bdcc75c335e3881adb1af6350de801675aa788` (the accepted clean-slate contract, the implemented + hardened reset tooling, the retained + verified authoritative archive, the passed disposable restore/reset drill, the closed validation gates, and the ratified trigger-handling mechanism), and set the live next authorizable action to the separate governed destructive execution order. Authorizes **documentation changes only** — no database access, SQL, reset execution, deletion, archive regeneration, deployment, `REAL_CUTOVER`, or `PHASE-C5B`.
+- **Supervisor acceptance (binding).** `62bdcc75c335e3881adb1af6350de801675aa788` = **ACCEPTED / DIRECTLY VERIFIED**. `CLEAN-SLATE RESET READINESS = ACCEPTED`; `CONTRACT = ACCEPTED`; `TOOLING = ACCEPTED`; `ARCHIVE = ACCEPTED` (`20260722T183846Z`, aggregate SHA-256 `5221cd4753157ba426cee978b43d8b0107a42a5f08f6e23c96503ee92d7399dc`, `verify-archive` 395/395); `DISPOSABLE RESTORE/RESET DRILL = ACCEPTED` (96/96); `VALIDATION GATES = CLOSED` (`--self-test` 54/54, fixture suite 61/61); `TRIGGER-HANDLING MECHANISM = RATIFIED / ACCEPTED` (contract §21.4, reset/restore SQL byte-identical). `SHARED-DEVELOPMENT RESET = AUTHORIZED AS THE NEXT SEPARATE GOVERNED DESTRUCTIVE ORDER (CLEAN-SLATE-TRANSACTIONAL-RESET-SHARED-DEV-EXECUTION-R1) / NOT EXECUTED BY THIS ORDER`.
+- **Superseded-checkpoint disposition.** `f165302c1c542aa26e9ae78464d260c81eda6415` **remains NOT ACCEPTED** (its mandatory `--self-test` failed there, §23); its retained technical corrections are **incorporated into and superseded by** the accepted checkpoint `62bdcc75c335e3881adb1af6350de801675aa788`.
+- **Non-authorization / non-mutation.** **No shared-development access of any kind occurred in this pass** (no MCP call, no connection, no query, no SQL). No reset was executed; the shared-development corpus (64/51/13, 16 Pedidos, 20 OPs, 25 lotes, the synthetic B6-VERIFY fixture) is **unchanged** and physically exists in `ucrjtfswnfdlxwtmxnoo`. The authoritative archive was not modified or regenerated. `REAL_CUTOVER`, `PHASE-C5B-ACCEPTANCE-DECISION`, real business-flow recreation, any shared-database apply beyond `db/77`, staging validation/application, deployment, activation, production access, and branch creation remain **unauthorized**; the phase is **not CLOSED**; the accepted product checkpoint stays `3405fdab8e05ec0f81cbfe07c63c489e551fee92`; no phase chains automatically.
+- **Validation.** `node scripts/validate-spec-custody.mjs` PASS; `node scripts/validate-spec-custody.mjs --self-test` **54/54 PASS, exit 0**; `git diff --check` / `git diff --cached --check` clean; protected residue (`.gitignore`, `.codex/config.toml`, `.mcp.json`) untouched.
+- **Exact accounting subject:** `docs: accept clean-slate reset readiness`
+- **Commit manifest.** 7 documentation files only (`docs/architecture/CLEAN_SLATE_TRANSACTIONAL_RESET_PHASE_CONTRACT.md`, `PROJECT_STATE.md`, `AGENT_HANDOFF.md`, `docs/DOCUMENTATION_INDEX.md`, `docs/architecture/ORDEM_COMPRA_C3_TRACEABILITY.md`, `docs/architecture/PEDIDO_PRODUCTION_FLOW_BACKLOG.md`, this ledger). No technical/product/test/script/migration/config change; no protected-residue change. Parent `62bdcc75c335e3881adb1af6350de801675aa788`.
+- **Canonical state after this commit:**
+  ```text
+  LAST_ACCEPTED_PHASE = PHASE-C5
+  ACTIVE_PHASE = CLEAN-SLATE-TRANSACTIONAL-RESET
+  ACTIVE_PHASE_CONTRACT = docs/architecture/CLEAN_SLATE_TRANSACTIONAL_RESET_PHASE_CONTRACT.md
+  ACCEPTED_CHECKPOINT = 3405fdab8e05ec0f81cbfe07c63c489e551fee92
+  ACCEPTED_CLEAN_SLATE_READINESS_CHECKPOINT = 62bdcc75c335e3881adb1af6350de801675aa788
+
+  CLEAN-SLATE-TRANSACTIONAL-RESET = CONTRACT ACCEPTED / TOOLING IMPLEMENTED / TRIGGER-HANDLING RATIFIED / ARCHIVE-SAFETY PATCH RETAINED / VALIDATION GATES CLOSED / READINESS ACCEPTED / DIRECTLY VERIFIED (62bdcc75) / f165302c NOT ACCEPTED (superseded by 62bdcc75) / SHARED-DEVELOPMENT RESET AUTHORIZED AS THE NEXT SEPARATE GOVERNED DESTRUCTIVE ORDER / NOT EXECUTED
+  OC-CUTOVER-001 = PLANNED
+  PHASE-C5B-ACCEPTANCE-DECISION = IDENTIFIED / NOT AUTHORIZED
+  REAL_CUTOVER = NOT AUTHORIZED
+  ```
+- **Próxima fase indicada / NEXT_AUTHORIZABLE_ACTION:** execute the authorized clean-slate shared-development transactional reset under the separate governed destructive order `CLEAN-SLATE-TRANSACTIONAL-RESET-SHARED-DEV-EXECUTION-R1` (authorized as a separate governed destructive order; not executed). Recording this acceptance does not itself execute anything; the destructive reset runs only under that separate order with every contract §12/§13 gate satisfied. This pass publishes exactly one documentation-only commit through one authorized fast-forward push to `staging/dev`; no further push is authorized.

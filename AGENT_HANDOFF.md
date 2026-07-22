@@ -25,8 +25,29 @@
 
 ## Phase status
 
+- **`CLEAN-SLATE-TRANSACTIONAL-RESET-READINESS-ACCEPTANCE-CLOSEOUT-R1`
+  (current — direct supervisor acceptance of the validation-gate-closed
+  clean-slate reset readiness; documentation-only):** the architect performed the
+  direct supervisor review and **ACCEPTED** checkpoint
+  `62bdcc75c335e3881adb1af6350de801675aa788` — the clean-slate contract, the reset
+  tooling, the retained authoritative archive `20260722T183846Z` (aggregate SHA-256
+  `5221cd47…`; `verify-archive` 395/395), the disposable restore/reset drill
+  (96/96), the closed validation gates (`--self-test` 54/54; fixture suite 61/61),
+  and the ratified §21.4 trigger-handling mechanism are all `ACCEPTED / DIRECTLY
+  VERIFIED`. `f165302c1c542aa26e9ae78464d260c81eda6415` remains **NOT ACCEPTED**,
+  its retained corrections incorporated into and superseded by `62bdcc75…`. The
+  `SHARED-DEVELOPMENT RESET` is now `AUTHORIZED AS THE NEXT SEPARATE GOVERNED
+  DESTRUCTIVE ORDER` (`CLEAN-SLATE-TRANSACTIONAL-RESET-SHARED-DEV-EXECUTION-R1`) /
+  **NOT EXECUTED**. `ACCEPTED_CLEAN_SLATE_READINESS_CHECKPOINT = 62bdcc75…` (the
+  bootstrap product `ACCEPTED_CHECKPOINT` stays `3405fdab…`);
+  `ACTIVE_PHASE`/`ACTIVE_PHASE_CONTRACT` stay `CLEAN-SLATE-TRANSACTIONAL-RESET` /
+  the contract; the phase is **not CLOSED**; `REAL_CUTOVER`,
+  `PHASE-C5B-ACCEPTANCE-DECISION`, and real business-flow recreation remain
+  unauthorized; no phase chains automatically. No database access or reset
+  execution occurred (documentation-only). Full record: contract §24 and
+  `docs/ledgers/G28_LEDGER.md`.
 - **`CLEAN-SLATE-TRANSACTIONAL-RESET-FINAL-VALIDATION-GATES-CORRECTION-R1`
-  (current — direct supervisor review of `f165302c`; localized forward
+  (prior pass — direct supervisor review of `f165302c`; localized forward
   correction + existing-archive revalidation):**
   `f165302c1c542aa26e9ae78464d260c81eda6415` checkpoint is **NOT ACCEPTED** — the
   mandatory `node scripts/validate-spec-custody.mjs --self-test` failed there
