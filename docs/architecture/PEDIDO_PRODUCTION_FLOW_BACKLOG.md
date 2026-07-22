@@ -8,6 +8,42 @@
 > `PROJECT_STATE.md`. Phase sequence, dependencies, backlog items, and accepted
 > architecture in this file remain authoritative; live operational status does not.
 
+# Update 2026-07-21 - C4-CLOSEOUT-AND-C5-CONTRACT-R1 (PHASE-C4 supervisor acceptance/closeout)
+
+Phase: `PHASE-C4` supervisor acceptance and documentary closeout. Type:
+docs-only; no product, test, script, migration, database, environment,
+deployment, or configuration change. Historical closeout note — live state
+belongs to `PROJECT_STATE.md`.
+
+The supervisor performed the mandatory architect visual validation
+(`SUPERVISION_PROTOCOL.md` §4) of the six-PNG evidence packet produced by
+`C4-ADMIN-RECEIPT-UI-VISUAL-GATE-R1` and **ACCEPTED** `PHASE-C4` as final and
+binding: `CLOSED / ACCEPTED / LOCALLY VERIFIED / ARCHITECT VISUAL VALIDATION
+PASSED` (`docs/architecture/ORDEM_COMPRA_C4_PHASE_CONTRACT.md` §0d).
+`OC-C4-ADMIN-001` is now `SATISFIED`. Accepted implementation commits:
+`bdd4c7d2bc43bd054d7cbb2b0bd70e6234160c24` (implementation),
+`25cbdd6f6128744a8668b034c192c7d012e58171` (visual correction),
+`289b0cca66e9c057330a882f69da3476adf90469` (accepted technical checkpoint).
+Ratified visual scope (card 6px radius, no shadow, canonical hairline border;
+4px primary controls; 30×30px/4px reversal action; right-aligned tabular
+numerals; horizontal overflow protection; canonical `--rv-*` tokens; sticky
+registration-modal total) and the factual correction that `css/tokens.css` is
+linked globally through `index.html` are both ratified final;
+`UI_VISUAL_CONTRACT.md` itself was not modified (it does not contain the
+incorrect claim). Two nonblocking debts: `ORDEM_COMPRA_CANCEL_HANDLER_STALE_ORDER_CAPTURE`
+(unchanged) and new `SHARED_UI_MODAL_CONTROL_RADIUS_TOKEN_ALIGNMENT` (shared
+`js/ui.js` primitives, ≈8px, outside the C4 manifest, needs a separately
+authorized global UI pass).
+
+`LAST_ACCEPTED_PHASE` becomes `PHASE-C4`; `ACTIVE_PHASE`/`ACTIVE_PHASE_CONTRACT`
+become `NONE`. `OC-C4-SUPPLIER-001` stays `DEFERRED`. This same pass continued
+immediately into read-only diagnosis and documentation-only authoring of the
+`PHASE-C5` material contract (`OC-C5-EMISSION-001`, purchase-order emission) —
+see the following, separately dated ledger/backlog entry for that authoring
+pass; `PHASE-C5` implementation remains unauthorized. Sequence/architecture in
+this file are unchanged. Full evidence: contract §0d and
+`docs/ledgers/G28_LEDGER.md`.
+
 # Update 2026-07-21 - C4-ADMIN-RECEIPT-UI-VISUAL-GATE-R1 (Admin Receipt UI visual-contract correction + evidence)
 
 Phase: `PHASE-C4` / `OC-C4-ADMIN-001` mandatory visual-validation preparation —

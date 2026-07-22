@@ -40,28 +40,32 @@
 - **Prior accepted product phase:** `PHASE-C3C-A` — `CLOSED / TECHNICALLY
   ACCEPTED — LOCALLY VERIFIED / INACTIVE / NOT APPLIED TO STAGING` (2026-07-20),
   technical checkpoint `89123729b3529fff6e4a2336bfec2907c4b94b4c`.
-- **Active product phase:** `PHASE-C4` (admin receipt UI at
-  `#/ordens-compra/:id`) — supervisor-accepted 2026-07-21 under
-  `C4-ADMIN-RECEIPT-UI-IMPLEMENTATION-R1` (contract §0b, `STATUS: ACCEPTED /
-  IMPLEMENTATION AUTHORIZED`). `ACTIVE_PHASE`/`ACTIVE_PHASE_CONTRACT` are
-  `PHASE-C4` / `docs/architecture/ORDEM_COMPRA_C4_PHASE_CONTRACT.md` (they were
-  `NONE` at the prior `PHASE-C3D` closeout, moved to `PHASE-C4` at this
-  authorization). The implementation
-  (`C4-ADMIN-RECEIPT-UI-IMPLEMENTATION-R1`, contract §0c) plus the visual-gate
-  correction (`C4-ADMIN-RECEIPT-UI-VISUAL-GATE-R1`) are now **`IMPLEMENTED /
-  LOCALLY VERIFIED / AWAITING ARCHITECT VISUAL VALIDATION`** — three new
-  `ordem-compra-receipt-*.js` files + additive `ordem-compra.js`/`index.html`,
-  native RPCs only, two independent idempotency trackers, four smoke suites
-  (38/38 pass), empty added-failing-identity differential vs `bdd4c7d`
-  (implementation) and `25cbdd6` (visual correction), validator PASS; local
-  only (no migration/environment/staging/deployment/push). The visual-gate pass
-  aligned the render/events modules to the canonical `--rv-*` tokens (card 6px,
-  neutral section chip, sticky total; correcting the contract §13.1 factual
-  claim that tokens.css was not linked — it is, globally at `index.html:11`)
-  and produced six deterministic Playwright screenshots + computed-style
-  evidence (`%TEMP%\\ravatex-c4-visual-review\\`). Not self-accepted; the
-  mandatory architect visual validation (`SUPERVISION_PROTOCOL.md` §4) is
-  pending. **`PHASE-C3D` (inactive deployment
+- **Last accepted product phase:** `PHASE-C4` (admin receipt UI at
+  `#/ordens-compra/:id`) — supervisor-accepted and architect-visual-validated
+  2026-07-21 under `C4-CLOSEOUT-AND-C5-CONTRACT-R1` (contract §0d, `STATUS:
+  CLOSED / ACCEPTED / LOCALLY VERIFIED / ARCHITECT VISUAL VALIDATION PASSED`).
+  `OC-C4-ADMIN-001` is `SATISFIED`. Accepted technical checkpoint
+  `289b0cca66e9c057330a882f69da3476adf90469`. `ACTIVE_PHASE`/
+  `ACTIVE_PHASE_CONTRACT` are `NONE` (moved back to `NONE` at this closeout).
+  The implementation (`C4-ADMIN-RECEIPT-UI-IMPLEMENTATION-R1`, contract §0c)
+  plus the visual-gate correction (`C4-ADMIN-RECEIPT-UI-VISUAL-GATE-R1`) —
+  three new `ordem-compra-receipt-*.js` files + additive
+  `ordem-compra.js`/`index.html`, native RPCs only, two independent
+  idempotency trackers, four smoke suites (38/38 pass), empty
+  added-failing-identity differential vs `bdd4c7d` (implementation) and
+  `25cbdd6` (visual correction), validator PASS; local only (no
+  migration/environment/staging/deployment/push) — are the accepted
+  implementation evidence. The visual-gate pass aligned the render/events
+  modules to the canonical `--rv-*` tokens (card 6px, neutral section chip,
+  sticky total; correcting the contract §13.1 factual claim that tokens.css
+  was not linked — it is, globally at `index.html:11`) and produced six
+  deterministic Playwright screenshots + computed-style evidence
+  (`%TEMP%\\ravatex-c4-visual-review\\`), which the supervisor reviewed and
+  accepted at this closeout (`SUPERVISION_PROTOCOL.md` §4 satisfied). One
+  nonblocking debt recorded at closeout:
+  `SHARED_UI_MODAL_CONTROL_RADIUS_TOKEN_ALIGNMENT` (shared `js/ui.js`
+  `modal()`/input primitives still ≈8px, outside the C4 manifest, needs a
+  separately authorized global UI pass). **`PHASE-C3D` (inactive deployment
   & rehearsal material phase)** is `CLOSED / ACCEPTED_WITH_NONBLOCKING_DEBT /
   LOCALLY VERIFIED`, accepted **technical** checkpoint
   `429aa3980c7027b9d872a1902e2f31f1a4a85a2a` (contract §Z). All five material
@@ -81,10 +85,12 @@
   independent transient queries); `saldo_fios`'s excess branch was not
   empirically executed (`kg_alocado` 15.500 > max total 15.000) and
   `saldo_fios_op` is `NOT_APPLICABLE` — neither an `OC-C3D-LOCK-001` §M exit
-  criterion. `PHASE-C4`/`PHASE-C5`/`REAL_CUTOVER` remain unauthorized.
-- **Active phase contract:**
-  `docs/architecture/ORDEM_COMPRA_C4_PHASE_CONTRACT.md` (`PHASE_ID: PHASE-C4`,
-  `STATUS: ACCEPTED / IMPLEMENTATION AUTHORIZED`, §0b). The now-**closed**
+  criterion. `PHASE-C4` is now closed (see above); `PHASE-C5`/`REAL_CUTOVER`
+  remain unauthorized.
+- **Active phase contract:** `NONE`. The now-**closed** `PHASE-C4` material
+  contract is `docs/architecture/ORDEM_COMPRA_C4_PHASE_CONTRACT.md`
+  (`PHASE_ID: PHASE-C4`, `STATUS: CLOSED / ACCEPTED / LOCALLY VERIFIED /
+  ARCHITECT VISUAL VALIDATION PASSED`, §0d). The now-**closed**
   `PHASE-C3D` material
   contract is `docs/architecture/ORDEM_COMPRA_C3D_PHASE_CONTRACT.md`
   (`PHASE_ID: PHASE-C3D`; `ACCEPTED`, §0c; C3D-A evidence §O/§P; C3D-B evidence
@@ -92,10 +98,9 @@
   §S/§T + acceptance §U; C3D-D evidence §V, targeted correction §W, acceptance
   §X; C3D-E evidence §Y; C3D-E acceptance + aggregate `PHASE-C3D`/`PHASE-C3D-F`
   closeout §Z).
-- **Active track:** `PURCHASE_ORDER_PHASE_C` (active phase `PHASE-C4`; next
-  authorizable action is execution of the authorized local `PHASE-C4` admin
-  receipt UI implementation, then supervisor review + architect visual
-  validation).
+- **Active track:** `PURCHASE_ORDER_PHASE_C` (no active phase; next
+  authorizable action is read-only diagnosis and documentation-only authoring
+  of the `PHASE-C5` material contract, `OC-C5-EMISSION-001`).
 - **Current governance status:** `GOVERNANCE-SPEC-CUSTODY-FOUNDATION-R1`
   **ACCEPTED**; `GOVERNANCE-STATE-HANDOFF-COMPACTION-R1` **ACCEPTED** by the
   supervisor at commit `1157b9e71bc629903c5940ab50d4b370964e560e` (state/handoff
@@ -195,13 +200,21 @@
   `cancelar_ordem_compra` with `p_ordem_id: undefined`; see
   `PROJECT_STATE.md` POST-LAUNCH DEBT REGISTER item 15 and contract §21.
   Not part of `PHASE-C4`; requires its own separate correction order.
-- **Next authorizable action:** **supervisor review and the mandatory architect
-  visual validation** (`SUPERVISION_PROTOCOL.md` §4) of the `IMPLEMENTED /
-  LOCALLY VERIFIED` `PHASE-C4` admin receipt UI
-  (`C4-ADMIN-RECEIPT-UI-IMPLEMENTATION-R1`, contract §0c), then **supervisor
-  acceptance/close** (supervisor only). `PHASE-C3D` is closed; the
-  implementation is not self-accepted and `OC-C4-ADMIN-001` is not marked
-  `SATISFIED`.
+- **`C4-CLOSEOUT-AND-C5-CONTRACT-R1` — supervisor acceptance + `PHASE-C4`
+  closeout (this pass):** the supervisor performed the mandatory architect
+  visual validation (`SUPERVISION_PROTOCOL.md` §4) of the six-PNG evidence
+  packet from `C4-ADMIN-RECEIPT-UI-VISUAL-GATE-R1` and **ACCEPTED** `PHASE-C4`
+  as final and binding — `CLOSED / ACCEPTED / LOCALLY VERIFIED / ARCHITECT
+  VISUAL VALIDATION PASSED` (contract §0d). `OC-C4-ADMIN-001` is now
+  `SATISFIED`. Accepted technical checkpoint
+  `289b0cca66e9c057330a882f69da3476adf90469`. Two nonblocking debts recorded:
+  `ORDEM_COMPRA_CANCEL_HANDLER_STALE_ORDER_CAPTURE` (unchanged) and
+  `SHARED_UI_MODAL_CONTROL_RADIUS_TOKEN_ALIGNMENT` (new — shared `js/ui.js`
+  primitives, ≈8px, outside the C4 manifest). `LAST_ACCEPTED_PHASE` becomes
+  `PHASE-C4`; `ACTIVE_PHASE`/`ACTIVE_PHASE_CONTRACT` become `NONE`.
+- **Next authorizable action:** read-only diagnosis and documentation-only
+  authoring of the `PHASE-C5` material contract (`OC-C5-EMISSION-001`,
+  purchase-order emission) — `PHASE-C5` implementation remains unauthorized.
   `PHASE-C3D-A`/`PHASE-C3D-B` are supervisor-accepted (§R, checkpoints
   `096cd603…` / `5441321…`), `PHASE-C3D-C` (§U, `6fd63a56…`), `PHASE-C3D-D` (§X,
   `5a2be05…`), and `PHASE-C3D-E` (§Z, `429aa39…`) are all `CLOSED / TECHNICALLY
@@ -384,9 +397,10 @@ Full matrix and normative anchors: `docs/architecture/ORDEM_COMPRA_C3_TRACEABILI
   read-only completeness disposition of the 13 unmapped `ordens_compra_fio` rows
   ids 153–165 — see Blockers and debts below); `OC-CUTOVER-PONR-001` —
   `PARTIALLY_SATISFIED` (real cutover unauthorized).
-- `OC-C4-ADMIN-001` — `PARTIALLY_SATISFIED` (owning phase C4; `IMPLEMENTED /
-  LOCALLY VERIFIED / AWAITING SUPERVISOR REVIEW` under
-  `C4-ADMIN-RECEIPT-UI-IMPLEMENTATION-R1`, contract §0c; not `SATISFIED` —
+- `OC-C4-ADMIN-001` — `SATISFIED` (owning phase C4; `CLOSED / ACCEPTED /
+  LOCALLY VERIFIED / ARCHITECT VISUAL VALIDATION PASSED` under
+  `C4-CLOSEOUT-AND-C5-CONTRACT-R1`, contract §0d; accepted checkpoint
+  `289b0cca66e9c057330a882f69da3476adf90469` — was previously (superseded)
   pending supervisor acceptance + architect visual validation);
   `OC-C4-SUPPLIER-001` — `DEFERRED`; `OC-C5-EMISSION-001` — `PLANNED`
   (post-C4 emission gate).
@@ -459,11 +473,11 @@ Full matrix and normative anchors: `docs/architecture/ORDEM_COMPRA_C3_TRACEABILI
   branch other than `main` is pushed to `production`.
 - **`main` is forbidden** as a working/target branch here; no push to
   `origin`/`staging` without separate express authorization.
-- **`PHASE-C4` admin receipt UI is `IMPLEMENTED / LOCALLY VERIFIED / AWAITING
-  SUPERVISOR REVIEW`** (`C4-ADMIN-RECEIPT-UI-IMPLEMENTATION-R1`, contract §0c) —
-  local-only, native RPCs, no migration/environment/staging/deployment/push;
-  awaiting supervisor acceptance and the mandatory architect visual validation
-  (`SUPERVISION_PROTOCOL.md` §4). **Still unauthorized (each a separate gate):**
+- **`PHASE-C4` admin receipt UI is `CLOSED / ACCEPTED / LOCALLY VERIFIED /
+  ARCHITECT VISUAL VALIDATION PASSED`** (`C4-CLOSEOUT-AND-C5-CONTRACT-R1`,
+  contract §0d) — local-only, native RPCs, no
+  migration/environment/staging/deployment/push; `OC-C4-ADMIN-001` is
+  `SATISFIED`. **Still unauthorized (each a separate gate):**
   `PHASE-C5`, staging application/validation of `db/76`, activation, deployment,
   real snapshot/import, fence transition, read switch, final ACL-closure
   invocation, cutover (`OC-CUTOVER-001`/`OC-CUTOVER-PONR-001`, additionally
@@ -478,10 +492,10 @@ These material continuity rules survive the `PHASE-C3D` closeout and bind the
 next authorizable work; do not reconstruct or shorten them into an ambiguous
 summary.
 
-- **C4/C5 roadmap.** After `PHASE-C3D` (closed), the next authorizable action is
-  the architect authorization decision for **`PHASE-C4` — ADMIN RECEIPT UI**
-  (`OC-C4-ADMIN-001`, admin receipt UI `#/ordens-compra/:id`).
-  `OC-C4-SUPPLIER-001` (supplier UI) is `DEFERRED`; **`PHASE-C5`** native
+- **C4/C5 roadmap.** `PHASE-C4` — **ADMIN RECEIPT UI** (`OC-C4-ADMIN-001`,
+  admin receipt UI `#/ordens-compra/:id`) is `CLOSED / ACCEPTED / LOCALLY
+  VERIFIED / ARCHITECT VISUAL VALIDATION PASSED` (`C4-CLOSEOUT-AND-C5-CONTRACT-R1`,
+  contract §0d). `OC-C4-SUPPLIER-001` (supplier UI) is `DEFERRED`; **`PHASE-C5`** native
   emission (`OC-C5-EMISSION-001`) is a separate post-C4 gate. Each requires its
   own explicit architect order and a fresh session.
 - **Real-cutover separation.** The `REAL_CUTOVER` window
@@ -539,9 +553,10 @@ summary.
     ACCEPTED / DOCUMENTATION-ONLY` (§Z); all four `OC-C3D-*` `SATISFIED`; not
     active — `ACTIVE_PHASE`/`ACTIVE_PHASE_CONTRACT` are `NONE`)
 22. `docs/architecture/ORDEM_COMPRA_C4_PHASE_CONTRACT.md` (C4 material phase
-    contract — admin receipt UI at `#/ordens-compra/:id`; `ACCEPTED /
-    IMPLEMENTATION AUTHORIZED`, §0b; implementation `IMPLEMENTED / LOCALLY
-    VERIFIED / AWAITING SUPERVISOR REVIEW`, §0c; **active** phase)
+    contract — admin receipt UI at `#/ordens-compra/:id`; **closed**: `CLOSED /
+    ACCEPTED / LOCALLY VERIFIED / ARCHITECT VISUAL VALIDATION PASSED` (§0d);
+    `OC-C4-ADMIN-001` `SATISFIED`; accepted checkpoint `289b0cca66e9c057330a882f69da3476adf90469`;
+    not active — `ACTIVE_PHASE`/`ACTIVE_PHASE_CONTRACT` are `NONE`)
 
 > Bootstrap first through `docs/governance/AGENT_INSTRUCTIONS.md` and the
 > `SPEC_CUSTODY_BOOTSTRAP` block in `PROJECT_STATE.md`. Private conversation,

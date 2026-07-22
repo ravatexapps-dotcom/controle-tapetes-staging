@@ -16,29 +16,37 @@ directly (`git rev-parse HEAD`, `git status --short --untracked-files=all`).
 
 <!-- SPEC_CUSTODY_BOOTSTRAP:BEGIN -->
 ```text
-LAST_ACCEPTED_PHASE: PHASE-C3D
-ACTIVE_PHASE: PHASE-C4
-ACTIVE_PHASE_CONTRACT: docs/architecture/ORDEM_COMPRA_C4_PHASE_CONTRACT.md
+LAST_ACCEPTED_PHASE: PHASE-C4
+ACTIVE_PHASE: NONE
+ACTIVE_PHASE_CONTRACT: NONE
 ACTIVE_TRACK: PURCHASE_ORDER_PHASE_C
-NEXT_AUTHORIZABLE_ACTION: supervisor review and the mandatory architect visual validation of the IMPLEMENTED / LOCALLY VERIFIED PHASE-C4 admin receipt UI (OC-C4-ADMIN-001, C4-ADMIN-RECEIPT-UI-IMPLEMENTATION-R1, contract §0c — three new js/screens/ordem-compra-receipt-*.js files + additive ordem-compra.js/index.html + four new smoke suites at 37/37 pass, empty added-failing-identity differential vs bdd4c7d, validator PASS), then supervisor acceptance/close (supervisor only — do not self-accept, do not mark OC-C4-ADMIN-001 SATISFIED); PHASE-C5, the REAL_CUTOVER window (OC-CUTOVER-001/OC-CUTOVER-PONR-001 — hard-gated behind the mandatory separate read-only completeness disposition of the 13 unmapped ordens_compra_fio rows ids 153–165), real close_final_acl invocation, real activation, the real read-authority switch, staging validation/application of db/76, and any productive receipt on a shared or real environment all remain unauthorized
+NEXT_AUTHORIZABLE_ACTION: read-only diagnosis and documentation-only authoring of the PHASE-C5 material contract (OC-C5-EMISSION-001, purchase-order emission), to be proposed as PROPOSED / AWAITING SUPERVISOR REVIEW / IMPLEMENTATION NOT AUTHORIZED; C5 implementation, the REAL_CUTOVER window (OC-CUTOVER-001/OC-CUTOVER-PONR-001 — hard-gated behind the mandatory separate read-only completeness disposition of the 13 unmapped ordens_compra_fio rows ids 153–165), real close_final_acl invocation, real activation, the real read-authority switch, staging validation/application of db/76, and any productive receipt on a shared or real environment all remain unauthorized
 GOVERNING_SPEC: docs/architecture/ORDEM_COMPRA_LIFECYCLE_SPEC_PROPOSED.md
 TECHNICAL_CONTRACT: docs/architecture/PEDIDO_OP_SCHEMA_CONTRACT.md
 SEQUENCE_AUTHORITY: docs/architecture/PEDIDO_PRODUCTION_FLOW_BACKLOG.md
 TRACEABILITY: docs/architecture/ORDEM_COMPRA_C3_TRACEABILITY.md
 LEDGER: docs/ledgers/G28_LEDGER.md
 HANDOFF: AGENT_HANDOFF.md
-ACCEPTED_CHECKPOINT: 429aa3980c7027b9d872a1902e2f31f1a4a85a2a
+ACCEPTED_CHECKPOINT: 289b0cca66e9c057330a882f69da3476adf90469
 ```
 <!-- SPEC_CUSTODY_BOOTSTRAP:END -->
 
 ## Active phase and next action
 
-- **Last accepted material phase:** `PHASE-C3D` (inactive deployment &
+- **Last accepted material phase:** `PHASE-C4` (admin receipt UI) — `CLOSED /
+  ACCEPTED / LOCALLY VERIFIED / ARCHITECT VISUAL VALIDATION PASSED`
+  (2026-07-21), accepted **technical** checkpoint
+  `289b0cca66e9c057330a882f69da3476adf90469`
+  (`docs/architecture/ORDEM_COMPRA_C4_PHASE_CONTRACT.md` §0d). `OC-C4-ADMIN-001`
+  is `SATISFIED`. `ACTIVE_PHASE`/`ACTIVE_PHASE_CONTRACT` are now `NONE`. See the
+  `C4-CLOSEOUT-AND-C5-CONTRACT-R1` bullet below for the full closeout record.
+- **Prior accepted material phase:** `PHASE-C3D` (inactive deployment &
   rehearsal) — `CLOSED / ACCEPTED_WITH_NONBLOCKING_DEBT / LOCALLY VERIFIED`
   (2026-07-21), accepted **technical** checkpoint
   `429aa3980c7027b9d872a1902e2f31f1a4a85a2a`
   (`docs/architecture/ORDEM_COMPRA_C3D_PHASE_CONTRACT.md` §Z, the `PHASE-C3D-F`
-  aggregate closeout). `ACTIVE_PHASE`/`ACTIVE_PHASE_CONTRACT` are now `NONE`.
+  aggregate closeout). `ACTIVE_PHASE`/`ACTIVE_PHASE_CONTRACT` were `NONE`
+  between `PHASE-C3D` and `PHASE-C4`.
   **`PHASE-C3D-F` (aggregate closeout & readiness disposition):** `CLOSED /
   ACCEPTED / DOCUMENTATION-ONLY` — the final `PHASE-C3D` documentation commit is
   the closeout-documentation checkpoint, **not** a new technical evidence
@@ -258,13 +266,44 @@ ACCEPTED_CHECKPOINT: 429aa3980c7027b9d872a1902e2f31f1a4a85a2a
   unchanged: `IMPLEMENTED / LOCALLY VERIFIED / AWAITING ARCHITECT VISUAL
   VALIDATION`; `OC-C4-ADMIN-001` stays `PARTIALLY_SATISFIED` (not advanced).
   One local correction commit; no push/migration/environment/deployment.
-- **Next authorizable action:** **the mandatory architect visual validation**
-  (`SUPERVISION_PROTOCOL.md` §4) of the `PHASE-C4` admin receipt UI (six-PNG
-  evidence packet from `C4-ADMIN-RECEIPT-UI-VISUAL-GATE-R1`), then **supervisor
-  acceptance/close** (supervisor only — the implementation is not self-accepted
-  and `OC-C4-ADMIN-001` is not `SATISFIED`). `PHASE-C5`, `REAL_CUTOVER`, staging
-  validation/application of `db/76`, activation, deployment, branch creation,
-  production access, and any push remain **unauthorized**.
+- **`C4-CLOSEOUT-AND-C5-CONTRACT-R1` — supervisor acceptance + `PHASE-C4`
+  closeout (documentary, this pass):** the supervisor performed the mandatory
+  architect visual validation (`SUPERVISION_PROTOCOL.md` §4) of the six-PNG
+  evidence packet from `C4-ADMIN-RECEIPT-UI-VISUAL-GATE-R1` and **ACCEPTED**
+  `PHASE-C4` as final and binding: `CLOSED / ACCEPTED / LOCALLY VERIFIED /
+  ARCHITECT VISUAL VALIDATION PASSED`. `OC-C4-ADMIN-001` is now `SATISFIED`.
+  Accepted implementation commits: `bdd4c7d2bc43bd054d7cbb2b0bd70e6234160c24`
+  (implementation), `25cbdd6f6128744a8668b034c192c7d012e58171` (visual
+  correction), `289b0cca66e9c057330a882f69da3476adf90469` (accepted technical
+  checkpoint). Ratified visual scope: card radius 6px; card shadow none;
+  canonical hairline card border; primary controls 4px; reversal action
+  30×30px/4px; right-aligned tabular-numeral headers/values; horizontal table
+  overflow protection; canonical `--rv-*` token usage; sticky registration-modal
+  total. Ratified factual correction: `css/tokens.css` is linked globally
+  through `index.html` and its `--rv-*` variables are available to the
+  `ordem-compra` screen (already corrected in prose at the visual-gate pass);
+  `UI_VISUAL_CONTRACT.md` itself does not contain the incorrect claim and was
+  not modified. Two nonblocking debts preserved/recorded: (1)
+  `ORDEM_COMPRA_CANCEL_HANDLER_STALE_ORDER_CAPTURE` (unchanged, item 15 below);
+  (2) new `SHARED_UI_MODAL_CONTROL_RADIUS_TOKEN_ALIGNMENT` (item 16 below) —
+  shared `js/ui.js` `modal()`/input primitives still use `rounded-lg`
+  (≈8px) rather than the canonical card/control token radii, inherited
+  application-wide, outside the accepted C4 manifest, requires a separately
+  authorized global UI pass. Narrow-screen (<1024px) policy and long
+  multi-item receipt-form scrolling remain open/nonblocking per the visual
+  contract. Documentation-only: no product, test, script, migration, or
+  protected-residue change. `LAST_ACCEPTED_PHASE` becomes `PHASE-C4`;
+  `ACTIVE_PHASE`/`ACTIVE_PHASE_CONTRACT` become `NONE`. `OC-C4-SUPPLIER-001`
+  stays `DEFERRED`; `OC-C5-EMISSION-001` stays `PLANNED` pending a separate C5
+  material contract. Full record: `docs/architecture/ORDEM_COMPRA_C4_PHASE_CONTRACT.md`
+  §0d and `docs/ledgers/G28_LEDGER.md`.
+- **Next authorizable action:** read-only diagnosis and documentation-only
+  authoring of the `PHASE-C5` material contract (`OC-C5-EMISSION-001`,
+  purchase-order emission), to be proposed as `PROPOSED / AWAITING SUPERVISOR
+  REVIEW / IMPLEMENTATION NOT AUTHORIZED` — no implementation. `PHASE-C5`
+  implementation, `REAL_CUTOVER`, staging validation/application of `db/76`,
+  activation, deployment, branch creation, production access, and any push
+  remain **unauthorized**.
 - **Prior accepted product phase:** `PHASE-C3C-B` (application compatibility/
   adaptation) — `CLOSED / ACCEPTED_WITH_NONBLOCKING_DEBT / LOCALLY VERIFIED`
   (2026-07-21), accepted checkpoint
@@ -708,7 +747,10 @@ ACCEPTED_CHECKPOINT: 429aa3980c7027b9d872a1902e2f31f1a4a85a2a
   receipt/reversal/import topology — neither an `OC-C3D-LOCK-001` §M exit
   criterion. See contract §Y/§Z and `docs/ledgers/G28_LEDGER.md` for the full
   closeout.
-- **NEXT_AUTHORIZABLE_ACTION:** **execute the authorized local `PHASE-C4`
+- **NEXT_AUTHORIZABLE_ACTION (historical, recorded at the `PHASE-C3D-F`
+  closeout; superseded — see "Active phase and next action" above and the
+  `C4-CLOSEOUT-AND-C5-CONTRACT-R1` bullet for the live pointer):** **execute
+  the authorized local `PHASE-C4`
   admin receipt UI implementation** (`OC-C4-ADMIN-001`) per
   `docs/architecture/ORDEM_COMPRA_C4_PHASE_CONTRACT.md` (`STATUS: ACCEPTED /
   IMPLEMENTATION AUTHORIZED`, §0b — supervisor-accepted 2026-07-21 under
@@ -822,6 +864,14 @@ consequence (1 = most consequential). Full narratives: ledger and archives.
     prohibited list (§11); does not block the `PHASE-C4` receipt UI
     contract; requires a separate, localized correction order; must not be
     silently fixed during `PHASE-C4` implementation.
+16. **`SHARED_UI_MODAL_CONTROL_RADIUS_TOKEN_ALIGNMENT`** — recorded at the
+    `PHASE-C4` closeout (`C4-CLOSEOUT-AND-C5-CONTRACT-R1`, 2026-07-21). Shared
+    `js/ui.js` `modal()`/input primitives still use `rounded-lg` (≈8px) rather
+    than the canonical card/control token radii (`--rv-radius-card`/
+    `--rv-radius-control`). Inherited application-wide behavior, outside the
+    accepted `PHASE-C4` correction manifest, does not block `PHASE-C4`.
+    Requires a separately authorized global UI pass; not scheduled or
+    implemented by this pass.
 
 - **Purchase-order Phase-C open items:** `HISTORICAL_SALDO_FIOS_PROVENANCE_UNAVAILABLE`
   (nonblocking); `NATIVE_RECEIPT_COMPATIBILITY_MULTI_ORIGIN_UNRESOLVED`; native
@@ -909,15 +959,16 @@ checkpoint `429aa3980c7027b9d872a1902e2f31f1a4a85a2a` (§Z). This `PHASE-C3D-F`
 pass is **documentation-only**: it changes only the seven authorized canonical
 owners (state, handoff, documentation index, C3D contract, traceability,
 backlog, ledger) and records one authorized fast-forward push to `staging/dev`.
-`PHASE-C3D` performed **no real cutover**. `PHASE-C4` admin receipt UI
-**local implementation** is now authorized (supervisor acceptance
-`C4-ADMIN-RECEIPT-UI-IMPLEMENTATION-R1`, 2026-07-21; contract §0b, `STATUS:
-ACCEPTED / IMPLEMENTATION AUTHORIZED`) — local-only, native RPCs only, no
-migration/environment/staging/deployment action, stopping at `IMPLEMENTED /
-LOCALLY VERIFIED / AWAITING SUPERVISOR REVIEW`. Beyond that authorized
-implementation, `PHASE-C5`, staging application/validation of `db/76`,
-activation, deployment, real snapshot/import, fence transition, read switch,
-real final ACL-closure invocation, real activation, the real cutover
+`PHASE-C3D` performed **no real cutover**. `PHASE-C4` admin receipt UI is now
+`CLOSED / ACCEPTED / LOCALLY VERIFIED / ARCHITECT VISUAL VALIDATION PASSED`
+(supervisor acceptance + mandatory architect visual validation
+`C4-CLOSEOUT-AND-C5-CONTRACT-R1`, 2026-07-21; contract §0d) — local-only,
+native RPCs only, no migration/environment/staging/deployment action;
+`OC-C4-ADMIN-001` is `SATISFIED`. `PHASE-C5` (purchase-order emission) remains
+unauthorized pending a separate read-only diagnosis and documentation-only
+material contract. Staging application/validation of
+`db/76`, activation, deployment, real snapshot/import, fence transition, read
+switch, real final ACL-closure invocation, real activation, the real cutover
 (`OC-CUTOVER-001`/`OC-CUTOVER-PONR-001`, additionally hard-gated behind the
 mandatory read-only completeness disposition of the 13 unmapped
 `ordens_compra_fio` rows ids 153–165), branch creation, production access,
@@ -958,6 +1009,7 @@ Commit SHAs there are the accepted technical commits; consult HEAD via Git.
 
 | Phase | Status | Date |
 |---|---|---|
+| `PHASE-C4` (admin receipt UI at `#/ordens-compra/:id`; implementation `bdd4c7d`, visual correction `25cbdd6`, accepted technical checkpoint `289b0cc`; supervisor acceptance + architect visual validation `C4-CLOSEOUT-AND-C5-CONTRACT-R1`, contract §0d; `OC-C4-ADMIN-001` `SATISFIED`) | `CLOSED / ACCEPTED / LOCALLY VERIFIED / ARCHITECT VISUAL VALIDATION PASSED` | 2026-07-21 |
 | `PHASE-C3D` (inactive deployment & rehearsal material phase; sublots C3D-A…C3D-E `CLOSED / TECHNICALLY ACCEPTED / LOCALLY VERIFIED` at `096cd60`/`5441321`/`6fd63a5`/`5a2be05`/`429aa39`; C3D-F documentation-only closeout §Z; all four `OC-C3D-*` `SATISFIED`; accepted technical checkpoint `429aa39`) | `CLOSED / ACCEPTED_WITH_NONBLOCKING_DEBT / LOCALLY VERIFIED` | 2026-07-21 |
 | `PHASE-C3C-B` (application compatibility/adaptation; adapter + 9 call-sites + corrections §34/§35, contract §36 supervisor acceptance, checkpoint `22bfb192`) | `CLOSED / ACCEPTED_WITH_NONBLOCKING_DEBT / LOCALLY VERIFIED` | 2026-07-21 |
 | `PHASE-C3C-B-DB-PREREQ` (implementation + DB-backed validation, `db/76` + 3 tests + `§R.29.7`/`§13.18` + contract §35/§36/§37) | `CLOSED / TECHNICALLY ACCEPTED / LOCAL DB VERIFIED / NOT APPLIED TO STAGING DATABASE` | 2026-07-20 |
@@ -1016,10 +1068,12 @@ Commit SHAs there are the accepted technical commits; consult HEAD via Git.
   `ACTIVE_PHASE_CONTRACT` are `NONE`):
   `docs/architecture/ORDEM_COMPRA_C3D_PHASE_CONTRACT.md`
 - C3C-B database prerequisites contract (closed / technically accepted / local DB verified / not applied to staging database; §35 records the implementation closeout, §36 records DB-backed validation completion, §37 records supervisor acceptance, not active): `docs/architecture/ORDEM_COMPRA_C3C_B_DB_PREREQUISITES_PHASE_CONTRACT.md`
-- C4 material phase contract (`ACCEPTED / IMPLEMENTATION AUTHORIZED`; admin
-  receipt UI at `#/ordens-compra/:id` **IMPLEMENTED / LOCALLY VERIFIED /
-  AWAITING SUPERVISOR REVIEW** under `C4-ADMIN-RECEIPT-UI-IMPLEMENTATION-R1`,
-  §0b/§0c; **active** phase):
+- C4 material phase contract (`CLOSED / ACCEPTED / LOCALLY VERIFIED /
+  ARCHITECT VISUAL VALIDATION PASSED`; admin receipt UI at
+  `#/ordens-compra/:id`, `OC-C4-ADMIN-001` `SATISFIED`, supervisor acceptance
+  + architect visual validation under `C4-CLOSEOUT-AND-C5-CONTRACT-R1`, §0d;
+  accepted technical checkpoint `289b0cca66e9c057330a882f69da3476adf90469`;
+  **not active** — `ACTIVE_PHASE`/`ACTIVE_PHASE_CONTRACT` are `NONE`):
   `docs/architecture/ORDEM_COMPRA_C4_PHASE_CONTRACT.md`
 - Append-only ledger: `docs/ledgers/G28_LEDGER.md`
 - Derived operational handoff: `AGENT_HANDOFF.md`

@@ -7953,3 +7953,77 @@ product file they depend on, was modified by this pass or the prior one):
   evidence packet, then supervisor acceptance/close (supervisor only).
   `PHASE-C5`, `REAL_CUTOVER`, staging/deployment/activation, branch creation,
   and any push remain unauthorized. **No push is authorized by this pass.**
+
+## 2026-07-21 — C4-CLOSEOUT-AND-C5-CONTRACT-R1 — PHASE-C4 supervisor acceptance and documentary closeout
+
+- **Authorization:** `C4-CLOSEOUT-AND-C5-CONTRACT-R1` — record the
+  supervisor's final acceptance and documentary closeout of `PHASE-C4`.
+  Entry checkpoint `HEAD` `289b0cca66e9c057330a882f69da3476adf90469`; protected
+  residue (`M .gitignore`, `?? .codex/`, `?? .mcp.json`) untouched. Preflight
+  confirmed branch `dev`, `HEAD`/`HEAD^` matched the order's expected SHAs,
+  and `staging/dev` (`0df4228f903ae68c7e8b240e69ff3b37df9ebd86`) remained
+  behind local `HEAD` by five commits (`git rev-list --left-right --count
+  staging/dev...HEAD` = `0	5`) — no `HARD STOP`.
+- **Supervisor ruling recorded as final and binding:** `PHASE-C4` is `CLOSED /
+  ACCEPTED / LOCALLY VERIFIED / ARCHITECT VISUAL VALIDATION PASSED`.
+  `OC-C4-ADMIN-001` is `SATISFIED`. Accepted implementation commits:
+  `bdd4c7d2bc43bd054d7cbb2b0bd70e6234160c24` (product implementation),
+  `25cbdd6f6128744a8668b034c192c7d012e58171` (visual-contract correction),
+  `289b0cca66e9c057330a882f69da3476adf90469` (accepted technical checkpoint).
+  Accepted functional scope: native administrator receipt registration;
+  allocation-shaped payload; explicit excess handling; immutable receipt and
+  reversal history; administrator reversal; independent idempotency trackers;
+  authoritative server reloads; server-derived action availability;
+  NULL-op/Pedido-origin rendering without fabricated OP attribution; dedicated
+  receipt UI on `#/ordens-compra/:id`; legacy compatibility RPC excluded from
+  the native C4 call graph.
+- **Accepted visual scope:** the six-image visual packet (desktop receipt
+  history, registration modal, reversal modal, disabled/empty states, narrow
+  1024px layout, contact sheet) was reviewed and accepted. Ratified: receipt
+  card radius 6px; card shadow none; card border the canonical line token;
+  primary controls 4px; reversal action 30×30px/4px; numeric headers/values
+  right-aligned with tabular numerals; horizontal table overflow protection;
+  canonical `--rv-*` token usage in the C4-specific surface; sticky receipt
+  total in the registration modal.
+- **Factual visual correction ratified:** `css/tokens.css` is linked globally
+  through `index.html` and its `--rv-*` variables are available to the
+  `ordem-compra` screen (prose already corrected at the
+  `C4-ADMIN-RECEIPT-UI-VISUAL-GATE-R1` pass). `UI_VISUAL_CONTRACT.md` was
+  inspected this pass and confirmed **not** to contain the incorrect
+  unavailability claim (`grep -n "tokens\.css" docs/architecture/UI_VISUAL_CONTRACT.md`
+  shows only correct references), so it was **not modified**.
+- **Nonblocking debts:** `ORDEM_COMPRA_CANCEL_HANDLER_STALE_ORDER_CAPTURE`
+  preserved unchanged (item 15). New:
+  `SHARED_UI_MODAL_CONTROL_RADIUS_TOKEN_ALIGNMENT` (item 16) — shared
+  `js/ui.js` modal/input primitives still use `rounded-lg` (≈8px) rather than
+  the canonical card/control token radii; inherited application-wide, outside
+  the accepted C4 correction manifest, does not block `PHASE-C4`, requires a
+  separately authorized global UI pass. Also preserved, open/nonblocking:
+  behavior below ≈1024px remains governed by the visual contract's unresolved
+  narrow-screen policy; long multi-item receipt forms may require scrolling
+  (sticky total and pinned footer already accepted as usable).
+- **Manifest (exact):** `docs/architecture/ORDEM_COMPRA_C4_PHASE_CONTRACT.md`
+  (§0d, §22), `PROJECT_STATE.md`, `AGENT_HANDOFF.md`,
+  `docs/architecture/ORDEM_COMPRA_C3_TRACEABILITY.md`,
+  `docs/architecture/PEDIDO_PRODUCTION_FLOW_BACKLOG.md`,
+  `docs/ledgers/G28_LEDGER.md` (this entry). No product, test, script,
+  migration, or configuration file changed.
+- **Validation:** `node scripts/validate-spec-custody.mjs` PASS;
+  `node scripts/validate-spec-custody.mjs --self-test` — the pre-existing
+  synthetic-fixture identity (`R1: ACTIVE_PHASE_CONTRACT is not an existing
+  file: docs/architecture/ORDEM_COMPRA_C4_PHASE_CONTRACT.md`) is resolved by
+  this closeout: with `ACTIVE_PHASE_CONTRACT` now `NONE`, that identity no
+  longer applies; exact self-test result recorded at commit time below.
+  `git diff --check` / `git diff --cached --check` clean. Protected residue
+  (`.gitignore`, `.codex/config.toml`, `.mcp.json`) unstaged and untouched.
+- **State after closeout:** `LAST_ACCEPTED_PHASE = PHASE-C4`; `ACTIVE_PHASE =
+  NONE`; `ACTIVE_PHASE_CONTRACT = NONE`. `OC-C4-SUPPLIER-001` remains
+  `DEFERRED`. `REAL_CUTOVER` remains unauthorized.
+- **Exact accounting subject:** `docs: close C4 admin receipt UI`
+- **NEXT_AUTHORIZABLE_ACTION:** this same pass continued immediately, without
+  a stop, into read-only diagnosis and documentation-only authoring of the
+  `PHASE-C5` material contract (`OC-C5-EMISSION-001`, purchase-order
+  emission) — see the following ledger entry
+  (`C4-CLOSEOUT-AND-C5-CONTRACT-R1` — C5 contract authoring). `PHASE-C5`
+  implementation, `REAL_CUTOVER`, and any push remain unauthorized. **No push
+  is authorized by this pass.**

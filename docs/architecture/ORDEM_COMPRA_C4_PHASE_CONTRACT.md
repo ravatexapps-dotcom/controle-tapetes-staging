@@ -3,7 +3,7 @@
 <!-- MATERIAL_PHASE_CONTRACT:BEGIN -->
 PHASE_ID: PHASE-C4
 <!-- MATERIAL_PHASE_CONTRACT:END -->
-STATUS: ACCEPTED / IMPLEMENTATION AUTHORIZED
+STATUS: CLOSED / ACCEPTED
 
 > **Role of this document.** This is a **material phase contract**, authored under
 > `C4-MATERIAL-PHASE-CONTRACT-R1` as **read-only repository reconciliation +
@@ -196,6 +196,78 @@ differential vs `25cbdd6` = empty; validator PASS.
 validation (`SUPERVISION_PROTOCOL.md` §4, §14 exit gate 6) and supervisor
 acceptance (§14 exit gate 7). Only the supervisor may accept and close the
 phase and advance `OC-C4-ADMIN-001` beyond `PARTIALLY_SATISFIED`.
+
+---
+
+## 0d. Supervisor acceptance and closeout — `C4-CLOSEOUT-AND-C5-CONTRACT-R1`
+
+On 2026-07-21 the supervisor performed the mandatory architect visual
+validation (`SUPERVISION_PROTOCOL.md` §4, §14 exit gate 6) of the six-PNG
+evidence packet produced by `C4-ADMIN-RECEIPT-UI-VISUAL-GATE-R1`
+(`01-desktop-receipt-history.png`, `02-registration-modal.png`,
+`03-reversal-modal.png`, `04-disabled-and-empty-states.png`,
+`05-narrow-layout.png`, `c4-visual-contact-sheet.png`) and **ACCEPTED** the
+`PHASE-C4` admin receipt UI implementation as final and binding (§14 exit
+gate 7). This closes both exit gates left pending at §0c.
+
+**Ratified visual findings:** receipt card radius 6px; card shadow none; card
+border the canonical hairline (`--rv-color-line-200`); primary controls 4px;
+the reversal action 30×30px / 4px; numeric headers and values right-aligned
+with tabular numerals; horizontal table overflow protection; canonical
+`--rv-*` token usage throughout the C4-specific surface; sticky receipt total
+in the registration modal — all as evidenced in §0c and
+`docs/ledgers/G28_LEDGER.md` (`C4-ADMIN-RECEIPT-UI-VISUAL-GATE-R1`).
+
+**Ratified factual correction:** `css/tokens.css` is linked globally through
+`index.html` and its `--rv-*` variables are available to the
+`ordem-compra*` render path — the §13.1/§4.6 claim of unavailability,
+already corrected in prose by `C4-ADMIN-RECEIPT-UI-VISUAL-GATE-R1` (§0c
+above), is confirmed final. `docs/architecture/UI_VISUAL_CONTRACT.md` does
+not itself contain the incorrect claim (verified this pass by direct
+inspection) and is therefore not modified by this closeout.
+
+**Disposition:** `PHASE-C4` is `CLOSED / ACCEPTED / LOCALLY VERIFIED /
+ARCHITECT VISUAL VALIDATION PASSED`. `OC-C4-ADMIN-001` is now `SATISFIED`.
+Accepted implementation commits: `bdd4c7d2bc43bd054d7cbb2b0bd70e6234160c24`
+(product implementation, §0c), `25cbdd6f6128744a8668b034c192c7d012e58171`
+(visual-contract correction, §0c), and `289b0cca66e9c057330a882f69da3476adf90469`
+(visual-contract correction commit that this closeout ratifies as the final
+accepted C4 technical checkpoint).
+
+**Accepted functional scope (unchanged from §6-§13, restated for closeout
+completeness):** native administrator receipt registration; allocation-shaped
+payload; explicit excess handling; immutable receipt and reversal history;
+administrator reversal; independent idempotency trackers; authoritative
+server reloads; server-derived action availability; NULL-op/Pedido-origin
+rendering without fabricated OP attribution; dedicated receipt UI on
+`#/ordens-compra/:id`; legacy compatibility RPC excluded from the native C4
+call graph.
+
+**Nonblocking debts recorded at this closeout:**
+
+1. `ORDEM_COMPRA_CANCEL_HANDLER_STALE_ORDER_CAPTURE` (§21) — preserved
+   unchanged, still requires its own separate correction order.
+2. `SHARED_UI_MODAL_CONTROL_RADIUS_TOKEN_ALIGNMENT` (new) — the shared
+   `js/ui.js` `modal()`/`textInput()` primitives still use `rounded-lg`
+   (≈8px) rather than the canonical card/control token radii. This is
+   inherited application-wide behavior, was outside the accepted C4
+   correction manifest (§0c), does not block `PHASE-C4`, and requires a
+   separately authorized global UI pass.
+3. Behavior below ≈1024px remains governed by `UI_VISUAL_CONTRACT.md`'s
+   unresolved narrow-screen policy (open, nonblocking).
+4. Long multi-item receipt forms may require scrolling; the sticky total and
+   pinned modal footer are already accepted as usable (§0c) — nonblocking.
+
+No product, test, script, migration, configuration, or visual-source file is
+touched by this closeout — documentation-only, per the authorized manifest in
+§19/§20 (this section adds no new document to that list beyond the ones
+already enumerated).
+
+`LAST_ACCEPTED_PHASE` becomes `PHASE-C4`. `ACTIVE_PHASE`/
+`ACTIVE_PHASE_CONTRACT` become `NONE`. `OC-C4-SUPPLIER-001` remains
+`DEFERRED`. `OC-C5-EMISSION-001` remains `PLANNED` until a separate C5
+material contract is proposed and accepted. `REAL_CUTOVER` remains
+unauthorized.
 
 ---
 
@@ -1383,17 +1455,16 @@ Recorded proportionally in `PROJECT_STATE.md` (POST-LAUNCH DEBT REGISTER),
 
 ## 22. Status and next authorizable action
 
-**STATUS: `ACCEPTED / IMPLEMENTATION AUTHORIZED`** — the supervisor accepted
-this contract and authorized local `PHASE-C4` implementation on 2026-07-21
-under `C4-ADMIN-RECEIPT-UI-IMPLEMENTATION-R1` (§0b). Two sub-decisions are
-**RATIFIED** (§2, §13.1) and the manifest is **RESOLVED** (§10/§11), all
-unchanged by the acceptance.
+**STATUS: `CLOSED / ACCEPTED / LOCALLY VERIFIED / ARCHITECT VISUAL VALIDATION
+PASSED`** — the supervisor performed the mandatory architect visual
+validation and accepted `PHASE-C4` as final and binding on 2026-07-21 under
+`C4-CLOSEOUT-AND-C5-CONTRACT-R1` (§0d). `OC-C4-ADMIN-001` is `SATISFIED`. All
+prior sub-decisions remain **RATIFIED** (§2, §13.1) and the manifest remains
+**RESOLVED** (§10/§11), unchanged by this closeout.
 
-`NEXT_AUTHORIZABLE_ACTION`: execute the authorized local `PHASE-C4`
-implementation per the §10 manifest and §15 test manifest, then stop at
-`IMPLEMENTED / LOCALLY VERIFIED / AWAITING SUPERVISOR REVIEW` for supervisor
-review and the mandatory architect visual validation (§14 exit gates). The
-implementation must not be self-accepted or closed, and must not mark
-`OC-C4-ADMIN-001` `SATISFIED`. `PHASE-C5`, `REAL_CUTOVER`, any database
-migration, any environment mutation, any staging/production/deployment
-action, branch creation, and any push remain unauthorized.
+`NEXT_AUTHORIZABLE_ACTION`: none within `PHASE-C4` — the phase is closed.
+`OC-C4-SUPPLIER-001` remains `DEFERRED`. `OC-C5-EMISSION-001` remains
+`PLANNED` pending a separate, independently authored and accepted `PHASE-C5`
+material contract. `REAL_CUTOVER`, any database migration, any environment
+mutation, any staging/production/deployment action, branch creation, and any
+push remain unauthorized.
