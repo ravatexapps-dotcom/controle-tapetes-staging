@@ -8,6 +8,68 @@
 > `PROJECT_STATE.md`. Phase sequence, dependencies, backlog items, and accepted
 > architecture in this file remain authoritative; live operational status does not.
 
+# Update 2026-07-22 - CLEAN-SLATE-TRANSACTIONAL-RESET-CONTRACT-CORRECTION-R1 (residual-boundary diagnosis accepted; reset contract corrected to one exact target; no execution)
+
+Phase: read-only continuation diagnosis
+(`CLEAN-SLATE-DOCUMENT-HISTORY-AND-RESIDUAL-BOUNDARY-DIAGNOSIS-R1`) followed by a
+documentation-only correction of
+`docs/architecture/CLEAN_SLATE_TRANSACTIONAL_RESET_PHASE_CONTRACT.md`. Type:
+docs-only; database access strictly READ-ONLY (no
+`INSERT`/`UPDATE`/`DELETE`/`TRUNCATE`/DDL/writer-RPC); no product, test, script,
+migration, or configuration change. Entry checkpoint HEAD
+`9eeff7d5a97e25cf676d54afcd4510816a8648fb`. Historical record — live state belongs
+to `PROJECT_STATE.md`.
+
+**Diagnosis outcome.** The only transaction-linked document in `ucrjtfswnfdlxwtmxnoo`
+is a **proven synthetic `G28-B6-VERIFY` verification fixture**
+(`G28-B6-VERIFY-c63b6c2c8aff4da58e87d1e75f7a9236-DOCUMENT`) linking Pedido #34
+(`7fa51e02`), OPs 55/57/61/63, and lotes 33/37 — no Drive object, no SHA-256, no
+fiscal/sender metadata, 0 operational descendants. The other 39 of 40 ingestor
+`document_candidates` are unlinked and preserved as a separate front. The
+Controlled-Delete × document-history rule is RESTRICT-FK + `db/53` application guard
+with no immutability trigger. Residual tables dispositioned: `saldo_fios` (5
+physical-inventory rows predating `db/67`) = preserve; `op_numeros` = preserve (no
+restart); `op_fornecedores` (16, 0 orphans) = purge with OPs; empty aux/shipping
+tables = no-op. Readiness: `READY_FOR_CONTRACT_CORRECTION`.
+
+**Correction outcome — one exact clean-slate reset target (binding).** The reset
+contract is now `STATUS: CORRECTED / AWAITING DIRECT SUPERVISOR REVIEW / DESTRUCTIVE
+EXECUTION NOT AUTHORIZED`. Every prior optional/`UNPROVEN` decision is binding:
+purge **all 16 Pedidos, all 20 OPs, all 25 lotes** (incl. orphan lotes 3,4,5,6,7,8,13)
++ `op_fornecedores` + the complete yarn-purchasing transaction corpus; **Option D3**
+removal of **only** the exact synthetic B6-VERIFY fixture (4 `document_link_revision_ops`
++ 8 `document_link_revisions` + 1 `document_candidates`) with the rest of the
+documents front preserved (broad documents-front deletion prohibited); preserve
+`saldo_fios` (physical inventory), `saldo_fios_op` empty state, `op_numeros`
+high-water (no restart), and all master/reference data; **cutover Option C** (stay
+`legacy_active`/`flat`/`not_started`, markers NULL); a **mandatory archive package +
+restore runbook + disposable restore drill** as a pre-execution HARD STOP the
+executor may not waive; and a **one-time governed administrative DELETE transaction**
+(not a `db/NN` migration, not the dashboard, not an RPC/UI writer). The contract now
+carries the exact Boundary-A order (11 tables → 0,0,0,0,0,51,51,51,64,51,64), the
+exact synthetic-document order (6 steps → 0,0,4,8,0,1, exact fixture id), the exact
+Boundary-B order (13 tables → 27,16,4,18,0,0,0,0,0,0,20,16,25), the exact 16 Pedido /
+20 OP / 25 lote ids, and a proposed (not created) implementation manifest
+(`scripts/reset/clean-slate-transactional-export.mjs`/`-reset.sql`/`-restore.sql`/
+`-verify.mjs`, `tests/clean-slate-transactional-reset.smoke.mjs`).
+
+**Sequence impact.** No existing sequence dependency or accepted architecture in this
+file changes. The `CLEAN-SLATE-TRANSACTIONAL-RESET` sequence item remains proposed
+and separately-authorizable; the former 13-row `REAL_CUTOVER` completeness gate stays
+`STILL_APPLICABLE_UNTIL_RESET_EXECUTION_COMPLETES` then `SUPERSEDED_BY_CLEAN_SLATE_RESET`;
+`OC-CUTOVER-001` stays `PLANNED`; `REAL_CUTOVER` remains a separate, `NOT AUTHORIZED`
+gate (any later cutover needs a re-baselined terminal migration since `db/75`'s
+constants are superseded once the reset completes).
+
+`NEXT_AUTHORIZABLE_ACTION`: direct supervisor review of the corrected
+`CLEAN-SLATE-TRANSACTIONAL-RESET` contract — no deletion, database mutation, archive
+creation, reset implementation, phase activation, or continuation is authorized; no
+phase chains automatically. `ACTIVE_PHASE`/`ACTIVE_PHASE_CONTRACT` remain `NONE`;
+`LAST_ACCEPTED_PHASE` stays `PHASE-C5`. One local documentation-only commit
+`docs: correct clean-slate reset contract`, published through one authorized
+fast-forward push to `staging/dev`. Full record: the reset contract and
+`docs/ledgers/G28_LEDGER.md`.
+
 # Update 2026-07-22 - CLEAN-SLATE-TRANSACTIONAL-RESET-CONTRACT-R1 (business-owner clean-slate ruling recorded; proposed reset contract authored; no execution)
 
 Phase: read-only diagnosis of the operational transaction domain in the

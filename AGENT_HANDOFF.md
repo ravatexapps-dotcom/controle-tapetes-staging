@@ -79,6 +79,37 @@
   authorizable action: direct supervisor review of the proposed
   `CLEAN-SLATE-TRANSACTIONAL-RESET` contract** — no deletion, reset execution, phase
   activation, or continuation is authorized.
+- **`CLEAN-SLATE-DOCUMENT-HISTORY-AND-RESIDUAL-BOUNDARY-DIAGNOSIS-R1` (read-only
+  continuation diagnosis; no doc mutation, no commit, no push) + `CLEAN-SLATE-TRANSACTIONAL-RESET-CONTRACT-CORRECTION-R1`
+  (documentation-only correction, commit `docs: correct clean-slate reset
+  contract`):** the residual-boundary diagnosis proved (read-only against
+  `ucrjtfswnfdlxwtmxnoo`) that the only transaction-linked document is the **synthetic
+  `G28-B6-VERIFY-c63b6c2c8aff4da58e87d1e75f7a9236-DOCUMENT`** fixture (Pedido #34
+  `7fa51e02`, OPs 55/57/61/63, lotes 33/37; 8 link revisions + 4 revision-ops + 1
+  candidate; no Drive object/SHA/fiscal metadata; 0 operational descendants), while
+  the other 39 of 40 ingestor `document_candidates` are an unrelated front to
+  preserve; the Controlled-Delete rule is RESTRICT-FK + `db/53` app guard with no
+  immutability trigger. The correction then set the reset contract to `CORRECTED /
+  AWAITING DIRECT SUPERVISOR REVIEW / DESTRUCTIVE EXECUTION NOT AUTHORIZED` with
+  every decision now **binding**: purge all 16 Pedidos + 20 OPs + 25 lotes (incl.
+  orphan lotes 3–8,13) + `op_fornecedores` + the full yarn-purchasing corpus; remove
+  **only** the exact B6 synthetic fixture (Option D3) and preserve the rest of the
+  documents front; preserve `saldo_fios` (physical inventory) and `op_numeros`
+  (no restart); preserve master data; cutover Option C (stay `legacy_active`); a
+  **mandatory archive + restore runbook + disposable restore drill** HARD STOP before
+  any execution; and a one-time governed administrative DELETE transaction (not a
+  `db/NN` migration, not the dashboard, not an RPC/UI writer). Added the exact
+  Boundary-A/document-fixture/Boundary-B deletion orders + affected-row counts, the
+  exact 16 Pedido / 20 OP / 25 lote ids, and a proposed (not created) implementation
+  manifest (`scripts/reset/*` + `tests/clean-slate-transactional-reset.smoke.mjs`).
+  **No deletion, database mutation, archive, reset implementation, migration,
+  cutover, activation, or environment change occurred**; `OC-CUTOVER-001` stays
+  `PLANNED`; the 13-row gate stays `STILL_APPLICABLE_UNTIL_RESET_EXECUTION_COMPLETES`;
+  `REAL_CUTOVER` and `PHASE-C5B` remain unauthorized; `LAST_ACCEPTED_PHASE` stays
+  `PHASE-C5`; `ACTIVE_PHASE`/`ACTIVE_PHASE_CONTRACT` stay `NONE`. Documentation-only,
+  seven authorized owners; one commit + one authorized `staging/dev` fast-forward
+  push. **Next authorizable action: direct supervisor review of the corrected
+  `CLEAN-SLATE-TRANSACTIONAL-RESET` contract.**
 - **Prior accepted product phase:** `PHASE-C3C-B` (application compatibility/
   adaptation) — `CLOSED / ACCEPTED_WITH_NONBLOCKING_DEBT / LOCALLY VERIFIED`
   (2026-07-21), accepted checkpoint `22bfb192c6c2ad10ccd2b2883d54c3a17e40cc9f`

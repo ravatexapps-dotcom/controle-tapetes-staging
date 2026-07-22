@@ -2,24 +2,26 @@
 PHASE_ID: CLEAN-SLATE-TRANSACTIONAL-RESET
 <!-- MATERIAL_PHASE_CONTRACT:END -->
 
-# Clean-Slate Transactional Reset — Proposed Material Phase Contract
+# Clean-Slate Transactional Reset — Corrected Material Phase Contract
 
 ```text
 PHASE_ID: CLEAN-SLATE-TRANSACTIONAL-RESET
-STATUS: PROPOSED / AWAITING SUPERVISOR REVIEW / DESTRUCTIVE EXECUTION NOT AUTHORIZED
+STATUS: CORRECTED / AWAITING DIRECT SUPERVISOR REVIEW / DESTRUCTIVE EXECUTION NOT AUTHORIZED
 AUTHORED_BY: CLEAN-SLATE-TRANSACTIONAL-RESET-CONTRACT-R1 (read-only diagnosis + documentation-only authoring)
-ENTRY_CHECKPOINT: 56f749812c693cea3c81518a139d174e958fbbbf
+CORRECTED_BY: CLEAN-SLATE-TRANSACTIONAL-RESET-CONTRACT-CORRECTION-R1 (documentation-only, over the accepted CLEAN-SLATE-DOCUMENT-HISTORY-AND-RESIDUAL-BOUNDARY-DIAGNOSIS-R1)
+ENTRY_CHECKPOINT: 9eeff7d5a97e25cf676d54afcd4510816a8648fb
 DATABASE_DIAGNOSED: ucrjtfswnfdlxwtmxnoo (non-production shared development, PostgreSQL 17.6, terminal migration 20260722055832) — READ-ONLY
 ACTIVE_PHASE: NONE
 ACTIVE_PHASE_CONTRACT: NONE
 ```
 
-> **Role.** This is a *proposed* material phase contract. It authorizes **no**
-> deletion, **no** database mutation, **no** migration, **no** cutover, **no**
-> activation, and **no** environment change. It records a binding business-owner
-> ruling, a complete read-only diagnosis of the operational transaction domain in
-> the authorized shared-development database, and a fully specified — but
-> unexecuted — destructive-reset design for direct supervisor review. Normative
+> **Role.** This is a *corrected proposed* material phase contract. It authorizes
+> **no** deletion, **no** database mutation, **no** archive creation, **no**
+> reset-script implementation, **no** migration, **no** cutover, **no**
+> activation, and **no** environment change. Every reset-boundary decision that
+> was previously optional, ambiguous, or `UNPROVEN` is now **binding** per the
+> supervisor rulings in §1, grounded in the accepted evidence of
+> `CLEAN-SLATE-DOCUMENT-HISTORY-AND-RESIDUAL-BOUNDARY-DIAGNOSIS-R1`. Normative
 > product/technical semantics remain owned by
 > `docs/architecture/ORDEM_COMPRA_LIFECYCLE_SPEC_PROPOSED.md` and
 > `docs/architecture/PEDIDO_OP_SCHEMA_CONTRACT.md`; current state remains owned by
@@ -28,543 +30,555 @@ ACTIVE_PHASE_CONTRACT: NONE
 
 ---
 
-## 1. Business-owner ruling (binding)
-
-Recorded verbatim as binding for this front:
+## 1. Binding supervisor rulings
 
 ```text
 CLEAN_SLATE_OPERATIONAL_REBUILD: APPROVED AS TARGET STRATEGY
-CURRENT OPERATIONAL TRANSACTION DATA: DOES NOT NEED TO BE PRESERVED AS LIVE BUSINESS DATA
+CURRENT OPERATIONAL TRANSACTION CORPUS: DISPOSABLE AS LIVE BUSINESS DATA
 REAL BUSINESS FLOWS: WILL BE RECREATED THROUGH THE NEW APPLICATION
-EXPECTED REAL FLOWS TO RECREATE: APPROXIMATELY TWO
-RECREATION ORDER:
-  1. create the real Pedidos;
-  2. regenerate their purchasing needs;
-  3. generate the purchase orders;
-  4. regenerate the OPs;
-  5. update subsequent operational states through the new application.
+RECREATION ORDER: 1 Pedido; 2 purchasing needs; 3 purchase orders; 4 OPs; 5 subsequent operational updates.
 ```
 
-The current 13 unmapped legacy rows ids `153`–`165` require **no** mapping,
-backfill, or re-baseline as business obligations. The current 51 mapped legacy
-rows and their native projections likewise carry **no** automatic preservation
-obligation as live operational transactions.
+No current Pedido or OP is preserved because it may correspond to a genuine
+business flow. The genuine flows will be recreated with **new canonical
+identities**. These rulings are binding and supersede every prior "option",
+"recommendation", "Boundary A vs Boundary A+B", or `UNPROVEN` framing in earlier
+revisions of this contract.
 
-This ruling **does not** authorize deletion of master/reference data, and **does
-not** by itself authorize any deletion at all. "Delete the operational
-transaction corpus" is not "delete everything": master data is preserved by
-default (§3). The prior legacy-data preservation/mapping strategy — including the
-`ordem_compra_item_compat_fio` 51-row bridge and the deferred 13-row completeness
-mapping/backfill options — is **SUPERSEDED as the target strategy**; it is not
-retroactively deleted or rewritten, only superseded going forward.
+### 1.1 Final purge scope (binding)
+
+- **All current Pedidos — 16 of 16.**
+- **All current OPs — 20 of 20.**
+- **All current lotes — 25 of 25**, including the orphan lote ids `3, 4, 5, 6, 7, 8, 13`.
+- **All OP supplier assignments — `public.op_fornecedores`, 16 rows.**
+- **The complete yarn-purchasing transaction corpus:** `public.ordens_compra_fio`,
+  `public.necessidade_compra_fio`, `public.ordem_compra`, `public.ordem_compra_item`,
+  `public.ordem_compra_item_alocacao`, `public.ordem_compra_item_compat_fio`,
+  `public.ordem_compra_recebimentos`, `public.ordem_compra_eventos`,
+  `public.ordem_compra_fio_lancamentos`, `public.ordem_compra_fio_movimentos_estoque`,
+  `public.ordem_compra_distribuicao_comandos`.
+
+### 1.2 Document-history disposition (binding) — Option **D3**
+
+**D3 — external metadata archive, then remove the synthetic document-history
+fixture.** The only transaction-linked document in the entire database is proven
+synthetic:
+
+```text
+G28-B6-VERIFY-c63b6c2c8aff4da58e87d1e75f7a9236-DOCUMENT
+```
+
+It has no Google Drive object, no SHA-256, no fiscal metadata, no sender metadata,
+no document event, no technical evidence, no decision, and no operational
+descendant. Its Pedido (`#34`, `7fa51e02-e15b-4a1b-a0f3-8ca39ceee247`), its OPs
+(`55, 57, 61, 63`), and its lotes (`33, 37`) are the matching synthetic fixtures
+with zero operational descendants.
+
+The future reset may remove **only** this synthetic fixture's rows: **4**
+`public.document_link_revision_ops` rows, **8** `public.document_link_revisions`
+rows, **1** `public.document_candidates` row, and its **0**
+`document_events`/`document_technical_evidences`/`document_decisions`. Before
+deletion, these rows and the linked synthetic Pedido/OP/lote metadata must be
+exported into the reset archive (§8). **No archival Pedido or OP shell is
+required.**
+
+**Preserve the remaining documents front (binding):** the 39 unlinked
+`public.document_candidates` rows, the 1 unlinked `public.document_events` row,
+the 24 `public.document_scan_requests` rows, the 30 `public.document_scan_runs`
+rows, and all unrelated document metadata, files, and history. **Broad deletion
+of the documents front is prohibited.** The reset must target the exact synthetic
+fixture identifier above — never a broad text pattern or partial token.
+
+### 1.3 Inventory disposition (binding)
+
+- **`public.saldo_fios` = `PRESERVE_OPERATIONAL_BASELINE`.** Preserve all five
+  current rows and quantities (algodão cor 1 = 732.010 kg; cor 2 = 549.010 kg;
+  cor 3 = 549.000 kg; poliéster PRETO = 427.500 kg; poliéster BRANCO = 427.500 kg).
+  They represent physical yarn inventory predating the purchase-order refoundation
+  (`db/67`) and were not created by the native receipt path (0 receipts). Recreating
+  Pedidos and OPs must not erase physical stock.
+- **`public.saldo_fios_op` = preserve current empty state.** Do not create,
+  delete, reset, or seed rows.
+
+### 1.4 Numbering disposition (binding)
+
+- **`public.op_numeros` = `PRESERVE_CURRENT_HIGH_WATER_VALUES`** (latex
+  `ultimo_numero = 18`, tecelagem `ultimo_numero = 41`). Do not restart numbering;
+  do not reuse historical OP numbers; do not `ALTER SEQUENCE`/`setval` for OP
+  numbering.
+
+### 1.5 Empty auxiliary tables (binding)
+
+`public.pedido_compra_fio_regime`, `public.op_latex_entregas`, `public.expedicoes`,
+`public.expedicao_itens`, `public.expedicao_movimentos`,
+`public.expedicao_movimento_itens`, `public.entregas`, `public.entrega_itens`, and
+`public.saldo_fios_op` currently contain **zero rows** and require **no** deletion
+statement merely to preserve their empty state; their schemas remain intact. **If
+any of these tables becomes non-empty before execution, the future reset must HARD
+STOP and require a new diagnosis.**
+
+### 1.6 Master/reference data disposition (binding)
+
+Preserve: `auth.users`, `public.usuarios`, `public.usuarios_eventos`,
+`public.clientes`, `public.fornecedores`, `public.cores`, `public.modelos`,
+`public.parametros_largura`, `public.precos_terceirizada`,
+`public.ordem_compra_config`, `public.op_numeros`, `public.saldo_fios`, migration
+history, backup infrastructure (`public.backup_runs`,
+`public.backup_run_destinations`), and all other reference/catalog/configuration
+tables not explicitly in the §7 purge manifest. **Master data must never be
+inferred into the destructive scope.**
+
+### 1.7 Cutover disposition (binding) — Option **C**
+
+After the reset, `public.ordem_compra_cutover` must remain `status = legacy_active`,
+`read_authority = flat`, `reconciliation_status = not_started`, with all
+snapshot/import/final-ACL/activation/PONR markers NULL. The reset does **not**
+execute fence, snapshot, import, reconciliation, read switch, final ACL closure, or
+canonical activation. **`REAL_CUTOVER` remains NOT AUTHORIZED.** The old `db/75`
+corpus constants (source snapshot count 51; import 39 headers / 44 ledger lines /
+20,221.280 kg / 405.980 kg excess / 0 movements) become **superseded only after the
+clean-slate reset physically completes**; any later `REAL_CUTOVER` requires a
+separately governed re-baselined terminal migration or equivalent canonical-cutover
+redesign. Options A and B (evaluated in the prior revision) are rejected and closed;
+Option C is the binding selection.
+
+### 1.8 `PHASE-C5B` disposition (binding)
+
+`PHASE-C5B-ACCEPTANCE-DECISION` remains `IDENTIFIED / NOT AUTHORIZED`. It is **not
+required** for the reset because `public.ordem_compra_config.exige_aceite = FALSE`
+(structurally frozen, no client write path). Recommended sequence: (1) correct and
+accept this reset contract; (2) execute the clean-slate reset under a separate
+order; (3) recreate the genuine flows; (4) consider `PHASE-C5B` only if the
+business later enables `exige_aceite = TRUE`.
 
 ---
 
 ## 2. Scope
 
-**In scope (diagnosis only, this pass):** a complete read-only foreign-key and
-logical-dependency inventory of the operational transaction domain in
-`ucrjtfswnfdlxwtmxnoo`; an exact row-count baseline; a preserved master-data
-boundary; the exact clean-slate deletion boundary and dependency-safe order; the
-archival evidence requirement; the future destructive-execution design; the
-clean-slate cutover strategy; the consequence for the former 13-row completeness
-gate; and the `PHASE-C5B-ACCEPTANCE-DECISION` sequencing recommendation.
-
-**Out of scope (explicitly not performed here):** any `INSERT`/`UPDATE`/
-`DELETE`/`TRUNCATE`/DDL/`CALL`/`DO`/writer-RPC; any archive creation; any
-migration authoring; any cutover, activation, or ACL closure; any product/test/
-script/migration/configuration change; any staging, deployment, production,
-branch, or push beyond the single authorized documentation-only commit and its
-one fast-forward push to `staging/dev`. Master-data disposition beyond "preserve
-by default" is out of scope. The `PHASE-C5B-ACCEPTANCE-DECISION` design is out of
-scope beyond sequencing.
-
----
-
-## 3. Preserved master-data boundary
-
-Preserved by default (no clean-slate obligation touches these); each is FK-referenced
-by the transactional layers and the running application depends on them as
-reference/catalog data. Exact live counts in parentheses (read-only, this pass):
-
-| Preserved table | Rows | Role |
-|---|---|---|
-| `auth.users` | (Supabase auth) | authentication identities; every actor FK (`emitida_por`, `cancelada_por`, `aceite_decidida_por`, `criado_por`, `ator_id`) targets it with `ON DELETE SET NULL`/`RESTRICT` |
-| `public.usuarios` | 10 | application users/roles (`tipo`, `nivel_acesso`, `fornecedor_id`) |
-| `public.usuarios_eventos` | 9 | user-administration audit (master-adjacent; not an OC transaction) |
-| `public.clientes` | 6 | customers |
-| `public.fornecedores` | 6 | suppliers (`tipo` gates material compatibility) |
-| `public.cores` | 6 | yarn/color catalog |
-| `public.modelos` | 12 | rug models (width + colors) |
-| `public.parametros_largura` | 2 | per-width yarn coefficients (SQL image of `js/calculo-op.js`) |
-| `public.precos_terceirizada` | 0 | supplier pricing reference |
-| `public.ordem_compra_config` | 1 | emission-policy singleton (`exige_aceite`, `DEFAULT FALSE`, no client write path) — **preserve as-is** (see §11 sequence/policy note) |
-| `db/*` migration history | 27 rows (`…65`→`…77`) | schema/migration history — immutable, never reset |
-
-Master data **must not** be inferred into the deletion set. Backup infrastructure
-tables `backup_runs` (2) / `backup_run_destinations` (4) are also preserved (not
-operational transactions).
-
----
-
-## 4. Exact operational-table inventory (read-only, terminal migration `20260722055832`)
-
-Every materially related table classified as exactly one of `PRESERVE_MASTER_DATA`,
-`PURGE_OPERATIONAL_SOURCE`, `PURGE_OPERATIONAL_DERIVED`, `RESET_CUTOVER_METADATA`,
-`PRESERVE_AUDIT_ARCHIVE`, or `UNPROVEN`. FK notation: `→` outbound FK (child→parent),
-`ON DELETE` behavior noted where it governs order.
-
-### 4.1 Yarn-purchasing operational corpus — the unambiguous clean-slate core (Boundary A)
-
-| Table | Rows | PK | Key inbound FKs | Key outbound FKs | Class | Reason |
-|---|---|---|---|---|---|---|
-| `ordens_compra_fio` | 64 | `id` BIGSERIAL | `necessidade_compra_fio.legado_origem_ordem_compra_fio_id` (NO ACTION), `ordem_compra_item_compat_fio.ordens_compra_fio_id` (NO ACTION), `ordem_compra_eventos.ordem_compra_fio_id` (CASCADE), `ordem_compra_fio_lancamentos.ordem_compra_fio_id` (CASCADE) | `op_id`→ops (CASCADE), `cor_id`→cores, `fornecedor_id`→fornecedores, actor→auth.users | PURGE_OPERATIONAL_SOURCE | legacy flat purchase orders; 51 mapped + 13 unmapped ids 153–165; disposable per ruling |
-| `necessidade_compra_fio` | 64 | `id` BIGSERIAL | `ordem_compra_item_alocacao.necessidade_id` (RESTRICT) | `pedido_id`→pedidos (CASCADE), `op_id`→ops (RESTRICT), `cor_id`→cores, `legado_origem_ordem_compra_fio_id`→ordens_compra_fio (NO ACTION) | PURGE_OPERATIONAL_SOURCE | Layer-1 needs; all 64 are legacy-origin (0 native) |
-| `ordem_compra` | 51 | `id` BIGSERIAL | item/eventos/recebimentos/lancamentos/movimentos | `pedido_id`→pedidos (CASCADE), `fornecedor_id`→fornecedores, actor→auth.users | PURGE_OPERATIONAL_DERIVED | Layer-2 native headers (all 51 `legado`-imported) |
-| `ordem_compra_item` | 51 | `id` BIGSERIAL | alocacao/compat_fio/lancamentos/movimentos | `ordem_id`→ordem_compra (CASCADE), `cor_id`→cores | PURGE_OPERATIONAL_DERIVED | Layer-3 item lines |
-| `ordem_compra_item_alocacao` | 51 | `id` BIGSERIAL | lancamentos/movimentos (RESTRICT) | `item_id`→ordem_compra_item (CASCADE), `necessidade_id`→necessidade_compra_fio (RESTRICT), `op_id`→ops (RESTRICT) | PURGE_OPERATIONAL_DERIVED | Layer-4 allocations |
-| `ordem_compra_item_compat_fio` | 51 | `id` BIGSERIAL | (none) | `ordem_compra_item_id`→ordem_compra_item (NO ACTION), `ordens_compra_fio_id`→ordens_compra_fio (NO ACTION), actor→auth.users | PURGE_OPERATIONAL_DERIVED | legacy↔native compat bridge (the frozen REFUND-A mapping being superseded) |
-| `ordem_compra_recebimentos` | 0 | `id` BIGSERIAL | lancamentos (RESTRICT) | `ordem_compra_id`→ordem_compra (RESTRICT), actor→auth.users | PURGE_OPERATIONAL_DERIVED | receipt command headers (empty) |
-| `ordem_compra_fio_lancamentos` | 0 | `id` BIGSERIAL | movimentos, self `estorno_de_id` | ordem_compra/item/alocacao/recebimentos/ordens_compra_fio/ops/cores/auth.users | PURGE_OPERATIONAL_DERIVED | append-only receipt ledger (empty; `trg_lancamento_append_only_guard`) |
-| `ordem_compra_fio_movimentos_estoque` | 0 | `id` BIGSERIAL | (none) | lancamento/item/alocacao/ordem_compra/ops/cores/auth.users (RESTRICT) | PURGE_OPERATIONAL_DERIVED | inventory movements (empty) |
-| `ordem_compra_eventos` | 0 | `id` BIGSERIAL | (none) | `ordem_compra_id`→ordem_compra (CASCADE), `ordens_compra_fio_id`→ordens_compra_fio (CASCADE), actor→auth.users | PURGE_OPERATIONAL_DERIVED | append-only transition audit (empty) |
-| `ordem_compra_distribuicao_comandos` | 0 | `id` BIGSERIAL | (none) | `ator_id`→auth.users (RESTRICT) | PURGE_OPERATIONAL_DERIVED | allocation-writer idempotency journal (empty) |
-
-Boundary-A physical row total: **332** (64+64+51+51+51+51 + five empty tables).
-
-### 4.2 Commercial/production source corpus — required IF the ruling's "create the real Pedidos / regenerate the OPs" is taken literally (Boundary B)
-
-| Table | Rows | Class | Reason / entanglement |
-|---|---|---|---|
-| `pedidos` | 16 | PURGE_OPERATIONAL_SOURCE | recreation step 1; **RESTRICT-blocked** by `document_link_revisions.pedido_id` for 1 Pedido, and `expedicoes.pedido_id` (RESTRICT; expedicoes empty). `lotes.pedido_id`, `document_candidates.pedido_id`, `document_events.pedido_id` are `SET NULL` |
-| `pedido_itens` | 18 | PURGE_OPERATIONAL_SOURCE | `pedido_id` CASCADE; `op_itens.pedido_item_id`, `expedicao_itens.pedido_item_id` SET NULL |
-| `pedido_eventos` | 0 | PURGE_OPERATIONAL_SOURCE | pedido audit (empty) |
-| `pedido_cliente_eventos` | 0 | PURGE_OPERATIONAL_SOURCE | pedido↔client audit (empty) |
-| `pedido_parciais` / `pedido_parcial_itens` | 0 / 0 | PURGE_OPERATIONAL_SOURCE | partial-delivery detail (empty) |
-| `pedido_compra_fio_regime` | 0 | UNPROVEN | per-Pedido `legacy`/`native` regime; immutable-by-trigger; vestigial after a clean rebuild (see §4.4) |
-| `ops` | 20 | PURGE_OPERATIONAL_SOURCE | recreation step 4; **RESTRICT-blocked** by `document_link_revision_ops.op_id` for 4 OPs, and by `necessidade_compra_fio.op_id`/`ordem_compra_item_alocacao.op_id` (resolved by Boundary A first) |
-| `op_itens` | 27 | PURGE_OPERATIONAL_SOURCE | `op_id` CASCADE; `entrega_itens.op_item_id`, `expedicao_itens.op_item_id` RESTRICT (both empty) |
-| `op_fornecedores` | 16 | UNPROVEN | OP↔supplier stage assignment; belongs to tecelagem flow, not the fio purchase-order chain |
-| `op_eventos` | 4 | PURGE_OPERATIONAL_SOURCE | OP status audit (`op_id` CASCADE) |
-| `op_numeros` | 2 | RESET_CUTOVER_METADATA | OP-number counter (`tipo`/`ano`/`ultimo_numero`); reset only if OP numbering must restart from the rebuilt corpus |
-| `op_latex_entregas` | 0 | UNPROVEN | latex delivery bridge (empty) |
-| `lotes` | 25 | UNPROVEN | production batch bridging Pedido→OP (`ops.lote_id → lotes.pedido_id`); 15 reference a Pedido (`SET NULL`); non-empty and shared with the commercial/shipping subsystem |
-
-### 4.3 Cutover metadata — reset target (but see §11 mechanism)
-
-| Table | Rows | State | Class | Reason |
-|---|---|---|---|---|
-| `ordem_compra_cutover` | 1 | `legacy_active` / `flat` / `not_started`, **all** snapshot/import/PONR/ACL/activation markers NULL | RESET_CUTOVER_METADATA | singleton; already at the pristine pre-cutover baseline — no marker needs clearing |
-| `ordem_compra_cutover_source_snapshot` | 0 | — | RESET_CUTOVER_METADATA | frozen source snapshot (never captured) |
-| `ordem_compra_cutover_inventory_baseline` | 0 | — | RESET_CUTOVER_METADATA | frozen inventory baseline (never captured) |
-
-### 4.4 Inventory, documents front, and shipping — UNPROVEN / explicit-decision-required
-
-| Table | Rows | Class | Reason |
-|---|---|---|---|
-| `saldo_fios` | 5 | UNPROVEN | yarn inventory balance cache (fenced by the cutover guard; mutated only by the native receipt trigger — 0 receipts). Pre-existing baseline inventory; reset-vs-preserve is a business decision |
-| `saldo_fios_op` | 0 | UNPROVEN | per-OP leftover yarn (empty; never written by any native/cutover path in db/67–77) |
-| `document_candidates` | 40 | UNPROVEN | documents front (separate front; `pedido_id`/`fornecedor_id` SET NULL) |
-| `document_events` | 1 | UNPROVEN | documents front (`pedido_id` SET NULL) |
-| `document_link_revisions` | 8 | UNPROVEN / **binding block** | `pedido_id`→pedidos **RESTRICT** (1 Pedido); canonical document history — the **Controlled-Delete × document-history** rule (`PEDIDO_OP_SCHEMA_CONTRACT.md`) blocks physical Pedido/OP deletion while it exists |
-| `document_link_revision_ops` | 10 | UNPROVEN / **binding block** | `op_id`→ops **RESTRICT** (4 OPs); same binding rule |
-| `document_technical_evidences` | 0 | UNPROVEN | documents front (empty) |
-| `document_decisions` | 0 | UNPROVEN | documents front (empty) |
-| `document_scan_requests` / `document_scan_runs` | 24 / 30 | UNPROVEN | ingestor scan history (documents front) |
-| `lotes` | 25 | UNPROVEN | see §4.2 |
-| `expedicoes` / `expedicao_itens` / `expedicao_movimentos` / `expedicao_movimento_itens` | 0 / 0 / 0 / 0 | UNPROVEN | shipping subsystem (all empty; `expedicoes.pedido_id`/`op_latex_id` RESTRICT) |
-| `entregas` / `entrega_itens` | 0 / 0 | UNPROVEN | production-movement subsystem (empty) |
-
----
-
-## 5. Row-count baseline (exact, read-only, `ucrjtfswnfdlxwtmxnoo`, this pass)
-
-The following are the exact `count(*)` values captured read-only and are the
-required pre-deletion invariant baseline (see §16 validation matrix):
-
-```text
-ordens_compra_fio ................. 64  (51 mapped + 13 unmapped ids 153–165)
-necessidade_compra_fio ........... 64  (64 legacy-origin, 0 native-origin)
-ordem_compra ..................... 51
-ordem_compra_item ................ 51
-ordem_compra_item_alocacao ....... 51
-ordem_compra_item_compat_fio ..... 51
-ordem_compra_recebimentos ........  0
-ordem_compra_eventos .............  0
-ordem_compra_fio_lancamentos .....  0
-ordem_compra_fio_movimentos_estoque 0
-ordem_compra_distribuicao_comandos  0
-ordem_compra_cutover .............  1  (legacy_active / flat / not_started; all markers NULL)
-ordem_compra_cutover_source_snapshot 0
-ordem_compra_cutover_inventory_baseline 0
-pedidos .......................... 16     pedido_itens ....... 18
-ops .............................. 20     op_itens ........... 27     op_fornecedores 16     op_eventos 4     op_numeros 2
-lotes ............................ 25
-saldo_fios ........................ 5     saldo_fios_op ....... 0
-document_candidates .............. 40     document_events ..... 1     document_link_revisions 8 (1 pedido)     document_link_revision_ops 10 (4 ops)
-document_scan_requests ........... 24     document_scan_runs .. 30
-clientes 6 · fornecedores 6 · cores 6 · modelos 12 · usuarios 10 · parametros_largura 2   (PRESERVED master data)
-```
-
-No real receipt, ledger, movement, event, or distribution-command row exists —
-the yarn-purchasing corpus carries **zero** productive receipt/stock/audit
-consequence. The cutover has never been exercised (§4.3), so there is no PONR to
-unwind. This materially lowers the reset's risk versus a corpus with real
-receipts.
-
----
-
-## 6. Dependency graph and the exact dependency-safe order
-
-Every ON-DELETE behavior above was read from `pg_constraint`. Under the current
-`legacy_active` state the `trg_c3c_protected_mutation_guard` fence is a
-pass-through (it raises `55000` only when the cutover state is *not*
-`legacy_active`), so the reset **must** run while `legacy_active` (§8). The
-`NO ACTION`/`RESTRICT` edges dictate that children be removed before parents.
-
-**Boundary-A dependency-safe deletion order (children first):**
-
-```text
-1.  ordem_compra_fio_movimentos_estoque   (0)
-2.  ordem_compra_fio_lancamentos          (0)   -- append-only guard permits nothing; empty, so no conflict
-3.  ordem_compra_recebimentos             (0)
-4.  ordem_compra_eventos                   (0)
-5.  ordem_compra_distribuicao_comandos     (0)
-6.  ordem_compra_item_compat_fio          (51)  -- NO ACTION FKs to both ordem_compra_item and ordens_compra_fio: must precede both
-7.  ordem_compra_item_alocacao            (51)  -- RESTRICT to necessidade_compra_fio: must precede it
-8.  ordem_compra_item                     (51)
-9.  necessidade_compra_fio                (64)  -- NO ACTION from legado_origem to ordens_compra_fio: must precede it
-10. ordem_compra                          (51)
-11. ordens_compra_fio                     (64)
-```
-
-This clears Layers 1–4, the legacy flat corpus, the compat bridge, and all
-(empty) ledgers/events/movements/commands, leaving every master-data parent
-(`cores`, `fornecedores`, `ops`, `pedidos`, `auth.users`, `ordem_compra_config`)
-untouched.
-
-**Boundary-B (only if authorized — see §18):** after Boundary A, the
-`necessidade`/`alocacao`→`ops` (RESTRICT) and `necessidade`/`ordem_compra`→
-`pedidos` (CASCADE) edges are already satisfied, so `op_eventos`, `op_itens`,
-`op_fornecedores`, `ops`, `pedido_*`, `pedidos`, `lotes` could then be removed —
-**but** deletion of the 1 Pedido and 4 OPs carrying `document_link_revisions`/
-`document_link_revision_ops` is **RESTRICT-blocked and additionally forbidden by
-the binding Controlled-Delete × document-history rule**, and the documents-front
-rows are a separate front. Boundary B therefore requires an explicit
-business-owner disposition of the documents-front data first (§18).
-
----
-
-## 7. Archival evidence plan (mandatory before any mutation)
-
-The future destructive-execution contract **must** produce, before touching any
-row, a complete archival evidence package. It is recovery/evidence material, not
-a new canonical state owner, and must live **outside the repository** (e.g. an
-operator-controlled encrypted archive directory), never committed.
-
-For **every** purged table the archive must record: schema-qualified table name;
-exact row export in a deterministic order (`ORDER BY id`, or the table's natural
-key); the pre-deletion row count; a per-table content checksum (e.g. SHA-256 over
-the deterministically serialized rows); the export timestamp; the database
-identity fingerprint (project ref `ucrjtfswnfdlxwtmxnoo`, `current_database`,
-`server_version`, terminal migration `20260722055832`); the cutover-state
-snapshot (`ordem_compra_cutover` full row); and the list of preserved master
-tables with their counts. The archive **must exclude** secrets, connection
-credentials, and any personal data not required for recovery (actor UUIDs may be
-retained as opaque identifiers; no `auth.users` PII is exported).
-
-The archive is **not** created by this contract. Its existence, checksum, and
-storage location must be proven as an entry gate of the future execution (§16).
-
----
-
-## 8. Destructive-execution design (specified, NOT executed)
-
-- **Exact tables & order:** §6 Boundary A (mandatory core); Boundary B only if
-  §18 authorizes it and the documents-front disposition is resolved.
-- **Exact predicates:** unconditional per-table `DELETE FROM <table>` in the §6
-  order (the whole corpus is disposable); no `WHERE` filter is needed for
-  Boundary A because every row is in scope. (If the supervisor instead scopes the
-  reset to "purge all but the ~2 real flows," the predicates become explicit
-  id-lists supplied by the business owner — recorded as an open decision, §18.)
-- **Transactional boundary:** one single serialized transaction; either the whole
-  reset commits or it rolls back — no partial reset.
-- **DELETE vs TRUNCATE:** use `DELETE` (not `TRUNCATE`). `TRUNCATE` bypasses
-  per-row triggers/FK checks and cannot be safely ordered against `NO ACTION`
-  edges; `DELETE` honors the append-only/immutable guards and FK order and is
-  auditable. `TRUNCATE` is prohibited.
-- **Guard/fence interaction:** the reset must run while `ordem_compra_cutover.status
-  = 'legacy_active'` so `trg_c3c_protected_mutation_guard` passes through; a HARD
-  STOP applies if the state is not `legacy_active` at execution time.
-- **Sequence handling:** **do not reset sequences** by default (leave
-  `ordens_compra_fio_id_seq`, `ordem_compra_id_seq`, `necessidade_compra_fio_id_seq`,
-  `ordem_compra_item_id_seq`, `ordem_compra_item_alocacao_id_seq`,
-  `ordem_compra_item_compat_fio_id_seq`, and the empty-table sequences advanced).
-  Recreated flows take fresh higher ids; this avoids PK reuse/collision with any
-  archived reference. Any `ALTER SEQUENCE … RESTART`/`setval` is an **optional,
-  separately authorized** cosmetic step, permitted only after a proven zero-row
-  state (§18).
-- **Expected counts before deletion:** exactly the §5 baseline (HARD STOP on any
-  mismatch — proves the corpus has not drifted since diagnosis).
-- **Expected zero-state after deletion:** every Boundary-A table `count(*) = 0`;
-  master-data counts unchanged; `ordem_compra_cutover` still
-  `legacy_active`/`flat`/`not_started` with all markers NULL.
-- **Rollback behavior:** any failed invariant, any unexpected count, any
-  non-`legacy_active` state, or any FK/guard error aborts the whole transaction
-  with no committed change.
-- **Mutation mechanism (decision):** the reset **must** be a **one-time, governed,
-  tracked administrative transactional operation** executed exactly once against
-  `ucrjtfswnfdlxwtmxnoo` **only**, under a separate explicit authorization. It
-  **must not** be a new `db/NN` forward migration: a forward migration replays on
-  every environment and every fresh disposable cluster, would delete the 64-row
-  corpus that the C3D/C5A integration tests and the `tests/ordem-compra-c3d-deploy.smoke.js`
-  deployment-manifest guard depend on, and would risk replaying against
-  production — all violations of the forward-only, environment-agnostic migration
-  model. Migrations `db/01`–`db/77` are immutable and are **not** edited. Ad-hoc
-  manual deletion through the Supabase dashboard is **prohibited**. If (and only
-  if) a future canonical activation on the rebuilt corpus needs schema-level
-  change, that is a separate migration decision, not part of this data reset.
-
----
-
-## 9. Sequence policy
-
-Owned sequences in the operational domain (all `BIGSERIAL`): `ordens_compra_fio_id_seq`,
-`necessidade_compra_fio_id_seq`, `ordem_compra_id_seq`, `ordem_compra_item_id_seq`,
-`ordem_compra_item_alocacao_id_seq`, `ordem_compra_item_compat_fio_id_seq`,
-`ordem_compra_eventos_id_seq`, `ordem_compra_fio_lancamentos_id_seq`,
-`ordem_compra_recebimentos_id_seq`, `ordem_compra_fio_movimentos_estoque_id_seq`,
-`ordem_compra_distribuicao_comandos_id_seq`, and the cutover sequences. `saldo_fios`
-(composite unique, no serial), `pedido_compra_fio_regime` (UUID PK), and
-`ordem_compra_config` (constant `id=1`) own no operational sequence.
-
-**Default policy: no sequence reset.** Recreated flows use fresh higher ids.
-Sequence restart is optional, cosmetic, separately authorizable, and only after a
-proven zero-row state.
-
----
-
-## 10. Cutover-state strategy
-
-Current state is pristine pre-cutover (`legacy_active`/`flat`/`not_started`, all
-markers NULL, snapshot/baseline rows 0, PONR never crossed). Options evaluated:
-
-- **Option A — two-phase reset then empty-corpus cutover.** Rejected. The `db/75`
-  cutover functions hard-code the disposed corpus's constants —
-  `ordem_compra_c3c_fence_and_snapshot` asserts **source snapshot count = 51**;
-  `ordem_compra_c3c_assert_import_reconciled` asserts **39 headers / 44 ledger
-  lines / 20,221.280 kg / 405.980 kg excess / 0 movements**. An empty or rebuilt
-  corpus fails every assert; a canonical activation is impossible without a
-  superseding, re-baselined migration.
-- **Option B — atomic reset + canonical activation.** Rejected for the same
-  hard-coded-constant reason, plus it needlessly crosses toward the irreversible
-  PONR for a corpus that is being rebuilt through the flat application path.
-- **Option C — remain `legacy_active` after reset. RECOMMENDED.** The application
-  is `legacy_active`/`flat`; the two real flows are recreated through the live
-  flat path (Pedido → needs → purchase orders → OPs). No fence, snapshot, import,
-  read switch, ACL closure, or activation is performed by the reset. The cutover
-  singleton stays at its pristine baseline.
-
-**Recommendation: Option C.** Consequence recorded: the `db/75` import/reconcile
-constants (51/39/44/20,221.280/405.980) and the `ordem_compra_item_compat_fio`
-51-row snapshot premise become **SUPERSEDED** once the corpus is reset; any future
-`REAL_CUTOVER` on the rebuilt corpus requires a **new terminal migration
-re-baselined to the rebuilt corpus's real counts**, authored under a separate
-order. This contract neither authors nor authorizes that migration.
-
----
-
-## 11. Rollback and recovery; and the `ordem_compra_config` note
-
-- **Pre-execution:** the archive (§7) is the recovery source of record; the reset
-  transaction is all-or-nothing (§8), so a failed reset leaves the corpus intact.
-- **Post-execution recovery:** because the reset stays `legacy_active` and the
-  cutover was never crossed, there is no PONR/forward-only constraint; recovery,
-  if ever required, is a restore from the §7 archive under a separate
-  authorization — not a canonical forward repair.
-- **`ordem_compra_config` (singleton, `exige_aceite=FALSE`):** preserve as-is. It
-  is a policy switch, not transactional data; re-seeding it is unnecessary and
-  would be a policy change. Preserving `exige_aceite=FALSE` keeps recreated
-  emissions on the already-validated `EMISSION_ALLOWED_ONLY_WHEN_EXIGE_ACEITE_FALSE`
-  path (C5A), avoiding the `PHASE-C5B` acceptance-decision gap (§14).
-
----
-
-## 12. Point of no return (PONR)
-
-For this reset the PONR is the **commit of the single reset transaction** — the
-first and only irreversible moment, recoverable thereafter only from the §7
-archive. It is unrelated to the `OC-CUTOVER-PONR-001` cutover PONR ("the first
-successfully committed non-import canonical receipt after the canonical read
-switch," `ORDEM_COMPRA_LIFECYCLE_SPEC_PROPOSED.md` §R.29.6), which is **not**
-crossed by this reset (Option C keeps `legacy_active`, never sets
-`productive_receipt_started_at`).
-
----
-
-## 13. Hard stops
-
-The future execution **must** hard-stop (abort, no mutation) if any of:
-
-- the selected project is not exactly `ucrjtfswnfdlxwtmxnoo`, or is production, or
-  is the legacy project;
-- `ordem_compra_cutover.status` ≠ `legacy_active`, or `read_authority` ≠ `flat`,
-  or any snapshot/import/PONR/ACL/activation marker is non-NULL;
-- any Boundary-A pre-count ≠ §5 baseline (corpus drift);
-- the §7 archive (export + checksum + identity fingerprint) is not proven present
-  before the first `DELETE`;
-- any Boundary-A row cannot be deleted in the §6 order (unexpected FK/guard);
-- any master-data count changes;
-- the reset is proposed as a `db/NN` migration or executed via the dashboard;
-- Boundary B is attempted without an explicit documents-front disposition and the
-  Controlled-Delete rule cleared for the 1 Pedido + 4 OPs;
-- a writer RPC or `TRUNCATE` is used in place of the specified `DELETE` order.
-
----
-
-## 14. `PHASE-C5B-ACCEPTANCE-DECISION` boundary and sequencing
-
-`PHASE-C5B-ACCEPTANCE-DECISION` (`IDENTIFIED / NOT AUTHORIZED`) owns the missing
-`status_aceite` `pendente → aceita/rejeitada` acceptance-decision RPC, actor
-ownership, state-transition rules, audit/history, UI, and the supplier-vs-admin
-permission split. It is **corpus-independent**: the acceptance-decision gap is
-structural, unaffected by resetting or rebuilding the transaction corpus.
-
-**Sequencing recommendation:** `PHASE-C5B` is **not** a prerequisite of, and is
-**not** blocked by, the clean-slate reset. Because `ordem_compra_config.exige_aceite`
-is preserved `FALSE` (§11), the recreated flows will not require an acceptance
-decision, so `PHASE-C5B` is best sequenced **after** the reset and **after** the
-two real flows are recreated — and only becomes necessary if/when the business
-later enables `exige_aceite=TRUE`. This contract neither authorizes nor designs
-`PHASE-C5B` beyond this sequencing.
-
----
-
-## 15. Consequence for the former 13-row completeness gate
-
-The former binding `REAL_CUTOVER` completeness gate for the 13 unmapped
-`ordens_compra_fio` rows ids `153`–`165` (`ORDEM_COMPRA_C3D_PHASE_CONTRACT.md`
-§Z.3; `OC-CUTOVER-001` residual debt) is dispositioned as:
-
-**`STILL_APPLICABLE_UNTIL_RESET_EXECUTION_COMPLETES`, then
-`SUPERSEDED_BY_CLEAN_SLATE_RESET`.**
-
-Distinguished exactly as the diagnosis requires:
-
-- **Business decision:** no current transaction (including the 13 rows) needs
-  preservation as live data.
-- **Technical fact:** the 13 rows (and the full 64/51 corpus) **physically still
-  exist** — no deletion has occurred; the gate remains applicable until the reset
-  is executed under a separate authorization.
-- **Future retirement point:** at reset execution, the 13 rows are removed as part
-  of the `ordens_compra_fio` purge — this **is** disposition option (3)
-  ("cancellation/removal through a separately authorized business-data action") of
-  the §Z.3 gate, applied to all 64 rows, not only 153–165. At that moment the
-  64/51/13 corpus ceases to be a cutover gate.
-- **Replacement gate:** the old completeness gate is replaced by the new
-  clean-slate readiness gates — proven zero-state, archive proven, master-data
-  intact, `legacy_active` preserved, and (for any future cutover) a re-baselined
-  migration (§10). `OC-CUTOVER-001` stays `PLANNED` and `REAL_CUTOVER` stays
-  **NOT AUTHORIZED** throughout; this contract does not mark `REAL_CUTOVER`
-  authorized.
-
----
-
-## 16. Validation matrix (for the future execution)
-
-| Gate | Check | When |
-|---|---|---|
-| Identity | project ref `ucrjtfswnfdlxwtmxnoo`, `server_version`, `current_database`, terminal migration `20260722055832` | entry |
-| Pre-state | cutover `legacy_active`/`flat`/`not_started`, all markers NULL | entry |
-| Baseline | every §5 count matches exactly | entry |
-| Archive | §7 export + per-table checksum + identity fingerprint proven present | entry (before first DELETE) |
-| Master-data guard | preserved-table counts snapshot | entry + exit |
-| Order | Boundary-A deletes succeed in §6 order inside one transaction | execution |
-| Zero-state | every Boundary-A table `count(*) = 0` | exit |
-| Cutover invariance | `ordem_compra_cutover` unchanged (`legacy_active`/`flat`/`not_started`, markers NULL) | exit |
-| Master-data invariance | preserved counts unchanged vs entry | exit |
-| No PONR | `productive_receipt_started_at` still NULL | exit |
-
----
-
-## 17. Evidence packet (for the future execution)
-
-The future execution report must provide: entry identity proof; the archive
-manifest (per-table count + checksum + location, outside the repo); the pre-count
-baseline vs §5; the single-transaction DELETE log in §6 order; the exit
-zero-state proof; master-data invariance; cutover-singleton invariance; the
-proven-absent PONR; and a statement that no migration, no dashboard action, no
-`TRUNCATE`, and no writer RPC was used.
-
----
-
-## 18. Exact proposed future file/migration manifest
-
-- **Mechanism:** one tracked, reviewed, single-transaction administrative SQL
-  operation (e.g. `scripts/reset/clean-slate-transactional-reset.sql` or an
-  equivalent governed runbook), **not** a `db/NN` migration, executed once against
-  `ucrjtfswnfdlxwtmxnoo`. Exact path/name to be fixed by the future execution
-  order.
-- **No migration file** is created (`db/01`–`db/77` immutable; a future cutover
-  re-baseline migration, if ever, is a separate order — §10).
-- **No product/test/config change.**
-- **Archive tooling** (export + checksum) may be a separate one-time script,
-  authored under the future execution order, writing outside the repository.
-
----
-
-## 19. Explicit exclusions
-
-Not performed and not authorized by this contract: any deletion or DB mutation;
-archive creation; migration authoring; cutover/fence/snapshot/import/read-switch/
-ACL-closure/activation; `REAL_CUTOVER`; `PHASE-C5B` design/implementation;
-master-data disposition beyond "preserve by default"; documents-front / `lotes` /
-`saldo_fios` disposition (all UNPROVEN, §18/§20); staging, deployment, production,
+**In scope (documentation only, this correction):** binding the reset boundary to
+one exact target and removing every optional/ambiguous/`UNPROVEN` decision.
+
+**Out of scope (not performed, not authorized):** any deletion or DB mutation;
+archive creation; reset-script implementation; migration authoring; cutover,
+activation, or ACL closure; `REAL_CUTOVER`; `PHASE-C5B` design/implementation;
+master-data disposition beyond "preserve"; staging, deployment, production,
 branch, or any push beyond this pass's single documentation-only commit and its
 one fast-forward push to `staging/dev`.
 
 ---
 
-## 20. Supervisor decisions still required
+## 3. Preserved master-data boundary
 
-1. **Accept or reject** this proposed contract and its recommended Option C
-   cutover strategy.
-2. **Boundary scope:** Boundary A only (yarn-purchasing corpus) versus Boundary A
-   + Boundary B (also purge `pedidos`/`ops`/`lotes`) — and, if Boundary B, whether
-   to purge the *entire* corpus or only "all but the ~2 real flows" via explicit
-   id-lists.
-3. **Documents-front disposition** (`document_candidates`/`_events`/
-   `_link_revisions`/`_link_revision_ops`/`_technical_evidences`/`_decisions`/
-   `_scan_requests`/`_scan_runs`) and the **binding Controlled-Delete × document-history
-   rule** for the 1 Pedido + 4 OPs that carry canonical document history — a
-   business-owner decision, since these block Boundary B and are a separate front.
-4. **`saldo_fios`/`saldo_fios_op` inventory** — reset or preserve.
-5. **`pedido_compra_fio_regime`, `op_fornecedores`, `op_numeros`, `lotes`,
-   `expedicoes`/`entregas`** — confirm disposition (UNPROVEN).
-6. **Sequence reset** — keep advanced (recommended) or restart after zero-state.
-7. **Mutation mechanism** — ratify "one-time governed administrative operation,
-   not a migration, not dashboard."
-8. **Master data** — confirm no master/reference table is in scope.
+Preserved by default (each FK-referenced by the transactional layers; the
+application depends on them as reference/catalog data). Exact live counts:
+
+| Preserved table | Rows | Role |
+|---|---|---|
+| `auth.users` | (Supabase auth) | authentication identities; every actor FK targets it (`SET NULL`/`RESTRICT`) |
+| `public.usuarios` | 10 | application users/roles |
+| `public.usuarios_eventos` | 9 | user-administration audit |
+| `public.clientes` | 6 | customers |
+| `public.fornecedores` | 6 | suppliers |
+| `public.cores` | 6 | yarn/color catalog |
+| `public.modelos` | 12 | rug models |
+| `public.parametros_largura` | 2 | per-width yarn coefficients |
+| `public.precos_terceirizada` | 0 | supplier pricing reference |
+| `public.ordem_compra_config` | 1 | emission-policy singleton (`exige_aceite=FALSE`) — preserve as-is |
+| `public.op_numeros` | 2 | OP numbering high-water — preserve, no restart (§1.4) |
+| `public.saldo_fios` | 5 | physical yarn inventory baseline — preserve (§1.3) |
+| `public.saldo_fios_op` | 0 | per-OP leftover yarn — preserve empty state (§1.3) |
+| `public.backup_runs` / `public.backup_run_destinations` | 2 / 4 | backup infrastructure |
+| documents front (unlinked) | 39 candidates / 1 event / 24 scan-req / 30 scan-run | separate front — preserve (§1.2) |
+| `db/*` migration history | 27 rows (`…65`→`…77`) | immutable, never reset |
+| `public.ordem_compra_cutover` (+ snapshot/baseline) | 1 / 0 / 0 | cutover singleton — preserve `legacy_active` (§1.7) |
 
 ---
 
-## 21. Production prohibition
+## 4. Exact operational-table inventory (read-only baseline, terminal migration `20260722055832`)
+
+Classification is now final (no `UNPROVEN` remains): `PRESERVE_MASTER_DATA`,
+`PURGE_OPERATIONAL_SOURCE`, `PURGE_OPERATIONAL_DERIVED`, `RESET_CUTOVER_METADATA`
+(none require a delete — the singleton is preserved as-is), `PRESERVE_OPERATIONAL_BASELINE`,
+or `PRESERVE_EMPTY_STATE`.
+
+### 4.1 Yarn-purchasing operational corpus — full purge (Boundary A)
+
+| Table | Rows | Class | Reason |
+|---|---|---|---|
+| `ordens_compra_fio` | 64 | PURGE_OPERATIONAL_SOURCE | legacy flat purchase orders (51 mapped + 13 unmapped ids 153–165) |
+| `necessidade_compra_fio` | 64 | PURGE_OPERATIONAL_SOURCE | Layer-1 needs (all legacy-origin) |
+| `ordem_compra` | 51 | PURGE_OPERATIONAL_DERIVED | Layer-2 native headers |
+| `ordem_compra_item` | 51 | PURGE_OPERATIONAL_DERIVED | Layer-3 items |
+| `ordem_compra_item_alocacao` | 51 | PURGE_OPERATIONAL_DERIVED | Layer-4 allocations |
+| `ordem_compra_item_compat_fio` | 51 | PURGE_OPERATIONAL_DERIVED | legacy↔native compat bridge (superseded) |
+| `ordem_compra_recebimentos` | 0 | PURGE_OPERATIONAL_DERIVED | receipt command headers |
+| `ordem_compra_eventos` | 0 | PURGE_OPERATIONAL_DERIVED | transition audit |
+| `ordem_compra_fio_lancamentos` | 0 | PURGE_OPERATIONAL_DERIVED | receipt ledger (append-only) |
+| `ordem_compra_fio_movimentos_estoque` | 0 | PURGE_OPERATIONAL_DERIVED | inventory movements |
+| `ordem_compra_distribuicao_comandos` | 0 | PURGE_OPERATIONAL_DERIVED | allocation idempotency journal |
+
+### 4.2 Commercial/production corpus — full purge (Boundary B)
+
+| Table | Rows | Class | Reason |
+|---|---|---|---|
+| `pedidos` | 16 | PURGE_OPERATIONAL_SOURCE | all 16 disposable; recreated fresh |
+| `pedido_itens` | 18 | PURGE_OPERATIONAL_SOURCE | pedido lines |
+| `pedido_eventos` / `pedido_cliente_eventos` / `pedido_parciais` / `pedido_parcial_itens` / `pedido_compra_fio_regime` | 0 / 0 / 0 / 0 / 0 | PURGE_OPERATIONAL_SOURCE | empty pedido children |
+| `ops` | 20 | PURGE_OPERATIONAL_SOURCE | all 20 disposable (incl. synthetic 55/57/61/63) |
+| `op_itens` | 27 | PURGE_OPERATIONAL_SOURCE | OP lines |
+| `op_fornecedores` | 16 | PURGE_OPERATIONAL_SOURCE | OP supplier assignments (0 orphans; all belong to current OPs) |
+| `op_eventos` | 4 | PURGE_OPERATIONAL_SOURCE | OP status audit |
+| `op_latex_entregas` | 0 | PRESERVE_EMPTY_STATE | empty (no delete needed) |
+| `lotes` | 25 | PURGE_OPERATIONAL_SOURCE | all 25 disposable (15 Pedido-linked, 3 OP-only, 7 orphan legacy) |
+
+### 4.3 Synthetic document-history fixture — targeted removal (§1.2)
+
+| Table | Rows | Class | Reason |
+|---|---|---|---|
+| `document_link_revision_ops` (B6 fixture) | 4 | PURGE (synthetic) | OP-link rows for the B6-VERIFY fixture (OPs 55/57/61/63) |
+| `document_link_revisions` (B6 fixture) | 8 | PURGE (synthetic) | 8 revisions (v1–v8; v8 active) of the B6-VERIFY document |
+| `document_candidates` (B6 fixture) | 1 | PURGE (synthetic) | the single B6-VERIFY candidate row |
+| `document_events`/`document_technical_evidences`/`document_decisions` (B6) | 0 / 0 / 0 | PURGE (synthetic, empty) | none exist for this document |
+
+### 4.4 Preserved inventory / cutover / documents front
+
+| Table | Rows | Class |
+|---|---|---|
+| `saldo_fios` | 5 | PRESERVE_OPERATIONAL_BASELINE |
+| `saldo_fios_op` | 0 | PRESERVE_EMPTY_STATE |
+| `op_numeros` | 2 | PRESERVE_MASTER_OR_REFERENCE (no restart) |
+| `ordem_compra_cutover` (+ snapshot/baseline) | 1 / 0 / 0 | preserve `legacy_active`/`flat`/`not_started` (§1.7) |
+| documents front (unlinked): `document_candidates` 39, `document_events` 1, `document_scan_requests` 24, `document_scan_runs` 30 | — | PRESERVE (separate front, §1.2) |
+| `expedicoes`/`expedicao_itens`/`expedicao_movimentos`/`expedicao_movimento_itens`/`entregas`/`entrega_itens` | 0 each | PRESERVE_EMPTY_STATE |
+
+---
+
+## 5. Row-count baseline (exact, read-only, `ucrjtfswnfdlxwtmxnoo`)
+
+```text
+-- Boundary A (yarn-purchasing corpus)
+ordem_compra_fio_movimentos_estoque 0   ordem_compra_fio_lancamentos 0   ordem_compra_recebimentos 0
+ordem_compra_eventos 0                   ordem_compra_distribuicao_comandos 0
+ordem_compra_item_compat_fio 51          ordem_compra_item_alocacao 51    ordem_compra_item 51
+necessidade_compra_fio 64                ordem_compra 51                  ordens_compra_fio 64
+-- Synthetic document fixture (id G28-B6-VERIFY-c63b6c2c8aff4da58e87d1e75f7a9236-DOCUMENT)
+document_technical_evidences 0  document_decisions 0  document_link_revision_ops 4
+document_link_revisions 8       document_events 0     document_candidates 1
+-- Boundary B (commercial/production corpus)
+op_itens 27  op_fornecedores 16  op_eventos 4  pedido_itens 18
+pedido_eventos 0  pedido_cliente_eventos 0  pedido_parcial_itens 0  pedido_parciais 0
+pedido_compra_fio_regime 0  op_latex_entregas 0  ops 20  pedidos 16  lotes 25
+-- Preserved (must be unchanged pre/post)
+saldo_fios 5  saldo_fios_op 0  op_numeros 2  ordem_compra_cutover 1 (legacy_active/flat/not_started, markers NULL)
+documents front unlinked: document_candidates 39  document_events 1  document_scan_requests 24  document_scan_runs 30
+clientes 6  fornecedores 6  cores 6  modelos 12  usuarios 10  parametros_largura 2  ordem_compra_config 1
+```
+
+The yarn-purchasing corpus carries **zero** productive receipt/stock/audit
+consequence; the cutover has never been exercised (no PONR to unwind).
+
+---
+
+## 6. Exact target Pedido / OP / lote identities
+
+- **16 Pedidos:** `e888f2b5-49a5-4d76-ab12-2421f86fa1f4`(#1),
+  `7cc6a074-c163-4926-829a-afaf23835da7`(#33),
+  `7fa51e02-e15b-4a1b-a0f3-8ca39ceee247`(#34, B6-VERIFY),
+  `5fdb4d9a-961a-4b6a-b964-117b99cb3ee9`(#46),
+  `be2edf28-a2d8-4883-a036-ef494300a69a`(#47),
+  `fe6a22dc-5304-4628-93a1-70c8c78823f1`(#48),
+  `85095adf-ed97-46f6-b250-97fb6e2fe1e6`(#49),
+  `35c5bcfd-2ed8-4ed7-a116-3b5faf6ebcbf`(#50),
+  `b5cbf9e1-2dfb-432f-9e6a-62c631eee6ce`(#51),
+  `60ff0642-b477-44cc-a7ef-aa2008faf80b`(#52),
+  `c0331a65-a2e4-4d60-aa61-d95d4f5a87e6`(#53),
+  `9d71d295-6032-480f-9659-f2d1defe9a9b`(#54),
+  `478825cb-5ee9-4ec8-bf6c-94f604ffb29a`(#55),
+  `b06df8ce-e5a7-4bf0-b3ac-80d84aaf4333`(#56),
+  `c801a798-b508-4ede-a7ce-27053dc15a24`(#57),
+  `5f0cbaef-3525-440c-96dd-192d224f3f8d`(#58).
+- **20 OPs:** `1, 2, 53, 55, 57, 61, 63, 87, 88, 89, 90, 91, 92, 93, 94, 95, 96, 97, 98, 99`
+  (OPs `55, 57, 61, 63` are the B6-VERIFY fixtures).
+- **25 lotes:** `1, 2, 3, 4, 5, 6, 7, 8, 13, 31, 33, 37, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68`
+  (orphan legacy `3, 4, 5, 6, 7, 8, 13`; B6-VERIFY `33, 37`).
+
+---
+
+## 7. Final exact reset manifest (future deletion — NOT executed)
+
+The reset runs as **one serialized transaction**, `DELETE` only (never
+`TRUNCATE`), under `legacy_active` (fence pass-through), children before parents.
+CASCADE edges make some deletes redundant; each is issued explicitly for
+auditability.
+
+### 7.1 Boundary A — yarn-purchasing corpus
+
+```text
+1  ordem_compra_fio_movimentos_estoque   -> 0
+2  ordem_compra_fio_lancamentos          -> 0
+3  ordem_compra_recebimentos             -> 0
+4  ordem_compra_eventos                  -> 0
+5  ordem_compra_distribuicao_comandos    -> 0
+6  ordem_compra_item_compat_fio          -> 51   (NO ACTION to item & ordens_compra_fio: precede both)
+7  ordem_compra_item_alocacao            -> 51   (RESTRICT to necessidade: precede it)
+8  ordem_compra_item                     -> 51
+9  necessidade_compra_fio                -> 64   (NO ACTION from legado_origem to ordens_compra_fio: precede it)
+10 ordem_compra                          -> 51
+11 ordens_compra_fio                     -> 64
+Expected affected rows: 0, 0, 0, 0, 0, 51, 51, 51, 64, 51, 64
+```
+
+### 7.2 Synthetic document fixture — id `G28-B6-VERIFY-c63b6c2c8aff4da58e87d1e75f7a9236-DOCUMENT`
+
+```text
+1  document_technical_evidences  WHERE document_id = 'G28-B6-VERIFY-c63b6c2c8aff4da58e87d1e75f7a9236-DOCUMENT'  -> 0
+2  document_decisions            WHERE document_id = 'G28-B6-VERIFY-c63b6c2c8aff4da58e87d1e75f7a9236-DOCUMENT'  -> 0
+3  document_link_revision_ops    WHERE revision_id IN (the 8 B6 fixture revision ids)                          -> 4  (RESTRICT to revisions & ops: precede both link_revisions and OP delete)
+4  document_link_revisions       WHERE document_id = 'G28-B6-VERIFY-c63b6c2c8aff4da58e87d1e75f7a9236-DOCUMENT'  -> 8  (RESTRICT to pedidos & candidate: precede pedidos delete and candidate delete)
+5  document_events               WHERE document_id = 'G28-B6-VERIFY-c63b6c2c8aff4da58e87d1e75f7a9236-DOCUMENT'  -> 0
+6  document_candidates           WHERE document_id = 'G28-B6-VERIFY-c63b6c2c8aff4da58e87d1e75f7a9236-DOCUMENT'  -> 1
+Expected affected rows: 0, 0, 4, 8, 0, 1
+```
+
+The reset must use the exact fixture identifier above — never a broad text
+pattern or partial token. The remaining documents front is untouched.
+
+### 7.3 Boundary B — Pedido/OP/lote corpus
+
+```text
+1  op_itens                    -> 27
+2  op_fornecedores             -> 16
+3  op_eventos                  -> 4
+4  pedido_itens                -> 18
+5  pedido_eventos              -> 0
+6  pedido_cliente_eventos      -> 0
+7  pedido_parcial_itens        -> 0
+8  pedido_parciais             -> 0
+9  pedido_compra_fio_regime    -> 0
+10 op_latex_entregas           -> 0
+11 ops                         -> 20   (needs/alloc/ocf gone via 7.1; doc revision-ops gone via 7.2; lotes.op_id SET NULL)
+12 pedidos                     -> 16   (itens/needs/oc gone; doc link-revisions gone via 7.2; document_candidates/events pedido_id SET NULL; lotes.pedido_id SET NULL)
+13 lotes                       -> 25   (ops.lote_id/pedidos already gone; lotes.cliente_id RESTRICT -> clientes preserved)
+Expected affected rows: 27, 16, 4, 18, 0, 0, 0, 0, 0, 0, 20, 16, 25
+```
+
+Every current Pedido, OP, and lote is in scope. No ambiguous phrasing ("related
+rows", "applicable rows", "current operational data", "etc.") is used or
+permitted.
+
+### 7.4 Post-delete invariants
+
+Boundary A + synthetic fixture + Boundary B tables all `count(*) = 0`;
+`saldo_fios` unchanged (5 rows, same quantities); `saldo_fios_op` empty;
+`op_numeros` unchanged (latex 18 / tecelagem 41); `ordem_compra_cutover` unchanged
+(`legacy_active`/`flat`/`not_started`, markers NULL); documents front minus the B6
+fixture = 39 candidates / 1 event / 24 scan-req / 30 scan-run intact; all
+master/reference counts unchanged.
+
+---
+
+## 8. Archive and verified-restore requirement (mandatory before any destructive execution)
+
+A backup file existing on disk is **not** sufficient. The future execution order
+must require all of the following.
+
+### 8.1 Archive package
+
+Before the first `DELETE`: export every purged table (§7.1/§7.2/§7.3), including
+the synthetic document fixture and the exact Pedido/OP/lote rows, in deterministic
+order; record per-table row counts; compute a per-table SHA-256 over a
+deterministic canonical serialization; record a total archive checksum; record the
+export timestamp, database identity (`ucrjtfswnfdlxwtmxnoo`, `current_database`,
+`server_version`, terminal migration `20260722055832`), the full
+`ordem_compra_cutover` singleton row, the preserved-master counts, the exact
+`saldo_fios` values, and the exact `op_numeros` values; exclude credentials and
+unnecessary PII (actor UUIDs may be retained as opaque identifiers; no
+`auth.users` PII is exported); store the archive **outside the repository**.
+
+### 8.2 Restore runbook
+
+The future implementation must include an exact restore procedure specifying:
+archive format; deserialization rules; child/parent reinsertion order (parents
+before children — the reverse of §7); handling of explicit primary keys;
+handling of identity/`BIGSERIAL` sequences; handling of actor UUIDs; handling of
+immutable/append-only triggers (`trg_lancamento_append_only_guard`,
+`trg_regime_immutable_guard`); handling of `RESTRICT` and `NO ACTION` foreign
+keys; preservation of original timestamps; restoration of the synthetic document
+fixture (candidate → link_revisions → revision_ops); restoration of Pedidos, OPs,
+lotes, needs, purchase orders, items, allocations, and compat mappings; post-restore
+sequence reconciliation that **never decreases any sequence below its existing
+high-water mark** (especially `op_numeros` and every `*_id_seq`); verification of
+per-table counts; verification of per-table SHA-256-equivalent canonical
+serialization; and verification that the cutover singleton remains unchanged.
+
+### 8.3 Mandatory disposable restore drill (HARD STOP gate)
+
+Before destructive execution against `ucrjtfswnfdlxwtmxnoo`: (1) bootstrap a
+disposable environment from the accepted schema/migration chain; (2) load the
+generated archive using the restore runbook; (3) prove every archived row can be
+restored; (4) prove every per-table count matches; (5) prove every deterministic
+checksum matches; (6) prove all foreign keys and constraints are valid; (7) prove
+preserved master/reference rows remain untouched; (8) prove the restored state can
+be deleted again by the exact reset operation; (9) destroy the disposable
+environment. **A failed or incomplete restore drill is a HARD STOP.** The future
+executor **may not** waive this gate.
+
+---
+
+## 9. Future mutation mechanism (ratified)
+
+**One-time governed administrative transaction.** The future reset must run exactly
+once; target only `ucrjtfswnfdlxwtmxnoo`; use one serialized transaction; use
+`DELETE` (not `TRUNCATE`); execute under `legacy_active`; verify exact pre-counts
+(§5); verify exact post-zero-state (§7.4); preserve master data, `saldo_fios`,
+`op_numeros`, and the cutover state; and roll back on any mismatch.
+
+It must **not** be: a `db/NN` migration; a Supabase dashboard manual deletion; an
+application RPC; a writer executed through the normal UI; or anything replayable
+automatically in another environment. The governed SQL/runbook may be
+repository-tracked under a separately authorized implementation order; **no such
+script is authorized by this correction.** Migrations `db/01`–`db/77` are
+immutable and are not edited.
+
+---
+
+## 10. Future proposed implementation manifest (proposed, NOT created)
+
+Recommended future files (a different path is permitted only if the repository's
+established script/test organization requires it, but must still produce one
+explicit export tool, reset operation, restore operation, verification tool, and
+disposable-environment test):
+
+- `scripts/reset/clean-slate-transactional-export.mjs` — archive export + checksums (§8.1)
+- `scripts/reset/clean-slate-transactional-reset.sql` — the one-time governed DELETE transaction (§7, §9)
+- `scripts/reset/clean-slate-transactional-restore.sql` — restore operation (§8.2)
+- `scripts/reset/clean-slate-transactional-verify.mjs` — pre/post + restore-drill verification (§8.3, §16)
+- `tests/clean-slate-transactional-reset.smoke.mjs` — disposable-environment reset+restore drill
+
+No product application file is expected. No `db/NN` migration is expected.
+
+---
+
+## 11. Point of no return (PONR)
+
+For this reset the PONR is the **commit of the single reset transaction** —
+recoverable thereafter only from the §8 archive via the verified restore runbook.
+It is unrelated to `OC-CUTOVER-PONR-001` (`§R.29.6`), which is not crossed (Option
+C keeps `legacy_active`, never sets `productive_receipt_started_at`).
+
+---
+
+## 12. Hard stops
+
+The future execution must hard-stop (abort, no mutation) if any of:
+
+- the selected project is not exactly `ucrjtfswnfdlxwtmxnoo`, or is production, or is the legacy project;
+- `ordem_compra_cutover.status` ≠ `legacy_active`, `read_authority` ≠ `flat`, or any snapshot/import/PONR/ACL/activation marker is non-NULL;
+- any §5 pre-count does not match (corpus drift);
+- the §8.1 archive (export + per-table checksum + identity fingerprint) is not proven present before the first `DELETE`;
+- the §8.3 disposable restore drill has not passed completely;
+- any of the §1.5 empty auxiliary tables is non-empty at execution time;
+- any master-data / `saldo_fios` / `op_numeros` / cutover count or value changes;
+- the reset is proposed as a `db/NN` migration or executed via the dashboard/RPC/UI;
+- a broad document-front deletion (beyond the exact B6 fixture id) is attempted;
+- a writer RPC or `TRUNCATE` is used in place of the specified `DELETE` order.
+
+---
+
+## 13. Validation matrix (future execution)
+
+| Gate | Check | When |
+|---|---|---|
+| Identity | project `ucrjtfswnfdlxwtmxnoo`, `server_version`, `current_database`, terminal migration `20260722055832` | entry |
+| Pre-state | cutover `legacy_active`/`flat`/`not_started`, markers NULL | entry |
+| Baseline | every §5 count matches exactly | entry |
+| Empty-aux guard | §1.5 tables still empty | entry |
+| Archive | §8.1 export + per-table checksum + identity fingerprint present | entry (before first DELETE) |
+| Restore drill | §8.3 drill passed (restore + counts + checksums + FK validity + re-delete) | entry (before first DELETE) |
+| Order | §7.1 → §7.2 → §7.3 deletes succeed in one transaction | execution |
+| Zero-state | every purged table `count(*) = 0` | exit |
+| Preserve invariance | `saldo_fios`(5)/`op_numeros`(2)/master/documents-front-39 unchanged | exit |
+| Cutover invariance | `ordem_compra_cutover` unchanged | exit |
+| No PONR | `productive_receipt_started_at` still NULL | exit |
+
+---
+
+## 14. Evidence packet (future execution)
+
+Entry identity proof; the archive manifest (per-table count + checksum + location,
+outside the repo); the passed restore-drill report; the pre-count baseline vs §5;
+the single-transaction DELETE log in §7 order; the exit zero-state proof; preserve
+invariance (`saldo_fios`, `op_numeros`, master, documents-front-39);
+cutover-singleton invariance; the proven-absent PONR; and a statement that no
+migration, no dashboard action, no RPC/UI writer, no `TRUNCATE`, and no broad
+document-front deletion was used.
+
+---
+
+## 15. `PHASE-C5B` boundary and sequencing
+
+Per §1.8: `PHASE-C5B-ACCEPTANCE-DECISION` remains `IDENTIFIED / NOT AUTHORIZED`,
+is corpus-independent, is not required for the reset (`exige_aceite=FALSE`), and is
+sequenced after the reset and real-flow recreation — only relevant if the business
+later enables `exige_aceite=TRUE`.
+
+---
+
+## 16. Consequence for the former 13-row completeness gate
+
+The former binding `REAL_CUTOVER` completeness gate for the 13 unmapped
+`ordens_compra_fio` rows ids `153`–`165` is
+`STILL_APPLICABLE_UNTIL_RESET_EXECUTION_COMPLETES`, then
+`SUPERSEDED_BY_CLEAN_SLATE_RESET`. At reset execution the 13 rows are removed as
+part of the `ordens_compra_fio` purge (§7.1) — disposition option (3) of the C3D
+§Z.3 gate, applied to all 64 rows. `OC-CUTOVER-001` stays `PLANNED` and
+`REAL_CUTOVER` stays **NOT AUTHORIZED** throughout; this contract does not mark
+`REAL_CUTOVER` authorized.
+
+---
+
+## 17. Explicit exclusions
+
+Not performed and not authorized: any deletion or DB mutation; archive creation;
+reset-script implementation; migration authoring; cutover/fence/snapshot/import/
+read-switch/ACL-closure/activation; `REAL_CUTOVER`; `PHASE-C5B` design/
+implementation; master-data disposition beyond "preserve"; broad documents-front
+deletion; staging, deployment, production, branch, or any push beyond this pass's
+single documentation-only commit and its one fast-forward push to `staging/dev`.
+
+---
+
+## 18. Production prohibition
 
 Production `bhgifjrfagkzubpyqpew` and the production project `gqmpsxkxynrjvidfmojk`
-**must not** be accessed or mutated by this front. The clean-slate reset is
-authorized (when it is authorized) **only** against the non-production shared
-development database `ucrjtfswnfdlxwtmxnoo`. No production data is in scope. A
-separate contemporaneous read-only production diagnosis remains mandatory before
-any production promotion of the purchase-order front (unchanged, unrelated to this
-reset).
+must not be accessed or mutated by this front. The clean-slate reset is authorized
+(when it is authorized) **only** against the non-production shared development
+database `ucrjtfswnfdlxwtmxnoo`. A separate contemporaneous read-only production
+diagnosis remains mandatory before any production promotion of the purchase-order
+front (unchanged, unrelated to this reset).
 
 ---
 
-## 22. Status
+## 19. Supervisor decisions — status
 
-`PROPOSED / AWAITING SUPERVISOR REVIEW / DESTRUCTIVE EXECUTION NOT AUTHORIZED`.
-No deletion, database mutation, migration, cutover, activation, or environment
-change has occurred. The 64/51/13 corpus physically exists. `REAL_CUTOVER` and
+All prior open decisions are now **RATIFIED / BINDING** in §1 (final purge scope;
+document-history option D3 with the exact fixture id; `saldo_fios` preserve;
+`op_numeros` preserve, no restart; `op_fornecedores` purge; `pedido_compra_fio_regime`
+empty; lotes full purge incl. orphans; master-data preserve; mutation mechanism;
+cutover Option C). No open reset-boundary decision remains. The only remaining
+supervisor action is **acceptance of this corrected contract**, after which a
+**separate** order may authorize the archive-and-restore-drill-gated destructive
+execution.
+
+---
+
+## 20. Status
+
+`CORRECTED / AWAITING DIRECT SUPERVISOR REVIEW / DESTRUCTIVE EXECUTION NOT
+AUTHORIZED`. No deletion, database mutation, archive creation, reset
+implementation, cutover, activation, or environment change has occurred. The
+64/51/13 corpus, the 16 Pedidos, the 20 OPs, the 25 lotes, and the synthetic
+B6-VERIFY fixture all physically exist. `REAL_CUTOVER` and
 `PHASE-C5B-ACCEPTANCE-DECISION` remain unauthorized. Execution requires a separate
-explicit order. `PROJECT_STATE.md` remains the sole owner of
-`ACTIVE_PHASE`/`ACTIVE_PHASE_CONTRACT` (both `NONE`).
+explicit order gated on the §8 verified archive-and-restore drill. `PROJECT_STATE.md`
+remains the sole owner of `ACTIVE_PHASE`/`ACTIVE_PHASE_CONTRACT` (both `NONE`).

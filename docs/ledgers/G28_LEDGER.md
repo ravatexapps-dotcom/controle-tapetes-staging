@@ -9129,3 +9129,124 @@ product file they depend on, was modified by this pass or the prior one):
   phase chains automatically. This pass published exactly one documentation-only
   commit through one authorized fast-forward push to `staging/dev`; no further push
   is authorized.
+
+## 2026-07-22 — CLEAN-SLATE-DOCUMENT-HISTORY-AND-RESIDUAL-BOUNDARY-DIAGNOSIS-R1 — Read-only residual-boundary diagnosis — READY_FOR_CONTRACT_CORRECTION (no documentation mutation, no commit, no push)
+
+- **Order:** `CLEAN-SLATE-DOCUMENT-HISTORY-AND-RESIDUAL-BOUNDARY-DIAGNOSIS-R1` —
+  continuation in the same session; read-only repository + read-only shared-development
+  database; no documentation mutation, no commit, no push. Entry checkpoint HEAD
+  `9eeff7d5a97e25cf676d54afcd4510816a8648fb`. Database identity proven read-only:
+  `ucrjtfswnfdlxwtmxnoo`, PostgreSQL 17.6, role `postgres`, terminal migration
+  `20260722055832`, cutover `legacy_active`/`flat`/`not_started`, all markers NULL.
+  Only independently read-only statements were issued (zero
+  `INSERT`/`UPDATE`/`DELETE`/`TRUNCATE`/DDL/writer-RPC/temp-table/lock).
+- **Decisive finding:** the only transaction-linked document in the entire database
+  is a **proven synthetic `G28-B6-VERIFY` verification fixture** —
+  `document_id G28-B6-VERIFY-c63b6c2c8aff4da58e87d1e75f7a9236-DOCUMENT` (no Google
+  Drive object, no SHA-256, no fiscal/sender metadata, 0 events/technical
+  evidence/decisions) — linking Pedido #34 (`7fa51e02-e15b-4a1b-a0f3-8ca39ceee247`,
+  `observacao G28-B6-VERIFY…-PEDIDO_A`, 0 pedido_itens/needs/OC), OPs 55/57/61/63
+  (all `tecelagem`, `observacao G28-B6-VERIFY…-OP_*`, 0 op_itens/op_fornecedores/
+  op_eventos/needs/OCF/allocations) and lotes 33/37, via 8 `document_link_revisions`
+  (v1–v8, only v8 active) + 4 `document_link_revision_ops`. The other 39 of 40
+  `document_candidates` are unlinked ingestor-pulled Gmail documents (Drive-backed,
+  `pending`, no Pedido/OP link) — a separate front to preserve.
+- **Controlled-Delete rule:** enforced by RESTRICT FKs
+  (`document_link_revisions.pedido_id → pedidos`, `document_link_revision_ops.op_id
+  → ops`, and the `document_id`/`revision_id` RESTRICT edges) plus the `db/53`
+  application-layer guard (`remover_pedido`/`remover_op` block when doc-link rows
+  exist, never auto-unlink). There is **no immutability trigger** on the link tables
+  (append-only enforced by SELECT-only grants + a single `SECURITY DEFINER` writer
+  that revokes, never deletes), and `document_candidates.pedido_id` /
+  `document_events.pedido_id` are `ON DELETE SET NULL` — so documents survive Pedido
+  removal and a governed dependency-ordered SQL operation can remove the fixture rows
+  then the Pedido/OP without a normative architecture change.
+- **Residual-table dispositions:** `saldo_fios` (5 rows — algodão 732.010/549.010/
+  549.000 kg, poliéster PRETO/BRANCO 427.500 kg each, last touched 2026-07-06 before
+  the `db/67` refoundation, not receipt-derived) = `PRESERVE_OPERATIONAL_BASELINE`;
+  `saldo_fios_op` (0) = preserve empty; `op_numeros` (latex 18 / tecelagem 41) =
+  preserve high-water, no restart; `op_fornecedores` (16, op_ids 1,2,53,87–99, 0
+  orphans, none on the B6 OPs) = purge with OPs; `pedido_compra_fio_regime` (0),
+  `op_latex_entregas` (0), `expedicoes`/`expedicao_itens`/`expedicao_movimentos`/
+  `expedicao_movimento_itens`/`entregas`/`entrega_itens` (all 0) = empty (no-op).
+  Full Pedido/OP/lote id enumeration captured (16/20/25).
+- **Readiness decision:** `READY_FOR_CONTRACT_CORRECTION` — the document-history
+  blocker is resolved as synthetic, every residual table is evidence-dispositioned,
+  no `DATA_INTEGRITY_HARD_STOP`, and no normative architecture change is required.
+- **Invariance:** no repository file modified; no commit; no push; no database
+  mutation, deletion, unlink, or archive; HEAD unchanged
+  `9eeff7d5a97e25cf676d54afcd4510816a8648fb`; only protected residue present.
+
+## 2026-07-22 — CLEAN-SLATE-TRANSACTIONAL-RESET-CONTRACT-CORRECTION-R1 — Reset contract corrected to one exact target — CORRECTED / AWAITING DIRECT SUPERVISOR REVIEW / DESTRUCTIVE EXECUTION NOT AUTHORIZED
+
+- **Order:** `CLEAN-SLATE-TRANSACTIONAL-RESET-CONTRACT-CORRECTION-R1` — continuation
+  in the same session; documentation-only contract correction + read-only repository
+  verification + one-time fast-forward push. Entry checkpoint HEAD
+  `9eeff7d5a97e25cf676d54afcd4510816a8648fb` (parent `56f749812c693cea3c81518a139d174e958fbbbf`);
+  `staging/dev` equal to HEAD; divergence 0/0; empty index; only protected residue
+  (`M .gitignore`, `?? .codex/config.toml`, `?? .mcp.json`). No new database
+  diagnosis was required beyond the accepted
+  `CLEAN-SLATE-DOCUMENT-HISTORY-AND-RESIDUAL-BOUNDARY-DIAGNOSIS-R1`; no database
+  access beyond the prior read-only diagnosis.
+- **Correction:** set `docs/architecture/CLEAN_SLATE_TRANSACTIONAL_RESET_PHASE_CONTRACT.md`
+  to `STATUS: CORRECTED / AWAITING DIRECT SUPERVISOR REVIEW / DESTRUCTIVE EXECUTION
+  NOT AUTHORIZED` and replaced every prior optional/ambiguous/`UNPROVEN`
+  reset-boundary decision with the **binding supervisor rulings**: (1) **final purge
+  scope** — all 16 of 16 Pedidos, all 20 of 20 OPs, all 25 of 25 lotes (incl. orphan
+  ids 3,4,5,6,7,8,13), `op_fornecedores` (16), and the complete yarn-purchasing
+  transaction corpus; (2) **document-history Option D3** — external metadata archive
+  then removal of **only** the exact synthetic fixture
+  `G28-B6-VERIFY-c63b6c2c8aff4da58e87d1e75f7a9236-DOCUMENT` (4 revision-ops + 8
+  revisions + 1 candidate + 0/0/0 events/evidence/decisions), preserving the rest of
+  the documents front and prohibiting broad documents-front deletion; (3) `saldo_fios`
+  `PRESERVE_OPERATIONAL_BASELINE` + `saldo_fios_op` empty-state preserve; (4)
+  `op_numeros` preserve high-water, no restart; (5) empty auxiliary tables kept
+  (schema intact; HARD STOP if any becomes non-empty before execution); (6)
+  master/reference data preserved; (7) cutover **Option C** (stay `legacy_active`/
+  `flat`/`not_started`, markers NULL; `db/75` constants superseded only after the
+  reset completes; any later `REAL_CUTOVER` needs a re-baselined migration); (8)
+  `PHASE-C5B` not required (`exige_aceite=FALSE`).
+- **Exact manifests added:** Boundary-A deletion order (11 tables → affected rows
+  0,0,0,0,0,51,51,51,64,51,64); synthetic-document order (6 steps → 0,0,4,8,0,1, exact
+  fixture id, not a broad pattern); Boundary-B order (13 tables → 27,16,4,18,0,0,0,0,0,
+  0,20,16,25); the exact 16 Pedido UUIDs / 20 OP ids / 25 lote ids; a **mandatory
+  archive package + restore runbook + disposable restore drill** as a pre-execution
+  HARD STOP the executor may not waive; the ratified **one-time governed
+  administrative DELETE transaction** mechanism (not a `db/NN` migration, not the
+  dashboard, not an RPC/UI writer); and a proposed (not created) implementation
+  manifest (`scripts/reset/clean-slate-transactional-export.mjs`/`-reset.sql`/
+  `-restore.sql`/`-verify.mjs`, `tests/clean-slate-transactional-reset.smoke.mjs`).
+- **Non-authorization:** no deletion, database mutation, archive creation, reset
+  implementation, migration, cutover, activation, or environment change occurred; the
+  contract is **not** marked ACCEPTED/ACTIVE/IMPLEMENTATION-AUTHORIZED/CLOSED and is
+  not self-accepted; `OC-CUTOVER-001` stays `PLANNED`; the 13-row gate stays
+  `STILL_APPLICABLE_UNTIL_RESET_EXECUTION_COMPLETES`; `REAL_CUTOVER` and
+  `PHASE-C5B-ACCEPTANCE-DECISION` remain unauthorized.
+- **Documentation manifest (exactly the authorized owners):** the reset contract,
+  `PROJECT_STATE.md`, `AGENT_HANDOFF.md`, `docs/DOCUMENTATION_INDEX.md`,
+  `docs/architecture/ORDEM_COMPRA_C3_TRACEABILITY.md`,
+  `docs/architecture/PEDIDO_PRODUCTION_FLOW_BACKLOG.md`, and this ledger. No product,
+  test, script, migration, `db/*.sql`, configuration, or protected-residue change.
+- **Validation:** `node scripts/validate-spec-custody.mjs` PASS; `--self-test` PASS
+  (`ACTIVE_PHASE`/`ACTIVE_PHASE_CONTRACT` are `NONE`); `git diff --check` /
+  `--cached --check` clean; protected residue unchanged.
+- **Exact accounting subject:** `docs: correct clean-slate reset contract`
+- **Canonical state after this commit:**
+  ```text
+  LAST_ACCEPTED_PHASE = PHASE-C5
+  ACTIVE_PHASE = NONE
+  ACTIVE_PHASE_CONTRACT = NONE
+  ACTIVE_TRACK = PURCHASE_ORDER_PHASE_C
+  ACCEPTED_CHECKPOINT = 3405fdab8e05ec0f81cbfe07c63c489e551fee92
+
+  CLEAN-SLATE-TRANSACTIONAL-RESET = CORRECTED / AWAITING DIRECT SUPERVISOR REVIEW / DESTRUCTIVE EXECUTION NOT AUTHORIZED
+  OC-CUTOVER-001 = PLANNED
+  PHASE-C5B-ACCEPTANCE-DECISION = IDENTIFIED / NOT AUTHORIZED
+  REAL_CUTOVER = NOT AUTHORIZED
+  ```
+- **Próxima fase indicada / NEXT_AUTHORIZABLE_ACTION:** direct supervisor review of
+  the **corrected** `CLEAN-SLATE-TRANSACTIONAL-RESET` contract. No deletion, database
+  mutation, archive creation, reset implementation, phase activation, or continuation
+  is authorized; no phase chains automatically. This pass published exactly one
+  documentation-only commit through one authorized fast-forward push to `staging/dev`;
+  no further push is authorized.
