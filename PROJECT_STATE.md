@@ -20,7 +20,7 @@ LAST_ACCEPTED_PHASE: PHASE-C4
 ACTIVE_PHASE: NONE
 ACTIVE_PHASE_CONTRACT: NONE
 ACTIVE_TRACK: PURCHASE_ORDER_PHASE_C
-NEXT_AUTHORIZABLE_ACTION: supervisor review and acceptance/rejection of the proposed PHASE-C5 material contract (OC-C5-EMISSION-001, purchase-order emission, docs/architecture/ORDEM_COMPRA_C5_PHASE_CONTRACT.md, STATUS: PROPOSED / AWAITING SUPERVISOR REVIEW / IMPLEMENTATION NOT AUTHORIZED), plus scoping/authorizing the separate database-prerequisite phase that contract identifies (emitir_ordem_compra and alocar_necessidade_compra_fio are both terminally REVOKE ALL as of db/74's exact final execution ACL matrix, reaffirmed absent through db/76); C5 implementation, the REAL_CUTOVER window (OC-CUTOVER-001/OC-CUTOVER-PONR-001 — hard-gated behind the mandatory separate read-only completeness disposition of the 13 unmapped ordens_compra_fio rows ids 153–165), real close_final_acl invocation, real activation, the real read-authority switch, staging validation/application of db/76, and any productive receipt on a shared or real environment all remain unauthorized
+NEXT_AUTHORIZABLE_ACTION: a fresh Claude Code session performs read-only diagnosis and documentation-only material-contract authoring of PHASE-C5A-DB-EMISSION-READINESS (the database-grant prerequisite for emitir_ordem_compra and alocar_necessidade_compra_fio, both terminally REVOKE ALL as of db/74's exact final execution ACL matrix, reaffirmed absent through db/76) — not issued or executed by this closeout; C5 implementation, PHASE-C5B-ACCEPTANCE-DECISION (IDENTIFIED / NOT AUTHORIZED — the missing status_aceite pendente-to-aceita/rejeitada transition capability), the REAL_CUTOVER window (OC-CUTOVER-001/OC-CUTOVER-PONR-001 — hard-gated behind the mandatory separate read-only completeness disposition of the 13 unmapped ordens_compra_fio rows ids 153–165), real close_final_acl invocation, real activation, the real read-authority switch, staging validation/application of db/76, and any productive receipt on a shared or real environment all remain unauthorized
 GOVERNING_SPEC: docs/architecture/ORDEM_COMPRA_LIFECYCLE_SPEC_PROPOSED.md
 TECHNICAL_CONTRACT: docs/architecture/PEDIDO_OP_SCHEMA_CONTRACT.md
 SEQUENCE_AUTHORITY: docs/architecture/PEDIDO_PRODUCTION_FLOW_BACKLOG.md
@@ -329,14 +329,40 @@ ACCEPTED_CHECKPOINT: 289b0cca66e9c057330a882f69da3476adf90469
   protected-residue change; no database, environment, or deployment action.
   `OC-C5-EMISSION-001` remains `PLANNED`; `PHASE-C5` implementation remains
   unauthorized; `ACTIVE_PHASE`/`ACTIVE_PHASE_CONTRACT` remain `NONE`.
-- **Next authorizable action:** supervisor review and acceptance/rejection
-  of the proposed `PHASE-C5` material contract
-  (`docs/architecture/ORDEM_COMPRA_C5_PHASE_CONTRACT.md`), plus the four
-  supervisor decisions recorded in its §18 and the scoping/authorization of
-  the separate database-prerequisite phase it identifies (§5). `PHASE-C5`
-  implementation, `REAL_CUTOVER`, staging validation/application of `db/76`,
-  activation, deployment, branch creation, production access, and any push
-  remain **unauthorized**.
+- **`C5-CONTRACT-ACCEPTANCE-CLOSEOUT-R1` — supervisor acceptance of the
+  `PHASE-C5` material contract (this pass, documentation-only):** the
+  supervisor **ACCEPTED**
+  `docs/architecture/ORDEM_COMPRA_C5_PHASE_CONTRACT.md` (`STATUS: ACCEPTED /
+  IMPLEMENTATION BLOCKED BY DATABASE PREREQUISITE`, contract §21), accepted
+  contract commit `f9fa97703d2724d62a0d916cca7b9637d54a1e08`. This
+  acceptance does **not** authorize `PHASE-C5` implementation. Resolved the
+  contract's four §18 decisions: (1) contract accepted as a whole; (2) the
+  `BLOCKING_DATABASE_PREREQUISITE` classification is ratified and assigned
+  to a new, separately authorized phase **`PHASE-C5A-DB-EMISSION-READINESS`**
+  (not authored by this closeout); (3) the missing acceptance-decision RPC
+  gap is ratified as a new, separately identified phase
+  **`PHASE-C5B-ACCEPTANCE-DECISION`** (`IDENTIFIED / NOT AUTHORIZED` — owns
+  actor ownership, canonical accept/reject RPCs, state-transition rules,
+  audit/history, UI ownership, supplier-vs-admin permissions, and
+  rejection/override semantics; `PHASE-C5A` must not implement or invent
+  acceptance decisions; orders with `exige_aceite=TRUE` must not be treated
+  as lifecycle-complete until `PHASE-C5B` ships); (4) emission's confirmation
+  UX is ratified as **`CONTROLLED_IRREVERSIBLE_TRANSITION`** — explicit
+  confirmation, no single-click emission, clear result explanation, primary
+  or neutral (not destructive-red) styling, authoritative reload after
+  deterministic success. `OC-C5-EMISSION-001` disposition becomes
+  `PLANNED / BLOCKED_BY_C5A_DB_PREREQUISITE`. Documentation-only: no
+  product, test, script, migration, or protected-residue change; no
+  database, environment, or deployment action. Full record: contract §21
+  and `docs/ledgers/G28_LEDGER.md`.
+- **Next authorizable action:** a fresh Claude Code session performs
+  read-only diagnosis and documentation-only material-contract authoring of
+  `PHASE-C5A-DB-EMISSION-READINESS` (the database-grant prerequisite for
+  `emitir_ordem_compra` and `alocar_necessidade_compra_fio`) — not issued or
+  executed by this closeout. `PHASE-C5` implementation,
+  `PHASE-C5B-ACCEPTANCE-DECISION`, `REAL_CUTOVER`, staging
+  validation/application of `db/76`, activation, deployment, branch
+  creation, production access, and any push remain **unauthorized**.
 - **Prior accepted product phase:** `PHASE-C3C-B` (application compatibility/
   adaptation) — `CLOSED / ACCEPTED_WITH_NONBLOCKING_DEBT / LOCALLY VERIFIED`
   (2026-07-21), accepted checkpoint
@@ -1108,12 +1134,13 @@ Commit SHAs there are the accepted technical commits; consult HEAD via Git.
   accepted technical checkpoint `289b0cca66e9c057330a882f69da3476adf90469`;
   **not active** — `ACTIVE_PHASE`/`ACTIVE_PHASE_CONTRACT` are `NONE`):
   `docs/architecture/ORDEM_COMPRA_C4_PHASE_CONTRACT.md`
-- C5 material phase contract (`PROPOSED / AWAITING SUPERVISOR REVIEW /
-  IMPLEMENTATION NOT AUTHORIZED`; purchase-order emission,
-  `OC-C5-EMISSION-001` `PLANNED`; database-prerequisite classification
-  `BLOCKING_DATABASE_PREREQUISITE`; authored under
-  `C4-CLOSEOUT-AND-C5-CONTRACT-R1`; **not active**):
-  `docs/architecture/ORDEM_COMPRA_C5_PHASE_CONTRACT.md`
+- C5 material phase contract (`ACCEPTED / IMPLEMENTATION BLOCKED BY
+  DATABASE PREREQUISITE`; purchase-order emission, `OC-C5-EMISSION-001`
+  `PLANNED / BLOCKED_BY_C5A_DB_PREREQUISITE`; supervisor-accepted under
+  `C5-CONTRACT-ACCEPTANCE-CLOSEOUT-R1`, contract §21; identifies
+  `PHASE-C5A-DB-EMISSION-READINESS` (next authorizable contract phase) and
+  `PHASE-C5B-ACCEPTANCE-DECISION` (`IDENTIFIED / NOT AUTHORIZED`); **not
+  active**): `docs/architecture/ORDEM_COMPRA_C5_PHASE_CONTRACT.md`
 - Append-only ledger: `docs/ledgers/G28_LEDGER.md`
 - Derived operational handoff: `AGENT_HANDOFF.md`
 - Documentation authority arbiter: `docs/DOCUMENTATION_INDEX.md`

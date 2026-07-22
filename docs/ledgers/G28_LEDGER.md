@@ -8139,3 +8139,76 @@ product file they depend on, was modified by this pass or the prior one):
   database-prerequisite phase it identifies (§5). `PHASE-C5` implementation,
   `REAL_CUTOVER`, and any push remain unauthorized. **No push is authorized
   by this pass.**
+
+## 2026-07-21 — C5-CONTRACT-ACCEPTANCE-CLOSEOUT-R1 — PHASE-C5 material contract supervisor acceptance
+
+- **Authorization:** `C5-CONTRACT-ACCEPTANCE-CLOSEOUT-R1` — record the
+  supervisor's acceptance of the `PHASE-C5` material contract in the
+  canonical repository state. Documentation-only. Entry checkpoint `HEAD`
+  `f9fa97703d2724d62a0d916cca7b9637d54a1e08`; protected residue (`M
+  .gitignore`, `?? .codex/`, `?? .mcp.json`) untouched. Preflight confirmed
+  branch `dev`, `HEAD`/`HEAD^` matched the order's expected SHAs exactly,
+  and `staging/dev` (`0df4228f903ae68c7e8b240e69ff3b37df9ebd86`) remained
+  behind local `HEAD` by seven commits (`git rev-list --left-right --count
+  staging/dev...HEAD` = `0	7`) — no `HARD STOP`.
+- **Contract disposition:** `docs/architecture/ORDEM_COMPRA_C5_PHASE_CONTRACT.md`
+  is `STATUS: ACCEPTED / IMPLEMENTATION BLOCKED BY DATABASE PREREQUISITE`
+  (§21). Accepted contract commit
+  `f9fa97703d2724d62a0d916cca7b9637d54a1e08`. Acceptance does **not**
+  authorize `PHASE-C5` implementation.
+- **`OC-C5-EMISSION-001` disposition:** `PLANNED / BLOCKED_BY_C5A_DB_PREREQUISITE`
+  — not `SATISFIED`, `ACTIVE`, `IMPLEMENTED`, or `CLOSED`.
+- **Database-prerequisite disposition:** `BLOCKING_DATABASE_PREREQUISITE`
+  ratified. `PHASE-C5` UI must not be implemented as an operationally
+  complete emission flow while `emitir_ordem_compra` and
+  `alocar_necessidade_compra_fio` remain ungranted and the canonical
+  UI-created draft path cannot satisfy allocation completeness. A separate
+  **`PHASE-C5A-DB-EMISSION-READINESS`** database-readiness contract is
+  required — **not authored in this session**.
+- **Emission confirmation disposition:** ratified
+  `CONTROLLED_IRREVERSIBLE_TRANSITION` — explicit confirmation required, no
+  single-click emission, clear explanation of the resulting state, primary
+  or neutral (never destructive-red) confirmation styling, authoritative
+  reload after deterministic success.
+- **Acceptance-decision gap disposition:** the missing `status_aceite`
+  `pendente`→`aceita`/`rejeitada` transition capability is recorded as
+  **`PHASE-C5B-ACCEPTANCE-DECISION`**, `IDENTIFIED / NOT AUTHORIZED`. Owns:
+  actor ownership for acceptance decisions; canonical acceptance/rejection
+  RPCs; state-transition rules; audit/history; UI ownership;
+  supplier-versus-administrator permissions; rejection and administrative
+  override semantics. `PHASE-C5A` must not implement or invent acceptance
+  decisions. Orders with `exige_aceite=TRUE` must not be treated as
+  lifecycle-complete until `PHASE-C5B` is implemented and accepted.
+- **Manifest (exact):** `docs/architecture/ORDEM_COMPRA_C5_PHASE_CONTRACT.md`
+  (§21), `PROJECT_STATE.md`, `AGENT_HANDOFF.md`,
+  `docs/architecture/ORDEM_COMPRA_C3_TRACEABILITY.md`,
+  `docs/architecture/PEDIDO_PRODUCTION_FLOW_BACKLOG.md`,
+  `docs/ledgers/G28_LEDGER.md` (this entry). No product, test, script,
+  migration, configuration, or normative-contract (lifecycle spec/schema
+  contract/UI visual contract) file changed.
+- **Validation:** `node scripts/validate-spec-custody.mjs` PASS;
+  `node scripts/validate-spec-custody.mjs --self-test` — exact result
+  recorded at commit time below; `git diff --check` / `git diff --cached
+  --check` clean. Protected residue unstaged and untouched. No database or
+  shared-environment access.
+- **Canonical state after closeout:**
+  ```text
+  LAST_ACCEPTED_PHASE = PHASE-C4
+  ACTIVE_PHASE = NONE
+  ACTIVE_PHASE_CONTRACT = NONE
+
+  PHASE-C5 CONTRACT = ACCEPTED
+  PHASE-C5 IMPLEMENTATION = NOT AUTHORIZED
+  OC-C5-EMISSION-001 = PLANNED / BLOCKED_BY_C5A_DB_PREREQUISITE
+
+  PHASE-C5A-DB-EMISSION-READINESS = NEXT AUTHORIZABLE CONTRACT PHASE
+  PHASE-C5B-ACCEPTANCE-DECISION = IDENTIFIED / NOT AUTHORIZED
+
+  REAL_CUTOVER = NOT AUTHORIZED
+  ```
+- **Exact accounting subject:** `docs: accept C5 emission contract`
+- **NEXT_AUTHORIZABLE_ACTION:** a fresh Claude Code session performs
+  read-only diagnosis and documentation-only material-contract authoring of
+  `PHASE-C5A-DB-EMISSION-READINESS` — not issued or executed by this
+  session. `PHASE-C5` implementation, `PHASE-C5B`, `REAL_CUTOVER`, and any
+  push remain unauthorized. **No push is authorized by this pass.**

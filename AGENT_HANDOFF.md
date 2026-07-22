@@ -228,12 +228,28 @@
   new product file), wiring the already-existing disabled `oc-emitir`
   button. Four supervisor decisions recorded as required (contract §18).
   `OC-C5-EMISSION-001` remains `PLANNED`.
-- **Next authorizable action:** supervisor review and acceptance/rejection
-  of the proposed `PHASE-C5` material contract
-  (`docs/architecture/ORDEM_COMPRA_C5_PHASE_CONTRACT.md`), plus its §18
-  supervisor decisions and the scoping/authorization of the separate
-  database-prerequisite phase it identifies (§5). `PHASE-C5` implementation
-  remains unauthorized.
+- **`C5-CONTRACT-ACCEPTANCE-CLOSEOUT-R1` — supervisor acceptance of the
+  `PHASE-C5` material contract (this pass):** the supervisor **ACCEPTED**
+  `docs/architecture/ORDEM_COMPRA_C5_PHASE_CONTRACT.md` (`STATUS: ACCEPTED /
+  IMPLEMENTATION BLOCKED BY DATABASE PREREQUISITE`, contract §21) —
+  acceptance does **not** authorize implementation. Ratified: the
+  `BLOCKING_DATABASE_PREREQUISITE` classification, assigned to a new,
+  separately authorized **`PHASE-C5A-DB-EMISSION-READINESS`** (not authored
+  by this closeout); the missing acceptance-decision RPC gap as
+  **`PHASE-C5B-ACCEPTANCE-DECISION`** (`IDENTIFIED / NOT AUTHORIZED` — owns
+  accept/reject RPCs, actor ownership, state-transition rules, audit,
+  UI, supplier-vs-admin split; `PHASE-C5A` must not implement acceptance
+  decisions; `exige_aceite=TRUE` orders are not lifecycle-complete until
+  `PHASE-C5B` ships); emission confirmation UX as
+  **`CONTROLLED_IRREVERSIBLE_TRANSITION`** (explicit confirmation, no
+  single-click, primary/neutral not destructive-red styling, authoritative
+  reload). `OC-C5-EMISSION-001` becomes
+  `PLANNED / BLOCKED_BY_C5A_DB_PREREQUISITE`.
+- **Next authorizable action:** a fresh Claude Code session performs
+  read-only diagnosis and documentation-only material-contract authoring of
+  `PHASE-C5A-DB-EMISSION-READINESS` — not issued or executed by this
+  closeout. `PHASE-C5` implementation and `PHASE-C5B-ACCEPTANCE-DECISION`
+  remain unauthorized.
   `PHASE-C3D-A`/`PHASE-C3D-B` are supervisor-accepted (§R, checkpoints
   `096cd603…` / `5441321…`), `PHASE-C3D-C` (§U, `6fd63a56…`), `PHASE-C3D-D` (§X,
   `5a2be05…`), and `PHASE-C3D-E` (§Z, `429aa39…`) are all `CLOSED / TECHNICALLY
@@ -421,8 +437,10 @@ Full matrix and normative anchors: `docs/architecture/ORDEM_COMPRA_C3_TRACEABILI
   `C4-CLOSEOUT-AND-C5-CONTRACT-R1`, contract §0d; accepted checkpoint
   `289b0cca66e9c057330a882f69da3476adf90469` — was previously (superseded)
   pending supervisor acceptance + architect visual validation);
-  `OC-C4-SUPPLIER-001` — `DEFERRED`; `OC-C5-EMISSION-001` — `PLANNED`
-  (post-C4 emission gate).
+  `OC-C4-SUPPLIER-001` — `DEFERRED`; `OC-C5-EMISSION-001` —
+  `PLANNED / BLOCKED_BY_C5A_DB_PREREQUISITE` (post-C4 emission gate;
+  contract accepted, implementation blocked by the database prerequisite,
+  `docs/architecture/ORDEM_COMPRA_C5_PHASE_CONTRACT.md` §21).
 
 ## Blockers and debts (live)
 
@@ -515,7 +533,13 @@ summary.
   admin receipt UI `#/ordens-compra/:id`) is `CLOSED / ACCEPTED / LOCALLY
   VERIFIED / ARCHITECT VISUAL VALIDATION PASSED` (`C4-CLOSEOUT-AND-C5-CONTRACT-R1`,
   contract §0d). `OC-C4-SUPPLIER-001` (supplier UI) is `DEFERRED`; **`PHASE-C5`** native
-  emission (`OC-C5-EMISSION-001`) is a separate post-C4 gate. Each requires its
+  emission (`OC-C5-EMISSION-001`) material contract is `ACCEPTED /
+  IMPLEMENTATION BLOCKED BY DATABASE PREREQUISITE`
+  (`docs/architecture/ORDEM_COMPRA_C5_PHASE_CONTRACT.md` §21) — implementation
+  is gated behind a separate, not-yet-authored **`PHASE-C5A-DB-EMISSION-READINESS`**
+  database-prerequisite contract, and full acceptance-workflow usability is
+  additionally gated behind **`PHASE-C5B-ACCEPTANCE-DECISION`**
+  (`IDENTIFIED / NOT AUTHORIZED`). Each requires its
   own explicit architect order and a fresh session.
 - **Real-cutover separation.** The `REAL_CUTOVER` window
   (`OC-CUTOVER-001`/`OC-CUTOVER-PONR-001`) is governed **separately** from
@@ -577,10 +601,13 @@ summary.
     `OC-C4-ADMIN-001` `SATISFIED`; accepted checkpoint `289b0cca66e9c057330a882f69da3476adf90469`;
     not active — `ACTIVE_PHASE`/`ACTIVE_PHASE_CONTRACT` are `NONE`)
 23. `docs/architecture/ORDEM_COMPRA_C5_PHASE_CONTRACT.md` (C5 material phase
-    contract — purchase-order emission; `PROPOSED / AWAITING SUPERVISOR
-    REVIEW / IMPLEMENTATION NOT AUTHORIZED`; `OC-C5-EMISSION-001` `PLANNED`;
-    database-prerequisite classification `BLOCKING_DATABASE_PREREQUISITE`;
-    not active)
+    contract — purchase-order emission; `ACCEPTED / IMPLEMENTATION BLOCKED
+    BY DATABASE PREREQUISITE` (§21); `OC-C5-EMISSION-001`
+    `PLANNED / BLOCKED_BY_C5A_DB_PREREQUISITE`; identifies
+    `PHASE-C5A-DB-EMISSION-READINESS` (next authorizable contract phase) and
+    `PHASE-C5B-ACCEPTANCE-DECISION` (`IDENTIFIED / NOT AUTHORIZED`); emission
+    confirmation UX ratified `CONTROLLED_IRREVERSIBLE_TRANSITION`; not
+    active)
 
 > Bootstrap first through `docs/governance/AGENT_INSTRUCTIONS.md` and the
 > `SPEC_CUSTODY_BOOTSTRAP` block in `PROJECT_STATE.md`. Private conversation,

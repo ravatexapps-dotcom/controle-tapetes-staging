@@ -8,6 +8,52 @@
 > `PROJECT_STATE.md`. Phase sequence, dependencies, backlog items, and accepted
 > architecture in this file remain authoritative; live operational status does not.
 
+# Update 2026-07-21 - C5-CONTRACT-ACCEPTANCE-CLOSEOUT-R1 (PHASE-C5 material contract, accepted)
+
+Phase: documentation-only supervisor-acceptance closeout of the `PHASE-C5`
+material contract. Type: docs-only; no product, test, script, migration,
+database, environment, deployment, or configuration change. Historical
+closeout note — live state belongs to `PROJECT_STATE.md`.
+
+The supervisor **ACCEPTED**
+`docs/architecture/ORDEM_COMPRA_C5_PHASE_CONTRACT.md` as final and binding
+(`STATUS: ACCEPTED / IMPLEMENTATION BLOCKED BY DATABASE PREREQUISITE`,
+contract §21; accepted contract commit
+`f9fa97703d2724d62a0d916cca7b9637d54a1e08`). This acceptance does **not**
+authorize `PHASE-C5` implementation. Resolved the contract's four §18
+decisions:
+
+1. The contract is accepted as a whole.
+2. The `BLOCKING_DATABASE_PREREQUISITE` classification is ratified and
+   assigned to a new, separately authorized **`PHASE-C5A-DB-EMISSION-READINESS`**
+   — not authored by this closeout; requires its own read-only diagnosis and
+   documentation-only contract-authoring pass in a fresh session.
+3. The missing acceptance-decision RPC gap (no schema object anywhere
+   transitions `status_aceite` from `pendente` to `aceita`/`rejeitada`) is
+   ratified as a new, separately identified **`PHASE-C5B-ACCEPTANCE-DECISION`**
+   (`IDENTIFIED / NOT AUTHORIZED`) — owns actor ownership for acceptance
+   decisions, the canonical accept/reject RPCs, state-transition rules,
+   audit/history, UI ownership, the supplier-versus-administrator permission
+   split, and rejection/override semantics. `PHASE-C5A` must not implement
+   or invent any acceptance-decision capability. Orders with
+   `exige_aceite=TRUE` must not be treated as lifecycle-complete until
+   `PHASE-C5B` is implemented and accepted.
+4. Emission's confirmation UX is ratified as
+   **`CONTROLLED_IRREVERSIBLE_TRANSITION`** — explicit confirmation, no
+   single-click emission, a clear explanation of the resulting state,
+   primary-or-neutral (not destructive-red) confirmation styling, and an
+   authoritative reload after deterministic success.
+
+`OC-C5-EMISSION-001` disposition becomes
+`PLANNED / BLOCKED_BY_C5A_DB_PREREQUISITE`. `LAST_ACCEPTED_PHASE` stays
+`PHASE-C4`; `ACTIVE_PHASE`/`ACTIVE_PHASE_CONTRACT` stay `NONE`.
+`NEXT_AUTHORIZABLE_ACTION` becomes a fresh Claude Code session's read-only
+diagnosis and documentation-only authoring of
+`PHASE-C5A-DB-EMISSION-READINESS` — not issued or executed by this closeout.
+`PHASE-C5` implementation, `PHASE-C5B-ACCEPTANCE-DECISION`, and
+`REAL_CUTOVER` remain unauthorized. Sequence/architecture in this file are
+unchanged. Full evidence: contract §21 and `docs/ledgers/G28_LEDGER.md`.
+
 # Update 2026-07-21 - C4-CLOSEOUT-AND-C5-CONTRACT-R1 Part 2 (PHASE-C5 material contract, proposed)
 
 Phase: read-only repository reconciliation + documentation-only `PHASE-C5`

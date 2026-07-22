@@ -3,7 +3,7 @@
 <!-- MATERIAL_PHASE_CONTRACT:BEGIN -->
 PHASE_ID: PHASE-C5
 <!-- MATERIAL_PHASE_CONTRACT:END -->
-STATUS: PROPOSED / AWAITING SUPERVISOR REVIEW / IMPLEMENTATION NOT AUTHORIZED
+STATUS: ACCEPTED / IMPLEMENTATION BLOCKED BY DATABASE PREREQUISITE
 
 > **Role of this document.** This is a **material phase contract**, authored under
 > `C4-CLOSEOUT-AND-C5-CONTRACT-R1` (Part 2) as **read-only repository
@@ -747,15 +747,105 @@ After this contract is authored:
 
 ---
 
-## 20. Status and next authorizable action
+## 20. Status and next authorizable action (superseded by §21 — retained for provenance)
 
-**STATUS: `PROPOSED / AWAITING SUPERVISOR REVIEW / IMPLEMENTATION NOT
-AUTHORIZED`.**
+*(Historical: at authoring time this section read `STATUS: PROPOSED /
+AWAITING SUPERVISOR REVIEW / IMPLEMENTATION NOT AUTHORIZED`, with
+`NEXT_AUTHORIZABLE_ACTION` pointing to supervisor review of this contract
+and the §18 decisions. §21 records the supervisor's subsequent ruling and is
+now the current disposition.)*
 
-`NEXT_AUTHORIZABLE_ACTION`: supervisor review and acceptance/rejection of
-this contract, resolution of the §18 supervisor decisions, and — as a
-logically prior, separately authorized action — scoping and authorizing the
-§5 database-prerequisite phase. `PHASE-C5` implementation, `REAL_CUTOVER`,
-any database migration, any environment mutation, any
-staging/production/deployment action, branch creation, and any push remain
+---
+
+## 21. Supervisor acceptance — `C5-CONTRACT-ACCEPTANCE-CLOSEOUT-R1`
+
+On 2026-07-21 the supervisor **ACCEPTED** this material phase contract as
+final and binding, resolving the four §18 decisions as follows. This
+acceptance does **not** authorize `PHASE-C5` implementation.
+
+**Contract disposition:** `STATUS: ACCEPTED / IMPLEMENTATION BLOCKED BY
+DATABASE PREREQUISITE`. Accepted contract commit
+`f9fa97703d2724d62a0d916cca7b9637d54a1e08`.
+
+**`OC-C5-EMISSION-001` disposition:** `PLANNED / BLOCKED_BY_C5A_DB_PREREQUISITE`
+— not `SATISFIED`, not `ACTIVE`, not `IMPLEMENTED`, not `CLOSED`.
+
+**§18.2 (database-prerequisite scoping) — ratified.** The §5 classification
+`BLOCKING_DATABASE_PREREQUISITE` is ratified. The `PHASE-C5` UI must **not**
+be implemented as an operationally complete emission flow while (i)
+`emitir_ordem_compra` has no executable application-role grant, (ii)
+`alocar_necessidade_compra_fio` has no executable application-role grant,
+and (iii) the canonical UI-created draft path cannot satisfy allocation
+completeness (all three proven at §4/§5 of this contract). A **separate
+`PHASE-C5A` database-readiness contract is required** to resolve (i)-(iii).
+That contract is **not authored by this closeout** — it requires its own
+read-only diagnosis and documentation-only authoring pass, in a fresh
+session (`NEXT_AUTHORIZABLE_ACTION` below).
+
+**§18.4 (destructive-confirmation classification) — ratified, as
+`CONTROLLED_IRREVERSIBLE_TRANSITION`** (not the `confirmDialog`/destructive-red
+treatment this contract had proposed as one option in §10). A future
+`PHASE-C5A`/`PHASE-C5` implementation order must design the emission
+confirmation UX to this classification, not the destructive pattern:
+
+- explicit confirmation is required (no single-click emission);
+- the confirmation must clearly explain the resulting state (irreversible
+  freeze of items/allocations per §R.22.5/§R.6, and — if `exige_aceite` is
+  active — that the order then awaits acceptance per §18.3 below);
+- confirmation control styling is **primary or neutral** — **not** the
+  destructive-red pattern (`UI_VISUAL_CONTRACT.md` §8's "Destructive
+  (Excluir)" treatment does not apply here merely because the transition is
+  irreversible; emission is not classified as destructive by this ruling);
+- an authoritative reload (`obter_ordem_compra_admin` via `loadOrdemDetail`,
+  §9 unchanged) is required after a deterministic success.
+
+This resolves §10's open question in favor of a distinct, named UX
+classification rather than either of §10's two named alternatives.
+
+**§18.3 (acceptance-decision-RPC gap ownership) — ratified as a new,
+separately identified phase: `PHASE-C5B-ACCEPTANCE-DECISION`.**
+
+- **Status:** `IDENTIFIED / NOT AUTHORIZED`.
+- **Owns:** actor ownership for acceptance decisions; the canonical
+  acceptance and rejection RPCs (none currently exist, §4); state-transition
+  rules for `status_aceite` (`pendente` → `aceita`/`rejeitada`); audit/history
+  for acceptance decisions; UI ownership for the decision surface; the
+  supplier-versus-administrator permission split (currently entirely
+  undecided — no canon anywhere assigns this); rejection and
+  administrative-override semantics (the historical, superseded §7c "is
+  `rejeitada → aceita` reachable" question, never ratified, remains open
+  under `PHASE-C5B`, not resolved here).
+- **`PHASE-C5A` must not implement or invent any acceptance-decision
+  capability** — `PHASE-C5A`'s scope is strictly the database-grant
+  prerequisite (§5), not `status_aceite` transition RPCs.
+- **Binding usability rule:** orders with `exige_aceite=TRUE` must **not**
+  be treated as lifecycle-complete, nor presented in any UI or documentation
+  as a fully closed workflow, until `PHASE-C5B` is implemented and accepted.
+  Any `PHASE-C5`/`PHASE-C5A` implementation order must surface this
+  limitation to the user (e.g., in the emission confirmation copy required
+  above) rather than silently omitting it.
+
+**Canonical state after this closeout:**
+
+```text
+LAST_ACCEPTED_PHASE = PHASE-C4
+ACTIVE_PHASE = NONE
+ACTIVE_PHASE_CONTRACT = NONE
+
+PHASE-C5 CONTRACT = ACCEPTED
+PHASE-C5 IMPLEMENTATION = NOT AUTHORIZED
+OC-C5-EMISSION-001 = PLANNED / BLOCKED_BY_C5A_DB_PREREQUISITE
+
+PHASE-C5A-DB-EMISSION-READINESS = NEXT AUTHORIZABLE CONTRACT PHASE
+PHASE-C5B-ACCEPTANCE-DECISION = IDENTIFIED / NOT AUTHORIZED
+
+REAL_CUTOVER = NOT AUTHORIZED
+```
+
+`NEXT_AUTHORIZABLE_ACTION`: a fresh Claude Code session performs read-only
+diagnosis and documentation-only material-contract authoring of
+`PHASE-C5A-DB-EMISSION-READINESS` (the database-grant prerequisite named at
+§5 of this contract). That phase is **not** issued or executed by this
+closeout. `PHASE-C5` implementation, `PHASE-C5B`, `REAL_CUTOVER`, any
+database migration, any environment mutation, and any push remain
 unauthorized.
