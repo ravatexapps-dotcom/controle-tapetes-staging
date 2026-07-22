@@ -9,6 +9,7 @@ PHASE_ID: CLEAN-SLATE-TRANSACTIONAL-RESET
 STATUS: CORRECTED / AWAITING DIRECT SUPERVISOR REVIEW / DESTRUCTIVE EXECUTION NOT AUTHORIZED
 AUTHORED_BY: CLEAN-SLATE-TRANSACTIONAL-RESET-CONTRACT-R1 (read-only diagnosis + documentation-only authoring)
 CORRECTED_BY: CLEAN-SLATE-TRANSACTIONAL-RESET-CONTRACT-CORRECTION-R1 (documentation-only, over the accepted CLEAN-SLATE-DOCUMENT-HISTORY-AND-RESIDUAL-BOUNDARY-DIAGNOSIS-R1)
+CONTRACT BASELINE CORRECTION: ACCEPTED ARCHITECT RULING — CLEAN-SLATE-TRANSACTIONAL-RESET-B6-ROW-BASELINE-FORWARD-CORRECTION-R1 (documentation-only): document_link_revision_ops corrected from 4 to 10 rows; 4 distinct OPs remain 55, 57, 61, 63
 ENTRY_CHECKPOINT: 9eeff7d5a97e25cf676d54afcd4510816a8648fb
 DATABASE_DIAGNOSED: ucrjtfswnfdlxwtmxnoo (non-production shared development, PostgreSQL 17.6, terminal migration 20260722055832) — READ-ONLY
 ACTIVE_PHASE: NONE
@@ -74,8 +75,9 @@ descendant. Its Pedido (`#34`, `7fa51e02-e15b-4a1b-a0f3-8ca39ceee247`), its OPs
 (`55, 57, 61, 63`), and its lotes (`33, 37`) are the matching synthetic fixtures
 with zero operational descendants.
 
-The future reset may remove **only** this synthetic fixture's rows: **4**
-`public.document_link_revision_ops` rows, **8** `public.document_link_revisions`
+The future reset may remove **only** this synthetic fixture's rows: **10**
+`public.document_link_revision_ops` rows (spanning the 6 op-bearing revisions of
+8; 4 distinct linked OPs — `55, 57, 61, 63`), **8** `public.document_link_revisions`
 rows, **1** `public.document_candidates` row, and its **0**
 `document_events`/`document_technical_evidences`/`document_decisions`. Before
 deletion, these rows and the linked synthetic Pedido/OP/lote metadata must be
@@ -235,7 +237,7 @@ or `PRESERVE_EMPTY_STATE`.
 
 | Table | Rows | Class | Reason |
 |---|---|---|---|
-| `document_link_revision_ops` (B6 fixture) | 4 | PURGE (synthetic) | OP-link rows for the B6-VERIFY fixture (OPs 55/57/61/63) |
+| `document_link_revision_ops` (B6 fixture) | 10 | PURGE (synthetic) | OP-link rows for the B6-VERIFY fixture, spanning its 6 op-bearing revisions (4 distinct OPs 55/57/61/63) |
 | `document_link_revisions` (B6 fixture) | 8 | PURGE (synthetic) | 8 revisions (v1–v8; v8 active) of the B6-VERIFY document |
 | `document_candidates` (B6 fixture) | 1 | PURGE (synthetic) | the single B6-VERIFY candidate row |
 | `document_events`/`document_technical_evidences`/`document_decisions` (B6) | 0 / 0 / 0 | PURGE (synthetic, empty) | none exist for this document |
@@ -262,8 +264,8 @@ ordem_compra_eventos 0                   ordem_compra_distribuicao_comandos 0
 ordem_compra_item_compat_fio 51          ordem_compra_item_alocacao 51    ordem_compra_item 51
 necessidade_compra_fio 64                ordem_compra 51                  ordens_compra_fio 64
 -- Synthetic document fixture (id G28-B6-VERIFY-c63b6c2c8aff4da58e87d1e75f7a9236-DOCUMENT)
-document_technical_evidences 0  document_decisions 0  document_link_revision_ops 4
-document_link_revisions 8       document_events 0     document_candidates 1
+document_technical_evidences 0  document_decisions 0  document_link_revision_ops 10
+document_link_revisions 8       document_events 0     document_candidates 1  (4 distinct linked OPs: 55, 57, 61, 63)
 -- Boundary B (commercial/production corpus)
 op_itens 27  op_fornecedores 16  op_eventos 4  pedido_itens 18
 pedido_eventos 0  pedido_cliente_eventos 0  pedido_parcial_itens 0  pedido_parciais 0
@@ -333,11 +335,11 @@ Expected affected rows: 0, 0, 0, 0, 0, 51, 51, 51, 64, 51, 64
 ```text
 1  document_technical_evidences  WHERE document_id = 'G28-B6-VERIFY-c63b6c2c8aff4da58e87d1e75f7a9236-DOCUMENT'  -> 0
 2  document_decisions            WHERE document_id = 'G28-B6-VERIFY-c63b6c2c8aff4da58e87d1e75f7a9236-DOCUMENT'  -> 0
-3  document_link_revision_ops    WHERE revision_id IN (the 8 B6 fixture revision ids)                          -> 4  (RESTRICT to revisions & ops: precede both link_revisions and OP delete)
+3  document_link_revision_ops    WHERE revision_id IN (the 8 B6 fixture revision ids)                          -> 10 (4 distinct OPs 55/57/61/63; RESTRICT to revisions & ops: precede both link_revisions and OP delete)
 4  document_link_revisions       WHERE document_id = 'G28-B6-VERIFY-c63b6c2c8aff4da58e87d1e75f7a9236-DOCUMENT'  -> 8  (RESTRICT to pedidos & candidate: precede pedidos delete and candidate delete)
 5  document_events               WHERE document_id = 'G28-B6-VERIFY-c63b6c2c8aff4da58e87d1e75f7a9236-DOCUMENT'  -> 0
 6  document_candidates           WHERE document_id = 'G28-B6-VERIFY-c63b6c2c8aff4da58e87d1e75f7a9236-DOCUMENT'  -> 1
-Expected affected rows: 0, 0, 4, 8, 0, 1
+Expected affected rows: 0, 0, 10, 8, 0, 1
 ```
 
 The reset must use the exact fixture identifier above — never a broad text

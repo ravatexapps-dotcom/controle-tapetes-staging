@@ -25,6 +25,23 @@
 
 ## Phase status
 
+- **`CLEAN-SLATE-TRANSACTIONAL-RESET-B6-ROW-BASELINE-FORWARD-CORRECTION-R1`
+  (documentation-only forward correction, this pass):** corrected the accepted
+  clean-slate reset contract's B6 synthetic-fixture baseline —
+  `document_link_revision_ops` was recorded as **4** rows; the proven database
+  state (read-only, `ucrjtfswnfdlxwtmxnoo`) is **10** rows across the fixture's 6
+  op-bearing revisions, spanning **4 distinct linked OPs** (`55, 57, 61, 63`). The
+  prior value confused the distinct-OP count with the relation-row count. Corrected
+  fixture deletion sequence: `document_technical_evidences 0, document_decisions 0,
+  document_link_revision_ops 10, document_link_revisions 8, document_events 0,
+  document_candidates 1` (was `0, 0, 4, 8, 0, 1`). No archive generated, no reset
+  tooling implemented, no disposable drill executed, no shared-development
+  mutation; the tooling-and-drill implementation remains `NOT IMPLEMENTED`. The
+  prior `CLEAN-SLATE-TRANSACTIONAL-RESET-TOOLING-AND-DRILL-R1` order is
+  `HARD-STOPPED / SUPERSEDED AS WRITTEN` at this corpus gate. `LAST_ACCEPTED_PHASE`
+  stays `PHASE-C5`; `ACTIVE_PHASE`/`ACTIVE_PHASE_CONTRACT` stay `NONE`. **Next
+  authorizable action: reissue `CLEAN-SLATE-TRANSACTIONAL-RESET-TOOLING-AND-DRILL`
+  against the corrected 10-row baseline.**
 - **Last accepted phase (current):** `PHASE-C5` (native purchase-order emission
   UI at `#/ordens-compra/:id`) — `CLOSED / ACCEPTED_WITH_NONBLOCKING_DEBT /
   DIRECTLY VERIFIED / ARCHITECT VISUAL VALIDATION PASSED` (supervisor acceptance
@@ -85,8 +102,9 @@
   contract`):** the residual-boundary diagnosis proved (read-only against
   `ucrjtfswnfdlxwtmxnoo`) that the only transaction-linked document is the **synthetic
   `G28-B6-VERIFY-c63b6c2c8aff4da58e87d1e75f7a9236-DOCUMENT`** fixture (Pedido #34
-  `7fa51e02`, OPs 55/57/61/63, lotes 33/37; 8 link revisions + 4 revision-ops + 1
-  candidate; no Drive object/SHA/fiscal metadata; 0 operational descendants), while
+  `7fa51e02`, OPs 55/57/61/63, lotes 33/37; 8 link revisions + 10 revision-ops
+  across 4 distinct linked OPs 55/57/61/63 + 1 candidate; no Drive object/SHA/fiscal
+  metadata; 0 operational descendants), while
   the other 39 of 40 ingestor `document_candidates` are an unrelated front to
   preserve; the Controlled-Delete rule is RESTRICT-FK + `db/53` app guard with no
   immutability trigger. The correction then set the reset contract to `CORRECTED /

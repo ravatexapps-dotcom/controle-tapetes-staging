@@ -9250,3 +9250,83 @@ product file they depend on, was modified by this pass or the prior one):
   is authorized; no phase chains automatically. This pass published exactly one
   documentation-only commit through one authorized fast-forward push to `staging/dev`;
   no further push is authorized.
+
+## 2026-07-22 — CLEAN-SLATE-TRANSACTIONAL-RESET-B6-ROW-BASELINE-FORWARD-CORRECTION-R1 — B6 fixture row-count baseline corrected — FORWARD_CORRECTION / DOCUMENTATION-ONLY
+
+- **Order:** `CLEAN-SLATE-TRANSACTIONAL-RESET-B6-ROW-BASELINE-FORWARD-CORRECTION-R1`
+  — read-only reconciliation + documentation-only forward correction, issued after
+  the separately ordered `CLEAN-SLATE-TRANSACTIONAL-RESET-TOOLING-AND-DRILL-R1`
+  hard-stopped at its mandatory §7 pre-export corpus gate. Entry checkpoint HEAD
+  `7a581d2f6710f52120e713e815d3875c47ebafef` (parent
+  `9eeff7d5a97e25cf676d54afcd4510816a8648fb`); `staging/dev` equal to HEAD;
+  divergence 0/0; empty index; only protected residue (`M .gitignore`,
+  `?? .codex/config.toml`, `?? .mcp.json`).
+- **Root cause.** The accepted contract, `PROJECT_STATE.md`,
+  `AGENT_HANDOFF.md`, and `ORDEM_COMPRA_C3_TRACEABILITY.md` recorded the B6
+  synthetic-fixture's `document_link_revision_ops` count as **4** rows. Read-only
+  reconciliation against `ucrjtfswnfdlxwtmxnoo` (transaction proven
+  `transaction_read_only = on`, `repeatable read`) found the real value is **10**
+  rows: the fixture's 8 `document_link_revisions` include 6 op-bearing revisions
+  (v3 2 ops, v4 1 op, v5 2 ops, v6 2 ops, v7 1 op, v8 2 ops = 10 relation rows),
+  spanning exactly **4 distinct linked OPs** (`55, 57, 61, 63`). The earlier
+  `CLEAN-SLATE-DOCUMENT-HISTORY-AND-RESIDUAL-BOUNDARY-DIAGNOSIS-R1` pass (recorded
+  two entries above) had confused the distinct-OP count with the relation-row
+  count; the error then propagated into the
+  `CLEAN-SLATE-TRANSACTIONAL-RESET-CONTRACT-CORRECTION-R1` correction and from
+  there into the contract's §1.2/§4.3/§5/§7.2 and the three dependent bootstrap/
+  handoff/traceability blocks. This ledger's own earlier
+  `CLEAN-SLATE-TRANSACTIONAL-RESET-CONTRACT-R1` entry (first of the three above)
+  had already recorded the correct value (`document_link_revision_ops 10 (4 OPs)`,
+  line ~9064) — the error was introduced only in the continuation diagnosis, not
+  present at the very first entry.
+- **Corrected fixture deletion sequence:** `document_technical_evidences 0,
+  document_decisions 0, document_link_revision_ops 10, document_link_revisions 8,
+  document_events 0, document_candidates 1` (was `0, 0, 4, 8, 0, 1`).
+- **Files corrected (current canonical state only; historical entries in this
+  ledger and the disclaimed historical block in
+  `docs/architecture/PEDIDO_PRODUCTION_FLOW_BACKLOG.md` were preserved unedited):**
+  `docs/architecture/CLEAN_SLATE_TRANSACTIONAL_RESET_PHASE_CONTRACT.md` (header
+  correction marker + §1.2 + §4.3 + §5 + §7.2), `PROJECT_STATE.md` (bootstrap
+  block `NEXT_AUTHORIZABLE_ACTION`), `AGENT_HANDOFF.md` (new leading bullet + the
+  live `CLEAN-SLATE-DOCUMENT-HISTORY-AND-RESIDUAL-BOUNDARY-DIAGNOSIS-R1` bullet
+  count), `docs/architecture/ORDEM_COMPRA_C3_TRACEABILITY.md`
+  (`NEXT_AUTHORIZABLE_ACTION`), and this ledger (new entry, append-only).
+  `docs/DOCUMENTATION_INDEX.md` and `docs/architecture/PEDIDO_PRODUCTION_FLOW_BACKLOG.md`
+  were read and found not materially dependent on the incorrect baseline (their
+  only occurrences are a correct "4 distinct OPs" statement, a `document_link_revision_ops`
+  table-name/constraint-name reference, and a self-disclaimed historical `# Update`
+  block) — left unchanged. No product, test, script, migration, `db/*.sql`,
+  configuration, or protected-residue change.
+- **Non-authorization:** no archive generated, no reset tooling implemented, no
+  disposable drill executed, no shared-development mutation (`INSERT`/`UPDATE`/
+  `DELETE`/`TRUNCATE`/DDL/writer-RPC) — all shared-development access this pass
+  was read-only, inside `BEGIN TRANSACTION ISOLATION LEVEL REPEATABLE READ READ
+  ONLY`. The tooling-and-drill implementation remains `NOT IMPLEMENTED`. The
+  contract is not marked ACCEPTED/ACTIVE/IMPLEMENTATION-AUTHORIZED/CLOSED; the
+  accepted product checkpoint is not advanced; `REAL_CUTOVER` and
+  `PHASE-C5B-ACCEPTANCE-DECISION` remain unauthorized; shared-development deletion
+  remains unauthorized.
+- **Validation:** `node scripts/validate-spec-custody.mjs` PASS; `--self-test`
+  PASS (47/47); `git diff --check` / `--cached --check` clean; protected residue
+  unchanged.
+- **Exact accounting subject:** `docs: correct B6 revision-op row baseline`
+- **Canonical state after this commit:**
+  ```text
+  LAST_ACCEPTED_PHASE = PHASE-C5
+  ACTIVE_PHASE = NONE
+  ACTIVE_PHASE_CONTRACT = NONE
+  ACCEPTED_CHECKPOINT = 3405fdab8e05ec0f81cbfe07c63c489e551fee92
+
+  CLEAN-SLATE-TRANSACTIONAL-RESET = CORRECTED / AWAITING DIRECT SUPERVISOR REVIEW / DESTRUCTIVE EXECUTION NOT AUTHORIZED (B6 row baseline forward-corrected: document_link_revision_ops = 10, 4 distinct OPs 55/57/61/63)
+  CLEAN-SLATE-TRANSACTIONAL-RESET-TOOLING-AND-DRILL = HARD-STOPPED / SUPERSEDED AS WRITTEN (superseded order; not implemented)
+  OC-CUTOVER-001 = PLANNED
+  PHASE-C5B-ACCEPTANCE-DECISION = IDENTIFIED / NOT AUTHORIZED
+  REAL_CUTOVER = NOT AUTHORIZED
+  ```
+- **Próxima fase indicada / NEXT_AUTHORIZABLE_ACTION:** reissue
+  `CLEAN-SLATE-TRANSACTIONAL-RESET-TOOLING-AND-DRILL` against the corrected
+  10-row baseline. No deletion, database mutation, archive creation, reset
+  implementation, phase activation, or continuation is authorized; no phase
+  chains automatically. This pass publishes exactly one documentation-only commit
+  through one authorized fast-forward push to `staging/dev`; no further push is
+  authorized.
