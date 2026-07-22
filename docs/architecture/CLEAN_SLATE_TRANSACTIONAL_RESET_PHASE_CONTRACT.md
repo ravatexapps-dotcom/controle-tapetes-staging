@@ -6,14 +6,16 @@ PHASE_ID: CLEAN-SLATE-TRANSACTIONAL-RESET
 
 ```text
 PHASE_ID: CLEAN-SLATE-TRANSACTIONAL-RESET
-STATUS: CORRECTED / AWAITING DIRECT SUPERVISOR REVIEW / DESTRUCTIVE EXECUTION NOT AUTHORIZED
+STATUS: CONTRACT ACCEPTED / TOOLING IMPLEMENTED / REAL ARCHIVE GENERATED READ-ONLY / DISPOSABLE RESTORE DRILL PASSED / AWAITING DIRECT SUPERVISOR REVIEW / SHARED-DEVELOPMENT RESET NOT AUTHORIZED
 AUTHORED_BY: CLEAN-SLATE-TRANSACTIONAL-RESET-CONTRACT-R1 (read-only diagnosis + documentation-only authoring)
 CORRECTED_BY: CLEAN-SLATE-TRANSACTIONAL-RESET-CONTRACT-CORRECTION-R1 (documentation-only, over the accepted CLEAN-SLATE-DOCUMENT-HISTORY-AND-RESIDUAL-BOUNDARY-DIAGNOSIS-R1)
 CONTRACT BASELINE CORRECTION: ACCEPTED ARCHITECT RULING — CLEAN-SLATE-TRANSACTIONAL-RESET-B6-ROW-BASELINE-FORWARD-CORRECTION-R1 (documentation-only): document_link_revision_ops corrected from 4 to 10 rows; 4 distinct OPs remain 55, 57, 61, 63
+IMPLEMENTED_BY: CLEAN-SLATE-TRANSACTIONAL-RESET-TOOLING-AND-DRILL-R2 (§21) — tooling + read-only real archive + disposable restore/reset drill; no shared-development mutation
+CONTRACT_ACCEPTANCE: ACCEPTED / DIRECTLY VERIFIED AT 21fe32bc4b37773d93cabeac3e7e09aca9079037
 ENTRY_CHECKPOINT: 9eeff7d5a97e25cf676d54afcd4510816a8648fb
 DATABASE_DIAGNOSED: ucrjtfswnfdlxwtmxnoo (non-production shared development, PostgreSQL 17.6, terminal migration 20260722055832) — READ-ONLY
-ACTIVE_PHASE: NONE
-ACTIVE_PHASE_CONTRACT: NONE
+ACTIVE_PHASE: CLEAN-SLATE-TRANSACTIONAL-RESET
+ACTIVE_PHASE_CONTRACT: docs/architecture/CLEAN_SLATE_TRANSACTIONAL_RESET_PHASE_CONTRACT.md
 ```
 
 > **Role.** This is a *corrected proposed* material phase contract. It authorizes
@@ -444,7 +446,7 @@ immutable and are not edited.
 
 ---
 
-## 10. Future proposed implementation manifest (proposed, NOT created)
+## 10. Future proposed implementation manifest (IMPLEMENTED by R2 — see §21)
 
 Recommended future files (a different path is permitted only if the repository's
 established script/test organization requires it, but must still produce one
@@ -576,11 +578,81 @@ execution.
 
 ## 20. Status
 
-`CORRECTED / AWAITING DIRECT SUPERVISOR REVIEW / DESTRUCTIVE EXECUTION NOT
-AUTHORIZED`. No deletion, database mutation, archive creation, reset
-implementation, cutover, activation, or environment change has occurred. The
-64/51/13 corpus, the 16 Pedidos, the 20 OPs, the 25 lotes, and the synthetic
-B6-VERIFY fixture all physically exist. `REAL_CUTOVER` and
-`PHASE-C5B-ACCEPTANCE-DECISION` remain unauthorized. Execution requires a separate
-explicit order gated on the §8 verified archive-and-restore drill. `PROJECT_STATE.md`
-remains the sole owner of `ACTIVE_PHASE`/`ACTIVE_PHASE_CONTRACT` (both `NONE`).
+`CONTRACT ACCEPTED / TOOLING IMPLEMENTED / REAL ARCHIVE GENERATED READ-ONLY /
+DISPOSABLE RESTORE DRILL PASSED / AWAITING DIRECT SUPERVISOR REVIEW /
+SHARED-DEVELOPMENT RESET NOT AUTHORIZED` (updated by R2, §21). **No deletion or
+database mutation of the shared-development database has occurred**; the 64/51/13
+corpus, the 16 Pedidos, the 20 OPs, the 25 lotes, and the synthetic B6-VERIFY
+fixture all physically exist unchanged in `ucrjtfswnfdlxwtmxnoo`. `REAL_CUTOVER`
+and `PHASE-C5B-ACCEPTANCE-DECISION` remain unauthorized. The destructive
+shared-development reset still requires a **separate** explicit order; the §8
+archive-and-restore drill HARD STOP is now satisfied by proven tooling (§21).
+`PROJECT_STATE.md` remains the sole owner of `ACTIVE_PHASE`/`ACTIVE_PHASE_CONTRACT`
+(now `CLEAN-SLATE-TRANSACTIONAL-RESET` / this contract).
+
+---
+
+## 21. Tooling implementation, real archive & disposable-drill evidence (R2)
+
+Authored by `CLEAN-SLATE-TRANSACTIONAL-RESET-TOOLING-AND-DRILL-R2` (entry checkpoint
+`21fe32bc4b37773d93cabeac3e7e09aca9079037`). This pass implemented the §10 tooling,
+generated the real archive **read-only**, and proved the §8.3 restore/reset drill in
+a disposable PostgreSQL environment. It authorizes **no** shared-development deletion.
+
+```text
+CONTRACT_ACCEPTANCE: ACCEPTED / DIRECTLY VERIFIED AT 21fe32bc4b37773d93cabeac3e7e09aca9079037
+IMPLEMENTATION_STATUS: TOOLING_IMPLEMENTED / REAL_ARCHIVE_GENERATED_READ_ONLY / DISPOSABLE_RESTORE_DRILL_PASSED / AWAITING DIRECT SUPERVISOR REVIEW / SHARED-DEVELOPMENT RESET NOT AUTHORIZED
+```
+
+### 21.1 Technical files (5)
+
+- `scripts/reset/clean-slate-transactional-export.mjs` — read-only export + corpus gate + deterministic archive/checksums (§8.1).
+- `scripts/reset/clean-slate-transactional-reset.sql` — the governed one-transaction `DELETE` (§7), disposable-drill sentinel only.
+- `scripts/reset/clean-slate-transactional-restore.sql` — FK-safe restore + FK/identity proof (§8.2), disposable-drill sentinel only.
+- `scripts/reset/clean-slate-transactional-verify.mjs` — archive & restore-drill verification (§8.3/§16).
+- `tests/clean-slate-transactional-reset.smoke.mjs` — fixture smoke + full disposable restore/reset drill.
+
+### 21.2 Real archive (read-only, outside the repository)
+
+Generated from `ucrjtfswnfdlxwtmxnoo` inside one `REPEATABLE READ READ ONLY`
+transaction (rolled back — zero mutation). Path
+`D:\Programação\controle-tapetes-g28-artifacts\clean-slate-reset\20260722T173607Z`;
+aggregate SHA-256 `337d23cd6426287053dcffe02512253c0e9e96874c6362d2823186b52094f593`;
+`verify-archive` = 330/330 checks passed. Terminal migration `20260722055832`,
+cutover `legacy_active/flat/not_started` (markers NULL); B6
+`document_link_revision_ops = 10` across 4 distinct OPs `55, 57, 61, 63`;
+`document_link_revisions = 8`; `document_candidates = 1`; targets 16 Pedidos / 20 OPs
+/ 25 lotes.
+
+### 21.3 Disposable restore/reset drill
+
+Fresh disposable PostgreSQL 18.4 cluster; Supabase preamble + ordered `db/01..77`;
+terminal migration `20260722055832` proven; disposable opaque stubs
+(`auth.users`/`clientes`/`fornecedores`/`cores`/`modelos`) + preserved baselines
+seeded; the real archive restored (prepare), reset #1 (exact affected-row sequences
+`0,0,0,0,0,51,51,51,64,51,64` / `0,0,10,8,0,1` / `27,16,4,18,0,0,0,0,0,0,20,16,25`),
+zero-state + preserve invariance proven, real archive restored, all counts /
+identities (16/20/25) / B6 (8 revisions, 10 revision-op rows across 55/57/61/63) /
+FK validity proven, reset #2 proved re-deletability, cluster destroyed with PID/port/
+directory-absence proof. Smoke + drill = 56/56 checks passed.
+
+### 21.4 Recorded implementation notes (for the future real-reset order)
+
+- **Emitted-order guard handling.** 39 of 51 orders are `status_administrativo =
+  emitida`; the per-row `item_quantidade_rascunho_guard` / `alocacao_rascunho_guard`
+  reject deleting an emitted order's items/allocations. The reset therefore
+  temporarily disables exactly those blocking business guards (plus the allocation
+  cache and the pedido-parciais sync side-effect triggers) via table-owner
+  `DISABLE TRIGGER`, keeps FK enforcement and the C3C cutover fence ACTIVE, and
+  re-enables them before COMMIT (`SET CONSTRAINTS ALL IMMEDIATE` flushes the
+  deferred `kg_pedido` guard first). The future real-reset order must ratify this
+  guard-handling — the contract §7 "plain DELETE" prose does not mention it.
+- **Restore mechanism** loads the consistent snapshot under transaction-scoped
+  `session_replication_role = replica` and proves FK validity afterwards with
+  triggers back on; it never permanently disables triggers/RLS and leaves no
+  session setting changed.
+- **Disposable-only scaffolding** (opaque master/`auth.users` stubs; a seeded
+  `supabase_migrations.schema_migrations` mirroring shared-dev to prove the
+  terminal migration; the classification 64-row corpus needed only so `db/67`'s
+  migration self-check applies) is confined to the destroyed cluster and excluded
+  from every archive identity claim.

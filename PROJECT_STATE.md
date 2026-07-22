@@ -17,10 +17,10 @@ directly (`git rev-parse HEAD`, `git status --short --untracked-files=all`).
 <!-- SPEC_CUSTODY_BOOTSTRAP:BEGIN -->
 ```text
 LAST_ACCEPTED_PHASE: PHASE-C5
-ACTIVE_PHASE: NONE
-ACTIVE_PHASE_CONTRACT: NONE
+ACTIVE_PHASE: CLEAN-SLATE-TRANSACTIONAL-RESET
+ACTIVE_PHASE_CONTRACT: docs/architecture/CLEAN_SLATE_TRANSACTIONAL_RESET_PHASE_CONTRACT.md
 ACTIVE_TRACK: PURCHASE_ORDER_PHASE_C
-NEXT_AUTHORIZABLE_ACTION: DIRECT SUPERVISOR REVIEW OF THE CORRECTED CLEAN-SLATE-TRANSACTIONAL-RESET CONTRACT (docs/architecture/CLEAN_SLATE_TRANSACTIONAL_RESET_PHASE_CONTRACT.md, STATUS: CORRECTED / AWAITING DIRECT SUPERVISOR REVIEW / DESTRUCTIVE EXECUTION NOT AUTHORIZED), corrected by CLEAN-SLATE-TRANSACTIONAL-RESET-CONTRACT-CORRECTION-R1 (2026-07-22, documentation-only, entry checkpoint 9eeff7d5a97e25cf676d54afcd4510816a8648fb) over the accepted CLEAN-SLATE-DOCUMENT-HISTORY-AND-RESIDUAL-BOUNDARY-DIAGNOSIS-R1, with the B6 fixture row-count baseline forward-corrected by CLEAN-SLATE-TRANSACTIONAL-RESET-B6-ROW-BASELINE-FORWARD-CORRECTION-R1 (2026-07-22, documentation-only). Residual-boundary diagnosis accepted; every prior optional/UNPROVEN reset-boundary decision is now BINDING: all 16 of 16 Pedidos, all 20 of 20 OPs, and all 25 of 25 lotes (incl. orphan lote ids 3,4,5,6,7,8,13) are selected for future purge together with op_fornecedores (16) and the complete yarn-purchasing transaction corpus (ordens_compra_fio 64 = 51 mapped + 13 unmapped ids 153–165, necessidade_compra_fio 64, ordem_compra/ordem_compra_item/ordem_compra_item_alocacao/ordem_compra_item_compat_fio 51 each, and the empty receipts/eventos/lancamentos/movimentos/distribuicao ledgers); the only transaction-linked document is the proven synthetic fixture G28-B6-VERIFY-c63b6c2c8aff4da58e87d1e75f7a9236-DOCUMENT (Pedido #34 7fa51e02, OPs 55/57/61/63, lotes 33/37; 10 document_link_revision_ops rows across 4 distinct linked OPs 55/57/61/63 + 8 document_link_revisions + 1 document_candidates row) selected for future metadata archive and removal via Option D3; the remaining documents front (39 unlinked candidates, 1 event, 24 scan requests, 30 scan runs) is PRESERVED and broad documents-front deletion is prohibited; saldo_fios (5 physical-inventory rows) PRESERVE_OPERATIONAL_BASELINE and saldo_fios_op empty-state preserved; op_numeros PRESERVE_CURRENT_HIGH_WATER_VALUES (no restart); master/reference data preserved; cutover Option C — ordem_compra_cutover stays legacy_active/flat/not_started with all markers NULL; a verified archive-and-restore disposable-environment DRILL is a mandatory pre-execution HARD STOP; the future mutation mechanism is a one-time governed administrative DELETE transaction (not a db/NN migration, not the dashboard, not an RPC/UI writer). No deletion, database mutation, archive creation, or reset implementation has occurred; the corpus physically exists. The former 13-row REAL_CUTOVER completeness gate stays STILL_APPLICABLE_UNTIL_RESET_EXECUTION_COMPLETES then SUPERSEDED_BY_CLEAN_SLATE_RESET; OC-CUTOVER-001 stays PLANNED. This pass authorizes neither the reset nor any continuation and creates no active phase; no phase chains automatically. The clean-slate reset execution, archive creation, reset-script implementation, PHASE-C5B-ACCEPTANCE-DECISION (IDENTIFIED / NOT AUTHORIZED), REAL_CUTOVER (NOT AUTHORIZED), any shared-database apply beyond db/77, staging validation/application of db/76 or db/77, deployment, activation, production access, branch creation, and any push beyond the one authorized staging/dev fast-forward for this pass's single documentation-only commit remain unauthorized
+NEXT_AUTHORIZABLE_ACTION: DIRECT SUPERVISOR REVIEW OF THE CLEAN-SLATE RESET TOOLING, REAL ARCHIVE, AND DISPOSABLE RESTORE-DRILL EVIDENCE implemented by CLEAN-SLATE-TRANSACTIONAL-RESET-TOOLING-AND-DRILL-R2 (docs/architecture/CLEAN_SLATE_TRANSACTIONAL_RESET_PHASE_CONTRACT.md §21, entry checkpoint 21fe32bc4b37773d93cabeac3e7e09aca9079037): the 5 technical files (scripts/reset/clean-slate-transactional-{export,verify}.mjs + clean-slate-transactional-{reset,restore}.sql + tests/clean-slate-transactional-reset.smoke.mjs) are TOOLING_IMPLEMENTED; a real deterministic archive was generated READ-ONLY from ucrjtfswnfdlxwtmxnoo inside one REPEATABLE READ READ ONLY transaction (rolled back, zero mutation) at D:/Programação/controle-tapetes-g28-artifacts/clean-slate-reset/20260722T173607Z (aggregate SHA-256 337d23cd6426287053dcffe02512253c0e9e96874c6362d2823186b52094f593, verify-archive 330/330), B6 document_link_revision_ops = 10 across 4 distinct OPs 55/57/61/63, targets 16 Pedidos/20 OPs/25 lotes; the DISPOSABLE_RESTORE_DRILL PASSED on a fresh PostgreSQL 18.4 cluster (preamble + db/01..77, terminal migration 20260722055832, restore→reset→restore→reset with exact affected-row sequences 0,0,0,0,0,51,51,51,64,51,64 / 0,0,10,8,0,1 / 27,16,4,18,0,0,0,0,0,0,20,16,25, all counts/identities/B6/FK proven, cluster destroyed with proof; smoke+drill 56/56). The shared-development database ucrjtfswnfdlxwtmxnoo was NOT mutated and its clean-slate reset was NOT executed or authorized. The clean-slate reset execution/shared-development deletion, PHASE-C5B-ACCEPTANCE-DECISION (IDENTIFIED / NOT AUTHORIZED), REAL_CUTOVER (NOT AUTHORIZED), any shared-database apply beyond db/77, staging validation/application, deployment, activation, production access, branch creation, and any push beyond the one authorized staging/dev fast-forward for this pass single commit remain unauthorized; the phase is not CLOSED and no phase chains automatically
 GOVERNING_SPEC: docs/architecture/ORDEM_COMPRA_LIFECYCLE_SPEC_PROPOSED.md
 TECHNICAL_CONTRACT: docs/architecture/PEDIDO_OP_SCHEMA_CONTRACT.md
 SEQUENCE_AUTHORITY: docs/architecture/PEDIDO_PRODUCTION_FLOW_BACKLOG.md
@@ -33,6 +33,40 @@ ACCEPTED_CHECKPOINT: 3405fdab8e05ec0f81cbfe07c63c489e551fee92
 
 ## Active phase and next action
 
+- **`CLEAN-SLATE-TRANSACTIONAL-RESET-TOOLING-AND-DRILL-R2` (this pass — tooling +
+  read-only real archive + disposable restore/reset drill):**
+  `TOOLING_IMPLEMENTED / REAL_ARCHIVE_GENERATED_READ_ONLY /
+  DISPOSABLE_RESTORE_DRILL_PASSED / AWAITING DIRECT SUPERVISOR REVIEW /
+  SHARED-DEVELOPMENT RESET NOT AUTHORIZED`. Accepted the corrected clean-slate
+  contract (`CONTRACT_ACCEPTANCE: ACCEPTED / DIRECTLY VERIFIED AT
+  21fe32bc4b37773d93cabeac3e7e09aca9079037`) and implemented its §10 tooling — the
+  five files `scripts/reset/clean-slate-transactional-export.mjs`,
+  `clean-slate-transactional-reset.sql`, `clean-slate-transactional-restore.sql`,
+  `clean-slate-transactional-verify.mjs`, and
+  `tests/clean-slate-transactional-reset.smoke.mjs`. Generated the real
+  deterministic archive **READ-ONLY** from `ucrjtfswnfdlxwtmxnoo` inside one
+  `REPEATABLE READ READ ONLY` transaction (rolled back — zero mutation): aggregate
+  SHA-256 `337d23cd6426287053dcffe02512253c0e9e96874c6362d2823186b52094f593`,
+  `verify-archive` 330/330, B6 `document_link_revision_ops = 10` across 4 distinct
+  OPs `55, 57, 61, 63`, targets 16 Pedidos / 20 OPs / 25 lotes, stored **outside
+  the repository**. Proved the §8.3 disposable drill on a fresh PostgreSQL 18.4
+  cluster (Supabase preamble + ordered `db/01..77`, terminal migration
+  `20260722055832`; restore→reset→restore→reset with exact affected-row sequences
+  `0,0,0,0,0,51,51,51,64,51,64` / `0,0,10,8,0,1` /
+  `27,16,4,18,0,0,0,0,0,0,20,16,25`; counts/identities/B6/FK proven; cluster
+  destroyed with PID/port/directory-absence proof; smoke + drill 56/56). The
+  shared-development database was **not mutated** (post-check identical to
+  baseline). `ACTIVE_PHASE`/`ACTIVE_PHASE_CONTRACT` become
+  `CLEAN-SLATE-TRANSACTIONAL-RESET` / the contract; `LAST_ACCEPTED_PHASE` stays
+  `PHASE-C5`; `ACCEPTED_CHECKPOINT` stays
+  `3405fdab8e05ec0f81cbfe07c63c489e551fee92`. The phase is **not CLOSED**; the
+  shared-development reset, `REAL_CUTOVER`, and `PHASE-C5B-ACCEPTANCE-DECISION`
+  remain unauthorized; no phase chains automatically. **Recorded implementation
+  note:** the reset transactionally disables the emitted-order
+  `*_rascunho_guard` business triggers (39 of 51 orders are `emitida`) while FK
+  enforcement and the C3C cutover fence stay ACTIVE — the future real-reset order
+  must ratify this guard-handling (contract §7 "plain DELETE" prose omits it).
+  Full record: contract §21 and `docs/ledgers/G28_LEDGER.md`.
 - **(Historical, at the `PHASE-C4` closeout point-in-time — superseded by the
   `PHASE-C5A`/`PHASE-C5` bullets later in this section and by the bootstrap
   block above, which are current.)** Last accepted material phase at that

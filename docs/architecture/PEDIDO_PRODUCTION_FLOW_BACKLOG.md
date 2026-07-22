@@ -8,6 +8,42 @@
 > `PROJECT_STATE.md`. Phase sequence, dependencies, backlog items, and accepted
 > architecture in this file remain authoritative; live operational status does not.
 
+# Update 2026-07-22 - CLEAN-SLATE-TRANSACTIONAL-RESET-TOOLING-AND-DRILL-R2 (reset tooling implemented; real archive generated read-only; disposable restore/reset drill passed; no shared-development execution)
+
+Phase: controlled tooling implementation + read-only shared-development export +
+destructive disposable-PostgreSQL drill. Entry checkpoint
+`21fe32bc4b37773d93cabeac3e7e09aca9079037`; accepted checkpoint stays
+`3405fdab8e05ec0f81cbfe07c63c489e551fee92`.
+
+**Sequence effect.** The `CLEAN-SLATE-TRANSACTIONAL-RESET` sequence item's mandatory
+pre-execution HARD STOP (contract §8.3 — a verified archive-and-restore disposable
+drill) is now **satisfied by proven tooling**. This pass implemented the five §10
+tooling files (`scripts/reset/clean-slate-transactional-export.mjs`,
+`clean-slate-transactional-reset.sql`, `clean-slate-transactional-restore.sql`,
+`clean-slate-transactional-verify.mjs`,
+`tests/clean-slate-transactional-reset.smoke.mjs`), generated a real deterministic
+archive **READ-ONLY** from `ucrjtfswnfdlxwtmxnoo` (rolled-back
+`REPEATABLE READ READ ONLY` transaction, zero mutation; aggregate SHA-256
+`337d23cd6426287053dcffe02512253c0e9e96874c6362d2823186b52094f593`; `verify-archive`
+330/330; B6 `document_link_revision_ops = 10` across OPs 55/57/61/63; 16 Pedidos /
+20 OPs / 25 lotes) stored **outside the repository**, and proved the drill on a
+fresh PostgreSQL 18.4 cluster (`db/01..77`, terminal `20260722055832`,
+restore→reset→restore→reset with the exact contract affected-row sequences, all
+counts/identities/B6/FK proven, cluster destroyed with proof; smoke + drill 56/56).
+
+**No execution / no mutation.** The shared-development database was **not mutated**
+and its clean-slate reset was **not executed or authorized** — the destructive reset
+remains a **separate future order**. `OC-CUTOVER-001` stays `PLANNED`; `REAL_CUTOVER`
+and `PHASE-C5B-ACCEPTANCE-DECISION` stay unauthorized; the phase is not CLOSED; no
+phase chains automatically. The `13`-row gate stays
+`STILL_APPLICABLE_UNTIL_RESET_EXECUTION_COMPLETES` then
+`SUPERSEDED_BY_CLEAN_SLATE_RESET`. Recorded implementation note: the reset
+transactionally disables the emitted-order `*_rascunho_guard` business triggers (FK
++ cutover fence stay ACTIVE) — the future real-reset order must ratify this. Commit
+`feat: add clean-slate reset tooling and restore drill`, published through one
+authorized `staging/dev` fast-forward push. Full record: contract §21,
+`PROJECT_STATE.md`, and `docs/ledgers/G28_LEDGER.md`.
+
 # Update 2026-07-22 - CLEAN-SLATE-TRANSACTIONAL-RESET-CONTRACT-CORRECTION-R1 (residual-boundary diagnosis accepted; reset contract corrected to one exact target; no execution)
 
 Phase: read-only continuation diagnosis

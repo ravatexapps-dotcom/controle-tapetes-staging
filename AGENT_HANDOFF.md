@@ -25,6 +25,29 @@
 
 ## Phase status
 
+- **`CLEAN-SLATE-TRANSACTIONAL-RESET-TOOLING-AND-DRILL-R2` (current — tooling +
+  read-only real archive + disposable restore/reset drill):** accepted the
+  corrected clean-slate contract and implemented its five-file tooling
+  (`scripts/reset/clean-slate-transactional-{export,verify}.mjs` +
+  `clean-slate-transactional-{reset,restore}.sql` +
+  `tests/clean-slate-transactional-reset.smoke.mjs`); generated a real
+  deterministic archive **READ-ONLY** from `ucrjtfswnfdlxwtmxnoo` (one
+  `REPEATABLE READ READ ONLY` transaction, rolled back — zero mutation) stored
+  **outside the repository** at
+  `D:/Programação/controle-tapetes-g28-artifacts/clean-slate-reset/20260722T173607Z`
+  (aggregate SHA-256 `337d23cd…`, `verify-archive` 330/330, B6
+  `document_link_revision_ops = 10` across OPs 55/57/61/63, 16/20/25 identities);
+  and passed the disposable restore/reset drill on a fresh PostgreSQL 18.4 cluster
+  (preamble + `db/01..77`, terminal `20260722055832`, restore→reset→restore→reset,
+  cluster destroyed with proof; smoke + drill 56/56). The shared-development
+  database was **not mutated** and its reset was **not executed or authorized**.
+  `ACTIVE_PHASE`/`ACTIVE_PHASE_CONTRACT` become `CLEAN-SLATE-TRANSACTIONAL-RESET` /
+  `docs/architecture/CLEAN_SLATE_TRANSACTIONAL_RESET_PHASE_CONTRACT.md`;
+  `ACCEPTED_CHECKPOINT` stays `3405fdab8e05ec0f81cbfe07c63c489e551fee92`. **Next
+  authorizable action: DIRECT SUPERVISOR REVIEW of the tooling, real archive, and
+  disposable restore-drill evidence.** The phase is not CLOSED; the
+  shared-development reset, `REAL_CUTOVER`, and `PHASE-C5B-ACCEPTANCE-DECISION`
+  remain unauthorized. Full record: contract §21 and `docs/ledgers/G28_LEDGER.md`.
 - **`CLEAN-SLATE-TRANSACTIONAL-RESET-B6-ROW-BASELINE-FORWARD-CORRECTION-R1`
   (documentation-only forward correction, this pass):** corrected the accepted
   clean-slate reset contract's B6 synthetic-fixture baseline —
