@@ -20,7 +20,7 @@ LAST_ACCEPTED_PHASE: PHASE-C4
 ACTIVE_PHASE: NONE
 ACTIVE_PHASE_CONTRACT: NONE
 ACTIVE_TRACK: PURCHASE_ORDER_PHASE_C
-NEXT_AUTHORIZABLE_ACTION: read-only diagnosis and documentation-only authoring of the PHASE-C5 material contract (OC-C5-EMISSION-001, purchase-order emission), to be proposed as PROPOSED / AWAITING SUPERVISOR REVIEW / IMPLEMENTATION NOT AUTHORIZED; C5 implementation, the REAL_CUTOVER window (OC-CUTOVER-001/OC-CUTOVER-PONR-001 — hard-gated behind the mandatory separate read-only completeness disposition of the 13 unmapped ordens_compra_fio rows ids 153–165), real close_final_acl invocation, real activation, the real read-authority switch, staging validation/application of db/76, and any productive receipt on a shared or real environment all remain unauthorized
+NEXT_AUTHORIZABLE_ACTION: supervisor review and acceptance/rejection of the proposed PHASE-C5 material contract (OC-C5-EMISSION-001, purchase-order emission, docs/architecture/ORDEM_COMPRA_C5_PHASE_CONTRACT.md, STATUS: PROPOSED / AWAITING SUPERVISOR REVIEW / IMPLEMENTATION NOT AUTHORIZED), plus scoping/authorizing the separate database-prerequisite phase that contract identifies (emitir_ordem_compra and alocar_necessidade_compra_fio are both terminally REVOKE ALL as of db/74's exact final execution ACL matrix, reaffirmed absent through db/76); C5 implementation, the REAL_CUTOVER window (OC-CUTOVER-001/OC-CUTOVER-PONR-001 — hard-gated behind the mandatory separate read-only completeness disposition of the 13 unmapped ordens_compra_fio rows ids 153–165), real close_final_acl invocation, real activation, the real read-authority switch, staging validation/application of db/76, and any productive receipt on a shared or real environment all remain unauthorized
 GOVERNING_SPEC: docs/architecture/ORDEM_COMPRA_LIFECYCLE_SPEC_PROPOSED.md
 TECHNICAL_CONTRACT: docs/architecture/PEDIDO_OP_SCHEMA_CONTRACT.md
 SEQUENCE_AUTHORITY: docs/architecture/PEDIDO_PRODUCTION_FLOW_BACKLOG.md
@@ -297,10 +297,43 @@ ACCEPTED_CHECKPOINT: 289b0cca66e9c057330a882f69da3476adf90469
   stays `DEFERRED`; `OC-C5-EMISSION-001` stays `PLANNED` pending a separate C5
   material contract. Full record: `docs/architecture/ORDEM_COMPRA_C4_PHASE_CONTRACT.md`
   §0d and `docs/ledgers/G28_LEDGER.md`.
-- **Next authorizable action:** read-only diagnosis and documentation-only
-  authoring of the `PHASE-C5` material contract (`OC-C5-EMISSION-001`,
-  purchase-order emission), to be proposed as `PROPOSED / AWAITING SUPERVISOR
-  REVIEW / IMPLEMENTATION NOT AUTHORIZED` — no implementation. `PHASE-C5`
+- **`C4-CLOSEOUT-AND-C5-CONTRACT-R1` — PHASE-C5 material contract authored
+  (this pass, read-only reconciliation + documentation-only phase-contract
+  authoring):** authored `docs/architecture/ORDEM_COMPRA_C5_PHASE_CONTRACT.md`
+  (`PHASE_ID: PHASE-C5`, `STATUS: PROPOSED / AWAITING SUPERVISOR REVIEW /
+  IMPLEMENTATION NOT AUTHORIZED`). Binds `OC-C5-EMISSION-001` to an exact
+  functional scope (wire the existing disabled `oc-emitir` button to
+  `emitir_ordem_compra` + a confirmation modal + `status_aceite` display;
+  no new UI list/history), actor/state/action matrix keyed to the real
+  `pode_emitir`/`bloqueio_emissao`/`acoes.emitir` server model, an API
+  ownership matrix (native `emitir_ordem_compra` only — the legacy flat
+  `emitir_ordem_compra_fio` is excluded from the call graph), and a closed
+  purely-additive three-file manifest (`ordem-compra-data.js`,
+  `-render.js`, `-events.js` — no new product file). **Database-prerequisite
+  classification: `BLOCKING_DATABASE_PREREQUISITE`** — `emitir_ordem_compra`
+  and `alocar_necessidade_compra_fio` are both terminally `REVOKE ALL` from
+  every role including `service_role` as of `db/74`'s own "exact final
+  execution ACL matrix" (`db/74:1171-1207`), reaffirmed absent through
+  `db/76`; no migration is bundled into this contract. A separate,
+  pre-existing normative gap was discovered (not introduced by this pass):
+  no migration ever creates an RPC to transition `status_aceite` from
+  `pendente` to `aceita`/`rejeitada`, so any order emitted while
+  `exige_aceite=TRUE` becomes permanently unreceivable — recorded as an
+  open supervisor decision (contract §5c/§18.3), not dispositioned by this
+  contract. Four supervisor decisions are recorded as still required
+  (contract §18): accept/reject the contract; scope the database-prerequisite
+  phase; decide ownership of the acceptance-decision-RPC gap; decide whether
+  emission requires `confirmDialog`-style destructive confirmation (no
+  clause in `UI_VISUAL_CONTRACT.md` currently classifies it either way).
+  Documentation-only: no product, test, script, migration, or
+  protected-residue change; no database, environment, or deployment action.
+  `OC-C5-EMISSION-001` remains `PLANNED`; `PHASE-C5` implementation remains
+  unauthorized; `ACTIVE_PHASE`/`ACTIVE_PHASE_CONTRACT` remain `NONE`.
+- **Next authorizable action:** supervisor review and acceptance/rejection
+  of the proposed `PHASE-C5` material contract
+  (`docs/architecture/ORDEM_COMPRA_C5_PHASE_CONTRACT.md`), plus the four
+  supervisor decisions recorded in its §18 and the scoping/authorization of
+  the separate database-prerequisite phase it identifies (§5). `PHASE-C5`
   implementation, `REAL_CUTOVER`, staging validation/application of `db/76`,
   activation, deployment, branch creation, production access, and any push
   remain **unauthorized**.
@@ -1075,6 +1108,12 @@ Commit SHAs there are the accepted technical commits; consult HEAD via Git.
   accepted technical checkpoint `289b0cca66e9c057330a882f69da3476adf90469`;
   **not active** — `ACTIVE_PHASE`/`ACTIVE_PHASE_CONTRACT` are `NONE`):
   `docs/architecture/ORDEM_COMPRA_C4_PHASE_CONTRACT.md`
+- C5 material phase contract (`PROPOSED / AWAITING SUPERVISOR REVIEW /
+  IMPLEMENTATION NOT AUTHORIZED`; purchase-order emission,
+  `OC-C5-EMISSION-001` `PLANNED`; database-prerequisite classification
+  `BLOCKING_DATABASE_PREREQUISITE`; authored under
+  `C4-CLOSEOUT-AND-C5-CONTRACT-R1`; **not active**):
+  `docs/architecture/ORDEM_COMPRA_C5_PHASE_CONTRACT.md`
 - Append-only ledger: `docs/ledgers/G28_LEDGER.md`
 - Derived operational handoff: `AGENT_HANDOFF.md`
 - Documentation authority arbiter: `docs/DOCUMENTATION_INDEX.md`

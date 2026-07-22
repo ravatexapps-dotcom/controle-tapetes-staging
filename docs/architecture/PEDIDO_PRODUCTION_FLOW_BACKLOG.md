@@ -8,6 +8,58 @@
 > `PROJECT_STATE.md`. Phase sequence, dependencies, backlog items, and accepted
 > architecture in this file remain authoritative; live operational status does not.
 
+# Update 2026-07-21 - C4-CLOSEOUT-AND-C5-CONTRACT-R1 Part 2 (PHASE-C5 material contract, proposed)
+
+Phase: read-only repository reconciliation + documentation-only `PHASE-C5`
+material contract authoring, continuing immediately (same execution) after
+the `PHASE-C4` closeout in Part 1 of the same order. Type: docs-only; no
+product, test, script, migration, database, environment, deployment, or
+configuration change. Historical closeout note — live state belongs to
+`PROJECT_STATE.md`.
+
+Authored `docs/architecture/ORDEM_COMPRA_C5_PHASE_CONTRACT.md`
+(`PHASE_ID: PHASE-C5`, `STATUS: PROPOSED / AWAITING SUPERVISOR REVIEW /
+IMPLEMENTATION NOT AUTHORIZED`), binding `OC-C5-EMISSION-001` to an exact
+functional scope — wire the already-existing disabled `oc-emitir` button
+(`js/screens/ordem-compra-render.js:165-177`) to native
+`emitir_ordem_compra` plus a confirmation modal plus a new `status_aceite`
+display (currently unrendered anywhere on the order-detail screen) — an
+actor/state/action matrix keyed to the real `pode_emitir`/
+`bloqueio_emissao`/`acoes.emitir` server model, an API ownership matrix
+(native `emitir_ordem_compra` only, excluding the superseded legacy flat
+`emitir_ordem_compra_fio`), and a closed **purely-additive** three-file
+manifest (`ordem-compra-data.js`/`-render.js`/`-events.js`; no new product
+file, per `docs/architecture/CODE_HEALTH_RULES.md` §7 size headroom).
+
+**Database-prerequisite classification: `BLOCKING_DATABASE_PREREQUISITE`.**
+Direct migration-chain inspection found `emitir_ordem_compra` and
+`alocar_necessidade_compra_fio` both terminally `REVOKE ALL` from every
+role including `service_role`, per `db/74_ordem_compra_hybrid_origin_forward_correction.sql`'s
+own "exact final execution ACL matrix" (§6, lines 1171-1207) — reaffirmed
+absent from `db/75`/`db/76`. No migration is proposed or bundled; the
+prerequisite is named exactly and assigned to a separate, later-authorized
+prerequisite phase (name/scope an open supervisor decision).
+
+A separate, pre-existing normative/product gap was discovered (not
+introduced by this pass, C4, or any prior pass): no migration in `db/01`
+through `db/76` ever creates an RPC that transitions `status_aceite` from
+`pendente` to `aceita`/`rejeitada` — so any order emitted while
+`exige_aceite=TRUE` becomes permanently unreceivable. This is recorded as
+an open supervisor decision (contract §5c/§18.3), not dispositioned by this
+contract, and is not part of `OC-C5-EMISSION-001`'s own scope.
+
+Four supervisor decisions are recorded as required (contract §18):
+accept/reject the contract as a whole; scope the database-prerequisite
+phase; decide ownership of the acceptance-decision-RPC gap; decide whether
+emission requires `confirmDialog`-style destructive confirmation (no clause
+in `docs/architecture/UI_VISUAL_CONTRACT.md` currently classifies emission
+either way).
+
+`OC-C5-EMISSION-001` remains `PLANNED`; `PHASE-C5` implementation remains
+unauthorized; `ACTIVE_PHASE`/`ACTIVE_PHASE_CONTRACT` remain `NONE`.
+Sequence/architecture in this file are unchanged. Full evidence: contract
+(all sections) and `docs/ledgers/G28_LEDGER.md`.
+
 # Update 2026-07-21 - C4-CLOSEOUT-AND-C5-CONTRACT-R1 (PHASE-C4 supervisor acceptance/closeout)
 
 Phase: `PHASE-C4` supervisor acceptance and documentary closeout. Type:

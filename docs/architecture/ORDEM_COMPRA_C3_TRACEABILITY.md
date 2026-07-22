@@ -13,7 +13,7 @@ ACTIVE_PHASE_CONTRACT: NONE
 CLOSED_MATERIAL_PHASES: PHASE-C3C-A, PHASE-C3C-B-DB-PREREQ, PHASE-C3C-B, PHASE-C3D, PHASE-C4
 ACCEPTED_C3D_SUBLOTS: PHASE-C3D-A (096cd60325e4987010d328c856ee6a3a51ca66bf), PHASE-C3D-B (5441321014883c4e8149dc8b20da9d053a193699), PHASE-C3D-C (6fd63a56a123d6d006353c6ae629611cbc7c01e9), PHASE-C3D-D (5a2be05c19a62346b906f7b3cbb0b89d07b3a571), PHASE-C3D-E (429aa3980c7027b9d872a1902e2f31f1a4a85a2a) — all CLOSED / TECHNICALLY ACCEPTED / LOCALLY VERIFIED (C3D-D supervisor-accepted contract §X advancing OC-C3D-ACL-001 to SATISFIED; C3D-E supervisor-accepted contract §Z advancing OC-C3D-LOCK-001 to SATISFIED). PHASE-C3D-F (aggregate closeout, contract §Z) is CLOSED / ACCEPTED / DOCUMENTATION-ONLY; the aggregate PHASE-C3D material phase is CLOSED / ACCEPTED_WITH_NONBLOCKING_DEBT / LOCALLY VERIFIED at accepted technical checkpoint 429aa3980c7027b9d872a1902e2f31f1a4a85a2a, all four OC-C3D-* SATISFIED
 ACCEPTED_C4: PHASE-C4 (289b0cca66e9c057330a882f69da3476adf90469) — CLOSED / ACCEPTED / LOCALLY VERIFIED / ARCHITECT VISUAL VALIDATION PASSED (supervisor acceptance + mandatory architect visual validation, C4-CLOSEOUT-AND-C5-CONTRACT-R1, contract §0d, 2026-07-21), advancing OC-C4-ADMIN-001 to SATISFIED
-NEXT_AUTHORIZABLE_ACTION: read-only diagnosis and documentation-only authoring of the PHASE-C5 material contract (OC-C5-EMISSION-001, purchase-order emission); PHASE-C5 implementation and the REAL_CUTOVER window (OC-CUTOVER-001/OC-CUTOVER-PONR-001, hard-gated behind the mandatory separate read-only completeness disposition of the 13 unmapped ordens_compra_fio rows ids 153–165) remain unauthorized
+NEXT_AUTHORIZABLE_ACTION: supervisor review and acceptance/rejection of the proposed PHASE-C5 material contract (OC-C5-EMISSION-001, purchase-order emission, docs/architecture/ORDEM_COMPRA_C5_PHASE_CONTRACT.md, STATUS: PROPOSED / AWAITING SUPERVISOR REVIEW / IMPLEMENTATION NOT AUTHORIZED, database-prerequisite classification BLOCKING_DATABASE_PREREQUISITE), plus its four recorded supervisor decisions and the scoping/authorization of the separate database-prerequisite phase it identifies; PHASE-C5 implementation and the REAL_CUTOVER window (OC-CUTOVER-001/OC-CUTOVER-PONR-001, hard-gated behind the mandatory separate read-only completeness disposition of the 13 unmapped ordens_compra_fio rows ids 153–165) remain unauthorized
 VALIDATION_ACCOUNTING_SUBJECT: fix: harden spec custody validation
 VALIDATION_ACCOUNTING_SUBJECT_R2: fix: reject detached spec custody rows
 VALIDATION_ACCOUNTING_SUBJECT_R3: fix: distinguish prose from detached tables
@@ -36,6 +36,7 @@ VALIDATION_ACCOUNTING_SUBJECT_R19: docs: finalize C3D contract execution boundar
 VALIDATION_ACCOUNTING_SUBJECT_R20: test: rehearse C3D purchase-order concurrency
 VALIDATION_ACCOUNTING_SUBJECT_R21: docs: close C3D purchase-order rehearsal
 VALIDATION_ACCOUNTING_SUBJECT_R22: docs: close C4 admin receipt UI
+VALIDATION_ACCOUNTING_SUBJECT_R23: docs: define C5 purchase-order emission contract
 ```
 
 ## Accepted foundation
@@ -67,7 +68,7 @@ Allowed dispositions: `SATISFIED`, `PARTIALLY_SATISFIED`, `PLANNED`, `DEFERRED`,
 | OC-CUTOVER-PONR-001 | docs/architecture/ORDEM_COMPRA_LIFECYCLE_SPEC_PROPOSED.md::§R.29.6 | REAL_CUTOVER | PARTIALLY_SATISFIED | db/75_ordem_compra_c3c_inactive_cutover.sql | tests/ordem-compra-c3c-inactive.integration.sql | LOCAL_POSTGRES_18_4_ONLY | 89123729b3529fff6e4a2336bfec2907c4b94b4c | Real pre-PONR rollback and post-PONR operation are not authorized. |
 | OC-C4-ADMIN-001 | docs/architecture/ORDEM_COMPRA_LIFECYCLE_SPEC_PROPOSED.md::§R.29.6 | C4 | SATISFIED | js/screens/ordem-compra-receipt-data.js, js/screens/ordem-compra-receipt-render.js, js/screens/ordem-compra-receipt-events.js (new); additive js/screens/ordem-compra.js + index.html (C4-ADMIN-RECEIPT-UI-IMPLEMENTATION-R1, contract §0c) | tests/ordem-compra-receipt-data.smoke.js, tests/ordem-compra-receipt-render.smoke.js, tests/ordem-compra-receipt-events.smoke.js, tests/ordem-compra-receipt-routing.smoke.js (38/38 pass, incl. VISUAL-GATE-R1 --rv-* token + sticky-total assertions); full-suite added-failing-identity differential vs bdd4c7d2bc43bd054d7cbb2b0bd70e6234160c24 (implementation) and vs 25cbdd6f6128744a8668b034c192c7d012e58171 (visual correction) both = empty; deterministic six-PNG Playwright screenshots + computed-style evidence (ledger C4-ADMIN-RECEIPT-UI-VISUAL-GATE-R1); node scripts/validate-spec-custody.mjs PASS | LOCAL_ONLY | 289b0cca66e9c057330a882f69da3476adf90469 | CLOSED / ACCEPTED / LOCALLY VERIFIED / ARCHITECT VISUAL VALIDATION PASSED (C4-ADMIN-RECEIPT-UI-IMPLEMENTATION-R1 implementation + C4-ADMIN-RECEIPT-UI-VISUAL-GATE-R1 visual-contract correction + C4-CLOSEOUT-AND-C5-CONTRACT-R1 supervisor acceptance, 2026-07-21; UI aligned to canonical --rv-* tokens — card 6px, neutral section chip, tabular right-aligned numerics, sticky total). Native RPCs only (obter_historico/registrar/estornar); no legacy compat RPC in the C4 call graph; two independent idempotency trackers. The mandatory architect visual validation (SUPERVISION_PROTOCOL §4) and supervisor acceptance are both satisfied (contract §0d); writer RPCs remain inert under legacy_active (fixture-level DOM/mocked-RPC evidence) — a residual environment-activation gap owned by OC-C5-EMISSION-001, not a C4 defect; the pre-existing pedido-modal/fornecedor legacy receipt UI is left in place (no decommission decision); the ORDEM_COMPRA_CANCEL_HANDLER_STALE_ORDER_CAPTURE debt is out of scope and untouched; new nonblocking debt SHARED_UI_MODAL_CONTROL_RADIUS_TOKEN_ALIGNMENT recorded (shared js/ui.js primitives ≈8px, outside the C4 manifest). |
 | OC-C4-SUPPLIER-001 | docs/architecture/ORDEM_COMPRA_LIFECYCLE_SPEC_PROPOSED.md::§R.29.6 | C4 | DEFERRED | — | — | NOT_IMPLEMENTED | — | Supplier UI remains explicitly deferred. |
-| OC-C5-EMISSION-001 | docs/architecture/ORDEM_COMPRA_LIFECYCLE_SPEC_PROPOSED.md::§R.24.10 | C5 | PLANNED | — | — | NOT_ACTIVATED | — | Native emission remains a separate post-C4 gate. |
+| OC-C5-EMISSION-001 | docs/architecture/ORDEM_COMPRA_LIFECYCLE_SPEC_PROPOSED.md::§R.24.10 | C5 | PLANNED | — | — | NOT_ACTIVATED | — | Native emission remains a separate post-C4 gate. docs/architecture/ORDEM_COMPRA_C5_PHASE_CONTRACT.md (PROPOSED / AWAITING SUPERVISOR REVIEW / IMPLEMENTATION NOT AUTHORIZED, authored C4-CLOSEOUT-AND-C5-CONTRACT-R1) binds this requirement to an exact functional scope, state/action matrix, and purely-additive three-file manifest; database-prerequisite classification BLOCKING_DATABASE_PREREQUISITE — emitir_ordem_compra and alocar_necessidade_compra_fio are both terminally REVOKE ALL per db/74's exact final execution ACL matrix, reaffirmed absent through db/76; a separate pre-existing gap (no RPC transitions status_aceite from pendente to aceita/rejeitada) is recorded as an open supervisor decision. Not SATISFIED — contract not yet accepted; implementation not authorized. |
 
 ## Authorization boundary
 
@@ -131,10 +132,15 @@ performed the mandatory architect visual validation
 (`STATUS: CLOSED / ACCEPTED / LOCALLY VERIFIED / ARCHITECT VISUAL VALIDATION
 PASSED`, contract §0d) — see "Material phase contract reference" below.
 `OC-C4-ADMIN-001` is now `SATISFIED`. `LAST_ACCEPTED_PHASE` is `PHASE-C4`;
-`ACTIVE_PHASE`/`ACTIVE_PHASE_CONTRACT` are `NONE`. The next authorizable
-action is **read-only diagnosis and documentation-only authoring of the
-`PHASE-C5` material contract** (`OC-C5-EMISSION-001`, purchase-order
-emission) — no implementation. `PHASE-C5` implementation, staging
+`ACTIVE_PHASE`/`ACTIVE_PHASE_CONTRACT` are `NONE`. The same pass then
+authored `docs/architecture/ORDEM_COMPRA_C5_PHASE_CONTRACT.md`
+(`PHASE_ID: PHASE-C5`, `STATUS: PROPOSED / AWAITING SUPERVISOR REVIEW /
+IMPLEMENTATION NOT AUTHORIZED`) — see "Material phase contract reference"
+below. The next authorizable
+action is **supervisor review and acceptance/rejection of the proposed
+`PHASE-C5` material contract**, plus its recorded supervisor decisions and
+the scoping/authorization of the separate database-prerequisite phase it
+identifies — no implementation. `PHASE-C5` implementation, staging
 validation/application of
 `db/76`, activation,
 deployment, real snapshot/import, fence transition, read switch, real final
@@ -173,6 +179,27 @@ CLOSED / ACCEPTED / LOCALLY VERIFIED / ARCHITECT VISUAL VALIDATION PASSED`,
 accepted technical checkpoint `289b0cca66e9c057330a882f69da3476adf90469`.
 `ACTIVE_PHASE`/`ACTIVE_PHASE_CONTRACT` are `NONE` in `PROJECT_STATE.md`.
 `OC-C4-ADMIN-001` advances `PARTIALLY_SATISFIED` → `SATISFIED` (row above).
+
+`docs/architecture/ORDEM_COMPRA_C5_PHASE_CONTRACT.md` (authored by
+`C4-CLOSEOUT-AND-C5-CONTRACT-R1`, Part 2, docs-only read-only reconciliation,
+2026-07-21) binds the `OC-C5-EMISSION-001` row above to an exact functional
+scope (wire the existing disabled `oc-emitir` button to native
+`emitir_ordem_compra` + a confirmation modal + `status_aceite` display),
+actor/state/action matrix, API ownership matrix (native `emitir_ordem_compra`
+only, excluding the superseded legacy flat `emitir_ordem_compra_fio`), a
+closed purely-additive three-file manifest
+(`ordem-compra-data.js`/`-render.js`/`-events.js`, no new product file), an
+idempotency/error contract, and a visual contract. Database-prerequisite
+classification: `BLOCKING_DATABASE_PREREQUISITE` — `emitir_ordem_compra` and
+`alocar_necessidade_compra_fio` are both terminally `REVOKE ALL` from every
+role per `db/74`'s "exact final execution ACL matrix" (`db/74:1171-1207`),
+reaffirmed absent through `db/76`; no migration is bundled into this
+contract. A separate, pre-existing gap was recorded (no RPC anywhere
+transitions `status_aceite` from `pendente` to `aceita`/`rejeitada`) as an
+open supervisor decision, not dispositioned by this contract. `STATUS:
+PROPOSED / AWAITING SUPERVISOR REVIEW / IMPLEMENTATION NOT AUTHORIZED`.
+`OC-C5-EMISSION-001` remains `PLANNED`; `PHASE-C5` implementation remains
+unauthorized; `ACTIVE_PHASE`/`ACTIVE_PHASE_CONTRACT` remain `NONE`.
 
 `docs/architecture/ORDEM_COMPRA_C3C_B_PHASE_CONTRACT.md` (authored by
 `C3C-B-MATERIAL-PHASE-CONTRACT-R1`, docs-only) binds the four `OC-C3-*` rows

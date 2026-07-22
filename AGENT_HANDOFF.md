@@ -212,9 +212,28 @@
   `SHARED_UI_MODAL_CONTROL_RADIUS_TOKEN_ALIGNMENT` (new — shared `js/ui.js`
   primitives, ≈8px, outside the C4 manifest). `LAST_ACCEPTED_PHASE` becomes
   `PHASE-C4`; `ACTIVE_PHASE`/`ACTIVE_PHASE_CONTRACT` become `NONE`.
-- **Next authorizable action:** read-only diagnosis and documentation-only
-  authoring of the `PHASE-C5` material contract (`OC-C5-EMISSION-001`,
-  purchase-order emission) — `PHASE-C5` implementation remains unauthorized.
+- **`C4-CLOSEOUT-AND-C5-CONTRACT-R1` — PHASE-C5 material contract authored
+  (this pass):** authored `docs/architecture/ORDEM_COMPRA_C5_PHASE_CONTRACT.md`
+  (`PHASE_ID: PHASE-C5`, `STATUS: PROPOSED / AWAITING SUPERVISOR REVIEW /
+  IMPLEMENTATION NOT AUTHORIZED`). Database-prerequisite classification:
+  `BLOCKING_DATABASE_PREREQUISITE` — `emitir_ordem_compra` and
+  `alocar_necessidade_compra_fio` are both terminally `REVOKE ALL` from
+  every role (`db/74`'s "exact final execution ACL matrix", reaffirmed
+  absent through `db/76`); no migration is bundled. A separate,
+  pre-existing gap was found: no RPC anywhere transitions `status_aceite`
+  from `pendente` to `aceita`/`rejeitada`, so any `exige_aceite=TRUE` order
+  becomes permanently unreceivable once emitted — recorded as an open
+  supervisor decision, not dispositioned here. Purely-additive three-file
+  manifest proposed (`ordem-compra-data.js`/`-render.js`/`-events.js`, no
+  new product file), wiring the already-existing disabled `oc-emitir`
+  button. Four supervisor decisions recorded as required (contract §18).
+  `OC-C5-EMISSION-001` remains `PLANNED`.
+- **Next authorizable action:** supervisor review and acceptance/rejection
+  of the proposed `PHASE-C5` material contract
+  (`docs/architecture/ORDEM_COMPRA_C5_PHASE_CONTRACT.md`), plus its §18
+  supervisor decisions and the scoping/authorization of the separate
+  database-prerequisite phase it identifies (§5). `PHASE-C5` implementation
+  remains unauthorized.
   `PHASE-C3D-A`/`PHASE-C3D-B` are supervisor-accepted (§R, checkpoints
   `096cd603…` / `5441321…`), `PHASE-C3D-C` (§U, `6fd63a56…`), `PHASE-C3D-D` (§X,
   `5a2be05…`), and `PHASE-C3D-E` (§Z, `429aa39…`) are all `CLOSED / TECHNICALLY
@@ -557,6 +576,11 @@ summary.
     ACCEPTED / LOCALLY VERIFIED / ARCHITECT VISUAL VALIDATION PASSED` (§0d);
     `OC-C4-ADMIN-001` `SATISFIED`; accepted checkpoint `289b0cca66e9c057330a882f69da3476adf90469`;
     not active — `ACTIVE_PHASE`/`ACTIVE_PHASE_CONTRACT` are `NONE`)
+23. `docs/architecture/ORDEM_COMPRA_C5_PHASE_CONTRACT.md` (C5 material phase
+    contract — purchase-order emission; `PROPOSED / AWAITING SUPERVISOR
+    REVIEW / IMPLEMENTATION NOT AUTHORIZED`; `OC-C5-EMISSION-001` `PLANNED`;
+    database-prerequisite classification `BLOCKING_DATABASE_PREREQUISITE`;
+    not active)
 
 > Bootstrap first through `docs/governance/AGENT_INSTRUCTIONS.md` and the
 > `SPEC_CUSTODY_BOOTSTRAP` block in `PROJECT_STATE.md`. Private conversation,

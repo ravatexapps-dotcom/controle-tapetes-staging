@@ -8027,3 +8027,115 @@ product file they depend on, was modified by this pass or the prior one):
   (`C4-CLOSEOUT-AND-C5-CONTRACT-R1` — C5 contract authoring). `PHASE-C5`
   implementation, `REAL_CUTOVER`, and any push remain unauthorized. **No push
   is authorized by this pass.**
+
+## 2026-07-21 — C4-CLOSEOUT-AND-C5-CONTRACT-R1 (Part 2) — PHASE-C5 purchase-order emission material contract, proposed
+
+- **Authorization:** `C4-CLOSEOUT-AND-C5-CONTRACT-R1`, Part 2 — read-only
+  diagnosis and documentation-only `PHASE-C5` material-contract authoring,
+  continuing immediately (no stop) after the Part 1 `PHASE-C4` closeout
+  commit. Entry checkpoint `HEAD` `e657ec7b7ca98be522084474257c45d065f3a0f0`
+  (the `PHASE-C4` closeout commit); protected residue untouched.
+  Post-closeout baseline re-verified: branch `dev`, `HEAD^`
+  `289b0cca66e9c057330a882f69da3476adf90469`, `git diff --stat HEAD^..HEAD`
+  matched exactly the six files authorized for the C4 closeout.
+- **Mandatory canonical reading performed:** `docs/governance/AGENT_INSTRUCTIONS.md`,
+  `PROJECT_STATE.md`, `AGENT_HANDOFF.md`, `CLAUDE.md`,
+  `docs/DOCUMENTATION_INDEX.md`, `docs/DOCUMENTATION_MODEL.md`,
+  `docs/governance/SUPERVISION_PROTOCOL.md`,
+  `docs/governance/CODE_HEALTH_RULES.md`,
+  `docs/architecture/ORDEM_COMPRA_LIFECYCLE_SPEC_PROPOSED.md` (full),
+  `docs/architecture/PEDIDO_OP_SCHEMA_CONTRACT.md` (full),
+  `docs/architecture/ORDEM_COMPRA_C3_TRACEABILITY.md`,
+  `docs/architecture/ORDEM_COMPRA_C4_PHASE_CONTRACT.md`,
+  `docs/architecture/PEDIDO_PRODUCTION_FLOW_BACKLOG.md`,
+  `docs/architecture/UI_VISUAL_CONTRACT.md` (full).
+- **Mandatory product inventory performed:** `js/screens/ordem-compra.js`,
+  `-data.js`, `-render.js`, `-events.js`, `-receipt-data.js`,
+  `-receipt-render.js`, `-receipt-events.js`, `-distribuicao.js`,
+  `-receipt-cutover.js`; `js/screens/op-writes.js`, `js/router.js`,
+  `js/boot.js`, `js/screens/common.js`, `index.html`; `js/screens/op-nova.js`
+  (boundary check). **Finding:** zero call sites of any emission RPC
+  anywhere in `js/`; the `oc-emitir` button
+  (`ordem-compra-render.js:165-177`) already exists, permanently disabled,
+  no click handler; the server read model already returns
+  `acoes.emitir`/`pode_emitir`/`bloqueio_emissao`
+  (`db/68_ordem_compra_native_draft_admin.sql:528-535`) but the client never
+  reads `acoes.emitir`; `status_aceite` is never rendered on the
+  order-detail screen; `js/screens/common.js` contains no shared RPC
+  idempotency/error-classification helpers (two independent, deliberately
+  non-shared implementations exist elsewhere instead); existing tests
+  (`tests/ordem-compra.smoke.js` 4-5, `tests/op-nova.smoke.js` 72/76)
+  already assert the current inert/absent state.
+- **Mandatory database inventory performed** (`db/65` through `db/76`, full
+  sequential chain, terminal state — not the first migration found):
+  two distinct emission functions exist — `emitir_ordem_compra_fio`
+  (`db/66:82-150`, legacy flat, terminally granted to `authenticated`) and
+  `emitir_ordem_compra` (`db/68:247-342`, native). **`emitir_ordem_compra`'s
+  terminal grant, per `db/74`'s own "exact final execution ACL matrix" (§6,
+  lines 1171-1207): `REVOKE ALL` from `PUBLIC`, `anon`, `authenticated`, AND
+  `service_role`, with no accompanying `GRANT` (contrast every sibling
+  entry in the same block) — reaffirmed absent from `db/75`/`db/76`.**
+  `alocar_necessidade_compra_fio` (the allocation writer §R.22.5's
+  precondition depends on) is independently, terminally ungranted in the
+  same block (`db/74:1182-1183`), superseding its earlier `db/69:629` grant.
+  Neither function is gated by the cutover singleton
+  (`legacy_active`/`canonical_active`) — the grant absence alone makes both
+  irrelevant to cutover state. No idempotency-key parameter exists on
+  either function. One `ordem_compra_eventos` audit row is written per
+  successful emission. No legacy-compat emission adapter exists anywhere.
+  **A separate, pre-existing gap was found: no migration in `db/01`-`db/76`
+  ever creates an RPC transitioning `status_aceite` from `pendente` to
+  `aceita`/`rejeitada`** (confirmed by exhaustive grep) — any order emitted
+  while `exige_aceite=TRUE` becomes permanently unreceivable per
+  §R.8/§R.25.3's `status_aceite IN ('nao_aplicavel','aceita')` receipt gate.
+- **Mandatory test inventory performed:** `tests/ordem-compra.smoke.js`,
+  `tests/ordem-compra-emitir-cancelar.smoke.js` (DB-level, legacy flat
+  function only), `tests/op-nova.smoke.js` (boundary — asserts zero inline
+  emit/cancel buttons on the OP screen).
+- **Database-prerequisite classification:** `BLOCKING_DATABASE_PREREQUISITE`.
+  No migration is proposed or bundled into the C5 UI implementation
+  manifest; the prerequisite (grant `emitir_ordem_compra` and
+  `alocar_necessidade_compra_fio`, jointly or separately) is named exactly
+  and assigned to a separate, later-authorized prerequisite phase.
+- **Contract authored:** `docs/architecture/ORDEM_COMPRA_C5_PHASE_CONTRACT.md`
+  (`PHASE_ID: PHASE-C5`, `STATUS: PROPOSED / AWAITING SUPERVISOR REVIEW /
+  IMPLEMENTATION NOT AUTHORIZED`) — full functional scope, actor/state/action
+  matrix, API ownership matrix, database-prerequisite boundary, a closed
+  purely-additive three-file manifest (no new product file — additive to
+  `ordem-compra-data.js`/`-render.js`/`-events.js` only, within
+  `docs/architecture/CODE_HEALTH_RULES.md` §7 size headroom), idempotency/error
+  contract, visual contract (flags the emission destructive-confirmation
+  classification as an open decision — `UI_VISUAL_CONTRACT.md` contains no
+  emission-specific clause), test/evidence contract, entry/exit gates, hard
+  stops, risks, and four recorded supervisor decisions (§18). The contract
+  does not self-accept.
+- **Corrected a premise in the order:** the order's framing implied a
+  supplier-UI-reuse clause attached to C5; direct re-reading of §R.24.10's
+  five-item list shows that clause is attached to item 4 (C4, for the
+  receipt RPC), not to C5's one-line emission-gate item. The authored
+  contract does not carry forward the mistaken attribution (§2 of the
+  contract).
+- **Manifest (exact):** `docs/architecture/ORDEM_COMPRA_C5_PHASE_CONTRACT.md`
+  (new), `PROJECT_STATE.md`, `AGENT_HANDOFF.md`,
+  `docs/DOCUMENTATION_INDEX.md`,
+  `docs/architecture/ORDEM_COMPRA_C3_TRACEABILITY.md`,
+  `docs/architecture/PEDIDO_PRODUCTION_FLOW_BACKLOG.md`,
+  `docs/ledgers/G28_LEDGER.md` (this entry). No product, test, script,
+  migration, or configuration file changed; no lifecycle spec or schema
+  contract modified (every citation is read-only reference to already-ratified
+  clauses).
+- **Validation:** `node scripts/validate-spec-custody.mjs` PASS;
+  `node scripts/validate-spec-custody.mjs --self-test` — exact result
+  recorded at commit time below; `git diff --check` / `git diff --cached
+  --check` clean. Protected residue untouched.
+- **State after this pass:** `LAST_ACCEPTED_PHASE = PHASE-C4` (unchanged);
+  `ACTIVE_PHASE = NONE`; `ACTIVE_PHASE_CONTRACT = NONE`. `PHASE-C5` contract
+  = `PROPOSED / AWAITING SUPERVISOR REVIEW`. `OC-C5-EMISSION-001` remains
+  `PLANNED`. `PHASE-C5` implementation remains unauthorized.
+- **Exact accounting subject:** `docs: define C5 purchase-order emission contract`
+- **NEXT_AUTHORIZABLE_ACTION:** supervisor review and acceptance/rejection of
+  the proposed `PHASE-C5` material contract, its four recorded supervisor
+  decisions (§18), and the scoping/authorization of the separate
+  database-prerequisite phase it identifies (§5). `PHASE-C5` implementation,
+  `REAL_CUTOVER`, and any push remain unauthorized. **No push is authorized
+  by this pass.**
