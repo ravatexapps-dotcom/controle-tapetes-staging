@@ -1,5 +1,12 @@
 # Purchase Order Phase-C Active Traceability
 
+> Unit 2 shadow note: deterministic facts from this canonical matrix are mirrored
+> non-canonically in
+> `docs/governance/traceability/purchase-order-phase-c.json` and rendered at
+> `docs/governance/shadow/generated/ORDEM_COMPRA_C3_TRACEABILITY.md`. This
+> authored document remains the semantic owner; the structured source and
+> generated view own no independent requirement prose or authority.
+
 > **Role:** derived active-track traceability. Normative semantics remain in
 > `ORDEM_COMPRA_LIFECYCLE_SPEC_PROPOSED.md` and
 > `PEDIDO_OP_SCHEMA_CONTRACT.md`. This matrix neither creates architecture nor

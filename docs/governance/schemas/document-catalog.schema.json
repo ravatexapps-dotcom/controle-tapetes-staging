@@ -1,0 +1,50 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ravatex.local/governance/document-catalog.schema.json",
+  "title": "Reviewed governance document catalog shadow",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "mode", "authority", "known_broken_references", "artifacts"],
+  "properties": {
+    "schema_version": { "const": "1.0.0" },
+    "mode": { "const": "NON_CANONICAL_SHADOW" },
+    "authority": { "const": "CURRENT_CANONICAL_OWNERS_UNCHANGED" },
+    "known_broken_references": { "type": "array", "minItems": 1 },
+    "artifacts": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "artifact_id", "path", "classification", "authority", "owner",
+          "bootstrap_tier", "status", "disposition", "generated_status", "role",
+          "content_hash", "line_count", "byte_count", "inbound_references",
+          "outbound_references", "survival_destination", "compatibility_pointer",
+          "review_status", "review_basis"
+        ],
+        "properties": {
+          "artifact_id": { "type": "string", "pattern": "^DOC-[A-Z0-9_-]+$" },
+          "path": { "type": "string", "pattern": "^(?:docs/.+\\.md|(?:PROJECT_STATE|AGENT_HANDOFF|AGENTS|CLAUDE)\\.md)$" },
+          "classification": { "enum": ["CANONICAL", "GOVERNANCE", "CONTRACT", "PLAN", "RUNBOOK", "STATE", "HANDOFF", "LEDGER", "EVIDENCE", "HISTORY", "INDEX", "ENTRYPOINT", "LEGACY", "DERIVED"] },
+          "authority": { "enum": ["NORMATIVE", "STATE_OWNER", "CLASSIFICATION_OWNER", "DERIVED", "EVIDENCE_ONLY", "HISTORY_ONLY", "NONE"] },
+          "owner": { "type": "string", "minLength": 1 },
+          "bootstrap_tier": { "enum": ["TIER_0_ENTRY", "TIER_1_MANDATORY", "TIER_2_ACTIVE", "TIER_3_REFERENCE", "TIER_4_HISTORY"] },
+          "status": { "enum": ["ACTIVE", "CLOSED", "HISTORICAL", "LEGACY", "GENERATED"] },
+          "disposition": { "enum": ["KEEP_NORMATIVE", "KEEP_ACTIVE_STATE", "GENERATE_DERIVED_VIEW", "MERGE_THEN_ARCHIVE", "ARCHIVE_IMMUTABLE", "DEPRECATE_WITH_POINTER", "DELETE_ONLY_IF_REGENERABLE_DERIVED_ARTIFACT", "INVESTIGATE_UNIQUE_CONTENT"] },
+          "generated_status": { "enum": ["MANUAL", "GENERATED"] },
+          "role": { "enum": ["normative", "evidence", "history", "state", "index", "entrypoint", "derived"] },
+          "content_hash": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+          "line_count": { "type": "integer", "minimum": 0 },
+          "byte_count": { "type": "integer", "minimum": 0 },
+          "inbound_references": { "type": "integer", "minimum": 0 },
+          "outbound_references": { "type": "integer", "minimum": 0 },
+          "survival_destination": { "type": "string", "minLength": 1 },
+          "compatibility_pointer": { "type": ["string", "null"] },
+          "review_status": { "const": "REVIEWED" },
+          "review_basis": { "type": "string", "minLength": 1 }
+        }
+      }
+    }
+  }
+}

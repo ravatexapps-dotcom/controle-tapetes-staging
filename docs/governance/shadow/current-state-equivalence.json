@@ -83,7 +83,7 @@
     {
       "source_id": "PROJECT_STATE.md:BOOTSTRAP_KEY:NEXT_AUTHORIZABLE_ACTION",
       "source_path": "PROJECT_STATE.md",
-      "source_sha256": "37ca6158ee61f2cddf183bc950ba5948b51b5222e03e63e53fa42c974392025d",
+      "source_sha256": "02e977b9ce6174c0ad49b52db250bceb46b48535703b50194f12d2f1e989eb2c",
       "classification": "STRUCTURED_FIELD",
       "preservation_disposition": "REPRESENTED_IN_STRUCTURED_STATE",
       "destination_path": "docs/governance/shadow/current-state.json",
@@ -91,7 +91,7 @@
       "destination_anchor": null,
       "actual_owner_path": null,
       "semantic_status": "REVIEWED",
-      "review_basis": "R2 explicit review: bootstrap value parses exactly and is bound to /next_authorizable_action/canonical_value."
+      "review_basis": "Unit 2 explicit re-review: the changed bootstrap value exactly matches /next_authorizable_action/canonical_value and records only the new supervisor-review gate."
     },
     {
       "source_id": "PROJECT_STATE.md:BOOTSTRAP_KEY:GOVERNING_SPEC",
@@ -213,7 +213,7 @@
     {
       "source_id": "PROJECT_STATE.md:TEXT_BLOCK:L2:ACTIVE_PHASE_AND_NEXT_ACTION:1:BLOCK:1",
       "source_path": "PROJECT_STATE.md",
-      "source_sha256": "c9f3f4ecc262ba10f34b8af54cfce5ea99408ca3436b00fd53806d0dca6941cb",
+      "source_sha256": "557b9cd3b5b9d11980e900075639127cc4c4600aee3b766bad43040815cd2ec0",
       "classification": "RETAINED_CURRENT_CANONICAL_CONTENT",
       "preservation_disposition": "RETAINED_IN_CURRENT_CANONICAL_SOURCE_PENDING_LATER_UNIT",
       "destination_path": "PROJECT_STATE.md",
@@ -221,7 +221,7 @@
       "destination_anchor": "## Active phase and next action",
       "actual_owner_path": "PROJECT_STATE.md",
       "semantic_status": "REVIEWED",
-      "review_basis": "R2 explicit review: PROJECT_STATE.md remains the accepted canonical owner in shadow mode; this unit is retained pending a later authorized unit."
+      "review_basis": "Unit 2 explicit re-review: PROJECT_STATE.md records the external Unit 1 ruling and Unit 2 shadow-review gate while remaining the sole current-state owner."
     },
     {
       "source_id": "PROJECT_STATE.md:MARKDOWN_HEADING:L2:WORKSPACE_AND_GIT_BOUNDARIES:1",
@@ -551,7 +551,7 @@
     {
       "source_id": "AGENT_HANDOFF.md:TEXT_BLOCK:L2:PHASE_STATUS:1:BLOCK:1",
       "source_path": "AGENT_HANDOFF.md",
-      "source_sha256": "5b3e16d3a8b6eda6711b0b4640dd118dbf386e4ae2447b28e4d2fa69ea7e7cb2",
+      "source_sha256": "4e7f3a8e86f9407107cd8a2ad7dd36128c5dfc2cc25eb22f348affb6d88d38cb",
       "classification": "DUPLICATED_CURRENT_STATE",
       "preservation_disposition": "DUPLICATED_FROM_VERIFIED_OWNER",
       "destination_path": "PROJECT_STATE.md",
@@ -559,7 +559,7 @@
       "destination_anchor": "## Active phase and next action",
       "actual_owner_path": "PROJECT_STATE.md",
       "semantic_status": "REVIEWED",
-      "review_basis": "R2 explicit review: derived handoff unit is duplicated from the verified owner PROJECT_STATE.md at ## Active phase and next action."
+      "review_basis": "Unit 2 explicit re-review: the derived handoff matches the changed Unit 1 acceptance and Unit 2 supervisor-review gate owned by PROJECT_STATE.md."
     },
     {
       "source_id": "AGENT_HANDOFF.md:MARKDOWN_HEADING:L2:GOVERNING_SPECIFICATIONS_AND_CONTRACTS:1",

@@ -59,7 +59,7 @@ this section, not repeat the list.
 | `docs/governance/DOCUMENTATION_MODEL.md` | Defines the governance model and the rules for per-phase documentary updates. Content in English since `DOC-LANGUAGE-MIGRATION-L1`; pt-BR original archived at `docs/archive/pt-BR/` (see §7). |
 | `docs/governance/SUPERVISION_PROTOCOL.md` | Defines the roles of the supervision process (Architect/Reviewer/Resident Executor), onboarding of a new reviewer, order format, and gates (visual validation, approved mockup, migration as its own gate, Auth risk kept separate). Does not define state or documentary organization rules — that is `DOCUMENTATION_MODEL.md`. Content in English since `DOC-LANGUAGE-MIGRATION-L1`; pt-BR original archived at `docs/archive/pt-BR/` (see §7). |
 | `docs/governance/AGENT_INSTRUCTIONS.md` | Single tracked repository-agent behavior source for Claude Code, Codex, and equivalent repository-capable agents. It defines bootstrap, evidence, safety, and proportional-update behavior but owns no current state or product semantics. |
-| `docs/governance/GOVERNANCE_EFFICIENCY_REFOUNDATION_PHASE_CONTRACT.md` | Active material phase contract for governance-efficiency shadow implementation; Unit 1 semantic hardening is implemented and awaits direct supervisor review; structured sources remain non-canonical, current canonical owners are unchanged, documentary-authority cutover is not authorized, and Unit 2 is not authorized. |
+| `docs/governance/GOVERNANCE_EFFICIENCY_REFOUNDATION_PHASE_CONTRACT.md` | Active material phase contract for governance-efficiency shadow implementation; Unit 1 is closed, accepted, and directly verified at `39abf42a7341b61fd4ac02a8e38d1e4f33471f0f`; Unit 2 is implemented and shadow-validated awaiting direct supervisor review; structured sources remain non-canonical, current canonical owners are unchanged, and documentary-authority cutover is not authorized. |
 | `docs/governance/schemas/current-state.schema.json` | Structured shadow-state schema; validation shape only, not an authority source. |
 | `docs/governance/shadow/current-state.json` | Structured current-state shadow source; explicitly non-canonical until supervisor cutover. |
 | `docs/governance/shadow/current-state-equivalence.json` | Read-only equivalence and ownership mapping for current-state and handoff facts. |
@@ -70,6 +70,18 @@ this section, not repeat the list.
 | `tests/governance-current-state-shadow.test.mjs` | Dependency-free validator/renderer self-tests. |
 | `docs/governance/shadow/generated/PROJECT_STATE.md` | Generated non-canonical compatibility view; never edit directly. |
 | `docs/governance/shadow/generated/AGENT_HANDOFF.md` | Generated non-canonical compatibility handoff view; never edit directly. |
+| `docs/governance/catalog/document-source-manifest.json` | Deterministic non-canonical inventory of governed Markdown, hashes, sizes, references, and headings. |
+| `docs/governance/catalog/documents.json` | Explicitly reviewed non-canonical document catalog and reference-debt dispositions. |
+| `docs/governance/traceability/purchase-order-phase-c.json` | Non-canonical deterministic Phase-C requirement traceability facts; canonical Markdown retains semantics. |
+| `docs/governance/schemas/document-catalog.schema.json` | Unit 2 catalog validation shape; owns no documentary facts. |
+| `docs/governance/schemas/purchase-order-phase-c-traceability.schema.json` | Unit 2 traceability validation shape; owns no normative requirement prose. |
+| `scripts/governance/build-document-source-manifest.mjs` | Deterministic Unit 2 Markdown inventory builder. |
+| `scripts/governance/render-documentation-shadow.mjs` | Deterministic renderer for Unit 2 non-canonical views. |
+| `scripts/governance/validate-documentation-shadow.mjs` | Parallel Unit 2 validator, including immutable `--commit` mode. |
+| `scripts/governance/git-content-reader.mjs` | Shared read-only worktree/immutable-Git content reader for Unit 2. |
+| `tests/governance-documentation-shadow.test.mjs` | Unit 2 positive, negative, deterministic, and immutable-read tests. |
+| `docs/governance/shadow/generated/DOCUMENTATION_INDEX.md` | Generated non-canonical catalog view; never edit directly. |
+| `docs/governance/shadow/generated/ORDEM_COMPRA_C3_TRACEABILITY.md` | Generated non-canonical Phase-C traceability view; never edit directly. |
 | `PROJECT_STATE.md` (root) | **Current-state authority** — sole owner of the current operational state per front. Compacted to a current-state hub by `GOVERNANCE-STATE-HANDOFF-COMPACTION-R1` (2026-07-20); historical narratives live in the ledger and closeout archives. Content in English since `DOC-LANGUAGE-MIGRATION-L2`; pt-BR original archived at `docs/archive/pt-BR/PROJECT_STATE.md` (see §7). |
 | `AGENT_HANDOFF.md` (root) | **Derived current operational handoff** — sole active handoff, derived from `PROJECT_STATE.md`; never a second state owner. Reduced to a concise derived handoff by `GOVERNANCE-STATE-HANDOFF-COMPACTION-R1` (2026-07-20); the prior stack is preserved in `docs/closeouts/AGENT_HANDOFF_ARCHIVE_2026-07.md`. Content in English since `DOC-LANGUAGE-MIGRATION-L2`; pt-BR original archived at `docs/archive/pt-BR/AGENT_HANDOFF.md` (see §7). |
 | `docs/ledgers/G28_LEDGER.md` | Structured append-only history of the G28 front. |

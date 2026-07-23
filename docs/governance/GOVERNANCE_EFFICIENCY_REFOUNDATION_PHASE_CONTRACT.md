@@ -6,28 +6,28 @@ PHASE_ID: GOVERNANCE-EFFICIENCY-REFOUNDATION
 
 STATUS: ACTIVE / SHADOW IMPLEMENTATION IN PROGRESS
 
-UNIT 1 STATUS: IMPLEMENTED / SEMANTIC HARDENING COMPLETE / AWAITING DIRECT SUPERVISOR REVIEW
+UNIT 1 STATUS: CLOSED / ACCEPTED / DIRECTLY VERIFIED
 
 GOVERNANCE-EFFICIENCY-REFOUNDATION: ACTIVE
 
-UNIT 1: IMPLEMENTED / SEMANTIC HARDENING COMPLETE / AWAITING DIRECT SUPERVISOR REVIEW
+UNIT 1: CLOSED / ACCEPTED / DIRECTLY VERIFIED
+
+UNIT 1 ACCEPTED CHECKPOINT: 39abf42a7341b61fd4ac02a8e38d1e4f33471f0f
 
 STRUCTURED SOURCES: NON-CANONICAL SHADOW MODE
 
 CURRENT CANONICAL OWNERS: UNCHANGED
 
-UNIT 2: NOT AUTHORIZED
+UNIT 2: IMPLEMENTED / SHADOW VALIDATED / AWAITING DIRECT SUPERVISOR REVIEW
 
 DOCUMENTARY-AUTHORITY CUTOVER: NOT AUTHORIZED
 
-The direct review of `a3978244f73227bfde39961f6b3248e75eea039c` accepted the
-phase opening, structured shadow direction, deterministic generated-view
-architecture, checkpoints, environment boundaries, and publication. It did not
-accept the equivalence and unique-content completeness proof. The R2 correction
-implements a contiguous normalized-byte partition, explicit hash-bound reviewed
-dispositions, exact structured-field comparison, and validated external-owner,
-anchor, retained-owner, and ledger/archive pointers. Unit 1 is not accepted and
-Unit 2 remains unauthorized.
+The external supervisor ruling directly verified and accepted checkpoint
+`39abf42a7341b61fd4ac02a8e38d1e4f33471f0f`; Unit 1 is closed and accepted.
+This records external acceptance, not executor self-acceptance. Unit 2 adds the
+reviewed document catalog, Phase-C traceability shadow, deterministic generated
+views, reference validation, and immutable-commit validation. Structured sources
+remain non-canonical and current canonical owners remain unchanged.
 
 ## Objective
 
@@ -43,6 +43,24 @@ supervisor acceptance.
 3. Ledger partitioning plus a compatibility view.
 4. Bootstrap and documentary-authority cutover.
 5. Legacy deprecation, archival, and post-cutover audit.
+
+## Unit 2 shadow implementation result
+
+- Document scope: all Git-indexed or worktree-candidate Markdown under `docs/`
+  plus `PROJECT_STATE.md`, `AGENT_HANDOFF.md`, `AGENTS.md`, and `CLAUDE.md`.
+- Structured catalog and source manifest:
+  `docs/governance/catalog/documents.json` and
+  `docs/governance/catalog/document-source-manifest.json`.
+- Structured Phase-C traceability:
+  `docs/governance/traceability/purchase-order-phase-c.json`.
+- Generated views:
+  `docs/governance/shadow/generated/DOCUMENTATION_INDEX.md` and
+  `docs/governance/shadow/generated/ORDEM_COMPRA_C3_TRACEABILITY.md`.
+- Validator: `scripts/governance/validate-documentation-shadow.mjs`, including
+  immutable `--commit <sha>` reads without checkout or Git mutation.
+- Unit 2 is not accepted by this implementation. Unit 3, documentary-authority
+  cutover, cleanup, compaction, partitioning, archival, deprecation, and deletion
+  remain not authorized.
 
 ## Binding rules
 

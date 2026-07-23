@@ -9519,3 +9519,36 @@ product file they depend on, was modified by this pass or the prior one):
 - **Mechanical proof.** Structured bootstrap mappings require exact JSON pointers and value equality; canonical-owner, retained-owner, ledger/archive, destination, and anchor claims are validated against existing files; generated views cannot own facts; `AGENT_HANDOFF.md` cannot self-own normative content. Retained `PROJECT_STATE.md` content is reported separately from structured parity.
 - **Resulting gate.** Unit 1 is `IMPLEMENTED / SEMANTIC HARDENING COMPLETE / AWAITING DIRECT SUPERVISOR REVIEW`; structured sources remain `NON-CANONICAL SHADOW MODE`, current canonical owners are unchanged, Unit 2 and documentary-authority cutover remain not authorized. Exact accounting subject: `fix: prove governance shadow semantic equivalence`.
 - **Exact accounting subject:** `fix: harden governance shadow equivalence`.
+
+## 2026-07-23 — GOVERNANCE-EFFICIENCY-REFOUNDATION-CATALOG-TRACEABILITY-VALIDATOR-SHADOW-R1 — Unit 1 acceptance and Unit 2 shadow implementation
+
+- **External supervisor ruling recorded.** Checkpoint
+  `39abf42a7341b61fd4ac02a8e38d1e4f33471f0f` is
+  `ACCEPTED / DIRECTLY VERIFIED`; Unit 1 is `CLOSED / ACCEPTED`. This is an
+  external ruling, not executor self-acceptance.
+- **Unit 2 result.** A deterministic governed-Markdown source manifest,
+  explicitly reviewed document catalog, structured Phase-C traceability source,
+  two non-canonical generated views, deterministic reference/anchor validation,
+  and immutable `--commit <sha>` validation are implemented in parallel with all
+  accepted Unit 1 and spec-custody validators.
+- **Authority boundary.** Unit 2 is `IMPLEMENTED / SHADOW VALIDATED / AWAITING
+  DIRECT SUPERVISOR REVIEW`. Structured sources remain `NON-CANONICAL SHADOW
+  MODE`; current canonical owners are unchanged. Unit 3, documentary-authority
+  cutover, cleanup, compaction, partitioning, archival, deprecation, deletion,
+  product changes, database access, migrations, deployment, production,
+  `REAL_CUTOVER`, and `PHASE-C5B` are not authorized and did not occur.
+- **Known reference debt.** `DOC-REF-DEBT-001` preserves
+  `docs/HANDOFF.md:146` → `docs/RETOMAR.md` as `DEFERRED`, owned by
+  `docs/DOCUMENTATION_INDEX.md`, because the legacy target is absent; future
+  resolution unit `GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-3`. Five additional
+  diagnosed missing active-document targets are explicitly deferred in the
+  structured catalog; no unresolved reference is silently waived.
+- **Validation.** Governed artifacts/catalog `116/116`, unreviewed `0`;
+  supported applicable references valid/deferred/unresolved `1249/6/0`; exact
+  Phase-C requirements `13` with missing/extra/duplicate `0/0/0`; Unit 2
+  positive/negative/determinism/immutable suite `35/35`; Unit 1 suite `37/37`;
+  Unit 1 validator, spec-custody validator, spec-custody self-tests `54/54`,
+  syntax checks, deterministic renders, and `git diff --check` all pass.
+- **Next action.** `DIRECT SUPERVISOR REVIEW OF
+  GOVERNANCE-EFFICIENCY-REFOUNDATION-CATALOG-TRACEABILITY-VALIDATOR-SHADOW-R1`.
+  Exact accounting subject: `feat: add governance catalog and traceability shadow`.
