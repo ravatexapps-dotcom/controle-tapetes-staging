@@ -50,7 +50,10 @@
         "governance_unit_3": { "const": "53899e30b72cde3d1f5759ea59fb0a4d632c974d" },
         "unit_4_contract": { "const": "76f52c842678b74e655ef9080f4fc67ccbd38e22" },
         "unit_4a_readiness": { "const": "fa986cf935abbf053172cfd549b0171bb9446f58" },
-        "unit_4b_readiness": { "const": "fa986cf935abbf053172cfd549b0171bb9446f58" }
+        "unit_4b_readiness": { "const": "fa986cf935abbf053172cfd549b0171bb9446f58" },
+        "unit_4c_activation": { "const": "51a61ddfdbf058887ead64f9b018c30ebc371b48" },
+        "unit_4c_canonical_correction": { "const": "7abaff26559c71b62337356eccd0baaf36b5f214" },
+        "unit_4d_acceptance": { "const": "7abaff26559c71b62337356eccd0baaf36b5f214" }
       }
     },
     "phase_status": { "type": "object", "minProperties": 7 },
@@ -61,7 +64,7 @@
       "properties": {
         "id": { "const": "GOVERNANCE-EFFICIENCY-REFOUNDATION" },
         "contract": { "const": "docs/governance/GOVERNANCE_EFFICIENCY_REFOUNDATION_PHASE_CONTRACT.md" },
-        "status": { "enum": ["IMPLEMENTED / CUTOVER READINESS EVIDENCE COMPLETE / AWAITING DIRECT SUPERVISOR REVIEW", "UNIT 4C DOCUMENTARY AUTHORITY ACTIVATED / AWAITING DIRECT SUPERVISOR REVIEW", "UNIT 4C FORWARD CORRECTION APPLIED / AWAITING DIRECT SUPERVISOR REVIEW"] }
+        "status": { "enum": ["IMPLEMENTED / CUTOVER READINESS EVIDENCE COMPLETE / AWAITING DIRECT SUPERVISOR REVIEW", "UNIT 4C DOCUMENTARY AUTHORITY ACTIVATED / AWAITING DIRECT SUPERVISOR REVIEW", "UNIT 4C FORWARD CORRECTION APPLIED / AWAITING DIRECT SUPERVISOR REVIEW", "UNIT 4 CLOSED / UNIT 5 DIAGNOSIS NEXT AUTHORIZABLE"] }
       }
     },
     "next_authorizable_action": {
@@ -69,11 +72,11 @@
       "additionalProperties": false,
       "required": ["order_id", "canonical_value", "mode", "risk_class", "status"],
       "properties": {
-        "order_id": { "enum": ["GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-4A-CUTOVER-READINESS-IMPLEMENTATION-R1", "GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-4C-DOCUMENTARY-AUTHORITY-CUTOVER-R1", "GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-4C-CANONICAL-CONSISTENCY-FORWARD-CORRECTION-R1"] },
-        "canonical_value": { "enum": ["DIRECT SUPERVISOR REVIEW OF GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-4A-CUTOVER-READINESS-IMPLEMENTATION-R1", "DIRECT SUPERVISOR REVIEW OF GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-4C-DOCUMENTARY-AUTHORITY-CUTOVER-R1", "DIRECT SUPERVISOR REVIEW OF GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-4C-CANONICAL-CONSISTENCY-FORWARD-CORRECTION-R1"] },
-        "mode": { "enum": ["UNIT 4B READINESS DIRECT REVIEW", "UNIT 4D POST-CUTOVER DIRECT REVIEW", "UNIT 4D POST-CORRECTION DIRECT REVIEW"] },
-        "risk_class": { "const": "R2" },
-        "status": { "const": "DIRECT SUPERVISOR REVIEW REQUIRED" }
+        "order_id": { "enum": ["GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-4A-CUTOVER-READINESS-IMPLEMENTATION-R1", "GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-4C-DOCUMENTARY-AUTHORITY-CUTOVER-R1", "GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-4C-CANONICAL-CONSISTENCY-FORWARD-CORRECTION-R1", "GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-5-LEGACY-DEPRECATION-AND-POST-CUTOVER-AUDIT-DIAGNOSIS-R1"] },
+        "canonical_value": { "enum": ["DIRECT SUPERVISOR REVIEW OF GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-4A-CUTOVER-READINESS-IMPLEMENTATION-R1", "DIRECT SUPERVISOR REVIEW OF GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-4C-DOCUMENTARY-AUTHORITY-CUTOVER-R1", "DIRECT SUPERVISOR REVIEW OF GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-4C-CANONICAL-CONSISTENCY-FORWARD-CORRECTION-R1", "GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-5-LEGACY-DEPRECATION-AND-POST-CUTOVER-AUDIT-DIAGNOSIS-R1"] },
+        "mode": { "enum": ["UNIT 4B READINESS DIRECT REVIEW", "UNIT 4D POST-CUTOVER DIRECT REVIEW", "UNIT 4D POST-CORRECTION DIRECT REVIEW", "READ_ONLY_DIAGNOSIS"] },
+        "risk_class": { "enum": ["R1", "R2"] },
+        "status": { "enum": ["DIRECT SUPERVISOR REVIEW REQUIRED", "AUTHORIZABLE / NOT AUTHORIZED BY THIS CLOSEOUT"] }
       }
     },
     "active_track": { "const": "PURCHASE_ORDER_PHASE_C" },
@@ -179,6 +182,71 @@
           "authority": { "const": "non_canonical_until_supervisor_activation" },
           "authority_epoch": { "const": 0 },
           "activation": { "properties": { "status": { "const": "inactive" }, "authority_epoch": { "const": 0 } } }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "accepted_checkpoints": {
+            "required": ["unit_4d_acceptance"]
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "accepted_checkpoints": {
+            "required": [
+              "unit_4c_activation",
+              "unit_4c_canonical_correction",
+              "unit_4d_acceptance"
+            ]
+          },
+          "authority_epoch": { "const": 1 },
+          "phase_status": {
+            "type": "object",
+            "required": [
+              "unit_4_contract",
+              "unit4a",
+              "unit4b",
+              "unit4c",
+              "unit4d",
+              "documentary_authority_cutover",
+              "unit5"
+            ],
+            "properties": {
+              "unit_4_contract": { "const": "CLOSED / ACCEPTED / DIRECTLY VERIFIED" },
+              "unit4a": { "const": "CLOSED / ACCEPTED / DIRECTLY VERIFIED" },
+              "unit4b": { "const": "DIRECT REVIEW COMPLETED / ACCEPTED" },
+              "unit4c": { "const": "CLOSED / ACCEPTED / DIRECTLY VERIFIED" },
+              "unit4d": { "const": "CLOSED / ACCEPTED / DIRECTLY VERIFIED" },
+              "documentary_authority_cutover": { "const": "CLOSED / ACCEPTED / DIRECTLY VERIFIED" },
+              "unit5": { "const": "NOT AUTHORIZED / DIAGNOSIS NEXT AUTHORIZABLE" }
+            }
+          },
+          "activation": {
+            "properties": {
+              "status": { "const": "active" },
+              "authority_epoch": { "const": 1 },
+              "required_parent": { "const": "fa986cf935abbf053172cfd549b0171bb9446f58" },
+              "accepted_unit4b_readiness_checkpoint": { "const": "fa986cf935abbf053172cfd549b0171bb9446f58" }
+            }
+          },
+          "rollback_readiness": {
+            "properties": {
+              "status": { "const": "PREPARED / NOT AUTHORIZED / NOT ACTIVATED" },
+              "forward_only": { "const": true }
+            }
+          },
+          "next_authorizable_action": {
+            "properties": {
+              "order_id": { "const": "GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-5-LEGACY-DEPRECATION-AND-POST-CUTOVER-AUDIT-DIAGNOSIS-R1" },
+              "canonical_value": { "const": "GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-5-LEGACY-DEPRECATION-AND-POST-CUTOVER-AUDIT-DIAGNOSIS-R1" },
+              "mode": { "const": "READ_ONLY_DIAGNOSIS" },
+              "risk_class": { "const": "R1" },
+              "status": { "const": "AUTHORIZABLE / NOT AUTHORIZED BY THIS CLOSEOUT" }
+            }
+          }
         }
       }
     }

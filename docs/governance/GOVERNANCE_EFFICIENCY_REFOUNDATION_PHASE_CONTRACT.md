@@ -4,7 +4,7 @@
 PHASE_ID: GOVERNANCE-EFFICIENCY-REFOUNDATION
 <!-- MATERIAL_PHASE_CONTRACT:END -->
 
-STATUS: ACTIVE / UNIT 4C FORWARD CORRECTION APPLIED / AWAITING DIRECT SUPERVISOR REVIEW
+STATUS: ACTIVE / UNIT 4 CLOSED / UNIT 5 DIAGNOSIS NEXT AUTHORIZABLE
 
 UNIT 1 STATUS: CLOSED / ACCEPTED / DIRECTLY VERIFIED
 
@@ -42,14 +42,14 @@ UNIT 4 CONTRACT CORRECTION: COMMIT SELF-REFERENCE REMOVED / CANDIDATE ROOT-PATH 
 
 UNIT 4A IMPLEMENTATION: CLOSED / ACCEPTED / DIRECTLY VERIFIED AT fa986cf935abbf053172cfd549b0171bb9446f58
 UNIT 4B REVIEW: DIRECT REVIEW COMPLETED / ACCEPTED AT fa986cf935abbf053172cfd549b0171bb9446f58
-UNIT 4C: ACTIVATED / FORWARD CORRECTION APPLIED / AWAITING DIRECT SUPERVISOR REVIEW
+UNIT 4C: CLOSED / ACCEPTED / DIRECTLY VERIFIED
 UNIT 4C REQUIRED PARENT: fa986cf935abbf053172cfd549b0171bb9446f58
 UNIT 4C CUTOVER ID: GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-4C-AUTHORITY-CUTOVER-R1
 AUTHORITY EPOCH: 1
-UNIT 4D ACCEPTANCE: DIRECT SUPERVISOR REVIEW REQUIRED / NOT SELF-ACCEPTED
-UNIT 5: NOT AUTHORIZED
+UNIT 4D ACCEPTANCE: CLOSED / ACCEPTED / DIRECTLY VERIFIED
+UNIT 5: NOT AUTHORIZED / DIAGNOSIS NEXT AUTHORIZABLE
 
-DOCUMENTARY-AUTHORITY CUTOVER: ACTIVE / AWAITING UNIT 4D REVIEW
+DOCUMENTARY-AUTHORITY CUTOVER: CLOSED / ACCEPTED / DIRECTLY VERIFIED
 
 The external supervisor ruling directly verified and accepted checkpoint
 `39abf42a7341b61fd4ac02a8e38d1e4f33471f0f`; Unit 1 is closed and accepted.
@@ -69,9 +69,9 @@ parent and deterministic activation manifest, Unit 4A candidate renders are
 confined to non-canonical candidate paths, and root replacement is Unit 4C-only.
 The external supervisor accepted Unit 4A and Unit 4B readiness at
 `fa986cf935abbf053172cfd549b0171bb9446f58` and authorized Unit 4C. Structured
-authority is activated at epoch `1`; Unit 4D remains direct-review only and is
-not self-accepted. Unit 5, cleanup, archival, deprecation, and deletion remain
-unauthorized.
+authority remains active at epoch `1`. Direct post-cutover review accepted Unit
+4C, Unit 4D, and the documentary-authority cutover. Unit 5 diagnosis is next
+authorizable but remains unauthorized by this closeout.
 
 ## Objective
 
@@ -178,7 +178,16 @@ ledger retain their established authority.
 - No cleanup, compaction, partitioning, archival, deletion, or deprecation occurs
   before unique-content and reference-survival proof.
 - Every authority cutover requires a separate direct supervisor acceptance.
-- This contract records the active authority-epoch-`1` model and the Unit 4C
-  forward correction. It does not self-accept Unit 4D or authorize Unit 5,
+- This contract records the active authority-epoch-`1` model and the accepted Unit 4
+  closeout. It does not authorize Unit 5,
   product changes, database access, deployment, production access, or real
   cutover.
+
+## Unit 4 post-cutover acceptance closeout
+
+External direct review accepted activation checkpoint `51a61ddfdbf058887ead64f9b018c30ebc371b48` and corrected
+canonical checkpoint `7abaff26559c71b62337356eccd0baaf36b5f214`. Unit 4A, Unit 4B, Unit 4C, Unit 4D,
+and the documentary-authority cutover are accepted. Authority epoch `1`, the
+cutover ID `GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-4C-AUTHORITY-CUTOVER-R1`, and the original PONR remain unchanged. No second
+activation or rollback occurred. Recovery remains forward-only. Unit 5 requires
+its own order; only read-only diagnosis `GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-5-LEGACY-DEPRECATION-AND-POST-CUTOVER-AUDIT-DIAGNOSIS-R1` is next authorizable.

@@ -48,7 +48,7 @@ const POSITIVE = [
   'no full-ledger read',
   'no-private-memory bootstrap',
   'generated roots match corrected sources',
-  'Unit 4D remains unaccepted',
+  'Unit 4D acceptance is externally recorded',
   'Unit 5 remains unauthorized',
   'immutable original activation validation',
   'immutable corrected-checkpoint validation',

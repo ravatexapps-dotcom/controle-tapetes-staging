@@ -14,7 +14,9 @@
     "governing_artifact_hashes", "canonical_ledger_identity",
     "bounded_ledger_reference_identities", "rollback_readiness_sha256",
     "changed_paths", "ponr_command", "actual_activation_commit_identity",
-    "unit4d_review", "prohibited_actions"
+    "unit4d_review", "prohibited_actions", "unit4c_activation_checkpoint",
+    "accepted_corrected_checkpoint", "unit4d_acceptance_checkpoint",
+    "original_activation_manifest_sha256", "rollback_executed"
   ],
   "properties": {
     "schema_version": { "const": "1.0.0" },
@@ -28,9 +30,14 @@
     "cutover_id": { "const": "GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-4C-AUTHORITY-CUTOVER-R1" },
     "authority_epoch": { "const": 1 },
     "activation_status": { "const": "active" },
-    "review_status": { "const": "CHANGES_REQUIRED / FORWARD CORRECTION APPLIED / AWAITING DIRECT SUPERVISOR REVIEW" },
+    "review_status": { "const": "CLOSED / ACCEPTED / DIRECTLY VERIFIED" },
     "second_activation": { "const": false },
     "original_ponr_unchanged": { "const": true },
+    "rollback_executed": { "const": false },
+    "unit4c_activation_checkpoint": { "const": "51a61ddfdbf058887ead64f9b018c30ebc371b48" },
+    "accepted_corrected_checkpoint": { "const": "7abaff26559c71b62337356eccd0baaf36b5f214" },
+    "unit4d_acceptance_checkpoint": { "const": "7abaff26559c71b62337356eccd0baaf36b5f214" },
+    "original_activation_manifest_sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
     "state_payload_sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
     "activation_manifest_sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
     "current_state_file_sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
@@ -44,8 +51,8 @@
     "rollback_readiness_sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
     "changed_paths": { "type": "array", "minItems": 1 },
     "ponr_command": { "const": "git push staging dev" },
-    "actual_activation_commit_identity": { "const": "EXTERNAL_GIT_FACT" },
-    "unit4d_review": { "const": "DIRECT_SUPERVISOR_REVIEW_REQUIRED / NOT_SELF_ACCEPTED" },
+    "actual_activation_commit_identity": { "const": "EXTERNAL_GIT_FACT_RECORDED_AFTER_UNIT4D_ACCEPTANCE" },
+    "unit4d_review": { "const": "CLOSED / ACCEPTED / DIRECTLY VERIFIED" },
     "prohibited_actions": { "type": "array", "minItems": 1 }
   }
 }

@@ -7,7 +7,7 @@ RENDERER: scripts/governance/render-unit4-canonical-views.mjs
 SCHEMA_VERSION: 2.0.0
 AUTHORITY_EPOCH: 1
 CUTOVER_ID: GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-4C-AUTHORITY-CUTOVER-R1
-SOURCE_PAYLOAD_SHA256: faf572343b5fd1c0a7aadff97b5f5f160a153bdc729c00a155e8418d745a2a78
+SOURCE_PAYLOAD_SHA256: 9d280ad6d7fa20ca36b391b19d288dccac02bf88de3a668079f5f3047d30d019
 
 <!-- GOVERNANCE_GENERATED_VIEW:END -->
 
@@ -18,7 +18,7 @@ This compatibility view owns no facts. `docs/governance/current-state.json` is c
 - Status: `active`
 - Authority epoch: `1`
 - Cutover ID: `GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-4C-AUTHORITY-CUTOVER-R1`
-- Active phase: `UNIT 4C FORWARD CORRECTION APPLIED / AWAITING DIRECT SUPERVISOR REVIEW`
+- Active phase: `UNIT 4 CLOSED / UNIT 5 DIAGNOSIS NEXT AUTHORIZABLE`
 
 ## Accepted checkpoints
 
@@ -31,12 +31,15 @@ This compatibility view owns no facts. `docs/governance/current-state.json` is c
 - unit_4_contract: `76f52c842678b74e655ef9080f4fc67ccbd38e22`
 - unit_4a_readiness: `fa986cf935abbf053172cfd549b0171bb9446f58`
 - unit_4b_readiness: `fa986cf935abbf053172cfd549b0171bb9446f58`
+- unit_4c_activation: `51a61ddfdbf058887ead64f9b018c30ebc371b48`
+- unit_4c_canonical_correction: `7abaff26559c71b62337356eccd0baaf36b5f214`
+- unit_4d_acceptance: `7abaff26559c71b62337356eccd0baaf36b5f214`
 
 ## Next authorized action
 
-- `DIRECT SUPERVISOR REVIEW OF GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-4C-CANONICAL-CONSISTENCY-FORWARD-CORRECTION-R1`
-- Mode: `UNIT 4D POST-CORRECTION DIRECT REVIEW`
-- Status: `DIRECT SUPERVISOR REVIEW REQUIRED`
+- `GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-5-LEGACY-DEPRECATION-AND-POST-CUTOVER-AUDIT-DIAGNOSIS-R1`
+- Mode: `READ_ONLY_DIAGNOSIS`
+- Status: `AUTHORIZABLE / NOT AUTHORIZED BY THIS CLOSEOUT`
 
 ## Governing pointers
 
@@ -71,9 +74,9 @@ This compatibility view owns no facts. `docs/governance/current-state.json` is c
 - `NO REAL_CUTOVER OR PHASE-C5B AUTHORIZATION`
 - `NO PUSH OTHER THAN THE SINGLE EXPLICIT FAST-FORWARD STAGING PUSH`
 - `UNIT_5`
-- `UNIT_4D_ACCEPTANCE`
 - `SILENT_FALLBACK`
 - `MANUAL_GENERATED_ROOT_EDIT`
+- `UNIT_5_IMPLEMENTATION`
 
 ## Authority matrix
 
@@ -85,7 +88,7 @@ This compatibility view owns no facts. `docs/governance/current-state.json` is c
 ## Bounded ledger references
 
 - `G28-LEDGER-UNIT-0203` / `G28-LEDGER-PART-0012`: Unit 3 acceptance and Unit 4 contract definition
-- `G28-LEDGER-UNIT-0204` / `G28-LEDGER-PART-0012`: Unit 4 contract correction
 - `G28-LEDGER-UNIT-0205` / `G28-LEDGER-PART-0012`: Unit 4A authorization and accepted readiness
 - `G28-LEDGER-UNIT-0206` / `G28-LEDGER-PART-0012`: Unit 4C activation
 - `G28-LEDGER-UNIT-0207` / `G28-LEDGER-PART-0012`: Unit 4C canonical consistency forward correction
+- `G28-LEDGER-UNIT-0208` / `G28-LEDGER-PART-0012`: Unit 4D post-cutover acceptance closeout

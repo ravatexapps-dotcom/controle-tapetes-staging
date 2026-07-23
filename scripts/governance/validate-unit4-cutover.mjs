@@ -18,18 +18,13 @@ import {
 } from './render-unit4-canonical-views.mjs';
 
 const SCRIPT_DIR = path.dirname(fileURLToPath(import.meta.url));
-export const REPO_ROOT = path.resolve(SCRIPT_DIR, '..', '..');
-export const PARENT = 'fa986cf935abbf053172cfd549b0171bb9446f58';
-export const SUBJECT = 'feat: activate structured governance authority';
-export const CORRECTION_SUBJECT = 'fix: reconcile post-cutover governance authority';
-export const CUTOVER_ID = 'GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-4C-AUTHORITY-CUTOVER-R1';
-export const CONTRACT_ID = 'GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-4-BOOTSTRAP-AUTHORITY-CUTOVER-CONTRACT-R1';
+export const REPO_ROOT = path.resolve(SCRIPT_DIR, '..', '..'); export const PARENT = 'fa986cf935abbf053172cfd549b0171bb9446f58';
+export const SUBJECT = 'feat: activate structured governance authority'; export const CORRECTION_SUBJECT = 'fix: reconcile post-cutover governance authority'; export const CLOSEOUT_SUBJECT = 'docs: close Unit 4 post-cutover acceptance';
+export const CUTOVER_ID = 'GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-4C-AUTHORITY-CUTOVER-R1'; export const CONTRACT_ID = 'GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-4-BOOTSTRAP-AUTHORITY-CUTOVER-CONTRACT-R1';
 const CORRECTION_ORDER = 'GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-4C-CANONICAL-CONSISTENCY-FORWARD-CORRECTION-R1';
-const STATE = 'docs/governance/current-state.json';
-const CATALOG = 'docs/governance/catalog/documents.json';
+const STATE = 'docs/governance/current-state.json'; const CATALOG = 'docs/governance/catalog/documents.json';
 const TRACE = 'docs/governance/traceability/purchase-order-phase-c.json';
-const CUTOVER = 'docs/governance/cutover/unit4c-cutover-manifest.json';
-const ROLLBACK = 'docs/governance/cutover/unit4c-rollback-readiness.json';
+const CUTOVER = 'docs/governance/cutover/unit4c-cutover-manifest.json'; const ROLLBACK = 'docs/governance/cutover/unit4c-rollback-readiness.json';
 const SCHEMAS = {
   [STATE]: 'docs/governance/schemas/current-state-v2.schema.json',
   [CATALOG]: 'docs/governance/schemas/document-catalog-v2.schema.json',
@@ -56,12 +51,13 @@ const AUTHORIZED = new Set([
   'docs/governance/shadow/ledger/partitions/G28_LEDGER_PART_0013.md',
   'scripts/governance/build-unit4-cutover.mjs',
   'scripts/governance/render-unit4-canonical-views.mjs',
-  'scripts/governance/validate-unit4-cutover.mjs',
+  'scripts/governance/validate-unit4-cutover.mjs', 'scripts/governance/build-unit4d-acceptance-closeout.mjs',
+  'scripts/governance/validate-unit4d-acceptance-closeout.mjs',
   'scripts/governance/simulate-unit4-bootstrap.mjs',
   'scripts/validate-spec-custody.mjs',
   'scripts/spec-custody/validation-core.mjs',
   'scripts/spec-custody/self-tests.mjs',
-  'tests/governance-unit4-cutover.test.mjs',
+  'tests/governance-unit4-cutover.test.mjs', 'tests/governance-unit4d-acceptance-closeout.test.mjs',
   'tests/governance-current-state-shadow.test.mjs',
   'tests/governance-documentation-shadow.test.mjs',
   'tests/governance-g28-ledger-shadow.test.mjs'
@@ -107,7 +103,8 @@ function changedPaths(root, commit) {
   const worktreePaths = gitRaw(root, ['status', '--porcelain=v1', '-uall']).split(/\r?\n/u).filter(Boolean)
     .map(line => line.slice(3).replace(/\\/gu, '/'))
     .filter(relativePath => !PROTECTED.has(relativePath)).sort();
-  if (git(root, ['show', '-s', '--format=%s', 'HEAD']) !== CORRECTION_SUBJECT) return worktreePaths;
+  if (![CORRECTION_SUBJECT, CLOSEOUT_SUBJECT]
+    .includes(git(root, ['show', '-s', '--format=%s', 'HEAD']))) return worktreePaths;
   const committedPaths = git(root, ['diff-tree', '--no-commit-id', '--name-only', '-r', 'HEAD'])
     .split(/\r?\n/u).filter(Boolean);
   return [...new Set([...committedPaths, ...worktreePaths])].sort();
@@ -135,6 +132,7 @@ function validateCommitIdentity(root, commit, activationCommit, errors) {
 }
 
 function validateLifecycle(state, errors) {
+  const closed = state.phase_status?.unit4d === 'CLOSED / ACCEPTED / DIRECTLY VERIFIED';
   exact(state.schema_version, '2.0.0', 'state schema', errors);
   exact(state.mode, 'canonical', 'state mode', errors);
   exact(state.authority, 'canonical_current_state', 'state authority', errors);
@@ -145,17 +143,22 @@ function validateLifecycle(state, errors) {
   exact(state.activation.required_parent, PARENT, 'required parent', errors);
   exact(state.activation.accepted_unit4b_readiness_checkpoint, PARENT,
     'accepted Unit 4B checkpoint', errors);
-  exact(state.phase_status.unit4c,
-    'ACTIVATED / FORWARD CORRECTION APPLIED / AWAITING DIRECT SUPERVISOR REVIEW',
+  exact(state.phase_status.unit4c, closed ? 'CLOSED / ACCEPTED / DIRECTLY VERIFIED'
+    : 'ACTIVATED / FORWARD CORRECTION APPLIED / AWAITING DIRECT SUPERVISOR REVIEW',
     'Unit 4C status', errors);
-  exact(state.phase_status.documentary_authority_cutover,
-    'ACTIVE / FORWARD CORRECTION APPLIED / AWAITING UNIT 4D REVIEW',
+  exact(state.phase_status.documentary_authority_cutover, closed ? 'CLOSED / ACCEPTED / DIRECTLY VERIFIED'
+    : 'ACTIVE / FORWARD CORRECTION APPLIED / AWAITING UNIT 4D REVIEW',
     'documentary cutover status', errors);
-  exact(state.phase_status.unit4d, 'DIRECT SUPERVISOR REVIEW REQUIRED / NOT SELF-ACCEPTED',
+  exact(state.phase_status.unit4d, closed ? 'CLOSED / ACCEPTED / DIRECTLY VERIFIED'
+    : 'DIRECT SUPERVISOR REVIEW REQUIRED / NOT SELF-ACCEPTED',
     'Unit 4D status', errors);
-  exact(state.phase_status.unit5, 'NOT AUTHORIZED', 'Unit 5 status', errors);
-  exact(state.next_authorizable_action.order_id, CORRECTION_ORDER, 'next order', errors);
-  exact(state.next_authorizable_action.mode, 'UNIT 4D POST-CORRECTION DIRECT REVIEW',
+  exact(state.phase_status.unit5, closed ? 'NOT AUTHORIZED / DIAGNOSIS NEXT AUTHORIZABLE'
+    : 'NOT AUTHORIZED', 'Unit 5 status', errors);
+  exact(state.next_authorizable_action.order_id, closed
+    ? 'GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-5-LEGACY-DEPRECATION-AND-POST-CUTOVER-AUDIT-DIAGNOSIS-R1'
+    : CORRECTION_ORDER, 'next order', errors);
+  exact(state.next_authorizable_action.mode, closed ? 'READ_ONLY_DIAGNOSIS'
+    : 'UNIT 4D POST-CORRECTION DIRECT REVIEW',
     'next review mode', errors);
   if ('current_fact_sections' in state) errors.push('raw current_fact_sections forbidden in canonical mode');
   const historical = state.historical_fact_sources ?? [];
@@ -279,18 +282,24 @@ export function validateCanonicalConsistencyObjects({
   state, cutover, unit4Contract, phaseContract, catalog
 }) {
   const errors = [];
+  const closed = state.phase_status?.unit4d === 'CLOSED / ACCEPTED / DIRECTLY VERIFIED';
   validateLifecycle(state, errors);
   const identity = unit4Contract.match(/^CONTRACT_ID:\s*(\S+)\s*$/mu)?.[1];
   exact(identity, CONTRACT_ID, 'literal contract ID', errors);
   exact(cutover.contract_id, CONTRACT_ID, 'manifest contract ID', errors);
   exact(cutover.contract_id, identity, 'contract ID parity', errors);
-  exact(cutover.review_status,
-    'CHANGES_REQUIRED / FORWARD CORRECTION APPLIED / AWAITING DIRECT SUPERVISOR REVIEW',
+  exact(cutover.review_status, closed ? 'CLOSED / ACCEPTED / DIRECTLY VERIFIED'
+    : 'CHANGES_REQUIRED / FORWARD CORRECTION APPLIED / AWAITING DIRECT SUPERVISOR REVIEW',
     'manifest review status', errors);
   exact(cutover.authority_epoch, 1, 'manifest epoch', errors);
   exact(cutover.second_activation, false, 'manifest second activation', errors);
   exact(cutover.original_ponr_unchanged, true, 'manifest original PONR', errors);
-  const unit4Required = [
+  const unit4Required = closed ? [
+    'STATUS: CLOSED / ACCEPTED / DIRECTLY VERIFIED', 'DOCUMENTARY-AUTHORITY CUTOVER: CLOSED / ACCEPTED / DIRECTLY VERIFIED',
+    'UNIT 4D: CLOSED / ACCEPTED / DIRECTLY VERIFIED',
+    '| Unit 4C — authority cutover execution | CLOSED / ACCEPTED / DIRECTLY VERIFIED |',
+    '| Documentary-authority cutover | CLOSED / ACCEPTED / DIRECTLY VERIFIED |'
+  ] : [
     'STATUS: UNIT 4C PUBLISHED / FORWARD CORRECTION APPLIED / AWAITING DIRECT SUPERVISOR REVIEW',
     `UNIT 4A IMPLEMENTATION: CLOSED / ACCEPTED / DIRECTLY VERIFIED AT ${PARENT}`,
     `UNIT 4B REVIEW: DIRECT REVIEW COMPLETED / ACCEPTED AT ${PARENT}`,
@@ -300,7 +309,12 @@ export function validateCanonicalConsistencyObjects({
     '| Unit 4C — authority cutover execution | ACTIVATED / FORWARD CORRECTION APPLIED / AWAITING DIRECT SUPERVISOR REVIEW |',
     '| Documentary-authority cutover | ACTIVE / AWAITING UNIT 4D REVIEW |'
   ];
-  const phaseRequired = [
+  const phaseRequired = closed ? [
+    'STATUS: ACTIVE / UNIT 4 CLOSED / UNIT 5 DIAGNOSIS NEXT AUTHORIZABLE', 'UNIT 4C: CLOSED / ACCEPTED / DIRECTLY VERIFIED',
+    'DOCUMENTARY-AUTHORITY CUTOVER: CLOSED / ACCEPTED / DIRECTLY VERIFIED',
+    'UNIT 4D ACCEPTANCE: CLOSED / ACCEPTED / DIRECTLY VERIFIED',
+    'UNIT 5: NOT AUTHORIZED / DIAGNOSIS NEXT AUTHORIZABLE'
+  ] : [
     'STATUS: ACTIVE / UNIT 4C FORWARD CORRECTION APPLIED / AWAITING DIRECT SUPERVISOR REVIEW',
     'UNIT 4C: ACTIVATED / FORWARD CORRECTION APPLIED / AWAITING DIRECT SUPERVISOR REVIEW',
     'DOCUMENTARY-AUTHORITY CUTOVER: ACTIVE / AWAITING UNIT 4D REVIEW',
@@ -350,11 +364,14 @@ function validateCutoverManifest(reader, cutover, state, root, commit, activatio
   exact(cutover.activation_manifest_sha256, state.activation.activation_manifest_sha256,
     'cutover activation manifest hash', errors);
   exact(cutover.ponr_command, 'git push staging dev', 'PONR command', errors);
-  exact(cutover.actual_activation_commit_identity, 'EXTERNAL_GIT_FACT',
+  exact(cutover.actual_activation_commit_identity,
+    state.phase_status?.unit4d === 'CLOSED / ACCEPTED / DIRECTLY VERIFIED'
+      ? 'EXTERNAL_GIT_FACT_RECORDED_AFTER_UNIT4D_ACCEPTANCE' : 'EXTERNAL_GIT_FACT',
     'external commit classification', errors);
   const actualPaths = changedPaths(root, commit);
   const declaredPaths = [...cutover.changed_paths].sort();
-  if (activationCommit) {
+  if (activationCommit
+      && state.phase_status?.unit4d !== 'CLOSED / ACCEPTED / DIRECTLY VERIFIED') {
     const activationPaths = changedPaths(root, activationCommit);
     if (JSON.stringify(activationPaths) !== JSON.stringify(declaredPaths)) {
       errors.push('original activation changed-path manifest mismatch');
@@ -442,7 +459,9 @@ export function validateCutover({ root = REPO_ROOT, commit = null, activationCom
   if (resolved && reader.readText(STATE).includes(resolved)) {
     errors.push('correction commit embedded in structured source');
   }
-  if (resolvedActivation && (reader.readText(STATE).includes(resolvedActivation)
+  if (resolvedActivation
+      && state.phase_status?.unit4d !== 'CLOSED / ACCEPTED / DIRECTLY VERIFIED'
+      && (reader.readText(STATE).includes(resolvedActivation)
       || reader.readText(CUTOVER).includes(resolvedActivation))) {
     errors.push('original activation commit embedded in canonical source');
   }

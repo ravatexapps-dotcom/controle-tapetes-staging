@@ -2,7 +2,7 @@
 
 CONTRACT_ID: GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-4-BOOTSTRAP-AUTHORITY-CUTOVER-CONTRACT-R1
 
-STATUS: UNIT 4C PUBLISHED / FORWARD CORRECTION APPLIED / AWAITING DIRECT SUPERVISOR REVIEW
+STATUS: CLOSED / ACCEPTED / DIRECTLY VERIFIED
 
 CONTRACT_CORRECTION: COMMIT SELF-REFERENCE REMOVED / CANDIDATE ROOT-PATH BOUNDARY DEFINED
 
@@ -10,13 +10,13 @@ UNIT 4A IMPLEMENTATION: CLOSED / ACCEPTED / DIRECTLY VERIFIED AT fa986cf935abbf0
 
 UNIT 4B REVIEW: DIRECT REVIEW COMPLETED / ACCEPTED AT fa986cf935abbf053172cfd549b0171bb9446f58
 
-DOCUMENTARY-AUTHORITY CUTOVER: ACTIVE / AWAITING UNIT 4D REVIEW
+DOCUMENTARY-AUTHORITY CUTOVER: CLOSED / ACCEPTED / DIRECTLY VERIFIED
 
 AUTHORITY EPOCH: 1
 
-UNIT 4D: DIRECT SUPERVISOR REVIEW REQUIRED / NOT SELF-ACCEPTED
+UNIT 4D: CLOSED / ACCEPTED / DIRECTLY VERIFIED
 
-UNIT 5: NOT AUTHORIZED
+UNIT 5: NOT AUTHORIZED / DIAGNOSIS NEXT AUTHORIZABLE
 
 ## 1. Purpose and non-goals
 
@@ -567,9 +567,9 @@ Each material Unit 4 gate must report:
 |---|---|
 | Unit 4A — cutover readiness implementation | CLOSED / ACCEPTED / DIRECTLY VERIFIED at `fa986cf935abbf053172cfd549b0171bb9446f58` |
 | Unit 4B — readiness direct review | DIRECT REVIEW COMPLETED / ACCEPTED at `fa986cf935abbf053172cfd549b0171bb9446f58` |
-| Unit 4C — authority cutover execution | ACTIVATED / FORWARD CORRECTION APPLIED / AWAITING DIRECT SUPERVISOR REVIEW |
-| Unit 4D — post-cutover acceptance | DIRECT SUPERVISOR REVIEW REQUIRED / NOT SELF-ACCEPTED |
-| Documentary-authority cutover | ACTIVE / AWAITING UNIT 4D REVIEW |
+| Unit 4C — authority cutover execution | CLOSED / ACCEPTED / DIRECTLY VERIFIED |
+| Unit 4D — post-cutover acceptance | CLOSED / ACCEPTED / DIRECTLY VERIFIED |
+| Documentary-authority cutover | CLOSED / ACCEPTED / DIRECTLY VERIFIED |
 
 The Unit 4 contract is `CLOSED / ACCEPTED / DIRECTLY VERIFIED` at checkpoint
 `76f52c842678b74e655ef9080f4fc67ccbd38e22` by external supervisor ruling, not
@@ -586,3 +586,22 @@ Unit 5 cannot start before Unit 4D is directly accepted. This contract does not
 authorize cleanup, compaction, archival, deprecation, deletion, bootstrap-artifact
 removal, compatibility-view removal, ledger replacement, or any other Unit 5
 work.
+
+## 26. Post-cutover acceptance closeout
+
+ACCEPTED ACTIVATION CHECKPOINT: 51a61ddfdbf058887ead64f9b018c30ebc371b48
+
+ACCEPTED CORRECTED CANONICAL CHECKPOINT: 7abaff26559c71b62337356eccd0baaf36b5f214
+
+AUTHORITY EPOCH: 1
+
+SECOND ACTIVATION: NO
+
+ROLLBACK: NOT AUTHORIZED / NOT ACTIVATED
+
+UNIT 5: NOT AUTHORIZED / DIAGNOSIS NEXT AUTHORIZABLE
+
+The original activation remains the immutable authority-epoch-1 PONR. The
+accepted forward correction did not move the PONR or create authority epoch `2`.
+Direct post-cutover review accepted the corrected canonical checkpoint. Recovery
+remains forward-only, and Unit 5 requires its own authorization.

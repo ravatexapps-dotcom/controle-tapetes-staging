@@ -9696,3 +9696,13 @@ product file they depend on, was modified by this pass or the prior one):
 - **Validation.** Schemas, validators, bootstrap simulation, generated-root parity, immutable activation/correction checks, and positive/negative governance tests were strengthened. Unit 4D remains pending and not self-accepted. Unit 5 remains unauthorized.
 - **Scope exclusions.** No product, database, migration, environment, deployment, cleanup, archival, deprecation, deletion, reset, force push, rollback, second activation, or history rewrite occurred.
 - **Commit subject.** `fix: reconcile post-cutover governance authority`.
+
+## 2026-07-23 — GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-4D-POST-CUTOVER-ACCEPTANCE-CLOSEOUT-R1 — docs: close Unit 4 post-cutover acceptance
+
+- **External supervisor acceptance.** Direct review accepted correction checkpoint `7abaff26559c71b62337356eccd0baaf36b5f214`, original activation checkpoint `51a61ddfdbf058887ead64f9b018c30ebc371b48`, and original activation parent `fa986cf935abbf053172cfd549b0171bb9446f58`. This is an external ruling, not executor self-acceptance.
+- **Closeout.** Unit 4C, Unit 4D, and the documentary-authority cutover are `CLOSED / ACCEPTED / DIRECTLY VERIFIED`. Authority epoch `1` and cutover ID `GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-4C-AUTHORITY-CUTOVER-R1` remain unchanged.
+- **PONR and recovery.** The original activation remains the PONR. No second activation or rollback occurred; recovery remains forward-only.
+- **Authority continuity.** Structured owners remain canonical, generated roots remain non-authoritative compatibility views, and canonical ledger authority remains unchanged.
+- **Next action.** Unit 5 diagnosis `GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-5-LEGACY-DEPRECATION-AND-POST-CUTOVER-AUDIT-DIAGNOSIS-R1` is next authorizable but is not authorized by this closeout.
+- **Scope exclusions.** No product, database, migration, environment, deployment, production, cleanup, archival, deprecation, compaction, deletion, reset, force push, or history rewrite occurred.
+- **Commit subject.** `docs: close Unit 4 post-cutover acceptance`.

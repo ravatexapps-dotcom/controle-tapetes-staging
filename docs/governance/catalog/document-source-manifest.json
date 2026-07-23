@@ -983,10 +983,10 @@
     },
     {
       "path": "AGENT_HANDOFF.md",
-      "git_object_id": "9ef3bf500b17c707ba0485d8e86e7d1d55ad2a6a",
-      "sha256": "c615fed9b61455dd5e34d7bb3ce66bd21bd523e54d19998a93a2d0ae00e3f259",
+      "git_object_id": "d327875ef80bb572bd41a16678cd10c06232599f",
+      "sha256": "d1669ee5b14b15dc73736f8f3e0152fb0deedce07bf45a461138dd682a82ef66",
       "line_count": 44,
-      "byte_count": 2759,
+      "byte_count": 2749,
       "generated_status": "GENERATED",
       "outbound_references": [
         {
@@ -5479,14 +5479,14 @@
         },
         {
           "source_path": "PROJECT_STATE.md",
-          "source_line": 47,
+          "source_line": 50,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
         },
         {
           "source_path": "PROJECT_STATE.md",
-          "source_line": 81,
+          "source_line": 84,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
@@ -6208,10 +6208,10 @@
     },
     {
       "path": "PROJECT_STATE.md",
-      "git_object_id": "bbb64113320c6ffcdeaa40e5bad7b2f7ba16755b",
-      "sha256": "1c5ed1b7a708038ab58ca805cb9ba1bd704b31cad49407c1f3ede97544d64791",
-      "line_count": 91,
-      "byte_count": 4567,
+      "git_object_id": "a8108dae09c9888de9d68775636e2b7a106bcfd2",
+      "sha256": "e7bdb9b9bc4bd800cc65a58352b961f216a07d9f6ee916e330fa6c297b39daf7",
+      "line_count": 94,
+      "byte_count": 4746,
       "generated_status": "GENERATED",
       "outbound_references": [
         {
@@ -6220,7 +6220,7 @@
           "target_path": "docs/ledgers/G28_LEDGER.md",
           "anchor": null,
           "line_suffix": null,
-          "source_line": 43
+          "source_line": 46
         },
         {
           "kind": "ROOT_REFERENCE",
@@ -6228,7 +6228,7 @@
           "target_path": "docs/architecture/ORDEM_COMPRA_LIFECYCLE_SPEC_PROPOSED.md",
           "anchor": null,
           "line_suffix": null,
-          "source_line": 46
+          "source_line": 49
         },
         {
           "kind": "ROOT_REFERENCE",
@@ -6236,7 +6236,7 @@
           "target_path": "AGENT_HANDOFF.md",
           "anchor": null,
           "line_suffix": null,
-          "source_line": 47
+          "source_line": 50
         },
         {
           "kind": "ROOT_REFERENCE",
@@ -6244,7 +6244,7 @@
           "target_path": "docs/governance/SUPERVISION_PROTOCOL.md",
           "anchor": null,
           "line_suffix": null,
-          "source_line": 48
+          "source_line": 51
         },
         {
           "kind": "ROOT_REFERENCE",
@@ -6252,7 +6252,7 @@
           "target_path": "docs/ledgers/G28_LEDGER.md",
           "anchor": null,
           "line_suffix": null,
-          "source_line": 49
+          "source_line": 52
         },
         {
           "kind": "ROOT_REFERENCE",
@@ -6260,7 +6260,7 @@
           "target_path": "docs/architecture/PEDIDO_PRODUCTION_FLOW_BACKLOG.md",
           "anchor": null,
           "line_suffix": null,
-          "source_line": 50
+          "source_line": 53
         },
         {
           "kind": "ROOT_REFERENCE",
@@ -6268,7 +6268,7 @@
           "target_path": "docs/architecture/PEDIDO_OP_SCHEMA_CONTRACT.md",
           "anchor": null,
           "line_suffix": null,
-          "source_line": 51
+          "source_line": 54
         },
         {
           "kind": "ROOT_REFERENCE",
@@ -6276,7 +6276,7 @@
           "target_path": "docs/governance/GOVERNANCE_EFFICIENCY_REFOUNDATION_UNIT_4_AUTHORITY_CUTOVER_CONTRACT.md",
           "anchor": null,
           "line_suffix": null,
-          "source_line": 54
+          "source_line": 57
         },
         {
           "kind": "ROOT_REFERENCE",
@@ -6284,7 +6284,7 @@
           "target_path": "PROJECT_STATE.md",
           "anchor": null,
           "line_suffix": null,
-          "source_line": 80
+          "source_line": 83
         },
         {
           "kind": "ROOT_REFERENCE",
@@ -6292,7 +6292,7 @@
           "target_path": "AGENT_HANDOFF.md",
           "anchor": null,
           "line_suffix": null,
-          "source_line": 81
+          "source_line": 84
         },
         {
           "kind": "ROOT_REFERENCE",
@@ -6300,7 +6300,7 @@
           "target_path": "docs/DOCUMENTATION_INDEX.md",
           "anchor": null,
           "line_suffix": null,
-          "source_line": 82
+          "source_line": 85
         },
         {
           "kind": "ROOT_REFERENCE",
@@ -6308,7 +6308,7 @@
           "target_path": "docs/architecture/ORDEM_COMPRA_C3_TRACEABILITY.md",
           "anchor": null,
           "line_suffix": null,
-          "source_line": 83
+          "source_line": 86
         }
       ],
       "inbound_references": [
@@ -13174,7 +13174,7 @@
         },
         {
           "source_path": "PROJECT_STATE.md",
-          "source_line": 80,
+          "source_line": 83,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
@@ -13203,37 +13203,37 @@
           "level": 2,
           "text": "Next authorized action",
           "anchor": "next-authorized-action",
-          "line": 35
+          "line": 38
         },
         {
           "level": 2,
           "text": "Governing pointers",
           "anchor": "governing-pointers",
-          "line": 41
+          "line": 44
         },
         {
           "level": 2,
           "text": "Blockers and debts",
           "anchor": "blockers-and-debts",
-          "line": 56
+          "line": 59
         },
         {
           "level": 2,
           "text": "Prohibitions",
           "anchor": "prohibitions",
-          "line": 66
+          "line": 69
         },
         {
           "level": 2,
           "text": "Authority matrix",
           "anchor": "authority-matrix",
-          "line": 78
+          "line": 81
         },
         {
           "level": 2,
           "text": "Bounded ledger references",
           "anchor": "bounded-ledger-references",
-          "line": 85
+          "line": 88
         }
       ]
     },
@@ -13924,10 +13924,10 @@
     },
     {
       "path": "docs/DOCUMENTATION_INDEX.md",
-      "git_object_id": "20ec0b77070cb80c23a896a37ab6220c55a40d8f",
-      "sha256": "7d871c0428ebfa8c931776884a1cc3578bb2698ed44cbb1be3f0cbb2ad7572fc",
-      "line_count": 160,
-      "byte_count": 24381,
+      "git_object_id": "c5dc5a772f7e412a1027e9a1dee55cf2fcab9726",
+      "sha256": "a2419ecc10d77dc8d356047449c68dc9097089c594689372772e51aae6f3df90",
+      "line_count": 163,
+      "byte_count": 24791,
       "generated_status": "GENERATED",
       "outbound_references": [
         {
@@ -17471,7 +17471,7 @@
         },
         {
           "source_path": "PROJECT_STATE.md",
-          "source_line": 82,
+          "source_line": 85,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
@@ -29674,7 +29674,7 @@
         },
         {
           "source_path": "PROJECT_STATE.md",
-          "source_line": 83,
+          "source_line": 86,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
@@ -33236,7 +33236,7 @@
         },
         {
           "source_path": "PROJECT_STATE.md",
-          "source_line": 46,
+          "source_line": 49,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
@@ -35937,7 +35937,7 @@
         },
         {
           "source_path": "PROJECT_STATE.md",
-          "source_line": 51,
+          "source_line": 54,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
@@ -38932,7 +38932,7 @@
         },
         {
           "source_path": "PROJECT_STATE.md",
-          "source_line": 50,
+          "source_line": 53,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
@@ -56291,10 +56291,10 @@
     },
     {
       "path": "docs/governance/GOVERNANCE_EFFICIENCY_REFOUNDATION_PHASE_CONTRACT.md",
-      "git_object_id": "056688f25dd079ae77fa0e562253a43038d09139",
-      "sha256": "7d6ac012eba99c8688318f2c542206adb3ea1f01ab454582e8ed5d80ba755816",
-      "line_count": 184,
-      "byte_count": 9878,
+      "git_object_id": "d8d1ae7b0182fe4eabb6f67b9b162ff52f905950",
+      "sha256": "b545b8bbc4817cd27dc8f6150e633e7218584a0e1acef46d9962e3a0a85c7cff",
+      "line_count": 193,
+      "byte_count": 10559,
       "generated_status": "MANUAL",
       "outbound_references": [
         {
@@ -56442,15 +56442,21 @@
           "text": "Binding rules",
           "anchor": "binding-rules",
           "line": 165
+        },
+        {
+          "level": 2,
+          "text": "Unit 4 post-cutover acceptance closeout",
+          "anchor": "unit-4-post-cutover-acceptance-closeout",
+          "line": 186
         }
       ]
     },
     {
       "path": "docs/governance/GOVERNANCE_EFFICIENCY_REFOUNDATION_UNIT_4_AUTHORITY_CUTOVER_CONTRACT.md",
-      "git_object_id": "0095e7ed206f7c431c95339494a713d7992b8317",
-      "sha256": "4927b130697c6d9c9cb69674ef9ed07d92fea68535e9cec4637c02b343579f09",
-      "line_count": 588,
-      "byte_count": 37019,
+      "git_object_id": "183d10c439a3bd240374ef534bf53fa3da20fa7c",
+      "sha256": "e25f312238b717f620b12b75a921535444791e4b2121b642bb8be581f1d3c23b",
+      "line_count": 607,
+      "byte_count": 37584,
       "generated_status": "MANUAL",
       "outbound_references": [
         {
@@ -56745,7 +56751,7 @@
         },
         {
           "source_path": "PROJECT_STATE.md",
-          "source_line": 54,
+          "source_line": 57,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
@@ -56919,6 +56925,12 @@
           "text": "25. Explicit Unit 5 exclusion",
           "anchor": "25-explicit-unit-5-exclusion",
           "line": 583
+        },
+        {
+          "level": 2,
+          "text": "26. Post-cutover acceptance closeout",
+          "anchor": "26-post-cutover-acceptance-closeout",
+          "line": 590
         }
       ]
     },
@@ -57360,7 +57372,7 @@
         },
         {
           "source_path": "PROJECT_STATE.md",
-          "source_line": 48,
+          "source_line": 51,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
@@ -60188,10 +60200,10 @@
     },
     {
       "path": "docs/governance/shadow/generated/G28_LEDGER.md",
-      "git_object_id": "cc0458e36144d50b998cbb342a7b22ffb67a8343",
-      "sha256": "af047be3ca932aaade0b7d336cbb4eec9a04f0e98ac8bfaf8311c6fabdeb6187",
-      "line_count": 9704,
-      "byte_count": 989367,
+      "git_object_id": "b811a2976d74789fe472672a7760d74b37e7d776",
+      "sha256": "3adeb380d36cefdc44c6bfaf73d1b5b024ee70bf976e6bd8c76ddd3dea7e0f62",
+      "line_count": 9714,
+      "byte_count": 990861,
       "generated_status": "GENERATED",
       "outbound_references": [
         {
@@ -68078,6 +68090,12 @@
           "text": "2026-07-23 — GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-4C-CANONICAL-CONSISTENCY-FORWARD-CORRECTION-R1 — reconcile post-cutover governance authority",
           "anchor": "2026-07-23-governance-efficiency-refoundation-unit-4c-canonical-consistency-forward-correction-r1-reconcile-post-cutover-governance-authority",
           "line": 9695
+        },
+        {
+          "level": 2,
+          "text": "2026-07-23 — GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-4D-POST-CUTOVER-ACCEPTANCE-CLOSEOUT-R1 — docs: close Unit 4 post-cutover acceptance",
+          "anchor": "2026-07-23-governance-efficiency-refoundation-unit-4d-post-cutover-acceptance-closeout-r1-docs-close-unit-4-post-cutover-acceptance",
+          "line": 9704
         }
       ]
     },
@@ -76314,10 +76332,10 @@
     },
     {
       "path": "docs/governance/shadow/ledger/partitions/G28_LEDGER_PART_0012.md",
-      "git_object_id": "6bf37af35a3465da0bad05ec0a4d822a85b0dfc3",
-      "sha256": "53b2a6a9c3db9d4cea7ffecfc2405a9bd593e0ffa27d8c8a2cd6449129845272",
-      "line_count": 201,
-      "byte_count": 26761,
+      "git_object_id": "cf522b30db3c1f2d072a06856e1cab5c3d241a7c",
+      "sha256": "de5c385ae6cdca4b966fa54a881203c35695a5e3d981198b99bd7b38c495fe2c",
+      "line_count": 211,
+      "byte_count": 28255,
       "generated_status": "GENERATED",
       "outbound_references": [
         {
@@ -76649,6 +76667,12 @@
           "text": "2026-07-23 — GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-4C-CANONICAL-CONSISTENCY-FORWARD-CORRECTION-R1 — reconcile post-cutover governance authority",
           "anchor": "2026-07-23-governance-efficiency-refoundation-unit-4c-canonical-consistency-forward-correction-r1-reconcile-post-cutover-governance-authority",
           "line": 192
+        },
+        {
+          "level": 2,
+          "text": "2026-07-23 — GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-4D-POST-CUTOVER-ACCEPTANCE-CLOSEOUT-R1 — docs: close Unit 4 post-cutover acceptance",
+          "anchor": "2026-07-23-governance-efficiency-refoundation-unit-4d-post-cutover-acceptance-closeout-r1-docs-close-unit-4-post-cutover-acceptance",
+          "line": 201
         }
       ]
     },
@@ -76743,10 +76767,10 @@
     },
     {
       "path": "docs/ledgers/G28_LEDGER.md",
-      "git_object_id": "5a758d5047d155d4ce1db85613f4e28ea0223990",
-      "sha256": "342460a4f77f006299e08d5d20f188fc6177afc2deab776fb4e9276efe5feb2c",
-      "line_count": 9698,
-      "byte_count": 989066,
+      "git_object_id": "76bb4ac9031df73488f8530749836ee80615344b",
+      "sha256": "089acb817e822a7c403801757540aa5765cf68d810b7bb6cfc73cbee0295168c",
+      "line_count": 9708,
+      "byte_count": 990560,
       "generated_status": "MANUAL",
       "outbound_references": [
         {
@@ -85289,14 +85313,14 @@
         },
         {
           "source_path": "PROJECT_STATE.md",
-          "source_line": 43,
+          "source_line": 46,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
         },
         {
           "source_path": "PROJECT_STATE.md",
-          "source_line": 49,
+          "source_line": 52,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
@@ -86586,6 +86610,12 @@
           "text": "2026-07-23 — GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-4C-CANONICAL-CONSISTENCY-FORWARD-CORRECTION-R1 — reconcile post-cutover governance authority",
           "anchor": "2026-07-23-governance-efficiency-refoundation-unit-4c-canonical-consistency-forward-correction-r1-reconcile-post-cutover-governance-authority",
           "line": 9691
+        },
+        {
+          "level": 2,
+          "text": "2026-07-23 — GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-4D-POST-CUTOVER-ACCEPTANCE-CLOSEOUT-R1 — docs: close Unit 4 post-cutover acceptance",
+          "anchor": "2026-07-23-governance-efficiency-refoundation-unit-4d-post-cutover-acceptance-closeout-r1-docs-close-unit-4-post-cutover-acceptance",
+          "line": 9700
         }
       ]
     },

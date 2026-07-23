@@ -7,7 +7,7 @@ RENDERER: scripts/governance/render-unit4-canonical-views.mjs
 SCHEMA_VERSION: 2.0.0
 AUTHORITY_EPOCH: 1
 CUTOVER_ID: GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-4C-AUTHORITY-CUTOVER-R1
-SOURCE_PAYLOAD_SHA256: faf572343b5fd1c0a7aadff97b5f5f160a153bdc729c00a155e8418d745a2a78
+SOURCE_PAYLOAD_SHA256: 9d280ad6d7fa20ca36b391b19d288dccac02bf88de3a668079f5f3047d30d019
 
 <!-- GOVERNANCE_GENERATED_VIEW:END -->
 
@@ -16,9 +16,9 @@ This bounded compatibility view owns no facts. Use the structured source and its
 - Repository: `ravatexapps-dotcom/controle-tapetes-staging`
 - Workspace: `D:\Programação\controle-tapetes-g28`
 - Branch: `dev`
-- Objective: `DIRECT SUPERVISOR REVIEW OF GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-4C-CANONICAL-CONSISTENCY-FORWARD-CORRECTION-R1`
-- Unit 4D: `DIRECT SUPERVISOR REVIEW REQUIRED / NOT SELF-ACCEPTED`
-- Unit 5: `NOT AUTHORIZED`
+- Objective: `GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-5-LEGACY-DEPRECATION-AND-POST-CUTOVER-AUDIT-DIAGNOSIS-R1`
+- Unit 4D: `CLOSED / ACCEPTED / DIRECTLY VERIFIED`
+- Unit 5: `NOT AUTHORIZED / DIAGNOSIS NEXT AUTHORIZABLE`
 
 ## Governing pointers
 
@@ -38,7 +38,7 @@ This bounded compatibility view owns no facts. Use the structured source and its
 ## Bounded ledger evidence
 
 - `GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-4-BOOTSTRAP-AUTHORITY-CUTOVER-CONTRACT-R1` in `docs/governance/shadow/ledger/partitions/G28_LEDGER_PART_0012.md`; Unit 3 acceptance and Unit 4 contract definition
-- `GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-4-CONTRACT-COMMIT-BINDING-AND-CANDIDATE-PATH-CORRECTION-R2` in `docs/governance/shadow/ledger/partitions/G28_LEDGER_PART_0012.md`; Unit 4 contract correction
 - `GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-4A-CUTOVER-READINESS-IMPLEMENTATION-R1` in `docs/governance/shadow/ledger/partitions/G28_LEDGER_PART_0012.md`; Unit 4A authorization and accepted readiness
 - `GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-4C-DOCUMENTARY-AUTHORITY-CUTOVER-R1` in `docs/governance/shadow/ledger/partitions/G28_LEDGER_PART_0012.md`; Unit 4C activation
 - `GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-4C-CANONICAL-CONSISTENCY-FORWARD-CORRECTION-R1` in `docs/governance/shadow/ledger/partitions/G28_LEDGER_PART_0012.md`; Unit 4C canonical consistency forward correction
+- `GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-4D-POST-CUTOVER-ACCEPTANCE-CLOSEOUT-R1` in `docs/governance/shadow/ledger/partitions/G28_LEDGER_PART_0012.md`; Unit 4D post-cutover acceptance closeout
