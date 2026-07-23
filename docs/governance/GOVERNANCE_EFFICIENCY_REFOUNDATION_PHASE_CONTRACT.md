@@ -6,6 +6,14 @@ PHASE_ID: GOVERNANCE-EFFICIENCY-REFOUNDATION
 
 STATUS: ACTIVE / SHADOW IMPLEMENTATION IN PROGRESS
 
+UNIT 1 STATUS: IMPLEMENTED / HARDENING REQUIRED / AWAITING DIRECT SUPERVISOR REVIEW
+
+The direct review of `a3978244f73227bfde39961f6b3248e75eea039c` accepted the
+phase opening, structured shadow direction, deterministic generated-view
+architecture, checkpoints, environment boundaries, and publication. It did not
+accept the equivalence and unique-content completeness proof. This correction
+hardens Unit 1 only; Unit 1 is not accepted and Unit 2 remains unauthorized.
+
 ## Objective
 
 Reduce governance bootstrap cost and duplicated current-state prose through a

@@ -5,138 +5,242 @@ import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
+  buildSourceManifest,
+  REQUIRED_BOOTSTRAP_KEYS
+} from '../scripts/governance/build-current-state-source-manifest.mjs';
+import {
   loadState,
-  renderViews,
-  validateStateShape
+  renderViews
 } from '../scripts/governance/render-current-state-shadow.mjs';
 import {
-  validateEquivalence,
-  validateGeneratedFiles,
-  validateGeneratedText
+  parseBootstrapBlock,
+  validateRepository,
+  validateSchemaValue
 } from '../scripts/governance/validate-current-state-shadow.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const validState = loadState(ROOT);
 const clone = value => JSON.parse(JSON.stringify(value));
 const hasError = (errors, text) => errors.some(error => error.includes(text));
 
-test('valid structured state passes', () => assert.deepEqual(validateStateShape(clone(validState)), []));
+const FIXTURE_FILES = [
+  'CLAUDE.md',
+  'PROJECT_STATE.md',
+  'AGENT_HANDOFF.md',
+  'docs/DOCUMENTATION_INDEX.md',
+  'docs/ledgers/G28_LEDGER.md',
+  'docs/governance/AGENT_INSTRUCTIONS.md',
+  'docs/governance/DOCUMENTATION_MODEL.md',
+  'docs/governance/SUPERVISION_PROTOCOL.md',
+  'docs/governance/GOVERNANCE_EFFICIENCY_REFOUNDATION_PHASE_CONTRACT.md',
+  'docs/governance/schemas/current-state.schema.json',
+  'docs/governance/shadow/current-state.json',
+  'docs/governance/shadow/current-state-equivalence.json',
+  'docs/governance/shadow/current-state-source-manifest.json',
+  'docs/governance/shadow/generated/PROJECT_STATE.md',
+  'docs/governance/shadow/generated/AGENT_HANDOFF.md',
+  'docs/architecture/ORDEM_COMPRA_LIFECYCLE_SPEC_PROPOSED.md',
+  'docs/architecture/PEDIDO_OP_SCHEMA_CONTRACT.md',
+  'docs/architecture/PEDIDO_PRODUCTION_FLOW_BACKLOG.md',
+  'docs/architecture/ORDEM_COMPRA_C3_TRACEABILITY.md',
+  'scripts/validate-spec-custody.mjs',
+  'scripts/spec-custody/validation-core.mjs',
+  'scripts/spec-custody/self-tests.mjs'
+];
 
-test('missing required field fails', () => {
-  const state = clone(validState);
-  delete state.active_track;
-  assert.ok(hasError(validateStateShape(state), 'active_track'));
+function makeFixture() {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'g28-shadow-fixture-'));
+  for (const relativePath of FIXTURE_FILES) {
+    const source = path.join(ROOT, relativePath);
+    const target = path.join(root, relativePath);
+    fs.mkdirSync(path.dirname(target), { recursive: true });
+    fs.copyFileSync(source, target);
+  }
+  return root;
+}
+
+function cleanup(root) { fs.rmSync(root, { recursive: true, force: true }); }
+function read(root, relativePath) { return fs.readFileSync(path.join(root, relativePath), 'utf8'); }
+function write(root, relativePath, text) { fs.writeFileSync(path.join(root, relativePath), text, 'utf8'); }
+function mutateJson(root, relativePath, mutator) {
+  const value = JSON.parse(read(root, relativePath));
+  mutator(value);
+  write(root, relativePath, `${JSON.stringify(value, null, 2)}\n`);
+}
+function mutateBootstrap(root, key, value) {
+  const current = read(root, 'PROJECT_STATE.md');
+  const next = current.replace(new RegExp(`^${key}: .*?$`, 'm'), `${key}: ${value}`);
+  assert.notEqual(next, current, `fixture bootstrap key not found: ${key}`);
+  write(root, 'PROJECT_STATE.md', next);
+}
+function editBootstrapLines(root, mutator) {
+  const lines = read(root, 'PROJECT_STATE.md').replace(/\r\n?/g, '\n').split('\n');
+  mutator(lines);
+  write(root, 'PROJECT_STATE.md', lines.join('\n'));
+}
+
+test('valid complete repository fixture passes', () => {
+  const root = makeFixture();
+  try { assert.deepEqual(validateRepository(root), []); } finally { cleanup(root); }
 });
 
-test('unknown schema version fails', () => {
-  const state = clone(validState);
-  state.schema_version = '9.9.9';
-  assert.ok(hasError(validateStateShape(state), 'schema_version'));
+test('new unmapped PROJECT_STATE heading fails', () => {
+  const root = makeFixture();
+  try {
+    write(root, 'PROJECT_STATE.md', `${read(root, 'PROJECT_STATE.md')}\n## Fixture-only unmapped state section\ncontent\n`);
+    assert.ok(hasError(validateRepository(root), 'missing mapping source ID'));
+  } finally { cleanup(root); }
 });
 
-test('wrong shared-development project fails', () => {
-  const state = clone(validState);
-  state.environment_boundaries.shared_development = 'wrong';
-  assert.ok(hasError(validateStateShape(state), 'shared development'));
+test('new unmapped AGENT_HANDOFF heading fails', () => {
+  const root = makeFixture();
+  try {
+    write(root, 'AGENT_HANDOFF.md', `${read(root, 'AGENT_HANDOFF.md')}\n## Fixture-only unmapped handoff section\ncontent\n`);
+    assert.ok(hasError(validateRepository(root), 'missing mapping source ID'));
+  } finally { cleanup(root); }
 });
 
-test('production and forbidden project swap fails', () => {
-  const state = clone(validState);
-  [state.environment_boundaries.production, state.environment_boundaries.forbidden_project] = [state.environment_boundaries.forbidden_project, state.environment_boundaries.production];
-  const errors = validateStateShape(state);
-  assert.ok(hasError(errors, 'production project'));
-  assert.ok(hasError(errors, 'forbidden project'));
+test('changed mapped section content with stale hash fails', () => {
+  const root = makeFixture();
+  try {
+    write(root, 'PROJECT_STATE.md', read(root, 'PROJECT_STATE.md').replace('## Active phase and next action', '## Active phase and next action\nfixture mutation'));
+    assert.ok(hasError(validateRepository(root), 'source manifest is stale'));
+  } finally { cleanup(root); }
 });
 
-test('product checkpoint mismatch fails', () => {
-  const state = clone(validState);
-  state.accepted_checkpoints.product = '0000000000000000000000000000000000000000';
-  assert.ok(hasError(validateStateShape(state), 'accepted_checkpoints.product mismatch'));
+test('missing mapping fails', () => {
+  const root = makeFixture();
+  try {
+    mutateJson(root, 'docs/governance/shadow/current-state-equivalence.json', value => value.mappings.pop());
+    assert.ok(hasError(validateRepository(root), 'missing mapping source ID'));
+  } finally { cleanup(root); }
 });
 
-test('clean-slate execution checkpoint mismatch fails', () => {
-  const state = clone(validState);
-  state.accepted_checkpoints.clean_slate_execution = '1111111111111111111111111111111111111111';
-  assert.ok(hasError(validateStateShape(state), 'accepted_checkpoints.clean_slate_execution mismatch'));
+test('duplicate mapping fails', () => {
+  const root = makeFixture();
+  try {
+    mutateJson(root, 'docs/governance/shadow/current-state-equivalence.json', value => value.mappings.push(clone(value.mappings[0])));
+    assert.ok(hasError(validateRepository(root), 'duplicate mapping source ID'));
+  } finally { cleanup(root); }
 });
 
-test('active phase without contract fails', () => {
-  const state = clone(validState);
-  state.active_phase.contract = 'NONE';
-  assert.ok(hasError(validateStateShape(state), 'active_phase.contract'));
+test('extra mapping fails', () => {
+  const root = makeFixture();
+  try {
+    mutateJson(root, 'docs/governance/shadow/current-state-equivalence.json', value => value.mappings.push({ ...value.mappings[0], source_id: 'EXTRA-SOURCE-ID' }));
+    assert.ok(hasError(validateRepository(root), 'extra or nonexistent mapping source ID'));
+  } finally { cleanup(root); }
 });
 
-test('NONE phase with contract fails', () => {
-  const state = clone(validState);
-  state.active_phase.id = 'NONE';
-  assert.ok(hasError(validateStateShape(state), 'active_phase.id'));
+test('mapping to nonexistent source ID fails', () => {
+  const root = makeFixture();
+  try {
+    mutateJson(root, 'docs/governance/shadow/current-state-equivalence.json', value => { value.mappings[0].source_id = 'NO-SUCH-SOURCE-ID'; });
+    assert.ok(hasError(validateRepository(root), 'extra or nonexistent mapping source ID'));
+  } finally { cleanup(root); }
 });
 
-test('missing governing pointer fails repository-level equivalence', () => {
-  const state = clone(validState);
-  state.governing_pointers.ledger = '';
-  assert.ok(hasError(validateStateShape(state), 'governing_pointers.ledger'));
+test('UNIQUE_CONTENT_REQUIRING_DISPOSITION fails', () => {
+  const root = makeFixture();
+  try {
+    mutateJson(root, 'docs/governance/shadow/current-state-equivalence.json', value => { value.mappings[0].classification = 'UNIQUE_CONTENT_REQUIRING_DISPOSITION'; });
+    assert.ok(hasError(validateRepository(root), 'unique content requires disposition'));
+  } finally { cleanup(root); }
 });
 
-test('unmapped fact fails equivalence', () => {
-  const equivalence = {
-    schema_version: '1.0.0',
-    source_owner: 'PROJECT_STATE.md',
-    unmapped_operational_facts: 1,
-    unique_normative_handoff_rules_without_owner: 0,
-    mappings: []
-  };
-  assert.ok(hasError(validateEquivalence(equivalence, ROOT), 'unmapped operational facts'));
+test('bootstrap active phase mismatch fails', () => {
+  const root = makeFixture();
+  try { mutateBootstrap(root, 'ACTIVE_PHASE', 'WRONG-PHASE'); assert.ok(hasError(validateRepository(root), 'bootstrap value mismatch: ACTIVE_PHASE')); } finally { cleanup(root); }
 });
 
-test('unique handoff rule without owner fails equivalence', () => {
-  const equivalence = {
-    schema_version: '1.0.0',
-    source_owner: 'PROJECT_STATE.md',
-    unmapped_operational_facts: 0,
-    unique_normative_handoff_rules_without_owner: 1,
-    mappings: []
-  };
-  assert.ok(hasError(validateEquivalence(equivalence, ROOT), 'unique normative handoff rules'));
+test('bootstrap active track mismatch fails', () => {
+  const root = makeFixture();
+  try { mutateBootstrap(root, 'ACTIVE_TRACK', 'WRONG-TRACK'); assert.ok(hasError(validateRepository(root), 'bootstrap value mismatch: ACTIVE_TRACK')); } finally { cleanup(root); }
 });
 
-test('generated drift fails exact generated-file validation', () => {
-  const state = clone(validState);
-  const views = renderViews(state);
-  const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'g28-shadow-'));
-  const generated = path.join(tempRoot, 'docs', 'governance', 'shadow', 'generated');
-  fs.mkdirSync(generated, { recursive: true });
-  fs.writeFileSync(path.join(generated, 'PROJECT_STATE.md'), `${views.project}DRIFT\n`);
-  fs.writeFileSync(path.join(generated, 'AGENT_HANDOFF.md'), views.handoff);
-  assert.ok(hasError(validateGeneratedFiles(tempRoot, state), 'drifted'));
+test('bootstrap governing pointer mismatch fails', () => {
+  const root = makeFixture();
+  try { mutateBootstrap(root, 'LEDGER', 'wrong-ledger.md'); assert.ok(hasError(validateRepository(root), 'bootstrap value mismatch: LEDGER')); } finally { cleanup(root); }
 });
 
-test('deterministic double render is byte-identical', () => {
-  const first = renderViews(clone(validState));
-  const second = renderViews(clone(validState));
+test('bootstrap accepted checkpoint mismatch fails', () => {
+  const root = makeFixture();
+  try { mutateBootstrap(root, 'ACCEPTED_CHECKPOINT', '0000000000000000000000000000000000000000'); assert.ok(hasError(validateRepository(root), 'bootstrap value mismatch: ACCEPTED_CHECKPOINT')); } finally { cleanup(root); }
+});
+
+test('missing bootstrap key fails', () => {
+  const root = makeFixture();
+  try {
+    editBootstrapLines(root, lines => lines.splice(lines.findIndex(line => line.startsWith('ACTIVE_TRACK:')), 1));
+    assert.ok(hasError(validateRepository(root), 'missing bootstrap key: ACTIVE_TRACK'));
+  } finally { cleanup(root); }
+});
+
+test('duplicate bootstrap key fails', () => {
+  const root = makeFixture();
+  try {
+    editBootstrapLines(root, lines => { const index = lines.findIndex(line => line.startsWith('ACTIVE_TRACK:')); lines.splice(index + 1, 0, lines[index]); });
+    assert.ok(hasError(validateRepository(root), 'duplicate bootstrap key: ACTIVE_TRACK'));
+  } finally { cleanup(root); }
+});
+
+test('unknown bootstrap key fails', () => {
+  const root = makeFixture();
+  try {
+    editBootstrapLines(root, lines => { const index = lines.findIndex(line => line.startsWith('ACTIVE_TRACK:')); lines.splice(index, 0, 'UNKNOWN_BOOTSTRAP_KEY: value'); });
+    assert.ok(hasError(validateRepository(root), 'unknown bootstrap key: UNKNOWN_BOOTSTRAP_KEY'));
+  } finally { cleanup(root); }
+});
+
+test('unknown top-level state property fails schema validation', () => {
+  const state = loadState(ROOT);
+  state.unknown_top_level = true;
+  const schema = JSON.parse(read(ROOT, 'docs/governance/schemas/current-state.schema.json'));
+  assert.ok(hasError(validateSchemaValue(state, schema), 'unknown property unknown_top_level'));
+});
+
+test('unknown nested state property fails schema validation', () => {
+  const state = loadState(ROOT);
+  state.repository.unknown_nested = true;
+  const schema = JSON.parse(read(ROOT, 'docs/governance/schemas/current-state.schema.json'));
+  assert.ok(hasError(validateSchemaValue(state, schema), 'unknown property unknown_nested'));
+});
+
+test('wrong array-item shape fails schema validation', () => {
+  const state = loadState(ROOT);
+  state.protected_residue[0] = 'wrong-shape';
+  const schema = JSON.parse(read(ROOT, 'docs/governance/schemas/current-state.schema.json'));
+  assert.ok(hasError(validateSchemaValue(state, schema), 'expected type object'));
+});
+
+test('manual generated-view edit fails', () => {
+  const root = makeFixture();
+  try {
+    write(root, 'docs/governance/shadow/generated/PROJECT_STATE.md', `${read(root, 'docs/governance/shadow/generated/PROJECT_STATE.md')}manual edit\n`);
+    assert.ok(hasError(validateRepository(root), 'generated view drifted'));
+  } finally { cleanup(root); }
+});
+
+test('source-manifest stale line range or hash fails', () => {
+  const root = makeFixture();
+  try {
+    mutateJson(root, 'docs/governance/shadow/current-state-source-manifest.json', value => { value.sources[0].units[0].start_line += 1; });
+    assert.ok(hasError(validateRepository(root), 'source manifest is stale'));
+  } finally { cleanup(root); }
+});
+
+test('deterministic source-manifest double build passes', () => {
+  const first = buildSourceManifest(ROOT);
+  const second = buildSourceManifest(ROOT);
   assert.deepEqual(second, first);
 });
 
-test('timestamp field is rejected', () => {
-  const state = clone(validState);
-  state.created_at = '2026-07-22T00:00:00Z';
-  assert.ok(hasError(validateStateShape(state), 'timestamp'));
+test('deterministic generated-view double render passes', () => {
+  const state = loadState(ROOT);
+  assert.deepEqual(renderViews(clone(state)), renderViews(clone(state)));
 });
 
-test('live Git status is rejected', () => {
-  const state = clone(validState);
-  state.git_status = 'clean';
-  assert.ok(hasError(validateStateShape(state), 'git_status'));
-});
-
-test('state line overflow fails generated view validation', () => {
-  const views = renderViews(clone(validState));
-  const overflow = `${views.project}${'x\n'.repeat(151)}`;
-  assert.ok(hasError(validateGeneratedText(overflow, views.handoff), 'PROJECT_STATE generated view exceeds'));
-});
-
-test('handoff line overflow fails generated view validation', () => {
-  const views = renderViews(clone(validState));
-  const overflow = `${views.handoff}${'x\n'.repeat(121)}`;
-  assert.ok(hasError(validateGeneratedText(views.project, overflow), 'AGENT_HANDOFF generated view exceeds'));
+test('bootstrap parser rejects changed key order', () => {
+  const current = read(ROOT, 'PROJECT_STATE.md');
+  const parsed = parseBootstrapBlock(current);
+  assert.deepEqual(parsed.order, REQUIRED_BOOTSTRAP_KEYS);
 });

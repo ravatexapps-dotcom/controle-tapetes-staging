@@ -3,6 +3,7 @@
   "authority": "non_canonical_until_supervisor_cutover",
   "schema_version": "1.0.0",
   "state_id": "GOVERNANCE-EFFICIENCY-REFOUNDATION-SHADOW-STATE-R1",
+  "last_accepted_phase": "PHASE-C5",
   "repository": {
     "canonical_workspace": "D:/Programação/controle-tapetes-g28",
     "repository": "ravatexapps-dotcom/controle-tapetes-staging",
@@ -20,8 +21,9 @@
     "status": "ACTIVE / SHADOW IMPLEMENTATION IN PROGRESS"
   },
   "next_authorizable_action": {
-    "order_id": "GOVERNANCE-EFFICIENCY-REFOUNDATION-SHADOW-STATE-R1",
-    "mode": "GOVERNANCE PHASE OPENING + NON-CANONICAL SHADOW STATE IMPLEMENTATION",
+    "order_id": "GOVERNANCE-EFFICIENCY-REFOUNDATION-SHADOW-STATE-HARDENING-R1",
+    "canonical_value": "DIRECT SUPERVISOR REVIEW OF GOVERNANCE-EFFICIENCY-REFOUNDATION-SHADOW-STATE-HARDENING-R1",
+    "mode": "SHADOW EQUIVALENCE AND VALIDATOR CORRECTION",
     "risk_class": "R1",
     "status": "DIRECT SUPERVISOR REVIEW REQUIRED"
   },

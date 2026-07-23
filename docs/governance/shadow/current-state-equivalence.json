@@ -1,31 +1,346 @@
 {
   "schema_version": "1.0.0",
-  "source_owner": "PROJECT_STATE.md",
-  "unmapped_operational_facts": 0,
-  "unique_normative_handoff_rules_without_owner": 0,
+  "manifest_id": "GOVERNANCE-EFFICIENCY-REFOUNDATION-SOURCE-MANIFEST",
   "mappings": [
-    { "source_path": "PROJECT_STATE.md", "source_heading_or_range": "SPEC_CUSTODY_BOOTSTRAP lines 17-31", "classification": "STRUCTURED_FIELD", "destination": "docs/governance/shadow/current-state.json", "structured_field_or_owner": "repository, accepted_checkpoints, active_phase, active_track, next_authorizable_action, governing_pointers", "semantic_status": "preserved", "notes": "Bootstrap fields are represented directly." },
-    { "source_path": "PROJECT_STATE.md", "source_heading_or_range": "Active phase and next action current opening", "classification": "STRUCTURED_FIELD", "destination": "docs/governance/shadow/current-state.json", "structured_field_or_owner": "active_phase, next_authorizable_action", "semantic_status": "preserved", "notes": "Current phase and review gate are explicit." },
-    { "source_path": "PROJECT_STATE.md", "source_heading_or_range": "Workspace and Git facts", "classification": "STRUCTURED_FIELD", "destination": "docs/governance/shadow/current-state.json", "structured_field_or_owner": "repository, protected_residue", "semantic_status": "preserved", "notes": "Stable repository identity and protected residue are retained." },
-    { "source_path": "PROJECT_STATE.md", "source_heading_or_range": "Environment boundaries", "classification": "STRUCTURED_FIELD", "destination": "docs/governance/shadow/current-state.json", "structured_field_or_owner": "environment_boundaries", "semantic_status": "preserved", "notes": "All three environment project refs are exact." },
-    { "source_path": "PROJECT_STATE.md", "source_heading_or_range": "Live debt register", "classification": "STRUCTURED_FIELD", "destination": "docs/governance/shadow/current-state.json", "structured_field_or_owner": "live_debts", "semantic_status": "preserved", "notes": "Stable IDs and ownership are retained without narrative duplication." },
-    { "source_path": "PROJECT_STATE.md", "source_heading_or_range": "Binding decisions and prohibitions", "classification": "NORMATIVE_OWNER_POINTER", "destination": "PROJECT_STATE.md and governing specifications", "structured_field_or_owner": "PROJECT_STATE.md remains owner", "semantic_status": "preserved", "notes": "Normative prose remains in its existing owner." },
-    { "source_path": "PROJECT_STATE.md", "source_heading_or_range": "Closed phase index and historical stack", "classification": "HISTORICAL_LEDGER_CONTENT", "destination": "docs/ledgers/G28_LEDGER.md and closeout archives", "structured_field_or_owner": "ledger/archive", "semantic_status": "preserved", "notes": "No historical narrative is removed." },
-    { "source_path": "PROJECT_STATE.md", "source_heading_or_range": "Canonical path and governing pointer list", "classification": "NORMATIVE_OWNER_POINTER", "destination": "docs/DOCUMENTATION_INDEX.md and current-state.json", "structured_field_or_owner": "governing_pointers", "semantic_status": "preserved", "notes": "Pointers remain authoritative and are indexed." },
-    { "source_path": "AGENT_HANDOFF.md", "source_heading_or_range": "Workspace and Git", "classification": "STRUCTURED_FIELD", "destination": "docs/governance/shadow/current-state.json", "structured_field_or_owner": "repository, protected_residue", "semantic_status": "preserved", "notes": "Derived handoff facts map to structured state." },
-    { "source_path": "AGENT_HANDOFF.md", "source_heading_or_range": "Phase status current opening", "classification": "DUPLICATED_CURRENT_STATE", "destination": "docs/governance/shadow/generated/AGENT_HANDOFF.md", "structured_field_or_owner": "active_phase, next_authorizable_action", "semantic_status": "preserved", "notes": "Generated shadow is a compatibility view only." },
-    { "source_path": "AGENT_HANDOFF.md", "source_heading_or_range": "Historical handoff stack", "classification": "HISTORICAL_LEDGER_CONTENT", "destination": "docs/closeouts/AGENT_HANDOFF_ARCHIVE_2026-07.md and ledger", "structured_field_or_owner": "archive/ledger", "semantic_status": "preserved", "notes": "Historical handoff remains available for audit." },
-    { "source_path": "AGENT_HANDOFF.md", "source_heading_or_range": "Governing pointers", "classification": "NORMATIVE_OWNER_POINTER", "destination": "docs/DOCUMENTATION_INDEX.md and current-state.json", "structured_field_or_owner": "governing_pointers", "semantic_status": "preserved", "notes": "No second source of truth is introduced." },
-    { "source_path": "AGENT_HANDOFF.md", "source_heading_or_range": "Active requirements and hard stops", "classification": "NORMATIVE_OWNER_POINTER", "destination": "PROJECT_STATE.md and governing specifications", "structured_field_or_owner": "PROJECT_STATE.md remains owner", "semantic_status": "preserved", "notes": "Every rule retains an owner." },
-    { "source_path": "AGENT_HANDOFF.md", "source_heading_or_range": "Blockers and debts", "classification": "DUPLICATED_CURRENT_STATE", "destination": "docs/governance/shadow/current-state.json", "structured_field_or_owner": "live_debts", "semantic_status": "preserved", "notes": "Only stable debt identifiers are shadowed." },
-    { "source_path": "AGENT_HANDOFF.md", "source_heading_or_range": "Environment boundaries", "classification": "DUPLICATED_CURRENT_STATE", "destination": "docs/governance/shadow/current-state.json", "structured_field_or_owner": "environment_boundaries", "semantic_status": "preserved", "notes": "Exact project references are shared." },
-    { "source_path": "AGENT_HANDOFF.md", "source_heading_or_range": "Push restrictions and prohibitions", "classification": "NORMATIVE_OWNER_POINTER", "destination": "PROJECT_STATE.md and AGENT_INSTRUCTIONS.md", "structured_field_or_owner": "existing owners", "semantic_status": "preserved", "notes": "No handoff-only rule is left ownerless." },
-    { "source_path": "AGENT_HANDOFF.md", "source_heading_or_range": "Roadmap and product-model continuity", "classification": "NORMATIVE_OWNER_POINTER", "destination": "product specifications and backlog", "structured_field_or_owner": "governing pointers", "semantic_status": "preserved", "notes": "Product semantics remain outside the shadow state." },
-    { "source_path": "AGENT_HANDOFF.md", "source_heading_or_range": "Canonical paths", "classification": "NORMATIVE_OWNER_POINTER", "destination": "docs/DOCUMENTATION_INDEX.md", "structured_field_or_owner": "document catalog", "semantic_status": "preserved", "notes": "Index remains the sole authority list." },
-    { "source_path": "docs/DOCUMENTATION_INDEX.md", "source_heading_or_range": "§1 Canonical documentary authority", "classification": "NORMATIVE_OWNER_POINTER", "destination": "docs/DOCUMENTATION_INDEX.md", "structured_field_or_owner": "authority list", "semantic_status": "preserved", "notes": "New shadow artifacts are indexed without authority cutover." },
-    { "source_path": "docs/ledgers/G28_LEDGER.md", "source_heading_or_range": "Append-only current event", "classification": "HISTORICAL_LEDGER_CONTENT", "destination": "docs/ledgers/G28_LEDGER.md", "structured_field_or_owner": "ledger", "semantic_status": "preserved", "notes": "This phase opening is recorded as one consolidated event." },
-    { "source_path": "scripts/validate-spec-custody.mjs", "source_heading_or_range": "validator entrypoint", "classification": "NORMATIVE_OWNER_POINTER", "destination": "scripts/validate-spec-custody.mjs", "structured_field_or_owner": "existing validator", "semantic_status": "preserved", "notes": "Existing spec-custody validation is not replaced or weakened." },
-    { "source_path": "scripts/spec-custody/validation-core.mjs", "source_heading_or_range": "validation core", "classification": "NORMATIVE_OWNER_POINTER", "destination": "scripts/spec-custody/validation-core.mjs", "structured_field_or_owner": "existing validator", "semantic_status": "preserved", "notes": "Existing validator implementation remains unchanged." },
-    { "source_path": "scripts/spec-custody/self-tests.mjs", "source_heading_or_range": "self-test suite", "classification": "NORMATIVE_OWNER_POINTER", "destination": "scripts/spec-custody/self-tests.mjs", "structured_field_or_owner": "existing validator", "semantic_status": "preserved", "notes": "Existing 54-case self-test remains unchanged." }
+    {
+      "source_id": "PROJECT_STATE.md:MARKDOWN_SECTION:L1:CANONICAL_CURRENT_STATE:1",
+      "source_path": "PROJECT_STATE.md",
+      "source_sha256": "107416843a0ec672c794254d622d0faa6f96ce104a0ec58e48e1fc9098d2f44d",
+      "classification": "STRUCTURED_FIELD",
+      "destination": "PROJECT_STATE.md",
+      "structured_field_or_owner": "PROJECT_STATE.md",
+      "semantic_status": "preserved",
+      "notes": "MARKDOWN_SECTION CANONICAL CURRENT STATE mapped by deterministic source manifest."
+    },
+    {
+      "source_id": "PROJECT_STATE.md:BOOTSTRAP_KEY:LAST_ACCEPTED_PHASE",
+      "source_path": "PROJECT_STATE.md",
+      "source_sha256": "805f150f47f5cd71ba09e1a827447e10044975eab28a28628d2df9f76149aa67",
+      "classification": "STRUCTURED_FIELD",
+      "destination": "docs/governance/shadow/current-state.json",
+      "structured_field_or_owner": "LAST_ACCEPTED_PHASE",
+      "semantic_status": "preserved",
+      "notes": "BOOTSTRAP_KEY LAST_ACCEPTED_PHASE mapped by deterministic source manifest."
+    },
+    {
+      "source_id": "PROJECT_STATE.md:BOOTSTRAP_KEY:ACTIVE_PHASE",
+      "source_path": "PROJECT_STATE.md",
+      "source_sha256": "5bb55f387a7569b591319679a7b61ae8a12fda23c235df8cc03b891976b6209c",
+      "classification": "STRUCTURED_FIELD",
+      "destination": "docs/governance/shadow/current-state.json",
+      "structured_field_or_owner": "ACTIVE_PHASE",
+      "semantic_status": "preserved",
+      "notes": "BOOTSTRAP_KEY ACTIVE_PHASE mapped by deterministic source manifest."
+    },
+    {
+      "source_id": "PROJECT_STATE.md:BOOTSTRAP_KEY:ACTIVE_PHASE_CONTRACT",
+      "source_path": "PROJECT_STATE.md",
+      "source_sha256": "fe4af4127403b7d693b3c0f0a332c746d14ffc760f84b0ebb131a2d4776595dd",
+      "classification": "STRUCTURED_FIELD",
+      "destination": "docs/governance/shadow/current-state.json",
+      "structured_field_or_owner": "ACTIVE_PHASE_CONTRACT",
+      "semantic_status": "preserved",
+      "notes": "BOOTSTRAP_KEY ACTIVE_PHASE_CONTRACT mapped by deterministic source manifest."
+    },
+    {
+      "source_id": "PROJECT_STATE.md:BOOTSTRAP_KEY:ACTIVE_TRACK",
+      "source_path": "PROJECT_STATE.md",
+      "source_sha256": "1e60354aed9a69e5d42cb0e466fc593a31c1a44ce2642f585c243e6b9a862d59",
+      "classification": "STRUCTURED_FIELD",
+      "destination": "docs/governance/shadow/current-state.json",
+      "structured_field_or_owner": "ACTIVE_TRACK",
+      "semantic_status": "preserved",
+      "notes": "BOOTSTRAP_KEY ACTIVE_TRACK mapped by deterministic source manifest."
+    },
+    {
+      "source_id": "PROJECT_STATE.md:BOOTSTRAP_KEY:NEXT_AUTHORIZABLE_ACTION",
+      "source_path": "PROJECT_STATE.md",
+      "source_sha256": "29f689651633804b6de5b46d6e55c1ede90fc0e12abc609c5687aa6d5eca6c9e",
+      "classification": "STRUCTURED_FIELD",
+      "destination": "docs/governance/shadow/current-state.json",
+      "structured_field_or_owner": "NEXT_AUTHORIZABLE_ACTION",
+      "semantic_status": "preserved",
+      "notes": "BOOTSTRAP_KEY NEXT_AUTHORIZABLE_ACTION mapped by deterministic source manifest."
+    },
+    {
+      "source_id": "PROJECT_STATE.md:BOOTSTRAP_KEY:GOVERNING_SPEC",
+      "source_path": "PROJECT_STATE.md",
+      "source_sha256": "cb47da4c3238572dc8db10b2dc9800e6016e6e51f297685dc10c481525c3f781",
+      "classification": "STRUCTURED_FIELD",
+      "destination": "docs/governance/shadow/current-state.json",
+      "structured_field_or_owner": "GOVERNING_SPEC",
+      "semantic_status": "preserved",
+      "notes": "BOOTSTRAP_KEY GOVERNING_SPEC mapped by deterministic source manifest."
+    },
+    {
+      "source_id": "PROJECT_STATE.md:BOOTSTRAP_KEY:TECHNICAL_CONTRACT",
+      "source_path": "PROJECT_STATE.md",
+      "source_sha256": "053abec3ae887a90a3dda83c6a74e5b21cc85b0d72a5a6c62967dfd32df62bf3",
+      "classification": "STRUCTURED_FIELD",
+      "destination": "docs/governance/shadow/current-state.json",
+      "structured_field_or_owner": "TECHNICAL_CONTRACT",
+      "semantic_status": "preserved",
+      "notes": "BOOTSTRAP_KEY TECHNICAL_CONTRACT mapped by deterministic source manifest."
+    },
+    {
+      "source_id": "PROJECT_STATE.md:BOOTSTRAP_KEY:SEQUENCE_AUTHORITY",
+      "source_path": "PROJECT_STATE.md",
+      "source_sha256": "8ca642cd1894bb78c49a2e2bb632292ff80f098ee77b2238b05b940a8181f0d0",
+      "classification": "STRUCTURED_FIELD",
+      "destination": "docs/governance/shadow/current-state.json",
+      "structured_field_or_owner": "SEQUENCE_AUTHORITY",
+      "semantic_status": "preserved",
+      "notes": "BOOTSTRAP_KEY SEQUENCE_AUTHORITY mapped by deterministic source manifest."
+    },
+    {
+      "source_id": "PROJECT_STATE.md:BOOTSTRAP_KEY:TRACEABILITY",
+      "source_path": "PROJECT_STATE.md",
+      "source_sha256": "3c6de11eee8bb649425bea52d0b59bccc6abedd2a8ce9584f2c7fecbc414e632",
+      "classification": "STRUCTURED_FIELD",
+      "destination": "docs/governance/shadow/current-state.json",
+      "structured_field_or_owner": "TRACEABILITY",
+      "semantic_status": "preserved",
+      "notes": "BOOTSTRAP_KEY TRACEABILITY mapped by deterministic source manifest."
+    },
+    {
+      "source_id": "PROJECT_STATE.md:BOOTSTRAP_KEY:LEDGER",
+      "source_path": "PROJECT_STATE.md",
+      "source_sha256": "5363d79e6cd4a87f43712e42feb92ea96105636bd2dd49d42ecd19640bbb4f11",
+      "classification": "STRUCTURED_FIELD",
+      "destination": "docs/governance/shadow/current-state.json",
+      "structured_field_or_owner": "LEDGER",
+      "semantic_status": "preserved",
+      "notes": "BOOTSTRAP_KEY LEDGER mapped by deterministic source manifest."
+    },
+    {
+      "source_id": "PROJECT_STATE.md:BOOTSTRAP_KEY:HANDOFF",
+      "source_path": "PROJECT_STATE.md",
+      "source_sha256": "5d767c04cf857be828cc849e02aabaeedababa7aad3910f1cca67b3aae3d61ce",
+      "classification": "STRUCTURED_FIELD",
+      "destination": "docs/governance/shadow/current-state.json",
+      "structured_field_or_owner": "HANDOFF",
+      "semantic_status": "preserved",
+      "notes": "BOOTSTRAP_KEY HANDOFF mapped by deterministic source manifest."
+    },
+    {
+      "source_id": "PROJECT_STATE.md:BOOTSTRAP_KEY:ACCEPTED_CHECKPOINT",
+      "source_path": "PROJECT_STATE.md",
+      "source_sha256": "0112d88d97d8ff957a17e14b173c4e1727c919f31e884c49801571747adbb51e",
+      "classification": "STRUCTURED_FIELD",
+      "destination": "docs/governance/shadow/current-state.json",
+      "structured_field_or_owner": "ACCEPTED_CHECKPOINT",
+      "semantic_status": "preserved",
+      "notes": "BOOTSTRAP_KEY ACCEPTED_CHECKPOINT mapped by deterministic source manifest."
+    },
+    {
+      "source_id": "PROJECT_STATE.md:MARKDOWN_SECTION:L2:ACTIVE_PHASE_AND_NEXT_ACTION:1",
+      "source_path": "PROJECT_STATE.md",
+      "source_sha256": "03934e79da89138a94856a797c61f3bbb566bb438f7646321b3019c7fcda712b",
+      "classification": "STRUCTURED_FIELD",
+      "destination": "PROJECT_STATE.md",
+      "structured_field_or_owner": "PROJECT_STATE.md",
+      "semantic_status": "preserved",
+      "notes": "MARKDOWN_SECTION Active phase and next action mapped by deterministic source manifest."
+    },
+    {
+      "source_id": "PROJECT_STATE.md:MARKDOWN_SECTION:L2:WORKSPACE_AND_GIT_BOUNDARIES:1",
+      "source_path": "PROJECT_STATE.md",
+      "source_sha256": "3cb7e34e4937bfb0bc8cbc17c92757df594b9807e94f1871969accef341855f5",
+      "classification": "STRUCTURED_FIELD",
+      "destination": "PROJECT_STATE.md",
+      "structured_field_or_owner": "PROJECT_STATE.md",
+      "semantic_status": "preserved",
+      "notes": "MARKDOWN_SECTION Workspace and Git boundaries mapped by deterministic source manifest."
+    },
+    {
+      "source_id": "PROJECT_STATE.md:MARKDOWN_SECTION:L2:ENVIRONMENT_AND_PRODUCTION_STAGING_STATE:1",
+      "source_path": "PROJECT_STATE.md",
+      "source_sha256": "bf9700f0e20582b4c2b3b576cae1c7c117eb4cbc4d8dd875622a5bef220faadc",
+      "classification": "STRUCTURED_FIELD",
+      "destination": "PROJECT_STATE.md",
+      "structured_field_or_owner": "PROJECT_STATE.md",
+      "semantic_status": "preserved",
+      "notes": "MARKDOWN_SECTION Environment and production/staging state mapped by deterministic source manifest."
+    },
+    {
+      "source_id": "PROJECT_STATE.md:MARKDOWN_SECTION:L2:POST_LAUNCH_DEBT_REGISTER_RANKED_EACH_NOT_AUTHORIZED_UNTIL_ITS_OWN_ORDER:1",
+      "source_path": "PROJECT_STATE.md",
+      "source_sha256": "aa15de54133b406e8102f9d4c3dea62d9496e99956e1273bd830b7b5d7afa436",
+      "classification": "STRUCTURED_FIELD",
+      "destination": "PROJECT_STATE.md",
+      "structured_field_or_owner": "PROJECT_STATE.md",
+      "semantic_status": "preserved",
+      "notes": "MARKDOWN_SECTION POST-LAUNCH DEBT REGISTER (ranked; each `NOT AUTHORIZED` until its own order) mapped by deterministic source manifest."
+    },
+    {
+      "source_id": "PROJECT_STATE.md:MARKDOWN_SECTION:L2:BINDING_DECISIONS_IN_FORCE_CONDENSED_VERBATIM_IN_ARCHIVE_LEDGER:1",
+      "source_path": "PROJECT_STATE.md",
+      "source_sha256": "fb297a3ac0e8db2a8979967691dfdb878c1e3c90ad0291eeb91112397d384352",
+      "classification": "HISTORICAL_LEDGER_CONTENT",
+      "destination": "PROJECT_STATE.md",
+      "structured_field_or_owner": "PROJECT_STATE.md",
+      "semantic_status": "preserved",
+      "notes": "MARKDOWN_SECTION Binding decisions in force (condensed; verbatim in archive/ledger) mapped by deterministic source manifest."
+    },
+    {
+      "source_id": "PROJECT_STATE.md:MARKDOWN_SECTION:L2:PRODUCT_AND_ENVIRONMENT_PROHIBITIONS:1",
+      "source_path": "PROJECT_STATE.md",
+      "source_sha256": "46979fbc2efde47588604839e9e7d8a09f957212195d3330ee61dc95eabe264c",
+      "classification": "STRUCTURED_FIELD",
+      "destination": "PROJECT_STATE.md",
+      "structured_field_or_owner": "PROJECT_STATE.md",
+      "semantic_status": "preserved",
+      "notes": "MARKDOWN_SECTION Product and environment prohibitions mapped by deterministic source manifest."
+    },
+    {
+      "source_id": "PROJECT_STATE.md:MARKDOWN_SECTION:L2:ACCEPTED_PHASE_INDEX_CONCISE:1",
+      "source_path": "PROJECT_STATE.md",
+      "source_sha256": "8ba88bb34d33248e3804ff3b4b8a83ada3f1304869401bf3d321065f1cab1b87",
+      "classification": "NORMATIVE_OWNER_POINTER",
+      "destination": "PROJECT_STATE.md",
+      "structured_field_or_owner": "PROJECT_STATE.md",
+      "semantic_status": "preserved",
+      "notes": "MARKDOWN_SECTION Accepted-phase index (concise) mapped by deterministic source manifest."
+    },
+    {
+      "source_id": "PROJECT_STATE.md:MARKDOWN_SECTION:L3:PURCHASE_ORDER_REFOUNDATION_PHASE_C_GOVERNANCE_TRACK:1",
+      "source_path": "PROJECT_STATE.md",
+      "source_sha256": "a6c93c54694f840319134b14751f67b7e02857cd06c17c614948a93feb20c19e",
+      "classification": "NORMATIVE_OWNER_POINTER",
+      "destination": "PROJECT_STATE.md",
+      "structured_field_or_owner": "PROJECT_STATE.md",
+      "semantic_status": "preserved",
+      "notes": "MARKDOWN_SECTION Purchase-order refoundation + Phase-C + governance track mapped by deterministic source manifest."
+    },
+    {
+      "source_id": "PROJECT_STATE.md:MARKDOWN_SECTION:L3:EARLIER_TRACKS_INDEXED_FULL_DETAIL_IN_LEDGER_ARCHIVES:1",
+      "source_path": "PROJECT_STATE.md",
+      "source_sha256": "004e35bc90c1b18c24aeb62f765629a9b9ec69cbc6f3e1a3a870ca6e848303a3",
+      "classification": "HISTORICAL_LEDGER_CONTENT",
+      "destination": "PROJECT_STATE.md",
+      "structured_field_or_owner": "PROJECT_STATE.md",
+      "semantic_status": "preserved",
+      "notes": "MARKDOWN_SECTION Earlier tracks (indexed; full detail in ledger/archives) mapped by deterministic source manifest."
+    },
+    {
+      "source_id": "PROJECT_STATE.md:MARKDOWN_SECTION:L2:GOVERNING_SPECIFICATIONS_AND_CANONICAL_PATHS:1",
+      "source_path": "PROJECT_STATE.md",
+      "source_sha256": "b2092054438d41af641ea22bb9668881c74d301048342a617b9e020250d97b48",
+      "classification": "NORMATIVE_OWNER_POINTER",
+      "destination": "PROJECT_STATE.md",
+      "structured_field_or_owner": "PROJECT_STATE.md",
+      "semantic_status": "preserved",
+      "notes": "MARKDOWN_SECTION Governing specifications and canonical paths mapped by deterministic source manifest."
+    },
+    {
+      "source_id": "PROJECT_STATE.md:MARKDOWN_SECTION:L2:HISTORICAL_REFERENCE_NOT_SOURCES_OF_CURRENT_STATE:1",
+      "source_path": "PROJECT_STATE.md",
+      "source_sha256": "e2039a6cee043d894bcbf1ef67a423ba63c7f9cb4e86740fbc4a60fb0a7dfe18",
+      "classification": "HISTORICAL_LEDGER_CONTENT",
+      "destination": "PROJECT_STATE.md",
+      "structured_field_or_owner": "PROJECT_STATE.md",
+      "semantic_status": "preserved",
+      "notes": "MARKDOWN_SECTION Historical reference (not sources of current state) mapped by deterministic source manifest."
+    },
+    {
+      "source_id": "AGENT_HANDOFF.md:MARKDOWN_SECTION:L1:ACTIVE_OPERATIONAL_HANDOFF:1",
+      "source_path": "AGENT_HANDOFF.md",
+      "source_sha256": "7236ac15bd4fd88a5a190cca7db8001519b2dcbfb257c019c45671b14ad8b35c",
+      "classification": "DUPLICATED_CURRENT_STATE",
+      "destination": "AGENT_HANDOFF.md",
+      "structured_field_or_owner": "AGENT_HANDOFF.md",
+      "semantic_status": "preserved",
+      "notes": "MARKDOWN_SECTION ACTIVE OPERATIONAL HANDOFF mapped by deterministic source manifest."
+    },
+    {
+      "source_id": "AGENT_HANDOFF.md:MARKDOWN_SECTION:L2:WORKSPACE_AND_GIT:1",
+      "source_path": "AGENT_HANDOFF.md",
+      "source_sha256": "205a5f8216bfecce0ab19ae8994fab0cfef765556edcb444ec3ac011b0ddaa0e",
+      "classification": "DUPLICATED_CURRENT_STATE",
+      "destination": "AGENT_HANDOFF.md",
+      "structured_field_or_owner": "AGENT_HANDOFF.md",
+      "semantic_status": "preserved",
+      "notes": "MARKDOWN_SECTION Workspace and Git mapped by deterministic source manifest."
+    },
+    {
+      "source_id": "AGENT_HANDOFF.md:MARKDOWN_SECTION:L2:PHASE_STATUS:1",
+      "source_path": "AGENT_HANDOFF.md",
+      "source_sha256": "47cfd9e19bab8a872624d21d9c0583daf7dd016be650fbe89ffd934c99c0d1d7",
+      "classification": "DUPLICATED_CURRENT_STATE",
+      "destination": "AGENT_HANDOFF.md",
+      "structured_field_or_owner": "AGENT_HANDOFF.md",
+      "semantic_status": "preserved",
+      "notes": "MARKDOWN_SECTION Phase status mapped by deterministic source manifest."
+    },
+    {
+      "source_id": "AGENT_HANDOFF.md:MARKDOWN_SECTION:L2:GOVERNING_SPECIFICATIONS_AND_CONTRACTS:1",
+      "source_path": "AGENT_HANDOFF.md",
+      "source_sha256": "cc5c6e4235087a98dd00c15f18abd2365e6cafe318f4a2ca6c1ac42989cf1916",
+      "classification": "DUPLICATED_CURRENT_STATE",
+      "destination": "AGENT_HANDOFF.md",
+      "structured_field_or_owner": "AGENT_HANDOFF.md",
+      "semantic_status": "preserved",
+      "notes": "MARKDOWN_SECTION Governing specifications and contracts mapped by deterministic source manifest."
+    },
+    {
+      "source_id": "AGENT_HANDOFF.md:MARKDOWN_SECTION:L2:ACTIVE_REQUIREMENT_IDS_AND_DISPOSITIONS:1",
+      "source_path": "AGENT_HANDOFF.md",
+      "source_sha256": "b8124b79e4ae0a79f16929ae8029c86176c0efd214fc8da33e8fab8ad2cfd8a0",
+      "classification": "DUPLICATED_CURRENT_STATE",
+      "destination": "AGENT_HANDOFF.md",
+      "structured_field_or_owner": "AGENT_HANDOFF.md",
+      "semantic_status": "preserved",
+      "notes": "MARKDOWN_SECTION Active requirement IDs and dispositions mapped by deterministic source manifest."
+    },
+    {
+      "source_id": "AGENT_HANDOFF.md:MARKDOWN_SECTION:L2:BLOCKERS_AND_DEBTS_LIVE:1",
+      "source_path": "AGENT_HANDOFF.md",
+      "source_sha256": "89f897f850d1abb7463b059736205f3eca3948f45c3902dbf128c0b2dcfa0c19",
+      "classification": "DUPLICATED_CURRENT_STATE",
+      "destination": "AGENT_HANDOFF.md",
+      "structured_field_or_owner": "AGENT_HANDOFF.md",
+      "semantic_status": "preserved",
+      "notes": "MARKDOWN_SECTION Blockers and debts (live) mapped by deterministic source manifest."
+    },
+    {
+      "source_id": "AGENT_HANDOFF.md:MARKDOWN_SECTION:L2:ENVIRONMENT_STATE:1",
+      "source_path": "AGENT_HANDOFF.md",
+      "source_sha256": "012942c264ae9741143f8c4b9e93f390596085a0aedc675197fbada40d354f1d",
+      "classification": "DUPLICATED_CURRENT_STATE",
+      "destination": "AGENT_HANDOFF.md",
+      "structured_field_or_owner": "AGENT_HANDOFF.md",
+      "semantic_status": "preserved",
+      "notes": "MARKDOWN_SECTION Environment state mapped by deterministic source manifest."
+    },
+    {
+      "source_id": "AGENT_HANDOFF.md:MARKDOWN_SECTION:L2:PUSH_REMOTE_MAIN_AND_DEPLOYMENT_LIMITS:1",
+      "source_path": "AGENT_HANDOFF.md",
+      "source_sha256": "81d336361eac55c09ab48946db48bfd92bf4becd3beefa2c88d39df7e2aa69a3",
+      "classification": "DUPLICATED_CURRENT_STATE",
+      "destination": "AGENT_HANDOFF.md",
+      "structured_field_or_owner": "AGENT_HANDOFF.md",
+      "semantic_status": "preserved",
+      "notes": "MARKDOWN_SECTION Push, remote, main and deployment limits mapped by deterministic source manifest."
+    },
+    {
+      "source_id": "AGENT_HANDOFF.md:MARKDOWN_SECTION:L2:ROADMAP_AND_PRODUCT_MODEL_CONTINUITY_RETRANSMIT_DO_NOT_SHORTEN:1",
+      "source_path": "AGENT_HANDOFF.md",
+      "source_sha256": "4e10f40c6d437970b69846f8aa101f0696178a915ae866048f4bf5be46560184",
+      "classification": "DUPLICATED_CURRENT_STATE",
+      "destination": "AGENT_HANDOFF.md",
+      "structured_field_or_owner": "AGENT_HANDOFF.md",
+      "semantic_status": "preserved",
+      "notes": "MARKDOWN_SECTION Roadmap and product-model continuity (retransmit — do not shorten) mapped by deterministic source manifest."
+    },
+    {
+      "source_id": "AGENT_HANDOFF.md:MARKDOWN_SECTION:L2:CANONICAL_PATHS_RETRANSMIT_ALL_OF_THESE_IN_EVERY_FUTURE_HANDOFF:1",
+      "source_path": "AGENT_HANDOFF.md",
+      "source_sha256": "7a664876e9d6476cfc90c227f7b84d64e4054a9b22ca17346a885f73cafda161",
+      "classification": "DUPLICATED_CURRENT_STATE",
+      "destination": "AGENT_HANDOFF.md",
+      "structured_field_or_owner": "AGENT_HANDOFF.md",
+      "semantic_status": "preserved",
+      "notes": "MARKDOWN_SECTION Canonical paths — RETRANSMIT ALL OF THESE IN EVERY FUTURE HANDOFF mapped by deterministic source manifest."
+    }
   ]
 }

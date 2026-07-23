@@ -1,0 +1,413 @@
+{
+  "schema_version": "1.0.0",
+  "manifest_id": "GOVERNANCE-EFFICIENCY-REFOUNDATION-SOURCE-MANIFEST",
+  "line_ending": "LF",
+  "source_paths": [
+    "PROJECT_STATE.md",
+    "AGENT_HANDOFF.md"
+  ],
+  "required_bootstrap_keys": [
+    "LAST_ACCEPTED_PHASE",
+    "ACTIVE_PHASE",
+    "ACTIVE_PHASE_CONTRACT",
+    "ACTIVE_TRACK",
+    "NEXT_AUTHORIZABLE_ACTION",
+    "GOVERNING_SPEC",
+    "TECHNICAL_CONTRACT",
+    "SEQUENCE_AUTHORITY",
+    "TRACEABILITY",
+    "LEDGER",
+    "HANDOFF",
+    "ACCEPTED_CHECKPOINT"
+  ],
+  "sources": [
+    {
+      "source_path": "PROJECT_STATE.md",
+      "source_sha256": "107416843a0ec672c794254d622d0faa6f96ce104a0ec58e48e1fc9098d2f44d",
+      "line_count": 1991,
+      "units": [
+        {
+          "source_id": "PROJECT_STATE.md:MARKDOWN_SECTION:L1:CANONICAL_CURRENT_STATE:1",
+          "source_path": "PROJECT_STATE.md",
+          "heading_level": 1,
+          "heading_text": "CANONICAL CURRENT STATE",
+          "heading_occurrence": 1,
+          "start_line": 1,
+          "end_line": 1991,
+          "sha256": "107416843a0ec672c794254d622d0faa6f96ce104a0ec58e48e1fc9098d2f44d",
+          "source_kind": "MARKDOWN_SECTION"
+        },
+        {
+          "source_id": "PROJECT_STATE.md:BOOTSTRAP_KEY:LAST_ACCEPTED_PHASE",
+          "source_path": "PROJECT_STATE.md",
+          "heading_level": 0,
+          "heading_text": "LAST_ACCEPTED_PHASE",
+          "heading_occurrence": 1,
+          "start_line": 19,
+          "end_line": 19,
+          "sha256": "805f150f47f5cd71ba09e1a827447e10044975eab28a28628d2df9f76149aa67",
+          "source_kind": "BOOTSTRAP_KEY"
+        },
+        {
+          "source_id": "PROJECT_STATE.md:BOOTSTRAP_KEY:ACTIVE_PHASE",
+          "source_path": "PROJECT_STATE.md",
+          "heading_level": 0,
+          "heading_text": "ACTIVE_PHASE",
+          "heading_occurrence": 1,
+          "start_line": 20,
+          "end_line": 20,
+          "sha256": "5bb55f387a7569b591319679a7b61ae8a12fda23c235df8cc03b891976b6209c",
+          "source_kind": "BOOTSTRAP_KEY"
+        },
+        {
+          "source_id": "PROJECT_STATE.md:BOOTSTRAP_KEY:ACTIVE_PHASE_CONTRACT",
+          "source_path": "PROJECT_STATE.md",
+          "heading_level": 0,
+          "heading_text": "ACTIVE_PHASE_CONTRACT",
+          "heading_occurrence": 1,
+          "start_line": 21,
+          "end_line": 21,
+          "sha256": "fe4af4127403b7d693b3c0f0a332c746d14ffc760f84b0ebb131a2d4776595dd",
+          "source_kind": "BOOTSTRAP_KEY"
+        },
+        {
+          "source_id": "PROJECT_STATE.md:BOOTSTRAP_KEY:ACTIVE_TRACK",
+          "source_path": "PROJECT_STATE.md",
+          "heading_level": 0,
+          "heading_text": "ACTIVE_TRACK",
+          "heading_occurrence": 1,
+          "start_line": 22,
+          "end_line": 22,
+          "sha256": "1e60354aed9a69e5d42cb0e466fc593a31c1a44ce2642f585c243e6b9a862d59",
+          "source_kind": "BOOTSTRAP_KEY"
+        },
+        {
+          "source_id": "PROJECT_STATE.md:BOOTSTRAP_KEY:NEXT_AUTHORIZABLE_ACTION",
+          "source_path": "PROJECT_STATE.md",
+          "heading_level": 0,
+          "heading_text": "NEXT_AUTHORIZABLE_ACTION",
+          "heading_occurrence": 1,
+          "start_line": 23,
+          "end_line": 23,
+          "sha256": "29f689651633804b6de5b46d6e55c1ede90fc0e12abc609c5687aa6d5eca6c9e",
+          "source_kind": "BOOTSTRAP_KEY"
+        },
+        {
+          "source_id": "PROJECT_STATE.md:BOOTSTRAP_KEY:GOVERNING_SPEC",
+          "source_path": "PROJECT_STATE.md",
+          "heading_level": 0,
+          "heading_text": "GOVERNING_SPEC",
+          "heading_occurrence": 1,
+          "start_line": 24,
+          "end_line": 24,
+          "sha256": "cb47da4c3238572dc8db10b2dc9800e6016e6e51f297685dc10c481525c3f781",
+          "source_kind": "BOOTSTRAP_KEY"
+        },
+        {
+          "source_id": "PROJECT_STATE.md:BOOTSTRAP_KEY:TECHNICAL_CONTRACT",
+          "source_path": "PROJECT_STATE.md",
+          "heading_level": 0,
+          "heading_text": "TECHNICAL_CONTRACT",
+          "heading_occurrence": 1,
+          "start_line": 25,
+          "end_line": 25,
+          "sha256": "053abec3ae887a90a3dda83c6a74e5b21cc85b0d72a5a6c62967dfd32df62bf3",
+          "source_kind": "BOOTSTRAP_KEY"
+        },
+        {
+          "source_id": "PROJECT_STATE.md:BOOTSTRAP_KEY:SEQUENCE_AUTHORITY",
+          "source_path": "PROJECT_STATE.md",
+          "heading_level": 0,
+          "heading_text": "SEQUENCE_AUTHORITY",
+          "heading_occurrence": 1,
+          "start_line": 26,
+          "end_line": 26,
+          "sha256": "8ca642cd1894bb78c49a2e2bb632292ff80f098ee77b2238b05b940a8181f0d0",
+          "source_kind": "BOOTSTRAP_KEY"
+        },
+        {
+          "source_id": "PROJECT_STATE.md:BOOTSTRAP_KEY:TRACEABILITY",
+          "source_path": "PROJECT_STATE.md",
+          "heading_level": 0,
+          "heading_text": "TRACEABILITY",
+          "heading_occurrence": 1,
+          "start_line": 27,
+          "end_line": 27,
+          "sha256": "3c6de11eee8bb649425bea52d0b59bccc6abedd2a8ce9584f2c7fecbc414e632",
+          "source_kind": "BOOTSTRAP_KEY"
+        },
+        {
+          "source_id": "PROJECT_STATE.md:BOOTSTRAP_KEY:LEDGER",
+          "source_path": "PROJECT_STATE.md",
+          "heading_level": 0,
+          "heading_text": "LEDGER",
+          "heading_occurrence": 1,
+          "start_line": 28,
+          "end_line": 28,
+          "sha256": "5363d79e6cd4a87f43712e42feb92ea96105636bd2dd49d42ecd19640bbb4f11",
+          "source_kind": "BOOTSTRAP_KEY"
+        },
+        {
+          "source_id": "PROJECT_STATE.md:BOOTSTRAP_KEY:HANDOFF",
+          "source_path": "PROJECT_STATE.md",
+          "heading_level": 0,
+          "heading_text": "HANDOFF",
+          "heading_occurrence": 1,
+          "start_line": 29,
+          "end_line": 29,
+          "sha256": "5d767c04cf857be828cc849e02aabaeedababa7aad3910f1cca67b3aae3d61ce",
+          "source_kind": "BOOTSTRAP_KEY"
+        },
+        {
+          "source_id": "PROJECT_STATE.md:BOOTSTRAP_KEY:ACCEPTED_CHECKPOINT",
+          "source_path": "PROJECT_STATE.md",
+          "heading_level": 0,
+          "heading_text": "ACCEPTED_CHECKPOINT",
+          "heading_occurrence": 1,
+          "start_line": 30,
+          "end_line": 30,
+          "sha256": "0112d88d97d8ff957a17e14b173c4e1727c919f31e884c49801571747adbb51e",
+          "source_kind": "BOOTSTRAP_KEY"
+        },
+        {
+          "source_id": "PROJECT_STATE.md:MARKDOWN_SECTION:L2:ACTIVE_PHASE_AND_NEXT_ACTION:1",
+          "source_path": "PROJECT_STATE.md",
+          "heading_level": 2,
+          "heading_text": "Active phase and next action",
+          "heading_occurrence": 1,
+          "start_line": 34,
+          "end_line": 1607,
+          "sha256": "03934e79da89138a94856a797c61f3bbb566bb438f7646321b3019c7fcda712b",
+          "source_kind": "MARKDOWN_SECTION"
+        },
+        {
+          "source_id": "PROJECT_STATE.md:MARKDOWN_SECTION:L2:WORKSPACE_AND_GIT_BOUNDARIES:1",
+          "source_path": "PROJECT_STATE.md",
+          "heading_level": 2,
+          "heading_text": "Workspace and Git boundaries",
+          "heading_occurrence": 1,
+          "start_line": 1608,
+          "end_line": 1620,
+          "sha256": "3cb7e34e4937bfb0bc8cbc17c92757df594b9807e94f1871969accef341855f5",
+          "source_kind": "MARKDOWN_SECTION"
+        },
+        {
+          "source_id": "PROJECT_STATE.md:MARKDOWN_SECTION:L2:ENVIRONMENT_AND_PRODUCTION_STAGING_STATE:1",
+          "source_path": "PROJECT_STATE.md",
+          "heading_level": 2,
+          "heading_text": "Environment and production/staging state",
+          "heading_occurrence": 1,
+          "start_line": 1621,
+          "end_line": 1654,
+          "sha256": "bf9700f0e20582b4c2b3b576cae1c7c117eb4cbc4d8dd875622a5bef220faadc",
+          "source_kind": "MARKDOWN_SECTION"
+        },
+        {
+          "source_id": "PROJECT_STATE.md:MARKDOWN_SECTION:L2:POST_LAUNCH_DEBT_REGISTER_RANKED_EACH_NOT_AUTHORIZED_UNTIL_ITS_OWN_ORDER:1",
+          "source_path": "PROJECT_STATE.md",
+          "heading_level": 2,
+          "heading_text": "POST-LAUNCH DEBT REGISTER (ranked; each `NOT AUTHORIZED` until its own order)",
+          "heading_occurrence": 1,
+          "start_line": 1655,
+          "end_line": 1780,
+          "sha256": "aa15de54133b406e8102f9d4c3dea62d9496e99956e1273bd830b7b5d7afa436",
+          "source_kind": "MARKDOWN_SECTION"
+        },
+        {
+          "source_id": "PROJECT_STATE.md:MARKDOWN_SECTION:L2:BINDING_DECISIONS_IN_FORCE_CONDENSED_VERBATIM_IN_ARCHIVE_LEDGER:1",
+          "source_path": "PROJECT_STATE.md",
+          "heading_level": 2,
+          "heading_text": "Binding decisions in force (condensed; verbatim in archive/ledger)",
+          "heading_occurrence": 1,
+          "start_line": 1781,
+          "end_line": 1806,
+          "sha256": "fb297a3ac0e8db2a8979967691dfdb878c1e3c90ad0291eeb91112397d384352",
+          "source_kind": "MARKDOWN_SECTION"
+        },
+        {
+          "source_id": "PROJECT_STATE.md:MARKDOWN_SECTION:L2:PRODUCT_AND_ENVIRONMENT_PROHIBITIONS:1",
+          "source_path": "PROJECT_STATE.md",
+          "heading_level": 2,
+          "heading_text": "Product and environment prohibitions",
+          "heading_occurrence": 1,
+          "start_line": 1807,
+          "end_line": 1871,
+          "sha256": "46979fbc2efde47588604839e9e7d8a09f957212195d3330ee61dc95eabe264c",
+          "source_kind": "MARKDOWN_SECTION"
+        },
+        {
+          "source_id": "PROJECT_STATE.md:MARKDOWN_SECTION:L2:ACCEPTED_PHASE_INDEX_CONCISE:1",
+          "source_path": "PROJECT_STATE.md",
+          "heading_level": 2,
+          "heading_text": "Accepted-phase index (concise)",
+          "heading_occurrence": 1,
+          "start_line": 1872,
+          "end_line": 1924,
+          "sha256": "8ba88bb34d33248e3804ff3b4b8a83ada3f1304869401bf3d321065f1cab1b87",
+          "source_kind": "MARKDOWN_SECTION"
+        },
+        {
+          "source_id": "PROJECT_STATE.md:MARKDOWN_SECTION:L3:PURCHASE_ORDER_REFOUNDATION_PHASE_C_GOVERNANCE_TRACK:1",
+          "source_path": "PROJECT_STATE.md",
+          "heading_level": 3,
+          "heading_text": "Purchase-order refoundation + Phase-C + governance track",
+          "heading_occurrence": 1,
+          "start_line": 1877,
+          "end_line": 1906,
+          "sha256": "a6c93c54694f840319134b14751f67b7e02857cd06c17c614948a93feb20c19e",
+          "source_kind": "MARKDOWN_SECTION"
+        },
+        {
+          "source_id": "PROJECT_STATE.md:MARKDOWN_SECTION:L3:EARLIER_TRACKS_INDEXED_FULL_DETAIL_IN_LEDGER_ARCHIVES:1",
+          "source_path": "PROJECT_STATE.md",
+          "heading_level": 3,
+          "heading_text": "Earlier tracks (indexed; full detail in ledger/archives)",
+          "heading_occurrence": 1,
+          "start_line": 1907,
+          "end_line": 1924,
+          "sha256": "004e35bc90c1b18c24aeb62f765629a9b9ec69cbc6f3e1a3a870ca6e848303a3",
+          "source_kind": "MARKDOWN_SECTION"
+        },
+        {
+          "source_id": "PROJECT_STATE.md:MARKDOWN_SECTION:L2:GOVERNING_SPECIFICATIONS_AND_CANONICAL_PATHS:1",
+          "source_path": "PROJECT_STATE.md",
+          "heading_level": 2,
+          "heading_text": "Governing specifications and canonical paths",
+          "heading_occurrence": 1,
+          "start_line": 1925,
+          "end_line": 1978,
+          "sha256": "b2092054438d41af641ea22bb9668881c74d301048342a617b9e020250d97b48",
+          "source_kind": "MARKDOWN_SECTION"
+        },
+        {
+          "source_id": "PROJECT_STATE.md:MARKDOWN_SECTION:L2:HISTORICAL_REFERENCE_NOT_SOURCES_OF_CURRENT_STATE:1",
+          "source_path": "PROJECT_STATE.md",
+          "heading_level": 2,
+          "heading_text": "Historical reference (not sources of current state)",
+          "heading_occurrence": 1,
+          "start_line": 1979,
+          "end_line": 1991,
+          "sha256": "e2039a6cee043d894bcbf1ef67a423ba63c7f9cb4e86740fbc4a60fb0a7dfe18",
+          "source_kind": "MARKDOWN_SECTION"
+        }
+      ]
+    },
+    {
+      "source_path": "AGENT_HANDOFF.md",
+      "source_sha256": "7236ac15bd4fd88a5a190cca7db8001519b2dcbfb257c019c45671b14ad8b35c",
+      "line_count": 1079,
+      "units": [
+        {
+          "source_id": "AGENT_HANDOFF.md:MARKDOWN_SECTION:L1:ACTIVE_OPERATIONAL_HANDOFF:1",
+          "source_path": "AGENT_HANDOFF.md",
+          "heading_level": 1,
+          "heading_text": "ACTIVE OPERATIONAL HANDOFF",
+          "heading_occurrence": 1,
+          "start_line": 1,
+          "end_line": 1079,
+          "sha256": "7236ac15bd4fd88a5a190cca7db8001519b2dcbfb257c019c45671b14ad8b35c",
+          "source_kind": "MARKDOWN_SECTION"
+        },
+        {
+          "source_id": "AGENT_HANDOFF.md:MARKDOWN_SECTION:L2:WORKSPACE_AND_GIT:1",
+          "source_path": "AGENT_HANDOFF.md",
+          "heading_level": 2,
+          "heading_text": "Workspace and Git",
+          "heading_occurrence": 1,
+          "start_line": 9,
+          "end_line": 25,
+          "sha256": "205a5f8216bfecce0ab19ae8994fab0cfef765556edcb444ec3ac011b0ddaa0e",
+          "source_kind": "MARKDOWN_SECTION"
+        },
+        {
+          "source_id": "AGENT_HANDOFF.md:MARKDOWN_SECTION:L2:PHASE_STATUS:1",
+          "source_path": "AGENT_HANDOFF.md",
+          "heading_level": 2,
+          "heading_text": "Phase status",
+          "heading_occurrence": 1,
+          "start_line": 26,
+          "end_line": 791,
+          "sha256": "47cfd9e19bab8a872624d21d9c0583daf7dd016be650fbe89ffd934c99c0d1d7",
+          "source_kind": "MARKDOWN_SECTION"
+        },
+        {
+          "source_id": "AGENT_HANDOFF.md:MARKDOWN_SECTION:L2:GOVERNING_SPECIFICATIONS_AND_CONTRACTS:1",
+          "source_path": "AGENT_HANDOFF.md",
+          "heading_level": 2,
+          "heading_text": "Governing specifications and contracts",
+          "heading_occurrence": 1,
+          "start_line": 792,
+          "end_line": 805,
+          "sha256": "cc5c6e4235087a98dd00c15f18abd2365e6cafe318f4a2ca6c1ac42989cf1916",
+          "source_kind": "MARKDOWN_SECTION"
+        },
+        {
+          "source_id": "AGENT_HANDOFF.md:MARKDOWN_SECTION:L2:ACTIVE_REQUIREMENT_IDS_AND_DISPOSITIONS:1",
+          "source_path": "AGENT_HANDOFF.md",
+          "heading_level": 2,
+          "heading_text": "Active requirement IDs and dispositions",
+          "heading_occurrence": 1,
+          "start_line": 806,
+          "end_line": 841,
+          "sha256": "b8124b79e4ae0a79f16929ae8029c86176c0efd214fc8da33e8fab8ad2cfd8a0",
+          "source_kind": "MARKDOWN_SECTION"
+        },
+        {
+          "source_id": "AGENT_HANDOFF.md:MARKDOWN_SECTION:L2:BLOCKERS_AND_DEBTS_LIVE:1",
+          "source_path": "AGENT_HANDOFF.md",
+          "heading_level": 2,
+          "heading_text": "Blockers and debts (live)",
+          "heading_occurrence": 1,
+          "start_line": 842,
+          "end_line": 870,
+          "sha256": "89f897f850d1abb7463b059736205f3eca3948f45c3902dbf128c0b2dcfa0c19",
+          "source_kind": "MARKDOWN_SECTION"
+        },
+        {
+          "source_id": "AGENT_HANDOFF.md:MARKDOWN_SECTION:L2:ENVIRONMENT_STATE:1",
+          "source_path": "AGENT_HANDOFF.md",
+          "heading_level": 2,
+          "heading_text": "Environment state",
+          "heading_occurrence": 1,
+          "start_line": 871,
+          "end_line": 887,
+          "sha256": "012942c264ae9741143f8c4b9e93f390596085a0aedc675197fbada40d354f1d",
+          "source_kind": "MARKDOWN_SECTION"
+        },
+        {
+          "source_id": "AGENT_HANDOFF.md:MARKDOWN_SECTION:L2:PUSH_REMOTE_MAIN_AND_DEPLOYMENT_LIMITS:1",
+          "source_path": "AGENT_HANDOFF.md",
+          "heading_level": 2,
+          "heading_text": "Push, remote, main and deployment limits",
+          "heading_occurrence": 1,
+          "start_line": 888,
+          "end_line": 939,
+          "sha256": "81d336361eac55c09ab48946db48bfd92bf4becd3beefa2c88d39df7e2aa69a3",
+          "source_kind": "MARKDOWN_SECTION"
+        },
+        {
+          "source_id": "AGENT_HANDOFF.md:MARKDOWN_SECTION:L2:ROADMAP_AND_PRODUCT_MODEL_CONTINUITY_RETRANSMIT_DO_NOT_SHORTEN:1",
+          "source_path": "AGENT_HANDOFF.md",
+          "heading_level": 2,
+          "heading_text": "Roadmap and product-model continuity (retransmit — do not shorten)",
+          "heading_occurrence": 1,
+          "start_line": 940,
+          "end_line": 997,
+          "sha256": "4e10f40c6d437970b69846f8aa101f0696178a915ae866048f4bf5be46560184",
+          "source_kind": "MARKDOWN_SECTION"
+        },
+        {
+          "source_id": "AGENT_HANDOFF.md:MARKDOWN_SECTION:L2:CANONICAL_PATHS_RETRANSMIT_ALL_OF_THESE_IN_EVERY_FUTURE_HANDOFF:1",
+          "source_path": "AGENT_HANDOFF.md",
+          "heading_level": 2,
+          "heading_text": "Canonical paths — RETRANSMIT ALL OF THESE IN EVERY FUTURE HANDOFF",
+          "heading_occurrence": 1,
+          "start_line": 998,
+          "end_line": 1079,
+          "sha256": "7a664876e9d6476cfc90c227f7b84d64e4054a9b22ca17346a885f73cafda161",
+          "source_kind": "MARKDOWN_SECTION"
+        }
+      ]
+    }
+  ]
+}

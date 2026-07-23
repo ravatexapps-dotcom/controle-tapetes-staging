@@ -59,10 +59,12 @@ this section, not repeat the list.
 | `docs/governance/DOCUMENTATION_MODEL.md` | Defines the governance model and the rules for per-phase documentary updates. Content in English since `DOC-LANGUAGE-MIGRATION-L1`; pt-BR original archived at `docs/archive/pt-BR/` (see §7). |
 | `docs/governance/SUPERVISION_PROTOCOL.md` | Defines the roles of the supervision process (Architect/Reviewer/Resident Executor), onboarding of a new reviewer, order format, and gates (visual validation, approved mockup, migration as its own gate, Auth risk kept separate). Does not define state or documentary organization rules — that is `DOCUMENTATION_MODEL.md`. Content in English since `DOC-LANGUAGE-MIGRATION-L1`; pt-BR original archived at `docs/archive/pt-BR/` (see §7). |
 | `docs/governance/AGENT_INSTRUCTIONS.md` | Single tracked repository-agent behavior source for Claude Code, Codex, and equivalent repository-capable agents. It defines bootstrap, evidence, safety, and proportional-update behavior but owns no current state or product semantics. |
-| `docs/governance/GOVERNANCE_EFFICIENCY_REFOUNDATION_PHASE_CONTRACT.md` | Active material phase contract for governance-efficiency shadow implementation; non-authoritative until separate supervisor cutover acceptance. |
+| `docs/governance/GOVERNANCE_EFFICIENCY_REFOUNDATION_PHASE_CONTRACT.md` | Active material phase contract for governance-efficiency shadow implementation; Unit 1 is implemented with hardening required and awaits direct supervisor review; non-authoritative until separate supervisor cutover acceptance; Unit 2 is not authorized. |
 | `docs/governance/schemas/current-state.schema.json` | Structured shadow-state schema; validation shape only, not an authority source. |
 | `docs/governance/shadow/current-state.json` | Structured current-state shadow source; explicitly non-canonical until supervisor cutover. |
 | `docs/governance/shadow/current-state-equivalence.json` | Read-only equivalence and ownership mapping for current-state and handoff facts. |
+| `docs/governance/shadow/current-state-source-manifest.json` | Deterministic inventory of bootstrap keys and Markdown level 1-3 source sections; non-authoritative evidence for shadow equivalence. |
+| `scripts/governance/build-current-state-source-manifest.mjs` | Dependency-free deterministic source-manifest builder; does not change canonical authority. |
 | `scripts/governance/render-current-state-shadow.mjs` | Deterministic renderer for non-canonical shadow views. |
 | `scripts/governance/validate-current-state-shadow.mjs` | Shadow-state validator; does not replace or weaken spec-custody validation. |
 | `tests/governance-current-state-shadow.test.mjs` | Dependency-free validator/renderer self-tests. |

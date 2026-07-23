@@ -8,10 +8,10 @@ export const REPO_ROOT = path.resolve(SCRIPT_DIR, '..', '..');
 export const STATE_PATH = path.join(REPO_ROOT, 'docs', 'governance', 'shadow', 'current-state.json');
 export const PROJECT_VIEW_PATH = path.join(REPO_ROOT, 'docs', 'governance', 'shadow', 'generated', 'PROJECT_STATE.md');
 export const HANDOFF_VIEW_PATH = path.join(REPO_ROOT, 'docs', 'governance', 'shadow', 'generated', 'AGENT_HANDOFF.md');
-export const SHADOW_MARKER = 'GENERATED SHADOW VIEW — NON-CANONICAL — DO NOT EDIT';
+export const SHADOW_MARKER = 'GENERATED SHADOW VIEW \u2014 NON-CANONICAL \u2014 DO NOT EDIT';
 
 const REQUIRED_KEYS = [
-  'mode', 'authority', 'schema_version', 'state_id', 'repository',
+  'mode', 'authority', 'schema_version', 'state_id', 'last_accepted_phase', 'repository',
   'accepted_checkpoints', 'active_phase', 'next_authorizable_action',
   'active_track', 'governing_pointers', 'environment_boundaries',
   'prohibitions', 'protected_residue', 'live_debts', 'source_mappings'
@@ -34,6 +34,7 @@ export function validateStateShape(state) {
   if (state.authority !== 'non_canonical_until_supervisor_cutover') errors.push('authority must remain non-canonical_until_supervisor_cutover');
   if (state.schema_version !== '1.0.0') errors.push('schema_version must be 1.0.0');
   requireString(state.state_id, 'state_id', errors);
+  if (state.last_accepted_phase !== 'PHASE-C5') errors.push('last_accepted_phase mismatch');
   const repo = state.repository;
   if (!repo || typeof repo !== 'object') errors.push('repository must be an object');
   else {
@@ -59,7 +60,8 @@ export function validateStateShape(state) {
   const action = state.next_authorizable_action;
   if (!action || typeof action !== 'object') errors.push('next_authorizable_action must be an object');
   else {
-    if (action.order_id !== 'GOVERNANCE-EFFICIENCY-REFOUNDATION-SHADOW-STATE-R1') errors.push('next_authorizable_action.order_id mismatch');
+    if (action.order_id !== 'GOVERNANCE-EFFICIENCY-REFOUNDATION-SHADOW-STATE-HARDENING-R1') errors.push('next_authorizable_action.order_id mismatch');
+    if (action.canonical_value !== 'DIRECT SUPERVISOR REVIEW OF GOVERNANCE-EFFICIENCY-REFOUNDATION-SHADOW-STATE-HARDENING-R1') errors.push('next_authorizable_action.canonical_value mismatch');
     if (action.risk_class !== 'R1') errors.push('next_authorizable_action.risk_class must be R1');
     requireString(action.mode, 'next_authorizable_action.mode', errors);
     requireString(action.status, 'next_authorizable_action.status', errors);
@@ -117,7 +119,8 @@ export function renderProjectStateView(state) {
     `- Phase: ${state.active_phase.id}`,
     `- Contract: ${state.active_phase.contract}`,
     `- Status: ${state.active_phase.status}`,
-    `- Next action: ${state.next_authorizable_action.order_id}`,
+    `- Last accepted phase: ${state.last_accepted_phase}`,
+    `- Next action: ${state.next_authorizable_action.canonical_value}`,
     `- Risk class: ${state.next_authorizable_action.risk_class}`,
     `- Gate: ${state.next_authorizable_action.status}`,
     `- Track: ${state.active_track}`,
@@ -165,7 +168,7 @@ export function renderHandoffView(state) {
     '## Phase and action',
     `- ${state.active_phase.id}: ${state.active_phase.status}`,
     `- Contract: ${state.active_phase.contract}`,
-    `- Next authorizable action: ${state.next_authorizable_action.order_id}`,
+    `- Next authorizable action: ${state.next_authorizable_action.canonical_value}`,
     `- Risk class: ${state.next_authorizable_action.risk_class}; gate: ${state.next_authorizable_action.status}`,
     `- Active track: ${state.active_track}`,
     '',

@@ -9,6 +9,7 @@
     "authority",
     "schema_version",
     "state_id",
+    "last_accepted_phase",
     "repository",
     "accepted_checkpoints",
     "active_phase",
@@ -26,6 +27,7 @@
     "authority": { "const": "non_canonical_until_supervisor_cutover" },
     "schema_version": { "type": "string", "const": "1.0.0" },
     "state_id": { "type": "string", "minLength": 1 },
+    "last_accepted_phase": { "type": "string", "const": "PHASE-C5" },
     "repository": {
       "type": "object",
       "additionalProperties": false,
@@ -60,9 +62,10 @@
     "next_authorizable_action": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["order_id", "mode", "risk_class", "status"],
+      "required": ["order_id", "canonical_value", "mode", "risk_class", "status"],
       "properties": {
-        "order_id": { "const": "GOVERNANCE-EFFICIENCY-REFOUNDATION-SHADOW-STATE-R1" },
+        "order_id": { "const": "GOVERNANCE-EFFICIENCY-REFOUNDATION-SHADOW-STATE-HARDENING-R1" },
+        "canonical_value": { "type": "string", "const": "DIRECT SUPERVISOR REVIEW OF GOVERNANCE-EFFICIENCY-REFOUNDATION-SHADOW-STATE-HARDENING-R1" },
         "mode": { "type": "string", "minLength": 1 },
         "risk_class": { "const": "R1" },
         "status": { "type": "string", "minLength": 1 }
