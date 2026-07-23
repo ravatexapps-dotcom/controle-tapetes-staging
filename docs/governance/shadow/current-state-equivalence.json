@@ -83,7 +83,7 @@
     {
       "source_id": "PROJECT_STATE.md:BOOTSTRAP_KEY:NEXT_AUTHORIZABLE_ACTION",
       "source_path": "PROJECT_STATE.md",
-      "source_sha256": "52e65612129a6de538729f9f30be7dd86a5f7172d24b0f7cdd7f98dff92a8caf",
+      "source_sha256": "39b031ff2effdeefa6eaa750220c6c2a246310353d985d31948229b66263e1f3",
       "classification": "STRUCTURED_FIELD",
       "preservation_disposition": "REPRESENTED_IN_STRUCTURED_STATE",
       "destination_path": "docs/governance/shadow/current-state.json",
@@ -91,7 +91,7 @@
       "destination_anchor": null,
       "actual_owner_path": null,
       "semantic_status": "REVIEWED",
-      "review_basis": "Unit 3 R2 explicit re-review: the changed bootstrap value exactly matches /next_authorizable_action/canonical_value and records the hardened ledger-partition shadow supervisor-review gate."
+      "review_basis": "Unit 3 R3 explicit re-review: the changed bootstrap value exactly matches /next_authorizable_action/canonical_value and records the partition-index identity-binding supervisor-review gate."
     },
     {
       "source_id": "PROJECT_STATE.md:BOOTSTRAP_KEY:GOVERNING_SPEC",
@@ -213,7 +213,7 @@
     {
       "source_id": "PROJECT_STATE.md:TEXT_BLOCK:L2:ACTIVE_PHASE_AND_NEXT_ACTION:1:BLOCK:1",
       "source_path": "PROJECT_STATE.md",
-      "source_sha256": "7ecaa255226c9158bc4530e3aeb279c626bac305d1c65f5e44dde6e353229e20",
+      "source_sha256": "3b5d67fd9943a26c23bb199df5123c3e781c9e4550f6ccdc8458590d804da361",
       "classification": "RETAINED_CURRENT_CANONICAL_CONTENT",
       "preservation_disposition": "RETAINED_IN_CURRENT_CANONICAL_SOURCE_PENDING_LATER_UNIT",
       "destination_path": "PROJECT_STATE.md",
@@ -221,7 +221,7 @@
       "destination_anchor": "## Active phase and next action",
       "actual_owner_path": "PROJECT_STATE.md",
       "semantic_status": "REVIEWED",
-      "review_basis": "Unit 3 R2 explicit re-review: PROJECT_STATE.md records the hardened ledger-partition shadow supervisor-review gate while remaining the sole current-state owner."
+      "review_basis": "Unit 3 R3 explicit re-review: PROJECT_STATE.md records the partition-index identity-binding supervisor-review gate while remaining the sole current-state owner."
     },
     {
       "source_id": "PROJECT_STATE.md:MARKDOWN_HEADING:L2:WORKSPACE_AND_GIT_BOUNDARIES:1",
@@ -551,7 +551,7 @@
     {
       "source_id": "AGENT_HANDOFF.md:TEXT_BLOCK:L2:PHASE_STATUS:1:BLOCK:1",
       "source_path": "AGENT_HANDOFF.md",
-      "source_sha256": "85dd72c22afb25aa83262eb2adf15fdd6e198245ab6172dd1d1d570dc716805e",
+      "source_sha256": "0c2da47f48ece5265e905a195fd9d9fdc657a0eee3f43b22a9e9437ac69686a5",
       "classification": "DUPLICATED_CURRENT_STATE",
       "preservation_disposition": "DUPLICATED_FROM_VERIFIED_OWNER",
       "destination_path": "PROJECT_STATE.md",
@@ -559,7 +559,7 @@
       "destination_anchor": "## Active phase and next action",
       "actual_owner_path": "PROJECT_STATE.md",
       "semantic_status": "REVIEWED",
-      "review_basis": "Unit 3 R2 explicit re-review: the derived handoff matches the hardened ledger-partition shadow supervisor-review gate owned by PROJECT_STATE.md."
+      "review_basis": "Unit 3 R3 explicit re-review: the derived handoff matches the partition-index identity-binding supervisor-review gate owned by PROJECT_STATE.md."
     },
     {
       "source_id": "AGENT_HANDOFF.md:MARKDOWN_HEADING:L2:GOVERNING_SPECIFICATIONS_AND_CONTRACTS:1",

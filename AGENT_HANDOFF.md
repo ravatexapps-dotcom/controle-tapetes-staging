@@ -37,17 +37,18 @@
   Unit 2 is `CLOSED / ACCEPTED / DIRECTLY VERIFIED` under the external supervisor
   ruling supplied for checkpoint `f7106977f4613de1830bef46002dbf0a4b8b3cbe`; this
   records supervisor acceptance and is not executor self-acceptance. Unit 3 is
-  `IMPLEMENTED / GOVERNANCE GATE HARDENING COMPLETE / AWAITING DIRECT SUPERVISOR
-  REVIEW`; its partitions, generated compatibility view, and indexes remain
-  non-canonical. The reviewed interval begins at
-  `e3c8c15b368d20161df6e593debbdf0c68cb7e41` and ends at the final R2 commit
-  with subject `fix: harden Unit 3 governance gates`; its exact SHA is resolved
-  by Git in the executor closeout. **Next authorizable action:** direct supervisor
-  review of `GOVERNANCE-EFFICIENCY-REFOUNDATION-LEDGER-PARTITION-SHADOW-HARDENING-R2`.
+  `IMPLEMENTED / PARTITION INDEX IDENTITY BINDING COMPLETE / AWAITING DIRECT
+  SUPERVISOR REVIEW`; its partitions, generated compatibility view, and indexes
+  remain non-canonical. The reviewed interval begins at
+  `e3c8c15b368d20161df6e593debbdf0c68cb7e41` and ends at the final R3 commit
+  with subject `fix: bind Unit 3 partition index identity`; its exact SHA is
+  resolved by Git in the executor closeout. **Next authorizable action:** direct
+  supervisor review of
+  `GOVERNANCE-EFFICIENCY-REFOUNDATION-LEDGER-PARTITION-INDEX-IDENTITY-BINDING-R3`.
   Documentary-authority cutover, Unit 4, cleanup, compaction, archival,
   deprecation, deletion, product work, database access, and deployment remain
   unauthorized. Exact Unit 2 accepted checkpoint: `f7106977f4613de1830bef46002dbf0a4b8b3cbe`;
-  exact accounting subject: `fix: harden Unit 3 governance gates`.
+  exact accounting subject: `fix: bind Unit 3 partition index identity`.
 - **`CLEAN-SLATE-TRANSACTIONAL-RESET-EXECUTION-ACCEPTANCE-CLOSEOUT-R1` (current —
   direct supervisor acceptance of the executed shared-development clean-slate
   reset; documentation-only closeout):** the supervisor **ACCEPTED** executed

@@ -162,7 +162,28 @@ function validateSource(reader, sourceBytes, recorded, errors) {
   if (recorded.coverage?.uncovered_bytes !== 0) errors.push('manifest reports uncovered bytes');
   if (recorded.coverage?.overlapping_ranges !== 0) errors.push('manifest reports overlapping ranges');
   if (actual.units.filter(unit => unit.unit_kind === 'ENTRY' && !unit.date).length !== recorded.heading_exceptions?.length) errors.push('malformed or exceptional entry manifest drift');
-  return { actual, expected };
+  return { actual, expected, recorded };
+}
+
+function validateIndexIdentity(index, sourceBytes, source, expectedIndex, errors) {
+  const actualSha256 = cryptoSha(sourceBytes);
+  const checks = [
+    [index.canonical_source_git_object,
+      [source.recorded.canonical_source_git_object, source.expected.canonical_source_git_object, expectedIndex.canonical_source_git_object],
+      'partition index canonical source Git object identity drift'],
+    [index.canonical_source_sha256,
+      [source.recorded.canonical_source_sha256, source.expected.canonical_source_sha256, expectedIndex.canonical_source_sha256, actualSha256],
+      'partition index canonical source SHA-256 identity drift'],
+    [index.canonical_byte_count,
+      [source.recorded.canonical_byte_count, source.expected.canonical_byte_count, expectedIndex.canonical_byte_count, sourceBytes.length],
+      'partition index canonical byte count identity drift'],
+    [index.canonical_line_count,
+      [source.recorded.canonical_line_count, source.expected.canonical_line_count, expectedIndex.canonical_line_count, source.actual.lines.length],
+      'partition index canonical line count identity drift']
+  ];
+  for (const [recorded, expectedValues, message] of checks) {
+    if (expectedValues.some(expected => recorded !== expected)) errors.push(message);
+  }
 }
 
 function validatePartitionFiles(reader, sourceBytes, source, index, errors) {
@@ -174,6 +195,7 @@ function validatePartitionFiles(reader, sourceBytes, source, index, errors) {
     expectedPartitions,
     buildInboundMappings(parse(reader, CATALOG_PATH, errors) ?? {}, source.expected, expectedPartitions, markdownHeadings(source.actual.lines))
   );
+  validateIndexIdentity(index, sourceBytes, source, expectedIndex, errors);
   const files = reader.listFiles().filter(relativePath => relativePath.startsWith(`${PARTITION_DIR}/`));
   const expectedFiles = expectedPartitions.map(partition => `${PARTITION_DIR}/${partition.file_name}`);
   const unexpected = files.filter(file => !expectedFiles.includes(file));
@@ -192,6 +214,7 @@ function validatePartitionFiles(reader, sourceBytes, source, index, errors) {
   if (actualMappings.length < expectedMappings.length) errors.push('inbound ledger reference missing from survival mapping');
   if (actualMappings.length > expectedMappings.length) errors.push('extra unused survival mapping');
   if (stable(actualMappings) !== stable(expectedMappings)) errors.push('inbound reference survival mapping drift');
+  if (stable(index) !== stable(expectedIndex)) errors.push('partition index full parity drift');
   if (index.authority !== 'NON-CANONICAL_SHADOW; CANONICAL_LEDGER_AUTHORITY_UNCHANGED') errors.push('partition index declares canonical authority');
   const actualPartitionById = new Map((index.partitions ?? []).map(partition => [partition.partition_id, partition]));
   for (const partition of expectedPartitions) {
@@ -212,7 +235,7 @@ function validatePartitionFiles(reader, sourceBytes, source, index, errors) {
 
 function cryptoSha(bytes) { return crypto.createHash('sha256').update(bytes).digest('hex'); }
 
-function validateCompatibility(reader, sourceBytes, index, errors) {
+function validateCompatibility(reader, sourceBytes, index, expectedIndex, errors) {
   if (!reader.exists(COMPATIBILITY_PATH)) return;
   let payload;
   try { payload = extractPayload(readBytes(reader, COMPATIBILITY_PATH), COMPATIBILITY_BEGIN, COMPATIBILITY_END, COMPATIBILITY_PATH); }
@@ -224,10 +247,17 @@ function validateCompatibility(reader, sourceBytes, index, errors) {
     catch { return Buffer.alloc(0); }
   });
   const reassembled = Buffer.concat(parts);
+  const canonicalSha256 = cryptoSha(sourceBytes);
+  const payloadSha256 = cryptoSha(payload);
+  const reassemblySha256 = cryptoSha(reassembled);
+  const recordedPayloadSha256 = index?.compatibility_view?.payload_sha256;
   if (!payload.equals(reassembled)) errors.push('compatibility payload differs from ordered partition payloads');
   if (!payload.equals(sourceBytes)) errors.push('compatibility payload differing from canonical source');
   if (index?.compatibility_view?.reconstructed_from !== 'ORDERED_PARTITION_PAYLOADS') errors.push('compatibility view reconstruction provenance drift');
-  if (index?.complete_reassembly_sha256 !== cryptoSha(reassembled)) errors.push('complete reassembly hash drift');
+  if ([canonicalSha256, payloadSha256, reassemblySha256, expectedIndex?.compatibility_view?.payload_sha256]
+    .some(expected => recordedPayloadSha256 !== expected)) errors.push('partition index compatibility payload SHA-256 identity drift');
+  if ([reassemblySha256, expectedIndex?.complete_reassembly_sha256]
+    .some(expected => index?.complete_reassembly_sha256 !== expected)) errors.push('partition index complete reassembly SHA-256 identity drift');
 }
 
 function validateCatalogIntegration(reader, index, errors) {
@@ -261,7 +291,7 @@ export function validateWithReader(reader) {
   if (source && index) {
     schemaBasics(index, INDEX_PATH, errors);
     const partitionResult = validatePartitionFiles(reader, sourceBytes, source, index, errors);
-    validateCompatibility(reader, sourceBytes, index, errors);
+    validateCompatibility(reader, sourceBytes, index, partitionResult?.expectedIndex, errors);
     try { assertAppendStable(sourceBytes, partitionResult?.expectedPartitions ?? []); }
     catch (error) { errors.push(`append-stability fixture failed: ${errorText(error)}`); }
     validateCatalogIntegration(reader, index, errors);

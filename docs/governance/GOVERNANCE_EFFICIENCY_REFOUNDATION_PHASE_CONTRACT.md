@@ -22,11 +22,11 @@ UNIT 2: CLOSED / ACCEPTED / DIRECTLY VERIFIED
 
 UNIT 2 ACCEPTED CHECKPOINT: f7106977f4613de1830bef46002dbf0a4b8b3cbe
 
-UNIT 3: IMPLEMENTED / GOVERNANCE GATE HARDENING COMPLETE / AWAITING DIRECT SUPERVISOR REVIEW
+UNIT 3: IMPLEMENTED / PARTITION INDEX IDENTITY BINDING COMPLETE / AWAITING DIRECT SUPERVISOR REVIEW
 
 UNIT 3 REVIEWED INTERVAL START: e3c8c15b368d20161df6e593debbdf0c68cb7e41
 
-UNIT 3 REVIEWED INTERVAL END: FINAL_R2_COMMIT (`fix: harden Unit 3 governance gates`; exact immutable SHA resolved by Git and reported in executor closeout)
+UNIT 3 REVIEWED INTERVAL END: FINAL_R3_COMMIT (`fix: bind Unit 3 partition index identity`; exact immutable SHA resolved by Git and reported in executor closeout)
 
 CANONICAL LEDGER: docs/ledgers/G28_LEDGER.md / AUTHORITY UNCHANGED
 
@@ -87,9 +87,9 @@ supervisor acceptance.
   nested inside the same Markdown-link raw syntax is treated as one parser
   representation; distinct source references remain cardinality errors.
 - Unit 2 is externally accepted at checkpoint `f7106977f4613de1830bef46002dbf0a4b8b3cbe`.
-  Unit 3 governance-gate hardening is complete and awaits direct supervisor
+  Unit 3 partition-index identity binding is complete and awaits direct supervisor
   review under
-  `GOVERNANCE-EFFICIENCY-REFOUNDATION-LEDGER-PARTITION-SHADOW-HARDENING-R2`.
+  `GOVERNANCE-EFFICIENCY-REFOUNDATION-LEDGER-PARTITION-INDEX-IDENTITY-BINDING-R3`.
   Documentary-authority cutover, Unit 4, cleanup, compaction, archival,
   deprecation, and deletion remain not authorized.
 
@@ -115,6 +115,23 @@ supervisor acceptance.
   non-dated boundary fails during derivation.
 - Unit 3 is not accepted. The next action is direct supervisor review of
   `GOVERNANCE-EFFICIENCY-REFOUNDATION-LEDGER-PARTITION-SHADOW-HARDENING-R2`.
+
+## Unit 3 R3 partition-index identity binding
+
+- The validator independently rebuilds the expected partition index and requires
+  full deterministic parity with the recorded index.
+- The recorded canonical Git object, canonical SHA-256, byte count, line count,
+  compatibility payload SHA-256, and complete reassembly SHA-256 are bound to
+  the source manifest, actual canonical bytes and lines, compatibility payload,
+  ordered partition reassembly, and rebuilt expected index as applicable.
+- One positive identity-parity test and seven independent negative tests cover
+  every required dynamic field, including a coordinated false canonical-source
+  and compatibility-payload SHA-256 mutation.
+- The R2 schema, immutable-reader, append-stability, legacy-heading,
+  decomposition, partition, compatibility, and reference-survival mechanisms
+  remain in force.
+- Unit 3 is not accepted. The next action is direct supervisor review of
+  `GOVERNANCE-EFFICIENCY-REFOUNDATION-LEDGER-PARTITION-INDEX-IDENTITY-BINDING-R3`.
 
 ## Binding rules
 

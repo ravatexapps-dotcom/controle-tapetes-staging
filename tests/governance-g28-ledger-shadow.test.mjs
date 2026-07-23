@@ -97,17 +97,26 @@ function mutatePartition(number, mutate) { return textChange(partitionFile(numbe
 function currentManifest() { return JSON.parse(files.get(SOURCE_MANIFEST_PATH)); }
 function currentIndex() { return JSON.parse(files.get(INDEX_PATH)); }
 function currentSourceBytes() { return Buffer.from(files.get(SOURCE_PATH), 'utf8'); }
+function recordedPartitionPayload(fileName) {
+  const bytes = Buffer.from(files.get(`${PARTITION_DIR}/${fileName}`), 'utf8');
+  const begin = Buffer.from(`${PAYLOAD_BEGIN}\n`, 'utf8');
+  const end = Buffer.from(`\n${PAYLOAD_END}\n`, 'utf8');
+  const start = bytes.indexOf(begin);
+  const finish = bytes.indexOf(end, start + begin.length);
+  assert.ok(start >= 0 && finish >= 0);
+  return bytes.subarray(start + begin.length, finish);
+}
 
 test('valid complete Unit 3 fixture passes', () => {
   const result = validateWithReader(memoryReader());
   assert.deepEqual(result.errors, []);
   assert.deepEqual(result.results, {
-    source_bytes: 976296,
-    source_lines: 9637,
-    source_units: 202,
-    entry_count: 201,
+    source_bytes: 978771,
+    source_lines: 9648,
+    source_units: 203,
+    entry_count: 202,
     partitions: 12,
-    inbound_references: 303,
+    inbound_references: 306,
     errors: 0
   });
 });
@@ -118,6 +127,36 @@ test('canonical source Git object, hash, bytes, and lines are exact', () => {
   assert.equal(manifest.canonical_source_sha256, sha256(currentSourceBytes()));
   assert.equal(manifest.canonical_byte_count, currentSourceBytes().length);
   assert.equal(manifest.canonical_line_count, splitRawLines(currentSourceBytes()).length);
+});
+
+test('partition index has exact dynamic identity parity', () => {
+  const sourceBytes = currentSourceBytes();
+  const manifest = currentManifest();
+  const index = currentIndex();
+  const expectedManifest = buildSourceManifest(sourceBytes, live.objectId(SOURCE_PATH));
+  const expectedPartitions = partitionUnits(expectedManifest.units);
+  const expectedIndex = buildPartitionIndex(
+    sourceBytes,
+    expectedManifest,
+    expectedPartitions,
+    buildInboundMappings(
+      JSON.parse(files.get(CATALOG_PATH)),
+      expectedManifest,
+      expectedPartitions,
+      markdownHeadings(splitRawLines(sourceBytes))
+    )
+  );
+  const compatibilityPayload = renderCompatibilityPayload(ROOT);
+  const reassembled = Buffer.concat(index.partitions.map(partition => recordedPartitionPayload(partition.file_name)));
+  assert.equal(index.canonical_source_git_object, manifest.canonical_source_git_object);
+  assert.equal(index.canonical_source_sha256, manifest.canonical_source_sha256);
+  assert.equal(index.canonical_byte_count, sourceBytes.length);
+  assert.equal(index.canonical_line_count, splitRawLines(sourceBytes).length);
+  assert.equal(index.compatibility_view.payload_sha256, sha256(sourceBytes));
+  assert.equal(index.compatibility_view.payload_sha256, sha256(compatibilityPayload));
+  assert.equal(index.compatibility_view.payload_sha256, sha256(reassembled));
+  assert.equal(index.complete_reassembly_sha256, sha256(reassembled));
+  assert.deepEqual(index, expectedIndex);
 });
 
 test('source units are exhaustive, ordered, contiguous, and complete', () => {
@@ -140,7 +179,7 @@ test('source units are exhaustive, ordered, contiguous, and complete', () => {
 test('entry inventory and heading exceptions are deterministic', () => {
   const manifest = currentManifest();
   assert.equal(manifest.units.filter(unit => unit.unit_kind === 'PREAMBLE').length, 1);
-  assert.equal(manifest.units.filter(unit => unit.unit_kind === 'ENTRY').length, 201);
+  assert.equal(manifest.units.filter(unit => unit.unit_kind === 'ENTRY').length, 202);
   assert.equal(manifest.heading_exceptions.length, 2);
   assert.deepEqual(manifest.heading_exceptions.map(exception => exception.heading), LEGACY_ENTRY_HEADINGS);
   assert.equal(manifest.entry_heading_grammar, '^## YYYY-MM-DD — <non-empty title>$, plus exactly two reviewed legacy headings');
@@ -180,10 +219,10 @@ test('compatibility payload is reconstructed exactly from ordered partition payl
 
 test('reference survival has exact cardinality and path-only destination', () => {
   const index = currentIndex();
-  assert.equal(index.inbound_reference_survival_mappings.length, 303);
+  assert.equal(index.inbound_reference_survival_mappings.length, 306);
   assert.ok(index.inbound_reference_survival_mappings.every(mapping => mapping.resolution_status === 'COMPATIBILITY_VIEW'));
   assert.ok(index.inbound_reference_survival_mappings.every(mapping => mapping.compatibility_view_destination === COMPATIBILITY_PATH));
-  assert.equal(new Set(index.inbound_reference_survival_mappings.map(mapping => mapping.mapping_id)).size, 303);
+  assert.equal(new Set(index.inbound_reference_survival_mappings.map(mapping => mapping.mapping_id)).size, 306);
 });
 
 test('append-stability fixture preserves every previously closed partition', () => {
@@ -221,6 +260,40 @@ test('all Unit 3 modules pass syntax checking', () => {
 expectValidationFailure('canonical ledger hash drift fails', jsonChange(SOURCE_MANIFEST_PATH, value => {
   value.canonical_source_sha256 = '0'.repeat(64);
 }), 'canonical ledger source hash drift');
+
+expectValidationFailure('valid-format incorrect partition index Git object identity fails', jsonChange(INDEX_PATH, value => {
+  value.canonical_source_git_object = '0'.repeat(40);
+}), 'partition index canonical source Git object identity drift');
+
+expectValidationFailure('valid-format incorrect partition index source SHA-256 identity fails', jsonChange(INDEX_PATH, value => {
+  value.canonical_source_sha256 = '0'.repeat(64);
+}), 'partition index canonical source SHA-256 identity drift');
+
+expectValidationFailure('incorrect positive partition index byte count identity fails', jsonChange(INDEX_PATH, value => {
+  value.canonical_byte_count += 1;
+}), 'partition index canonical byte count identity drift');
+
+expectValidationFailure('incorrect positive partition index line count identity fails', jsonChange(INDEX_PATH, value => {
+  value.canonical_line_count += 1;
+}), 'partition index canonical line count identity drift');
+
+expectValidationFailure('valid-format incorrect compatibility payload SHA-256 identity fails', jsonChange(INDEX_PATH, value => {
+  value.compatibility_view.payload_sha256 = '0'.repeat(64);
+}), 'partition index compatibility payload SHA-256 identity drift');
+
+expectValidationFailure('valid-format incorrect complete reassembly SHA-256 identity fails', jsonChange(INDEX_PATH, value => {
+  value.complete_reassembly_sha256 = '0'.repeat(64);
+}), 'partition index complete reassembly SHA-256 identity drift');
+
+test('coordinated false source and compatibility SHA-256 identities fail explicitly', () => {
+  const changes = jsonChange(INDEX_PATH, value => {
+    value.canonical_source_sha256 = 'f'.repeat(64);
+    value.compatibility_view.payload_sha256 = 'f'.repeat(64);
+  });
+  const result = validationResult(changes);
+  assert.ok(result.errors.includes('partition index canonical source SHA-256 identity drift'), result.errors.join('\n'));
+  assert.ok(result.errors.includes('partition index compatibility payload SHA-256 identity drift'), result.errors.join('\n'));
+});
 
 expectValidationFailure('missing source-manifest schema fails', { [SOURCE_SCHEMA_PATH]: null }, `missing required ledger shadow artifact: ${SOURCE_SCHEMA_PATH}`);
 

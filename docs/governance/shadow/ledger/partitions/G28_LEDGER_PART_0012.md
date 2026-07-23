@@ -1,10 +1,10 @@
 <!-- GENERATED NON-CANONICAL SHADOW LEDGER PARTITION — DO NOT EDIT -->
 <!-- partition_id: G28-LEDGER-PART-0012 -->
 <!-- canonical_source: docs/ledgers/G28_LEDGER.md -->
-<!-- source_unit_interval: G28-LEDGER-UNIT-0195..G28-LEDGER-UNIT-0201 -->
-<!-- canonical_byte_interval: 962903..976296 -->
-<!-- canonical_line_interval: 9510..9637 -->
-<!-- payload_sha256: ee41c8684aee8d1cfb7397639cc475ba71bd9606fbd2bff0e6f52cab6d278e27 -->
+<!-- source_unit_interval: G28-LEDGER-UNIT-0195..G28-LEDGER-UNIT-0202 -->
+<!-- canonical_byte_interval: 962903..978771 -->
+<!-- canonical_line_interval: 9510..9648 -->
+<!-- payload_sha256: b60ee699aa53b105f00871e604dc2f1edd6b0d3a91b23a3e328d0aa3eb91f823 -->
 <!-- oversized_single_unit: false -->
 <!-- partition_status: OPEN -->
 <!-- G28_LEDGER_SHADOW_PAYLOAD_BEGIN_7b9d4e3a -->
@@ -135,6 +135,17 @@
 - **Status and reviewed interval:** Unit 3 is `IMPLEMENTED / GOVERNANCE GATE HARDENING COMPLETE / AWAITING DIRECT SUPERVISOR REVIEW`. The reviewed interval is `e3c8c15b368d20161df6e593debbdf0c68cb7e41` through `FINAL_R2_COMMIT` (`fix: harden Unit 3 governance gates`; exact immutable SHA resolved by Git and reported in the executor closeout). Unit 3 is not accepted.
 - **Authority boundary:** canonical ledger authority remains unchanged. Unit 4 and documentary-authority cutover are not authorized.
 - **Next action:** direct supervisor review of `GOVERNANCE-EFFICIENCY-REFOUNDATION-LEDGER-PARTITION-SHADOW-HARDENING-R2`.
+- **Scope exclusions:** no Unit 4/5, cutover, canonical replacement or truncation, cleanup, compaction, archive, movement, deprecation, deletion, product code, database/SQL, migration, shared-development access, deployment, production, forbidden-project access, `REAL_CUTOVER`, or `PHASE-C5B` occurred.
+
+## 2026-07-23 — GOVERNANCE-EFFICIENCY-REFOUNDATION-LEDGER-PARTITION-INDEX-IDENTITY-BINDING-R3 — Unit 3 partition-index identity-binding forward correction
+
+- **Supervisor verdict and retained baseline:** checkpoint `f17715f5356dc6532094cda02a84bb801cbf0d71` is `CHANGES_REQUIRED / DIRECTLY VERIFIED`. The R2 path-ceiling accounting, generated-document classification, mandatory nested-schema enforcement, immutable checkpoint validation, independent old/new-buffer append stability, closed-payload mutation detection, and exact legacy-heading exception enforcement remain retained.
+- **Unit 2 status:** `CLOSED / ACCEPTED / DIRECTLY VERIFIED` at checkpoint `f7106977f4613de1830bef46002dbf0a4b8b3cbe`; this remains an external supervisor ruling, not executor self-acceptance.
+- **Identity binding:** the recorded partition index must have full deterministic parity with the independently rebuilt expected index. Its canonical Git object, canonical SHA-256, canonical byte count, canonical line count, compatibility payload SHA-256, and complete reassembly SHA-256 are bound to the source manifest, actual canonical bytes and lines, compatibility payload, ordered partition reassembly, and rebuilt expected index as applicable.
+- **Tests:** one direct positive identity-parity test and seven independent negative tests cover the six dynamic fields plus a coordinated false canonical-source/compatibility-payload SHA-256 mutation. Each negative mutation requires an explicit identity/parity diagnostic.
+- **Status and reviewed interval:** Unit 3 is `IMPLEMENTED / PARTITION INDEX IDENTITY BINDING COMPLETE / AWAITING DIRECT SUPERVISOR REVIEW`. The reviewed interval is `e3c8c15b368d20161df6e593debbdf0c68cb7e41` through `FINAL_R3_COMMIT` (`fix: bind Unit 3 partition index identity`; exact immutable SHA resolved by Git and reported in executor closeout). Unit 3 is not accepted.
+- **Authority boundary:** `docs/ledgers/G28_LEDGER.md` remains canonical and unchanged in authority. Unit 4 and documentary-authority cutover are not authorized.
+- **Next action:** direct supervisor review of `GOVERNANCE-EFFICIENCY-REFOUNDATION-LEDGER-PARTITION-INDEX-IDENTITY-BINDING-R3`.
 - **Scope exclusions:** no Unit 4/5, cutover, canonical replacement or truncation, cleanup, compaction, archive, movement, deprecation, deletion, product code, database/SQL, migration, shared-development access, deployment, production, forbidden-project access, `REAL_CUTOVER`, or `PHASE-C5B` occurred.
 
 <!-- G28_LEDGER_SHADOW_PAYLOAD_END_7b9d4e3a -->
