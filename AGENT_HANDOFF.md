@@ -25,6 +25,18 @@
 
 ## Phase status
 
+- **`GOVERNANCE-EFFICIENCY-REFOUNDATION` (current — shadow implementation):**
+  `ACTIVE / SHADOW IMPLEMENTATION IN PROGRESS`. The structured current-state
+  source, equivalence mapping, deterministic renderer/validator, and generated
+  shadow views are implemented under the active contract, but remain
+  `NON-CANONICAL UNTIL SUPERVISOR CUTOVER`. `PROJECT_STATE.md` remains the
+  current-state owner and this file remains the derived operational handoff.
+  Status: `SHADOW IMPLEMENTATION AUTHORIZED / DOCUMENTARY-AUTHORITY CUTOVER NOT AUTHORIZED`.
+  **Next authorizable action:** direct supervisor review of
+  `GOVERNANCE-EFFICIENCY-REFOUNDATION-SHADOW-STATE-R1`. Documentary-authority
+  cutover, cleanup, compaction, partitioning, archival, deprecation, deletion,
+  product work, database access, and deployment remain unauthorized. Exact
+  accounting subject: `feat: add governance current-state shadow`.
 - **`CLEAN-SLATE-TRANSACTIONAL-RESET-EXECUTION-ACCEPTANCE-CLOSEOUT-R1` (current —
   direct supervisor acceptance of the executed shared-development clean-slate
   reset; documentation-only closeout):** the supervisor **ACCEPTED** executed

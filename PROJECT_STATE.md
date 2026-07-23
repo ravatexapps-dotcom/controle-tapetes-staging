@@ -17,10 +17,10 @@ directly (`git rev-parse HEAD`, `git status --short --untracked-files=all`).
 <!-- SPEC_CUSTODY_BOOTSTRAP:BEGIN -->
 ```text
 LAST_ACCEPTED_PHASE: PHASE-C5
-ACTIVE_PHASE: NONE
-ACTIVE_PHASE_CONTRACT: NONE
+ACTIVE_PHASE: GOVERNANCE-EFFICIENCY-REFOUNDATION
+ACTIVE_PHASE_CONTRACT: docs/governance/GOVERNANCE_EFFICIENCY_REFOUNDATION_PHASE_CONTRACT.md
 ACTIVE_TRACK: PURCHASE_ORDER_PHASE_C
-NEXT_AUTHORIZABLE_ACTION: GOVERNANCE-EFFICIENCY-REFOUNDATION-DIAGNOSIS-R1 — READ-ONLY DOCUMENT INVENTORY AND REFOUNDATION DIAGNOSIS AUTHORIZED / IMPLEMENTATION NOT YET AUTHORIZED. The CLEAN-SLATE-TRANSACTIONAL-RESET phase is CLOSED / ACCEPTED / DIRECTLY VERIFIED — the supervisor performed the direct review and accepted the executed shared-development clean-slate reset at checkpoint 770772548baf04c52e9ef020ff94f8bdabf77f03 under CLEAN-SLATE-TRANSACTIONAL-RESET-EXECUTION-ACCEPTANCE-CLOSEOUT-R1 (the executed reset itself: canonical authorization checkpoint 9706ec75c10bf811abf67e4cfcabb19aa64cbeeb, accepted readiness checkpoint 62bdcc75c335e3881adb1af6350de801675aa788, one serialized SERIALIZABLE DELETE transaction against ucrjtfswnfdlxwtmxnoo purged 64 legacy orders + 64 needs + 51 native purchase orders + 16 Pedidos + 20 OPs + 25 lotes + the exact synthetic B6-VERIFY fixture, post-state proven zero, master/reference data + saldo_fios + saldo_fios_op empty state + op_numeros + the documents front excluding B6 + the legacy_active cutover + migration history + all sequence high-water marks preserved unchanged, all user triggers enabled with the four temporarily-disabled guards re-enabled byte-identical, all C3C protected mutation guards enabled; authoritative archive 20260722T183846Z aggregate SHA-256 5221cd4753157ba426cee978b43d8b0107a42a5f08f6e23c96503ee92d7399dc and execution evidence stored outside the repository at …/clean-slate-reset/execution/20260722T202717Z/ remain authoritative and unchanged). ACCEPTED_CLEAN_SLATE_RESET_EXECUTION_CHECKPOINT = 770772548baf04c52e9ef020ff94f8bdabf77f03 (recorded separately; never repurposing the product ACCEPTED_CHECKPOINT below). The superseding CLEAN-SLATE-TRANSACTIONAL-RESET-EXECUTION-ACCEPTANCE-CLOSEOUT-R1 order sets the next authorizable action to a read-only inventory and classification of all current governance documents (line counts and file sizes, current authority and ownership, unique information held by each document, duplicated facts and duplicated narratives, documents required during normal bootstrap vs. only for historical audit, manual versus generated documents, consumers and inbound references, ledger partitioning and rollover options, archive and compaction candidates, safe deprecation candidates, documents that must remain normative, documents that may become generated views, information-loss risks, and link/reference migration requirements) — the diagnosis must not delete, archive, split, compact, or generate replacement files, and this closeout defines or guesses none of its results. The prior REAL-BUSINESS-FLOW-RECREATION-DIAGNOSIS-R1 framing of the next action is SUPERSEDED; real business-flow recreation stays a separate, still-unauthorized track, not the live next action. The previously emitted but unexecuted order CLEAN-SLATE-CLOSEOUT-AND-GOVERNANCE-EFFICIENCY-REFOUNDATION-SHADOW-R1 is SUPERSEDED and must not be executed. REAL_CUTOVER (NOT AUTHORIZED / NOT EXECUTED), PHASE-C5B-ACCEPTANCE-DECISION (IDENTIFIED / NOT AUTHORIZED / NOT IMPLEMENTED), real business-flow recreation (NOT YET AUTHORIZED), any shared-database apply beyond db/77, staging validation/application, deployment, activation, production access, the forbidden project (NOT ACCESSED), governance-efficiency refoundation implementation (NOT YET AUTHORIZED), document cleanup/compaction (NOT YET AUTHORIZED), documentary-authority cutover (NOT AUTHORIZED), and branch creation remain unauthorized; no phase chains automatically
+NEXT_AUTHORIZABLE_ACTION: DIRECT SUPERVISOR REVIEW OF GOVERNANCE-EFFICIENCY-REFOUNDATION-SHADOW-STATE-R1 — SHADOW IMPLEMENTATION AUTHORIZED / DOCUMENTARY-AUTHORITY CUTOVER NOT AUTHORIZED.
 GOVERNING_SPEC: docs/architecture/ORDEM_COMPRA_LIFECYCLE_SPEC_PROPOSED.md
 TECHNICAL_CONTRACT: docs/architecture/PEDIDO_OP_SCHEMA_CONTRACT.md
 SEQUENCE_AUTHORITY: docs/architecture/PEDIDO_PRODUCTION_FLOW_BACKLOG.md
@@ -33,6 +33,21 @@ ACCEPTED_CHECKPOINT: 3405fdab8e05ec0f81cbfe07c63c489e551fee92
 
 ## Active phase and next action
 
+- **`GOVERNANCE-EFFICIENCY-REFOUNDATION` (current — shadow implementation):**
+  diagnosis acceptance is recorded and the phase is open as
+  `ACTIVE / SHADOW IMPLEMENTATION IN PROGRESS`. The structured current-state
+  source, equivalence mapping, deterministic renderer/validator, and generated
+  shadow views are implemented under the active phase contract. They are
+  `NON-CANONICAL UNTIL SUPERVISOR CUTOVER`; `PROJECT_STATE.md` remains current
+  state authority and `AGENT_HANDOFF.md` remains the derived handoff. The next
+  gate is `DIRECT SUPERVISOR REVIEW OF
+  GOVERNANCE-EFFICIENCY-REFOUNDATION-SHADOW-STATE-R1`. Documentary-authority
+  status: `SHADOW IMPLEMENTATION AUTHORIZED / DOCUMENTARY-AUTHORITY CUTOVER NOT AUTHORIZED`.
+  The
+  cutover, cleanup, compaction, partitioning, archival, deprecation, deletion,
+  product work, database access, and deployment are not authorized. Exact
+  `ACCEPTED_CLEAN_SLATE_RESET_EXECUTION_CHECKPOINT = 770772548baf04c52e9ef020ff94f8bdabf77f03`. Exact accounting subject:
+  `feat: add governance current-state shadow`.
 - **`CLEAN-SLATE-TRANSACTIONAL-RESET-EXECUTION-ACCEPTANCE-CLOSEOUT-R1` (current —
   direct supervisor acceptance of the executed shared-development clean-slate
   reset; documentation-only closeout):** the supervisor performed the direct

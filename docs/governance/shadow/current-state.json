@@ -1,0 +1,70 @@
+{
+  "mode": "shadow",
+  "authority": "non_canonical_until_supervisor_cutover",
+  "schema_version": "1.0.0",
+  "state_id": "GOVERNANCE-EFFICIENCY-REFOUNDATION-SHADOW-STATE-R1",
+  "repository": {
+    "canonical_workspace": "D:/Programação/controle-tapetes-g28",
+    "repository": "ravatexapps-dotcom/controle-tapetes-staging",
+    "branch": "dev",
+    "checkpoint_remote": "staging/dev"
+  },
+  "accepted_checkpoints": {
+    "product": "3405fdab8e05ec0f81cbfe07c63c489e551fee92",
+    "clean_slate_readiness": "62bdcc75c335e3881adb1af6350de801675aa788",
+    "clean_slate_execution": "770772548baf04c52e9ef020ff94f8bdabf77f03"
+  },
+  "active_phase": {
+    "id": "GOVERNANCE-EFFICIENCY-REFOUNDATION",
+    "contract": "docs/governance/GOVERNANCE_EFFICIENCY_REFOUNDATION_PHASE_CONTRACT.md",
+    "status": "ACTIVE / SHADOW IMPLEMENTATION IN PROGRESS"
+  },
+  "next_authorizable_action": {
+    "order_id": "GOVERNANCE-EFFICIENCY-REFOUNDATION-SHADOW-STATE-R1",
+    "mode": "GOVERNANCE PHASE OPENING + NON-CANONICAL SHADOW STATE IMPLEMENTATION",
+    "risk_class": "R1",
+    "status": "DIRECT SUPERVISOR REVIEW REQUIRED"
+  },
+  "active_track": "PURCHASE_ORDER_PHASE_C",
+  "governing_pointers": {
+    "governing_spec": "docs/architecture/ORDEM_COMPRA_LIFECYCLE_SPEC_PROPOSED.md",
+    "technical_contract": "docs/architecture/PEDIDO_OP_SCHEMA_CONTRACT.md",
+    "sequence_authority": "docs/architecture/PEDIDO_PRODUCTION_FLOW_BACKLOG.md",
+    "traceability": "docs/architecture/ORDEM_COMPRA_C3_TRACEABILITY.md",
+    "ledger": "docs/ledgers/G28_LEDGER.md",
+    "handoff": "AGENT_HANDOFF.md"
+  },
+  "environment_boundaries": {
+    "shared_development": "ucrjtfswnfdlxwtmxnoo",
+    "production": "gqmpsxkxynrjvidfmojk",
+    "forbidden_project": "bhgifjrfagkzubpyqpew"
+  },
+  "prohibitions": [
+    "NO DATABASE ACCESS, SQL, MIGRATIONS, OR PRODUCT IMPLEMENTATION",
+    "NO PRODUCTION ACCESS OR FORBIDDEN-PROJECT ACCESS",
+    "NO DOCUMENTARY-AUTHORITY CUTOVER OR REPLACEMENT OF ROOT STATE/HANDOFF",
+    "NO CLEANUP, COMPACTION, PARTITIONING, ARCHIVAL, DEPRECATION, OR DELETION",
+    "NO REAL_CUTOVER OR PHASE-C5B AUTHORIZATION",
+    "NO PUSH OTHER THAN THE SINGLE EXPLICIT FAST-FORWARD STAGING PUSH"
+  ],
+  "protected_residue": [
+    { "path": ".gitignore", "status": "pre-existing modified residue; preserve exactly" },
+    { "path": ".codex/config.toml", "status": "pre-existing untracked residue; preserve exactly" },
+    { "path": ".mcp.json", "status": "pre-existing untracked residue; preserve exactly" }
+  ],
+  "live_debts": [
+    { "stable_id": "INGESTOR-DOC-CYCLE-VERIFY-DEFERRED", "owner_path": "PROJECT_STATE.md", "blocking": true, "status": "active production blocker" },
+    { "stable_id": "CAMADA3-BK5-BK8", "owner_path": "PROJECT_STATE.md", "blocking": true, "status": "open" },
+    { "stable_id": "DELETE-PROD-GUARD-A", "owner_path": "PROJECT_STATE.md", "blocking": true, "status": "open" },
+    { "stable_id": "CODE-HEALTH-AUDIT-18-R1", "owner_path": "PROJECT_STATE.md", "blocking": false, "status": "open" },
+    { "stable_id": "HISTORICAL_SALDO_FIOS_PROVENANCE_UNAVAILABLE", "owner_path": "PROJECT_STATE.md", "blocking": true, "status": "open" },
+    { "stable_id": "NATIVE_RECEIPT_COMPATIBILITY_MULTI_ORIGIN_UNRESOLVED", "owner_path": "PROJECT_STATE.md", "blocking": true, "status": "open" },
+    { "stable_id": "C3D-13-UNMAPPED-ROWS-COMPLETENESS-GATE", "owner_path": "PROJECT_STATE.md", "blocking": true, "status": "open" }
+  ],
+  "source_mappings": [
+    { "source_path": "PROJECT_STATE.md", "destination": "structured current state plus normative pointers" },
+    { "source_path": "AGENT_HANDOFF.md", "destination": "derived handoff view plus historical ledger content" },
+    { "source_path": "docs/ledgers/G28_LEDGER.md", "destination": "append-only historical ledger" },
+    { "source_path": "docs/DOCUMENTATION_INDEX.md", "destination": "document catalog and authority classification" }
+  ]
+}
