@@ -9,7 +9,28 @@
     "schema_version": { "const": "1.0.0" },
     "mode": { "const": "NON_CANONICAL_SHADOW" },
     "authority": { "const": "CURRENT_CANONICAL_OWNERS_UNCHANGED" },
-    "known_broken_references": { "type": "array", "minItems": 1 },
+    "known_broken_references": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "debt_id", "source_path", "source_line", "target", "status",
+          "owner", "reason", "future_resolution_unit"
+        ],
+        "properties": {
+          "debt_id": { "type": "string", "pattern": "^DOC-REF-DEBT-[0-9]{3}$" },
+          "source_path": { "type": "string", "pattern": "^(?:docs/.+\\.md|(?:PROJECT_STATE|AGENT_HANDOFF|AGENTS|CLAUDE)\\.md)$" },
+          "source_line": { "type": "integer", "minimum": 1 },
+          "target": { "type": "string", "pattern": "^docs/.+\\.md$" },
+          "status": { "const": "DEFERRED" },
+          "owner": { "type": "string", "pattern": "^(?:docs/.+\\.md|(?:PROJECT_STATE|AGENT_HANDOFF|AGENTS|CLAUDE)\\.md)$" },
+          "reason": { "type": "string", "minLength": 1 },
+          "future_resolution_unit": { "type": "string", "pattern": "^[A-Z0-9][A-Z0-9_-]+$" }
+        }
+      }
+    },
     "artifacts": {
       "type": "array",
       "minItems": 1,

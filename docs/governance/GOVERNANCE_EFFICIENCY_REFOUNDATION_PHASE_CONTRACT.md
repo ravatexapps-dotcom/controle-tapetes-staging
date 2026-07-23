@@ -18,7 +18,7 @@ STRUCTURED SOURCES: NON-CANONICAL SHADOW MODE
 
 CURRENT CANONICAL OWNERS: UNCHANGED
 
-UNIT 2: IMPLEMENTED / SHADOW VALIDATED / AWAITING DIRECT SUPERVISOR REVIEW
+UNIT 2: IMPLEMENTED / TRACEABILITY AND REFERENCE-DEBT HARDENING COMPLETE / AWAITING DIRECT SUPERVISOR REVIEW
 
 DOCUMENTARY-AUTHORITY CUTOVER: NOT AUTHORIZED
 
@@ -58,6 +58,17 @@ supervisor acceptance.
   `docs/governance/shadow/generated/ORDEM_COMPRA_C3_TRACEABILITY.md`.
 - Validator: `scripts/governance/validate-documentation-shadow.mjs`, including
   immutable `--commit <sha>` reads without checkout or Git mutation.
+- Canonical trace rows bind `BLOCKING_STATE`, the exact LF-normalized row
+  SHA-256 (including its terminating LF), explicit review basis, and exact
+  evidence-pointer parity. Evidence pointers are extracted only as bounded
+  root-relative `docs/`, `scripts/`, `tests/`, `db/`, or `js/` paths ending in
+  `.md`, `.mjs`, `.js`, or `.sql`, plus `index.html`; extraction scans
+  `IMPLEMENTATION_ARTIFACT` before `TEST_OR_EVIDENCE`, preserves first-occurrence
+  order, and removes exact duplicates.
+- Known broken-reference debt is fail-closed and reconciled one-to-one against
+  the source path, exact line, extracted missing target, cataloged owner, and
+  deferred resolution unit; duplicate, unused, stale, or newly resolved debt
+  entries fail validation.
 - Unit 2 is not accepted by this implementation. Unit 3, documentary-authority
   cutover, cleanup, compaction, partitioning, archival, deprecation, and deletion
   remain not authorized.

@@ -34,13 +34,13 @@
   Status: `SHADOW IMPLEMENTATION AUTHORIZED / DOCUMENTARY-AUTHORITY CUTOVER NOT AUTHORIZED`.
   Unit 1 is `CLOSED / ACCEPTED / DIRECTLY VERIFIED` at
   `39abf42a7341b61fd4ac02a8e38d1e4f33471f0f` by external supervisor ruling.
-  Unit 2 is `IMPLEMENTED / SHADOW VALIDATED / AWAITING DIRECT SUPERVISOR REVIEW`;
+  Unit 2 is `IMPLEMENTED / TRACEABILITY AND REFERENCE-DEBT HARDENING COMPLETE / AWAITING DIRECT SUPERVISOR REVIEW`;
   its catalog, reference validation, structured Phase-C traceability, and generated
   views remain non-canonical. **Next authorizable action:** direct supervisor
-  review of `GOVERNANCE-EFFICIENCY-REFOUNDATION-CATALOG-TRACEABILITY-VALIDATOR-SHADOW-R1`. Documentary-authority
+  review of `GOVERNANCE-EFFICIENCY-REFOUNDATION-CATALOG-TRACEABILITY-VALIDATOR-SHADOW-HARDENING-R2`. Documentary-authority
   cutover, cleanup, compaction, partitioning, archival, deprecation, deletion,
   product work, database access, and deployment remain unauthorized. Exact
-  accounting subject: `fix: prove governance shadow semantic equivalence`.
+  accounting subject: `fix: bind governance traceability and reference debts`.
 - **`CLEAN-SLATE-TRANSACTIONAL-RESET-EXECUTION-ACCEPTANCE-CLOSEOUT-R1` (current —
   direct supervisor acceptance of the executed shared-development clean-slate
   reset; documentation-only closeout):** the supervisor **ACCEPTED** executed

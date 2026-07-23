@@ -416,10 +416,10 @@
     },
     {
       "path": "AGENT_HANDOFF.md",
-      "git_object_id": "c79947dd48c94a66561cd1ff01f68b3e2bdc553c",
-      "sha256": "a624da65d68b659a59aa9cea6f6a613a292cce28810feffb5c84227333c8516b",
+      "git_object_id": "553873789bcccae7c51b727dd1de1ae9f7696df5",
+      "sha256": "6e676210abac4911219a2476b6a5f94eb921d047a45f3d4bc2168306c4554aa3",
       "line_count": 1081,
-      "byte_count": 76050,
+      "byte_count": 76098,
       "generated_status": "MANUAL",
       "outbound_references": [
         {
@@ -2060,14 +2060,14 @@
         },
         {
           "source_path": "docs/governance/GOVERNANCE_EFFICIENCY_REFOUNDATION_PHASE_CONTRACT.md",
-          "source_line": 68,
+          "source_line": 79,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
         },
         {
           "source_path": "docs/governance/GOVERNANCE_EFFICIENCY_REFOUNDATION_PHASE_CONTRACT.md",
-          "source_line": 75,
+          "source_line": 86,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
@@ -4070,10 +4070,10 @@
     },
     {
       "path": "PROJECT_STATE.md",
-      "git_object_id": "b0432771c9178e10aeafd83d6f96266df54d4773",
-      "sha256": "518acbeb8a909c99305a013beabc1f755cbc705fd319945ed365da28ee3f595e",
+      "git_object_id": "2d9293b85e1f747df363b4e38f7174feaf9550f3",
+      "sha256": "7cbc2e936a3fdd8ccc6e5ae3e95c83ab63983a54458b3bf49e513bee69dc1679",
       "line_count": 1995,
-      "byte_count": 146105,
+      "byte_count": 146163,
       "generated_status": "MANUAL",
       "outbound_references": [
         {
@@ -5502,42 +5502,42 @@
         },
         {
           "source_path": "docs/architecture/ORDEM_COMPRA_C3_TRACEABILITY.md",
-          "source_line": 204,
+          "source_line": 227,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
         },
         {
           "source_path": "docs/architecture/ORDEM_COMPRA_C3_TRACEABILITY.md",
-          "source_line": 364,
+          "source_line": 387,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
         },
         {
           "source_path": "docs/architecture/ORDEM_COMPRA_C3_TRACEABILITY.md",
-          "source_line": 470,
+          "source_line": 493,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
         },
         {
           "source_path": "docs/architecture/ORDEM_COMPRA_C3_TRACEABILITY.md",
-          "source_line": 502,
+          "source_line": 525,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
         },
         {
           "source_path": "docs/architecture/ORDEM_COMPRA_C3_TRACEABILITY.md",
-          "source_line": 528,
+          "source_line": 551,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
         },
         {
           "source_path": "docs/architecture/ORDEM_COMPRA_C3_TRACEABILITY.md",
-          "source_line": 545,
+          "source_line": 568,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
@@ -7966,14 +7966,14 @@
         },
         {
           "source_path": "docs/governance/GOVERNANCE_EFFICIENCY_REFOUNDATION_PHASE_CONTRACT.md",
-          "source_line": 67,
+          "source_line": 78,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
         },
         {
           "source_path": "docs/governance/GOVERNANCE_EFFICIENCY_REFOUNDATION_PHASE_CONTRACT.md",
-          "source_line": 73,
+          "source_line": 84,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
@@ -10617,10 +10617,10 @@
     },
     {
       "path": "docs/DOCUMENTATION_INDEX.md",
-      "git_object_id": "1b2aff042a77d6dd9228a6865f6194c64f16ba18",
-      "sha256": "9e946cdfd6f1621215831665975721776c531715a61d8a2d6812ae7b9211a9fa",
+      "git_object_id": "eb5b31164840d07539c9e41c1b925b6f6a4acd55",
+      "sha256": "c78e4d32bdb4b05d81fd7784287ce1bef3ea8b586f790db1bcab88dd6d4410f4",
       "line_count": 735,
-      "byte_count": 109034,
+      "byte_count": 109052,
       "generated_status": "MANUAL",
       "outbound_references": [
         {
@@ -16728,7 +16728,7 @@
         },
         {
           "source_path": "docs/architecture/ORDEM_COMPRA_C3_TRACEABILITY.md",
-          "source_line": 478,
+          "source_line": 501,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
@@ -19796,14 +19796,14 @@
         },
         {
           "source_path": "docs/architecture/ORDEM_COMPRA_C3_TRACEABILITY.md",
-          "source_line": 105,
+          "source_line": 128,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
         },
         {
           "source_path": "docs/architecture/ORDEM_COMPRA_C3_TRACEABILITY.md",
-          "source_line": 366,
+          "source_line": 389,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
@@ -21214,14 +21214,14 @@
         },
         {
           "source_path": "docs/architecture/ORDEM_COMPRA_C3_TRACEABILITY.md",
-          "source_line": 101,
+          "source_line": 124,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
         },
         {
           "source_path": "docs/architecture/ORDEM_COMPRA_C3_TRACEABILITY.md",
-          "source_line": 352,
+          "source_line": 375,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
@@ -22559,14 +22559,14 @@
         },
         {
           "source_path": "docs/architecture/ORDEM_COMPRA_C3_TRACEABILITY.md",
-          "source_line": 117,
+          "source_line": 140,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
         },
         {
           "source_path": "docs/architecture/ORDEM_COMPRA_C3_TRACEABILITY.md",
-          "source_line": 397,
+          "source_line": 420,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
@@ -23275,10 +23275,10 @@
     },
     {
       "path": "docs/architecture/ORDEM_COMPRA_C3_TRACEABILITY.md",
-      "git_object_id": "5e09e3928e50955308c86a662cd5dd13e9213a20",
-      "sha256": "3719493e5e2961c1f1c06056513d20acc2da9244d94d9d19ac5433bb69324f4f",
-      "line_count": 556,
-      "byte_count": 67334,
+      "git_object_id": "fa7c4ff55497dd0d16385d24832cc6d868af902d",
+      "sha256": "9e2c0170733bd5bbfc496a0e968fe02964443fda6893d5ad239252c38938f8b8",
+      "line_count": 579,
+      "byte_count": 92336,
       "generated_status": "MANUAL",
       "outbound_references": [
         {
@@ -23295,7 +23295,7 @@
           "target_path": "docs/architecture/ORDEM_COMPRA_C3C_B_PHASE_CONTRACT.md",
           "anchor": null,
           "line_suffix": null,
-          "source_line": 101
+          "source_line": 124
         },
         {
           "kind": "ROOT_REFERENCE",
@@ -23303,7 +23303,7 @@
           "target_path": "docs/architecture/ORDEM_COMPRA_C3C_B_DB_PREREQUISITES_PHASE_CONTRACT.md",
           "anchor": null,
           "line_suffix": null,
-          "source_line": 105
+          "source_line": 128
         },
         {
           "kind": "ROOT_REFERENCE",
@@ -23311,7 +23311,7 @@
           "target_path": "docs/architecture/ORDEM_COMPRA_C3D_PHASE_CONTRACT.md",
           "anchor": null,
           "line_suffix": null,
-          "source_line": 117
+          "source_line": 140
         },
         {
           "kind": "ROOT_REFERENCE",
@@ -23319,7 +23319,7 @@
           "target_path": "docs/architecture/ORDEM_COMPRA_C4_PHASE_CONTRACT.md",
           "anchor": null,
           "line_suffix": null,
-          "source_line": 146
+          "source_line": 169
         },
         {
           "kind": "ROOT_REFERENCE",
@@ -23327,7 +23327,7 @@
           "target_path": "docs/architecture/ORDEM_COMPRA_C5_PHASE_CONTRACT.md",
           "anchor": null,
           "line_suffix": null,
-          "source_line": 159
+          "source_line": 182
         },
         {
           "kind": "ROOT_REFERENCE",
@@ -23335,7 +23335,7 @@
           "target_path": "docs/architecture/ORDEM_COMPRA_C4_PHASE_CONTRACT.md",
           "anchor": null,
           "line_suffix": null,
-          "source_line": 180
+          "source_line": 203
         },
         {
           "kind": "ROOT_REFERENCE",
@@ -23343,7 +23343,7 @@
           "target_path": "docs/architecture/UI_VISUAL_CONTRACT.md",
           "anchor": null,
           "line_suffix": null,
-          "source_line": 188
+          "source_line": 211
         },
         {
           "kind": "ROOT_REFERENCE",
@@ -23351,7 +23351,7 @@
           "target_path": "PROJECT_STATE.md",
           "anchor": null,
           "line_suffix": null,
-          "source_line": 204
+          "source_line": 227
         },
         {
           "kind": "ROOT_REFERENCE",
@@ -23359,7 +23359,7 @@
           "target_path": "docs/architecture/ORDEM_COMPRA_C5_PHASE_CONTRACT.md",
           "anchor": null,
           "line_suffix": null,
-          "source_line": 207
+          "source_line": 230
         },
         {
           "kind": "ROOT_REFERENCE",
@@ -23367,7 +23367,7 @@
           "target_path": "docs/architecture/ORDEM_COMPRA_C5A_DB_EMISSION_READINESS_PHASE_CONTRACT.md",
           "anchor": null,
           "line_suffix": null,
-          "source_line": 235
+          "source_line": 258
         },
         {
           "kind": "ROOT_REFERENCE",
@@ -23375,20 +23375,12 @@
           "target_path": "docs/architecture/ORDEM_COMPRA_C5A_DB_EMISSION_READINESS_PHASE_CONTRACT.md",
           "anchor": null,
           "line_suffix": null,
-          "source_line": 274
+          "source_line": 297
         },
         {
           "kind": "ROOT_REFERENCE",
           "raw": "`docs/architecture/ORDEM_COMPRA_C5A_DB_EMISSION_READINESS_PHASE_CONTRACT.md`",
           "target_path": "docs/architecture/ORDEM_COMPRA_C5A_DB_EMISSION_READINESS_PHASE_CONTRACT.md",
-          "anchor": null,
-          "line_suffix": null,
-          "source_line": 309
-        },
-        {
-          "kind": "ROOT_REFERENCE",
-          "raw": "`docs/architecture/ORDEM_COMPRA_C5_PHASE_CONTRACT.md`",
-          "target_path": "docs/architecture/ORDEM_COMPRA_C5_PHASE_CONTRACT.md",
           "anchor": null,
           "line_suffix": null,
           "source_line": 332
@@ -23399,7 +23391,15 @@
           "target_path": "docs/architecture/ORDEM_COMPRA_C5_PHASE_CONTRACT.md",
           "anchor": null,
           "line_suffix": null,
-          "source_line": 341
+          "source_line": 355
+        },
+        {
+          "kind": "ROOT_REFERENCE",
+          "raw": "`docs/architecture/ORDEM_COMPRA_C5_PHASE_CONTRACT.md`",
+          "target_path": "docs/architecture/ORDEM_COMPRA_C5_PHASE_CONTRACT.md",
+          "anchor": null,
+          "line_suffix": null,
+          "source_line": 364
         },
         {
           "kind": "ROOT_REFERENCE",
@@ -23407,7 +23407,7 @@
           "target_path": "docs/governance/AGENT_INSTRUCTIONS.md",
           "anchor": null,
           "line_suffix": null,
-          "source_line": 345
+          "source_line": 368
         },
         {
           "kind": "ROOT_REFERENCE",
@@ -23415,7 +23415,7 @@
           "target_path": "docs/architecture/ORDEM_COMPRA_C3C_B_PHASE_CONTRACT.md",
           "anchor": null,
           "line_suffix": null,
-          "source_line": 352
+          "source_line": 375
         },
         {
           "kind": "ROOT_REFERENCE",
@@ -23423,7 +23423,7 @@
           "target_path": "PROJECT_STATE.md",
           "anchor": null,
           "line_suffix": null,
-          "source_line": 364
+          "source_line": 387
         },
         {
           "kind": "ROOT_REFERENCE",
@@ -23431,7 +23431,7 @@
           "target_path": "docs/architecture/ORDEM_COMPRA_C3C_B_DB_PREREQUISITES_PHASE_CONTRACT.md",
           "anchor": null,
           "line_suffix": null,
-          "source_line": 366
+          "source_line": 389
         },
         {
           "kind": "ROOT_REFERENCE",
@@ -23439,7 +23439,7 @@
           "target_path": "docs/architecture/ORDEM_COMPRA_C3D_PHASE_CONTRACT.md",
           "anchor": null,
           "line_suffix": null,
-          "source_line": 397
+          "source_line": 420
         },
         {
           "kind": "ROOT_REFERENCE",
@@ -23447,7 +23447,7 @@
           "target_path": "PROJECT_STATE.md",
           "anchor": null,
           "line_suffix": null,
-          "source_line": 470
+          "source_line": 493
         },
         {
           "kind": "ROOT_REFERENCE",
@@ -23455,7 +23455,7 @@
           "target_path": "docs/architecture/ORDEM_COMPRA_C4_PHASE_CONTRACT.md",
           "anchor": null,
           "line_suffix": null,
-          "source_line": 472
+          "source_line": 495
         },
         {
           "kind": "ROOT_REFERENCE",
@@ -23463,7 +23463,7 @@
           "target_path": "docs/architecture/CLEAN_SLATE_TRANSACTIONAL_RESET_PHASE_CONTRACT.md",
           "anchor": null,
           "line_suffix": null,
-          "source_line": 478
+          "source_line": 501
         },
         {
           "kind": "ROOT_REFERENCE",
@@ -23471,7 +23471,7 @@
           "target_path": "PROJECT_STATE.md",
           "anchor": null,
           "line_suffix": null,
-          "source_line": 502
+          "source_line": 525
         },
         {
           "kind": "ROOT_REFERENCE",
@@ -23479,7 +23479,7 @@
           "target_path": "PROJECT_STATE.md",
           "anchor": null,
           "line_suffix": null,
-          "source_line": 528
+          "source_line": 551
         },
         {
           "kind": "ROOT_REFERENCE",
@@ -23487,7 +23487,7 @@
           "target_path": "PROJECT_STATE.md",
           "anchor": null,
           "line_suffix": null,
-          "source_line": 545
+          "source_line": 568
         }
       ],
       "inbound_references": [
@@ -23725,20 +23725,6 @@
         {
           "source_path": "docs/governance/shadow/generated/ORDEM_COMPRA_C3_TRACEABILITY.md",
           "source_line": 4,
-          "kind": "ROOT_REFERENCE",
-          "anchor": null,
-          "line_suffix": null
-        },
-        {
-          "source_path": "docs/governance/shadow/generated/ORDEM_COMPRA_C3_TRACEABILITY.md",
-          "source_line": 16,
-          "kind": "ROOT_REFERENCE",
-          "anchor": null,
-          "line_suffix": null
-        },
-        {
-          "source_path": "docs/governance/shadow/generated/ORDEM_COMPRA_C3_TRACEABILITY.md",
-          "source_line": 19,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
@@ -24157,15 +24143,21 @@
         },
         {
           "level": 2,
+          "text": "Canonical requirement matrix",
+          "anchor": "canonical-requirement-matrix",
+          "line": 98
+        },
+        {
+          "level": 2,
           "text": "Authorization boundary",
           "anchor": "authorization-boundary",
-          "line": 96
+          "line": 119
         },
         {
           "level": 2,
           "text": "Material phase contract reference",
           "anchor": "material-phase-contract-reference",
-          "line": 178
+          "line": 201
         }
       ]
     },
@@ -24609,21 +24601,21 @@
         },
         {
           "source_path": "docs/architecture/ORDEM_COMPRA_C3_TRACEABILITY.md",
-          "source_line": 146,
+          "source_line": 169,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
         },
         {
           "source_path": "docs/architecture/ORDEM_COMPRA_C3_TRACEABILITY.md",
-          "source_line": 180,
+          "source_line": 203,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
         },
         {
           "source_path": "docs/architecture/ORDEM_COMPRA_C3_TRACEABILITY.md",
-          "source_line": 472,
+          "source_line": 495,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
@@ -25396,21 +25388,21 @@
         },
         {
           "source_path": "docs/architecture/ORDEM_COMPRA_C3_TRACEABILITY.md",
-          "source_line": 235,
+          "source_line": 258,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
         },
         {
           "source_path": "docs/architecture/ORDEM_COMPRA_C3_TRACEABILITY.md",
-          "source_line": 274,
+          "source_line": 297,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
         },
         {
           "source_path": "docs/architecture/ORDEM_COMPRA_C3_TRACEABILITY.md",
-          "source_line": 309,
+          "source_line": 332,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
@@ -26270,28 +26262,28 @@
         },
         {
           "source_path": "docs/architecture/ORDEM_COMPRA_C3_TRACEABILITY.md",
-          "source_line": 159,
+          "source_line": 182,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
         },
         {
           "source_path": "docs/architecture/ORDEM_COMPRA_C3_TRACEABILITY.md",
-          "source_line": 207,
+          "source_line": 230,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
         },
         {
           "source_path": "docs/architecture/ORDEM_COMPRA_C3_TRACEABILITY.md",
-          "source_line": 332,
+          "source_line": 355,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
         },
         {
           "source_path": "docs/architecture/ORDEM_COMPRA_C3_TRACEABILITY.md",
-          "source_line": 341,
+          "source_line": 364,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
@@ -32875,7 +32867,7 @@
         },
         {
           "source_path": "docs/architecture/ORDEM_COMPRA_C3_TRACEABILITY.md",
-          "source_line": 188,
+          "source_line": 211,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
@@ -46898,7 +46890,7 @@
         },
         {
           "source_path": "docs/architecture/ORDEM_COMPRA_C3_TRACEABILITY.md",
-          "source_line": 345,
+          "source_line": 368,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
@@ -48865,10 +48857,10 @@
     },
     {
       "path": "docs/governance/GOVERNANCE_EFFICIENCY_REFOUNDATION_PHASE_CONTRACT.md",
-      "git_object_id": "72850b623ba692162e0704633eab8d7ef6cc0009",
-      "sha256": "3062588ab5a224eb3c8037a3953a925ac8664f419a15463227bbecbab8fb2d8d",
-      "line_count": 81,
-      "byte_count": 3833,
+      "git_object_id": "60d12bd49640b97560d1c50efad321776fb6bf84",
+      "sha256": "44711ee748cc87eb3714c8d23ef4049b27c2e955827889d803bab453b0db20a2",
+      "line_count": 92,
+      "byte_count": 4623,
       "generated_status": "MANUAL",
       "outbound_references": [
         {
@@ -48925,7 +48917,7 @@
           "target_path": "PROJECT_STATE.md",
           "anchor": null,
           "line_suffix": null,
-          "source_line": 67
+          "source_line": 78
         },
         {
           "kind": "ROOT_REFERENCE",
@@ -48933,7 +48925,7 @@
           "target_path": "AGENT_HANDOFF.md",
           "anchor": null,
           "line_suffix": null,
-          "source_line": 68
+          "source_line": 79
         },
         {
           "kind": "ROOT_REFERENCE",
@@ -48941,7 +48933,7 @@
           "target_path": "PROJECT_STATE.md",
           "anchor": null,
           "line_suffix": null,
-          "source_line": 73
+          "source_line": 84
         },
         {
           "kind": "ROOT_REFERENCE",
@@ -48949,7 +48941,7 @@
           "target_path": "AGENT_HANDOFF.md",
           "anchor": null,
           "line_suffix": null,
-          "source_line": 75
+          "source_line": 86
         }
       ],
       "inbound_references": [
@@ -48997,7 +48989,7 @@
           "level": 2,
           "text": "Binding rules",
           "anchor": "binding-rules",
-          "line": 65
+          "line": 76
         }
       ]
     },
@@ -49503,10 +49495,10 @@
     },
     {
       "path": "docs/governance/shadow/generated/AGENT_HANDOFF.md",
-      "git_object_id": "c240cc1a251075be2bc2995ebb2122ced4575882",
-      "sha256": "0d7ec9461ffcf0c2986c1edacb04000a71c9e848b6cf9fc47d37bcadfd6c6909",
+      "git_object_id": "2e058cef4d812666026f2ad8e51d058a6fc05349",
+      "sha256": "ee2d5072df3bbf5290723883dc6adea7f8c3303a0bfbb9eecc835cdab93d5648",
       "line_count": 48,
-      "byte_count": 2386,
+      "byte_count": 2406,
       "generated_status": "GENERATED",
       "outbound_references": [],
       "inbound_references": [
@@ -50555,10 +50547,10 @@
     },
     {
       "path": "docs/governance/shadow/generated/ORDEM_COMPRA_C3_TRACEABILITY.md",
-      "git_object_id": "2041e4e6f2f53506d09d0df94ea59eb7067089a6",
-      "sha256": "b2259740f9cb34d27202da6fdba07b9329ccf26d0533ea87a479477ba7b95b3c",
+      "git_object_id": "3bdd5ac0aa96be397a10f8999d01f85ac0d74b88",
+      "sha256": "09b7d274d06c36f5423b12b9b4ad9126cc42e31a12b482dcda3cbb34a955d35d",
       "line_count": 20,
-      "byte_count": 4556,
+      "byte_count": 4488,
       "generated_status": "GENERATED",
       "outbound_references": [
         {
@@ -50643,14 +50635,6 @@
         },
         {
           "kind": "ROOT_REFERENCE",
-          "raw": "`docs/architecture/ORDEM_COMPRA_C3_TRACEABILITY.md`",
-          "target_path": "docs/architecture/ORDEM_COMPRA_C3_TRACEABILITY.md",
-          "anchor": null,
-          "line_suffix": null,
-          "source_line": 16
-        },
-        {
-          "kind": "ROOT_REFERENCE",
           "raw": "`docs/architecture/ORDEM_COMPRA_LIFECYCLE_SPEC_PROPOSED.md::§R.29.5`",
           "target_path": "docs/architecture/ORDEM_COMPRA_LIFECYCLE_SPEC_PROPOSED.md",
           "anchor": "§R.29.5",
@@ -50672,14 +50656,6 @@
           "anchor": "§R.29.6",
           "line_suffix": null,
           "source_line": 18
-        },
-        {
-          "kind": "ROOT_REFERENCE",
-          "raw": "`docs/architecture/ORDEM_COMPRA_C3_TRACEABILITY.md`",
-          "target_path": "docs/architecture/ORDEM_COMPRA_C3_TRACEABILITY.md",
-          "anchor": null,
-          "line_suffix": null,
-          "source_line": 19
         },
         {
           "kind": "ROOT_REFERENCE",
@@ -50739,10 +50715,10 @@
     },
     {
       "path": "docs/governance/shadow/generated/PROJECT_STATE.md",
-      "git_object_id": "540904f9fd412ee8bd7b0fc110cec59bf70499e9",
-      "sha256": "5d24611970b5556de119713d11b3901ec31d0aaadb09d5764ddab7c0ce9448a4",
+      "git_object_id": "cdd2f53eef15816abd3ad4604c58eec458e82dd3",
+      "sha256": "6aed773f86bb984b8c0b0ca242d03a39f9027ba050e6e3f2cfb3e55ce8bc1ba6",
       "line_count": 61,
-      "byte_count": 2602,
+      "byte_count": 2612,
       "generated_status": "GENERATED",
       "outbound_references": [],
       "inbound_references": [
@@ -50888,10 +50864,10 @@
     },
     {
       "path": "docs/ledgers/G28_LEDGER.md",
-      "git_object_id": "2b231a10bbb668d85c1fb3fc7bb184e1abeec596",
-      "sha256": "0073830e1f1e47486494140ae5fea1f5ac9e53e752565c0dc17190f90f5e1ee4",
-      "line_count": 9562,
-      "byte_count": 968363,
+      "git_object_id": "4735803f29bf7d708bd915520635fd920c23e272",
+      "sha256": "f0b2eeda2613a70139bd73e447b2cd136b730a9fddad0b8e110d9927c9de4638",
+      "line_count": 9586,
+      "byte_count": 970085,
       "generated_status": "MANUAL",
       "outbound_references": [
         {
@@ -60493,6 +60469,12 @@
           "text": "2026-07-23 — GOVERNANCE-EFFICIENCY-REFOUNDATION-CATALOG-TRACEABILITY-VALIDATOR-SHADOW-R1 — Unit 1 acceptance and Unit 2 shadow implementation",
           "anchor": "2026-07-23-governance-efficiency-refoundation-catalog-traceability-validator-shadow-r1-unit-1-acceptance-and-unit-2-shadow-implementation",
           "line": 9523
+        },
+        {
+          "level": 2,
+          "text": "2026-07-23 — GOVERNANCE-EFFICIENCY-REFOUNDATION-CATALOG-TRACEABILITY-VALIDATOR-SHADOW-HARDENING-R2 — Unit 2 traceability and reference-debt hardening",
+          "anchor": "2026-07-23-governance-efficiency-refoundation-catalog-traceability-validator-shadow-hardening-r2-unit-2-traceability-and-reference-debt-hardening",
+          "line": 9564
         }
       ]
     },

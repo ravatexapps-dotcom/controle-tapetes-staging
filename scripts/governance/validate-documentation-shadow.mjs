@@ -1,3 +1,4 @@
+import crypto from 'node:crypto';
 import path from 'node:path';
 import process from 'node:process';
 import { fileURLToPath } from 'node:url';
@@ -13,12 +14,14 @@ const TRACE = 'docs/governance/traceability/purchase-order-phase-c.json';
 const INDEX_VIEW = 'docs/governance/shadow/generated/DOCUMENTATION_INDEX.md';
 const TRACE_VIEW = 'docs/governance/shadow/generated/ORDEM_COMPRA_C3_TRACEABILITY.md';
 const ALLOWED_DISPOSITIONS = new Set(['PLANNED', 'PARTIALLY_SATISFIED', 'SATISFIED', 'DEFERRED', 'BLOCKED', 'NOT_APPLICABLE', 'SUPERSEDED']);
+const ALLOWED_BLOCKING_STATES = new Set(['NON_BLOCKING', 'BLOCKED', 'DEFERRED']);
 
 function parseJson(reader, relativePath, errors) {
   try { return JSON.parse(reader.readText(relativePath)); }
   catch (error) { errors.push(`${relativePath}: invalid JSON: ${error.message}`); return null; }
 }
 function stable(value) { return JSON.stringify(value); }
+function sha256(value) { return crypto.createHash('sha256').update(value, 'utf8').digest('hex'); }
 function duplicateValues(values) {
   const seen = new Set();
   const duplicate = new Set();
@@ -42,6 +45,7 @@ function validateSchema(value, schema, location = '$') {
     if (schema.minLength !== undefined && value.length < schema.minLength) errors.push(`${location}: minLength`);
     if (schema.pattern && !new RegExp(schema.pattern).test(value)) errors.push(`${location}: pattern`);
   }
+  if (typeof value === 'number' && schema.minimum !== undefined && value < schema.minimum) errors.push(`${location}: minimum`);
   if (Array.isArray(value)) {
     if (schema.minItems !== undefined && value.length < schema.minItems) errors.push(`${location}: minItems`);
     if (schema.items) value.forEach((item, index) => errors.push(...validateSchema(item, schema.items, `${location}[${index}]`)));
@@ -64,11 +68,19 @@ function validateRootRelative(value, label, errors) {
 
 export function parseCanonicalTraceability(text, errors = []) {
   const lines = normalizeLf(text).split('\n');
-  const heading = lines.indexOf('## Requirement matrix');
-  if (heading < 0) { errors.push('traceability: missing Requirement matrix'); return []; }
-  const header = lines.findIndex((line, index) => index > heading && line.startsWith('| REQUIREMENT_ID |'));
+  const heading = lines.indexOf('## Canonical requirement matrix');
+  if (heading < 0) { errors.push('traceability: missing canonical Requirement matrix'); return []; }
+  const expectedHeader = [
+    'REQUIREMENT_ID', 'NORMATIVE_ANCHOR', 'OWNING_PHASE', 'DISPOSITION',
+    'BLOCKING_STATE', 'IMPLEMENTATION_ARTIFACT', 'TEST_OR_EVIDENCE',
+    'ENVIRONMENT', 'ACCEPTED_CHECKPOINT', 'RESIDUAL_DEBT'
+  ];
+  const headerLine = `| ${expectedHeader.join(' | ')} |`;
+  const header = lines.findIndex((line, index) => index > heading && line === headerLine);
   const dividerCells = (lines[header + 1] ?? '').split('|').slice(1, -1);
-  if (header < 0 || dividerCells.length !== 9 || dividerCells.some(cell => !/^\s*:?-{3,}:?\s*$/.test(cell))) {
+  const headerCells = (lines[header] ?? '').split('|').slice(1, -1).map(cell => cell.trim());
+  if (header < 0 || stable(headerCells) !== stable(expectedHeader)
+      || dividerCells.length !== 10 || dividerCells.some(cell => !/^\s*:?-{3,}:?\s*$/.test(cell))) {
     errors.push('traceability: malformed requirement table header');
     return [];
   }
@@ -77,22 +89,68 @@ export function parseCanonicalTraceability(text, errors = []) {
     const line = lines[index];
     if (!line.startsWith('|')) break;
     const cells = line.split('|').slice(1, -1).map(cell => cell.trim());
-    if (cells.length !== 9) { errors.push(`traceability:${index + 1}: ambiguous canonical traceability row`); continue; }
+    if (cells.length !== 10) { errors.push(`traceability:${index + 1}: ambiguous canonical traceability row`); continue; }
     if (!/^OC-[A-Z0-9-]+$/.test(cells[0])) { errors.push(`traceability:${index + 1}: malformed requirement ID`); continue; }
     rows.push({
       requirement_id: cells[0],
       normative_anchor_cell: cells[1],
       phase_owner: cells[2],
       disposition: cells[3],
-      implementation_cell: cells[4],
-      evidence_cell: cells[5],
-      environment_cell: cells[6],
-      checkpoint_cell: cells[7],
-      residual_cell: cells[8],
+      blocking_state: cells[4],
+      implementation_cell: cells[5],
+      evidence_cell: cells[6],
+      environment_cell: cells[7],
+      checkpoint_cell: cells[8],
+      residual_cell: cells[9],
+      cells,
+      canonical_row_sha256: sha256(`${line}\n`),
       line: index + 1
     });
   }
   return rows;
+}
+
+function parseCompatibilityTraceability(text, errors) {
+  const lines = normalizeLf(text).split('\n');
+  const heading = lines.indexOf('## Requirement matrix');
+  const nextHeading = lines.findIndex((line, index) => index > heading && /^##\s/.test(line));
+  const headers = [
+    'REQUIREMENT_ID', 'NORMATIVE_ANCHOR', 'OWNING_PHASE', 'DISPOSITION',
+    'IMPLEMENTATION_ARTIFACT', 'TEST_OR_EVIDENCE', 'ENVIRONMENT',
+    'ACCEPTED_CHECKPOINT', 'RESIDUAL_DEBT'
+  ];
+  const headerLine = `| ${headers.join(' | ')} |`;
+  const headerIndexes = lines.flatMap((line, index) =>
+    index > heading && (nextHeading < 0 || index < nextHeading) && line === headerLine ? [index] : []);
+  if (heading < 0 || headerIndexes.length !== 1) {
+    errors.push('traceability: malformed spec-custody compatibility projection');
+    return [];
+  }
+  const header = headerIndexes[0];
+  const divider = (lines[header + 1] ?? '').split('|').slice(1, -1);
+  if (divider.length !== 9 || divider.some(cell => !/^\s*:?-{3,}:?\s*$/.test(cell))) {
+    errors.push('traceability: malformed spec-custody compatibility divider');
+    return [];
+  }
+  const rows = [];
+  for (let index = header + 2; index < lines.length && lines[index].startsWith('|'); index += 1) {
+    const cells = lines[index].split('|').slice(1, -1).map(cell => cell.trim());
+    if (cells.length !== 9) errors.push(`traceability:${index + 1}: malformed spec-custody compatibility row`);
+    else rows.push(cells);
+  }
+  return rows;
+}
+
+export function extractEvidencePointers(...cells) {
+  const pattern = /(?:^|[^A-Za-z0-9_./-])((?:(?:docs|scripts|tests|db|js)\/[A-Za-z0-9_./-]+\.(?:md|mjs|js|sql)|index\.html))(?=$|[^A-Za-z0-9_./-])/g;
+  const pointers = [];
+  const seen = new Set();
+  for (const cell of cells) {
+    for (const match of cell.matchAll(pattern)) {
+      if (!seen.has(match[1])) { seen.add(match[1]); pointers.push(match[1]); }
+    }
+  }
+  return pointers;
 }
 
 function parseNormativeSources(cell, label, errors) {
@@ -164,15 +222,24 @@ function validateCatalog(catalog, manifest, reader, errors) {
   for (const entry of catalog.artifacts) if (!manifestByPath.has(entry.path)) errors.push(`catalog: extra catalog entry ${entry.path}`);
   const debts = catalog.known_broken_references ?? [];
   for (const duplicate of duplicateValues(debts.map(debt => debt.debt_id))) errors.push(`catalog: duplicate stable reference ID ${duplicate}`);
-  for (const debt of debts) {
-    for (const key of ['debt_id', 'source_path', 'source_line', 'target', 'status', 'owner', 'reason', 'future_resolution_unit']) {
-      if (debt[key] === undefined || debt[key] === '') errors.push(`catalog: broken-reference debt missing ${key}`);
-    }
-  }
-  const known = new Set(debts.map(debt => `${debt.source_path}:${debt.source_line}->${debt.target}`));
+  const debtKeys = debts.map(debt => `${debt.source_path}:${debt.source_line}->${debt.target}`);
+  for (const duplicate of duplicateValues(debtKeys)) errors.push(`catalog: duplicate broken-reference debt ${duplicate}`);
+  const known = new Set(debtKeys);
   if (!known.has('docs/HANDOFF.md:146->docs/RETOMAR.md')) errors.push('catalog: explicit known-broken-reference disposition removed');
   const allFiles = new Set(reader.listFiles());
   const governedByPath = new Map(manifest.documents.map(document => [document.path, document]));
+  for (const debt of debts) {
+    if (debt.status !== 'DEFERRED') errors.push(`catalog:${debt.debt_id}: broken-reference status must be DEFERRED`);
+    const source = governedByPath.get(debt.source_path);
+    if (!source) { errors.push(`catalog:${debt.debt_id}: nonexistent debt source`); continue; }
+    if (!Number.isInteger(debt.source_line) || debt.source_line < 1 || debt.source_line > source.line_count) errors.push(`catalog:${debt.debt_id}: stale source line`);
+    const matches = source.outbound_references.filter(reference =>
+      reference.source_line === debt.source_line && reference.target_path === debt.target);
+    if (matches.length === 0) errors.push(`catalog:${debt.debt_id}: debt matches no extracted reference`);
+    if (allFiles.has(debt.target)) errors.push(`catalog:${debt.debt_id}: deferred target now exists`);
+    if (!reader.exists(debt.owner) || !catalogByPath.has(debt.owner)) errors.push(`catalog:${debt.debt_id}: nonexistent debt owner`);
+  }
+  const applicableBroken = new Set();
   let validReferences = 0;
   let unresolvedReferences = 0;
   for (const source of manifest.documents) {
@@ -186,7 +253,8 @@ function validateCatalog(catalog, manifest, reader, errors) {
       const validRange = typeof reference.line_suffix === 'string' && /^\d+-\d+$/.test(reference.line_suffix);
       if (reference.line_suffix !== null && !Number.isInteger(reference.line_suffix) && !validRange) errors.push(`reference:${key}: malformed line suffix`);
       if (!allFiles.has(reference.target_path)) {
-        if (!known.has(key)) { errors.push(`reference:${key}: missing target`); unresolvedReferences += 1; }
+        applicableBroken.add(key);
+        if (!known.has(key)) { errors.push(`reference:${key}: missing debt for applicable broken reference`); unresolvedReferences += 1; }
         continue;
       }
       const target = governedByPath.get(reference.target_path);
@@ -202,6 +270,7 @@ function validateCatalog(catalog, manifest, reader, errors) {
       validReferences += 1;
     }
   }
+  for (const key of known) if (!applicableBroken.has(key)) errors.push(`catalog: unused broken-reference debt ${key}`);
   return { validReferences, unresolvedReferences };
 }
 
@@ -209,6 +278,11 @@ function validateTraceability(structured, reader, actualManifest, errors) {
   if (!structured) return;
   const canonicalText = reader.readText('docs/architecture/ORDEM_COMPRA_C3_TRACEABILITY.md');
   const rows = parseCanonicalTraceability(canonicalText, errors);
+  const compatibilityRows = parseCompatibilityTraceability(canonicalText, errors);
+  const projectedRows = rows.map(row => row.cells.filter((_, index) => index !== 4));
+  if (stable(compatibilityRows) !== stable(projectedRows)) {
+    errors.push('traceability: spec-custody compatibility projection differs from canonical matrix');
+  }
   const canonicalIds = rows.map(row => row.requirement_id);
   const structuredIds = structured.requirements.map(row => row.requirement_id);
   for (const duplicate of duplicateValues(canonicalIds)) errors.push(`traceability: duplicate canonical requirement ID ${duplicate}`);
@@ -222,10 +296,16 @@ function validateTraceability(structured, reader, actualManifest, errors) {
     const entry = structuredById.get(row.requirement_id);
     if (!entry) continue;
     if (!ALLOWED_DISPOSITIONS.has(row.disposition)) errors.push(`traceability:${row.requirement_id}: unknown canonical disposition`);
+    if (!ALLOWED_BLOCKING_STATES.has(row.blocking_state)) errors.push(`traceability:${row.requirement_id}: unknown canonical blocking state`);
     if (entry.disposition !== row.disposition) errors.push(`traceability:${row.requirement_id}: changed canonical traceability disposition`);
+    if (entry.blocking_state !== row.blocking_state) errors.push(`traceability:${row.requirement_id}: blocking state differs from canonical`);
     if (entry.phase_owner !== row.phase_owner) errors.push(`traceability:${row.requirement_id}: phase owner drift`);
     if (entry.source_location !== `docs/architecture/ORDEM_COMPRA_C3_TRACEABILITY.md:${row.line}`) errors.push(`traceability:${row.requirement_id}: source location drift`);
     if (entry.review_status !== 'REVIEWED') errors.push(`traceability:${row.requirement_id}: UNREVIEWED`);
+    if (entry.canonical_row_sha256 !== row.canonical_row_sha256) errors.push(`traceability:${row.requirement_id}: stale canonical row hash`);
+    if (entry.review_status === 'REVIEWED' && (!entry.review_basis || entry.canonical_row_sha256 !== row.canonical_row_sha256)) {
+      errors.push(`traceability:${row.requirement_id}: reviewed row is not hash-bound`);
+    }
     const canonicalSources = parseNormativeSources(row.normative_anchor_cell, row.requirement_id, errors);
     if (stable(entry.normative_sources) !== stable(canonicalSources)) errors.push(`traceability:${row.requirement_id}: normative source set drift`);
     for (const source of entry.normative_sources) {
@@ -236,6 +316,8 @@ function validateTraceability(structured, reader, actualManifest, errors) {
       if (matches.length === 0) errors.push(`traceability:${row.requirement_id}: invalid requirement anchor ${source.anchor}`);
       if (matches.length > 1) errors.push(`traceability:${row.requirement_id}: ambiguous requirement anchor ${source.anchor}`);
     }
+    const canonicalEvidence = extractEvidencePointers(row.implementation_cell, row.evidence_cell);
+    if (stable(entry.evidence_pointers) !== stable(canonicalEvidence)) errors.push(`traceability:${row.requirement_id}: evidence pointer parity mismatch`);
     for (const pointer of entry.evidence_pointers) {
       const pointerPath = pointer.replace(/:\d+$/, '');
       validateRootRelative(pointerPath, `traceability:${row.requirement_id}:evidence`, errors);

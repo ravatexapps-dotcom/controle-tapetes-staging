@@ -16,7 +16,7 @@
       "items": {
         "type": "object",
         "additionalProperties": false,
-        "required": ["requirement_id", "normative_sources", "disposition", "evidence_pointers", "phase_owner", "blocking_state", "source_location", "review_status"],
+        "required": ["requirement_id", "normative_sources", "disposition", "evidence_pointers", "phase_owner", "blocking_state", "source_location", "canonical_row_sha256", "review_status", "review_basis"],
         "properties": {
           "requirement_id": { "type": "string", "pattern": "^OC-[A-Z0-9-]+$" },
           "normative_sources": {
@@ -37,7 +37,9 @@
           "phase_owner": { "type": "string", "minLength": 1 },
           "blocking_state": { "enum": ["BLOCKED", "NON_BLOCKING", "DEFERRED"] },
           "source_location": { "type": "string", "pattern": "^docs/architecture/ORDEM_COMPRA_C3_TRACEABILITY\\.md:\\d+$" },
-          "review_status": { "const": "REVIEWED" }
+          "canonical_row_sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+          "review_status": { "const": "REVIEWED" },
+          "review_basis": { "type": "string", "minLength": 1 }
         }
       }
     }

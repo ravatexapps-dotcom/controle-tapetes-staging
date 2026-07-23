@@ -9553,10 +9553,34 @@ product file they depend on, was modified by this pass or the prior one):
   GOVERNANCE-EFFICIENCY-REFOUNDATION-CATALOG-TRACEABILITY-VALIDATOR-SHADOW-R1`.
   Exact accounting subject: `feat: add governance catalog and traceability shadow`.
 - **Linear immutable-validation correction.** Initial Unit 2 checkpoint
-  `fd84685e8af02c649a9077050b93ce6f992643be` passed every worktree gate, but the
+  `fd8468548af02c649a9077050b93ce6f992643be` passed every worktree gate, but the
   mandated post-commit invocation `--commit HEAD` exposed a bounded reader defect:
   the revision guard accepted hexadecimal object IDs only. Git status, branch,
   index, and refs were proven unchanged by that failed invocation. The reader now
   accepts bounded safe revision names such as `HEAD`, still rejects option
   injection, reflog syntax, ranges, invalid revisions, and non-commit objects.
   Accepted history was not amended, squashed, rebased, reset, or rewritten.
+
+## 2026-07-23 — GOVERNANCE-EFFICIENCY-REFOUNDATION-CATALOG-TRACEABILITY-VALIDATOR-SHADOW-HARDENING-R2 — Unit 2 traceability and reference-debt hardening
+
+- **Supervisor ruling and publication reconciliation.** Unit 2 checkpoint
+  `09146affd99168086c7bc736a8b96b4d7fc53609` is `CHANGES_REQUIRED / DIRECTLY
+  VERIFIED`. Its original local push invocation timed out; it was not retried.
+  A later read-only reconciliation proved that the remote had advanced and that
+  `staging/dev` equals `09146affd99168086c7bc736a8b96b4d7fc53609`.
+- **Bounded correction.** The 13 canonical Phase-C trace rows now own an explicit
+  blocking-state column (`11 NON_BLOCKING`, `1 BLOCKED`, `1 DEFERRED`) and bind
+  exact LF-normalized row SHA-256, explicit review basis, and deterministic exact
+  evidence-pointer parity. The six preserved missing-reference debts now have a
+  complete schema and fail-closed one-to-one source/line/target/owner/catalog
+  reconciliation. Underlying broken references were not repaired.
+- **Authority boundary.** Unit 2 is `IMPLEMENTED / TRACEABILITY AND
+  REFERENCE-DEBT HARDENING COMPLETE / AWAITING DIRECT SUPERVISOR REVIEW`.
+  Structured sources remain `NON-CANONICAL SHADOW MODE`; current canonical
+  owners are unchanged. Unit 3, documentary-authority cutover, cleanup,
+  compaction, partitioning, archival, deprecation, deletion, product changes,
+  database access, migrations, deployment, production, `REAL_CUTOVER`, and
+  `PHASE-C5B` remain unauthorized and did not occur.
+- **Next action.** `DIRECT SUPERVISOR REVIEW OF
+  GOVERNANCE-EFFICIENCY-REFOUNDATION-CATALOG-TRACEABILITY-VALIDATOR-SHADOW-HARDENING-R2`.
+  Exact accounting subject: `fix: bind governance traceability and reference debts`.

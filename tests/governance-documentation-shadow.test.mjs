@@ -41,6 +41,12 @@ function changedJson(relativePath, mutate) {
   mutate(value);
   return JSON.stringify(value, null, 2) + '\n';
 }
+function changedCanonicalTrace(search, replacement) {
+  const text = files.get('docs/architecture/ORDEM_COMPRA_C3_TRACEABILITY.md');
+  const start = text.indexOf('## Canonical requirement matrix');
+  assert.notEqual(start, -1);
+  return text.slice(0, start) + text.slice(start).replace(search, replacement);
+}
 function errors(changes = {}) { return validateWithReader(reader(changes)).errors.join('\n'); }
 function expectFailure(name, changes, pattern) {
   test(name, () => assert.match(errors(changes), pattern));
@@ -79,7 +85,7 @@ expectFailure('missing inbound-reference source', {
 }, /stale inbound references/);
 expectFailure('missing reference target', {
   'PROJECT_STATE.md': `${files.get('PROJECT_STATE.md')}\n[missing](docs/never-tracked.md)\n`
-}, /missing target/);
+}, /missing debt for applicable broken reference/);
 expectFailure('missing anchor', {
   'PROJECT_STATE.md': `${files.get('PROJECT_STATE.md')}\n[missing anchor](docs\/DOCUMENTATION_INDEX.md#never-present)\n`
 }, /missing anchor/);
@@ -98,7 +104,7 @@ expectFailure('absolute path where root-relative is required', {
 }, /absolute path forbidden/);
 expectFailure('unexpected unresolved broken reference', {
   'PROJECT_STATE.md': `${files.get('PROJECT_STATE.md')}\n[unexpected](docs/unexpected-broken.md)\n`
-}, /missing target/);
+}, /missing debt for applicable broken reference/);
 expectFailure('removal of explicit known-broken-reference disposition', {
   'docs/governance/catalog/documents.json': changedJson('docs/governance/catalog/documents.json', value => { value.known_broken_references = value.known_broken_references.filter(debt => debt.debt_id !== 'DOC-REF-DEBT-001'); })
 }, /explicit known-broken-reference disposition removed/);
@@ -123,8 +129,62 @@ expectFailure('invalid requirement anchor', {
 expectFailure('changed canonical traceability disposition', {
   'docs/governance/traceability/purchase-order-phase-c.json': changedJson('docs/governance/traceability/purchase-order-phase-c.json', value => value.requirements[0].disposition = 'SATISFIED')
 }, /changed canonical traceability disposition/);
+expectFailure('structured blocking state differing from canonical', {
+  'docs/governance/traceability/purchase-order-phase-c.json': changedJson('docs/governance/traceability/purchase-order-phase-c.json', value => value.requirements[0].blocking_state = 'BLOCKED')
+}, /blocking state differs from canonical/);
+expectFailure('missing canonical blocking-state column', {
+  'docs/architecture/ORDEM_COMPRA_C3_TRACEABILITY.md': files.get('docs/architecture/ORDEM_COMPRA_C3_TRACEABILITY.md').replace(' | BLOCKING_STATE', '')
+}, /malformed requirement table header/);
+expectFailure('stale canonical row hash', {
+  'docs/governance/traceability/purchase-order-phase-c.json': changedJson('docs/governance/traceability/purchase-order-phase-c.json', value => value.requirements[0].canonical_row_sha256 = '0'.repeat(64))
+}, /stale canonical row hash/);
+expectFailure('reviewed row without matching hash fails', {
+  'docs/governance/traceability/purchase-order-phase-c.json': changedJson('docs/governance/traceability/purchase-order-phase-c.json', value => value.requirements[0].canonical_row_sha256 = '1'.repeat(64))
+}, /reviewed row is not hash-bound/);
+expectFailure('evidence pointer replaced by another existing file', {
+  'docs/governance/traceability/purchase-order-phase-c.json': changedJson('docs/governance/traceability/purchase-order-phase-c.json', value => value.requirements[0].evidence_pointers[0] = 'docs/DOCUMENTATION_INDEX.md')
+}, /evidence pointer parity mismatch/);
+expectFailure('missing canonical evidence pointer', {
+  'docs/governance/traceability/purchase-order-phase-c.json': changedJson('docs/governance/traceability/purchase-order-phase-c.json', value => value.requirements[0].evidence_pointers.shift())
+}, /evidence pointer parity mismatch/);
+expectFailure('extra structured evidence pointer', {
+  'docs/governance/traceability/purchase-order-phase-c.json': changedJson('docs/governance/traceability/purchase-order-phase-c.json', value => value.requirements[0].evidence_pointers.push('docs/DOCUMENTATION_INDEX.md'))
+}, /evidence pointer parity mismatch/);
+expectFailure('structured evidence order differs from canonical', {
+  'docs/governance/traceability/purchase-order-phase-c.json': changedJson('docs/governance/traceability/purchase-order-phase-c.json', value => value.requirements[0].evidence_pointers.reverse())
+}, /evidence pointer parity mismatch/);
+expectFailure('canonical evidence change without structured update', {
+  'docs/architecture/ORDEM_COMPRA_C3_TRACEABILITY.md': changedCanonicalTrace('tests/ordem-compra-c3c-inactive.smoke.js', 'tests/ordem-compra-c3d-deploy.smoke.js')
+}, /evidence pointer parity mismatch/);
+expectFailure('broken-reference status other than DEFERRED', {
+  'docs/governance/catalog/documents.json': changedJson('docs/governance/catalog/documents.json', value => value.known_broken_references[0].status = 'ACTIVE')
+}, /broken-reference status must be DEFERRED/);
+expectFailure('nonexistent debt owner', {
+  'docs/governance/catalog/documents.json': changedJson('docs/governance/catalog/documents.json', value => value.known_broken_references[0].owner = 'docs/missing-owner.md')
+}, /nonexistent debt owner/);
+expectFailure('nonexistent debt source', {
+  'docs/governance/catalog/documents.json': changedJson('docs/governance/catalog/documents.json', value => value.known_broken_references[0].source_path = 'docs/missing-source.md')
+}, /nonexistent debt source/);
+expectFailure('stale debt source line', {
+  'docs/governance/catalog/documents.json': changedJson('docs/governance/catalog/documents.json', value => value.known_broken_references[0].source_line = 999999)
+}, /stale source line/);
+expectFailure('debt that matches no extracted reference', {
+  'docs/governance/catalog/documents.json': changedJson('docs/governance/catalog/documents.json', value => value.known_broken_references[0].source_line = 1)
+}, /debt matches no extracted reference/);
+expectFailure('duplicate debt for the same reference', {
+  'docs/governance/catalog/documents.json': changedJson('docs/governance/catalog/documents.json', value => value.known_broken_references.push({ ...value.known_broken_references[0], debt_id: 'DOC-REF-DEBT-999' }))
+}, /duplicate broken-reference debt/);
+expectFailure('missing debt for an applicable broken reference', {
+  'docs/governance/catalog/documents.json': changedJson('docs/governance/catalog/documents.json', value => value.known_broken_references.splice(1, 1))
+}, /missing debt for applicable broken reference/);
+expectFailure('debt whose target now exists', {
+  'docs/RETOMAR.md': '# restored target\n'
+}, /deferred target now exists/);
+expectFailure('duplicate debt ID', {
+  'docs/governance/catalog/documents.json': changedJson('docs/governance/catalog/documents.json', value => value.known_broken_references[1].debt_id = value.known_broken_references[0].debt_id)
+}, /duplicate stable reference ID/);
 expectFailure('ambiguous canonical traceability row', {
-  'docs/architecture/ORDEM_COMPRA_C3_TRACEABILITY.md': files.get('docs/architecture/ORDEM_COMPRA_C3_TRACEABILITY.md').replace('| OC-C3-READ-001 |', '| OC-C3-READ-001 | unexpected |')
+  'docs/architecture/ORDEM_COMPRA_C3_TRACEABILITY.md': changedCanonicalTrace('| OC-C3-READ-001 |', '| OC-C3-READ-001 | unexpected |')
 }, /ambiguous canonical traceability row/);
 expectFailure('generated DOCUMENTATION_INDEX drift', {
   'docs/governance/shadow/generated/DOCUMENTATION_INDEX.md': `${files.get('docs/governance/shadow/generated/DOCUMENTATION_INDEX.md')}drift\n`
