@@ -50888,10 +50888,10 @@
     },
     {
       "path": "docs/ledgers/G28_LEDGER.md",
-      "git_object_id": "e82513eb9178e3e96cc8b6b2299e91d3236b206f",
-      "sha256": "b32f91150fcc626f69538f3d5e75e92d8ab5cd21d9a401b896fa4942d44f35ed",
-      "line_count": 9554,
-      "byte_count": 967736,
+      "git_object_id": "2b231a10bbb668d85c1fb3fc7bb184e1abeec596",
+      "sha256": "0073830e1f1e47486494140ae5fea1f5ac9e53e752565c0dc17190f90f5e1ee4",
+      "line_count": 9562,
+      "byte_count": 968363,
       "generated_status": "MANUAL",
       "outbound_references": [
         {

@@ -9552,3 +9552,11 @@ product file they depend on, was modified by this pass or the prior one):
 - **Next action.** `DIRECT SUPERVISOR REVIEW OF
   GOVERNANCE-EFFICIENCY-REFOUNDATION-CATALOG-TRACEABILITY-VALIDATOR-SHADOW-R1`.
   Exact accounting subject: `feat: add governance catalog and traceability shadow`.
+- **Linear immutable-validation correction.** Initial Unit 2 checkpoint
+  `fd84685e8af02c649a9077050b93ce6f992643be` passed every worktree gate, but the
+  mandated post-commit invocation `--commit HEAD` exposed a bounded reader defect:
+  the revision guard accepted hexadecimal object IDs only. Git status, branch,
+  index, and refs were proven unchanged by that failed invocation. The reader now
+  accepts bounded safe revision names such as `HEAD`, still rejects option
+  injection, reflog syntax, ranges, invalid revisions, and non-commit objects.
+  Accepted history was not amended, squashed, rebased, reset, or rewritten.

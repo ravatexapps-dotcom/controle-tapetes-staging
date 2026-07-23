@@ -11,7 +11,8 @@ function git(root, args, encoding = 'utf8') {
 }
 
 export function validateCommit(root, commit) {
-  if (!/^[0-9a-fA-F]{4,64}$/.test(commit ?? '')) throw new Error('invalid --commit value');
+  if (!/^[0-9A-Za-z][0-9A-Za-z._/-]{0,127}$/.test(commit ?? '')
+      || commit.includes('..') || commit.includes('@{')) throw new Error('invalid --commit value');
   try {
     return git(root, ['rev-parse', '--verify', `${commit}^{commit}`]).trim();
   } catch {
