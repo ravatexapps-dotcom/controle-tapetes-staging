@@ -96,7 +96,7 @@ test('valid complete Unit 3 fixture passes', () => {
   const result = validateWithReader(memoryReader());
   assert.deepEqual(result.errors, []);
   assert.deepEqual(result.results, {
-    source_bytes: 983252,
+    source_bytes: 973755,
     source_lines: 9626,
     source_units: 201,
     entry_count: 200,

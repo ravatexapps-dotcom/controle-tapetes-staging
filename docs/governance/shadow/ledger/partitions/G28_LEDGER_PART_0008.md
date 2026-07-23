@@ -2,9 +2,9 @@
 <!-- partition_id: G28-LEDGER-PART-0008 -->
 <!-- canonical_source: docs/ledgers/G28_LEDGER.md -->
 <!-- source_unit_interval: G28-LEDGER-UNIT-0150..G28-LEDGER-UNIT-0158 -->
-<!-- canonical_byte_interval: 673744..740608 -->
+<!-- canonical_byte_interval: 668053..733966 -->
 <!-- canonical_line_interval: 5692..6642 -->
-<!-- payload_sha256: 2e0a30ae15203d7a689503fe97eeb0bf1730d3014a8a7616f67db3463d1e4d1c -->
+<!-- payload_sha256: 1ef5e83eb149d4e75416be9c96590821c53cd3b482ec2f22cd188edb285ed568 -->
 <!-- oversized_single_unit: false -->
 <!-- partition_status: CLOSED -->
 <!-- G28_LEDGER_SHADOW_PAYLOAD_BEGIN_7b9d4e3a -->
