@@ -111,12 +111,12 @@ test('valid complete Unit 3 fixture passes', () => {
   const result = validateWithReader(memoryReader());
   assert.deepEqual(result.errors, []);
   assert.deepEqual(result.results, {
-    source_bytes: 985271,
-    source_lines: 9679,
-    source_units: 206,
-    entry_count: 205,
+    source_bytes: 987565,
+    source_lines: 9689,
+    source_units: 207,
+    entry_count: 206,
     partitions: 12,
-    inbound_references: 318,
+    inbound_references: 281,
     errors: 0
   });
 });
@@ -179,7 +179,7 @@ test('source units are exhaustive, ordered, contiguous, and complete', () => {
 test('entry inventory and heading exceptions are deterministic', () => {
   const manifest = currentManifest();
   assert.equal(manifest.units.filter(unit => unit.unit_kind === 'PREAMBLE').length, 1);
-  assert.equal(manifest.units.filter(unit => unit.unit_kind === 'ENTRY').length, 205);
+  assert.equal(manifest.units.filter(unit => unit.unit_kind === 'ENTRY').length, 206);
   assert.equal(manifest.heading_exceptions.length, 2);
   assert.deepEqual(manifest.heading_exceptions.map(exception => exception.heading), LEGACY_ENTRY_HEADINGS);
   assert.equal(manifest.entry_heading_grammar, '^## YYYY-MM-DD — <non-empty title>$, plus exactly two reviewed legacy headings');
@@ -219,10 +219,10 @@ test('compatibility payload is reconstructed exactly from ordered partition payl
 
 test('reference survival has exact cardinality and path-only destination', () => {
   const index = currentIndex();
-  assert.equal(index.inbound_reference_survival_mappings.length, 318);
+  assert.equal(index.inbound_reference_survival_mappings.length, 281);
   assert.ok(index.inbound_reference_survival_mappings.every(mapping => mapping.resolution_status === 'COMPATIBILITY_VIEW'));
   assert.ok(index.inbound_reference_survival_mappings.every(mapping => mapping.compatibility_view_destination === COMPATIBILITY_PATH));
-  assert.equal(new Set(index.inbound_reference_survival_mappings.map(mapping => mapping.mapping_id)).size, 318);
+  assert.equal(new Set(index.inbound_reference_survival_mappings.map(mapping => mapping.mapping_id)).size, 281);
 });
 
 test('append-stability fixture preserves every previously closed partition', () => {

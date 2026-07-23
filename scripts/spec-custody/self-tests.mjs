@@ -1,4 +1,4 @@
-import { copyFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import {
@@ -7,6 +7,7 @@ import {
 } from './validation-core.mjs';
 
 const TRACEABILITY_FIXTURE_PATH = 'docs/architecture/ORDEM_COMPRA_C3_TRACEABILITY.md';
+const LEGACY_FIXTURE_CHECKPOINT = 'fa986cf935abbf053172cfd549b0171bb9446f58';
 
 // Inline-pipe positives: prose that legitimately contains `|` and must be accepted
 // when appended after the canonical traceability table.
@@ -26,7 +27,8 @@ const INLINE_PIPE_POSITIVES = [
 function copyFixtureFile(source, target, path) {
   const destination = resolve(target, path);
   mkdirSync(dirname(destination), { recursive: true });
-  copyFileSync(resolve(source, path), destination);
+  const content = runGit(source, ['show', `${LEGACY_FIXTURE_CHECKPOINT}:${path}`]);
+  writeFileSync(destination, content);
 }
 
 // Reads ACTIVE_PHASE/ACTIVE_PHASE_CONTRACT directly out of the SOURCE repository's
@@ -36,7 +38,7 @@ function copyFixtureFile(source, target, path) {
 // parse) purely so the fixture can be built faithfully; validation-core.mjs is
 // never modified to expose this.
 function readSourceBootstrap(source) {
-  const state = readText(source, 'PROJECT_STATE.md');
+  const state = runGit(source, ['show', `${LEGACY_FIXTURE_CHECKPOINT}:PROJECT_STATE.md`]);
   const activePhase = state.match(/^ACTIVE_PHASE:[ \t]+(.+?)\s*$/m)?.[1];
   const activePhaseContract = state.match(/^ACTIVE_PHASE_CONTRACT:[ \t]+(.+?)\s*$/m)?.[1];
   if (!activePhase || !activePhaseContract) {

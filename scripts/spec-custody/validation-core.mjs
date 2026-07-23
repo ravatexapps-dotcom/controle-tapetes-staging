@@ -345,7 +345,7 @@ function laterCommitAccountedFor(root, sha, subject, currentEvidence, paths, err
   if (!addedSubject) errors.push(`R4: later commit is not accounted for by its own evidence diff: ${sha} ${subject}`);
 }
 
-function validateCheckpoint(root, bootstrap, traceText, errors) {
+function validateCheckpoint(root, bootstrap, traceText, errors, stateOwner = 'PROJECT_STATE.md') {
   const checkpoint = bootstrap.ACCEPTED_CHECKPOINT;
   if (!/^[0-9a-f]{40}$/.test(checkpoint || '')) {
     errors.push('R4: accepted checkpoint must be a full lowercase SHA.');
@@ -361,7 +361,7 @@ function validateCheckpoint(root, bootstrap, traceText, errors) {
     errors.push(`R4: accepted checkpoint is not an ancestor of HEAD: ${checkpoint}`);
     return;
   }
-  const paths = EVIDENCE_OWNERS.map((key) => key === 'PROJECT_STATE.md' ? key : bootstrap[key]);
+  const paths = EVIDENCE_OWNERS.map((key) => key === 'PROJECT_STATE.md' ? stateOwner : bootstrap[key]);
   const currentEvidence = [readText(root, paths[0]), readText(root, paths[1]), traceText].join('\n');
   const later = runGit(root, ['log', '--reverse', '--format=%H%x09%s', `${checkpoint}..HEAD`]);
   for (const line of later ? later.split(/\r?\n/) : []) {
@@ -381,11 +381,74 @@ function validateWrappers(root, errors) {
   if (!first.toString('utf8').includes(SHARED_INSTRUCTION)) errors.push('R5: wrappers do not share the instruction pointer.');
 }
 
+function validateStructuredRepository(root, errors) {
+  const stateOwner = 'docs/governance/current-state.json';
+  containedTrackedFile(root, stateOwner, stateOwner, errors);
+  let state;
+  try { state = JSON.parse(readText(root, stateOwner)); }
+  catch (error) {
+    errors.push(`R1: structured current state is invalid JSON: ${error.message}`);
+    return errors;
+  }
+  if (state.mode !== 'canonical' || state.authority !== 'canonical_current_state'
+      || state.authority_epoch !== 1 || state.activation?.status !== 'active') {
+    errors.push('R1: structured current-state authority is not actively canonical.');
+    return errors;
+  }
+  const pointers = state.governing_pointers ?? {};
+  const bootstrap = {
+    GOVERNING_SPEC: pointers.governing_spec,
+    TECHNICAL_CONTRACT: pointers.technical_contract,
+    SEQUENCE_AUTHORITY: pointers.sequence_authority,
+    TRACEABILITY: pointers.traceability,
+    LEDGER: pointers.ledger,
+    HANDOFF: pointers.handoff,
+    ACTIVE_PHASE: state.active_phase?.id,
+    ACTIVE_PHASE_CONTRACT: state.active_phase?.contract,
+    ACCEPTED_CHECKPOINT: state.accepted_checkpoints?.unit_4b_readiness
+  };
+  for (const key of POINTER_KEYS) containedTrackedFile(root, bootstrap[key], key, errors);
+  if (bootstrap.GOVERNING_SPEC !== REGISTRIES[0].path) {
+    errors.push('R1: GOVERNING_SPEC is not the active lifecycle registry owner.');
+  }
+  if (bootstrap.TECHNICAL_CONTRACT !== REGISTRIES[1].path) {
+    errors.push('R1: TECHNICAL_CONTRACT is not the active schema registry owner.');
+  }
+  validateActiveContract(root, bootstrap, errors);
+  const registry = parseRegistry(root, errors);
+  validateAnchors(root, registry, errors);
+  let traceText = '';
+  try {
+    const trace = JSON.parse(readText(root, bootstrap.TRACEABILITY));
+    traceText = JSON.stringify(trace);
+    if (trace.authority !== 'CANONICAL_PHASE_C_TRACEABILITY_OWNER'
+        || trace.activation_status !== 'ACTIVE' || trace.requirements?.length !== 13) {
+      errors.push('R3: structured traceability authority or row cardinality is invalid.');
+    }
+  } catch (error) {
+    errors.push(`R3: structured traceability is invalid JSON: ${error.message}`);
+  }
+  if (bootstrap.LEDGER && bootstrap.TRACEABILITY) {
+    validateCheckpoint(root, bootstrap, traceText, errors, stateOwner);
+  }
+  validateWrappers(root, errors);
+  return errors;
+}
+
 export function validateRepository(inputRoot) {
   const errors = [];
   const top = runGit(inputRoot, ['rev-parse', '--show-toplevel'], { allowFailure: true });
   if (!top) return ['R1: root is not a Git repository.'];
   const root = resolve(top);
+  const structuredPath = resolve(root, 'docs/governance/current-state.json');
+  if (existsSync(structuredPath)) {
+    try {
+      const structured = JSON.parse(readFileSync(structuredPath, 'utf8'));
+      if (structured.mode === 'canonical') return validateStructuredRepository(root, errors);
+    } catch {
+      return ['R1: structured current state is invalid JSON.'];
+    }
+  }
   const statePath = resolve(root, 'PROJECT_STATE.md');
   if (!existsSync(statePath)) return ['R1: PROJECT_STATE.md is missing.'];
   containedTrackedFile(root, 'PROJECT_STATE.md', 'PROJECT_STATE.md', errors);

@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://ravatex.local/governance/current-state-v2.schema.json",
-  "title": "Unit 4 current-state cutover candidate",
+  "title": "Unit 4 governed current-state lifecycle",
   "type": "object",
   "additionalProperties": false,
   "required": [
@@ -16,10 +16,10 @@
   ],
   "properties": {
     "schema_version": { "const": "2.0.0" },
-    "mode": { "const": "cutover_candidate" },
-    "authority": { "const": "non_canonical_until_supervisor_activation" },
-    "state_id": { "const": "GOVERNANCE-EFFICIENCY-REFOUNDATION-CURRENT-STATE-CANDIDATE-R1" },
-    "authority_epoch": { "const": 0 },
+    "mode": { "enum": ["cutover_candidate", "canonical"] },
+    "authority": { "enum": ["non_canonical_until_supervisor_activation", "canonical_current_state"] },
+    "state_id": { "enum": ["GOVERNANCE-EFFICIENCY-REFOUNDATION-CURRENT-STATE-CANDIDATE-R1", "GOVERNANCE-EFFICIENCY-REFOUNDATION-CURRENT-STATE-R1"] },
+    "authority_epoch": { "enum": [0, 1] },
     "cutover_id": { "const": "GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-4C-AUTHORITY-CUTOVER-R1" },
     "last_accepted_phase": { "const": "PHASE-C5" },
     "repository": {
@@ -49,7 +49,9 @@
         "governance_unit_1": { "const": "39abf42a7341b61fd4ac02a8e38d1e4f33471f0f" },
         "governance_unit_2": { "const": "f7106977f4613de1830bef46002dbf0a4b8b3cbe" },
         "governance_unit_3": { "const": "53899e30b72cde3d1f5759ea59fb0a4d632c974d" },
-        "unit_4_contract": { "const": "76f52c842678b74e655ef9080f4fc67ccbd38e22" }
+        "unit_4_contract": { "const": "76f52c842678b74e655ef9080f4fc67ccbd38e22" },
+        "unit_4a_readiness": { "const": "fa986cf935abbf053172cfd549b0171bb9446f58" },
+        "unit_4b_readiness": { "const": "fa986cf935abbf053172cfd549b0171bb9446f58" }
       }
     },
     "phase_status": { "type": "object", "minProperties": 7 },
@@ -60,7 +62,7 @@
       "properties": {
         "id": { "const": "GOVERNANCE-EFFICIENCY-REFOUNDATION" },
         "contract": { "const": "docs/governance/GOVERNANCE_EFFICIENCY_REFOUNDATION_PHASE_CONTRACT.md" },
-        "status": { "const": "IMPLEMENTED / CUTOVER READINESS EVIDENCE COMPLETE / AWAITING DIRECT SUPERVISOR REVIEW" }
+        "status": { "enum": ["IMPLEMENTED / CUTOVER READINESS EVIDENCE COMPLETE / AWAITING DIRECT SUPERVISOR REVIEW", "UNIT 4C DOCUMENTARY AUTHORITY ACTIVATED / AWAITING DIRECT SUPERVISOR REVIEW"] }
       }
     },
     "next_authorizable_action": {
@@ -68,9 +70,9 @@
       "additionalProperties": false,
       "required": ["order_id", "canonical_value", "mode", "risk_class", "status"],
       "properties": {
-        "order_id": { "const": "GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-4A-CUTOVER-READINESS-IMPLEMENTATION-R1" },
-        "canonical_value": { "const": "DIRECT SUPERVISOR REVIEW OF GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-4A-CUTOVER-READINESS-IMPLEMENTATION-R1" },
-        "mode": { "const": "UNIT 4B READINESS DIRECT REVIEW" },
+        "order_id": { "enum": ["GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-4A-CUTOVER-READINESS-IMPLEMENTATION-R1", "GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-4C-DOCUMENTARY-AUTHORITY-CUTOVER-R1"] },
+        "canonical_value": { "enum": ["DIRECT SUPERVISOR REVIEW OF GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-4A-CUTOVER-READINESS-IMPLEMENTATION-R1", "DIRECT SUPERVISOR REVIEW OF GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-4C-DOCUMENTARY-AUTHORITY-CUTOVER-R1"] },
+        "mode": { "enum": ["UNIT 4B READINESS DIRECT REVIEW", "UNIT 4D POST-CUTOVER DIRECT REVIEW"] },
         "risk_class": { "const": "R2" },
         "status": { "const": "DIRECT SUPERVISOR REVIEW REQUIRED" }
       }
@@ -89,6 +91,7 @@
     "candidate_views": { "type": "object", "minProperties": 4 },
     "root_authorities": { "type": "array", "minItems": 4 },
     "rollback_readiness": { "type": "object", "minProperties": 4 },
+    "evidence_events": { "type": "array", "minItems": 3 },
     "activation": {
       "type": "object",
       "additionalProperties": false,
@@ -98,25 +101,54 @@
         "allowed_publication_remote", "manifest_algorithm", "state_payload_sha256",
         "structured_source_hashes", "generated_view_hashes",
         "governing_artifact_hashes", "bounded_ledger_reference_identities",
-        "activation_manifest_sha256"
+        "activation_manifest_sha256", "rollback_readiness_sha256"
       ],
       "properties": {
-        "status": { "const": "inactive" },
+        "status": { "enum": ["inactive", "active"] },
         "target_schema_version": { "const": "2.0.0" },
-        "authority_epoch": { "const": 0 },
+        "authority_epoch": { "enum": [0, 1] },
         "cutover_id": { "const": "GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-4C-AUTHORITY-CUTOVER-R1" },
-        "required_parent": { "type": "null" },
-        "accepted_unit4b_readiness_checkpoint": { "type": "null" },
+        "required_parent": { "type": ["string", "null"], "pattern": "^[0-9a-f]{40}$" },
+        "accepted_unit4b_readiness_checkpoint": { "type": ["string", "null"], "pattern": "^[0-9a-f]{40}$" },
         "branch": { "const": "dev" },
         "allowed_publication_remote": { "const": "staging/dev" },
         "manifest_algorithm": { "const": "UNIT4-ACTIVATION-MANIFEST-V1" },
         "state_payload_sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
         "structured_source_hashes": { "type": "object", "minProperties": 4 },
-        "generated_view_hashes": { "type": "object", "minProperties": 4 },
+        "generated_view_hashes": { "type": "object", "minProperties": 4, "maxProperties": 4 },
         "governing_artifact_hashes": { "type": "object", "minProperties": 4 },
         "bounded_ledger_reference_identities": { "type": "array", "minItems": 3 },
+        "rollback_readiness_sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
         "activation_manifest_sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" }
       }
     }
-  }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "mode": { "const": "canonical" } } },
+      "then": {
+        "required": ["evidence_events"],
+        "properties": {
+          "authority": { "const": "canonical_current_state" },
+          "state_id": { "const": "GOVERNANCE-EFFICIENCY-REFOUNDATION-CURRENT-STATE-R1" },
+          "authority_epoch": { "const": 1 },
+          "activation": {
+            "properties": {
+              "status": { "const": "active" },
+              "authority_epoch": { "const": 1 },
+              "required_parent": { "const": "fa986cf935abbf053172cfd549b0171bb9446f58" },
+              "accepted_unit4b_readiness_checkpoint": { "const": "fa986cf935abbf053172cfd549b0171bb9446f58" }
+            }
+          }
+        }
+      },
+      "else": {
+        "properties": {
+          "authority": { "const": "non_canonical_until_supervisor_activation" },
+          "authority_epoch": { "const": 0 },
+          "activation": { "properties": { "status": { "const": "inactive" }, "authority_epoch": { "const": 0 } } }
+        }
+      }
+    }
+  ]
 }

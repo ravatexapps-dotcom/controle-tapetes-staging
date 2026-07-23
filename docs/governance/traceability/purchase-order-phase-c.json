@@ -1,9 +1,11 @@
 {
-  "activation_status": "INACTIVE",
-  "authority": "NON_CANONICAL_UNTIL_SUPERVISOR_ACTIVATION",
+  "activation_status": "ACTIVE",
+  "authority": "CANONICAL_PHASE_C_TRACEABILITY_OWNER",
+  "authority_epoch": 1,
   "canonical_source": "docs/architecture/ORDEM_COMPRA_C3_TRACEABILITY.md",
+  "cutover_id": "GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-4C-AUTHORITY-CUTOVER-R1",
   "future_authority_path": "docs/governance/traceability/purchase-order-phase-c.json",
-  "mode": "CUTOVER_CANDIDATE",
+  "mode": "CANONICAL",
   "requirements": [
     {
       "blocking_state": "NON_BLOCKING",

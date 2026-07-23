@@ -1,0 +1,60 @@
+{
+  "accepted_pre_cutover_checkpoint": "fa986cf935abbf053172cfd549b0171bb9446f58",
+  "actual_unit4c_commit_checkpoint": "EXTERNALLY_REQUIRED_INPUT",
+  "current_structured_owners": [
+    "docs/governance/current-state.json",
+    "docs/governance/catalog/documents.json",
+    "docs/governance/traceability/purchase-order-phase-c.json"
+  ],
+  "defective_authority_epoch": 1,
+  "generated_root_paths": [
+    "PROJECT_STATE.md",
+    "AGENT_HANDOFF.md",
+    "docs/DOCUMENTATION_INDEX.md",
+    "docs/architecture/ORDEM_COMPRA_C3_TRACEABILITY.md"
+  ],
+  "governing_bootstrap_consumers": [
+    "AGENTS.md",
+    "CLAUDE.md",
+    "docs/governance/AGENT_INSTRUCTIONS.md"
+  ],
+  "package_id": "GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-4C-ROLLBACK-READINESS-R1",
+  "prior_authority_owners": [
+    {
+      "path": "PROJECT_STATE.md",
+      "sha256_at_accepted_checkpoint": "4cefe8cf461729ec7e083dc50c546bf7ef0dc67aa9b32804bdb9af504b9d32bd"
+    },
+    {
+      "path": "AGENT_HANDOFF.md",
+      "sha256_at_accepted_checkpoint": "99cbcefd68e1cb0dff5e459044f00224420d50c8ead0fd377841b6f359505da2"
+    },
+    {
+      "path": "docs/DOCUMENTATION_INDEX.md",
+      "sha256_at_accepted_checkpoint": "d14c93e8b55f34bac5566512ff405376c39ca52d40222b96cea257eb66667570"
+    },
+    {
+      "path": "docs/architecture/ORDEM_COMPRA_C3_TRACEABILITY.md",
+      "sha256_at_accepted_checkpoint": "9e2c0170733bd5bbfc496a0e968fe02964443fda6893d5ad239252c38938f8b8"
+    }
+  ],
+  "prohibitions": [
+    "RESET",
+    "FORCE_PUSH",
+    "HISTORY_REWRITE",
+    "BRANCH_REPLACEMENT",
+    "SILENT_FALLBACK",
+    "MANUAL_GENERATED_ROOT_MAINTENANCE",
+    "AUTOMATIC_ACTIVATION"
+  ],
+  "required_corrective_authority_epoch": 2,
+  "requirements": [
+    "RESTORE_AUTHORITY_ONLY_THROUGH_EXPLICIT_AUTHORITY_FIELDS",
+    "REGENERATE_ROOTS_SOURCE_FIRST",
+    "APPEND_CANONICAL_LEDGER_CORRECTION",
+    "CREATE_ONE_FUTURE_FAST_FORWARD_CORRECTION_COMMIT",
+    "OBTAIN_DIRECT_SUPERVISOR_REVIEW",
+    "ADVANCE_AUTHORITY_EPOCH_TO_2"
+  ],
+  "schema_version": "1.0.0",
+  "status": "PREPARED / NOT AUTHORIZED / NOT ACTIVATED"
+}

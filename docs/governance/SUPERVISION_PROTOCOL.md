@@ -7,8 +7,9 @@
 > ChatGPT to a consultant without state custody.
 > This document formalizes the roles and the order format for any
 > reviewer (human or AI) that participates in the supervision of the project.
-> **It is not a source of state.** Operational state lives in `PROJECT_STATE.md`;
-> continuity in `AGENT_HANDOFF.md`; history in per-front ledgers.
+> **It is not a source of state.** Operational state lives in
+> `docs/governance/current-state.json`; generated roots provide compatibility
+> context; history lives in per-front ledgers.
 
 ---
 
@@ -52,11 +53,14 @@ Before opining on state, backlog or next action, a new reviewer
 (or a new session of an existing reviewer) must read, in this
 order:
 
-1. `AGENT_HANDOFF.md` — continuity and mandatory paths.
-2. `PROJECT_STATE.md` — current operational state per front.
-3. The plan/spec of the active front (e.g.: `docs/architecture/CAMADA2_USUARIOS_SPEC_PROPOSED.md`
-   for `G28-CAMADA-2`).
-4. The front ledger (e.g.: `docs/ledgers/G28_LEDGER.md`).
+1. Validate repository identity, Git state, and configured remotes.
+2. Read and schema-validate `docs/governance/current-state.json`.
+3. Validate activation epoch, cutover ID, required parent, and declared hashes.
+4. Follow the active governing pointers and applicable plan/spec.
+5. Retrieve only the bounded ledger events declared by structured state.
+
+Generated roots are optional context, not authority. Missing or invalid
+structured authority is a hard stop; silent fallback is forbidden.
 
 Nothing a reviewer says about the state of the project becomes state
 until it passes through the canonical documents, updated by the resident
@@ -113,9 +117,13 @@ automatically.** An order covers exclusively what it authorizes.
 
 Every repository-capable executor starts through
 `docs/governance/AGENT_INSTRUCTIONS.md` and the
-`SPEC_CUSTODY_BOOTSTRAP` block in `PROJECT_STATE.md`. Private conversation,
-memory, rollout summaries, and tool caches do not authorize work or establish
-state.
+active bootstrap in `docs/governance/current-state.json`. Private conversation,
+memory, rollout summaries, generated root views, and tool caches do not
+authorize work or establish state.
+
+After authority epoch `1`, defects are corrected only by a separately authorized
+source-first forward correction. Reset, force push, history rewrite, manual root
+maintenance, and silent fallback are forbidden.
 
 The supervision rule is:
 

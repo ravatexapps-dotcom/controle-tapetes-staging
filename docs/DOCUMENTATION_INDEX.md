@@ -1,765 +1,160 @@
-# Documentation Index — Ravatex Controle de Tapetes
-
-> Documentation index. Every new AI session or person must
-> start from the **authority list** in §1, which is the sole
-> active list of documentary authority in the project. The
-> **legacy docs** have been preserved as historical context and
-> **must not guide execution** after the refactor/hardening cycle.
->
-> **Convention:** this directory is docs-only. No changes to
-> code, tests, or `index.html` are made here.
-
-## 0. Role of this index and documentary governance contract
-
-As of `G28-DOCS-B1` (additive phase, no migration), this file
-is formally recognized as the project's **sole arbiter of
-documentary authority and canonical paths**. It answers:
-
-- what is the **order of authority** among documents;
-- what is the **classification** of each document (canonical,
-  operational, contract, runbook, legacy, diagnostic,
-  governance);
-- what are the **canonical paths**;
-- which documents are **legacy** and pending reconciliation;
-- what is the **responsibility** of each document category.
-
-This index is **not** the source of the current phase, next
-action, HEAD, working tree, operational status, or closeout
-history. Those facts belong to `PROJECT_STATE.md`, Git, and the
-front ledger, per the contract in
-[`docs/governance/DOCUMENTATION_MODEL.md`](governance/DOCUMENTATION_MODEL.md).
-
-The **documentary governance model** that governs ownership,
-duplication, per-phase updates, minimum documentary transaction,
-compaction, and treatment of Git/migrations/HEAD is
-`docs/governance/DOCUMENTATION_MODEL.md`. In case of conflict
-between any project document and this model, the model prevails,
-unless the revision is recorded in this index and in the
-respective ledger.
-
-The competing lists of "canonical sources (fontes canônicas)",
-"functional precedence", and "required documents" that existed
-in other files (§2 of this index,
-`docs/architecture/CLAUDE_PROJECT_ASSET_MAP.md`,
-`Guide-and-governance-rules.stxt`) were reconciled in
-`G28-DOCS-B3-E1`: they now point to §1 of this index as the
-sole active list of authority. No other competing list should
-be created.
-
-## 1. Canonical documentary authority (single list)
-
-This is the **sole active list of documentary authority** in
-the project. Any other document describing authority,
-prevalence, precedence, or "required documents" must point to
-this section, not repeat the list.
-
-| Document | Role |
-|---|---|
-| `docs/DOCUMENTATION_INDEX.md` (this file) | Classifies the documents and defines their roles. |
-| `docs/governance/DOCUMENTATION_MODEL.md` | Defines the governance model and the rules for per-phase documentary updates. Content in English since `DOC-LANGUAGE-MIGRATION-L1`; pt-BR original archived at `docs/archive/pt-BR/` (see §7). |
-| `docs/governance/SUPERVISION_PROTOCOL.md` | Defines the roles of the supervision process (Architect/Reviewer/Resident Executor), onboarding of a new reviewer, order format, and gates (visual validation, approved mockup, migration as its own gate, Auth risk kept separate). Does not define state or documentary organization rules — that is `DOCUMENTATION_MODEL.md`. Content in English since `DOC-LANGUAGE-MIGRATION-L1`; pt-BR original archived at `docs/archive/pt-BR/` (see §7). |
-| `docs/governance/AGENT_INSTRUCTIONS.md` | Single tracked repository-agent behavior source for Claude Code, Codex, and equivalent repository-capable agents. It defines bootstrap, evidence, safety, and proportional-update behavior but owns no current state or product semantics. |
-| `docs/governance/GOVERNANCE_EFFICIENCY_REFOUNDATION_PHASE_CONTRACT.md` | Active material phase contract for governance-efficiency refoundation; Units 1–3 and the Unit 4 contract are closed and directly accepted, Unit 4A readiness is implemented awaiting direct supervisor review, structured sources remain non-canonical, current canonical owners are unchanged, and Unit 4C/documentary-authority cutover remain unauthorized. |
-| `docs/governance/GOVERNANCE_EFFICIENCY_REFOUNDATION_UNIT_4_AUTHORITY_CUTOVER_CONTRACT.md` | Authored normative Unit 4 contract, externally accepted at `76f52c842678b74e655ef9080f4fc67ccbd38e22`; defines the future structured-authority architecture, 31-consumer matrix, schema transition, readiness gates, PONR, cutover boundaries, post-cutover validation, and forward-correction rollback. Unit 4A readiness is implemented but not self-accepted; Unit 4C remains unauthorized. |
-| `docs/governance/current-state.json` | Schema `2.0.0` inactive cutover candidate; non-canonical readiness source until a separately accepted Unit 4C activation. |
-| `docs/governance/schemas/current-state-v2.schema.json` | Strict Unit 4 candidate current-state validation shape; owns no state facts. |
-| `docs/governance/schemas/document-catalog-v2.schema.json` | Strict inactive candidate catalog validation shape; owns no classification facts during Unit 4A. |
-| `docs/governance/schemas/purchase-order-phase-c-v2.schema.json` | Strict inactive candidate Phase-C traceability validation shape; owns no product semantics. |
-| `docs/governance/schemas/unit4-readiness-manifest.schema.json` | Unit 4A external readiness-manifest validation shape. |
-| `docs/governance/candidate/current-state-source-manifest.json` | Deterministic Unit 4A source coverage derived from accepted Unit 1 evidence. |
-| `docs/governance/candidate/current-state-equivalence.json` | Reviewed one-to-one Unit 4A disposition for every accepted Unit 1 source unit. |
-| `docs/governance/candidate/readiness-manifest.json` | External non-canonical identity, consumer, fact-coverage, bounded-ledger, bootstrap, isolation, and rollback-readiness evidence. |
-| `docs/governance/candidate/generated/PROJECT_STATE.md` | Generated non-canonical Unit 4A readiness view; root `PROJECT_STATE.md` remains authoritative. |
-| `docs/governance/candidate/generated/AGENT_HANDOFF.md` | Generated non-canonical Unit 4A handoff view; root `AGENT_HANDOFF.md` remains the manual derived handoff. |
-| `docs/governance/candidate/generated/DOCUMENTATION_INDEX.md` | Generated non-canonical Unit 4A catalog view; root index remains classification authority. |
-| `docs/governance/candidate/generated/ORDEM_COMPRA_C3_TRACEABILITY.md` | Generated non-canonical Unit 4A traceability view; authored root traceability remains authoritative. |
-| `scripts/governance/unit4-canonical-json.mjs` | Shared deterministic JSON, hashing, projection, and self-reference rejection helpers. |
-| `scripts/governance/build-unit4-readiness.mjs` | Deterministic source-first Unit 4A readiness builder. |
-| `scripts/governance/render-unit4-candidate-views.mjs` | Literal-allowlist renderer for the four candidate-only human views. |
-| `scripts/governance/read-bounded-ledger-events.mjs` | Unit 3 index/partition reader for declared recent ledger events; full-ledger fallback is forbidden. |
-| `scripts/governance/simulate-unit4-bootstrap.mjs` | Instrumented no-private-memory candidate bootstrap simulator. |
-| `scripts/governance/validate-unit4-readiness.mjs` | Worktree and immutable-commit Unit 4A readiness validator; causes no Git mutation. |
-| `tests/governance-unit4-readiness.test.mjs` | Unit 4A positive and negative readiness coverage. |
-| `docs/governance/schemas/current-state.schema.json` | Structured shadow-state schema; validation shape only, not an authority source. |
-| `docs/governance/shadow/current-state.json` | Structured current-state shadow source; explicitly non-canonical until supervisor cutover. |
-| `docs/governance/shadow/current-state-equivalence.json` | Read-only equivalence and ownership mapping for current-state and handoff facts. |
-| `docs/governance/shadow/current-state-source-manifest.json` | Deterministic inventory of bootstrap keys and Markdown level 1-3 source sections; non-authoritative evidence for shadow equivalence. |
-| `scripts/governance/build-current-state-source-manifest.mjs` | Dependency-free deterministic source-manifest builder; does not change canonical authority. |
-| `scripts/governance/render-current-state-shadow.mjs` | Deterministic renderer for non-canonical shadow views. |
-| `scripts/governance/validate-current-state-shadow.mjs` | Shadow-state validator; does not replace or weaken spec-custody validation. |
-| `tests/governance-current-state-shadow.test.mjs` | Dependency-free validator/renderer self-tests. |
-| `docs/governance/shadow/generated/PROJECT_STATE.md` | Generated non-canonical compatibility view; never edit directly. |
-| `docs/governance/shadow/generated/AGENT_HANDOFF.md` | Generated non-canonical compatibility handoff view; never edit directly. |
-| `docs/governance/catalog/document-source-manifest.json` | Deterministic non-canonical inventory of governed Markdown, hashes, sizes, references, and headings. |
-| `docs/governance/catalog/documents.json` | Explicitly reviewed non-canonical document catalog and reference-debt dispositions. |
-| `docs/governance/traceability/purchase-order-phase-c.json` | Non-canonical deterministic Phase-C requirement traceability facts; canonical Markdown retains semantics. |
-| `docs/governance/schemas/document-catalog.schema.json` | Unit 2 catalog validation shape; owns no documentary facts. |
-| `docs/governance/schemas/purchase-order-phase-c-traceability.schema.json` | Unit 2 traceability validation shape; owns no normative requirement prose. |
-| `scripts/governance/build-document-source-manifest.mjs` | Deterministic Unit 2 Markdown inventory builder. |
-| `scripts/governance/render-documentation-shadow.mjs` | Deterministic renderer for Unit 2 non-canonical views. |
-| `scripts/governance/validate-documentation-shadow.mjs` | Parallel Unit 2 validator, including immutable `--commit` mode. |
-| `scripts/governance/git-content-reader.mjs` | Shared read-only worktree/immutable-Git content reader for Unit 2. |
-| `tests/governance-documentation-shadow.test.mjs` | Unit 2 positive, negative, deterministic, and immutable-read tests. |
-| `docs/governance/shadow/generated/DOCUMENTATION_INDEX.md` | Generated non-canonical catalog view; never edit directly. |
-| `docs/governance/shadow/generated/ORDEM_COMPRA_C3_TRACEABILITY.md` | Generated non-canonical Phase-C traceability view; never edit directly. |
-| `docs/governance/schemas/g28-ledger-source-manifest.schema.json` | Required and dependency-free-enforced Unit 3 raw-byte source-manifest validation shape; owns no ledger prose. |
-| `docs/governance/schemas/g28-ledger-partition-index.schema.json` | Required and dependency-free-enforced Unit 3 nested partition-index validation shape; owns no ledger prose. |
-| `docs/governance/ledger/g28-ledger-source-manifest.json` | Unit 3 deterministic raw-byte ledger source manifest; non-canonical evidence derived from the canonical ledger. |
-| `docs/governance/ledger/g28-ledger-partition-index.json` | Unit 3 deterministic partition index and reference-survival proof; non-canonical evidence derived from the canonical ledger. |
-| `scripts/governance/build-g28-ledger-partitions.mjs` | Unit 3 raw-byte source-manifest and deterministic partition builder. |
-| `scripts/governance/render-g28-ledger-shadow.mjs` | Unit 3 partition-derived compatibility-view renderer. |
-| `scripts/governance/validate-g28-ledger-shadow.mjs` | Unit 3 schema, partition-index identity parity, lossless partition, compatibility, reference-survival, old/new-buffer append-stability, immutable-commit, and catalog validator. |
-| `tests/governance-g28-ledger-shadow.test.mjs` | Unit 3 positive identity-parity, identity-negative, schema-negative, boundary-negative, deterministic, generated-classification, and immutable-read tests. |
-| `docs/governance/shadow/generated/G28_LEDGER.md` | Generated non-canonical compatibility view derived only from ordered ledger partition payloads; never edit directly. |
-| `docs/governance/shadow/ledger/partitions/G28_LEDGER_PART_[0-9][0-9][0-9][0-9].md` | Generated non-canonical ledger partitions; deletable only if mechanically regenerable. |
-| `PROJECT_STATE.md` (root) | **Current-state authority** — sole owner of the current operational state per front. Compacted to a current-state hub by `GOVERNANCE-STATE-HANDOFF-COMPACTION-R1` (2026-07-20); historical narratives live in the ledger and closeout archives. Content in English since `DOC-LANGUAGE-MIGRATION-L2`; pt-BR original archived at `docs/archive/pt-BR/PROJECT_STATE.md` (see §7). |
-| `AGENT_HANDOFF.md` (root) | **Derived current operational handoff** — sole active handoff, derived from `PROJECT_STATE.md`; never a second state owner. Reduced to a concise derived handoff by `GOVERNANCE-STATE-HANDOFF-COMPACTION-R1` (2026-07-20); the prior stack is preserved in `docs/closeouts/AGENT_HANDOFF_ARCHIVE_2026-07.md`. Content in English since `DOC-LANGUAGE-MIGRATION-L2`; pt-BR original archived at `docs/archive/pt-BR/AGENT_HANDOFF.md` (see §7). |
-| `docs/ledgers/G28_LEDGER.md` | Structured append-only history of the G28 front. |
-| `docs/refactor/ARCHITECTURE_REFACTOR_LEDGER.md` | History exclusive to the refactor front. |
-| `docs/legacy/pre-model/MANIFEST.md` | Immutable pre-model preservation; not operational. |
-| Git | Commits, diffs, manifests, branch, HEAD, staging, and divergence — consult directly. |
-
-> These roles **do not overlap**. In divergence between
-> documents with distinct roles, the document whose role
-> matches the question resolves it (state → `PROJECT_STATE.md`;
-> update rule → `DOCUMENTATION_MODEL.md`; authority/classification
-> → this index; commit/diff → Git). The detailed per-phase update
-> matrix is in
-> [`docs/governance/DOCUMENTATION_MODEL.md`](governance/DOCUMENTATION_MODEL.md) §11.
-
-### Classificatory inventory (documents by category)
-
-The documents below have a legitimate classificatory or
-contractual function; they are **not** a second prevalence
-list. In divergence with §1, resolve by the role of each one.
-
-| Document | Category | Purpose |
-|---|---|---|
-| `docs/architecture/CODE_HEALTH_RULES.md` | Architectural contract | 19 binding architectural health rules (18 modularization + rule 19, on language). Every new phase must comply. Content in English since `DOC-LANGUAGE-MIGRATION-L1`; pt-BR original archived at `docs/archive/pt-BR/` (see §7). |
-| `docs/architecture/PORTAL_B2B_ARCHITECTURE_RULES.md` | Architectural contract | Rules for the Portal B2B/Pedidos front: separates client/admin/supplier, operational vs. visual status, common components, phase decomposition. |
-| `docs/architecture/PEDIDO_OP_MOVIMENTACAO_DOCUMENTOS_PLANO.md` | Persistent plan | Plan for the Pedido ↔ OP ↔ Movimentação ↔ Documentos front: entry state, decisions, target model, screen roles, future phases (B through J), evidence template. |
-| `docs/architecture/PEDIDO_OP_SCHEMA_CONTRACT.md` | Technical contract | Schema contract for Pedido ↔ OP ↔ Movimentação ↔ Documentos. §13 is the accepted exact structural realization of the F1 executable contract. §13.15 remains the unchanged C3B executable contract; §13.16 records C3C-A local technical acceptance; §13.17 adds governance metadata for `OC-C3D-ACL-001`; §13.18 (applied 2026-07-20) records the legacy-compat receipt-adapter schema (additive `idempotency_namespace` `CHECK` only) for `PHASE-C3C-B-DB-PREREQ`. Current routing is owned by `PROJECT_STATE.md`; C3C-B application implementation remains unauthorized. |
-| `docs/architecture/ORDEM_COMPRA_LIFECYCLE_SPEC_PROPOSED.md` | Ratified architectural contract | Governing four-layer purchase-order model. §R.29 core remains the unchanged accepted Phase-C3 product contract; §R.30 records C3C-A local technical acceptance; §R.31 adds stable active-continuation requirement labels; §R.29.7 (applied 2026-07-20) records the legacy-compat database prerequisites for `PHASE-C3C-B-DB-PREREQ`. Current routing is owned by `PROJECT_STATE.md`; C3C-B application implementation remains unauthorized. |
-| `docs/architecture/ORDEM_COMPRA_C3_TRACEABILITY.md` | Derived active-track traceability | Maps the active Phase-C continuation requirement IDs to existing lifecycle/schema anchors, owning phase, disposition, implementation, evidence, environment, checkpoint, and residual debt. It creates no architecture or authorization. |
-| `docs/architecture/ORDEM_COMPRA_C3C_B_PHASE_CONTRACT.md` | Material phase contract (closed / accepted_with_nonblocking_debt / locally verified; not active) | Binds `OC-C3-READ-001`/`OC-C3-WRITE-001`/`OC-C3-COMPAT-001`/`OC-C3-NOUI-001` to an exact repository scope, dependency inventory, implementation-file manifest, tests, evidence, and hard stops for the `PHASE-C3C-B` application compatibility/adaptation implementation. Created by `C3C-B-MATERIAL-PHASE-CONTRACT-R1` (docs-only); forward-corrected and accepted `ACCEPTED_WITH_BLOCKING_DATABASE_PREREQUISITES` (§31); activated by §32 once the companion database-prerequisites contract's environment application was supervisor-accepted; implemented in §33, corrected in §34/§35, and supervisor-accepted in §36 (`STATUS: CLOSED / ACCEPTED_WITH_NONBLOCKING_DEBT / LOCALLY VERIFIED`, checkpoint `22bfb192c6c2ad10ccd2b2883d54c3a17e40cc9f`, 2026-07-21). No dependent `OC-C3-*` requirement is `SATISFIED`. `PROJECT_STATE.md` remains sole owner of `ACTIVE_PHASE`/`ACTIVE_PHASE_CONTRACT` (both `NONE`). |
-| `docs/architecture/ORDEM_COMPRA_C3C_B_DB_PREREQUISITES_PHASE_CONTRACT.md` | Material phase contract (closed / technically accepted / local DB verified / not applied to staging database; not active) | Defines two database components (canonical order-catalog projection; atomic legacy receipt-intent adapter) that close the two hard stops recorded in `ORDEM_COMPRA_C3C_B_PHASE_CONTRACT.md` §25/§26. R2 architecture accepted in §34; `PHASE-C3C-B-DB-PREREQ` **implemented** in §35, **DB-backed-validated** in §36, and **supervisor-accepted** in §37 (`STATUS: CLOSED / TECHNICALLY ACCEPTED / LOCAL DB VERIFIED / NOT APPLIED TO STAGING DATABASE`) — `db/76` (Component A + Component B, both inert-until-`canonical_active`; two functions + one additive `idempotency_namespace` `CHECK`, no bridge/backfill/`db/67`/`db/75` change), the three contracted tests (the two DB-backed ones executed and passing against an isolated disposable local PostgreSQL 18.4 cluster, including a persisted rollback rehearsal and reapply), and the applied `§R.29.7`/`§13.18` deltas. §35 records the architect ruling that legacy-compat receipts reuse the native command types and carry compat identity in `idempotency_namespace='legacy_compat_receipt_v1'` (no `recebimento_compat`; shape guard unchanged); §36 records one genuine `db/76` defect found and fixed (a PL/pgSQL naming ambiguity in Component A) and that the C3C-A DB-backed regressions remain unexecutable against any synthetic corpus (pre-existing, unrelated limitation, recorded as nonblocking C3C-A fixture debt); §37 records supervisor acceptance — `db/76` is **not applied to any staging database**, and no dependent `OC-C3-*` requirement is marked `SATISFIED`. §38 records the applied-to-development-database (`ucrjtfswnfdlxwtmxnoo`) closeout, inert; §39 records supervisor acceptance of that environment application, which activated `ORDEM_COMPRA_C3C_B_PHASE_CONTRACT.md` §32 and its `PHASE-C3C-B` implementation. Fixed corpus binding; completeness/freeze/re-baseline deferred to real-cutover/C3D. `PROJECT_STATE.md` remains sole owner of `ACTIVE_PHASE`/`ACTIVE_PHASE_CONTRACT` (both `NONE`). |
-| `docs/architecture/ORDEM_COMPRA_C3D_PHASE_CONTRACT.md` | Material phase contract (closed / accepted_with_nonblocking_debt / locally verified; not active) | Binds the four already-ratified `OC-C3D-*` requirements (`OC-C3D-DEPLOY-001`/`OC-C3D-FENCE-001`/`OC-C3D-ACL-001`/`OC-C3D-LOCK-001`) to an isolated-rehearsal scope for `PHASE-C3D` (inactive deployment & rehearsal): six sublots (C3D-A…C3D-F), environment strategy (disposable local PostgreSQL + read-only shared-DB inspection, §D Option 2), entry/exit gates, test matrix, recovery/PONR model, exact future manifests, and mandatory supervisor decisions. Creates no requirement and changes no anchor; every `OC-C3D-*` disposition remains as ratified. Authored by `docs: accept C3C-B and define C3D contract` (2026-07-21), forward-corrected twice the same day (`docs: correct C3D contract boundaries` §0/R1; `docs: finalize C3D contract execution boundaries` §0b/R2), then **accepted** by the supervisor (§0c) under the "PHASE-C3D-A — ENVIRONMENT AND DEPLOYMENT-MANIFEST QUALIFICATION" order, which explicitly authorized `PHASE-C3D-A` alone and recorded its implementation/evidence at §O (`scripts/c3d/bootstrap-disposable-cluster.mjs`, `tests/ordem-compra-c3d-deploy.smoke.js`; no migration applied to any cluster or database; read-only `ucrjtfswnfdlxwtmxnoo` inspection succeeded). The material-contract `PHASE_ID` was subsequently restored from the documentary-error `PHASE-C3D-A` to `PHASE-C3D` and `PHASE-C3D-A` recorded `CLOSED / TECHNICALLY ACCEPTED / LOCALLY VERIFIED` at checkpoint `096cd603…` (§Q.1); `PHASE-C3D-B` (inactive migration/application-presence validation) added the authorized `tests/ordem-compra-c3d-deploy.integration.sql` (full ordered `db/01`…`db/76` applied to two fresh disposable local clusters; inactive Component A/B, idempotency, zero-mutation, and cluster-destruction proofs) (§Q). The supervisor then **accepted** `PHASE-C3D-A` (`096cd603…`) and `PHASE-C3D-B` (`5441321…`), advanced `OC-C3D-DEPLOY-001` to `SATISFIED`, and corrected the §G item 9 pre-PONR rollback semantics (restores `flat` reads only, stays `maintenance_fenced`, does not return to `legacy_active`) (§R). `PHASE-C3D-C` was then `AUTHORIZED / NOT STARTED` (fresh Claude session required) (§R.3). `PHASE-C3D-C` (fence and pre-PONR rollback rehearsal) subsequently added the authorized `tests/ordem-compra-c3d-fence.integration.sql` (database-faithful authenticated actor-context fence-denial proof, 8-table×3-op structural fence matrix, pre-PONR rollback rehearsal, across two fresh disposable local clusters) and is `CLOSED / TECHNICALLY ACCEPTED / LOCALLY VERIFIED` (§S corrected §T, supervisor-accepted §U at checkpoint `6fd63a56…`), advancing `OC-C3D-FENCE-001` to `SATISFIED`. `PHASE-C3D-D` (effective ACL and role-matrix rehearsal) added the authorized `tests/ordem-compra-c3d-acl.integration.sql` (empirical `close_final_acl` catalog proof; a simulated closure and post-simulation table/column/sequence/policy/function matrices without invoking the real closure and with `final_acl_closed_at` NULL throughout; a Component A/B eight-actor runtime matrix under a TEST-ONLY canonical_active fixture; byte-identical rollback; across two fresh disposable local clusters) and is `IMPLEMENTED / LOCALLY VERIFIED / AWAITING SUPERVISOR ACCEPTANCE` (§V); a subsequent read-only review returned `CHANGES_REQUIRED` on one BLOCKING evidence defect — the catalog matrix and the runtime role matrix ran in separate transactions, so the runtime matrix executed after the simulated ACL closure was already rolled back — resolved by the §W targeted correction that binds the runtime role matrix to the active simulated closure inside one outer transaction + one nested savepoint (`c3dd_runtime_fixture`), re-verified across two fresh disposable local clusters (db/75/db/76 byte-unchanged), leaving `PHASE-C3D-D` supervisor-accepted (§X, advancing `OC-C3D-ACL-001` to `SATISFIED`). `PHASE-C3D-E` (session/resource lock + Component B concurrency) is now `CLOSED / TECHNICALLY ACCEPTED / LOCALLY VERIFIED` (supervisor-accepted §Z at `429aa39`, advancing `OC-C3D-LOCK-001` to `SATISFIED`), and `PHASE-C3D-F` is the `CLOSED / ACCEPTED / DOCUMENTATION-ONLY` aggregate closeout (§Z): the whole `PHASE-C3D` material phase is `CLOSED / ACCEPTED_WITH_NONBLOCKING_DEBT / LOCALLY VERIFIED` at accepted technical checkpoint `429aa39`, with all four `OC-C3D-*` requirements `SATISFIED`; the 13 unmapped `ordens_compra_fio` rows (ids 153–165) remain a binding `REAL_CUTOVER` completeness gate deferred to real cutover. `PROJECT_STATE.md` remains sole owner of `ACTIVE_PHASE`/`ACTIVE_PHASE_CONTRACT` (both now `NONE`). |
-| `docs/architecture/ORDEM_COMPRA_C4_PHASE_CONTRACT.md` | Material phase contract (closed / accepted / locally verified / architect visual validation passed; not active) | Binds `OC-C4-ADMIN-001` to an exact functional scope (admin receipt registration, item/allocation remaining quantities, explicit excess entry, receipt command history, administrator reversal), actor/state/action matrix, API ownership matrix (native `registrar_recebimento_ordem_compra`/`estornar_recebimento_ordem_compra`/`obter_historico_recebimento_ordem_compra`, excluding the PHASE-C3C-B legacy-compat adapter from C4's call graph), a closed three-new-file product manifest, an explicit unchanged-file list, an idempotency/error contract, and a visual contract authored against `docs/architecture/UI_VISUAL_CONTRACT.md`. Created by `C4-MATERIAL-PHASE-CONTRACT-R1` (docs-only, 2026-07-21); accepted + implementation authorized by `C4-ADMIN-RECEIPT-UI-IMPLEMENTATION-R1` (§0b); implemented + visually corrected (§0c); **supervisor-accepted with the mandatory architect visual validation by `C4-CLOSEOUT-AND-C5-CONTRACT-R1`** (§0d, 2026-07-21): `STATUS: CLOSED / ACCEPTED / LOCALLY VERIFIED / ARCHITECT VISUAL VALIDATION PASSED`, accepted technical checkpoint `289b0cca66e9c057330a882f69da3476adf90469`. `OC-C4-ADMIN-001` is `SATISFIED`. `PROJECT_STATE.md` remains sole owner of `ACTIVE_PHASE`/`ACTIVE_PHASE_CONTRACT` (both `NONE`). |
-| `docs/architecture/ORDEM_COMPRA_C5_PHASE_CONTRACT.md` | Material phase contract (closed / accepted_with_nonblocking_debt / directly verified / architect visual validation passed; not active) | Binds `OC-C5-EMISSION-001` to an exact functional scope (wire the existing disabled `oc-emitir` button to native `emitir_ordem_compra` + a confirmation modal + `status_aceite` display; no new list/history), an actor/state/action matrix keyed to the server `pode_emitir`/`bloqueio_emissao`/`acoes.emitir` model, an API ownership matrix (native `emitir_ordem_compra` only, excluding the superseded legacy flat `emitir_ordem_compra_fio`), a closed purely-additive three-file manifest (`ordem-compra-data.js`/`-render.js`/`-events.js`, no new product file), an idempotency/error contract, and a visual contract ratified `CONTROLLED_IRREVERSIBLE_TRANSITION` (§21). Created by `C4-CLOSEOUT-AND-C5-CONTRACT-R1` (2026-07-21); supervisor-accepted under `C5-CONTRACT-ACCEPTANCE-CLOSEOUT-R1` (§21) with the database prerequisite assigned to `PHASE-C5A-DB-EMISSION-READINESS`; local implementation authorized under `C5A-CLOSEOUT-AND-C5-AUTHORIZATION-R1` (2026-07-22, §22); implemented under `C5-PURCHASE-ORDER-EMISSION-UI-IMPLEMENTATION-R1` (§23); direct supervisor functional/visual review found exactly one blocking functional defect (`C5_AMBIGUOUS_EMISSION_RELOAD_FALSE_DRAFT_ASSERTION`; visual review passed with nonblocking cosmetic debt), targeted-corrected under `C5-AMBIGUOUS-RELOAD-AND-CANONICAL-STATE-CORRECTION-R1` (2026-07-22, §24); and **supervisor-accepted and closed** under `C5-DOCUMENTATION-CLOSEOUT-R1` (2026-07-22, §25): `STATUS: CLOSED / ACCEPTED_WITH_NONBLOCKING_DEBT / DIRECTLY VERIFIED / ARCHITECT VISUAL VALIDATION PASSED`, accepted technical checkpoint `3405fdab8e05ec0f81cbfe07c63c489e551fee92` (PHASE-C5 FUNCTIONAL GATE = PASS; VISUAL REVIEW = PASS_WITH_NONBLOCKING_COSMETIC_DEBT). `OC-C5-EMISSION-001` is `SATISFIED`. `PHASE-C5B-ACCEPTANCE-DECISION` remains `IDENTIFIED / NOT AUTHORIZED`. `PROJECT_STATE.md` remains sole owner of `ACTIVE_PHASE`/`ACTIVE_PHASE_CONTRACT` (both now `NONE`). |
-| `docs/architecture/ORDEM_COMPRA_C5A_DB_EMISSION_READINESS_PHASE_CONTRACT.md` | Material phase contract (closed / accepted / locally verified / shared-development verified; not active) | Defines the database, ACL, writer-readiness, read-model, testing, rollback, and shared-environment evidence required before `PHASE-C5` purchase-order emission UI may be authorized — the database prerequisite of `OC-C5-EMISSION-001` (introduces no new requirement ID). Classification `READ_MODEL_FUNCTION_AND_GRANT_PREREQUISITE`: `db/77_ordem_compra_c5a_emission_readiness.sql` grants `EXECUTE ON emitir_ordem_compra(BIGINT)` to `authenticated` (terminally `REVOKE ALL` with no grant anywhere previously, `db/74:1192-1193`; body byte-unchanged) and corrects the terminal read models `obter_ordem_compra_admin` (`db/69:987`) / `listar_ordens_compra_admin` (`db/69:913`), which had hard-coded `pode_emitir=false`/`acoes.emitir=false`, so they derive true for a fully-distributed native rascunho with `exige_aceite=FALSE`. Resolved the accepted `ORDEM_COMPRA_C5_PHASE_CONTRACT.md` §5(b)/§21 open question: the allocation path is `ALLOCATION_PATH_READY_AFTER_GRANT` via the already-granted, wired `definir_alocacao_necessidade_compra_fio` (`db/74:330`/`:1177`); the superseded `alocar_necessidade_compra_fio` (`db/74:1182`) needed no grant and stays ungranted. Actor `emitir_ordem_compra = AUTHENTICATED_ADMIN_ONLY`; acceptance disposition `EMISSION_ALLOWED_ONLY_WHEN_EXIGE_ACEITE_FALSE`. Created by `C5A-DB-EMISSION-READINESS-CONTRACT-R1` (docs-only); accepted + local implementation authorized by `C5A-DB-EMISSION-READINESS-IMPLEMENTATION-R1` Part 1 (§22); locally implemented as `db/77` + `tests/ordem-compra-c5a-emission-readiness.integration.sql` by Part 2 (§23); applied byte-identical and §14-validated on the authorized non-production shared development database `ucrjtfswnfdlxwtmxnoo` (PostgreSQL 17.6, terminal migration `20260722055832`) under `C5A-DB77-SHARED-DEV-VALIDATION-R1` (§24); **supervisor-closed** under `C5A-CLOSEOUT-AND-C5-AUTHORIZATION-R1` (2026-07-22, §25): `STATUS: CLOSED / ACCEPTED / LOCALLY VERIFIED / SHARED-DEVELOPMENT VERIFIED`. Resolves the C5 `BLOCKING_DATABASE_PREREQUISITE`; does not modify the accepted C5/lifecycle/schema/visual contracts. `PROJECT_STATE.md` remains sole owner of `ACTIVE_PHASE`/`ACTIVE_PHASE_CONTRACT` (moved to `PHASE-C5` / the row above). |
-| `docs/architecture/CLEAN_SLATE_TRANSACTIONAL_RESET_PHASE_CONTRACT.md` | Material phase contract (closed / accepted / directly verified; not active) | Corrected contract for a controlled clean-slate rebuild of the operational transaction corpus in the non-production shared development database `ucrjtfswnfdlxwtmxnoo`, replacing the superseded legacy-data preservation/mapping strategy. Records the binding business-owner ruling (`CLEAN_SLATE_OPERATIONAL_REBUILD`), a complete read-only FK/dependency inventory and exact row-count baseline of the operational transaction domain, a per-table classification (`PRESERVE_MASTER_DATA` / `PURGE_OPERATIONAL_SOURCE` / `PURGE_OPERATIONAL_DERIVED` / `RESET_CUTOVER_METADATA` / `PRESERVE_OPERATIONAL_BASELINE` / `PRESERVE_EMPTY_STATE`, now final with no `UNPROVEN` remaining), the exact dependency-safe deletion order (Boundary A = yarn-purchasing corpus and Boundary B = `pedidos`/`ops`/`lotes`, both now in binding full scope), a mandatory out-of-repo archival evidence plan, the destructive-execution design (single transaction, `DELETE` not `TRUNCATE`, run only under `legacy_active`, no default sequence reset, one-time governed administrative operation — not a `db/NN` migration, not the dashboard), the recommended Option C cutover strategy, the 13-row-gate consequence (`STILL_APPLICABLE_UNTIL_RESET_EXECUTION_COMPLETES` then `SUPERSEDED_BY_CLEAN_SLATE_RESET`), the `PHASE-C5B` sequencing, hard stops, validation/evidence matrices, and the Controlled-Delete × document-history entanglement (now resolved — the 1 Pedido + 4 OPs are the synthetic B6-VERIFY fixture removed under Option D3). Authored by `CLEAN-SLATE-TRANSACTIONAL-RESET-CONTRACT-R1` (2026-07-22, docs-only) and **corrected** by `CLEAN-SLATE-TRANSACTIONAL-RESET-CONTRACT-CORRECTION-R1` (2026-07-22, docs-only, over the accepted `CLEAN-SLATE-DOCUMENT-HISTORY-AND-RESIDUAL-BOUNDARY-DIAGNOSIS-R1`), which set `STATUS: CORRECTED / AWAITING DIRECT SUPERVISOR REVIEW / DESTRUCTIVE EXECUTION NOT AUTHORIZED` and made every reset-boundary decision binding: purge all 16 Pedidos / 20 OPs / 25 lotes (incl. orphan lotes 3–8,13) + `op_fornecedores` + the full yarn-purchasing corpus; Option D3 removal of only the proven synthetic `G28-B6-VERIFY-c63b6c2c8aff4da58e87d1e75f7a9236-DOCUMENT` fixture with the rest of the documents front preserved (broad documents-front deletion prohibited); `saldo_fios` (physical inventory) and `op_numeros` (no restart) and master/reference data preserved; cutover Option C (stay `legacy_active`); a mandatory archive package + restore runbook + disposable restore drill as a pre-execution HARD STOP; and a one-time governed administrative DELETE transaction (not a `db/NN` migration, not the dashboard, not an RPC/UI writer). Introduces no requirement ID and changes no disposition; authorizes no deletion, archive creation, reset implementation, migration, cutover, activation, or environment change. Subsequently **implemented** by `CLEAN-SLATE-TRANSACTIONAL-RESET-TOOLING-AND-DRILL-R2` (contract §21): the five §10 tooling files (`scripts/reset/clean-slate-transactional-export.mjs`, `clean-slate-transactional-reset.sql`, `clean-slate-transactional-restore.sql`, `clean-slate-transactional-verify.mjs`, `tests/clean-slate-transactional-reset.smoke.mjs` — **Authority: NONE** tooling/tests) were created; a real deterministic archive was generated **READ-ONLY** from `ucrjtfswnfdlxwtmxnoo` (rolled-back `REPEATABLE READ READ ONLY` transaction, zero mutation; aggregate SHA-256 `337d23cd…`; `verify-archive` 330/330; B6 `document_link_revision_ops = 10` across OPs 55/57/61/63; 16/20/25 identities) stored **outside the repository**; and the §8.3 disposable restore/reset drill passed on a fresh PostgreSQL 18.4 cluster (`db/01..77`, terminal `20260722055832`, restore→reset→restore→reset, cluster destroyed with proof; smoke + drill 56/56). No shared-development mutation; the destructive shared-development reset, `REAL_CUTOVER`, and `PHASE-C5B` remain unauthorized. Subsequently reviewed and corrected by `CLEAN-SLATE-TRANSACTIONAL-RESET-ARCHIVE-SAFETY-CORRECTION-R1` (contract §22): **RATIFIED** the emitted-order trigger-handling mechanism as an accepted architectural mechanism (§21.4; reset/restore SQL byte-identical, unchanged); found and fixed 4 blocking gaps in the export/verify tooling (pre-write preserved-baseline gate completing before any write; file-location-derived repository-boundary guard, never `process.cwd()`; exact recursive archive-inventory + strict `checksums.sha256` parsing; project-ref custody cross-checks) — 16 new tests, fixture suite 49/49; regenerated the **replacement authoritative archive**, read-only, at `20260722T183846Z` (aggregate SHA-256 `5221cd47…`, `verify-archive` 395/395), all 30 table hashes identical to the prior (superseded, retained) archive `20260722T173607Z`; the disposable drill re-passed against the replacement archive (84/84). Still no shared-development mutation. Subsequently reviewed by `CLEAN-SLATE-TRANSACTIONAL-RESET-FINAL-VALIDATION-GATES-CORRECTION-R1` (contract §23): checkpoint `f165302c1c542aa26e9ae78464d260c81eda6415` is **NOT ACCEPTED** (the mandatory `--self-test` failed there — uncaught crash, exit 1); the §22 archive-safety technical patch was reviewed and **RETAINED**; fixed **root cause A** (the self-test's synthetic fixture never copied `ACTIVE_PHASE_CONTRACT`, generically corrected — no phase/path hardcoded — plus 7 new tests, `--self-test` now 54/54 PASS, exit 0) and **root cause B** (`op_numeros` preserved-gate was a loose map ignoring the year; now an exact canonical two-row identity set with 6 new tests, fixture suite 61/61). The **existing** authoritative archive `20260722T183846Z` was **retained and revalidated, not regenerated** (aggregate SHA-256 unchanged `5221cd47…`; corrected `verify-archive` 395/395; disposable drill re-passed 96/96; reset/restore SQL byte-identical). Still no shared-development access of any kind. `PROJECT_STATE.md` remains sole owner of `ACTIVE_PHASE`/`ACTIVE_PHASE_CONTRACT` (still `CLEAN-SLATE-TRANSACTIONAL-RESET` / this contract). Subsequently the architect performed the direct supervisor review and **ACCEPTED** the validation-gate-closed readiness at checkpoint `62bdcc75c335e3881adb1af6350de801675aa788` under `CLEAN-SLATE-TRANSACTIONAL-RESET-READINESS-ACCEPTANCE-CLOSEOUT-R1` (contract §24, documentation-only): the contract, tooling, the retained authoritative archive `20260722T183846Z`, the disposable restore/reset drill, the closed validation gates, and the §21.4 trigger-handling mechanism are all `ACCEPTED / DIRECTLY VERIFIED`; `f165302c` stays NOT ACCEPTED, superseded by `62bdcc75…`; the shared-development reset is now `AUTHORIZED AS THE NEXT SEPARATE GOVERNED DESTRUCTIVE ORDER` (`CLEAN-SLATE-TRANSACTIONAL-RESET-SHARED-DEV-EXECUTION-R1`), then **EXECUTED** by that order (contract §25, canonical authorization checkpoint `9706ec75c10bf811abf67e4cfcabb19aa64cbeeb`): one serialized `SERIALIZABLE` DELETE transaction against `ucrjtfswnfdlxwtmxnoo` purged the 64/64/51/16/20/25 corpus and the exact synthetic B6-VERIFY fixture (affected-row sequences `0,0,0,0,0,51,51,51,64,51,64` / `0,0,10,8,0,1` / `27,16,4,18,0,0,0,0,0,0,20,16,25`), post-state proven zero with master/reference data, `saldo_fios`, `saldo_fios_op` empty, `op_numeros`, the documents front excluding B6, the `legacy_active` cutover, migration history, all sequences, and all triggers (the four guards re-enabled with byte-identical definitions) preserved unchanged; the external SQL + all pre/post evidence are stored outside the repository and the authoritative archive is unchanged. `SHARED-DEVELOPMENT RESET = EXECUTED / TRANSACTIONALLY VERIFIED / AWAITING DIRECT SUPERVISOR REVIEW`; the phase was **not CLOSED** at that point and `REAL_CUTOVER`/`PHASE-C5B-ACCEPTANCE-DECISION`/real business-flow recreation remained unauthorized. Subsequently the supervisor performed the direct review and **ACCEPTED** the executed reset at checkpoint `770772548baf04c52e9ef020ff94f8bdabf77f03` under `CLEAN-SLATE-TRANSACTIONAL-RESET-EXECUTION-ACCEPTANCE-CLOSEOUT-R1` (contract §26, documentation-only): `STATUS: CLOSED / ACCEPTED / DIRECTLY VERIFIED`. `ACTIVE_PHASE`/`ACTIVE_PHASE_CONTRACT` return to `NONE`/`NONE`; `ACCEPTED_CLEAN_SLATE_RESET_EXECUTION_CHECKPOINT = 770772548baf04c52e9ef020ff94f8bdabf77f03` is recorded separately from the product `ACCEPTED_CHECKPOINT` (unchanged `3405fdab…`). `REAL_CUTOVER`, `PHASE-C5B-ACCEPTANCE-DECISION`, and real business-flow recreation remain unauthorized; the prior `REAL-BUSINESS-FLOW-RECREATION-DIAGNOSIS-R1` framing of the next action is superseded by `CLEAN-SLATE-TRANSACTIONAL-RESET-EXECUTION-ACCEPTANCE-CLOSEOUT-R1`, whose next authorizable action is a read-only governance-document inventory and refoundation diagnosis (`GOVERNANCE-EFFICIENCY-REFOUNDATION-DIAGNOSIS-R1`), not implementation. |
-| `docs/architecture/PEDIDO_PRODUCTION_FLOW_BACKLOG.md` | Backlog | Backlog of the Pedido production flow (§1-8) + Admin backlog (§9). 8 production items (A-H) + 10 Admin items (P1/P2). Mandatory reading before implementation in the production flow. |
-| `docs/architecture/AUTH_DELETE_USER_DESIGN.md` | Design | Semantics of user deletion/deactivation: deactivate (soft delete + Auth ban) instead of physically deleting. |
-| `docs/architecture/CAMADA2_USUARIOS_SPEC_PROPOSED.md` | Spec (design, historical) | Spec for Camada 2 (user administration, A1-A7 + password policy): evidenced comparison Tapetes × SGAA_clean_baseline (external functional/visual reference, read-only), module plan, Auth risk classification, and order of subphases with gates. **Status: `DELIVERED` — every subphase named (`A1`-`A7`) was subsequently authorized in its own order and is `CLOSED / ACCEPTED`** (`G28-CAMADA-2` track `COMPLETE`, closed at the `A3.4` closeout, 2026-07-17). Retained as the historical spec/rationale; current operational state lives in `PROJECT_STATE.md`. |
-| `docs/architecture/CAMADA3_BACKUP_CONTRACT.md` | Contract (design, proposed) | Backup contract for Camada 3 (automated backup, `BK1`-`BK8`): evidenced diagnosis of the live schema/Storage/extensions state, SGAA_clean_baseline comparison (external functional/UX reference only, engine/scheduler rejected as stack-specific), scope (`public` + full `auth` schema; document bytes and Storage explicitly out of scope), cadence/retention (GFS), integrity (SHA-256 + row-count manifest), N-destination contract (Drive primary, OneDrive interface-ready), trigger-agnostic exporter contract, and the restore-drill contract. **Status: `CLOSED / ACCEPTED` as the ratified `PROPOSED` premise for all later `G28-CAMADA-3` subphases** (`BK3`, 2026-07-17); `BK4.1`-`BK8` and `CAMADA3-TRIGGER-SELECTION` each require their own separate authorization. Current operational state lives in `PROJECT_STATE.md`. | `G28-CAMADA-3-DIAGNOSIS-R1` (diagnosis) + `BK3` (contract) |
-| `docs/design/CAMADA2_A32_MOCKUP_APPROVED.md` | Design (approved) | Approved visual specification for `A3.2` (summary/KPI cards, toolbar, role badge, inactive-row opacity): final color/spacing/typography values, implemented in `js/screens/admin-usuarios.js`. Explicitly documents what was left out of scope ("Last access" column, blocked by migration HARD STOP; A5 icons; A3.3 bulk actions). **Status: `CLOSED / ACCEPTED`** (architect visual validation confirmed 2026-07-15). |
-| `docs/architecture/CLAUDE_PROJECT_ASSET_MAP.md` | Asset inventory | Map of components, entry points, contracts, and `.claude` structure. **Not a source of current state nor an authority arbiter.** |
-| `Guide-and-governance-rules.stxt` (root) | Agent governance | Stable operational rules for the Architect/IAexec agent (Git, scope, decomposition, routing). **Does not repeat this authority list.** |
-
-### Operational runbooks (complement, do not replace)
-
-Runbooks describe **how to execute** approved procedures. They
-do not replace §1 authority; in divergence, §1 prevails.
-
-| Document | Purpose |
-|---|---|
-| `docs/operations/AUTH_USER_PROVISIONING_RUNBOOK.md` | Standard operational procedure for creating users (admin/supplier) via Edge Function `admin-create-user` + UI `#/cadastros/usuarios`. Replaces the manual flow of creating an Auth user in Studio and copying the UID. |
-| `docs/operations/AUTH_DISABLE_USER_PROD_RELEASE_PLAN.md` | Operational release plan for taking the Auth chain from staging to production. Required order, GO/NO-GO criteria, rollback, read-only validations. |
-| `docs/operations/PARALLEL_ENVIRONMENT_RECONCILIATION.md` | Official taxonomy of the environments: `bhgifjrfagkzubpyqpew` = Legacy (do not touch), `ucrjtfswnfdlxwtmxnoo` = working parallel. State of each environment, architectural decision, next steps. |
-
-## 1b. UI diagnostic documents (non-normative, non-executable)
-
-Documents in this section **compare** approved mockups against
-the current implementation, to scope future phases of visual
-adjustment. **Not a canonical source**, they do not by
-themselves authorize implementation and do not replace the §1
-authority list.
-
-| Document | Purpose | Phase |
-|---|---|---|
-| `docs/ui/CLIENTE_PORTAL_UI_GAP_INVENTORY.md` | Read-only inventory of divergences between the 5 mockups of the B2B Client Portal (Dashboard, Novo Pedido, Modal Adicionar Item, Detalhe do Pedido, Acompanhamento) and the current `js/screens/cliente-*.js` screens. Per-screen matrix, detailed gaps, operational particulars still TBD, and proposal of future phases (`UI-GAP-FIX-*`, `UI-OPERATIONS-RULES-A`). Implements or fixes nothing. | `RAVATEX-TAPETES-CLIENTE-PORTAL-UI-GAP-INVENTORY-A` |
-| `docs/ui/CLIENTE_PORTAL_UI_OPERATIONS_RULES.md` | Docs-only operational matrix for the B2B Client Portal UI. Consolidates decisions already closed, records pending items `OP-001` through `OP-012`, technical recommendations, per-screen impact, and the future sequence (`UI-GAP-FIX-NOVO-PEDIDO-A` through `UI-GAP-FIX-SHELL-A`). Does not implement UI nor change code/schema/Supabase. | `RAVATEX-TAPETES-CLIENTE-PORTAL-UI-OPERATIONS-RULES-A` |
-
-## 1c. Structured history and per-front preservation
-
-Classificatory detail of the history/preservation roles
-declared in §1. Not a second authority list.
-
-- `docs/ledgers/G28_LEDGER.md` — append-only; not a source of current state;
-  does not replace Git; does not automatically reconstruct pre-model history.
-- `docs/refactor/ARCHITECTURE_REFACTOR_LEDGER.md` — history ledger
-  exclusive to the refactor front; stays at its current path; must not be
-  copied into `docs/legacy/`.
-- `docs/legacy/pre-model/MANIFEST.md` — index of the complete and
-  immutable snapshots prior to compaction; snapshots are not sources of
-  current state; snapshots receive no new closeouts; content preserved for
-  audit, not for operational routing.
-- `docs/closeouts/PROJECT_STATE_ARCHIVE_2026-07.md` — closeout narratives
-  of phases moved from `PROJECT_STATE.md` by `PROJECT-STATE-COMPACTION-A`
-  (2026-07-16) and `PROJECT-STATE-COMPACTION-B` (2026-07-17, its own
-  batch divider — the 2026-07-17 Camada-2/Camada-3 subphase narratives, the
-  superseded Publication Criterion, and the UI-track closeouts), verbatim and
-  in original order. **Historical / non-operational — not a source of current
-  state** (that is `PROJECT_STATE.md`, now current-state-only); archived
-  phases are indexed in the "Accepted-phase index" of `PROJECT_STATE.md`.
-  Append-only for this batch; the architect decisions recorded there
-  remain in force and are condensed in `PROJECT_STATE.md` §"Binding
-  decisions in force".
-- `docs/closeouts/AGENT_HANDOFF_ARCHIVE_2026-07.md` — the accumulated
-  operational-handoff stack moved verbatim from the root `AGENT_HANDOFF.md` by
-  `GOVERNANCE-STATE-HANDOFF-COMPACTION-R1` (2026-07-20). **Historical /
-  non-operational — carries no live next-action authority.** The current-state
-  owner is `PROJECT_STATE.md`; the current operational handoff is the root
-  `AGENT_HANDOFF.md`. Append-only for this batch.
-
-## 1d. Diagnostic and reconciliation reports, and external supervision artifacts (non-normative)
-
-Documents in this section record read-only diagnostics or
-external supervision artifacts. They are not a canonical source
-of state, do not by themselves authorize implementation, and do
-not replace the §1 authority list. Architect decisions derived
-from these documents are recorded in `PROJECT_STATE.md` and in
-the ledger of the applicable front, not in the documents
-themselves.
-
-| Document | Purpose | Phase |
-|---|---|---|
-| `docs/reports/BACKLOG_RECONCILIATION_R1_2026-07-15.md` | Read-only diagnostic of the general backlog: inventory in the actual code of Camada 2 (user administration) and Camada 3 (backup), worktree audit, factual evidence of the Documents section validation (without classifying acceptance), a single table of remaining backlog, and divergences between canonical/code/ChatGPT closeout. Does not change state; decisions derived are recorded in `PROJECT_STATE.md` (`G28-RECONCILIATION-DECISIONS-A`). | `BACKLOG-RECONCILIATION-READONLY-R1` |
-| `docs/reports/TEST_MOCK_FIDELITY_AUDIT_2026-07-17.md` | Read-only fidelity audit of every test double in `tests/` (124 suites) against the real behavior it imitates (DOM/`el()` boolean coercion, `functions.invoke()` double envelope, `.rpc()`/PostgREST envelopes, `js/ui.js` primitives): per-suite verdicts, the zero-live-(c) result, the structural residual classes (`R1`/`R2`/`R3`), the shared-double `tests/_doubles.js` assessment, prioritized lots (`L0`–`L3`), and the known-debt re-grounding (fixed-port `:8765` + stale inline-`<script>` assertions). Does not change state; decisions derived (shared-double approval, `§20`, lot authorizations) are recorded in `PROJECT_STATE.md` and `docs/ledgers/G28_LEDGER.md`. | `TEST-MOCK-FIDELITY-AUDIT` |
-| `docs/reports/PRODUCTION_READINESS_DIAGNOSIS_R1_2026-07-17.md` | Read-only production-readiness diagnosis for migrating the whole system to a new environment (new repo `inttexsystem/inttracker` + new Supabase `gqmpsxkxynrjvidfmojk` + Vercel `vercel.com/inttex`): migration inventory (authoritative schema path = ordered `db/01`→`db/64` replay, not `setup_completo.sql`/`db push`; auth migrate-vs-recreate; 5 edge functions + 3 secrets; config/ingestor/backup repoint surface; 0 buckets), Vercel + repo-linked Supabase assessment (Vercel cron does NOT resolve `CAMADA3-TRIGGER-SELECTION` — use GitHub Actions; preview-deploy DB-exposure risk), branch recommendation (full-history push of 749 commits preserves ~656 SHA citations; squash rejected), the **canonical residual risk register** (12 items, ranked), the minimum pre-launch set, and the proposed `M0`-`M10` migration plan with gates and rollback. **`ACCEPTED` / ratified reference report (2026-07-17).** Does not change state; decisions derived (amended publication criterion, backlog freeze, active `M0`-`M10` track, canonical residual risk register, 749-commit correction) are recorded in `PROJECT_STATE.md` and `docs/ledgers/G28_LEDGER.md`. | `PRODUCTION-READINESS-DIAGNOSIS-R1` |
-| `docs/handoffs/CHATGPT_CLOSEOUT_2026-07-15.md` | Closeout record of ChatGPT's supervision: state per its own record, orders issued but not closed, decisions discussed outside canonical files, and pending items awaiting architect decision. External, non-canonical artifact; its `PROJECT-CONTROL-BASELINE-R1` report was evaluated and rejected (`REJECTED / NOT RATIFIED`) in `PROJECT_STATE.md` (`G28-RECONCILIATION-DECISIONS-A`). | External handoff (ChatGPT), not numbered as a project phase |
-| `CLAUDE.md` and `AGENTS.md` (root) | Tracked, byte-identical, minimal harness wrappers for Claude Code and Codex. **Authority: NONE** — both point exclusively to `docs/governance/AGENT_INSTRUCTIONS.md` and contain no current phase, HEAD, backlog, or history. | `GOVERNANCE-SPEC-CUSTODY-FOUNDATION-R1` |
-| `scripts/validate-spec-custody.mjs` | Dependency-free local validator for bootstrap paths, active-phase agreement, closed-phase dispositions, checkpoint accounting, wrapper identity/tracking, and unique anchored active requirements. It owns no state or semantics. | `GOVERNANCE-SPEC-CUSTODY-FOUNDATION-R1` |
-| `.claude/launch.json` | Harness config to start the local static server (`python -m http.server 8765`) used in the architect's visual validation gates (A3.1 and future Camada 2 subphases touching UI: A3.2, A4.2, A6.3). **Authority: NONE** — not a source of state, rule, or classification; contains no credential, URL, or secret (inspected before commit). Same treatment as `CLAUDE.md`: tooling pointer, not canonical. | `Add local preview launch config` |
-
-## 2. Prevalence rule
-
-The sole active list of documentary authority is in **§1** of
-this index. The prevalence rule is: resolve the question by the
-document's **role** (state → `PROJECT_STATE.md`; update rule →
-`docs/governance/DOCUMENTATION_MODEL.md`; classification/authority
-→ §1 of this index; commit/diff/HEAD/staging/divergence → Git).
-
-The detailed matrix of **which document to update per type of
-phase event** is in
-[`docs/governance/DOCUMENTATION_MODEL.md`](governance/DOCUMENTATION_MODEL.md)
-§11 ("Update rule per phase") and §12 ("Minimum documentary
-transaction").
-
-The numbered prevalence list that existed in this section was
-removed in `G28-DOCS-B3-E1` for being a competitor of §1. Legacy
-docs (`docs/superpowers`, `docs/qa`, old docs at the root of
-`docs/`) continue to **not** guide execution.
-
-## 3. Current operational runbooks
-
-Folder `docs/operations/`. They document **how to execute**
-procedures approved by the canonical sources. When there is
-divergence between a runbook and a canonical source, the
-canonical sources prevail.
-
-| File | Procedure | Phase |
-
-| File | Procedure | Phase |
-|---|---|---|
-| `AUTH_USER_PROVISIONING_RUNBOOK.md` | Creation of users (admin/supplier) via Edge Function `admin-create-user` + UI `#/cadastros/usuarios`. Replaces the manual flow of creating an Auth user in Studio and copying the UID. | `RAVATEX-TAPETES-AUTH-PROVISIONING-DOCS-A` |
-| `AUTH_DISABLE_USER_PROD_RELEASE_PLAN.md` | Production release plan — schema, secrets, Edge Functions, frontend. Required order, rollback, GO/NO-GO. | `RAVATEX-TAPETES-AUTH-DISABLE-USER-PROD-RELEASE-PLAN-A` |
-| `PARALLEL_ENVIRONMENT_RECONCILIATION.md` | Official environment taxonomy. Legacy vs. parallel, state of each, blockers. | `RAVATEX-TAPETES-PARALLEL-ENV-RECONCILIATION-A` |
-
-Convention: these runbooks are **docs-only** and
-**operational**. Updates must be made in dedicated docs-only
-phases.
-
-## 4. Schema / versioned migrations (Supabase)
-
-The `db/` folder contains the canonical schema and the
-migrations applied (partially) in staging and production.
-**Schema-only** migrations (no destructive deletes) are created
-in their own phases and validated by smoke tests before any
-application to Supabase. When a migration has **not yet been
-applied**, this is explicitly recorded in the file header and
-in `PROJECT_STATE.md`.
-
-| File | Purpose | Phase | Status |
-|---|---|---|---|
-| `db/01_schema.sql` | Base schema for the app's tables. | `RAVATEX-TAPETES-FASE-1` | applied in staging/production |
-| `db/02_functions.sql` | Original auxiliary RLS functions (`is_admin`, `meu_fornecedor_id`). | `RAVATEX-TAPETES-FASE-1` | applied (replaced in production by `db/05_fix_pgrst.sql`) |
-| `db/03_policies.sql` | RLS policies for all tables. | `RAVATEX-TAPETES-FASE-1` | applied in staging/production |
-| `db/04_seed.sql` | Registration seeds. | `RAVATEX-TAPETES-FASE-1` | applied in staging |
-| `db/05_fix_pgrst.sql` | PGRST fix + recreation of `is_admin`/`meu_fornecedor_id` with `EXCEPTION`. | `RAVATEX-TAPETES-FASE-5A` | applied in staging/production |
-| `db/06_fase5a_policies.sql` | Additional policies for supplier deliveries. | `RAVATEX-TAPETES-FASE-5A` | applied in staging/production |
-| `db/07_fase5a_destino_latex.sql` | Latex destination columns in deliveries. | `RAVATEX-TAPETES-FASE-5A` | applied in staging |
-| `db/08_fase5b_latex.sql` | Support for latex OP (type, origin, latex supplier). | `RAVATEX-TAPETES-FASE-5B` | applied in staging |
-| `db/09_fase6_cliente_lote.sql` | Tables `clientes` and `lotes`, function `gerar_op_latex`. | `RAVATEX-TAPETES-FASE-6` | applied in staging |
-| `db/10_reset_producao.sql` | Destructive production reset (bulk DELETE). | — | **DO NOT run** without authorization. |
-| `db/11_reset_ops.sql` | Destructive OP reset (bulk DELETE). | — | **DO NOT run** without authorization. |
-| `db/12_auth_user_disable_schema.sql` | Support for user deactivation: columns `ativo`, `desativado_em`, `desativado_por`, `motivo_desativacao`; recreation of `is_admin` and `meu_fornecedor_id` to require `ativo is true`; recreation of policies `usuarios_select`, `usuarios_admin_all`, `usuarios_self_update`. | `RAVATEX-TAPETES-AUTH-DISABLE-USER-SCHEMA-A` (+ `...-SCHEMA-APPLY-A` + `...-SCHEMA-APPLY-EVIDENCE-A`) | **Applied in staging** (`ucrjtfswnfdlxwtmxnoo`) on `2026-06-24`, manually by HMNlead in the SQL Editor. Post-application validation: `ativo = true, total = 3`; no destructive column run; `db/10_reset_producao.sql` and `db/11_reset_ops.sql` were not executed; production `bhgifjrfagkzubpyqpew` was not touched. Validated by `tests/auth-disable-user-schema.smoke.js` (20/20) **before** application. |
-| `db/13_pedidos_schema.sql` | Client Pedido schema/RLS: tables `pedidos`, `pedido_itens`, `pedido_eventos`; column `lotes.pedido_id` (nullable); admin-only RLS on all 3 tables; indexes on `cliente_id`, `status`, `token_acesso`, `pedido_id`. **Does not** create `pedidos.op_id`. **Does not** create a public policy. | `RAVATEX-TAPETES-PEDIDOS-SCHEMA-RLS-A` (+ `...-SCHEMA-APPLY-UCR-A` + `...-SCHEMA-APPLY-RECORD-A`) | **Applied in ucr** (`ucrjtfswnfdlxwtmxnoo`) on `2026-06-24` via Management API. Post-application validation: 3 tables created, RLS enabled, admin-only policies, indexes OK, `pedidos.op_id` absent, `lotes.pedido_id` present. Validated by `tests/pedidos-schema.smoke.js` (41/41). Frontend implemented (C1 + C2 + C2-R1 + C3A): listing `#/pedidos`, form `#/pedidos/novo` (admin creation as `rascunho`), color-preview fix (C2-R1), and read-only detail `#/pedidos/<uuid>` (C3A). Focused frontend validation: `pedido-detail.smoke.js` 30/30, `pedido-form.smoke.js` 35/35, `pedido-ui.test.js` 18/18, `pedidos-list.smoke.js` 29/29. **Strictly read-only** in the detail view (no insert/update/delete/rpc, no `functions.invoke`, no `token_acesso`, no public route, no mutation on `lotes`/`pedido_eventos`). |
-| `db/14_cliente_perfil_schema.sql` | Authenticated client profile: role `cliente` in `usuarios.tipo` (constraint `usuarios_tipo_check`), column `usuarios.cliente_id` (FK → `public.clientes`), constraint `usuarios_vinculo_exclusivo_check` (admin/supplier/client with exclusive links), function `public.meu_cliente_id()` (SECURITY DEFINER, STABLE; requires `tipo='cliente' AND ativo=true AND cliente_id NOT NULL`; returns NULL on failure), minimal RLS policies for client SELECT/INSERT on `clientes`, `pedidos`, and `pedido_itens`. **Does not** grant client UPDATE/DELETE. **Does not** expose a public token. **Does not** create an anon policy. `pedido_eventos` remains admin-only (internal audit). | `RAVATEX-TAPETES-PEDIDOS-CLIENTE-SCHEMA-RLS-B1` + `B2` + `B2-RECORD-A` | **Applied in staging** (`ucrjtfswnfdlxwtmxnoo`) via Management API on `2026-06-24` (phase B2). Status 201, 33 statements. Post validations 23/23: `usuarios_tipo_check` with `cliente`, `usuarios.cliente_id` + FK, `usuarios_vinculo_exclusivo_check`, `meu_cliente_id()` (SECURITY DEFINER, grants OK), 5 client SELECT/INSERT policies, 0 client UPDATE/DELETE policies, 0 anon/token policies, 0 constraint violations. **Gap:** `admin-create-user` and the UI accept only `admin`/`fornecedor`; client-user provisioning pending. |
-| `db/15_status_cliente_visual.sql` | Versioned base for B2B client visual tracking: new visual columns on `public.pedidos` (`status_cliente_visual`, `status_cliente_excecao`, `status_cliente_mensagem`, `status_cliente_atualizado_em`, `referencia_cliente`, `prazo_desejado`, `tipo_recebimento`); idempotent TEXT + CHECK checks; table `public.pedido_cliente_eventos`; admin-only RLS on this new table; INSERT guard trigger to prevent the client from publishing visual state; touch trigger for `status_cliente_atualizado_em` on visual updates. | `RAVATEX-TAPETES-PEDIDOS-CLIENTE-TRACKING-SCHEMA-A` + `...-SCHEMA-B` | **Applied and validated in staging** (`ucrjtfswnfdlxwtmxnoo`) on `2026-06-26`. Structural validations completed: 7 new columns in `pedidos`, 10 columns in `pedido_cliente_eventos`, 4 constraints, 2 triggers, 2 functions, 1 index, `pedido_cliente_eventos = 0`. Client frontend already reads the real `status_cliente_visual`, but does not yet expose `pedido_cliente_eventos`. |
-| `db/16_pedido_cliente_eventos_cliente_select.sql` | Versioned RLS policy to grant client-only `SELECT` on `public.pedido_cliente_eventos`, restricted to rows with `visivel_cliente = true` belonging to orders whose `cliente_id = public.meu_cliente_id()`. Preserves the existing admin policy and creates no writes, view, RPC, or trigger. | `RAVATEX-TAPETES-PEDIDOS-CLIENTE-TRACKING-EVENTS-RLS-A` | **Versioned in the repo, not yet applied** in Supabase. Prepares the following staging-apply phase and the client's future read-only timeline. |
-| `db/30_cliente_pedido_summary_readmodel.sql` | Public RPC `cliente_pedido_summary(UUID)` for the Pedido detail view in the Client Portal. Encapsulates the internal operational tables behind `SECURITY DEFINER`, authorizes admin or the owning client, returns a simplified JSONB DTO (`pedido`, `itens`, `parciais`, `timeline`, `entregas`, `pendencias`, `etapas`, `chain_state`) and does not publish OP/lot/supplier/invoice/waybill/cost/margin/catalog IDs. | `RAVATEX-TAPETES-CLIENTE-ORDER-SUMMARY-READMODEL-A-B` (+ `...-APPLY-STAGING-A` + `...-ACL-GRANTS-R1`) | **Function applied and functionally verified in staging** (`ucrjtfswnfdlxwtmxnoo`), confirmed on `2026-07-15` (`CLIENTE-ORDER-SUMMARY-READMODEL-APPLY-STAGING-A`, `CLOSED / ACCEPTED_WITH_NONBLOCKING_DEBTS`). `public.cliente_pedido_summary(uuid)` exists with a body byte-for-byte equivalent to the file (**no schema drift**). **`db/30` itself remains absent** from `supabase_migrations.schema_migrations` (provenance debt preserved, `DB30_NOT_RECORDED_IN_SUPABASE_MIGRATION_HISTORY`, not repaired). Execution ACL **no broader than the canonical contract**: remediated on `2026-07-15` by the grants-only migration `db/57_cliente_pedido_summary_acl_grants.sql` (see its own row below, phase `CLIENTE-ORDER-SUMMARY-READMODEL-ACL-GRANTS-R1`), which revoked `EXECUTE` from `PUBLIC`/`anon`/`service_role`, keeping only `authenticated`. Authenticated browser smoke remains a non-blocking debt (`AUTHENTICATED_BROWSER_SMOKE_NOT_EXECUTED`, no test client password). |
-| `db/34_controlled_delete_pedido_op.sql` | RPCs for controlled test/staging physical deletion of Pedido and OP: `diagnosticar_impacto_pedido`, `diagnosticar_impacto_op`, `remover_pedido`, `remover_op`. Removes the legacy trigger `ops_numeradas_no_delete` (db/26) to allow removing a numbered OP without real blockers. Blocks when there is an untreated delivery, Expedição, or child OP; requires `EXCLUIR` confirmation for non-blocking dependencies. `op_numeros` is never altered. | `RAVATEX-TAPETES-PEDIDO-OP-CONTROLLED-DELETE-B` (+ `...-POLICY-FIX-C`) | **Applied and validated only in staging** (`ucrjtfswnfdlxwtmxnoo`); production `bhgifjrfagkzubpyqpew` untouched. Destructive logic renamed to `*_pre53` by `db/53` (see below); no public API under the original name since then. |
-| `db/35_controlled_delete_test_cascade.sql` | Replaces the four `db/34` RPCs with versions that accept a controlled physical cascade (delivery + child OP) when there is no linked Expedição, requiring textual confirmation `EXCLUIR TUDO` (`requires_cascade_confirmation`). Expedição remains a blocker in this migration. `op_numeros` unchanged. | `RAVATEX-TAPETES-PEDIDO-OP-CONTROLLED-DELETE-CASCADE-TEST-D` | **Applied and validated only in staging** (`ucrjtfswnfdlxwtmxnoo`); production untouched. Functionally replaced by `db/36`/`db/37` in the same Controlled Delete phase; renamed to `*_pre53` by `db/53`. |
-| `db/36_controlled_delete_fk_order_fix.sql` | Fixes the transactional order of the `db/35` cascade: builds explicit FK targets (`target_ops`, `target_op_itens`, `target_entregas`, `target_op_latex_links`, `target_child_ops`, `target_child_op_itens`), zeroes `entrega_itens` by `op_id` and by `op_item_id` before removing OPs, and fixes the guards `entrega_cima_latex_guard_fn`/`entrega_itens_cima_latex_guard_fn` to return `OLD` on authorized `DELETE` (avoids silent cancellation). Expedição remains a blocker. `op_numeros` unchanged. | `RAVATEX-TAPETES-PEDIDO-OP-CONTROLLED-DELETE-FK-ORDER-FIX-E` | **Applied and validated only in staging** (`ucrjtfswnfdlxwtmxnoo`) with a real synthetic test (Pedido #29, OPs 45/46, delivery 21); production untouched. Renamed to `*_pre53` by `db/53`. |
-| `db/37_controlled_delete_expedicao_cascade.sql` | Replaces the four `db/36` RPCs (same delivery guards): Expedição stops being an unconditional blocker and becomes part of the `EXCLUIR TUDO` cascade (`expedicao_movimento_itens` → `expedicao_movimentos` → `expedicao_itens` → `expedicoes`, removed before OPs/deliveries/lots/Pedido). `op_numeros` unchanged. See decision `D-DEL14` in `docs/architecture/PEDIDO_OP_SCHEMA_CONTRACT.md` §10. | `RAVATEX-TAPETES-PEDIDO-OP-CONTROLLED-DELETE-EXPEDICAO-CASCADE-E2` | **Applied and validated only in staging** (`ucrjtfswnfdlxwtmxnoo`); production untouched. Since `db/53`, renamed to `diagnosticar_impacto_pedido_pre53`/`diagnosticar_impacto_op_pre53`/`remover_pedido_pre53`/`remover_op_pre53` (`EXECUTE` revoked from all roles); logic preserved and called by the documentary guard's public wrappers only when eligible. |
-| `db/53_controlled_delete_document_link_guard.sql` | Permanent documentary guard between the controlled test physical deletion (Pedido/OP) and the G28 canonical documentary history (`document_link_revisions`/`document_link_revision_ops`). Renames the four `db/37` legacy functions to `*_pre53` (revokes `EXECUTE` from `PUBLIC`/`anon`/`authenticated`/`service_role`) and recreates the original public signatures as `SECURITY DEFINER` wrappers that diagnose documentary history, block when there is a canonical link, and delegate to `*_pre53` only when eligible. Never deletes/alters `document_link_revisions`/`document_link_revision_ops`/`op_numeros`. | `RAVATEX-TAPETES-CONTROLLED-DELETE-DOCUMENT-LINK-GUARD-B` | **Applied and validated in staging** (`ucrjtfswnfdlxwtmxnoo`), technical commit `707a37bd1d2c4728ab2a17433b6441049bd88062`. `CLOSED / ACCEPTED`. Production untouched. See `docs/architecture/PEDIDO_OP_SCHEMA_CONTRACT.md` (decisions `D-DEL10`-`D-DEL13`). |
-| `db/54_controlled_delete_document_link_grants.sql` | Staging-only emergency security fix: after `db/53`, the four public RPCs still had `EXECUTE` granted to `PUBLIC`/`anon` from earlier/default grants. Revokes those grants and restricts `EXECUTE` to `authenticated`, without changing the body, `SECURITY DEFINER`, or tables. | `RAVATEX-TAPETES-CONTROLLED-DELETE-DOCUMENT-LINK-GRANTS-54` | **Applied and validated in staging** (`ucrjtfswnfdlxwtmxnoo`), part of the same technical commit `707a37bd...`. `CLOSED / ACCEPTED`. Production untouched. |
-| `db/55_controlled_delete_document_link_policy_cast.sql` | Staging-only emergency fix for the already-applied `db/53`: `to_jsonb(<literal>)` without an explicit cast failed with `could not determine polymorphic type`. Forward-only patch (`DO $repair$`) locates and replaces the documentary-policy literal with `to_jsonb(<literal>::TEXT)` in the two already-applied public diagnostic functions. Does not change rules, grants, or cascades. | `RAVATEX-TAPETES-CONTROLLED-DELETE-DOCUMENT-LINK-POLICY-CAST-55` | **Applied and validated in staging** (`ucrjtfswnfdlxwtmxnoo`), part of the same technical commit `707a37bd...`. `CLOSED / ACCEPTED`. Production untouched. |
-| `db/56_controlled_delete_document_link_diagnostics_null_safe.sql` | Staging-only emergency fix for a `db/53` regression: `jsonb_set(...)` is `STRICT`, so the entire return of the public diagnostic functions collapsed to `NULL` whenever the target was not blocked by documentary history (`reason` null). Fixed with `COALESCE(to_jsonb(v_reason), 'null'::jsonb)` in the final `jsonb_set` of each diagnostic function, preserving the JSON schema without changing the guard/ACL/`remover_*`/`*_pre53`. | `RAVATEX-TAPETES-CONTROLLED-DELETE-DOCUMENT-LINK-DIAGNOSTICS-NULL-SAFE-56` | **Applied and validated in staging** (`ucrjtfswnfdlxwtmxnoo`), part of the same technical commit `707a37bd...`. `CLOSED / ACCEPTED`. Production untouched. |
-| `db/57_cliente_pedido_summary_acl_grants.sql` | Grants-only, forward-only, idempotent migration for `public.cliente_pedido_summary(UUID)`: `REVOKE EXECUTE ... FROM PUBLIC, anon, service_role; GRANT EXECUTE ... TO authenticated`. Does not recreate or alter the function's body, `SECURITY DEFINER`, volatility, `search_path`, owner, signature, or return type. Resolves the ACL divergence recorded in `D-COS06` (`docs/architecture/PEDIDO_OP_MOVIMENTACAO_DOCUMENTOS_PLANO.md`), closing it in `D-COS07`. | `CLIENTE-ORDER-SUMMARY-READMODEL-ACL-GRANTS-R1` | **Applied and verified only in staging** (`ucrjtfswnfdlxwtmxnoo`), `2026-07-15`, via a tracked Supabase MCP migration operation; record `20260715190627 / 57_cliente_pedido_summary_acl_grants` confirmed in the catalog. `CLOSED / ACCEPTED`. Final ACL verified live: `PUBLIC` without `EXECUTE`, `anon` without `EXECUTE`, `authenticated` with `EXECUTE`, `service_role` without explicit `EXECUTE` (owner `postgres` retains inherent privilege). Function contract (signature `cliente_pedido_summary(uuid)`, return `jsonb`, `SECURITY DEFINER`, `STABLE`, `search_path=public`, owner `postgres`, body) confirmed byte-for-byte unchanged (identical definition hash before/after). Production (`bhgifjrfagkzubpyqpew`) untouched; no push. |
-| `db/58_admin_usuarios_senha_temporaria.sql` | Additive, forward-only, idempotent migration (`ADD COLUMN IF NOT EXISTS`) for phase `A4.1` (`docs/architecture/CAMADA2_USUARIOS_SPEC_PROPOSED.md`): `usuarios.senha_temporaria BOOLEAN NOT NULL DEFAULT FALSE` + `usuarios.senha_gerada_em TIMESTAMPTZ NULL`. Basis for the single path decided for A4 (temporary password + forced change on first login, A4.2 still `NOT AUTHORIZED`). | `A4.1` | **Applied and verified in staging** (`ucrjtfswnfdlxwtmxnoo`), `2026-07-16`, via Supabase MCP; record `20260716014338 / 58_admin_usuarios_senha_temporaria` confirmed in the catalog. `CLOSED / ACCEPTED`. Columns confirmed live with the file's type/nullability/default; the 10 existing users preserved with no retroactive effect (`senha_temporaria=false`, `senha_gerada_em=NULL` for all). Production untouched; no push. |
-| `db/59_admin_last_sign_in_readmodel.sql` | RPC `public.admin_usuarios_last_sign_in()` — admin-only read model (`SECURITY DEFINER`, `STABLE`, `search_path=public,auth`), guarded by `is_admin()` (`db/12` pattern) with `RAISE EXCEPTION ... ERRCODE 42501` for a non-admin caller. Returns only `id`+`last_sign_in_at` from `auth.users` for the users visible in `public.usuarios` — does not expose email/password/metadata. Explicit grants: `REVOKE FROM PUBLIC, anon, service_role; GRANT TO authenticated`. Closes the "Last access" column HARD STOP recorded in the `A3.2` closeout. | `CAMADA2-LAST-ACCESS-RPC` | **Applied and verified in staging** (`ucrjtfswnfdlxwtmxnoo`), `2026-07-16`, via Supabase MCP; record `20260716014358 / 59_admin_last_sign_in_readmodel` confirmed in the catalog. `CLOSED / ACCEPTED`. Empirical role matrix (`BEGIN...ROLLBACK`): `anon` → `42501` at the ACL boundary (before execution); non-admin `authenticated` → business `42501` (RAISE EXCEPTION inside the function); admin `authenticated` → `ok`, minimal DTO confirmed (only `id`+`last_sign_in_at`). UI consumption (the "Last access" column in `js/screens/admin-usuarios.js`) is its own future micro-phase, `NOT AUTHORIZED` by this record. Production untouched; no push. |
-| `db/60_usuarios_auditoria_schema.sql` | Append-only audit table `public.usuarios_eventos` (mirrors `op_eventos`, `db/21`) + trigger `trg_usuario_evento` on `public.usuarios` (`AFTER UPDATE`), recording `ativo`/`tipo`/`nivel_acesso`/`senha_temporaria` diffs as `perfil_alterado` events. Admin-only RLS `SELECT`; no client writes (write path is the `SECURITY DEFINER` trigger only). **Canonical audit-trail design (recorded here, binding):** two write paths reach `usuarios_eventos`, mutually exclusive by the `auth.uid()` condition — (1) the trigger records direct-`UPDATE` changes made by an authenticated admin session (`auth.uid() IS NOT NULL`); (2) the five admin Edge Functions (`db/61`-era, `A6.2`) record their own actions explicitly, since they run under `service_role` where `auth.uid() IS NULL` excludes the trigger by design. Both paths populate the identity snapshot columns (`usuario_email`/`usuario_nome`/`usuario_tipo`, added by `db/61`) — the trigger from `NEW`, the Edge Functions explicitly (no automatic path populates them under `service_role`). | `A6.1` | **Applied and verified in staging** (`ucrjtfswnfdlxwtmxnoo`), `2026-07-16`; record `20260717002523 / 60_usuarios_auditoria_schema` confirmed in the catalog. `CLOSED / ACCEPTED`. Role matrix in `BEGIN...ROLLBACK`: trigger fires once per changed watched field, no-op on same-value updates, no double-recording under a simulated `service_role` context; `anon` → `42501`; non-admin `authenticated` → 0 rows (RLS); admin `authenticated` → reads. Production untouched; no push. |
-| `db/61_usuarios_eventos_preserve_on_delete.sql` | Corrective migration over `db/60` (not edited — applied, immutable): `usuarios_eventos.usuario_id` FK changed from `ON DELETE CASCADE` to `ON DELETE SET NULL`; adds identity snapshot columns `usuario_email`/`usuario_nome`/`usuario_tipo`; `trigger_usuario_evento()` updated in place to populate them from `NEW`. Root cause: `admin-delete-user` hard-deletes `public.usuarios`, and the original `CASCADE` would destroy an event in the same statement that deletes its subject — architect ruling rejected both `CASCADE` (destroys the trail) and dropping the FK (loses integrity while the subject lives). | `A6.1-B` | **Applied and verified in staging** (`ucrjtfswnfdlxwtmxnoo`), `2026-07-16`; record `20260717003652 / 61_usuarios_eventos_preserve_on_delete` confirmed in the catalog. `CLOSED / ACCEPTED`. Full `db/60` role matrix re-verified green under the new schema, plus the delete-survival case: a synthetic profile's event survives its own profile's deletion with `usuario_id` NULL and the identity snapshot intact. Production untouched; no push. |
-| `db/62_admin_nivel_acesso_schema.sql` | Additive, forward-only, idempotent (`A2.1`): `public.usuarios.nivel_acesso TEXT NOT NULL DEFAULT 'completo'` + named CHECK `usuarios_nivel_acesso_check (nivel_acesso IN ('completo','somente_leitura'))` (two levels only; NO overrides table, ratified). Helper `public.is_admin_full()` (`plpgsql SECURITY DEFINER STABLE search_path=public,auth`, `EXCEPTION -> FALSE`) requires `ativo IS TRUE AND tipo='admin' AND nivel_acesso='completo'` — same shape as `db/12`'s `is_admin()`, NOT consumed by any policy (modal wiring `A2.2` / route enforcement `A2.3` are separate). `usuarios.tipo` and `is_admin()` untouched (`tipo` anchors all RLS). ACL in-migration (revoke PUBLIC/anon, grant authenticated) — corrected for `service_role` by `db/63`. | `A2.1` | **Applied and verified in staging** (`ucrjtfswnfdlxwtmxnoo`), `2026-07-17`; record `20260717093122 / 62_admin_nivel_acesso_schema`. `CLOSED / ACCEPTED`. All 10 existing users defaulted `completo` (no silent privilege change); role matrix green incl. the regression `is_admin()` stays true for a `somente_leitura` admin; `db/60` trigger records the `nivel_acesso` change (`perfil_alterado`, correct payload); CHECK rejects invalid values. Production untouched; no push. |
-| `db/63_is_admin_full_grants.sql` | Grants-only, forward-only, idempotent ACL correction over `db/62` (`A2.1-B`, precedent `db/57`). Root cause: `db/62` left `service_role` with `EXECUTE` via Supabase default function privileges, diverging from the db/54/57 authenticated-only standard on that row (harmless — `service_role` is server-only, bypasses RLS, `is_admin_full()` returns FALSE under it). States the COMPLETE intended ACL: `REVOKE ALL FROM PUBLIC, anon, service_role; GRANT EXECUTE TO authenticated`. Encountered as the architect-named hard stop ("ACL diverging"); ruled Option 3 (forward-only new migration). | `A2.1-B` | **Applied and verified in staging** (`ucrjtfswnfdlxwtmxnoo`), `2026-07-17`; record `20260717101401 / 63_is_admin_full_grants`. `CLOSED / ACCEPTED`. Final catalog ACL `[postgres, authenticated]` only; `has_function_privilege` → authenticated `true`, anon/service_role `false`; runtime `service_role` call → `42501` (helper unreachable); authenticated admin path unchanged. Production untouched; no push. |
-| `db/65_ordem_compra_lifecycle_schema.sql` | Additive, forward-only, idempotent schema for the purchase-order lifecycle (`ORDEM_COMPRA_LIFECYCLE_SPEC_PROPOSED.md`, `RATIFIED`): 12 new columns on `ordens_compra_fio` (three orthogonal dimensions — `status_administrativo`/`status_aceite`/`status_recebimento` — + audit columns + `aceite_exigido_na_emissao` freeze snapshot); new tables `ordem_compra_fio_lancamentos` (receipt ledger, empty/no trigger yet), `ordem_compra_eventos` (transition audit, `op_eventos`/`usuarios_eventos` pattern), `ordem_compra_config` (singleton, seeded `exige_aceite=false`); one-time legacy-marking backfill in the same transaction as the `ALTER TABLE` (binding gap 1). Admin-only RLS read, no client writes, on all three new tables (db/57/63 grants standard). No RPC, no UI, no JS change. | `ORDEM-COMPRA-LIFECYCLE` Phase `A` | **Applied and verified in staging** (`ucrjtfswnfdlxwtmxnoo`), `2026-07-18`, via `supabase-legacy` MCP; record `20260718110246 / 65_ordem_compra_lifecycle_schema`. `CLOSED / ACCEPTED`. 14/14 verification-matrix checks (`BEGIN…ROLLBACK`, synthetic, cleanup confirmed zero) — legacy backfill mapping, new-order defaults, config default, events-table role matrix (anon `42501` / non-admin `0` rows / admin reads), all five dimension `CHECK` constraints. Production (`gqmpsxkxynrjvidfmojk`) untouched; `git push production dev` authorized (remote backup only, not `main`). |
-| `db/66_ordem_compra_emitir_cancelar.sql` | Flat-model emit/cancel RPCs and lifecycle ACL transition retained for imported legacy coexistence. | `ORDEM-COMPRA-LIFECYCLE` Phase `B1` | **Applied and accepted in staging**; historical flat authority retained only within the documented coexistence boundary. |
-| `db/67_ordem_compra_refoundation_schema.sql` | Four-layer refoundation schema and ratified 64/51/51/51/51 legacy conversion. | `REFUND-A` | **Applied and accepted in staging**, record `20260719012036 / 67_ordem_compra_refoundation_schema`. |
-| `db/68_ordem_compra_native_draft_admin.sql` | Native draft administration, item writer, read models, inactive emission contract. The manual item quantity writer is now a documented forward-correction target under §R.27. | `REFUND-B1` | **Applied and accepted in staging**, record `20260719025055 / 68_ordem_compra_native_draft_admin`; file unchanged by Documentation Correction R2. |
-| `db/69_ordem_compra_preprod_allocation.sql` | Native purchasing regime, need assessment/sync, allocation/removal, read model, and concurrency guards. Caller-controlled/shared non-NULL OP and plain nullable-OP uniqueness are documented forward-correction targets. | `PRE-PROD-A-R1` | **Applied and accepted in staging**, record `20260719120036 / 69_ordem_compra_preprod_allocation`; file unchanged by Documentation Correction R2. |
-| `db/70_ordem_compra_native_receipt_foundation.sql` | Immutable native receipt/reversal headers, ledger extension, derived caches, and source-linked surplus movements. Non-NULL OP assumptions for allocated shared lines require localized forward correction and focused revalidation. | `PHASE-C2` | **Applied and accepted in staging**, record `20260719160518 / 70_ordem_compra_native_receipt_foundation`; file unchanged by Documentation Correction R2. |
-| `db/71_ordem_compra_c3a_cutover_foundation.sql` | Inactive C3A cutover/opening-balance foundation and read-only preview. | `PHASE-C3A` | **Applied and verified in staging**, record `20260719172749 / 71_ordem_compra_c3a_cutover_foundation`; `CLOSED / TECHNICALLY ACCEPTED` (2026-07-19). |
-| `db/72_ordem_compra_c3a_cutover_initial_state.sql` | Protected deterministic inactive cutover singleton. | `PHASE-C3A-R1` | **Applied and verified in staging**, record `20260719174006 / 72_ordem_compra_c3a_cutover_initial_state`; `CLOSED / TECHNICALLY ACCEPTED` (2026-07-19). |
-| `db/73_ordem_compra_c3a_import_command.sql` | Owner-only, semantically idempotent Class A/D opening-balance import command; no physical inventory posting or client grant. | `PHASE-C3A-R2` | **Applied and verified in staging**, record `20260719175732 / 73_ordem_compra_c3a_import_command`; no real import executed; `CLOSED / TECHNICALLY ACCEPTED` (2026-07-19). |
-| `db/74_ordem_compra_hybrid_origin_forward_correction.sql` | Forward-only F1 authority correction: need-first absolute-target writer, immutable actor/key journal, corrected allocation identity, derived item quantity/cleanup/freeze guards, exact ACL matrix, and shared NULL-OP Phase C replacements. | `PURCHASE-ORDER HYBRID ORIGIN — F1/F3R1` | **Applied and validated in staging** `ucrjtfswnfdlxwtmxnoo` as exactly one `20260719215401 / 74_ordem_compra_hybrid_origin_forward_correction`. Objects, guards, accepted ACLs, and stable business snapshots match. Rollback-only need-first, PRE-PROD, receipt/reversal, and nullable-OP Phase C validation passed with zero residue. F3R1 is `CLOSED / ACCEPTED` under a scoped committed-concurrency-fixture waiver (isolated F1 eight-case distinct-session matrix plus rollback-only staging evidence accepted; committed-fixture requirement waived for F3R1 only); immutable journal integrity and zero synthetic residue remain mandatory. PHASE-C3A is `CLOSED / TECHNICALLY ACCEPTED` (2026-07-19); see `db/71`-`db/73`. |
-| `db/75_ordem_compra_c3c_inactive_cutover.sql` | Inactive C3C-A database contract: cutover state/fence, canonical snapshot/import/reconciliation, nullable normalized reader, receipt/reversal state gates, session/resource locks, ACL closure command, and recovery boundaries. | `PHASE-C3C-A` / R2-R4 | **Locally verified only; inactive; not applied to staging.** Technical chain `d4dba671` → `4b7ee13f` → `29913e40` → `89123729`; `C3C_A_STATUS: CLOSED / TECHNICALLY ACCEPTED — LOCALLY VERIFIED / INACTIVE / NOT APPLIED TO STAGING` (2026-07-20). No staging validation/application, deployment, activation, snapshot/import, fence, switch, ACL invocation, cutover, remote, or push. Current routing is derived from the `PROJECT_STATE.md` bootstrap; C3C-B remains unauthorized. |
-| `db/76_ordem_compra_c3c_b_db_prerequisites.sql` | Legacy-compat database prerequisites: `listar_ordens_compra_fio_compat` (Component A, canonical order-catalog projection) and `registrar_recebimento_ordem_compra_fio_compat` (Component B, atomic legacy receipt-intent adapter), both inert until `canonical_active`, plus one additive `idempotency_namespace` `CHECK` extension. No bridge, no backfill, no `db/67`/`db/75` change. | `PHASE-C3C-B-DB-PREREQ` (contract §§35–37) | **Local DB verified: full schema apply, `db/76` reapply (idempotent), both DB-backed tests PASS, persisted rollback rehearsal + reapply PASS, against an isolated disposable local PostgreSQL 18.4 cluster; not applied to staging.** `CLOSED / TECHNICALLY ACCEPTED / LOCAL DB VERIFIED / NOT APPLIED TO STAGING DATABASE` (supervisor acceptance, contract §37). Normative anchors `§R.29.7`/`§13.18` applied. No Supabase/staging/deployment/activation/cutover; one authorized fast-forward push to `staging/dev`. |
-
-### Static smoke tests for versioned schema
-
-| File | Purpose | Phase |
-|---|---|---|
-| `tests/cliente-tracking-schema.smoke.js` | Static validation of `db/15_status_cliente_visual.sql`: new columns, visual taxonomy, exceptions, `pedido_cliente_eventos`, admin-only RLS, INSERT guard trigger, UPDATE touch trigger, and absence of destructive commands/secrets. | `RAVATEX-TAPETES-PEDIDOS-CLIENTE-TRACKING-SCHEMA-A` |
-| `tests/cliente-events-rls-schema.smoke.js` | Static validation of `db/16_pedido_cliente_eventos_cliente_select.sql`: file existence, policy `pedido_cliente_eventos_cliente_select`, `FOR SELECT`, filter `visivel_cliente = true`, ownership via `public.pedidos` + `public.meu_cliente_id()`, absence of client writes, and absence of improper scope. | `RAVATEX-TAPETES-PEDIDOS-CLIENTE-TRACKING-EVENTS-RLS-A` |
-| `tests/cliente-tracking-steps.smoke.js` | Static and sandboxed validation of `js/pedido-tracking-ui.js`: global namespace, 8 main steps, 4 exceptions, pure helpers, fallback to `recebido`, absence of forbidden internal terms, and absence of query/write. | `RAVATEX-TAPETES-PEDIDOS-CLIENTE-TRACKING-STEPS-A` |
-| `tests/admin-pedido-tracking-control.smoke.js` | Static validation of the admin control for publishing visual tracking: new module `js/screens/pedido-tracking-admin.js`, integration with `pedido-detail.js`, use of the shared taxonomy, writes to `pedidos.status_cliente_*` and `pedido_cliente_eventos`, separation from operational status, and absence of functional changes in the client/supplier screens. | `RAVATEX-TAPETES-PEDIDOS-CLIENTE-TRACKING-ADMIN-A` |
-| `tests/pedido-parciais-admin-control.smoke.js` | Static validation of the manual admin control for partials: new module `js/screens/pedido-parciais-admin.js`, integration with `pedido-detail.js`, explicit SELECT and controlled insert into `pedido_parciais`, reuse of the shared catalog `CLIENTE_PARCIAL_SITUACOES`, absence of mandatory use of `pedido_parcial_itens`, and absence of functional changes in the client screens. | `RAVATEX-TAPETES-CLIENTE-PARCIAIS-ADMIN-CONTROL-A` |
-| `tests/cliente-dashboard.smoke.js` | Static validation of the read-only Client Dashboard: existence of the module `js/screens/cliente-dashboard.js`, route `#/cliente/dashboard` (client role), "Início" menu, explicit SELECT on pedidos restricted to allowed fields, `pedido_cliente_eventos` with only safe columns, absence of `metadata`/`criado_por`/`origem`/`pedido_eventos`, use of the `window.RavatexPedidoTracking` taxonomy, rendering of KPIs/recent pedidos/updates, and absence of writes/`service_role`/internal data. | `RAVATEX-TAPETES-CLIENTE-DASHBOARD-A` |
-| `tests/cliente-pedido-summary-readmodel.smoke.js` | Static validation of the public RPC `cliente_pedido_summary(UUID)`: permission for admin or the owning client, `SECURITY DEFINER`, `search_path`, grant only to `authenticated`, public DTO, absence of forbidden internal keys, partials/timeline only with `visivel_cliente IS TRUE`, and absence of destructive writes. | `RAVATEX-TAPETES-CLIENTE-ORDER-SUMMARY-READMODEL-A-B` |
-| `tests/ordem-compra-lifecycle-schema.smoke.js` | Static validation of `db/65_ordem_compra_lifecycle_schema.sql`: all 12 new `ordens_compra_fio` columns/defaults/`CHECK`s, the three new tables' shape/index/RLS/grants (admin-only `SELECT`, no client writes), the single-transaction `BEGIN`/`COMMIT` wrapper around the `ALTER TABLE` + legacy backfill, the backfill's `status`→`status_recebimento` mapping, a scope guard (no RPC/trigger/dimension-column `REVOKE` — Phase B/C/D territory), absence of destructive commands/secrets, and non-regression of `db/63`/`db/64`. | `ORDEM-COMPRA-LIFECYCLE` Phase `A` |
-| `tests/ordem-compra-emitir-cancelar.smoke.js` | Static validation of the `db/66` flat emit/cancel lifecycle boundary. | `ORDEM-COMPRA-LIFECYCLE` Phase `B1` |
-| `tests/ordem-compra.smoke.js` | Consolidated native purchase-order refoundation and administration coverage, including `db/67`-`db/69` contracts and application surfaces. Documentation Correction R2 changes no test artifact; focused tests must be updated only in the separately authorized implementation. | `REFUND-A` / `REFUND-B1` / `PRE-PROD-A-R1` |
-| `tests/ordem-compra-native-receipt.smoke.js` | Static/contract coverage of `db/70` native receipt, reversal, ledger, and narrow inventory integration. Existing evidence remains accepted; shared NULL-OP coverage is a future focused revalidation requirement. | `PHASE-C2` |
-| `tests/ordem-compra-c3a-cutover-foundation.smoke.js` | Static coverage of the inactive C3A cutover/opening-balance foundation (`db/71`, extended for `db/73`). | `PHASE-C3A` / `PHASE-C3A-R2` |
-| `tests/ordem-compra-c3a-cutover-initial-state.smoke.js` | Static coverage of the protected inactive singleton in `db/72`. | `PHASE-C3A-R1` |
-| `tests/ordem-compra-hybrid-origin-f1.smoke.js` | Static F1 migration, authority, ACL, provenance, quantity, Phase C, and F2-boundary coverage. | `PURCHASE-ORDER HYBRID ORIGIN — F1` |
-| `tests/ordem-compra-hybrid-origin-f1.integration.sql` | Rollback-scoped isolated PostgreSQL functional, idempotency, cleanup, freeze, ACL, shared receipt/excess/reversal/movement, and OP-origin regression matrix. | `PURCHASE-ORDER HYBRID ORIGIN — F1` |
-| `tests/ordem-compra-c3c-inactive.smoke.js` | Static contract coverage for inactive C3C-A migration, snapshot/import/reconciliation, normalized reader, locks, ACL closure, and recovery boundaries. | `PHASE-C3C-A` |
-| `tests/ordem-compra-c3c-inactive.integration.sql` | Rollback-scoped PostgreSQL proof for replay/conflict stability, SHA-256 drift rejection, exact reconciliation, nullable provenance, ACL closure, and recovery boundaries. | `PHASE-C3C-A` |
-| `tests/ordem-compra-c3c-inactive-concurrency.mjs` | Distinct-session runtime proof for session advisory exclusion, deterministic eight-stage resource blocking, release/reacquisition, zero deadlocks, and idle final backend state. | `PHASE-C3C-A` |
-
-### Frontend modules for visual tracking
-
-| File | Role | Phase |
-|---|---|---|
-| `js/pedido-tracking-ui.js` | Shared layer of visual taxonomy and pure helpers for status, message, and progress of client tracking. | `RAVATEX-TAPETES-PEDIDOS-CLIENTE-TRACKING-STEPS-A` |
-| `js/screens/pedido-tracking-admin.js` | Admin card to publish the status visible to the client, with preview and auditable writes to `pedidos.status_cliente_*` and `pedido_cliente_eventos`. | `RAVATEX-TAPETES-PEDIDOS-CLIENTE-TRACKING-ADMIN-A` |
-| `js/screens/pedido-parciais-admin.js` | Admin card to list and manually register Pedido partials in `pedido_parciais`, reusing the shared catalog `CLIENTE_PARCIAL_SITUACOES` and a simple technical preview via `buildPedidoAcompanhamentoParcial`, with no client read and without activating `pedido_parcial_itens`. | `RAVATEX-TAPETES-CLIENTE-PARCIAIS-ADMIN-CONTROL-A` |
-| `js/screens/cliente-dashboard.js` | Read-only Client Dashboard (`#/cliente/dashboard`, `screenClienteDashboard`): the B2B portal's home page. Locally derived cards/KPIs, recent pedidos, and latest updates. Explicit SELECT on `pedidos` (safe fields) and `pedido_cliente_eventos` (`id, pedido_id, status, titulo, mensagem, criado_em`). No writes, no `metadata`/`criado_por`/`origem`, no `pedido_eventos`, no exposure of `OP`/`lote`/`fornecedor`/`NF`/`romaneio`/`custo`/`margem`. | `RAVATEX-TAPETES-CLIENTE-DASHBOARD-A` |
-| `js/screens/cliente-pedido-detail.js` | Pedido detail view in the Client Portal. As of `CLIENTE-ORDER-SUMMARY-READMODEL-A-B`, consumes only `supa.rpc('cliente_pedido_summary')` and does not directly query internal operational tables such as `ops`, `lotes`, `op_itens`, `entregas`, `expedicoes`, or `ordens_compra_fio`. | `RAVATEX-TAPETES-CLIENTE-ORDER-SUMMARY-READMODEL-A-B` |
-
-> The design justifying the schema migration is in
-> `docs/architecture/AUTH_DELETE_USER_DESIGN.md` (phase
-> `RAVATEX-TAPETES-AUTH-DELETE-USER-DESIGN-A`). The migration
-> `db/12_auth_user_disable_schema.sql` was applied in staging
-> (`ucrjtfswnfdlxwtmxnoo`) on `2026-06-24` — see phases
-> `RAVATEX-TAPETES-AUTH-DISABLE-USER-SCHEMA-APPLY-A` (guidance,
-> commit `8fa924a`) and `...-SCHEMA-APPLY-EVIDENCE-A` (record of
-> the actual application, commit `1a35e1d`) in the LEDGER. The Edge
-> Function `admin-disable-user` was created locally in the repo in
-> phase `RAVATEX-TAPETES-AUTH-DISABLE-USER-EDGE-A`, commit `eb5d2e0`
-> (see `supabase/functions/admin-disable-user/README.md`);
-> deployed to staging `ucrjtfswnfdlxwtmxnoo` (phase
-> `...-EDGE-STAGING-DEPLOY-A`, see LEDGER). An **automated local
-> runner** for E2E was created at
-> `scripts/staging/admin-disable-user-e2e.mjs` (phase
-> `...-E2E-AUTO-RUNNER-A`) and the handling of the expected blocked
-> login was fixed in `...-E2E-RUNNER-FIX-A`. **Real E2E in staging
-> already passed with `result: PASS`** (see LEDGER §5k for
-> sanitized evidence of the disposable
-> `disable-edge-e2e-20260624-115027@tapetes.test`,
-> user_id `d12b005e-d455-4f78-b401-59ebd9f971c5`,
-> deactivated in staging, blocked login confirmed). The
-> **`#/cadastros/usuarios` screen was integrated** with
-> `admin-disable-user` in phase `...-UI-A` (the `Desativar`
-> button replaces the `Em breve` placeholder; calls
-> `window.supa.functions.invoke('admin-disable-user', { body:
-> { user_id, reason } })`; modal with optional reason; maps
-> `FORBIDDEN`/`SELF_DISABLE_FORBIDDEN`/`LAST_ADMIN_FORBIDDEN`/
-> `NOT_FOUND`/`AUTH_BAN_FAILED`/`COMPENSATION_FAILED`/
-> `VALIDATION_ERROR`/`UNAUTHORIZED` to PT-BR messages;
-> UX guard for self/inactive). **Manual validation of the
-> deactivation UI in staging recorded** in phase
-> `RAVATEX-TAPETES-AUTH-DISABLE-USER-UI-VALIDATION-CLOSEOUT-A`
-> (HMNlead, app/staging `ucrjtfswnfdlxwtmxnoo`): screen
-> `#/cadastros/usuarios`, `Desativar` button, guard for an
-> already-inactive user, creation of a disposable active
-> supplier, and deactivation via the UI — the real flow passed.
-> Details in `PROJECT_STATE.md`. **Production `bhgifjrfagkzubpyqpew`
-> and `origin/main` untouched.** Next step: release decision
-> for `origin/main`/production, only with explicit
-> authorization from HMNlead (in a separate phase).
-
-> **A4.1 + `CAMADA2-LAST-ACCESS-RPC` (`2026-07-16`):** the Edge
-> Function `admin-create-user` was extended — password policy
-> 6→8 characters + requirement of ≥1 digit (`PASSWORD_MIN_LENGTH`,
-> `PASSWORD_DIGIT_RE`), and the insert into `public.usuarios` now
-> sets `senha_temporaria: true` / `senha_gerada_em: now()` (see
-> `supabase/functions/admin-create-user/README.md`). **Deploy to
-> staging (`ucrjtfswnfdlxwtmxnoo`) executed by the architect.** An
-> **automated local E2E runner**, same skeleton and same security
-> guarantees as `admin-disable-user-e2e.mjs` (login with a real
-> password performed by a human, never by the AI agent; secret
-> sanitization; staging-only guard; gitignored local config), was
-> created at `scripts/staging/admin-create-user-password-policy-e2e.mjs`.
-> **Real E2E in staging passed with `result: PASS` (9/9 steps)**,
-> covering: 7-character password rejected (length message), 8-character
-> password without a digit rejected (digit message), valid password
-> accepted with `senha_temporaria=true` and `senha_gerada_em` filled
-> confirmed via REST, cleanup via `admin-delete-user` (existing flow)
-> with zero-cleanup verified. Consumption of the "Last access" column
-> in the UI (`js/screens/admin-usuarios.js`, via `db/59`) and `A4.2`
-> (boot guard + mandatory-change screen) remain `NOT AUTHORIZED`,
-> candidates for `ARCHITECT DECISION`. Production `bhgifjrfagkzubpyqpew`
-> not accessed; no push.
->
-> **Update (`2026-07-16`, superseded above):** consumption of the
-> "Last access" column was implemented and closed (`CAMADA2-LAST-ACCESS-UI`
-> — `CLOSED / ACCEPTED`, technical commit `0aff22f` — `Add last
-> sign-in column to user admin`; architect visual validation
-> confirmed in preview: column populated with real data, correct
-> format, `"—"` for never-logged-in users, sorting with nulls last).
-> **`A4.2` (mandatory password-change guard) — `CLOSED / ACCEPTED`
-> (2026-07-16).** `js/auth.js` gained `senha_temporaria`/`senha_gerada_em`
-> in the `select` of `loadCurrentUser()` (the only change, explicit
-> architect decision — Option A of a hard stop raised in session);
-> `js/boot.js` gained the guard (`isSenhaTemporariaExpirada` +
-> `guardedHandleRoute`, without touching `js/router.js`);
-> `js/trocar-senha-writes.js` (new) does the self-service
-> `auth.updateUser({password})` + `UPDATE usuarios SET
-> senha_temporaria=false`; `js/screens/trocar-senha-obrigatoria.js`
-> (new) is the screen (shell-less card, live checklist, `expired`
-> mode after 7 days). An **automated local E2E runner**, same
-> skeleton and same security guarantees as the previous runners
-> (login with a real password only by a human, never by the AI
-> agent; synthetic password generated by the script itself; secret
-> sanitization; staging-only guard; gitignored local config), was
-> created at `scripts/staging/trocar-senha-obrigatoria-e2e.mjs` —
-> **not run in this phase**; the evidence used for the closeout was
-> the **architect's manual validation in staging**: synthetic user
-> created, gate displayed, checklist reacted, change made,
-> `senha_temporaria` cleared, second login entered directly without
-> the gate, user removed. Debt recorded (candidate for
-> `CODE-HEALTH-AUDIT-§18-R1`, not fixed in this phase): 6 pre-existing
-> tests in `tests/auth.smoke.js` with an outdated regex regarding the
-> cache-busting `?v=` on `<script src="js/auth.js">`. `A4.3` (email
-> invitation) remains `NOT AUTHORIZED`. Production `bhgifjrfagkzubpyqpew`
-> not accessed; no push.
->
-> **`A5.1-A5.2` (`2026-07-16`) — `CLOSED / ACCEPTED`:** new Edge
-> Function `admin-reset-user-password` (mirror of `admin-disable-user`)
-> — `auth.admin.updateUserById(target, {password})` with a temporary
-> password generated via `crypto.getRandomValues` (never `Math.random`,
-> never a fixed value), self-reset **blocked** (`SELF_RESET_FORBIDDEN`,
-> architect decision), sets `senha_temporaria=true`/`senha_gerada_em=now()`,
-> password returned only once, never logged (see
-> `supabase/functions/admin-reset-user-password/README.md`). UI: key-icon
-> button in `js/screens/admin-usuarios.js` →
-> `confirmDialog` → "Password generated" modal (password/copy/one-time
-> display warning) in `js/screens/admin-usuarios-modal.js`. **Deploy to
-> staging (`ucrjtfswnfdlxwtmxnoo`) executed by the architect.** An
-> **automated local E2E runner**, 4th of the same pattern as the
-> previous ones (`admin-disable-user-e2e.mjs`,
-> `admin-create-user-password-policy-e2e.mjs`,
-> `trocar-senha-obrigatoria-e2e.mjs` — login with a real password only
-> by a human, never by the AI agent; synthetic passwords generated by
-> the script itself/by the Edge Function; secret sanitization;
-> staging-only guard; gitignored local config), was created at
-> `scripts/staging/admin-reset-password-e2e.mjs`. **Real E2E in
-> staging passed with `result: PASS` (15/15 steps)**, covering:
-> `SELF_RESET_FORBIDDEN`/`NOT_FOUND` guards live, real reset with
-> flag+timestamp updated, old password invalidated, login with the new
-> temporary password, `A4.2` self-service chained (new change + flag
-> cleared), re-login without the gate ("next login goes straight in"),
-> zero cleanup. Architect visual validation **waived by explicit
-> decision**, covered by the combination of e2e + real-browser flow
-> verification by the executor. Findings recorded as `NOT AUTHORIZED`
-> candidates: `UI-EL-BOOLEAN-ATTR-FIX` (potential boolean `setAttribute`
-> bug in `js/ui.js`'s `el()`, severity **not confirmed** — pending
-> architect verification on the Desativar/Excluir buttons of
-> `admin-usuarios.js`) and decomposition of `admin-usuarios-modal.js`
-> (576 lines, candidate for `CODE-HEALTH-AUDIT-§18-R1`). `A5.3-A5.4`
-> (reactivation) remains `NOT AUTHORIZED`, its own future authorization.
-> Production `bhgifjrfagkzubpyqpew` not accessed; no push.
->
-> **`A5.3-A5.4` (`2026-07-16`) — `CLOSED / ACCEPTED`:** new Edge
-> Function `admin-reactivate-user` (symmetric counterpart of
-> `admin-disable-user`) — `ativo=true`, clears `desativado_em`/
-> `desativado_por`/`motivo_desativacao`,
-> `auth.admin.updateUserById(target, {ban_duration:'none'})`; guards the
-> target exists (`NOT_FOUND`) and is inactive (`REACTIVATE_NOT_INACTIVE`
-> otherwise — deliberately not idempotent, unlike `admin-disable-user`'s
-> `already_disabled`); compensates to the *exact* prior inactive state
-> (preserved before the update, not re-stamped) if the unban call fails
-> (see `supabase/functions/admin-reactivate-user/README.md`). UI:
-> inactive rows in `js/screens/admin-usuarios.js` swap the ban icon for
-> a refresh icon → `confirmDialog` (non-destructive) →
-> `reativarUsuario(userId)`. **Deploy to staging
-> (`ucrjtfswnfdlxwtmxnoo`) executed by the architect.** An **automated
-> local E2E runner**, 5th of the same pattern as the previous ones
-> (`admin-disable-user-e2e.mjs`,
-> `admin-create-user-password-policy-e2e.mjs`,
-> `trocar-senha-obrigatoria-e2e.mjs`, `admin-reset-password-e2e.mjs` —
-> login with a real password only by a human, never by the AI agent;
-> secret sanitization; staging-only guard; gitignored local config),
-> was created at `scripts/staging/admin-reactivate-e2e.mjs`. **Real E2E
-> in staging passed with `result: PASS` (13/13 steps)**, covering:
-> disable→login-blocked→reactivate→flags-cleared→login-restored chain,
-> plus the `REACTIVATE_NOT_INACTIVE` guard on the now-active target and
-> zero-cleanup verification. Architect visual validation confirmed the
-> Desativar button works on an active user. **Finding —
-> `UI-EL-BOOLEAN-ATTR-FIX` severity updated from `NOT CONFIRMED` to
-> `CONFIRMED — ACTIVE REGRESSION`:** the architect reproduced the
-> boolean-`setAttribute` bug live via the "Mostrar inativos" checkbox
-> in `admin-usuarios.js` (always renders checked regardless of the
-> actual toggle state, same root cause as the `expedicao-admin.js`
-> residue); the Excluir button in the same file carries the identical
-> vulnerable pattern and is unconfirmed but suspect; not fixed in this
-> phase, recorded as the priority `ARCHITECT DECISION` candidate. The
-> `A5` track (reset + reactivation) is now `COMPLETE`. Production
-> `bhgifjrfagkzubpyqpew` not accessed; no push.
->
-> **`A6.1`/`A6.1-B`/`A6.2` — user audit trail (`db/60`, `db/61`,
-> `CLOSED / ACCEPTED`):** append-only `public.usuarios_eventos` +
-> trigger `trg_usuario_evento` (see `db/60`/`db/61` rows above for
-> the canonical two-write-paths design and the delete-survival fix).
-> `A6.2` wires the five admin Edge Functions
-> (`admin-create-user`/`admin-disable-user`/`admin-reactivate-user`/
-> `admin-reset-user-password`/`admin-delete-user`) with an explicit
-> `usuarios_eventos` insert each (`tipo_evento`:
-> `usuario_criado`/`usuario_desativado`/`usuario_reativado`/
-> `senha_resetada`/`usuario_excluido`), `ator_id` from the caller's
-> validated JWT (never `auth.uid()`, `NULL` under `service_role`),
-> identity snapshot populated explicitly on every insert. Payloads
-> never carry passwords or tokens (`admin-reset-user-password`'s
-> payload is an empty object by design). For
-> create/disable/reactivate/reset-password the insert is the last
-> step, only on the fully-committed success path. `admin-delete-user`
-> is the one exception, by architect ruling: its insert precedes the
-> `public.usuarios` delete (the `db/61` FK is only satisfiable while
-> the row still exists), so `ON DELETE SET NULL` lets the event
-> survive; if the delete subsequently fails or is compensated, the
-> event remains as a recorded but not literally accurate "attempted"
-> entry — an accepted trade-off, no compensation invented for the
-> audit table itself. An **automated local E2E runner**, 6th of the
-> same pattern as the five before it (`admin-disable-user-e2e.mjs`,
-> `admin-create-user-password-policy-e2e.mjs`,
-> `trocar-senha-obrigatoria-e2e.mjs`, `admin-reset-password-e2e.mjs`,
-> `admin-reactivate-e2e.mjs`), was created at
-> `scripts/staging/usuarios-audit-e2e.mjs`. **Real E2E in staging
-> passed with `result: PASS` (15/15 steps)**, `2026-07-17`, synthetic
-> user `c0d5da9c-471c-459f-b0c4-02110fa81709`: one event per action
-> across all five functions, no double-entry, password absent from
-> the `senha_resetada` payload, and 5/5 accumulated events surviving
-> the profile deletion with `usuario_id` NULL and identity snapshot
-> intact. Five functions deployed to staging
-> (`ucrjtfswnfdlxwtmxnoo`) by the architect. Production
-> `bhgifjrfagkzubpyqpew` not accessed; no push.
-## 4. Legacy docs (DOES NOT GUIDE EXECUTION (NÃO GUIAM EXECUÇÃO))
-
-Preserved for historical context. Each folder or file carries its own
-banner. If used, **adapt to the current architecture** and confirm
-against canonical sources.
-
-### `docs/superpowers/`
-
-Content from project phases 1-7. Includes `STATUS.md`, `specs/` and
-`plans/`.
-
-| Type | Classification | Note |
-|---|---|---|
-| `STATUS.md` | Historical | Phases 1-6 listed; assumes pre-refactor architecture. |
-| `specs/*.md` (9 files) | Obsolete | Designs written for the monolithic `index.html`. The architecture has since been modularized. |
-| `plans/*.md` (9 files) | **DANGEROUS FOR AI (PERIGOSO PARA IA)** | Instructs modifying `index.html` directly, with inline Supabase writes and `git add .`. **Do not follow literally.** |
-
-> Before using any spec/plan here as a functional requirement,
-> adapt it to the current modular architecture
-> (`js/boot.js`, `js/router.js`, `js/ui.js`, `js/screens/*`,
-> `js/calculo-op.js`).
-> See `docs/superpowers/README.md` for details.
-
-### `docs/qa/`
-
-QA checklists and scripts from phases 1-6 + Phase 6 script.
-
-| Type | Classification | Note |
-|---|---|---|
-| `fase1-checklist.md`, `fase2-checklist.md` | Historical + anonymized credentials | Could contain test passwords; anonymized in `RAVATEX-TAPETES-DOCS-SANITIZE-A`. |
-| Remaining checklists (`fase3`-`fase6`, `fase5a`, `fase5b`) | Historical | Useful as a QA record, not as a technical specification. |
-| `roteiro-teste-fase6.md` | Historical | Manual script for Vinícius. |
-| `fase2-bugs-pendentes.md` | Historical | Pending bug from Phase 2. Needs current verification before any action. |
-
-> See `docs/qa/README.md` for details.
-
-### `docs/` root (old docs)
-
-| File | Classification | Note |
-|---|---|---|
-| `DEPLOYMENT.md` | Partially obsolete | Written before the staging/origin split. Today there is staging; `origin/main` is protected. See banner at top. |
-| `AI_AGENT_RULES.md` | Partially legacy | Some rules remain useful, but the D1/D1A/D2 context is not the current phase. See banner at top. |
-| `BACKUP_AND_RESTORE.md` | Partially current | Runbook is correct, but backup status may be outdated. See note at top. |
-| `HANDOFF.md` | Historical/partially legacy | Mixes old architecture with post-staging practices. See banner at top. |
-| `STAGING_BASELINE.md` | **Current** | Well-detailed staging checkpoint. Refs and environment rule still apply. |
-
-## 5. Critical warnings
-
-### Plans in `docs/superpowers/plans/`
-
-The plans describe direct modifications to `index.html`, inline
-Supabase writes, `git add .`, and a workflow without staging.
-**Following them literally would reintroduce the pre-refactor
-monolith**, violating `docs/architecture/CODE_HEALTH_RULES.md` §2
-and §6.
-
-> Treat the plans as a **historical record of intent** from the old
-> phases, not as an executable playbook.
-
-### Old credentials in `docs/qa/`
-
-`docs/qa/fase1-checklist.md` and `docs/qa/fase2-checklist.md`
-contained test passwords (e.g. `Admin123!`, `Fornec123!`). They
-were **anonymized** in `RAVATEX-TAPETES-DOCS-SANITIZE-A`, replaced
-with `[REDACTED_TEST_PASSWORD]`. Do not trust any credential found
-in legacy docs; rotate if necessary.
-
-### `docs/DEPLOYMENT.md` and `docs/AI_AGENT_RULES.md`
-
-Both docs were written in a context prior to the `staging`/`origin`
-split and modularization. Today there is:
-
-- remote `staging` (`controle-tapetes-staging`), the default push
-  destination on `work/app-next`;
-- remote `origin` (`grupoterrabranca/controle-tapes`), which is
-  production and has been **untouched** since the refactor phase;
-- Supabase staging ref `ucrjtfswnfdlxwtmxnoo`;
-- Supabase production ref `bhgifjrfagkzubpyqpew`.
-
-The current rule is in `AGENT_HANDOFF.md` (rules 1, 2, 3, 15) and in
-`docs/architecture/CODE_HEALTH_RULES.md` §15.
-
-## 6. Policy for updating this index
-
-- Update this index when there is a change to the authority list
-  in §1, a new classificatory document (enters the §1 inventory), a
-  new runbook (enters §3), or a new category of legacy docs (enters
-  §4).
-- §1 is the only active documentary-authority list; no other
-  section of this index and no other file should keep a competing
-  list of "canonical sources", "prevalence", or "precedence".
-- Phase: docs-only. No functional change.
-- Updating the index is governed by the **update matrix by phase**
-  in `docs/governance/DOCUMENTATION_MODEL.md` §11 and by the
-  **minimum documentary transaction** §12 of the same model.
-  Changes to authority, classification, or paths require a review
-  of this index; cosmetic changes should be avoided.
-- The competing lists that existed in the former §2 "Prevalence
-  rule" of this index, in
-  `docs/architecture/CLAUDE_PROJECT_ASSET_MAP.md`, and in
-  `Guide-and-governance-rules.stxt` were reconciled in
-  `G28-DOCS-B3-E1`: they now point to §1. The history of this
-  reconciliation is in `docs/ledgers/G28_LEDGER.md`.
-
-## 7. Documentation language migration (DOC-LANGUAGE-MIGRATION) and pt-BR archive
-
-The `DOC-LANGUAGE-MIGRATION` track progressively translates the
-canonical documentation into English, in batches authorized by their
-own order. Each translated file has its pt-BR original **moved**, in
-the same commit, to `docs/archive/pt-BR/<original-path>`
-(byte-for-byte preservation; not operational, historical reference
-only). File names, anchors, paths and cross-references remain
-**unchanged** — only the content is translated. The canonical status
-vocabulary (`CLOSED`, `ACCEPTED`, `NOT AUTHORIZED`, `DEFERRED`,
-`PROPOSED`, `HARD STOP`, `READ-ONLY` etc.) remains verbatim. Starting
-with `DOC-LANGUAGE-MIGRATION-L2`, architect decisions and blocks
-previously kept in Portuguese in the canonical homes also start being
-translated into English, marked with a provenance note
-(`translated from the architect's original Portuguese; original in
-docs/archive/pt-BR/`); the original pt-BR wording preserved in the
-file remains authoritative in any dispute over nuance. Ledgers and
-`docs/handoffs/` are **not** translated.
-
-The current language policy is recorded in the canonical homes:
-`docs/governance/DOCUMENTATION_MODEL.md` (§18, "Language policy"),
-`docs/architecture/CODE_HEALTH_RULES.md` (§19, "Rule for language") and
-`docs/governance/SUPERVISION_PROTOCOL.md` (§3, language line in the
-order format). `CLAUDE.md` keeps a pointer summary pointing to these
-homes.
-
-### Batch `DOC-LANGUAGE-MIGRATION-L1`
-
-| Canonical path (now in English) | Archived pt-BR original |
-|---|---|
-| `docs/architecture/CODE_HEALTH_RULES.md` | `docs/archive/pt-BR/docs/architecture/CODE_HEALTH_RULES.md` |
-| `docs/governance/SUPERVISION_PROTOCOL.md` | `docs/archive/pt-BR/docs/governance/SUPERVISION_PROTOCOL.md` |
-| `docs/governance/DOCUMENTATION_MODEL.md` | `docs/archive/pt-BR/docs/governance/DOCUMENTATION_MODEL.md` |
-| `CLAUDE.md` | `docs/archive/pt-BR/CLAUDE.md` |
-
-### Batch `DOC-LANGUAGE-MIGRATION-L2`
-
-| Canonical path (now in English) | Archived pt-BR original |
-|---|---|
-| `PROJECT_STATE.md` | `docs/archive/pt-BR/PROJECT_STATE.md` |
-| `AGENT_HANDOFF.md` | `docs/archive/pt-BR/AGENT_HANDOFF.md` |
-
-In `L2`, besides the translation, the language policy was adjusted:
-architect orders can be issued in Portuguese, but once recorded in the
-canonical documents they are written in English, with the original
-wording preserved in the ledger or archive file.
-`docs/governance/DOCUMENTATION_MODEL.md` §18, `CLAUDE.md` and the
-language line of `docs/governance/SUPERVISION_PROTOCOL.md` §3 were
-updated in the same commit; the supervision handoff appendix block
-(template, not a signed decision) was translated into English, with
-the pt-BR original preserved in the `L1` file.
-
-### Batch `DOC-LANGUAGE-MIGRATION-L3`
-
-| Canonical path (now in English) | Archived pt-BR original |
-|---|---|
-| `docs/architecture/CAMADA2_USUARIOS_SPEC_PROPOSED.md` | `docs/archive/pt-BR/docs/architecture/CAMADA2_USUARIOS_SPEC_PROPOSED.md` |
-| `docs/architecture/DOCUMENTOS_VALIDACAO_VINCULOS_E_EVOLUCAO_PLANO.md` | `docs/archive/pt-BR/docs/architecture/DOCUMENTOS_VALIDACAO_VINCULOS_E_EVOLUCAO_PLANO.md` |
-| `docs/architecture/PEDIDO_PRODUCTION_FLOW_BACKLOG.md` | `docs/archive/pt-BR/docs/architecture/PEDIDO_PRODUCTION_FLOW_BACKLOG.md` |
-| `docs/architecture/PEDIDO_OP_MOVIMENTACAO_DOCUMENTOS_PLANO.md` | `docs/archive/pt-BR/docs/architecture/PEDIDO_OP_MOVIMENTACAO_DOCUMENTOS_PLANO.md` |
-| `docs/architecture/PEDIDO_OP_SCHEMA_CONTRACT.md` | `docs/archive/pt-BR/docs/architecture/PEDIDO_OP_SCHEMA_CONTRACT.md` |
-| `docs/reports/BACKLOG_RECONCILIATION_R1_2026-07-15.md` | `docs/archive/pt-BR/docs/reports/BACKLOG_RECONCILIATION_R1_2026-07-15.md` |
-| `docs/design/CAMADA2_A32_MOCKUP_APPROVED.md` | `docs/archive/pt-BR/docs/design/CAMADA2_A32_MOCKUP_APPROVED.md` |
-| `docs/operations/AUTH_DISABLE_USER_PROD_RELEASE_PLAN.md` | `docs/archive/pt-BR/docs/operations/AUTH_DISABLE_USER_PROD_RELEASE_PLAN.md` |
-| `docs/operations/AUTH_USER_PROVISIONING_RUNBOOK.md` | `docs/archive/pt-BR/docs/operations/AUTH_USER_PROVISIONING_RUNBOOK.md` |
-| `docs/operations/PARALLEL_ENVIRONMENT_RECONCILIATION.md` | `docs/archive/pt-BR/docs/operations/PARALLEL_ENVIRONMENT_RECONCILIATION.md` |
-| `docs/architecture/CLAUDE_PROJECT_ASSET_MAP.md` | `docs/archive/pt-BR/docs/architecture/CLAUDE_PROJECT_ASSET_MAP.md` |
-| `docs/architecture/AUTH_DELETE_USER_DESIGN.md` | `docs/archive/pt-BR/docs/architecture/AUTH_DELETE_USER_DESIGN.md` |
-| `docs/architecture/AUTH_PROVISIONING_EDGE_DESIGN.md` | `docs/archive/pt-BR/docs/architecture/AUTH_PROVISIONING_EDGE_DESIGN.md` |
-| `docs/architecture/DOCUMENTS_INGESTOR_CONSUMER_DESIGN.md` | `docs/archive/pt-BR/docs/architecture/DOCUMENTS_INGESTOR_CONSUMER_DESIGN.md` |
-| `docs/architecture/PORTAL_B2B_ARCHITECTURE_RULES.md` | `docs/archive/pt-BR/docs/architecture/PORTAL_B2B_ARCHITECTURE_RULES.md` |
-| `docs/architecture/UI_VISUAL_CONTRACT.md` | `docs/archive/pt-BR/docs/architecture/UI_VISUAL_CONTRACT.md` |
-| `docs/ui/CLIENTE_PORTAL_UI_GAP_INVENTORY.md` | `docs/archive/pt-BR/docs/ui/CLIENTE_PORTAL_UI_GAP_INVENTORY.md` |
-| `docs/ui/CLIENTE_PORTAL_UI_OPERATIONS_RULES.md` | `docs/archive/pt-BR/docs/ui/CLIENTE_PORTAL_UI_OPERATIONS_RULES.md` |
-| `docs/DOCUMENTATION_INDEX.md` (this file) | `docs/archive/pt-BR/docs/DOCUMENTATION_INDEX.md` |
-
-In `L3`, the remaining active specs, plans, contracts, reports, and
-runbooks were translated (19 files) — the last lot of documents still
-in Portuguese, closing the `DOC-LANGUAGE-MIGRATION` track for
-currently-scoped canonical documents. Explicitly excluded from L3, by
-architect ruling, as historical/quarantined and left in Portuguese:
-`docs/qa/*`, `docs/superpowers/*`, the root `docs/*.md` legacy files
-listed in §4 (`DEPLOYMENT.md`, `AI_AGENT_RULES.md`,
-`BACKUP_AND_RESTORE.md`, `HANDOFF.md`, `STAGING_BASELINE.md`), and the
-byte-immutable `docs/legacy/pre-model/` snapshots. Ledgers and
-`docs/handoffs/` remain untranslated per standing policy. Phase IDs
-and their embedded terms (e.g. `Camada N`) are never translated, per
-`docs/governance/DOCUMENTATION_MODEL.md` §18.
-
-The files under `docs/archive/pt-BR/` are immutable preservation (not
-operational); in case of divergence, the canonical English file
-prevails.
+# Documentation Index
+<!-- GOVERNANCE_GENERATED_VIEW:BEGIN -->
+
+STATUS: ACTIVE_GENERATED_COMPATIBILITY_VIEW
+STRUCTURED_SOURCE: docs/governance/catalog/documents.json
+RENDERER: scripts/governance/render-unit4-canonical-views.mjs
+SCHEMA_VERSION: 2.0.0
+AUTHORITY_EPOCH: 1
+CUTOVER_ID: GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-4C-AUTHORITY-CUTOVER-R1
+SOURCE_PAYLOAD_SHA256: b24838cee8f32c6efec72e68f4de1a4b2a05844d7782234ed3458d00ac883d41
+
+<!-- GOVERNANCE_GENERATED_VIEW:END -->
+
+This generated view owns no classifications. Normative governance semantics remain in `docs/governance/DOCUMENTATION_MODEL.md`.
+
+| ID | Path | Classification | Authority | Disposition |
+|---|---|---|---|---|
+| DOC-AGENTS_MD | `AGENTS.md` | ENTRYPOINT | NONE | KEEP_NORMATIVE |
+| DOC-AGENT_HANDOFF_MD | `AGENT_HANDOFF.md` | GENERATED_COMPATIBILITY_VIEW | NONE / STRUCTURED_SOURCE_OWNED | GENERATE_FROM_STRUCTURED_SOURCE |
+| DOC-CLAUDE_MD | `CLAUDE.md` | ENTRYPOINT | NONE | KEEP_NORMATIVE |
+| DOC-PROJECT_STATE_MD | `PROJECT_STATE.md` | GENERATED_COMPATIBILITY_VIEW | NONE / STRUCTURED_SOURCE_OWNED | GENERATE_FROM_STRUCTURED_SOURCE |
+| DOC-DOCS_AI_AGENT_RULES_MD | `docs/AI_AGENT_RULES.md` | LEGACY | HISTORY_ONLY | INVESTIGATE_UNIQUE_CONTENT |
+| DOC-DOCS_BACKUP_AND_RESTORE_MD | `docs/BACKUP_AND_RESTORE.md` | LEGACY | HISTORY_ONLY | INVESTIGATE_UNIQUE_CONTENT |
+| DOC-DOCS_DEPLOYMENT_MD | `docs/DEPLOYMENT.md` | LEGACY | HISTORY_ONLY | INVESTIGATE_UNIQUE_CONTENT |
+| DOC-DOCS_DOCUMENTATION_INDEX_MD | `docs/DOCUMENTATION_INDEX.md` | GENERATED_COMPATIBILITY_VIEW | NONE / STRUCTURED_SOURCE_OWNED | GENERATE_FROM_STRUCTURED_SOURCE |
+| DOC-DOCS_HANDOFF_MD | `docs/HANDOFF.md` | LEGACY | HISTORY_ONLY | INVESTIGATE_UNIQUE_CONTENT |
+| DOC-DOCS_STAGING_BASELINE_MD | `docs/STAGING_BASELINE.md` | LEGACY | HISTORY_ONLY | INVESTIGATE_UNIQUE_CONTENT |
+| DOC-DOCS_ARCHITECTURE_AUTH_DELETE_USER_DESIGN_MD | `docs/architecture/AUTH_DELETE_USER_DESIGN.md` | CONTRACT | NORMATIVE | KEEP_NORMATIVE |
+| DOC-DOCS_ARCHITECTURE_AUTH_PROVISIONING_EDGE_DESIGN_MD | `docs/architecture/AUTH_PROVISIONING_EDGE_DESIGN.md` | CONTRACT | NORMATIVE | KEEP_NORMATIVE |
+| DOC-DOCS_ARCHITECTURE_CAMADA2_USUARIOS_SPEC_PROPOSED_MD | `docs/architecture/CAMADA2_USUARIOS_SPEC_PROPOSED.md` | CONTRACT | NORMATIVE | KEEP_NORMATIVE |
+| DOC-DOCS_ARCHITECTURE_CAMADA3_BACKUP_CONTRACT_MD | `docs/architecture/CAMADA3_BACKUP_CONTRACT.md` | CONTRACT | NORMATIVE | KEEP_NORMATIVE |
+| DOC-DOCS_ARCHITECTURE_CLAUDE_PROJECT_ASSET_MAP_MD | `docs/architecture/CLAUDE_PROJECT_ASSET_MAP.md` | CONTRACT | NORMATIVE | KEEP_NORMATIVE |
+| DOC-DOCS_ARCHITECTURE_CLEAN_SLATE_TRANSACTIONAL_RESET_PHASE_CONTRACT_MD | `docs/architecture/CLEAN_SLATE_TRANSACTIONAL_RESET_PHASE_CONTRACT.md` | CONTRACT | NORMATIVE | KEEP_NORMATIVE |
+| DOC-DOCS_ARCHITECTURE_CODE_HEALTH_RULES_MD | `docs/architecture/CODE_HEALTH_RULES.md` | CONTRACT | NORMATIVE | KEEP_NORMATIVE |
+| DOC-DOCS_ARCHITECTURE_DOCUMENTOS_VALIDACAO_VINCULOS_E_EVOLUCAO_PLANO_MD | `docs/architecture/DOCUMENTOS_VALIDACAO_VINCULOS_E_EVOLUCAO_PLANO.md` | PLAN | NORMATIVE | KEEP_NORMATIVE |
+| DOC-DOCS_ARCHITECTURE_DOCUMENTS_INGESTOR_CONSUMER_DESIGN_MD | `docs/architecture/DOCUMENTS_INGESTOR_CONSUMER_DESIGN.md` | CONTRACT | NORMATIVE | KEEP_NORMATIVE |
+| DOC-DOCS_ARCHITECTURE_ORDEM_COMPRA_C3C_B_DB_PREREQUISITES_PHASE_CONTRACT_MD | `docs/architecture/ORDEM_COMPRA_C3C_B_DB_PREREQUISITES_PHASE_CONTRACT.md` | CONTRACT | NORMATIVE | KEEP_NORMATIVE |
+| DOC-DOCS_ARCHITECTURE_ORDEM_COMPRA_C3C_B_PHASE_CONTRACT_MD | `docs/architecture/ORDEM_COMPRA_C3C_B_PHASE_CONTRACT.md` | CONTRACT | NORMATIVE | KEEP_NORMATIVE |
+| DOC-DOCS_ARCHITECTURE_ORDEM_COMPRA_C3D_PHASE_CONTRACT_MD | `docs/architecture/ORDEM_COMPRA_C3D_PHASE_CONTRACT.md` | CONTRACT | NORMATIVE | KEEP_NORMATIVE |
+| DOC-DOCS_ARCHITECTURE_ORDEM_COMPRA_C3_TRACEABILITY_MD | `docs/architecture/ORDEM_COMPRA_C3_TRACEABILITY.md` | GENERATED_COMPATIBILITY_VIEW | NONE / STRUCTURED_SOURCE_OWNED | GENERATE_FROM_STRUCTURED_SOURCE |
+| DOC-DOCS_ARCHITECTURE_ORDEM_COMPRA_C4_PHASE_CONTRACT_MD | `docs/architecture/ORDEM_COMPRA_C4_PHASE_CONTRACT.md` | CONTRACT | NORMATIVE | KEEP_NORMATIVE |
+| DOC-DOCS_ARCHITECTURE_ORDEM_COMPRA_C5A_DB_EMISSION_READINESS_PHASE_CONTRACT_MD | `docs/architecture/ORDEM_COMPRA_C5A_DB_EMISSION_READINESS_PHASE_CONTRACT.md` | CONTRACT | NORMATIVE | KEEP_NORMATIVE |
+| DOC-DOCS_ARCHITECTURE_ORDEM_COMPRA_C5_PHASE_CONTRACT_MD | `docs/architecture/ORDEM_COMPRA_C5_PHASE_CONTRACT.md` | CONTRACT | NORMATIVE | KEEP_NORMATIVE |
+| DOC-DOCS_ARCHITECTURE_ORDEM_COMPRA_LIFECYCLE_SPEC_PROPOSED_MD | `docs/architecture/ORDEM_COMPRA_LIFECYCLE_SPEC_PROPOSED.md` | CONTRACT | NORMATIVE | KEEP_NORMATIVE |
+| DOC-DOCS_ARCHITECTURE_PEDIDO_OP_MOVIMENTACAO_DOCUMENTOS_PLANO_MD | `docs/architecture/PEDIDO_OP_MOVIMENTACAO_DOCUMENTOS_PLANO.md` | PLAN | NORMATIVE | KEEP_NORMATIVE |
+| DOC-DOCS_ARCHITECTURE_PEDIDO_OP_SCHEMA_CONTRACT_MD | `docs/architecture/PEDIDO_OP_SCHEMA_CONTRACT.md` | CONTRACT | NORMATIVE | KEEP_NORMATIVE |
+| DOC-DOCS_ARCHITECTURE_PEDIDO_PRODUCTION_FLOW_BACKLOG_MD | `docs/architecture/PEDIDO_PRODUCTION_FLOW_BACKLOG.md` | PLAN | NORMATIVE | KEEP_NORMATIVE |
+| DOC-DOCS_ARCHITECTURE_PORTAL_B2B_ARCHITECTURE_RULES_MD | `docs/architecture/PORTAL_B2B_ARCHITECTURE_RULES.md` | CONTRACT | NORMATIVE | KEEP_NORMATIVE |
+| DOC-DOCS_ARCHITECTURE_UI_VISUAL_CONTRACT_MD | `docs/architecture/UI_VISUAL_CONTRACT.md` | CONTRACT | NORMATIVE | KEEP_NORMATIVE |
+| DOC-DOCS_ARCHIVE_PT_BR_AGENT_HANDOFF_MD | `docs/archive/pt-BR/AGENT_HANDOFF.md` | HISTORY | HISTORY_ONLY | ARCHIVE_IMMUTABLE |
+| DOC-DOCS_ARCHIVE_PT_BR_CLAUDE_MD | `docs/archive/pt-BR/CLAUDE.md` | HISTORY | HISTORY_ONLY | ARCHIVE_IMMUTABLE |
+| DOC-DOCS_ARCHIVE_PT_BR_PROJECT_STATE_MD | `docs/archive/pt-BR/PROJECT_STATE.md` | HISTORY | HISTORY_ONLY | ARCHIVE_IMMUTABLE |
+| DOC-DOCS_ARCHIVE_PT_BR_DOCS_DOCUMENTATION_INDEX_MD | `docs/archive/pt-BR/docs/DOCUMENTATION_INDEX.md` | HISTORY | HISTORY_ONLY | ARCHIVE_IMMUTABLE |
+| DOC-DOCS_ARCHIVE_PT_BR_DOCS_ARCHITECTURE_AUTH_DELETE_USER_DESIGN_MD | `docs/archive/pt-BR/docs/architecture/AUTH_DELETE_USER_DESIGN.md` | HISTORY | HISTORY_ONLY | ARCHIVE_IMMUTABLE |
+| DOC-DOCS_ARCHIVE_PT_BR_DOCS_ARCHITECTURE_AUTH_PROVISIONING_EDGE_DESIGN_MD | `docs/archive/pt-BR/docs/architecture/AUTH_PROVISIONING_EDGE_DESIGN.md` | HISTORY | HISTORY_ONLY | ARCHIVE_IMMUTABLE |
+| DOC-DOCS_ARCHIVE_PT_BR_DOCS_ARCHITECTURE_CAMADA2_USUARIOS_SPEC_PROPOSED_MD | `docs/archive/pt-BR/docs/architecture/CAMADA2_USUARIOS_SPEC_PROPOSED.md` | HISTORY | HISTORY_ONLY | ARCHIVE_IMMUTABLE |
+| DOC-DOCS_ARCHIVE_PT_BR_DOCS_ARCHITECTURE_CLAUDE_PROJECT_ASSET_MAP_MD | `docs/archive/pt-BR/docs/architecture/CLAUDE_PROJECT_ASSET_MAP.md` | HISTORY | HISTORY_ONLY | ARCHIVE_IMMUTABLE |
+| DOC-DOCS_ARCHIVE_PT_BR_DOCS_ARCHITECTURE_CODE_HEALTH_RULES_MD | `docs/archive/pt-BR/docs/architecture/CODE_HEALTH_RULES.md` | HISTORY | HISTORY_ONLY | ARCHIVE_IMMUTABLE |
+| DOC-DOCS_ARCHIVE_PT_BR_DOCS_ARCHITECTURE_DOCUMENTOS_VALIDACAO_VINCULOS_E_EVOLUCAO_PLANO_MD | `docs/archive/pt-BR/docs/architecture/DOCUMENTOS_VALIDACAO_VINCULOS_E_EVOLUCAO_PLANO.md` | HISTORY | HISTORY_ONLY | ARCHIVE_IMMUTABLE |
+| DOC-DOCS_ARCHIVE_PT_BR_DOCS_ARCHITECTURE_DOCUMENTS_INGESTOR_CONSUMER_DESIGN_MD | `docs/archive/pt-BR/docs/architecture/DOCUMENTS_INGESTOR_CONSUMER_DESIGN.md` | HISTORY | HISTORY_ONLY | ARCHIVE_IMMUTABLE |
+| DOC-DOCS_ARCHIVE_PT_BR_DOCS_ARCHITECTURE_PEDIDO_OP_MOVIMENTACAO_DOCUMENTOS_PLANO_MD | `docs/archive/pt-BR/docs/architecture/PEDIDO_OP_MOVIMENTACAO_DOCUMENTOS_PLANO.md` | HISTORY | HISTORY_ONLY | ARCHIVE_IMMUTABLE |
+| DOC-DOCS_ARCHIVE_PT_BR_DOCS_ARCHITECTURE_PEDIDO_OP_SCHEMA_CONTRACT_MD | `docs/archive/pt-BR/docs/architecture/PEDIDO_OP_SCHEMA_CONTRACT.md` | HISTORY | HISTORY_ONLY | ARCHIVE_IMMUTABLE |
+| DOC-DOCS_ARCHIVE_PT_BR_DOCS_ARCHITECTURE_PEDIDO_PRODUCTION_FLOW_BACKLOG_MD | `docs/archive/pt-BR/docs/architecture/PEDIDO_PRODUCTION_FLOW_BACKLOG.md` | HISTORY | HISTORY_ONLY | ARCHIVE_IMMUTABLE |
+| DOC-DOCS_ARCHIVE_PT_BR_DOCS_ARCHITECTURE_PORTAL_B2B_ARCHITECTURE_RULES_MD | `docs/archive/pt-BR/docs/architecture/PORTAL_B2B_ARCHITECTURE_RULES.md` | HISTORY | HISTORY_ONLY | ARCHIVE_IMMUTABLE |
+| DOC-DOCS_ARCHIVE_PT_BR_DOCS_ARCHITECTURE_UI_VISUAL_CONTRACT_MD | `docs/archive/pt-BR/docs/architecture/UI_VISUAL_CONTRACT.md` | HISTORY | HISTORY_ONLY | ARCHIVE_IMMUTABLE |
+| DOC-DOCS_ARCHIVE_PT_BR_DOCS_DESIGN_CAMADA2_A32_MOCKUP_APPROVED_MD | `docs/archive/pt-BR/docs/design/CAMADA2_A32_MOCKUP_APPROVED.md` | HISTORY | HISTORY_ONLY | ARCHIVE_IMMUTABLE |
+| DOC-DOCS_ARCHIVE_PT_BR_DOCS_GOVERNANCE_DOCUMENTATION_MODEL_MD | `docs/archive/pt-BR/docs/governance/DOCUMENTATION_MODEL.md` | HISTORY | HISTORY_ONLY | ARCHIVE_IMMUTABLE |
+| DOC-DOCS_ARCHIVE_PT_BR_DOCS_GOVERNANCE_SUPERVISION_PROTOCOL_MD | `docs/archive/pt-BR/docs/governance/SUPERVISION_PROTOCOL.md` | HISTORY | HISTORY_ONLY | ARCHIVE_IMMUTABLE |
+| DOC-DOCS_ARCHIVE_PT_BR_DOCS_OPERATIONS_AUTH_DISABLE_USER_PROD_RELEASE_PLAN_MD | `docs/archive/pt-BR/docs/operations/AUTH_DISABLE_USER_PROD_RELEASE_PLAN.md` | HISTORY | HISTORY_ONLY | ARCHIVE_IMMUTABLE |
+| DOC-DOCS_ARCHIVE_PT_BR_DOCS_OPERATIONS_AUTH_USER_PROVISIONING_RUNBOOK_MD | `docs/archive/pt-BR/docs/operations/AUTH_USER_PROVISIONING_RUNBOOK.md` | HISTORY | HISTORY_ONLY | ARCHIVE_IMMUTABLE |
+| DOC-DOCS_ARCHIVE_PT_BR_DOCS_OPERATIONS_PARALLEL_ENVIRONMENT_RECONCILIATION_MD | `docs/archive/pt-BR/docs/operations/PARALLEL_ENVIRONMENT_RECONCILIATION.md` | HISTORY | HISTORY_ONLY | ARCHIVE_IMMUTABLE |
+| DOC-DOCS_ARCHIVE_PT_BR_DOCS_REPORTS_BACKLOG_RECONCILIATION_R1_2026_07_15_MD | `docs/archive/pt-BR/docs/reports/BACKLOG_RECONCILIATION_R1_2026-07-15.md` | HISTORY | HISTORY_ONLY | ARCHIVE_IMMUTABLE |
+| DOC-DOCS_ARCHIVE_PT_BR_DOCS_UI_CLIENTE_PORTAL_UI_GAP_INVENTORY_MD | `docs/archive/pt-BR/docs/ui/CLIENTE_PORTAL_UI_GAP_INVENTORY.md` | HISTORY | HISTORY_ONLY | ARCHIVE_IMMUTABLE |
+| DOC-DOCS_ARCHIVE_PT_BR_DOCS_UI_CLIENTE_PORTAL_UI_OPERATIONS_RULES_MD | `docs/archive/pt-BR/docs/ui/CLIENTE_PORTAL_UI_OPERATIONS_RULES.md` | HISTORY | HISTORY_ONLY | ARCHIVE_IMMUTABLE |
+| DOC-DOCS_CLOSEOUTS_AGENT_HANDOFF_ARCHIVE_2026_07_MD | `docs/closeouts/AGENT_HANDOFF_ARCHIVE_2026-07.md` | HISTORY | HISTORY_ONLY | ARCHIVE_IMMUTABLE |
+| DOC-DOCS_CLOSEOUTS_PROJECT_STATE_ARCHIVE_2026_07_MD | `docs/closeouts/PROJECT_STATE_ARCHIVE_2026-07.md` | HISTORY | HISTORY_ONLY | ARCHIVE_IMMUTABLE |
+| DOC-DOCS_DESIGN_CAMADA2_A32_MOCKUP_APPROVED_MD | `docs/design/CAMADA2_A32_MOCKUP_APPROVED.md` | CONTRACT | NORMATIVE | KEEP_NORMATIVE |
+| DOC-DOCS_GOVERNANCE_AGENT_INSTRUCTIONS_MD | `docs/governance/AGENT_INSTRUCTIONS.md` | GOVERNANCE | NORMATIVE | KEEP_NORMATIVE |
+| DOC-DOCS_GOVERNANCE_DOCUMENTATION_MODEL_MD | `docs/governance/DOCUMENTATION_MODEL.md` | GOVERNANCE | NORMATIVE | KEEP_NORMATIVE |
+| DOC-DOCS_GOVERNANCE_GOVERNANCE_EFFICIENCY_REFOUNDATION_PHASE_CONTRACT_MD | `docs/governance/GOVERNANCE_EFFICIENCY_REFOUNDATION_PHASE_CONTRACT.md` | GOVERNANCE | NORMATIVE | KEEP_NORMATIVE |
+| DOC-DOCS_GOVERNANCE_GOVERNANCE_EFFICIENCY_REFOUNDATION_UNIT_4_AUTHORITY_CUTOVER_CONTRACT_MD | `docs/governance/GOVERNANCE_EFFICIENCY_REFOUNDATION_UNIT_4_AUTHORITY_CUTOVER_CONTRACT.md` | GOVERNANCE | NORMATIVE | KEEP_NORMATIVE |
+| DOC-DOCS_GOVERNANCE_SUPERVISION_PROTOCOL_MD | `docs/governance/SUPERVISION_PROTOCOL.md` | GOVERNANCE | NORMATIVE | KEEP_NORMATIVE |
+| DOC-DOCS_GOVERNANCE_SHADOW_GENERATED_AGENT_HANDOFF_MD | `docs/governance/shadow/generated/AGENT_HANDOFF.md` | HISTORICAL_OR_READINESS_EVIDENCE | EVIDENCE_ONLY | DELETE_ONLY_IF_REGENERABLE_DERIVED_ARTIFACT |
+| DOC-DOCS_GOVERNANCE_SHADOW_GENERATED_DOCUMENTATION_INDEX_MD | `docs/governance/shadow/generated/DOCUMENTATION_INDEX.md` | HISTORICAL_OR_READINESS_EVIDENCE | EVIDENCE_ONLY | DELETE_ONLY_IF_REGENERABLE_DERIVED_ARTIFACT |
+| DOC-DOCS_GOVERNANCE_SHADOW_GENERATED_G28_LEDGER_MD | `docs/governance/shadow/generated/G28_LEDGER.md` | DERIVED | DERIVED | DELETE_ONLY_IF_REGENERABLE_DERIVED_ARTIFACT |
+| DOC-DOCS_GOVERNANCE_SHADOW_GENERATED_ORDEM_COMPRA_C3_TRACEABILITY_MD | `docs/governance/shadow/generated/ORDEM_COMPRA_C3_TRACEABILITY.md` | HISTORICAL_OR_READINESS_EVIDENCE | EVIDENCE_ONLY | DELETE_ONLY_IF_REGENERABLE_DERIVED_ARTIFACT |
+| DOC-DOCS_GOVERNANCE_SHADOW_GENERATED_PROJECT_STATE_MD | `docs/governance/shadow/generated/PROJECT_STATE.md` | HISTORICAL_OR_READINESS_EVIDENCE | EVIDENCE_ONLY | DELETE_ONLY_IF_REGENERABLE_DERIVED_ARTIFACT |
+| DOC-DOCS_GOVERNANCE_SHADOW_LEDGER_PARTITIONS_G28_LEDGER_PART_0001_MD | `docs/governance/shadow/ledger/partitions/G28_LEDGER_PART_0001.md` | DERIVED | DERIVED | DELETE_ONLY_IF_REGENERABLE_DERIVED_ARTIFACT |
+| DOC-DOCS_GOVERNANCE_SHADOW_LEDGER_PARTITIONS_G28_LEDGER_PART_0002_MD | `docs/governance/shadow/ledger/partitions/G28_LEDGER_PART_0002.md` | DERIVED | DERIVED | DELETE_ONLY_IF_REGENERABLE_DERIVED_ARTIFACT |
+| DOC-DOCS_GOVERNANCE_SHADOW_LEDGER_PARTITIONS_G28_LEDGER_PART_0003_MD | `docs/governance/shadow/ledger/partitions/G28_LEDGER_PART_0003.md` | DERIVED | DERIVED | DELETE_ONLY_IF_REGENERABLE_DERIVED_ARTIFACT |
+| DOC-DOCS_GOVERNANCE_SHADOW_LEDGER_PARTITIONS_G28_LEDGER_PART_0004_MD | `docs/governance/shadow/ledger/partitions/G28_LEDGER_PART_0004.md` | DERIVED | DERIVED | DELETE_ONLY_IF_REGENERABLE_DERIVED_ARTIFACT |
+| DOC-DOCS_GOVERNANCE_SHADOW_LEDGER_PARTITIONS_G28_LEDGER_PART_0005_MD | `docs/governance/shadow/ledger/partitions/G28_LEDGER_PART_0005.md` | DERIVED | DERIVED | DELETE_ONLY_IF_REGENERABLE_DERIVED_ARTIFACT |
+| DOC-DOCS_GOVERNANCE_SHADOW_LEDGER_PARTITIONS_G28_LEDGER_PART_0006_MD | `docs/governance/shadow/ledger/partitions/G28_LEDGER_PART_0006.md` | DERIVED | DERIVED | DELETE_ONLY_IF_REGENERABLE_DERIVED_ARTIFACT |
+| DOC-DOCS_GOVERNANCE_SHADOW_LEDGER_PARTITIONS_G28_LEDGER_PART_0007_MD | `docs/governance/shadow/ledger/partitions/G28_LEDGER_PART_0007.md` | DERIVED | DERIVED | DELETE_ONLY_IF_REGENERABLE_DERIVED_ARTIFACT |
+| DOC-DOCS_GOVERNANCE_SHADOW_LEDGER_PARTITIONS_G28_LEDGER_PART_0008_MD | `docs/governance/shadow/ledger/partitions/G28_LEDGER_PART_0008.md` | DERIVED | DERIVED | DELETE_ONLY_IF_REGENERABLE_DERIVED_ARTIFACT |
+| DOC-DOCS_GOVERNANCE_SHADOW_LEDGER_PARTITIONS_G28_LEDGER_PART_0009_MD | `docs/governance/shadow/ledger/partitions/G28_LEDGER_PART_0009.md` | DERIVED | DERIVED | DELETE_ONLY_IF_REGENERABLE_DERIVED_ARTIFACT |
+| DOC-DOCS_GOVERNANCE_SHADOW_LEDGER_PARTITIONS_G28_LEDGER_PART_0010_MD | `docs/governance/shadow/ledger/partitions/G28_LEDGER_PART_0010.md` | DERIVED | DERIVED | DELETE_ONLY_IF_REGENERABLE_DERIVED_ARTIFACT |
+| DOC-DOCS_GOVERNANCE_SHADOW_LEDGER_PARTITIONS_G28_LEDGER_PART_0011_MD | `docs/governance/shadow/ledger/partitions/G28_LEDGER_PART_0011.md` | DERIVED | DERIVED | DELETE_ONLY_IF_REGENERABLE_DERIVED_ARTIFACT |
+| DOC-DOCS_GOVERNANCE_SHADOW_LEDGER_PARTITIONS_G28_LEDGER_PART_0012_MD | `docs/governance/shadow/ledger/partitions/G28_LEDGER_PART_0012.md` | DERIVED | DERIVED | DELETE_ONLY_IF_REGENERABLE_DERIVED_ARTIFACT |
+| DOC-DOCS_HANDOFFS_CHATGPT_CLOSEOUT_2026_07_15_MD | `docs/handoffs/CHATGPT_CLOSEOUT_2026-07-15.md` | EVIDENCE | EVIDENCE_ONLY | ARCHIVE_IMMUTABLE |
+| DOC-DOCS_LEDGERS_G28_LEDGER_MD | `docs/ledgers/G28_LEDGER.md` | LEDGER | HISTORY_ONLY | KEEP_NORMATIVE |
+| DOC-DOCS_LEGACY_PRE_MODEL_AGENT_HANDOFF_FULL_SNAPSHOT_MD | `docs/legacy/pre-model/AGENT_HANDOFF_FULL_SNAPSHOT.md` | LEGACY | HISTORY_ONLY | INVESTIGATE_UNIQUE_CONTENT |
+| DOC-DOCS_LEGACY_PRE_MODEL_DOCUMENTS_INGESTOR_PROJECT_STATE_FULL_SNAPSHOT_MD | `docs/legacy/pre-model/DOCUMENTS_INGESTOR_PROJECT_STATE_FULL_SNAPSHOT.md` | LEGACY | HISTORY_ONLY | INVESTIGATE_UNIQUE_CONTENT |
+| DOC-DOCS_LEGACY_PRE_MODEL_MANIFEST_MD | `docs/legacy/pre-model/MANIFEST.md` | LEGACY | HISTORY_ONLY | INVESTIGATE_UNIQUE_CONTENT |
+| DOC-DOCS_LEGACY_PRE_MODEL_PROJECT_STATE_FULL_SNAPSHOT_MD | `docs/legacy/pre-model/PROJECT_STATE_FULL_SNAPSHOT.md` | LEGACY | HISTORY_ONLY | INVESTIGATE_UNIQUE_CONTENT |
+| DOC-DOCS_OPERATIONS_AUTH_DISABLE_USER_PROD_RELEASE_PLAN_MD | `docs/operations/AUTH_DISABLE_USER_PROD_RELEASE_PLAN.md` | RUNBOOK | NORMATIVE | KEEP_NORMATIVE |
+| DOC-DOCS_OPERATIONS_AUTH_USER_PROVISIONING_RUNBOOK_MD | `docs/operations/AUTH_USER_PROVISIONING_RUNBOOK.md` | RUNBOOK | NORMATIVE | KEEP_NORMATIVE |
+| DOC-DOCS_OPERATIONS_PARALLEL_ENVIRONMENT_RECONCILIATION_MD | `docs/operations/PARALLEL_ENVIRONMENT_RECONCILIATION.md` | RUNBOOK | NORMATIVE | KEEP_NORMATIVE |
+| DOC-DOCS_QA_README_MD | `docs/qa/README.md` | LEGACY | HISTORY_ONLY | INVESTIGATE_UNIQUE_CONTENT |
+| DOC-DOCS_QA_FASE1_CHECKLIST_MD | `docs/qa/fase1-checklist.md` | LEGACY | HISTORY_ONLY | INVESTIGATE_UNIQUE_CONTENT |
+| DOC-DOCS_QA_FASE2_BUGS_PENDENTES_MD | `docs/qa/fase2-bugs-pendentes.md` | LEGACY | HISTORY_ONLY | INVESTIGATE_UNIQUE_CONTENT |
+| DOC-DOCS_QA_FASE2_CHECKLIST_MD | `docs/qa/fase2-checklist.md` | LEGACY | HISTORY_ONLY | INVESTIGATE_UNIQUE_CONTENT |
+| DOC-DOCS_QA_FASE3_CHECKLIST_MD | `docs/qa/fase3-checklist.md` | LEGACY | HISTORY_ONLY | INVESTIGATE_UNIQUE_CONTENT |
+| DOC-DOCS_QA_FASE4_CHECKLIST_MD | `docs/qa/fase4-checklist.md` | LEGACY | HISTORY_ONLY | INVESTIGATE_UNIQUE_CONTENT |
+| DOC-DOCS_QA_FASE5A_CHECKLIST_MD | `docs/qa/fase5a-checklist.md` | LEGACY | HISTORY_ONLY | INVESTIGATE_UNIQUE_CONTENT |
+| DOC-DOCS_QA_FASE5B_CHECKLIST_MD | `docs/qa/fase5b-checklist.md` | LEGACY | HISTORY_ONLY | INVESTIGATE_UNIQUE_CONTENT |
+| DOC-DOCS_QA_FASE6_CHECKLIST_MD | `docs/qa/fase6-checklist.md` | LEGACY | HISTORY_ONLY | INVESTIGATE_UNIQUE_CONTENT |
+| DOC-DOCS_QA_ROTEIRO_TESTE_FASE6_MD | `docs/qa/roteiro-teste-fase6.md` | LEGACY | HISTORY_ONLY | INVESTIGATE_UNIQUE_CONTENT |
+| DOC-DOCS_REFACTOR_ARCHITECTURE_REFACTOR_LEDGER_MD | `docs/refactor/ARCHITECTURE_REFACTOR_LEDGER.md` | LEDGER | HISTORY_ONLY | KEEP_NORMATIVE |
+| DOC-DOCS_RELEASES_G28_D_RELEASE_CANDIDATE_MD | `docs/releases/G28_D_RELEASE_CANDIDATE.md` | EVIDENCE | EVIDENCE_ONLY | ARCHIVE_IMMUTABLE |
+| DOC-DOCS_REPORTS_BACKLOG_RECONCILIATION_R1_2026_07_15_MD | `docs/reports/BACKLOG_RECONCILIATION_R1_2026-07-15.md` | EVIDENCE | EVIDENCE_ONLY | ARCHIVE_IMMUTABLE |
+| DOC-DOCS_REPORTS_M2_SCHEMA_REPLAY_VERIFICATION_2026_07_17_MD | `docs/reports/M2_SCHEMA_REPLAY_VERIFICATION_2026-07-17.md` | EVIDENCE | EVIDENCE_ONLY | ARCHIVE_IMMUTABLE |
+| DOC-DOCS_REPORTS_ORDEM_COMPRA_LEGACY_DIAGNOSIS_2026_07_18_MD | `docs/reports/ORDEM_COMPRA_LEGACY_DIAGNOSIS_2026-07-18.md` | EVIDENCE | EVIDENCE_ONLY | ARCHIVE_IMMUTABLE |
+| DOC-DOCS_REPORTS_ORDEM_COMPRA_PHASE_A_2026_07_18_MD | `docs/reports/ORDEM_COMPRA_PHASE_A_2026-07-18.md` | EVIDENCE | EVIDENCE_ONLY | ARCHIVE_IMMUTABLE |
+| DOC-DOCS_REPORTS_PRODUCTION_READINESS_DIAGNOSIS_R1_2026_07_17_MD | `docs/reports/PRODUCTION_READINESS_DIAGNOSIS_R1_2026-07-17.md` | EVIDENCE | EVIDENCE_ONLY | ARCHIVE_IMMUTABLE |
+| DOC-DOCS_REPORTS_TEST_MOCK_FIDELITY_AUDIT_2026_07_17_MD | `docs/reports/TEST_MOCK_FIDELITY_AUDIT_2026-07-17.md` | EVIDENCE | EVIDENCE_ONLY | ARCHIVE_IMMUTABLE |
+| DOC-DOCS_SUPERPOWERS_README_MD | `docs/superpowers/README.md` | LEGACY | HISTORY_ONLY | INVESTIGATE_UNIQUE_CONTENT |
+| DOC-DOCS_SUPERPOWERS_STATUS_MD | `docs/superpowers/STATUS.md` | LEGACY | HISTORY_ONLY | INVESTIGATE_UNIQUE_CONTENT |
+| DOC-DOCS_SUPERPOWERS_PLANS_2026_05_16_FASE1_FUNDACAO_MD | `docs/superpowers/plans/2026-05-16-fase1-fundacao.md` | LEGACY | HISTORY_ONLY | INVESTIGATE_UNIQUE_CONTENT |
+| DOC-DOCS_SUPERPOWERS_PLANS_2026_05_18_FASE2_ADMIN_CADASTROS_MD | `docs/superpowers/plans/2026-05-18-fase2-admin-cadastros.md` | LEGACY | HISTORY_ONLY | INVESTIGATE_UNIQUE_CONTENT |
+| DOC-DOCS_SUPERPOWERS_PLANS_2026_05_25_FASE3_NOVA_OP_MD | `docs/superpowers/plans/2026-05-25-fase3-nova-op.md` | LEGACY | HISTORY_ONLY | INVESTIGATE_UNIQUE_CONTENT |
+| DOC-DOCS_SUPERPOWERS_PLANS_2026_05_27_FASE4_RECEBIMENTO_FIOS_MD | `docs/superpowers/plans/2026-05-27-fase4-recebimento-fios.md` | LEGACY | HISTORY_ONLY | INVESTIGATE_UNIQUE_CONTENT |
+| DOC-DOCS_SUPERPOWERS_PLANS_2026_05_28_FASE5A_TECELAGEM_MD | `docs/superpowers/plans/2026-05-28-fase5a-tecelagem.md` | LEGACY | HISTORY_ONLY | INVESTIGATE_UNIQUE_CONTENT |
+| DOC-DOCS_SUPERPOWERS_PLANS_2026_06_02_DESTINO_LATEX_ENTREGA_TECELAGEM_MD | `docs/superpowers/plans/2026-06-02-destino-latex-entrega-tecelagem.md` | LEGACY | HISTORY_ONLY | INVESTIGATE_UNIQUE_CONTENT |
+| DOC-DOCS_SUPERPOWERS_PLANS_2026_06_02_FASE5B_OP_LATEX_MD | `docs/superpowers/plans/2026-06-02-fase5b-op-latex.md` | LEGACY | HISTORY_ONLY | INVESTIGATE_UNIQUE_CONTENT |
+| DOC-DOCS_SUPERPOWERS_PLANS_2026_06_04_FASE6_CLIENTE_LOTE_OP_MD | `docs/superpowers/plans/2026-06-04-fase6-cliente-lote-op.md` | LEGACY | HISTORY_ONLY | INVESTIGATE_UNIQUE_CONTENT |
+| DOC-DOCS_SUPERPOWERS_PLANS_2026_06_15_CORRIGIR_DESFAZER_RECEBIMENTO_FIO_MD | `docs/superpowers/plans/2026-06-15-corrigir-desfazer-recebimento-fio.md` | LEGACY | HISTORY_ONLY | INVESTIGATE_UNIQUE_CONTENT |
+| DOC-DOCS_SUPERPOWERS_SPECS_2026_05_16_CONTROLE_TAPETES_DESIGN_MD | `docs/superpowers/specs/2026-05-16-controle-tapetes-design.md` | LEGACY | HISTORY_ONLY | INVESTIGATE_UNIQUE_CONTENT |
+| DOC-DOCS_SUPERPOWERS_SPECS_2026_05_25_FASE3_NOVA_OP_MD | `docs/superpowers/specs/2026-05-25-fase3-nova-op.md` | LEGACY | HISTORY_ONLY | INVESTIGATE_UNIQUE_CONTENT |
+| DOC-DOCS_SUPERPOWERS_SPECS_2026_05_27_FASE4_RECEBIMENTO_FIOS_DESIGN_MD | `docs/superpowers/specs/2026-05-27-fase4-recebimento-fios-design.md` | LEGACY | HISTORY_ONLY | INVESTIGATE_UNIQUE_CONTENT |
+| DOC-DOCS_SUPERPOWERS_SPECS_2026_05_28_FASE5A_TECELAGEM_DESIGN_MD | `docs/superpowers/specs/2026-05-28-fase5a-tecelagem-design.md` | LEGACY | HISTORY_ONLY | INVESTIGATE_UNIQUE_CONTENT |
+| DOC-DOCS_SUPERPOWERS_SPECS_2026_06_02_DESTINO_LATEX_ENTREGA_TECELAGEM_DESIGN_MD | `docs/superpowers/specs/2026-06-02-destino-latex-entrega-tecelagem-design.md` | LEGACY | HISTORY_ONLY | INVESTIGATE_UNIQUE_CONTENT |
+| DOC-DOCS_SUPERPOWERS_SPECS_2026_06_02_FASE5B_OP_LATEX_DESIGN_MD | `docs/superpowers/specs/2026-06-02-fase5b-op-latex-design.md` | LEGACY | HISTORY_ONLY | INVESTIGATE_UNIQUE_CONTENT |
+| DOC-DOCS_SUPERPOWERS_SPECS_2026_06_04_FASE6_CLIENTE_LOTE_OP_DESIGN_MD | `docs/superpowers/specs/2026-06-04-fase6-cliente-lote-op-design.md` | LEGACY | HISTORY_ONLY | INVESTIGATE_UNIQUE_CONTENT |
+| DOC-DOCS_SUPERPOWERS_SPECS_2026_06_15_CORRIGIR_DESFAZER_RECEBIMENTO_FIO_DESIGN_MD | `docs/superpowers/specs/2026-06-15-corrigir-desfazer-recebimento-fio-design.md` | LEGACY | HISTORY_ONLY | INVESTIGATE_UNIQUE_CONTENT |
+| DOC-DOCS_UI_CLIENTE_PORTAL_UI_GAP_INVENTORY_MD | `docs/ui/CLIENTE_PORTAL_UI_GAP_INVENTORY.md` | RUNBOOK | NORMATIVE | KEEP_NORMATIVE |
+| DOC-DOCS_UI_CLIENTE_PORTAL_UI_OPERATIONS_RULES_MD | `docs/ui/CLIENTE_PORTAL_UI_OPERATIONS_RULES.md` | RUNBOOK | NORMATIVE | KEEP_NORMATIVE |
+| DOC-UNIT4A-CANDIDATE-PROJECT-STATE | `docs/governance/candidate/generated/PROJECT_STATE.md` | HISTORICAL_OR_READINESS_EVIDENCE | EVIDENCE_ONLY | GENERATE_DERIVED_VIEW |
+| DOC-UNIT4A-CANDIDATE-AGENT-HANDOFF | `docs/governance/candidate/generated/AGENT_HANDOFF.md` | HISTORICAL_OR_READINESS_EVIDENCE | EVIDENCE_ONLY | GENERATE_DERIVED_VIEW |
+| DOC-UNIT4A-CANDIDATE-DOCUMENTATION-INDEX | `docs/governance/candidate/generated/DOCUMENTATION_INDEX.md` | HISTORICAL_OR_READINESS_EVIDENCE | EVIDENCE_ONLY | GENERATE_DERIVED_VIEW |
+| DOC-UNIT4A-CANDIDATE-PHASE-C-TRACEABILITY | `docs/governance/candidate/generated/ORDEM_COMPRA_C3_TRACEABILITY.md` | HISTORICAL_OR_READINESS_EVIDENCE | EVIDENCE_ONLY | GENERATE_DERIVED_VIEW |
+| DOC-UNIT4C-CURRENT-STATE | `docs/governance/current-state.json` | STRUCTURED_CURRENT_STATE | CANONICAL_CURRENT_STATE_OWNER | KEEP_CANONICAL |
+| DOC-UNIT4C-CATALOG | `docs/governance/catalog/documents.json` | STRUCTURED_CATALOG | CANONICAL_DOCUMENT_CLASSIFICATION_OWNER | KEEP_CANONICAL |
+| DOC-UNIT4C-TRACEABILITY | `docs/governance/traceability/purchase-order-phase-c.json` | STRUCTURED_TRACEABILITY | CANONICAL_PHASE_C_TRACEABILITY_OWNER | KEEP_CANONICAL |
+| DOC-UNIT4C-CUTOVER-MANIFEST | `docs/governance/cutover/unit4c-cutover-manifest.json` | CUTOVER_EVIDENCE | EVIDENCE_ONLY | KEEP_CANONICAL |
+| DOC-UNIT4C-ROLLBACK-READINESS | `docs/governance/cutover/unit4c-rollback-readiness.json` | FORWARD_CORRECTION_READINESS | EVIDENCE_ONLY | KEEP_CANONICAL |
+| DOC-UNIT4C-BUILDER | `scripts/governance/build-unit4-cutover.mjs` | GOVERNANCE_TOOLING | IMPLEMENTATION | KEEP_CANONICAL |
+| DOC-UNIT4C-RENDERER | `scripts/governance/render-unit4-canonical-views.mjs` | GOVERNANCE_TOOLING | IMPLEMENTATION | KEEP_CANONICAL |
+| DOC-UNIT4C-VALIDATOR | `scripts/governance/validate-unit4-cutover.mjs` | GOVERNANCE_TOOLING | IMPLEMENTATION | KEEP_CANONICAL |
+| DOC-UNIT4C-TESTS | `tests/governance-unit4-cutover.test.mjs` | GOVERNANCE_TEST | EVIDENCE_ONLY | KEEP_CANONICAL |

@@ -7,10 +7,10 @@ import { execFileSync } from 'node:child_process';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { validateRepository, validateWithReader } from '../scripts/governance/validate-documentation-shadow.mjs';
-import { worktreeReader } from '../scripts/governance/git-content-reader.mjs';
+import { commitReader } from '../scripts/governance/git-content-reader.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const live = worktreeReader(ROOT);
+const live = commitReader(ROOT, 'fa986cf935abbf053172cfd549b0171bb9446f58');
 const files = new Map(live.listFiles().filter(relativePath => live.exists(relativePath)).map(relativePath => [relativePath, live.readText(relativePath)]));
 const manifest = JSON.parse(files.get('docs/governance/catalog/document-source-manifest.json'));
 const baseObjects = new Map(manifest.documents.map(document => [document.path, document.git_object_id]));

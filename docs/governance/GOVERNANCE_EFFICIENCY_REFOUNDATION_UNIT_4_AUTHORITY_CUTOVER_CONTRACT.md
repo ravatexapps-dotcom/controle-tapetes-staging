@@ -559,17 +559,20 @@ Each material Unit 4 gate must report:
 
 | Gate | Status after this contract-definition pass |
 |---|---|
-| Unit 4A — cutover readiness implementation | IMPLEMENTED / CUTOVER READINESS EVIDENCE COMPLETE / AWAITING DIRECT SUPERVISOR REVIEW |
-| Unit 4B — readiness direct review | DIRECT SUPERVISOR REVIEW REQUIRED / NOT SELF-ACCEPTED |
-| Unit 4C — authority cutover execution | NOT AUTHORIZED |
-| Unit 4D — post-cutover acceptance | NOT AUTHORIZED |
-| Documentary-authority cutover | NOT AUTHORIZED |
+| Unit 4A — cutover readiness implementation | CLOSED / ACCEPTED / DIRECTLY VERIFIED at `fa986cf935abbf053172cfd549b0171bb9446f58` |
+| Unit 4B — readiness direct review | DIRECT REVIEW COMPLETED / ACCEPTED at `fa986cf935abbf053172cfd549b0171bb9446f58` |
+| Unit 4C — authority cutover execution | ACTIVATED / AWAITING DIRECT SUPERVISOR REVIEW |
+| Unit 4D — post-cutover acceptance | DIRECT SUPERVISOR REVIEW REQUIRED / NOT SELF-ACCEPTED |
+| Documentary-authority cutover | ACTIVATED / AWAITING UNIT 4D REVIEW |
 
 The Unit 4 contract is `CLOSED / ACCEPTED / DIRECTLY VERIFIED` at checkpoint
 `76f52c842678b74e655ef9080f4fc67ccbd38e22` by external supervisor ruling, not
-executor self-acceptance. Unit 4A readiness is implemented and not self-accepted.
-The next authorizable action is `DIRECT SUPERVISOR REVIEW OF
-GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-4A-CUTOVER-READINESS-IMPLEMENTATION-R1`.
+executor self-acceptance. Unit 4A and Unit 4B were externally accepted at
+`fa986cf935abbf053172cfd549b0171bb9446f58`. Unit 4C uses that exact required
+parent, authority epoch `1`, and cutover ID
+`GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-4C-AUTHORITY-CUTOVER-R1`. Unit 4D is
+not self-accepted. The next authorizable action is `DIRECT SUPERVISOR REVIEW OF
+GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-4C-DOCUMENTARY-AUTHORITY-CUTOVER-R1`.
 
 ## 25. Explicit Unit 5 exclusion
 

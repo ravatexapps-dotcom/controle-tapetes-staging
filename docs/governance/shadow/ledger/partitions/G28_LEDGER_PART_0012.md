@@ -1,10 +1,10 @@
 <!-- GENERATED NON-CANONICAL SHADOW LEDGER PARTITION — DO NOT EDIT -->
 <!-- partition_id: G28-LEDGER-PART-0012 -->
 <!-- canonical_source: docs/ledgers/G28_LEDGER.md -->
-<!-- source_unit_interval: G28-LEDGER-UNIT-0195..G28-LEDGER-UNIT-0205 -->
-<!-- canonical_byte_interval: 962903..985271 -->
-<!-- canonical_line_interval: 9510..9679 -->
-<!-- payload_sha256: d246ed0feef88a33a3f84a8e3718cbdfd28bbd41b99719f4bfdc081c2cdbc08f -->
+<!-- source_unit_interval: G28-LEDGER-UNIT-0195..G28-LEDGER-UNIT-0206 -->
+<!-- canonical_byte_interval: 962903..987565 -->
+<!-- canonical_line_interval: 9510..9689 -->
+<!-- payload_sha256: b4fb2c66494e85bb591d389b9f0ab71d197808744b7f016cbff43574387cc70a -->
 <!-- oversized_single_unit: false -->
 <!-- partition_status: OPEN -->
 <!-- G28_LEDGER_SHADOW_PAYLOAD_BEGIN_7b9d4e3a -->
@@ -178,5 +178,15 @@
 - **Next action.** `DIRECT SUPERVISOR REVIEW OF GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-4A-CUTOVER-READINESS-IMPLEMENTATION-R1`.
 - **Scope exclusions.** No product, database, SQL, migration, shared-development, production, forbidden-project, deployment, cleanup, archival, compaction, deprecation, movement, deletion, authority cutover, Unit 4C, Unit 4D, or Unit 5 action occurred.
 - **Commit subject.** `feat: implement Unit 4A governance readiness`.
+
+## 2026-07-23 — GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-4C-DOCUMENTARY-AUTHORITY-CUTOVER-R1 — activate structured governance authority
+
+- **External supervisor ruling.** Unit 4A is `CLOSED / ACCEPTED / DIRECTLY VERIFIED` and Unit 4B direct review is `COMPLETED / ACCEPTED` at checkpoint `fa986cf935abbf053172cfd549b0171bb9446f58`. Unit 4C is explicitly authorized by the governing order; this is not executor self-authorization.
+- **Activation identity.** Required parent and accepted Unit 4B readiness checkpoint: `fa986cf935abbf053172cfd549b0171bb9446f58`. Authority epoch: `1`. Cutover ID: `GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-4C-DOCUMENTARY-AUTHORITY-CUTOVER-R1`. Activation subject: `feat: activate structured governance authority`.
+- **Authority matrix.** Before cutover, the four authored Markdown roots own current state, handoff, classification, and Phase-C traceability. After PONR, `docs/governance/current-state.json`, `docs/governance/catalog/documents.json`, and `docs/governance/traceability/purchase-order-phase-c.json` own their structured domains; the four stable Markdown roots are source-owned generated compatibility views. `docs/ledgers/G28_LEDGER.md` remains the authored append-only canonical ledger.
+- **Bootstrap and root transaction.** Repository bootstrap switches to structured current state, schema and activation validation, governing pointers, and bounded ledger references. All four roots are replaced together by the canonical renderer and own no independent facts.
+- **Rollback readiness.** A forward-correction package is prepared but not authorized and not activated. Reset, force push, history rewrite, branch replacement, silent fallback, and manual maintenance of generated roots remain prohibited.
+- **Publication boundary.** Authority becomes effective only upon exactly one fast-forward `git push staging dev`. Publication is not claimed by this in-commit entry. The actual activation SHA is an external Git fact and is not embedded in the structured source.
+- **Review boundary.** Unit 4C remains `AWAITING DIRECT SUPERVISOR REVIEW`; Unit 4D is required and is not self-accepted. Unit 5, product work, database access, migrations, environment access, deployment, production, cleanup, archival, deprecation, and deletion remain unauthorized.
 
 <!-- G28_LEDGER_SHADOW_PAYLOAD_END_7b9d4e3a -->

@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import { execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import {
   buildSourceManifest,
@@ -22,6 +23,7 @@ import {
 } from '../scripts/governance/validate-current-state-shadow.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const UNIT1_CHECKPOINT = 'fa986cf935abbf053172cfd549b0171bb9446f58';
 const clone = value => JSON.parse(JSON.stringify(value));
 const hasError = (errors, text) => errors.some(error => error.includes(text));
 
@@ -53,10 +55,12 @@ const FIXTURE_FILES = [
 function makeFixture() {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'g28-shadow-fixture-'));
   for (const relativePath of FIXTURE_FILES) {
-    const source = path.join(ROOT, relativePath);
     const target = path.join(root, relativePath);
     fs.mkdirSync(path.dirname(target), { recursive: true });
-    fs.copyFileSync(source, target);
+    const content = execFileSync('git', ['show', `${UNIT1_CHECKPOINT}:${relativePath}`], {
+      cwd: ROOT, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024
+    });
+    fs.writeFileSync(target, content, 'utf8');
   }
   return root;
 }
@@ -381,9 +385,12 @@ test('source-manifest stale line range or hash fails', () => {
 });
 
 test('deterministic source-manifest double build passes', () => {
-  const first = buildSourceManifest(ROOT);
-  const second = buildSourceManifest(ROOT);
-  assert.deepEqual(second, first);
+  const root = makeFixture();
+  try {
+    const first = buildSourceManifest(root);
+    const second = buildSourceManifest(root);
+    assert.deepEqual(second, first);
+  } finally { cleanup(root); }
 });
 
 test('deterministic generated-view double render passes', () => {
@@ -392,7 +399,9 @@ test('deterministic generated-view double render passes', () => {
 });
 
 test('bootstrap parser rejects changed key order', () => {
-  const current = read(ROOT, 'PROJECT_STATE.md');
+  const current = execFileSync('git', ['show', `${UNIT1_CHECKPOINT}:PROJECT_STATE.md`], {
+    cwd: ROOT, encoding: 'utf8'
+  });
   const parsed = parseBootstrapBlock(current);
   assert.deepEqual(parsed.order, REQUIRED_BOOTSTRAP_KEYS);
 });

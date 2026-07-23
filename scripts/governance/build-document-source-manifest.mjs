@@ -18,10 +18,16 @@ export function isGovernedDocument(relativePath) {
     || (relativePath.startsWith('docs/') && relativePath.endsWith('.md'));
 }
 
-export function isGeneratedDocument(relativePath) {
+export function isGeneratedDocument(relativePath, text = '') {
   return relativePath.startsWith('docs/governance/shadow/generated/')
     || relativePath.startsWith('docs/governance/shadow/ledger/partitions/')
-    || relativePath.startsWith('docs/governance/candidate/generated/');
+    || relativePath.startsWith('docs/governance/candidate/generated/')
+    || ([
+      'PROJECT_STATE.md',
+      'AGENT_HANDOFF.md',
+      'docs/DOCUMENTATION_INDEX.md',
+      'docs/architecture/ORDEM_COMPRA_C3_TRACEABILITY.md'
+    ].includes(relativePath) && text.includes('GOVERNANCE_GENERATED_VIEW:BEGIN'));
 }
 
 function githubSlug(text) {
@@ -118,7 +124,7 @@ export function buildDocumentManifest(reader) {
       sha256: sha256(text),
       line_count: text === '' ? 0 : text.split('\n').length - (text.endsWith('\n') ? 1 : 0),
       byte_count: bytes,
-      generated_status: isGeneratedDocument(relativePath) ? 'GENERATED' : 'MANUAL',
+      generated_status: isGeneratedDocument(relativePath, text) ? 'GENERATED' : 'MANUAL',
       outbound_references: references,
       inbound_references: [],
       headings: headingInventory(text)

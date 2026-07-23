@@ -1,5 +1,6 @@
 import path from 'node:path';
 import process from 'node:process';
+import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import { commitReader, worktreeReader } from './git-content-reader.mjs';
 import { readBoundedLedgerEvents } from './read-bounded-ledger-events.mjs';
@@ -50,12 +51,29 @@ export function simulateWithReader(baseReader) {
   const allowed = new Set(ROUTING_PATHS);
   const reader = instrumentReader(baseReader, allowed);
   const state = parseJson(reader, ROUTING_PATHS[0]);
+  const canonical = state.mode === 'canonical';
+  if (canonical && (state.authority !== 'canonical_current_state'
+      || state.authority_epoch !== 1 || state.activation.status !== 'active')) {
+    throw new Error('canonical structured activation is invalid');
+  }
+  if (!canonical && (state.mode !== 'cutover_candidate'
+      || state.authority !== 'non_canonical_until_supervisor_activation'
+      || state.authority_epoch !== 0 || state.activation.status !== 'inactive')) {
+    throw new Error('candidate readiness lifecycle is invalid');
+  }
   for (const reference of state.bounded_recent_ledger_references) {
     allowed.add(reference.partition_path);
+  }
+  for (const relativePath of Object.keys(state.activation.structured_source_hashes)) {
+    allowed.add(relativePath);
   }
   const schema = parseJson(reader, ROUTING_PATHS[1]);
   const schemaErrors = validateSchema(state, schema, 'current-state-v2');
   if (schemaErrors.length) throw new Error(schemaErrors.join('\n'));
+  for (const [relativePath, expected] of Object.entries(state.activation.structured_source_hashes)) {
+    const actual = crypto.createHash('sha256').update(reader.readText(relativePath), 'utf8').digest('hex');
+    if (actual !== expected) throw new Error(`structured source hash drift: ${relativePath}`);
+  }
   const phaseContract = reader.readText(ROUTING_PATHS[2]);
   const unit4Contract = reader.readText(ROUTING_PATHS[3]);
   if (!phaseContract.includes('PHASE_ID: GOVERNANCE-EFFICIENCY-REFOUNDATION')) {
@@ -101,11 +119,11 @@ function main() {
   try {
     if (commitIndex >= 0 && !commit) throw new Error('--commit requires a SHA');
     const result = simulateRepository(root, commit);
-    console.log(`UNIT4A_BOOTSTRAP_RESULT: ${JSON.stringify(result)}`);
-    console.log('UNIT4A_BOOTSTRAP_SIMULATION: PASS');
+    console.log(`UNIT4C_BOOTSTRAP_RESULT: ${JSON.stringify(result)}`);
+    console.log('UNIT4C_BOOTSTRAP_SIMULATION: PASS');
   } catch (error) {
     console.error(error.message);
-    console.error('UNIT4A_BOOTSTRAP_SIMULATION: FAIL');
+    console.error('UNIT4C_BOOTSTRAP_SIMULATION: FAIL');
     process.exitCode = 1;
   }
 }

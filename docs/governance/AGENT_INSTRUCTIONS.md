@@ -11,17 +11,22 @@ Repository files and Git are the only operational sources of truth.
 
 - Git owns commits, diffs, branch, HEAD, index, worktree, untracked files, and
   remotes.
-- `docs/DOCUMENTATION_INDEX.md` owns documentation classification and canonical
-  paths.
+- `docs/governance/catalog/documents.json` owns documentation classification and
+  canonical paths. `docs/DOCUMENTATION_INDEX.md` is a generated compatibility
+  view.
 - `docs/governance/DOCUMENTATION_MODEL.md` owns documentation responsibility and
   update rules.
 - `docs/governance/SUPERVISION_PROTOCOL.md` owns roles, authorization format, and
   gates.
-- `PROJECT_STATE.md` owns current operational state.
+- `docs/governance/current-state.json` owns current operational state.
 - Applicable plans and backlogs own sequence and dependencies.
 - Applicable specifications and contracts own product and technical semantics.
 - The applicable append-only ledger owns accepted historical evidence.
-- `AGENT_HANDOFF.md` is a derived operational handoff, never a second state owner.
+- `docs/governance/traceability/purchase-order-phase-c.json` owns Phase-C
+  traceability classification; authored specifications retain product semantics.
+- `PROJECT_STATE.md`, `AGENT_HANDOFF.md`, `docs/DOCUMENTATION_INDEX.md`, and
+  `docs/architecture/ORDEM_COMPRA_C3_TRACEABILITY.md` are generated compatibility
+  views and never independent owners.
 
 Conversation, private memory, rollout summaries, agent auto-memory, and local
 tool caches are non-authoritative. They may help locate evidence but cannot
@@ -37,19 +42,25 @@ Before deciding, validating, or implementing:
 
 1. Verify the workspace, standalone Git directory, branch, HEAD, index,
    worktree, untracked files, and configured remotes.
-2. Read the `SPEC_CUSTODY_BOOTSTRAP` block in `PROJECT_STATE.md`.
-3. Follow every path in that block: governing specification, technical
-   contract, sequence authority, active-track traceability, ledger, and handoff.
-4. Read `docs/DOCUMENTATION_INDEX.md`,
-   `docs/governance/DOCUMENTATION_MODEL.md`, and
-   `docs/governance/SUPERVISION_PROTOCOL.md` when authority, status, or update
-   responsibility is relevant.
-5. Confirm the active phase and authorization boundary from repository files.
+2. Read `docs/governance/current-state.json` and validate it against
+   `docs/governance/schemas/current-state-v2.schema.json`.
+3. Validate active activation, authority epoch, cutover ID, required-parent
+   binding, structured-source hashes, and all four generated-root hashes.
+4. Follow only the active phase and governing pointers declared by the
+   structured source. Read an applicable baseline only when explicitly non-null.
+5. Retrieve only the bounded ledger entries and partitions declared by the
+   structured source. Generated root views are optional human-readable context.
+6. Confirm the active phase and authorization boundary from repository files.
    A backlog position or phase number never authorizes execution.
-6. Read the current governing clauses before reviewing or implementing any
+7. Read the current governing clauses before reviewing or implementing any
    requirement. Do not validate a report against memory or a copied summary.
-7. Stop if the bootstrap paths are missing, contradictory, or cannot identify a
-   single current-state owner.
+8. Hard stop on a missing source, schema failure, hash drift, ambiguous
+   ownership, stale render, invalid activation, or source/generated divergence.
+
+Normal bootstrap must not require full reads of the four generated roots, the
+canonical ledger, historical archives, private memory, chat transcripts, or tool
+caches. Silent fallback to Markdown, shadow, candidate, or historical sources is
+forbidden.
 
 ## 3. Authorization and architecture
 

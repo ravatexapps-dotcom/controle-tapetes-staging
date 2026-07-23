@@ -21,6 +21,17 @@ prevails. In case of conflict, this model takes priority over
 any other process description, except when explicitly
 revised in an authorized phase and recorded in `docs/DOCUMENTATION_INDEX.md`.
 
+### Unit 4C authority activation
+
+Authority epoch `1`, cutover ID
+`GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-4C-AUTHORITY-CUTOVER-R1`, supersedes
+only the ownership clauses affected below. Structured current state, document
+classification, and Phase-C traceability are canonical. The four stable Markdown
+roots are deterministic generated compatibility views. The canonical ledger,
+normative specifications, contracts, plans, governance documents, and runbooks
+remain authored Markdown. Shadow and candidate artifacts are historical or
+readiness evidence. Recovery after publication is forward-only.
+
 ---
 
 ## 1. Central principle
@@ -49,9 +60,10 @@ Direct consequences:
 
 | Role | File | Fact it owns |
 |---|---|---|
-| **Documentation arbiter** | `docs/DOCUMENTATION_INDEX.md` | Order of authority, document classification, canonical paths, legacy mapping, responsibility by category. |
-| **Permanent state per front** | `PROJECT_STATE.md` (root) and `services/*/PROJECT_STATE.md` (when applicable) | Current operational state of each front (phase, next action, blocker, context links). |
-| **Active operational handoff** | `AGENT_HANDOFF.md` (root) | Continuity of the next session: immediate objective, mandatory files, constraints, links. |
+| **Documentation arbiter** | `docs/governance/catalog/documents.json` | Order of authority, document classification, canonical paths, legacy mapping, responsibility by category. |
+| **Permanent root state** | `docs/governance/current-state.json` | Current operational state, active phase, next action, blockers, and governing pointers. |
+| **Phase-C traceability** | `docs/governance/traceability/purchase-order-phase-c.json` | Requirement classification and normative-anchor mapping; no product semantics. |
+| **Generated compatibility views** | `PROJECT_STATE.md`, `AGENT_HANDOFF.md`, `docs/DOCUMENTATION_INDEX.md`, `docs/architecture/ORDEM_COMPRA_C3_TRACEABILITY.md` | Human-readable renderings with no independent facts or authority. |
 | **Historical ledger (append-only)** | `docs/refactor/ARCHITECTURE_REFACTOR_LEDGER.md` (refactor) and front-specific ledgers (to be created) | Auditable history of closed phases, accepted commits, tests, residual risk and next phase. |
 | **Architectural plan** | `docs/architecture/PLANO_*.md` | Target architecture, requirements, permanent decisions, dependencies, planned phases, acceptance criteria, backlog. |
 | **Domain / API contract** | `docs/architecture/*_CONTRACT.md` and `services/documents-ingestor/contracts/*` | Technical contract of an area (schema, RLS, RPCs, events, JSON schemas). |
@@ -66,9 +78,9 @@ declared in the file itself and maintained in the `DOCUMENTATION_INDEX`.
 
 ---
 
-## 3. Documentation arbiter — `docs/DOCUMENTATION_INDEX.md`
+## 3. Documentation arbiter — structured catalog
 
-`docs/DOCUMENTATION_INDEX.md` is the **only source** for:
+`docs/governance/catalog/documents.json` is the **only source** for:
 
 - order of documentation authority;
 - document classification (canonical, operational, contract,
@@ -96,11 +108,11 @@ replaced by a reference to the index in future slices, per
 
 ---
 
-## 4. Permanent state — `PROJECT_STATE.md`
+## 4. Permanent state — structured current state
 
-`PROJECT_STATE.md` (root) will in the future be the **only source** of
-current state per front of the monorepo. Each front, in its block
-inside `PROJECT_STATE.md`, will contain only:
+`docs/governance/current-state.json` is the only root current-state owner.
+`PROJECT_STATE.md` is generated exclusively from it and contains no independent
+facts. Each front represented in structured state contains only:
 
 - name of the front;
 - workspace;
@@ -112,7 +124,7 @@ inside `PROJECT_STATE.md`, will contain only:
 - blocker or debt that affects continuity;
 - links to plan, ledger and component context.
 
-`PROJECT_STATE.md` will **not** contain:
+The structured owner and generated view will **not** contain:
 
 - current HEAD as prose (except as a transitory reference during
   the acceptance slice — see §9);
@@ -175,7 +187,8 @@ This slice does not migrate nor decide between the alternatives.
 
 ## 6. Operational handoff — `AGENT_HANDOFF.md`
 
-`AGENT_HANDOFF.md` is the **only active operational handoff**.
+`AGENT_HANDOFF.md` is a bounded generated operational handoff sourced from
+structured current state, governing pointers, and declared ledger references.
 
 It may contain:
 
@@ -198,9 +211,8 @@ It may contain:
 - duplication of the front's state (the phase and the next action
   belong to `PROJECT_STATE.md`).
 
-The handoff **does not replace** `PROJECT_STATE.md`. Mentions of the phase
-ID are allowed to **guide execution**, but the canonical
-status of the phase belongs only to `PROJECT_STATE.md`.
+The handoff owns no state. Canonical phase status belongs only to
+`docs/governance/current-state.json`.
 
 ---
 
@@ -575,8 +587,9 @@ Repository-capable agents share one tracked behavior source:
 byte-identical, authority-free harness wrappers. Neither wrapper may contain
 current state, HEAD, backlog copies, or execution history.
 
-`PROJECT_STATE.md` contains a rigid `SPEC_CUSTODY_BOOTSTRAP` block. Its paths are
-the deterministic entry route for a clean session. Plans/backlogs remain sequence
+`docs/governance/current-state.json` and its active activation object are the
+deterministic entry route for a clean session. Generated roots are optional
+context and silent fallback is forbidden. Plans/backlogs remain sequence
 authority; specifications/contracts remain normative product authority; active
 traceability maps requirements to those existing normative anchors and never
 creates architecture.
