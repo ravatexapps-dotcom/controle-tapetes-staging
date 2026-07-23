@@ -20,13 +20,14 @@
   `3405fdab8e05ec0f81cbfe07c63c489e551fee92` (the accepted `PHASE-C5` technical
   checkpoint — the targeted-correction commit accepted at the `PHASE-C5`
   closeout; consult Git for live `HEAD`).
-- **Current Git residue:** modified `.gitignore` only (pre-existing, preserved,
-  unstaged). No other tracked residue.
+- **Current Git residue:** modified `.gitignore` plus untracked
+  `.codex/config.toml` and `.mcp.json` (pre-existing, preserved, unstaged).
+  Their contents must not be inspected or touched.
 
 ## Phase status
 
-- **`GOVERNANCE-EFFICIENCY-REFOUNDATION` (current — shadow implementation):**
-  `ACTIVE / SHADOW IMPLEMENTATION IN PROGRESS`. The structured current-state
+- **`GOVERNANCE-EFFICIENCY-REFOUNDATION` (current — Unit 4 contract definition):**
+  `ACTIVE / UNIT 4 CONTRACT DEFINED / AWAITING DIRECT SUPERVISOR REVIEW`. The structured current-state
   source, equivalence mapping, deterministic renderer/validator, and generated
   shadow views are implemented under the active contract, but remain
   `NON-CANONICAL UNTIL SUPERVISOR CUTOVER`. `PROJECT_STATE.md` remains the
@@ -37,18 +38,23 @@
   Unit 2 is `CLOSED / ACCEPTED / DIRECTLY VERIFIED` under the external supervisor
   ruling supplied for checkpoint `f7106977f4613de1830bef46002dbf0a4b8b3cbe`; this
   records supervisor acceptance and is not executor self-acceptance. Unit 3 is
-  `IMPLEMENTED / PARTITION INDEX IDENTITY BINDING COMPLETE / AWAITING DIRECT
-  SUPERVISOR REVIEW`; its partitions, generated compatibility view, and indexes
-  remain non-canonical. The reviewed interval begins at
+  `CLOSED / ACCEPTED / DIRECTLY VERIFIED` under the external supervisor ruling
+  supplied for checkpoint `53899e30b72cde3d1f5759ea59fb0a4d632c974d`; this
+  records supervisor acceptance and is not executor self-acceptance. Its
+  partitions, generated compatibility view, and indexes remain non-canonical.
+  The accepted interval begins at
   `e3c8c15b368d20161df6e593debbdf0c68cb7e41` and ends at the final R3 commit
-  with subject `fix: bind Unit 3 partition index identity`; its exact SHA is
-  resolved by Git in the executor closeout. **Next authorizable action:** direct
-  supervisor review of
-  `GOVERNANCE-EFFICIENCY-REFOUNDATION-LEDGER-PARTITION-INDEX-IDENTITY-BINDING-R3`.
-  Documentary-authority cutover, Unit 4, cleanup, compaction, archival,
-  deprecation, deletion, product work, database access, and deployment remain
-  unauthorized. Exact Unit 2 accepted checkpoint: `f7106977f4613de1830bef46002dbf0a4b8b3cbe`;
-  exact accounting subject: `fix: bind Unit 3 partition index identity`.
+  `53899e30b72cde3d1f5759ea59fb0a4d632c974d`. The Unit 4 cutover contract is
+  defined at
+  `docs/governance/GOVERNANCE_EFFICIENCY_REFOUNDATION_UNIT_4_AUTHORITY_CUTOVER_CONTRACT.md`.
+  **Next authorizable action:** direct supervisor review of
+  `GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-4-BOOTSTRAP-AUTHORITY-CUTOVER-CONTRACT-R1`.
+  Unit 4A implementation, documentary-authority cutover, Unit 5, cleanup,
+  compaction, archival, deprecation, deletion, product work, database access,
+  and deployment remain unauthorized. Exact accepted governance checkpoints:
+  Unit 1 `39abf42a7341b61fd4ac02a8e38d1e4f33471f0f`, Unit 2
+  `f7106977f4613de1830bef46002dbf0a4b8b3cbe`, and Unit 3
+  `53899e30b72cde3d1f5759ea59fb0a4d632c974d`.
 - **`CLEAN-SLATE-TRANSACTIONAL-RESET-EXECUTION-ACCEPTANCE-CLOSEOUT-R1` (current —
   direct supervisor acceptance of the executed shared-development clean-slate
   reset; documentation-only closeout):** the supervisor **ACCEPTED** executed

@@ -20,7 +20,7 @@ LAST_ACCEPTED_PHASE: PHASE-C5
 ACTIVE_PHASE: GOVERNANCE-EFFICIENCY-REFOUNDATION
 ACTIVE_PHASE_CONTRACT: docs/governance/GOVERNANCE_EFFICIENCY_REFOUNDATION_PHASE_CONTRACT.md
 ACTIVE_TRACK: PURCHASE_ORDER_PHASE_C
-NEXT_AUTHORIZABLE_ACTION: DIRECT SUPERVISOR REVIEW OF GOVERNANCE-EFFICIENCY-REFOUNDATION-LEDGER-PARTITION-INDEX-IDENTITY-BINDING-R3
+NEXT_AUTHORIZABLE_ACTION: DIRECT SUPERVISOR REVIEW OF GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-4-BOOTSTRAP-AUTHORITY-CUTOVER-CONTRACT-R1
 GOVERNING_SPEC: docs/architecture/ORDEM_COMPRA_LIFECYCLE_SPEC_PROPOSED.md
 TECHNICAL_CONTRACT: docs/architecture/PEDIDO_OP_SCHEMA_CONTRACT.md
 SEQUENCE_AUTHORITY: docs/architecture/PEDIDO_PRODUCTION_FLOW_BACKLOG.md
@@ -33,9 +33,9 @@ ACCEPTED_CHECKPOINT: 3405fdab8e05ec0f81cbfe07c63c489e551fee92
 
 ## Active phase and next action
 
-- **`GOVERNANCE-EFFICIENCY-REFOUNDATION` (current — shadow implementation):**
+- **`GOVERNANCE-EFFICIENCY-REFOUNDATION` (current — Unit 4 contract definition):**
   diagnosis acceptance is recorded and the phase is open as
-  `ACTIVE / SHADOW IMPLEMENTATION IN PROGRESS`. The structured current-state
+  `ACTIVE / UNIT 4 CONTRACT DEFINED / AWAITING DIRECT SUPERVISOR REVIEW`. The structured current-state
   source, equivalence mapping, deterministic renderer/validator, and generated
   shadow views are implemented under the active phase contract. They are
   `NON-CANONICAL UNTIL SUPERVISOR CUTOVER`; `PROJECT_STATE.md` remains current
@@ -45,19 +45,23 @@ ACCEPTED_CHECKPOINT: 3405fdab8e05ec0f81cbfe07c63c489e551fee92
   Unit 2 is `CLOSED / ACCEPTED / DIRECTLY VERIFIED` under the external supervisor
   ruling supplied for checkpoint `f7106977f4613de1830bef46002dbf0a4b8b3cbe`; this
   records supervisor acceptance and is not executor self-acceptance. Unit 3 is
-  `IMPLEMENTED / PARTITION INDEX IDENTITY BINDING COMPLETE / AWAITING DIRECT
-  SUPERVISOR REVIEW`; its partitions, generated compatibility view, and indexes
-  remain non-canonical. The reviewed interval begins at
+  `CLOSED / ACCEPTED / DIRECTLY VERIFIED` under the external supervisor ruling
+  supplied for checkpoint `53899e30b72cde3d1f5759ea59fb0a4d632c974d`; this
+  records supervisor acceptance and is not executor self-acceptance. Its
+  partitions, generated compatibility view, and indexes remain non-canonical.
+  The accepted interval begins at
   `e3c8c15b368d20161df6e593debbdf0c68cb7e41` and ends at the final R3 commit
-  with subject `fix: bind Unit 3 partition index identity`; its exact SHA is
-  resolved by Git in the executor closeout. The next gate is `DIRECT SUPERVISOR
-  REVIEW OF GOVERNANCE-EFFICIENCY-REFOUNDATION-LEDGER-PARTITION-INDEX-IDENTITY-BINDING-R3`.
-  Documentary-authority status: `SHADOW IMPLEMENTATION AUTHORIZED /
-  DOCUMENTARY-AUTHORITY CUTOVER NOT AUTHORIZED`. Unit 4, cleanup, compaction,
-  archival, deprecation, deletion, product work, database access, and deployment
-  are not authorized. Exact `UNIT 2 ACCEPTED CHECKPOINT =
-  f7106977f4613de1830bef46002dbf0a4b8b3cbe`; exact accounting subject:
-  `fix: bind Unit 3 partition index identity`.
+  `53899e30b72cde3d1f5759ea59fb0a4d632c974d`. Unit 4 contract definition is
+  authorized and defined at
+  `docs/governance/GOVERNANCE_EFFICIENCY_REFOUNDATION_UNIT_4_AUTHORITY_CUTOVER_CONTRACT.md`;
+  Unit 4A implementation and documentary-authority cutover are not authorized.
+  The next gate is `DIRECT SUPERVISOR REVIEW OF
+  GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-4-BOOTSTRAP-AUTHORITY-CUTOVER-CONTRACT-R1`.
+  Unit 5, cleanup, compaction, archival, deprecation, deletion, product work,
+  database access, and deployment are not authorized. Exact accepted governance
+  checkpoints: Unit 1 `39abf42a7341b61fd4ac02a8e38d1e4f33471f0f`,
+  Unit 2 `f7106977f4613de1830bef46002dbf0a4b8b3cbe`, and Unit 3
+  `53899e30b72cde3d1f5759ea59fb0a4d632c974d`.
 - **`CLEAN-SLATE-TRANSACTIONAL-RESET-EXECUTION-ACCEPTANCE-CLOSEOUT-R1` (current —
   direct supervisor acceptance of the executed shared-development clean-slate
   reset; documentation-only closeout):** the supervisor performed the direct

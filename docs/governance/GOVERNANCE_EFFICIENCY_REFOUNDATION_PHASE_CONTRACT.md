@@ -4,7 +4,7 @@
 PHASE_ID: GOVERNANCE-EFFICIENCY-REFOUNDATION
 <!-- MATERIAL_PHASE_CONTRACT:END -->
 
-STATUS: ACTIVE / SHADOW IMPLEMENTATION IN PROGRESS
+STATUS: ACTIVE / UNIT 4 CONTRACT DEFINED / AWAITING DIRECT SUPERVISOR REVIEW
 
 UNIT 1 STATUS: CLOSED / ACCEPTED / DIRECTLY VERIFIED
 
@@ -22,15 +22,21 @@ UNIT 2: CLOSED / ACCEPTED / DIRECTLY VERIFIED
 
 UNIT 2 ACCEPTED CHECKPOINT: f7106977f4613de1830bef46002dbf0a4b8b3cbe
 
-UNIT 3: IMPLEMENTED / PARTITION INDEX IDENTITY BINDING COMPLETE / AWAITING DIRECT SUPERVISOR REVIEW
+UNIT 3: CLOSED / ACCEPTED / DIRECTLY VERIFIED
 
 UNIT 3 REVIEWED INTERVAL START: e3c8c15b368d20161df6e593debbdf0c68cb7e41
 
-UNIT 3 REVIEWED INTERVAL END: FINAL_R3_COMMIT (`fix: bind Unit 3 partition index identity`; exact immutable SHA resolved by Git and reported in executor closeout)
+UNIT 3 ACCEPTED CHECKPOINT: 53899e30b72cde3d1f5759ea59fb0a4d632c974d
+
+UNIT 3 ACCEPTED INTERVAL END: 53899e30b72cde3d1f5759ea59fb0a4d632c974d
 
 CANONICAL LEDGER: docs/ledgers/G28_LEDGER.md / AUTHORITY UNCHANGED
 
-UNIT 4: NOT AUTHORIZED
+UNIT 4: CONTRACT DEFINED / AWAITING DIRECT SUPERVISOR REVIEW
+
+UNIT 4 CONTRACT: docs/governance/GOVERNANCE_EFFICIENCY_REFOUNDATION_UNIT_4_AUTHORITY_CUTOVER_CONTRACT.md
+
+UNIT 4A IMPLEMENTATION: NOT AUTHORIZED
 
 DOCUMENTARY-AUTHORITY CUTOVER: NOT AUTHORIZED
 
@@ -42,7 +48,11 @@ views, reference validation, and immutable-commit validation. Unit 3 adds the
 lossless raw-byte ledger source manifest, deterministic whole-entry partitions,
 survival mappings, generated compatibility view, and append-stability proof.
 Structured sources remain non-canonical and current canonical owners remain
-unchanged.
+unchanged. The external supervisor directly accepted Unit 3 checkpoint
+`53899e30b72cde3d1f5759ea59fb0a4d632c974d`; Unit 3 is closed and accepted.
+This records external acceptance, not executor self-acceptance. The Unit 4
+authority-cutover contract is defined for direct review; Unit 4A implementation
+and documentary-authority cutover remain not authorized.
 
 ## Objective
 
@@ -87,11 +97,9 @@ supervisor acceptance.
   nested inside the same Markdown-link raw syntax is treated as one parser
   representation; distinct source references remain cardinality errors.
 - Unit 2 is externally accepted at checkpoint `f7106977f4613de1830bef46002dbf0a4b8b3cbe`.
-  Unit 3 partition-index identity binding is complete and awaits direct supervisor
-  review under
-  `GOVERNANCE-EFFICIENCY-REFOUNDATION-LEDGER-PARTITION-INDEX-IDENTITY-BINDING-R3`.
-  Documentary-authority cutover, Unit 4, cleanup, compaction, archival,
-  deprecation, and deletion remain not authorized.
+  The later Unit 3 closeout is recorded in the current status block and the R3
+  section below. Documentary-authority cutover, Unit 4A implementation, cleanup,
+  compaction, archival, deprecation, and deletion remain not authorized.
 
 ## Unit 3 R2 governance-gate hardening
 
@@ -113,8 +121,8 @@ supervisor acceptance.
 - Entry derivation permits the dated grammar plus exactly the two reviewed
   legacy non-dated headings; mutation, removal, demotion, duplication, or a new
   non-dated boundary fails during derivation.
-- Unit 3 is not accepted. The next action is direct supervisor review of
-  `GOVERNANCE-EFFICIENCY-REFOUNDATION-LEDGER-PARTITION-SHADOW-HARDENING-R2`.
+- At the R2 checkpoint, Unit 3 remained unaccepted and proceeded to the R3
+  identity-binding correction recorded below.
 
 ## Unit 3 R3 partition-index identity binding
 
@@ -130,8 +138,10 @@ supervisor acceptance.
 - The R2 schema, immutable-reader, append-stability, legacy-heading,
   decomposition, partition, compatibility, and reference-survival mechanisms
   remain in force.
-- Unit 3 is not accepted. The next action is direct supervisor review of
-  `GOVERNANCE-EFFICIENCY-REFOUNDATION-LEDGER-PARTITION-INDEX-IDENTITY-BINDING-R3`.
+- Unit 3 is `CLOSED / ACCEPTED / DIRECTLY VERIFIED` at
+  `53899e30b72cde3d1f5759ea59fb0a4d632c974d`.
+- The next action is direct supervisor review of
+  `GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-4-BOOTSTRAP-AUTHORITY-CUTOVER-CONTRACT-R1`.
 
 ## Binding rules
 
@@ -148,5 +158,7 @@ supervisor acceptance.
 - No cleanup, compaction, partitioning, archival, deletion, or deprecation occurs
   before unique-content and reference-survival proof.
 - Every authority cutover requires a separate direct supervisor acceptance.
-- This contract authorizes shadow implementation only; it does not authorize
-  product changes, database access, deployment, production access, or real cutover.
+- This contract records accepted shadow implementation and the separately
+  authorized Unit 4 contract definition. It does not authorize Unit 4A,
+  documentary-authority cutover, product changes, database access, deployment,
+  production access, or real cutover.

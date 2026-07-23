@@ -83,7 +83,7 @@
     {
       "source_id": "PROJECT_STATE.md:BOOTSTRAP_KEY:NEXT_AUTHORIZABLE_ACTION",
       "source_path": "PROJECT_STATE.md",
-      "source_sha256": "39b031ff2effdeefa6eaa750220c6c2a246310353d985d31948229b66263e1f3",
+      "source_sha256": "d2369d5e704cc355b4b3ded2f4a5c32ac9e7391da7fcd8a9ed06a05da5c7d687",
       "classification": "STRUCTURED_FIELD",
       "preservation_disposition": "REPRESENTED_IN_STRUCTURED_STATE",
       "destination_path": "docs/governance/shadow/current-state.json",
@@ -91,7 +91,7 @@
       "destination_anchor": null,
       "actual_owner_path": null,
       "semantic_status": "REVIEWED",
-      "review_basis": "Unit 3 R3 explicit re-review: the changed bootstrap value exactly matches /next_authorizable_action/canonical_value and records the partition-index identity-binding supervisor-review gate."
+      "review_basis": "Unit 4 contract-definition explicit review: the bootstrap value exactly matches /next_authorizable_action/canonical_value and records the Unit 4 contract direct-review gate."
     },
     {
       "source_id": "PROJECT_STATE.md:BOOTSTRAP_KEY:GOVERNING_SPEC",
@@ -213,7 +213,7 @@
     {
       "source_id": "PROJECT_STATE.md:TEXT_BLOCK:L2:ACTIVE_PHASE_AND_NEXT_ACTION:1:BLOCK:1",
       "source_path": "PROJECT_STATE.md",
-      "source_sha256": "3b5d67fd9943a26c23bb199df5123c3e781c9e4550f6ccdc8458590d804da361",
+      "source_sha256": "c892c4c5c47ab291736ebc62b11bc8d1275b0a23e179ec4caf1498d1c40b331d",
       "classification": "RETAINED_CURRENT_CANONICAL_CONTENT",
       "preservation_disposition": "RETAINED_IN_CURRENT_CANONICAL_SOURCE_PENDING_LATER_UNIT",
       "destination_path": "PROJECT_STATE.md",
@@ -221,7 +221,7 @@
       "destination_anchor": "## Active phase and next action",
       "actual_owner_path": "PROJECT_STATE.md",
       "semantic_status": "REVIEWED",
-      "review_basis": "Unit 3 R3 explicit re-review: PROJECT_STATE.md records the partition-index identity-binding supervisor-review gate while remaining the sole current-state owner."
+      "review_basis": "Unit 4 contract-definition explicit review: PROJECT_STATE.md remains the accepted canonical current-state owner; the block records external Unit 3 acceptance and Unit 4 contract-review status without activating cutover."
     },
     {
       "source_id": "PROJECT_STATE.md:MARKDOWN_HEADING:L2:WORKSPACE_AND_GIT_BOUNDARIES:1",
@@ -525,7 +525,7 @@
     {
       "source_id": "AGENT_HANDOFF.md:TEXT_BLOCK:L2:WORKSPACE_AND_GIT:1:BLOCK:1",
       "source_path": "AGENT_HANDOFF.md",
-      "source_sha256": "efd582289f7333398b2d9b02fdee8abf3052c6856ee266ef34aa4c71c256bbea",
+      "source_sha256": "1a9b27d424a7de08e692e414bb158d237813574c43b87e21138fb20c4ec7f6b1",
       "classification": "DUPLICATED_CURRENT_STATE",
       "preservation_disposition": "DUPLICATED_FROM_VERIFIED_OWNER",
       "destination_path": "PROJECT_STATE.md",
@@ -533,7 +533,7 @@
       "destination_anchor": "## Workspace and Git boundaries",
       "actual_owner_path": "PROJECT_STATE.md",
       "semantic_status": "REVIEWED",
-      "review_basis": "R2 explicit review: derived handoff unit is duplicated from the verified owner PROJECT_STATE.md at ## Workspace and Git boundaries."
+      "review_basis": "Unit 4 contract-definition explicit review: derived handoff routing and all three protected-residue paths match verified Git path-only evidence and remain non-authoritative."
     },
     {
       "source_id": "AGENT_HANDOFF.md:MARKDOWN_HEADING:L2:PHASE_STATUS:1",
@@ -551,7 +551,7 @@
     {
       "source_id": "AGENT_HANDOFF.md:TEXT_BLOCK:L2:PHASE_STATUS:1:BLOCK:1",
       "source_path": "AGENT_HANDOFF.md",
-      "source_sha256": "0c2da47f48ece5265e905a195fd9d9fdc657a0eee3f43b22a9e9437ac69686a5",
+      "source_sha256": "a1c8592de692329080fcb6a6e45baf2058a4c87ec9f3bf013cc5d61955b5b312",
       "classification": "DUPLICATED_CURRENT_STATE",
       "preservation_disposition": "DUPLICATED_FROM_VERIFIED_OWNER",
       "destination_path": "PROJECT_STATE.md",
@@ -559,7 +559,7 @@
       "destination_anchor": "## Active phase and next action",
       "actual_owner_path": "PROJECT_STATE.md",
       "semantic_status": "REVIEWED",
-      "review_basis": "Unit 3 R3 explicit re-review: the derived handoff matches the partition-index identity-binding supervisor-review gate owned by PROJECT_STATE.md."
+      "review_basis": "Unit 4 contract-definition explicit review: derived handoff phase text matches PROJECT_STATE.md and the Unit 4 contract-review gate; authority remains unchanged."
     },
     {
       "source_id": "AGENT_HANDOFF.md:MARKDOWN_HEADING:L2:GOVERNING_SPECIFICATIONS_AND_CONTRACTS:1",

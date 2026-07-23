@@ -60,9 +60,9 @@ export function validateStateShape(state) {
   const action = state.next_authorizable_action;
   if (!action || typeof action !== 'object') errors.push('next_authorizable_action must be an object');
   else {
-    if (action.order_id !== 'GOVERNANCE-EFFICIENCY-REFOUNDATION-LEDGER-PARTITION-INDEX-IDENTITY-BINDING-R3') errors.push('next_authorizable_action.order_id mismatch');
-    if (action.canonical_value !== 'DIRECT SUPERVISOR REVIEW OF GOVERNANCE-EFFICIENCY-REFOUNDATION-LEDGER-PARTITION-INDEX-IDENTITY-BINDING-R3') errors.push('next_authorizable_action.canonical_value mismatch');
-    if (action.risk_class !== 'R1') errors.push('next_authorizable_action.risk_class must be R1');
+    if (action.order_id !== 'GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-4-BOOTSTRAP-AUTHORITY-CUTOVER-CONTRACT-R1') errors.push('next_authorizable_action.order_id mismatch');
+    if (action.canonical_value !== 'DIRECT SUPERVISOR REVIEW OF GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-4-BOOTSTRAP-AUTHORITY-CUTOVER-CONTRACT-R1') errors.push('next_authorizable_action.canonical_value mismatch');
+    if (action.risk_class !== 'R0') errors.push('next_authorizable_action.risk_class must be R0');
     requireString(action.mode, 'next_authorizable_action.mode', errors);
     requireString(action.status, 'next_authorizable_action.status', errors);
   }

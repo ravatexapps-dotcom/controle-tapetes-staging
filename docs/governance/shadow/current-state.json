@@ -13,18 +13,21 @@
   "accepted_checkpoints": {
     "product": "3405fdab8e05ec0f81cbfe07c63c489e551fee92",
     "clean_slate_readiness": "62bdcc75c335e3881adb1af6350de801675aa788",
-    "clean_slate_execution": "770772548baf04c52e9ef020ff94f8bdabf77f03"
+    "clean_slate_execution": "770772548baf04c52e9ef020ff94f8bdabf77f03",
+    "governance_unit_1": "39abf42a7341b61fd4ac02a8e38d1e4f33471f0f",
+    "governance_unit_2": "f7106977f4613de1830bef46002dbf0a4b8b3cbe",
+    "governance_unit_3": "53899e30b72cde3d1f5759ea59fb0a4d632c974d"
   },
   "active_phase": {
     "id": "GOVERNANCE-EFFICIENCY-REFOUNDATION",
     "contract": "docs/governance/GOVERNANCE_EFFICIENCY_REFOUNDATION_PHASE_CONTRACT.md",
-    "status": "ACTIVE / SHADOW IMPLEMENTATION IN PROGRESS"
+    "status": "ACTIVE / UNIT 4 CONTRACT DEFINED / AWAITING DIRECT SUPERVISOR REVIEW"
   },
   "next_authorizable_action": {
-    "order_id": "GOVERNANCE-EFFICIENCY-REFOUNDATION-LEDGER-PARTITION-INDEX-IDENTITY-BINDING-R3",
-    "canonical_value": "DIRECT SUPERVISOR REVIEW OF GOVERNANCE-EFFICIENCY-REFOUNDATION-LEDGER-PARTITION-INDEX-IDENTITY-BINDING-R3",
-    "mode": "BOUNDED UNIT 3 FORWARD CORRECTION",
-    "risk_class": "R1",
+    "order_id": "GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-4-BOOTSTRAP-AUTHORITY-CUTOVER-CONTRACT-R1",
+    "canonical_value": "DIRECT SUPERVISOR REVIEW OF GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-4-BOOTSTRAP-AUTHORITY-CUTOVER-CONTRACT-R1",
+    "mode": "DIRECT SUPERVISOR REVIEW",
+    "risk_class": "R0",
     "status": "DIRECT SUPERVISOR REVIEW REQUIRED"
   },
   "active_track": "PURCHASE_ORDER_PHASE_C",

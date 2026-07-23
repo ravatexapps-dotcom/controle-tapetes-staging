@@ -9651,4 +9651,15 @@ product file they depend on, was modified by this pass or the prior one):
 - **Next action:** direct supervisor review of `GOVERNANCE-EFFICIENCY-REFOUNDATION-LEDGER-PARTITION-INDEX-IDENTITY-BINDING-R3`.
 - **Scope exclusions:** no Unit 4/5, cutover, canonical replacement or truncation, cleanup, compaction, archive, movement, deprecation, deletion, product code, database/SQL, migration, shared-development access, deployment, production, forbidden-project access, `REAL_CUTOVER`, or `PHASE-C5B` occurred.
 
+## 2026-07-23 — GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-4-BOOTSTRAP-AUTHORITY-CUTOVER-CONTRACT-R1 — accept Unit 3 and define Unit 4 cutover contract
+
+- **External supervisor ruling recorded.** Unit 3 is `CLOSED / ACCEPTED / DIRECTLY VERIFIED` at checkpoint `53899e30b72cde3d1f5759ea59fb0a4d632c974d`. The accepted interval is `e3c8c15b368d20161df6e593debbdf0c68cb7e41` through `53899e30b72cde3d1f5759ea59fb0a4d632c974d`. This is an external ruling, not executor self-acceptance.
+- **Accepted Unit 3 scope.** Raw UTF-8 canonical-ledger coverage, deterministic whole-unit partitioning, 12-partition compatibility architecture, exact byte reassembly, reference-survival mappings, append-stability enforcement, schema enforcement, immutable commit-reader validation, legacy-heading exception enforcement, and full partition-index identity parity are accepted.
+- **Unit 4 contract definition.** `docs/governance/GOVERNANCE_EFFICIENCY_REFOUNDATION_UNIT_4_AUTHORITY_CUTOVER_CONTRACT.md` defines the structured current-state authority, generated root views, structured catalog and Phase-C traceability ownership, unchanged authored normative and canonical-ledger authority, schema `2.0.0` transition, 31-consumer migration matrix, bootstrap continuity harness, readiness gates, PONR, one-publication boundary, post-cutover validation, and forward-correction rollback.
+- **Authority boundary.** Canonical documentary authority is unchanged. `PROJECT_STATE.md`, `AGENT_HANDOFF.md`, `docs/DOCUMENTATION_INDEX.md`, `docs/architecture/ORDEM_COMPRA_C3_TRACEABILITY.md`, and `docs/ledgers/G28_LEDGER.md` retain their pre-cutover roles. No candidate path, renderer, generated view, or marker is activated.
+- **Status.** Unit 4 is `CONTRACT DEFINED / AWAITING DIRECT SUPERVISOR REVIEW`. Unit 4A implementation, Unit 4B readiness review, Unit 4C authority cutover, Unit 4D post-cutover acceptance, and Unit 5 are not authorized.
+- **Scope exclusions.** No product, database, SQL, migration, environment, deployment, production, forbidden-project, cleanup, compaction, archival, movement, deprecation, deletion, authority cutover, or Unit 5 action occurred.
+- **Next action.** `DIRECT SUPERVISOR REVIEW OF GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-4-BOOTSTRAP-AUTHORITY-CUTOVER-CONTRACT-R1`.
+- **Commit subject.** `docs: accept Unit 3 and define Unit 4 cutover contract`.
+
 <!-- G28_LEDGER_SHADOW_COMPATIBILITY_PAYLOAD_END_7b9d4e3a -->

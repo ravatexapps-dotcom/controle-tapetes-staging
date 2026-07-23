@@ -42,11 +42,14 @@
     "accepted_checkpoints": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["product", "clean_slate_readiness", "clean_slate_execution"],
+      "required": ["product", "clean_slate_readiness", "clean_slate_execution", "governance_unit_1", "governance_unit_2", "governance_unit_3"],
       "properties": {
         "product": { "type": "string", "pattern": "^[0-9a-f]{40}$" },
         "clean_slate_readiness": { "type": "string", "pattern": "^[0-9a-f]{40}$" },
-        "clean_slate_execution": { "type": "string", "pattern": "^[0-9a-f]{40}$" }
+        "clean_slate_execution": { "type": "string", "pattern": "^[0-9a-f]{40}$" },
+        "governance_unit_1": { "type": "string", "const": "39abf42a7341b61fd4ac02a8e38d1e4f33471f0f" },
+        "governance_unit_2": { "type": "string", "const": "f7106977f4613de1830bef46002dbf0a4b8b3cbe" },
+        "governance_unit_3": { "type": "string", "const": "53899e30b72cde3d1f5759ea59fb0a4d632c974d" }
       }
     },
     "active_phase": {
@@ -56,7 +59,7 @@
       "properties": {
         "id": { "const": "GOVERNANCE-EFFICIENCY-REFOUNDATION" },
         "contract": { "const": "docs/governance/GOVERNANCE_EFFICIENCY_REFOUNDATION_PHASE_CONTRACT.md" },
-        "status": { "const": "ACTIVE / SHADOW IMPLEMENTATION IN PROGRESS" }
+        "status": { "const": "ACTIVE / UNIT 4 CONTRACT DEFINED / AWAITING DIRECT SUPERVISOR REVIEW" }
       }
     },
     "next_authorizable_action": {
@@ -64,10 +67,10 @@
       "additionalProperties": false,
       "required": ["order_id", "canonical_value", "mode", "risk_class", "status"],
       "properties": {
-        "order_id": { "const": "GOVERNANCE-EFFICIENCY-REFOUNDATION-LEDGER-PARTITION-INDEX-IDENTITY-BINDING-R3" },
-        "canonical_value": { "type": "string", "const": "DIRECT SUPERVISOR REVIEW OF GOVERNANCE-EFFICIENCY-REFOUNDATION-LEDGER-PARTITION-INDEX-IDENTITY-BINDING-R3" },
+        "order_id": { "const": "GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-4-BOOTSTRAP-AUTHORITY-CUTOVER-CONTRACT-R1" },
+        "canonical_value": { "type": "string", "const": "DIRECT SUPERVISOR REVIEW OF GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-4-BOOTSTRAP-AUTHORITY-CUTOVER-CONTRACT-R1" },
         "mode": { "type": "string", "minLength": 1 },
-        "risk_class": { "const": "R1" },
+        "risk_class": { "const": "R0" },
         "status": { "type": "string", "minLength": 1 }
       }
     },
