@@ -1,10 +1,10 @@
 <!-- GENERATED NON-CANONICAL SHADOW LEDGER PARTITION — DO NOT EDIT -->
 <!-- partition_id: G28-LEDGER-PART-0012 -->
 <!-- canonical_source: docs/ledgers/G28_LEDGER.md -->
-<!-- source_unit_interval: G28-LEDGER-UNIT-0195..G28-LEDGER-UNIT-0208 -->
-<!-- canonical_byte_interval: 962903..990560 -->
-<!-- canonical_line_interval: 9510..9708 -->
-<!-- payload_sha256: ca33d5f767813ecf5eabb187536d47348aa202e1a320d91e9c9335a52aa67c17 -->
+<!-- source_unit_interval: G28-LEDGER-UNIT-0195..G28-LEDGER-UNIT-0209 -->
+<!-- canonical_byte_interval: 962903..992811 -->
+<!-- canonical_line_interval: 9510..9730 -->
+<!-- payload_sha256: 602db92e27c48275be1f9181444be0041a35ec6764646a53a56b7d9918e45cb6 -->
 <!-- oversized_single_unit: false -->
 <!-- partition_status: OPEN -->
 <!-- G28_LEDGER_SHADOW_PAYLOAD_BEGIN_7b9d4e3a -->
@@ -207,5 +207,27 @@
 - **Next action.** Unit 5 diagnosis `GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-5-LEGACY-DEPRECATION-AND-POST-CUTOVER-AUDIT-DIAGNOSIS-R1` is next authorizable but is not authorized by this closeout.
 - **Scope exclusions.** No product, database, migration, environment, deployment, production, cleanup, archival, deprecation, compaction, deletion, reset, force push, or history rewrite occurred.
 - **Commit subject.** `docs: close Unit 4 post-cutover acceptance`.
+
+## 2026-07-23 — GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-5-PRECONDITION-CANONICAL-AUTHORITY-CONSUMER-FORWARD-CORRECTION-R3 — fix: reconcile residual governance authority consumers
+
+- **Prior hard stops.** R1 and R2 hard-stopped with zero writes at baseline `e88194cf6681d7aff154b22b4360e27b6d6e6dad`.
+- **Complete preflight.** All 25 cataloged ACTIVE/NORMATIVE artifacts were read and 188 semantic matches were classified before mutation; zero unresolved classifications and zero unmanifested contradictions remained.
+- **Corrected authored consumers.** Nine ACTIVE_CONTRADICTION paths were corrected:
+  - `docs/architecture/CLAUDE_PROJECT_ASSET_MAP.md`
+  - `docs/architecture/DOCUMENTOS_VALIDACAO_VINCULOS_E_EVOLUCAO_PLANO.md`
+  - `docs/architecture/PEDIDO_PRODUCTION_FLOW_BACKLOG.md`
+  - `docs/architecture/CAMADA3_BACKUP_CONTRACT.md`
+  - `docs/architecture/ORDEM_COMPRA_LIFECYCLE_SPEC_PROPOSED.md`
+  - `docs/architecture/PEDIDO_OP_MOVIMENTACAO_DOCUMENTOS_PLANO.md`
+  - `docs/operations/AUTH_DISABLE_USER_PROD_RELEASE_PLAN.md`
+  - `docs/design/CAMADA2_A32_MOCKUP_APPROVED.md`
+  - `docs/architecture/CAMADA2_USUARIOS_SPEC_PROPOSED.md`
+- **Architect ruling.** `docs/architecture/CAMADA2_USUARIOS_SPEC_PROPOSED.md` was classified as `ACTIVE_CONTRADICTION`, not historical-valid.
+- **Renderer correction.** `scripts/governance/render-documentation-shadow.mjs` now names the structured catalog and structured Phase-C traceability owners; generated roots remain compatibility views.
+- **Authority continuity.** The structured owner matrix and authority epoch `1` remain unchanged. Unit 4 remains `CLOSED / ACCEPTED / DIRECTLY VERIFIED`.
+- **Activation and rollback.** No second activation occurred; rollback was not authorized or activated.
+- **Next action.** Unit 5 implementation remains unauthorized. Read-only diagnosis `GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-5-LEGACY-DEPRECATION-AND-POST-CUTOVER-AUDIT-DIAGNOSIS-R2` is required after direct review.
+- **Scope exclusions.** No cleanup, archival, deprecation, compaction, deletion, product work, database or environment access, deployment, production, reset, revert, rebase, force push, or history rewrite occurred.
+- **Commit subject.** `fix: reconcile residual governance authority consumers`.
 
 <!-- G28_LEDGER_SHADOW_PAYLOAD_END_7b9d4e3a -->

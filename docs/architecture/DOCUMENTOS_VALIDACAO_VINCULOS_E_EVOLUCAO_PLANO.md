@@ -4,8 +4,8 @@
 - **Closing HEAD:** `383db586e70852fba3c5ae5d5ac5312ab1b49284`.
 - **G28-A:** `REJECTED AS CONTRACT / RETAINED AS DIAGNOSTIC INPUT`.
 - **G28-B1:** `AUTHORIZED` at the moment of this closeout; since then G28-B1, B2, B3, B4 and B5-D5 have been accepted.
-- **Current state (historical):** see HISTORICAL EXECUTION CHECKPOINT — SUPERSEDED above. The current operational state is in `PROJECT_STATE.md`.
-- **Historical record only:** the active phase, the last accepted block, and the next authorizable action are in the checkpoint and in `PROJECT_STATE.md`.
+- **Current state (historical):** see HISTORICAL EXECUTION CHECKPOINT — SUPERSEDED below. Current operational state is owned by `docs/governance/current-state.json`.
+- **Historical record only:** the active phase, last accepted block, and next authorizable action are obtained from `docs/governance/current-state.json`.
 
 ---
 
@@ -18,11 +18,11 @@
 > `NEXT_AUTHORIZABLE_ACTION` status lines in the header block below are a
 > **historical 2026-07-14/15 reconciliation snapshot (G28-C/G28-D era),
 > superseded**. The sole owner of the live current phase, next authorizable
-> action, and open decisions is `PROJECT_STATE.md`; the active track has since
+> action, and open decisions is `docs/governance/current-state.json`; the active track has since
 > moved to the purchase-order refoundation / Phase-C work recorded there.
 
 **Project:** Ravatex — Controle de Tapetes / Documents Ingestor  
-**Plan status:** reconciled (G28-PLAN-R1 on 2026-07-14); this plan is the architectural backlog of G28 and `PROJECT_STATE.md` holds the current operational state.
+**Plan status:** reconciled (G28-PLAN-R1 on 2026-07-14); this plan owns G28 architecture, sequence, backlog, and hard stops, while `docs/governance/current-state.json` owns current operational state.
 **Active phase:** No functional phase is active. G28-C is `CLOSED / ACCEPTED_WITH_NONBLOCKING_AUTHENTICATED_BROWSER_SMOKE_DEBT`. G28-D discovery/preparation remains `RELEASE CONTRACT DISCOVERY COMPLETE` (evidence preserved in `docs/releases/G28_D_RELEASE_CANDIDATE.md`); by explicit architect decision (`STAGING-ONLY-EXECUTION-BOUNDARY-A`, 2026-07-15) its publication is `DEFERRED BY ARCHITECT UNTIL GLOBAL BACKLOG COMPLETION` and does not constitute a current blocker for staging work. Publication remains `NOT STARTED / NOT ACCEPTED / NOT AUTHORIZED`.
 **Last accepted phase:** `G28-C — CLOSED / ACCEPTED_WITH_NONBLOCKING_AUTHENTICATED_BROWSER_SMOKE_DEBT`.
 **G28-D:** discovery `RELEASE CONTRACT DISCOVERY COMPLETE`; publication `DEFERRED BY ARCHITECT / NOT A CURRENT BLOCKER / NOT AUTHORIZED` (explicit decision `STAGING-ONLY-EXECUTION-BOUNDARY-A`, 2026-07-15 — postponed until completion of the full canonical backlog, not discovered/defined/tested/completed). No publication, push, production, or acceptance; discovery evidence preserved in `docs/releases/G28_D_RELEASE_CANDIDATE.md`.
@@ -33,13 +33,13 @@
 **Controlled Delete × documentary history (cross-cutting, outside the numbered G28-A..D sequence):** `CLOSED / ACCEPTED` — technical commit `707a37bd1d2c4728ab2a17433b6441049bd88062`. The canonical documentary link (`document_link_revisions` / `document_link_revision_ops`) now also protects the physical test deletion of Pedido/OP (`db/34`–`db/37`): deletion is blocked in a controlled manner when linked documentary history exists, without deleting, altering, or reactivating any revision; in the absence of history, the prior deletion policy remains unchanged. The `Documento→Pedido 0..1` / `Documento→OP 0..N` contract and the two canonical tables (`document_link_revisions`, `document_link_revision_ops`) are preserved without change in cardinality or ownership. Does not constitute acceptance of G28-D, publication, or a later G28 phase. See `PROJECT_STATE.md`, `docs/architecture/PEDIDO_OP_SCHEMA_CONTRACT.md`, and `docs/ledgers/G28_LEDGER.md`.
 **Open architect decisions:** `OPEN_ARCHITECT_DECISIONS: NONE` for the current staging cycle. `DEPLOYMENT_MAPPING_AND_PRODUCTION_MIGRATION_PROCEDURE` was reclassified by explicit architect decision (`STAGING-ONLY-EXECUTION-BOUNDARY-A`, 2026-07-15) as `DEFERRED UNTIL GLOBAL BACKLOG COMPLETION / NOT A CURRENT STAGING BLOCKER / NOT STARTED` — not discovered, defined, tested, or completed; only postponed. Current operational environment: staging (`ucrjtfswnfdlxwtmxnoo`) exclusively; the protected Supabase project is out of scope. `CLIENTE-ORDER-SUMMARY-READMODEL-ACL-GRANTS-R1` was authorized, implemented, applied, and verified in staging on 2026-07-15 (`CLOSED / ACCEPTED`; see `D-COS07` §6.2 and `PROJECT_STATE.md`). `NEXT_AUTHORIZABLE_ACTION: NONE` — no single unambiguous technical candidate after removing this item; `ARCHITECT DECISION REQUIRED AFTER BACKLOG RECONCILIATION`.
 **Last reconciliation:** 2026-07-14 (G28-PLAN-R1; B6 checkpoint updated after direct verification).
-**Authority rules:** Git proves live branch/HEAD/index/worktree; `PROJECT_STATE.md` holds the current operational state; `AGENT_HANDOFF.md` holds continuity; the G28 ledger holds the append-only history of closeouts; this master plan holds architecture/backlog; plans alone do not authorize execution.
+**Authority rules:** Git proves live branch/HEAD/index/worktree; `docs/governance/current-state.json` owns current operational state; `AGENT_HANDOFF.md` is a generated compatibility view sourced from canonical structured state; the G28 ledger holds append-only closeout history; this master plan owns architecture/backlog; plans alone do not authorize execution.
 
 ---
 
 ## HISTORICAL EXECUTION CHECKPOINT — SUPERSEDED
 
-> **This checkpoint has been superseded.** The subsequent canonical state is recorded in the header of this plan (lines 1–25) and in `PROJECT_STATE.md`. G28-C is `CLOSED / ACCEPTED_WITH_NONBLOCKING_AUTHENTICATED_BROWSER_SMOKE_DEBT`; G28-D discovery is `COMPLETED / BLOCKED_BY_MISSING_DEPLOYMENT_DEFINITION`; G28-B8 was subsumed by the acceptance of G28-C. No functional phase is active. See the header and `PROJECT_STATE.md` for the current state.
+> **This checkpoint has been superseded.** Its historical facts remain here; current operational state is owned by `docs/governance/current-state.json`. G28-C was `CLOSED / ACCEPTED_WITH_NONBLOCKING_AUTHENTICATED_BROWSER_SMOKE_DEBT`; G28-D discovery was `COMPLETED / BLOCKED_BY_MISSING_DEPLOYMENT_DEFINITION`; G28-B8 was subsumed by the acceptance of G28-C.
 
 **Date:** 2026-07-14 (HISTORICAL)
 **Technical baseline:** `9ef61e1896af631bc5aeeced4af93c77051f4de4` (branch `work/g28-document-qualification`; clean worktree before B8 implementation).
@@ -78,10 +78,13 @@ Organize the evolution of the Documents front without breaking the already-conso
 - auditable implementation sequence;
 - future backlog for access, backup, and external collaboration.
 
-This plan must be read together with:
+For current execution, validate Git, read and validate
+`docs/governance/current-state.json`, follow its governing pointers, and then
+read this plan with the applicable contract. Generated roots are optional
+compatibility views.
 
-- `PROJECT_STATE.md`;
-- `AGENT_HANDOFF.md`;
+- `docs/governance/current-state.json`;
+- `docs/governance/AGENT_INSTRUCTIONS.md`;
 - `docs/architecture/PEDIDO_OP_MOVIMENTACAO_DOCUMENTOS_PLANO.md`;
 - architecture documents referenced by those files;
 - versioned visual contract, when created;
@@ -93,10 +96,10 @@ This plan must be read together with:
 
 ## 0.1 Canonical sources
 
-Before any diagnosis, implementation, migration, UI, or integration, the IAsup must read:
+Before any diagnosis, implementation, migration, UI, or integration, the IAsup must:
 
-1. `PROJECT_STATE.md`;
-2. `AGENT_HANDOFF.md`;
+1. validate Git;
+2. read and validate `docs/governance/current-state.json`;
 3. `services/documents-ingestor/PROJECT_STATE.md`;
 4. `docs/architecture/PEDIDO_OP_MOVIMENTACAO_DOCUMENTOS_PLANO.md`;
 5. this plan;
@@ -1064,9 +1067,9 @@ admin RLS, without a second Supabase client and without writes.
 - definitive decisions, final evidence, accepted HEADs, and closure are only entered
   after the applicable technical/architectural acceptance;
 - IAexec **does not** declare its own work `CLOSED`;
-- `PROJECT_STATE.md` records the current state (phase, HEAD, publication, environment);
+- `docs/governance/current-state.json` records current operational facts; Git owns HEAD and worktree facts;
 - this plan records the sequence and the decisions;
-- `AGENT_HANDOFF.md` records operational continuity.
+- regenerate `PROJECT_STATE.md` and `AGENT_HANDOFF.md` through canonical tooling when their structured sources change; never edit them as independent owners.
 
 Recording the state during execution does not anticipate acceptance: closure
 (`CLOSED`) and publication (`PUBLISHED`) depend on the applicable review.
@@ -1083,7 +1086,7 @@ was explicitly reclassified by the architect as `DEFERRED UNTIL
 GLOBAL BACKLOG COMPLETION / NOT A CURRENT STAGING BLOCKER / NOT STARTED` —
 not discovered, defined, tested, or completed, merely postponed until the
 full canonical backlog is reconciled. See the header of this plan and
-`PROJECT_STATE.md`. The historical decisions on Documento↔Pedido cardinality,
+`docs/governance/current-state.json`. The historical decisions on Documento↔Pedido cardinality,
 Documento↔OP, per-type links, and compatibility were resolved in the accepted
 phases G28-B1 through G28-B8 and G28-C, and are no longer open.
 The plan will be considered fully closed when:
@@ -1098,7 +1101,7 @@ The plan will be considered fully closed when:
 # NEXT ACTION — CURRENT STATE (HISTORICAL SNAPSHOT — SUPERSEDED)
 
 > **Historical record (2026-07-15 reconciliation), superseded.** The live current
-> phase and next authorizable action are owned solely by `PROJECT_STATE.md`; the
+> phase and next authorizable action are now owned solely by `docs/governance/current-state.json`; the
 > `NEXT_AUTHORIZABLE_ACTION` value in this section is not current. Retained for
 > chronology only.
 
@@ -1129,7 +1132,7 @@ G28-D discovery: `COMPLETED` (evidence preserved in `docs/releases/G28_D_RELEASE
 rewritten). G28-D publication: `DEFERRED BY ARCHITECT / NOT A CURRENT BLOCKER / NOT AUTHORIZED`.
 Later phases: `DEFERRED / NOT AUTHORIZED`.
 
-Current operational state: `PROJECT_STATE.md`.
-Continuity: `AGENT_HANDOFF.md`.
+Current operational state: `docs/governance/current-state.json`.
+Continuity compatibility view: generated `AGENT_HANDOFF.md`, with no independent authority.
 Closeout history: `docs/ledgers/G28_LEDGER.md`.
 Architecture/backlog: this master plan.

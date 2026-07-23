@@ -183,7 +183,7 @@ Pedido
 | **J** | Smart balance per stage and transactional lock: prevent one stage from consuming more than the previous one produced. | F | **Future / not sequenced / not started / not authorized** (transactional balance lock per stage; see `PEDIDO_OP_SCHEMA_CONTRACT.md` §7). |
 | **L** | OP backend lifecycle: expanded status (`pausada`/`concluida`/`cancelada`), `op_eventos` table, event trigger, RPC `alterar_status_op` (admin-only, R1). Migration `db/21_op_lifecycle_status_eventos.sql` applied in staging `ucrjtfswnfdlxwtmxnoo`. | — | **[x] Completed** (backend applied in staging; next: OP lifecycle UI) |
 
-> **Reconciliation `DOCS-PEDIDO-OP-LEGACY-PLAN-STATUS-CONSISTENCY-R1` (docs-only):** the Status column of Phases D–J was reconciled with the current authorities — D/E/F **delivered** via the accepted production flow; G/H/I **superseded** by the canonical G28 documentation pipeline; J **future/not sequenced/not started/not authorized**. No change to code, runtime, or behavior; dated decisions and historical records remain preserved. **Live current phase and next authorizable action are owned solely by `PROJECT_STATE.md`; this note carries no live current-state value** (its former `ACTIVE_PHASE`/`NEXT_AUTHORIZABLE_ACTION` tokens are a historical 2026-07 reconciliation snapshot, superseded).
+> **Reconciliation `DOCS-PEDIDO-OP-LEGACY-PLAN-STATUS-CONSISTENCY-R1` (docs-only):** the Status column of Phases D–J was reconciled with the current authorities — D/E/F **delivered** via the accepted production flow; G/H/I **superseded** by the canonical G28 documentation pipeline; J **future/not sequenced/not started/not authorized**. No change to code, runtime, or behavior; dated decisions and historical records remain preserved. **Live current phase and next authorizable action are owned solely by `docs/governance/current-state.json`; this note carries no live current-state value** (its former `ACTIVE_PHASE`/`NEXT_AUTHORIZABLE_ACTION` tokens are a historical 2026-07 reconciliation snapshot, superseded).
 
 ---
 
@@ -200,9 +200,9 @@ Whenever there is evolution, a decision, a block, a partial conclusion, or the c
    - Identified pendencies.
    - New or mitigated risks.
    - Recommended next step.
-3. **Update `PROJECT_STATE.md`** with the record of the completed phase.
-4. **Update `AGENT_HANDOFF.md`** with the summary for the next session.
-5. **Expose in the handoff** that the next chat must consult this plan before any action.
+3. **Update `docs/governance/current-state.json`** when current operational facts change.
+4. **Regenerate `PROJECT_STATE.md` and `AGENT_HANDOFF.md`** through canonical tooling; never edit either as an independent owner.
+5. **Expose through structured continuity and the generated handoff** that the next executor must consult this plan when applicable.
 6. **Never** implement without first consulting this plan.
 7. **Never** close a stage without updating this plan.
 
@@ -262,8 +262,8 @@ Every phase of this front must record upon closing:
 - Files changed/created.
 - Decisions recorded.
 - This plan updated.
-- `PROJECT_STATE.md` updated.
-- `AGENT_HANDOFF.md` updated.
+- Canonical structured current state updated when operational facts changed.
+- Generated `PROJECT_STATE.md` and `AGENT_HANDOFF.md` regenerated through canonical tooling when affected.
 - Recommended next steps.
 
 ---

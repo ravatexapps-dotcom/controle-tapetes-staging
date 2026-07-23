@@ -10,8 +10,9 @@
 > architect's decisions in `CAMADA2-USUARIOS-SPEC-MATERIALIZE-R1`.
 > **Functional/visual reference:** `D:\OneDrive\Programação\SGAA_clean_baseline`
 > (unrelated Flask/SQLite project — see caveat below).
-> **Not a source of current state.** Operational state lives in
-> `PROJECT_STATE.md`; continuity in `AGENT_HANDOFF.md`; history in
+> **This document owns no current operational state.** Operational state is
+> owned by `docs/governance/current-state.json`; `PROJECT_STATE.md` and
+> `AGENT_HANDOFF.md` are generated compatibility views only; history is retained in
 > `docs/ledgers/G28_LEDGER.md`.
 
 ---
@@ -519,7 +520,7 @@ time (permanent project rule: phases do not chain automatically).
 
 ---
 
-## Refactor governance (§16 CODE_HEALTH_RULES.md)
+## HISTORICAL CHECKPOINT — Refactor governance (§16 CODE_HEALTH_RULES.md)
 
 `docs/refactor/ARCHITECTURE_REFACTOR_LEDGER.md` becomes part of the
 mandatory closeout artifacts for **A3.1** (new structural module:
@@ -532,7 +533,7 @@ require an entry in this ledger — only the standard closeout artifacts
 
 ---
 
-## STRUCTURAL POLICY COMPLIANCE
+## HISTORICAL CHECKPOINT — STRUCTURAL POLICY COMPLIANCE
 
 - **Canonical files read:** `docs/reports/BACKLOG_RECONCILIATION_R1_2026-07-15.md` §1,
   `docs/architecture/CODE_HEALTH_RULES.md` (in full, 18 rules),

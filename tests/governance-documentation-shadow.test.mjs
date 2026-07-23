@@ -8,10 +8,42 @@ import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { validateRepository, validateWithReader } from '../scripts/governance/validate-documentation-shadow.mjs';
 import { commitReader } from '../scripts/governance/git-content-reader.mjs';
+import { buildDocumentManifest } from '../scripts/governance/build-document-source-manifest.mjs';
+import { renderViews } from '../scripts/governance/render-documentation-shadow.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const live = commitReader(ROOT, 'fa986cf935abbf053172cfd549b0171bb9446f58');
 const files = new Map(live.listFiles().filter(relativePath => live.exists(relativePath)).map(relativePath => [relativePath, live.readText(relativePath)]));
+const currentRendererViews = renderViews(
+  JSON.parse(files.get('docs/governance/catalog/documents.json')),
+  JSON.parse(files.get('docs/governance/traceability/purchase-order-phase-c.json'))
+);
+files.set('docs/governance/shadow/generated/DOCUMENTATION_INDEX.md', currentRendererViews.documentationIndex);
+files.set('docs/governance/shadow/generated/ORDEM_COMPRA_C3_TRACEABILITY.md', currentRendererViews.traceability);
+const normalizedReader = {
+  mode: 'memory',
+  listFiles: () => [...files.keys()].sort(),
+  exists: relativePath => files.has(relativePath),
+  readText: relativePath => files.get(relativePath),
+  objectId: relativePath => gitBlobId(files.get(relativePath) ?? '')
+};
+const normalizedManifest = buildDocumentManifest(normalizedReader);
+files.set('docs/governance/catalog/document-source-manifest.json', JSON.stringify(normalizedManifest, null, 2) + '\n');
+const normalizedCatalog = JSON.parse(files.get('docs/governance/catalog/documents.json'));
+const normalizedByPath = new Map(normalizedManifest.documents.map(document => [document.path, document]));
+normalizedCatalog.artifacts = normalizedCatalog.artifacts.map(artifact => {
+  const document = normalizedByPath.get(artifact.path);
+  return !document || artifact.content_hash === null ? artifact : {
+    ...artifact,
+    content_hash: document.sha256,
+    line_count: document.line_count,
+    byte_count: document.byte_count,
+    inbound_references: document.inbound_references.length,
+    outbound_references: document.outbound_references.length,
+    generated_status: document.generated_status
+  };
+});
+files.set('docs/governance/catalog/documents.json', JSON.stringify(normalizedCatalog, null, 2) + '\n');
 const manifest = JSON.parse(files.get('docs/governance/catalog/document-source-manifest.json'));
 const baseObjects = new Map(manifest.documents.map(document => [document.path, document.git_object_id]));
 

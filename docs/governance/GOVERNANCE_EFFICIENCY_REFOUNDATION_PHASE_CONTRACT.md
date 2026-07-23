@@ -4,7 +4,7 @@
 PHASE_ID: GOVERNANCE-EFFICIENCY-REFOUNDATION
 <!-- MATERIAL_PHASE_CONTRACT:END -->
 
-STATUS: ACTIVE / UNIT 4 CLOSED / UNIT 5 DIAGNOSIS NEXT AUTHORIZABLE
+STATUS: ACTIVE / UNIT 4 CLOSED / UNIT 5 DIAGNOSIS PRECONDITION CORRECTED / R2 NEXT AUTHORIZABLE
 
 UNIT 1 STATUS: CLOSED / ACCEPTED / DIRECTLY VERIFIED
 
@@ -47,7 +47,7 @@ UNIT 4C REQUIRED PARENT: fa986cf935abbf053172cfd549b0171bb9446f58
 UNIT 4C CUTOVER ID: GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-4C-AUTHORITY-CUTOVER-R1
 AUTHORITY EPOCH: 1
 UNIT 4D ACCEPTANCE: CLOSED / ACCEPTED / DIRECTLY VERIFIED
-UNIT 5: NOT AUTHORIZED / DIAGNOSIS NEXT AUTHORIZABLE
+UNIT 5: NOT AUTHORIZED / DIAGNOSIS R2 NEXT AUTHORIZABLE
 
 DOCUMENTARY-AUTHORITY CUTOVER: CLOSED / ACCEPTED / DIRECTLY VERIFIED
 
@@ -191,3 +191,16 @@ and the documentary-authority cutover are accepted. Authority epoch `1`, the
 cutover ID `GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-4C-AUTHORITY-CUTOVER-R1`, and the original PONR remain unchanged. No second
 activation or rollback occurred. Recovery remains forward-only. Unit 5 requires
 its own order; only read-only diagnosis `GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-5-LEGACY-DEPRECATION-AND-POST-CUTOVER-AUDIT-DIAGNOSIS-R1` is next authorizable.
+
+## Unit 5 diagnosis precondition authority-consumer forward correction
+
+Unit 5 diagnosis R1 hard-stopped read-only after residual active authority
+contradictions were confirmed. R1 and R2 correction attempts made zero writes.
+The R3 pre-write inventory inspected all 25 ACTIVE/NORMATIVE artifacts and
+classified 188 semantic matches. Nine authored consumers and one historical
+shadow renderer were corrected through this bounded forward correction.
+
+Authority epoch remains `1`; Unit 4 remains closed, accepted, and directly
+verified. No second activation or rollback occurred. Unit 5 implementation
+remains unauthorized. Read-only diagnosis `GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-5-LEGACY-DEPRECATION-AND-POST-CUTOVER-AUDIT-DIAGNOSIS-R2` is next authorizable
+after direct review; this correction does not claim that diagnosis is complete.

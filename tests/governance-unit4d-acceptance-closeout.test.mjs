@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import test from 'node:test';
@@ -25,15 +26,21 @@ import {
 } from '../scripts/governance/unit4-canonical-json.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const CLOSEOUT = 'e88194cf6681d7aff154b22b4360e27b6d6e6dad';
 const readText = relativePath => fs.readFileSync(path.join(ROOT, relativePath), 'utf8');
-const readJson = relativePath => JSON.parse(readText(relativePath));
-const state = readJson('docs/governance/current-state.json');
-const catalog = readJson('docs/governance/catalog/documents.json');
-const traceability = readJson('docs/governance/traceability/purchase-order-phase-c.json');
-const cutover = readJson('docs/governance/cutover/unit4c-cutover-manifest.json');
-const unit4Contract = readText(
+const readCommitText = relativePath => execFileSync(
+  'git',
+  ['show', `${CLOSEOUT}:${relativePath}`],
+  { cwd: ROOT, encoding: 'utf8', maxBuffer: 16 * 1024 * 1024 }
+);
+const readCommitJson = relativePath => JSON.parse(readCommitText(relativePath));
+const state = readCommitJson('docs/governance/current-state.json');
+const catalog = readCommitJson('docs/governance/catalog/documents.json');
+const traceability = readCommitJson('docs/governance/traceability/purchase-order-phase-c.json');
+const cutover = readCommitJson('docs/governance/cutover/unit4c-cutover-manifest.json');
+const unit4Contract = readCommitText(
   'docs/governance/GOVERNANCE_EFFICIENCY_REFOUNDATION_UNIT_4_AUTHORITY_CUTOVER_CONTRACT.md');
-const phaseContract = readText(
+const phaseContract = readCommitText(
   'docs/governance/GOVERNANCE_EFFICIENCY_REFOUNDATION_PHASE_CONTRACT.md');
 
 const POSITIVE = [
@@ -100,6 +107,7 @@ const stateFailure = mutate => {
 };
 const validation = validateCloseout({
   root: ROOT,
+  commit: CLOSEOUT,
   activationCommit: ACTIVATION,
   acceptedCorrection: CORRECTION
 });
@@ -145,7 +153,9 @@ const negativeChecks = new Map([
   })],
   [NEGATIVE[14], () => {
     const rendered = renderCanonicalViews(state, catalog, traceability);
-    return `${rendered['PROJECT_STATE.md']}\nDRIFT\n` === readText('PROJECT_STATE.md') ? [] : ['root drift'];
+    return `${rendered['PROJECT_STATE.md']}\nDRIFT\n` === readCommitText('PROJECT_STATE.md')
+      ? []
+      : ['root drift'];
   }],
   [NEGATIVE[15], () => stateFailure(value => {
     value.state.bounded_recent_ledger_references = value.state.bounded_recent_ledger_references
@@ -199,7 +209,7 @@ test('deterministic identities and generated roots are exact', () => {
   assert.deepEqual(first, renderCanonicalViews(state, catalog, traceability));
   assert.doesNotThrow(() => validateRenderedViews(first));
   for (const [relativePath, text] of Object.entries(first)) {
-    assert.equal(readText(relativePath).replace(/\r\n?/gu, '\n'), text);
+    assert.equal(readCommitText(relativePath).replace(/\r\n?/gu, '\n'), text);
   }
 });
 

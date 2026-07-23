@@ -110,8 +110,9 @@
 > here.
 > **Classification:** Contract (design, ratified) — same category as
 > `docs/architecture/CAMADA3_BACKUP_CONTRACT.md` and
-> `docs/architecture/CAMADA2_USUARIOS_SPEC_PROPOSED.md`. Subject to
-> `docs/DOCUMENTATION_INDEX.md` §1/§1d classification once registered.
+> `docs/architecture/CAMADA2_USUARIOS_SPEC_PROPOSED.md`. Classification is
+> owned by `docs/governance/catalog/documents.json`;
+> `docs/DOCUMENTATION_INDEX.md` is its generated compatibility view.
 >
 > **AMENDED 2026-07-18 (`ORDEM-COMPRA SPEC AMENDMENT`, architect decision):**
 > §6 (UI surface) and §8 (phasing) carry an architect amendment — receipt
@@ -1299,8 +1300,9 @@ receipt history; or fabricate reverse administrative events to simulate rollback
   `tests/ordem-compra-admin.matrix.sql` (or an equivalent DB matrix) for the writers;
   additions to `tests/op-nova.smoke.js` asserting the reader is summary-only (no inline
   emit/cancel) and links out.
-- **Canonical closeout docs:** `PROJECT_STATE.md`, `AGENT_HANDOFF.md`,
-  `docs/ledgers/G28_LEDGER.md`, and this spec.
+- **Canonical closeout owners:** `docs/governance/current-state.json`,
+  `docs/ledgers/G28_LEDGER.md`, and this spec. `PROJECT_STATE.md` and
+  `AGENT_HANDOFF.md` are regenerated compatibility views.
 - **`PEDIDO_OP_SCHEMA_CONTRACT.md` §6.2:** corrected in **this** contract phase
   (REFUND-B1-CONTRACT-R1), not deferred — see the §6.2 edit.
 

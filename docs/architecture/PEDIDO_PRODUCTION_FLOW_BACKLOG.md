@@ -5,7 +5,7 @@
 > `Status:` / `NEXT_AUTHORIZABLE_ACTION:` / "next authorizable action" / "current
 > state" statements inside those blocks are **historical and superseded** — the
 > sole owner of the live current phase, next authorizable action, and debts is
-> `PROJECT_STATE.md`. Phase sequence, dependencies, backlog items, and accepted
+> `docs/governance/current-state.json`. Phase sequence, dependencies, backlog items, and accepted
 > architecture in this file remain authoritative; live operational status does not.
 
 # Update 2026-07-22 - CLEAN-SLATE-TRANSACTIONAL-RESET-EXECUTION-ACCEPTANCE-CLOSEOUT-R1 (direct supervisor acceptance of the executed clean-slate shared-development reset; checkpoint 770772548baf04c52e9ef020ff94f8bdabf77f03 ACCEPTED / DIRECTLY VERIFIED; phase CLOSED; documentation-only closeout commit)
@@ -2408,8 +2408,9 @@ Each modal opened by the stepper arrows in the Pedido Detail must display:
    are never a push target.
 5. **Selective staging**: `git add` only the phase's files; never
    `git add .`.
-6. **Update `AGENT_HANDOFF.md` at the end** of each phase, recording the
-   post-phase state, changed files, tests, and next step.
+6. **Update canonical structured state when operational facts change**, then
+   regenerate `AGENT_HANDOFF.md` through canonical tooling; never edit the
+   generated handoff as an independent owner.
 7. **Push only to `staging`**: `git push staging work/app-next`.
 8. **Branch**: always `work/app-next`.
 9. **Allowed residual**: `?? supabase/.temp/` — never committed.
@@ -2473,8 +2474,9 @@ Each modal opened by the stepper arrows in the Pedido Detail must display:
 - `tests/production-flow-invariants.smoke.js` — Production flow invariants
 - `docs/architecture/PEDIDO_OP_MOVIMENTACAO_DOCUMENTOS_PLANO.md` — Architectural plan
 - `docs/architecture/PEDIDO_OP_SCHEMA_CONTRACT.md` — Schema contract
-- `PROJECT_STATE.md` — **Sole owner of live current state** (phase, next action, debts, accepted-phase index)
-- `AGENT_HANDOFF.md` — Derived operational handoff (continuity only; not a current-state owner)
+- `docs/governance/current-state.json` — **Sole owner of live current operational state** (phase, next action, debts, accepted-checkpoint index)
+- `AGENT_HANDOFF.md` — Deterministic generated compatibility view sourced from canonical structured state; no independent continuity or current-state facts
+- `docs/governance/catalog/documents.json` — Documentation-classification and canonical-path owner
 ## 9. Admin Backlog — Operational Validation
 
 Phase: `RAVATEX-TAPETES-ADMIN-FLOW-BACKLOG-SYNC-A`

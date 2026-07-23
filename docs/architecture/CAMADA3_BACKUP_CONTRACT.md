@@ -11,8 +11,9 @@
 > three scope/trigger/destination decisions incorporated below.
 > **Precedent:** `docs/architecture/CAMADA2_USUARIOS_SPEC_PROPOSED.md`
 > (spec format, subphase/gate table, module-plan style).
-> **Not a source of current state.** Operational state lives in
-> `PROJECT_STATE.md`; continuity in `AGENT_HANDOFF.md`; history in
+> **Not a source of current state.** Operational state is owned by
+> `docs/governance/current-state.json`; `AGENT_HANDOFF.md` is a generated
+> compatibility view sourced from structured state with no independent authority; history is in
 > `docs/ledgers/G28_LEDGER.md`.
 
 ---

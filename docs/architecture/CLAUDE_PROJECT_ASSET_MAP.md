@@ -4,11 +4,13 @@
 > `.claude` structure). **Not a source of current state, not an arbiter
 > of documentation authority, and does not define HEAD, branch, next phase, or
 > operational status.**
-> **Documentation authority:** `docs/DOCUMENTATION_INDEX.md` §1.
+> **Documentation classification and canonical paths:** `docs/governance/catalog/documents.json`.
 > **Governance model:** `docs/governance/DOCUMENTATION_MODEL.md`.
-> **Current operational state:** `PROJECT_STATE.md`. **Active handoff:**
-> `AGENT_HANDOFF.md`. **Branch, HEAD, working tree, staging, and divergence:**
-> consult Git directly.
+> **Current operational state:** `docs/governance/current-state.json`.
+> **Repository-agent bootstrap:** `docs/governance/AGENT_INSTRUCTIONS.md`.
+> `PROJECT_STATE.md`, `AGENT_HANDOFF.md`, and `docs/DOCUMENTATION_INDEX.md`
+> are optional generated compatibility views with no independent authority.
+> **Branch, HEAD, working tree, staging, and divergence:** consult Git directly.
 > **Record commit (historical, not canonical):** `bdb2fa3b05361c761d55506192483fe4d8be5034`
 > (`G28-P0`, when the inventory was made). Do not treat it as the current state.
 > **Original workspace (quarantine, read-only):** `D:\OneDrive\Programação\Ravatex\controle-tapetes`
@@ -17,16 +19,16 @@ This map records where the project's assets live, which ones are useful by
 task type, and which assets need to be promoted from `.claude` to
 versioned documentation. It exists so that any new worktree knows what
 to read before acting — including when the `.claude` folder **does not exist**
-in it (see §13). **Authority over which document prevails over which belongs
-to `docs/DOCUMENTATION_INDEX.md` §1 and to
-`docs/governance/DOCUMENTATION_MODEL.md`, not to this map.**
+in it (see §13). **Documentation-governance semantics belong to
+`docs/governance/DOCUMENTATION_MODEL.md`; classification and canonical paths
+belong to `docs/governance/catalog/documents.json`, not to this map.**
 
 ---
 
 ## 1. Document inventory by category
 
-> **Documentation authority:** the single authority list is at
-> `docs/DOCUMENTATION_INDEX.md` §1, and the governance model at
+> **Documentation classification and canonical paths:** the structured owner is
+> `docs/governance/catalog/documents.json`, and the governance model is
 > `docs/governance/DOCUMENTATION_MODEL.md`. The table below is a
 > **location and category inventory**, not a precedence list
 > nor a source of current state.
@@ -35,15 +37,16 @@ to `docs/DOCUMENTATION_INDEX.md` §1 and to
 reading order before every task, and it is **not** an arbiter of
 authority:
 
-- the **initial gate** for any task is `PROJECT_STATE.md` + `AGENT_HANDOFF.md`
-  + the applicable plan;
+- the **initial gate** is to validate Git, read and validate
+  `docs/governance/current-state.json`, follow its governing pointers, and read
+  the applicable plan or contract;
 - §11 defines the specific readings by task type;
 - the remaining references are read when they affect the task's scope.
 
 | Document | Category / location |
 |---|---|
-| `PROJECT_STATE.md` (root) | Current operational state by front (consult the file; do not copy HEAD/staging as permanent truth). |
-| `AGENT_HANDOFF.md` (root) | Handoff for the next session. |
+| `PROJECT_STATE.md` (root) | Optional generated compatibility view of `docs/governance/current-state.json`; no independent authority. |
+| `AGENT_HANDOFF.md` (root) | Optional generated compatibility handoff sourced from canonical structured state; no independent authority. |
 | `services/documents-ingestor/PROJECT_STATE.md` | Technical context of the Documents Ingestor service. |
 | `docs/architecture/DOCUMENTOS_VALIDACAO_VINCULOS_E_EVOLUCAO_PLANO.md` | **Master plan** for the documentation front (Camadas 0–4, sequence, backlog, phase matrix, hard stops). |
 | `docs/architecture/PEDIDO_OP_MOVIMENTACAO_DOCUMENTOS_PLANO.md` | Persistent plan Pedido ↔ OP ↔ Movimentação ↔ Documentos. |
@@ -53,7 +56,10 @@ authority:
 | `docs/architecture/DOCUMENTS_INGESTOR_CONSUMER_DESIGN.md` | Contract for the Controle's reader over the Ingestor. |
 | `docs/architecture/CLAUDE_PROJECT_ASSET_MAP.md` | **This map** — asset inventory; not documentation authority. |
 | `docs/architecture/UI_VISUAL_CONTRACT.md` | **Versioned visual contract** (consolidation of the `.claude/design-skill` skill). |
-| `docs/DOCUMENTATION_INDEX.md` | **Arbiter of documentation authority and classification** (single authority list in §1). |
+| `docs/DOCUMENTATION_INDEX.md` | Generated compatibility view of `docs/governance/catalog/documents.json`; no independent authority. |
+| `docs/governance/catalog/documents.json` | Canonical documentation-classification and canonical-path owner. |
+| `docs/governance/current-state.json` | Canonical current operational-state owner. |
+| `docs/governance/AGENT_INSTRUCTIONS.md` | Canonical repository-agent bootstrap instructions. |
 | `docs/governance/DOCUMENTATION_MODEL.md` | **Documentation governance model.** |
 
 ## 2. Persistent plans
@@ -69,14 +75,14 @@ authority:
 
 | File | Scope | Format |
 |---|---|---|
-| `PROJECT_STATE.md` (root) | Controle de Tapetes monorepo | Reverse-chronological log (most recent block at the top). |
+| `PROJECT_STATE.md` (root) | Controle de Tapetes monorepo | Deterministic generated compatibility view; no independent state ownership. |
 | `services/documents-ingestor/PROJECT_STATE.md` | Documents Ingestor service | Reverse-chronological log. |
 
 ## 4. Handoff files
 
 | File | Scope |
 |---|---|
-| `AGENT_HANDOFF.md` (root) | Handoff for the monorepo's next session. Most recent section at the top, separated by `---`. |
+| `AGENT_HANDOFF.md` (root) | Deterministic generated compatibility handoff sourced from canonical structured state. |
 
 ## 5. Inventory of the `.claude` folder
 
@@ -108,7 +114,7 @@ contain credentials, authentication tokens, keys, or secrets — the files calle
 | `tokens/typography.css` | untracked | Typography design tokens | visual reference | Partial | No | No | REFERENCE_ONLY |
 | `preview/*.html` | untracked | Real render harness (tecelagem/acabamento/op-aberta) | example / verification | No | No | No | KEEP_LOCAL (visual verification harness) |
 | `preview/screenshots/*.png` | untracked | Visual evidence of the pilots | visual reference | No | No | No | KEEP_LOCAL |
-| `launch.json` | **tracked** | Local preview config (`python -m http.server 8765`) | local configuration | No | Yes (local runtime) | Yes (present in this worktree) | TRACKED — authority NONE (tooling pointer; see `docs/DOCUMENTATION_INDEX.md` §1d) |
+| `launch.json` | **tracked** | Local preview config (`python -m http.server 8765`) | local configuration | No | Yes (local runtime) | Yes (present in this worktree) | TRACKED — authority NONE (tooling pointer; classification is owned by `docs/governance/catalog/documents.json`) |
 | `settings.local.json` | untracked | Machine permission allowlist (no secrets) | local configuration / machine-specific | No | Yes (local path) | No | KEEP_LOCAL |
 
 > No sensitive content was found; therefore no row is marked as
@@ -164,7 +170,7 @@ visual contract prevails. A skill cannot contradict the architecture.
 **Snapshot of G28-P0 — not a permanent operational source.** The state of the
 migrations below is a snapshot of the moment of recording:
 
-- the current state must be confirmed in `PROJECT_STATE.md`, in the application
+- the current state must be confirmed in `docs/governance/current-state.json`, in the application
   evidence, and in the target environment;
 - "Applied" here means "reported applied in the G28-P0 snapshot," not a
   permanent guarantee;
@@ -193,7 +199,7 @@ migrations below is a snapshot of the moment of recording:
 
 | Task type | Mandatory reading before |
 |---|---|
-| Any phase | §1 (document inventory) + `PROJECT_STATE.md` + `AGENT_HANDOFF.md` |
+| Any phase | Validate Git + `docs/governance/AGENT_INSTRUCTIONS.md` + validated `docs/governance/current-state.json` + its applicable governing pointers |
 | Documentos front | Master plan + `PEDIDO_OP_MOVIMENTACAO_DOCUMENTOS_PLANO.md` + `DOCUMENTS_INGESTOR_CONSUMER_DESIGN.md` + `services/documents-ingestor/PROJECT_STATE.md` |
 | Schema / migration | `PEDIDO_OP_SCHEMA_CONTRACT.md` + `CODE_HEALTH_RULES.md` + §10 contracts |
 | UI / modal / table / card | `UI_VISUAL_CONTRACT.md` + `css/tokens.css` + skill `.claude/design-skill` (when present) + §9 pilots |
@@ -202,8 +208,8 @@ migrations below is a snapshot of the moment of recording:
 
 ## 12. Functional use of sources (guidance, not authority)
 
-> **Authority and precedence:** `docs/DOCUMENTATION_INDEX.md` §1 is the single
-> active authority list; `docs/governance/DOCUMENTATION_MODEL.md` §11
+> **Classification and canonical paths:** `docs/governance/catalog/documents.json`
+> is the structured owner; `docs/governance/DOCUMENTATION_MODEL.md` §11
 > defines which document to update per phase event. The text below is
 > **usage guidance** (what type of question each document helps
 > resolve), not a competing precedence list.
@@ -213,10 +219,10 @@ document whose **scope** matches the question — not its position in a list:
 
 - **current explicit decision from the IAlead/architect** — resolves reserved decisions and supersession;
 - **domain architectural contract** — resolves invariants and semantics;
-- **`PROJECT_STATE.md`** — resolves phase, publication, environment, and current state;
+- **`docs/governance/current-state.json`** — owns phase, publication, environment, and current operational state;
 - **applicable persistent plan** — resolves sequence, dependencies, and backlog;
 - **task-specific contract** (UI, schema, integration, other technical domain) — resolves the corresponding technical domain;
-- **`AGENT_HANDOFF.md`** — resolves operational continuity, without creating architecture;
+- **`AGENT_HANDOFF.md`** — optional generated compatibility handoff sourced from canonical structured state; no independent authority;
 - **skill** — guides execution, without altering the contract;
 - **agent preference** — does not create a rule.
 
@@ -263,7 +269,7 @@ are not in `.gitignore` and exist only in the original workspace). Consequences:
 ---
 
 > **This map is an asset location inventory; it is not an arbiter of
-> > documentation authority.** Authority belongs to
-> > `docs/DOCUMENTATION_INDEX.md` §1. This map must be consulted at the
+> > documentation authority.** Classification and canonical-path ownership belong
+> > to `docs/governance/catalog/documents.json`. This map must be consulted at the
 > > start of each phase and updated when entrypoints, contracts, or the
 > > `.claude` structure change.

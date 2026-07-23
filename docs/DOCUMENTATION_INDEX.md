@@ -7,7 +7,7 @@ RENDERER: scripts/governance/render-unit4-canonical-views.mjs
 SCHEMA_VERSION: 2.0.0
 AUTHORITY_EPOCH: 1
 CUTOVER_ID: GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-4C-AUTHORITY-CUTOVER-R1
-SOURCE_PAYLOAD_SHA256: 1373f5afc51dccfcde5013ff362b60dbc70a9f257a86c5c45055797a2dd133fb
+SOURCE_PAYLOAD_SHA256: 99d0e6f93fdd42b0cad6eedfb44ea8980e00736b3f6caafeaa45e0fa9cf359ae
 
 <!-- GOVERNANCE_GENERATED_VIEW:END -->
 
@@ -161,3 +161,6 @@ This generated view owns no classifications. Normative governance semantics rema
 | DOC-UNIT4D-BUILDER | `scripts/governance/build-unit4d-acceptance-closeout.mjs` | GOVERNANCE_TOOLING | IMPLEMENTATION | KEEP_CANONICAL |
 | DOC-UNIT4D-VALIDATOR | `scripts/governance/validate-unit4d-acceptance-closeout.mjs` | GOVERNANCE_TOOLING | IMPLEMENTATION | KEEP_CANONICAL |
 | DOC-UNIT4D-TESTS | `tests/governance-unit4d-acceptance-closeout.test.mjs` | GOVERNANCE_TEST | EVIDENCE_ONLY | KEEP_CANONICAL |
+| DOC-UNIT5-PRECONDITION-BUILDER | `scripts/governance/build-unit5-precondition-correction.mjs` | GOVERNANCE_TOOLING | IMPLEMENTATION | KEEP_CANONICAL |
+| DOC-UNIT5-PRECONDITION-VALIDATOR | `scripts/governance/validate-canonical-authority-consumers.mjs` | GOVERNANCE_TOOLING | IMPLEMENTATION | KEEP_CANONICAL |
+| DOC-UNIT5-PRECONDITION-TESTS | `tests/governance-canonical-authority-consumers.test.mjs` | GOVERNANCE_TEST | EVIDENCE_ONLY | KEEP_CANONICAL |

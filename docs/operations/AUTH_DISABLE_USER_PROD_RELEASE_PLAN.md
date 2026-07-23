@@ -402,5 +402,6 @@ git push origin --force <commit-anterior>:main
 - `supabase/functions/admin-create-user/README.md` — documentation of the creation Edge Function.
 - `supabase/functions/admin-disable-user/README.md` — documentation of the disable Edge Function.
 - `scripts/staging/admin-disable-user-e2e.mjs` — staging E2E runner (reference for production).
-- `PROJECT_STATE.md` — canonical project snapshot.
-- `AGENT_HANDOFF.md` — accepted state for resumption.
+- `docs/governance/current-state.json` — canonical current operational state.
+- `PROJECT_STATE.md` — generated compatibility view of canonical structured state.
+- `AGENT_HANDOFF.md` — generated compatibility handoff with no independent authority.

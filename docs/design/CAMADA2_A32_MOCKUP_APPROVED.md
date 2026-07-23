@@ -8,7 +8,9 @@
 > untouched by this phase.
 > Reference implementation: `js/screens/admin-usuarios.js`
 > (`kpiCard`, `tipoBadge`, toolbar in `renderStandalone()`).
-> Not a source of state — operational state lives in `PROJECT_STATE.md`.
+> Not a source of state — operational state is owned by
+> `docs/governance/current-state.json`; `PROJECT_STATE.md` is a generated
+> compatibility view.
 
 ---
 

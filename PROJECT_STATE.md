@@ -7,7 +7,7 @@ RENDERER: scripts/governance/render-unit4-canonical-views.mjs
 SCHEMA_VERSION: 2.0.0
 AUTHORITY_EPOCH: 1
 CUTOVER_ID: GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-4C-AUTHORITY-CUTOVER-R1
-SOURCE_PAYLOAD_SHA256: 9d280ad6d7fa20ca36b391b19d288dccac02bf88de3a668079f5f3047d30d019
+SOURCE_PAYLOAD_SHA256: bc1e35f24df7301ee97ce4e75da411e2fb89d6204843e98ed7f875c8168f21eb
 
 <!-- GOVERNANCE_GENERATED_VIEW:END -->
 
@@ -18,7 +18,7 @@ This compatibility view owns no facts. `docs/governance/current-state.json` is c
 - Status: `active`
 - Authority epoch: `1`
 - Cutover ID: `GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-4C-AUTHORITY-CUTOVER-R1`
-- Active phase: `UNIT 4 CLOSED / UNIT 5 DIAGNOSIS NEXT AUTHORIZABLE`
+- Active phase: `UNIT 4 CLOSED / UNIT 5 DIAGNOSIS PRECONDITION CORRECTED / R2 NEXT AUTHORIZABLE`
 
 ## Accepted checkpoints
 
@@ -37,9 +37,9 @@ This compatibility view owns no facts. `docs/governance/current-state.json` is c
 
 ## Next authorized action
 
-- `GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-5-LEGACY-DEPRECATION-AND-POST-CUTOVER-AUDIT-DIAGNOSIS-R1`
+- `GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-5-LEGACY-DEPRECATION-AND-POST-CUTOVER-AUDIT-DIAGNOSIS-R2`
 - Mode: `READ_ONLY_DIAGNOSIS`
-- Status: `AUTHORIZABLE / NOT AUTHORIZED BY THIS CLOSEOUT`
+- Status: `AUTHORIZABLE AFTER DIRECT REVIEW / UNIT 5 IMPLEMENTATION NOT AUTHORIZED`
 
 ## Governing pointers
 
@@ -87,8 +87,8 @@ This compatibility view owns no facts. `docs/governance/current-state.json` is c
 
 ## Bounded ledger references
 
-- `G28-LEDGER-UNIT-0203` / `G28-LEDGER-PART-0012`: Unit 3 acceptance and Unit 4 contract definition
-- `G28-LEDGER-UNIT-0205` / `G28-LEDGER-PART-0012`: Unit 4A authorization and accepted readiness
+- `G28-LEDGER-UNIT-0205` / `G28-LEDGER-PART-0012`: Unit 4A accepted readiness
 - `G28-LEDGER-UNIT-0206` / `G28-LEDGER-PART-0012`: Unit 4C activation
-- `G28-LEDGER-UNIT-0207` / `G28-LEDGER-PART-0012`: Unit 4C canonical consistency forward correction
-- `G28-LEDGER-UNIT-0208` / `G28-LEDGER-PART-0012`: Unit 4D post-cutover acceptance closeout
+- `G28-LEDGER-UNIT-0207` / `G28-LEDGER-PART-0012`: Unit 4C consistency correction
+- `G28-LEDGER-UNIT-0208` / `G28-LEDGER-PART-0012`: Unit 4D acceptance
+- `G28-LEDGER-UNIT-0209` / `G28-LEDGER-PART-0012`: Unit 5 diagnosis precondition authority-consumer correction

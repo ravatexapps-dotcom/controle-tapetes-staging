@@ -489,6 +489,7 @@ expectValidationFailure('generated artifact without explicit catalog review fail
   value.artifacts = value.artifacts.filter(artifact => artifact.path !== COMPATIBILITY_PATH);
 }), `generated artifact added without explicit catalog review: ${COMPATIBILITY_PATH}`);
 
-test('acceptance-closeout event is the bounded final ledger unit', () => {
-  assert.equal(currentManifest().units.at(-1).phase_order_id, 'GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-4D-POST-CUTOVER-ACCEPTANCE-CLOSEOUT-R1');
+test('Unit 5 precondition correction is the bounded final ledger unit', () => {
+  assert.equal(currentManifest().units.at(-1).phase_order_id,
+    'GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-5-PRECONDITION-CANONICAL-AUTHORITY-CONSUMER-FORWARD-CORRECTION-R3');
 });

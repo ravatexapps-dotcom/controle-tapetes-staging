@@ -1,7 +1,8 @@
 # Purchase Order Phase-C traceability shadow view
 <!-- GENERATED SHADOW VIEW — NON-CANONICAL — DO NOT EDIT -->
 
-Canonical owner: `docs/architecture/ORDEM_COMPRA_C3_TRACEABILITY.md`. This view owns no independent facts.
+Canonical structured owner: `docs/governance/traceability/purchase-order-phase-c.json`.
+Generated compatibility view: `docs/architecture/ORDEM_COMPRA_C3_TRACEABILITY.md`. This shadow owns no independent facts.
 
 | Requirement | Normative pointers | Owner | Disposition | Blocking | Evidence pointers |
 |---|---|---|---|---|---|
