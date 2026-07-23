@@ -5,23 +5,15 @@ import process from 'node:process';
 import { fileURLToPath } from 'node:url';
 import { commitReader, validateCommit, worktreeReader } from './git-content-reader.mjs';
 import { validateSchema } from './validate-documentation-shadow.mjs';
-import {
-  activationManifestProjection,
-  jsonSha256,
-  rejectSelfReference,
-  statePayloadProjection
-} from './unit4-canonical-json.mjs';
-import {
-  CANONICAL_VIEW_PATHS,
-  renderCanonicalViews,
-  validateRenderedViews
-} from './render-unit4-canonical-views.mjs';
-
+import { activationManifestProjection, jsonSha256, rejectSelfReference, statePayloadProjection } from './unit4-canonical-json.mjs';
+import { CANONICAL_VIEW_PATHS, renderCanonicalViews, validateRenderedViews } from './render-unit4-canonical-views.mjs';
 const SCRIPT_DIR = path.dirname(fileURLToPath(import.meta.url));
 export const REPO_ROOT = path.resolve(SCRIPT_DIR, '..', '..'); export const PARENT = 'fa986cf935abbf053172cfd549b0171bb9446f58';
 export const SUBJECT = 'feat: activate structured governance authority'; export const CORRECTION_SUBJECT = 'fix: reconcile post-cutover governance authority'; export const CLOSEOUT_SUBJECT = 'docs: close Unit 4 post-cutover acceptance';
 export const CUTOVER_ID = 'GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-4C-AUTHORITY-CUTOVER-R1'; export const CONTRACT_ID = 'GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-4-BOOTSTRAP-AUTHORITY-CUTOVER-CONTRACT-R1';
 const CORRECTION_ORDER = 'GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-4C-CANONICAL-CONSISTENCY-FORWARD-CORRECTION-R1';
+const LIFECYCLE_CORRECTION_PARENT = '56675625ad2557572ee24650a5d7e0e435b02fec';
+const LIFECYCLE_CORRECTION_SUBJECT = 'fix: decouple Unit 4 validator from Unit 5 lifecycle';
 const STATE = 'docs/governance/current-state.json'; const CATALOG = 'docs/governance/catalog/documents.json';
 const TRACE = 'docs/governance/traceability/purchase-order-phase-c.json';
 const CUTOVER = 'docs/governance/cutover/unit4c-cutover-manifest.json'; const ROLLBACK = 'docs/governance/cutover/unit4c-rollback-readiness.json';
@@ -29,8 +21,7 @@ const SCHEMAS = {
   [STATE]: 'docs/governance/schemas/current-state-v2.schema.json',
   [CATALOG]: 'docs/governance/schemas/document-catalog-v2.schema.json',
   [TRACE]: 'docs/governance/schemas/purchase-order-phase-c-v2.schema.json',
-  [CUTOVER]: 'docs/governance/schemas/unit4-cutover-manifest.schema.json',
-  [ROLLBACK]: 'docs/governance/schemas/unit4-rollback-readiness.schema.json'
+  [CUTOVER]: 'docs/governance/schemas/unit4-cutover-manifest.schema.json', [ROLLBACK]: 'docs/governance/schemas/unit4-rollback-readiness.schema.json'
 };
 const PROTECTED = new Set(['.gitignore', '.codex/config.toml', '.mcp.json']);
 const AUTHORIZED = new Set([
@@ -62,23 +53,19 @@ const AUTHORIZED = new Set([
   'tests/governance-documentation-shadow.test.mjs',
   'tests/governance-g28-ledger-shadow.test.mjs'
 ]);
-
 function git(root, args, encoding = 'utf8') {
   return childProcess.execFileSync('git', args, {
     cwd: root, encoding, maxBuffer: 64 * 1024 * 1024
   }).trim();
 }
-
 function gitRaw(root, args) {
   return childProcess.execFileSync('git', args, {
     cwd: root, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024
   });
 }
-
 function digest(value) {
   return crypto.createHash('sha256').update(value, 'utf8').digest('hex');
 }
-
 function parseJson(reader, relativePath, errors) {
   try { return JSON.parse(reader.readText(relativePath)); }
   catch (error) {
@@ -86,15 +73,15 @@ function parseJson(reader, relativePath, errors) {
     return null;
   }
 }
-
 function fileHash(reader, relativePath) {
   return digest(reader.readText(relativePath));
 }
-
 function exact(value, expected, label, errors) {
   if (value !== expected) errors.push(`${label}: expected ${expected}; got ${value}`);
 }
-
+function nonempty(value, label, errors) {
+  if (typeof value !== 'string' || value.trim() === '') errors.push(`${label}: nonempty string required`);
+}
 function changedPaths(root, commit) {
   if (commit) {
     return git(root, ['diff-tree', '--no-commit-id', '--name-only', '-r', commit])
@@ -109,7 +96,6 @@ function changedPaths(root, commit) {
     .split(/\r?\n/u).filter(Boolean);
   return [...new Set([...committedPaths, ...worktreePaths])].sort();
 }
-
 function validateCommitIdentity(root, commit, activationCommit, errors) {
   let activation = null;
   if (activationCommit) {
@@ -124,13 +110,15 @@ function validateCommitIdentity(root, commit, activationCommit, errors) {
   if (!activation) errors.push('original activation commit input is required');
   else {
     if (commit === activation) errors.push('correction commit used as original activation commit');
-    exact(git(root, ['rev-parse', `${commit}^`]), activation, 'correction parent', errors);
+    const subject = git(root, ['show', '-s', '--format=%s', commit]);
+    const parent = subject === LIFECYCLE_CORRECTION_SUBJECT ? LIFECYCLE_CORRECTION_PARENT : activation;
+    exact(git(root, ['rev-parse', `${commit}^`]), parent, 'correction parent', errors);
+    if (![CORRECTION_SUBJECT, LIFECYCLE_CORRECTION_SUBJECT].includes(subject)) {
+      errors.push(`correction subject: unsupported ${subject}`);
+    }
   }
-  exact(git(root, ['show', '-s', '--format=%s', commit]), CORRECTION_SUBJECT,
-    'correction subject', errors);
   return activation;
 }
-
 function validateLifecycle(state, errors) {
   const closed = state.phase_status?.unit4d === 'CLOSED / ACCEPTED / DIRECTLY VERIFIED';
   exact(state.schema_version, '2.0.0', 'state schema', errors);
@@ -152,14 +140,29 @@ function validateLifecycle(state, errors) {
   exact(state.phase_status.unit4d, closed ? 'CLOSED / ACCEPTED / DIRECTLY VERIFIED'
     : 'DIRECT SUPERVISOR REVIEW REQUIRED / NOT SELF-ACCEPTED',
     'Unit 4D status', errors);
-  exact(state.phase_status.unit5, closed ? 'NOT AUTHORIZED / DIAGNOSIS NEXT AUTHORIZABLE'
-    : 'NOT AUTHORIZED', 'Unit 5 status', errors);
-  exact(state.next_authorizable_action.order_id, closed
-    ? 'GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-5-LEGACY-DEPRECATION-AND-POST-CUTOVER-AUDIT-DIAGNOSIS-R1'
-    : CORRECTION_ORDER, 'next order', errors);
-  exact(state.next_authorizable_action.mode, closed ? 'READ_ONLY_DIAGNOSIS'
-    : 'UNIT 4D POST-CORRECTION DIRECT REVIEW',
-    'next review mode', errors);
+  exact(state.active_phase?.id, 'GOVERNANCE-EFFICIENCY-REFOUNDATION', 'active phase ID', errors);
+  if (closed) {
+    nonempty(state.active_phase?.status, 'active phase status', errors);
+    nonempty(state.phase_status?.unit5, 'Unit 5 status', errors);
+    nonempty(state.next_authorizable_action?.order_id, 'next order', errors);
+    nonempty(state.next_authorizable_action?.mode, 'next action mode', errors);
+    nonempty(state.next_authorizable_action?.status, 'next action status', errors);
+    exact(state.next_authorizable_action?.canonical_value,
+      state.next_authorizable_action?.order_id, 'next action canonical value', errors);
+  } else {
+    exact(state.phase_status.unit5, 'NOT AUTHORIZED', 'Unit 5 status', errors);
+    exact(state.next_authorizable_action.order_id, CORRECTION_ORDER, 'next order', errors);
+    exact(state.next_authorizable_action.mode, 'UNIT 4D POST-CORRECTION DIRECT REVIEW',
+      'next review mode', errors);
+  }
+  if ((state.evidence_events ?? []).some(event => event.second_activation === true)) {
+    errors.push('second activation claimed by current state');
+  }
+  if ((state.evidence_events ?? []).some(event => event.rollback_executed === true)) {
+    errors.push('rollback claimed by current state');
+  }
+  exact(state.rollback_readiness?.status, 'PREPARED / NOT AUTHORIZED / NOT ACTIVATED',
+    'rollback readiness status', errors);
   if ('current_fact_sections' in state) errors.push('raw current_fact_sections forbidden in canonical mode');
   const historical = state.historical_fact_sources ?? [];
   const requiredSources = [
@@ -204,7 +207,6 @@ function validateLifecycle(state, errors) {
   }
   errors.push(...rejectSelfReference(state));
 }
-
 export function validateCanonicalStateObject(state) {
   const errors = [];
   validateLifecycle(state, errors);
@@ -216,7 +218,6 @@ export function validateCanonicalStateObject(state) {
   }
   return errors;
 }
-
 function validateSchemas(reader, payloads, errors) {
   for (const [payloadPath, schemaPath] of Object.entries(SCHEMAS)) {
     const schema = parseJson(reader, schemaPath, errors);
@@ -225,7 +226,6 @@ function validateSchemas(reader, payloads, errors) {
     }
   }
 }
-
 function validateHashes(reader, state, catalog, traceability, rollback, errors) {
   exact(jsonSha256(statePayloadProjection(state)), state.activation.state_payload_sha256,
     'state payload hash', errors);
@@ -254,7 +254,6 @@ function validateHashes(reader, state, catalog, traceability, rollback, errors) 
       `root hash ${relativePath}`, errors);
   }
 }
-
 function validateCatalogTrace(catalog, traceability, errors) {
   exact(catalog.mode, 'CANONICAL', 'catalog mode', errors);
   exact(catalog.authority, 'CANONICAL_DOCUMENT_CLASSIFICATION_OWNER', 'catalog authority', errors);
@@ -277,7 +276,6 @@ function validateCatalogTrace(catalog, traceability, errors) {
     }
   }
 }
-
 export function validateCanonicalConsistencyObjects({
   state, cutover, unit4Contract, phaseContract, catalog
 }) {
@@ -310,10 +308,11 @@ export function validateCanonicalConsistencyObjects({
     '| Documentary-authority cutover | ACTIVE / AWAITING UNIT 4D REVIEW |'
   ];
   const phaseRequired = closed ? [
-    'STATUS: ACTIVE / UNIT 4 CLOSED / UNIT 5 DIAGNOSIS NEXT AUTHORIZABLE', 'UNIT 4C: CLOSED / ACCEPTED / DIRECTLY VERIFIED',
-    'DOCUMENTARY-AUTHORITY CUTOVER: CLOSED / ACCEPTED / DIRECTLY VERIFIED',
-    'UNIT 4D ACCEPTANCE: CLOSED / ACCEPTED / DIRECTLY VERIFIED',
-    'UNIT 5: NOT AUTHORIZED / DIAGNOSIS NEXT AUTHORIZABLE'
+    `STATUS: ACTIVE / ${state.active_phase.status}`,
+    `UNIT 4C: ${state.phase_status.unit4c}`,
+    `DOCUMENTARY-AUTHORITY CUTOVER: ${state.phase_status.documentary_authority_cutover}`,
+    `UNIT 4D ACCEPTANCE: ${state.phase_status.unit4d}`,
+    `UNIT 5: ${state.phase_status.unit5}`
   ] : [
     'STATUS: ACTIVE / UNIT 4C FORWARD CORRECTION APPLIED / AWAITING DIRECT SUPERVISOR REVIEW',
     'UNIT 4C: ACTIVATED / FORWARD CORRECTION APPLIED / AWAITING DIRECT SUPERVISOR REVIEW',
@@ -345,6 +344,7 @@ export function validateCanonicalConsistencyObjects({
     exact(owner?.classification, 'GENERATED_COMPATIBILITY_VIEW',
       `generated root classification ${rootPath}`, errors);
     exact(owner?.owner, sourcePath, `generated root owner ${rootPath}`, errors);
+    if (['STATE_OWNER', 'CLASSIFICATION_OWNER'].includes(owner?.authority)) errors.push(`generated root retains authority: ${rootPath}`);
   }
   if (!(state.prohibitions ?? []).includes('SILENT_FALLBACK')) errors.push('silent fallback prohibition missing');
   if ((state.root_authorities ?? []).some(item => item.remains_authoritative !== false)) {
@@ -353,7 +353,6 @@ export function validateCanonicalConsistencyObjects({
   errors.push(...rejectSelfReference(cutover, '$cutover'));
   return errors;
 }
-
 function validateCutoverManifest(reader, cutover, state, root, commit, activationCommit, errors) {
   exact(cutover.current_state_file_sha256, fileHash(reader, STATE),
     'cutover current-state hash', errors);
@@ -379,14 +378,17 @@ function validateCutoverManifest(reader, cutover, state, root, commit, activatio
   }
   const unauthorized = actualPaths.filter(relativePath => !AUTHORIZED.has(relativePath));
   if (unauthorized.length) errors.push(`unauthorized changed paths: ${unauthorized.join(', ')}`);
-  for (const requiredPath of [STATE, CUTOVER,
+  const lifecycleCorrection = (state.evidence_events ?? []).some(event =>
+    event.subject === LIFECYCLE_CORRECTION_SUBJECT);
+  const requiredPaths = [STATE, CUTOVER,
     'docs/governance/GOVERNANCE_EFFICIENCY_REFOUNDATION_PHASE_CONTRACT.md',
-    'docs/governance/GOVERNANCE_EFFICIENCY_REFOUNDATION_UNIT_4_AUTHORITY_CUTOVER_CONTRACT.md',
-    'docs/ledgers/G28_LEDGER.md']) {
+    'docs/ledgers/G28_LEDGER.md', ...(lifecycleCorrection
+      ? ['scripts/governance/validate-unit4-cutover.mjs', 'tests/governance-unit4-cutover.test.mjs']
+      : ['docs/governance/GOVERNANCE_EFFICIENCY_REFOUNDATION_UNIT_4_AUTHORITY_CUTOVER_CONTRACT.md'])];
+  for (const requiredPath of requiredPaths) {
     if (!actualPaths.includes(requiredPath)) errors.push(`missing correction path: ${requiredPath}`);
   }
 }
-
 function validateBootstrap(reader, state, errors) {
   const instructions = reader.readText('docs/governance/AGENT_INSTRUCTIONS.md');
   if (!instructions.includes(STATE) || !instructions.includes('Silent fallback')) {
@@ -414,7 +416,6 @@ function validateBootstrap(reader, state, errors) {
   exact(readiness?.bootstrap?.full_ledger_read, false, 'full ledger read', errors);
   exact(readiness?.bootstrap?.private_memory_used, false, 'private memory', errors);
 }
-
 function validateClosedPartitions(reader, root, errors) {
   for (let number = 1; number <= 11; number += 1) {
     const fileName = `G28_LEDGER_PART_${String(number).padStart(4, '0')}.md`;
@@ -423,7 +424,6 @@ function validateClosedPartitions(reader, root, errors) {
     exact(reader.readText(relativePath), prior, `closed partition ${number}`, errors);
   }
 }
-
 export function validateCutover({ root = REPO_ROOT, commit = null, activationCommit = null } = {}) {
   const before = {
     head: git(root, ['rev-parse', 'HEAD']),
@@ -482,7 +482,6 @@ export function validateCutover({ root = REPO_ROOT, commit = null, activationCom
     bounded_references: state.bounded_recent_ledger_references
   };
 }
-
 if (process.argv[1] && path.resolve(process.argv[1]) === path.resolve(fileURLToPath(import.meta.url))) {
   const commitIndex = process.argv.indexOf('--commit');
   const activationIndex = process.argv.indexOf('--activation-commit');

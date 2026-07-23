@@ -15,65 +15,65 @@
   },
   "activation": {
     "accepted_unit4b_readiness_checkpoint": "fa986cf935abbf053172cfd549b0171bb9446f58",
-    "activation_manifest_sha256": "990f00018b5566f39978913f7ed0b74ad6d6b3be858e44ab40e2716117978323",
+    "activation_manifest_sha256": "cbe8329402953226462344b02b279aad70cf1f3c05c8e4d5ad2d5f2d1852d33d",
     "allowed_publication_remote": "staging/dev",
     "authority_epoch": 1,
     "bounded_ledger_reference_identities": [
       {
         "partition_id": "G28-LEDGER-PART-0012",
-        "partition_payload_sha256": "602db92e27c48275be1f9181444be0041a35ec6764646a53a56b7d9918e45cb6",
-        "unit_id": "G28-LEDGER-UNIT-0205",
-        "unit_raw_sha256": "668cfc591e17842bb2fd26e63eec27b4da63b1418b1337d885cf7d31963aaf18"
-      },
-      {
-        "partition_id": "G28-LEDGER-PART-0012",
-        "partition_payload_sha256": "602db92e27c48275be1f9181444be0041a35ec6764646a53a56b7d9918e45cb6",
+        "partition_payload_sha256": "00282f041f1ac3a72b725fad166159de6b0ef5f828bd4cc06246ab80b36f5e4f",
         "unit_id": "G28-LEDGER-UNIT-0206",
         "unit_raw_sha256": "ef4734875e25c22b1922399ab17701a8e2f18c50148ac3ef1cd645fd03bb1560"
       },
       {
         "partition_id": "G28-LEDGER-PART-0012",
-        "partition_payload_sha256": "602db92e27c48275be1f9181444be0041a35ec6764646a53a56b7d9918e45cb6",
+        "partition_payload_sha256": "00282f041f1ac3a72b725fad166159de6b0ef5f828bd4cc06246ab80b36f5e4f",
         "unit_id": "G28-LEDGER-UNIT-0207",
         "unit_raw_sha256": "19445bf9719f06f093b1cb4f4fb752c9ec2b144c74ab5fbb65a6f80039d6da8f"
       },
       {
         "partition_id": "G28-LEDGER-PART-0012",
-        "partition_payload_sha256": "602db92e27c48275be1f9181444be0041a35ec6764646a53a56b7d9918e45cb6",
+        "partition_payload_sha256": "00282f041f1ac3a72b725fad166159de6b0ef5f828bd4cc06246ab80b36f5e4f",
         "unit_id": "G28-LEDGER-UNIT-0208",
         "unit_raw_sha256": "174bb82d69b8fe76ad6ecce4f5f222092430eaf95506854d389b4e2a076ac2fb"
       },
       {
         "partition_id": "G28-LEDGER-PART-0012",
-        "partition_payload_sha256": "602db92e27c48275be1f9181444be0041a35ec6764646a53a56b7d9918e45cb6",
+        "partition_payload_sha256": "00282f041f1ac3a72b725fad166159de6b0ef5f828bd4cc06246ab80b36f5e4f",
         "unit_id": "G28-LEDGER-UNIT-0209",
-        "unit_raw_sha256": "abe4cb3b8fba520f812804cb7639a0083070f26b44c4a00906c179f43e9d7f3b"
+        "unit_raw_sha256": "8a40d000128bed2a4bb4a852d9a6702bc2e43eeb7f662105ef5e357e1a909c5a"
+      },
+      {
+        "partition_id": "G28-LEDGER-PART-0012",
+        "partition_payload_sha256": "00282f041f1ac3a72b725fad166159de6b0ef5f828bd4cc06246ab80b36f5e4f",
+        "unit_id": "G28-LEDGER-UNIT-0210",
+        "unit_raw_sha256": "8929045c167372edbdbe4994635d8b18ab83187dbfdc61c7dae5415aed9923ab"
       }
     ],
     "branch": "dev",
     "cutover_id": "GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-4C-AUTHORITY-CUTOVER-R1",
     "generated_view_hashes": {
-      "AGENT_HANDOFF.md": "5cb276ad4f4164d1102b008edbab9d32dacb5f2b7da6c1a86db3cef5b9ba3c6f",
-      "PROJECT_STATE.md": "0a86d05cf6573dca4d5b164715fe115bc79329ac7edde6e32ad157c6f4431595",
+      "AGENT_HANDOFF.md": "d741e7e0190a2a59c34370b10bdbc58644e56fe620c5de405c80f6dd23f4e2a0",
+      "PROJECT_STATE.md": "f44682e544d715d2d0868aa0c2a2ef3f2a5b0ab6404d37226c0a65cad1c54e7d",
       "docs/DOCUMENTATION_INDEX.md": "f23e9d751b4a1723cbb40d726224a7e0c0cae3e81340f900a0fb7af8999b81cc",
       "docs/architecture/ORDEM_COMPRA_C3_TRACEABILITY.md": "81e8f73f56df3cd61ce42bf0f6878ae1c7d6abb32e314a965dc07981341863b7"
     },
     "governing_artifact_hashes": {
       "docs/governance/AGENT_INSTRUCTIONS.md": "4b4715ccc3af4360bfbbbfe3458df22fb10a9d8707fad17b9cf188a450d86380",
       "docs/governance/DOCUMENTATION_MODEL.md": "2ecf212d135440e135bab188db1ebe94dedf709a4a43c0474ba3e05262981404",
-      "docs/governance/GOVERNANCE_EFFICIENCY_REFOUNDATION_PHASE_CONTRACT.md": "e9376971514f27c3a811b5f547804b2abfaa6bbdb1fe0fa2c59019a7463acca8",
+      "docs/governance/GOVERNANCE_EFFICIENCY_REFOUNDATION_PHASE_CONTRACT.md": "c7a00f2227ad4716d433e82fd66457b0bf9292285627157a54bd0a53db6ce48b",
       "docs/governance/GOVERNANCE_EFFICIENCY_REFOUNDATION_UNIT_4_AUTHORITY_CUTOVER_CONTRACT.md": "e25f312238b717f620b12b75a921535444791e4b2121b642bb8be581f1d3c23b",
       "docs/governance/SUPERVISION_PROTOCOL.md": "0d046e279bcfa57ff1a5c6930dc24f86438d13ffc70b4bba71d7bfa77c98a8c8"
     },
     "manifest_algorithm": "UNIT4-ACTIVATION-MANIFEST-V1",
     "required_parent": "fa986cf935abbf053172cfd549b0171bb9446f58",
     "rollback_readiness_sha256": "147d6660000ab3fd43709f85f331574ba345f2b572a5bbefb95ad0ab3b10e781",
-    "state_payload_sha256": "bc1e35f24df7301ee97ce4e75da411e2fb89d6204843e98ed7f875c8168f21eb",
+    "state_payload_sha256": "4cbb2a3328019a54cf6e8adb3625e8d8f2548a35f6d8ce7997864e376ed1abcf",
     "status": "active",
     "structured_source_hashes": {
-      "docs/governance/catalog/documents.json": "01dfaad75d303977a2fa9221ea4d2d01812ee4ec25c8ee2a23733550ec319a87",
+      "docs/governance/catalog/documents.json": "6ddeca84d57695bf81abac30c1f596ac902b8e7209a4f9a14706c789504bd772",
       "docs/governance/cutover/unit4c-rollback-readiness.json": "147d6660000ab3fd43709f85f331574ba345f2b572a5bbefb95ad0ab3b10e781",
-      "docs/governance/schemas/current-state-v2.schema.json": "ac7f725470aaea42f01caf1479bf411b7669b23dfc4a12e1bfe095d4282262c4",
+      "docs/governance/schemas/current-state-v2.schema.json": "96275e889664605faa27662a956b84b491427ce9a5b01facf47e925ce787cd63",
       "docs/governance/schemas/document-catalog-v2.schema.json": "00ad550d9faafadc69e4648a2fb42bf27069d499bccef9b1f893d2b5f79f1d98",
       "docs/governance/schemas/purchase-order-phase-c-v2.schema.json": "e571e89b511b7459962e0b732b322f82b87f5028bb64084a11906c01fb713dac",
       "docs/governance/schemas/unit4-cutover-manifest.schema.json": "e60f63b522c361078e0cc75cd30bc8ab683575823a45f93fc86834021afdc426",
@@ -85,7 +85,7 @@
   "active_phase": {
     "contract": "docs/governance/GOVERNANCE_EFFICIENCY_REFOUNDATION_PHASE_CONTRACT.md",
     "id": "GOVERNANCE-EFFICIENCY-REFOUNDATION",
-    "status": "UNIT 4 CLOSED / UNIT 5 DIAGNOSIS PRECONDITION CORRECTED / R2 NEXT AUTHORIZABLE"
+    "status": "UNIT 4 CLOSED / UNIT 5 R2 BOOTSTRAP VALIDATOR CORRECTED / DIAGNOSIS R2 NEXT AUTHORIZABLE"
   },
   "active_requirements": [
     {
@@ -173,28 +173,13 @@
   "authority_epoch": 1,
   "bounded_recent_ledger_references": [
     {
-      "end_byte": 985272,
-      "end_line": 9680,
-      "event_id": "GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-4A-CUTOVER-READINESS-IMPLEMENTATION-R1",
-      "heading": "## 2026-07-23 — GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-4A-CUTOVER-READINESS-IMPLEMENTATION-R1 — implement Unit 4A candidate readiness",
-      "partition_id": "G28-LEDGER-PART-0012",
-      "partition_path": "docs/governance/shadow/ledger/partitions/G28_LEDGER_PART_0012.md",
-      "partition_payload_sha256": "602db92e27c48275be1f9181444be0041a35ec6764646a53a56b7d9918e45cb6",
-      "phase_order_id": "GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-4A-CUTOVER-READINESS-IMPLEMENTATION-R1",
-      "reason": "Unit 4A accepted readiness",
-      "start_byte": 983402,
-      "start_line": 9671,
-      "unit_id": "G28-LEDGER-UNIT-0205",
-      "unit_raw_sha256": "668cfc591e17842bb2fd26e63eec27b4da63b1418b1337d885cf7d31963aaf18"
-    },
-    {
       "end_byte": 987566,
       "end_line": 9690,
       "event_id": "GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-4C-DOCUMENTARY-AUTHORITY-CUTOVER-R1",
       "heading": "## 2026-07-23 — GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-4C-DOCUMENTARY-AUTHORITY-CUTOVER-R1 — activate structured governance authority",
       "partition_id": "G28-LEDGER-PART-0012",
       "partition_path": "docs/governance/shadow/ledger/partitions/G28_LEDGER_PART_0012.md",
-      "partition_payload_sha256": "602db92e27c48275be1f9181444be0041a35ec6764646a53a56b7d9918e45cb6",
+      "partition_payload_sha256": "00282f041f1ac3a72b725fad166159de6b0ef5f828bd4cc06246ab80b36f5e4f",
       "phase_order_id": "GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-4C-DOCUMENTARY-AUTHORITY-CUTOVER-R1",
       "reason": "Unit 4C activation",
       "start_byte": 985272,
@@ -209,7 +194,7 @@
       "heading": "## 2026-07-23 — GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-4C-CANONICAL-CONSISTENCY-FORWARD-CORRECTION-R1 — reconcile post-cutover governance authority",
       "partition_id": "G28-LEDGER-PART-0012",
       "partition_path": "docs/governance/shadow/ledger/partitions/G28_LEDGER_PART_0012.md",
-      "partition_payload_sha256": "602db92e27c48275be1f9181444be0041a35ec6764646a53a56b7d9918e45cb6",
+      "partition_payload_sha256": "00282f041f1ac3a72b725fad166159de6b0ef5f828bd4cc06246ab80b36f5e4f",
       "phase_order_id": "GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-4C-CANONICAL-CONSISTENCY-FORWARD-CORRECTION-R1",
       "reason": "Unit 4C consistency correction",
       "start_byte": 987566,
@@ -224,7 +209,7 @@
       "heading": "## 2026-07-23 — GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-4D-POST-CUTOVER-ACCEPTANCE-CLOSEOUT-R1 — docs: close Unit 4 post-cutover acceptance",
       "partition_id": "G28-LEDGER-PART-0012",
       "partition_path": "docs/governance/shadow/ledger/partitions/G28_LEDGER_PART_0012.md",
-      "partition_payload_sha256": "602db92e27c48275be1f9181444be0041a35ec6764646a53a56b7d9918e45cb6",
+      "partition_payload_sha256": "00282f041f1ac3a72b725fad166159de6b0ef5f828bd4cc06246ab80b36f5e4f",
       "phase_order_id": "GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-4D-POST-CUTOVER-ACCEPTANCE-CLOSEOUT-R1",
       "reason": "Unit 4D acceptance",
       "start_byte": 989067,
@@ -233,19 +218,34 @@
       "unit_raw_sha256": "174bb82d69b8fe76ad6ecce4f5f222092430eaf95506854d389b4e2a076ac2fb"
     },
     {
-      "end_byte": 992811,
-      "end_line": 9730,
+      "end_byte": 992812,
+      "end_line": 9731,
       "event_id": "GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-5-PRECONDITION-CANONICAL-AUTHORITY-CONSUMER-FORWARD-CORRECTION-R3",
       "heading": "## 2026-07-23 — GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-5-PRECONDITION-CANONICAL-AUTHORITY-CONSUMER-FORWARD-CORRECTION-R3 — fix: reconcile residual governance authority consumers",
       "partition_id": "G28-LEDGER-PART-0012",
       "partition_path": "docs/governance/shadow/ledger/partitions/G28_LEDGER_PART_0012.md",
-      "partition_payload_sha256": "602db92e27c48275be1f9181444be0041a35ec6764646a53a56b7d9918e45cb6",
+      "partition_payload_sha256": "00282f041f1ac3a72b725fad166159de6b0ef5f828bd4cc06246ab80b36f5e4f",
       "phase_order_id": "GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-5-PRECONDITION-CANONICAL-AUTHORITY-CONSUMER-FORWARD-CORRECTION-R3",
       "reason": "Unit 5 diagnosis precondition authority-consumer correction",
       "start_byte": 990561,
       "start_line": 9710,
       "unit_id": "G28-LEDGER-UNIT-0209",
-      "unit_raw_sha256": "abe4cb3b8fba520f812804cb7639a0083070f26b44c4a00906c179f43e9d7f3b"
+      "unit_raw_sha256": "8a40d000128bed2a4bb4a852d9a6702bc2e43eeb7f662105ef5e357e1a909c5a"
+    },
+    {
+      "end_byte": 994393,
+      "end_line": 9741,
+      "event_id": "GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-5-R2-BOOTSTRAP-VALIDATOR-LIFECYCLE-DECOUPLING-FORWARD-CORRECTION-R1",
+      "heading": "## 2026-07-23 — GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-5-R2-BOOTSTRAP-VALIDATOR-LIFECYCLE-DECOUPLING-FORWARD-CORRECTION-R1 — fix: decouple Unit 4 validator from Unit 5 lifecycle",
+      "partition_id": "G28-LEDGER-PART-0012",
+      "partition_path": "docs/governance/shadow/ledger/partitions/G28_LEDGER_PART_0012.md",
+      "partition_payload_sha256": "00282f041f1ac3a72b725fad166159de6b0ef5f828bd4cc06246ab80b36f5e4f",
+      "phase_order_id": "GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-5-R2-BOOTSTRAP-VALIDATOR-LIFECYCLE-DECOUPLING-FORWARD-CORRECTION-R1",
+      "reason": "Unit 5 R2 bootstrap validator lifecycle decoupling",
+      "start_byte": 992812,
+      "start_line": 9732,
+      "unit_id": "G28-LEDGER-UNIT-0210",
+      "unit_raw_sha256": "8929045c167372edbdbe4994635d8b18ab83187dbfdc61c7dae5415aed9923ab"
     }
   ],
   "candidate_views": {
@@ -339,6 +339,20 @@
       "unit5_implementation_authorized": false,
       "unmanifested_active_contradictions": 0,
       "unresolved_semantic_matches": 0
+    },
+    {
+      "authority_epoch": 1,
+      "blocked_diagnosis": "GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-5-LEGACY-DEPRECATION-AND-POST-CUTOVER-AUDIT-DIAGNOSIS-R2",
+      "classification": "FORWARD_CORRECTION",
+      "diagnosis_r2_required": true,
+      "event_id": "UNIT5_R2_BOOTSTRAP_VALIDATOR_LIFECYCLE_DECOUPLING",
+      "rollback_executed": false,
+      "second_activation": false,
+      "stale_mismatch_count": 4,
+      "stale_validator": "scripts/governance/validate-unit4-cutover.mjs",
+      "subject": "fix: decouple Unit 4 validator from Unit 5 lifecycle",
+      "unit5_implementation_authorized": false,
+      "validator_scope_after_correction": "UNIT_4_INVARIANTS_PLUS_DYNAMIC_CURRENT_LIFECYCLE_PARITY"
     }
   ],
   "governing_pointers": {
@@ -391,7 +405,7 @@
       "bootstrap_required": false,
       "evidence_identity": "G28-LEDGER-SOURCE-MANIFEST-R1",
       "evidence_role": "APPEND_ONLY_GOVERNANCE_HISTORY",
-      "record_count": 210,
+      "record_count": 211,
       "record_kind": "UNIT",
       "source_path": "docs/ledgers/G28_LEDGER.md",
       "unresolved_count": 0
@@ -528,7 +542,7 @@
   "structured_sources": {
     "docs/governance/catalog/documents.json": {
       "path": "docs/governance/catalog/documents.json",
-      "sha256": "01dfaad75d303977a2fa9221ea4d2d01812ee4ec25c8ee2a23733550ec319a87"
+      "sha256": "6ddeca84d57695bf81abac30c1f596ac902b8e7209a4f9a14706c789504bd772"
     },
     "docs/governance/cutover/unit4c-rollback-readiness.json": {
       "path": "docs/governance/cutover/unit4c-rollback-readiness.json",
@@ -536,7 +550,7 @@
     },
     "docs/governance/schemas/current-state-v2.schema.json": {
       "path": "docs/governance/schemas/current-state-v2.schema.json",
-      "sha256": "ac7f725470aaea42f01caf1479bf411b7669b23dfc4a12e1bfe095d4282262c4"
+      "sha256": "96275e889664605faa27662a956b84b491427ce9a5b01facf47e925ce787cd63"
     },
     "docs/governance/schemas/document-catalog-v2.schema.json": {
       "path": "docs/governance/schemas/document-catalog-v2.schema.json",

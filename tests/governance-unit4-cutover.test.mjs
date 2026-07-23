@@ -11,6 +11,8 @@ import {
   validateCanonicalStateObject,
   validateCutover
 } from '../scripts/governance/validate-unit4-cutover.mjs';
+import { simulateRepository } from '../scripts/governance/simulate-unit4-bootstrap.mjs';
+import { validateCloseout } from '../scripts/governance/validate-unit4d-acceptance-closeout.mjs';
 import {
   CANONICAL_VIEW_PATHS,
   renderCanonicalViews,
@@ -19,6 +21,8 @@ import {
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const ACTIVATION = '51a61ddfdbf058887ead64f9b018c30ebc371b48';
+const CORRECTION = '7abaff26559c71b62337356eccd0baaf36b5f214';
+const CLOSEOUT = 'e88194cf6681d7aff154b22b4360e27b6d6e6dad';
 const readText = relativePath => fs.readFileSync(path.join(ROOT, relativePath), 'utf8');
 const readJson = relativePath => JSON.parse(readText(relativePath));
 const state = readJson('docs/governance/current-state.json');
@@ -96,6 +100,23 @@ const semanticFailure = mutate => () => {
   };
   mutate(fixture);
   return validateCanonicalConsistencyObjects(fixture);
+};
+const lifecycleFixture = ({ activeStatus, unit5Status, orderId }) => {
+  const fixture = {
+    state: clone(state),
+    cutover: clone(cutover),
+    unit4Contract,
+    phaseContract,
+    catalog: clone(catalog)
+  };
+  fixture.state.active_phase.status = activeStatus;
+  fixture.state.phase_status.unit5 = unit5Status;
+  fixture.state.next_authorizable_action.order_id = orderId;
+  fixture.state.next_authorizable_action.canonical_value = orderId;
+  fixture.phaseContract = fixture.phaseContract
+    .replace(/^STATUS:.*$/mu, `STATUS: ACTIVE / ${activeStatus}`)
+    .replace(/^UNIT 5:.*$/mu, `UNIT 5: ${unit5Status}`);
+  return fixture;
 };
 const checks = new Map([
   [NEGATIVE[0], stateFailure(value => { value.historical_fact_sources[0].content = 'legacy prose'; })],
@@ -179,4 +200,84 @@ test('forward-correction identities are exact', () => {
   assert.equal(cutover.contract_id, CONTRACT_ID);
   assert.equal(cutover.second_activation, false);
   assert.equal(Object.hasOwn(state, 'current_fact_sections'), false);
+});
+
+test('current and unfamiliar future Unit 5 lifecycles use dynamic parity', () => {
+  assert.deepEqual(validateCanonicalConsistencyObjects({
+    state: clone(state), cutover: clone(cutover), unit4Contract, phaseContract, catalog: clone(catalog)
+  }), []);
+  const futures = [
+    {
+      activeStatus: 'UNIT 4 CLOSED / UNIT 5A CONTRACT ACTIVE',
+      unit5Status: 'UNIT 5A CONTRACT / AUTHORIZED',
+      orderId: 'FUTURE-UNIT-5A-CONTRACT-ORDER'
+    },
+    {
+      activeStatus: 'UNIT 4 CLOSED / UNIT 5B CLEANUP ACTIVE',
+      unit5Status: 'UNIT 5B CLEANUP / AUTHORIZED',
+      orderId: 'FUTURE-UNIT-5B-CLEANUP-ORDER'
+    },
+    {
+      activeStatus: 'UNIT 4 CLOSED / UNFAMILIAR FUTURE UNIT 5 LIFECYCLE',
+      unit5Status: 'UNFAMILIAR FUTURE UNIT 5 STATUS',
+      orderId: 'UNFAMILIAR-FUTURE-UNIT-5-ORDER'
+    }
+  ];
+  for (const fixture of futures.map(lifecycleFixture)) {
+    assert.deepEqual(validateCanonicalConsistencyObjects(fixture), []);
+  }
+});
+
+test('dynamic lifecycle mismatches and Unit 4 invariant changes fail closed', () => {
+  const cases = [
+    fixture => {
+      fixture.phaseContract = fixture.phaseContract.replace(
+        /^STATUS:.*$/mu, 'STATUS: ACTIVE / UNIT 4 CLOSED / UNIT 5 DIAGNOSIS NEXT AUTHORIZABLE');
+    },
+    fixture => { fixture.state.phase_status.unit5 = 'MISMATCHED UNIT 5 STATUS'; },
+    fixture => { fixture.state.active_phase.status = 'MISMATCHED ACTIVE PHASE'; },
+    fixture => { fixture.state.next_authorizable_action.canonical_value = 'MISMATCHED'; },
+    fixture => { fixture.state.next_authorizable_action.order_id = ''; },
+    fixture => { fixture.state.phase_status.unit4c = 'CHANGED'; },
+    fixture => { fixture.state.phase_status.unit4d = 'CHANGED'; },
+    fixture => { fixture.state.phase_status.documentary_authority_cutover = 'CHANGED'; },
+    fixture => { fixture.state.authority_epoch = 2; },
+    fixture => { fixture.state.evidence_events.at(-1).second_activation = true; },
+    fixture => { fixture.state.rollback_readiness.status = 'ACTIVATED'; },
+    fixture => {
+      fixture.catalog.artifacts.find(item => item.path === 'PROJECT_STATE.md').authority = 'STATE_OWNER';
+    }
+  ];
+  for (const [index, mutate] of cases.entries()) {
+    const fixture = lifecycleFixture({
+      activeStatus: state.active_phase.status,
+      unit5Status: state.phase_status.unit5,
+      orderId: state.next_authorizable_action.order_id
+    });
+    mutate(fixture);
+    assert.ok(validateCanonicalConsistencyObjects(fixture).length > 0, `negative lifecycle fixture ${index + 1}`);
+  }
+});
+
+test('Unit 4 validator contains no mutable Unit 5 lifecycle constants', () => {
+  const source = readText('scripts/governance/validate-unit4-cutover.mjs');
+  const stale = [
+    'GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-5-LEGACY-DEPRECATION-AND-POST-CUTOVER-AUDIT-DIAGNOSIS-R1',
+    'GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-5-LEGACY-DEPRECATION-AND-POST-CUTOVER-AUDIT-DIAGNOSIS-R2',
+    'NOT AUTHORIZED / DIAGNOSIS NEXT AUTHORIZABLE',
+    'STATUS: ACTIVE / UNIT 4 CLOSED / UNIT 5 DIAGNOSIS NEXT AUTHORIZABLE'
+  ];
+  for (const value of stale) assert.equal(source.includes(value), false);
+  assert.ok(`${source}\n${stale[0]}`.includes(stale[0]));
+});
+
+test('historical checkpoints, current bootstrap, and zero-mutation validation remain valid', () => {
+  assert.deepEqual(validateCutover({
+    root: ROOT, commit: CORRECTION, activationCommit: ACTIVATION
+  }).errors, []);
+  assert.deepEqual(validateCloseout({
+    root: ROOT, commit: CLOSEOUT, activationCommit: ACTIVATION, acceptedCorrection: CORRECTION
+  }).errors, []);
+  assert.equal(simulateRepository(ROOT).result, 'PASS');
+  assert.deepEqual(validateCutover({ root: ROOT, activationCommit: ACTIVATION }).errors, []);
 });

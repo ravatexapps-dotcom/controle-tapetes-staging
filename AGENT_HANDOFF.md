@@ -7,7 +7,7 @@ RENDERER: scripts/governance/render-unit4-canonical-views.mjs
 SCHEMA_VERSION: 2.0.0
 AUTHORITY_EPOCH: 1
 CUTOVER_ID: GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-4C-AUTHORITY-CUTOVER-R1
-SOURCE_PAYLOAD_SHA256: bc1e35f24df7301ee97ce4e75da411e2fb89d6204843e98ed7f875c8168f21eb
+SOURCE_PAYLOAD_SHA256: 4cbb2a3328019a54cf6e8adb3625e8d8f2548a35f6d8ce7997864e376ed1abcf
 
 <!-- GOVERNANCE_GENERATED_VIEW:END -->
 
@@ -37,8 +37,8 @@ This bounded compatibility view owns no facts. Use the structured source and its
 
 ## Bounded ledger evidence
 
-- `GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-4A-CUTOVER-READINESS-IMPLEMENTATION-R1` in `docs/governance/shadow/ledger/partitions/G28_LEDGER_PART_0012.md`; Unit 4A accepted readiness
 - `GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-4C-DOCUMENTARY-AUTHORITY-CUTOVER-R1` in `docs/governance/shadow/ledger/partitions/G28_LEDGER_PART_0012.md`; Unit 4C activation
 - `GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-4C-CANONICAL-CONSISTENCY-FORWARD-CORRECTION-R1` in `docs/governance/shadow/ledger/partitions/G28_LEDGER_PART_0012.md`; Unit 4C consistency correction
 - `GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-4D-POST-CUTOVER-ACCEPTANCE-CLOSEOUT-R1` in `docs/governance/shadow/ledger/partitions/G28_LEDGER_PART_0012.md`; Unit 4D acceptance
 - `GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-5-PRECONDITION-CANONICAL-AUTHORITY-CONSUMER-FORWARD-CORRECTION-R3` in `docs/governance/shadow/ledger/partitions/G28_LEDGER_PART_0012.md`; Unit 5 diagnosis precondition authority-consumer correction
+- `GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-5-R2-BOOTSTRAP-VALIDATOR-LIFECYCLE-DECOUPLING-FORWARD-CORRECTION-R1` in `docs/governance/shadow/ledger/partitions/G28_LEDGER_PART_0012.md`; Unit 5 R2 bootstrap validator lifecycle decoupling

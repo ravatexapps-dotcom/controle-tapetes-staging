@@ -1,10 +1,10 @@
 <!-- GENERATED NON-CANONICAL SHADOW LEDGER PARTITION — DO NOT EDIT -->
 <!-- partition_id: G28-LEDGER-PART-0012 -->
 <!-- canonical_source: docs/ledgers/G28_LEDGER.md -->
-<!-- source_unit_interval: G28-LEDGER-UNIT-0195..G28-LEDGER-UNIT-0209 -->
-<!-- canonical_byte_interval: 962903..992811 -->
-<!-- canonical_line_interval: 9510..9730 -->
-<!-- payload_sha256: 602db92e27c48275be1f9181444be0041a35ec6764646a53a56b7d9918e45cb6 -->
+<!-- source_unit_interval: G28-LEDGER-UNIT-0195..G28-LEDGER-UNIT-0210 -->
+<!-- canonical_byte_interval: 962903..994393 -->
+<!-- canonical_line_interval: 9510..9741 -->
+<!-- payload_sha256: 00282f041f1ac3a72b725fad166159de6b0ef5f828bd4cc06246ab80b36f5e4f -->
 <!-- oversized_single_unit: false -->
 <!-- partition_status: OPEN -->
 <!-- G28_LEDGER_SHADOW_PAYLOAD_BEGIN_7b9d4e3a -->
@@ -229,5 +229,16 @@
 - **Next action.** Unit 5 implementation remains unauthorized. Read-only diagnosis `GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-5-LEGACY-DEPRECATION-AND-POST-CUTOVER-AUDIT-DIAGNOSIS-R2` is required after direct review.
 - **Scope exclusions.** No cleanup, archival, deprecation, compaction, deletion, product work, database or environment access, deployment, production, reset, revert, rebase, force push, or history rewrite occurred.
 - **Commit subject.** `fix: reconcile residual governance authority consumers`.
+
+## 2026-07-23 — GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-5-R2-BOOTSTRAP-VALIDATOR-LIFECYCLE-DECOUPLING-FORWARD-CORRECTION-R1 — fix: decouple Unit 4 validator from Unit 5 lifecycle
+
+- **Baseline and prior hard stop.** Baseline `56675625ad2557572ee24650a5d7e0e435b02fec`. Diagnosis R2 hard-stopped read-only with zero writes.
+- **Confirmed defect.** Canonical current state and the phase contract already declared Diagnosis R2 correctly; four stale R1 expectations remained in `scripts/governance/validate-unit4-cutover.mjs`, and canonical bootstrap failed because it imports that validator.
+- **Forward correction.** Unit 4 validation no longer prescribes mutable Unit 5 order IDs or subphase names. Current lifecycle parity is derived dynamically from canonical state and its phase contract.
+- **Historical continuity.** Immutable activation, canonical-correction, and Unit 4D closeout validation remain preserved.
+- **Authority continuity.** Authority epoch remains `1`; no second activation or rollback occurred. Unit 5 implementation remains unauthorized.
+- **Next action.** Read-only diagnosis `GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-5-LEGACY-DEPRECATION-AND-POST-CUTOVER-AUDIT-DIAGNOSIS-R2` remains required after direct review.
+- **Scope exclusions.** No Unit 5 diagnosis execution, Unit 5 implementation, cleanup, archival, deprecation, compaction, deletion, product work, database or environment access, deployment, production action, reset, rebase, force push, or history rewrite occurred.
+- **Commit subject.** `fix: decouple Unit 4 validator from Unit 5 lifecycle`.
 
 <!-- G28_LEDGER_SHADOW_PAYLOAD_END_7b9d4e3a -->

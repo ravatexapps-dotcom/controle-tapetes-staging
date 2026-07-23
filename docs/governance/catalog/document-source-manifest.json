@@ -983,10 +983,10 @@
     },
     {
       "path": "AGENT_HANDOFF.md",
-      "git_object_id": "64a1f1fc8e1bef7214bdb5464ecc142840c0de3d",
-      "sha256": "5cb276ad4f4164d1102b008edbab9d32dacb5f2b7da6c1a86db3cef5b9ba3c6f",
+      "git_object_id": "5fbf22b8f43da47f5c6fa31e44c5644d022f0582",
+      "sha256": "d741e7e0190a2a59c34370b10bdbc58644e56fe620c5de405c80f6dd23f4e2a0",
       "line_count": 44,
-      "byte_count": 2729,
+      "byte_count": 2782,
       "generated_status": "GENERATED",
       "outbound_references": [
         {
@@ -6180,10 +6180,10 @@
     },
     {
       "path": "PROJECT_STATE.md",
-      "git_object_id": "491fbbb71cdb31da7ce130c589d01d0db871ed31",
-      "sha256": "0a86d05cf6573dca4d5b164715fe115bc79329ac7edde6e32ad157c6f4431595",
+      "git_object_id": "17b9233a565dd7d7ed34fb29ca0000e12a2ebc36",
+      "sha256": "f44682e544d715d2d0868aa0c2a2ef3f2a5b0ab6404d37226c0a65cad1c54e7d",
       "line_count": 94,
-      "byte_count": 4752,
+      "byte_count": 4786,
       "generated_status": "GENERATED",
       "outbound_references": [
         {
@@ -56120,10 +56120,10 @@
     },
     {
       "path": "docs/governance/GOVERNANCE_EFFICIENCY_REFOUNDATION_PHASE_CONTRACT.md",
-      "git_object_id": "59bb3b6ea9a5a05fac9965c400fe3700222a06c4",
-      "sha256": "e9376971514f27c3a811b5f547804b2abfaa6bbdb1fe0fa2c59019a7463acca8",
-      "line_count": 206,
-      "byte_count": 11433,
+      "git_object_id": "ae4de1786b33d9a6aa26d87bb948391ddad91798",
+      "sha256": "c7a00f2227ad4716d433e82fd66457b0bf9292285627157a54bd0a53db6ce48b",
+      "line_count": 220,
+      "byte_count": 12221,
       "generated_status": "MANUAL",
       "outbound_references": [
         {
@@ -56283,6 +56283,12 @@
           "text": "Unit 5 diagnosis precondition authority-consumer forward correction",
           "anchor": "unit-5-diagnosis-precondition-authority-consumer-forward-correction",
           "line": 195
+        },
+        {
+          "level": 2,
+          "text": "Unit 5 R2 bootstrap-validator lifecycle-decoupling forward correction",
+          "anchor": "unit-5-r2-bootstrap-validator-lifecycle-decoupling-forward-correction",
+          "line": 208
         }
       ]
     },
@@ -60035,10 +60041,10 @@
     },
     {
       "path": "docs/governance/shadow/generated/G28_LEDGER.md",
-      "git_object_id": "0723d36f6b187010241db8a111f1d4bf2feb457c",
-      "sha256": "9db2da9a658342fffb0e61c0725b3c83fcfc7fd56e59664bd1de196183e1aa5b",
-      "line_count": 9736,
-      "byte_count": 993112,
+      "git_object_id": "d58320432c2d36fb05954ec864338eacc312e055",
+      "sha256": "28a67d5d369f5a4333d250f74ee30088b6928861727584c724c49d268595f3de",
+      "line_count": 9747,
+      "byte_count": 994694,
       "generated_status": "GENERATED",
       "outbound_references": [
         {
@@ -68017,6 +68023,12 @@
           "text": "2026-07-23 — GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-5-PRECONDITION-CANONICAL-AUTHORITY-CONSUMER-FORWARD-CORRECTION-R3 — fix: reconcile residual governance authority consumers",
           "anchor": "2026-07-23-governance-efficiency-refoundation-unit-5-precondition-canonical-authority-consumer-forward-correction-r3-fix-reconcile-residual-governance-authority-consumers",
           "line": 9714
+        },
+        {
+          "level": 2,
+          "text": "2026-07-23 — GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-5-R2-BOOTSTRAP-VALIDATOR-LIFECYCLE-DECOUPLING-FORWARD-CORRECTION-R1 — fix: decouple Unit 4 validator from Unit 5 lifecycle",
+          "anchor": "2026-07-23-governance-efficiency-refoundation-unit-5-r2-bootstrap-validator-lifecycle-decoupling-forward-correction-r1-fix-decouple-unit-4-validator-from-unit-5-lifecycle",
+          "line": 9736
         }
       ]
     },
@@ -76253,10 +76265,10 @@
     },
     {
       "path": "docs/governance/shadow/ledger/partitions/G28_LEDGER_PART_0012.md",
-      "git_object_id": "998c81ca7cdc02d788b30a41d8943a649633652c",
-      "sha256": "79b16c9703b85de8a2d499b3765c6b5e001fe434cb27189bd6780c222f7f08bf",
-      "line_count": 233,
-      "byte_count": 30506,
+      "git_object_id": "93a3f8acd942a0985e48be3c70550752f6a14348",
+      "sha256": "a6509c48c52888e5f2098d776755e6f3aa0eaa2d0a7d8800eeb35f27bd330286",
+      "line_count": 244,
+      "byte_count": 32088,
       "generated_status": "GENERATED",
       "outbound_references": [
         {
@@ -76680,6 +76692,12 @@
           "text": "2026-07-23 — GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-5-PRECONDITION-CANONICAL-AUTHORITY-CONSUMER-FORWARD-CORRECTION-R3 — fix: reconcile residual governance authority consumers",
           "anchor": "2026-07-23-governance-efficiency-refoundation-unit-5-precondition-canonical-authority-consumer-forward-correction-r3-fix-reconcile-residual-governance-authority-consumers",
           "line": 211
+        },
+        {
+          "level": 2,
+          "text": "2026-07-23 — GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-5-R2-BOOTSTRAP-VALIDATOR-LIFECYCLE-DECOUPLING-FORWARD-CORRECTION-R1 — fix: decouple Unit 4 validator from Unit 5 lifecycle",
+          "anchor": "2026-07-23-governance-efficiency-refoundation-unit-5-r2-bootstrap-validator-lifecycle-decoupling-forward-correction-r1-fix-decouple-unit-4-validator-from-unit-5-lifecycle",
+          "line": 233
         }
       ]
     },
@@ -76774,10 +76792,10 @@
     },
     {
       "path": "docs/ledgers/G28_LEDGER.md",
-      "git_object_id": "8b7f1de1351248735d4c4945e7c3260aa77c38f5",
-      "sha256": "f3f3651f488e64a83e33be0310fb783181e86e57fbc1c208d0c4d03268a77613",
-      "line_count": 9730,
-      "byte_count": 992811,
+      "git_object_id": "d09b19e456d48794fe134489240b460526851664",
+      "sha256": "90da381f593a76c8a461ffc5c80b8707709ab9101122786755de198fce31c414",
+      "line_count": 9741,
+      "byte_count": 994393,
       "generated_status": "MANUAL",
       "outbound_references": [
         {
@@ -86709,6 +86727,12 @@
           "text": "2026-07-23 — GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-5-PRECONDITION-CANONICAL-AUTHORITY-CONSUMER-FORWARD-CORRECTION-R3 — fix: reconcile residual governance authority consumers",
           "anchor": "2026-07-23-governance-efficiency-refoundation-unit-5-precondition-canonical-authority-consumer-forward-correction-r3-fix-reconcile-residual-governance-authority-consumers",
           "line": 9710
+        },
+        {
+          "level": 2,
+          "text": "2026-07-23 — GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-5-R2-BOOTSTRAP-VALIDATOR-LIFECYCLE-DECOUPLING-FORWARD-CORRECTION-R1 — fix: decouple Unit 4 validator from Unit 5 lifecycle",
+          "anchor": "2026-07-23-governance-efficiency-refoundation-unit-5-r2-bootstrap-validator-lifecycle-decoupling-forward-correction-r1-fix-decouple-unit-4-validator-from-unit-5-lifecycle",
+          "line": 9732
         }
       ]
     },

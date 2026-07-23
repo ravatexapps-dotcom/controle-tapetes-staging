@@ -4,7 +4,7 @@
 PHASE_ID: GOVERNANCE-EFFICIENCY-REFOUNDATION
 <!-- MATERIAL_PHASE_CONTRACT:END -->
 
-STATUS: ACTIVE / UNIT 4 CLOSED / UNIT 5 DIAGNOSIS PRECONDITION CORRECTED / R2 NEXT AUTHORIZABLE
+STATUS: ACTIVE / UNIT 4 CLOSED / UNIT 5 R2 BOOTSTRAP VALIDATOR CORRECTED / DIAGNOSIS R2 NEXT AUTHORIZABLE
 
 UNIT 1 STATUS: CLOSED / ACCEPTED / DIRECTLY VERIFIED
 
@@ -204,3 +204,17 @@ Authority epoch remains `1`; Unit 4 remains closed, accepted, and directly
 verified. No second activation or rollback occurred. Unit 5 implementation
 remains unauthorized. Read-only diagnosis `GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-5-LEGACY-DEPRECATION-AND-POST-CUTOVER-AUDIT-DIAGNOSIS-R2` is next authorizable
 after direct review; this correction does not claim that diagnosis is complete.
+
+## Unit 5 R2 bootstrap-validator lifecycle-decoupling forward correction
+
+Diagnosis R2 hard-stopped read-only with zero writes because the Unit 4
+validator retained four active R1 lifecycle expectations. Canonical current
+state and this phase contract already declared Diagnosis R2 correctly. The
+validator now preserves fixed Unit 4 cutover and acceptance invariants while
+deriving mutable current-lifecycle parity from canonical state.
+
+Unit 4 remains closed, accepted, and directly verified. Authority epoch remains
+`1`; no second activation or rollback occurred. Unit 5 implementation remains
+unauthorized. Read-only diagnosis
+`GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-5-LEGACY-DEPRECATION-AND-POST-CUTOVER-AUDIT-DIAGNOSIS-R2`
+remains next authorizable after direct review.

@@ -37,6 +37,7 @@ const CATALOG_PATH = 'docs/governance/catalog/document-source-manifest.json';
 const DOCUMENT_CATALOG_PATH = 'docs/governance/catalog/documents.json';
 const SOURCE_SCHEMA_PATH = 'docs/governance/schemas/g28-ledger-source-manifest.schema.json';
 const INDEX_SCHEMA_PATH = 'docs/governance/schemas/g28-ledger-partition-index.schema.json';
+const CURRENT_STATE_PATH = 'docs/governance/current-state.json';
 const PUBLISHED_UNIT_3_CHECKPOINT = '52533cc1a7658cc23f055b782b98f2167b63893f';
 const live = worktreeReader(ROOT);
 const snapshotPaths = [SOURCE_PATH, SOURCE_MANIFEST_PATH, INDEX_PATH, COMPATIBILITY_PATH,
@@ -489,7 +490,47 @@ expectValidationFailure('generated artifact without explicit catalog review fail
   value.artifacts = value.artifacts.filter(artifact => artifact.path !== COMPATIBILITY_PATH);
 }), `generated artifact added without explicit catalog review: ${COMPATIBILITY_PATH}`);
 
-test('Unit 5 precondition correction is the bounded final ledger unit', () => {
-  assert.equal(currentManifest().units.at(-1).phase_order_id,
-    'GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-5-PRECONDITION-CANONICAL-AUTHORITY-CONSUMER-FORWARD-CORRECTION-R3');
+test('current correction is bounded while prior Unit 5 evidence remains append-stable', () => {
+  const priorOrder = 'GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-5-PRECONDITION-CANONICAL-AUTHORITY-CONSUMER-FORWARD-CORRECTION-R3';
+  const correctionOrder = 'GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-5-R2-BOOTSTRAP-VALIDATOR-LIFECYCLE-DECOUPLING-FORWARD-CORRECTION-R1';
+  const state = JSON.parse(fs.readFileSync(path.join(ROOT, CURRENT_STATE_PATH), 'utf8'));
+  const manifest = currentManifest();
+  const unitsFor = (units, order) => units.filter(unit => unit.phase_order_id === order);
+  const prior = unitsFor(manifest.units, priorOrder);
+  const correction = unitsFor(manifest.units, correctionOrder);
+  assert.equal(prior.length, 1);
+  assert.equal(correction.length, 1);
+  assert.ok(prior[0].ordinal < correction[0].ordinal);
+
+  const finalUnit = manifest.units.at(-1);
+  const currentBounded = state.bounded_recent_ledger_references.at(-1);
+  const currentEvent = state.evidence_events.at(-1);
+  assert.equal(finalUnit.phase_order_id, currentBounded.phase_order_id);
+  assert.equal(finalUnit.unit_id, currentBounded.unit_id);
+  assert.equal(currentBounded.event_id, currentBounded.phase_order_id);
+  assert.ok(finalUnit.heading.endsWith(currentEvent.subject));
+  const boundedOrdinals = state.bounded_recent_ledger_references.map(reference =>
+    manifest.units.find(unit => unit.unit_id === reference.unit_id)?.ordinal);
+  assert.ok(boundedOrdinals.every(Number.isInteger));
+  assert.deepEqual(boundedOrdinals, [...boundedOrdinals].sort((left, right) => left - right));
+
+  for (const partition of currentIndex().partitions.filter(item => item.status === 'CLOSED')) {
+    const relativePath = `${PARTITION_DIR}/${partition.file_name}`;
+    const accepted = execFileSync('git', ['show', `${PUBLISHED_UNIT_3_CHECKPOINT}:${relativePath}`], {
+      cwd: ROOT, encoding: 'utf8'
+    });
+    assert.equal(files.get(relativePath), accepted);
+  }
+
+  const futureSource = Buffer.concat([
+    currentSourceBytes(),
+    Buffer.from('\n## 2099-12-31 — FUTURE-GOVERNANCE-EVENT-R1 — append-only fixture\n\n- fixture\n', 'utf8')
+  ]);
+  const futureUnits = deriveSourceUnits(futureSource).units;
+  assert.equal(unitsFor(futureUnits, priorOrder).length, 1);
+  assert.equal(unitsFor(futureUnits, correctionOrder).length, 1);
+  assert.ok(
+    unitsFor(futureUnits, priorOrder)[0].ordinal < unitsFor(futureUnits, correctionOrder)[0].ordinal
+  );
+  assert.notEqual(futureUnits.at(-1).phase_order_id, correctionOrder);
 });
