@@ -9553,7 +9553,7 @@ product file they depend on, was modified by this pass or the prior one):
   GOVERNANCE-EFFICIENCY-REFOUNDATION-CATALOG-TRACEABILITY-VALIDATOR-SHADOW-R1`.
   Exact accounting subject: `feat: add governance catalog and traceability shadow`.
 - **Linear immutable-validation correction.** Initial Unit 2 checkpoint
-  `fd8468548af02c649a9077050b93ce6f992643be` passed every worktree gate, but the
+  `fd84685453e9cb9e913e63fca2bfb3fbd7d73099` passed every worktree gate, but the
   mandated post-commit invocation `--commit HEAD` exposed a bounded reader defect:
   the revision guard accepted hexadecimal object IDs only. Git status, branch,
   index, and refs were proven unchanged by that failed invocation. The reader now
@@ -9584,3 +9584,30 @@ product file they depend on, was modified by this pass or the prior one):
 - **Next action.** `DIRECT SUPERVISOR REVIEW OF
   GOVERNANCE-EFFICIENCY-REFOUNDATION-CATALOG-TRACEABILITY-VALIDATOR-SHADOW-HARDENING-R2`.
   Exact accounting subject: `fix: bind governance traceability and reference debts`.
+
+## 2026-07-23 — GOVERNANCE-EFFICIENCY-REFOUNDATION-CATALOG-TRACEABILITY-VALIDATOR-SHADOW-HARDENING-R3 — final bounded Unit 2 review correction
+
+- **Forward correction.** The real first Unit 2 checkpoint is
+  `fd84685453e9cb9e913e63fca2bfb3fbd7d73099`; the prior ledger typo was corrected
+  without changing Git history. A targeted Unit 2 test asserts this exact
+  checkpoint and rejects the incorrect value.
+- **Reference-debt cardinality hardening.** Each known broken-reference debt now
+  requires exactly one distinct extracted source-line-target match. Zero matches
+  fail; more than one fails with an explicit ambiguous source-reference
+  multiplicity error. The parser's nested inline-code representation inside the
+  same Markdown-link raw syntax is collapsed only as one representation; distinct
+  Markdown references are never concealed by the applicable-debt Set. Existing
+  one-debt-per-key, no-duplicates, no-unused, no-missing, absent-target, owner,
+  source, and `DEFERRED` guarantees remain enforced.
+- **Negative fixture.** A real Unit 2 fixture adds two distinct Markdown links to
+  the same absent target on one source line and one deferred debt card; validation
+  fails with the required ambiguity/cardinality error.
+- **Authority boundary.** Unit 2 is `IMPLEMENTED / FINAL BOUNDED HARDENING
+  COMPLETE / AWAITING DIRECT SUPERVISOR REVIEW`. Structured sources remain
+  `NON-CANONICAL SHADOW MODE`; current canonical owners are unchanged. Unit 3,
+  documentary-authority cutover, cleanup, compaction, archival, deprecation,
+  deletion, product changes, database access, migrations, deployment, production,
+  `REAL_CUTOVER`, and `PHASE-C5B` remain unauthorized and did not occur.
+- **Next action.** `DIRECT SUPERVISOR REVIEW OF
+  GOVERNANCE-EFFICIENCY-REFOUNDATION-CATALOG-TRACEABILITY-VALIDATOR-SHADOW-HARDENING-R3`.
+  Exact accounting subject: `fix: close Unit 2 review gaps`.

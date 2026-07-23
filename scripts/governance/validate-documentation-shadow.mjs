@@ -235,7 +235,11 @@ function validateCatalog(catalog, manifest, reader, errors) {
     if (!Number.isInteger(debt.source_line) || debt.source_line < 1 || debt.source_line > source.line_count) errors.push(`catalog:${debt.debt_id}: stale source line`);
     const matches = source.outbound_references.filter(reference =>
       reference.source_line === debt.source_line && reference.target_path === debt.target);
-    if (matches.length === 0) errors.push(`catalog:${debt.debt_id}: debt matches no extracted reference`);
+    const distinctMatches = matches.filter(reference =>
+      reference.kind !== 'ROOT_REFERENCE' || !matches.some(candidate =>
+        candidate !== reference && candidate.kind === 'MARKDOWN_LINK' && candidate.raw.includes(reference.raw)));
+    if (distinctMatches.length === 0) errors.push(`catalog:${debt.debt_id}: debt matches no extracted reference`);
+    if (distinctMatches.length > 1) errors.push(`catalog:${debt.debt_id}: ambiguous source-reference multiplicity; expected exactly one extracted reference, found ${distinctMatches.length}`);
     if (allFiles.has(debt.target)) errors.push(`catalog:${debt.debt_id}: deferred target now exists`);
     if (!reader.exists(debt.owner) || !catalogByPath.has(debt.owner)) errors.push(`catalog:${debt.debt_id}: nonexistent debt owner`);
   }

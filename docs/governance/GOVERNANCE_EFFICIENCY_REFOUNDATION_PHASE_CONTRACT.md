@@ -18,7 +18,7 @@ STRUCTURED SOURCES: NON-CANONICAL SHADOW MODE
 
 CURRENT CANONICAL OWNERS: UNCHANGED
 
-UNIT 2: IMPLEMENTED / TRACEABILITY AND REFERENCE-DEBT HARDENING COMPLETE / AWAITING DIRECT SUPERVISOR REVIEW
+UNIT 2: IMPLEMENTED / FINAL BOUNDED HARDENING COMPLETE / AWAITING DIRECT SUPERVISOR REVIEW
 
 DOCUMENTARY-AUTHORITY CUTOVER: NOT AUTHORIZED
 
@@ -67,8 +67,10 @@ supervisor acceptance.
   order, and removes exact duplicates.
 - Known broken-reference debt is fail-closed and reconciled one-to-one against
   the source path, exact line, extracted missing target, cataloged owner, and
-  deferred resolution unit; duplicate, unused, stale, or newly resolved debt
-  entries fail validation.
+  deferred resolution unit; duplicate, unused, stale, newly resolved, or
+  multiply matched debt entries fail validation. A legacy inline-code token
+  nested inside the same Markdown-link raw syntax is treated as one parser
+  representation; distinct source references remain cardinality errors.
 - Unit 2 is not accepted by this implementation. Unit 3, documentary-authority
   cutover, cleanup, compaction, partitioning, archival, deprecation, and deletion
   remain not authorized.

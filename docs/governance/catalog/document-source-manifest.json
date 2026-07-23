@@ -416,10 +416,10 @@
     },
     {
       "path": "AGENT_HANDOFF.md",
-      "git_object_id": "553873789bcccae7c51b727dd1de1ae9f7696df5",
-      "sha256": "6e676210abac4911219a2476b6a5f94eb921d047a45f3d4bc2168306c4554aa3",
+      "git_object_id": "15b8161f8ddf63a06b701cd69a2d693bf1b0c487",
+      "sha256": "df13a2202396627407968612a9de003f5f0e99c52cf701062adbbc182de57a19",
       "line_count": 1081,
-      "byte_count": 76098,
+      "byte_count": 76056,
       "generated_status": "MANUAL",
       "outbound_references": [
         {
@@ -2060,14 +2060,14 @@
         },
         {
           "source_path": "docs/governance/GOVERNANCE_EFFICIENCY_REFOUNDATION_PHASE_CONTRACT.md",
-          "source_line": 79,
+          "source_line": 81,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
         },
         {
           "source_path": "docs/governance/GOVERNANCE_EFFICIENCY_REFOUNDATION_PHASE_CONTRACT.md",
-          "source_line": 86,
+          "source_line": 88,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
@@ -4070,10 +4070,10 @@
     },
     {
       "path": "PROJECT_STATE.md",
-      "git_object_id": "2d9293b85e1f747df363b4e38f7174feaf9550f3",
-      "sha256": "7cbc2e936a3fdd8ccc6e5ae3e95c83ab63983a54458b3bf49e513bee69dc1679",
+      "git_object_id": "44e33f8570800d59a33dfa6afdc9d2f9d9c67cd2",
+      "sha256": "6b09b3c11adf54fb4ae0daa931e40abdf561da0ffae63cfda792b0f4a7b4be2e",
       "line_count": 1995,
-      "byte_count": 146163,
+      "byte_count": 146121,
       "generated_status": "MANUAL",
       "outbound_references": [
         {
@@ -7966,14 +7966,14 @@
         },
         {
           "source_path": "docs/governance/GOVERNANCE_EFFICIENCY_REFOUNDATION_PHASE_CONTRACT.md",
-          "source_line": 78,
+          "source_line": 80,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
         },
         {
           "source_path": "docs/governance/GOVERNANCE_EFFICIENCY_REFOUNDATION_PHASE_CONTRACT.md",
-          "source_line": 84,
+          "source_line": 86,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
@@ -10617,10 +10617,10 @@
     },
     {
       "path": "docs/DOCUMENTATION_INDEX.md",
-      "git_object_id": "eb5b31164840d07539c9e41c1b925b6f6a4acd55",
-      "sha256": "c78e4d32bdb4b05d81fd7784287ce1bef3ea8b586f790db1bcab88dd6d4410f4",
+      "git_object_id": "ab6edd97899160a1b69e00a0fa3292a3d05319a9",
+      "sha256": "2ff4fc80f7375590e9eb650de4013c6c4d0a4e33c36effa512ea6731eae4c653",
       "line_count": 735,
-      "byte_count": 109052,
+      "byte_count": 109034,
       "generated_status": "MANUAL",
       "outbound_references": [
         {
@@ -48857,10 +48857,10 @@
     },
     {
       "path": "docs/governance/GOVERNANCE_EFFICIENCY_REFOUNDATION_PHASE_CONTRACT.md",
-      "git_object_id": "60d12bd49640b97560d1c50efad321776fb6bf84",
-      "sha256": "44711ee748cc87eb3714c8d23ef4049b27c2e955827889d803bab453b0db20a2",
-      "line_count": 92,
-      "byte_count": 4623,
+      "git_object_id": "198c7ac0b72e9858207954aa48173e2a0afbddd3",
+      "sha256": "4cb45ceebb045185707b1144a4ae0909361dbcbd46abc6eb8c4864f1bc69c5d6",
+      "line_count": 94,
+      "byte_count": 4797,
       "generated_status": "MANUAL",
       "outbound_references": [
         {
@@ -48917,7 +48917,7 @@
           "target_path": "PROJECT_STATE.md",
           "anchor": null,
           "line_suffix": null,
-          "source_line": 78
+          "source_line": 80
         },
         {
           "kind": "ROOT_REFERENCE",
@@ -48925,7 +48925,7 @@
           "target_path": "AGENT_HANDOFF.md",
           "anchor": null,
           "line_suffix": null,
-          "source_line": 79
+          "source_line": 81
         },
         {
           "kind": "ROOT_REFERENCE",
@@ -48933,7 +48933,7 @@
           "target_path": "PROJECT_STATE.md",
           "anchor": null,
           "line_suffix": null,
-          "source_line": 84
+          "source_line": 86
         },
         {
           "kind": "ROOT_REFERENCE",
@@ -48941,7 +48941,7 @@
           "target_path": "AGENT_HANDOFF.md",
           "anchor": null,
           "line_suffix": null,
-          "source_line": 86
+          "source_line": 88
         }
       ],
       "inbound_references": [
@@ -48989,7 +48989,7 @@
           "level": 2,
           "text": "Binding rules",
           "anchor": "binding-rules",
-          "line": 76
+          "line": 78
         }
       ]
     },
@@ -49495,8 +49495,8 @@
     },
     {
       "path": "docs/governance/shadow/generated/AGENT_HANDOFF.md",
-      "git_object_id": "2e058cef4d812666026f2ad8e51d058a6fc05349",
-      "sha256": "ee2d5072df3bbf5290723883dc6adea7f8c3303a0bfbb9eecc835cdab93d5648",
+      "git_object_id": "124d7e77b406aa1db48b8db4403670f1a27abdd1",
+      "sha256": "872894a2a1f5731967e6dd7ea250715c323a0db0bcc0a513b47d5c01c9c067fc",
       "line_count": 48,
       "byte_count": 2406,
       "generated_status": "GENERATED",
@@ -50715,8 +50715,8 @@
     },
     {
       "path": "docs/governance/shadow/generated/PROJECT_STATE.md",
-      "git_object_id": "cdd2f53eef15816abd3ad4604c58eec458e82dd3",
-      "sha256": "6aed773f86bb984b8c0b0ca242d03a39f9027ba050e6e3f2cfb3e55ce8bc1ba6",
+      "git_object_id": "9f0c07ed3bf863b8a42286d67b7f5cc636904d1d",
+      "sha256": "ececed775d00953e341c3629d679a8a80f2ebfe005ae678613442b60aac36059",
       "line_count": 61,
       "byte_count": 2612,
       "generated_status": "GENERATED",
@@ -50864,10 +50864,10 @@
     },
     {
       "path": "docs/ledgers/G28_LEDGER.md",
-      "git_object_id": "4735803f29bf7d708bd915520635fd920c23e272",
-      "sha256": "f0b2eeda2613a70139bd73e447b2cd136b730a9fddad0b8e110d9927c9de4638",
-      "line_count": 9586,
-      "byte_count": 970085,
+      "git_object_id": "ac4100b7080c6e5d3e1cdc9f0bd0b39a6114628f",
+      "sha256": "52bca982d01186c0367a3eee37c5cee927ad5f9b2b02ea6d4d9f708514378fd6",
+      "line_count": 9613,
+      "byte_count": 971986,
       "generated_status": "MANUAL",
       "outbound_references": [
         {
@@ -60475,6 +60475,12 @@
           "text": "2026-07-23 — GOVERNANCE-EFFICIENCY-REFOUNDATION-CATALOG-TRACEABILITY-VALIDATOR-SHADOW-HARDENING-R2 — Unit 2 traceability and reference-debt hardening",
           "anchor": "2026-07-23-governance-efficiency-refoundation-catalog-traceability-validator-shadow-hardening-r2-unit-2-traceability-and-reference-debt-hardening",
           "line": 9564
+        },
+        {
+          "level": 2,
+          "text": "2026-07-23 — GOVERNANCE-EFFICIENCY-REFOUNDATION-CATALOG-TRACEABILITY-VALIDATOR-SHADOW-HARDENING-R3 — final bounded Unit 2 review correction",
+          "anchor": "2026-07-23-governance-efficiency-refoundation-catalog-traceability-validator-shadow-hardening-r3-final-bounded-unit-2-review-correction",
+          "line": 9588
         }
       ]
     },

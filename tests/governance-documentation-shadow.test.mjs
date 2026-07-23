@@ -183,6 +183,24 @@ expectFailure('debt whose target now exists', {
 expectFailure('duplicate debt ID', {
   'docs/governance/catalog/documents.json': changedJson('docs/governance/catalog/documents.json', value => value.known_broken_references[1].debt_id = value.known_broken_references[0].debt_id)
 }, /duplicate stable reference ID/);
+expectFailure('ambiguous source-reference multiplicity', (() => {
+  const source = files.get('PROJECT_STATE.md');
+  const sourceLine = source.split(/\r?\n/).length;
+  const changedSource = `${source}[first](docs/ambiguous-reference-target.md) [second](docs/ambiguous-reference-target.md)\n`;
+  return {
+    'PROJECT_STATE.md': changedSource,
+    'docs/governance/catalog/documents.json': changedJson('docs/governance/catalog/documents.json', value => value.known_broken_references.push({
+      debt_id: 'DOC-REF-DEBT-AMBIGUOUS',
+      source_path: 'PROJECT_STATE.md',
+      source_line: sourceLine,
+      target: 'docs/ambiguous-reference-target.md',
+      status: 'DEFERRED',
+      owner: 'docs/DOCUMENTATION_INDEX.md',
+      reason: 'Fixture contains two distinct references on one source line.',
+      future_resolution_unit: 'GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-3'
+    }))
+  };
+})(), /ambiguous source-reference multiplicity/);
 expectFailure('ambiguous canonical traceability row', {
   'docs/architecture/ORDEM_COMPRA_C3_TRACEABILITY.md': changedCanonicalTrace('| OC-C3-READ-001 |', '| OC-C3-READ-001 | unexpected |')
 }, /ambiguous canonical traceability row/);
@@ -198,6 +216,12 @@ expectFailure('non-deterministic input ordering is rejected through generated dr
 
 test('invalid --commit object fails', () => {
   assert.throws(() => validateRepository(ROOT, 'deadbeef'), /invalid --commit object/);
+});
+
+test('ledger records the exact real Unit 2 first checkpoint', () => {
+  const ledger = files.get('docs/ledgers/G28_LEDGER.md');
+  assert.match(ledger, /GOVERNANCE-EFFICIENCY-REFOUNDATION-CATALOG-TRACEABILITY-VALIDATOR-SHADOW-R1[\s\S]*?fd84685453e9cb9e913e63fca2bfb3fbd7d73099/);
+  assert.doesNotMatch(ledger, /fd8468548af02c649a9077050b93ce6f992643be/);
 });
 
 test('immutable baseline with stale or absent generated artifacts fails without Git mutation', () => {

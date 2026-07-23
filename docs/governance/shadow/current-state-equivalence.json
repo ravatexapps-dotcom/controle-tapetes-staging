@@ -83,7 +83,7 @@
     {
       "source_id": "PROJECT_STATE.md:BOOTSTRAP_KEY:NEXT_AUTHORIZABLE_ACTION",
       "source_path": "PROJECT_STATE.md",
-      "source_sha256": "482f2e8b40d66ece1bf25e8d7ac33fb1e5680f4969bb094b5179bb624546e8fd",
+      "source_sha256": "eb6c55e1129ce4b9c236e6411a19f13d69e15903c1b61c0770a5bffd211a1883",
       "classification": "STRUCTURED_FIELD",
       "preservation_disposition": "REPRESENTED_IN_STRUCTURED_STATE",
       "destination_path": "docs/governance/shadow/current-state.json",
@@ -91,7 +91,7 @@
       "destination_anchor": null,
       "actual_owner_path": null,
       "semantic_status": "REVIEWED",
-      "review_basis": "R2 explicit re-review: the changed bootstrap value exactly matches /next_authorizable_action/canonical_value and records only the hardening supervisor-review gate."
+      "review_basis": "R3 explicit re-review: the changed bootstrap value exactly matches /next_authorizable_action/canonical_value and records only the final bounded-hardening supervisor-review gate."
     },
     {
       "source_id": "PROJECT_STATE.md:BOOTSTRAP_KEY:GOVERNING_SPEC",
@@ -213,7 +213,7 @@
     {
       "source_id": "PROJECT_STATE.md:TEXT_BLOCK:L2:ACTIVE_PHASE_AND_NEXT_ACTION:1:BLOCK:1",
       "source_path": "PROJECT_STATE.md",
-      "source_sha256": "eedeafbc6a3ec85cac6c1f5f4e848baef8cd71843cdbc06c69e5c7a7b6a7a3d1",
+      "source_sha256": "8cc0308ad4ef27705608e33646ef7a4c0d716cd13963aefc2acd77dcb8371235",
       "classification": "RETAINED_CURRENT_CANONICAL_CONTENT",
       "preservation_disposition": "RETAINED_IN_CURRENT_CANONICAL_SOURCE_PENDING_LATER_UNIT",
       "destination_path": "PROJECT_STATE.md",
@@ -221,7 +221,7 @@
       "destination_anchor": "## Active phase and next action",
       "actual_owner_path": "PROJECT_STATE.md",
       "semantic_status": "REVIEWED",
-      "review_basis": "R2 explicit re-review: PROJECT_STATE.md records the hardened Unit 2 supervisor-review gate while remaining the sole current-state owner."
+      "review_basis": "R3 explicit re-review: PROJECT_STATE.md records the final bounded-hardening supervisor-review gate while remaining the sole current-state owner."
     },
     {
       "source_id": "PROJECT_STATE.md:MARKDOWN_HEADING:L2:WORKSPACE_AND_GIT_BOUNDARIES:1",
@@ -546,12 +546,12 @@
       "destination_anchor": "## Active phase and next action",
       "actual_owner_path": "PROJECT_STATE.md",
       "semantic_status": "REVIEWED",
-      "review_basis": "R2 explicit review: derived handoff unit is duplicated from the verified owner PROJECT_STATE.md at ## Active phase and next action."
+      "review_basis": "R3 explicit re-review: derived handoff unit is duplicated from the verified owner PROJECT_STATE.md at ## Active phase and next action, including the final bounded-hardening gate."
     },
     {
       "source_id": "AGENT_HANDOFF.md:TEXT_BLOCK:L2:PHASE_STATUS:1:BLOCK:1",
       "source_path": "AGENT_HANDOFF.md",
-      "source_sha256": "a06089a4e5418a44d9eafd15418cc48dfa4b70ce1879645dd441c2a6ffd4d575",
+      "source_sha256": "cb3f54b349dccfe6aec971a336995fd55e5755a132d4b08a9dff46c85a000573",
       "classification": "DUPLICATED_CURRENT_STATE",
       "preservation_disposition": "DUPLICATED_FROM_VERIFIED_OWNER",
       "destination_path": "PROJECT_STATE.md",
