@@ -7,7 +7,7 @@ RENDERER: scripts/governance/render-unit4-canonical-views.mjs
 SCHEMA_VERSION: 2.0.0
 AUTHORITY_EPOCH: 1
 CUTOVER_ID: GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-4C-AUTHORITY-CUTOVER-R1
-SOURCE_PAYLOAD_SHA256: 0abff550ead5d3eb417eb001db806975bf406e8b1819287a0f938ef672505c25
+SOURCE_PAYLOAD_SHA256: faf572343b5fd1c0a7aadff97b5f5f160a153bdc729c00a155e8418d745a2a78
 
 <!-- GOVERNANCE_GENERATED_VIEW:END -->
 
@@ -18,7 +18,7 @@ This compatibility view owns no facts. `docs/governance/current-state.json` is c
 - Status: `active`
 - Authority epoch: `1`
 - Cutover ID: `GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-4C-AUTHORITY-CUTOVER-R1`
-- Active phase: `UNIT 4C DOCUMENTARY AUTHORITY ACTIVATED / AWAITING DIRECT SUPERVISOR REVIEW`
+- Active phase: `UNIT 4C FORWARD CORRECTION APPLIED / AWAITING DIRECT SUPERVISOR REVIEW`
 
 ## Accepted checkpoints
 
@@ -34,8 +34,8 @@ This compatibility view owns no facts. `docs/governance/current-state.json` is c
 
 ## Next authorized action
 
-- `DIRECT SUPERVISOR REVIEW OF GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-4C-DOCUMENTARY-AUTHORITY-CUTOVER-R1`
-- Mode: `UNIT 4D POST-CUTOVER DIRECT REVIEW`
+- `DIRECT SUPERVISOR REVIEW OF GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-4C-CANONICAL-CONSISTENCY-FORWARD-CORRECTION-R1`
+- Mode: `UNIT 4D POST-CORRECTION DIRECT REVIEW`
 - Status: `DIRECT SUPERVISOR REVIEW REQUIRED`
 
 ## Governing pointers
@@ -55,13 +55,13 @@ This compatibility view owns no facts. `docs/governance/current-state.json` is c
 
 ## Blockers and debts
 
-- `INGESTOR-DOC-CYCLE-VERIFY-DEFERRED`: active production blocker; blocking=true; owner=`PROJECT_STATE.md`.
-- `CAMADA3-BK5-BK8`: open; blocking=true; owner=`PROJECT_STATE.md`.
-- `DELETE-PROD-GUARD-A`: open; blocking=true; owner=`PROJECT_STATE.md`.
-- `CODE-HEALTH-AUDIT-18-R1`: open; blocking=false; owner=`PROJECT_STATE.md`.
-- `HISTORICAL_SALDO_FIOS_PROVENANCE_UNAVAILABLE`: open; blocking=true; owner=`PROJECT_STATE.md`.
-- `NATIVE_RECEIPT_COMPATIBILITY_MULTI_ORIGIN_UNRESOLVED`: open; blocking=true; owner=`PROJECT_STATE.md`.
-- `C3D-13-UNMAPPED-ROWS-COMPLETENESS-GATE`: open; blocking=true; owner=`PROJECT_STATE.md`.
+- `INGESTOR-DOC-CYCLE-VERIFY-DEFERRED`: active production blocker; blocking=true; owner=`docs/governance/current-state.json`.
+- `CAMADA3-BK5-BK8`: open; blocking=true; owner=`docs/governance/current-state.json`.
+- `DELETE-PROD-GUARD-A`: open; blocking=true; owner=`docs/governance/current-state.json`.
+- `CODE-HEALTH-AUDIT-18-R1`: open; blocking=false; owner=`docs/governance/current-state.json`.
+- `HISTORICAL_SALDO_FIOS_PROVENANCE_UNAVAILABLE`: open; blocking=true; owner=`docs/governance/current-state.json`.
+- `NATIVE_RECEIPT_COMPATIBILITY_MULTI_ORIGIN_UNRESOLVED`: open; blocking=true; owner=`docs/governance/current-state.json`.
+- `C3D-13-UNMAPPED-ROWS-COMPLETENESS-GATE`: open; blocking=true; owner=`docs/governance/current-state.json`.
 
 ## Prohibitions
 
@@ -88,3 +88,4 @@ This compatibility view owns no facts. `docs/governance/current-state.json` is c
 - `G28-LEDGER-UNIT-0204` / `G28-LEDGER-PART-0012`: Unit 4 contract correction
 - `G28-LEDGER-UNIT-0205` / `G28-LEDGER-PART-0012`: Unit 4A authorization and accepted readiness
 - `G28-LEDGER-UNIT-0206` / `G28-LEDGER-PART-0012`: Unit 4C activation
+- `G28-LEDGER-UNIT-0207` / `G28-LEDGER-PART-0012`: Unit 4C canonical consistency forward correction

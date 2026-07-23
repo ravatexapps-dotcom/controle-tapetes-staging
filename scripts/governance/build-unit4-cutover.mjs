@@ -6,20 +6,8 @@ import { fileURLToPath } from 'node:url';
 import { writeDocumentManifest } from './build-document-source-manifest.mjs';
 import { writeArtifacts as writeLedgerArtifacts } from './build-g28-ledger-partitions.mjs';
 import { writeCompatibilityView as writeLedgerCompatibilityView } from './render-g28-ledger-shadow.mjs';
-import {
-  activationManifestProjection,
-  jsonSha256,
-  prettyJsonLf,
-  rejectSelfReference,
-  sha256,
-  statePayloadProjection
-} from './unit4-canonical-json.mjs';
-import {
-  CANONICAL_VIEW_PATHS,
-  renderCanonicalViews,
-  validateRenderedViews,
-  writeCanonicalViews
-} from './render-unit4-canonical-views.mjs';
+import { activationManifestProjection, jsonSha256, prettyJsonLf, rejectSelfReference, sha256, statePayloadProjection } from './unit4-canonical-json.mjs';
+import { CANONICAL_VIEW_PATHS, renderCanonicalViews, validateRenderedViews, writeCanonicalViews } from './render-unit4-canonical-views.mjs';
 
 const SCRIPT_DIR = path.dirname(fileURLToPath(import.meta.url));
 export const REPO_ROOT = path.resolve(SCRIPT_DIR, '..', '..');
@@ -31,6 +19,7 @@ export const TRACE_PATH = 'docs/governance/traceability/purchase-order-phase-c.j
 export const ROLLBACK_PATH = 'docs/governance/cutover/unit4c-rollback-readiness.json';
 export const CUTOVER_PATH = 'docs/governance/cutover/unit4c-cutover-manifest.json';
 export const LEDGER_PATH = 'docs/ledgers/G28_LEDGER.md';
+export const CORRECTION_ORDER = 'GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-4C-CANONICAL-CONSISTENCY-FORWARD-CORRECTION-R1';
 export const SCHEMAS = [
   'docs/governance/schemas/current-state-v2.schema.json',
   'docs/governance/schemas/document-catalog-v2.schema.json',
@@ -45,7 +34,6 @@ const GOVERNING_ARTIFACTS = [
   'docs/governance/GOVERNANCE_EFFICIENCY_REFOUNDATION_PHASE_CONTRACT.md',
   'docs/governance/GOVERNANCE_EFFICIENCY_REFOUNDATION_UNIT_4_AUTHORITY_CUTOVER_CONTRACT.md'
 ];
-const PROTECTED_RESIDUE = new Set(['.gitignore', '.codex/config.toml', '.mcp.json']);
 
 function readJson(root, relativePath) {
   return JSON.parse(fs.readFileSync(path.join(root, relativePath), 'utf8'));
@@ -63,53 +51,6 @@ function fileHash(root, relativePath) {
 
 function git(root, args) {
   return childProcess.execFileSync('git', args, { cwd: root, encoding: 'utf8' }).trim();
-}
-
-function gitRaw(root, args) {
-  return childProcess.execFileSync('git', args, { cwd: root, encoding: 'utf8' });
-}
-
-function priorHash(root, relativePath) {
-  return sha256(childProcess.execFileSync('git', ['show', `${PARENT}:${relativePath}`], { cwd: root }));
-}
-
-function buildRollback(root) {
-  const priorOwners = [
-    'PROJECT_STATE.md',
-    'AGENT_HANDOFF.md',
-    'docs/DOCUMENTATION_INDEX.md',
-    'docs/architecture/ORDEM_COMPRA_C3_TRACEABILITY.md'
-  ];
-  return {
-    schema_version: '1.0.0',
-    package_id: 'GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-4C-ROLLBACK-READINESS-R1',
-    status: 'PREPARED / NOT AUTHORIZED / NOT ACTIVATED',
-    accepted_pre_cutover_checkpoint: PARENT,
-    defective_authority_epoch: 1,
-    required_corrective_authority_epoch: 2,
-    prior_authority_owners: priorOwners.map(owner => ({
-      path: owner,
-      sha256_at_accepted_checkpoint: priorHash(root, owner)
-    })),
-    current_structured_owners: [STATE_PATH, CATALOG_PATH, TRACE_PATH],
-    generated_root_paths: Object.values(CANONICAL_VIEW_PATHS),
-    governing_bootstrap_consumers: [
-      'AGENTS.md', 'CLAUDE.md', 'docs/governance/AGENT_INSTRUCTIONS.md'
-    ],
-    requirements: [
-      'RESTORE_AUTHORITY_ONLY_THROUGH_EXPLICIT_AUTHORITY_FIELDS',
-      'REGENERATE_ROOTS_SOURCE_FIRST',
-      'APPEND_CANONICAL_LEDGER_CORRECTION',
-      'CREATE_ONE_FUTURE_FAST_FORWARD_CORRECTION_COMMIT',
-      'OBTAIN_DIRECT_SUPERVISOR_REVIEW',
-      'ADVANCE_AUTHORITY_EPOCH_TO_2'
-    ],
-    prohibitions: [
-      'RESET', 'FORCE_PUSH', 'HISTORY_REWRITE', 'BRANCH_REPLACEMENT',
-      'SILENT_FALLBACK', 'MANUAL_GENERATED_ROOT_MAINTENANCE', 'AUTOMATIC_ACTIVATION'
-    ],
-    actual_unit4c_commit_checkpoint: 'EXTERNALLY_REQUIRED_INPUT'
-  };
 }
 
 function canonicalArtifact(relativePath, suffix, classification, authority) {
@@ -165,28 +106,43 @@ function transformRootArtifact(item) {
   };
 }
 
-function buildCatalog(candidate) {
+function refreshArtifact(item, manifestByPath) {
+  const document = manifestByPath.get(item.path);
+  if (!document || item.content_hash === null) return item;
+  return {
+    ...item,
+    content_hash: document.sha256,
+    line_count: document.line_count,
+    byte_count: document.byte_count,
+    inbound_references: document.inbound_references.length,
+    outbound_references: document.outbound_references.length,
+    generated_status: document.generated_status
+  };
+}
+
+function buildCatalog(candidate, manifest) {
+  const manifestByPath = new Map((manifest?.documents ?? []).map(item => [item.path, item]));
   const existing = candidate.artifacts.map(item => {
     const rooted = transformRootArtifact(item);
     if (rooted !== item) return rooted;
+    let updated = item;
     if (item.path === 'docs/governance/shadow/generated/G28_LEDGER.md'
         || item.path.startsWith('docs/governance/shadow/ledger/partitions/')) {
-      return {
+      updated = {
         ...item,
         classification: 'DERIVED',
         authority: 'DERIVED',
         status: 'GENERATED'
       };
-    }
-    if (item.path.startsWith('docs/governance/candidate/')
+    } else if (item.path.startsWith('docs/governance/candidate/')
         || item.path.startsWith('docs/governance/shadow/')) {
-      return {
+      updated = {
         ...item,
         authority: 'EVIDENCE_ONLY',
         status: 'HISTORICAL'
       };
     }
-    return item;
+    return refreshArtifact(updated, manifestByPath);
   });
   const additions = [
     canonicalArtifact(STATE_PATH, 'CURRENT-STATE', 'STRUCTURED_CURRENT_STATE', 'CANONICAL_CURRENT_STATE_OWNER'),
@@ -229,7 +185,8 @@ function deriveReferences(root) {
     'GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-4-BOOTSTRAP-AUTHORITY-CUTOVER-CONTRACT-R1',
     'GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-4-CONTRACT-COMMIT-BINDING-AND-CANDIDATE-PATH-CORRECTION-R2',
     'GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-4A-CUTOVER-READINESS-IMPLEMENTATION-R1',
-    'GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-4C-DOCUMENTARY-AUTHORITY-CUTOVER-R1'
+    'GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-4C-DOCUMENTARY-AUTHORITY-CUTOVER-R1',
+    CORRECTION_ORDER
   ];
   return wanted.map((eventId, ordinal) => {
     const unit = manifest.units.find(item => item.phase_order_id === eventId);
@@ -253,12 +210,13 @@ function deriveReferences(root) {
       reason: ordinal === 0 ? 'Unit 3 acceptance and Unit 4 contract definition'
         : ordinal === 1 ? 'Unit 4 contract correction'
           : ordinal === 2 ? 'Unit 4A authorization and accepted readiness'
-            : 'Unit 4C activation'
+            : ordinal === 3 ? 'Unit 4C activation'
+              : 'Unit 4C canonical consistency forward correction'
     };
   });
 }
 
-function evidenceEvents() {
+function evidenceEvents(originalActivationManifestHash) {
   return [
     {
       event_id: 'UNIT4A_UNIT4B_ACCEPTANCE',
@@ -283,13 +241,48 @@ function evidenceEvents() {
       event_id: 'UNIT4C_ACTIVATION_SUBJECT',
       classification: 'SPEC_CUSTODY_ACCOUNTING',
       subject: 'feat: activate structured governance authority'
+    },
+    {
+      event_id: 'UNIT4C_CANONICAL_CONSISTENCY_FORWARD_CORRECTION',
+      classification: 'FORWARD_CORRECTION',
+      subject: 'fix: reconcile post-cutover governance authority',
+      authority_epoch: 1,
+      second_activation: false,
+      rollback_executed: false,
+      unit4d_review_required: true,
+      original_ponr_unchanged: true,
+      original_activation_manifest_sha256: originalActivationManifestHash
     }
   ];
 }
 
-function buildState(candidate, references, rollbackHash, sourceHashes, governingHashes) {
+function historicalFactSources(root, legacySectionCount) {
+  const shadow = readJson(root, 'docs/governance/shadow/current-state-equivalence.json');
+  const candidate = readJson(root, 'docs/governance/candidate/current-state-equivalence.json');
+  const ledger = readJson(root, 'docs/governance/ledger/g28-ledger-source-manifest.json');
+  return [
+    ['docs/governance/shadow/current-state-equivalence.json', 'PRE_CUTOVER_SEMANTIC_EQUIVALENCE',
+      shadow.manifest_id, 'MAPPING', shadow.mappings.length, 'HISTORICAL_NON_AUTHORITATIVE'],
+    ['docs/governance/candidate/current-state-equivalence.json', 'ACCEPTED_UNIT4A_READINESS_EQUIVALENCE',
+      candidate.manifest_id, 'MAPPING', candidate.mappings.length, 'HISTORICAL_NON_AUTHORITATIVE'],
+    ['docs/closeouts/PROJECT_STATE_ARCHIVE_2026-07.md', 'PRE_CUTOVER_CURRENT_STATE_ARCHIVE',
+      `ACCEPTED_UNIT4B_CHECKPOINT:${PARENT}`, 'UNIT', legacySectionCount, 'HISTORICAL_NON_AUTHORITATIVE'],
+    [LEDGER_PATH, 'APPEND_ONLY_GOVERNANCE_HISTORY', ledger.manifest_id, 'UNIT', ledger.units.length,
+      'CANONICAL_APPEND_ONLY_HISTORY_NON_AUTHORITATIVE_FOR_CURRENT_STATE']
+  ].map(([source_path, evidence_role, evidence_identity, record_kind, record_count, authority_status]) => ({
+    source_path, evidence_role, evidence_identity, record_kind, record_count,
+    unresolved_count: 0, authority_status, bootstrap_required: false
+  }));
+}
+
+function buildState(candidate, references, rollbackHash, sourceHashes, governingHashes, historicalSources) {
+  const {
+    current_fact_sections: legacySections,
+    historical_fact_sources: ignoredHistoricalSources,
+    ...currentFields
+  } = candidate;
   const state = {
-    ...candidate,
+    ...currentFields,
     mode: 'canonical',
     authority: 'canonical_current_state',
     state_id: 'GOVERNANCE-EFFICIENCY-REFOUNDATION-CURRENT-STATE-R1',
@@ -303,19 +296,19 @@ function buildState(candidate, references, rollbackHash, sourceHashes, governing
       unit_4_contract: 'CLOSED / ACCEPTED / DIRECTLY VERIFIED',
       unit4a: 'CLOSED / ACCEPTED / DIRECTLY VERIFIED',
       unit4b: 'DIRECT REVIEW COMPLETED / ACCEPTED',
-      unit4c: 'ACTIVATED / AWAITING DIRECT SUPERVISOR REVIEW',
-      documentary_authority_cutover: 'ACTIVATED / AWAITING UNIT 4D REVIEW',
+      unit4c: 'ACTIVATED / FORWARD CORRECTION APPLIED / AWAITING DIRECT SUPERVISOR REVIEW',
+      documentary_authority_cutover: 'ACTIVE / FORWARD CORRECTION APPLIED / AWAITING UNIT 4D REVIEW',
       unit4d: 'DIRECT SUPERVISOR REVIEW REQUIRED / NOT SELF-ACCEPTED',
       unit5: 'NOT AUTHORIZED'
     },
     active_phase: {
       ...candidate.active_phase,
-      status: 'UNIT 4C DOCUMENTARY AUTHORITY ACTIVATED / AWAITING DIRECT SUPERVISOR REVIEW'
+      status: 'UNIT 4C FORWARD CORRECTION APPLIED / AWAITING DIRECT SUPERVISOR REVIEW'
     },
     next_authorizable_action: {
-      order_id: 'GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-4C-DOCUMENTARY-AUTHORITY-CUTOVER-R1',
-      canonical_value: 'DIRECT SUPERVISOR REVIEW OF GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-4C-DOCUMENTARY-AUTHORITY-CUTOVER-R1',
-      mode: 'UNIT 4D POST-CUTOVER DIRECT REVIEW',
+      order_id: CORRECTION_ORDER,
+      canonical_value: `DIRECT SUPERVISOR REVIEW OF ${CORRECTION_ORDER}`,
+      mode: 'UNIT 4D POST-CORRECTION DIRECT REVIEW',
       risk_class: 'R2',
       status: 'DIRECT SUPERVISOR REVIEW REQUIRED'
     },
@@ -333,6 +326,11 @@ function buildState(candidate, references, rollbackHash, sourceHashes, governing
       'UNIT_4D_ACCEPTANCE', 'UNIT_5', 'SILENT_FALLBACK', 'MANUAL_GENERATED_ROOT_EDIT'
     ]))],
     bounded_recent_ledger_references: references,
+    historical_fact_sources: historicalSources,
+    live_debts: candidate.live_debts.map(debt => ({
+      ...debt,
+      owner_path: debt.owner_path === 'PROJECT_STATE.md' ? STATE_PATH : debt.owner_path
+    })),
     structured_sources: Object.fromEntries(Object.entries(sourceHashes).map(([sourcePath, hash]) =>
       [sourcePath, { path: sourcePath, sha256: hash }])),
     candidate_views: Object.fromEntries(Object.entries(candidate.candidate_views).map(([viewPath, value]) =>
@@ -351,7 +349,11 @@ function buildState(candidate, references, rollbackHash, sourceHashes, governing
       sha256: rollbackHash,
       forward_only: true
     },
-    evidence_events: evidenceEvents(),
+    evidence_events: evidenceEvents(
+      candidate.evidence_events?.find(event =>
+        event.event_id === 'UNIT4C_CANONICAL_CONSISTENCY_FORWARD_CORRECTION')
+        ?.original_activation_manifest_sha256 ?? candidate.activation.activation_manifest_sha256
+    ),
     activation: {
       ...candidate.activation,
       status: 'active',
@@ -375,20 +377,19 @@ function buildState(candidate, references, rollbackHash, sourceHashes, governing
   return state;
 }
 
-function changedPaths(root) {
-  const lines = gitRaw(root, ['status', '--porcelain=v1', '-uall']).split(/\r?\n/u).filter(Boolean);
-  const paths = lines.map(line => line.slice(3).replace(/\\/gu, '/'))
-    .filter(relativePath => !PROTECTED_RESIDUE.has(relativePath));
-  if (!paths.includes(CUTOVER_PATH)) paths.push(CUTOVER_PATH);
-  return [...new Set(paths)].sort();
+function contractId(root) {
+  const contract = fs.readFileSync(path.join(root, GOVERNING_ARTIFACTS[4]), 'utf8');
+  const identity = contract.match(/^CONTRACT_ID:\s*(\S+)\s*$/mu)?.[1];
+  if (!identity) throw new Error('literal Unit 4 contract ID missing');
+  return identity;
 }
 
-function buildCutoverManifest(root, state, references, rollbackHash) {
+function buildCutoverManifest(root, state, references, rollbackHash, activationPaths) {
   const index = readJson(root, 'docs/governance/ledger/g28-ledger-partition-index.json');
   return {
     schema_version: '1.0.0',
     manifest_id: 'GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-4C-CUTOVER-MANIFEST-R1',
-    contract_id: 'GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-4-AUTHORITY-CUTOVER-CONTRACT-R1',
+    contract_id: contractId(root),
     order_id: 'GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-4C-DOCUMENTARY-AUTHORITY-CUTOVER-R1',
     required_parent: PARENT,
     accepted_unit4b_checkpoint: PARENT,
@@ -397,6 +398,9 @@ function buildCutoverManifest(root, state, references, rollbackHash) {
     cutover_id: CUTOVER_ID,
     authority_epoch: 1,
     activation_status: 'active',
+    review_status: 'CHANGES_REQUIRED / FORWARD CORRECTION APPLIED / AWAITING DIRECT SUPERVISOR REVIEW',
+    second_activation: false,
+    original_ponr_unchanged: true,
     state_payload_sha256: state.activation.state_payload_sha256,
     activation_manifest_sha256: state.activation.activation_manifest_sha256,
     current_state_file_sha256: fileHash(root, STATE_PATH),
@@ -413,7 +417,7 @@ function buildCutoverManifest(root, state, references, rollbackHash) {
     },
     bounded_ledger_reference_identities: references,
     rollback_readiness_sha256: rollbackHash,
-    changed_paths: changedPaths(root),
+    changed_paths: activationPaths,
     ponr_command: 'git push staging dev',
     actual_activation_commit_identity: 'EXTERNAL_GIT_FACT',
     unit4d_review: 'DIRECT_SUPERVISOR_REVIEW_REQUIRED / NOT_SELF_ACCEPTED',
@@ -425,41 +429,57 @@ function buildCutoverManifest(root, state, references, rollbackHash) {
 }
 
 export function buildCutover(root = REPO_ROOT) {
-  if (git(root, ['rev-parse', 'HEAD']) !== PARENT) throw new Error('Unit 4C required parent mismatch');
+  if (git(root, ['branch', '--show-current']) !== 'dev') throw new Error('Unit 4C branch mismatch');
   const candidateState = readJson(root, STATE_PATH);
-  if (candidateState.authority_epoch !== 0 && candidateState.authority_epoch !== 1) {
-    throw new Error('unsupported authority epoch');
+  if (candidateState.mode !== 'canonical' || candidateState.authority_epoch !== 1
+      || candidateState.activation?.status !== 'active'
+      || candidateState.activation?.required_parent !== PARENT
+      || candidateState.activation?.accepted_unit4b_readiness_checkpoint !== PARENT) {
+    throw new Error('forward correction requires active authority epoch 1');
   }
-  const catalog = buildCatalog(readJson(root, CATALOG_PATH));
-  const traceability = buildTraceability(readJson(root, TRACE_PATH));
-  const rollback = buildRollback(root);
-  writeJson(root, CATALOG_PATH, catalog);
-  writeJson(root, TRACE_PATH, traceability);
-  writeJson(root, ROLLBACK_PATH, rollback);
+  const priorCutover = readJson(root, CUTOVER_PATH);
+  const rollback = readJson(root, ROLLBACK_PATH);
+  if (rollback.status !== 'PREPARED / NOT AUTHORIZED / NOT ACTIVATED') {
+    throw new Error('rollback readiness must remain inactive');
+  }
+  const traceability = readJson(root, TRACE_PATH);
+  if (JSON.stringify(buildTraceability(traceability)) !== JSON.stringify(traceability)) {
+    throw new Error('traceability authority drift requires an unauthorized path');
+  }
+  writeLedgerArtifacts(root);
+  writeLedgerCompatibilityView(root);
   const references = deriveReferences(root);
   const rollbackHash = fileHash(root, ROLLBACK_PATH);
-  const sourceHashes = Object.fromEntries([
-    CATALOG_PATH, TRACE_PATH, ROLLBACK_PATH, ...SCHEMAS
-  ].map(relativePath => [relativePath, fileHash(root, relativePath)]));
-  const governingHashes = Object.fromEntries(GOVERNING_ARTIFACTS.map(relativePath =>
-    [relativePath, fileHash(root, relativePath)]));
-  const state = buildState(candidateState, references, rollbackHash, sourceHashes, governingHashes);
-  const views = renderCanonicalViews(state, catalog, traceability);
-  validateRenderedViews(views);
-  state.activation.generated_view_hashes = Object.fromEntries(Object.entries(views).map(([relativePath, text]) =>
-    [relativePath, sha256(text.replace(/\r\n?/gu, '\n'))]));
-  state.activation.activation_manifest_sha256 = jsonSha256(activationManifestProjection(state));
-  const selfErrors = rejectSelfReference(state);
-  if (selfErrors.length) throw new Error(selfErrors.join('\n'));
-  writeJson(root, STATE_PATH, state);
-  const writtenHashes = writeCanonicalViews(root, renderCanonicalViews(state, catalog, traceability));
-  if (JSON.stringify(writtenHashes) !== JSON.stringify(state.activation.generated_view_hashes)) {
-    throw new Error('generated root hash drift');
+  const legacySectionCount = candidateState.current_fact_sections?.length ?? 10;
+  const historicalSources = historicalFactSources(root, legacySectionCount);
+  let catalog = readJson(root, CATALOG_PATH);
+  let state;
+  for (let pass = 0; pass < 3; pass += 1) {
+    catalog = buildCatalog(catalog, writeDocumentManifest(root));
+    writeJson(root, CATALOG_PATH, catalog);
+    const sourceHashes = Object.fromEntries([
+      CATALOG_PATH, TRACE_PATH, ROLLBACK_PATH, ...SCHEMAS
+    ].map(relativePath => [relativePath, fileHash(root, relativePath)]));
+    const governingHashes = Object.fromEntries(GOVERNING_ARTIFACTS.map(relativePath =>
+      [relativePath, fileHash(root, relativePath)]));
+    state = buildState(candidateState, references, rollbackHash, sourceHashes, governingHashes, historicalSources);
+    const views = renderCanonicalViews(state, catalog, traceability);
+    validateRenderedViews(views);
+    state.activation.generated_view_hashes = Object.fromEntries(Object.entries(views).map(([relativePath, text]) =>
+      [relativePath, sha256(text.replace(/\r\n?/gu, '\n'))]));
+    state.activation.activation_manifest_sha256 = jsonSha256(activationManifestProjection(state));
+    const selfErrors = rejectSelfReference(state);
+    if (selfErrors.length) throw new Error(selfErrors.join('\n'));
+    writeJson(root, STATE_PATH, state);
+    const writtenHashes = writeCanonicalViews(root, renderCanonicalViews(state, catalog, traceability));
+    if (JSON.stringify(writtenHashes) !== JSON.stringify(state.activation.generated_view_hashes)) {
+      throw new Error('generated root hash drift');
+    }
   }
   writeDocumentManifest(root);
   writeLedgerArtifacts(root);
   writeLedgerCompatibilityView(root);
-  const cutover = buildCutoverManifest(root, state, references, rollbackHash);
+  const cutover = buildCutoverManifest(root, state, references, rollbackHash, priorCutover.changed_paths);
   writeJson(root, CUTOVER_PATH, cutover);
   return { state, catalog, traceability, rollback, cutover };
 }

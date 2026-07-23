@@ -5,6 +5,7 @@ import { fileURLToPath } from 'node:url';
 import { commitReader, worktreeReader } from './git-content-reader.mjs';
 import { readBoundedLedgerEvents } from './read-bounded-ledger-events.mjs';
 import { validateSchema } from './validate-documentation-shadow.mjs';
+import { validateCanonicalConsistencyObjects } from './validate-unit4-cutover.mjs';
 
 const SCRIPT_DIR = path.dirname(fileURLToPath(import.meta.url));
 export const REPO_ROOT = path.resolve(SCRIPT_DIR, '..', '..');
@@ -13,7 +14,9 @@ export const ROUTING_PATHS = [
   'docs/governance/schemas/current-state-v2.schema.json',
   'docs/governance/GOVERNANCE_EFFICIENCY_REFOUNDATION_PHASE_CONTRACT.md',
   'docs/governance/GOVERNANCE_EFFICIENCY_REFOUNDATION_UNIT_4_AUTHORITY_CUTOVER_CONTRACT.md',
-  'docs/governance/ledger/g28-ledger-partition-index.json'
+  'docs/governance/ledger/g28-ledger-partition-index.json',
+  'docs/governance/cutover/unit4c-cutover-manifest.json',
+  'docs/governance/catalog/documents.json'
 ];
 export const PROHIBITED_BOOTSTRAP_READS = new Set([
   'PROJECT_STATE.md',
@@ -80,9 +83,20 @@ export function simulateWithReader(baseReader) {
     throw new Error('active phase contract identity missing');
   }
   if (!unit4Contract.includes('## 8. Read-only consumer reconciliation')) {
-    throw new Error('accepted Unit 4 contract identity missing');
+    if (!unit4Contract.includes('## 8. HISTORICAL PRE-CUTOVER STATE — Read-only consumer reconciliation')) {
+      throw new Error('accepted Unit 4 contract identity missing');
+    }
   }
+  const cutover = parseJson(reader, ROUTING_PATHS[5]);
+  const catalog = parseJson(reader, ROUTING_PATHS[6]);
+  const consistencyErrors = validateCanonicalConsistencyObjects({
+    state, cutover, unit4Contract, phaseContract, catalog
+  });
+  if (consistencyErrors.length) throw new Error(consistencyErrors.join('\n'));
   const ledger = readBoundedLedgerEvents(reader, state.bounded_recent_ledger_references);
+  const debtOwners = state.live_debts.map(item => item.owner_path);
+  const invalidDebtOwners = debtOwners.filter(owner => owner !== 'docs/governance/current-state.json');
+  const contractIdentity = unit4Contract.match(/^CONTRACT_ID:\s*(\S+)\s*$/mu)?.[1] ?? null;
   const facts = {
     schema_version: state.schema_version,
     authority: state.authority,
@@ -93,6 +107,18 @@ export function simulateWithReader(baseReader) {
     unit4a_status: state.phase_status.unit4a,
     unit4b_status: state.phase_status.unit4b,
     unit4c_status: state.phase_status.unit4c,
+    unit4d_status: state.phase_status.unit4d,
+    current_debt_count: state.live_debts.length,
+    debt_owner_paths: [...new Set(debtOwners)].sort(),
+    invalid_owner_count: invalidDebtOwners.length,
+    historical_fact_sources: state.historical_fact_sources.map(item => item.source_path),
+    raw_legacy_prose_present: Object.hasOwn(state, 'current_fact_sections'),
+    contract_identity: contractIdentity,
+    manifest_contract_identity: cutover.contract_id,
+    contract_identity_parity: contractIdentity === cutover.contract_id,
+    unit4_contract_status: unit4Contract.match(/^STATUS:\s*(.+)$/mu)?.[1] ?? null,
+    phase_contract_status: phaseContract.match(/^STATUS:\s*(.+)$/mu)?.[1] ?? null,
+    second_activation: cutover.second_activation,
     root_authorities: state.root_authorities.map(item => item.path),
     ledger_events: ledger.events.map(item => item.reference.unit_id)
   };

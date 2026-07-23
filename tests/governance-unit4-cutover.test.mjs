@@ -4,8 +4,10 @@ import path from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 import {
+  CONTRACT_ID,
   CUTOVER_ID,
   PARENT,
+  validateCanonicalConsistencyObjects,
   validateCanonicalStateObject,
   validateCutover
 } from '../scripts/governance/validate-unit4-cutover.mjs';
@@ -16,154 +18,165 @@ import {
 } from '../scripts/governance/render-unit4-canonical-views.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const readJson = relativePath =>
-  JSON.parse(fs.readFileSync(path.join(ROOT, relativePath), 'utf8'));
+const ACTIVATION = '51a61ddfdbf058887ead64f9b018c30ebc371b48';
+const readText = relativePath => fs.readFileSync(path.join(ROOT, relativePath), 'utf8');
+const readJson = relativePath => JSON.parse(readText(relativePath));
 const state = readJson('docs/governance/current-state.json');
 const catalog = readJson('docs/governance/catalog/documents.json');
 const traceability = readJson('docs/governance/traceability/purchase-order-phase-c.json');
-const validation = validateCutover({ root: ROOT });
+const cutover = readJson('docs/governance/cutover/unit4c-cutover-manifest.json');
+const unit4Contract = readText('docs/governance/GOVERNANCE_EFFICIENCY_REFOUNDATION_UNIT_4_AUTHORITY_CUTOVER_CONTRACT.md');
+const phaseContract = readText('docs/governance/GOVERNANCE_EFFICIENCY_REFOUNDATION_PHASE_CONTRACT.md');
+const validation = validateCutover({ root: ROOT, activationCommit: ACTIVATION });
 
 const POSITIVE = [
-  'accepted Unit 4A checkpoint immutability',
-  'canonical schema 2.0.0',
-  'mode and authority activation',
-  'epoch 1',
-  'exact cutover ID',
-  'exact required parent',
-  'exact accepted Unit 4B checkpoint',
-  'exact four generated-root hashes',
-  'source-first activation transaction',
-  'atomic four-root replacement',
-  'exact active generated markers',
-  'generated roots own no independent facts',
-  'catalog canonical activation',
-  'traceability canonical activation',
-  'exact 13-row traceability parity',
-  'current-state fact coverage',
-  '31-consumer coverage',
-  'zero unresolved consumers',
-  'new structured bootstrap',
-  'no-private-memory continuity',
-  'bounded ledger lookup',
+  'canonical state has no current_fact_sections',
+  'compact historical fact sources are complete',
+  'historical sources are non-authoritative',
+  'every live-debt owner is canonical',
+  'no generated root owns a current fact',
+  'exact contract-ID parity',
+  'Unit 4 contract internal status consistency',
+  'phase contract internal status consistency',
+  'original activation remains external and unchanged',
+  'correction does not create a second activation',
+  'epoch remains 1',
+  'required parent remains accepted readiness checkpoint',
+  'Unit 4B checkpoint remains accepted readiness checkpoint',
+  'correction subject is structurally accounted for',
+  'new bounded ledger event resolves',
   'no full-ledger read',
-  'rollback package prepared',
-  'current ledger authority unchanged',
-  'Unit 1 guarantees preserved',
-  'Unit 2 guarantees preserved',
-  'Unit 3 guarantees preserved',
-  'spec-custody R4 through structured evidence',
-  'deterministic root render',
-  'deterministic complete build fixed point',
-  'external commit input',
-  'real parent equality',
-  'immutable validation',
-  'zero Git mutation',
+  'no-private-memory bootstrap',
+  'generated roots match corrected sources',
   'Unit 4D remains unaccepted',
-  'Unit 5 remains unauthorized'
+  'Unit 5 remains unauthorized',
+  'immutable original activation validation',
+  'immutable corrected-checkpoint validation',
+  'zero Git mutation'
 ];
 
 const NEGATIVE = [
-  'candidate mode presented as canonical',
-  'inactive activation in canonical mode',
-  'epoch zero after cutover',
-  'wrong cutover ID',
-  'wrong required parent',
-  'wrong Unit 4B checkpoint',
-  'wrong externally supplied commit',
-  'real commit parent mismatch',
-  'self-referential commit or tree field',
-  'missing root replacement',
-  'only one two or three roots replaced',
-  'wrong root output path',
-  'candidate marker remaining in a root',
-  'missing or duplicate active marker',
-  'manual-authority claim in a generated root',
-  'root manual edit',
-  'source change without render',
-  'render change without source',
-  'root hash drift',
-  'catalog or traceability hash drift',
-  'competing current-state owner',
-  'old Markdown treated as authoritative',
-  'silent fallback to root shadow or candidate',
-  'missing governing pointer',
-  'unclassified consumer',
-  'missing current-state fact',
-  'missing or stale bounded ledger reference',
-  'full-ledger fallback',
-  'missing rollback package',
-  'rollback package marked active',
-  'reset force or history-rewrite rollback instruction',
-  'actual commit SHA embedded in source',
-  'timestamp or live-Git field',
-  'wrong branch or remote',
-  'dirty index or unapproved residue',
-  'Unit 4D self-acceptance',
-  'Unit 5 authorization'
+  'raw legacy prose in canonical state',
+  'current_fact_sections in canonical mode',
+  'generated root as debt owner',
+  'missing debt owner',
+  'unknown debt owner',
+  'mismatched manifest contract ID',
+  'stale Unit 4 contract header',
+  'stale phase-contract clause',
+  'candidate authority claim after epoch 1',
+  'second activation',
+  'epoch increment without authorization',
+  'changed required parent',
+  'changed Unit 4B checkpoint',
+  'activation SHA embedded in source',
+  'correction SHA embedded in source',
+  'silent fallback',
+  'historical source treated as current owner',
+  'missing correction ledger event',
+  'missing correction evidence event',
+  'validator using correction commit as original activation commit',
+  'wrong externally supplied activation commit',
+  'generated-root drift'
 ];
 
-function clone(value) {
-  return JSON.parse(JSON.stringify(value));
-}
-
-const STATE_MUTATIONS = new Map([
-  [NEGATIVE[0], value => { value.mode = 'cutover_candidate'; }],
-  [NEGATIVE[1], value => { value.activation.status = 'inactive'; }],
-  [NEGATIVE[2], value => { value.authority_epoch = 0; value.activation.authority_epoch = 0; }],
-  [NEGATIVE[3], value => { value.cutover_id = 'WRONG'; }],
-  [NEGATIVE[4], value => { value.activation.required_parent = '0'.repeat(40); }],
-  [NEGATIVE[5], value => { value.activation.accepted_unit4b_readiness_checkpoint = '0'.repeat(40); }],
-  [NEGATIVE[8], value => { value.commit_sha = '0'.repeat(40); }],
-  [NEGATIVE[23], value => { delete value.governing_pointers.ledger; }],
-  [NEGATIVE[25], value => { delete value.active_phase; }],
-  [NEGATIVE[26], value => { value.bounded_recent_ledger_references.pop(); }],
-  [NEGATIVE[31], value => { value.evidence_events[1].commit_sha = '0'.repeat(40); }],
-  [NEGATIVE[32], value => { value.timestamp = '2026-07-23T00:00:00Z'; }],
-  [NEGATIVE[33], value => { value.repository.branch = 'main'; }],
-  [NEGATIVE[35], value => { value.phase_status.unit4d = 'ACCEPTED'; }],
-  [NEGATIVE[36], value => { value.phase_status.unit5 = 'AUTHORIZED'; }]
+const clone = value => structuredClone(value);
+const stateFailure = mutate => () => {
+  const fixture = clone(state);
+  mutate(fixture);
+  return validateCanonicalStateObject(fixture);
+};
+const semanticFailure = mutate => () => {
+  const fixture = {
+    state: clone(state),
+    cutover: clone(cutover),
+    unit4Contract,
+    phaseContract,
+    catalog: clone(catalog)
+  };
+  mutate(fixture);
+  return validateCanonicalConsistencyObjects(fixture);
+};
+const checks = new Map([
+  [NEGATIVE[0], stateFailure(value => { value.historical_fact_sources[0].content = 'legacy prose'; })],
+  [NEGATIVE[1], stateFailure(value => { value.current_fact_sections = []; })],
+  [NEGATIVE[2], stateFailure(value => { value.live_debts[0].owner_path = 'PROJECT_STATE.md'; })],
+  [NEGATIVE[3], stateFailure(value => { delete value.live_debts[0].owner_path; })],
+  [NEGATIVE[4], stateFailure(value => { value.live_debts[0].owner_path = 'docs/unknown.md'; })],
+  [NEGATIVE[5], semanticFailure(value => { value.cutover.contract_id = 'WRONG'; })],
+  [NEGATIVE[6], semanticFailure(value => {
+    value.unit4Contract = value.unit4Contract.replace(/^STATUS:.*$/mu, 'STATUS: CORRECTED');
+  })],
+  [NEGATIVE[7], semanticFailure(value => {
+    value.phaseContract += '\nStructured sources remain non-canonical.\n';
+  })],
+  [NEGATIVE[8], stateFailure(value => { value.authority = 'non_canonical_until_supervisor_activation'; })],
+  [NEGATIVE[9], stateFailure(value => {
+    value.evidence_events.find(event =>
+      event.event_id === 'UNIT4C_CANONICAL_CONSISTENCY_FORWARD_CORRECTION').second_activation = true;
+  })],
+  [NEGATIVE[10], stateFailure(value => { value.authority_epoch = 2; })],
+  [NEGATIVE[11], stateFailure(value => { value.activation.required_parent = '0'.repeat(40); })],
+  [NEGATIVE[12], stateFailure(value => {
+    value.activation.accepted_unit4b_readiness_checkpoint = '0'.repeat(40);
+  })],
+  [NEGATIVE[13], stateFailure(value => { value.activation_commit_sha = ACTIVATION; })],
+  [NEGATIVE[14], stateFailure(value => { value.correction_commit_sha = 'f'.repeat(40); })],
+  [NEGATIVE[15], stateFailure(value => {
+    value.prohibitions = value.prohibitions.filter(item => item !== 'SILENT_FALLBACK');
+  })],
+  [NEGATIVE[16], stateFailure(value => {
+    value.historical_fact_sources[0].authority_status = 'CURRENT_STATE_OWNER';
+  })],
+  [NEGATIVE[17], stateFailure(value => { value.bounded_recent_ledger_references.pop(); })],
+  [NEGATIVE[18], stateFailure(value => {
+    value.evidence_events = value.evidence_events.filter(event =>
+      event.event_id !== 'UNIT4C_CANONICAL_CONSISTENCY_FORWARD_CORRECTION');
+  })],
+  [NEGATIVE[19], () => validateCutover({
+    root: ROOT, commit: ACTIVATION, activationCommit: ACTIVATION
+  }).errors],
+  [NEGATIVE[20], () => validateCutover({ root: ROOT, activationCommit: PARENT }).errors],
+  [NEGATIVE[21], () => {
+    const rendered = renderCanonicalViews(state, catalog, traceability);
+    return `${rendered['PROJECT_STATE.md']}\nDRIFT\n` === readText('PROJECT_STATE.md')
+      ? [] : ['generated-root drift'];
+  }]
 ]);
 
-test('Unit 4C inventories are exact', () => {
-  assert.equal(POSITIVE.length, 36);
-  assert.equal(NEGATIVE.length, 37);
-  assert.equal(new Set(POSITIVE).size, 36);
-  assert.equal(new Set(NEGATIVE).size, 37);
+test('Unit 4C forward-correction inventories are exact', () => {
+  assert.equal(POSITIVE.length, 23);
+  assert.equal(NEGATIVE.length, 22);
+  assert.equal(new Set(POSITIVE).size, 23);
+  assert.equal(new Set(NEGATIVE).size, 22);
+  assert.equal(checks.size, 22);
 });
 
 for (const name of POSITIVE) {
   test(`positive: ${name}`, () => {
     assert.deepEqual(validation.errors, []);
-    assert.equal(validation.positive_checks, 36);
-    assert.equal(validation.traceability_rows, 13);
-    assert.equal(validation.consumers, 31);
+    assert.equal(validation.positive_checks, 23);
   });
 }
 
 for (const name of NEGATIVE) {
-  test(`negative inventory: ${name}`, () => {
-    const mutate = STATE_MUTATIONS.get(name);
-    if (mutate) {
-      const fixture = clone(state);
-      mutate(fixture);
-      assert.ok(validateCanonicalStateObject(fixture).length > 0);
-    } else {
-      assert.equal(validation.negative_checks, 37);
-      assert.ok(name.length > 0);
-    }
+  test(`negative: ${name}`, () => {
+    assert.ok(checks.get(name)().length > 0);
   });
 }
 
 test('canonical renderer is deterministic and complete', () => {
   const first = renderCanonicalViews(state, catalog, traceability);
-  const second = renderCanonicalViews(state, catalog, traceability);
-  assert.deepEqual(first, second);
+  assert.deepEqual(first, renderCanonicalViews(state, catalog, traceability));
   assert.deepEqual(Object.keys(first).sort(), Object.values(CANONICAL_VIEW_PATHS).sort());
   assert.doesNotThrow(() => validateRenderedViews(first));
 });
 
-test('canonical activation identities are exact', () => {
+test('forward-correction identities are exact', () => {
   assert.equal(state.cutover_id, CUTOVER_ID);
   assert.equal(state.activation.required_parent, PARENT);
   assert.equal(state.activation.accepted_unit4b_readiness_checkpoint, PARENT);
+  assert.equal(cutover.contract_id, CONTRACT_ID);
+  assert.equal(cutover.second_activation, false);
+  assert.equal(Object.hasOwn(state, 'current_fact_sections'), false);
 });

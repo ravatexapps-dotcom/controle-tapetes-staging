@@ -1,10 +1,10 @@
 <!-- GENERATED NON-CANONICAL SHADOW LEDGER PARTITION — DO NOT EDIT -->
 <!-- partition_id: G28-LEDGER-PART-0012 -->
 <!-- canonical_source: docs/ledgers/G28_LEDGER.md -->
-<!-- source_unit_interval: G28-LEDGER-UNIT-0195..G28-LEDGER-UNIT-0206 -->
-<!-- canonical_byte_interval: 962903..987565 -->
-<!-- canonical_line_interval: 9510..9689 -->
-<!-- payload_sha256: b4fb2c66494e85bb591d389b9f0ab71d197808744b7f016cbff43574387cc70a -->
+<!-- source_unit_interval: G28-LEDGER-UNIT-0195..G28-LEDGER-UNIT-0207 -->
+<!-- canonical_byte_interval: 962903..989066 -->
+<!-- canonical_line_interval: 9510..9698 -->
+<!-- payload_sha256: 133fdae82c3535e497b9a35de762d064f88cfb18b22ab008b7c7b9e46e43bd48 -->
 <!-- oversized_single_unit: false -->
 <!-- partition_status: OPEN -->
 <!-- G28_LEDGER_SHADOW_PAYLOAD_BEGIN_7b9d4e3a -->
@@ -188,5 +188,14 @@
 - **Rollback readiness.** A forward-correction package is prepared but not authorized and not activated. Reset, force push, history rewrite, branch replacement, silent fallback, and manual maintenance of generated roots remain prohibited.
 - **Publication boundary.** Authority becomes effective only upon exactly one fast-forward `git push staging dev`. Publication is not claimed by this in-commit entry. The actual activation SHA is an external Git fact and is not embedded in the structured source.
 - **Review boundary.** Unit 4C remains `AWAITING DIRECT SUPERVISOR REVIEW`; Unit 4D is required and is not self-accepted. Unit 5, product work, database access, migrations, environment access, deployment, production, cleanup, archival, deprecation, and deletion remain unauthorized.
+
+## 2026-07-23 — GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-4C-CANONICAL-CONSISTENCY-FORWARD-CORRECTION-R1 — reconcile post-cutover governance authority
+
+- **Published checkpoint retained.** Unit 4C activation checkpoint `51a61ddfdbf058887ead64f9b018c30ebc371b48` was published and classified `CHANGES_REQUIRED / NOT ACCEPTED`; its PONR, required parent, cutover identity, and authority epoch `1` remain unchanged.
+- **Forward correction.** No rollback or second activation occurred. Contradictory active-tense clauses in the Unit 4 and governance phase contracts were corrected. Raw pre-cutover `current_fact_sections` prose was removed from canonical current state; historical equivalence remains preserved through compact structured references.
+- **Authority correction.** Current live-debt ownership moved from generated `PROJECT_STATE.md` to `docs/governance/current-state.json`. The cutover manifest contract ID now matches the literal normative `CONTRACT_ID`.
+- **Validation.** Schemas, validators, bootstrap simulation, generated-root parity, immutable activation/correction checks, and positive/negative governance tests were strengthened. Unit 4D remains pending and not self-accepted. Unit 5 remains unauthorized.
+- **Scope exclusions.** No product, database, migration, environment, deployment, cleanup, archival, deprecation, deletion, reset, force push, rollback, second activation, or history rewrite occurred.
+- **Commit subject.** `fix: reconcile post-cutover governance authority`.
 
 <!-- G28_LEDGER_SHADOW_PAYLOAD_END_7b9d4e3a -->

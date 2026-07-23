@@ -7,7 +7,7 @@ RENDERER: scripts/governance/render-unit4-canonical-views.mjs
 SCHEMA_VERSION: 2.0.0
 AUTHORITY_EPOCH: 1
 CUTOVER_ID: GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-4C-AUTHORITY-CUTOVER-R1
-SOURCE_PAYLOAD_SHA256: 0abff550ead5d3eb417eb001db806975bf406e8b1819287a0f938ef672505c25
+SOURCE_PAYLOAD_SHA256: faf572343b5fd1c0a7aadff97b5f5f160a153bdc729c00a155e8418d745a2a78
 
 <!-- GOVERNANCE_GENERATED_VIEW:END -->
 
@@ -16,7 +16,7 @@ This bounded compatibility view owns no facts. Use the structured source and its
 - Repository: `ravatexapps-dotcom/controle-tapetes-staging`
 - Workspace: `D:\Programação\controle-tapetes-g28`
 - Branch: `dev`
-- Objective: `DIRECT SUPERVISOR REVIEW OF GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-4C-DOCUMENTARY-AUTHORITY-CUTOVER-R1`
+- Objective: `DIRECT SUPERVISOR REVIEW OF GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-4C-CANONICAL-CONSISTENCY-FORWARD-CORRECTION-R1`
 - Unit 4D: `DIRECT SUPERVISOR REVIEW REQUIRED / NOT SELF-ACCEPTED`
 - Unit 5: `NOT AUTHORIZED`
 
@@ -41,3 +41,4 @@ This bounded compatibility view owns no facts. Use the structured source and its
 - `GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-4-CONTRACT-COMMIT-BINDING-AND-CANDIDATE-PATH-CORRECTION-R2` in `docs/governance/shadow/ledger/partitions/G28_LEDGER_PART_0012.md`; Unit 4 contract correction
 - `GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-4A-CUTOVER-READINESS-IMPLEMENTATION-R1` in `docs/governance/shadow/ledger/partitions/G28_LEDGER_PART_0012.md`; Unit 4A authorization and accepted readiness
 - `GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-4C-DOCUMENTARY-AUTHORITY-CUTOVER-R1` in `docs/governance/shadow/ledger/partitions/G28_LEDGER_PART_0012.md`; Unit 4C activation
+- `GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-4C-CANONICAL-CONSISTENCY-FORWARD-CORRECTION-R1` in `docs/governance/shadow/ledger/partitions/G28_LEDGER_PART_0012.md`; Unit 4C canonical consistency forward correction

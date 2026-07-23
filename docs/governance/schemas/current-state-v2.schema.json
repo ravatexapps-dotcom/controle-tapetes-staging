@@ -9,8 +9,7 @@
     "cutover_id", "last_accepted_phase", "repository", "accepted_checkpoints",
     "phase_status", "active_phase", "next_authorizable_action", "active_track",
     "governing_pointers", "applicable_baseline", "environment_boundaries",
-    "protected_residue", "live_debts", "current_fact_sections",
-    "active_requirements", "prohibitions",
+    "protected_residue", "live_debts", "active_requirements", "prohibitions",
     "bounded_recent_ledger_references", "structured_sources",
     "candidate_views", "root_authorities", "rollback_readiness", "activation"
   ],
@@ -62,7 +61,7 @@
       "properties": {
         "id": { "const": "GOVERNANCE-EFFICIENCY-REFOUNDATION" },
         "contract": { "const": "docs/governance/GOVERNANCE_EFFICIENCY_REFOUNDATION_PHASE_CONTRACT.md" },
-        "status": { "enum": ["IMPLEMENTED / CUTOVER READINESS EVIDENCE COMPLETE / AWAITING DIRECT SUPERVISOR REVIEW", "UNIT 4C DOCUMENTARY AUTHORITY ACTIVATED / AWAITING DIRECT SUPERVISOR REVIEW"] }
+        "status": { "enum": ["IMPLEMENTED / CUTOVER READINESS EVIDENCE COMPLETE / AWAITING DIRECT SUPERVISOR REVIEW", "UNIT 4C DOCUMENTARY AUTHORITY ACTIVATED / AWAITING DIRECT SUPERVISOR REVIEW", "UNIT 4C FORWARD CORRECTION APPLIED / AWAITING DIRECT SUPERVISOR REVIEW"] }
       }
     },
     "next_authorizable_action": {
@@ -70,9 +69,9 @@
       "additionalProperties": false,
       "required": ["order_id", "canonical_value", "mode", "risk_class", "status"],
       "properties": {
-        "order_id": { "enum": ["GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-4A-CUTOVER-READINESS-IMPLEMENTATION-R1", "GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-4C-DOCUMENTARY-AUTHORITY-CUTOVER-R1"] },
-        "canonical_value": { "enum": ["DIRECT SUPERVISOR REVIEW OF GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-4A-CUTOVER-READINESS-IMPLEMENTATION-R1", "DIRECT SUPERVISOR REVIEW OF GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-4C-DOCUMENTARY-AUTHORITY-CUTOVER-R1"] },
-        "mode": { "enum": ["UNIT 4B READINESS DIRECT REVIEW", "UNIT 4D POST-CUTOVER DIRECT REVIEW"] },
+        "order_id": { "enum": ["GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-4A-CUTOVER-READINESS-IMPLEMENTATION-R1", "GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-4C-DOCUMENTARY-AUTHORITY-CUTOVER-R1", "GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-4C-CANONICAL-CONSISTENCY-FORWARD-CORRECTION-R1"] },
+        "canonical_value": { "enum": ["DIRECT SUPERVISOR REVIEW OF GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-4A-CUTOVER-READINESS-IMPLEMENTATION-R1", "DIRECT SUPERVISOR REVIEW OF GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-4C-DOCUMENTARY-AUTHORITY-CUTOVER-R1", "DIRECT SUPERVISOR REVIEW OF GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-4C-CANONICAL-CONSISTENCY-FORWARD-CORRECTION-R1"] },
+        "mode": { "enum": ["UNIT 4B READINESS DIRECT REVIEW", "UNIT 4D POST-CUTOVER DIRECT REVIEW", "UNIT 4D POST-CORRECTION DIRECT REVIEW"] },
         "risk_class": { "const": "R2" },
         "status": { "const": "DIRECT SUPERVISOR REVIEW REQUIRED" }
       }
@@ -82,8 +81,39 @@
     "applicable_baseline": { "type": "null" },
     "environment_boundaries": { "type": "object", "minProperties": 3 },
     "protected_residue": { "type": "array", "minItems": 3 },
-    "live_debts": { "type": "array" },
+    "live_debts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["owner_path"],
+        "properties": {
+          "owner_path": { "const": "docs/governance/current-state.json" }
+        }
+      }
+    },
     "current_fact_sections": { "type": "array", "minItems": 8 },
+    "historical_fact_sources": {
+      "type": "array",
+      "minItems": 4,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "source_path", "evidence_role", "evidence_identity", "record_kind",
+          "record_count", "unresolved_count", "authority_status", "bootstrap_required"
+        ],
+        "properties": {
+          "source_path": { "type": "string", "pattern": "^(docs/governance/(shadow|candidate)/current-state-equivalence\\.json|docs/closeouts/PROJECT_STATE_ARCHIVE_2026-07\\.md|docs/ledgers/G28_LEDGER\\.md)$" },
+          "evidence_role": { "type": "string", "minLength": 1 },
+          "evidence_identity": { "type": "string", "minLength": 1 },
+          "record_kind": { "enum": ["MAPPING", "UNIT"] },
+          "record_count": { "type": "integer", "minimum": 1 },
+          "unresolved_count": { "const": 0 },
+          "authority_status": { "enum": ["HISTORICAL_NON_AUTHORITATIVE", "CANONICAL_APPEND_ONLY_HISTORY_NON_AUTHORITATIVE_FOR_CURRENT_STATE"] },
+          "bootstrap_required": { "const": false }
+        }
+      }
+    },
     "active_requirements": { "type": "array", "minItems": 13 },
     "prohibitions": { "type": "array", "minItems": 1 },
     "bounded_recent_ledger_references": { "type": "array", "minItems": 3 },
@@ -127,7 +157,8 @@
     {
       "if": { "properties": { "mode": { "const": "canonical" } } },
       "then": {
-        "required": ["evidence_events"],
+        "required": ["evidence_events", "historical_fact_sources"],
+        "not": { "required": ["current_fact_sections"] },
         "properties": {
           "authority": { "const": "canonical_current_state" },
           "state_id": { "const": "GOVERNANCE-EFFICIENCY-REFOUNDATION-CURRENT-STATE-R1" },
@@ -143,6 +174,7 @@
         }
       },
       "else": {
+        "required": ["current_fact_sections"],
         "properties": {
           "authority": { "const": "non_canonical_until_supervisor_activation" },
           "authority_epoch": { "const": 0 },

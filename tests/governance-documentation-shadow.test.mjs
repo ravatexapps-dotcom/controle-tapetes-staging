@@ -256,3 +256,11 @@ test('deterministic renderer produces byte-identical output twice', async () => 
   const traceability = json('docs/governance/traceability/purchase-order-phase-c.json');
   assert.deepEqual(renderViews(catalog, traceability), renderViews(structuredClone(catalog), structuredClone(traceability)));
 });
+
+test('epoch-1 generated roots resolve only to structured catalog owners', () => {
+  const catalog = JSON.parse(fs.readFileSync(path.join(ROOT, 'docs/governance/catalog/documents.json'), 'utf8'));
+  const roots = catalog.artifacts.filter(item => item.classification === 'GENERATED_COMPATIBILITY_VIEW');
+  assert.equal(roots.length, 4);
+  assert.ok(roots.every(item => item.authority === 'NONE / STRUCTURED_SOURCE_OWNED'));
+  assert.ok(roots.every(item => !['PROJECT_STATE.md', 'AGENT_HANDOFF.md'].includes(item.owner)));
+});

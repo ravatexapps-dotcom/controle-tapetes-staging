@@ -7,7 +7,8 @@
   "required": [
     "schema_version", "manifest_id", "contract_id", "order_id", "required_parent",
     "accepted_unit4b_checkpoint", "target_branch", "allowed_remote", "cutover_id",
-    "authority_epoch", "activation_status", "state_payload_sha256",
+    "authority_epoch", "activation_status", "review_status", "second_activation",
+    "original_ponr_unchanged", "state_payload_sha256",
     "activation_manifest_sha256", "current_state_file_sha256", "catalog_sha256",
     "traceability_sha256", "schema_hashes", "generated_root_hashes",
     "governing_artifact_hashes", "canonical_ledger_identity",
@@ -18,7 +19,7 @@
   "properties": {
     "schema_version": { "const": "1.0.0" },
     "manifest_id": { "const": "GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-4C-CUTOVER-MANIFEST-R1" },
-    "contract_id": { "const": "GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-4-AUTHORITY-CUTOVER-CONTRACT-R1" },
+    "contract_id": { "const": "GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-4-BOOTSTRAP-AUTHORITY-CUTOVER-CONTRACT-R1" },
     "order_id": { "const": "GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-4C-DOCUMENTARY-AUTHORITY-CUTOVER-R1" },
     "required_parent": { "const": "fa986cf935abbf053172cfd549b0171bb9446f58" },
     "accepted_unit4b_checkpoint": { "const": "fa986cf935abbf053172cfd549b0171bb9446f58" },
@@ -27,6 +28,9 @@
     "cutover_id": { "const": "GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-4C-AUTHORITY-CUTOVER-R1" },
     "authority_epoch": { "const": 1 },
     "activation_status": { "const": "active" },
+    "review_status": { "const": "CHANGES_REQUIRED / FORWARD CORRECTION APPLIED / AWAITING DIRECT SUPERVISOR REVIEW" },
+    "second_activation": { "const": false },
+    "original_ponr_unchanged": { "const": true },
     "state_payload_sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
     "activation_manifest_sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
     "current_state_file_sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },

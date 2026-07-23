@@ -1,6 +1,6 @@
 {
   "accepted_unit4b_checkpoint": "fa986cf935abbf053172cfd549b0171bb9446f58",
-  "activation_manifest_sha256": "ce27f5a2471a51e47bffff09853e3fe08e63bcc6c03da0cbd2891f84c74a6f67",
+  "activation_manifest_sha256": "813b13d578d316af8a1536d9d4e1b2d938487a5c98417ce3e2fd9e5f998b52ac",
   "activation_status": "active",
   "actual_activation_commit_identity": "EXTERNAL_GIT_FACT",
   "allowed_remote": "staging/dev",
@@ -13,7 +13,7 @@
       "heading": "## 2026-07-23 — GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-4-BOOTSTRAP-AUTHORITY-CUTOVER-CONTRACT-R1 — accept Unit 3 and define Unit 4 cutover contract",
       "partition_id": "G28-LEDGER-PART-0012",
       "partition_path": "docs/governance/shadow/ledger/partitions/G28_LEDGER_PART_0012.md",
-      "partition_payload_sha256": "b4fb2c66494e85bb591d389b9f0ab71d197808744b7f016cbff43574387cc70a",
+      "partition_payload_sha256": "133fdae82c3535e497b9a35de762d064f88cfb18b22ab008b7c7b9e46e43bd48",
       "phase_order_id": "GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-4-BOOTSTRAP-AUTHORITY-CUTOVER-CONTRACT-R1",
       "reason": "Unit 3 acceptance and Unit 4 contract definition",
       "start_byte": 978772,
@@ -28,7 +28,7 @@
       "heading": "## 2026-07-23 — GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-4-CONTRACT-COMMIT-BINDING-AND-CANDIDATE-PATH-CORRECTION-R2 — correct Unit 4 commit binding and candidate paths",
       "partition_id": "G28-LEDGER-PART-0012",
       "partition_path": "docs/governance/shadow/ledger/partitions/G28_LEDGER_PART_0012.md",
-      "partition_payload_sha256": "b4fb2c66494e85bb591d389b9f0ab71d197808744b7f016cbff43574387cc70a",
+      "partition_payload_sha256": "133fdae82c3535e497b9a35de762d064f88cfb18b22ab008b7c7b9e46e43bd48",
       "phase_order_id": "GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-4-CONTRACT-COMMIT-BINDING-AND-CANDIDATE-PATH-CORRECTION-R2",
       "reason": "Unit 4 contract correction",
       "start_byte": 981128,
@@ -43,7 +43,7 @@
       "heading": "## 2026-07-23 — GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-4A-CUTOVER-READINESS-IMPLEMENTATION-R1 — implement Unit 4A candidate readiness",
       "partition_id": "G28-LEDGER-PART-0012",
       "partition_path": "docs/governance/shadow/ledger/partitions/G28_LEDGER_PART_0012.md",
-      "partition_payload_sha256": "b4fb2c66494e85bb591d389b9f0ab71d197808744b7f016cbff43574387cc70a",
+      "partition_payload_sha256": "133fdae82c3535e497b9a35de762d064f88cfb18b22ab008b7c7b9e46e43bd48",
       "phase_order_id": "GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-4A-CUTOVER-READINESS-IMPLEMENTATION-R1",
       "reason": "Unit 4A authorization and accepted readiness",
       "start_byte": 983402,
@@ -52,28 +52,43 @@
       "unit_raw_sha256": "668cfc591e17842bb2fd26e63eec27b4da63b1418b1337d885cf7d31963aaf18"
     },
     {
-      "end_byte": 987565,
-      "end_line": 9689,
+      "end_byte": 987566,
+      "end_line": 9690,
       "event_id": "GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-4C-DOCUMENTARY-AUTHORITY-CUTOVER-R1",
       "heading": "## 2026-07-23 — GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-4C-DOCUMENTARY-AUTHORITY-CUTOVER-R1 — activate structured governance authority",
       "partition_id": "G28-LEDGER-PART-0012",
       "partition_path": "docs/governance/shadow/ledger/partitions/G28_LEDGER_PART_0012.md",
-      "partition_payload_sha256": "b4fb2c66494e85bb591d389b9f0ab71d197808744b7f016cbff43574387cc70a",
+      "partition_payload_sha256": "133fdae82c3535e497b9a35de762d064f88cfb18b22ab008b7c7b9e46e43bd48",
       "phase_order_id": "GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-4C-DOCUMENTARY-AUTHORITY-CUTOVER-R1",
       "reason": "Unit 4C activation",
       "start_byte": 985272,
       "start_line": 9681,
       "unit_id": "G28-LEDGER-UNIT-0206",
-      "unit_raw_sha256": "04698dda01612fb2921b430315196fefb499edea4d3c13e1539708c6257979ca"
+      "unit_raw_sha256": "ef4734875e25c22b1922399ab17701a8e2f18c50148ac3ef1cd645fd03bb1560"
+    },
+    {
+      "end_byte": 989066,
+      "end_line": 9698,
+      "event_id": "GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-4C-CANONICAL-CONSISTENCY-FORWARD-CORRECTION-R1",
+      "heading": "## 2026-07-23 — GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-4C-CANONICAL-CONSISTENCY-FORWARD-CORRECTION-R1 — reconcile post-cutover governance authority",
+      "partition_id": "G28-LEDGER-PART-0012",
+      "partition_path": "docs/governance/shadow/ledger/partitions/G28_LEDGER_PART_0012.md",
+      "partition_payload_sha256": "133fdae82c3535e497b9a35de762d064f88cfb18b22ab008b7c7b9e46e43bd48",
+      "phase_order_id": "GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-4C-CANONICAL-CONSISTENCY-FORWARD-CORRECTION-R1",
+      "reason": "Unit 4C canonical consistency forward correction",
+      "start_byte": 987566,
+      "start_line": 9691,
+      "unit_id": "G28-LEDGER-UNIT-0207",
+      "unit_raw_sha256": "4390d8d4243d2769f77d6866cac3035dc0c21f76a85f7d716fb0ed5a7210ff40"
     }
   ],
   "canonical_ledger_identity": {
     "authority": "AUTHORED_APPEND_ONLY_CANONICAL_LEDGER",
     "git_object_classification": "WORKTREE_CONTENT_EXTERNAL_TO_ACTIVATION_SOURCE",
     "path": "docs/ledgers/G28_LEDGER.md",
-    "sha256": "495d91448ca0d7bf2f9cc9f66454f3afb3fcc11bd71d154e54cc1405b2c96613"
+    "sha256": "342460a4f77f006299e08d5d20f188fc6177afc2deab776fb4e9276efe5feb2c"
   },
-  "catalog_sha256": "6356a18602de0d4442c3728dc0bf1ea10ee838e949314dbf90bb0b2b92a7bdd4",
+  "catalog_sha256": "375df6fb6bee3a789344d10c1a1b517d382b062e75fdbf5b7deaaa64c8b0efba",
   "changed_paths": [
     "AGENT_HANDOFF.md",
     "PROJECT_STATE.md",
@@ -113,24 +128,25 @@
     "tests/governance-g28-ledger-shadow.test.mjs",
     "tests/governance-unit4-cutover.test.mjs"
   ],
-  "contract_id": "GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-4-AUTHORITY-CUTOVER-CONTRACT-R1",
-  "current_state_file_sha256": "9f3c0705cfd08fdcd2c580c1c7a88d2df626667d47947a1bf5227245e35342f0",
+  "contract_id": "GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-4-BOOTSTRAP-AUTHORITY-CUTOVER-CONTRACT-R1",
+  "current_state_file_sha256": "67ab762efb21a90e3e212703e1a0bd8357adf5e002380c8e3245e06e2a4cc912",
   "cutover_id": "GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-4C-AUTHORITY-CUTOVER-R1",
   "generated_root_hashes": {
-    "AGENT_HANDOFF.md": "c4b91c76e2da3765a326d01680356d46123230a0677cce5ad6016752f1ccf21e",
-    "PROJECT_STATE.md": "f979bea0569489f666adc77ac2e5e83b515289260c99a87deb630822d87ba79e",
+    "AGENT_HANDOFF.md": "c615fed9b61455dd5e34d7bb3ce66bd21bd523e54d19998a93a2d0ae00e3f259",
+    "PROJECT_STATE.md": "1c5ed1b7a708038ab58ca805cb9ba1bd704b31cad49407c1f3ede97544d64791",
     "docs/DOCUMENTATION_INDEX.md": "7d871c0428ebfa8c931776884a1cc3578bb2698ed44cbb1be3f0cbb2ad7572fc",
     "docs/architecture/ORDEM_COMPRA_C3_TRACEABILITY.md": "81e8f73f56df3cd61ce42bf0f6878ae1c7d6abb32e314a965dc07981341863b7"
   },
   "governing_artifact_hashes": {
     "docs/governance/AGENT_INSTRUCTIONS.md": "4b4715ccc3af4360bfbbbfe3458df22fb10a9d8707fad17b9cf188a450d86380",
-    "docs/governance/DOCUMENTATION_MODEL.md": "8163fa94fef29ceb9473adfb7a4df5724e97d64cddcf0b79172ddf51481f22f6",
-    "docs/governance/GOVERNANCE_EFFICIENCY_REFOUNDATION_PHASE_CONTRACT.md": "b2d0c5cf602d37a1c1aff9da55f3c0be2bc0fe0c8813f2cadc33dd518baf9c99",
-    "docs/governance/GOVERNANCE_EFFICIENCY_REFOUNDATION_UNIT_4_AUTHORITY_CUTOVER_CONTRACT.md": "287b9da67c0a43fb66fa5269ee4bfe8a5ee3c921746daad9a2695a983f061118",
-    "docs/governance/SUPERVISION_PROTOCOL.md": "0bec9469ec44b1ec59b2ba599ae599a07c80344414a46f56be3789856c19fc41"
+    "docs/governance/DOCUMENTATION_MODEL.md": "2ecf212d135440e135bab188db1ebe94dedf709a4a43c0474ba3e05262981404",
+    "docs/governance/GOVERNANCE_EFFICIENCY_REFOUNDATION_PHASE_CONTRACT.md": "7d6ac012eba99c8688318f2c542206adb3ea1f01ab454582e8ed5d80ba755816",
+    "docs/governance/GOVERNANCE_EFFICIENCY_REFOUNDATION_UNIT_4_AUTHORITY_CUTOVER_CONTRACT.md": "4927b130697c6d9c9cb69674ef9ed07d92fea68535e9cec4637c02b343579f09",
+    "docs/governance/SUPERVISION_PROTOCOL.md": "0d046e279bcfa57ff1a5c6930dc24f86438d13ffc70b4bba71d7bfa77c98a8c8"
   },
   "manifest_id": "GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-4C-CUTOVER-MANIFEST-R1",
   "order_id": "GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-4C-DOCUMENTARY-AUTHORITY-CUTOVER-R1",
+  "original_ponr_unchanged": true,
   "ponr_command": "git push staging dev",
   "prohibited_actions": [
     "UNIT_4D_ACCEPTANCE",
@@ -142,16 +158,18 @@
     "PRODUCT_OR_DATABASE_OR_ENVIRONMENT_ACTION"
   ],
   "required_parent": "fa986cf935abbf053172cfd549b0171bb9446f58",
+  "review_status": "CHANGES_REQUIRED / FORWARD CORRECTION APPLIED / AWAITING DIRECT SUPERVISOR REVIEW",
   "rollback_readiness_sha256": "147d6660000ab3fd43709f85f331574ba345f2b572a5bbefb95ad0ab3b10e781",
   "schema_hashes": {
-    "docs/governance/schemas/current-state-v2.schema.json": "c888e837561e7e40eab561a14a99bb859729cf0cb12935ce369f5167d82e28d6",
+    "docs/governance/schemas/current-state-v2.schema.json": "c10e91d6a7ad66372c3809d7f67a1f6da58f11af8a64c73ce02db198e658289d",
     "docs/governance/schemas/document-catalog-v2.schema.json": "00ad550d9faafadc69e4648a2fb42bf27069d499bccef9b1f893d2b5f79f1d98",
     "docs/governance/schemas/purchase-order-phase-c-v2.schema.json": "e571e89b511b7459962e0b732b322f82b87f5028bb64084a11906c01fb713dac",
-    "docs/governance/schemas/unit4-cutover-manifest.schema.json": "2f0b7174d0d9f1fd069804080e5eb7040701e5e63a663e09e3e0ccbdcda65878",
+    "docs/governance/schemas/unit4-cutover-manifest.schema.json": "9ff01d0aa679ab8815127c1bc9feebe9d88b338d8a455a6353f7b405645b74de",
     "docs/governance/schemas/unit4-rollback-readiness.schema.json": "605d15d7e4ceea4a9ee3184def15005d714a5ac535bdd4c7b23a3a1cc93911a7"
   },
   "schema_version": "1.0.0",
-  "state_payload_sha256": "0abff550ead5d3eb417eb001db806975bf406e8b1819287a0f938ef672505c25",
+  "second_activation": false,
+  "state_payload_sha256": "faf572343b5fd1c0a7aadff97b5f5f160a153bdc729c00a155e8418d745a2a78",
   "target_branch": "dev",
   "traceability_sha256": "66581e068321afe6660033c370ef5b8fc45ee21a62ee264a928701af71138d58",
   "unit4d_review": "DIRECT_SUPERVISOR_REVIEW_REQUIRED / NOT_SELF_ACCEPTED"

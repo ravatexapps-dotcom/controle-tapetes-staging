@@ -405,3 +405,10 @@ test('bootstrap parser rejects changed key order', () => {
   const parsed = parseBootstrapBlock(current);
   assert.deepEqual(parsed.order, REQUIRED_BOOTSTRAP_KEYS);
 });
+
+test('canonical epoch-1 state uses compact history and structured debt ownership', () => {
+  const canonical = JSON.parse(read(ROOT, 'docs/governance/current-state.json'));
+  assert.equal(Object.hasOwn(canonical, 'current_fact_sections'), false);
+  assert.deepEqual(canonical.historical_fact_sources.map(item => item.bootstrap_required), [false, false, false, false]);
+  assert.ok(canonical.live_debts.every(item => item.owner_path === 'docs/governance/current-state.json'));
+});

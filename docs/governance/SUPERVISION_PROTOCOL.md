@@ -168,9 +168,8 @@ propose exists only once recorded in the canonical documents by an
 executed order.
 
 GET UP TO SPEED NOW, IN THIS ORDER:
-  1. PROJECT_STATE.md — current state (sole owner of the
-     operational state)
-  2. AGENT_HANDOFF.md — continuity and last accepted phase
+  1. docs/governance/current-state.json — sole current-state owner
+  2. PROJECT_STATE.md and AGENT_HANDOFF.md — generated compatibility views
   3. docs/governance/SUPERVISION_PROTOCOL.md — roles, order
      format, gates
   4. The other canonical documents listed in CLAUDE.md, as needed

@@ -2,27 +2,32 @@
 
 CONTRACT_ID: GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-4-BOOTSTRAP-AUTHORITY-CUTOVER-CONTRACT-R1
 
-STATUS: CORRECTED / AWAITING DIRECT SUPERVISOR REVIEW
+STATUS: UNIT 4C PUBLISHED / FORWARD CORRECTION APPLIED / AWAITING DIRECT SUPERVISOR REVIEW
 
 CONTRACT_CORRECTION: COMMIT SELF-REFERENCE REMOVED / CANDIDATE ROOT-PATH BOUNDARY DEFINED
 
-UNIT 4A IMPLEMENTATION: NOT AUTHORIZED
+UNIT 4A IMPLEMENTATION: CLOSED / ACCEPTED / DIRECTLY VERIFIED AT fa986cf935abbf053172cfd549b0171bb9446f58
 
-DOCUMENTARY-AUTHORITY CUTOVER: NOT AUTHORIZED
+UNIT 4B REVIEW: DIRECT REVIEW COMPLETED / ACCEPTED AT fa986cf935abbf053172cfd549b0171bb9446f58
+
+DOCUMENTARY-AUTHORITY CUTOVER: ACTIVE / AWAITING UNIT 4D REVIEW
+
+AUTHORITY EPOCH: 1
+
+UNIT 4D: DIRECT SUPERVISOR REVIEW REQUIRED / NOT SELF-ACCEPTED
 
 UNIT 5: NOT AUTHORIZED
 
 ## 1. Purpose and non-goals
 
-This contract defines the bounded sequence, authority model, compatibility
-requirements, evidence, tests, point of no return, and forward-correction
-rollback protocol for a future documentary-authority cutover.
+This contract defines the bounded sequence, active authority model,
+compatibility requirements, evidence, tests, point of no return, and
+forward-correction protocol for the published documentary-authority cutover.
 
-This contract does not implement Unit 4A, create a canonical structured
-current-state source, activate any authority marker, change repository-agent
-bootstrap, change a root document to generated status, alter product semantics,
-replace the canonical ledger, archive or delete any document, access any
-database or environment, deploy, or authorize Unit 5.
+Unit 4A and Unit 4B are accepted, and Unit 4C activated authority epoch `1`.
+This contract does not self-accept Unit 4D, alter product semantics, replace the
+canonical ledger, archive or delete any document, access any database or
+environment, deploy, or authorize Unit 5.
 
 ## 2. Accepted prerequisites
 
@@ -50,18 +55,19 @@ rulings, not executor self-acceptance.
 | Phase sequencing | Authored plans and phase contracts | None | Unchanged authored Markdown authority | Same authored documents |
 | Historical ledger | `docs/ledgers/G28_LEDGER.md` | Accepted Unit 3 derived artifacts | `docs/ledgers/G28_LEDGER.md`, unchanged | Partitions, index, and compatibility view remain derived |
 
-Candidate existence never changes authority. Every current owner in the
-"before" column remains authoritative through Unit 4A and Unit 4B.
+HISTORICAL PRE-CUTOVER STATE: Candidate existence did not change authority;
+every owner in the "before" column remained authoritative through Unit 4A and
+Unit 4B. The "after" column is active at authority epoch `1`.
 
 ## 4. Canonical paths
 
-The future structured current-state owner is
+The structured current-state owner is
 docs/governance/current-state.json. The accepted predecessor remains
 `docs/governance/shadow/current-state.json`; it must not be promoted in place
 under a misleading shadow path.
 
-The future document catalog owner remains
-`docs/governance/catalog/documents.json`. The future Phase-C traceability owner
+The document catalog owner is
+`docs/governance/catalog/documents.json`. The Phase-C traceability owner
 remains `docs/governance/traceability/purchase-order-phase-c.json`. The
 canonical ledger remains `docs/ledgers/G28_LEDGER.md`.
 
@@ -73,9 +79,9 @@ Root compatibility paths remain stable: `PROJECT_STATE.md`,
 
 Target current-state schema version: `2.0.0`.
 
-Version `1.0.0` remains valid only for the accepted shadow predecessor during
-Unit 4A and Unit 4B dual-read validation. It cannot become canonical unchanged.
-The target version must define:
+HISTORICAL PRE-CUTOVER STATE: Version `1.0.0` was valid only for the accepted
+shadow predecessor during Unit 4A and Unit 4B dual-read validation. It did not
+become canonical. The active target version defines:
 
 - `mode`: `cutover_candidate` before activation and `canonical` only after the
   authorized activation transaction;
@@ -110,14 +116,14 @@ Compatibility rules:
 6. Readers must never silently fall back from an invalid canonical candidate to
    a shadow or generated Markdown view.
 
-This contract defines the transition; it does not implement schema `2.0.0`.
+Schema `2.0.0` is active at authority epoch `1`.
 
 ## 6. Authority activation marker and external Git identity
 
-The future schema must expose one machine-readable activation object. Before
-Unit 4C it must be inactive. Unit 4C may activate it exactly once in the bounded
-activation commit. The object must bind only values knowable before that commit
-is created:
+The schema exposes one machine-readable activation object. HISTORICAL
+PRE-CUTOVER STATE: before Unit 4C it was inactive, and Unit 4C could activate it
+exactly once in the bounded activation commit. The active object binds only
+values knowable before that commit was created:
 
 - target schema version;
 - authority epoch;
@@ -139,7 +145,7 @@ semantics.
 
 ### 6.1 Deterministic activation manifest
 
-Unit 4A must define, and Unit 4C must use, a deterministic activation-manifest
+HISTORICAL PRE-CUTOVER STATE: Unit 4A defined, and Unit 4C used, a deterministic activation-manifest
 SHA-256 calculated over a canonical projection of the activation object and
 governed artifact identities. The canonical projection must define field order,
 UTF-8 encoding, line endings, and serialization. It must exclude:
@@ -176,7 +182,7 @@ externally observed commit SHA by itself is an activation marker.
 
 ## 7. Bootstrap algorithm after cutover
 
-After an accepted Unit 4C activation, every repository-capable agent must:
+At active authority epoch `1`, every repository-capable agent must:
 
 1. verify the real workspace, standalone Git directory, branch, HEAD, index,
    worktree, untracked files, and configured remotes;
@@ -196,13 +202,13 @@ Normal bootstrap must not require the full `PROJECT_STATE.md`, full
 `AGENT_HANDOFF.md`, full `docs/ledgers/G28_LEDGER.md`, full document catalog, or
 historical archives.
 
-## 8. Read-only consumer reconciliation
+## 8. HISTORICAL PRE-CUTOVER STATE — Read-only consumer reconciliation
 
 The following 31 relevant consumers and authority participants were classified.
 An unresolved material consumer count of zero is required before this contract
 can pass direct review.
 
-| # | Consumer path | Current source read / assumption | Target after cutover | Required future change | Gate | Forward-correction behavior | Required evidence |
+| # | Consumer path | Historical source read / assumption | Authority-epoch-1 outcome | Historical required change | Gate | Forward-correction behavior | Required evidence |
 |---:|---|---|---|---|---|---|---|
 | 1 | `AGENTS.md` | Entry wrapper; delegates to shared instructions | Same wrapper | No authority facts; retain pointer-only form | 4A/4C | Follows restored shared instructions | Byte parity with `CLAUDE.md`; bootstrap test |
 | 2 | `CLAUDE.md` | Entry wrapper; delegates to shared instructions | Same wrapper | No authority facts; retain pointer-only form | 4A/4C | Follows restored shared instructions | Byte parity with `AGENTS.md`; bootstrap test |
@@ -266,7 +272,7 @@ owner, append-only ledger/archive owner, generated-view content, or explicitly
 deferred non-current material. No current fact may remain only in a manual root
 view at readiness.
 
-## 10. Candidate and generated-view ownership and protection
+## 10. HISTORICAL PRE-CUTOVER STATE — Candidate and generated-view ownership and protection
 
 During Unit 4A and Unit 4B, all four root Markdown documents remain in their
 current authored/manual roles. Unit 4A may implement renderers and generate
@@ -300,7 +306,7 @@ Validators must reject:
 - non-deterministic renders;
 - missing, duplicate, or misleading generated markers.
 
-## 11. Update transactions
+## 11. HISTORICAL PRE-CUTOVER STATE — Update transactions
 
 The Unit 4A readiness transaction is candidate-only:
 
@@ -329,7 +335,7 @@ first:
 A root generated view is never edited first or maintained manually. No Unit 4A
 transaction may write candidate content to a root compatibility path.
 
-## 12. Dual-read and equivalence period
+## 12. HISTORICAL PRE-CUTOVER STATE — Dual-read and equivalence period
 
 Unit 4A must maintain existing Markdown owners as authoritative while creating
 the candidate structured source and candidate renderers. Candidate output exists
@@ -340,7 +346,7 @@ candidate drift, root generated markers, root replacement, or unexplained
 retained content. Unit 4B directly reviews that evidence. Dual-read is
 validation only; it is not silent fallback.
 
-## 13. Readiness gates
+## 13. HISTORICAL PRE-CUTOVER STATE — Readiness gates
 
 Unit 4A is ready for Unit 4B only when:
 
@@ -369,7 +375,7 @@ After that publication, authority must not be restored by reset, force push,
 history rewrite, branch replacement, or silent fallback; recovery is a separate
 authorized forward correction.
 
-## 15. Exact cutover preconditions
+## 15. HISTORICAL PRE-CUTOVER STATE — Exact cutover preconditions
 
 Unit 4C requires all of the following:
 
@@ -391,7 +397,7 @@ commit creation.
 
 Failure of any precondition is a hard stop.
 
-## 16. Cutover execution boundaries
+## 16. HISTORICAL PRE-CUTOVER STATE — Cutover execution boundaries
 
 Unit 4C may, only under its separate order:
 
@@ -466,7 +472,7 @@ Stop on:
 - any requirement for database, environment, product, deployment, archive,
   deletion, compaction, or Unit 5 work.
 
-## 20. Authorized path families for a future Unit 4A order
+## 20. HISTORICAL PRE-CUTOVER STATE — Authorized path families for the Unit 4A order
 
 This section defines a ceiling for drafting the future order; it does not
 authorize mutation now. A Unit 4A order may authorize only:
@@ -557,13 +563,13 @@ Each material Unit 4 gate must report:
 
 ## 24. Unit statuses
 
-| Gate | Status after this contract-definition pass |
+| Gate | Current status |
 |---|---|
 | Unit 4A — cutover readiness implementation | CLOSED / ACCEPTED / DIRECTLY VERIFIED at `fa986cf935abbf053172cfd549b0171bb9446f58` |
 | Unit 4B — readiness direct review | DIRECT REVIEW COMPLETED / ACCEPTED at `fa986cf935abbf053172cfd549b0171bb9446f58` |
-| Unit 4C — authority cutover execution | ACTIVATED / AWAITING DIRECT SUPERVISOR REVIEW |
+| Unit 4C — authority cutover execution | ACTIVATED / FORWARD CORRECTION APPLIED / AWAITING DIRECT SUPERVISOR REVIEW |
 | Unit 4D — post-cutover acceptance | DIRECT SUPERVISOR REVIEW REQUIRED / NOT SELF-ACCEPTED |
-| Documentary-authority cutover | ACTIVATED / AWAITING UNIT 4D REVIEW |
+| Documentary-authority cutover | ACTIVE / AWAITING UNIT 4D REVIEW |
 
 The Unit 4 contract is `CLOSED / ACCEPTED / DIRECTLY VERIFIED` at checkpoint
 `76f52c842678b74e655ef9080f4fc67ccbd38e22` by external supervisor ruling, not
@@ -572,7 +578,7 @@ executor self-acceptance. Unit 4A and Unit 4B were externally accepted at
 parent, authority epoch `1`, and cutover ID
 `GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-4C-AUTHORITY-CUTOVER-R1`. Unit 4D is
 not self-accepted. The next authorizable action is `DIRECT SUPERVISOR REVIEW OF
-GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-4C-DOCUMENTARY-AUTHORITY-CUTOVER-R1`.
+GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-4C-CANONICAL-CONSISTENCY-FORWARD-CORRECTION-R1`.
 
 ## 25. Explicit Unit 5 exclusion
 

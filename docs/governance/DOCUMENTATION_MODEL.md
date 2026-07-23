@@ -2,11 +2,10 @@
 
 > **Phase:** `G28-DOCS-B1` — permanent documentation governance contract
 > (additive; no migration, no compaction, no file movement).
-> **Status:** `AUTHORIZED` for reference; concrete migration of
-> states/handoffs/ledgers in later slices.
-> **Workspace:** `D:\OneDrive\Programação\Ravatex\controle-tapetes-g28`
-> **Branch:** `work/g28-document-qualification`
-> **Last update:** `2026-07-12`
+> **Status:** `ACTIVE / STRUCTURED AUTHORITY EPOCH 1`
+> **Workspace:** `D:\Programação\controle-tapetes-g28`
+> **Branch:** `dev`
+> **Last update:** `2026-07-23`
 
 This document is the **permanent contract of ownership, authority and
 update** of the project's documentation. It governs **how** each
@@ -45,9 +44,8 @@ Direct consequences:
   fact. Where duplication seems to exist, the secondary source is only
   a **reference** (link) to the primary source.
 - Documents that consider themselves a "source" of something outside their scope
-  lose that authority when migrated to the model. Competing
-  lists of "canonical sources" existing today are treated
-  as **legacy to reconcile** in future slices (see §13).
+  have no such authority. Competing lists are historical; the structured catalog
+  is the active classification owner.
 - Derived facts (HEAD, working tree, staging, divergence,
   environment status, apply evidence) **are not copied in
   Markdown** as permanent state: they are obtained from their living
@@ -64,7 +62,7 @@ Direct consequences:
 | **Permanent root state** | `docs/governance/current-state.json` | Current operational state, active phase, next action, blockers, and governing pointers. |
 | **Phase-C traceability** | `docs/governance/traceability/purchase-order-phase-c.json` | Requirement classification and normative-anchor mapping; no product semantics. |
 | **Generated compatibility views** | `PROJECT_STATE.md`, `AGENT_HANDOFF.md`, `docs/DOCUMENTATION_INDEX.md`, `docs/architecture/ORDEM_COMPRA_C3_TRACEABILITY.md` | Human-readable renderings with no independent facts or authority. |
-| **Historical ledger (append-only)** | `docs/refactor/ARCHITECTURE_REFACTOR_LEDGER.md` (refactor) and front-specific ledgers (to be created) | Auditable history of closed phases, accepted commits, tests, residual risk and next phase. |
+| **Historical ledger (append-only)** | `docs/ledgers/G28_LEDGER.md` and other established front-specific ledgers | Auditable history of closed phases, accepted commits, tests, residual risk and next phase. |
 | **Architectural plan** | `docs/architecture/PLANO_*.md` | Target architecture, requirements, permanent decisions, dependencies, planned phases, acceptance criteria, backlog. |
 | **Domain / API contract** | `docs/architecture/*_CONTRACT.md` and `services/documents-ingestor/contracts/*` | Technical contract of an area (schema, RLS, RPCs, events, JSON schemas). |
 | **Visual contract** | `docs/architecture/UI_VISUAL_CONTRACT.md` | Versioned visual rules. |
@@ -74,7 +72,7 @@ Direct consequences:
 
 These roles **do not overlap**. A single file may exercise
 more than one role **only** if the boundary is explicitly
-declared in the file itself and maintained in the `DOCUMENTATION_INDEX`.
+declared in the file itself and maintained in the structured catalog.
 
 ---
 
@@ -100,11 +98,9 @@ declared in the file itself and maintained in the `DOCUMENTATION_INDEX`.
 - closeout history;
 - chronological phase progress.
 
-These lists of "canonical sources" present today in other files
-(for example, the order of precedence enumerated in legacy files)
-**are not altered in this slice** (G28-DOCS-B1). They will be
-replaced by a reference to the index in future slices, per
-§13.
+Legacy lists of "canonical sources" are non-authoritative. Structured
+classification is owned by `docs/governance/catalog/documents.json`; generated
+compatibility indexes reference that owner.
 
 ---
 
@@ -124,7 +120,7 @@ facts. Each front represented in structured state contains only:
 - blocker or debt that affects continuity;
 - links to plan, ledger and component context.
 
-The structured owner and generated view will **not** contain:
+The structured owner and generated view do **not** contain:
 
 - current HEAD as prose (except as a transitory reference during
   the acceptance slice — see §9);
@@ -151,10 +147,9 @@ The structured owner and generated view will **not** contain:
 
 ### 4.2 Workspace, branch and remote
 
-`workspace`, `branch` and `allowed remote` are **routing
-metadata** and may appear in the front block in
-`PROJECT_STATE.md`. They identify where the front is operated, not
-the living state of the execution.
+`workspace`, `branch` and `allowed remote` are **routing metadata** in
+`docs/governance/current-state.json`; generated views may render them. They
+identify where the front is operated, not the living state of the execution.
 
 ---
 
@@ -208,8 +203,8 @@ It may contain:
 - full copy of plans;
 - HEAD declared as canonical source;
 - working tree, staging or divergence as living state;
-- duplication of the front's state (the phase and the next action
-  belong to `PROJECT_STATE.md`).
+- duplication of the front's state (the phase and next action belong to
+  `docs/governance/current-state.json`).
 
 The handoff owns no state. Canonical phase status belongs only to
 `docs/governance/current-state.json`.
@@ -218,7 +213,7 @@ The handoff owns no state. Canonical phase status belongs only to
 
 ## 7. Closeout ledger
 
-The future model will adopt an **append-only ledger per front**. Each
+The model uses an **append-only ledger per front**. Each
 ledger entry must record, at a minimum:
 
 - phase (ID);
@@ -236,13 +231,13 @@ ledger entry must record, at a minimum:
   current state. Later corrections enter as a **new line**
   or as a **note linked** to the original line.
 - The ledger does **not** determine the current phase. The current phase is
-  declared in the front's `PROJECT_STATE.md`.
+  declared in `docs/governance/current-state.json`.
 - **Git remains the source of the commits and diffs**. The ledger
   is a historical and auditable index, not a mirror of the `git log`.
-- The ledger does **not** replace `AGENT_HANDOFF.md` nor
-  `PROJECT_STATE.md`; it complements them.
+- The ledger does **not** replace structured current state; generated roots
+  render bounded operational context from their structured owners.
 
-### 7.2 This slice's phase
+### 7.2 HISTORICAL PRE-CUTOVER STATE — This slice's phase
 
 **No new ledger must be created in this slice.** The
 already existing `docs/refactor/ARCHITECTURE_REFACTOR_LEDGER.md`
@@ -265,7 +260,7 @@ Architectural plans (e.g.: `docs/architecture/PLANO_*.md`,
 - backlog;
 - **macro non-operational** progress (e.g.: "B2 completed;
   B3 in progress" — reference to states that live in
-  `PROJECT_STATE.md`).
+  `docs/governance/current-state.json`).
 
 They must not contain as **active state**:
 
@@ -279,7 +274,7 @@ They must not contain as **active state**:
 - temporary next order;
 - complete commit reports.
 
-Detailed progress must point to `PROJECT_STATE.md` and to the
+Detailed progress must point to `docs/governance/current-state.json` and the
 corresponding ledger.
 
 ---
@@ -291,7 +286,7 @@ from Git:
 
 | Class | Nature | Where it must appear |
 |---|---|---|
-| **Workspace, branch, remote** | Routing metadata (stable until a new migration phase) | Front block in `PROJECT_STATE.md` and in `AGENT_HANDOFF.md` (if relevant). |
+| **Workspace, branch, remote** | Routing metadata (stable until a new migration phase) | `docs/governance/current-state.json`; generated compatibility views may render it. |
 | **HEAD, working tree, staging, divergence** | Living fact | Obtained via `git` at the moment of query. **Not** copied in Markdown. |
 | **Accepted commit of a phase** | Historical fact | Line of the front's **ledger**, with SHA, message and main files. |
 
@@ -347,11 +342,11 @@ must automatically update all documents.**
 | Read-only diagnostic | none |
 | Technical patch not yet accepted | none |
 | Rejected gate | no canonical alteration; report remains outside the permanent state |
-| Accepted technical gate | front's ledger; `PROJECT_STATE.md` only if phase or next action change |
+| Accepted technical gate | front's ledger; structured current state only if phase or next action changes; regenerate affected views |
 | R1/R2 correction within the same phase | new entry or link in the ledger; without duplicating the whole state |
 | Architectural change | corresponding plan or contract |
-| Chat switch | `AGENT_HANDOFF.md` |
-| Switch of workspace, branch or remote | front block in `PROJECT_STATE.md` |
+| Chat switch | structured continuity fields, then regenerate `AGENT_HANDOFF.md` |
+| Switch of workspace, branch or remote | routing metadata in `docs/governance/current-state.json`, then regenerate views |
 | Migration apply | ledger with environment and evidence; state only when this changes the phase |
 | Push | ledger of the phase, when operationally relevant |
 | Documentation compaction | ledger records origin, destination and reduction; index is updated only if paths change |
@@ -364,14 +359,14 @@ After an **accepted gate**, the normal update must
 involve at most:
 
 1. **1 ledger** of the front;
-2. **+ 1 block of `PROJECT_STATE.md`**, only when the phase
-   or the next action change;
-3. **+ `AGENT_HANDOFF.md`**, only when there is relevant
-   operational continuity or chat switch.
+2. **+ `docs/governance/current-state.json`**, only when an owned current fact
+   changes;
+3. **+ regenerated compatibility views**, only when their structured source
+   changes.
 
 Plans are only altered when architecture, requirements or backlog
-change. `docs/DOCUMENTATION_INDEX.md` is only altered when there is
-a change of authority, classification or paths.
+change. `docs/governance/catalog/documents.json` changes only when authority,
+classification, paths, or governed metadata change; the index is regenerated.
 
 > **No technical phase must automatically update all
 > documents.** The temptation of "all-in-one" is the most common
@@ -388,14 +383,12 @@ observed, **not** by aesthetics or by calendar.
 
 ### 13.1 Compaction signals
 
-`PROJECT_STATE.md` or `AGENT_HANDOFF.md` will need compaction
-when **any** of the signals below is true:
+Structured current state or its historical sources need a separately authorized
+compaction when **any** of the signals below is true:
 
-- `PROJECT_STATE.md` or `AGENT_HANDOFF.md` above approximately
-  **300 lines**;
-- more than **one historical closeout block** within the same
-  file;
-- more than **one detailed front** within the handoff;
+- generated output expands beyond its bounded compatibility role;
+- historical prose appears in canonical structured current state;
+- more than one detailed front is required by the bounded handoff;
 - presence of **HEAD, working tree, staging or divergence** as
   active state (instead of a reference derived from Git);
 - duplication of **phase** or **next action** between two files
@@ -408,11 +401,10 @@ The compaction must:
 1. **Preserve** permanent decisions in the plans;
 2. **Move** the history to the front's **ledger** (or
    existing append-only);
-3. **Keep** the current state legible in `PROJECT_STATE.md` and
-   `AGENT_HANDOFF.md`;
+3. **Keep** current state structured and regenerate bounded compatibility views;
 4. **Record** the operation in the ledger (origin, destination, reduction);
-5. **Update** references in `docs/DOCUMENTATION_INDEX.md`
-   only when paths change.
+5. **Update** the structured catalog when paths or classifications change, then
+   regenerate `docs/DOCUMENTATION_INDEX.md`.
 
 ### 13.3 This slice's phase
 
@@ -421,21 +413,18 @@ established for use in future slices.
 
 ---
 
-## 14. Existing competing lists — legacy to reconcile
+## 14. HISTORICAL PRE-CUTOVER STATE — Existing competing lists
 
-The documents below contain today lists or orderings that
-**compete** with the arbiter role of
-`docs/DOCUMENTATION_INDEX.md`. None of them was altered by
-G28-DOCS-B1. The reconciliation will be done in later slices
-that, ideally, will replace these lists by a reference to the
-index and to this model.
+The documents below historically contained lists or orderings that competed
+with the arbiter role now held by `docs/governance/catalog/documents.json`.
+They are non-authoritative unless separately reconciled.
 
 | Document | Competing list/ordering | Note |
 |---|---|---|
 | `docs/DOCUMENTATION_INDEX.md` §2 — "Precedence rule" | Enumerates 7 canonical sources by order. | Must be rewritten to reference this model. |
 | `docs/architecture/CLAUDE_PROJECT_ASSET_MAP.md` §1, §3, §4, §11, §12 | Catalog of "canonical documents", "state files", "handoff files", functional precedence. | Must be rewritten to point to the index and to this model. |
 | `docs/superpowers/STATUS.md`, `docs/superpowers/README.md` | Self-label as "current canonical state" or reference it. | Legacy content (Phases 1–6). Kept as history; **must not** guide execution. |
-| `docs/HANDOFF.md` (root) | "Canonical snapshot" and "canonical refs". | Existing banner already indicates that the current state is in `PROJECT_STATE.md`. Will be revisited in a reconciliation slice. |
+| `docs/HANDOFF.md` (root) | "Canonical snapshot" and "canonical refs". | Legacy pointer language; it does not override structured current-state authority. |
 | `Guide-and-governance-rules.stxt` | General governance rules for ChatGPT, not for the internal documentation model. | Remains valid for the agent, but **is not** the arbiter of the project's internal documentation. |
 
 These points are under the jurisdiction of their own slices. G28-DOCS-B1
@@ -451,19 +440,18 @@ to be accepted:
 
 1. `git diff --check` clean.
 2. Final working tree clean, final staging empty.
-3. `docs/DOCUMENTATION_INDEX.md` remains as the arbiter of
-   authority, **not** of operational state.
-4. `PROJECT_STATE.md` (after migration) is the **only** owner
-   of the current state per front.
+3. `docs/governance/catalog/documents.json` remains the classification and
+   authority arbiter; `docs/DOCUMENTATION_INDEX.md` is generated.
+4. `docs/governance/current-state.json` is the **only** root current-state
+   owner; `PROJECT_STATE.md` is generated compatibility output.
 5. Local component states (`services/*/PROJECT_STATE.md`)
    do not duplicate phase and next action.
 6. `AGENT_HANDOFF.md` has an operational role, **not** a historical one.
 7. Ledger (where applicable) is append-only.
 8. HEAD and working tree are derived from Git; none of that lives
    as active state in Markdown.
-9. Branch and workspace are treated as routing
-   metadata, allowed in the front block in
-   `PROJECT_STATE.md`.
+9. Branch and workspace are routing metadata in structured current state and
+   may be rendered in generated compatibility views.
 10. Versioned, applied and verified migrations are
     distinguished; the proof of "applied in staging" is the ledger
     of the front, not just the SQL header.
@@ -475,7 +463,7 @@ to be accepted:
 
 ---
 
-## 16. Recommended next slice
+## 16. HISTORICAL PRE-CUTOVER STATE — Recommended next slice
 
 `G28-DOCS-B2` — **MIGRATION OF STATE TO OWNER FILES** (docs-only,
 additive, no compaction yet). Suggested scope:
@@ -514,7 +502,8 @@ procedure, not a corrective phase, and does not authorize the next phase.
 
 1. Verify real branch, HEAD, worktree, staging, and untracked state.
 
-2. Read applicable master plan, PROJECT_STATE.md, AGENT_HANDOFF.md, applicable append-only ledger.
+2. Read `docs/governance/current-state.json`, applicable governing pointers,
+   and bounded ledger references; generated roots provide compatibility only.
 
 3. Compare planned objective, work actually performed, accepted evidence, remaining work, next authorizable action.
 
@@ -522,10 +511,10 @@ procedure, not a corrective phase, and does not authorize the next phase.
    fact, using separate labels: diagnosed, decided, implemented, tested,
    accepted, deferred.
 
-5. Update `PROJECT_STATE.md` only for a material current-state change or phase
-   closeout that changes an owned state fact.
+5. Update `docs/governance/current-state.json` for a material current-state
+   change, then regenerate `PROJECT_STATE.md`.
 
-6. Update `AGENT_HANDOFF.md` only when operational continuity changes.
+6. Regenerate `AGENT_HANDOFF.md` when structured operational continuity changes.
 
 7. Append the applicable ledger only when required by the §19 event matrix.
 
