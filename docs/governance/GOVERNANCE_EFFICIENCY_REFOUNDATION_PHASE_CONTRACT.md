@@ -22,7 +22,15 @@ UNIT 2: CLOSED / ACCEPTED / DIRECTLY VERIFIED
 
 UNIT 2 ACCEPTED CHECKPOINT: f7106977f4613de1830bef46002dbf0a4b8b3cbe
 
-UNIT 3: IMPLEMENTED / LOSSLESS SHADOW LEDGER PARTITIONING VALIDATED / AWAITING DIRECT SUPERVISOR REVIEW
+UNIT 3: IMPLEMENTED / GOVERNANCE GATE HARDENING COMPLETE / AWAITING DIRECT SUPERVISOR REVIEW
+
+UNIT 3 REVIEWED INTERVAL START: e3c8c15b368d20161df6e593debbdf0c68cb7e41
+
+UNIT 3 REVIEWED INTERVAL END: FINAL_R2_COMMIT (`fix: harden Unit 3 governance gates`; exact immutable SHA resolved by Git and reported in executor closeout)
+
+CANONICAL LEDGER: docs/ledgers/G28_LEDGER.md / AUTHORITY UNCHANGED
+
+UNIT 4: NOT AUTHORIZED
 
 DOCUMENTARY-AUTHORITY CUTOVER: NOT AUTHORIZED
 
@@ -79,9 +87,34 @@ supervisor acceptance.
   nested inside the same Markdown-link raw syntax is treated as one parser
   representation; distinct source references remain cardinality errors.
 - Unit 2 is externally accepted at checkpoint `f7106977f4613de1830bef46002dbf0a4b8b3cbe`.
-  Unit 3 is implemented and locally validated, awaiting direct supervisor review.
+  Unit 3 governance-gate hardening is complete and awaits direct supervisor
+  review under
+  `GOVERNANCE-EFFICIENCY-REFOUNDATION-LEDGER-PARTITION-SHADOW-HARDENING-R2`.
   Documentary-authority cutover, Unit 4, cleanup, compaction, archival,
   deprecation, and deletion remain not authorized.
+
+## Unit 3 R2 governance-gate hardening
+
+- The published Unit 3 interval changed 39 paths. The exact path
+  `scripts/governance/build-document-source-manifest.mjs` was outside the R1
+  path ceiling and therefore was not authorized in R1. Its change was required
+  to classify `docs/governance/shadow/ledger/partitions/` as generated
+  documentation. R2 authorizes retention of that necessary non-weakening
+  integration as a forward correction; no broader Unit 2 builder change is
+  authorized.
+- Both Unit 3 schemas are required, parsed, and enforced by the dependency-free
+  validator, including nested shape, local-reference, type, const, enum,
+  pattern, minimum, and array-cardinality failures.
+- Immutable validation explicitly covers published checkpoint
+  `52533cc1a7658cc23f055b782b98f2167b63893f` with before/after Git-state
+  equality.
+- Append stability compares old and appended source buffers independently and
+  preserves every closed partition interval, payload, and payload hash.
+- Entry derivation permits the dated grammar plus exactly the two reviewed
+  legacy non-dated headings; mutation, removal, demotion, duplication, or a new
+  non-dated boundary fails during derivation.
+- Unit 3 is not accepted. The next action is direct supervisor review of
+  `GOVERNANCE-EFFICIENCY-REFOUNDATION-LEDGER-PARTITION-SHADOW-HARDENING-R2`.
 
 ## Binding rules
 

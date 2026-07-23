@@ -9629,4 +9629,15 @@ product file they depend on, was modified by this pass or the prior one):
 - **Next action:** direct supervisor review of `GOVERNANCE-EFFICIENCY-REFOUNDATION-LEDGER-PARTITION-SHADOW-R1`.
 - **Scope exclusions:** Unit 4, documentary-authority cutover, legacy cleanup, archival, deprecation, deletion, product work, database access, migrations, deployment, production access, `REAL_CUTOVER`, and `PHASE-C5B` did not occur.
 
+## 2026-07-23 — GOVERNANCE-EFFICIENCY-REFOUNDATION-LEDGER-PARTITION-SHADOW-HARDENING-R2 — Unit 3 governance-gate forward correction
+
+- **Supervisor verdict and retained baseline:** checkpoint `52533cc1a7658cc23f055b782b98f2167b63893f` is `CHANGES_REQUIRED / DIRECTLY VERIFIED`. The accepted Unit 3 raw-byte decomposition, partition payloads, reassembly, compatibility view, reference-survival mappings, catalog classifications, Unit 1/2 preservation, and canonical authority boundary are retained.
+- **Unit 2 status:** `CLOSED / ACCEPTED / DIRECTLY VERIFIED` at checkpoint `f7106977f4613de1830bef46002dbf0a4b8b3cbe`; this remains an external supervisor ruling, not executor self-acceptance.
+- **Path-ceiling deviation ratified:** the published Unit 3 interval changed 39 paths. The exact path `scripts/governance/build-document-source-manifest.mjs` was absent from the R1 authorized ceiling and therefore was not authorized in R1. Its necessary non-weakening change classifies `docs/governance/shadow/ledger/partitions/` as generated documentation. This R2 order authorizes retention as a forward correction; no broader Unit 2 builder change is authorized.
+- **Governance gates hardened:** both Unit 3 schemas are mandatory and dependency-free enforced through nested validation and local `$ref` resolution; immutable validation executes against the published checkpoint with zero Git mutation; append stability compares independent old/new source buffers and protects every closed interval, payload, and hash; derivation permits the dated entry grammar and exactly the two reviewed legacy non-dated headings.
+- **Status and reviewed interval:** Unit 3 is `IMPLEMENTED / GOVERNANCE GATE HARDENING COMPLETE / AWAITING DIRECT SUPERVISOR REVIEW`. The reviewed interval is `e3c8c15b368d20161df6e593debbdf0c68cb7e41` through `FINAL_R2_COMMIT` (`fix: harden Unit 3 governance gates`; exact immutable SHA resolved by Git and reported in the executor closeout). Unit 3 is not accepted.
+- **Authority boundary:** canonical ledger authority remains unchanged. Unit 4 and documentary-authority cutover are not authorized.
+- **Next action:** direct supervisor review of `GOVERNANCE-EFFICIENCY-REFOUNDATION-LEDGER-PARTITION-SHADOW-HARDENING-R2`.
+- **Scope exclusions:** no Unit 4/5, cutover, canonical replacement or truncation, cleanup, compaction, archive, movement, deprecation, deletion, product code, database/SQL, migration, shared-development access, deployment, production, forbidden-project access, `REAL_CUTOVER`, or `PHASE-C5B` occurred.
+
 <!-- G28_LEDGER_SHADOW_COMPATIBILITY_PAYLOAD_END_7b9d4e3a -->

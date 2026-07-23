@@ -119,7 +119,7 @@
         },
         {
           "source_path": "docs/governance/GOVERNANCE_EFFICIENCY_REFOUNDATION_PHASE_CONTRACT.md",
-          "source_line": 57,
+          "source_line": 65,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
@@ -962,10 +962,10 @@
     },
     {
       "path": "AGENT_HANDOFF.md",
-      "git_object_id": "9b8256b9f887447d02b24202dc4964b695628420",
-      "sha256": "1e43d708edc576b1864dc0aff7d3308cfdfc5c110bcad2adeb59eb3fb2db3fbf",
-      "line_count": 1085,
-      "byte_count": 76340,
+      "git_object_id": "caa4137d2379fb90cf320b5b4aa3c58bd2c0b1d7",
+      "sha256": "6b6d13748f1e24e5e27fe878ac4b9bbca513d0963646cc4548aa3a8ad1e57841",
+      "line_count": 1088,
+      "byte_count": 76551,
       "generated_status": "MANUAL",
       "outbound_references": [
         {
@@ -998,7 +998,7 @@
           "target_path": "docs/ledgers/G28_LEDGER.md",
           "anchor": null,
           "line_suffix": null,
-          "source_line": 96
+          "source_line": 99
         },
         {
           "kind": "ROOT_REFERENCE",
@@ -1006,7 +1006,7 @@
           "target_path": "PROJECT_STATE.md",
           "anchor": null,
           "line_suffix": null,
-          "source_line": 96
+          "source_line": 99
         },
         {
           "kind": "ROOT_REFERENCE",
@@ -1014,7 +1014,7 @@
           "target_path": "docs/ledgers/G28_LEDGER.md",
           "anchor": null,
           "line_suffix": null,
-          "source_line": 125
+          "source_line": 128
         },
         {
           "kind": "ROOT_REFERENCE",
@@ -1022,7 +1022,7 @@
           "target_path": "PROJECT_STATE.md",
           "anchor": null,
           "line_suffix": null,
-          "source_line": 125
+          "source_line": 128
         },
         {
           "kind": "ROOT_REFERENCE",
@@ -1030,7 +1030,7 @@
           "target_path": "docs/ledgers/G28_LEDGER.md",
           "anchor": null,
           "line_suffix": null,
-          "source_line": 146
+          "source_line": 149
         },
         {
           "kind": "ROOT_REFERENCE",
@@ -1038,7 +1038,7 @@
           "target_path": "docs/ledgers/G28_LEDGER.md",
           "anchor": null,
           "line_suffix": null,
-          "source_line": 175
+          "source_line": 178
         },
         {
           "kind": "ROOT_REFERENCE",
@@ -1046,7 +1046,7 @@
           "target_path": "docs/ledgers/G28_LEDGER.md",
           "anchor": null,
           "line_suffix": null,
-          "source_line": 201
+          "source_line": 204
         },
         {
           "kind": "ROOT_REFERENCE",
@@ -1054,7 +1054,7 @@
           "target_path": "docs/architecture/CLEAN_SLATE_TRANSACTIONAL_RESET_PHASE_CONTRACT.md",
           "anchor": null,
           "line_suffix": null,
-          "source_line": 219
+          "source_line": 222
         },
         {
           "kind": "ROOT_REFERENCE",
@@ -1062,7 +1062,7 @@
           "target_path": "docs/ledgers/G28_LEDGER.md",
           "anchor": null,
           "line_suffix": null,
-          "source_line": 224
+          "source_line": 227
         },
         {
           "kind": "ROOT_REFERENCE",
@@ -1070,7 +1070,7 @@
           "target_path": "docs/ledgers/G28_LEDGER.md",
           "anchor": null,
           "line_suffix": null,
-          "source_line": 255
+          "source_line": 258
         },
         {
           "kind": "ROOT_REFERENCE",
@@ -1078,7 +1078,7 @@
           "target_path": "PROJECT_STATE.md",
           "anchor": null,
           "line_suffix": null,
-          "source_line": 256
+          "source_line": 259
         },
         {
           "kind": "ROOT_REFERENCE",
@@ -1086,7 +1086,7 @@
           "target_path": "docs/architecture/CLEAN_SLATE_TRANSACTIONAL_RESET_PHASE_CONTRACT.md",
           "anchor": null,
           "line_suffix": null,
-          "source_line": 263
+          "source_line": 266
         },
         {
           "kind": "ROOT_REFERENCE",
@@ -1094,7 +1094,7 @@
           "target_path": "docs/architecture/ORDEM_COMPRA_C3C_B_PHASE_CONTRACT.md",
           "anchor": null,
           "line_suffix": null,
-          "source_line": 331
+          "source_line": 334
         },
         {
           "kind": "ROOT_REFERENCE",
@@ -1102,7 +1102,7 @@
           "target_path": "docs/architecture/ORDEM_COMPRA_C5_PHASE_CONTRACT.md",
           "anchor": null,
           "line_suffix": null,
-          "source_line": 397
+          "source_line": 400
         },
         {
           "kind": "ROOT_REFERENCE",
@@ -1110,7 +1110,7 @@
           "target_path": "docs/architecture/ORDEM_COMPRA_C5A_DB_EMISSION_READINESS_PHASE_CONTRACT.md",
           "anchor": null,
           "line_suffix": null,
-          "source_line": 404
+          "source_line": 407
         },
         {
           "kind": "ROOT_REFERENCE",
@@ -1118,7 +1118,7 @@
           "target_path": "docs/architecture/ORDEM_COMPRA_C4_PHASE_CONTRACT.md",
           "anchor": null,
           "line_suffix": null,
-          "source_line": 408
+          "source_line": 411
         },
         {
           "kind": "ROOT_REFERENCE",
@@ -1126,7 +1126,7 @@
           "target_path": "docs/architecture/ORDEM_COMPRA_C3D_PHASE_CONTRACT.md",
           "anchor": null,
           "line_suffix": null,
-          "source_line": 411
+          "source_line": 414
         },
         {
           "kind": "ROOT_REFERENCE",
@@ -1134,7 +1134,7 @@
           "target_path": "docs/architecture/ORDEM_COMPRA_C3C_B_DB_PREREQUISITES_PHASE_CONTRACT.md",
           "anchor": null,
           "line_suffix": null,
-          "source_line": 467
+          "source_line": 470
         },
         {
           "kind": "ROOT_REFERENCE",
@@ -1142,7 +1142,7 @@
           "target_path": "docs/architecture/ORDEM_COMPRA_C3C_B_PHASE_CONTRACT.md",
           "anchor": null,
           "line_suffix": null,
-          "source_line": 472
+          "source_line": 475
         },
         {
           "kind": "ROOT_REFERENCE",
@@ -1150,7 +1150,7 @@
           "target_path": "docs/architecture/ORDEM_COMPRA_C4_PHASE_CONTRACT.md",
           "anchor": null,
           "line_suffix": null,
-          "source_line": 506
+          "source_line": 509
         },
         {
           "kind": "ROOT_REFERENCE",
@@ -1158,7 +1158,7 @@
           "target_path": "docs/architecture/UI_VISUAL_CONTRACT.md",
           "anchor": null,
           "line_suffix": null,
-          "source_line": 511
+          "source_line": 514
         },
         {
           "kind": "ROOT_REFERENCE",
@@ -1166,7 +1166,7 @@
           "target_path": "docs/architecture/ORDEM_COMPRA_C4_PHASE_CONTRACT.md",
           "anchor": null,
           "line_suffix": null,
-          "source_line": 523
+          "source_line": 526
         },
         {
           "kind": "ROOT_REFERENCE",
@@ -1174,7 +1174,7 @@
           "target_path": "PROJECT_STATE.md",
           "anchor": null,
           "line_suffix": null,
-          "source_line": 533
+          "source_line": 536
         },
         {
           "kind": "ROOT_REFERENCE",
@@ -1182,7 +1182,7 @@
           "target_path": "docs/architecture/ORDEM_COMPRA_C5_PHASE_CONTRACT.md",
           "anchor": null,
           "line_suffix": null,
-          "source_line": 548
+          "source_line": 551
         },
         {
           "kind": "ROOT_REFERENCE",
@@ -1190,7 +1190,7 @@
           "target_path": "docs/architecture/ORDEM_COMPRA_C5_PHASE_CONTRACT.md",
           "anchor": null,
           "line_suffix": null,
-          "source_line": 565
+          "source_line": 568
         },
         {
           "kind": "ROOT_REFERENCE",
@@ -1198,7 +1198,7 @@
           "target_path": "docs/architecture/ORDEM_COMPRA_C5A_DB_EMISSION_READINESS_PHASE_CONTRACT.md",
           "anchor": null,
           "line_suffix": null,
-          "source_line": 582
+          "source_line": 585
         },
         {
           "kind": "ROOT_REFERENCE",
@@ -1206,7 +1206,7 @@
           "target_path": "docs/architecture/ORDEM_COMPRA_C5A_DB_EMISSION_READINESS_PHASE_CONTRACT.md",
           "anchor": null,
           "line_suffix": null,
-          "source_line": 605
+          "source_line": 608
         },
         {
           "kind": "ROOT_REFERENCE",
@@ -1214,7 +1214,7 @@
           "target_path": "PROJECT_STATE.md",
           "anchor": null,
           "line_suffix": null,
-          "source_line": 619
+          "source_line": 622
         },
         {
           "kind": "ROOT_REFERENCE",
@@ -1222,7 +1222,7 @@
           "target_path": "AGENT_HANDOFF.md",
           "anchor": null,
           "line_suffix": null,
-          "source_line": 620
+          "source_line": 623
         },
         {
           "kind": "ROOT_REFERENCE",
@@ -1230,7 +1230,7 @@
           "target_path": "docs/architecture/ORDEM_COMPRA_C3_TRACEABILITY.md",
           "anchor": null,
           "line_suffix": null,
-          "source_line": 620
+          "source_line": 623
         },
         {
           "kind": "ROOT_REFERENCE",
@@ -1238,7 +1238,7 @@
           "target_path": "docs/architecture/PEDIDO_PRODUCTION_FLOW_BACKLOG.md",
           "anchor": null,
           "line_suffix": null,
-          "source_line": 621
+          "source_line": 624
         },
         {
           "kind": "ROOT_REFERENCE",
@@ -1246,7 +1246,7 @@
           "target_path": "docs/ledgers/G28_LEDGER.md",
           "anchor": null,
           "line_suffix": null,
-          "source_line": 622
+          "source_line": 625
         },
         {
           "kind": "ROOT_REFERENCE",
@@ -1254,7 +1254,7 @@
           "target_path": "docs/architecture/ORDEM_COMPRA_C3D_PHASE_CONTRACT.md",
           "anchor": null,
           "line_suffix": null,
-          "source_line": 696
+          "source_line": 699
         },
         {
           "kind": "ROOT_REFERENCE",
@@ -1262,7 +1262,7 @@
           "target_path": "docs/architecture/ORDEM_COMPRA_LIFECYCLE_SPEC_PROPOSED.md",
           "anchor": null,
           "line_suffix": null,
-          "source_line": 800
+          "source_line": 803
         },
         {
           "kind": "ROOT_REFERENCE",
@@ -1270,7 +1270,7 @@
           "target_path": "docs/architecture/PEDIDO_OP_SCHEMA_CONTRACT.md",
           "anchor": null,
           "line_suffix": null,
-          "source_line": 804
+          "source_line": 807
         },
         {
           "kind": "ROOT_REFERENCE",
@@ -1278,7 +1278,7 @@
           "target_path": "docs/architecture/PEDIDO_PRODUCTION_FLOW_BACKLOG.md",
           "anchor": null,
           "line_suffix": null,
-          "source_line": 808
+          "source_line": 811
         },
         {
           "kind": "ROOT_REFERENCE",
@@ -1286,7 +1286,7 @@
           "target_path": "docs/architecture/ORDEM_COMPRA_C3_TRACEABILITY.md",
           "anchor": null,
           "line_suffix": null,
-          "source_line": 809
+          "source_line": 812
         },
         {
           "kind": "ROOT_REFERENCE",
@@ -1294,7 +1294,7 @@
           "target_path": "docs/ledgers/G28_LEDGER.md",
           "anchor": null,
           "line_suffix": null,
-          "source_line": 810
+          "source_line": 813
         },
         {
           "kind": "ROOT_REFERENCE",
@@ -1302,7 +1302,7 @@
           "target_path": "docs/architecture/ORDEM_COMPRA_C3_TRACEABILITY.md",
           "anchor": null,
           "line_suffix": null,
-          "source_line": 814
+          "source_line": 817
         },
         {
           "kind": "ROOT_REFERENCE",
@@ -1310,7 +1310,7 @@
           "target_path": "docs/architecture/ORDEM_COMPRA_C3C_B_PHASE_CONTRACT.md",
           "anchor": null,
           "line_suffix": null,
-          "source_line": 824
+          "source_line": 827
         },
         {
           "kind": "ROOT_REFERENCE",
@@ -1318,7 +1318,7 @@
           "target_path": "docs/architecture/ORDEM_COMPRA_C3D_PHASE_CONTRACT.md",
           "anchor": null,
           "line_suffix": null,
-          "source_line": 831
+          "source_line": 834
         },
         {
           "kind": "ROOT_REFERENCE",
@@ -1326,7 +1326,7 @@
           "target_path": "docs/architecture/ORDEM_COMPRA_C5_PHASE_CONTRACT.md",
           "anchor": null,
           "line_suffix": null,
-          "source_line": 845
+          "source_line": 848
         },
         {
           "kind": "ROOT_REFERENCE",
@@ -1334,7 +1334,7 @@
           "target_path": "PROJECT_STATE.md",
           "anchor": null,
           "line_suffix": null,
-          "source_line": 873
+          "source_line": 876
         },
         {
           "kind": "ROOT_REFERENCE",
@@ -1342,7 +1342,7 @@
           "target_path": "docs/architecture/ORDEM_COMPRA_C5_PHASE_CONTRACT.md",
           "anchor": null,
           "line_suffix": null,
-          "source_line": 969
+          "source_line": 972
         },
         {
           "kind": "ROOT_REFERENCE",
@@ -1350,7 +1350,7 @@
           "target_path": "PROJECT_STATE.md",
           "anchor": null,
           "line_suffix": null,
-          "source_line": 1006
+          "source_line": 1009
         },
         {
           "kind": "ROOT_REFERENCE",
@@ -1358,7 +1358,7 @@
           "target_path": "AGENT_HANDOFF.md",
           "anchor": null,
           "line_suffix": null,
-          "source_line": 1007
+          "source_line": 1010
         },
         {
           "kind": "ROOT_REFERENCE",
@@ -1366,7 +1366,7 @@
           "target_path": "CLAUDE.md",
           "anchor": null,
           "line_suffix": null,
-          "source_line": 1008
+          "source_line": 1011
         },
         {
           "kind": "ROOT_REFERENCE",
@@ -1374,7 +1374,7 @@
           "target_path": "docs/governance/AGENT_INSTRUCTIONS.md",
           "anchor": null,
           "line_suffix": null,
-          "source_line": 1009
+          "source_line": 1012
         },
         {
           "kind": "ROOT_REFERENCE",
@@ -1382,7 +1382,7 @@
           "target_path": "docs/architecture/PEDIDO_OP_MOVIMENTACAO_DOCUMENTOS_PLANO.md",
           "anchor": null,
           "line_suffix": null,
-          "source_line": 1010
+          "source_line": 1013
         },
         {
           "kind": "ROOT_REFERENCE",
@@ -1390,7 +1390,7 @@
           "target_path": "docs/architecture/PEDIDO_PRODUCTION_FLOW_BACKLOG.md",
           "anchor": null,
           "line_suffix": null,
-          "source_line": 1011
+          "source_line": 1014
         },
         {
           "kind": "ROOT_REFERENCE",
@@ -1398,7 +1398,7 @@
           "target_path": "docs/architecture/DOCUMENTOS_VALIDACAO_VINCULOS_E_EVOLUCAO_PLANO.md",
           "anchor": null,
           "line_suffix": null,
-          "source_line": 1012
+          "source_line": 1015
         },
         {
           "kind": "ROOT_REFERENCE",
@@ -1406,7 +1406,7 @@
           "target_path": "docs/architecture/PEDIDO_OP_SCHEMA_CONTRACT.md",
           "anchor": null,
           "line_suffix": null,
-          "source_line": 1013
+          "source_line": 1016
         },
         {
           "kind": "ROOT_REFERENCE",
@@ -1414,7 +1414,7 @@
           "target_path": "docs/architecture/ORDEM_COMPRA_LIFECYCLE_SPEC_PROPOSED.md",
           "anchor": null,
           "line_suffix": null,
-          "source_line": 1014
+          "source_line": 1017
         },
         {
           "kind": "ROOT_REFERENCE",
@@ -1422,7 +1422,7 @@
           "target_path": "docs/architecture/ORDEM_COMPRA_C3_TRACEABILITY.md",
           "anchor": null,
           "line_suffix": null,
-          "source_line": 1015
+          "source_line": 1018
         },
         {
           "kind": "ROOT_REFERENCE",
@@ -1430,7 +1430,7 @@
           "target_path": "docs/ledgers/G28_LEDGER.md",
           "anchor": null,
           "line_suffix": null,
-          "source_line": 1016
+          "source_line": 1019
         },
         {
           "kind": "ROOT_REFERENCE",
@@ -1438,7 +1438,7 @@
           "target_path": "docs/DOCUMENTATION_INDEX.md",
           "anchor": null,
           "line_suffix": null,
-          "source_line": 1017
+          "source_line": 1020
         },
         {
           "kind": "ROOT_REFERENCE",
@@ -1446,7 +1446,7 @@
           "target_path": "docs/governance/DOCUMENTATION_MODEL.md",
           "anchor": null,
           "line_suffix": null,
-          "source_line": 1018
+          "source_line": 1021
         },
         {
           "kind": "ROOT_REFERENCE",
@@ -1454,7 +1454,7 @@
           "target_path": "docs/governance/SUPERVISION_PROTOCOL.md",
           "anchor": null,
           "line_suffix": null,
-          "source_line": 1019
+          "source_line": 1022
         },
         {
           "kind": "ROOT_REFERENCE",
@@ -1462,7 +1462,7 @@
           "target_path": "docs/architecture/CODE_HEALTH_RULES.md",
           "anchor": null,
           "line_suffix": null,
-          "source_line": 1020
+          "source_line": 1023
         },
         {
           "kind": "ROOT_REFERENCE",
@@ -1470,7 +1470,7 @@
           "target_path": "docs/reports/ORDEM_COMPRA_LEGACY_DIAGNOSIS_2026-07-18.md",
           "anchor": null,
           "line_suffix": null,
-          "source_line": 1021
+          "source_line": 1024
         },
         {
           "kind": "ROOT_REFERENCE",
@@ -1478,7 +1478,7 @@
           "target_path": "docs/closeouts/AGENT_HANDOFF_ARCHIVE_2026-07.md",
           "anchor": null,
           "line_suffix": null,
-          "source_line": 1022
+          "source_line": 1025
         },
         {
           "kind": "ROOT_REFERENCE",
@@ -1486,7 +1486,7 @@
           "target_path": "docs/closeouts/PROJECT_STATE_ARCHIVE_2026-07.md",
           "anchor": null,
           "line_suffix": null,
-          "source_line": 1023
+          "source_line": 1026
         },
         {
           "kind": "ROOT_REFERENCE",
@@ -1494,7 +1494,7 @@
           "target_path": "docs/architecture/ORDEM_COMPRA_C3C_B_PHASE_CONTRACT.md",
           "anchor": null,
           "line_suffix": null,
-          "source_line": 1024
+          "source_line": 1027
         },
         {
           "kind": "ROOT_REFERENCE",
@@ -1502,7 +1502,7 @@
           "target_path": "docs/architecture/ORDEM_COMPRA_C3C_B_DB_PREREQUISITES_PHASE_CONTRACT.md",
           "anchor": null,
           "line_suffix": null,
-          "source_line": 1027
+          "source_line": 1030
         },
         {
           "kind": "ROOT_REFERENCE",
@@ -1510,7 +1510,7 @@
           "target_path": "docs/architecture/ORDEM_COMPRA_C3D_PHASE_CONTRACT.md",
           "anchor": null,
           "line_suffix": null,
-          "source_line": 1032
+          "source_line": 1035
         },
         {
           "kind": "ROOT_REFERENCE",
@@ -1518,7 +1518,7 @@
           "target_path": "docs/architecture/ORDEM_COMPRA_C4_PHASE_CONTRACT.md",
           "anchor": null,
           "line_suffix": null,
-          "source_line": 1040
+          "source_line": 1043
         },
         {
           "kind": "ROOT_REFERENCE",
@@ -1526,7 +1526,7 @@
           "target_path": "docs/architecture/ORDEM_COMPRA_C5_PHASE_CONTRACT.md",
           "anchor": null,
           "line_suffix": null,
-          "source_line": 1049
+          "source_line": 1052
         },
         {
           "kind": "ROOT_REFERENCE",
@@ -1534,7 +1534,7 @@
           "target_path": "docs/architecture/ORDEM_COMPRA_C5A_DB_EMISSION_READINESS_PHASE_CONTRACT.md",
           "anchor": null,
           "line_suffix": null,
-          "source_line": 1065
+          "source_line": 1068
         },
         {
           "kind": "ROOT_REFERENCE",
@@ -1542,7 +1542,7 @@
           "target_path": "docs/governance/AGENT_INSTRUCTIONS.md",
           "anchor": null,
           "line_suffix": null,
-          "source_line": 1083
+          "source_line": 1086
         },
         {
           "kind": "ROOT_REFERENCE",
@@ -1550,20 +1550,20 @@
           "target_path": "PROJECT_STATE.md",
           "anchor": null,
           "line_suffix": null,
-          "source_line": 1084
+          "source_line": 1087
         }
       ],
       "inbound_references": [
         {
           "source_path": "AGENT_HANDOFF.md",
-          "source_line": 620,
+          "source_line": 623,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
         },
         {
           "source_path": "AGENT_HANDOFF.md",
-          "source_line": 1007,
+          "source_line": 1010,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
@@ -2599,21 +2599,21 @@
         },
         {
           "source_path": "docs/governance/GOVERNANCE_EFFICIENCY_REFOUNDATION_PHASE_CONTRACT.md",
-          "source_line": 57,
+          "source_line": 65,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
         },
         {
           "source_path": "docs/governance/GOVERNANCE_EFFICIENCY_REFOUNDATION_PHASE_CONTRACT.md",
-          "source_line": 89,
+          "source_line": 122,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
         },
         {
           "source_path": "docs/governance/GOVERNANCE_EFFICIENCY_REFOUNDATION_PHASE_CONTRACT.md",
-          "source_line": 96,
+          "source_line": 129,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
@@ -5924,63 +5924,63 @@
         },
         {
           "source_path": "PROJECT_STATE.md",
-          "source_line": 466,
+          "source_line": 469,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
         },
         {
           "source_path": "PROJECT_STATE.md",
-          "source_line": 696,
+          "source_line": 699,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
         },
         {
           "source_path": "PROJECT_STATE.md",
-          "source_line": 792,
+          "source_line": 795,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
         },
         {
           "source_path": "PROJECT_STATE.md",
-          "source_line": 922,
+          "source_line": 925,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
         },
         {
           "source_path": "PROJECT_STATE.md",
-          "source_line": 1414,
+          "source_line": 1417,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
         },
         {
           "source_path": "PROJECT_STATE.md",
-          "source_line": 1454,
+          "source_line": 1457,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
         },
         {
           "source_path": "PROJECT_STATE.md",
-          "source_line": 1525,
+          "source_line": 1528,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
         },
         {
           "source_path": "PROJECT_STATE.md",
-          "source_line": 1596,
+          "source_line": 1599,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
         },
         {
           "source_path": "PROJECT_STATE.md",
-          "source_line": 1975,
+          "source_line": 1978,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
@@ -6009,43 +6009,43 @@
           "level": 2,
           "text": "Governing specifications and contracts",
           "anchor": "governing-specifications-and-contracts",
-          "line": 798
+          "line": 801
         },
         {
           "level": 2,
           "text": "Active requirement IDs and dispositions",
           "anchor": "active-requirement-ids-and-dispositions",
-          "line": 812
+          "line": 815
         },
         {
           "level": 2,
           "text": "Blockers and debts (live)",
           "anchor": "blockers-and-debts-live",
-          "line": 848
+          "line": 851
         },
         {
           "level": 2,
           "text": "Environment state",
           "anchor": "environment-state",
-          "line": 877
+          "line": 880
         },
         {
           "level": 2,
           "text": "Push, remote, main and deployment limits",
           "anchor": "push-remote-main-and-deployment-limits",
-          "line": 894
+          "line": 897
         },
         {
           "level": 2,
           "text": "Roadmap and product-model continuity (retransmit — do not shorten)",
           "anchor": "roadmap-and-product-model-continuity-retransmit-do-not-shorten",
-          "line": 946
+          "line": 949
         },
         {
           "level": 2,
           "text": "Canonical paths — RETRANSMIT ALL OF THESE IN EVERY FUTURE HANDOFF",
           "anchor": "canonical-paths-retransmit-all-of-these-in-every-future-handoff",
-          "line": 1004
+          "line": 1007
         }
       ]
     },
@@ -6069,7 +6069,7 @@
       "inbound_references": [
         {
           "source_path": "AGENT_HANDOFF.md",
-          "source_line": 1008,
+          "source_line": 1011,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
@@ -6251,7 +6251,7 @@
         },
         {
           "source_path": "docs/governance/GOVERNANCE_EFFICIENCY_REFOUNDATION_PHASE_CONTRACT.md",
-          "source_line": 57,
+          "source_line": 65,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
@@ -6758,10 +6758,10 @@
     },
     {
       "path": "PROJECT_STATE.md",
-      "git_object_id": "aa069fdcd1bea61cdc70ce827c5a162d284bf1ec",
-      "sha256": "1bbfb1903dc6eee947eeec87e25ad9ce98ba504c32e51f80430289af1034225b",
-      "line_count": 1998,
-      "byte_count": 146268,
+      "git_object_id": "3e5d6e50e19b11a053f992860d6a334fe8dd0e6a",
+      "sha256": "1a9f027739f1e7a98ba244e02f2cf4cb83655b72d34d4800132883b07729edcf",
+      "line_count": 2001,
+      "byte_count": 146489,
       "generated_status": "MANUAL",
       "outbound_references": [
         {
@@ -6810,7 +6810,7 @@
           "target_path": "docs/ledgers/G28_LEDGER.md",
           "anchor": null,
           "line_suffix": null,
-          "source_line": 120
+          "source_line": 123
         },
         {
           "kind": "ROOT_REFERENCE",
@@ -6818,7 +6818,7 @@
           "target_path": "docs/ledgers/G28_LEDGER.md",
           "anchor": null,
           "line_suffix": null,
-          "source_line": 159
+          "source_line": 162
         },
         {
           "kind": "ROOT_REFERENCE",
@@ -6826,7 +6826,7 @@
           "target_path": "docs/ledgers/G28_LEDGER.md",
           "anchor": null,
           "line_suffix": null,
-          "source_line": 188
+          "source_line": 191
         },
         {
           "kind": "ROOT_REFERENCE",
@@ -6834,7 +6834,7 @@
           "target_path": "docs/ledgers/G28_LEDGER.md",
           "anchor": null,
           "line_suffix": null,
-          "source_line": 224
+          "source_line": 227
         },
         {
           "kind": "ROOT_REFERENCE",
@@ -6842,7 +6842,7 @@
           "target_path": "docs/ledgers/G28_LEDGER.md",
           "anchor": null,
           "line_suffix": null,
-          "source_line": 256
+          "source_line": 259
         },
         {
           "kind": "ROOT_REFERENCE",
@@ -6850,7 +6850,7 @@
           "target_path": "docs/ledgers/G28_LEDGER.md",
           "anchor": null,
           "line_suffix": null,
-          "source_line": 285
+          "source_line": 288
         },
         {
           "kind": "ROOT_REFERENCE",
@@ -6858,7 +6858,7 @@
           "target_path": "docs/architecture/ORDEM_COMPRA_C4_PHASE_CONTRACT.md",
           "anchor": null,
           "line_suffix": null,
-          "source_line": 294
+          "source_line": 297
         },
         {
           "kind": "ROOT_REFERENCE",
@@ -6866,7 +6866,7 @@
           "target_path": "docs/architecture/ORDEM_COMPRA_C5_PHASE_CONTRACT.md",
           "anchor": null,
           "line_suffix": null,
-          "source_line": 297
+          "source_line": 300
         },
         {
           "kind": "ROOT_REFERENCE",
@@ -6874,7 +6874,7 @@
           "target_path": "docs/architecture/ORDEM_COMPRA_C3D_PHASE_CONTRACT.md",
           "anchor": null,
           "line_suffix": null,
-          "source_line": 306
+          "source_line": 309
         },
         {
           "kind": "ROOT_REFERENCE",
@@ -6882,7 +6882,7 @@
           "target_path": "docs/architecture/ORDEM_COMPRA_C4_PHASE_CONTRACT.md",
           "anchor": null,
           "line_suffix": null,
-          "source_line": 394
+          "source_line": 397
         },
         {
           "kind": "ROOT_REFERENCE",
@@ -6890,7 +6890,7 @@
           "target_path": "docs/architecture/UI_VISUAL_CONTRACT.md",
           "anchor": null,
           "line_suffix": null,
-          "source_line": 413
+          "source_line": 416
         },
         {
           "kind": "ROOT_REFERENCE",
@@ -6898,7 +6898,7 @@
           "target_path": "docs/architecture/ORDEM_COMPRA_C4_PHASE_CONTRACT.md",
           "anchor": null,
           "line_suffix": null,
-          "source_line": 442
+          "source_line": 445
         },
         {
           "kind": "ROOT_REFERENCE",
@@ -6906,7 +6906,7 @@
           "target_path": "docs/architecture/ORDEM_COMPRA_C4_PHASE_CONTRACT.md",
           "anchor": null,
           "line_suffix": null,
-          "source_line": 448
+          "source_line": 451
         },
         {
           "kind": "ROOT_REFERENCE",
@@ -6914,7 +6914,7 @@
           "target_path": "docs/architecture/ORDEM_COMPRA_C4_PHASE_CONTRACT.md",
           "anchor": null,
           "line_suffix": null,
-          "source_line": 464
+          "source_line": 467
         },
         {
           "kind": "ROOT_REFERENCE",
@@ -6922,7 +6922,7 @@
           "target_path": "docs/architecture/ORDEM_COMPRA_C3_TRACEABILITY.md",
           "anchor": null,
           "line_suffix": null,
-          "source_line": 465
+          "source_line": 468
         },
         {
           "kind": "ROOT_REFERENCE",
@@ -6930,7 +6930,7 @@
           "target_path": "PROJECT_STATE.md",
           "anchor": null,
           "line_suffix": null,
-          "source_line": 465
+          "source_line": 468
         },
         {
           "kind": "ROOT_REFERENCE",
@@ -6938,7 +6938,7 @@
           "target_path": "AGENT_HANDOFF.md",
           "anchor": null,
           "line_suffix": null,
-          "source_line": 466
+          "source_line": 469
         },
         {
           "kind": "ROOT_REFERENCE",
@@ -6946,7 +6946,7 @@
           "target_path": "docs/ledgers/G28_LEDGER.md",
           "anchor": null,
           "line_suffix": null,
-          "source_line": 466
+          "source_line": 469
         },
         {
           "kind": "ROOT_REFERENCE",
@@ -6954,20 +6954,12 @@
           "target_path": "docs/architecture/ORDEM_COMPRA_C4_PHASE_CONTRACT.md",
           "anchor": null,
           "line_suffix": null,
-          "source_line": 557
+          "source_line": 560
         },
         {
           "kind": "ROOT_REFERENCE",
           "raw": "`docs/ledgers/G28_LEDGER.md`",
           "target_path": "docs/ledgers/G28_LEDGER.md",
-          "anchor": null,
-          "line_suffix": null,
-          "source_line": 558
-        },
-        {
-          "kind": "ROOT_REFERENCE",
-          "raw": "`docs/architecture/ORDEM_COMPRA_C5_PHASE_CONTRACT.md`",
-          "target_path": "docs/architecture/ORDEM_COMPRA_C5_PHASE_CONTRACT.md",
           "anchor": null,
           "line_suffix": null,
           "source_line": 561
@@ -6978,7 +6970,15 @@
           "target_path": "docs/architecture/ORDEM_COMPRA_C5_PHASE_CONTRACT.md",
           "anchor": null,
           "line_suffix": null,
-          "source_line": 594
+          "source_line": 564
+        },
+        {
+          "kind": "ROOT_REFERENCE",
+          "raw": "`docs/architecture/ORDEM_COMPRA_C5_PHASE_CONTRACT.md`",
+          "target_path": "docs/architecture/ORDEM_COMPRA_C5_PHASE_CONTRACT.md",
+          "anchor": null,
+          "line_suffix": null,
+          "source_line": 597
         },
         {
           "kind": "ROOT_REFERENCE",
@@ -6986,7 +6986,7 @@
           "target_path": "docs/ledgers/G28_LEDGER.md",
           "anchor": null,
           "line_suffix": null,
-          "source_line": 616
+          "source_line": 619
         },
         {
           "kind": "ROOT_REFERENCE",
@@ -6994,7 +6994,7 @@
           "target_path": "docs/architecture/ORDEM_COMPRA_C5A_DB_EMISSION_READINESS_PHASE_CONTRACT.md",
           "anchor": null,
           "line_suffix": null,
-          "source_line": 620
+          "source_line": 623
         },
         {
           "kind": "ROOT_REFERENCE",
@@ -7002,7 +7002,7 @@
           "target_path": "docs/ledgers/G28_LEDGER.md",
           "anchor": null,
           "line_suffix": null,
-          "source_line": 662
+          "source_line": 665
         },
         {
           "kind": "ROOT_REFERENCE",
@@ -7010,7 +7010,7 @@
           "target_path": "docs/architecture/ORDEM_COMPRA_C5A_DB_EMISSION_READINESS_PHASE_CONTRACT.md",
           "anchor": null,
           "line_suffix": null,
-          "source_line": 667
+          "source_line": 670
         },
         {
           "kind": "ROOT_REFERENCE",
@@ -7018,7 +7018,7 @@
           "target_path": "docs/architecture/ORDEM_COMPRA_C5A_DB_EMISSION_READINESS_PHASE_CONTRACT.md",
           "anchor": null,
           "line_suffix": null,
-          "source_line": 674
+          "source_line": 677
         },
         {
           "kind": "ROOT_REFERENCE",
@@ -7026,7 +7026,7 @@
           "target_path": "docs/architecture/ORDEM_COMPRA_C5A_DB_EMISSION_READINESS_PHASE_CONTRACT.md",
           "anchor": null,
           "line_suffix": null,
-          "source_line": 695
+          "source_line": 698
         },
         {
           "kind": "ROOT_REFERENCE",
@@ -7034,7 +7034,7 @@
           "target_path": "AGENT_HANDOFF.md",
           "anchor": null,
           "line_suffix": null,
-          "source_line": 696
+          "source_line": 699
         },
         {
           "kind": "ROOT_REFERENCE",
@@ -7042,7 +7042,7 @@
           "target_path": "PROJECT_STATE.md",
           "anchor": null,
           "line_suffix": null,
-          "source_line": 696
+          "source_line": 699
         },
         {
           "kind": "ROOT_REFERENCE",
@@ -7050,7 +7050,7 @@
           "target_path": "docs/architecture/ORDEM_COMPRA_C3_TRACEABILITY.md",
           "anchor": null,
           "line_suffix": null,
-          "source_line": 697
+          "source_line": 700
         },
         {
           "kind": "ROOT_REFERENCE",
@@ -7058,7 +7058,7 @@
           "target_path": "docs/architecture/PEDIDO_PRODUCTION_FLOW_BACKLOG.md",
           "anchor": null,
           "line_suffix": null,
-          "source_line": 698
+          "source_line": 701
         },
         {
           "kind": "ROOT_REFERENCE",
@@ -7066,7 +7066,7 @@
           "target_path": "docs/ledgers/G28_LEDGER.md",
           "anchor": null,
           "line_suffix": null,
-          "source_line": 699
+          "source_line": 702
         },
         {
           "kind": "ROOT_REFERENCE",
@@ -7074,7 +7074,7 @@
           "target_path": "docs/ledgers/G28_LEDGER.md",
           "anchor": null,
           "line_suffix": null,
-          "source_line": 759
+          "source_line": 762
         },
         {
           "kind": "ROOT_REFERENCE",
@@ -7082,7 +7082,7 @@
           "target_path": "AGENT_HANDOFF.md",
           "anchor": null,
           "line_suffix": null,
-          "source_line": 792
+          "source_line": 795
         },
         {
           "kind": "ROOT_REFERENCE",
@@ -7090,7 +7090,7 @@
           "target_path": "docs/architecture/ORDEM_COMPRA_C3_TRACEABILITY.md",
           "anchor": null,
           "line_suffix": null,
-          "source_line": 793
+          "source_line": 796
         },
         {
           "kind": "ROOT_REFERENCE",
@@ -7098,7 +7098,7 @@
           "target_path": "docs/architecture/PEDIDO_PRODUCTION_FLOW_BACKLOG.md",
           "anchor": null,
           "line_suffix": null,
-          "source_line": 794
+          "source_line": 797
         },
         {
           "kind": "ROOT_REFERENCE",
@@ -7106,7 +7106,7 @@
           "target_path": "docs/ledgers/G28_LEDGER.md",
           "anchor": null,
           "line_suffix": null,
-          "source_line": 795
+          "source_line": 798
         },
         {
           "kind": "ROOT_REFERENCE",
@@ -7114,7 +7114,7 @@
           "target_path": "docs/architecture/ORDEM_COMPRA_C3C_B_PHASE_CONTRACT.md",
           "anchor": null,
           "line_suffix": null,
-          "source_line": 811
+          "source_line": 814
         },
         {
           "kind": "ROOT_REFERENCE",
@@ -7122,7 +7122,7 @@
           "target_path": "docs/architecture/ORDEM_COMPRA_C3C_B_DB_PREREQUISITES_PHASE_CONTRACT.md",
           "anchor": null,
           "line_suffix": null,
-          "source_line": 825
+          "source_line": 828
         },
         {
           "kind": "ROOT_REFERENCE",
@@ -7130,15 +7130,7 @@
           "target_path": "docs/architecture/ORDEM_COMPRA_C3D_PHASE_CONTRACT.md",
           "anchor": null,
           "line_suffix": null,
-          "source_line": 846
-        },
-        {
-          "kind": "ROOT_REFERENCE",
-          "raw": "`docs/architecture/ORDEM_COMPRA_C3C_B_PHASE_CONTRACT.md`",
-          "target_path": "docs/architecture/ORDEM_COMPRA_C3C_B_PHASE_CONTRACT.md",
-          "anchor": null,
-          "line_suffix": null,
-          "source_line": 863
+          "source_line": 849
         },
         {
           "kind": "ROOT_REFERENCE",
@@ -7150,11 +7142,19 @@
         },
         {
           "kind": "ROOT_REFERENCE",
+          "raw": "`docs/architecture/ORDEM_COMPRA_C3C_B_PHASE_CONTRACT.md`",
+          "target_path": "docs/architecture/ORDEM_COMPRA_C3C_B_PHASE_CONTRACT.md",
+          "anchor": null,
+          "line_suffix": null,
+          "source_line": 869
+        },
+        {
+          "kind": "ROOT_REFERENCE",
           "raw": "`docs/architecture/ORDEM_COMPRA_C3C_B_DB_PREREQUISITES_PHASE_CONTRACT.md`",
           "target_path": "docs/architecture/ORDEM_COMPRA_C3C_B_DB_PREREQUISITES_PHASE_CONTRACT.md",
           "anchor": null,
           "line_suffix": null,
-          "source_line": 869
+          "source_line": 872
         },
         {
           "kind": "ROOT_REFERENCE",
@@ -7162,7 +7162,7 @@
           "target_path": "docs/architecture/ORDEM_COMPRA_C3C_B_PHASE_CONTRACT.md",
           "anchor": null,
           "line_suffix": null,
-          "source_line": 897
+          "source_line": 900
         },
         {
           "kind": "ROOT_REFERENCE",
@@ -7170,7 +7170,7 @@
           "target_path": "docs/ledgers/G28_LEDGER.md",
           "anchor": null,
           "line_suffix": null,
-          "source_line": 898
+          "source_line": 901
         },
         {
           "kind": "ROOT_REFERENCE",
@@ -7178,7 +7178,7 @@
           "target_path": "docs/architecture/ORDEM_COMPRA_C3C_B_PHASE_CONTRACT.md",
           "anchor": null,
           "line_suffix": null,
-          "source_line": 916
+          "source_line": 919
         },
         {
           "kind": "ROOT_REFERENCE",
@@ -7186,7 +7186,7 @@
           "target_path": "PROJECT_STATE.md",
           "anchor": null,
           "line_suffix": null,
-          "source_line": 921
+          "source_line": 924
         },
         {
           "kind": "ROOT_REFERENCE",
@@ -7194,7 +7194,7 @@
           "target_path": "AGENT_HANDOFF.md",
           "anchor": null,
           "line_suffix": null,
-          "source_line": 922
+          "source_line": 925
         },
         {
           "kind": "ROOT_REFERENCE",
@@ -7202,7 +7202,7 @@
           "target_path": "docs/architecture/ORDEM_COMPRA_C3C_B_PHASE_CONTRACT.md",
           "anchor": null,
           "line_suffix": null,
-          "source_line": 933
+          "source_line": 936
         },
         {
           "kind": "ROOT_REFERENCE",
@@ -7210,7 +7210,7 @@
           "target_path": "docs/architecture/ORDEM_COMPRA_C3C_B_DB_PREREQUISITES_PHASE_CONTRACT.md",
           "anchor": null,
           "line_suffix": null,
-          "source_line": 944
+          "source_line": 947
         },
         {
           "kind": "ROOT_REFERENCE",
@@ -7218,7 +7218,7 @@
           "target_path": "docs/architecture/ORDEM_COMPRA_C3C_B_DB_PREREQUISITES_PHASE_CONTRACT.md",
           "anchor": null,
           "line_suffix": null,
-          "source_line": 955
+          "source_line": 958
         },
         {
           "kind": "ROOT_REFERENCE",
@@ -7226,7 +7226,7 @@
           "target_path": "docs/architecture/ORDEM_COMPRA_C3D_PHASE_CONTRACT.md",
           "anchor": null,
           "line_suffix": null,
-          "source_line": 1018
+          "source_line": 1021
         },
         {
           "kind": "ROOT_REFERENCE",
@@ -7234,7 +7234,7 @@
           "target_path": "docs/ledgers/G28_LEDGER.md",
           "anchor": null,
           "line_suffix": null,
-          "source_line": 1070
+          "source_line": 1073
         },
         {
           "kind": "ROOT_REFERENCE",
@@ -7242,7 +7242,7 @@
           "target_path": "docs/ledgers/G28_LEDGER.md",
           "anchor": null,
           "line_suffix": null,
-          "source_line": 1100
+          "source_line": 1103
         },
         {
           "kind": "ROOT_REFERENCE",
@@ -7250,7 +7250,7 @@
           "target_path": "docs/ledgers/G28_LEDGER.md",
           "anchor": null,
           "line_suffix": null,
-          "source_line": 1148
+          "source_line": 1151
         },
         {
           "kind": "ROOT_REFERENCE",
@@ -7258,7 +7258,7 @@
           "target_path": "docs/ledgers/G28_LEDGER.md",
           "anchor": null,
           "line_suffix": null,
-          "source_line": 1205
+          "source_line": 1208
         },
         {
           "kind": "ROOT_REFERENCE",
@@ -7266,7 +7266,7 @@
           "target_path": "docs/ledgers/G28_LEDGER.md",
           "anchor": null,
           "line_suffix": null,
-          "source_line": 1248
+          "source_line": 1251
         },
         {
           "kind": "ROOT_REFERENCE",
@@ -7274,7 +7274,7 @@
           "target_path": "docs/architecture/ORDEM_COMPRA_C4_PHASE_CONTRACT.md",
           "anchor": null,
           "line_suffix": null,
-          "source_line": 1255
+          "source_line": 1258
         },
         {
           "kind": "ROOT_REFERENCE",
@@ -7282,7 +7282,7 @@
           "target_path": "docs/architecture/ORDEM_COMPRA_C4_PHASE_CONTRACT.md",
           "anchor": null,
           "line_suffix": null,
-          "source_line": 1262
+          "source_line": 1265
         },
         {
           "kind": "ROOT_REFERENCE",
@@ -7290,7 +7290,7 @@
           "target_path": "docs/architecture/ORDEM_COMPRA_C5A_DB_EMISSION_READINESS_PHASE_CONTRACT.md",
           "anchor": null,
           "line_suffix": null,
-          "source_line": 1275
+          "source_line": 1278
         },
         {
           "kind": "ROOT_REFERENCE",
@@ -7298,7 +7298,7 @@
           "target_path": "docs/architecture/ORDEM_COMPRA_C5_PHASE_CONTRACT.md",
           "anchor": null,
           "line_suffix": null,
-          "source_line": 1303
+          "source_line": 1306
         },
         {
           "kind": "ROOT_REFERENCE",
@@ -7306,7 +7306,7 @@
           "target_path": "docs/architecture/ORDEM_COMPRA_C5_PHASE_CONTRACT.md",
           "anchor": null,
           "line_suffix": null,
-          "source_line": 1314
+          "source_line": 1317
         },
         {
           "kind": "ROOT_REFERENCE",
@@ -7314,7 +7314,7 @@
           "target_path": "docs/governance/AGENT_INSTRUCTIONS.md",
           "anchor": null,
           "line_suffix": null,
-          "source_line": 1319
+          "source_line": 1322
         },
         {
           "kind": "ROOT_REFERENCE",
@@ -7322,7 +7322,7 @@
           "target_path": "docs/architecture/ORDEM_COMPRA_C5A_DB_EMISSION_READINESS_PHASE_CONTRACT.md",
           "anchor": null,
           "line_suffix": null,
-          "source_line": 1326
+          "source_line": 1329
         },
         {
           "kind": "ROOT_REFERENCE",
@@ -7330,7 +7330,7 @@
           "target_path": "docs/architecture/ORDEM_COMPRA_C5_PHASE_CONTRACT.md",
           "anchor": null,
           "line_suffix": null,
-          "source_line": 1327
+          "source_line": 1330
         },
         {
           "kind": "ROOT_REFERENCE",
@@ -7338,87 +7338,71 @@
           "target_path": "docs/ledgers/G28_LEDGER.md",
           "anchor": null,
           "line_suffix": null,
-          "source_line": 1328
+          "source_line": 1331
         },
         {
           "kind": "ROOT_REFERENCE",
           "raw": "`AGENT_HANDOFF.md`",
           "target_path": "AGENT_HANDOFF.md",
-          "anchor": null,
-          "line_suffix": null,
-          "source_line": 1414
-        },
-        {
-          "kind": "ROOT_REFERENCE",
-          "raw": "`docs/DOCUMENTATION_INDEX.md`",
-          "target_path": "docs/DOCUMENTATION_INDEX.md",
-          "anchor": null,
-          "line_suffix": null,
-          "source_line": 1414
-        },
-        {
-          "kind": "ROOT_REFERENCE",
-          "raw": "`docs/architecture/ORDEM_COMPRA_C5_PHASE_CONTRACT.md`",
-          "target_path": "docs/architecture/ORDEM_COMPRA_C5_PHASE_CONTRACT.md",
-          "anchor": null,
-          "line_suffix": null,
-          "source_line": 1416
-        },
-        {
-          "kind": "ROOT_REFERENCE",
-          "raw": "`docs/ledgers/G28_LEDGER.md`",
-          "target_path": "docs/ledgers/G28_LEDGER.md",
           "anchor": null,
           "line_suffix": null,
           "source_line": 1417
         },
         {
           "kind": "ROOT_REFERENCE",
-          "raw": "`AGENT_HANDOFF.md`",
-          "target_path": "AGENT_HANDOFF.md",
-          "anchor": null,
-          "line_suffix": null,
-          "source_line": 1454
-        },
-        {
-          "kind": "ROOT_REFERENCE",
           "raw": "`docs/DOCUMENTATION_INDEX.md`",
           "target_path": "docs/DOCUMENTATION_INDEX.md",
           "anchor": null,
           "line_suffix": null,
-          "source_line": 1455
+          "source_line": 1417
         },
         {
           "kind": "ROOT_REFERENCE",
-          "raw": "`docs/architecture/ORDEM_COMPRA_C3_TRACEABILITY.md`",
-          "target_path": "docs/architecture/ORDEM_COMPRA_C3_TRACEABILITY.md",
+          "raw": "`docs/architecture/ORDEM_COMPRA_C5_PHASE_CONTRACT.md`",
+          "target_path": "docs/architecture/ORDEM_COMPRA_C5_PHASE_CONTRACT.md",
           "anchor": null,
           "line_suffix": null,
-          "source_line": 1456
+          "source_line": 1419
         },
         {
           "kind": "ROOT_REFERENCE",
-          "raw": "`docs/architecture/PEDIDO_PRODUCTION_FLOW_BACKLOG.md`",
-          "target_path": "docs/architecture/PEDIDO_PRODUCTION_FLOW_BACKLOG.md",
+          "raw": "`docs/ledgers/G28_LEDGER.md`",
+          "target_path": "docs/ledgers/G28_LEDGER.md",
+          "anchor": null,
+          "line_suffix": null,
+          "source_line": 1420
+        },
+        {
+          "kind": "ROOT_REFERENCE",
+          "raw": "`AGENT_HANDOFF.md`",
+          "target_path": "AGENT_HANDOFF.md",
           "anchor": null,
           "line_suffix": null,
           "source_line": 1457
         },
         {
           "kind": "ROOT_REFERENCE",
-          "raw": "`docs/architecture/ORDEM_COMPRA_C5_PHASE_CONTRACT.md`",
-          "target_path": "docs/architecture/ORDEM_COMPRA_C5_PHASE_CONTRACT.md",
+          "raw": "`docs/DOCUMENTATION_INDEX.md`",
+          "target_path": "docs/DOCUMENTATION_INDEX.md",
           "anchor": null,
           "line_suffix": null,
           "source_line": 1458
         },
         {
           "kind": "ROOT_REFERENCE",
-          "raw": "`docs/ledgers/G28_LEDGER.md`",
-          "target_path": "docs/ledgers/G28_LEDGER.md",
+          "raw": "`docs/architecture/ORDEM_COMPRA_C3_TRACEABILITY.md`",
+          "target_path": "docs/architecture/ORDEM_COMPRA_C3_TRACEABILITY.md",
           "anchor": null,
           "line_suffix": null,
           "source_line": 1459
+        },
+        {
+          "kind": "ROOT_REFERENCE",
+          "raw": "`docs/architecture/PEDIDO_PRODUCTION_FLOW_BACKLOG.md`",
+          "target_path": "docs/architecture/PEDIDO_PRODUCTION_FLOW_BACKLOG.md",
+          "anchor": null,
+          "line_suffix": null,
+          "source_line": 1460
         },
         {
           "kind": "ROOT_REFERENCE",
@@ -7426,7 +7410,7 @@
           "target_path": "docs/architecture/ORDEM_COMPRA_C5_PHASE_CONTRACT.md",
           "anchor": null,
           "line_suffix": null,
-          "source_line": 1464
+          "source_line": 1461
         },
         {
           "kind": "ROOT_REFERENCE",
@@ -7434,7 +7418,23 @@
           "target_path": "docs/ledgers/G28_LEDGER.md",
           "anchor": null,
           "line_suffix": null,
-          "source_line": 1465
+          "source_line": 1462
+        },
+        {
+          "kind": "ROOT_REFERENCE",
+          "raw": "`docs/architecture/ORDEM_COMPRA_C5_PHASE_CONTRACT.md`",
+          "target_path": "docs/architecture/ORDEM_COMPRA_C5_PHASE_CONTRACT.md",
+          "anchor": null,
+          "line_suffix": null,
+          "source_line": 1467
+        },
+        {
+          "kind": "ROOT_REFERENCE",
+          "raw": "`docs/ledgers/G28_LEDGER.md`",
+          "target_path": "docs/ledgers/G28_LEDGER.md",
+          "anchor": null,
+          "line_suffix": null,
+          "source_line": 1468
         },
         {
           "kind": "ROOT_REFERENCE",
@@ -7442,79 +7442,23 @@
           "target_path": "docs/architecture/CLEAN_SLATE_TRANSACTIONAL_RESET_PHASE_CONTRACT.md",
           "anchor": null,
           "line_suffix": null,
-          "source_line": 1485
+          "source_line": 1488
         },
         {
           "kind": "ROOT_REFERENCE",
           "raw": "`docs/architecture/CLEAN_SLATE_TRANSACTIONAL_RESET_PHASE_CONTRACT.md`",
           "target_path": "docs/architecture/CLEAN_SLATE_TRANSACTIONAL_RESET_PHASE_CONTRACT.md",
-          "anchor": null,
-          "line_suffix": null,
-          "source_line": 1524
-        },
-        {
-          "kind": "ROOT_REFERENCE",
-          "raw": "`AGENT_HANDOFF.md`",
-          "target_path": "AGENT_HANDOFF.md",
-          "anchor": null,
-          "line_suffix": null,
-          "source_line": 1525
-        },
-        {
-          "kind": "ROOT_REFERENCE",
-          "raw": "`docs/DOCUMENTATION_INDEX.md`",
-          "target_path": "docs/DOCUMENTATION_INDEX.md",
-          "anchor": null,
-          "line_suffix": null,
-          "source_line": 1525
-        },
-        {
-          "kind": "ROOT_REFERENCE",
-          "raw": "`docs/architecture/ORDEM_COMPRA_C3_TRACEABILITY.md`",
-          "target_path": "docs/architecture/ORDEM_COMPRA_C3_TRACEABILITY.md",
-          "anchor": null,
-          "line_suffix": null,
-          "source_line": 1526
-        },
-        {
-          "kind": "ROOT_REFERENCE",
-          "raw": "`docs/architecture/PEDIDO_PRODUCTION_FLOW_BACKLOG.md`",
-          "target_path": "docs/architecture/PEDIDO_PRODUCTION_FLOW_BACKLOG.md",
           "anchor": null,
           "line_suffix": null,
           "source_line": 1527
         },
         {
           "kind": "ROOT_REFERENCE",
-          "raw": "`docs/ledgers/G28_LEDGER.md`",
-          "target_path": "docs/ledgers/G28_LEDGER.md",
-          "anchor": null,
-          "line_suffix": null,
-          "source_line": 1528
-        },
-        {
-          "kind": "ROOT_REFERENCE",
-          "raw": "`docs/architecture/CLEAN_SLATE_TRANSACTIONAL_RESET_PHASE_CONTRACT.md`",
-          "target_path": "docs/architecture/CLEAN_SLATE_TRANSACTIONAL_RESET_PHASE_CONTRACT.md",
-          "anchor": null,
-          "line_suffix": null,
-          "source_line": 1563
-        },
-        {
-          "kind": "ROOT_REFERENCE",
           "raw": "`AGENT_HANDOFF.md`",
           "target_path": "AGENT_HANDOFF.md",
           "anchor": null,
           "line_suffix": null,
-          "source_line": 1596
-        },
-        {
-          "kind": "ROOT_REFERENCE",
-          "raw": "`docs/architecture/ORDEM_COMPRA_C3_TRACEABILITY.md`",
-          "target_path": "docs/architecture/ORDEM_COMPRA_C3_TRACEABILITY.md",
-          "anchor": null,
-          "line_suffix": null,
-          "source_line": 1597
+          "source_line": 1528
         },
         {
           "kind": "ROOT_REFERENCE",
@@ -7522,7 +7466,15 @@
           "target_path": "docs/DOCUMENTATION_INDEX.md",
           "anchor": null,
           "line_suffix": null,
-          "source_line": 1597
+          "source_line": 1528
+        },
+        {
+          "kind": "ROOT_REFERENCE",
+          "raw": "`docs/architecture/ORDEM_COMPRA_C3_TRACEABILITY.md`",
+          "target_path": "docs/architecture/ORDEM_COMPRA_C3_TRACEABILITY.md",
+          "anchor": null,
+          "line_suffix": null,
+          "source_line": 1529
         },
         {
           "kind": "ROOT_REFERENCE",
@@ -7530,7 +7482,7 @@
           "target_path": "docs/architecture/PEDIDO_PRODUCTION_FLOW_BACKLOG.md",
           "anchor": null,
           "line_suffix": null,
-          "source_line": 1598
+          "source_line": 1530
         },
         {
           "kind": "ROOT_REFERENCE",
@@ -7538,7 +7490,7 @@
           "target_path": "docs/ledgers/G28_LEDGER.md",
           "anchor": null,
           "line_suffix": null,
-          "source_line": 1598
+          "source_line": 1531
         },
         {
           "kind": "ROOT_REFERENCE",
@@ -7546,7 +7498,55 @@
           "target_path": "docs/architecture/CLEAN_SLATE_TRANSACTIONAL_RESET_PHASE_CONTRACT.md",
           "anchor": null,
           "line_suffix": null,
-          "source_line": 1604
+          "source_line": 1566
+        },
+        {
+          "kind": "ROOT_REFERENCE",
+          "raw": "`AGENT_HANDOFF.md`",
+          "target_path": "AGENT_HANDOFF.md",
+          "anchor": null,
+          "line_suffix": null,
+          "source_line": 1599
+        },
+        {
+          "kind": "ROOT_REFERENCE",
+          "raw": "`docs/architecture/ORDEM_COMPRA_C3_TRACEABILITY.md`",
+          "target_path": "docs/architecture/ORDEM_COMPRA_C3_TRACEABILITY.md",
+          "anchor": null,
+          "line_suffix": null,
+          "source_line": 1600
+        },
+        {
+          "kind": "ROOT_REFERENCE",
+          "raw": "`docs/DOCUMENTATION_INDEX.md`",
+          "target_path": "docs/DOCUMENTATION_INDEX.md",
+          "anchor": null,
+          "line_suffix": null,
+          "source_line": 1600
+        },
+        {
+          "kind": "ROOT_REFERENCE",
+          "raw": "`docs/architecture/PEDIDO_PRODUCTION_FLOW_BACKLOG.md`",
+          "target_path": "docs/architecture/PEDIDO_PRODUCTION_FLOW_BACKLOG.md",
+          "anchor": null,
+          "line_suffix": null,
+          "source_line": 1601
+        },
+        {
+          "kind": "ROOT_REFERENCE",
+          "raw": "`docs/ledgers/G28_LEDGER.md`",
+          "target_path": "docs/ledgers/G28_LEDGER.md",
+          "anchor": null,
+          "line_suffix": null,
+          "source_line": 1601
+        },
+        {
+          "kind": "ROOT_REFERENCE",
+          "raw": "`docs/architecture/CLEAN_SLATE_TRANSACTIONAL_RESET_PHASE_CONTRACT.md`",
+          "target_path": "docs/architecture/CLEAN_SLATE_TRANSACTIONAL_RESET_PHASE_CONTRACT.md",
+          "anchor": null,
+          "line_suffix": null,
+          "source_line": 1607
         },
         {
           "kind": "ROOT_REFERENCE",
@@ -7554,7 +7554,7 @@
           "target_path": "docs/architecture/ORDEM_COMPRA_C3C_B_DB_PREREQUISITES_PHASE_CONTRACT.md",
           "anchor": null,
           "line_suffix": null,
-          "source_line": 1652
+          "source_line": 1655
         },
         {
           "kind": "ROOT_REFERENCE",
@@ -7562,7 +7562,7 @@
           "target_path": "docs/architecture/ORDEM_COMPRA_C4_PHASE_CONTRACT.md",
           "anchor": null,
           "line_suffix": null,
-          "source_line": 1705
+          "source_line": 1708
         },
         {
           "kind": "ROOT_REFERENCE",
@@ -7570,7 +7570,7 @@
           "target_path": "docs/architecture/ORDEM_COMPRA_C3D_PHASE_CONTRACT.md",
           "anchor": null,
           "line_suffix": null,
-          "source_line": 1769
+          "source_line": 1772
         },
         {
           "kind": "ROOT_REFERENCE",
@@ -7578,7 +7578,7 @@
           "target_path": "docs/closeouts/PROJECT_STATE_ARCHIVE_2026-07.md",
           "anchor": null,
           "line_suffix": null,
-          "source_line": 1790
+          "source_line": 1793
         },
         {
           "kind": "ROOT_REFERENCE",
@@ -7586,7 +7586,7 @@
           "target_path": "docs/ledgers/G28_LEDGER.md",
           "anchor": null,
           "line_suffix": null,
-          "source_line": 1791
+          "source_line": 1794
         },
         {
           "kind": "ROOT_REFERENCE",
@@ -7594,20 +7594,12 @@
           "target_path": "docs/architecture/ORDEM_COMPRA_C3C_B_DB_PREREQUISITES_PHASE_CONTRACT.md",
           "anchor": null,
           "line_suffix": null,
-          "source_line": 1820
+          "source_line": 1823
         },
         {
           "kind": "ROOT_REFERENCE",
           "raw": "`docs/architecture/ORDEM_COMPRA_C3C_B_PHASE_CONTRACT.md`",
           "target_path": "docs/architecture/ORDEM_COMPRA_C3C_B_PHASE_CONTRACT.md",
-          "anchor": null,
-          "line_suffix": null,
-          "source_line": 1823
-        },
-        {
-          "kind": "ROOT_REFERENCE",
-          "raw": "`docs/architecture/ORDEM_COMPRA_C3D_PHASE_CONTRACT.md`",
-          "target_path": "docs/architecture/ORDEM_COMPRA_C3D_PHASE_CONTRACT.md",
           "anchor": null,
           "line_suffix": null,
           "source_line": 1826
@@ -7618,55 +7610,7 @@
           "target_path": "docs/architecture/ORDEM_COMPRA_C3D_PHASE_CONTRACT.md",
           "anchor": null,
           "line_suffix": null,
-          "source_line": 1858
-        },
-        {
-          "kind": "ROOT_REFERENCE",
-          "raw": "`docs/ledgers/G28_LEDGER.md`",
-          "target_path": "docs/ledgers/G28_LEDGER.md",
-          "anchor": null,
-          "line_suffix": null,
-          "source_line": 1881
-        },
-        {
-          "kind": "ROOT_REFERENCE",
-          "raw": "`docs/architecture/ORDEM_COMPRA_LIFECYCLE_SPEC_PROPOSED.md`",
-          "target_path": "docs/architecture/ORDEM_COMPRA_LIFECYCLE_SPEC_PROPOSED.md",
-          "anchor": null,
-          "line_suffix": null,
-          "source_line": 1934
-        },
-        {
-          "kind": "ROOT_REFERENCE",
-          "raw": "`docs/architecture/PEDIDO_OP_SCHEMA_CONTRACT.md`",
-          "target_path": "docs/architecture/PEDIDO_OP_SCHEMA_CONTRACT.md",
-          "anchor": null,
-          "line_suffix": null,
-          "source_line": 1935
-        },
-        {
-          "kind": "ROOT_REFERENCE",
-          "raw": "`docs/architecture/PEDIDO_PRODUCTION_FLOW_BACKLOG.md`",
-          "target_path": "docs/architecture/PEDIDO_PRODUCTION_FLOW_BACKLOG.md",
-          "anchor": null,
-          "line_suffix": null,
-          "source_line": 1936
-        },
-        {
-          "kind": "ROOT_REFERENCE",
-          "raw": "`docs/architecture/ORDEM_COMPRA_C3_TRACEABILITY.md`",
-          "target_path": "docs/architecture/ORDEM_COMPRA_C3_TRACEABILITY.md",
-          "anchor": null,
-          "line_suffix": null,
-          "source_line": 1937
-        },
-        {
-          "kind": "ROOT_REFERENCE",
-          "raw": "`docs/architecture/ORDEM_COMPRA_C3C_B_PHASE_CONTRACT.md`",
-          "target_path": "docs/architecture/ORDEM_COMPRA_C3C_B_PHASE_CONTRACT.md",
-          "anchor": null,
-          "line_suffix": null,
-          "source_line": 1940
+          "source_line": 1829
         },
         {
           "kind": "ROOT_REFERENCE",
@@ -7674,39 +7618,7 @@
           "target_path": "docs/architecture/ORDEM_COMPRA_C3D_PHASE_CONTRACT.md",
           "anchor": null,
           "line_suffix": null,
-          "source_line": 1947
-        },
-        {
-          "kind": "ROOT_REFERENCE",
-          "raw": "`docs/architecture/ORDEM_COMPRA_C3C_B_DB_PREREQUISITES_PHASE_CONTRACT.md`",
-          "target_path": "docs/architecture/ORDEM_COMPRA_C3C_B_DB_PREREQUISITES_PHASE_CONTRACT.md",
-          "anchor": null,
-          "line_suffix": null,
-          "source_line": 1948
-        },
-        {
-          "kind": "ROOT_REFERENCE",
-          "raw": "`docs/architecture/ORDEM_COMPRA_C4_PHASE_CONTRACT.md`",
-          "target_path": "docs/architecture/ORDEM_COMPRA_C4_PHASE_CONTRACT.md",
-          "anchor": null,
-          "line_suffix": null,
-          "source_line": 1955
-        },
-        {
-          "kind": "ROOT_REFERENCE",
-          "raw": "`docs/architecture/ORDEM_COMPRA_C5A_DB_EMISSION_READINESS_PHASE_CONTRACT.md`",
-          "target_path": "docs/architecture/ORDEM_COMPRA_C5A_DB_EMISSION_READINESS_PHASE_CONTRACT.md",
-          "anchor": null,
-          "line_suffix": null,
-          "source_line": 1964
-        },
-        {
-          "kind": "ROOT_REFERENCE",
-          "raw": "`docs/architecture/ORDEM_COMPRA_C5_PHASE_CONTRACT.md`",
-          "target_path": "docs/architecture/ORDEM_COMPRA_C5_PHASE_CONTRACT.md",
-          "anchor": null,
-          "line_suffix": null,
-          "source_line": 1973
+          "source_line": 1861
         },
         {
           "kind": "ROOT_REFERENCE",
@@ -7714,7 +7626,95 @@
           "target_path": "docs/ledgers/G28_LEDGER.md",
           "anchor": null,
           "line_suffix": null,
-          "source_line": 1974
+          "source_line": 1884
+        },
+        {
+          "kind": "ROOT_REFERENCE",
+          "raw": "`docs/architecture/ORDEM_COMPRA_LIFECYCLE_SPEC_PROPOSED.md`",
+          "target_path": "docs/architecture/ORDEM_COMPRA_LIFECYCLE_SPEC_PROPOSED.md",
+          "anchor": null,
+          "line_suffix": null,
+          "source_line": 1937
+        },
+        {
+          "kind": "ROOT_REFERENCE",
+          "raw": "`docs/architecture/PEDIDO_OP_SCHEMA_CONTRACT.md`",
+          "target_path": "docs/architecture/PEDIDO_OP_SCHEMA_CONTRACT.md",
+          "anchor": null,
+          "line_suffix": null,
+          "source_line": 1938
+        },
+        {
+          "kind": "ROOT_REFERENCE",
+          "raw": "`docs/architecture/PEDIDO_PRODUCTION_FLOW_BACKLOG.md`",
+          "target_path": "docs/architecture/PEDIDO_PRODUCTION_FLOW_BACKLOG.md",
+          "anchor": null,
+          "line_suffix": null,
+          "source_line": 1939
+        },
+        {
+          "kind": "ROOT_REFERENCE",
+          "raw": "`docs/architecture/ORDEM_COMPRA_C3_TRACEABILITY.md`",
+          "target_path": "docs/architecture/ORDEM_COMPRA_C3_TRACEABILITY.md",
+          "anchor": null,
+          "line_suffix": null,
+          "source_line": 1940
+        },
+        {
+          "kind": "ROOT_REFERENCE",
+          "raw": "`docs/architecture/ORDEM_COMPRA_C3C_B_PHASE_CONTRACT.md`",
+          "target_path": "docs/architecture/ORDEM_COMPRA_C3C_B_PHASE_CONTRACT.md",
+          "anchor": null,
+          "line_suffix": null,
+          "source_line": 1943
+        },
+        {
+          "kind": "ROOT_REFERENCE",
+          "raw": "`docs/architecture/ORDEM_COMPRA_C3D_PHASE_CONTRACT.md`",
+          "target_path": "docs/architecture/ORDEM_COMPRA_C3D_PHASE_CONTRACT.md",
+          "anchor": null,
+          "line_suffix": null,
+          "source_line": 1950
+        },
+        {
+          "kind": "ROOT_REFERENCE",
+          "raw": "`docs/architecture/ORDEM_COMPRA_C3C_B_DB_PREREQUISITES_PHASE_CONTRACT.md`",
+          "target_path": "docs/architecture/ORDEM_COMPRA_C3C_B_DB_PREREQUISITES_PHASE_CONTRACT.md",
+          "anchor": null,
+          "line_suffix": null,
+          "source_line": 1951
+        },
+        {
+          "kind": "ROOT_REFERENCE",
+          "raw": "`docs/architecture/ORDEM_COMPRA_C4_PHASE_CONTRACT.md`",
+          "target_path": "docs/architecture/ORDEM_COMPRA_C4_PHASE_CONTRACT.md",
+          "anchor": null,
+          "line_suffix": null,
+          "source_line": 1958
+        },
+        {
+          "kind": "ROOT_REFERENCE",
+          "raw": "`docs/architecture/ORDEM_COMPRA_C5A_DB_EMISSION_READINESS_PHASE_CONTRACT.md`",
+          "target_path": "docs/architecture/ORDEM_COMPRA_C5A_DB_EMISSION_READINESS_PHASE_CONTRACT.md",
+          "anchor": null,
+          "line_suffix": null,
+          "source_line": 1967
+        },
+        {
+          "kind": "ROOT_REFERENCE",
+          "raw": "`docs/architecture/ORDEM_COMPRA_C5_PHASE_CONTRACT.md`",
+          "target_path": "docs/architecture/ORDEM_COMPRA_C5_PHASE_CONTRACT.md",
+          "anchor": null,
+          "line_suffix": null,
+          "source_line": 1976
+        },
+        {
+          "kind": "ROOT_REFERENCE",
+          "raw": "`docs/ledgers/G28_LEDGER.md`",
+          "target_path": "docs/ledgers/G28_LEDGER.md",
+          "anchor": null,
+          "line_suffix": null,
+          "source_line": 1977
         },
         {
           "kind": "ROOT_REFERENCE",
@@ -7722,7 +7722,7 @@
           "target_path": "AGENT_HANDOFF.md",
           "anchor": null,
           "line_suffix": null,
-          "source_line": 1975
+          "source_line": 1978
         },
         {
           "kind": "ROOT_REFERENCE",
@@ -7730,7 +7730,7 @@
           "target_path": "docs/DOCUMENTATION_INDEX.md",
           "anchor": null,
           "line_suffix": null,
-          "source_line": 1976
+          "source_line": 1979
         },
         {
           "kind": "ROOT_REFERENCE",
@@ -7738,7 +7738,7 @@
           "target_path": "docs/governance/DOCUMENTATION_MODEL.md",
           "anchor": null,
           "line_suffix": null,
-          "source_line": 1977
+          "source_line": 1980
         },
         {
           "kind": "ROOT_REFERENCE",
@@ -7746,7 +7746,7 @@
           "target_path": "docs/governance/SUPERVISION_PROTOCOL.md",
           "anchor": null,
           "line_suffix": null,
-          "source_line": 1978
+          "source_line": 1981
         },
         {
           "kind": "ROOT_REFERENCE",
@@ -7754,7 +7754,7 @@
           "target_path": "docs/governance/AGENT_INSTRUCTIONS.md",
           "anchor": null,
           "line_suffix": null,
-          "source_line": 1979
+          "source_line": 1982
         },
         {
           "kind": "ROOT_REFERENCE",
@@ -7762,7 +7762,7 @@
           "target_path": "docs/architecture/DOCUMENTOS_VALIDACAO_VINCULOS_E_EVOLUCAO_PLANO.md",
           "anchor": null,
           "line_suffix": null,
-          "source_line": 1980
+          "source_line": 1983
         },
         {
           "kind": "ROOT_REFERENCE",
@@ -7770,7 +7770,7 @@
           "target_path": "docs/architecture/PEDIDO_OP_MOVIMENTACAO_DOCUMENTOS_PLANO.md",
           "anchor": null,
           "line_suffix": null,
-          "source_line": 1981
+          "source_line": 1984
         },
         {
           "kind": "ROOT_REFERENCE",
@@ -7778,7 +7778,7 @@
           "target_path": "docs/reports/PRODUCTION_READINESS_DIAGNOSIS_R1_2026-07-17.md",
           "anchor": null,
           "line_suffix": null,
-          "source_line": 1982
+          "source_line": 1985
         },
         {
           "kind": "ROOT_REFERENCE",
@@ -7786,7 +7786,7 @@
           "target_path": "docs/architecture/CAMADA3_BACKUP_CONTRACT.md",
           "anchor": null,
           "line_suffix": null,
-          "source_line": 1983
+          "source_line": 1986
         },
         {
           "kind": "ROOT_REFERENCE",
@@ -7794,7 +7794,7 @@
           "target_path": "docs/closeouts/AGENT_HANDOFF_ARCHIVE_2026-07.md",
           "anchor": null,
           "line_suffix": null,
-          "source_line": 1988
+          "source_line": 1991
         },
         {
           "kind": "ROOT_REFERENCE",
@@ -7802,7 +7802,7 @@
           "target_path": "docs/closeouts/PROJECT_STATE_ARCHIVE_2026-07.md",
           "anchor": null,
           "line_suffix": null,
-          "source_line": 1989
+          "source_line": 1992
         },
         {
           "kind": "ROOT_REFERENCE",
@@ -7810,7 +7810,7 @@
           "target_path": "docs/legacy/pre-model/MANIFEST.md",
           "anchor": null,
           "line_suffix": null,
-          "source_line": 1990
+          "source_line": 1993
         },
         {
           "kind": "ROOT_REFERENCE",
@@ -7818,7 +7818,7 @@
           "target_path": "docs/archive/pt-BR/PROJECT_STATE.md",
           "anchor": null,
           "line_suffix": null,
-          "source_line": 1991
+          "source_line": 1994
         },
         {
           "kind": "ROOT_REFERENCE",
@@ -7826,7 +7826,7 @@
           "target_path": "docs/legacy/pre-model/PROJECT_STATE_FULL_SNAPSHOT.md",
           "anchor": null,
           "line_suffix": null,
-          "source_line": 1994
+          "source_line": 1997
         },
         {
           "kind": "ROOT_REFERENCE",
@@ -7834,7 +7834,7 @@
           "target_path": "docs/legacy/pre-model/MANIFEST.md",
           "anchor": null,
           "line_suffix": null,
-          "source_line": 1995
+          "source_line": 1998
         }
       ],
       "inbound_references": [
@@ -7854,56 +7854,56 @@
         },
         {
           "source_path": "AGENT_HANDOFF.md",
-          "source_line": 96,
+          "source_line": 99,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
         },
         {
           "source_path": "AGENT_HANDOFF.md",
-          "source_line": 125,
+          "source_line": 128,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
         },
         {
           "source_path": "AGENT_HANDOFF.md",
-          "source_line": 256,
+          "source_line": 259,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
         },
         {
           "source_path": "AGENT_HANDOFF.md",
-          "source_line": 533,
+          "source_line": 536,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
         },
         {
           "source_path": "AGENT_HANDOFF.md",
-          "source_line": 619,
+          "source_line": 622,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
         },
         {
           "source_path": "AGENT_HANDOFF.md",
-          "source_line": 873,
+          "source_line": 876,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
         },
         {
           "source_path": "AGENT_HANDOFF.md",
-          "source_line": 1006,
+          "source_line": 1009,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
         },
         {
           "source_path": "AGENT_HANDOFF.md",
-          "source_line": 1084,
+          "source_line": 1087,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
@@ -10647,21 +10647,21 @@
         },
         {
           "source_path": "docs/governance/GOVERNANCE_EFFICIENCY_REFOUNDATION_PHASE_CONTRACT.md",
-          "source_line": 57,
+          "source_line": 65,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
         },
         {
           "source_path": "docs/governance/GOVERNANCE_EFFICIENCY_REFOUNDATION_PHASE_CONTRACT.md",
-          "source_line": 88,
+          "source_line": 121,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
         },
         {
           "source_path": "docs/governance/GOVERNANCE_EFFICIENCY_REFOUNDATION_PHASE_CONTRACT.md",
-          "source_line": 94,
+          "source_line": 127,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
@@ -15029,21 +15029,21 @@
         },
         {
           "source_path": "PROJECT_STATE.md",
-          "source_line": 465,
+          "source_line": 468,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
         },
         {
           "source_path": "PROJECT_STATE.md",
-          "source_line": 696,
+          "source_line": 699,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
         },
         {
           "source_path": "PROJECT_STATE.md",
-          "source_line": 921,
+          "source_line": 924,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
@@ -15066,61 +15066,61 @@
           "level": 2,
           "text": "Workspace and Git boundaries",
           "anchor": "workspace-and-git-boundaries",
-          "line": 1615
+          "line": 1618
         },
         {
           "level": 2,
           "text": "Environment and production/staging state",
           "anchor": "environment-and-productionstaging-state",
-          "line": 1628
+          "line": 1631
         },
         {
           "level": 2,
           "text": "POST-LAUNCH DEBT REGISTER (ranked; each `NOT AUTHORIZED` until its own order)",
           "anchor": "post-launch-debt-register-ranked-each-not-authorized-until-its-own-order",
-          "line": 1662
+          "line": 1665
         },
         {
           "level": 2,
           "text": "Binding decisions in force (condensed; verbatim in archive/ledger)",
           "anchor": "binding-decisions-in-force-condensed-verbatim-in-archiveledger",
-          "line": 1788
+          "line": 1791
         },
         {
           "level": 2,
           "text": "Product and environment prohibitions",
           "anchor": "product-and-environment-prohibitions",
-          "line": 1814
+          "line": 1817
         },
         {
           "level": 2,
           "text": "Accepted-phase index (concise)",
           "anchor": "accepted-phase-index-concise",
-          "line": 1879
+          "line": 1882
         },
         {
           "level": 3,
           "text": "Purchase-order refoundation + Phase-C + governance track",
           "anchor": "purchase-order-refoundation-phase-c-governance-track",
-          "line": 1884
+          "line": 1887
         },
         {
           "level": 3,
           "text": "Earlier tracks (indexed; full detail in ledger/archives)",
           "anchor": "earlier-tracks-indexed-full-detail-in-ledgerarchives",
-          "line": 1914
+          "line": 1917
         },
         {
           "level": 2,
           "text": "Governing specifications and canonical paths",
           "anchor": "governing-specifications-and-canonical-paths",
-          "line": 1932
+          "line": 1935
         },
         {
           "level": 2,
           "text": "Historical reference (not sources of current state)",
           "anchor": "historical-reference-not-sources-of-current-state",
-          "line": 1986
+          "line": 1989
         }
       ]
     },
@@ -15783,10 +15783,10 @@
     },
     {
       "path": "docs/DOCUMENTATION_INDEX.md",
-      "git_object_id": "ef7f613e6682e416fb42a559056e648394a222c9",
-      "sha256": "604e17e59ea20787364721feba04db201b88508cdef631bffa18783eaafd18e7",
+      "git_object_id": "7727538f5b7bdc13825e36217b5fa6972efb146f",
+      "sha256": "4e0789a83b5b23e0441ed4ba7113c909c7624de28db993100bfe8b72486fab8a",
       "line_count": 745,
-      "byte_count": 110526,
+      "byte_count": 110733,
       "generated_status": "MANUAL",
       "outbound_references": [
         {
@@ -17169,7 +17169,7 @@
       "inbound_references": [
         {
           "source_path": "AGENT_HANDOFF.md",
-          "source_line": 1017,
+          "source_line": 1020,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
@@ -19591,35 +19591,35 @@
         },
         {
           "source_path": "PROJECT_STATE.md",
-          "source_line": 1414,
+          "source_line": 1417,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
         },
         {
           "source_path": "PROJECT_STATE.md",
-          "source_line": 1455,
+          "source_line": 1458,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
         },
         {
           "source_path": "PROJECT_STATE.md",
-          "source_line": 1525,
+          "source_line": 1528,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
         },
         {
           "source_path": "PROJECT_STATE.md",
-          "source_line": 1597,
+          "source_line": 1600,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
         },
         {
           "source_path": "PROJECT_STATE.md",
-          "source_line": 1976,
+          "source_line": 1979,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
@@ -22377,7 +22377,7 @@
         },
         {
           "source_path": "PROJECT_STATE.md",
-          "source_line": 1983,
+          "source_line": 1986,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
@@ -23176,14 +23176,14 @@
       "inbound_references": [
         {
           "source_path": "AGENT_HANDOFF.md",
-          "source_line": 219,
+          "source_line": 222,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
         },
         {
           "source_path": "AGENT_HANDOFF.md",
-          "source_line": 263,
+          "source_line": 266,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
@@ -23435,28 +23435,28 @@
         },
         {
           "source_path": "PROJECT_STATE.md",
-          "source_line": 1485,
+          "source_line": 1488,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
         },
         {
           "source_path": "PROJECT_STATE.md",
-          "source_line": 1524,
+          "source_line": 1527,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
         },
         {
           "source_path": "PROJECT_STATE.md",
-          "source_line": 1563,
+          "source_line": 1566,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
         },
         {
           "source_path": "PROJECT_STATE.md",
-          "source_line": 1604,
+          "source_line": 1607,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
@@ -23973,7 +23973,7 @@
       "inbound_references": [
         {
           "source_path": "AGENT_HANDOFF.md",
-          "source_line": 1020,
+          "source_line": 1023,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
@@ -24914,7 +24914,7 @@
       "inbound_references": [
         {
           "source_path": "AGENT_HANDOFF.md",
-          "source_line": 1012,
+          "source_line": 1015,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
@@ -25551,7 +25551,7 @@
         },
         {
           "source_path": "PROJECT_STATE.md",
-          "source_line": 1980,
+          "source_line": 1983,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
@@ -26720,14 +26720,14 @@
       "inbound_references": [
         {
           "source_path": "AGENT_HANDOFF.md",
-          "source_line": 467,
+          "source_line": 470,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
         },
         {
           "source_path": "AGENT_HANDOFF.md",
-          "source_line": 1027,
+          "source_line": 1030,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
@@ -27049,49 +27049,49 @@
         },
         {
           "source_path": "PROJECT_STATE.md",
-          "source_line": 825,
+          "source_line": 828,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
         },
         {
           "source_path": "PROJECT_STATE.md",
-          "source_line": 869,
+          "source_line": 872,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
         },
         {
           "source_path": "PROJECT_STATE.md",
-          "source_line": 944,
+          "source_line": 947,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
         },
         {
           "source_path": "PROJECT_STATE.md",
-          "source_line": 955,
+          "source_line": 958,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
         },
         {
           "source_path": "PROJECT_STATE.md",
-          "source_line": 1652,
+          "source_line": 1655,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
         },
         {
           "source_path": "PROJECT_STATE.md",
-          "source_line": 1820,
+          "source_line": 1823,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
         },
         {
           "source_path": "PROJECT_STATE.md",
-          "source_line": 1948,
+          "source_line": 1951,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
@@ -28278,28 +28278,28 @@
       "inbound_references": [
         {
           "source_path": "AGENT_HANDOFF.md",
-          "source_line": 331,
+          "source_line": 334,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
         },
         {
           "source_path": "AGENT_HANDOFF.md",
-          "source_line": 472,
+          "source_line": 475,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
         },
         {
           "source_path": "AGENT_HANDOFF.md",
-          "source_line": 824,
+          "source_line": 827,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
         },
         {
           "source_path": "AGENT_HANDOFF.md",
-          "source_line": 1024,
+          "source_line": 1027,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
@@ -28677,14 +28677,7 @@
         },
         {
           "source_path": "PROJECT_STATE.md",
-          "source_line": 811,
-          "kind": "ROOT_REFERENCE",
-          "anchor": null,
-          "line_suffix": null
-        },
-        {
-          "source_path": "PROJECT_STATE.md",
-          "source_line": 863,
+          "source_line": 814,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
@@ -28698,35 +28691,42 @@
         },
         {
           "source_path": "PROJECT_STATE.md",
-          "source_line": 897,
+          "source_line": 869,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
         },
         {
           "source_path": "PROJECT_STATE.md",
-          "source_line": 916,
+          "source_line": 900,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
         },
         {
           "source_path": "PROJECT_STATE.md",
-          "source_line": 933,
+          "source_line": 919,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
         },
         {
           "source_path": "PROJECT_STATE.md",
-          "source_line": 1823,
+          "source_line": 936,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
         },
         {
           "source_path": "PROJECT_STATE.md",
-          "source_line": 1940,
+          "source_line": 1826,
+          "kind": "ROOT_REFERENCE",
+          "anchor": null,
+          "line_suffix": null
+        },
+        {
+          "source_path": "PROJECT_STATE.md",
+          "source_line": 1943,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
@@ -29777,28 +29777,28 @@
       "inbound_references": [
         {
           "source_path": "AGENT_HANDOFF.md",
-          "source_line": 411,
+          "source_line": 414,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
         },
         {
           "source_path": "AGENT_HANDOFF.md",
-          "source_line": 696,
+          "source_line": 699,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
         },
         {
           "source_path": "AGENT_HANDOFF.md",
-          "source_line": 831,
+          "source_line": 834,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
         },
         {
           "source_path": "AGENT_HANDOFF.md",
-          "source_line": 1032,
+          "source_line": 1035,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
@@ -30344,49 +30344,49 @@
         },
         {
           "source_path": "PROJECT_STATE.md",
-          "source_line": 306,
+          "source_line": 309,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
         },
         {
           "source_path": "PROJECT_STATE.md",
-          "source_line": 846,
+          "source_line": 849,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
         },
         {
           "source_path": "PROJECT_STATE.md",
-          "source_line": 1018,
+          "source_line": 1021,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
         },
         {
           "source_path": "PROJECT_STATE.md",
-          "source_line": 1769,
+          "source_line": 1772,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
         },
         {
           "source_path": "PROJECT_STATE.md",
-          "source_line": 1826,
+          "source_line": 1829,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
         },
         {
           "source_path": "PROJECT_STATE.md",
-          "source_line": 1858,
+          "source_line": 1861,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
         },
         {
           "source_path": "PROJECT_STATE.md",
-          "source_line": 1947,
+          "source_line": 1950,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
@@ -31047,28 +31047,28 @@
       "inbound_references": [
         {
           "source_path": "AGENT_HANDOFF.md",
-          "source_line": 620,
+          "source_line": 623,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
         },
         {
           "source_path": "AGENT_HANDOFF.md",
-          "source_line": 809,
+          "source_line": 812,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
         },
         {
           "source_path": "AGENT_HANDOFF.md",
-          "source_line": 814,
+          "source_line": 817,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
         },
         {
           "source_path": "AGENT_HANDOFF.md",
-          "source_line": 1015,
+          "source_line": 1018,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
@@ -32314,49 +32314,49 @@
         },
         {
           "source_path": "PROJECT_STATE.md",
-          "source_line": 465,
+          "source_line": 468,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
         },
         {
           "source_path": "PROJECT_STATE.md",
-          "source_line": 697,
+          "source_line": 700,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
         },
         {
           "source_path": "PROJECT_STATE.md",
-          "source_line": 793,
+          "source_line": 796,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
         },
         {
           "source_path": "PROJECT_STATE.md",
-          "source_line": 1456,
+          "source_line": 1459,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
         },
         {
           "source_path": "PROJECT_STATE.md",
-          "source_line": 1526,
+          "source_line": 1529,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
         },
         {
           "source_path": "PROJECT_STATE.md",
-          "source_line": 1597,
+          "source_line": 1600,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
         },
         {
           "source_path": "PROJECT_STATE.md",
-          "source_line": 1937,
+          "source_line": 1940,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
@@ -32813,28 +32813,28 @@
       "inbound_references": [
         {
           "source_path": "AGENT_HANDOFF.md",
-          "source_line": 408,
+          "source_line": 411,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
         },
         {
           "source_path": "AGENT_HANDOFF.md",
-          "source_line": 506,
+          "source_line": 509,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
         },
         {
           "source_path": "AGENT_HANDOFF.md",
-          "source_line": 523,
+          "source_line": 526,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
         },
         {
           "source_path": "AGENT_HANDOFF.md",
-          "source_line": 1040,
+          "source_line": 1043,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
@@ -33184,70 +33184,70 @@
         },
         {
           "source_path": "PROJECT_STATE.md",
-          "source_line": 294,
+          "source_line": 297,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
         },
         {
           "source_path": "PROJECT_STATE.md",
-          "source_line": 394,
+          "source_line": 397,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
         },
         {
           "source_path": "PROJECT_STATE.md",
-          "source_line": 442,
+          "source_line": 445,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
         },
         {
           "source_path": "PROJECT_STATE.md",
-          "source_line": 448,
+          "source_line": 451,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
         },
         {
           "source_path": "PROJECT_STATE.md",
-          "source_line": 464,
+          "source_line": 467,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
         },
         {
           "source_path": "PROJECT_STATE.md",
-          "source_line": 557,
+          "source_line": 560,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
         },
         {
           "source_path": "PROJECT_STATE.md",
-          "source_line": 1255,
+          "source_line": 1258,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
         },
         {
           "source_path": "PROJECT_STATE.md",
-          "source_line": 1262,
+          "source_line": 1265,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
         },
         {
           "source_path": "PROJECT_STATE.md",
-          "source_line": 1705,
+          "source_line": 1708,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
         },
         {
           "source_path": "PROJECT_STATE.md",
-          "source_line": 1955,
+          "source_line": 1958,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
@@ -33754,28 +33754,28 @@
       "inbound_references": [
         {
           "source_path": "AGENT_HANDOFF.md",
-          "source_line": 404,
+          "source_line": 407,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
         },
         {
           "source_path": "AGENT_HANDOFF.md",
-          "source_line": 582,
+          "source_line": 585,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
         },
         {
           "source_path": "AGENT_HANDOFF.md",
-          "source_line": 605,
+          "source_line": 608,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
         },
         {
           "source_path": "AGENT_HANDOFF.md",
-          "source_line": 1065,
+          "source_line": 1068,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
@@ -34013,49 +34013,49 @@
         },
         {
           "source_path": "PROJECT_STATE.md",
-          "source_line": 620,
+          "source_line": 623,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
         },
         {
           "source_path": "PROJECT_STATE.md",
-          "source_line": 667,
+          "source_line": 670,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
         },
         {
           "source_path": "PROJECT_STATE.md",
-          "source_line": 674,
+          "source_line": 677,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
         },
         {
           "source_path": "PROJECT_STATE.md",
-          "source_line": 695,
+          "source_line": 698,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
         },
         {
           "source_path": "PROJECT_STATE.md",
-          "source_line": 1275,
+          "source_line": 1278,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
         },
         {
           "source_path": "PROJECT_STATE.md",
-          "source_line": 1326,
+          "source_line": 1329,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
         },
         {
           "source_path": "PROJECT_STATE.md",
-          "source_line": 1964,
+          "source_line": 1967,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
@@ -34726,42 +34726,42 @@
       "inbound_references": [
         {
           "source_path": "AGENT_HANDOFF.md",
-          "source_line": 397,
+          "source_line": 400,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
         },
         {
           "source_path": "AGENT_HANDOFF.md",
-          "source_line": 548,
+          "source_line": 551,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
         },
         {
           "source_path": "AGENT_HANDOFF.md",
-          "source_line": 565,
+          "source_line": 568,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
         },
         {
           "source_path": "AGENT_HANDOFF.md",
-          "source_line": 845,
+          "source_line": 848,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
         },
         {
           "source_path": "AGENT_HANDOFF.md",
-          "source_line": 969,
+          "source_line": 972,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
         },
         {
           "source_path": "AGENT_HANDOFF.md",
-          "source_line": 1049,
+          "source_line": 1052,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
@@ -35097,70 +35097,70 @@
         },
         {
           "source_path": "PROJECT_STATE.md",
-          "source_line": 297,
+          "source_line": 300,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
         },
         {
           "source_path": "PROJECT_STATE.md",
-          "source_line": 561,
+          "source_line": 564,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
         },
         {
           "source_path": "PROJECT_STATE.md",
-          "source_line": 594,
+          "source_line": 597,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
         },
         {
           "source_path": "PROJECT_STATE.md",
-          "source_line": 1303,
+          "source_line": 1306,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
         },
         {
           "source_path": "PROJECT_STATE.md",
-          "source_line": 1314,
+          "source_line": 1317,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
         },
         {
           "source_path": "PROJECT_STATE.md",
-          "source_line": 1327,
+          "source_line": 1330,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
         },
         {
           "source_path": "PROJECT_STATE.md",
-          "source_line": 1416,
+          "source_line": 1419,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
         },
         {
           "source_path": "PROJECT_STATE.md",
-          "source_line": 1458,
+          "source_line": 1461,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
         },
         {
           "source_path": "PROJECT_STATE.md",
-          "source_line": 1464,
+          "source_line": 1467,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
         },
         {
           "source_path": "PROJECT_STATE.md",
-          "source_line": 1973,
+          "source_line": 1976,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
@@ -35479,14 +35479,14 @@
       "inbound_references": [
         {
           "source_path": "AGENT_HANDOFF.md",
-          "source_line": 800,
+          "source_line": 803,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
         },
         {
           "source_path": "AGENT_HANDOFF.md",
-          "source_line": 1014,
+          "source_line": 1017,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
@@ -36095,7 +36095,7 @@
         },
         {
           "source_path": "PROJECT_STATE.md",
-          "source_line": 1934,
+          "source_line": 1937,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
@@ -37090,7 +37090,7 @@
       "inbound_references": [
         {
           "source_path": "AGENT_HANDOFF.md",
-          "source_line": 1010,
+          "source_line": 1013,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
@@ -37797,7 +37797,7 @@
         },
         {
           "source_path": "PROJECT_STATE.md",
-          "source_line": 1981,
+          "source_line": 1984,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
@@ -38040,14 +38040,14 @@
       "inbound_references": [
         {
           "source_path": "AGENT_HANDOFF.md",
-          "source_line": 804,
+          "source_line": 807,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
         },
         {
           "source_path": "AGENT_HANDOFF.md",
-          "source_line": 1013,
+          "source_line": 1016,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
@@ -38831,7 +38831,7 @@
         },
         {
           "source_path": "PROJECT_STATE.md",
-          "source_line": 1935,
+          "source_line": 1938,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
@@ -40272,21 +40272,21 @@
       "inbound_references": [
         {
           "source_path": "AGENT_HANDOFF.md",
-          "source_line": 621,
+          "source_line": 624,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
         },
         {
           "source_path": "AGENT_HANDOFF.md",
-          "source_line": 808,
+          "source_line": 811,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
         },
         {
           "source_path": "AGENT_HANDOFF.md",
-          "source_line": 1011,
+          "source_line": 1014,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
@@ -41833,42 +41833,42 @@
         },
         {
           "source_path": "PROJECT_STATE.md",
-          "source_line": 698,
+          "source_line": 701,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
         },
         {
           "source_path": "PROJECT_STATE.md",
-          "source_line": 794,
+          "source_line": 797,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
         },
         {
           "source_path": "PROJECT_STATE.md",
-          "source_line": 1457,
+          "source_line": 1460,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
         },
         {
           "source_path": "PROJECT_STATE.md",
-          "source_line": 1527,
+          "source_line": 1530,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
         },
         {
           "source_path": "PROJECT_STATE.md",
-          "source_line": 1598,
+          "source_line": 1601,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
         },
         {
           "source_path": "PROJECT_STATE.md",
-          "source_line": 1936,
+          "source_line": 1939,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
@@ -42850,7 +42850,7 @@
       "inbound_references": [
         {
           "source_path": "AGENT_HANDOFF.md",
-          "source_line": 511,
+          "source_line": 514,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
@@ -43214,7 +43214,7 @@
         },
         {
           "source_path": "PROJECT_STATE.md",
-          "source_line": 413,
+          "source_line": 416,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
@@ -45663,7 +45663,7 @@
         },
         {
           "source_path": "PROJECT_STATE.md",
-          "source_line": 1991,
+          "source_line": 1994,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
@@ -55466,7 +55466,7 @@
         },
         {
           "source_path": "AGENT_HANDOFF.md",
-          "source_line": 1022,
+          "source_line": 1025,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
@@ -55585,7 +55585,7 @@
         },
         {
           "source_path": "PROJECT_STATE.md",
-          "source_line": 1988,
+          "source_line": 1991,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
@@ -56360,7 +56360,7 @@
       "inbound_references": [
         {
           "source_path": "AGENT_HANDOFF.md",
-          "source_line": 1023,
+          "source_line": 1026,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
@@ -56710,14 +56710,14 @@
         },
         {
           "source_path": "PROJECT_STATE.md",
-          "source_line": 1790,
+          "source_line": 1793,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
         },
         {
           "source_path": "PROJECT_STATE.md",
-          "source_line": 1989,
+          "source_line": 1992,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
@@ -57188,14 +57188,14 @@
       "inbound_references": [
         {
           "source_path": "AGENT_HANDOFF.md",
-          "source_line": 1009,
+          "source_line": 1012,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
         },
         {
           "source_path": "AGENT_HANDOFF.md",
-          "source_line": 1083,
+          "source_line": 1086,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
@@ -57573,14 +57573,14 @@
         },
         {
           "source_path": "PROJECT_STATE.md",
-          "source_line": 1319,
+          "source_line": 1322,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
         },
         {
           "source_path": "PROJECT_STATE.md",
-          "source_line": 1979,
+          "source_line": 1982,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
@@ -58185,7 +58185,7 @@
       "inbound_references": [
         {
           "source_path": "AGENT_HANDOFF.md",
-          "source_line": 1018,
+          "source_line": 1021,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
@@ -59326,7 +59326,7 @@
         },
         {
           "source_path": "PROJECT_STATE.md",
-          "source_line": 1977,
+          "source_line": 1980,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
@@ -59505,10 +59505,10 @@
     },
     {
       "path": "docs/governance/GOVERNANCE_EFFICIENCY_REFOUNDATION_PHASE_CONTRACT.md",
-      "git_object_id": "0d0d24e7acd40c98b931c0fbdcc9bc524922c9ac",
-      "sha256": "92c74ba1c7dc2f288f7c0783e28933d2edd43d81748e728b4cc6f9b87ac3afed",
-      "line_count": 102,
-      "byte_count": 5209,
+      "git_object_id": "fca16749c3bd2ad4ab0874003b7115e0640aa3e4",
+      "sha256": "246e2ce799be435e5958beef7eafc7b807e2246d958d63a6361338d7dfd62d90",
+      "line_count": 135,
+      "byte_count": 6956,
       "generated_status": "MANUAL",
       "outbound_references": [
         {
@@ -59517,7 +59517,7 @@
           "target_path": "AGENT_HANDOFF.md",
           "anchor": null,
           "line_suffix": null,
-          "source_line": 57
+          "source_line": 65
         },
         {
           "kind": "ROOT_REFERENCE",
@@ -59525,36 +59525,12 @@
           "target_path": "AGENTS.md",
           "anchor": null,
           "line_suffix": null,
-          "source_line": 57
+          "source_line": 65
         },
         {
           "kind": "ROOT_REFERENCE",
           "raw": "`CLAUDE.md`",
           "target_path": "CLAUDE.md",
-          "anchor": null,
-          "line_suffix": null,
-          "source_line": 57
-        },
-        {
-          "kind": "ROOT_REFERENCE",
-          "raw": "`PROJECT_STATE.md`",
-          "target_path": "PROJECT_STATE.md",
-          "anchor": null,
-          "line_suffix": null,
-          "source_line": 57
-        },
-        {
-          "kind": "ROOT_REFERENCE",
-          "raw": "`docs/governance/shadow/generated/DOCUMENTATION_INDEX.md`",
-          "target_path": "docs/governance/shadow/generated/DOCUMENTATION_INDEX.md",
-          "anchor": null,
-          "line_suffix": null,
-          "source_line": 64
-        },
-        {
-          "kind": "ROOT_REFERENCE",
-          "raw": "`docs/governance/shadow/generated/ORDEM_COMPRA_C3_TRACEABILITY.md`",
-          "target_path": "docs/governance/shadow/generated/ORDEM_COMPRA_C3_TRACEABILITY.md",
           "anchor": null,
           "line_suffix": null,
           "source_line": 65
@@ -59565,15 +59541,23 @@
           "target_path": "PROJECT_STATE.md",
           "anchor": null,
           "line_suffix": null,
-          "source_line": 88
+          "source_line": 65
         },
         {
           "kind": "ROOT_REFERENCE",
-          "raw": "`AGENT_HANDOFF.md`",
-          "target_path": "AGENT_HANDOFF.md",
+          "raw": "`docs/governance/shadow/generated/DOCUMENTATION_INDEX.md`",
+          "target_path": "docs/governance/shadow/generated/DOCUMENTATION_INDEX.md",
           "anchor": null,
           "line_suffix": null,
-          "source_line": 89
+          "source_line": 72
+        },
+        {
+          "kind": "ROOT_REFERENCE",
+          "raw": "`docs/governance/shadow/generated/ORDEM_COMPRA_C3_TRACEABILITY.md`",
+          "target_path": "docs/governance/shadow/generated/ORDEM_COMPRA_C3_TRACEABILITY.md",
+          "anchor": null,
+          "line_suffix": null,
+          "source_line": 73
         },
         {
           "kind": "ROOT_REFERENCE",
@@ -59581,7 +59565,7 @@
           "target_path": "PROJECT_STATE.md",
           "anchor": null,
           "line_suffix": null,
-          "source_line": 94
+          "source_line": 121
         },
         {
           "kind": "ROOT_REFERENCE",
@@ -59589,7 +59573,23 @@
           "target_path": "AGENT_HANDOFF.md",
           "anchor": null,
           "line_suffix": null,
-          "source_line": 96
+          "source_line": 122
+        },
+        {
+          "kind": "ROOT_REFERENCE",
+          "raw": "`PROJECT_STATE.md`",
+          "target_path": "PROJECT_STATE.md",
+          "anchor": null,
+          "line_suffix": null,
+          "source_line": 127
+        },
+        {
+          "kind": "ROOT_REFERENCE",
+          "raw": "`AGENT_HANDOFF.md`",
+          "target_path": "AGENT_HANDOFF.md",
+          "anchor": null,
+          "line_suffix": null,
+          "source_line": 129
         }
       ],
       "inbound_references": [
@@ -59619,25 +59619,31 @@
           "level": 2,
           "text": "Objective",
           "anchor": "objective",
-          "line": 39
+          "line": 47
         },
         {
           "level": 2,
           "text": "Material units",
           "anchor": "material-units",
-          "line": 46
+          "line": 54
         },
         {
           "level": 2,
           "text": "Unit 2 shadow implementation result",
           "anchor": "unit-2-shadow-implementation-result",
-          "line": 54
+          "line": 62
+        },
+        {
+          "level": 2,
+          "text": "Unit 3 R2 governance-gate hardening",
+          "anchor": "unit-3-r2-governance-gate-hardening",
+          "line": 96
         },
         {
           "level": 2,
           "text": "Binding rules",
           "anchor": "binding-rules",
-          "line": 86
+          "line": 119
         }
       ]
     },
@@ -59757,7 +59763,7 @@
       "inbound_references": [
         {
           "source_path": "AGENT_HANDOFF.md",
-          "source_line": 1019,
+          "source_line": 1022,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
@@ -60142,7 +60148,7 @@
         },
         {
           "source_path": "PROJECT_STATE.md",
-          "source_line": 1978,
+          "source_line": 1981,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
@@ -60213,10 +60219,10 @@
     },
     {
       "path": "docs/governance/shadow/generated/AGENT_HANDOFF.md",
-      "git_object_id": "842622de3f73565125b9a41cd7d4e281174277b1",
-      "sha256": "facd6279a19f72d47df9d44c0eba84c8c79540d7d97c7fe3d5ebcf483e9162d6",
+      "git_object_id": "4bc59fede849dd0f2a8d90145ebb6f5c180a7744",
+      "sha256": "6258577dce85c31ace166041d38b41a8b07a01ce210a6eabf6c4451d9259b0ee",
       "line_count": 48,
-      "byte_count": 2358,
+      "byte_count": 2378,
       "generated_status": "GENERATED",
       "outbound_references": [],
       "inbound_references": [
@@ -61345,7 +61351,7 @@
         },
         {
           "source_path": "docs/governance/GOVERNANCE_EFFICIENCY_REFOUNDATION_PHASE_CONTRACT.md",
-          "source_line": 64,
+          "source_line": 72,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
@@ -61369,10 +61375,10 @@
     },
     {
       "path": "docs/governance/shadow/generated/G28_LEDGER.md",
-      "git_object_id": "a320786668cd3c6e980a990cfe5a627b6641c530",
-      "sha256": "d12a3dbadf22737005ab19502e8cf3051b656c79a7923c5a0c9ee47224998394",
-      "line_count": 9632,
-      "byte_count": 974056,
+      "git_object_id": "08bd30b8905977430e53d011e96e46b10543ab5c",
+      "sha256": "1f1b5b2d79961038b2108990f121d5985aa8cb66f62a3c768cca36da4696d8fe",
+      "line_count": 9643,
+      "byte_count": 976597,
       "generated_status": "GENERATED",
       "outbound_references": [
         {
@@ -69082,6 +69088,12 @@
           "text": "2026-07-23 — GOVERNANCE-EFFICIENCY-REFOUNDATION-LEDGER-PARTITION-SHADOW-R1 — Unit 3 lossless shadow ledger partitioning",
           "anchor": "2026-07-23-governance-efficiency-refoundation-ledger-partition-shadow-r1-unit-3-lossless-shadow-ledger-partitioning",
           "line": 9621
+        },
+        {
+          "level": 2,
+          "text": "2026-07-23 — GOVERNANCE-EFFICIENCY-REFOUNDATION-LEDGER-PARTITION-SHADOW-HARDENING-R2 — Unit 3 governance-gate forward correction",
+          "anchor": "2026-07-23-governance-efficiency-refoundation-ledger-partition-shadow-hardening-r2-unit-3-governance-gate-forward-correction",
+          "line": 9632
         }
       ]
     },
@@ -69231,7 +69243,7 @@
         },
         {
           "source_path": "docs/governance/GOVERNANCE_EFFICIENCY_REFOUNDATION_PHASE_CONTRACT.md",
-          "source_line": 65,
+          "source_line": 73,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
@@ -69255,10 +69267,10 @@
     },
     {
       "path": "docs/governance/shadow/generated/PROJECT_STATE.md",
-      "git_object_id": "0db842a7f593b879a7971466f2cf2db16411c1a6",
-      "sha256": "4df864565fc58d06079466f24be6f984d9b1241c20443b99805cd44c3e987b84",
+      "git_object_id": "48d46be3d0bab949efc9bdb792366159e5a46e6e",
+      "sha256": "11683efc96c0804db9b208d94cea0b92f20cbd3a176b903396bd32d7de72d4fc",
       "line_count": 61,
-      "byte_count": 2588,
+      "byte_count": 2598,
       "generated_status": "GENERATED",
       "outbound_references": [],
       "inbound_references": [
@@ -77157,10 +77169,10 @@
     },
     {
       "path": "docs/governance/shadow/ledger/partitions/G28_LEDGER_PART_0012.md",
-      "git_object_id": "6c0df76281b43d1d8d4c83687ff3171723f68ada",
-      "sha256": "19f21151af959ab126d651173abcbe788f150b645fb8fdc0149fcf6fe9026c14",
-      "line_count": 129,
-      "byte_count": 11450,
+      "git_object_id": "3eabc1d543011d19c85e41b3bfdd3bd9d49945d7",
+      "sha256": "6ad0ad8f2ce866632b94919f700dbaf5ad25dd9fa0e8fbf4329f53299c015163",
+      "line_count": 140,
+      "byte_count": 13991,
       "generated_status": "GENERATED",
       "outbound_references": [
         {
@@ -77273,6 +77285,12 @@
           "text": "2026-07-23 — GOVERNANCE-EFFICIENCY-REFOUNDATION-LEDGER-PARTITION-SHADOW-R1 — Unit 3 lossless shadow ledger partitioning",
           "anchor": "2026-07-23-governance-efficiency-refoundation-ledger-partition-shadow-r1-unit-3-lossless-shadow-ledger-partitioning",
           "line": 118
+        },
+        {
+          "level": 2,
+          "text": "2026-07-23 — GOVERNANCE-EFFICIENCY-REFOUNDATION-LEDGER-PARTITION-SHADOW-HARDENING-R2 — Unit 3 governance-gate forward correction",
+          "anchor": "2026-07-23-governance-efficiency-refoundation-ledger-partition-shadow-hardening-r2-unit-3-governance-gate-forward-correction",
+          "line": 129
         }
       ]
     },
@@ -77360,10 +77378,10 @@
     },
     {
       "path": "docs/ledgers/G28_LEDGER.md",
-      "git_object_id": "331dd16f7847135a0d073dbb1d0b63861efe24f2",
-      "sha256": "4047cf918e2bec620b883cbd8c5bfb2c7ea529dd41df70a52d289589dbadef66",
-      "line_count": 9626,
-      "byte_count": 973755,
+      "git_object_id": "96cea4b2990a5d37b6e5a1c3179689007fcb4c72",
+      "sha256": "56d7703593ced55ddaaa60251276b03368ace33c73c7ef37db33ce7818a80ffa",
+      "line_count": 9637,
+      "byte_count": 976296,
       "generated_status": "MANUAL",
       "outbound_references": [
         {
@@ -83818,70 +83836,70 @@
       "inbound_references": [
         {
           "source_path": "AGENT_HANDOFF.md",
-          "source_line": 96,
+          "source_line": 99,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
         },
         {
           "source_path": "AGENT_HANDOFF.md",
-          "source_line": 125,
+          "source_line": 128,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
         },
         {
           "source_path": "AGENT_HANDOFF.md",
-          "source_line": 146,
+          "source_line": 149,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
         },
         {
           "source_path": "AGENT_HANDOFF.md",
-          "source_line": 175,
+          "source_line": 178,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
         },
         {
           "source_path": "AGENT_HANDOFF.md",
-          "source_line": 201,
+          "source_line": 204,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
         },
         {
           "source_path": "AGENT_HANDOFF.md",
-          "source_line": 224,
+          "source_line": 227,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
         },
         {
           "source_path": "AGENT_HANDOFF.md",
-          "source_line": 255,
+          "source_line": 258,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
         },
         {
           "source_path": "AGENT_HANDOFF.md",
-          "source_line": 622,
+          "source_line": 625,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
         },
         {
           "source_path": "AGENT_HANDOFF.md",
-          "source_line": 810,
+          "source_line": 813,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
         },
         {
           "source_path": "AGENT_HANDOFF.md",
-          "source_line": 1016,
+          "source_line": 1019,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
@@ -85743,196 +85761,196 @@
         },
         {
           "source_path": "PROJECT_STATE.md",
-          "source_line": 120,
+          "source_line": 123,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
         },
         {
           "source_path": "PROJECT_STATE.md",
-          "source_line": 159,
+          "source_line": 162,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
         },
         {
           "source_path": "PROJECT_STATE.md",
-          "source_line": 188,
+          "source_line": 191,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
         },
         {
           "source_path": "PROJECT_STATE.md",
-          "source_line": 224,
+          "source_line": 227,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
         },
         {
           "source_path": "PROJECT_STATE.md",
-          "source_line": 256,
+          "source_line": 259,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
         },
         {
           "source_path": "PROJECT_STATE.md",
-          "source_line": 285,
+          "source_line": 288,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
         },
         {
           "source_path": "PROJECT_STATE.md",
-          "source_line": 466,
+          "source_line": 469,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
         },
         {
           "source_path": "PROJECT_STATE.md",
-          "source_line": 558,
+          "source_line": 561,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
         },
         {
           "source_path": "PROJECT_STATE.md",
-          "source_line": 616,
+          "source_line": 619,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
         },
         {
           "source_path": "PROJECT_STATE.md",
-          "source_line": 662,
+          "source_line": 665,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
         },
         {
           "source_path": "PROJECT_STATE.md",
-          "source_line": 699,
+          "source_line": 702,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
         },
         {
           "source_path": "PROJECT_STATE.md",
-          "source_line": 759,
+          "source_line": 762,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
         },
         {
           "source_path": "PROJECT_STATE.md",
-          "source_line": 795,
+          "source_line": 798,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
         },
         {
           "source_path": "PROJECT_STATE.md",
-          "source_line": 898,
+          "source_line": 901,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
         },
         {
           "source_path": "PROJECT_STATE.md",
-          "source_line": 1070,
+          "source_line": 1073,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
         },
         {
           "source_path": "PROJECT_STATE.md",
-          "source_line": 1100,
+          "source_line": 1103,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
         },
         {
           "source_path": "PROJECT_STATE.md",
-          "source_line": 1148,
+          "source_line": 1151,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
         },
         {
           "source_path": "PROJECT_STATE.md",
-          "source_line": 1205,
+          "source_line": 1208,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
         },
         {
           "source_path": "PROJECT_STATE.md",
-          "source_line": 1248,
+          "source_line": 1251,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
         },
         {
           "source_path": "PROJECT_STATE.md",
-          "source_line": 1328,
+          "source_line": 1331,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
         },
         {
           "source_path": "PROJECT_STATE.md",
-          "source_line": 1417,
+          "source_line": 1420,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
         },
         {
           "source_path": "PROJECT_STATE.md",
-          "source_line": 1459,
+          "source_line": 1462,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
         },
         {
           "source_path": "PROJECT_STATE.md",
-          "source_line": 1465,
+          "source_line": 1468,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
         },
         {
           "source_path": "PROJECT_STATE.md",
-          "source_line": 1528,
+          "source_line": 1531,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
         },
         {
           "source_path": "PROJECT_STATE.md",
-          "source_line": 1598,
+          "source_line": 1601,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
         },
         {
           "source_path": "PROJECT_STATE.md",
-          "source_line": 1791,
+          "source_line": 1794,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
         },
         {
           "source_path": "PROJECT_STATE.md",
-          "source_line": 1881,
+          "source_line": 1884,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
         },
         {
           "source_path": "PROJECT_STATE.md",
-          "source_line": 1974,
+          "source_line": 1977,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
@@ -87180,6 +87198,12 @@
           "text": "2026-07-23 — GOVERNANCE-EFFICIENCY-REFOUNDATION-LEDGER-PARTITION-SHADOW-R1 — Unit 3 lossless shadow ledger partitioning",
           "anchor": "2026-07-23-governance-efficiency-refoundation-ledger-partition-shadow-r1-unit-3-lossless-shadow-ledger-partitioning",
           "line": 9617
+        },
+        {
+          "level": 2,
+          "text": "2026-07-23 — GOVERNANCE-EFFICIENCY-REFOUNDATION-LEDGER-PARTITION-SHADOW-HARDENING-R2 — Unit 3 governance-gate forward correction",
+          "anchor": "2026-07-23-governance-efficiency-refoundation-ledger-partition-shadow-hardening-r2-unit-3-governance-gate-forward-correction",
+          "line": 9628
         }
       ]
     },
@@ -88316,14 +88340,14 @@
         },
         {
           "source_path": "PROJECT_STATE.md",
-          "source_line": 1990,
+          "source_line": 1993,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
         },
         {
           "source_path": "PROJECT_STATE.md",
-          "source_line": 1995,
+          "source_line": 1998,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
@@ -89371,7 +89395,7 @@
         },
         {
           "source_path": "PROJECT_STATE.md",
-          "source_line": 1994,
+          "source_line": 1997,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
@@ -93863,7 +93887,7 @@
       "inbound_references": [
         {
           "source_path": "AGENT_HANDOFF.md",
-          "source_line": 1021,
+          "source_line": 1024,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null
@@ -94319,7 +94343,7 @@
         },
         {
           "source_path": "PROJECT_STATE.md",
-          "source_line": 1982,
+          "source_line": 1985,
           "kind": "ROOT_REFERENCE",
           "anchor": null,
           "line_suffix": null

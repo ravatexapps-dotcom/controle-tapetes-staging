@@ -30,7 +30,12 @@ import {
 
 const CATALOG_PATH = 'docs/governance/catalog/document-source-manifest.json';
 const DOCUMENT_CATALOG_PATH = 'docs/governance/catalog/documents.json';
-const REQUIRED = [SOURCE_PATH, SOURCE_MANIFEST_PATH, INDEX_PATH, COMPATIBILITY_PATH, CATALOG_PATH, DOCUMENT_CATALOG_PATH];
+const SOURCE_SCHEMA_PATH = 'docs/governance/schemas/g28-ledger-source-manifest.schema.json';
+const INDEX_SCHEMA_PATH = 'docs/governance/schemas/g28-ledger-partition-index.schema.json';
+const REQUIRED = [
+  SOURCE_PATH, SOURCE_SCHEMA_PATH, INDEX_SCHEMA_PATH, SOURCE_MANIFEST_PATH,
+  INDEX_PATH, COMPATIBILITY_PATH, CATALOG_PATH, DOCUMENT_CATALOG_PATH
+];
 
 function stable(value) { return JSON.stringify(value); }
 function readBytes(reader, relativePath) { return Buffer.from(reader.readText(relativePath), 'utf8'); }
@@ -53,6 +58,81 @@ function schemaBasics(value, name, errors) {
   for (const key of ['schema_version', 'authority']) if (!value?.[key]) errors.push(`${name}: missing ${key}`);
 }
 function errorText(error) { return error instanceof Error ? error.message : String(error); }
+
+function matchesType(value, type) {
+  if (type === 'null') return value === null;
+  if (type === 'array') return Array.isArray(value);
+  if (type === 'object') return value !== null && typeof value === 'object' && !Array.isArray(value);
+  if (type === 'integer') return Number.isInteger(value);
+  if (type === 'number') return typeof value === 'number' && Number.isFinite(value);
+  return typeof value === type;
+}
+
+function resolveLocalRef(rootSchema, reference) {
+  if (!reference.startsWith('#/')) throw new Error(`unresolved local $ref: ${reference}`);
+  let current = rootSchema;
+  for (const token of reference.slice(2).split('/').map(value => value.replace(/~1/gu, '/').replace(/~0/gu, '~'))) {
+    if (!current || typeof current !== 'object' || !(token in current)) throw new Error(`unresolved local $ref: ${reference}`);
+    current = current[token];
+  }
+  return current;
+}
+
+function validateSchemaReferences(schema, rootSchema, location, errors) {
+  if (Array.isArray(schema)) {
+    schema.forEach((item, index) => validateSchemaReferences(item, rootSchema, `${location}[${index}]`, errors));
+    return;
+  }
+  if (!schema || typeof schema !== 'object') return;
+  if (Object.hasOwn(schema, '$ref')) {
+    if (typeof schema.$ref !== 'string') errors.push(`${location}.$ref: invalid local $ref`);
+    else {
+      try { resolveLocalRef(rootSchema, schema.$ref); }
+      catch (error) { errors.push(`${location}.$ref: ${errorText(error)}`); }
+    }
+  }
+  for (const [key, value] of Object.entries(schema)) {
+    if (key !== '$ref') validateSchemaReferences(value, rootSchema, `${location}.${key}`, errors);
+  }
+}
+
+function validateJsonSchema(value, schema, rootSchema, location, errors) {
+  if (!schema || typeof schema !== 'object' || Array.isArray(schema)) {
+    errors.push(`${location}: invalid schema node`);
+    return;
+  }
+  if (schema.$ref) {
+    try { validateJsonSchema(value, resolveLocalRef(rootSchema, schema.$ref), rootSchema, location, errors); }
+    catch (error) { errors.push(`${location}: ${errorText(error)}`); }
+    return;
+  }
+  const allowedTypes = Array.isArray(schema.type) ? schema.type : schema.type ? [schema.type] : [];
+  if (allowedTypes.length && !allowedTypes.some(type => matchesType(value, type))) {
+    errors.push(`${location}: type violation; expected ${allowedTypes.join('|')}`);
+    return;
+  }
+  if (Object.hasOwn(schema, 'const') && stable(value) !== stable(schema.const)) errors.push(`${location}: const violation`);
+  if (schema.enum && !schema.enum.some(candidate => stable(candidate) === stable(value))) errors.push(`${location}: enum violation`);
+  if (typeof value === 'string' && schema.pattern) {
+    try { if (!new RegExp(schema.pattern, 'u').test(value)) errors.push(`${location}: pattern violation`); }
+    catch (error) { errors.push(`${location}: invalid schema pattern (${errorText(error)})`); }
+  }
+  if (typeof value === 'string' && schema.minLength !== undefined && value.length < schema.minLength) errors.push(`${location}: minLength violation`);
+  if (typeof value === 'number' && schema.minimum !== undefined && value < schema.minimum) errors.push(`${location}: minimum violation`);
+  if (Array.isArray(value)) {
+    if (schema.minItems !== undefined && value.length < schema.minItems) errors.push(`${location}: minItems violation`);
+    if (schema.maxItems !== undefined && value.length > schema.maxItems) errors.push(`${location}: maxItems violation`);
+    if (schema.items) value.forEach((item, index) => validateJsonSchema(item, schema.items, rootSchema, `${location}[${index}]`, errors));
+  }
+  if (value !== null && typeof value === 'object' && !Array.isArray(value)) {
+    for (const key of schema.required ?? []) if (!Object.hasOwn(value, key)) errors.push(`${location}: missing required property ${key}`);
+    const properties = schema.properties ?? {};
+    for (const [key, item] of Object.entries(value)) {
+      if (properties[key]) validateJsonSchema(item, properties[key], rootSchema, `${location}.${key}`, errors);
+      else if (schema.additionalProperties === false) errors.push(`${location}: unknown property ${key}`);
+    }
+  }
+}
 
 function validateSource(reader, sourceBytes, recorded, errors) {
   if (!recorded) return null;
@@ -169,8 +249,14 @@ export function validateWithReader(reader) {
   for (const relativePath of REQUIRED) if (!reader.exists(relativePath)) errors.push(`missing required ledger shadow artifact: ${relativePath}`);
   if (errors.length) return { errors, results: { errors: errors.length } };
   const sourceBytes = readBytes(reader, SOURCE_PATH);
+  const sourceSchema = parse(reader, SOURCE_SCHEMA_PATH, errors);
+  const indexSchema = parse(reader, INDEX_SCHEMA_PATH, errors);
   const sourceManifest = parse(reader, SOURCE_MANIFEST_PATH, errors);
   const index = parse(reader, INDEX_PATH, errors);
+  if (sourceSchema) validateSchemaReferences(sourceSchema, sourceSchema, SOURCE_SCHEMA_PATH, errors);
+  if (indexSchema) validateSchemaReferences(indexSchema, indexSchema, INDEX_SCHEMA_PATH, errors);
+  if (sourceSchema && sourceManifest) validateJsonSchema(sourceManifest, sourceSchema, sourceSchema, SOURCE_MANIFEST_PATH, errors);
+  if (indexSchema && index) validateJsonSchema(index, indexSchema, indexSchema, INDEX_PATH, errors);
   const source = validateSource(reader, sourceBytes, sourceManifest, errors);
   if (source && index) {
     schemaBasics(index, INDEX_PATH, errors);

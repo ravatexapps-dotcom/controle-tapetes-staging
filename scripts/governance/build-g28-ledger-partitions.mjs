@@ -19,6 +19,10 @@ export const PAYLOAD_BEGIN = '<!-- G28_LEDGER_SHADOW_PAYLOAD_BEGIN_7b9d4e3a -->'
 export const PAYLOAD_END = '<!-- G28_LEDGER_SHADOW_PAYLOAD_END_7b9d4e3a -->';
 export const COMPATIBILITY_BEGIN = '<!-- G28_LEDGER_SHADOW_COMPATIBILITY_PAYLOAD_BEGIN_7b9d4e3a -->';
 export const COMPATIBILITY_END = '<!-- G28_LEDGER_SHADOW_COMPATIBILITY_PAYLOAD_END_7b9d4e3a -->';
+export const LEGACY_ENTRY_HEADINGS = Object.freeze([
+  '## G28-STATE-RECONCILIATION-R1 — Corrective documentary addendum',
+  '## PHASE-C3A — Contract boundary opened (2026-07-19)'
+]);
 
 const ENTRY_RE = /^##\s+(.+)$/u;
 const DATE_ENTRY_RE = /^##\s+(\d{4}-\d{2}-\d{2})\s+—\s+(.+)$/u;
@@ -84,6 +88,15 @@ export function deriveSourceUnits(bytes) {
   if (!firstEntry) throw new Error('canonical ledger preamble has no first dated entry');
   const boundaries = lines.filter(line => line.number >= firstEntry.number && ENTRY_RE.test(line.text));
   if (!boundaries.length || boundaries[0].number !== firstEntry.number) throw new Error('ledger entry boundary discovery failed');
+  const legacyCounts = new Map(LEGACY_ENTRY_HEADINGS.map(heading => [heading, 0]));
+  for (const boundary of boundaries) {
+    if (DATE_ENTRY_RE.test(boundary.text)) continue;
+    if (!legacyCounts.has(boundary.text)) throw new Error(`unrecognized non-dated ledger entry heading: ${boundary.text}`);
+    legacyCounts.set(boundary.text, legacyCounts.get(boundary.text) + 1);
+  }
+  for (const [heading, count] of legacyCounts) {
+    if (count !== 1) throw new Error(`reviewed legacy ledger entry heading must occur exactly once: ${heading} (found ${count})`);
+  }
   const units = [];
   const preambleEnd = lines[firstEntry.number - 2] ?? firstEntry;
   units.push(sourceUnit('G28-LEDGER-PREAMBLE', 'PREAMBLE', 0, null, null, null, source, lines[0], preambleEnd));
@@ -154,7 +167,7 @@ export function buildSourceManifest(bytes, sourceGitObject) {
     canonical_line_count: derived.lines.length,
     encoding: 'UTF-8',
     line_endings: lineEndingProfile(derived.lines),
-    entry_heading_grammar: '^##\\s+.+$ within the post-preamble region; dated form ^## YYYY-MM-DD — <non-empty title>$',
+    entry_heading_grammar: '^## YYYY-MM-DD — <non-empty title>$, plus exactly two reviewed legacy headings',
     preamble_unit_id: preamble.unit_id,
     units: derived.units,
     coverage: {
@@ -214,15 +227,37 @@ export function partitionUnits(units) {
   return partitions;
 }
 
-export function assertAppendStablePartitions(sourceBytes, oldPartitions, newPartitions) {
+export function assertAppendStablePartitions(oldSourceBytes, newSourceBytes, oldPartitions, newPartitions) {
+  const oldSource = asBytes(oldSourceBytes);
+  const newSource = asBytes(newSourceBytes);
   if (newPartitions.length < oldPartitions.length) throw new Error('append stability reduced partition count');
-  const oldUnits = oldPartitions.slice(0, -1).flatMap(partition => partition.unit_ids);
-  const newUnits = newPartitions.slice(0, oldPartitions.length - 1).flatMap(partition => partition.unit_ids);
-  if (JSON.stringify(oldUnits) !== JSON.stringify(newUnits)) throw new Error('append changed a previously closed partition unit interval');
-  for (let index = 0; index < oldPartitions.length - 1; index += 1) {
-    const oldPayload = payloadForPartition(sourceBytes, oldPartitions[index]);
-    const newPayload = payloadForPartition(sourceBytes, newPartitions[index]);
+  const closed = oldPartitions.filter(partition => partition.status === 'CLOSED');
+  for (let index = 0; index < closed.length; index += 1) {
+    const oldPartition = closed[index];
+    const newPartition = newPartitions[index];
+    const interval = partition => [
+      partition?.partition_id, partition?.first_unit_ordinal, partition?.last_unit_ordinal,
+      partition?.first_unit_id, partition?.last_unit_id, partition?.start_byte,
+      partition?.end_byte, partition?.start_line, partition?.end_line, partition?.unit_ids
+    ];
+    if (JSON.stringify(interval(oldPartition)) !== JSON.stringify(interval(newPartition))) {
+      throw new Error(`append changed a previously closed partition unit interval: ${index + 1}`);
+    }
+    const oldPayload = payloadForPartition(oldSource, oldPartition);
+    const newPayload = payloadForPartition(newSource, newPartition);
     if (!oldPayload.equals(newPayload)) throw new Error(`append changed a previously closed partition payload: ${index + 1}`);
+    const oldHash = sha256(oldPayload);
+    const newHash = sha256(newPayload);
+    if (oldHash !== newHash) throw new Error(`append changed a previously closed partition payload hash: ${index + 1}`);
+    if (oldPartition.payload_sha256 && oldPartition.payload_sha256 !== oldHash) {
+      throw new Error(`old closed partition payload hash is stale: ${index + 1}`);
+    }
+    if (newPartition.payload_sha256 && newPartition.payload_sha256 !== newHash) {
+      throw new Error(`new closed partition payload hash is stale: ${index + 1}`);
+    }
+  }
+  if (newSource.length < oldSource.length || !newSource.subarray(0, oldSource.length).equals(oldSource)) {
+    throw new Error('new canonical source does not begin with the complete old source byte-for-byte');
   }
   return true;
 }
@@ -231,7 +266,7 @@ export function assertAppendStable(sourceBytes, oldPartitions) {
   const suffix = Buffer.from('## 2099-12-31 — G28-LEDGER-APPEND-STABILITY-FIXTURE\n\n- fixture\n', 'utf8');
   const appended = Buffer.concat([asBytes(sourceBytes), asBytes(sourceBytes).at(-1) === 0x0a ? Buffer.alloc(0) : Buffer.from('\n', 'utf8'), suffix]);
   const next = partitionUnits(deriveSourceUnits(appended).units);
-  assertAppendStablePartitions(sourceBytes, oldPartitions, next);
+  assertAppendStablePartitions(sourceBytes, appended, oldPartitions, next);
   return { old_partition_count: oldPartitions.length, appended_partition_count: next.length };
 }
 

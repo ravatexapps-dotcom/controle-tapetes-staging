@@ -9,6 +9,7 @@ import {
   COMPATIBILITY_BEGIN,
   COMPATIBILITY_PATH,
   INDEX_PATH,
+  LEGACY_ENTRY_HEADINGS,
   PARTITION_DIR,
   PAYLOAD_BEGIN,
   PAYLOAD_END,
@@ -26,6 +27,7 @@ import {
   sha256,
   splitRawLines
 } from '../scripts/governance/build-g28-ledger-partitions.mjs';
+import { isGeneratedDocument } from '../scripts/governance/build-document-source-manifest.mjs';
 import { renderCompatibilityPayload, renderCompatibilityView } from '../scripts/governance/render-g28-ledger-shadow.mjs';
 import { validateRepository, validateWithReader } from '../scripts/governance/validate-g28-ledger-shadow.mjs';
 import { worktreeReader } from '../scripts/governance/git-content-reader.mjs';
@@ -33,9 +35,13 @@ import { worktreeReader } from '../scripts/governance/git-content-reader.mjs';
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const CATALOG_PATH = 'docs/governance/catalog/document-source-manifest.json';
 const DOCUMENT_CATALOG_PATH = 'docs/governance/catalog/documents.json';
+const SOURCE_SCHEMA_PATH = 'docs/governance/schemas/g28-ledger-source-manifest.schema.json';
+const INDEX_SCHEMA_PATH = 'docs/governance/schemas/g28-ledger-partition-index.schema.json';
+const PUBLISHED_UNIT_3_CHECKPOINT = '52533cc1a7658cc23f055b782b98f2167b63893f';
 const live = worktreeReader(ROOT);
 const snapshotPaths = [SOURCE_PATH, SOURCE_MANIFEST_PATH, INDEX_PATH, COMPATIBILITY_PATH,
-  CATALOG_PATH, DOCUMENT_CATALOG_PATH, ...live.listFiles().filter(file => file.startsWith(`${PARTITION_DIR}/`))];
+  SOURCE_SCHEMA_PATH, INDEX_SCHEMA_PATH, CATALOG_PATH, DOCUMENT_CATALOG_PATH,
+  ...live.listFiles().filter(file => file.startsWith(`${PARTITION_DIR}/`))];
 const files = new Map([...new Set(snapshotPaths)].map(file => [file, live.readText(file)]));
 
 function gitBlobId(text) {
@@ -96,10 +102,10 @@ test('valid complete Unit 3 fixture passes', () => {
   const result = validateWithReader(memoryReader());
   assert.deepEqual(result.errors, []);
   assert.deepEqual(result.results, {
-    source_bytes: 973755,
-    source_lines: 9626,
-    source_units: 201,
-    entry_count: 200,
+    source_bytes: 976296,
+    source_lines: 9637,
+    source_units: 202,
+    entry_count: 201,
     partitions: 12,
     inbound_references: 303,
     errors: 0
@@ -134,9 +140,20 @@ test('source units are exhaustive, ordered, contiguous, and complete', () => {
 test('entry inventory and heading exceptions are deterministic', () => {
   const manifest = currentManifest();
   assert.equal(manifest.units.filter(unit => unit.unit_kind === 'PREAMBLE').length, 1);
-  assert.equal(manifest.units.filter(unit => unit.unit_kind === 'ENTRY').length, 200);
+  assert.equal(manifest.units.filter(unit => unit.unit_kind === 'ENTRY').length, 201);
   assert.equal(manifest.heading_exceptions.length, 2);
-  assert.equal(manifest.entry_heading_grammar, '^##\\s+.+$ within the post-preamble region; dated form ^## YYYY-MM-DD \u2014 <non-empty title>$');
+  assert.deepEqual(manifest.heading_exceptions.map(exception => exception.heading), LEGACY_ENTRY_HEADINGS);
+  assert.equal(manifest.entry_heading_grammar, '^## YYYY-MM-DD — <non-empty title>$, plus exactly two reviewed legacy headings');
+});
+
+test('Unit 3 partitions are GENERATED while normal authored Markdown remains MANUAL', () => {
+  const partition = `${PARTITION_DIR}/G28_LEDGER_PART_0001.md`;
+  const authored = 'docs/governance/GOVERNANCE_EFFICIENCY_REFOUNDATION_PHASE_CONTRACT.md';
+  const manifest = JSON.parse(files.get(CATALOG_PATH));
+  assert.equal(isGeneratedDocument(partition), true);
+  assert.equal(isGeneratedDocument(authored), false);
+  assert.equal(manifest.documents.find(document => document.path === partition).generated_status, 'GENERATED');
+  assert.equal(manifest.documents.find(document => document.path === authored).generated_status, 'MANUAL');
 });
 
 test('partitions contain complete source units without split entries', () => {
@@ -191,7 +208,7 @@ test('Unit 3 worktree validator passes', () => {
 });
 
 test('all Unit 3 JSON artifacts parse', () => {
-  for (const file of [SOURCE_MANIFEST_PATH, INDEX_PATH, CATALOG_PATH, DOCUMENT_CATALOG_PATH]) JSON.parse(files.get(file));
+  for (const file of [SOURCE_SCHEMA_PATH, INDEX_SCHEMA_PATH, SOURCE_MANIFEST_PATH, INDEX_PATH, CATALOG_PATH, DOCUMENT_CATALOG_PATH]) JSON.parse(files.get(file));
 });
 
 test('all Unit 3 modules pass syntax checking', () => {
@@ -204,6 +221,28 @@ test('all Unit 3 modules pass syntax checking', () => {
 expectValidationFailure('canonical ledger hash drift fails', jsonChange(SOURCE_MANIFEST_PATH, value => {
   value.canonical_source_sha256 = '0'.repeat(64);
 }), 'canonical ledger source hash drift');
+
+expectValidationFailure('missing source-manifest schema fails', { [SOURCE_SCHEMA_PATH]: null }, `missing required ledger shadow artifact: ${SOURCE_SCHEMA_PATH}`);
+
+expectValidationFailure('missing partition-index schema fails', { [INDEX_SCHEMA_PATH]: null }, `missing required ledger shadow artifact: ${INDEX_SCHEMA_PATH}`);
+
+expectValidationFailure('malformed schema JSON fails', { [SOURCE_SCHEMA_PATH]: '{ malformed' }, `${SOURCE_SCHEMA_PATH}: invalid JSON`);
+
+expectValidationFailure('source manifest schema violation fails', jsonChange(SOURCE_MANIFEST_PATH, value => {
+  value.unreviewed_property = true;
+}), `${SOURCE_MANIFEST_PATH}: unknown property unreviewed_property`);
+
+expectValidationFailure('partition nested schema violation fails', jsonChange(INDEX_PATH, value => {
+  delete value.partitions[0].status;
+}), `${INDEX_PATH}.partitions[0]: missing required property status`);
+
+expectValidationFailure('survival mapping nested schema violation fails', jsonChange(INDEX_PATH, value => {
+  value.inbound_reference_survival_mappings[0].source_line = '1';
+}), `${INDEX_PATH}.inbound_reference_survival_mappings[0].source_line: type violation`);
+
+expectValidationFailure('unresolved local schema ref fails', jsonChange(SOURCE_SCHEMA_PATH, value => {
+  value.$defs.unused = { $ref: '#/$defs/missing' };
+}), 'unresolved local $ref');
 
 expectValidationFailure('missing source byte fails', jsonChange(SOURCE_MANIFEST_PATH, value => {
   value.units[1].end_byte -= 1;
@@ -225,11 +264,31 @@ expectValidationFailure('reordered source units fail', jsonChange(SOURCE_MANIFES
   [value.units[1], value.units[2]] = [value.units[2], value.units[1]];
 }), 'source manifest drift');
 
-const exceptionalHeading = currentManifest().heading_exceptions[0].heading;
-expectValidationFailure('malformed entry heading fails', textChange(SOURCE_PATH, value => {
-  assert.ok(value.includes(exceptionalHeading));
-  return value.replace(exceptionalHeading, exceptionalHeading.replace(/^##/u, '#'));
-}), 'source manifest drift');
+test('new non-dated ledger boundary fails during derivation', () => {
+  const changed = Buffer.from(`${files.get(SOURCE_PATH)}\n## UNREVIEWED-NON-DATED-ENTRY\n\n- fixture\n`, 'utf8');
+  assert.throws(() => deriveSourceUnits(changed), /unrecognized non-dated ledger entry heading/);
+});
+
+for (const [index, heading] of LEGACY_ENTRY_HEADINGS.entries()) {
+  test(`mutation of reviewed legacy heading ${index + 1} fails during derivation`, () => {
+    const changed = Buffer.from(files.get(SOURCE_PATH).replace(heading, `${heading} mutated`), 'utf8');
+    assert.throws(() => deriveSourceUnits(changed), /unrecognized non-dated ledger entry heading/);
+  });
+  test(`demotion of reviewed legacy heading ${index + 1} fails during derivation`, () => {
+    const changed = Buffer.from(files.get(SOURCE_PATH).replace(heading, heading.replace(/^##/u, '#')), 'utf8');
+    assert.throws(() => deriveSourceUnits(changed), /must occur exactly once/);
+  });
+  test(`duplicate reviewed legacy heading ${index + 1} fails during derivation`, () => {
+    const changed = Buffer.from(`${files.get(SOURCE_PATH)}\n${heading}\n\n- duplicate fixture\n`, 'utf8');
+    assert.throws(() => deriveSourceUnits(changed), /must occur exactly once/);
+  });
+}
+
+test('removal of a reviewed legacy heading fails during derivation', () => {
+  const heading = LEGACY_ENTRY_HEADINGS[0];
+  const changed = Buffer.from(files.get(SOURCE_PATH).replace(`${heading}\n`, ''), 'utf8');
+  assert.throws(() => deriveSourceUnits(changed), /must occur exactly once/);
+});
 
 expectValidationFailure('duplicate unit ID fails', jsonChange(SOURCE_MANIFEST_PATH, value => {
   value.units[1].unit_id = value.units[2].unit_id;
@@ -312,19 +371,50 @@ expectValidationFailure('generated partition declared normative fails', mutatePa
 
 expectValidationFailure('appended ledger entry without regeneration fails', textChange(SOURCE_PATH, value => `${value}\n## 2099-12-31 — G28-LEDGER-APPEND-UNREGENERATED\n\n- fixture\n`), 'canonical ledger source hash drift');
 
-test('pure append changing a closed partition fails append-stability proof', () => {
+test('same-byte-length closed payload mutation plus valid append fails payload proof', () => {
+  const source = currentSourceBytes();
+  const mutated = Buffer.from(source);
+  const first = currentIndex().partitions[0];
+  const mutation = mutated.indexOf(Buffer.from('Canonical', 'utf8'), first.start_byte);
+  assert.ok(mutation >= first.start_byte && mutation < first.end_byte);
+  mutated[mutation] = mutated[mutation] === 0x43 ? 0x44 : 0x43;
+  const appended = Buffer.concat([mutated, Buffer.from('## 2099-12-31 — G28-LEDGER-APPEND-STABILITY-FIXTURE\n\n- fixture\n', 'utf8')]);
+  const next = partitionUnits(deriveSourceUnits(appended).units);
+  assert.deepEqual(next[0].unit_ids, first.unit_ids);
+  assert.deepEqual(
+    [next[0].start_byte, next[0].end_byte, next[0].start_line, next[0].end_line],
+    [first.start_byte, first.end_byte, first.start_line, first.end_line]
+  );
+  assert.throws(
+    () => assertAppendStablePartitions(source, appended, currentIndex().partitions, next),
+    /previously closed partition payload/
+  );
+});
+
+test('changed closed partition unit interval fails append-stability proof', () => {
   const source = currentSourceBytes();
   const appended = Buffer.concat([source, Buffer.from('## 2099-12-31 — G28-LEDGER-APPEND-STABILITY-FIXTURE\n\n- fixture\n', 'utf8')]);
   const next = partitionUnits(deriveSourceUnits(appended).units);
   next[0].unit_ids = [...next[0].unit_ids, 'G28-LEDGER-FAKE-UNIT'];
-  assert.throws(() => assertAppendStablePartitions(source, currentIndex().partitions, next), /closed partition unit interval/);
+  assert.throws(() => assertAppendStablePartitions(source, appended, currentIndex().partitions, next), /closed partition unit interval/);
 });
 
-test('immutable validation produces zero Git mutation', () => {
-  const before = execFileSync('git', ['status', '--short', '--branch'], { cwd: ROOT, encoding: 'utf8' });
-  assert.deepEqual(validateRepository(ROOT).errors, []);
-  const after = execFileSync('git', ['status', '--short', '--branch'], { cwd: ROOT, encoding: 'utf8' });
-  assert.equal(after, before);
+function gitState() {
+  const run = args => execFileSync('git', args, { cwd: ROOT, encoding: 'utf8' });
+  return {
+    worktree_status: run(['status', '--porcelain=v1', '--untracked-files=all']),
+    index_state: run(['ls-files', '--stage']),
+    current_branch: run(['branch', '--show-current']).trim(),
+    head: run(['rev-parse', 'HEAD']).trim(),
+    refs: run(['show-ref', '--head'])
+  };
+}
+
+test('published Unit 3 checkpoint immutable validation produces zero Git mutation', () => {
+  const before = gitState();
+  assert.deepEqual(validateRepository(ROOT, PUBLISHED_UNIT_3_CHECKPOINT).errors, []);
+  const after = gitState();
+  assert.deepEqual(after, before);
 });
 
 expectValidationFailure('generated artifact without explicit catalog review fails', jsonChange(DOCUMENT_CATALOG_PATH, value => {
