@@ -4,7 +4,7 @@
 PHASE_ID: GOVERNANCE-EFFICIENCY-REFOUNDATION
 <!-- MATERIAL_PHASE_CONTRACT:END -->
 
-STATUS: ACTIVE / UNIT 4 CONTRACT DEFINED / AWAITING DIRECT SUPERVISOR REVIEW
+STATUS: ACTIVE / UNIT 4 CONTRACT CORRECTED / AWAITING DIRECT SUPERVISOR REVIEW
 
 UNIT 1 STATUS: CLOSED / ACCEPTED / DIRECTLY VERIFIED
 
@@ -32,9 +32,13 @@ UNIT 3 ACCEPTED INTERVAL END: 53899e30b72cde3d1f5759ea59fb0a4d632c974d
 
 CANONICAL LEDGER: docs/ledgers/G28_LEDGER.md / AUTHORITY UNCHANGED
 
-UNIT 4: CONTRACT DEFINED / AWAITING DIRECT SUPERVISOR REVIEW
+UNIT 4: CONTRACT CORRECTED / AWAITING DIRECT SUPERVISOR REVIEW
 
 UNIT 4 CONTRACT: docs/governance/GOVERNANCE_EFFICIENCY_REFOUNDATION_UNIT_4_AUTHORITY_CUTOVER_CONTRACT.md
+
+UNIT 4 CONTRACT REVIEWED CHECKPOINT: c7f4bb38076d865549221133ce33d8323e19f4eb
+
+UNIT 4 CONTRACT CORRECTION: COMMIT SELF-REFERENCE REMOVED / CANDIDATE ROOT-PATH BOUNDARY DEFINED
 
 UNIT 4A IMPLEMENTATION: NOT AUTHORIZED
 
@@ -51,8 +55,12 @@ Structured sources remain non-canonical and current canonical owners remain
 unchanged. The external supervisor directly accepted Unit 3 checkpoint
 `53899e30b72cde3d1f5759ea59fb0a4d632c974d`; Unit 3 is closed and accepted.
 This records external acceptance, not executor self-acceptance. The Unit 4
-authority-cutover contract is defined for direct review; Unit 4A implementation
-and documentary-authority cutover remain not authorized.
+authority-cutover contract published at `c7f4bb38076d865549221133ce33d8323e19f4eb`
+was directly reviewed as `CHANGES_REQUIRED`. It is corrected so the activation
+commit SHA is external immutable evidence, pre-commit content binds the required
+parent and deterministic activation manifest, Unit 4A candidate renders are
+confined to non-canonical candidate paths, and root replacement is Unit 4C-only.
+Unit 4A implementation and documentary-authority cutover remain not authorized.
 
 ## Objective
 
@@ -141,7 +149,7 @@ supervisor acceptance.
 - Unit 3 is `CLOSED / ACCEPTED / DIRECTLY VERIFIED` at
   `53899e30b72cde3d1f5759ea59fb0a4d632c974d`.
 - The next action is direct supervisor review of
-  `GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-4-BOOTSTRAP-AUTHORITY-CUTOVER-CONTRACT-R1`.
+  `GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-4-CONTRACT-COMMIT-BINDING-AND-CANDIDATE-PATH-CORRECTION-R2`.
 
 ## Binding rules
 

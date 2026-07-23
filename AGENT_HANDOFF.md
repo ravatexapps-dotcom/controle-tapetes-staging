@@ -26,8 +26,8 @@
 
 ## Phase status
 
-- **`GOVERNANCE-EFFICIENCY-REFOUNDATION` (current — Unit 4 contract definition):**
-  `ACTIVE / UNIT 4 CONTRACT DEFINED / AWAITING DIRECT SUPERVISOR REVIEW`. The structured current-state
+- **`GOVERNANCE-EFFICIENCY-REFOUNDATION` (current — Unit 4 contract correction):**
+  `ACTIVE / UNIT 4 CONTRACT CORRECTED / AWAITING DIRECT SUPERVISOR REVIEW`. The structured current-state
   source, equivalence mapping, deterministic renderer/validator, and generated
   shadow views are implemented under the active contract, but remain
   `NON-CANONICAL UNTIL SUPERVISOR CUTOVER`. `PROJECT_STATE.md` remains the
@@ -44,11 +44,19 @@
   partitions, generated compatibility view, and indexes remain non-canonical.
   The accepted interval begins at
   `e3c8c15b368d20161df6e593debbdf0c68cb7e41` and ends at the final R3 commit
-  `53899e30b72cde3d1f5759ea59fb0a4d632c974d`. The Unit 4 cutover contract is
-  defined at
+  `53899e30b72cde3d1f5759ea59fb0a4d632c974d`. Published checkpoint
+  `c7f4bb38076d865549221133ce33d8323e19f4eb` was directly reviewed: Unit 3
+  acceptance remains valid, but the Unit 4 contract required correction for a
+  self-referential activation-commit SHA and ambiguous Unit 4A candidate output
+  paths. The corrected contract is at
   `docs/governance/GOVERNANCE_EFFICIENCY_REFOUNDATION_UNIT_4_AUTHORITY_CUTOVER_CONTRACT.md`.
+  It binds the required parent and deterministic activation content before
+  commit creation, treats the actual activation SHA as external Git evidence,
+  confines Unit 4A candidate renders to
+  `docs/governance/candidate/generated/`, and reserves atomic root replacement
+  for Unit 4C.
   **Next authorizable action:** direct supervisor review of
-  `GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-4-BOOTSTRAP-AUTHORITY-CUTOVER-CONTRACT-R1`.
+  `GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-4-CONTRACT-COMMIT-BINDING-AND-CANDIDATE-PATH-CORRECTION-R2`.
   Unit 4A implementation, documentary-authority cutover, Unit 5, cleanup,
   compaction, archival, deprecation, deletion, product work, database access,
   and deployment remain unauthorized. Exact accepted governance checkpoints:

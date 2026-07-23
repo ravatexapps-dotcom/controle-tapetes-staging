@@ -59,7 +59,7 @@
       "properties": {
         "id": { "const": "GOVERNANCE-EFFICIENCY-REFOUNDATION" },
         "contract": { "const": "docs/governance/GOVERNANCE_EFFICIENCY_REFOUNDATION_PHASE_CONTRACT.md" },
-        "status": { "const": "ACTIVE / UNIT 4 CONTRACT DEFINED / AWAITING DIRECT SUPERVISOR REVIEW" }
+        "status": { "const": "ACTIVE / UNIT 4 CONTRACT CORRECTED / AWAITING DIRECT SUPERVISOR REVIEW" }
       }
     },
     "next_authorizable_action": {
@@ -67,8 +67,8 @@
       "additionalProperties": false,
       "required": ["order_id", "canonical_value", "mode", "risk_class", "status"],
       "properties": {
-        "order_id": { "const": "GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-4-BOOTSTRAP-AUTHORITY-CUTOVER-CONTRACT-R1" },
-        "canonical_value": { "type": "string", "const": "DIRECT SUPERVISOR REVIEW OF GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-4-BOOTSTRAP-AUTHORITY-CUTOVER-CONTRACT-R1" },
+        "order_id": { "const": "GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-4-CONTRACT-COMMIT-BINDING-AND-CANDIDATE-PATH-CORRECTION-R2" },
+        "canonical_value": { "type": "string", "const": "DIRECT SUPERVISOR REVIEW OF GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-4-CONTRACT-COMMIT-BINDING-AND-CANDIDATE-PATH-CORRECTION-R2" },
         "mode": { "type": "string", "minLength": 1 },
         "risk_class": { "const": "R0" },
         "status": { "type": "string", "minLength": 1 }

@@ -2,7 +2,9 @@
 
 CONTRACT_ID: GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-4-BOOTSTRAP-AUTHORITY-CUTOVER-CONTRACT-R1
 
-STATUS: CONTRACT DEFINED / AWAITING DIRECT SUPERVISOR REVIEW
+STATUS: CORRECTED / AWAITING DIRECT SUPERVISOR REVIEW
+
+CONTRACT_CORRECTION: COMMIT SELF-REFERENCE REMOVED / CANDIDATE ROOT-PATH BOUNDARY DEFINED
 
 UNIT 4A IMPLEMENTATION: NOT AUTHORIZED
 
@@ -84,8 +86,11 @@ The target version must define:
 - a controlled next-authorizable-action object with stable order ID, canonical
   wording, mode, risk class, and status;
 - `authority_epoch` and an immutable `cutover_id`;
-- an `activation` object with status, checkpoint, parent, and activation
-  transaction identity;
+- an `activation` object containing only pre-commit-known values: activation
+  status, target schema version, authority epoch, cutover ID, required parent,
+  accepted Unit 4B readiness checkpoint, canonical structured-source hashes,
+  generated-view hashes, governing-artifact hashes or versions,
+  activation-manifest identity, branch, and allowed publication remote;
 - hashes for every generated root view;
 - hashes or versions for every governing artifact followed at bootstrap;
 - bounded recent-ledger references identifying exact entries and, when used,
@@ -107,22 +112,67 @@ Compatibility rules:
 
 This contract defines the transition; it does not implement schema `2.0.0`.
 
-## 6. Authority activation marker
+## 6. Authority activation marker and external Git identity
 
 The future schema must expose one machine-readable activation object. Before
 Unit 4C it must be inactive. Unit 4C may activate it exactly once in the bounded
-cutover commit. The marker must bind:
+activation commit. The object must bind only values knowable before that commit
+is created:
 
+- target schema version;
 - authority epoch;
 - cutover ID;
-- cutover commit and required parent;
-- source schema version;
+- required parent SHA;
+- accepted Unit 4B readiness checkpoint;
+- canonical structured-source hashes;
 - generated-view hashes;
-- governing artifact hashes or versions;
-- the accepted Unit 4 readiness checkpoint.
+- governing-artifact hashes or versions;
+- activation-manifest identity;
+- activation status;
+- branch and allowed publication remote.
 
-Neither a filename, renderer, candidate state, branch push, nor generated view
-is an activation marker.
+The activation object must not contain the SHA of its own enclosing commit, a
+tree SHA that would include a field containing that same tree SHA, or any
+equivalent self-referential Git identity. The target schema must reject fields
+such as `cutover_commit`, `current_commit_sha`, or any alias with equivalent
+semantics.
+
+### 6.1 Deterministic activation manifest
+
+Unit 4A must define, and Unit 4C must use, a deterministic activation-manifest
+SHA-256 calculated over a canonical projection of the activation object and
+governed artifact identities. The canonical projection must define field order,
+UTF-8 encoding, line endings, and serialization. It must exclude:
+
+- the eventual activation commit SHA;
+- the activation commit tree SHA;
+- transient timestamps;
+- live Git status;
+- any value derived from the commit that contains the manifest.
+
+### 6.2 External activation commit identity
+
+The actual Unit 4C commit SHA is an external Git fact established only after
+commit creation through `git rev-parse HEAD`. Immutable validation must receive
+that SHA as explicit external input, for example:
+
+`node <validator> --commit <UNIT_4C_SHA>`
+
+The validator must never trust a commit SHA read from the activation source it
+is validating. It must prove that the supplied commit exists, its real parent
+equals `required_parent`, its tree contains the schema-valid activation object,
+the cutover ID and authority epoch are exact, all governed hashes match, and
+validation causes zero worktree, index, branch, ref, or HEAD mutation.
+
+The Unit 4C execution report returns the actual SHA as external evidence. That
+SHA may be recorded permanently only by a later, separately authorized
+post-cutover acceptance/closeout transaction after direct Unit 4D review. The
+later source-first record may update structured current state, the append-only
+ledger, and generated human views; it does not create a second activation,
+change the original authority epoch, or move the PONR.
+
+Neither a filename, renderer, candidate state, branch push, generated view, nor
+externally observed commit SHA by itself is an activation marker.
 
 ## 7. Bootstrap algorithm after cutover
 
@@ -159,21 +209,21 @@ can pass direct review.
 | 3 | `docs/governance/AGENT_INSTRUCTIONS.md` | Directs bootstrap through `PROJECT_STATE.md` | Structured current state | Change bootstrap order only in 4C | 4C | Forward-correct pointer and bootstrap order | New-chat bootstrap and old-owner non-authority tests |
 | 4 | `docs/governance/DOCUMENTATION_MODEL.md` | Declares Markdown state/index owners | Structured owners plus generated views | Normative ownership revision only in 4C | 4C | Forward-correct ownership clauses | Authority matrix and catalog parity |
 | 5 | `docs/governance/SUPERVISION_PROTOCOL.md` | Onboarding reads handoff/state in full | Structured bootstrap, bounded pointers | Revise onboarding only in 4C | 4C | Forward-correct onboarding order | Clean-session continuity test |
-| 6 | `PROJECT_STATE.md` | Sole manual current-state authority | Generated view of structured state | Implement deterministic renderer and generated marker | 4A/4C | Regenerate from restored owner after forward correction | Exact semantic parity and direct-edit rejection |
-| 7 | `AGENT_HANDOFF.md` | Manual derived operational handoff | Generated bounded operational view | Render from state, governing pointers, and referenced ledger events | 4A/4C | Regenerate from restored owner set | Determinism, bounded-ledger, no-second-owner tests |
-| 8 | `docs/DOCUMENTATION_INDEX.md` | Manual classification/authority owner | Generated catalog view | Render complete human index from structured catalog | 4A/4C | Regenerate from restored owner after forward correction | Catalog/view equivalence and direct-edit rejection |
-| 9 | `docs/architecture/ORDEM_COMPRA_C3_TRACEABILITY.md` | Manual Phase-C traceability owner | Generated structured-traceability view | Render exact normative pointers and dispositions | 4A/4C | Regenerate from restored owner after forward correction | Row/hash/evidence parity |
+| 6 | `PROJECT_STATE.md` | Sole authored current-state authority | Generated view of structured state after cutover | 4A: render only to docs/governance/candidate/generated/PROJECT_STATE.md, validate dual-read equivalence, root unchanged. 4C: atomically replace root, add active generated marker, switch authority/bootstrap. | 4A/4C | Before cutover root remains owner; after cutover use authorized forward correction | Candidate-path isolation, exact parity, premature-root-marker rejection |
+| 7 | `AGENT_HANDOFF.md` | Manual derived operational handoff | Generated bounded operational view after cutover | 4A: render only to docs/governance/candidate/generated/AGENT_HANDOFF.md, root unchanged. 4C: atomically replace root and activate generated status. | 4A/4C | Before cutover retain manual derived root; after cutover use authorized forward correction | Candidate isolation, bounded-ledger determinism, no-second-owner test |
+| 8 | `docs/DOCUMENTATION_INDEX.md` | Authored classification/authority owner | Generated catalog view after cutover | 4A: render only to docs/governance/candidate/generated/DOCUMENTATION_INDEX.md, root unchanged. 4C: atomically replace root and activate structured catalog authority. | 4A/4C | Before cutover root remains owner; after cutover use authorized forward correction | Catalog equivalence, candidate isolation, premature-root-marker rejection |
+| 9 | `docs/architecture/ORDEM_COMPRA_C3_TRACEABILITY.md` | Authored Phase-C traceability owner | Generated structured-traceability view after cutover | 4A: render only to docs/governance/candidate/generated/ORDEM_COMPRA_C3_TRACEABILITY.md, root unchanged. 4C: atomically replace root and activate structured traceability authority. | 4A/4C | Before cutover root remains owner; after cutover use authorized forward correction | Row/hash parity, candidate isolation, atomic root replacement |
 | 10 | `docs/governance/GOVERNANCE_EFFICIENCY_REFOUNDATION_PHASE_CONTRACT.md` | Defines current phase and unit status | Authored normative phase contract | Record 4A–4D gates; never derive semantics | 4A–4D | Append forward-correction status | Contract/status consistency |
 | 11 | `scripts/validate-spec-custody.mjs` | Entry to Markdown bootstrap custody checks | Structured bootstrap custody entry | Route canonical validation to the structured owner in 4C | 4A/4C | Versioned validation of restored authority | Positive/negative custody suite |
 | 12 | `scripts/spec-custody/validation-core.mjs` | Parses `PROJECT_STATE.md` bootstrap block | Parses and validates structured state | Add schema, activation, pointer, and old-owner rejection checks | 4A/4C | Recognize explicit forward-correction epoch only | Missing/hash/ambiguity/fallback negatives |
 | 13 | `scripts/spec-custody/self-tests.mjs` | Builds Markdown-state fixtures | Builds structured-state activation fixtures | Add candidate, cutover, drift, and rollback fixtures | 4A–4D | Exercise forward-correction epoch | Complete positive/negative matrix |
 | 14 | `scripts/governance/build-current-state-source-manifest.mjs` | Inventories root state/handoff | Candidate source/equivalence evidence | Replace with bounded readiness/equivalence input builder | 4A | Preserve pre-cutover sources for forward correction | Full fact-coverage manifest |
-| 15 | `scripts/governance/render-current-state-shadow.mjs` | Renders non-canonical shadow root views | Renders candidate then canonical root views | Add explicit mode and canonical generated markers | 4A/4C | Render restored-authority compatibility views | Deterministic double render |
-| 16 | `scripts/governance/validate-current-state-shadow.mjs` | Validates shadow/state/root equivalence | Validates candidate and canonical modes | Add dual-read, activation, drift, and old-owner checks | 4A–4D | Validate forward-correction epoch | Worktree and immutable validation |
+| 15 | `scripts/governance/render-current-state-shadow.mjs` | Renders accepted non-canonical shadow views | Future candidate renderer, then canonical renderer | 4A: implement candidate rendering only under `docs/governance/candidate/generated/`; never write root paths. 4C: explicitly authorized root rendering with active markers. | 4A/4C | Candidate renderer remains non-authoritative; post-cutover recovery is forward-only | Output-path allowlist and deterministic double render |
+| 16 | `scripts/governance/validate-current-state-shadow.mjs` | Validates shadow/state/root equivalence | Validates candidate and canonical modes | 4A: validate candidate-path isolation, dual-read parity, and unchanged root authority. 4C: validate activation, external commit input, root replacement, and old-owner non-authority. | 4A–4D | Validate explicit forward-correction epoch only | Premature-root-marker, wrong-commit, wrong-parent, and zero-mutation tests |
 | 17 | `tests/governance-current-state-shadow.test.mjs` | Tests Unit 1 shadow behavior | Tests readiness and cutover lifecycle | Add 4A, 4C, 4D, and rollback fixtures | 4A–4D | Prove forward-correction recovery | Exact pass count and fixture inventory |
 | 18 | `scripts/governance/build-document-source-manifest.mjs` | Inventories governed Markdown | Inventories generated root views plus authored normative docs | Preserve generated/manual classification transition | 4A/4C | Reclassify only under explicit epoch | Exhaustive path inventory |
-| 19 | `scripts/governance/render-documentation-shadow.mjs` | Renders non-canonical index/traceability views | Renders root generated views | Add target-mode markers and root output transaction | 4A/4C | Render restored-owner views | Deterministic double render |
-| 20 | `scripts/governance/validate-documentation-shadow.mjs` | Validates Markdown owners against shadow data | Validates structured owners and generated roots | Add dual-read, source-first transaction, and drift checks | 4A–4D | Accept restored authority only by explicit epoch | Catalog/traceability/source-generated negatives |
+| 19 | `scripts/governance/render-documentation-shadow.mjs` | Renders accepted non-canonical index/traceability views | Future candidate renderer, then canonical root renderer | 4A: output only the two documentation candidate paths; roots remain authored. 4C: atomically render both root paths with active markers. | 4A/4C | Candidate output remains evidence only; post-cutover recovery is forward-only | Output-path allowlist, deterministic double render, atomic pair replacement |
+| 20 | `scripts/governance/validate-documentation-shadow.mjs` | Validates Markdown owners against shadow data | Validates structured owners and generated roots | 4A: validate candidate drift/equivalence and unchanged root owners. 4C: validate external commit, atomic root replacement, source-first transaction, and generated drift. | 4A–4D | Accept changed authority only under explicit epoch | Candidate drift, premature-root-marker, wrong-commit/parent, source-generated negatives |
 | 21 | `tests/governance-documentation-shadow.test.mjs` | Tests Unit 2 shadow behavior | Tests catalog/traceability authority lifecycle | Add candidate/cutover/rollback cases | 4A–4D | Prove restored-owner parity | Exact pass count and immutable test |
 | 22 | `scripts/governance/git-content-reader.mjs` | Immutable/worktree content abstraction | Same abstraction | Include all new canonical paths without checkout mutation | 4A | Read prior and corrected epochs immutably | Before/after Git-state equality |
 | 23 | `scripts/governance/build-g28-ledger-partitions.mjs` | Derives Unit 3 artifacts from canonical ledger | Same canonical ledger input | Preserve authority; expose bounded referenced-event lookup | 4A | Rebuild from unchanged canonical ledger | Reassembly and reference-survival proof |
@@ -216,11 +266,32 @@ owner, append-only ledger/archive owner, generated-view content, or explicitly
 deferred non-current material. No current fact may remain only in a manual root
 view at readiness.
 
-## 10. Generated-view ownership and protection
+## 10. Candidate and generated-view ownership and protection
 
-After cutover, root generated views own no independent facts. Each must carry an
-explicit generated marker naming its structured source and renderer. Validators
-must reject:
+During Unit 4A and Unit 4B, all four root Markdown documents remain in their
+current authored/manual roles. Unit 4A may implement renderers and generate
+non-canonical readiness evidence only at:
+
+- docs/governance/candidate/generated/PROJECT_STATE.md
+- docs/governance/candidate/generated/AGENT_HANDOFF.md
+- docs/governance/candidate/generated/DOCUMENTATION_INDEX.md
+- docs/governance/candidate/generated/ORDEM_COMPRA_C3_TRACEABILITY.md
+
+This contract defines those paths but does not create them. Each future
+candidate view must state candidate/readiness status, non-canonical authority,
+its exact structured source, renderer identity, deterministic source hash, and
+that the corresponding root document remains authoritative.
+
+Unit 4A and Unit 4B must not place generated-authority markers in root
+documents, replace root content with candidate output, derive root documents
+from the candidate source, remove current root ownership, or require normal
+bootstrap to read candidate files.
+
+Only Unit 4C may replace all four root compatibility paths with generated
+content, and it must do so atomically in the single activation commit. After
+cutover, root generated views own no independent facts. Each must carry an
+explicit active generated marker naming its structured source and renderer.
+Validators must reject:
 
 - direct manual root-view edits;
 - source changes without regeneration;
@@ -229,29 +300,45 @@ must reject:
 - non-deterministic renders;
 - missing, duplicate, or misleading generated markers.
 
-## 11. Update transaction
+## 11. Update transactions
 
-The post-cutover update workflow is source first:
+The Unit 4A readiness transaction is candidate-only:
+
+1. verify Git and existing root authority;
+2. update the non-canonical candidate structured source;
+3. validate candidate schema and governing pointers;
+4. render only under `docs/governance/candidate/generated/`;
+5. validate dual-read equivalence and candidate drift;
+6. prove all four root documents remain authored/manual and unchanged in
+   authority;
+7. commit readiness evidence without activating authority.
+
+The Unit 4C activation transaction, under separate authorization, is source
+first:
 
 1. verify Git and authority epoch;
 2. update the structured owner;
 3. validate schema and governing pointers;
-4. render all affected generated views;
+4. render all four root generated views atomically;
 5. validate exact source/generated parity;
 6. update an affected authored normative document only when semantics changed;
 7. append the canonical ledger when the event matrix requires it;
 8. validate the complete exact path manifest;
 9. commit once under the separately authorized order.
 
-A root generated view is never edited first or maintained manually.
+A root generated view is never edited first or maintained manually. No Unit 4A
+transaction may write candidate content to a root compatibility path.
 
 ## 12. Dual-read and equivalence period
 
 Unit 4A must maintain existing Markdown owners as authoritative while creating
-the candidate structured source and candidate renderers. Validators must compare
-both representations and fail on missing facts, unequal values, mismatched
-ownership, or unexplained retained content. Unit 4B directly reviews that
-evidence. Dual-read is validation only; it is not silent fallback.
+the candidate structured source and candidate renderers. Candidate output exists
+only under `docs/governance/candidate/generated/`; root content, markers,
+ownership, and normal bootstrap remain unchanged. Validators must compare both
+representations and fail on missing facts, unequal values, mismatched ownership,
+candidate drift, root generated markers, root replacement, or unexplained
+retained content. Unit 4B directly reviews that evidence. Dual-read is
+validation only; it is not silent fallback.
 
 ## 13. Readiness gates
 
@@ -261,7 +348,9 @@ Unit 4A is ready for Unit 4B only when:
 - all current-state facts have explicit coverage;
 - all 31 known consumers are implemented or proven unchanged;
 - repository search finds no unresolved material consumer;
-- all root candidate renders are deterministic and drift-protected;
+- all candidate-path renders are deterministic and drift-protected;
+- all four root documents remain authored/manual authorities without generated
+  markers throughout Unit 4A and Unit 4B;
 - source-first update transactions are enforced;
 - new-chat bootstrap succeeds without private memory or full-history reads;
 - bounded ledger references resolve exactly;
@@ -296,6 +385,10 @@ Unit 4C requires all of the following:
 9. clean new-chat bootstrap and rollback-readiness evidence;
 10. exact rollback forward-correction package prepared but not activated.
 
+The activation object must bind the required parent, not its own eventual
+commit SHA. The real activation commit identity is supplied externally after
+commit creation.
+
 Failure of any precondition is a hard stop.
 
 ## 16. Cutover execution boundaries
@@ -307,8 +400,10 @@ Unit 4C may, only under its separate order:
 - change root human documents to generated status;
 - activate structured document catalog and Phase-C traceability ownership;
 - update affected authority maps and authored governance clauses;
-- render root views;
+- atomically replace all four root compatibility paths with generated views;
 - create one bounded linear activation commit;
+- resolve its actual SHA externally with `git rev-parse HEAD`;
+- validate that SHA by explicit immutable `--commit <UNIT_4C_SHA>` input;
 - publish exactly once by fast-forward to `staging/dev`;
 - stop for direct supervisor review.
 
@@ -321,7 +416,9 @@ technical semantics, unrelated documents, or Unit 5 status.
 Unit 4D must validate the immutable Unit 4C checkpoint using only the new
 bootstrap path. It must prove:
 
-- schema, activation, epoch, checkpoint, and hash validity;
+- the externally supplied commit exists and its real parent equals the
+  activation object's `required_parent`;
+- schema, activation manifest, epoch, cutover ID, and governed hash validity;
 - continuity from a no-private-memory agent fixture;
 - generated-view drift rejection;
 - manual old owners no longer possess authority;
@@ -397,6 +494,12 @@ paths are excluded.
 - deterministic repeated render for every root view;
 - source-first update transaction;
 - candidate mode does not activate authority;
+- Unit 4A candidate views exist only under the four candidate paths;
+- root documents remain authored authorities throughout Unit 4A and Unit 4B;
+- a Unit 4C activation atomically replaces all four root paths;
+- immutable activation validation receives the actual commit SHA externally;
+- later recording of the accepted Unit 4C SHA preserves the original epoch and
+  does not create a second activation;
 - activated mode resolves all governing pointers;
 - no-private-memory bootstrap continuity;
 - bounded recent-ledger lookup without full ledger read;
@@ -408,6 +511,9 @@ paths are excluded.
 
 - shadow `1.0.0` presented as canonical;
 - candidate mode or inactive marker presented as canonical;
+- a candidate output written to any root path before Unit 4C;
+- a generated-authority marker appearing at a root path before Unit 4C;
+- candidate-view drift;
 - unknown schema major version;
 - missing, duplicate, mismatched, or stale activation fields;
 - missing current-state fact or competing owner;
@@ -420,6 +526,11 @@ paths are excluded.
 - silent fallback after canonical validation failure;
 - new unclassified consumer;
 - wrong workspace, branch, parent, remote, index, worktree, or residue;
+- wrong externally supplied activation commit;
+- real commit parent differing from `required_parent`;
+- marker `required_parent` differing from the real commit parent;
+- self-referential `cutover_commit`, `current_commit_sha`, tree SHA, or
+  equivalent field;
 - forward correction attempted through reset, force, or history rewrite.
 
 ## 23. Evidence packet
@@ -430,6 +541,8 @@ Each material Unit 4 gate must report:
   index, worktree, untracked files, and protected residue path-only;
 - exact authorization and changed-path manifest;
 - schema version, authority epoch, activation state, and cutover ID;
+- activation-manifest identity, required parent, and externally supplied actual
+  activation commit SHA;
 - before/after authority matrix;
 - consumer inventory count and unresolved count;
 - current-state fact-coverage table;
@@ -452,7 +565,10 @@ Each material Unit 4 gate must report:
 | Unit 4D — post-cutover acceptance | NOT AUTHORIZED |
 | Documentary-authority cutover | NOT AUTHORIZED |
 
-The next authorizable action is direct supervisor review of this contract.
+The Unit 4 contract is `CORRECTED / AWAITING DIRECT SUPERVISOR REVIEW`.
+Commit self-reference is removed and the candidate/root-path boundary is
+defined. The next authorizable action is `DIRECT SUPERVISOR REVIEW OF
+GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-4-CONTRACT-COMMIT-BINDING-AND-CANDIDATE-PATH-CORRECTION-R2`.
 
 ## 25. Explicit Unit 5 exclusion
 

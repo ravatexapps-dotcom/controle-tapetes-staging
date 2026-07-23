@@ -1,10 +1,10 @@
 <!-- GENERATED NON-CANONICAL SHADOW LEDGER PARTITION — DO NOT EDIT -->
 <!-- partition_id: G28-LEDGER-PART-0012 -->
 <!-- canonical_source: docs/ledgers/G28_LEDGER.md -->
-<!-- source_unit_interval: G28-LEDGER-UNIT-0195..G28-LEDGER-UNIT-0203 -->
-<!-- canonical_byte_interval: 962903..981127 -->
-<!-- canonical_line_interval: 9510..9659 -->
-<!-- payload_sha256: cc062d17df1aa7af7a27c51353a4bf021b443a773702b4b1b9f23f2f9a7593c5 -->
+<!-- source_unit_interval: G28-LEDGER-UNIT-0195..G28-LEDGER-UNIT-0204 -->
+<!-- canonical_byte_interval: 962903..983401 -->
+<!-- canonical_line_interval: 9510..9669 -->
+<!-- payload_sha256: abaa890915e9d410eab3bdbef3b4f95fa35e827c11a4bad18a4d7c4305310063 -->
 <!-- oversized_single_unit: false -->
 <!-- partition_status: OPEN -->
 <!-- G28_LEDGER_SHADOW_PAYLOAD_BEGIN_7b9d4e3a -->
@@ -158,5 +158,15 @@
 - **Scope exclusions.** No product, database, SQL, migration, environment, deployment, production, forbidden-project, cleanup, compaction, archival, movement, deprecation, deletion, authority cutover, or Unit 5 action occurred.
 - **Next action.** `DIRECT SUPERVISOR REVIEW OF GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-4-BOOTSTRAP-AUTHORITY-CUTOVER-CONTRACT-R1`.
 - **Commit subject.** `docs: accept Unit 3 and define Unit 4 cutover contract`.
+
+## 2026-07-23 — GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-4-CONTRACT-COMMIT-BINDING-AND-CANDIDATE-PATH-CORRECTION-R2 — correct Unit 4 commit binding and candidate paths
+
+- **External supervisor ruling.** Published checkpoint `c7f4bb38076d865549221133ce33d8323e19f4eb` was directly reviewed. The Unit 3 acceptance closeout remains valid. The Unit 4 contract was `CHANGES_REQUIRED` because its activation-commit binding was self-referential and its Unit 4A candidate/root-path boundary was ambiguous.
+- **Commit-binding correction.** The activation object binds only pre-commit-known values: target schema version, authority epoch, cutover ID, required parent, accepted Unit 4B readiness checkpoint, canonical source hashes, generated-view hashes, governing-artifact identities, activation-manifest identity, status, branch, and allowed publication remote. The actual Unit 4C SHA is an external Git fact supplied to immutable validation; it is never read from the activation source. A deterministic non-self-referential activation-manifest projection is defined.
+- **Candidate-path correction.** Unit 4A candidate renders are contractually confined to `docs/governance/candidate/generated/PROJECT_STATE.md`, `AGENT_HANDOFF.md`, `DOCUMENTATION_INDEX.md`, and `ORDEM_COMPRA_C3_TRACEABILITY.md` under that candidate directory. These paths are not created by this correction. All four root Markdown authorities remain unchanged through Unit 4A and Unit 4B. Only Unit 4C may atomically replace the four root compatibility paths in the activation commit.
+- **Authority boundary.** Unit 4A implementation, documentary-authority cutover, and Unit 5 remain not authorized. No candidate renderer, dual-read logic, schema `2.0.0`, activation marker, root replacement, bootstrap change, product code, database, migration, deployment, production, cleanup, archival, deprecation, or deletion occurred.
+- **Status.** Unit 4 contract: `CORRECTED / AWAITING DIRECT SUPERVISOR REVIEW`. Correction: `COMMIT SELF-REFERENCE REMOVED / CANDIDATE ROOT-PATH BOUNDARY DEFINED`.
+- **Next action.** `DIRECT SUPERVISOR REVIEW OF GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-4-CONTRACT-COMMIT-BINDING-AND-CANDIDATE-PATH-CORRECTION-R2`.
+- **Commit subject.** `docs: correct Unit 4 cutover contract bindings`.
 
 <!-- G28_LEDGER_SHADOW_PAYLOAD_END_7b9d4e3a -->

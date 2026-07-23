@@ -111,10 +111,10 @@ test('valid complete Unit 3 fixture passes', () => {
   const result = validateWithReader(memoryReader());
   assert.deepEqual(result.errors, []);
   assert.deepEqual(result.results, {
-    source_bytes: 981127,
-    source_lines: 9659,
-    source_units: 204,
-    entry_count: 203,
+    source_bytes: 983401,
+    source_lines: 9669,
+    source_units: 205,
+    entry_count: 204,
     partitions: 12,
     inbound_references: 312,
     errors: 0
@@ -179,7 +179,7 @@ test('source units are exhaustive, ordered, contiguous, and complete', () => {
 test('entry inventory and heading exceptions are deterministic', () => {
   const manifest = currentManifest();
   assert.equal(manifest.units.filter(unit => unit.unit_kind === 'PREAMBLE').length, 1);
-  assert.equal(manifest.units.filter(unit => unit.unit_kind === 'ENTRY').length, 203);
+  assert.equal(manifest.units.filter(unit => unit.unit_kind === 'ENTRY').length, 204);
   assert.equal(manifest.heading_exceptions.length, 2);
   assert.deepEqual(manifest.heading_exceptions.map(exception => exception.heading), LEGACY_ENTRY_HEADINGS);
   assert.equal(manifest.entry_heading_grammar, '^## YYYY-MM-DD — <non-empty title>$, plus exactly two reviewed legacy headings');
