@@ -5,6 +5,7 @@ import { fileURLToPath } from 'node:url';
 import { buildDocumentManifest, normalizeLf } from './build-document-source-manifest.mjs';
 import { commitReader, worktreeReader } from './git-content-reader.mjs';
 import { renderViews, MARKER } from './render-documentation-shadow.mjs';
+import { canonicalJson } from './unit4-canonical-json.mjs';
 
 const SCRIPT_DIR = path.dirname(fileURLToPath(import.meta.url));
 export const REPO_ROOT = path.resolve(SCRIPT_DIR, '..', '..');
@@ -20,7 +21,7 @@ function parseJson(reader, relativePath, errors) {
   try { return JSON.parse(reader.readText(relativePath)); }
   catch (error) { errors.push(`${relativePath}: invalid JSON: ${error.message}`); return null; }
 }
-function stable(value) { return JSON.stringify(value); }
+function stable(value) { return canonicalJson(value); }
 function sha256(value) { return crypto.createHash('sha256').update(value, 'utf8').digest('hex'); }
 function duplicateValues(values) {
   const seen = new Set();
@@ -36,7 +37,7 @@ function schemaTypeMatches(value, type) {
   if (type === 'integer') return Number.isInteger(value);
   return typeof value === type;
 }
-function validateSchema(value, schema, location = '$') {
+export function validateSchema(value, schema, location = '$') {
   const errors = [];
   if (schema.type && !schemaTypeMatches(value, schema.type)) return [`${location}: invalid type`];
   if ('const' in schema && stable(value) !== stable(schema.const)) errors.push(`${location}: const mismatch`);
@@ -195,7 +196,15 @@ function validateManifest(recorded, actual, errors) {
 
 function validateCatalog(catalog, manifest, reader, errors) {
   if (!catalog || !manifest) return { validReferences: 0, unresolvedReferences: 0 };
-  if (catalog.mode !== 'NON_CANONICAL_SHADOW' || catalog.authority !== 'CURRENT_CANONICAL_OWNERS_UNCHANGED') errors.push('catalog: shadow authority boundary invalid');
+  const candidate = catalog.schema_version === '2.0.0';
+  const validBoundary = candidate
+    ? catalog.mode === 'CUTOVER_CANDIDATE'
+      && catalog.authority === 'NON_CANONICAL_UNTIL_SUPERVISOR_ACTIVATION'
+      && catalog.activation_status === 'INACTIVE'
+      && catalog.future_authority_path === CATALOG
+    : catalog.mode === 'NON_CANONICAL_SHADOW'
+      && catalog.authority === 'CURRENT_CANONICAL_OWNERS_UNCHANGED';
+  if (!validBoundary) errors.push('catalog: shadow/candidate authority boundary invalid');
   const ids = catalog.artifacts.map(entry => entry.artifact_id);
   const paths = catalog.artifacts.map(entry => entry.path);
   for (const duplicate of duplicateValues(ids)) errors.push(`catalog: duplicate artifact ID ${duplicate}`);
@@ -206,8 +215,14 @@ function validateCatalog(catalog, manifest, reader, errors) {
     const entry = catalogByPath.get(document.path);
     if (!entry) { errors.push(`catalog: governed document missing from catalog: ${document.path}`); continue; }
     if (entry.review_status !== 'REVIEWED' || /UNREVIEWED|ambiguous/i.test(`${entry.classification} ${entry.disposition} ${entry.review_basis}`)) errors.push(`catalog:${entry.path}: UNREVIEWED or ambiguous entry`);
-    if (entry.content_hash !== document.sha256 || entry.line_count !== document.line_count || entry.byte_count !== document.byte_count) errors.push(`catalog:${entry.path}: stale content metadata`);
-    if (entry.inbound_references !== document.inbound_references.length || entry.outbound_references !== document.outbound_references.length) errors.push(`catalog:${entry.path}: stale reference counts`);
+    const candidateView = entry.path.startsWith('docs/governance/candidate/generated/');
+    if (candidateView) {
+      const dynamic = ['content_hash', 'line_count', 'byte_count', 'inbound_references', 'outbound_references'];
+      if (!candidate || dynamic.some(key => entry[key] !== null)) errors.push(`catalog:${entry.path}: invalid non-cyclic candidate metadata`);
+    } else {
+      if (entry.content_hash !== document.sha256 || entry.line_count !== document.line_count || entry.byte_count !== document.byte_count) errors.push(`catalog:${entry.path}: stale content metadata`);
+      if (entry.inbound_references !== document.inbound_references.length || entry.outbound_references !== document.outbound_references.length) errors.push(`catalog:${entry.path}: stale reference counts`);
+    }
     if (entry.generated_status !== document.generated_status) errors.push(`catalog:${entry.path}: generated/manual mismatch`);
     validateRootRelative(entry.owner, `catalog:${entry.path}:owner`, errors);
     validateRootRelative(entry.survival_destination, `catalog:${entry.path}:survival`, errors);
@@ -351,8 +366,14 @@ export function validateWithReader(reader) {
   const catalog = parseJson(reader, CATALOG, errors);
   const traceability = parseJson(reader, TRACE, errors);
   const actualManifest = buildDocumentManifest(reader);
-  const catalogSchema = parseJson(reader, 'docs/governance/schemas/document-catalog.schema.json', errors);
-  const traceSchema = parseJson(reader, 'docs/governance/schemas/purchase-order-phase-c-traceability.schema.json', errors);
+  const catalogSchemaPath = catalog?.schema_version === '2.0.0'
+    ? 'docs/governance/schemas/document-catalog-v2.schema.json'
+    : 'docs/governance/schemas/document-catalog.schema.json';
+  const traceSchemaPath = traceability?.schema_version === '2.0.0'
+    ? 'docs/governance/schemas/purchase-order-phase-c-v2.schema.json'
+    : 'docs/governance/schemas/purchase-order-phase-c-traceability.schema.json';
+  const catalogSchema = parseJson(reader, catalogSchemaPath, errors);
+  const traceSchema = parseJson(reader, traceSchemaPath, errors);
   if (catalog && catalogSchema) errors.push(...validateSchema(catalog, catalogSchema, 'catalog-schema'));
   if (traceability && traceSchema) errors.push(...validateSchema(traceability, traceSchema, 'traceability-schema'));
   validateManifest(recordedManifest, actualManifest, errors);

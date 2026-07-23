@@ -9672,4 +9672,14 @@ product file they depend on, was modified by this pass or the prior one):
 - **Next action.** `DIRECT SUPERVISOR REVIEW OF GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-4-CONTRACT-COMMIT-BINDING-AND-CANDIDATE-PATH-CORRECTION-R2`.
 - **Commit subject.** `docs: correct Unit 4 cutover contract bindings`.
 
+## 2026-07-23 — GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-4A-CUTOVER-READINESS-IMPLEMENTATION-R1 — implement Unit 4A candidate readiness
+
+- **External supervisor ruling.** The corrected Unit 4 authority-cutover contract is `CLOSED / ACCEPTED / DIRECTLY VERIFIED` at checkpoint `76f52c842678b74e655ef9080f4fc67ccbd38e22`. This is external supervisor acceptance, not executor self-acceptance.
+- **Authorization and implementation.** Unit 4A was authorized and its schema `2.0.0` current-state candidate, candidate catalog and Phase-C traceability metadata, source/equivalence evidence, deterministic candidate views, non-cyclic identity domains, bounded Unit 3 ledger lookup, 31-consumer reconciliation, readiness manifest, validators, tests, and no-private-memory bootstrap simulation were implemented.
+- **Authority boundary.** Candidate sources and views remain non-canonical and inactive. `PROJECT_STATE.md`, `AGENT_HANDOFF.md`, `docs/DOCUMENTATION_INDEX.md`, `docs/architecture/ORDEM_COMPRA_C3_TRACEABILITY.md`, and `docs/ledgers/G28_LEDGER.md` retain their existing authority roles. Normal repository bootstrap is unchanged.
+- **Status.** Unit 4A is `IMPLEMENTED / CUTOVER READINESS EVIDENCE COMPLETE / AWAITING DIRECT SUPERVISOR REVIEW` and is not self-accepted. Unit 4B direct supervisor review is required. Unit 4C and documentary-authority cutover are not authorized. Unit 4D and Unit 5 are not authorized.
+- **Next action.** `DIRECT SUPERVISOR REVIEW OF GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-4A-CUTOVER-READINESS-IMPLEMENTATION-R1`.
+- **Scope exclusions.** No product, database, SQL, migration, shared-development, production, forbidden-project, deployment, cleanup, archival, compaction, deprecation, movement, deletion, authority cutover, Unit 4C, Unit 4D, or Unit 5 action occurred.
+- **Commit subject.** `feat: implement Unit 4A governance readiness`.
+
 <!-- G28_LEDGER_SHADOW_COMPATIBILITY_PAYLOAD_END_7b9d4e3a -->

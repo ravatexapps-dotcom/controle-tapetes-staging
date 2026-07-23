@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ravatex.local/governance/unit4-readiness-manifest.schema.json",
+  "title": "Unit 4A readiness evidence manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version", "manifest_id", "authority", "build_algorithm",
+    "identities", "consumer_inventory", "reference_search",
+    "fact_coverage", "bounded_ledger_references", "root_authorities",
+    "source_equivalence", "bootstrap", "readiness_gates"
+  ],
+  "properties": {
+    "schema_version": { "const": "1.0.0" },
+    "manifest_id": { "const": "GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-4A-READINESS-MANIFEST-R1" },
+    "authority": { "const": "NON_CANONICAL_READINESS_EVIDENCE" },
+    "build_algorithm": { "const": "UNIT4A-DETERMINISTIC-BUILD-V1" },
+    "identities": { "type": "object", "minProperties": 7 },
+    "consumer_inventory": { "type": "array", "minItems": 31 },
+    "reference_search": { "type": "object", "minProperties": 3 },
+    "fact_coverage": { "type": "array", "minItems": 20 },
+    "bounded_ledger_references": { "type": "array", "minItems": 3 },
+    "root_authorities": { "type": "array", "minItems": 4 },
+    "source_equivalence": { "type": "object", "minProperties": 4 },
+    "bootstrap": { "type": "object", "minProperties": 3 },
+    "readiness_gates": { "type": "object", "minProperties": 10 }
+  }
+}

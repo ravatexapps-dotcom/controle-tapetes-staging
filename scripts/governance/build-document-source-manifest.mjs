@@ -20,7 +20,8 @@ export function isGovernedDocument(relativePath) {
 
 export function isGeneratedDocument(relativePath) {
   return relativePath.startsWith('docs/governance/shadow/generated/')
-    || relativePath.startsWith('docs/governance/shadow/ledger/partitions/');
+    || relativePath.startsWith('docs/governance/shadow/ledger/partitions/')
+    || relativePath.startsWith('docs/governance/candidate/generated/');
 }
 
 function githubSlug(text) {

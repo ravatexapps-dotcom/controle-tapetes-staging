@@ -1,0 +1,55 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ravatex.local/governance/document-catalog-v2.schema.json",
+  "title": "Unit 4 candidate document catalog",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version", "mode", "authority", "activation_status",
+    "future_authority_path", "known_broken_references", "artifacts"
+  ],
+  "properties": {
+    "schema_version": { "const": "2.0.0" },
+    "mode": { "const": "CUTOVER_CANDIDATE" },
+    "authority": { "const": "NON_CANONICAL_UNTIL_SUPERVISOR_ACTIVATION" },
+    "activation_status": { "const": "INACTIVE" },
+    "future_authority_path": { "const": "docs/governance/catalog/documents.json" },
+    "known_broken_references": { "type": "array", "minItems": 1 },
+    "artifacts": {
+      "type": "array",
+      "minItems": 134,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "artifact_id", "path", "classification", "authority", "owner",
+          "bootstrap_tier", "status", "disposition", "generated_status", "role",
+          "content_hash", "line_count", "byte_count", "inbound_references",
+          "outbound_references", "survival_destination", "compatibility_pointer",
+          "review_status", "review_basis"
+        ],
+        "properties": {
+          "artifact_id": { "type": "string", "pattern": "^DOC-[A-Z0-9_-]+$" },
+          "path": { "type": "string", "pattern": "^(?:docs/.+\\.md|(?:PROJECT_STATE|AGENT_HANDOFF|AGENTS|CLAUDE)\\.md)$" },
+          "classification": { "type": "string", "minLength": 1 },
+          "authority": { "type": "string", "minLength": 1 },
+          "owner": { "type": "string", "minLength": 1 },
+          "bootstrap_tier": { "type": "string", "minLength": 1 },
+          "status": { "type": "string", "minLength": 1 },
+          "disposition": { "type": "string", "minLength": 1 },
+          "generated_status": { "type": "string", "enum": ["MANUAL", "GENERATED"] },
+          "role": { "type": "string", "minLength": 1 },
+          "content_hash": { "type": ["string", "null"] },
+          "line_count": { "type": ["integer", "null"] },
+          "byte_count": { "type": ["integer", "null"] },
+          "inbound_references": { "type": ["integer", "null"] },
+          "outbound_references": { "type": ["integer", "null"] },
+          "survival_destination": { "type": "string", "minLength": 1 },
+          "compatibility_pointer": { "type": ["string", "null"] },
+          "review_status": { "const": "REVIEWED" },
+          "review_basis": { "type": "string", "minLength": 1 }
+        }
+      }
+    }
+  }
+}

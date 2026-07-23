@@ -1,0 +1,122 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ravatex.local/governance/current-state-v2.schema.json",
+  "title": "Unit 4 current-state cutover candidate",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version", "mode", "authority", "state_id", "authority_epoch",
+    "cutover_id", "last_accepted_phase", "repository", "accepted_checkpoints",
+    "phase_status", "active_phase", "next_authorizable_action", "active_track",
+    "governing_pointers", "applicable_baseline", "environment_boundaries",
+    "protected_residue", "live_debts", "current_fact_sections",
+    "active_requirements", "prohibitions",
+    "bounded_recent_ledger_references", "structured_sources",
+    "candidate_views", "root_authorities", "rollback_readiness", "activation"
+  ],
+  "properties": {
+    "schema_version": { "const": "2.0.0" },
+    "mode": { "const": "cutover_candidate" },
+    "authority": { "const": "non_canonical_until_supervisor_activation" },
+    "state_id": { "const": "GOVERNANCE-EFFICIENCY-REFOUNDATION-CURRENT-STATE-CANDIDATE-R1" },
+    "authority_epoch": { "const": 0 },
+    "cutover_id": { "const": "GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-4C-AUTHORITY-CUTOVER-R1" },
+    "last_accepted_phase": { "const": "PHASE-C5" },
+    "repository": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["identity", "canonical_workspace", "standalone_git_expected", "branch", "checkpoint_remote"],
+      "properties": {
+        "identity": { "const": "ravatexapps-dotcom/controle-tapetes-staging" },
+        "canonical_workspace": { "const": "D:\\Programação\\controle-tapetes-g28" },
+        "standalone_git_expected": { "const": true },
+        "branch": { "const": "dev" },
+        "checkpoint_remote": { "const": "staging/dev" }
+      }
+    },
+    "accepted_checkpoints": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "product", "clean_slate_readiness", "clean_slate_execution",
+        "governance_unit_1", "governance_unit_2", "governance_unit_3",
+        "unit_4_contract"
+      ],
+      "properties": {
+        "product": { "type": "string", "pattern": "^[0-9a-f]{40}$" },
+        "clean_slate_readiness": { "type": "string", "pattern": "^[0-9a-f]{40}$" },
+        "clean_slate_execution": { "type": "string", "pattern": "^[0-9a-f]{40}$" },
+        "governance_unit_1": { "const": "39abf42a7341b61fd4ac02a8e38d1e4f33471f0f" },
+        "governance_unit_2": { "const": "f7106977f4613de1830bef46002dbf0a4b8b3cbe" },
+        "governance_unit_3": { "const": "53899e30b72cde3d1f5759ea59fb0a4d632c974d" },
+        "unit_4_contract": { "const": "76f52c842678b74e655ef9080f4fc67ccbd38e22" }
+      }
+    },
+    "phase_status": { "type": "object", "minProperties": 7 },
+    "active_phase": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "contract", "status"],
+      "properties": {
+        "id": { "const": "GOVERNANCE-EFFICIENCY-REFOUNDATION" },
+        "contract": { "const": "docs/governance/GOVERNANCE_EFFICIENCY_REFOUNDATION_PHASE_CONTRACT.md" },
+        "status": { "const": "IMPLEMENTED / CUTOVER READINESS EVIDENCE COMPLETE / AWAITING DIRECT SUPERVISOR REVIEW" }
+      }
+    },
+    "next_authorizable_action": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["order_id", "canonical_value", "mode", "risk_class", "status"],
+      "properties": {
+        "order_id": { "const": "GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-4A-CUTOVER-READINESS-IMPLEMENTATION-R1" },
+        "canonical_value": { "const": "DIRECT SUPERVISOR REVIEW OF GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-4A-CUTOVER-READINESS-IMPLEMENTATION-R1" },
+        "mode": { "const": "UNIT 4B READINESS DIRECT REVIEW" },
+        "risk_class": { "const": "R2" },
+        "status": { "const": "DIRECT SUPERVISOR REVIEW REQUIRED" }
+      }
+    },
+    "active_track": { "const": "PURCHASE_ORDER_PHASE_C" },
+    "governing_pointers": { "type": "object", "minProperties": 8 },
+    "applicable_baseline": { "type": "null" },
+    "environment_boundaries": { "type": "object", "minProperties": 3 },
+    "protected_residue": { "type": "array", "minItems": 3 },
+    "live_debts": { "type": "array" },
+    "current_fact_sections": { "type": "array", "minItems": 8 },
+    "active_requirements": { "type": "array", "minItems": 13 },
+    "prohibitions": { "type": "array", "minItems": 1 },
+    "bounded_recent_ledger_references": { "type": "array", "minItems": 3 },
+    "structured_sources": { "type": "object", "minProperties": 4 },
+    "candidate_views": { "type": "object", "minProperties": 4 },
+    "root_authorities": { "type": "array", "minItems": 4 },
+    "rollback_readiness": { "type": "object", "minProperties": 4 },
+    "activation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status", "target_schema_version", "authority_epoch", "cutover_id",
+        "required_parent", "accepted_unit4b_readiness_checkpoint", "branch",
+        "allowed_publication_remote", "manifest_algorithm", "state_payload_sha256",
+        "structured_source_hashes", "generated_view_hashes",
+        "governing_artifact_hashes", "bounded_ledger_reference_identities",
+        "activation_manifest_sha256"
+      ],
+      "properties": {
+        "status": { "const": "inactive" },
+        "target_schema_version": { "const": "2.0.0" },
+        "authority_epoch": { "const": 0 },
+        "cutover_id": { "const": "GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-4C-AUTHORITY-CUTOVER-R1" },
+        "required_parent": { "type": "null" },
+        "accepted_unit4b_readiness_checkpoint": { "type": "null" },
+        "branch": { "const": "dev" },
+        "allowed_publication_remote": { "const": "staging/dev" },
+        "manifest_algorithm": { "const": "UNIT4-ACTIVATION-MANIFEST-V1" },
+        "state_payload_sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+        "structured_source_hashes": { "type": "object", "minProperties": 4 },
+        "generated_view_hashes": { "type": "object", "minProperties": 4 },
+        "governing_artifact_hashes": { "type": "object", "minProperties": 4 },
+        "bounded_ledger_reference_identities": { "type": "array", "minItems": 3 },
+        "activation_manifest_sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" }
+      }
+    }
+  }
+}

@@ -1,17 +1,13 @@
 {
-  "schema_version": "1.0.0",
-  "mode": "NON_CANONICAL_SHADOW",
-  "authority": "CANONICAL_MARKDOWN_OWNS_SEMANTICS",
+  "activation_status": "INACTIVE",
+  "authority": "NON_CANONICAL_UNTIL_SUPERVISOR_ACTIVATION",
   "canonical_source": "docs/architecture/ORDEM_COMPRA_C3_TRACEABILITY.md",
+  "future_authority_path": "docs/governance/traceability/purchase-order-phase-c.json",
+  "mode": "CUTOVER_CANDIDATE",
   "requirements": [
     {
-      "requirement_id": "OC-C3-READ-001",
-      "normative_sources": [
-        {
-          "path": "docs/architecture/ORDEM_COMPRA_LIFECYCLE_SPEC_PROPOSED.md",
-          "anchor": "§R.29.2"
-        }
-      ],
+      "blocking_state": "NON_BLOCKING",
+      "canonical_row_sha256": "2174872ba53b7b84d82a429c66be3be9b1e9e6ecab21354b12595e2653334785",
       "disposition": "PARTIALLY_SATISFIED",
       "evidence_pointers": [
         "db/75_ordem_compra_c3c_inactive_cutover.sql",
@@ -26,25 +22,21 @@
         "tests/op-nova.smoke.js",
         "tests/fornecedor-screens.smoke.js"
       ],
-      "phase_owner": "C3C-B",
-      "blocking_state": "NON_BLOCKING",
-      "source_location": "docs/architecture/ORDEM_COMPRA_C3_TRACEABILITY.md:105",
-      "review_status": "REVIEWED",
-      "canonical_row_sha256": "2174872ba53b7b84d82a429c66be3be9b1e9e6ecab21354b12595e2653334785",
-      "review_basis": "R2 explicit review: SHA-256 binds the exact LF-normalized canonical table row including its terminating LF; evidence pointers and blocking state equal the canonical row."
-    },
-    {
-      "requirement_id": "OC-C3-WRITE-001",
       "normative_sources": [
         {
-          "path": "docs/architecture/ORDEM_COMPRA_LIFECYCLE_SPEC_PROPOSED.md",
-          "anchor": "§R.29.1"
-        },
-        {
-          "path": "docs/architecture/ORDEM_COMPRA_LIFECYCLE_SPEC_PROPOSED.md",
-          "anchor": "§R.29.3"
+          "anchor": "§R.29.2",
+          "path": "docs/architecture/ORDEM_COMPRA_LIFECYCLE_SPEC_PROPOSED.md"
         }
       ],
+      "phase_owner": "C3C-B",
+      "requirement_id": "OC-C3-READ-001",
+      "review_basis": "R2 explicit review: SHA-256 binds the exact LF-normalized canonical table row including its terminating LF; evidence pointers and blocking state equal the canonical row.",
+      "review_status": "REVIEWED",
+      "source_location": "docs/architecture/ORDEM_COMPRA_C3_TRACEABILITY.md:105"
+    },
+    {
+      "blocking_state": "NON_BLOCKING",
+      "canonical_row_sha256": "403c2046952adec1be8b5863cbe3c62f52b7ad5cf47d71e622602dc179444639",
       "disposition": "PARTIALLY_SATISFIED",
       "evidence_pointers": [
         "db/75_ordem_compra_c3c_inactive_cutover.sql",
@@ -60,62 +52,66 @@
         "tests/op-persistir.smoke.js",
         "tests/op-recalculo.smoke.js"
       ],
-      "phase_owner": "C3C-B",
-      "blocking_state": "NON_BLOCKING",
-      "source_location": "docs/architecture/ORDEM_COMPRA_C3_TRACEABILITY.md:106",
-      "review_status": "REVIEWED",
-      "canonical_row_sha256": "403c2046952adec1be8b5863cbe3c62f52b7ad5cf47d71e622602dc179444639",
-      "review_basis": "R2 explicit review: SHA-256 binds the exact LF-normalized canonical table row including its terminating LF; evidence pointers and blocking state equal the canonical row."
-    },
-    {
-      "requirement_id": "OC-C3-COMPAT-001",
       "normative_sources": [
         {
-          "path": "docs/architecture/ORDEM_COMPRA_LIFECYCLE_SPEC_PROPOSED.md",
-          "anchor": "§R.29.1"
+          "anchor": "§R.29.1",
+          "path": "docs/architecture/ORDEM_COMPRA_LIFECYCLE_SPEC_PROPOSED.md"
+        },
+        {
+          "anchor": "§R.29.3",
+          "path": "docs/architecture/ORDEM_COMPRA_LIFECYCLE_SPEC_PROPOSED.md"
         }
       ],
+      "phase_owner": "C3C-B",
+      "requirement_id": "OC-C3-WRITE-001",
+      "review_basis": "R2 explicit review: SHA-256 binds the exact LF-normalized canonical table row including its terminating LF; evidence pointers and blocking state equal the canonical row.",
+      "review_status": "REVIEWED",
+      "source_location": "docs/architecture/ORDEM_COMPRA_C3_TRACEABILITY.md:106"
+    },
+    {
+      "blocking_state": "NON_BLOCKING",
+      "canonical_row_sha256": "b826277f4153777cfb9622a81d463682d8138709931efab412ec756423374e7d",
       "disposition": "PARTIALLY_SATISFIED",
       "evidence_pointers": [
         "docs/architecture/ORDEM_COMPRA_C3C_B_PHASE_CONTRACT.md",
         "scripts/validate-spec-custody.mjs"
       ],
-      "phase_owner": "C3C-B",
-      "blocking_state": "NON_BLOCKING",
-      "source_location": "docs/architecture/ORDEM_COMPRA_C3_TRACEABILITY.md:107",
-      "review_status": "REVIEWED",
-      "canonical_row_sha256": "b826277f4153777cfb9622a81d463682d8138709931efab412ec756423374e7d",
-      "review_basis": "R2 explicit review: SHA-256 binds the exact LF-normalized canonical table row including its terminating LF; evidence pointers and blocking state equal the canonical row."
-    },
-    {
-      "requirement_id": "OC-C3-NOUI-001",
       "normative_sources": [
         {
-          "path": "docs/architecture/ORDEM_COMPRA_LIFECYCLE_SPEC_PROPOSED.md",
-          "anchor": "§R.29.6"
+          "anchor": "§R.29.1",
+          "path": "docs/architecture/ORDEM_COMPRA_LIFECYCLE_SPEC_PROPOSED.md"
         }
       ],
+      "phase_owner": "C3C-B",
+      "requirement_id": "OC-C3-COMPAT-001",
+      "review_basis": "R2 explicit review: SHA-256 binds the exact LF-normalized canonical table row including its terminating LF; evidence pointers and blocking state equal the canonical row.",
+      "review_status": "REVIEWED",
+      "source_location": "docs/architecture/ORDEM_COMPRA_C3_TRACEABILITY.md:107"
+    },
+    {
+      "blocking_state": "NON_BLOCKING",
+      "canonical_row_sha256": "059118912d0f21932d70d3b8766206d85777cf939dd592e2408eff926bb39b1f",
       "disposition": "PARTIALLY_SATISFIED",
       "evidence_pointers": [
         "js/router.js",
         "js/boot.js",
         "index.html"
       ],
-      "phase_owner": "C3C-B",
-      "blocking_state": "NON_BLOCKING",
-      "source_location": "docs/architecture/ORDEM_COMPRA_C3_TRACEABILITY.md:108",
-      "review_status": "REVIEWED",
-      "canonical_row_sha256": "059118912d0f21932d70d3b8766206d85777cf939dd592e2408eff926bb39b1f",
-      "review_basis": "R2 explicit review: SHA-256 binds the exact LF-normalized canonical table row including its terminating LF; evidence pointers and blocking state equal the canonical row."
-    },
-    {
-      "requirement_id": "OC-C3D-DEPLOY-001",
       "normative_sources": [
         {
-          "path": "docs/architecture/ORDEM_COMPRA_LIFECYCLE_SPEC_PROPOSED.md",
-          "anchor": "§R.29"
+          "anchor": "§R.29.6",
+          "path": "docs/architecture/ORDEM_COMPRA_LIFECYCLE_SPEC_PROPOSED.md"
         }
       ],
+      "phase_owner": "C3C-B",
+      "requirement_id": "OC-C3-NOUI-001",
+      "review_basis": "R2 explicit review: SHA-256 binds the exact LF-normalized canonical table row including its terminating LF; evidence pointers and blocking state equal the canonical row.",
+      "review_status": "REVIEWED",
+      "source_location": "docs/architecture/ORDEM_COMPRA_C3_TRACEABILITY.md:108"
+    },
+    {
+      "blocking_state": "NON_BLOCKING",
+      "canonical_row_sha256": "5f209c767363fca84e14043033a2a485f934278a165052a178257c807b4966f4",
       "disposition": "SATISFIED",
       "evidence_pointers": [
         "scripts/c3d/bootstrap-disposable-cluster.mjs",
@@ -124,121 +120,121 @@
         "db/75_ordem_compra_c3c_inactive_cutover.sql",
         "db/76_ordem_compra_c3c_b_db_prerequisites.sql"
       ],
-      "phase_owner": "C3D",
-      "blocking_state": "NON_BLOCKING",
-      "source_location": "docs/architecture/ORDEM_COMPRA_C3_TRACEABILITY.md:109",
-      "review_status": "REVIEWED",
-      "canonical_row_sha256": "5f209c767363fca84e14043033a2a485f934278a165052a178257c807b4966f4",
-      "review_basis": "R2 explicit review: SHA-256 binds the exact LF-normalized canonical table row including its terminating LF; evidence pointers and blocking state equal the canonical row."
-    },
-    {
-      "requirement_id": "OC-C3D-FENCE-001",
       "normative_sources": [
         {
-          "path": "docs/architecture/ORDEM_COMPRA_LIFECYCLE_SPEC_PROPOSED.md",
-          "anchor": "§R.29.3"
+          "anchor": "§R.29",
+          "path": "docs/architecture/ORDEM_COMPRA_LIFECYCLE_SPEC_PROPOSED.md"
         }
       ],
+      "phase_owner": "C3D",
+      "requirement_id": "OC-C3D-DEPLOY-001",
+      "review_basis": "R2 explicit review: SHA-256 binds the exact LF-normalized canonical table row including its terminating LF; evidence pointers and blocking state equal the canonical row.",
+      "review_status": "REVIEWED",
+      "source_location": "docs/architecture/ORDEM_COMPRA_C3_TRACEABILITY.md:109"
+    },
+    {
+      "blocking_state": "NON_BLOCKING",
+      "canonical_row_sha256": "685d904f31587f0ed9109f5ec910da3268dcd7eda271028b85e4737925b018a3",
       "disposition": "SATISFIED",
       "evidence_pointers": [
         "db/75_ordem_compra_c3c_inactive_cutover.sql",
         "tests/ordem-compra-c3c-inactive.integration.sql",
         "tests/ordem-compra-c3d-fence.integration.sql"
       ],
-      "phase_owner": "C3D",
-      "blocking_state": "NON_BLOCKING",
-      "source_location": "docs/architecture/ORDEM_COMPRA_C3_TRACEABILITY.md:110",
-      "review_status": "REVIEWED",
-      "canonical_row_sha256": "685d904f31587f0ed9109f5ec910da3268dcd7eda271028b85e4737925b018a3",
-      "review_basis": "R2 explicit review: SHA-256 binds the exact LF-normalized canonical table row including its terminating LF; evidence pointers and blocking state equal the canonical row."
-    },
-    {
-      "requirement_id": "OC-C3D-ACL-001",
       "normative_sources": [
         {
-          "path": "docs/architecture/PEDIDO_OP_SCHEMA_CONTRACT.md",
-          "anchor": "13.15.2"
+          "anchor": "§R.29.3",
+          "path": "docs/architecture/ORDEM_COMPRA_LIFECYCLE_SPEC_PROPOSED.md"
         }
       ],
+      "phase_owner": "C3D",
+      "requirement_id": "OC-C3D-FENCE-001",
+      "review_basis": "R2 explicit review: SHA-256 binds the exact LF-normalized canonical table row including its terminating LF; evidence pointers and blocking state equal the canonical row.",
+      "review_status": "REVIEWED",
+      "source_location": "docs/architecture/ORDEM_COMPRA_C3_TRACEABILITY.md:110"
+    },
+    {
+      "blocking_state": "NON_BLOCKING",
+      "canonical_row_sha256": "bd9c63cc76bf0b4b429c46f4f2fd07179fdd0caddbd68ba0f23886ac3532203c",
       "disposition": "SATISFIED",
       "evidence_pointers": [
         "db/75_ordem_compra_c3c_inactive_cutover.sql",
         "tests/ordem-compra-c3d-acl.integration.sql",
         "tests/ordem-compra-c3c-inactive.integration.sql"
       ],
-      "phase_owner": "C3D",
-      "blocking_state": "NON_BLOCKING",
-      "source_location": "docs/architecture/ORDEM_COMPRA_C3_TRACEABILITY.md:111",
-      "review_status": "REVIEWED",
-      "canonical_row_sha256": "bd9c63cc76bf0b4b429c46f4f2fd07179fdd0caddbd68ba0f23886ac3532203c",
-      "review_basis": "R2 explicit review: SHA-256 binds the exact LF-normalized canonical table row including its terminating LF; evidence pointers and blocking state equal the canonical row."
-    },
-    {
-      "requirement_id": "OC-C3D-LOCK-001",
       "normative_sources": [
         {
-          "path": "docs/architecture/ORDEM_COMPRA_LIFECYCLE_SPEC_PROPOSED.md",
-          "anchor": "§R.29.5"
+          "anchor": "13.15.2",
+          "path": "docs/architecture/PEDIDO_OP_SCHEMA_CONTRACT.md"
         }
       ],
+      "phase_owner": "C3D",
+      "requirement_id": "OC-C3D-ACL-001",
+      "review_basis": "R2 explicit review: SHA-256 binds the exact LF-normalized canonical table row including its terminating LF; evidence pointers and blocking state equal the canonical row.",
+      "review_status": "REVIEWED",
+      "source_location": "docs/architecture/ORDEM_COMPRA_C3_TRACEABILITY.md:111"
+    },
+    {
+      "blocking_state": "NON_BLOCKING",
+      "canonical_row_sha256": "701c7f9b463d024506a1d894b93cdc5d62e0d9db8e07e369b50ce515d506294f",
       "disposition": "SATISFIED",
       "evidence_pointers": [
         "db/75_ordem_compra_c3c_inactive_cutover.sql",
         "tests/ordem-compra-c3d-lock-concurrency.mjs",
         "tests/ordem-compra-c3c-inactive-concurrency.mjs"
       ],
-      "phase_owner": "C3D",
-      "blocking_state": "NON_BLOCKING",
-      "source_location": "docs/architecture/ORDEM_COMPRA_C3_TRACEABILITY.md:112",
-      "review_status": "REVIEWED",
-      "canonical_row_sha256": "701c7f9b463d024506a1d894b93cdc5d62e0d9db8e07e369b50ce515d506294f",
-      "review_basis": "R2 explicit review: SHA-256 binds the exact LF-normalized canonical table row including its terminating LF; evidence pointers and blocking state equal the canonical row."
-    },
-    {
-      "requirement_id": "OC-CUTOVER-001",
       "normative_sources": [
         {
-          "path": "docs/architecture/ORDEM_COMPRA_LIFECYCLE_SPEC_PROPOSED.md",
-          "anchor": "§R.29.5"
+          "anchor": "§R.29.5",
+          "path": "docs/architecture/ORDEM_COMPRA_LIFECYCLE_SPEC_PROPOSED.md"
         }
       ],
+      "phase_owner": "C3D",
+      "requirement_id": "OC-C3D-LOCK-001",
+      "review_basis": "R2 explicit review: SHA-256 binds the exact LF-normalized canonical table row including its terminating LF; evidence pointers and blocking state equal the canonical row.",
+      "review_status": "REVIEWED",
+      "source_location": "docs/architecture/ORDEM_COMPRA_C3_TRACEABILITY.md:112"
+    },
+    {
+      "blocking_state": "BLOCKED",
+      "canonical_row_sha256": "3161148f22048437270b6c63ed3b4be9f874dd7b7778d41ae8ccf0a2e8730f83",
       "disposition": "PLANNED",
       "evidence_pointers": [],
-      "phase_owner": "REAL_CUTOVER",
-      "blocking_state": "BLOCKED",
-      "source_location": "docs/architecture/ORDEM_COMPRA_C3_TRACEABILITY.md:113",
-      "review_status": "REVIEWED",
-      "canonical_row_sha256": "3161148f22048437270b6c63ed3b4be9f874dd7b7778d41ae8ccf0a2e8730f83",
-      "review_basis": "R2 explicit review: SHA-256 binds the exact LF-normalized canonical table row including its terminating LF; evidence pointers and blocking state equal the canonical row."
-    },
-    {
-      "requirement_id": "OC-CUTOVER-PONR-001",
       "normative_sources": [
         {
-          "path": "docs/architecture/ORDEM_COMPRA_LIFECYCLE_SPEC_PROPOSED.md",
-          "anchor": "§R.29.6"
+          "anchor": "§R.29.5",
+          "path": "docs/architecture/ORDEM_COMPRA_LIFECYCLE_SPEC_PROPOSED.md"
         }
       ],
+      "phase_owner": "REAL_CUTOVER",
+      "requirement_id": "OC-CUTOVER-001",
+      "review_basis": "R2 explicit review: SHA-256 binds the exact LF-normalized canonical table row including its terminating LF; evidence pointers and blocking state equal the canonical row.",
+      "review_status": "REVIEWED",
+      "source_location": "docs/architecture/ORDEM_COMPRA_C3_TRACEABILITY.md:113"
+    },
+    {
+      "blocking_state": "NON_BLOCKING",
+      "canonical_row_sha256": "c46115caf84053a87df5b8d77657d1d9501063f2f3b6a1d17f1f0c094292d79b",
       "disposition": "PARTIALLY_SATISFIED",
       "evidence_pointers": [
         "db/75_ordem_compra_c3c_inactive_cutover.sql",
         "tests/ordem-compra-c3c-inactive.integration.sql"
       ],
-      "phase_owner": "REAL_CUTOVER",
-      "blocking_state": "NON_BLOCKING",
-      "source_location": "docs/architecture/ORDEM_COMPRA_C3_TRACEABILITY.md:114",
-      "review_status": "REVIEWED",
-      "canonical_row_sha256": "c46115caf84053a87df5b8d77657d1d9501063f2f3b6a1d17f1f0c094292d79b",
-      "review_basis": "R2 explicit review: SHA-256 binds the exact LF-normalized canonical table row including its terminating LF; evidence pointers and blocking state equal the canonical row."
-    },
-    {
-      "requirement_id": "OC-C4-ADMIN-001",
       "normative_sources": [
         {
-          "path": "docs/architecture/ORDEM_COMPRA_LIFECYCLE_SPEC_PROPOSED.md",
-          "anchor": "§R.29.6"
+          "anchor": "§R.29.6",
+          "path": "docs/architecture/ORDEM_COMPRA_LIFECYCLE_SPEC_PROPOSED.md"
         }
       ],
+      "phase_owner": "REAL_CUTOVER",
+      "requirement_id": "OC-CUTOVER-PONR-001",
+      "review_basis": "R2 explicit review: SHA-256 binds the exact LF-normalized canonical table row including its terminating LF; evidence pointers and blocking state equal the canonical row.",
+      "review_status": "REVIEWED",
+      "source_location": "docs/architecture/ORDEM_COMPRA_C3_TRACEABILITY.md:114"
+    },
+    {
+      "blocking_state": "NON_BLOCKING",
+      "canonical_row_sha256": "7db589571d728a965b5350081067559395a626f323292838d6230ba5fab4870f",
       "disposition": "SATISFIED",
       "evidence_pointers": [
         "js/screens/ordem-compra-receipt-data.js",
@@ -252,38 +248,38 @@
         "tests/ordem-compra-receipt-routing.smoke.js",
         "scripts/validate-spec-custody.mjs"
       ],
-      "phase_owner": "C4",
-      "blocking_state": "NON_BLOCKING",
-      "source_location": "docs/architecture/ORDEM_COMPRA_C3_TRACEABILITY.md:115",
-      "review_status": "REVIEWED",
-      "canonical_row_sha256": "7db589571d728a965b5350081067559395a626f323292838d6230ba5fab4870f",
-      "review_basis": "R2 explicit review: SHA-256 binds the exact LF-normalized canonical table row including its terminating LF; evidence pointers and blocking state equal the canonical row."
-    },
-    {
-      "requirement_id": "OC-C4-SUPPLIER-001",
       "normative_sources": [
         {
-          "path": "docs/architecture/ORDEM_COMPRA_LIFECYCLE_SPEC_PROPOSED.md",
-          "anchor": "§R.29.6"
+          "anchor": "§R.29.6",
+          "path": "docs/architecture/ORDEM_COMPRA_LIFECYCLE_SPEC_PROPOSED.md"
         }
       ],
+      "phase_owner": "C4",
+      "requirement_id": "OC-C4-ADMIN-001",
+      "review_basis": "R2 explicit review: SHA-256 binds the exact LF-normalized canonical table row including its terminating LF; evidence pointers and blocking state equal the canonical row.",
+      "review_status": "REVIEWED",
+      "source_location": "docs/architecture/ORDEM_COMPRA_C3_TRACEABILITY.md:115"
+    },
+    {
+      "blocking_state": "DEFERRED",
+      "canonical_row_sha256": "ad29d74290188de4ef2e593780b60cf84e22a7c68750161fc4ec2cd1883f979f",
       "disposition": "DEFERRED",
       "evidence_pointers": [],
-      "phase_owner": "C4",
-      "blocking_state": "DEFERRED",
-      "source_location": "docs/architecture/ORDEM_COMPRA_C3_TRACEABILITY.md:116",
-      "review_status": "REVIEWED",
-      "canonical_row_sha256": "ad29d74290188de4ef2e593780b60cf84e22a7c68750161fc4ec2cd1883f979f",
-      "review_basis": "R2 explicit review: SHA-256 binds the exact LF-normalized canonical table row including its terminating LF; evidence pointers and blocking state equal the canonical row."
-    },
-    {
-      "requirement_id": "OC-C5-EMISSION-001",
       "normative_sources": [
         {
-          "path": "docs/architecture/ORDEM_COMPRA_LIFECYCLE_SPEC_PROPOSED.md",
-          "anchor": "§R.24.10"
+          "anchor": "§R.29.6",
+          "path": "docs/architecture/ORDEM_COMPRA_LIFECYCLE_SPEC_PROPOSED.md"
         }
       ],
+      "phase_owner": "C4",
+      "requirement_id": "OC-C4-SUPPLIER-001",
+      "review_basis": "R2 explicit review: SHA-256 binds the exact LF-normalized canonical table row including its terminating LF; evidence pointers and blocking state equal the canonical row.",
+      "review_status": "REVIEWED",
+      "source_location": "docs/architecture/ORDEM_COMPRA_C3_TRACEABILITY.md:116"
+    },
+    {
+      "blocking_state": "NON_BLOCKING",
+      "canonical_row_sha256": "2172293ef8fd0852ff83da78b8c43df90a978b4918ed88ffc8afa8adebabc08a",
       "disposition": "SATISFIED",
       "evidence_pointers": [
         "js/screens/ordem-compra-data.js",
@@ -293,12 +289,18 @@
         "tests/ordem-compra.smoke.js",
         "scripts/validate-spec-custody.mjs"
       ],
+      "normative_sources": [
+        {
+          "anchor": "§R.24.10",
+          "path": "docs/architecture/ORDEM_COMPRA_LIFECYCLE_SPEC_PROPOSED.md"
+        }
+      ],
       "phase_owner": "C5",
-      "blocking_state": "NON_BLOCKING",
-      "source_location": "docs/architecture/ORDEM_COMPRA_C3_TRACEABILITY.md:117",
+      "requirement_id": "OC-C5-EMISSION-001",
+      "review_basis": "R2 explicit review: SHA-256 binds the exact LF-normalized canonical table row including its terminating LF; evidence pointers and blocking state equal the canonical row.",
       "review_status": "REVIEWED",
-      "canonical_row_sha256": "2172293ef8fd0852ff83da78b8c43df90a978b4918ed88ffc8afa8adebabc08a",
-      "review_basis": "R2 explicit review: SHA-256 binds the exact LF-normalized canonical table row including its terminating LF; evidence pointers and blocking state equal the canonical row."
+      "source_location": "docs/architecture/ORDEM_COMPRA_C3_TRACEABILITY.md:117"
     }
-  ]
+  ],
+  "schema_version": "2.0.0"
 }

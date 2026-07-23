@@ -26,11 +26,12 @@
 
 ## Phase status
 
-- **`GOVERNANCE-EFFICIENCY-REFOUNDATION` (current — Unit 4 contract correction):**
-  `ACTIVE / UNIT 4 CONTRACT CORRECTED / AWAITING DIRECT SUPERVISOR REVIEW`. The structured current-state
-  source, equivalence mapping, deterministic renderer/validator, and generated
-  shadow views are implemented under the active contract, but remain
-  `NON-CANONICAL UNTIL SUPERVISOR CUTOVER`. `PROJECT_STATE.md` remains the
+- **`GOVERNANCE-EFFICIENCY-REFOUNDATION` (current — Unit 4A readiness):**
+  `ACTIVE / UNIT 4A CUTOVER READINESS IMPLEMENTED / AWAITING DIRECT SUPERVISOR
+  REVIEW`. The structured current-state candidate, equivalence evidence,
+  candidate views, bounded-ledger reader, readiness manifest, and bootstrap
+  simulator are implemented, but remain `NON-CANONICAL UNTIL SUPERVISOR
+  ACTIVATION`. `PROJECT_STATE.md` remains the
   current-state owner and this file remains the derived operational handoff.
   Status: `SHADOW IMPLEMENTATION AUTHORIZED / DOCUMENTARY-AUTHORITY CUTOVER NOT AUTHORIZED`.
   Unit 1 is `CLOSED / ACCEPTED / DIRECTLY VERIFIED` at
@@ -44,20 +45,21 @@
   partitions, generated compatibility view, and indexes remain non-canonical.
   The accepted interval begins at
   `e3c8c15b368d20161df6e593debbdf0c68cb7e41` and ends at the final R3 commit
-  `53899e30b72cde3d1f5759ea59fb0a4d632c974d`. Published checkpoint
-  `c7f4bb38076d865549221133ce33d8323e19f4eb` was directly reviewed: Unit 3
-  acceptance remains valid, but the Unit 4 contract required correction for a
-  self-referential activation-commit SHA and ambiguous Unit 4A candidate output
-  paths. The corrected contract is at
+  `53899e30b72cde3d1f5759ea59fb0a4d632c974d`. The Unit 4 contract at checkpoint
+  `76f52c842678b74e655ef9080f4fc67ccbd38e22` is `CLOSED / ACCEPTED / DIRECTLY
+  VERIFIED` by external supervisor ruling, not executor self-acceptance. The accepted contract is at
   `docs/governance/GOVERNANCE_EFFICIENCY_REFOUNDATION_UNIT_4_AUTHORITY_CUTOVER_CONTRACT.md`.
   It binds the required parent and deterministic activation content before
   commit creation, treats the actual activation SHA as external Git evidence,
   confines Unit 4A candidate renders to
   `docs/governance/candidate/generated/`, and reserves atomic root replacement
   for Unit 4C.
+  Unit 4A is `IMPLEMENTED / CUTOVER READINESS EVIDENCE COMPLETE / AWAITING
+  DIRECT SUPERVISOR REVIEW` and is not self-accepted.
   **Next authorizable action:** direct supervisor review of
-  `GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-4-CONTRACT-COMMIT-BINDING-AND-CANDIDATE-PATH-CORRECTION-R2`.
-  Unit 4A implementation, documentary-authority cutover, Unit 5, cleanup,
+  `GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-4A-CUTOVER-READINESS-IMPLEMENTATION-R1`.
+  Unit 4B review is required. Unit 4C, documentary-authority cutover, Unit 4D,
+  Unit 5, cleanup,
   compaction, archival, deprecation, deletion, product work, database access,
   and deployment remain unauthorized. Exact accepted governance checkpoints:
   Unit 1 `39abf42a7341b61fd4ac02a8e38d1e4f33471f0f`, Unit 2

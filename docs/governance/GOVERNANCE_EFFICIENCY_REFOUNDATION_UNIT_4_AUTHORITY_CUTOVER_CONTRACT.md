@@ -559,16 +559,17 @@ Each material Unit 4 gate must report:
 
 | Gate | Status after this contract-definition pass |
 |---|---|
-| Unit 4A — cutover readiness implementation | NOT AUTHORIZED |
-| Unit 4B — readiness direct review | NOT AUTHORIZED |
+| Unit 4A — cutover readiness implementation | IMPLEMENTED / CUTOVER READINESS EVIDENCE COMPLETE / AWAITING DIRECT SUPERVISOR REVIEW |
+| Unit 4B — readiness direct review | DIRECT SUPERVISOR REVIEW REQUIRED / NOT SELF-ACCEPTED |
 | Unit 4C — authority cutover execution | NOT AUTHORIZED |
 | Unit 4D — post-cutover acceptance | NOT AUTHORIZED |
 | Documentary-authority cutover | NOT AUTHORIZED |
 
-The Unit 4 contract is `CORRECTED / AWAITING DIRECT SUPERVISOR REVIEW`.
-Commit self-reference is removed and the candidate/root-path boundary is
-defined. The next authorizable action is `DIRECT SUPERVISOR REVIEW OF
-GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-4-CONTRACT-COMMIT-BINDING-AND-CANDIDATE-PATH-CORRECTION-R2`.
+The Unit 4 contract is `CLOSED / ACCEPTED / DIRECTLY VERIFIED` at checkpoint
+`76f52c842678b74e655ef9080f4fc67ccbd38e22` by external supervisor ruling, not
+executor self-acceptance. Unit 4A readiness is implemented and not self-accepted.
+The next authorizable action is `DIRECT SUPERVISOR REVIEW OF
+GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-4A-CUTOVER-READINESS-IMPLEMENTATION-R1`.
 
 ## 25. Explicit Unit 5 exclusion
 

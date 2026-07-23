@@ -3,10 +3,10 @@
   "index_id": "G28-LEDGER-PARTITION-INDEX-R1",
   "authority": "NON-CANONICAL_SHADOW; CANONICAL_LEDGER_AUTHORITY_UNCHANGED",
   "canonical_source": "docs/ledgers/G28_LEDGER.md",
-  "canonical_source_git_object": "c28678a46aef949648d1491ca8546be1c1d0bd4d",
-  "canonical_source_sha256": "e8759c24eb22f3c0ad3cd7ed97f602c3b7031b1b5ea3378fff1bcb097f7bdcdc",
-  "canonical_byte_count": 983401,
-  "canonical_line_count": 9669,
+  "canonical_source_git_object": "99b38ac706bb082b65870907c996f9316b26c45d",
+  "canonical_source_sha256": "26b4988ffd788a6552a4a0fcf8d3e5de2d28541ca59a4d1d7d57c92f85a66b00",
+  "canonical_byte_count": 985271,
+  "canonical_line_count": 9679,
   "source_manifest_path": "docs/governance/ledger/g28-ledger-source-manifest.json",
   "preamble_unit_id": "G28-LEDGER-PREAMBLE",
   "thresholds": {
@@ -3082,11 +3082,26 @@
       "date": "2026-07-23",
       "phase_order_id": "GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-4-CONTRACT-COMMIT-BINDING-AND-CANDIDATE-PATH-CORRECTION-R2",
       "start_byte": 981128,
-      "end_byte": 983401,
+      "end_byte": 983402,
       "start_line": 9661,
-      "end_line": 9669,
-      "raw_sha256": "b9846318e59068aec569eb60f8bd82653b64d3d76a5ce350cfa98ef743eb7f71",
-      "byte_count": 2273,
+      "end_line": 9670,
+      "raw_sha256": "00ff09bddf2e948a81ab5213b354a0b8b9493854484366b312f10a163e48a286",
+      "byte_count": 2274,
+      "line_count": 10
+    },
+    {
+      "unit_id": "G28-LEDGER-UNIT-0205",
+      "ordinal": 205,
+      "unit_kind": "ENTRY",
+      "heading": "## 2026-07-23 — GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-4A-CUTOVER-READINESS-IMPLEMENTATION-R1 — implement Unit 4A candidate readiness",
+      "date": "2026-07-23",
+      "phase_order_id": "GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-4A-CUTOVER-READINESS-IMPLEMENTATION-R1",
+      "start_byte": 983402,
+      "end_byte": 985271,
+      "start_line": 9671,
+      "end_line": 9679,
+      "raw_sha256": "72484e1201f7263f88876d421c3365699c4d83695e020ab249ef18f5531970c7",
+      "byte_count": 1869,
       "line_count": 9
     }
   ],
@@ -3499,15 +3514,15 @@
       "partition_id": "G28-LEDGER-PART-0012",
       "file_name": "G28_LEDGER_PART_0012.md",
       "first_unit_ordinal": 195,
-      "last_unit_ordinal": 204,
+      "last_unit_ordinal": 205,
       "first_unit_id": "G28-LEDGER-UNIT-0195",
-      "last_unit_id": "G28-LEDGER-UNIT-0204",
+      "last_unit_id": "G28-LEDGER-UNIT-0205",
       "start_byte": 962903,
-      "end_byte": 983401,
+      "end_byte": 985271,
       "start_line": 9510,
-      "end_line": 9669,
-      "byte_count": 20498,
-      "line_count": 160,
+      "end_line": 9679,
+      "byte_count": 22368,
+      "line_count": 170,
       "oversized_single_unit": false,
       "status": "OPEN",
       "unit_ids": [
@@ -3520,9 +3535,10 @@
         "G28-LEDGER-UNIT-0201",
         "G28-LEDGER-UNIT-0202",
         "G28-LEDGER-UNIT-0203",
-        "G28-LEDGER-UNIT-0204"
+        "G28-LEDGER-UNIT-0204",
+        "G28-LEDGER-UNIT-0205"
       ],
-      "payload_sha256": "abaa890915e9d410eab3bdbef3b4f95fa35e827c11a4bad18a4d7c4305310063"
+      "payload_sha256": "d246ed0feef88a33a3f84a8e3718cbdfd28bbd41b99719f4bfdc081c2cdbc08f"
     }
   ],
   "unit_to_partition": [
@@ -4345,13 +4361,17 @@
     {
       "unit_id": "G28-LEDGER-UNIT-0204",
       "partition_id": "G28-LEDGER-PART-0012"
+    },
+    {
+      "unit_id": "G28-LEDGER-UNIT-0205",
+      "partition_id": "G28-LEDGER-PART-0012"
     }
   ],
   "inbound_reference_survival_mappings": [
     {
       "mapping_id": "G28-LEDGER-REF-0001",
       "source_document": "AGENT_HANDOFF.md",
-      "source_line": 114,
+      "source_line": 116,
       "reference_kind": "ROOT_REFERENCE",
       "original_target": "docs/ledgers/G28_LEDGER.md",
       "anchor": null,
@@ -4364,7 +4384,7 @@
     {
       "mapping_id": "G28-LEDGER-REF-0002",
       "source_document": "AGENT_HANDOFF.md",
-      "source_line": 143,
+      "source_line": 145,
       "reference_kind": "ROOT_REFERENCE",
       "original_target": "docs/ledgers/G28_LEDGER.md",
       "anchor": null,
@@ -4377,7 +4397,7 @@
     {
       "mapping_id": "G28-LEDGER-REF-0003",
       "source_document": "AGENT_HANDOFF.md",
-      "source_line": 164,
+      "source_line": 166,
       "reference_kind": "ROOT_REFERENCE",
       "original_target": "docs/ledgers/G28_LEDGER.md",
       "anchor": null,
@@ -4390,7 +4410,7 @@
     {
       "mapping_id": "G28-LEDGER-REF-0004",
       "source_document": "AGENT_HANDOFF.md",
-      "source_line": 193,
+      "source_line": 195,
       "reference_kind": "ROOT_REFERENCE",
       "original_target": "docs/ledgers/G28_LEDGER.md",
       "anchor": null,
@@ -4403,7 +4423,7 @@
     {
       "mapping_id": "G28-LEDGER-REF-0005",
       "source_document": "AGENT_HANDOFF.md",
-      "source_line": 219,
+      "source_line": 221,
       "reference_kind": "ROOT_REFERENCE",
       "original_target": "docs/ledgers/G28_LEDGER.md",
       "anchor": null,
@@ -4416,7 +4436,7 @@
     {
       "mapping_id": "G28-LEDGER-REF-0006",
       "source_document": "AGENT_HANDOFF.md",
-      "source_line": 242,
+      "source_line": 244,
       "reference_kind": "ROOT_REFERENCE",
       "original_target": "docs/ledgers/G28_LEDGER.md",
       "anchor": null,
@@ -4429,7 +4449,7 @@
     {
       "mapping_id": "G28-LEDGER-REF-0007",
       "source_document": "AGENT_HANDOFF.md",
-      "source_line": 273,
+      "source_line": 275,
       "reference_kind": "ROOT_REFERENCE",
       "original_target": "docs/ledgers/G28_LEDGER.md",
       "anchor": null,
@@ -4442,7 +4462,7 @@
     {
       "mapping_id": "G28-LEDGER-REF-0008",
       "source_document": "AGENT_HANDOFF.md",
-      "source_line": 640,
+      "source_line": 642,
       "reference_kind": "ROOT_REFERENCE",
       "original_target": "docs/ledgers/G28_LEDGER.md",
       "anchor": null,
@@ -4455,7 +4475,7 @@
     {
       "mapping_id": "G28-LEDGER-REF-0009",
       "source_document": "AGENT_HANDOFF.md",
-      "source_line": 828,
+      "source_line": 830,
       "reference_kind": "ROOT_REFERENCE",
       "original_target": "docs/ledgers/G28_LEDGER.md",
       "anchor": null,
@@ -4468,7 +4488,7 @@
     {
       "mapping_id": "G28-LEDGER-REF-0010",
       "source_document": "AGENT_HANDOFF.md",
-      "source_line": 1034,
+      "source_line": 1036,
       "reference_kind": "ROOT_REFERENCE",
       "original_target": "docs/ledgers/G28_LEDGER.md",
       "anchor": null,
@@ -7237,7 +7257,7 @@
     {
       "mapping_id": "G28-LEDGER-REF-0223",
       "source_document": "docs/DOCUMENTATION_INDEX.md",
-      "source_line": 98,
+      "source_line": 117,
       "reference_kind": "ROOT_REFERENCE",
       "original_target": "docs/ledgers/G28_LEDGER.md",
       "anchor": null,
@@ -7250,7 +7270,7 @@
     {
       "mapping_id": "G28-LEDGER-REF-0224",
       "source_document": "docs/DOCUMENTATION_INDEX.md",
-      "source_line": 169,
+      "source_line": 188,
       "reference_kind": "ROOT_REFERENCE",
       "original_target": "docs/ledgers/G28_LEDGER.md",
       "anchor": null,
@@ -7263,7 +7283,7 @@
     {
       "mapping_id": "G28-LEDGER-REF-0225",
       "source_document": "docs/DOCUMENTATION_INDEX.md",
-      "source_line": 209,
+      "source_line": 228,
       "reference_kind": "ROOT_REFERENCE",
       "original_target": "docs/ledgers/G28_LEDGER.md",
       "anchor": null,
@@ -7276,7 +7296,7 @@
     {
       "mapping_id": "G28-LEDGER-REF-0226",
       "source_document": "docs/DOCUMENTATION_INDEX.md",
-      "source_line": 210,
+      "source_line": 229,
       "reference_kind": "ROOT_REFERENCE",
       "original_target": "docs/ledgers/G28_LEDGER.md",
       "anchor": null,
@@ -7289,7 +7309,7 @@
     {
       "mapping_id": "G28-LEDGER-REF-0227",
       "source_document": "docs/DOCUMENTATION_INDEX.md",
-      "source_line": 653,
+      "source_line": 672,
       "reference_kind": "ROOT_REFERENCE",
       "original_target": "docs/ledgers/G28_LEDGER.md",
       "anchor": null,
@@ -7301,6 +7321,45 @@
     },
     {
       "mapping_id": "G28-LEDGER-REF-0228",
+      "source_document": "docs/governance/candidate/generated/DOCUMENTATION_INDEX.md",
+      "source_line": 97,
+      "reference_kind": "ROOT_REFERENCE",
+      "original_target": "docs/ledgers/G28_LEDGER.md",
+      "anchor": null,
+      "line_suffix": null,
+      "resolved_canonical_unit_id": null,
+      "resolved_partition_id": null,
+      "compatibility_view_destination": "docs/governance/shadow/generated/G28_LEDGER.md",
+      "resolution_status": "COMPATIBILITY_VIEW"
+    },
+    {
+      "mapping_id": "G28-LEDGER-REF-0229",
+      "source_document": "docs/governance/candidate/generated/PROJECT_STATE.md",
+      "source_line": 24,
+      "reference_kind": "ROOT_REFERENCE",
+      "original_target": "docs/ledgers/G28_LEDGER.md",
+      "anchor": null,
+      "line_suffix": null,
+      "resolved_canonical_unit_id": null,
+      "resolved_partition_id": null,
+      "compatibility_view_destination": "docs/governance/shadow/generated/G28_LEDGER.md",
+      "resolution_status": "COMPATIBILITY_VIEW"
+    },
+    {
+      "mapping_id": "G28-LEDGER-REF-0230",
+      "source_document": "docs/governance/candidate/generated/PROJECT_STATE.md",
+      "source_line": 28,
+      "reference_kind": "ROOT_REFERENCE",
+      "original_target": "docs/ledgers/G28_LEDGER.md",
+      "anchor": null,
+      "line_suffix": null,
+      "resolved_canonical_unit_id": null,
+      "resolved_partition_id": null,
+      "compatibility_view_destination": "docs/governance/shadow/generated/G28_LEDGER.md",
+      "resolution_status": "COMPATIBILITY_VIEW"
+    },
+    {
+      "mapping_id": "G28-LEDGER-REF-0231",
       "source_document": "docs/governance/GOVERNANCE_EFFICIENCY_REFOUNDATION_UNIT_4_AUTHORITY_CUTOVER_CONTRACT.md",
       "source_line": 51,
       "reference_kind": "ROOT_REFERENCE",
@@ -7313,7 +7372,7 @@
       "resolution_status": "COMPATIBILITY_VIEW"
     },
     {
-      "mapping_id": "G28-LEDGER-REF-0229",
+      "mapping_id": "G28-LEDGER-REF-0232",
       "source_document": "docs/governance/GOVERNANCE_EFFICIENCY_REFOUNDATION_UNIT_4_AUTHORITY_CUTOVER_CONTRACT.md",
       "source_line": 66,
       "reference_kind": "ROOT_REFERENCE",
@@ -7326,7 +7385,7 @@
       "resolution_status": "COMPATIBILITY_VIEW"
     },
     {
-      "mapping_id": "G28-LEDGER-REF-0230",
+      "mapping_id": "G28-LEDGER-REF-0233",
       "source_document": "docs/governance/GOVERNANCE_EFFICIENCY_REFOUNDATION_UNIT_4_AUTHORITY_CUTOVER_CONTRACT.md",
       "source_line": 196,
       "reference_kind": "ROOT_REFERENCE",
@@ -7339,7 +7398,7 @@
       "resolution_status": "COMPATIBILITY_VIEW"
     },
     {
-      "mapping_id": "G28-LEDGER-REF-0231",
+      "mapping_id": "G28-LEDGER-REF-0234",
       "source_document": "docs/governance/shadow/generated/DOCUMENTATION_INDEX.md",
       "source_line": 91,
       "reference_kind": "ROOT_REFERENCE",
@@ -7352,7 +7411,7 @@
       "resolution_status": "COMPATIBILITY_VIEW"
     },
     {
-      "mapping_id": "G28-LEDGER-REF-0232",
+      "mapping_id": "G28-LEDGER-REF-0235",
       "source_document": "docs/governance/shadow/generated/G28_LEDGER.md",
       "source_line": 181,
       "reference_kind": "ROOT_REFERENCE",
@@ -7365,7 +7424,7 @@
       "resolution_status": "COMPATIBILITY_VIEW"
     },
     {
-      "mapping_id": "G28-LEDGER-REF-0233",
+      "mapping_id": "G28-LEDGER-REF-0236",
       "source_document": "docs/governance/shadow/generated/G28_LEDGER.md",
       "source_line": 734,
       "reference_kind": "ROOT_REFERENCE",
@@ -7378,7 +7437,7 @@
       "resolution_status": "COMPATIBILITY_VIEW"
     },
     {
-      "mapping_id": "G28-LEDGER-REF-0234",
+      "mapping_id": "G28-LEDGER-REF-0237",
       "source_document": "docs/governance/shadow/generated/G28_LEDGER.md",
       "source_line": 761,
       "reference_kind": "ROOT_REFERENCE",
@@ -7391,7 +7450,7 @@
       "resolution_status": "COMPATIBILITY_VIEW"
     },
     {
-      "mapping_id": "G28-LEDGER-REF-0235",
+      "mapping_id": "G28-LEDGER-REF-0238",
       "source_document": "docs/governance/shadow/generated/G28_LEDGER.md",
       "source_line": 911,
       "reference_kind": "ROOT_REFERENCE",
@@ -7404,7 +7463,7 @@
       "resolution_status": "COMPATIBILITY_VIEW"
     },
     {
-      "mapping_id": "G28-LEDGER-REF-0236",
+      "mapping_id": "G28-LEDGER-REF-0239",
       "source_document": "docs/governance/shadow/generated/G28_LEDGER.md",
       "source_line": 6165,
       "reference_kind": "ROOT_REFERENCE",
@@ -7417,7 +7476,7 @@
       "resolution_status": "COMPATIBILITY_VIEW"
     },
     {
-      "mapping_id": "G28-LEDGER-REF-0237",
+      "mapping_id": "G28-LEDGER-REF-0240",
       "source_document": "docs/governance/shadow/generated/G28_LEDGER.md",
       "source_line": 8013,
       "reference_kind": "ROOT_REFERENCE",
@@ -7430,7 +7489,7 @@
       "resolution_status": "COMPATIBILITY_VIEW"
     },
     {
-      "mapping_id": "G28-LEDGER-REF-0238",
+      "mapping_id": "G28-LEDGER-REF-0241",
       "source_document": "docs/governance/shadow/generated/G28_LEDGER.md",
       "source_line": 8127,
       "reference_kind": "ROOT_REFERENCE",
@@ -7443,7 +7502,7 @@
       "resolution_status": "COMPATIBILITY_VIEW"
     },
     {
-      "mapping_id": "G28-LEDGER-REF-0239",
+      "mapping_id": "G28-LEDGER-REF-0242",
       "source_document": "docs/governance/shadow/generated/G28_LEDGER.md",
       "source_line": 8190,
       "reference_kind": "ROOT_REFERENCE",
@@ -7456,7 +7515,7 @@
       "resolution_status": "COMPATIBILITY_VIEW"
     },
     {
-      "mapping_id": "G28-LEDGER-REF-0240",
+      "mapping_id": "G28-LEDGER-REF-0243",
       "source_document": "docs/governance/shadow/generated/G28_LEDGER.md",
       "source_line": 8301,
       "reference_kind": "ROOT_REFERENCE",
@@ -7469,7 +7528,7 @@
       "resolution_status": "COMPATIBILITY_VIEW"
     },
     {
-      "mapping_id": "G28-LEDGER-REF-0241",
+      "mapping_id": "G28-LEDGER-REF-0244",
       "source_document": "docs/governance/shadow/generated/G28_LEDGER.md",
       "source_line": 8374,
       "reference_kind": "ROOT_REFERENCE",
@@ -7482,7 +7541,7 @@
       "resolution_status": "COMPATIBILITY_VIEW"
     },
     {
-      "mapping_id": "G28-LEDGER-REF-0242",
+      "mapping_id": "G28-LEDGER-REF-0245",
       "source_document": "docs/governance/shadow/generated/G28_LEDGER.md",
       "source_line": 8486,
       "reference_kind": "ROOT_REFERENCE",
@@ -7495,7 +7554,7 @@
       "resolution_status": "COMPATIBILITY_VIEW"
     },
     {
-      "mapping_id": "G28-LEDGER-REF-0243",
+      "mapping_id": "G28-LEDGER-REF-0246",
       "source_document": "docs/governance/shadow/generated/G28_LEDGER.md",
       "source_line": 8693,
       "reference_kind": "ROOT_REFERENCE",
@@ -7508,7 +7567,7 @@
       "resolution_status": "COMPATIBILITY_VIEW"
     },
     {
-      "mapping_id": "G28-LEDGER-REF-0244",
+      "mapping_id": "G28-LEDGER-REF-0247",
       "source_document": "docs/governance/shadow/generated/G28_LEDGER.md",
       "source_line": 9625,
       "reference_kind": "ROOT_REFERENCE",
@@ -7521,7 +7580,7 @@
       "resolution_status": "COMPATIBILITY_VIEW"
     },
     {
-      "mapping_id": "G28-LEDGER-REF-0245",
+      "mapping_id": "G28-LEDGER-REF-0248",
       "source_document": "docs/governance/shadow/generated/G28_LEDGER.md",
       "source_line": 9650,
       "reference_kind": "ROOT_REFERENCE",
@@ -7534,7 +7593,7 @@
       "resolution_status": "COMPATIBILITY_VIEW"
     },
     {
-      "mapping_id": "G28-LEDGER-REF-0246",
+      "mapping_id": "G28-LEDGER-REF-0249",
       "source_document": "docs/governance/shadow/generated/G28_LEDGER.md",
       "source_line": 9659,
       "reference_kind": "ROOT_REFERENCE",
@@ -7547,7 +7606,20 @@
       "resolution_status": "COMPATIBILITY_VIEW"
     },
     {
-      "mapping_id": "G28-LEDGER-REF-0247",
+      "mapping_id": "G28-LEDGER-REF-0250",
+      "source_document": "docs/governance/shadow/generated/G28_LEDGER.md",
+      "source_line": 9679,
+      "reference_kind": "ROOT_REFERENCE",
+      "original_target": "docs/ledgers/G28_LEDGER.md",
+      "anchor": null,
+      "line_suffix": null,
+      "resolved_canonical_unit_id": null,
+      "resolved_partition_id": null,
+      "compatibility_view_destination": "docs/governance/shadow/generated/G28_LEDGER.md",
+      "resolution_status": "COMPATIBILITY_VIEW"
+    },
+    {
+      "mapping_id": "G28-LEDGER-REF-0251",
       "source_document": "docs/governance/shadow/ledger/partitions/G28_LEDGER_PART_0001.md",
       "source_line": 187,
       "reference_kind": "ROOT_REFERENCE",
@@ -7560,7 +7632,7 @@
       "resolution_status": "COMPATIBILITY_VIEW"
     },
     {
-      "mapping_id": "G28-LEDGER-REF-0248",
+      "mapping_id": "G28-LEDGER-REF-0252",
       "source_document": "docs/governance/shadow/ledger/partitions/G28_LEDGER_PART_0001.md",
       "source_line": 740,
       "reference_kind": "ROOT_REFERENCE",
@@ -7573,7 +7645,7 @@
       "resolution_status": "COMPATIBILITY_VIEW"
     },
     {
-      "mapping_id": "G28-LEDGER-REF-0249",
+      "mapping_id": "G28-LEDGER-REF-0253",
       "source_document": "docs/governance/shadow/ledger/partitions/G28_LEDGER_PART_0001.md",
       "source_line": 767,
       "reference_kind": "ROOT_REFERENCE",
@@ -7586,7 +7658,7 @@
       "resolution_status": "COMPATIBILITY_VIEW"
     },
     {
-      "mapping_id": "G28-LEDGER-REF-0250",
+      "mapping_id": "G28-LEDGER-REF-0254",
       "source_document": "docs/governance/shadow/ledger/partitions/G28_LEDGER_PART_0001.md",
       "source_line": 917,
       "reference_kind": "ROOT_REFERENCE",
@@ -7599,7 +7671,7 @@
       "resolution_status": "COMPATIBILITY_VIEW"
     },
     {
-      "mapping_id": "G28-LEDGER-REF-0251",
+      "mapping_id": "G28-LEDGER-REF-0255",
       "source_document": "docs/governance/shadow/ledger/partitions/G28_LEDGER_PART_0008.md",
       "source_line": 480,
       "reference_kind": "ROOT_REFERENCE",
@@ -7612,7 +7684,7 @@
       "resolution_status": "COMPATIBILITY_VIEW"
     },
     {
-      "mapping_id": "G28-LEDGER-REF-0252",
+      "mapping_id": "G28-LEDGER-REF-0256",
       "source_document": "docs/governance/shadow/ledger/partitions/G28_LEDGER_PART_0010.md",
       "source_line": 410,
       "reference_kind": "ROOT_REFERENCE",
@@ -7625,7 +7697,7 @@
       "resolution_status": "COMPATIBILITY_VIEW"
     },
     {
-      "mapping_id": "G28-LEDGER-REF-0253",
+      "mapping_id": "G28-LEDGER-REF-0257",
       "source_document": "docs/governance/shadow/ledger/partitions/G28_LEDGER_PART_0010.md",
       "source_line": 524,
       "reference_kind": "ROOT_REFERENCE",
@@ -7638,7 +7710,7 @@
       "resolution_status": "COMPATIBILITY_VIEW"
     },
     {
-      "mapping_id": "G28-LEDGER-REF-0254",
+      "mapping_id": "G28-LEDGER-REF-0258",
       "source_document": "docs/governance/shadow/ledger/partitions/G28_LEDGER_PART_0010.md",
       "source_line": 587,
       "reference_kind": "ROOT_REFERENCE",
@@ -7651,7 +7723,7 @@
       "resolution_status": "COMPATIBILITY_VIEW"
     },
     {
-      "mapping_id": "G28-LEDGER-REF-0255",
+      "mapping_id": "G28-LEDGER-REF-0259",
       "source_document": "docs/governance/shadow/ledger/partitions/G28_LEDGER_PART_0010.md",
       "source_line": 698,
       "reference_kind": "ROOT_REFERENCE",
@@ -7664,7 +7736,7 @@
       "resolution_status": "COMPATIBILITY_VIEW"
     },
     {
-      "mapping_id": "G28-LEDGER-REF-0256",
+      "mapping_id": "G28-LEDGER-REF-0260",
       "source_document": "docs/governance/shadow/ledger/partitions/G28_LEDGER_PART_0010.md",
       "source_line": 771,
       "reference_kind": "ROOT_REFERENCE",
@@ -7677,7 +7749,7 @@
       "resolution_status": "COMPATIBILITY_VIEW"
     },
     {
-      "mapping_id": "G28-LEDGER-REF-0257",
+      "mapping_id": "G28-LEDGER-REF-0261",
       "source_document": "docs/governance/shadow/ledger/partitions/G28_LEDGER_PART_0010.md",
       "source_line": 883,
       "reference_kind": "ROOT_REFERENCE",
@@ -7690,7 +7762,7 @@
       "resolution_status": "COMPATIBILITY_VIEW"
     },
     {
-      "mapping_id": "G28-LEDGER-REF-0258",
+      "mapping_id": "G28-LEDGER-REF-0262",
       "source_document": "docs/governance/shadow/ledger/partitions/G28_LEDGER_PART_0011.md",
       "source_line": 185,
       "reference_kind": "ROOT_REFERENCE",
@@ -7703,7 +7775,7 @@
       "resolution_status": "COMPATIBILITY_VIEW"
     },
     {
-      "mapping_id": "G28-LEDGER-REF-0259",
+      "mapping_id": "G28-LEDGER-REF-0263",
       "source_document": "docs/governance/shadow/ledger/partitions/G28_LEDGER_PART_0012.md",
       "source_line": 122,
       "reference_kind": "ROOT_REFERENCE",
@@ -7716,7 +7788,7 @@
       "resolution_status": "COMPATIBILITY_VIEW"
     },
     {
-      "mapping_id": "G28-LEDGER-REF-0260",
+      "mapping_id": "G28-LEDGER-REF-0264",
       "source_document": "docs/governance/shadow/ledger/partitions/G28_LEDGER_PART_0012.md",
       "source_line": 147,
       "reference_kind": "ROOT_REFERENCE",
@@ -7729,7 +7801,7 @@
       "resolution_status": "COMPATIBILITY_VIEW"
     },
     {
-      "mapping_id": "G28-LEDGER-REF-0261",
+      "mapping_id": "G28-LEDGER-REF-0265",
       "source_document": "docs/governance/shadow/ledger/partitions/G28_LEDGER_PART_0012.md",
       "source_line": 156,
       "reference_kind": "ROOT_REFERENCE",
@@ -7742,7 +7814,20 @@
       "resolution_status": "COMPATIBILITY_VIEW"
     },
     {
-      "mapping_id": "G28-LEDGER-REF-0262",
+      "mapping_id": "G28-LEDGER-REF-0266",
+      "source_document": "docs/governance/shadow/ledger/partitions/G28_LEDGER_PART_0012.md",
+      "source_line": 176,
+      "reference_kind": "ROOT_REFERENCE",
+      "original_target": "docs/ledgers/G28_LEDGER.md",
+      "anchor": null,
+      "line_suffix": null,
+      "resolved_canonical_unit_id": null,
+      "resolved_partition_id": null,
+      "compatibility_view_destination": "docs/governance/shadow/generated/G28_LEDGER.md",
+      "resolution_status": "COMPATIBILITY_VIEW"
+    },
+    {
+      "mapping_id": "G28-LEDGER-REF-0267",
       "source_document": "docs/governance/SUPERVISION_PROTOCOL.md",
       "source_line": 59,
       "reference_kind": "ROOT_REFERENCE",
@@ -7755,7 +7840,7 @@
       "resolution_status": "COMPATIBILITY_VIEW"
     },
     {
-      "mapping_id": "G28-LEDGER-REF-0263",
+      "mapping_id": "G28-LEDGER-REF-0268",
       "source_document": "docs/ledgers/G28_LEDGER.md",
       "source_line": 177,
       "reference_kind": "ROOT_REFERENCE",
@@ -7768,7 +7853,7 @@
       "resolution_status": "COMPATIBILITY_VIEW"
     },
     {
-      "mapping_id": "G28-LEDGER-REF-0264",
+      "mapping_id": "G28-LEDGER-REF-0269",
       "source_document": "docs/ledgers/G28_LEDGER.md",
       "source_line": 730,
       "reference_kind": "ROOT_REFERENCE",
@@ -7781,7 +7866,7 @@
       "resolution_status": "COMPATIBILITY_VIEW"
     },
     {
-      "mapping_id": "G28-LEDGER-REF-0265",
+      "mapping_id": "G28-LEDGER-REF-0270",
       "source_document": "docs/ledgers/G28_LEDGER.md",
       "source_line": 757,
       "reference_kind": "ROOT_REFERENCE",
@@ -7794,7 +7879,7 @@
       "resolution_status": "COMPATIBILITY_VIEW"
     },
     {
-      "mapping_id": "G28-LEDGER-REF-0266",
+      "mapping_id": "G28-LEDGER-REF-0271",
       "source_document": "docs/ledgers/G28_LEDGER.md",
       "source_line": 907,
       "reference_kind": "ROOT_REFERENCE",
@@ -7807,7 +7892,7 @@
       "resolution_status": "COMPATIBILITY_VIEW"
     },
     {
-      "mapping_id": "G28-LEDGER-REF-0267",
+      "mapping_id": "G28-LEDGER-REF-0272",
       "source_document": "docs/ledgers/G28_LEDGER.md",
       "source_line": 6161,
       "reference_kind": "ROOT_REFERENCE",
@@ -7820,7 +7905,7 @@
       "resolution_status": "COMPATIBILITY_VIEW"
     },
     {
-      "mapping_id": "G28-LEDGER-REF-0268",
+      "mapping_id": "G28-LEDGER-REF-0273",
       "source_document": "docs/ledgers/G28_LEDGER.md",
       "source_line": 8009,
       "reference_kind": "ROOT_REFERENCE",
@@ -7833,7 +7918,7 @@
       "resolution_status": "COMPATIBILITY_VIEW"
     },
     {
-      "mapping_id": "G28-LEDGER-REF-0269",
+      "mapping_id": "G28-LEDGER-REF-0274",
       "source_document": "docs/ledgers/G28_LEDGER.md",
       "source_line": 8123,
       "reference_kind": "ROOT_REFERENCE",
@@ -7846,7 +7931,7 @@
       "resolution_status": "COMPATIBILITY_VIEW"
     },
     {
-      "mapping_id": "G28-LEDGER-REF-0270",
+      "mapping_id": "G28-LEDGER-REF-0275",
       "source_document": "docs/ledgers/G28_LEDGER.md",
       "source_line": 8186,
       "reference_kind": "ROOT_REFERENCE",
@@ -7859,7 +7944,7 @@
       "resolution_status": "COMPATIBILITY_VIEW"
     },
     {
-      "mapping_id": "G28-LEDGER-REF-0271",
+      "mapping_id": "G28-LEDGER-REF-0276",
       "source_document": "docs/ledgers/G28_LEDGER.md",
       "source_line": 8297,
       "reference_kind": "ROOT_REFERENCE",
@@ -7872,7 +7957,7 @@
       "resolution_status": "COMPATIBILITY_VIEW"
     },
     {
-      "mapping_id": "G28-LEDGER-REF-0272",
+      "mapping_id": "G28-LEDGER-REF-0277",
       "source_document": "docs/ledgers/G28_LEDGER.md",
       "source_line": 8370,
       "reference_kind": "ROOT_REFERENCE",
@@ -7885,7 +7970,7 @@
       "resolution_status": "COMPATIBILITY_VIEW"
     },
     {
-      "mapping_id": "G28-LEDGER-REF-0273",
+      "mapping_id": "G28-LEDGER-REF-0278",
       "source_document": "docs/ledgers/G28_LEDGER.md",
       "source_line": 8482,
       "reference_kind": "ROOT_REFERENCE",
@@ -7898,7 +7983,7 @@
       "resolution_status": "COMPATIBILITY_VIEW"
     },
     {
-      "mapping_id": "G28-LEDGER-REF-0274",
+      "mapping_id": "G28-LEDGER-REF-0279",
       "source_document": "docs/ledgers/G28_LEDGER.md",
       "source_line": 8689,
       "reference_kind": "ROOT_REFERENCE",
@@ -7911,7 +7996,7 @@
       "resolution_status": "COMPATIBILITY_VIEW"
     },
     {
-      "mapping_id": "G28-LEDGER-REF-0275",
+      "mapping_id": "G28-LEDGER-REF-0280",
       "source_document": "docs/ledgers/G28_LEDGER.md",
       "source_line": 9621,
       "reference_kind": "ROOT_REFERENCE",
@@ -7924,7 +8009,7 @@
       "resolution_status": "COMPATIBILITY_VIEW"
     },
     {
-      "mapping_id": "G28-LEDGER-REF-0276",
+      "mapping_id": "G28-LEDGER-REF-0281",
       "source_document": "docs/ledgers/G28_LEDGER.md",
       "source_line": 9646,
       "reference_kind": "ROOT_REFERENCE",
@@ -7937,7 +8022,7 @@
       "resolution_status": "COMPATIBILITY_VIEW"
     },
     {
-      "mapping_id": "G28-LEDGER-REF-0277",
+      "mapping_id": "G28-LEDGER-REF-0282",
       "source_document": "docs/ledgers/G28_LEDGER.md",
       "source_line": 9655,
       "reference_kind": "ROOT_REFERENCE",
@@ -7950,74 +8035,9 @@
       "resolution_status": "COMPATIBILITY_VIEW"
     },
     {
-      "mapping_id": "G28-LEDGER-REF-0278",
-      "source_document": "docs/reports/BACKLOG_RECONCILIATION_R1_2026-07-15.md",
-      "source_line": 8,
-      "reference_kind": "ROOT_REFERENCE",
-      "original_target": "docs/ledgers/G28_LEDGER.md",
-      "anchor": null,
-      "line_suffix": null,
-      "resolved_canonical_unit_id": null,
-      "resolved_partition_id": null,
-      "compatibility_view_destination": "docs/governance/shadow/generated/G28_LEDGER.md",
-      "resolution_status": "COMPATIBILITY_VIEW"
-    },
-    {
-      "mapping_id": "G28-LEDGER-REF-0279",
-      "source_document": "docs/reports/BACKLOG_RECONCILIATION_R1_2026-07-15.md",
-      "source_line": 17,
-      "reference_kind": "ROOT_REFERENCE",
-      "original_target": "docs/ledgers/G28_LEDGER.md",
-      "anchor": null,
-      "line_suffix": null,
-      "resolved_canonical_unit_id": null,
-      "resolved_partition_id": null,
-      "compatibility_view_destination": "docs/governance/shadow/generated/G28_LEDGER.md",
-      "resolution_status": "COMPATIBILITY_VIEW"
-    },
-    {
-      "mapping_id": "G28-LEDGER-REF-0280",
-      "source_document": "docs/reports/BACKLOG_RECONCILIATION_R1_2026-07-15.md",
-      "source_line": 165,
-      "reference_kind": "ROOT_REFERENCE",
-      "original_target": "docs/ledgers/G28_LEDGER.md",
-      "anchor": null,
-      "line_suffix": null,
-      "resolved_canonical_unit_id": null,
-      "resolved_partition_id": null,
-      "compatibility_view_destination": "docs/governance/shadow/generated/G28_LEDGER.md",
-      "resolution_status": "COMPATIBILITY_VIEW"
-    },
-    {
-      "mapping_id": "G28-LEDGER-REF-0281",
-      "source_document": "docs/reports/ORDEM_COMPRA_PHASE_A_2026-07-18.md",
-      "source_line": 121,
-      "reference_kind": "ROOT_REFERENCE",
-      "original_target": "docs/ledgers/G28_LEDGER.md",
-      "anchor": null,
-      "line_suffix": null,
-      "resolved_canonical_unit_id": null,
-      "resolved_partition_id": null,
-      "compatibility_view_destination": "docs/governance/shadow/generated/G28_LEDGER.md",
-      "resolution_status": "COMPATIBILITY_VIEW"
-    },
-    {
-      "mapping_id": "G28-LEDGER-REF-0282",
-      "source_document": "docs/reports/PRODUCTION_READINESS_DIAGNOSIS_R1_2026-07-17.md",
-      "source_line": 10,
-      "reference_kind": "ROOT_REFERENCE",
-      "original_target": "docs/ledgers/G28_LEDGER.md",
-      "anchor": null,
-      "line_suffix": null,
-      "resolved_canonical_unit_id": null,
-      "resolved_partition_id": null,
-      "compatibility_view_destination": "docs/governance/shadow/generated/G28_LEDGER.md",
-      "resolution_status": "COMPATIBILITY_VIEW"
-    },
-    {
       "mapping_id": "G28-LEDGER-REF-0283",
-      "source_document": "docs/reports/PRODUCTION_READINESS_DIAGNOSIS_R1_2026-07-17.md",
-      "source_line": 179,
+      "source_document": "docs/ledgers/G28_LEDGER.md",
+      "source_line": 9675,
       "reference_kind": "ROOT_REFERENCE",
       "original_target": "docs/ledgers/G28_LEDGER.md",
       "anchor": null,
@@ -8029,7 +8049,7 @@
     },
     {
       "mapping_id": "G28-LEDGER-REF-0284",
-      "source_document": "PROJECT_STATE.md",
+      "source_document": "docs/reports/BACKLOG_RECONCILIATION_R1_2026-07-15.md",
       "source_line": 8,
       "reference_kind": "ROOT_REFERENCE",
       "original_target": "docs/ledgers/G28_LEDGER.md",
@@ -8042,8 +8062,8 @@
     },
     {
       "mapping_id": "G28-LEDGER-REF-0285",
-      "source_document": "PROJECT_STATE.md",
-      "source_line": 135,
+      "source_document": "docs/reports/BACKLOG_RECONCILIATION_R1_2026-07-15.md",
+      "source_line": 17,
       "reference_kind": "ROOT_REFERENCE",
       "original_target": "docs/ledgers/G28_LEDGER.md",
       "anchor": null,
@@ -8055,8 +8075,8 @@
     },
     {
       "mapping_id": "G28-LEDGER-REF-0286",
-      "source_document": "PROJECT_STATE.md",
-      "source_line": 174,
+      "source_document": "docs/reports/BACKLOG_RECONCILIATION_R1_2026-07-15.md",
+      "source_line": 165,
       "reference_kind": "ROOT_REFERENCE",
       "original_target": "docs/ledgers/G28_LEDGER.md",
       "anchor": null,
@@ -8068,8 +8088,8 @@
     },
     {
       "mapping_id": "G28-LEDGER-REF-0287",
-      "source_document": "PROJECT_STATE.md",
-      "source_line": 203,
+      "source_document": "docs/reports/ORDEM_COMPRA_PHASE_A_2026-07-18.md",
+      "source_line": 121,
       "reference_kind": "ROOT_REFERENCE",
       "original_target": "docs/ledgers/G28_LEDGER.md",
       "anchor": null,
@@ -8081,8 +8101,8 @@
     },
     {
       "mapping_id": "G28-LEDGER-REF-0288",
-      "source_document": "PROJECT_STATE.md",
-      "source_line": 239,
+      "source_document": "docs/reports/PRODUCTION_READINESS_DIAGNOSIS_R1_2026-07-17.md",
+      "source_line": 10,
       "reference_kind": "ROOT_REFERENCE",
       "original_target": "docs/ledgers/G28_LEDGER.md",
       "anchor": null,
@@ -8094,8 +8114,8 @@
     },
     {
       "mapping_id": "G28-LEDGER-REF-0289",
-      "source_document": "PROJECT_STATE.md",
-      "source_line": 271,
+      "source_document": "docs/reports/PRODUCTION_READINESS_DIAGNOSIS_R1_2026-07-17.md",
+      "source_line": 179,
       "reference_kind": "ROOT_REFERENCE",
       "original_target": "docs/ledgers/G28_LEDGER.md",
       "anchor": null,
@@ -8108,7 +8128,7 @@
     {
       "mapping_id": "G28-LEDGER-REF-0290",
       "source_document": "PROJECT_STATE.md",
-      "source_line": 300,
+      "source_line": 8,
       "reference_kind": "ROOT_REFERENCE",
       "original_target": "docs/ledgers/G28_LEDGER.md",
       "anchor": null,
@@ -8121,7 +8141,7 @@
     {
       "mapping_id": "G28-LEDGER-REF-0291",
       "source_document": "PROJECT_STATE.md",
-      "source_line": 481,
+      "source_line": 136,
       "reference_kind": "ROOT_REFERENCE",
       "original_target": "docs/ledgers/G28_LEDGER.md",
       "anchor": null,
@@ -8134,7 +8154,7 @@
     {
       "mapping_id": "G28-LEDGER-REF-0292",
       "source_document": "PROJECT_STATE.md",
-      "source_line": 573,
+      "source_line": 175,
       "reference_kind": "ROOT_REFERENCE",
       "original_target": "docs/ledgers/G28_LEDGER.md",
       "anchor": null,
@@ -8147,7 +8167,7 @@
     {
       "mapping_id": "G28-LEDGER-REF-0293",
       "source_document": "PROJECT_STATE.md",
-      "source_line": 631,
+      "source_line": 204,
       "reference_kind": "ROOT_REFERENCE",
       "original_target": "docs/ledgers/G28_LEDGER.md",
       "anchor": null,
@@ -8160,7 +8180,7 @@
     {
       "mapping_id": "G28-LEDGER-REF-0294",
       "source_document": "PROJECT_STATE.md",
-      "source_line": 677,
+      "source_line": 240,
       "reference_kind": "ROOT_REFERENCE",
       "original_target": "docs/ledgers/G28_LEDGER.md",
       "anchor": null,
@@ -8173,7 +8193,7 @@
     {
       "mapping_id": "G28-LEDGER-REF-0295",
       "source_document": "PROJECT_STATE.md",
-      "source_line": 714,
+      "source_line": 272,
       "reference_kind": "ROOT_REFERENCE",
       "original_target": "docs/ledgers/G28_LEDGER.md",
       "anchor": null,
@@ -8186,7 +8206,7 @@
     {
       "mapping_id": "G28-LEDGER-REF-0296",
       "source_document": "PROJECT_STATE.md",
-      "source_line": 774,
+      "source_line": 301,
       "reference_kind": "ROOT_REFERENCE",
       "original_target": "docs/ledgers/G28_LEDGER.md",
       "anchor": null,
@@ -8199,7 +8219,7 @@
     {
       "mapping_id": "G28-LEDGER-REF-0297",
       "source_document": "PROJECT_STATE.md",
-      "source_line": 810,
+      "source_line": 482,
       "reference_kind": "ROOT_REFERENCE",
       "original_target": "docs/ledgers/G28_LEDGER.md",
       "anchor": null,
@@ -8212,7 +8232,7 @@
     {
       "mapping_id": "G28-LEDGER-REF-0298",
       "source_document": "PROJECT_STATE.md",
-      "source_line": 913,
+      "source_line": 574,
       "reference_kind": "ROOT_REFERENCE",
       "original_target": "docs/ledgers/G28_LEDGER.md",
       "anchor": null,
@@ -8225,7 +8245,7 @@
     {
       "mapping_id": "G28-LEDGER-REF-0299",
       "source_document": "PROJECT_STATE.md",
-      "source_line": 1085,
+      "source_line": 632,
       "reference_kind": "ROOT_REFERENCE",
       "original_target": "docs/ledgers/G28_LEDGER.md",
       "anchor": null,
@@ -8238,7 +8258,7 @@
     {
       "mapping_id": "G28-LEDGER-REF-0300",
       "source_document": "PROJECT_STATE.md",
-      "source_line": 1115,
+      "source_line": 678,
       "reference_kind": "ROOT_REFERENCE",
       "original_target": "docs/ledgers/G28_LEDGER.md",
       "anchor": null,
@@ -8251,7 +8271,7 @@
     {
       "mapping_id": "G28-LEDGER-REF-0301",
       "source_document": "PROJECT_STATE.md",
-      "source_line": 1163,
+      "source_line": 715,
       "reference_kind": "ROOT_REFERENCE",
       "original_target": "docs/ledgers/G28_LEDGER.md",
       "anchor": null,
@@ -8264,7 +8284,7 @@
     {
       "mapping_id": "G28-LEDGER-REF-0302",
       "source_document": "PROJECT_STATE.md",
-      "source_line": 1220,
+      "source_line": 775,
       "reference_kind": "ROOT_REFERENCE",
       "original_target": "docs/ledgers/G28_LEDGER.md",
       "anchor": null,
@@ -8277,7 +8297,7 @@
     {
       "mapping_id": "G28-LEDGER-REF-0303",
       "source_document": "PROJECT_STATE.md",
-      "source_line": 1263,
+      "source_line": 811,
       "reference_kind": "ROOT_REFERENCE",
       "original_target": "docs/ledgers/G28_LEDGER.md",
       "anchor": null,
@@ -8290,7 +8310,7 @@
     {
       "mapping_id": "G28-LEDGER-REF-0304",
       "source_document": "PROJECT_STATE.md",
-      "source_line": 1343,
+      "source_line": 914,
       "reference_kind": "ROOT_REFERENCE",
       "original_target": "docs/ledgers/G28_LEDGER.md",
       "anchor": null,
@@ -8303,7 +8323,7 @@
     {
       "mapping_id": "G28-LEDGER-REF-0305",
       "source_document": "PROJECT_STATE.md",
-      "source_line": 1432,
+      "source_line": 1086,
       "reference_kind": "ROOT_REFERENCE",
       "original_target": "docs/ledgers/G28_LEDGER.md",
       "anchor": null,
@@ -8316,7 +8336,7 @@
     {
       "mapping_id": "G28-LEDGER-REF-0306",
       "source_document": "PROJECT_STATE.md",
-      "source_line": 1474,
+      "source_line": 1116,
       "reference_kind": "ROOT_REFERENCE",
       "original_target": "docs/ledgers/G28_LEDGER.md",
       "anchor": null,
@@ -8329,7 +8349,7 @@
     {
       "mapping_id": "G28-LEDGER-REF-0307",
       "source_document": "PROJECT_STATE.md",
-      "source_line": 1480,
+      "source_line": 1164,
       "reference_kind": "ROOT_REFERENCE",
       "original_target": "docs/ledgers/G28_LEDGER.md",
       "anchor": null,
@@ -8342,7 +8362,7 @@
     {
       "mapping_id": "G28-LEDGER-REF-0308",
       "source_document": "PROJECT_STATE.md",
-      "source_line": 1543,
+      "source_line": 1221,
       "reference_kind": "ROOT_REFERENCE",
       "original_target": "docs/ledgers/G28_LEDGER.md",
       "anchor": null,
@@ -8355,7 +8375,7 @@
     {
       "mapping_id": "G28-LEDGER-REF-0309",
       "source_document": "PROJECT_STATE.md",
-      "source_line": 1613,
+      "source_line": 1264,
       "reference_kind": "ROOT_REFERENCE",
       "original_target": "docs/ledgers/G28_LEDGER.md",
       "anchor": null,
@@ -8368,7 +8388,7 @@
     {
       "mapping_id": "G28-LEDGER-REF-0310",
       "source_document": "PROJECT_STATE.md",
-      "source_line": 1806,
+      "source_line": 1344,
       "reference_kind": "ROOT_REFERENCE",
       "original_target": "docs/ledgers/G28_LEDGER.md",
       "anchor": null,
@@ -8381,7 +8401,7 @@
     {
       "mapping_id": "G28-LEDGER-REF-0311",
       "source_document": "PROJECT_STATE.md",
-      "source_line": 1896,
+      "source_line": 1433,
       "reference_kind": "ROOT_REFERENCE",
       "original_target": "docs/ledgers/G28_LEDGER.md",
       "anchor": null,
@@ -8394,7 +8414,85 @@
     {
       "mapping_id": "G28-LEDGER-REF-0312",
       "source_document": "PROJECT_STATE.md",
-      "source_line": 1989,
+      "source_line": 1475,
+      "reference_kind": "ROOT_REFERENCE",
+      "original_target": "docs/ledgers/G28_LEDGER.md",
+      "anchor": null,
+      "line_suffix": null,
+      "resolved_canonical_unit_id": null,
+      "resolved_partition_id": null,
+      "compatibility_view_destination": "docs/governance/shadow/generated/G28_LEDGER.md",
+      "resolution_status": "COMPATIBILITY_VIEW"
+    },
+    {
+      "mapping_id": "G28-LEDGER-REF-0313",
+      "source_document": "PROJECT_STATE.md",
+      "source_line": 1481,
+      "reference_kind": "ROOT_REFERENCE",
+      "original_target": "docs/ledgers/G28_LEDGER.md",
+      "anchor": null,
+      "line_suffix": null,
+      "resolved_canonical_unit_id": null,
+      "resolved_partition_id": null,
+      "compatibility_view_destination": "docs/governance/shadow/generated/G28_LEDGER.md",
+      "resolution_status": "COMPATIBILITY_VIEW"
+    },
+    {
+      "mapping_id": "G28-LEDGER-REF-0314",
+      "source_document": "PROJECT_STATE.md",
+      "source_line": 1544,
+      "reference_kind": "ROOT_REFERENCE",
+      "original_target": "docs/ledgers/G28_LEDGER.md",
+      "anchor": null,
+      "line_suffix": null,
+      "resolved_canonical_unit_id": null,
+      "resolved_partition_id": null,
+      "compatibility_view_destination": "docs/governance/shadow/generated/G28_LEDGER.md",
+      "resolution_status": "COMPATIBILITY_VIEW"
+    },
+    {
+      "mapping_id": "G28-LEDGER-REF-0315",
+      "source_document": "PROJECT_STATE.md",
+      "source_line": 1614,
+      "reference_kind": "ROOT_REFERENCE",
+      "original_target": "docs/ledgers/G28_LEDGER.md",
+      "anchor": null,
+      "line_suffix": null,
+      "resolved_canonical_unit_id": null,
+      "resolved_partition_id": null,
+      "compatibility_view_destination": "docs/governance/shadow/generated/G28_LEDGER.md",
+      "resolution_status": "COMPATIBILITY_VIEW"
+    },
+    {
+      "mapping_id": "G28-LEDGER-REF-0316",
+      "source_document": "PROJECT_STATE.md",
+      "source_line": 1807,
+      "reference_kind": "ROOT_REFERENCE",
+      "original_target": "docs/ledgers/G28_LEDGER.md",
+      "anchor": null,
+      "line_suffix": null,
+      "resolved_canonical_unit_id": null,
+      "resolved_partition_id": null,
+      "compatibility_view_destination": "docs/governance/shadow/generated/G28_LEDGER.md",
+      "resolution_status": "COMPATIBILITY_VIEW"
+    },
+    {
+      "mapping_id": "G28-LEDGER-REF-0317",
+      "source_document": "PROJECT_STATE.md",
+      "source_line": 1897,
+      "reference_kind": "ROOT_REFERENCE",
+      "original_target": "docs/ledgers/G28_LEDGER.md",
+      "anchor": null,
+      "line_suffix": null,
+      "resolved_canonical_unit_id": null,
+      "resolved_partition_id": null,
+      "compatibility_view_destination": "docs/governance/shadow/generated/G28_LEDGER.md",
+      "resolution_status": "COMPATIBILITY_VIEW"
+    },
+    {
+      "mapping_id": "G28-LEDGER-REF-0318",
+      "source_document": "PROJECT_STATE.md",
+      "source_line": 1990,
       "reference_kind": "ROOT_REFERENCE",
       "original_target": "docs/ledgers/G28_LEDGER.md",
       "anchor": null,
@@ -8408,7 +8506,7 @@
   "compatibility_view": {
     "path": "docs/governance/shadow/generated/G28_LEDGER.md",
     "reconstructed_from": "ORDERED_PARTITION_PAYLOADS",
-    "payload_sha256": "e8759c24eb22f3c0ad3cd7ed97f602c3b7031b1b5ea3378fff1bcb097f7bdcdc"
+    "payload_sha256": "26b4988ffd788a6552a4a0fcf8d3e5de2d28541ca59a4d1d7d57c92f85a66b00"
   },
-  "complete_reassembly_sha256": "e8759c24eb22f3c0ad3cd7ed97f602c3b7031b1b5ea3378fff1bcb097f7bdcdc"
+  "complete_reassembly_sha256": "26b4988ffd788a6552a4a0fcf8d3e5de2d28541ca59a4d1d7d57c92f85a66b00"
 }

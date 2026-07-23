@@ -20,7 +20,7 @@ LAST_ACCEPTED_PHASE: PHASE-C5
 ACTIVE_PHASE: GOVERNANCE-EFFICIENCY-REFOUNDATION
 ACTIVE_PHASE_CONTRACT: docs/governance/GOVERNANCE_EFFICIENCY_REFOUNDATION_PHASE_CONTRACT.md
 ACTIVE_TRACK: PURCHASE_ORDER_PHASE_C
-NEXT_AUTHORIZABLE_ACTION: DIRECT SUPERVISOR REVIEW OF GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-4-CONTRACT-COMMIT-BINDING-AND-CANDIDATE-PATH-CORRECTION-R2
+NEXT_AUTHORIZABLE_ACTION: DIRECT SUPERVISOR REVIEW OF GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-4A-CUTOVER-READINESS-IMPLEMENTATION-R1
 GOVERNING_SPEC: docs/architecture/ORDEM_COMPRA_LIFECYCLE_SPEC_PROPOSED.md
 TECHNICAL_CONTRACT: docs/architecture/PEDIDO_OP_SCHEMA_CONTRACT.md
 SEQUENCE_AUTHORITY: docs/architecture/PEDIDO_PRODUCTION_FLOW_BACKLOG.md
@@ -33,13 +33,14 @@ ACCEPTED_CHECKPOINT: 3405fdab8e05ec0f81cbfe07c63c489e551fee92
 
 ## Active phase and next action
 
-- **`GOVERNANCE-EFFICIENCY-REFOUNDATION` (current — Unit 4 contract correction):**
+- **`GOVERNANCE-EFFICIENCY-REFOUNDATION` (current — Unit 4A readiness):**
   diagnosis acceptance is recorded and the phase is open as
-  `ACTIVE / UNIT 4 CONTRACT CORRECTED / AWAITING DIRECT SUPERVISOR REVIEW`. The structured current-state
-  source, equivalence mapping, deterministic renderer/validator, and generated
-  shadow views are implemented under the active phase contract. They are
-  `NON-CANONICAL UNTIL SUPERVISOR CUTOVER`; `PROJECT_STATE.md` remains current
-  state authority and `AGENT_HANDOFF.md` remains the derived handoff. Unit 1 is
+  `ACTIVE / UNIT 4A CUTOVER READINESS IMPLEMENTED / AWAITING DIRECT SUPERVISOR
+  REVIEW`. The structured current-state candidate, equivalence evidence,
+  candidate views, bounded-ledger reader, readiness manifest, and bootstrap
+  simulator are implemented. They remain `NON-CANONICAL UNTIL SUPERVISOR
+  ACTIVATION`; `PROJECT_STATE.md` remains current state authority and
+  `AGENT_HANDOFF.md` remains the manual derived handoff. Unit 1 is
   `CLOSED / ACCEPTED / DIRECTLY VERIFIED` at checkpoint
   `39abf42a7341b61fd4ac02a8e38d1e4f33471f0f` by external supervisor ruling.
   Unit 2 is `CLOSED / ACCEPTED / DIRECTLY VERIFIED` under the external supervisor
@@ -51,20 +52,20 @@ ACCEPTED_CHECKPOINT: 3405fdab8e05ec0f81cbfe07c63c489e551fee92
   partitions, generated compatibility view, and indexes remain non-canonical.
   The accepted interval begins at
   `e3c8c15b368d20161df6e593debbdf0c68cb7e41` and ends at the final R3 commit
-  `53899e30b72cde3d1f5759ea59fb0a4d632c974d`. Published checkpoint
-  `c7f4bb38076d865549221133ce33d8323e19f4eb` was directly reviewed: the Unit 3
-  acceptance closeout remains valid, while the Unit 4 contract was
-  `CHANGES_REQUIRED` because its activation-commit binding was self-referential
-  and its Unit 4A candidate/root-path boundary was ambiguous. The contract at
+  `53899e30b72cde3d1f5759ea59fb0a4d632c974d`. The Unit 4 contract at checkpoint
+  `76f52c842678b74e655ef9080f4fc67ccbd38e22` is `CLOSED / ACCEPTED / DIRECTLY
+  VERIFIED` by external supervisor ruling, not executor self-acceptance. The contract at
   `docs/governance/GOVERNANCE_EFFICIENCY_REFOUNDATION_UNIT_4_AUTHORITY_CUTOVER_CONTRACT.md`
-  is corrected: actual activation commit identity is an external Git fact,
+  is accepted with actual activation commit identity as an external Git fact,
   `required_parent` and deterministic activation content are pre-commit bound,
   Unit 4A candidate renders are confined to
   `docs/governance/candidate/generated/`, and only Unit 4C may atomically replace
-  the four root compatibility paths. Unit 4A implementation and
-  documentary-authority cutover remain not authorized.
+  the four root compatibility paths. Unit 4A is `IMPLEMENTED / CUTOVER READINESS
+  EVIDENCE COMPLETE / AWAITING DIRECT SUPERVISOR REVIEW` and is not self-accepted.
+  Unit 4B direct review is required. Unit 4C, documentary-authority cutover,
+  Unit 4D, and Unit 5 remain unauthorized.
   The next gate is `DIRECT SUPERVISOR REVIEW OF
-  GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-4-CONTRACT-COMMIT-BINDING-AND-CANDIDATE-PATH-CORRECTION-R2`.
+  GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-4A-CUTOVER-READINESS-IMPLEMENTATION-R1`.
   Unit 5, cleanup, compaction, archival, deprecation, deletion, product work,
   database access, and deployment are not authorized. Exact accepted governance
   checkpoints: Unit 1 `39abf42a7341b61fd4ac02a8e38d1e4f33471f0f`,

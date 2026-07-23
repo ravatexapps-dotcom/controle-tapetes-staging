@@ -83,7 +83,7 @@
     {
       "source_id": "PROJECT_STATE.md:BOOTSTRAP_KEY:NEXT_AUTHORIZABLE_ACTION",
       "source_path": "PROJECT_STATE.md",
-      "source_sha256": "cad660bc7b9325647f4b50c20b80f132e167d89074fbb93d8cdd658eb471a3da",
+      "source_sha256": "32d886dc717a083e144196fa2c7f80535f46d2cefb0d0c91ec16509e6150c546",
       "classification": "STRUCTURED_FIELD",
       "preservation_disposition": "REPRESENTED_IN_STRUCTURED_STATE",
       "destination_path": "docs/governance/shadow/current-state.json",
@@ -213,7 +213,7 @@
     {
       "source_id": "PROJECT_STATE.md:TEXT_BLOCK:L2:ACTIVE_PHASE_AND_NEXT_ACTION:1:BLOCK:1",
       "source_path": "PROJECT_STATE.md",
-      "source_sha256": "ff0c1b60a294bf500d8486d24d6248bb48975d9f7c359b3ffaa84d8120bed5bf",
+      "source_sha256": "4e41357656d8be617a8b63c2021011e2c03f5483110d22efa1896dad0269a352",
       "classification": "RETAINED_CURRENT_CANONICAL_CONTENT",
       "preservation_disposition": "RETAINED_IN_CURRENT_CANONICAL_SOURCE_PENDING_LATER_UNIT",
       "destination_path": "PROJECT_STATE.md",
@@ -551,7 +551,7 @@
     {
       "source_id": "AGENT_HANDOFF.md:TEXT_BLOCK:L2:PHASE_STATUS:1:BLOCK:1",
       "source_path": "AGENT_HANDOFF.md",
-      "source_sha256": "55ca02633ddfd043501dcb9394e8ba89a98bc6da91c90cb15aad1ef2964f2f01",
+      "source_sha256": "5b4dfcd47277e673c8ad9aaf17290746a9817a6caa47534e96327bba5ead7543",
       "classification": "DUPLICATED_CURRENT_STATE",
       "preservation_disposition": "DUPLICATED_FROM_VERIFIED_OWNER",
       "destination_path": "PROJECT_STATE.md",
