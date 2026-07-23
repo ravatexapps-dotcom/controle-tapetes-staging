@@ -248,7 +248,9 @@ function validateCatalog(catalog, manifest, reader, errors) {
   let unresolvedReferences = 0;
   for (const source of manifest.documents) {
     const sourceEntry = catalogByPath.get(source.path);
-    const validateAll = !['HISTORY_ONLY'].includes(sourceEntry?.authority) && sourceEntry?.classification !== 'LEGACY';
+    const generatedLedgerShadow = source.path === 'docs/governance/shadow/generated/G28_LEDGER.md'
+      || source.path.startsWith('docs/governance/shadow/ledger/partitions/');
+    const validateAll = !generatedLedgerShadow && !['HISTORY_ONLY'].includes(sourceEntry?.authority) && sourceEntry?.classification !== 'LEGACY';
     for (const reference of source.outbound_references) {
       const key = `${source.path}:${reference.source_line}->${reference.target_path}`;
       if (!validateAll && key !== 'docs/HANDOFF.md:146->docs/RETOMAR.md') continue;

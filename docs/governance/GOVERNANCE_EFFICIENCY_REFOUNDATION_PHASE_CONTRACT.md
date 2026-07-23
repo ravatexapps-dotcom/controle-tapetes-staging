@@ -18,7 +18,11 @@ STRUCTURED SOURCES: NON-CANONICAL SHADOW MODE
 
 CURRENT CANONICAL OWNERS: UNCHANGED
 
-UNIT 2: IMPLEMENTED / FINAL BOUNDED HARDENING COMPLETE / AWAITING DIRECT SUPERVISOR REVIEW
+UNIT 2: CLOSED / ACCEPTED / DIRECTLY VERIFIED
+
+UNIT 2 ACCEPTED CHECKPOINT: f7106977f4613de1830bef46002dbf0a4b8b3cbe
+
+UNIT 3: IMPLEMENTED / LOSSLESS SHADOW LEDGER PARTITIONING VALIDATED / AWAITING DIRECT SUPERVISOR REVIEW
 
 DOCUMENTARY-AUTHORITY CUTOVER: NOT AUTHORIZED
 
@@ -26,8 +30,11 @@ The external supervisor ruling directly verified and accepted checkpoint
 `39abf42a7341b61fd4ac02a8e38d1e4f33471f0f`; Unit 1 is closed and accepted.
 This records external acceptance, not executor self-acceptance. Unit 2 adds the
 reviewed document catalog, Phase-C traceability shadow, deterministic generated
-views, reference validation, and immutable-commit validation. Structured sources
-remain non-canonical and current canonical owners remain unchanged.
+views, reference validation, and immutable-commit validation. Unit 3 adds the
+lossless raw-byte ledger source manifest, deterministic whole-entry partitions,
+survival mappings, generated compatibility view, and append-stability proof.
+Structured sources remain non-canonical and current canonical owners remain
+unchanged.
 
 ## Objective
 
@@ -71,9 +78,10 @@ supervisor acceptance.
   multiply matched debt entries fail validation. A legacy inline-code token
   nested inside the same Markdown-link raw syntax is treated as one parser
   representation; distinct source references remain cardinality errors.
-- Unit 2 is not accepted by this implementation. Unit 3, documentary-authority
-  cutover, cleanup, compaction, partitioning, archival, deprecation, and deletion
-  remain not authorized.
+- Unit 2 is externally accepted at checkpoint `f7106977f4613de1830bef46002dbf0a4b8b3cbe`.
+  Unit 3 is implemented and locally validated, awaiting direct supervisor review.
+  Documentary-authority cutover, Unit 4, cleanup, compaction, archival,
+  deprecation, and deletion remain not authorized.
 
 ## Binding rules
 

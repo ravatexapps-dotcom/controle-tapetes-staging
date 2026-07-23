@@ -18,6 +18,11 @@ export function isGovernedDocument(relativePath) {
     || (relativePath.startsWith('docs/') && relativePath.endsWith('.md'));
 }
 
+export function isGeneratedDocument(relativePath) {
+  return relativePath.startsWith('docs/governance/shadow/generated/')
+    || relativePath.startsWith('docs/governance/shadow/ledger/partitions/');
+}
+
 function githubSlug(text) {
   return text.toLowerCase().trim()
     .replace(/<[^>]+>/g, '')
@@ -112,7 +117,7 @@ export function buildDocumentManifest(reader) {
       sha256: sha256(text),
       line_count: text === '' ? 0 : text.split('\n').length - (text.endsWith('\n') ? 1 : 0),
       byte_count: bytes,
-      generated_status: relativePath.startsWith('docs/governance/shadow/generated/') ? 'GENERATED' : 'MANUAL',
+      generated_status: isGeneratedDocument(relativePath) ? 'GENERATED' : 'MANUAL',
       outbound_references: references,
       inbound_references: [],
       headings: headingInventory(text)

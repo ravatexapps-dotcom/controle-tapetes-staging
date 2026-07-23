@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ravatex.local/governance/g28-ledger-source-manifest.schema.json",
+  "title": "G28 raw-byte ledger source manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "manifest_id", "authority", "canonical_source", "canonical_source_git_object", "canonical_source_sha256", "canonical_byte_count", "canonical_line_count", "encoding", "line_endings", "entry_heading_grammar", "preamble_unit_id", "units", "coverage", "heading_exceptions"],
+  "properties": {
+    "schema_version": { "const": "1.0.0" },
+    "manifest_id": { "const": "G28-LEDGER-SOURCE-MANIFEST-R1" },
+    "authority": { "const": "NON-CANONICAL_DERIVED_FROM_CANONICAL_LEDGER" },
+    "canonical_source": { "const": "docs/ledgers/G28_LEDGER.md" },
+    "canonical_source_git_object": { "type": "string", "pattern": "^[0-9a-f]{40}$" },
+    "canonical_source_sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "canonical_byte_count": { "type": "integer", "minimum": 0 },
+    "canonical_line_count": { "type": "integer", "minimum": 1 },
+    "encoding": { "const": "UTF-8" },
+    "line_endings": { "type": "object", "additionalProperties": false, "required": ["crlf", "lf_only", "bare_cr", "mixed"], "properties": { "crlf": { "type": "integer", "minimum": 0 }, "lf_only": { "type": "integer", "minimum": 0 }, "bare_cr": { "type": "integer", "minimum": 0 }, "mixed": { "type": "boolean" } } },
+    "entry_heading_grammar": { "type": "string", "minLength": 1 },
+    "preamble_unit_id": { "const": "G28-LEDGER-PREAMBLE" },
+    "units": { "type": "array", "minItems": 2, "items": { "$ref": "#/$defs/unit" } },
+    "coverage": { "type": "object", "additionalProperties": false, "required": ["model", "first_byte", "last_byte_exclusive", "first_line", "last_line", "uncovered_bytes", "overlapping_ranges"], "properties": { "model": { "type": "string" }, "first_byte": { "const": 0 }, "last_byte_exclusive": { "type": "integer", "minimum": 1 }, "first_line": { "const": 1 }, "last_line": { "type": "integer", "minimum": 1 }, "uncovered_bytes": { "const": 0 }, "overlapping_ranges": { "const": 0 } } },
+    "heading_exceptions": { "type": "array", "items": { "type": "object", "additionalProperties": false, "required": ["unit_id", "line", "heading"], "properties": { "unit_id": { "type": "string" }, "line": { "type": "integer", "minimum": 1 }, "heading": { "type": "string" } } } }
+  },
+  "$defs": {
+    "unit": { "type": "object", "additionalProperties": false, "required": ["unit_id", "unit_kind", "ordinal", "heading", "date", "phase_order_id", "start_byte", "end_byte", "start_line", "end_line", "raw_sha256", "byte_count", "line_count"], "properties": { "unit_id": { "type": "string" }, "unit_kind": { "enum": ["PREAMBLE", "ENTRY"] }, "ordinal": { "type": "integer", "minimum": 0 }, "heading": { "type": ["string", "null"] }, "date": { "type": ["string", "null"] }, "phase_order_id": { "type": ["string", "null"] }, "start_byte": { "type": "integer", "minimum": 0 }, "end_byte": { "type": "integer", "minimum": 1 }, "start_line": { "type": "integer", "minimum": 1 }, "end_line": { "type": "integer", "minimum": 1 }, "raw_sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" }, "byte_count": { "type": "integer", "minimum": 1 }, "line_count": { "type": "integer", "minimum": 1 } } }
+  }
+}

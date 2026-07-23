@@ -34,13 +34,17 @@
   Status: `SHADOW IMPLEMENTATION AUTHORIZED / DOCUMENTARY-AUTHORITY CUTOVER NOT AUTHORIZED`.
   Unit 1 is `CLOSED / ACCEPTED / DIRECTLY VERIFIED` at
   `39abf42a7341b61fd4ac02a8e38d1e4f33471f0f` by external supervisor ruling.
-  Unit 2 is `IMPLEMENTED / FINAL BOUNDED HARDENING COMPLETE / AWAITING DIRECT SUPERVISOR REVIEW`;
-  its catalog, reference validation, structured Phase-C traceability, and generated
-  views remain non-canonical. **Next authorizable action:** direct supervisor
-  review of `GOVERNANCE-EFFICIENCY-REFOUNDATION-CATALOG-TRACEABILITY-VALIDATOR-SHADOW-HARDENING-R3`. Documentary-authority
-  cutover, cleanup, compaction, partitioning, archival, deprecation, deletion,
-  product work, database access, and deployment remain unauthorized. Exact
-  accounting subject: `fix: close Unit 2 review gaps`.
+  Unit 2 is `CLOSED / ACCEPTED / DIRECTLY VERIFIED` under the external supervisor
+  ruling supplied for checkpoint `f7106977f4613de1830bef46002dbf0a4b8b3cbe`; this
+  records supervisor acceptance and is not executor self-acceptance. Unit 3 is
+  `IMPLEMENTED / LOSSLESS SHADOW LEDGER PARTITIONING VALIDATED / AWAITING DIRECT
+  SUPERVISOR REVIEW`; its partitions, generated compatibility view, and indexes
+  remain non-canonical. **Next authorizable action:** direct supervisor review of
+  `GOVERNANCE-EFFICIENCY-REFOUNDATION-LEDGER-PARTITION-SHADOW-R1`.
+  Documentary-authority cutover, Unit 4, cleanup, compaction, archival,
+  deprecation, deletion, product work, database access, and deployment remain
+  unauthorized. Exact Unit 2 accepted checkpoint: `f7106977f4613de1830bef46002dbf0a4b8b3cbe`;
+  exact accounting subject: `feat: add lossless governance ledger partitions`.
 - **`CLEAN-SLATE-TRANSACTIONAL-RESET-EXECUTION-ACCEPTANCE-CLOSEOUT-R1` (current —
   direct supervisor acceptance of the executed shared-development clean-slate
   reset; documentation-only closeout):** the supervisor **ACCEPTED** executed

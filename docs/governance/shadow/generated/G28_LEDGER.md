@@ -1,3 +1,7 @@
+<!-- GENERATED NON-CANONICAL COMPATIBILITY VIEW — DO NOT EDIT -->
+<!-- canonical_source: docs/ledgers/G28_LEDGER.md -->
+<!-- reconstruction: ORDERED_PARTITION_PAYLOADS -->
+<!-- G28_LEDGER_SHADOW_COMPATIBILITY_PAYLOAD_BEGIN_7b9d4e3a -->
 # G28 — LEDGER DE FASES ACEITAS
 
 ## Papel
@@ -9624,3 +9628,5 @@ product file they depend on, was modified by this pass or the prior one):
 - **Commit subject:** `feat: add lossless governance ledger partitions`.
 - **Next action:** direct supervisor review of `GOVERNANCE-EFFICIENCY-REFOUNDATION-LEDGER-PARTITION-SHADOW-R1`.
 - **Scope exclusions:** Unit 4, documentary-authority cutover, legacy cleanup, archival, deprecation, deletion, product work, database access, migrations, deployment, production access, `REAL_CUTOVER`, and `PHASE-C5B` did not occur.
+
+<!-- G28_LEDGER_SHADOW_COMPATIBILITY_PAYLOAD_END_7b9d4e3a -->

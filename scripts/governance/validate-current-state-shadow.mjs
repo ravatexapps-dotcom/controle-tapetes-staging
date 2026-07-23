@@ -329,7 +329,7 @@ export function validateCanonicalReconciliation(root, state, manifest, equivalen
     HANDOFF: state.governing_pointers.handoff, ACCEPTED_CHECKPOINT: state.accepted_checkpoints.product
   };
   for (const key of REQUIRED_BOOTSTRAP_KEYS) if (parsed.values[key] !== expected[key]) errors.push(`bootstrap value mismatch: ${key}`);
-  for (const text of ['GOVERNANCE-EFFICIENCY-REFOUNDATION', 'GOVERNANCE-EFFICIENCY-REFOUNDATION-CATALOG-TRACEABILITY-VALIDATOR-SHADOW-HARDENING-R3']) if (!handoffText.includes(text)) errors.push(`AGENT_HANDOFF missing current action text: ${text}`);
+  for (const text of ['GOVERNANCE-EFFICIENCY-REFOUNDATION', 'GOVERNANCE-EFFICIENCY-REFOUNDATION-LEDGER-PARTITION-SHADOW-R1']) if (!handoffText.includes(text)) errors.push(`AGENT_HANDOFF missing current action text: ${text}`);
   const contractPath = fullPath(root, state.active_phase.contract);
   if (!fs.existsSync(contractPath)) errors.push('active phase contract is missing');
   else if (!normalizeLf(fs.readFileSync(contractPath, 'utf8')).includes('<!-- MATERIAL_PHASE_CONTRACT:BEGIN -->\nPHASE_ID: GOVERNANCE-EFFICIENCY-REFOUNDATION\n<!-- MATERIAL_PHASE_CONTRACT:END -->')) errors.push('active phase contract material marker mismatch');
