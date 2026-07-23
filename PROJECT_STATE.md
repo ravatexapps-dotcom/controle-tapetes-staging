@@ -62,6 +62,11 @@ ACCEPTED_CHECKPOINT: 3405fdab8e05ec0f81cbfe07c63c489e551fee92
   `docs/governance/candidate/generated/`, and only Unit 4C may atomically replace
   the four root compatibility paths. Unit 4A is `IMPLEMENTED / CUTOVER READINESS
   EVIDENCE COMPLETE / AWAITING DIRECT SUPERVISOR REVIEW` and is not self-accepted.
+  The stale Unit 3 inbound-mapping fixture is reconciled from 317 to 318 under
+  accounting subject `test: reconcile Unit 3 inbound mapping fixture`; all
+  required Unit 4A validation gates now pass, Unit 4A remains awaiting direct
+  supervisor review without self-acceptance, and Unit 4C and documentary-authority
+  cutover remain unauthorized.
   Unit 4B direct review is required. Unit 4C, documentary-authority cutover,
   Unit 4D, and Unit 5 remain unauthorized.
   The next gate is `DIRECT SUPERVISOR REVIEW OF

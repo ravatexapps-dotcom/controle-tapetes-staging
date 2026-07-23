@@ -3,7 +3,7 @@
 <!-- structured_source: docs/governance/current-state.json -->
 <!-- renderer: scripts/governance/render-unit4-candidate-views.mjs -->
 <!-- target_schema_version: 2.0.0 -->
-<!-- deterministic_source_sha256: 63c0af2b25571e1a2d1524e470e6446d2e4fa322d03a1838b597cd6f77b6c933 -->
+<!-- deterministic_source_sha256: 9b0429cff728b712daae570394e571e150da96e797bdfc38ecb84191a85376e4 -->
 <!-- candidate_authority: NON_CANONICAL_UNTIL_SUPERVISOR_ACTIVATION -->
 <!-- root_authority_path: PROJECT_STATE.md -->
 

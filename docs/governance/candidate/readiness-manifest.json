@@ -555,18 +555,18 @@
     }
   ],
   "identities": {
-    "activation_manifest_sha256": "c7fe6b4d694f429d715078c06decb523304bf6e9e7d815efb4a3445fe8ee4c48",
+    "activation_manifest_sha256": "71804ca7ab48e2219571a1f3937039d29a219e0522c8e447948b4baab175b6a3",
     "candidate_views": {
-      "docs/governance/candidate/generated/AGENT_HANDOFF.md": "ee072bf8785fc16983ae49f50924ad96cad11d01c7adf84ccd66592d7905180b",
+      "docs/governance/candidate/generated/AGENT_HANDOFF.md": "b9fa8fcc4934adbbc4d48ea716851b14c4431565c62db21222401ef69cc87883",
       "docs/governance/candidate/generated/DOCUMENTATION_INDEX.md": "5eb7640185bfb2cf056a4e5a66fbab09ade3745c7b2d301d2d936a2be135827c",
       "docs/governance/candidate/generated/ORDEM_COMPRA_C3_TRACEABILITY.md": "4d0f1e6558032232125f910f930c95667eb1b85e6661249343b5ac3241759c7f",
-      "docs/governance/candidate/generated/PROJECT_STATE.md": "ac685aeeb97e4c77a6e3b91d8a85c0c603c7c0a7e5871c41de45b57fa6ee7413"
+      "docs/governance/candidate/generated/PROJECT_STATE.md": "135774a7073300b7ffc33145497bb3c3307cb989cd93a120ee68bf60774151f6"
     },
-    "catalog_sha256": "55579a7afaf2e8a3c3c4cb105e9d0531ca71bb4fb967c593154f7eeb74141ef9",
-    "current_state_file_sha256": "2bd199157dd9ef116488adde941882aab9c73ac6cb1b3d00f18137a0c14aa0a2",
+    "catalog_sha256": "04f3e92ca46811a2fcada8e02b5ad341fa650330c04ae0f9e87078486df9238e",
+    "current_state_file_sha256": "2d15ebde03a4ffc3722f1dcfa9ce29a90bafb3129a2a50177a25add3528be98b",
     "governing_artifacts": {
       "AGENT_HANDOFF.md": "294953d7308885dde84b3c79857bf0d93deb35790d0677f6c84c14d0da72ddd8",
-      "PROJECT_STATE.md": "dae58cfab913f1af0e5c3453b0d7ebefb0a69ce4023d16be8c47d8da53010ba8",
+      "PROJECT_STATE.md": "bfddde4a6a27d59b5847d629216ece99448b52d691e2e7344b7de740ac84537f",
       "docs/DOCUMENTATION_INDEX.md": "5061ceb472d25e7ddb4e7ae9ae902944b674d6773fd963f120766653d6171926",
       "docs/architecture/ORDEM_COMPRA_C3_TRACEABILITY.md": "b10b3e19be6da7678b6f17e9f726c5a82c69b27fe6dffc06b45351146f42c096",
       "docs/governance/DOCUMENTATION_MODEL.md": "29396c1547aa3a6559e67d4dd62dc47989050613daea63d04af77fa1d3689a0e",
@@ -580,7 +580,7 @@
       "docs/governance/schemas/purchase-order-phase-c-v2.schema.json": "018a296da49bcd1bf89c2f4ebf7e713ddd59e6f3dc9de646e02d880eeb4371ec",
       "docs/governance/schemas/unit4-readiness-manifest.schema.json": "9e6214491047bbce7ad4d7c2cab69bdcba67dbf8b7b1944d15cd0723c408a0ca"
     },
-    "state_payload_sha256": "63c0af2b25571e1a2d1524e470e6446d2e4fa322d03a1838b597cd6f77b6c933",
+    "state_payload_sha256": "9b0429cff728b712daae570394e571e150da96e797bdfc38ecb84191a85376e4",
     "traceability_sha256": "db2cf7293f34a926ab7bea6b29883bff561fdf90c44a0ed6d1f9c4f151007735"
   },
   "manifest_id": "GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-4A-READINESS-MANIFEST-R1",

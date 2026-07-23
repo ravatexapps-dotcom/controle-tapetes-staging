@@ -116,7 +116,7 @@ test('valid complete Unit 3 fixture passes', () => {
     source_units: 206,
     entry_count: 205,
     partitions: 12,
-    inbound_references: 317,
+    inbound_references: 318,
     errors: 0
   });
 });
@@ -219,10 +219,10 @@ test('compatibility payload is reconstructed exactly from ordered partition payl
 
 test('reference survival has exact cardinality and path-only destination', () => {
   const index = currentIndex();
-  assert.equal(index.inbound_reference_survival_mappings.length, 317);
+  assert.equal(index.inbound_reference_survival_mappings.length, 318);
   assert.ok(index.inbound_reference_survival_mappings.every(mapping => mapping.resolution_status === 'COMPATIBILITY_VIEW'));
   assert.ok(index.inbound_reference_survival_mappings.every(mapping => mapping.compatibility_view_destination === COMPATIBILITY_PATH));
-  assert.equal(new Set(index.inbound_reference_survival_mappings.map(mapping => mapping.mapping_id)).size, 317);
+  assert.equal(new Set(index.inbound_reference_survival_mappings.map(mapping => mapping.mapping_id)).size, 318);
 });
 
 test('append-stability fixture preserves every previously closed partition', () => {

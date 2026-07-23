@@ -213,7 +213,7 @@
     {
       "source_id": "PROJECT_STATE.md:TEXT_BLOCK:L2:ACTIVE_PHASE_AND_NEXT_ACTION:1:BLOCK:1",
       "source_path": "PROJECT_STATE.md",
-      "source_sha256": "4e41357656d8be617a8b63c2021011e2c03f5483110d22efa1896dad0269a352",
+      "source_sha256": "1b686401ae0af4e8775f179ae8937f29ef6fe2537538538037f1a19bfc0f6684",
       "classification": "RETAINED_CURRENT_CANONICAL_CONTENT",
       "preservation_disposition": "RETAINED_IN_CURRENT_CANONICAL_SOURCE_PENDING_LATER_UNIT",
       "destination_path": "PROJECT_STATE.md",
@@ -221,7 +221,7 @@
       "destination_anchor": "## Active phase and next action",
       "actual_owner_path": "PROJECT_STATE.md",
       "semantic_status": "REVIEWED",
-      "review_basis": "Unit 4 contract correction explicit review: PROJECT_STATE.md remains canonical; the block records direct review of c7f4bb3, preserves Unit 3 acceptance, and records the non-self-referential commit binding and candidate/root boundary without activating Unit 4A."
+      "review_basis": "Unit 4A fixture-accounting explicit review: PROJECT_STATE.md remains canonical; the existing active-phase block preserves Unit 3 acceptance and Unit 4 boundaries while recording the reconciled 318-count fixture and exact accounting subject without self-acceptance or Unit 4C activation."
     },
     {
       "source_id": "PROJECT_STATE.md:MARKDOWN_HEADING:L2:WORKSPACE_AND_GIT_BOUNDARIES:1",
