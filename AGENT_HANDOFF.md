@@ -32,13 +32,14 @@
   `NON-CANONICAL UNTIL SUPERVISOR CUTOVER`. `PROJECT_STATE.md` remains the
   current-state owner and this file remains the derived operational handoff.
   Status: `SHADOW IMPLEMENTATION AUTHORIZED / DOCUMENTARY-AUTHORITY CUTOVER NOT AUTHORIZED`.
-  Unit 1 is `IMPLEMENTED / HARDENING REQUIRED / AWAITING DIRECT SUPERVISOR REVIEW`;
-  the equivalence completeness proof was not accepted.
+  Unit 1 is `IMPLEMENTED / SEMANTIC HARDENING COMPLETE / AWAITING DIRECT
+  SUPERVISOR REVIEW`; the non-overlapping source partition and explicit reviewed
+  information-survival proof are implemented but not accepted.
   **Next authorizable action:** direct supervisor review of
-  `GOVERNANCE-EFFICIENCY-REFOUNDATION-SHADOW-STATE-HARDENING-R1`. Documentary-authority
+  `GOVERNANCE-EFFICIENCY-REFOUNDATION-SHADOW-STATE-HARDENING-R2`. Documentary-authority
   cutover, cleanup, compaction, partitioning, archival, deprecation, deletion,
   product work, database access, and deployment remain unauthorized. Exact
-  accounting subject: `feat: add governance current-state shadow`.
+  accounting subject: `fix: prove governance shadow semantic equivalence`.
 - **`CLEAN-SLATE-TRANSACTIONAL-RESET-EXECUTION-ACCEPTANCE-CLOSEOUT-R1` (current —
   direct supervisor acceptance of the executed shared-development clean-slate
   reset; documentation-only closeout):** the supervisor **ACCEPTED** executed

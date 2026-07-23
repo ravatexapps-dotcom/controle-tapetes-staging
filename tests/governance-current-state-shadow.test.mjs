@@ -6,6 +6,8 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
   buildSourceManifest,
+  buildEquivalenceSkeleton,
+  writeManifest,
   REQUIRED_BOOTSTRAP_KEYS
 } from '../scripts/governance/build-current-state-source-manifest.mjs';
 import {
@@ -15,6 +17,7 @@ import {
 import {
   parseBootstrapBlock,
   validateRepository,
+  validateRepositoryDetailed,
   validateSchemaValue
 } from '../scripts/governance/validate-current-state-shadow.mjs';
 
@@ -80,7 +83,16 @@ function editBootstrapLines(root, mutator) {
 
 test('valid complete repository fixture passes', () => {
   const root = makeFixture();
-  try { assert.deepEqual(validateRepository(root), []); } finally { cleanup(root); }
+  try {
+    const result = validateRepositoryDetailed(root);
+    assert.deepEqual(result.errors, []);
+    assert.equal(result.results.total_coverage_units, result.results.covered_units);
+    for (const key of ['uncovered_ranges', 'overlapping_ranges', 'missing_mappings',
+      'extra_mappings', 'duplicate_mappings', 'stale_mappings', 'unreviewed_mappings',
+      'unique_content_mappings', 'ownerless_mappings', 'invalid_destinations',
+      'invalid_anchors']) assert.equal(result.results[key], 0, key);
+    assert.equal(result.results.structured_state_exact_mappings, 12);
+  } finally { cleanup(root); }
 });
 
 test('new unmapped PROJECT_STATE heading fails', () => {
@@ -139,11 +151,151 @@ test('mapping to nonexistent source ID fails', () => {
   } finally { cleanup(root); }
 });
 
-test('UNIQUE_CONTENT_REQUIRING_DISPOSITION fails', () => {
+test('actual unique content inserted into an existing section remains unreviewed and fails', () => {
   const root = makeFixture();
   try {
-    mutateJson(root, 'docs/governance/shadow/current-state-equivalence.json', value => { value.mappings[0].classification = 'UNIQUE_CONTENT_REQUIRING_DISPOSITION'; });
-    assert.ok(hasError(validateRepository(root), 'unique content requires disposition'));
+    const current = read(root, 'PROJECT_STATE.md');
+    write(root, 'PROJECT_STATE.md', current.replace('## Active phase and next action\n', '## Active phase and next action\n\nFIXTURE_UNIQUE_NORMATIVE_RULE: approval required.\n'));
+    writeManifest(root, true);
+    const equivalence = JSON.parse(read(root, 'docs/governance/shadow/current-state-equivalence.json'));
+    assert.ok(equivalence.mappings.some(mapping => mapping.semantic_status === 'UNREVIEWED'));
+    assert.ok(hasError(validateRepository(root), 'unreviewed mapping'));
+  } finally { cleanup(root); }
+});
+
+test('source change plus mechanical manifest and equivalence regeneration cannot preserve prior review', () => {
+  const root = makeFixture();
+  try {
+    write(root, 'AGENT_HANDOFF.md', read(root, 'AGENT_HANDOFF.md').replace('## Workspace and Git\n', '## Workspace and Git\n\nfixture changed survival claim\n'));
+    const manifest = writeManifest(root, true);
+    const skeleton = buildEquivalenceSkeleton(manifest);
+    assert.ok(skeleton.mappings.every(mapping => mapping.semantic_status === 'UNREVIEWED'));
+    assert.ok(hasError(validateRepository(root), 'unreviewed mapping'));
+  } finally { cleanup(root); }
+});
+
+test('uncovered normalized-byte source range fails', () => {
+  const root = makeFixture();
+  try {
+    mutateJson(root, 'docs/governance/shadow/current-state-source-manifest.json', value => { value.sources[0].units[1].start_offset += 1; });
+    assert.ok(hasError(validateRepository(root), 'uncovered source range'));
+  } finally { cleanup(root); }
+});
+
+test('overlapping normalized-byte source ranges fail', () => {
+  const root = makeFixture();
+  try {
+    mutateJson(root, 'docs/governance/shadow/current-state-source-manifest.json', value => { value.sources[0].units[1].start_offset -= 1; });
+    assert.ok(hasError(validateRepository(root), 'overlapping source range'));
+  } finally { cleanup(root); }
+});
+
+test('explicit UNREVIEWED disposition fails', () => {
+  const root = makeFixture();
+  try {
+    mutateJson(root, 'docs/governance/shadow/current-state-equivalence.json', value => {
+      Object.assign(value.mappings[0], { classification: 'UNREVIEWED', preservation_disposition: 'UNREVIEWED', semantic_status: 'UNREVIEWED' });
+    });
+    assert.ok(hasError(validateRepository(root), 'unreviewed mapping'));
+  } finally { cleanup(root); }
+});
+
+test('nonexistent structured JSON pointer fails', () => {
+  const root = makeFixture();
+  try {
+    mutateJson(root, 'docs/governance/shadow/current-state-equivalence.json', value => {
+      value.mappings.find(mapping => mapping.classification === 'STRUCTURED_FIELD').destination_json_pointer = '/missing/value';
+    });
+    assert.ok(hasError(validateRepository(root), 'structured JSON pointer not found'));
+  } finally { cleanup(root); }
+});
+
+test('structured JSON pointer with wrong value fails', () => {
+  const root = makeFixture();
+  try {
+    mutateJson(root, 'docs/governance/shadow/current-state-equivalence.json', value => {
+      value.mappings.find(mapping => mapping.source_id.endsWith('BOOTSTRAP_KEY:ACTIVE_PHASE')).destination_json_pointer = '/active_track';
+    });
+    assert.ok(hasError(validateRepository(root), 'structured value mismatch'));
+  } finally { cleanup(root); }
+});
+
+test('owner path missing fails', () => {
+  const root = makeFixture();
+  try {
+    mutateJson(root, 'docs/governance/shadow/current-state-equivalence.json', value => {
+      const mapping = value.mappings.find(item => item.source_path === 'AGENT_HANDOFF.md');
+      mapping.destination_path = mapping.actual_owner_path = 'docs/no-such-owner.md';
+    });
+    assert.ok(hasError(validateRepository(root), 'owner path missing'));
+  } finally { cleanup(root); }
+});
+
+test('owner anchor missing fails', () => {
+  const root = makeFixture();
+  try {
+    mutateJson(root, 'docs/governance/shadow/current-state-equivalence.json', value => {
+      value.mappings.find(item => item.source_path === 'AGENT_HANDOFF.md').destination_anchor = '## NO SUCH OWNER ANCHOR';
+    });
+    assert.ok(hasError(validateRepository(root), 'owner anchor missing'));
+  } finally { cleanup(root); }
+});
+
+test('owner classification rejects an existing ledger as a normative owner', () => {
+  const root = makeFixture();
+  try {
+    mutateJson(root, 'docs/governance/shadow/current-state-equivalence.json', value => {
+      const mapping = value.mappings.find(item => item.source_path === 'AGENT_HANDOFF.md');
+      mapping.destination_path = mapping.actual_owner_path = 'docs/ledgers/G28_LEDGER.md';
+      mapping.destination_anchor = '# G28 — LEDGER DE FASES ACEITAS';
+    });
+    assert.ok(hasError(validateRepository(root), 'owner type not allowed'));
+  } finally { cleanup(root); }
+});
+
+test('normative AGENT_HANDOFF self-owner fails', () => {
+  const root = makeFixture();
+  try {
+    mutateJson(root, 'docs/governance/shadow/current-state-equivalence.json', value => {
+      const mapping = value.mappings.find(item => item.source_path === 'AGENT_HANDOFF.md');
+      mapping.destination_path = mapping.actual_owner_path = 'AGENT_HANDOFF.md';
+      mapping.destination_anchor = '# ACTIVE OPERATIONAL HANDOFF';
+    });
+    assert.ok(hasError(validateRepository(root), 'normative AGENT_HANDOFF self-owner'));
+  } finally { cleanup(root); }
+});
+
+test('self-destination without retained-current-owner disposition fails', () => {
+  const root = makeFixture();
+  try {
+    mutateJson(root, 'docs/governance/shadow/current-state-equivalence.json', value => {
+      const mapping = value.mappings.find(item => item.preservation_disposition === 'RETAINED_IN_CURRENT_CANONICAL_SOURCE_PENDING_LATER_UNIT');
+      mapping.classification = 'DUPLICATED_CURRENT_STATE';
+      mapping.preservation_disposition = 'DUPLICATED_FROM_VERIFIED_OWNER';
+    });
+    assert.ok(hasError(validateRepository(root), 'self-destination lacks retained-current-owner disposition'));
+  } finally { cleanup(root); }
+});
+
+test('generated shadow view cannot be an independent owner', () => {
+  const root = makeFixture();
+  try {
+    mutateJson(root, 'docs/governance/shadow/current-state-equivalence.json', value => {
+      const mapping = value.mappings.find(item => item.source_path === 'AGENT_HANDOFF.md');
+      mapping.destination_path = mapping.actual_owner_path = 'docs/governance/shadow/generated/PROJECT_STATE.md';
+      mapping.destination_anchor = '# PROJECT_STATE shadow view';
+    });
+    assert.ok(hasError(validateRepository(root), 'generated view cannot be an independent owner'));
+  } finally { cleanup(root); }
+});
+
+test('structured preservation without a concrete target fails', () => {
+  const root = makeFixture();
+  try {
+    mutateJson(root, 'docs/governance/shadow/current-state-equivalence.json', value => {
+      value.mappings.find(mapping => mapping.classification === 'STRUCTURED_FIELD').destination_json_pointer = null;
+    });
+    assert.ok(hasError(validateRepository(root), 'structured preservation without structured target'));
   } finally { cleanup(root); }
 });
 

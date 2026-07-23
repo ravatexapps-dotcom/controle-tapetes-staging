@@ -14,7 +14,7 @@
 ## Phase and action
 - GOVERNANCE-EFFICIENCY-REFOUNDATION: ACTIVE / SHADOW IMPLEMENTATION IN PROGRESS
 - Contract: docs/governance/GOVERNANCE_EFFICIENCY_REFOUNDATION_PHASE_CONTRACT.md
-- Next authorizable action: DIRECT SUPERVISOR REVIEW OF GOVERNANCE-EFFICIENCY-REFOUNDATION-SHADOW-STATE-HARDENING-R1
+- Next authorizable action: DIRECT SUPERVISOR REVIEW OF GOVERNANCE-EFFICIENCY-REFOUNDATION-SHADOW-STATE-HARDENING-R2
 - Risk class: R1; gate: DIRECT SUPERVISOR REVIEW REQUIRED
 - Active track: PURCHASE_ORDER_PHASE_C
 
@@ -43,6 +43,6 @@
 - NO PUSH OTHER THAN THE SINGLE EXPLICIT FAST-FORWARD STAGING PUSH
 
 ## Recent ledger pointer
-- docs/ledgers/G28_LEDGER.md: append-only governance phase event for GOVERNANCE-EFFICIENCY-REFOUNDATION-SHADOW-STATE-HARDENING-R1.
+- docs/ledgers/G28_LEDGER.md: append-only governance phase event for GOVERNANCE-EFFICIENCY-REFOUNDATION-SHADOW-STATE-HARDENING-R2.
 
 Do not infer documentary-authority cutover, cleanup, compaction, partitioning, archival, or product authorization from this view.
