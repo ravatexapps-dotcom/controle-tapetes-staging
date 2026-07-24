@@ -31,10 +31,10 @@
     }
   ],
   "last_accepted": {
-    "product_phase": "PHASE-C5",
+    "product_phase": "PHASE-MANTA-A",
     "product_evidence": {
-      "path": "docs/ledgers/G28_LEDGER.md",
-      "anchor": "## 2026-07-22 — C5-DOCUMENTATION-CLOSEOUT-R1 — Close PHASE-C5 purchase-order emission phase"
+      "path": "docs/architecture/MANTA_PRODUCT_VARIANT_PHASE_CONTRACT.md",
+      "anchor": "## 9. Shared-development application, live validation and closeout (PHASE-MANTA-A)"
     },
     "governance_checkpoint": "GOVERNANCE-EFFICIENCY-REFOUNDATION-COMPACT-BOOTSTRAP",
     "governance_checkpoint_commit": "76ce950a5cc244ca448120687cfd51391c8b63a7",
@@ -45,20 +45,20 @@
   },
   "active_phase": {
     "id": "PHASE-MANTA-A",
-    "status": "IMPLEMENTED / LOCALLY AND CONCURRENTLY VERIFIED / AWAITING ARCHITECT REVIEW",
+    "status": "CLOSED / ACCEPTED / APPLIED TO SHARED DEVELOPMENT / LIVE VALIDATED",
     "contract": {
       "path": "docs/architecture/MANTA_PRODUCT_VARIANT_PHASE_CONTRACT.md",
       "anchor": "# Manta Product Variant — PHASE-MANTA-A Phase Contract"
     },
-    "immediate_objective": "PHASE-MANTA-A (Manta product identity + route-homogeneity foundation, db/78) plus its db/79 forward correction (concurrency-safe OP route-homogeneity guard and model route/composition immutability) and db/80 forward correction (serialize the model identity used to validate a Pedido/OP item against a concurrent modelos.tipo_produto/largura change, via ascending FOR SHARE modelos-row locks) are implemented and locally and concurrently verified on a disposable PostgreSQL cluster on branch dev; awaiting architect review. Business-flow recreation remains paused. PHASE-MANTA-B (Manta direct delivery) is not authorized. No shared-development apply is authorized; db/78, db/79 and db/80 are applied only to disposable local clusters.",
+    "immediate_objective": "PHASE-MANTA-A (Manta product identity + route-homogeneity foundation, db/78, plus the db/79 concurrency-safe OP route-homogeneity and model-immutability correction and the db/80 model-reference FOR SHARE serialization correction) is closed and accepted: db/78, db/79 and db/80 were applied once, in order, to shared development ucrjtfswnfdlxwtmxnoo and live-validated (contract section 9); the informal MANTA ARABESCO model became ARABESCO/manta/1.40 and the operational corpus stayed empty. Business-flow recreation remains paused. PHASE-MANTA-B (Manta direct weaving-to-client route) is not authorized; its backend persistence mechanism is unresolved and no new entregas.etapa value is canonized (the former tecelagem_direto selection is superseded).",
     "self_accepted": false,
-    "architect_accepted": false
+    "architect_accepted": true
   },
   "next_authorizable_action": {
-    "id": "PHASE-MANTA-A-ARCHITECT-REVIEW-R1",
+    "id": "PHASE-MANTA-B-DIRECT-ROUTE-RECONCILIATION-R1",
     "mode": "ARCHITECT_DECISION",
-    "status": "AWAITING ARCHITECT REVIEW; PHASE-MANTA-B NOT AUTHORIZED; NO SHARED-DEVELOPMENT APPLY AUTHORIZED",
-    "authorization_boundary": "The architect reviews PHASE-MANTA-A (db/78 and its db/79 and db/80 corrections). Applying db/78, db/79 or db/80 to any shared/staging/production environment, PHASE-MANTA-B, and business-flow recreation each require a new explicit order; no phase chains automatically."
+    "status": "AUTHORIZABLE / NOT AUTHORIZED BY THIS CLOSEOUT; PHASE-MANTA-B IMPLEMENTATION NOT AUTHORIZED",
+    "authorization_boundary": "PHASE-MANTA-B begins with a bounded read-only reconciliation of the existing expedition, delivery and progress mechanisms before selecting the minimum backend change for the Manta weaving-to-client direct route; no new entregas.etapa value is canonized. PHASE-MANTA-B implementation, business-flow recreation, and any further shared/staging/production apply each require a new explicit order; no phase chains automatically."
   },
   "active_track": {
     "id": "PURCHASE_ORDER_PHASE_C",
@@ -132,7 +132,7 @@
     "this_checkpoint": "REPOSITORY_LOCAL_ONLY; NO ENVIRONMENT COMMANDS AUTHORIZED",
     "shared_development": {
       "project_id": "ucrjtfswnfdlxwtmxnoo",
-      "access": "NOT AUTHORIZED BY CURRENT PHASE"
+      "access": "PHASE-MANTA-A db/78-db/80 APPLIED AND ACCEPTED (LIVE VALIDATED); NO FURTHER APPLY AUTHORIZED WITHOUT A NEW ORDER"
     },
     "production": {
       "project_id": "gqmpsxkxynrjvidfmojk",

@@ -1421,3 +1421,29 @@ same-value routing updates permitted), and opposing item `modelo_id` moves with
 ascending model locks — no `40P01`, both route and identity invariants preserved —
 plus db/78/db/79 regression, finishing regression, and C5 emission regression. No
 shared-development apply is authorized.
+
+## Update 2026-07-24 — PHASE-MANTA-A shared-development application (db/78–db/80)
+
+Order `PHASE-MANTA-A-SHARED-DEV-APPLY-LIVE-VALIDATION-AND-CLOSEOUT-R1` applied db/78, db/79
+and db/80 — once each, in order — to shared development `ucrjtfswnfdlxwtmxnoo`
+(PostgreSQL 17.6). This supersedes the "No shared-development apply is authorized" boundary
+of the three sections above (which recorded the implementation-phase, local-only scope). No
+new product or schema semantics are introduced beyond the already-accepted rules above.
+
+Recorded in shared-development migration history, once and in order:
+`78_manta_product_identity_and_route_foundation` (`20260724124419`),
+`79_manta_product_identity_invariant_correction` (`20260724124522`),
+`80_manta_model_reference_concurrency_correction` (`20260724124616`); terminal 77 → 80.
+
+Verified live and read-only on shared development: `modelos.tipo_produto NOT NULL DEFAULT
+'tapete'` with CHECK `('tapete','manta')`; Manta width CHECK
+`tipo_produto <> 'manta' OR largura = 1.40`; uniqueness
+`(nome, cor_1_id, cor_2_id, largura, tipo_produto)` (base 4-column key dropped); the
+informal `MANTA ARABESCO`/1.40 row reclassified to `ARABESCO`/`manta`/1.40 with every other
+model `tapete`; the `pedido_itens` Manta-width guard, the concurrency-safe `op_itens`
+route-homogeneity guard and the `modelos` route-identity immutability guard present with the
+db/80 model-row `FOR SHARE` lock bodies; `gerar_op_latex`/`gerar_op_latex_split` rejecting a
+Manta or non-homogeneous origin; signatures, `SECURITY DEFINER`, `search_path=public` and
+grants intact. The operational corpus stayed empty and `parametros_largura` and the
+purchase-order cutover/config state were unmodified. Governing contract:
+`MANTA_PRODUCT_VARIANT_PHASE_CONTRACT.md` §9.

@@ -1,6 +1,6 @@
 # Manta Product Variant — PHASE-MANTA-A Phase Contract
 
-STATUS: IMPLEMENTED / LOCALLY AND CONCURRENTLY VERIFIED / AWAITING ARCHITECT REVIEW
+STATUS: CLOSED / ACCEPTED / APPLIED TO SHARED DEVELOPMENT / LIVE VALIDATED
 
 Order: `PHASE-MANTA-A-PRODUCT-IDENTITY-AND-ROUTE-FOUNDATION-R1`.
 Diagnosis: `PRODUCT-VARIANT-MANTA-WEAVING-ONLY-DIAGNOSIS-R1`.
@@ -11,7 +11,9 @@ PHASE-MANTA-A establishes the canonical **product identity** for a second produc
 variation, **Manta**, and the **route-homogeneity** invariants required before (and
 independently of) any direct-delivery route. It does **not** make Manta
 operationally deliverable — the weaving→client direct route is deferred to
-**PHASE-MANTA-B** (`entregas.etapa = 'tecelagem_direto'`, not implemented here).
+**PHASE-MANTA-B**; its backend persistence mechanism is **unresolved** (the
+previously assumed `entregas.etapa = 'tecelagem_direto'` is **superseded** and is
+no longer a selected solution — see §9).
 
 ## 2. Architect rulings (binding, implemented)
 
@@ -34,9 +36,13 @@ operationally deliverable — the weaving→client direct route is deferred to
    `1.40`) is migrated to `nome = 'ARABESCO'`, `tipo_produto = 'manta'`, identified
    by guarded semantic attributes (not a hardcoded id), fail-closed on ambiguity,
    with an explicit diagnostic when absent. All other rows backfill as `tapete`.
-7. **Future direct route** — `entregas.etapa = 'tecelagem_direto'` is the selected
-   PHASE-MANTA-B mechanism; NOT implemented in PHASE-MANTA-A; `cima` is not
-   overloaded.
+7. **Future direct route (selection superseded)** — the direct weaving→client route
+   for Manta is deferred to PHASE-MANTA-B and its backend persistence mechanism is
+   **unresolved**. The earlier statement that `entregas.etapa = 'tecelagem_direto'`
+   is the selected mechanism is **superseded** and must not be treated as a chosen
+   solution (§9). PHASE-MANTA-B must first reconcile the existing expedition,
+   delivery and progress mechanisms before selecting the minimum backend change; no
+   new `entregas.etapa` value is assumed or canonized here. `cima` is not overloaded.
 
 ## 3. Database (`db/78_manta_product_identity_and_route_foundation.sql`)
 
@@ -54,8 +60,10 @@ Single forward-only, idempotent migration:
   signatures, grants, security mode, search_path, locking, events and generated
   rows preserved.
 
-No shared-development apply is authorized by this phase. The migration is not
-applied to `ucrjtfswnfdlxwtmxnoo`.
+The PHASE-MANTA-A implementation order authorized no shared-development apply. A
+subsequent order (`PHASE-MANTA-A-SHARED-DEV-APPLY-LIVE-VALIDATION-AND-CLOSEOUT-R1`)
+authorized and applied db/78, db/79 and db/80 to shared development
+`ucrjtfswnfdlxwtmxnoo`, then live-validated the result — see §9.
 
 ## 4. Application
 
@@ -102,9 +110,11 @@ applied to `ucrjtfswnfdlxwtmxnoo`.
 
 ## 6. Deferred to PHASE-MANTA-B (not authorized here)
 
-Direct weaving→client delivery for Manta: `entregas.etapa = 'tecelagem_direto'`,
-generalized expedition source, `cliente_pedido_summary` / chain-state weaving-only
-branch, and Manta-only / mixed Pedido completion. None implemented in PHASE-MANTA-A.
+Direct weaving→client delivery for Manta: a generalized expedition source,
+`cliente_pedido_summary` / chain-state weaving-only branch, and Manta-only / mixed
+Pedido completion. The backend persistence mechanism is **unresolved**; the
+previously assumed `entregas.etapa = 'tecelagem_direto'` is **superseded** (§9) and
+is not a selected solution. None implemented in PHASE-MANTA-A.
 
 ## 7. Forward correction — db/79 (route-invariant hardening)
 
@@ -205,6 +215,79 @@ serialize; `nome` and same-value routing updates permitted); (F) opposing item
 identity invariants hold — plus the db/78/db/79 regressions, finishing regression and
 C5 emission regression; cluster then destroyed with proof.
 
-Migration terminal advanced 79 → 80 (`tests/ordem-compra-c3d-deploy.smoke.js`). No
-shared-development apply is authorized: db/78, db/79 and db/80 are applied only to
-disposable local clusters.
+Migration terminal advanced 79 → 80 (`tests/ordem-compra-c3d-deploy.smoke.js`). That
+implementation order authorized no shared-development apply: at the time, db/78, db/79
+and db/80 were applied only to disposable local clusters. The shared-development apply
+described in §9 was authorized later, by a separate order.
+
+## 9. Shared-development application, live validation and closeout (PHASE-MANTA-A)
+
+Order `PHASE-MANTA-A-SHARED-DEV-APPLY-LIVE-VALIDATION-AND-CLOSEOUT-R1` authorized the
+first (and only) shared-development apply of this phase. db/78, db/79 and db/80 were
+applied once, in order, to shared development `ucrjtfswnfdlxwtmxnoo` (PostgreSQL 17.6,
+role `postgres`) through the dedicated project-scoped migration mechanism. Production
+(`gqmpsxkxynrjvidfmojk`) and the forbidden project (`bhgifjrfagkzubpyqpew`) were not
+touched; no Vercel deployment occurred.
+
+**Migration history (recorded once, in order).**
+- `78_manta_product_identity_and_route_foundation` — version `20260724124419`.
+- `79_manta_product_identity_invariant_correction` — version `20260724124522`.
+- `80_manta_model_reference_concurrency_correction` — version `20260724124616`.
+
+Terminal advanced 77 → 80 on shared development.
+
+**Live schema/backfill evidence (read-only).**
+- `modelos.tipo_produto` is `NOT NULL DEFAULT 'tapete'`; CHECK `('tapete','manta')`;
+  CHECK `tipo_produto <> 'manta' OR largura = 1.40`; uniqueness
+  `(nome, cor_1_id, cor_2_id, largura, tipo_produto)` (the base 4-column key dropped).
+- The single informal row (`id=13`, `MANTA ARABESCO`, `1.40`) became `nome='ARABESCO'`,
+  `tipo_produto='manta'`, `largura=1.40`; the 11 other models are `tapete`; no
+  `MANTA ARABESCO` source row remains.
+- The three guards are live with the db/80 bodies: the `op_itens` route-homogeneity
+  guard locks the OP row `FOR UPDATE` then the model row `FOR SHARE` (ascending id)
+  before inspecting; the `pedido_itens` Manta-width guard locks the model row
+  `FOR SHARE`; the `modelos` route-identity immutability guard (BEFORE UPDATE) is
+  present. `gerar_op_latex` and `gerar_op_latex_split` reject a Manta / non-homogeneous
+  origin. Signatures, `SECURITY DEFINER`, `search_path=public` and grants match the
+  migrations.
+
+**Zero-business-data evidence.** The entire operational corpus (pedidos, ops, op_itens,
+entregas, expedições, ordem_compra*, lotes and every related event table) remained at
+zero rows; `parametros_largura` (including the canonical 1.40 row) and the purchase-order
+cutover/config state were unmodified. No Pedido, OP, purchase order, delivery, expedition
+or business event was created. No persistent fixture was planted.
+
+**Live UI evidence.** The accepted repository checkpoint was run locally against shared
+development (`js/config.js` resolves localhost to the STAGING profile
+`https://ucrjtfswnfdlxwtmxnoo.supabase.co`; environment banner "AMBIENTE STAGING"). Through
+the app's own client and `js/op-display.js` helpers on live shared-development data, the
+migrated model renders `Manta · ARABESCO · 1,40 m · PRETO/CRU` (`productTypeLabel` =
+`Manta`); a Tapete row renders `Tapete · … · 2,10 m · …`; a Tapete also named "Arabesco"
+(`id=5`) stays `Tapete`, confirming the type is derived, never name-inferred. Model
+maintenance (`cadastros.js`) shows the product-type badge and, in the model form, locks
+Manta width to 1,40 m and rejects any other value; the Pedido item picker
+(`pedido-itens-edit.js`) shows each choice's type. Authenticated interactive click-through
+was not driven (login requires a password, which was not entered; the local write-guard is
+inactive against STAGING, so no screen that could write was navigated); the mixed-Pedido
+operational UI is deferred to the first controlled real flow. No operational record was
+written.
+
+**Superseded future-route ruling (binding).** The prior statement selecting
+`entregas.etapa = 'tecelagem_direto'` is superseded. The binding current product routes are:
+- **Tapete**: Insumos → Tecelagem → Acabamento → Expedição → Entrega.
+- **Manta**: Insumos → Tecelagem → Expedição → Entrega.
+
+UI: the Manta stepper omits Acabamento entirely (never shown as pending or disabled);
+Tapete retains the Acabamento step; a mixed Pedido represents its two applicable routes
+separately (preferably by homogeneous OP or route-specific progress); a single fixed linear
+stepper must not falsely represent a mixed Pedido. The dynamic Manta stepper is a
+PHASE-MANTA-B UI item and is not implemented at this checkpoint. Backend: Manta never enters
+finishing (DB-enforced here); the exact weaving→expedition persistence mechanism is **not
+selected**, no new `entregas.etapa` value is canonized, and PHASE-MANTA-B must begin with a
+bounded reconciliation of the existing expedition, delivery and progress mechanisms before
+choosing the minimum backend change.
+
+**Status.** PHASE-MANTA-A is CLOSED / ACCEPTED / APPLIED TO SHARED DEVELOPMENT / LIVE
+VALIDATED. Business-flow recreation remains paused. The next authorizable action is
+`PHASE-MANTA-B-DIRECT-ROUTE-RECONCILIATION-R1`; PHASE-MANTA-B implementation remains
+unauthorized and no phase chains automatically.

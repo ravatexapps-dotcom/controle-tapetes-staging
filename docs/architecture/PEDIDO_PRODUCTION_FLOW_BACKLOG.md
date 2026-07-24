@@ -3442,3 +3442,30 @@ Sequence impact:
 
 The canonical `insumos → tecelagem → acabamento(látex) → expedição → entrega` flow
 for Tapete is unchanged.
+
+# Update 2026-07-24 — PHASE-MANTA-A shared-dev apply and route ruling (forward correction)
+
+Order `PHASE-MANTA-A-SHARED-DEV-APPLY-LIVE-VALIDATION-AND-CLOSEOUT-R1` applied db/78–db/80
+to shared development `ucrjtfswnfdlxwtmxnoo` and live-validated the Manta product identity
+(governing contract `MANTA_PRODUCT_VARIANT_PHASE_CONTRACT.md` §9). It also corrects the
+earlier direct-route assumption.
+
+**Binding product route sequences (current ruling):**
+
+- **Tapete**: Insumos → Tecelagem → Acabamento → Expedição → Entrega.
+- **Manta**: Insumos → Tecelagem → Expedição → Entrega (weaving-direct; no Acabamento).
+
+**Superseded:** the previously stated `entregas.etapa = 'tecelagem_direto'` mechanism is no
+longer represented as a selected solution. The Manta backend direct-output
+(weaving→expedition) persistence mechanism is **unresolved**; no new `entregas.etapa` value
+and no new database stage is assumed or canonized here. PHASE-MANTA-B must begin with a
+bounded reconciliation of the existing expedition, delivery and progress mechanisms before
+choosing the minimum backend change (next authorizable action
+`PHASE-MANTA-B-DIRECT-ROUTE-RECONCILIATION-R1`; MANTA-B implementation unauthorized).
+
+**Stepper/UI ruling:** the Manta stepper omits Acabamento entirely (never shown as pending
+or disabled); Tapete keeps Acabamento; a mixed Pedido must represent its two applicable
+routes separately (preferably by homogeneous OP or route-specific progress) — a single fixed
+linear stepper must not falsely represent a mixed Pedido. The dynamic Manta stepper is a
+PHASE-MANTA-B UI item, not implemented at this checkpoint; at the database level a Manta OP
+already never creates or enters Acabamento/Látex.
