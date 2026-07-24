@@ -19,6 +19,7 @@ export const CANONICAL_VIEW_PATHS = Object.freeze({
   documentation: 'docs/DOCUMENTATION_INDEX.md',
   traceability: 'docs/architecture/ORDEM_COMPRA_C3_TRACEABILITY.md'
 });
+const ALL_CANONICAL_VIEW_PATHS = Object.freeze(Object.values(CANONICAL_VIEW_PATHS));
 export const CANONICAL_OUTPUT_ALLOWLIST = new Set(Object.values(CANONICAL_VIEW_PATHS));
 
 function compatibilityMarker(source) {
@@ -137,26 +138,47 @@ function traceabilityView(traceability) {
   ].join('\n');
 }
 
-export function renderCanonicalViews(state, catalog, traceability) {
-  return {
-    [CANONICAL_VIEW_PATHS.project]: projectView(state),
-    [CANONICAL_VIEW_PATHS.handoff]: handoffView(state),
-    [CANONICAL_VIEW_PATHS.documentation]: documentationView(catalog),
-    [CANONICAL_VIEW_PATHS.traceability]: traceabilityView(traceability)
-  };
-}
-
-export function assertCanonicalOutputPaths(requestedPaths) {
-  const paths = [...requestedPaths];
-  const invalid = paths.filter(value => !CANONICAL_OUTPUT_ALLOWLIST.has(value));
-  if (invalid.length || paths.length !== 4 || new Set(paths).size !== 4) {
-    throw new Error(`canonical root transaction violation: ${invalid.join(',') || 'partial or duplicate set'}`);
+function selectionPaths(requestedPaths) {
+  if (!Array.isArray(requestedPaths) && !(requestedPaths instanceof Set)) {
+    throw new Error('canonical output selection must be an array or set');
   }
+  const paths = [...requestedPaths];
+  if (!paths.length) throw new Error('canonical output selection must not be empty');
+  if (paths.some(value => typeof value !== 'string')) {
+    throw new Error('canonical output selection contains a non-string path');
+  }
+  if (new Set(paths).size !== paths.length) {
+    throw new Error('canonical output selection contains a duplicate path');
+  }
+  const invalid = paths.filter(value => !CANONICAL_OUTPUT_ALLOWLIST.has(value));
+  if (invalid.length) {
+    throw new Error(`canonical output selection contains an unknown path: ${invalid.join(',')}`);
+  }
+  return paths;
 }
 
-export function validateRenderedViews(views) {
-  assertCanonicalOutputPaths(Object.keys(views));
+function requiredSource(sources, key, relativePath) {
+  const source = sources?.[key];
+  if (!source || typeof source !== 'object') {
+    throw new Error(`missing required ${key} source for ${relativePath}`);
+  }
+  return source;
+}
+
+function renderSelectedView(relativePath, sources) {
+  if (relativePath === CANONICAL_VIEW_PATHS.project) return projectView();
+  if (relativePath === CANONICAL_VIEW_PATHS.handoff) {
+    return handoffView(requiredSource(sources, 'state', relativePath));
+  }
+  if (relativePath === CANONICAL_VIEW_PATHS.documentation) return documentationView();
+  return traceabilityView(requiredSource(sources, 'traceability', relativePath));
+}
+
+function validateViewEntries(views) {
   for (const [relativePath, text] of Object.entries(views)) {
+    if (typeof text !== 'string') {
+      throw new Error(`rendered canonical output must be text: ${relativePath}`);
+    }
     if (relativePath === CANONICAL_VIEW_PATHS.traceability) {
       if ((text.match(/GOVERNANCE_GENERATED_VIEW:BEGIN/gu) ?? []).length !== 1
           || (text.match(/GOVERNANCE_GENERATED_VIEW:END/gu) ?? []).length !== 1) {
@@ -169,13 +191,25 @@ export function validateRenderedViews(views) {
       throw new Error(`forbidden generated content: ${relativePath}`);
     }
   }
-  if (/SHA256|hash chain|ledger history/iu.test(views[CANONICAL_VIEW_PATHS.handoff])) {
+  if (Object.hasOwn(views, CANONICAL_VIEW_PATHS.handoff)
+      && /SHA256|hash chain|ledger history/iu.test(views[CANONICAL_VIEW_PATHS.handoff])) {
     throw new Error('compact handoff contains historical hash or ledger machinery');
   }
 }
 
-export function writeCanonicalViews(root, views) {
-  validateRenderedViews(views);
+function assertRenderedPathMatch(views, requestedPaths) {
+  if (!views || typeof views !== 'object' || Array.isArray(views)) {
+    throw new Error('rendered canonical outputs must be an object');
+  }
+  const renderedPaths = Object.keys(views);
+  if (renderedPaths.length !== requestedPaths.length
+      || renderedPaths.some(value => !requestedPaths.includes(value))
+      || requestedPaths.some(value => !Object.hasOwn(views, value))) {
+    throw new Error('rendered canonical outputs do not match the requested paths');
+  }
+}
+
+function writeValidatedViews(root, views) {
   const temporary = fs.mkdtempSync(path.join(os.tmpdir(), 'unit4c-roots-'));
   try {
     for (const [relativePath, text] of Object.entries(views)) {
@@ -194,6 +228,51 @@ export function writeCanonicalViews(root, views) {
   }
   return Object.fromEntries(Object.keys(views).map(relativePath =>
     [relativePath, sha256(fs.readFileSync(path.join(root, relativePath)))]));
+}
+
+export function assertSelectiveOutputPaths(requestedPaths) {
+  return selectionPaths(requestedPaths);
+}
+
+export function assertCanonicalOutputPaths(requestedPaths) {
+  const paths = selectionPaths(requestedPaths);
+  if (paths.length !== ALL_CANONICAL_VIEW_PATHS.length) {
+    throw new Error('canonical root transaction violation: partial set');
+  }
+  return paths;
+}
+
+export function renderSelectedCanonicalViews(sources, requestedPaths) {
+  const paths = assertSelectiveOutputPaths(requestedPaths);
+  return Object.fromEntries(paths.map(relativePath =>
+    [relativePath, renderSelectedView(relativePath, sources)]));
+}
+
+export function renderCanonicalViews(state, catalog, traceability) {
+  assertCanonicalOutputPaths(ALL_CANONICAL_VIEW_PATHS);
+  return renderSelectedCanonicalViews({ state, catalog, traceability }, ALL_CANONICAL_VIEW_PATHS);
+}
+
+export function validateSelectedRenderedViews(views, requestedPaths) {
+  const paths = assertSelectiveOutputPaths(requestedPaths);
+  assertRenderedPathMatch(views, paths);
+  validateViewEntries(views);
+}
+
+export function validateRenderedViews(views) {
+  const paths = assertCanonicalOutputPaths(Object.keys(views));
+  assertRenderedPathMatch(views, paths);
+  validateViewEntries(views);
+}
+
+export function writeSelectedCanonicalViews(root, views, requestedPaths) {
+  validateSelectedRenderedViews(views, requestedPaths);
+  return writeValidatedViews(root, views);
+}
+
+export function writeCanonicalViews(root, views) {
+  validateRenderedViews(views);
+  return writeValidatedViews(root, views);
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === path.resolve(fileURLToPath(import.meta.url))) {
