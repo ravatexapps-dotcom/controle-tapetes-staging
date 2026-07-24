@@ -44,21 +44,21 @@
     }
   },
   "active_phase": {
-    "id": "GOVERNANCE-EFFICIENCY-REFOUNDATION",
-    "status": "CLOSED / ACCEPTED",
+    "id": "PHASE-MANTA-A",
+    "status": "IMPLEMENTED / LOCALLY VERIFIED / AWAITING ARCHITECT REVIEW",
     "contract": {
-      "path": "docs/governance/GOVERNANCE_EFFICIENCY_REFOUNDATION_PHASE_CONTRACT.md",
-      "anchor": "# Governance Efficiency Refoundation — Phase Contract"
+      "path": "docs/architecture/MANTA_PRODUCT_VARIANT_PHASE_CONTRACT.md",
+      "anchor": "# Manta Product Variant — PHASE-MANTA-A Phase Contract"
     },
-    "immediate_objective": "Governance refoundation is closed and accepted; await architect selection of the next product or governance phase.",
+    "immediate_objective": "PHASE-MANTA-A (Manta product identity + route-homogeneity foundation) is implemented and locally verified on branch dev; awaiting architect review. Business-flow recreation remains paused. PHASE-MANTA-B (Manta direct delivery) is not authorized. No shared-development apply is authorized.",
     "self_accepted": false,
-    "architect_accepted": true
+    "architect_accepted": false
   },
   "next_authorizable_action": {
-    "id": "ARCHITECT-NEXT-PHASE-SELECTION-R1",
+    "id": "PHASE-MANTA-A-ARCHITECT-REVIEW-R1",
     "mode": "ARCHITECT_DECISION",
-    "status": "AUTHORIZABLE; NO PRODUCT OR FOLLOW-ON GOVERNANCE PHASE IS AUTHORIZED YET",
-    "authorization_boundary": "The architect must explicitly select the next product or governance phase; no phase chains automatically."
+    "status": "AWAITING ARCHITECT REVIEW; PHASE-MANTA-B NOT AUTHORIZED; NO SHARED-DEVELOPMENT APPLY AUTHORIZED",
+    "authorization_boundary": "The architect reviews PHASE-MANTA-A. Applying db/78 to any environment, PHASE-MANTA-B, and business-flow recreation each require a new explicit order; no phase chains automatically."
   },
   "active_track": {
     "id": "PURCHASE_ORDER_PHASE_C",

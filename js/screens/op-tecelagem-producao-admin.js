@@ -554,6 +554,27 @@
         'Registre a transferência como uma nova entrega no bloco “Entregas de tecelagem”.'));
   }
 
+  // PHASE-MANTA-A: a Manta OP is weaving-only; no finishing action is offered
+  // and direct delivery is not yet active (deferred to PHASE-MANTA-B). This
+  // note replaces the cima-delivery / "Enviar para acabamento" surfaces.
+  function buildMantaRotaNote() {
+    return el('div', { style: CARD + 'padding:15px 17px;' },
+      rvSectionPill('Rota da Manta', IC_MOV),
+      el('div', { style: 'font-size:12.5px;color:#5b6472;line-height:1.55;' },
+        el('div', { style: 'font-weight:700;color:var(--rv-color-title);margin-bottom:6px;' }, 'Manta — rota tecelagem-direta'),
+        el('div', {}, 'Esta OP é de Manta: produzida somente por tecelagem e nunca enviada para acabamento/látex. A entrega direta ao cliente ainda não está ativa (PHASE-MANTA-B). Nenhuma ação de acabamento é oferecida aqui.')));
+  }
+
+  function opEhManta(ctx) {
+    var disp = window.RAVATEX_OP_DISPLAY;
+    if (!disp || typeof disp.deriveProductType !== 'function') return false;
+    var items = (ctx.opItensRaw || []).map(function (it) {
+      var m = ctx.modelosById[it.modelo_id];
+      return { tipo_produto: m && m.tipo_produto };
+    });
+    return disp.deriveProductType(items) === 'manta';
+  }
+
   function buildDocumentos(ctx) {
     // Camada VISUAL (slots por tipo + Anexar full-width). Backend de anexo via
     // Google Drive entra depois — sem arquivos fabricados; Anexar só sinaliza.
@@ -601,17 +622,21 @@
 
   function renderOPTecelagemProducaoAdmin(ctx) {
     var totais = computeTotaisProducao(ctx);
+    var isManta = opEhManta(ctx);
 
     var left = el('div', { style: 'min-width:0;display:flex;flex-direction:column;gap:14px;' },
       buildCardDados(ctx),
       buildCardItens(ctx, totais.totalPorItem),
       ctx.buildBlocoFios(),
       buildBlocoCapacidade(ctx, totais));
-    if (ctx.cimaFornecedorId) left.appendChild(buildBlocoEntregas(ctx));
+    // PHASE-MANTA-A: never offer the finishing (cima -> latex) surface for a
+    // Manta OP; show the tecelagem-only note instead.
+    if (isManta) left.appendChild(buildMantaRotaNote());
+    else if (ctx.cimaFornecedorId) left.appendChild(buildBlocoEntregas(ctx));
     left.appendChild(buildBlocoHistorico(ctx));
 
     var railKids = [buildResumo(totais)];
-    if (ctx.cimaFornecedorId) railKids.push(buildEnviarAcabamento(ctx, totais));
+    if (ctx.cimaFornecedorId && !isManta) railKids.push(buildEnviarAcabamento(ctx, totais));
     railKids.push(buildDocumentos(ctx));
     var right = el('div', { style: 'min-width:0;position:sticky;top:0;display:flex;flex-direction:column;gap:14px;' }, railKids);
 

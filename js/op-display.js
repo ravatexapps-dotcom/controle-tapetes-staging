@@ -121,12 +121,90 @@
     return formatOpLegacyCode(op);
   }
 
+  // ===================================================================
+  // Product variation identity (PHASE-MANTA-A).
+  // Pure display of the canonical modelos.tipo_produto ('tapete'|'manta').
+  // Single source of the product-line label contract used across Pedido
+  // and OP surfaces:
+  //   "Manta · Arabesco · 1,40 m · KRAFT/CRU"
+  //   "Tapete · Barcelona · 2,10 m · KRAFT/CRU"
+  // Never infers the type from the model name.
+  // ===================================================================
+
+  // Any value other than the canonical 'manta' resolves to 'Tapete', the
+  // backfill default carried by every existing row (modelos.tipo_produto
+  // DEFAULT 'tapete'). Keeps the label honest without name inference.
+  function productTypeLabel(tipoProduto) {
+    return normalizeTipo(tipoProduto) === 'manta' ? 'Manta' : 'Tapete';
+  }
+
+  function formatWidthPtBr(largura) {
+    var n = Number(largura);
+    if (!Number.isFinite(n)) return null;
+    return n.toFixed(2).replace('.', ',');
+  }
+
+  function resolveCorNome(cor) {
+    if (cor == null) return null;
+    if (typeof cor === 'string') return cor;
+    if (typeof cor === 'object' && cor.nome) return cor.nome;
+    return null;
+  }
+
+  // model = { tipo_produto, nome, largura, cor_1|cor1, cor_2|cor2 } where a
+  // cor may be a string or a { nome } object. Emits the canonical
+  // "Tipo · Nome · L,LL m · COR1/COR2" contract, dropping any part
+  // that is genuinely absent (never fabricating a value).
+  function formatProductLabel(model) {
+    if (!model) return '';
+    var parts = [productTypeLabel(model.tipo_produto)];
+    if (model.nome != null && String(model.nome).trim() !== '') parts.push(String(model.nome).trim());
+    var w = formatWidthPtBr(model.largura);
+    if (w != null) parts.push(w + ' m');
+    var c1 = resolveCorNome(model.cor_1 != null ? model.cor_1 : model.cor1);
+    var c2 = resolveCorNome(model.cor_2 != null ? model.cor_2 : model.cor2);
+    if (c1 || c2) parts.push([c1 || '—', c2 || '—'].join('/'));
+    return parts.join(' · ');
+  }
+
+  // Resolves a single tipo_produto for a whole OP from its items (each
+  // carrying its modelo's tipo_produto, directly or via `modelo`/`modelos`).
+  // Returns 'tapete' | 'manta' | 'misto' | null. A route-homogeneous OP
+  // (DB-enforced) returns a single type; 'misto' is a defensive signal.
+  function deriveProductType(items) {
+    if (!Array.isArray(items) || items.length === 0) return null;
+    var seen = {};
+    for (var i = 0; i < items.length; i++) {
+      var it = items[i] || {};
+      var raw = it.tipo_produto
+        || (it.modelo && it.modelo.tipo_produto)
+        || (it.modelos && it.modelos.tipo_produto);
+      var tp = normalizeTipo(raw) === 'manta' ? 'manta' : 'tapete';
+      seen[tp] = true;
+    }
+    var keys = Object.keys(seen);
+    if (keys.length > 1) return 'misto';
+    return keys[0];
+  }
+
+  // OP-level label: 'Tapete' | 'Manta' | 'Misto' | null (empty/unknown).
+  function opProductTypeLabel(items) {
+    var tp = deriveProductType(items);
+    if (tp == null) return null;
+    if (tp === 'misto') return 'Misto';
+    return productTypeLabel(tp);
+  }
+
   var api = {
     getOpTypeLetter: getOpTypeLetter,
     getPedidoOperationalYear: getPedidoOperationalYear,
     buildOpOperationalSequence: buildOpOperationalSequence,
     formatOpOperationalCode: formatOpOperationalCode,
     formatOpLegacyCode: formatOpLegacyCode,
+    productTypeLabel: productTypeLabel,
+    formatProductLabel: formatProductLabel,
+    deriveProductType: deriveProductType,
+    opProductTypeLabel: opProductTypeLabel,
   };
 
   window.RAVATEX_OP_DISPLAY = api;

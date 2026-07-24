@@ -3419,3 +3419,26 @@ supervisor and is not attributed to Kleber.
 - **NEXT_AUTHORIZABLE_ACTION: `READ-ONLY GOVERNANCE AND SPEC-CUSTODY AUDIT`.**
   C3C-B remains the next product implementation lot but is not authorized. The
   audit precedes any C3C-B implementation order; no product phase chains.
+
+# Update 2026-07-24 — PHASE-MANTA-A (Manta product identity + route homogeneity)
+
+A second product variation, **Manta** (`modelos.tipo_produto = 'manta'`), enters the
+flow (governing contract:
+`docs/architecture/MANTA_PRODUCT_VARIANT_PHASE_CONTRACT.md`; schema: `db/78`).
+Sequence impact:
+
+- A Pedido may mix Tapete and Manta items; a weaving OP must be route-homogeneous,
+  so a mixed Pedido produces separate weaving OPs by product type. Enforced by the
+  `op_itens` DB trigger and by `js/screens/op-persistir.js` before OP-number
+  consumption; `js/screens/op-nova.js` requires an explicit product-type choice for
+  a mixed Pedido.
+- A Manta OP is **tecelagem-only**: it never creates or enters acabamento/látex
+  (the finishing RPCs reject a Manta origin), and no finishing action is offered for
+  it in the UI.
+- Manta is **not operationally deliverable** in PHASE-MANTA-A. The direct
+  weaving→client route (`entregas.etapa = 'tecelagem_direto'`, generalized
+  expedition source, weaving-only completion and progress) is deferred to
+  PHASE-MANTA-B and is not authorized here.
+
+The canonical `insumos → tecelagem → acabamento(látex) → expedição → entrega` flow
+for Tapete is unchanged.

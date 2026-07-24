@@ -1089,8 +1089,9 @@
     }
 
     async function reload() {
-      columnSupport = await detectOptionalColumns('modelos', ['observacoes']);
+      columnSupport = await detectOptionalColumns('modelos', ['observacoes', 'tipo_produto']);
       const modelosSelect = 'id, nome, largura, cor_1:cor_1_id(id, nome), cor_2:cor_2_id(id, nome)'
+        + (columnSupport.tipo_produto ? ', tipo_produto' : '')
         + (columnSupport.observacoes ? ', observacoes' : '');
       const [modelosRes, coresRes] = await Promise.all([
         window.supa.from('modelos').select(modelosSelect).order('nome'),
@@ -1106,7 +1107,7 @@
       const rows = busca
         ? allRows.filter((row) => {
             const q = busca.trim().toLowerCase();
-            return [row.nome, row.cor_1?.nome, row.cor_2?.nome, String(row.id), String(row.largura)].join(' ').toLowerCase().includes(q);
+            return [row.nome, row.cor_1?.nome, row.cor_2?.nome, String(row.id), String(row.largura), row.tipo_produto].join(' ').toLowerCase().includes(q);
           })
         : allRows.slice();
 
@@ -1173,6 +1174,15 @@
         modelInfo.appendChild(window.el('div', {
           style: 'font-size:14px; font-weight:600; color:#16203a; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;'
         }, row.nome || ''));
+        if (columnSupport.tipo_produto) {
+          const tipoLabel = (window.RAVATEX_OP_DISPLAY && window.RAVATEX_OP_DISPLAY.productTypeLabel)
+            ? window.RAVATEX_OP_DISPLAY.productTypeLabel(row.tipo_produto)
+            : (String(row.tipo_produto).toLowerCase() === 'manta' ? 'Manta' : 'Tapete');
+          const isManta = tipoLabel === 'Manta';
+          modelInfo.appendChild(window.el('span', {
+            style: `align-self:flex-start; margin-top:4px; display:inline-flex; align-items:center; border-radius:4px; padding:2px 8px; font-size:11px; font-weight:700; letter-spacing:.02em; ${isManta ? 'background:#ecfdf5; color:#047857;' : 'background:#eef2f7; color:#475569;'}`
+          }, tipoLabel));
+        }
         modelInfo.appendChild(window.el('div', {
           style: 'font-size:12px; color:#9aa2af; margin-top:3px;'
         }, `ID ${row.id ?? '—'}`));
@@ -1231,6 +1241,22 @@
         options: [{ value: '1.40', label: '1,40 m' }, { value: '2.10', label: '2,10 m' }],
         value: modelo?.largura
       });
+      const tipoSel = window.selectInput({
+        options: [{ value: 'tapete', label: 'Tapete' }, { value: 'manta', label: 'Manta' }],
+        value: modelo?.tipo_produto || 'tapete'
+      });
+      // Manta: canonical width fixed to 1,40 m and locked in the UI. The
+      // database (modelos_manta_largura_chk) remains the authority.
+      function applyMantaWidthLock() {
+        if (tipoSel.value === 'manta') {
+          largSel.value = '1.40';
+          largSel.disabled = true;
+        } else {
+          largSel.disabled = false;
+        }
+      }
+      tipoSel.onchange = applyMantaWidthLock;
+      if (columnSupport.tipo_produto) applyMantaWidthLock();
       const imageInput = window.el('input', {
         type: 'file',
         accept: 'image/*',
@@ -1268,6 +1294,9 @@
           cadastrosModalField({ label: 'Cor 1 (predominante)', input: cor1Sel, hint: 'A ordem importa: "BRANCO/PRETO" é diferente de "PRETO/BRANCO".' }),
           cadastrosModalField({ label: 'Cor 2', input: cor2Sel })
         ], 2, 720),
+        ...(columnSupport.tipo_produto
+          ? [cadastrosModalField({ label: 'Tipo de produto', input: tipoSel, fullWidth: true, hint: 'Manta é tecelagem-direta (largura fixa 1,40 m). Tapete segue tecelagem → acabamento.' })]
+          : []),
         cadastrosModalField({ label: 'Largura', input: largSel, fullWidth: true }),
         cadastrosModalPanel({
           title: 'Imagem do modelo',
@@ -1292,8 +1321,11 @@
           const cor_1_id = cor1Sel.value;
           const cor_2_id = cor2Sel.value;
           const largura = largSel.value;
+          const tipo_produto = columnSupport.tipo_produto ? (tipoSel.value || 'tapete') : null;
           if (!nome || !cor_1_id || !cor_2_id || !largura) { window.toast('Preencha todos os campos', 'error'); return false; }
+          if (tipo_produto === 'manta' && String(largura) !== '1.40') { window.toast('Manta exige largura 1,40 m', 'error'); return false; }
           const payload = { nome, cor_1_id, cor_2_id, largura };
+          if (columnSupport.tipo_produto) payload.tipo_produto = tipo_produto;
           if (columnSupport.observacoes) payload.observacoes = observacoesField.input.value.trim() || null;
           const { error } = isEdit
             ? await window.supa.from('modelos').update(payload).eq('id', modelo.id)

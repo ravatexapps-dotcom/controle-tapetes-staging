@@ -230,6 +230,31 @@
     return el('div', { style: 'display:grid;grid-template-columns:' + colsTemplate + ';gap:10px;padding:12px 24px;border-bottom:1px solid #f1f3f6;align-items:center;' }, cells);
   }
 
+  // PHASE-MANTA-A: explicit product-type chooser for a mixed Pedido. A weaving
+  // OP is route-homogeneous; this picks which single type the new OP contains.
+  // Resolves the chosen type ('tapete'|'manta'), or null if dismissed.
+  function escolherTipoProdutoOP(tiposDisponiveis) {
+    return new Promise(function (resolve) {
+      var opcoes = tiposDisponiveis.map(function (t) { return { value: t, label: t === 'manta' ? 'Manta' : 'Tapete' }; });
+      var sel = selectInput({ options: opcoes, value: tiposDisponiveis[0] });
+      var escolhido = tiposDisponiveis[0];
+      sel.onchange = function () { escolhido = sel.value; };
+      var done = false;
+      modal({
+        title: 'Tipo de produto desta OP',
+        body: el('div', {},
+          el('p', { style: 'font-size:13px;color:#5b6472;margin-bottom:12px;line-height:1.5;' },
+            'Este Pedido tem itens de Tapete e Manta. Uma OP de tecelagem contém um único tipo de produto. Escolha qual esta OP vai conter; os itens do outro tipo permanecem disponíveis para outra OP.'),
+          el('label', { style: 'display:block;font-size:13px;font-weight:600;color:#16203a;margin-bottom:6px;' }, 'Produto desta OP'),
+          sel
+        ),
+        saveLabel: 'Confirmar',
+        onSave: function () { done = true; resolve(escolhido); },
+        onClose: function () { if (!done) resolve(null); },
+      });
+    });
+  }
+
   async function screenNovaOP(opId, pedidoId) {
   const container = el('div', {});
   // 1) Carrega dados de apoio
@@ -248,6 +273,14 @@
   const clientesById = Object.fromEntries((clientesRes.data || []).map(c => [String(c.id), c.nome]));
   const modelos = modelosRes.data || [];
   const modelosById = Object.fromEntries(modelos.map(m => [m.id, m]));
+  // PHASE-MANTA-A: augment models with tipo_produto when the column exists
+  // (graceful before the migration is applied; absent => treated as Tapete).
+  const tipoProdutoRes = await supa.from('modelos').select('id, tipo_produto');
+  if (!tipoProdutoRes.error && Array.isArray(tipoProdutoRes.data)) {
+    for (const tr of tipoProdutoRes.data) {
+      if (modelosById[tr.id]) modelosById[tr.id].tipo_produto = tr.tipo_produto;
+    }
+  }
   const parametrosByLargura = Object.fromEntries((paramsRes.data || []).map(p => [larguraKey(p.largura), p]));
   const forns = fornsRes.data || [];
   const fornsPorTipo = (tipo) => forns.filter(f => f.tipo === tipo).map(f => ({ value: f.id, label: f.nome }));
@@ -437,6 +470,22 @@
         }
       }
     }
+
+    // PHASE-MANTA-A: keep the new weaving OP route-homogeneous. A mixed Pedido
+    // requires an explicit product-type choice and includes only that type;
+    // the DB trigger and persistirOP guard remain the authority.
+    var tiposPedidoOP = Array.from(new Set(itens.map(function (it) {
+      var m = modelosById[it.modeloId];
+      return (m && m.tipo_produto === 'manta') ? 'manta' : 'tapete';
+    })));
+    if (tiposPedidoOP.length > 1) {
+      var tipoEscolhido = await escolherTipoProdutoOP(tiposPedidoOP);
+      if (!tipoEscolhido) { navigate('#/pedidos'); return shellLayout(ADMIN_MENU, container); }
+      itens = itens.filter(function (it) {
+        var m = modelosById[it.modeloId];
+        return ((m && m.tipo_produto === 'manta') ? 'manta' : 'tapete') === tipoEscolhido;
+      });
+    }
   }
 
   if (opId) {
@@ -575,6 +624,8 @@
           erroSalvar(result.error);
         } else if (result.step === 'pedido_required') {
           bloquearSemPedido();
+        } else if (result.step === 'route_homogeneity') {
+          toast(result.error.message, 'error');
         } else {
           toast('Erro ao salvar OP', 'error');
           console.error(result.error);
@@ -617,6 +668,7 @@
           op_fornecedores_delete: 'Erro ao salvar fornecedor de tecelagem',
           op_fornecedores_insert: 'Erro ao salvar fornecedor de tecelagem',
           pedido_required: 'Nao e possivel abrir OP sem Pedido vinculado.',
+          route_homogeneity: 'OP nao pode misturar Tapete e Manta; crie OPs separadas por tipo de produto.',
           ordens_compra_fio_delete: 'Falha ao gerar ordens de compra — OP mantida como simulada',
           ordens_compra_fio_insert: 'Falha ao gerar ordens de compra — OP mantida como simulada',
           regime_resolve: 'Falha ao resolver o regime de compra do Pedido — OP mantida como simulada',

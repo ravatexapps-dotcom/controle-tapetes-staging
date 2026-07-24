@@ -54,6 +54,27 @@
     return (itens || []).filter((item) => item && item.modeloId && Number(item.metros) > 0);
   }
 
+  // PHASE-MANTA-A: distinct product types present in the OP items, derived
+  // from modelos.tipo_produto via modelo_id. Missing metadata resolves to
+  // 'tapete' (the backfill default), so a pre-migration model map never
+  // yields a false mixed-route block.
+  function tiposProdutoOP(itensValidos, modelosById) {
+    var set = {};
+    for (var i = 0; i < (itensValidos || []).length; i++) {
+      var it = itensValidos[i];
+      var m = (modelosById && it) ? modelosById[it.modeloId] : null;
+      set[(m && m.tipo_produto === 'manta') ? 'manta' : 'tapete'] = true;
+    }
+    return Object.keys(set);
+  }
+
+  // A weaving OP must be route-homogeneous (only Tapete or only Manta). This
+  // is the in-code guard; the DB trigger op_itens_route_homogeneity_guard is
+  // the ultimate authority.
+  function opRotaHomogenea(itensValidos, modelosById) {
+    return tiposProdutoOP(itensValidos, modelosById).length <= 1;
+  }
+
   function montarPayloadItensOP(itensValidos, opId) {
     return itensValidos.map((item) => {
       var payload = {
@@ -136,6 +157,17 @@
     const validos = itensValidosOP(itens);
     const isNova = !op;
     let numeroPersistido = numeroInt;
+
+    // PHASE-MANTA-A: reject a mixed-route OP BEFORE reserving an OP number.
+    // The database trigger remains the ultimate authority.
+    if (!opRotaHomogenea(validos, modelosById)) {
+      return {
+        error: { message: 'OP nao pode misturar Tapete e Manta; crie OPs separadas por tipo de produto.' },
+        step: 'route_homogeneity',
+        partial: false,
+        opId: op && op.id ? op.id : null,
+      };
+    }
 
     if (isNova) {
       const numeroRes = await supa.rpc('proximo_numero_op', { p_tipo: 'tecelagem', p_ano: anoInt });
@@ -288,6 +320,8 @@
   window.RAVATEX_SCREENS = window.RAVATEX_SCREENS || {};
   window.RAVATEX_SCREENS.opPersistir = {
     itensValidosOP,
+    tiposProdutoOP,
+    opRotaHomogenea,
     montarPayloadItensOP,
     montarPayloadFornecedoresOP,
     montarPayloadOP,
@@ -297,6 +331,8 @@
   };
 
   window.itensValidosOP = itensValidosOP;
+  window.tiposProdutoOP = tiposProdutoOP;
+  window.opRotaHomogenea = opRotaHomogenea;
   window.montarPayloadItensOP = montarPayloadItensOP;
   window.montarPayloadFornecedoresOP = montarPayloadFornecedoresOP;
   window.montarPayloadOP = montarPayloadOP;

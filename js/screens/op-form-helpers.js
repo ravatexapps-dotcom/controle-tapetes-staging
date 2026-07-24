@@ -31,6 +31,14 @@
 
   function rotuloModelo(modelo) {
     if (!modelo) return '?';
+    // PHASE-MANTA-A: when the model carries the canonical tipo_produto, use
+    // the shared product-line contract ("Manta · Arabesco · 1,40 m ·
+    // KRAFT/CRU"). Absent the column (pre-migration loads), keep the exact
+    // legacy label so existing consumers stay unchanged.
+    var display = window.RAVATEX_OP_DISPLAY;
+    if (modelo.tipo_produto != null && display && typeof display.formatProductLabel === 'function') {
+      return display.formatProductLabel(modelo);
+    }
     return `${modelo.nome} ${window.larguraKey(modelo.largura)}m · ${modelo.cor_1?.nome || '?'}/${modelo.cor_2?.nome || '?'}`;
   }
 

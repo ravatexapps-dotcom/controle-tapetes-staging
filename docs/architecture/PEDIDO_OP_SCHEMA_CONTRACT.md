@@ -1315,3 +1315,28 @@ not viable without modifying that guard, which the frozen manifest forbids
 backfill, no `ordem_compra_item_compat_fio` row, and no modification to any
 `db/67` or `db/75` object. The migration is exactly two `SECURITY DEFINER`
 functions plus this one additive constraint change.
+
+## Update 2026-07-24 — PHASE-MANTA-A (product variation: Manta)
+
+`db/78_manta_product_identity_and_route_foundation.sql` adds the canonical
+product-variation owner and its invariants (governing contract:
+`docs/architecture/MANTA_PRODUCT_VARIANT_PHASE_CONTRACT.md`):
+
+- `modelos.tipo_produto TEXT NOT NULL DEFAULT 'tapete'`, CHECK `('tapete','manta')`.
+  Sole owner of product type; `pedido_itens` and `op_itens` derive it through
+  `modelo_id` — no redundant product-type column is added to `pedido_itens`,
+  `op_itens`, `ops`, `lotes` or deliveries.
+- Manta width invariant: CHECK `tipo_produto <> 'manta' OR largura = 1.40`.
+- Model uniqueness replaced with
+  `UNIQUE (nome, cor_1_id, cor_2_id, largura, tipo_produto)`.
+- `pedido_itens_manta_largura_guard` trigger rejects a non-null `largura` override
+  other than 1.40 for a Manta item; Tapete behavior unchanged.
+- `op_itens_route_homogeneity_guard` trigger enforces a route-homogeneous OP (only
+  Tapete or only Manta).
+- `gerar_op_latex` / `gerar_op_latex_split` reject a Manta or non-homogeneous origin
+  before reserving an OP number; all other `db/33` behavior, signatures, grants,
+  security mode, search_path, locking, events and generated rows are preserved.
+
+Yarn is unchanged and width-keyed: Manta 1.40 reuses `parametros_largura[1.40]` with
+no duplicated factor. Direct Manta delivery (`entregas.etapa = 'tecelagem_direto'`)
+is deferred to PHASE-MANTA-B and is not part of this schema change.

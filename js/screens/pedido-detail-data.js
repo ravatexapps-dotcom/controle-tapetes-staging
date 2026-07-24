@@ -112,6 +112,14 @@
         state.modelosById = Object.fromEntries((modelosRes.data || []).map(function (modelo) {
           return [modelo.id, modelo];
         }));
+        // PHASE-MANTA-A: best-effort tipo_produto augmentation (graceful
+        // before the migration is applied; absent => rendered as Tapete).
+        try {
+          var tpRes = await window.supa.from('modelos').select('id, tipo_produto').in('id', modeloIds);
+          if (!tpRes.error && Array.isArray(tpRes.data)) {
+            tpRes.data.forEach(function (r) { if (state.modelosById[r.id]) state.modelosById[r.id].tipo_produto = r.tipo_produto; });
+          }
+        } catch (e) { /* coluna ausente: tratado como Tapete */ }
         (modelosRes.data || []).forEach(function (modelo) {
           if (modelo.cor_1_id != null) corIds.push(modelo.cor_1_id);
           if (modelo.cor_2_id != null) corIds.push(modelo.cor_2_id);

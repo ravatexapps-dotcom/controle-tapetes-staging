@@ -236,6 +236,17 @@
       }
       state.modelos = modRes.data || [];
 
+      // PHASE-MANTA-A: best-effort tipo_produto augmentation. Graceful before
+      // the migration is applied (column absent => models stay type-less and
+      // render as Tapete); never fatal.
+      try {
+        const tpRes = await window.supa.from('modelos').select('id, tipo_produto');
+        if (!tpRes.error && Array.isArray(tpRes.data)) {
+          const tpById = Object.fromEntries(tpRes.data.map(function (r) { return [String(r.id), r.tipo_produto]; }));
+          state.modelos.forEach(function (m) { if (tpById[String(m.id)] != null) m.tipo_produto = tpById[String(m.id)]; });
+        }
+      } catch (e) { /* coluna ausente: tratado como Tapete */ }
+
       // Coleta IDs de cor referenciadas (dos itens override + dos modelos)
       // para buscar nomes para o preview.
       const corIds = [];
@@ -289,11 +300,17 @@
 
     function modeloLabel(modelo) {
       if (!modelo) return '—';
+      const c1 = (state.coresById[modelo.cor_1_id] && state.coresById[modelo.cor_1_id].nome) || '—';
+      const c2 = (state.coresById[modelo.cor_2_id] && state.coresById[modelo.cor_2_id].nome) || '—';
+      // PHASE-MANTA-A: canonical "Tipo · Nome · Largura · Cores" when the model
+      // carries tipo_produto; legacy label otherwise (pre-migration).
+      const display = window.RAVATEX_OP_DISPLAY;
+      if (modelo.tipo_produto != null && display && typeof display.formatProductLabel === 'function') {
+        return display.formatProductLabel({ tipo_produto: modelo.tipo_produto, nome: modelo.nome, largura: modelo.largura, cor1: c1, cor2: c2 });
+      }
       const w = (typeof modelo.largura === 'number')
         ? modelo.largura.toFixed(2).replace('.', ',') + ' m'
         : (modelo.largura != null ? String(modelo.largura) : '—');
-      const c1 = (state.coresById[modelo.cor_1_id] && state.coresById[modelo.cor_1_id].nome) || '—';
-      const c2 = (state.coresById[modelo.cor_2_id] && state.coresById[modelo.cor_2_id].nome) || '—';
       return modelo.nome + ' · ' + c1 + '/' + c2 + ' · ' + w;
     }
 

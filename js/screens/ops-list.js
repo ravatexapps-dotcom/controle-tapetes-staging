@@ -170,6 +170,21 @@
 
       state.error = false;
       state.rows = opsRes.data || [];
+      // PHASE-MANTA-A: best-effort product type per OP, derived from its items'
+      // modelo.tipo_produto. Graceful before the migration is applied (column
+      // absent => no product chip); never blocks the list.
+      state.produtoTipoPorOp = {};
+      try {
+        var tpRes = await window.supa.from('op_itens').select('op_id, modelo:modelo_id(tipo_produto)');
+        if (!tpRes.error && Array.isArray(tpRes.data)) {
+          var disp = window.RAVATEX_OP_DISPLAY;
+          var byOp = {};
+          tpRes.data.forEach(function (r) { (byOp[r.op_id] = byOp[r.op_id] || []).push({ tipo_produto: r.modelo && r.modelo.tipo_produto }); });
+          Object.keys(byOp).forEach(function (opId) {
+            state.produtoTipoPorOp[opId] = (disp && disp.deriveProductType) ? disp.deriveProductType(byOp[opId]) : null;
+          });
+        }
+      } catch (e) { /* coluna ausente: sem chip de produto */ }
       state.itensPorOpId = {};
       (entregaRes.data || []).forEach(function (item) {
         if (!item || item.op_id == null) return;
@@ -488,7 +503,12 @@
         window.el('div', { style: 'font-size:14px;font-weight:700;color:#2563eb;' }, primaryLabel),
         window.el('div', { style: 'font-size:11px;color:#9aa2af;margin-top:1px;' }, legacyLabel + ' · ' + loteLabel)
       ),
-      window.el('div', {}, window.badgeTipo(row.tipo || 'tecelagem')),
+      window.el('div', {}, window.badgeTipo(row.tipo || 'tecelagem'), (function () {
+        var pt = state.produtoTipoPorOp && state.produtoTipoPorOp[row.id];
+        if (pt !== 'manta' && pt !== 'tapete') return '';
+        var isM = pt === 'manta';
+        return window.el('span', { style: 'margin-left:6px;display:inline-flex;align-items:center;border-radius:4px;padding:2px 7px;font-size:10.5px;font-weight:700;' + (isM ? 'background:#ecfdf5;color:#047857;' : 'background:#eef2f7;color:#475569;') }, isM ? 'Manta' : 'Tapete');
+      })()),
       (function () {
         var nome = clienteNome(row);
         return window.truncatedCell(nome, nome === '—' ? null : nome, 'font-size:13px;color:#3f4757;');

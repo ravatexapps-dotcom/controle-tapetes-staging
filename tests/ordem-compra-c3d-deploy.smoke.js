@@ -4,8 +4,8 @@
 //
 // Proves, without applying any migration and without touching any shared or
 // remote database:
-//   - the ordered deployment manifest resolves exactly db/01..db/77, with
-//     db/76 and db/77 as the terminal two, fixed migration numbers unique
+//   - the ordered deployment manifest resolves exactly db/01..db/78, with
+//     db/77 and db/78 as the terminal two, fixed migration numbers unique
 //     and contiguous, and the manifest fails closed on the malformed
 //     synthetic fixtures the real repository must never actually contain
 //     (duplicate number, gap, missing start, unexpected trailing migration,
@@ -20,6 +20,12 @@
 // by one entry, so the expected terminal advances 76 -> 77 and the terminal two
 // become db/76/db/77. The fail-closed mechanism (duplicate/gap/missing-start/
 // unexpected-trailing via synthetic fixtures) is unchanged.
+//
+// PHASE-MANTA-A note (PHASE-MANTA-A-PRODUCT-IDENTITY-AND-ROUTE-FOUNDATION-R1):
+// the authorized new migration db/78_manta_product_identity_and_route_foundation.sql
+// extends this manifest by one further entry, so the expected terminal advances
+// 77 -> 78 and the terminal two become db/77/db/78. The fail-closed mechanism is
+// unchanged (mechanism preserved, only the terminal expectation advanced).
 //   - the accepted application artifact is an ancestor of the current
 //     branch;
 //   - scripts/c3d/bootstrap-disposable-cluster.mjs creates a fresh disposable
@@ -49,13 +55,15 @@ const BOOTSTRAP_SOURCE = fs.readFileSync(BOOTSTRAP_MODULE_PATH, 'utf8');
 
 const APPLICATION_ARTIFACT = '22bfb192c6c2ad10ccd2b2883d54c3a17e40cc9f';
 const EXPECTED_BRANCH = 'dev';
-const EXPECTED_TERMINAL = 77;
+const EXPECTED_TERMINAL = 78;
 const DB75_FILENAME = '75_ordem_compra_c3c_inactive_cutover.sql';
 const DB76_FILENAME = '76_ordem_compra_c3c_b_db_prerequisites.sql';
 const DB77_FILENAME = '77_ordem_compra_c5a_emission_readiness.sql';
+const DB78_FILENAME = '78_manta_product_identity_and_route_foundation.sql';
 const DB75_PATH = path.join(DB_DIR, DB75_FILENAME);
 const DB76_PATH = path.join(DB_DIR, DB76_FILENAME);
 const DB77_PATH = path.join(DB_DIR, DB77_FILENAME);
+const DB78_PATH = path.join(DB_DIR, DB78_FILENAME);
 
 const FORBIDDEN_HOST_PATTERNS = [
   /ucrjtfswnfdlxwtmxnoo/i,
@@ -216,8 +224,8 @@ function buildDeploymentManifest({ dbDir = DB_DIR, applicationArtifact = APPLICA
   });
 
   const terminalTwo = migrations.slice(-2);
-  assert.equal(terminalTwo[0].filename, DB76_FILENAME);
-  assert.equal(terminalTwo[1].filename, DB77_FILENAME);
+  assert.equal(terminalTwo[0].filename, DB77_FILENAME);
+  assert.equal(terminalTwo[1].filename, DB78_FILENAME);
 
   for (const migration of terminalTwo) {
     const relPathPosix = `db/${migration.filename}`;
@@ -236,27 +244,27 @@ function buildDeploymentManifest({ dbDir = DB_DIR, applicationArtifact = APPLICA
 // Deployment manifest: happy path against the real repository
 // ---------------------------------------------------------------------------
 
-test('deployment manifest resolves exactly db/01..db/77, contiguous and unique', () => {
+test('deployment manifest resolves exactly db/01..db/78, contiguous and unique', () => {
   const filenames = fs.readdirSync(DB_DIR);
   const entries = resolveMigrationManifest(filenames, { expectedTerminal: EXPECTED_TERMINAL });
-  assert.equal(entries.length, 77);
+  assert.equal(entries.length, 78);
   assert.deepEqual(
     entries.map((entry) => entry.number),
-    Array.from({ length: 77 }, (_, i) => i + 1)
+    Array.from({ length: 78 }, (_, i) => i + 1)
   );
 });
 
-test('db/76 and db/77 are the terminal two migrations', () => {
+test('db/77 and db/78 are the terminal two migrations', () => {
   const filenames = fs.readdirSync(DB_DIR);
   const entries = resolveMigrationManifest(filenames, { expectedTerminal: EXPECTED_TERMINAL });
-  const [second76, first77] = entries.slice(-2);
-  assert.equal(second76.filename, DB76_FILENAME);
-  assert.equal(first77.filename, DB77_FILENAME);
+  const [second77, first78] = entries.slice(-2);
+  assert.equal(second77.filename, DB77_FILENAME);
+  assert.equal(first78.filename, DB78_FILENAME);
 });
 
 test('the full deployment manifest builds against the real repository', () => {
   const manifest = buildDeploymentManifest();
-  assert.equal(manifest.migrations.length, 77);
+  assert.equal(manifest.migrations.length, 78);
   assert.equal(manifest.applicationArtifact, APPLICATION_ARTIFACT);
   assert.equal(manifest.terminalTwo.length, 2);
   assert.ok(/^[0-9a-f]{40}$/.test(manifest.documentaryCheckpoint));
@@ -346,18 +354,25 @@ test('db/77 hash matches the committed HEAD checkpoint', () => {
   assert.equal(sha256OfFile(DB77_PATH), gitCheckpointHash(`db/${DB77_FILENAME}`));
 });
 
+test('db/78 hash matches the committed HEAD checkpoint', () => {
+  assert.equal(sha256OfFile(DB78_PATH), gitCheckpointHash(`db/${DB78_FILENAME}`));
+});
+
 let db75HashAtStart;
 let db76HashAtStart;
 let db77HashAtStart;
+let db78HashAtStart;
 before(() => {
   db75HashAtStart = sha256OfFile(DB75_PATH);
   db76HashAtStart = sha256OfFile(DB76_PATH);
   db77HashAtStart = sha256OfFile(DB77_PATH);
+  db78HashAtStart = sha256OfFile(DB78_PATH);
 });
 after(() => {
   assert.equal(sha256OfFile(DB75_PATH), db75HashAtStart, 'db/75 must remain byte-stable for the whole test run');
   assert.equal(sha256OfFile(DB76_PATH), db76HashAtStart, 'db/76 must remain byte-stable for the whole test run');
   assert.equal(sha256OfFile(DB77_PATH), db77HashAtStart, 'db/77 must remain byte-stable for the whole test run');
+  assert.equal(sha256OfFile(DB78_PATH), db78HashAtStart, 'db/78 must remain byte-stable for the whole test run');
 });
 
 // ---------------------------------------------------------------------------

@@ -30,7 +30,14 @@
     var larguraLabel = larguraValue != null
       ? Number(larguraValue).toFixed(2).replace('.', ',') + ' m'
       : '-';
-    return modelo.nome + ' · ' + larguraLabel;
+    var base = modelo.nome + ' · ' + larguraLabel;
+    // PHASE-MANTA-A: prefix the canonical product type when available; the
+    // colors are rendered separately by itemCoresLabel.
+    var display = window.RAVATEX_OP_DISPLAY;
+    if (modelo.tipo_produto != null && display && typeof display.productTypeLabel === 'function') {
+      return display.productTypeLabel(modelo.tipo_produto) + ' · ' + base;
+    }
+    return base;
   }
 
   function itemCoresLabel(state, item) {

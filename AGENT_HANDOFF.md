@@ -12,9 +12,9 @@ This generated continuation view owns no rules, state, product semantics, or acc
 
 ## Current objective
 
-- Status: `CLOSED / ACCEPTED`
-- Objective: Governance refoundation is closed and accepted; await architect selection of the next product or governance phase.
-- Next authorizable action: `ARCHITECT-NEXT-PHASE-SELECTION-R1` / `ARCHITECT_DECISION`
+- Status: `IMPLEMENTED / LOCALLY VERIFIED / AWAITING ARCHITECT REVIEW`
+- Objective: PHASE-MANTA-A (Manta product identity + route-homogeneity foundation) is implemented and locally verified on branch dev; awaiting architect review. Business-flow recreation remains paused. PHASE-MANTA-B (Manta direct delivery) is not authorized. No shared-development apply is authorized.
+- Next authorizable action: `PHASE-MANTA-A-ARCHITECT-REVIEW-R1` / `ARCHITECT_DECISION`
 
 ## Blockers and decisions
 
@@ -27,7 +27,7 @@ This generated continuation view owns no rules, state, product semantics, or acc
 
 ## Task-specific pointers
 
-- `docs/governance/GOVERNANCE_EFFICIENCY_REFOUNDATION_PHASE_CONTRACT.md::# Governance Efficiency Refoundation — Phase Contract`
+- `docs/architecture/MANTA_PRODUCT_VARIANT_PHASE_CONTRACT.md::# Manta Product Variant — PHASE-MANTA-A Phase Contract`
 - `docs/architecture/ORDEM_COMPRA_LIFECYCLE_SPEC_PROPOSED.md::## §R.31 Active Phase-C continuation requirement registry — governance metadata`
 - `docs/architecture/PEDIDO_OP_SCHEMA_CONTRACT.md::### 13.17 Active Phase-C schema requirement registry — governance metadata`
 - `docs/architecture/PEDIDO_PRODUCTION_FLOW_BACKLOG.md::# Update 2026-07-22 - C5-DOCUMENTATION-CLOSEOUT-R1 (PHASE-C5 supervisor acceptance and closeout; OC-C5-EMISSION-001 SATISFIED)`
