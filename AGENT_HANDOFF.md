@@ -1,44 +1,34 @@
-# Operational Handoff
-<!-- GOVERNANCE_GENERATED_VIEW:BEGIN -->
+# Agent Handoff
+<!-- GENERATED_COMPATIBILITY_VIEW: docs/governance/current-state.json via scripts/governance/render-unit4-canonical-views.mjs; NO INDEPENDENT AUTHORITY -->
 
-STATUS: ACTIVE_GENERATED_COMPATIBILITY_VIEW
-STRUCTURED_SOURCE: docs/governance/current-state.json
-RENDERER: scripts/governance/render-unit4-canonical-views.mjs
-SCHEMA_VERSION: 2.0.0
-AUTHORITY_EPOCH: 1
-CUTOVER_ID: GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-4C-AUTHORITY-CUTOVER-R1
-SOURCE_PAYLOAD_SHA256: 4cbb2a3328019a54cf6e8adb3625e8d8f2548a35f6d8ce7997864e376ed1abcf
+This generated continuation view owns no rules, state, product semantics, or acceptance.
 
-<!-- GOVERNANCE_GENERATED_VIEW:END -->
-
-This bounded compatibility view owns no facts. Use the structured source and its governing pointers.
+## Routing
 
 - Repository: `ravatexapps-dotcom/controle-tapetes-staging`
 - Workspace: `D:\Programação\controle-tapetes-g28`
 - Branch: `dev`
-- Objective: `GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-5-LEGACY-DEPRECATION-AND-POST-CUTOVER-AUDIT-DIAGNOSIS-R2`
-- Unit 4D: `CLOSED / ACCEPTED / DIRECTLY VERIFIED`
-- Unit 5: `NOT AUTHORIZED / DIAGNOSIS R2 NEXT AUTHORIZABLE`
+- Publication boundary: `staging/dev`; EXPLICIT_SINGLE_FAST_FORWARD_ONLY
 
-## Governing pointers
+## Current objective
 
-- canonical_ledger: `docs/ledgers/G28_LEDGER.md`
-- current_state: `docs/governance/current-state.json`
-- document_classification: `docs/governance/catalog/documents.json`
-- governing_spec: `docs/architecture/ORDEM_COMPRA_LIFECYCLE_SPEC_PROPOSED.md`
-- handoff: `AGENT_HANDOFF.md`
-- handoff_policy: `docs/governance/SUPERVISION_PROTOCOL.md`
-- ledger: `docs/ledgers/G28_LEDGER.md`
-- sequence_authority: `docs/architecture/PEDIDO_PRODUCTION_FLOW_BACKLOG.md`
-- technical_contract: `docs/architecture/PEDIDO_OP_SCHEMA_CONTRACT.md`
-- traceability: `docs/governance/traceability/purchase-order-phase-c.json`
-- traceability_authority: `docs/governance/traceability/purchase-order-phase-c.json`
-- unit_4_contract: `docs/governance/GOVERNANCE_EFFICIENCY_REFOUNDATION_UNIT_4_AUTHORITY_CUTOVER_CONTRACT.md`
+- Status: `COMPACT_BOOTSTRAP_IMPLEMENTED; AWAITING_ARCHITECT REVIEW AND ACCEPTANCE`
+- Objective: Review and accept or reject the compact governance bootstrap checkpoint.
+- Next authorizable action: `GOVERNANCE-COMPACT-BOOTSTRAP-ARCHITECT-REVIEW-R1` / `READ_ONLY_REVIEW`
 
-## Bounded ledger evidence
+## Blockers and decisions
 
-- `GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-4C-DOCUMENTARY-AUTHORITY-CUTOVER-R1` in `docs/governance/shadow/ledger/partitions/G28_LEDGER_PART_0012.md`; Unit 4C activation
-- `GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-4C-CANONICAL-CONSISTENCY-FORWARD-CORRECTION-R1` in `docs/governance/shadow/ledger/partitions/G28_LEDGER_PART_0012.md`; Unit 4C consistency correction
-- `GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-4D-POST-CUTOVER-ACCEPTANCE-CLOSEOUT-R1` in `docs/governance/shadow/ledger/partitions/G28_LEDGER_PART_0012.md`; Unit 4D acceptance
-- `GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-5-PRECONDITION-CANONICAL-AUTHORITY-CONSUMER-FORWARD-CORRECTION-R3` in `docs/governance/shadow/ledger/partitions/G28_LEDGER_PART_0012.md`; Unit 5 diagnosis precondition authority-consumer correction
-- `GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-5-R2-BOOTSTRAP-VALIDATOR-LIFECYCLE-DECOUPLING-FORWARD-CORRECTION-R1` in `docs/governance/shadow/ledger/partitions/G28_LEDGER_PART_0012.md`; Unit 5 R2 bootstrap validator lifecycle decoupling
+- Blockers/debts: `INGESTOR-DOC-CYCLE-VERIFY-DEFERRED`, `CAMADA3-BK5-BK8`, `DELETE-PROD-GUARD-A`, `CODE-HEALTH-AUDIT-18-R1`, `HISTORICAL_SALDO_FIOS_PROVENANCE_UNAVAILABLE`, `NATIVE_RECEIPT_COMPATIBILITY_MULTI_ORIGIN_UNRESOLVED`, `C3D-13-UNMAPPED-ROWS-COMPLETENESS-GATE`
+- Open architect decisions: Accept or reject the compact governance bootstrap checkpoint. | Select the next product or governance phase after acceptance. | Rule on historical saldo_fios provenance before any real receipt cutover. | Resolve native receipt compatibility for multiple purchase-order origins.
+
+## Prohibitions
+
+- NO PRODUCT IMPLEMENTATION | NO DATABASE, SUPABASE, SQL, MIGRATION, ACL/RLS, AUTH, OR ENVIRONMENT ACCESS | NO DEPLOYMENT, ACTIVATION, CUTOVER, PONR, OR PRODUCTION ACTION | NO MAIN, ORIGIN, TAG, ADDITIONAL REF, FORCE, OR SECOND PUBLICATION ATTEMPT | NO CLEANUP, ARCHIVAL, DEPRECATION, PARTITIONING, OR PHYSICAL DELETION | NO MANUAL EDIT OF GENERATED HANDOFF OR OTHER GENERATED OUTPUT OUTSIDE ITS RENDERER | NO ACCESS TO PROTECTED RESIDUE EXCEPT EXPLICIT NON-DISCLOSING HASH EQUALITY | NO AUTOMATIC PRODUCT OR GOVERNANCE PHASE CHAINING | SUPERSEDED UNIT 5A DIRECTION IS CANCELLED
+
+## Task-specific pointers
+
+- `docs/governance/GOVERNANCE_EFFICIENCY_REFOUNDATION_PHASE_CONTRACT.md::# Governance Efficiency Refoundation — Phase Contract`
+- `docs/architecture/ORDEM_COMPRA_LIFECYCLE_SPEC_PROPOSED.md::## §R.31 Active Phase-C continuation requirement registry — governance metadata`
+- `docs/architecture/PEDIDO_OP_SCHEMA_CONTRACT.md::### 13.17 Active Phase-C schema requirement registry — governance metadata`
+- `docs/architecture/PEDIDO_PRODUCTION_FLOW_BACKLOG.md::# Update 2026-07-22 - C5-DOCUMENTATION-CLOSEOUT-R1 (PHASE-C5 supervisor acceptance and closeout; OC-C5-EMISSION-001 SATISFIED)`
+- `docs/governance/traceability/purchase-order-phase-c.json::/requirements`

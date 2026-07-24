@@ -1,576 +1,168 @@
 {
-  "accepted_checkpoints": {
-    "clean_slate_execution": "770772548baf04c52e9ef020ff94f8bdabf77f03",
-    "clean_slate_readiness": "62bdcc75c335e3881adb1af6350de801675aa788",
-    "governance_unit_1": "39abf42a7341b61fd4ac02a8e38d1e4f33471f0f",
-    "governance_unit_2": "f7106977f4613de1830bef46002dbf0a4b8b3cbe",
-    "governance_unit_3": "53899e30b72cde3d1f5759ea59fb0a4d632c974d",
-    "product": "3405fdab8e05ec0f81cbfe07c63c489e551fee92",
-    "unit_4_contract": "76f52c842678b74e655ef9080f4fc67ccbd38e22",
-    "unit_4a_readiness": "fa986cf935abbf053172cfd549b0171bb9446f58",
-    "unit_4b_readiness": "fa986cf935abbf053172cfd549b0171bb9446f58",
-    "unit_4c_activation": "51a61ddfdbf058887ead64f9b018c30ebc371b48",
-    "unit_4c_canonical_correction": "7abaff26559c71b62337356eccd0baaf36b5f214",
-    "unit_4d_acceptance": "7abaff26559c71b62337356eccd0baaf36b5f214"
-  },
-  "activation": {
-    "accepted_unit4b_readiness_checkpoint": "fa986cf935abbf053172cfd549b0171bb9446f58",
-    "activation_manifest_sha256": "cbe8329402953226462344b02b279aad70cf1f3c05c8e4d5ad2d5f2d1852d33d",
-    "allowed_publication_remote": "staging/dev",
-    "authority_epoch": 1,
-    "bounded_ledger_reference_identities": [
-      {
-        "partition_id": "G28-LEDGER-PART-0012",
-        "partition_payload_sha256": "00282f041f1ac3a72b725fad166159de6b0ef5f828bd4cc06246ab80b36f5e4f",
-        "unit_id": "G28-LEDGER-UNIT-0206",
-        "unit_raw_sha256": "ef4734875e25c22b1922399ab17701a8e2f18c50148ac3ef1cd645fd03bb1560"
-      },
-      {
-        "partition_id": "G28-LEDGER-PART-0012",
-        "partition_payload_sha256": "00282f041f1ac3a72b725fad166159de6b0ef5f828bd4cc06246ab80b36f5e4f",
-        "unit_id": "G28-LEDGER-UNIT-0207",
-        "unit_raw_sha256": "19445bf9719f06f093b1cb4f4fb752c9ec2b144c74ab5fbb65a6f80039d6da8f"
-      },
-      {
-        "partition_id": "G28-LEDGER-PART-0012",
-        "partition_payload_sha256": "00282f041f1ac3a72b725fad166159de6b0ef5f828bd4cc06246ab80b36f5e4f",
-        "unit_id": "G28-LEDGER-UNIT-0208",
-        "unit_raw_sha256": "174bb82d69b8fe76ad6ecce4f5f222092430eaf95506854d389b4e2a076ac2fb"
-      },
-      {
-        "partition_id": "G28-LEDGER-PART-0012",
-        "partition_payload_sha256": "00282f041f1ac3a72b725fad166159de6b0ef5f828bd4cc06246ab80b36f5e4f",
-        "unit_id": "G28-LEDGER-UNIT-0209",
-        "unit_raw_sha256": "8a40d000128bed2a4bb4a852d9a6702bc2e43eeb7f662105ef5e357e1a909c5a"
-      },
-      {
-        "partition_id": "G28-LEDGER-PART-0012",
-        "partition_payload_sha256": "00282f041f1ac3a72b725fad166159de6b0ef5f828bd4cc06246ab80b36f5e4f",
-        "unit_id": "G28-LEDGER-UNIT-0210",
-        "unit_raw_sha256": "8929045c167372edbdbe4994635d8b18ab83187dbfdc61c7dae5415aed9923ab"
-      }
-    ],
+  "format_version": "3.0.0",
+  "state_id": "GOVERNANCE-COMPACT-CURRENT-STATE-R1",
+  "repository": {
+    "identity": "ravatexapps-dotcom/controle-tapetes-staging",
+    "canonical_workspace": "D:\\Programação\\controle-tapetes-g28",
+    "standalone_git_required": true,
     "branch": "dev",
-    "cutover_id": "GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-4C-AUTHORITY-CUTOVER-R1",
-    "generated_view_hashes": {
-      "AGENT_HANDOFF.md": "d741e7e0190a2a59c34370b10bdbc58644e56fe620c5de405c80f6dd23f4e2a0",
-      "PROJECT_STATE.md": "f44682e544d715d2d0868aa0c2a2ef3f2a5b0ab6404d37226c0a65cad1c54e7d",
-      "docs/DOCUMENTATION_INDEX.md": "f23e9d751b4a1723cbb40d726224a7e0c0cae3e81340f900a0fb7af8999b81cc",
-      "docs/architecture/ORDEM_COMPRA_C3_TRACEABILITY.md": "81e8f73f56df3cd61ce42bf0f6878ae1c7d6abb32e314a965dc07981341863b7"
-    },
-    "governing_artifact_hashes": {
-      "docs/governance/AGENT_INSTRUCTIONS.md": "4b4715ccc3af4360bfbbbfe3458df22fb10a9d8707fad17b9cf188a450d86380",
-      "docs/governance/DOCUMENTATION_MODEL.md": "2ecf212d135440e135bab188db1ebe94dedf709a4a43c0474ba3e05262981404",
-      "docs/governance/GOVERNANCE_EFFICIENCY_REFOUNDATION_PHASE_CONTRACT.md": "c7a00f2227ad4716d433e82fd66457b0bf9292285627157a54bd0a53db6ce48b",
-      "docs/governance/GOVERNANCE_EFFICIENCY_REFOUNDATION_UNIT_4_AUTHORITY_CUTOVER_CONTRACT.md": "e25f312238b717f620b12b75a921535444791e4b2121b642bb8be581f1d3c23b",
-      "docs/governance/SUPERVISION_PROTOCOL.md": "0d046e279bcfa57ff1a5c6930dc24f86438d13ffc70b4bba71d7bfa77c98a8c8"
-    },
-    "manifest_algorithm": "UNIT4-ACTIVATION-MANIFEST-V1",
-    "required_parent": "fa986cf935abbf053172cfd549b0171bb9446f58",
-    "rollback_readiness_sha256": "147d6660000ab3fd43709f85f331574ba345f2b572a5bbefb95ad0ab3b10e781",
-    "state_payload_sha256": "4cbb2a3328019a54cf6e8adb3625e8d8f2548a35f6d8ce7997864e376ed1abcf",
-    "status": "active",
-    "structured_source_hashes": {
-      "docs/governance/catalog/documents.json": "6ddeca84d57695bf81abac30c1f596ac902b8e7209a4f9a14706c789504bd772",
-      "docs/governance/cutover/unit4c-rollback-readiness.json": "147d6660000ab3fd43709f85f331574ba345f2b572a5bbefb95ad0ab3b10e781",
-      "docs/governance/schemas/current-state-v2.schema.json": "96275e889664605faa27662a956b84b491427ce9a5b01facf47e925ce787cd63",
-      "docs/governance/schemas/document-catalog-v2.schema.json": "00ad550d9faafadc69e4648a2fb42bf27069d499bccef9b1f893d2b5f79f1d98",
-      "docs/governance/schemas/purchase-order-phase-c-v2.schema.json": "e571e89b511b7459962e0b732b322f82b87f5028bb64084a11906c01fb713dac",
-      "docs/governance/schemas/unit4-cutover-manifest.schema.json": "e60f63b522c361078e0cc75cd30bc8ab683575823a45f93fc86834021afdc426",
-      "docs/governance/schemas/unit4-rollback-readiness.schema.json": "605d15d7e4ceea4a9ee3184def15005d714a5ac535bdd4c7b23a3a1cc93911a7",
-      "docs/governance/traceability/purchase-order-phase-c.json": "66581e068321afe6660033c370ef5b8fc45ee21a62ee264a928701af71138d58"
-    },
-    "target_schema_version": "2.0.0"
-  },
-  "active_phase": {
-    "contract": "docs/governance/GOVERNANCE_EFFICIENCY_REFOUNDATION_PHASE_CONTRACT.md",
-    "id": "GOVERNANCE-EFFICIENCY-REFOUNDATION",
-    "status": "UNIT 4 CLOSED / UNIT 5 R2 BOOTSTRAP VALIDATOR CORRECTED / DIAGNOSIS R2 NEXT AUTHORIZABLE"
-  },
-  "active_requirements": [
-    {
-      "blocking_state": "NON_BLOCKING",
-      "disposition": "PARTIALLY_SATISFIED",
-      "phase_owner": "C3C-B",
-      "requirement_id": "OC-C3-READ-001"
-    },
-    {
-      "blocking_state": "NON_BLOCKING",
-      "disposition": "PARTIALLY_SATISFIED",
-      "phase_owner": "C3C-B",
-      "requirement_id": "OC-C3-WRITE-001"
-    },
-    {
-      "blocking_state": "NON_BLOCKING",
-      "disposition": "PARTIALLY_SATISFIED",
-      "phase_owner": "C3C-B",
-      "requirement_id": "OC-C3-COMPAT-001"
-    },
-    {
-      "blocking_state": "NON_BLOCKING",
-      "disposition": "PARTIALLY_SATISFIED",
-      "phase_owner": "C3C-B",
-      "requirement_id": "OC-C3-NOUI-001"
-    },
-    {
-      "blocking_state": "NON_BLOCKING",
-      "disposition": "SATISFIED",
-      "phase_owner": "C3D",
-      "requirement_id": "OC-C3D-DEPLOY-001"
-    },
-    {
-      "blocking_state": "NON_BLOCKING",
-      "disposition": "SATISFIED",
-      "phase_owner": "C3D",
-      "requirement_id": "OC-C3D-FENCE-001"
-    },
-    {
-      "blocking_state": "NON_BLOCKING",
-      "disposition": "SATISFIED",
-      "phase_owner": "C3D",
-      "requirement_id": "OC-C3D-ACL-001"
-    },
-    {
-      "blocking_state": "NON_BLOCKING",
-      "disposition": "SATISFIED",
-      "phase_owner": "C3D",
-      "requirement_id": "OC-C3D-LOCK-001"
-    },
-    {
-      "blocking_state": "BLOCKED",
-      "disposition": "PLANNED",
-      "phase_owner": "REAL_CUTOVER",
-      "requirement_id": "OC-CUTOVER-001"
-    },
-    {
-      "blocking_state": "NON_BLOCKING",
-      "disposition": "PARTIALLY_SATISFIED",
-      "phase_owner": "REAL_CUTOVER",
-      "requirement_id": "OC-CUTOVER-PONR-001"
-    },
-    {
-      "blocking_state": "NON_BLOCKING",
-      "disposition": "SATISFIED",
-      "phase_owner": "C4",
-      "requirement_id": "OC-C4-ADMIN-001"
-    },
-    {
-      "blocking_state": "DEFERRED",
-      "disposition": "DEFERRED",
-      "phase_owner": "C4",
-      "requirement_id": "OC-C4-SUPPLIER-001"
-    },
-    {
-      "blocking_state": "NON_BLOCKING",
-      "disposition": "SATISFIED",
-      "phase_owner": "C5",
-      "requirement_id": "OC-C5-EMISSION-001"
-    }
-  ],
-  "active_track": "PURCHASE_ORDER_PHASE_C",
-  "applicable_baseline": null,
-  "authority": "canonical_current_state",
-  "authority_epoch": 1,
-  "bounded_recent_ledger_references": [
-    {
-      "end_byte": 987566,
-      "end_line": 9690,
-      "event_id": "GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-4C-DOCUMENTARY-AUTHORITY-CUTOVER-R1",
-      "heading": "## 2026-07-23 — GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-4C-DOCUMENTARY-AUTHORITY-CUTOVER-R1 — activate structured governance authority",
-      "partition_id": "G28-LEDGER-PART-0012",
-      "partition_path": "docs/governance/shadow/ledger/partitions/G28_LEDGER_PART_0012.md",
-      "partition_payload_sha256": "00282f041f1ac3a72b725fad166159de6b0ef5f828bd4cc06246ab80b36f5e4f",
-      "phase_order_id": "GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-4C-DOCUMENTARY-AUTHORITY-CUTOVER-R1",
-      "reason": "Unit 4C activation",
-      "start_byte": 985272,
-      "start_line": 9681,
-      "unit_id": "G28-LEDGER-UNIT-0206",
-      "unit_raw_sha256": "ef4734875e25c22b1922399ab17701a8e2f18c50148ac3ef1cd645fd03bb1560"
-    },
-    {
-      "end_byte": 989067,
-      "end_line": 9699,
-      "event_id": "GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-4C-CANONICAL-CONSISTENCY-FORWARD-CORRECTION-R1",
-      "heading": "## 2026-07-23 — GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-4C-CANONICAL-CONSISTENCY-FORWARD-CORRECTION-R1 — reconcile post-cutover governance authority",
-      "partition_id": "G28-LEDGER-PART-0012",
-      "partition_path": "docs/governance/shadow/ledger/partitions/G28_LEDGER_PART_0012.md",
-      "partition_payload_sha256": "00282f041f1ac3a72b725fad166159de6b0ef5f828bd4cc06246ab80b36f5e4f",
-      "phase_order_id": "GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-4C-CANONICAL-CONSISTENCY-FORWARD-CORRECTION-R1",
-      "reason": "Unit 4C consistency correction",
-      "start_byte": 987566,
-      "start_line": 9691,
-      "unit_id": "G28-LEDGER-UNIT-0207",
-      "unit_raw_sha256": "19445bf9719f06f093b1cb4f4fb752c9ec2b144c74ab5fbb65a6f80039d6da8f"
-    },
-    {
-      "end_byte": 990561,
-      "end_line": 9709,
-      "event_id": "GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-4D-POST-CUTOVER-ACCEPTANCE-CLOSEOUT-R1",
-      "heading": "## 2026-07-23 — GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-4D-POST-CUTOVER-ACCEPTANCE-CLOSEOUT-R1 — docs: close Unit 4 post-cutover acceptance",
-      "partition_id": "G28-LEDGER-PART-0012",
-      "partition_path": "docs/governance/shadow/ledger/partitions/G28_LEDGER_PART_0012.md",
-      "partition_payload_sha256": "00282f041f1ac3a72b725fad166159de6b0ef5f828bd4cc06246ab80b36f5e4f",
-      "phase_order_id": "GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-4D-POST-CUTOVER-ACCEPTANCE-CLOSEOUT-R1",
-      "reason": "Unit 4D acceptance",
-      "start_byte": 989067,
-      "start_line": 9700,
-      "unit_id": "G28-LEDGER-UNIT-0208",
-      "unit_raw_sha256": "174bb82d69b8fe76ad6ecce4f5f222092430eaf95506854d389b4e2a076ac2fb"
-    },
-    {
-      "end_byte": 992812,
-      "end_line": 9731,
-      "event_id": "GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-5-PRECONDITION-CANONICAL-AUTHORITY-CONSUMER-FORWARD-CORRECTION-R3",
-      "heading": "## 2026-07-23 — GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-5-PRECONDITION-CANONICAL-AUTHORITY-CONSUMER-FORWARD-CORRECTION-R3 — fix: reconcile residual governance authority consumers",
-      "partition_id": "G28-LEDGER-PART-0012",
-      "partition_path": "docs/governance/shadow/ledger/partitions/G28_LEDGER_PART_0012.md",
-      "partition_payload_sha256": "00282f041f1ac3a72b725fad166159de6b0ef5f828bd4cc06246ab80b36f5e4f",
-      "phase_order_id": "GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-5-PRECONDITION-CANONICAL-AUTHORITY-CONSUMER-FORWARD-CORRECTION-R3",
-      "reason": "Unit 5 diagnosis precondition authority-consumer correction",
-      "start_byte": 990561,
-      "start_line": 9710,
-      "unit_id": "G28-LEDGER-UNIT-0209",
-      "unit_raw_sha256": "8a40d000128bed2a4bb4a852d9a6702bc2e43eeb7f662105ef5e357e1a909c5a"
-    },
-    {
-      "end_byte": 994393,
-      "end_line": 9741,
-      "event_id": "GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-5-R2-BOOTSTRAP-VALIDATOR-LIFECYCLE-DECOUPLING-FORWARD-CORRECTION-R1",
-      "heading": "## 2026-07-23 — GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-5-R2-BOOTSTRAP-VALIDATOR-LIFECYCLE-DECOUPLING-FORWARD-CORRECTION-R1 — fix: decouple Unit 4 validator from Unit 5 lifecycle",
-      "partition_id": "G28-LEDGER-PART-0012",
-      "partition_path": "docs/governance/shadow/ledger/partitions/G28_LEDGER_PART_0012.md",
-      "partition_payload_sha256": "00282f041f1ac3a72b725fad166159de6b0ef5f828bd4cc06246ab80b36f5e4f",
-      "phase_order_id": "GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-5-R2-BOOTSTRAP-VALIDATOR-LIFECYCLE-DECOUPLING-FORWARD-CORRECTION-R1",
-      "reason": "Unit 5 R2 bootstrap validator lifecycle decoupling",
-      "start_byte": 992812,
-      "start_line": 9732,
-      "unit_id": "G28-LEDGER-UNIT-0210",
-      "unit_raw_sha256": "8929045c167372edbdbe4994635d8b18ab83187dbfdc61c7dae5415aed9923ab"
-    }
-  ],
-  "candidate_views": {
-    "docs/governance/candidate/generated/AGENT_HANDOFF.md": {
-      "authority": "HISTORICAL_READINESS_EVIDENCE",
-      "structured_source": "docs/governance/current-state.json"
-    },
-    "docs/governance/candidate/generated/DOCUMENTATION_INDEX.md": {
-      "authority": "HISTORICAL_READINESS_EVIDENCE",
-      "structured_source": "docs/governance/catalog/documents.json"
-    },
-    "docs/governance/candidate/generated/ORDEM_COMPRA_C3_TRACEABILITY.md": {
-      "authority": "HISTORICAL_READINESS_EVIDENCE",
-      "structured_source": "docs/governance/traceability/purchase-order-phase-c.json"
-    },
-    "docs/governance/candidate/generated/PROJECT_STATE.md": {
-      "authority": "HISTORICAL_READINESS_EVIDENCE",
-      "structured_source": "docs/governance/current-state.json"
+    "publication": {
+      "remote": "staging",
+      "branch": "dev",
+      "tracking_ref": "refs/remotes/staging/dev",
+      "mode": "EXPLICIT_SINGLE_FAST_FORWARD_ONLY"
     }
   },
-  "cutover_id": "GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-4C-AUTHORITY-CUTOVER-R1",
-  "environment_boundaries": {
-    "forbidden_project": "bhgifjrfagkzubpyqpew",
-    "production": "gqmpsxkxynrjvidfmojk",
-    "shared_development": "ucrjtfswnfdlxwtmxnoo"
-  },
-  "evidence_events": [
-    {
-      "checkpoint": "fa986cf935abbf053172cfd549b0171bb9446f58",
-      "classification": "EXTERNAL_SUPERVISOR_RULING",
-      "event_id": "UNIT4A_UNIT4B_ACCEPTANCE",
-      "unit4a": "CLOSED / ACCEPTED / DIRECTLY VERIFIED",
-      "unit4b": "DIRECT REVIEW COMPLETED / ACCEPTED"
-    },
-    {
-      "accepted_readiness_checkpoint": "fa986cf935abbf053172cfd549b0171bb9446f58",
-      "activation_status": "active",
-      "actual_activation_commit_identity": "EXTERNAL_GIT_FACT",
-      "authority_epoch": 1,
-      "classification": "MATERIAL_STATE_CHANGE_AND_NORMATIVE_AUTHORITY_CHANGE",
-      "cutover_id": "GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-4C-AUTHORITY-CUTOVER-R1",
-      "event_id": "UNIT4C_ACTIVATION",
-      "publication_ponr": "git push staging dev",
-      "unit4c_self_accepted": false,
-      "unit4d_review_required": true
-    },
-    {
-      "classification": "SPEC_CUSTODY_ACCOUNTING",
-      "event_id": "UNIT4C_ACTIVATION_SUBJECT",
-      "subject": "feat: activate structured governance authority"
-    },
-    {
-      "authority_epoch": 1,
-      "classification": "FORWARD_CORRECTION",
-      "event_id": "UNIT4C_CANONICAL_CONSISTENCY_FORWARD_CORRECTION",
-      "original_activation_manifest_sha256": "ce27f5a2471a51e47bffff09853e3fe08e63bcc6c03da0cbd2891f84c74a6f67",
-      "original_ponr_unchanged": true,
-      "rollback_executed": false,
-      "second_activation": false,
-      "subject": "fix: reconcile post-cutover governance authority",
-      "unit4d_review_required": true
-    },
-    {
-      "accepted_corrected_checkpoint": "7abaff26559c71b62337356eccd0baaf36b5f214",
-      "authority_epoch": 1,
-      "classification": "EXTERNAL_SUPERVISOR_ACCEPTANCE",
-      "documentary_authority_cutover_status": "CLOSED / ACCEPTED / DIRECTLY VERIFIED",
-      "event_id": "UNIT4D_POST_CUTOVER_ACCEPTANCE",
-      "original_activation_checkpoint": "51a61ddfdbf058887ead64f9b018c30ebc371b48",
-      "rollback_executed": false,
-      "second_activation": false,
-      "subject": "docs: close Unit 4 post-cutover acceptance",
-      "unit4c_status": "CLOSED / ACCEPTED / DIRECTLY VERIFIED",
-      "unit4d_status": "CLOSED / ACCEPTED / DIRECTLY VERIFIED",
-      "unit5_authorized": false
-    },
-    {
-      "active_normative_artifacts_scanned": 25,
-      "authority_epoch": 1,
-      "camada2_classification": "ACTIVE_CONTRADICTION",
-      "classification": "FORWARD_CORRECTION",
-      "corrected_consumer_count": 9,
-      "corrected_renderer_count": 1,
-      "diagnosis_r1_result": "READ_ONLY_DIAGNOSIS / HARD STOP",
-      "diagnosis_r2_required": true,
-      "event_id": "UNIT5_PRECONDITION_CANONICAL_AUTHORITY_CONSUMER_CORRECTION",
-      "rollback_executed": false,
-      "second_activation": false,
-      "semantic_matches_classified": 188,
-      "subject": "fix: reconcile residual governance authority consumers",
-      "unit5_implementation_authorized": false,
-      "unmanifested_active_contradictions": 0,
-      "unresolved_semantic_matches": 0
-    },
-    {
-      "authority_epoch": 1,
-      "blocked_diagnosis": "GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-5-LEGACY-DEPRECATION-AND-POST-CUTOVER-AUDIT-DIAGNOSIS-R2",
-      "classification": "FORWARD_CORRECTION",
-      "diagnosis_r2_required": true,
-      "event_id": "UNIT5_R2_BOOTSTRAP_VALIDATOR_LIFECYCLE_DECOUPLING",
-      "rollback_executed": false,
-      "second_activation": false,
-      "stale_mismatch_count": 4,
-      "stale_validator": "scripts/governance/validate-unit4-cutover.mjs",
-      "subject": "fix: decouple Unit 4 validator from Unit 5 lifecycle",
-      "unit5_implementation_authorized": false,
-      "validator_scope_after_correction": "UNIT_4_INVARIANTS_PLUS_DYNAMIC_CURRENT_LIFECYCLE_PARITY"
-    }
-  ],
-  "governing_pointers": {
-    "canonical_ledger": "docs/ledgers/G28_LEDGER.md",
-    "current_state": "docs/governance/current-state.json",
-    "document_classification": "docs/governance/catalog/documents.json",
-    "governing_spec": "docs/architecture/ORDEM_COMPRA_LIFECYCLE_SPEC_PROPOSED.md",
-    "handoff": "AGENT_HANDOFF.md",
-    "handoff_policy": "docs/governance/SUPERVISION_PROTOCOL.md",
-    "ledger": "docs/ledgers/G28_LEDGER.md",
-    "sequence_authority": "docs/architecture/PEDIDO_PRODUCTION_FLOW_BACKLOG.md",
-    "technical_contract": "docs/architecture/PEDIDO_OP_SCHEMA_CONTRACT.md",
-    "traceability": "docs/governance/traceability/purchase-order-phase-c.json",
-    "traceability_authority": "docs/governance/traceability/purchase-order-phase-c.json",
-    "unit_4_contract": "docs/governance/GOVERNANCE_EFFICIENCY_REFOUNDATION_UNIT_4_AUTHORITY_CUTOVER_CONTRACT.md"
-  },
-  "historical_fact_sources": [
-    {
-      "authority_status": "HISTORICAL_NON_AUTHORITATIVE",
-      "bootstrap_required": false,
-      "evidence_identity": "GOVERNANCE-EFFICIENCY-REFOUNDATION-SOURCE-MANIFEST",
-      "evidence_role": "PRE_CUTOVER_SEMANTIC_EQUIVALENCE",
-      "record_count": 57,
-      "record_kind": "MAPPING",
-      "source_path": "docs/governance/shadow/current-state-equivalence.json",
-      "unresolved_count": 0
-    },
-    {
-      "authority_status": "HISTORICAL_NON_AUTHORITATIVE",
-      "bootstrap_required": false,
-      "evidence_identity": "GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-4A-SOURCE-MANIFEST-R1",
-      "evidence_role": "ACCEPTED_UNIT4A_READINESS_EQUIVALENCE",
-      "record_count": 57,
-      "record_kind": "MAPPING",
-      "source_path": "docs/governance/candidate/current-state-equivalence.json",
-      "unresolved_count": 0
-    },
-    {
-      "authority_status": "HISTORICAL_NON_AUTHORITATIVE",
-      "bootstrap_required": false,
-      "evidence_identity": "ACCEPTED_UNIT4B_CHECKPOINT:fa986cf935abbf053172cfd549b0171bb9446f58",
-      "evidence_role": "PRE_CUTOVER_CURRENT_STATE_ARCHIVE",
-      "record_count": 10,
-      "record_kind": "UNIT",
-      "source_path": "docs/closeouts/PROJECT_STATE_ARCHIVE_2026-07.md",
-      "unresolved_count": 0
-    },
-    {
-      "authority_status": "CANONICAL_APPEND_ONLY_HISTORY_NON_AUTHORITATIVE_FOR_CURRENT_STATE",
-      "bootstrap_required": false,
-      "evidence_identity": "G28-LEDGER-SOURCE-MANIFEST-R1",
-      "evidence_role": "APPEND_ONLY_GOVERNANCE_HISTORY",
-      "record_count": 211,
-      "record_kind": "UNIT",
-      "source_path": "docs/ledgers/G28_LEDGER.md",
-      "unresolved_count": 0
-    }
-  ],
-  "last_accepted_phase": "PHASE-C5",
-  "live_debts": [
-    {
-      "blocking": true,
-      "owner_path": "docs/governance/current-state.json",
-      "stable_id": "INGESTOR-DOC-CYCLE-VERIFY-DEFERRED",
-      "status": "active production blocker"
-    },
-    {
-      "blocking": true,
-      "owner_path": "docs/governance/current-state.json",
-      "stable_id": "CAMADA3-BK5-BK8",
-      "status": "open"
-    },
-    {
-      "blocking": true,
-      "owner_path": "docs/governance/current-state.json",
-      "stable_id": "DELETE-PROD-GUARD-A",
-      "status": "open"
-    },
-    {
-      "blocking": false,
-      "owner_path": "docs/governance/current-state.json",
-      "stable_id": "CODE-HEALTH-AUDIT-18-R1",
-      "status": "open"
-    },
-    {
-      "blocking": true,
-      "owner_path": "docs/governance/current-state.json",
-      "stable_id": "HISTORICAL_SALDO_FIOS_PROVENANCE_UNAVAILABLE",
-      "status": "open"
-    },
-    {
-      "blocking": true,
-      "owner_path": "docs/governance/current-state.json",
-      "stable_id": "NATIVE_RECEIPT_COMPATIBILITY_MULTI_ORIGIN_UNRESOLVED",
-      "status": "open"
-    },
-    {
-      "blocking": true,
-      "owner_path": "docs/governance/current-state.json",
-      "stable_id": "C3D-13-UNMAPPED-ROWS-COMPLETENESS-GATE",
-      "status": "open"
-    }
-  ],
-  "mode": "canonical",
-  "next_authorizable_action": {
-    "canonical_value": "GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-5-LEGACY-DEPRECATION-AND-POST-CUTOVER-AUDIT-DIAGNOSIS-R2",
-    "mode": "READ_ONLY_DIAGNOSIS",
-    "order_id": "GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-5-LEGACY-DEPRECATION-AND-POST-CUTOVER-AUDIT-DIAGNOSIS-R2",
-    "risk_class": "R1",
-    "status": "AUTHORIZABLE AFTER DIRECT REVIEW / UNIT 5 IMPLEMENTATION NOT AUTHORIZED"
-  },
-  "phase_status": {
-    "documentary_authority_cutover": "CLOSED / ACCEPTED / DIRECTLY VERIFIED",
-    "unit4a": "CLOSED / ACCEPTED / DIRECTLY VERIFIED",
-    "unit4b": "DIRECT REVIEW COMPLETED / ACCEPTED",
-    "unit4c": "CLOSED / ACCEPTED / DIRECTLY VERIFIED",
-    "unit4d": "CLOSED / ACCEPTED / DIRECTLY VERIFIED",
-    "unit5": "NOT AUTHORIZED / DIAGNOSIS R2 NEXT AUTHORIZABLE",
-    "unit_4_contract": "CLOSED / ACCEPTED / DIRECTLY VERIFIED"
-  },
-  "prohibitions": [
-    "NO DATABASE ACCESS, SQL, MIGRATIONS, OR PRODUCT IMPLEMENTATION",
-    "NO PRODUCTION ACCESS OR FORBIDDEN-PROJECT ACCESS",
-    "NO CLEANUP, COMPACTION, PARTITIONING, ARCHIVAL, DEPRECATION, OR DELETION",
-    "NO REAL_CUTOVER OR PHASE-C5B AUTHORIZATION",
-    "NO PUSH OTHER THAN THE SINGLE EXPLICIT FAST-FORWARD STAGING PUSH",
-    "UNIT_5",
-    "SILENT_FALLBACK",
-    "MANUAL_GENERATED_ROOT_EDIT",
-    "UNIT_5_IMPLEMENTATION"
-  ],
   "protected_residue": [
     {
       "path": ".gitignore",
-      "status": "pre-existing modified residue; preserve exactly"
+      "expected_status": "MODIFIED",
+      "handling": "PRESERVE_EXACTLY; DO_NOT OPEN, DISPLAY, COPY, MODIFY, RESTORE, STAGE, COMMIT, REMOVE, CLEAN, OR REINTERPRET"
     },
     {
       "path": ".codex/config.toml",
-      "status": "pre-existing untracked residue; preserve exactly"
+      "expected_status": "UNTRACKED",
+      "handling": "PRESERVE_EXACTLY; DO NOT OPEN, DISPLAY, COPY, MODIFY, RESTORE, STAGE, COMMIT, REMOVE, CLEAN, OR REINTERPRET"
     },
     {
       "path": ".mcp.json",
-      "status": "pre-existing untracked residue; preserve exactly"
+      "expected_status": "UNTRACKED",
+      "handling": "PRESERVE_EXACTLY; DO NOT OPEN, DISPLAY, COPY, MODIFY, RESTORE, STAGE, COMMIT, REMOVE, CLEAN, OR REINTERPRET"
     }
   ],
-  "repository": {
-    "branch": "dev",
-    "canonical_workspace": "D:\\Programação\\controle-tapetes-g28",
-    "checkpoint_remote": "staging/dev",
-    "identity": "ravatexapps-dotcom/controle-tapetes-staging",
-    "standalone_git_expected": true
+  "last_accepted": {
+    "product_phase": "PHASE-C5",
+    "product_evidence": {
+      "path": "docs/ledgers/G28_LEDGER.md",
+      "anchor": "## 2026-07-22 — C5-DOCUMENTATION-CLOSEOUT-R1 — Close PHASE-C5 purchase-order emission phase"
+    },
+    "governance_checkpoint": "GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-5-R2-BOOTSTRAP-VALIDATOR-LIFECYCLE-DECOUPLING-FORWARD-CORRECTION-R1",
+    "governance_evidence": {
+      "path": "docs/ledgers/G28_LEDGER.md",
+      "anchor": "## 2026-07-23 — GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-5-R2-BOOTSTRAP-VALIDATOR-LIFECYCLE-DECOUPLING-FORWARD-CORRECTION-R1 — fix: decouple Unit 4 validator from Unit 5 lifecycle"
+    }
   },
-  "rollback_readiness": {
-    "forward_only": true,
-    "path": "docs/governance/cutover/unit4c-rollback-readiness.json",
-    "sha256": "147d6660000ab3fd43709f85f331574ba345f2b572a5bbefb95ad0ab3b10e781",
-    "status": "PREPARED / NOT AUTHORIZED / NOT ACTIVATED"
+  "active_phase": {
+    "id": "GOVERNANCE-EFFICIENCY-REFOUNDATION",
+    "status": "COMPACT_BOOTSTRAP_IMPLEMENTED; AWAITING_ARCHITECT REVIEW AND ACCEPTANCE",
+    "contract": {
+      "path": "docs/governance/GOVERNANCE_EFFICIENCY_REFOUNDATION_PHASE_CONTRACT.md",
+      "anchor": "# Governance Efficiency Refoundation — Phase Contract"
+    },
+    "immediate_objective": "Review and accept or reject the compact governance bootstrap checkpoint.",
+    "self_accepted": false
   },
-  "root_authorities": [
+  "next_authorizable_action": {
+    "id": "GOVERNANCE-COMPACT-BOOTSTRAP-ARCHITECT-REVIEW-R1",
+    "mode": "READ_ONLY_REVIEW",
+    "status": "AUTHORIZABLE; NO PRODUCT OR FOLLOW-ON GOVERNANCE PHASE IS AUTHORIZED",
+    "after_acceptance": "The architect selects the next product or governance action; no phase chains automatically."
+  },
+  "active_track": {
+    "id": "PURCHASE_ORDER_PHASE_C",
+    "status": "LAST PRODUCT PHASE ACCEPTED; NEXT PRODUCT PHASE UNSELECTED",
+    "governing_pointers": [
+      {
+        "role": "product_semantics",
+        "path": "docs/architecture/ORDEM_COMPRA_LIFECYCLE_SPEC_PROPOSED.md",
+        "anchor": "## §R.31 Active Phase-C continuation requirement registry — governance metadata"
+      },
+      {
+        "role": "technical_semantics",
+        "path": "docs/architecture/PEDIDO_OP_SCHEMA_CONTRACT.md",
+        "anchor": "### 13.17 Active Phase-C schema requirement registry — governance metadata"
+      },
+      {
+        "role": "sequence_and_dependencies",
+        "path": "docs/architecture/PEDIDO_PRODUCTION_FLOW_BACKLOG.md",
+        "anchor": "# Update 2026-07-22 - C5-DOCUMENTATION-CLOSEOUT-R1 (PHASE-C5 supervisor acceptance and closeout; OC-C5-EMISSION-001 SATISFIED)"
+      },
+      {
+        "role": "requirement_traceability",
+        "path": "docs/governance/traceability/purchase-order-phase-c.json",
+        "anchor": "/requirements"
+      }
+    ]
+  },
+  "blockers_and_material_debts": [
     {
-      "generated_status": "GENERATED",
-      "path": "PROJECT_STATE.md",
-      "remains_authoritative": false,
-      "role": "GENERATED_CURRENT_STATE_COMPATIBILITY"
+      "id": "INGESTOR-DOC-CYCLE-VERIFY-DEFERRED",
+      "status": "ACTIVE_PRODUCTION_BLOCKER",
+      "blocking": true
     },
     {
-      "generated_status": "GENERATED",
-      "path": "AGENT_HANDOFF.md",
-      "remains_authoritative": false,
-      "role": "GENERATED_OPERATIONAL_HANDOFF"
+      "id": "CAMADA3-BK5-BK8",
+      "status": "OPEN",
+      "blocking": true
     },
     {
-      "generated_status": "GENERATED",
-      "path": "docs/DOCUMENTATION_INDEX.md",
-      "remains_authoritative": false,
-      "role": "GENERATED_CLASSIFICATION_COMPATIBILITY"
+      "id": "DELETE-PROD-GUARD-A",
+      "status": "OPEN",
+      "blocking": true
     },
     {
-      "generated_status": "GENERATED",
-      "path": "docs/architecture/ORDEM_COMPRA_C3_TRACEABILITY.md",
-      "remains_authoritative": false,
-      "role": "GENERATED_TRACEABILITY_COMPATIBILITY"
+      "id": "CODE-HEALTH-AUDIT-18-R1",
+      "status": "OPEN",
+      "blocking": false
+    },
+    {
+      "id": "HISTORICAL_SALDO_FIOS_PROVENANCE_UNAVAILABLE",
+      "status": "OPEN",
+      "blocking": true
+    },
+    {
+      "id": "NATIVE_RECEIPT_COMPATIBILITY_MULTI_ORIGIN_UNRESOLVED",
+      "status": "OPEN",
+      "blocking": true
+    },
+    {
+      "id": "C3D-13-UNMAPPED-ROWS-COMPLETENESS-GATE",
+      "status": "OPEN",
+      "blocking": true
     }
   ],
-  "schema_version": "2.0.0",
-  "state_id": "GOVERNANCE-EFFICIENCY-REFOUNDATION-CURRENT-STATE-R1",
-  "structured_sources": {
-    "docs/governance/catalog/documents.json": {
-      "path": "docs/governance/catalog/documents.json",
-      "sha256": "6ddeca84d57695bf81abac30c1f596ac902b8e7209a4f9a14706c789504bd772"
+  "open_architect_decisions": [
+    "Accept or reject the compact governance bootstrap checkpoint.",
+    "Select the next product or governance phase after acceptance.",
+    "Rule on historical saldo_fios provenance before any real receipt cutover.",
+    "Resolve native receipt compatibility for multiple purchase-order origins."
+  ],
+  "environment_boundaries": {
+    "this_checkpoint": "REPOSITORY_LOCAL_ONLY; NO ENVIRONMENT COMMANDS AUTHORIZED",
+    "shared_development": {
+      "project_id": "ucrjtfswnfdlxwtmxnoo",
+      "access": "NOT AUTHORIZED BY CURRENT PHASE"
     },
-    "docs/governance/cutover/unit4c-rollback-readiness.json": {
+    "production": {
+      "project_id": "gqmpsxkxynrjvidfmojk",
+      "access": "PROHIBITED WITHOUT A NEW EXPLICIT ORDER"
+    },
+    "forbidden_project": {
+      "project_id": "bhgifjrfagkzubpyqpew",
+      "access": "PROHIBITED"
+    }
+  },
+  "prohibitions": [
+    "NO PRODUCT IMPLEMENTATION",
+    "NO DATABASE, SUPABASE, SQL, MIGRATION, ACL/RLS, AUTH, OR ENVIRONMENT ACCESS",
+    "NO DEPLOYMENT, ACTIVATION, CUTOVER, PONR, OR PRODUCTION ACTION",
+    "NO MAIN, ORIGIN, TAG, ADDITIONAL REF, FORCE, OR SECOND PUBLICATION ATTEMPT",
+    "NO CLEANUP, ARCHIVAL, DEPRECATION, PARTITIONING, OR PHYSICAL DELETION",
+    "NO MANUAL EDIT OF GENERATED HANDOFF OR OTHER GENERATED OUTPUT OUTSIDE ITS RENDERER",
+    "NO ACCESS TO PROTECTED RESIDUE EXCEPT EXPLICIT NON-DISCLOSING HASH EQUALITY",
+    "NO AUTOMATIC PRODUCT OR GOVERNANCE PHASE CHAINING",
+    "SUPERSEDED UNIT 5A DIRECTION IS CANCELLED"
+  ],
+  "exceptional_evidence": [
+    {
+      "purpose": "historical authority-cutover recovery evidence; retrieve only if required",
       "path": "docs/governance/cutover/unit4c-rollback-readiness.json",
-      "sha256": "147d6660000ab3fd43709f85f331574ba345f2b572a5bbefb95ad0ab3b10e781"
+      "anchor": "/status"
     },
-    "docs/governance/schemas/current-state-v2.schema.json": {
-      "path": "docs/governance/schemas/current-state-v2.schema.json",
-      "sha256": "96275e889664605faa27662a956b84b491427ce9a5b01facf47e925ce787cd63"
-    },
-    "docs/governance/schemas/document-catalog-v2.schema.json": {
-      "path": "docs/governance/schemas/document-catalog-v2.schema.json",
-      "sha256": "00ad550d9faafadc69e4648a2fb42bf27069d499bccef9b1f893d2b5f79f1d98"
-    },
-    "docs/governance/schemas/purchase-order-phase-c-v2.schema.json": {
-      "path": "docs/governance/schemas/purchase-order-phase-c-v2.schema.json",
-      "sha256": "e571e89b511b7459962e0b732b322f82b87f5028bb64084a11906c01fb713dac"
-    },
-    "docs/governance/schemas/unit4-cutover-manifest.schema.json": {
-      "path": "docs/governance/schemas/unit4-cutover-manifest.schema.json",
-      "sha256": "e60f63b522c361078e0cc75cd30bc8ab683575823a45f93fc86834021afdc426"
-    },
-    "docs/governance/schemas/unit4-rollback-readiness.schema.json": {
-      "path": "docs/governance/schemas/unit4-rollback-readiness.schema.json",
-      "sha256": "605d15d7e4ceea4a9ee3184def15005d714a5ac535bdd4c7b23a3a1cc93911a7"
-    },
-    "docs/governance/traceability/purchase-order-phase-c.json": {
-      "path": "docs/governance/traceability/purchase-order-phase-c.json",
-      "sha256": "66581e068321afe6660033c370ef5b8fc45ee21a62ee264a928701af71138d58"
+    {
+      "purpose": "append-only governance history; retrieve only the task-relevant heading",
+      "path": "docs/ledgers/G28_LEDGER.md",
+      "anchor": "## 2026-07-23 — GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-4D-POST-CUTOVER-ACCEPTANCE-CLOSEOUT-R1 — docs: close Unit 4 post-cutover acceptance"
     }
-  }
+  ]
 }

@@ -4,7 +4,6 @@ import path from 'node:path';
 import process from 'node:process';
 import { fileURLToPath } from 'node:url';
 import {
-  catalogRenderProjection,
   jsonSha256,
   sha256,
   traceabilityRenderProjection
@@ -22,7 +21,11 @@ export const CANONICAL_VIEW_PATHS = Object.freeze({
 });
 export const CANONICAL_OUTPUT_ALLOWLIST = new Set(Object.values(CANONICAL_VIEW_PATHS));
 
-function marker(source, sourceHash) {
+function compatibilityMarker(source) {
+  return `<!-- GENERATED_COMPATIBILITY_VIEW: ${source} via ${RENDERER_ID}; NO INDEPENDENT AUTHORITY -->`;
+}
+
+function legacyTraceabilityMarker(source, sourceHash) {
   return [
     '<!-- GOVERNANCE_GENERATED_VIEW:BEGIN -->',
     '',
@@ -39,96 +42,79 @@ function marker(source, sourceHash) {
   ];
 }
 
-function bullets(object) {
-  return Object.entries(object).map(([key, value]) => `- ${key}: \`${value}\``);
+function pointerText(pointer) {
+  return `${pointer.path}::${pointer.anchor}`;
 }
 
-function projectView(state) {
+function projectView() {
   return [
-    '# Current State',
-    ...marker('docs/governance/current-state.json', state.activation.state_payload_sha256),
-    'This compatibility view owns no facts. `docs/governance/current-state.json` is canonical.',
+    '# Project State Compatibility Pointer',
     '',
-    '## Activation',
+    compatibilityMarker('docs/governance/current-state.json'),
     '',
-    `- Status: \`${state.activation.status}\``,
-    `- Authority epoch: \`${state.authority_epoch}\``,
-    `- Cutover ID: \`${state.cutover_id}\``,
-    `- Active phase: \`${state.active_phase.status}\``,
-    '',
-    '## Accepted checkpoints',
-    '',
-    ...bullets(state.accepted_checkpoints),
-    '',
-    '## Next authorized action',
-    '',
-    `- \`${state.next_authorizable_action.canonical_value}\``,
-    `- Mode: \`${state.next_authorizable_action.mode}\``,
-    `- Status: \`${state.next_authorizable_action.status}\``,
-    '',
-    '## Governing pointers',
-    '',
-    ...bullets(state.governing_pointers),
-    '',
-    '## Blockers and debts',
-    '',
-    ...(state.live_debts.length ? state.live_debts.map(debt =>
-      `- \`${debt.stable_id}\`: ${debt.status}; blocking=${debt.blocking}; owner=\`${debt.owner_path}\`.`)
-      : ['- None recorded.']),
-    '',
-    '## Prohibitions',
-    '',
-    ...state.prohibitions.map(value => `- \`${value}\``),
-    '',
-    '## Authority matrix',
-    '',
-    ...state.root_authorities.map(item =>
-      `- \`${item.path}\`: ${item.role}; generated=${item.generated_status}; authoritative=${item.remains_authoritative}.`),
-    '',
-    '## Bounded ledger references',
-    '',
-    ...state.bounded_recent_ledger_references.map(reference =>
-      `- \`${reference.unit_id}\` / \`${reference.partition_id}\`: ${reference.reason}`),
+    '`docs/governance/current-state.json` is the sole current operational state owner.',
+    '`AGENT_HANDOFF.md` is the generated continuation view. Read neither this file nor any historical ledger as independent current-state authority.',
     ''
   ].join('\n');
 }
 
 function handoffView(state) {
+  const pointers = [
+    state.active_phase.contract,
+    ...state.active_track.governing_pointers
+  ];
   return [
-    '# Operational Handoff',
-    ...marker('docs/governance/current-state.json', state.activation.state_payload_sha256),
-    'This bounded compatibility view owns no facts. Use the structured source and its governing pointers.',
+    '# Agent Handoff',
+    compatibilityMarker('docs/governance/current-state.json'),
+    '',
+    'This generated continuation view owns no rules, state, product semantics, or acceptance.',
+    '',
+    '## Routing',
     '',
     `- Repository: \`${state.repository.identity}\``,
     `- Workspace: \`${state.repository.canonical_workspace}\``,
     `- Branch: \`${state.repository.branch}\``,
-    `- Objective: \`${state.next_authorizable_action.canonical_value}\``,
-    `- Unit 4D: \`${state.phase_status.unit4d}\``,
-    `- Unit 5: \`${state.phase_status.unit5}\``,
+    `- Publication boundary: \`${state.repository.publication.remote}/${state.repository.publication.branch}\`; ${state.repository.publication.mode}`,
     '',
-    '## Governing pointers',
+    '## Current objective',
     '',
-    ...bullets(state.governing_pointers),
+    `- Status: \`${state.active_phase.status}\``,
+    `- Objective: ${state.active_phase.immediate_objective}`,
+    `- Next authorizable action: \`${state.next_authorizable_action.id}\` / \`${state.next_authorizable_action.mode}\``,
     '',
-    '## Bounded ledger evidence',
+    '## Blockers and decisions',
     '',
-    ...state.bounded_recent_ledger_references.map(reference =>
-      `- \`${reference.event_id ?? reference.unit_id}\` in \`${reference.partition_path}\`; ${reference.reason}`),
+    `- Blockers/debts: ${state.blockers_and_material_debts.map(item => `\`${item.id}\``).join(', ')}`,
+    `- Open architect decisions: ${state.open_architect_decisions.join(' | ')}`,
+    '',
+    '## Prohibitions',
+    '',
+    `- ${state.prohibitions.join(' | ')}`,
+    '',
+    '## Task-specific pointers',
+    '',
+    ...pointers.map(pointer => `- \`${pointerText(pointer)}\``),
     ''
   ].join('\n');
 }
 
-function documentationView(catalog) {
-  const rows = catalog.artifacts.map(item =>
-    `| ${item.artifact_id} | \`${item.path}\` | ${item.classification} | ${item.authority} | ${item.disposition} |`);
+function documentationView() {
   return [
-    '# Documentation Index',
-    ...marker('docs/governance/catalog/documents.json', jsonSha256(catalogRenderProjection(catalog))),
-    'This generated view owns no classifications. Normative governance semantics remain in `docs/governance/DOCUMENTATION_MODEL.md`.',
+    '# Documentation Inventory Pointer',
     '',
-    '| ID | Path | Classification | Authority | Disposition |',
-    '|---|---|---|---|---|',
-    ...rows,
+    compatibilityMarker('docs/governance/catalog/documents.json'),
+    '',
+    'This passive generated notice owns no current state, bootstrap rule, classification decision, supervision rule, authorization, or product semantics.',
+    '',
+    '- Active operational rules: `docs/governance/AGENT_INSTRUCTIONS.md`',
+    '- Current operational continuity: `docs/governance/current-state.json`',
+    '- Generated continuation view: `AGENT_HANDOFF.md`',
+    '- Passive structured inventory: `docs/governance/catalog/documents.json`',
+    '- Product and technical semantics: applicable authored specifications and contracts',
+    '- Sequence and dependencies: applicable plans and backlogs',
+    '- Historical evidence: applicable append-only ledgers and Git',
+    '',
+    'The complete governed corpus remains discoverable through repository search and the passive structured inventory; it is not a fixed-bootstrap input.',
     ''
   ].join('\n');
 }
@@ -140,7 +126,7 @@ function traceabilityView(traceability) {
   });
   return [
     '# Purchase Order Phase-C Traceability',
-    ...marker('docs/governance/traceability/purchase-order-phase-c.json',
+    ...legacyTraceabilityMarker('docs/governance/traceability/purchase-order-phase-c.json',
       jsonSha256(traceabilityRenderProjection(traceability))),
     'This generated view owns no product or technical semantics.',
     '',
@@ -171,13 +157,20 @@ export function assertCanonicalOutputPaths(requestedPaths) {
 export function validateRenderedViews(views) {
   assertCanonicalOutputPaths(Object.keys(views));
   for (const [relativePath, text] of Object.entries(views)) {
-    if ((text.match(/GOVERNANCE_GENERATED_VIEW:BEGIN/gu) ?? []).length !== 1
-        || (text.match(/GOVERNANCE_GENERATED_VIEW:END/gu) ?? []).length !== 1) {
-      throw new Error(`invalid generated marker cardinality: ${relativePath}`);
+    if (relativePath === CANONICAL_VIEW_PATHS.traceability) {
+      if ((text.match(/GOVERNANCE_GENERATED_VIEW:BEGIN/gu) ?? []).length !== 1
+          || (text.match(/GOVERNANCE_GENERATED_VIEW:END/gu) ?? []).length !== 1) {
+        throw new Error(`invalid historical traceability marker cardinality: ${relativePath}`);
+      }
+    } else if ((text.match(/GENERATED_COMPATIBILITY_VIEW/gu) ?? []).length !== 1) {
+      throw new Error(`invalid compact generated marker cardinality: ${relativePath}`);
     }
     if (/CANDIDATE READINESS VIEW|commit_sha|tree_sha|TIMESTAMP:/iu.test(text)) {
       throw new Error(`forbidden generated content: ${relativePath}`);
     }
+  }
+  if (/SHA256|hash chain|ledger history/iu.test(views[CANONICAL_VIEW_PATHS.handoff])) {
+    throw new Error('compact handoff contains historical hash or ledger machinery');
   }
 }
 
@@ -204,6 +197,6 @@ export function writeCanonicalViews(root, views) {
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === path.resolve(fileURLToPath(import.meta.url))) {
-  console.error('Use build-unit4-cutover.mjs for the controlled four-root transaction.');
+  console.error('Import this module and write only the explicitly authorized generated paths.');
   process.exitCode = 1;
 }
