@@ -12,8 +12,8 @@ This generated continuation view owns no rules, state, product semantics, or acc
 
 ## Current objective
 
-- Status: `IMPLEMENTED / LOCALLY VERIFIED / AWAITING ARCHITECT REVIEW`
-- Objective: PHASE-MANTA-A (Manta product identity + route-homogeneity foundation) is implemented and locally verified on branch dev; awaiting architect review. Business-flow recreation remains paused. PHASE-MANTA-B (Manta direct delivery) is not authorized. No shared-development apply is authorized.
+- Status: `IMPLEMENTED / LOCALLY AND CONCURRENTLY VERIFIED / AWAITING ARCHITECT REVIEW`
+- Objective: PHASE-MANTA-A (Manta product identity + route-homogeneity foundation, db/78) plus its db/79 forward correction (concurrency-safe OP route-homogeneity guard and model route/composition immutability) are implemented and locally and concurrently verified on a disposable PostgreSQL cluster on branch dev; awaiting architect review. Business-flow recreation remains paused. PHASE-MANTA-B (Manta direct delivery) is not authorized. No shared-development apply is authorized; db/78 and db/79 are applied only to disposable local clusters.
 - Next authorizable action: `PHASE-MANTA-A-ARCHITECT-REVIEW-R1` / `ARCHITECT_DECISION`
 
 ## Blockers and decisions

@@ -1340,3 +1340,42 @@ product-variation owner and its invariants (governing contract:
 Yarn is unchanged and width-keyed: Manta 1.40 reuses `parametros_largura[1.40]` with
 no duplicated factor. Direct Manta delivery (`entregas.etapa = 'tecelagem_direto'`)
 is deferred to PHASE-MANTA-B and is not part of this schema change.
+
+## Update 2026-07-24 — PHASE-MANTA-A route-invariant correction (db/79)
+
+`db/79_manta_product_identity_invariant_correction.sql` is a forward-only, idempotent
+correction of two invariant defects in db/78. It does not edit the published,
+byte-stable db/78 (forward-only migration policy, §12); the migration terminal guard
+advances 78 → 79 (`tests/ordem-compra-c3d-deploy.smoke.js`). Governing contract:
+`docs/architecture/MANTA_PRODUCT_VARIANT_PHASE_CONTRACT.md` §7.
+
+- **`op_itens_route_homogeneity_guard_fn` is now concurrency-safe.** The BEFORE
+  INSERT/UPDATE guard serializes writers on the owning `public.ops` row(s) with
+  `FOR UPDATE` before inspecting `op_itens`, so two concurrent first inserts of
+  different product types into the same empty OP can no longer both commit. Every
+  affected OP identity is locked in deterministic ascending `id` order (the
+  destination OP, plus the source OP when an UPDATE moves an item between OPs), which
+  composes deadlock-free with the existing db/31/db/32 finishing functions (they lock
+  the owning `ops` row `FOR UPDATE` before that op's `op_itens`). Under the canonical
+  READ COMMITTED isolation the blocked writer re-reads the committed rows under a
+  fresh per-statement snapshot and is rejected. Homogeneity semantics, the derived
+  product type (`modelos.tipo_produto` via `modelo_id`; no denormalized column) and
+  the no-partial-write BEFORE-trigger contract are all preserved from db/78. Inserts
+  into different OPs do not serialize.
+- **New `modelos_route_identity_immutability_guard` (BEFORE UPDATE on
+  `public.modelos`).** Once a model is referenced by `pedido_itens` or `op_itens`,
+  changing `tipo_produto` or `largura` is rejected — the persisted product identity of
+  historical Pedidos/OPs (derived through `modelo_id`) is immutable. An unreferenced
+  model may still change those fields, subject to the db/78 CHECK constraints; other
+  columns (e.g. `nome`) remain editable. Direct SQL and stale UI receive the same
+  rejection. The preferred path for a post-use type/width change is a new model SKU.
+  `SECURITY DEFINER`, `search_path = public`, grants and security mode match db/78.
+
+Verified on a disposable PostgreSQL 18.4 cluster (`tests/manta-product-identity-invariant.mjs`):
+full db/01..79 apply, db/78+db/79 idempotent re-apply with a stable schema fingerprint
+(zero schema/grant/trigger/function drift), the db/78 integration test, model
+immutability, real two-session route-homogeneity concurrency (one commit + one
+controlled rejection, homogeneous OP; same-type both succeed; different OPs
+independent; deterministic ascending lock order; no deadlock), finishing-RPC
+regression, and the C5 emission integration test. No shared-development apply is
+authorized.

@@ -1,6 +1,6 @@
 # Manta Product Variant — PHASE-MANTA-A Phase Contract
 
-STATUS: IMPLEMENTED / LOCALLY VERIFIED / AWAITING ARCHITECT REVIEW
+STATUS: IMPLEMENTED / LOCALLY AND CONCURRENTLY VERIFIED / AWAITING ARCHITECT REVIEW
 
 Order: `PHASE-MANTA-A-PRODUCT-IDENTITY-AND-ROUTE-FOUNDATION-R1`.
 Diagnosis: `PRODUCT-VARIANT-MANTA-WEAVING-ONLY-DIAGNOSIS-R1`.
@@ -89,10 +89,63 @@ applied to `ucrjtfswnfdlxwtmxnoo`.
 - `tests/manta-ui-surfaces.smoke.js` — Manta wiring on every affected surface.
 - `tests/manta-product-identity.integration.sql` — disposable-cluster proof of the
   width, uniqueness, pedido-override and OP-homogeneity guards (external runner).
-- `tests/ordem-compra-c3d-deploy.smoke.js` — migration terminal advanced 77 → 78.
+- `tests/manta-product-identity-invariant.mjs` — disposable-cluster invariant +
+  distinct-session concurrency harness for the db/79 correction (§7): full
+  db/01..79 apply, db/78+db/79 idempotent re-apply with zero drift, the db/78
+  integration test, model immutability, real two-session route-homogeneity
+  concurrency, deterministic ascending lock order, no deadlock, finishing
+  regression, and C5 emission regression; cluster destroyed with proof.
+- `tests/ordem-compra-c3d-deploy.smoke.js` — migration terminal advanced 77 → 78
+  (db/78), then 78 → 79 (db/79 correction, §7).
 
 ## 6. Deferred to PHASE-MANTA-B (not authorized here)
 
 Direct weaving→client delivery for Manta: `entregas.etapa = 'tecelagem_direto'`,
 generalized expedition source, `cliente_pedido_summary` / chain-state weaving-only
 branch, and Manta-only / mixed Pedido completion. None implemented in PHASE-MANTA-A.
+
+## 7. Forward correction — db/79 (route-invariant hardening)
+
+`db/79_manta_product_identity_invariant_correction.sql` (order
+`PHASE-MANTA-A-DB-VALIDATION-AND-INVARIANT-CORRECTION-R1`) forward-corrects two
+invariant defects in db/78 without editing the published, byte-stable db/78
+(forward-only migration policy; `PEDIDO_OP_SCHEMA_CONTRACT.md` §12):
+
+1. **Concurrency-safe route homogeneity.** db/78's `op_itens_route_homogeneity_guard`
+   inspected the OP's existing items without serializing concurrent inserts, so two
+   concurrent *first* inserts of different product types into the same empty OP could
+   each observe an empty OP and both commit — a committed mixed-route OP. The
+   corrected guard serializes writers on the owning `public.ops` row(s) with
+   `FOR UPDATE` **before** inspecting `op_itens`, locking every affected OP identity
+   (destination, plus the source when an UPDATE moves an item) in deterministic
+   ascending id order. Under the canonical READ COMMITTED isolation the second writer
+   blocks, then re-reads the now-committed rows under a fresh statement snapshot and
+   is rejected. Different OPs never block each other; opposing moves cannot deadlock;
+   it stays a BEFORE trigger, so an aborted statement leaves no partial write. No
+   denormalized product-type column is introduced (§2.1 preserved).
+
+2. **Model route/composition immutability once used.** Because product type and
+   composition are derived live through `modelos`, an in-place change to
+   `modelos.tipo_produto` or `modelos.largura` would silently rewrite the product
+   identity of every historical Pedido/OP that already references the model. The new
+   `modelos_route_identity_immutability_guard` (BEFORE UPDATE) rejects a change to
+   `tipo_produto` or `largura` once the model is referenced by `pedido_itens` or
+   `op_itens` (direct SQL and stale UI alike). An unreferenced model may still change
+   them, subject to the db/78 CHECK constraints; non-routing metadata (`nome`) stays
+   editable. The preferred operational path for a post-use type/width change is a new
+   model SKU. The db/78 informal-Manta backfill is unaffected (it runs before this
+   guard exists and, on re-apply, no longer matches its source row).
+
+Verified on a disposable PostgreSQL 18.4 cluster (`tests/manta-product-identity-invariant.mjs`):
+full db/01..79 apply; db/78+db/79 idempotent re-apply with zero schema/grant/trigger/
+function drift; the db/78 integration test; the informal-Manta backfill
+(`MANTA ARABESCO` → `ARABESCO`/manta, ordinary models stay tapete); model
+immutability; real two-session concurrency (exactly one commit + one controlled
+rejection with the OP left homogeneous, same-type inserts both succeed, different OPs
+independent, deterministic ascending lock order in both move directions, no deadlock);
+finishing-RPC regression (Manta origin rejected, Tapete origin still finishes); and
+the C5 emission integration test — cluster then destroyed with proof.
+
+Migration terminal advanced 78 → 79 (`tests/ordem-compra-c3d-deploy.smoke.js`). No
+shared-development apply is authorized: db/78 and db/79 are applied only to disposable
+local clusters.

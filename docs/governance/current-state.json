@@ -45,12 +45,12 @@
   },
   "active_phase": {
     "id": "PHASE-MANTA-A",
-    "status": "IMPLEMENTED / LOCALLY VERIFIED / AWAITING ARCHITECT REVIEW",
+    "status": "IMPLEMENTED / LOCALLY AND CONCURRENTLY VERIFIED / AWAITING ARCHITECT REVIEW",
     "contract": {
       "path": "docs/architecture/MANTA_PRODUCT_VARIANT_PHASE_CONTRACT.md",
       "anchor": "# Manta Product Variant — PHASE-MANTA-A Phase Contract"
     },
-    "immediate_objective": "PHASE-MANTA-A (Manta product identity + route-homogeneity foundation) is implemented and locally verified on branch dev; awaiting architect review. Business-flow recreation remains paused. PHASE-MANTA-B (Manta direct delivery) is not authorized. No shared-development apply is authorized.",
+    "immediate_objective": "PHASE-MANTA-A (Manta product identity + route-homogeneity foundation, db/78) plus its db/79 forward correction (concurrency-safe OP route-homogeneity guard and model route/composition immutability) are implemented and locally and concurrently verified on a disposable PostgreSQL cluster on branch dev; awaiting architect review. Business-flow recreation remains paused. PHASE-MANTA-B (Manta direct delivery) is not authorized. No shared-development apply is authorized; db/78 and db/79 are applied only to disposable local clusters.",
     "self_accepted": false,
     "architect_accepted": false
   },
@@ -58,7 +58,7 @@
     "id": "PHASE-MANTA-A-ARCHITECT-REVIEW-R1",
     "mode": "ARCHITECT_DECISION",
     "status": "AWAITING ARCHITECT REVIEW; PHASE-MANTA-B NOT AUTHORIZED; NO SHARED-DEVELOPMENT APPLY AUTHORIZED",
-    "authorization_boundary": "The architect reviews PHASE-MANTA-A. Applying db/78 to any environment, PHASE-MANTA-B, and business-flow recreation each require a new explicit order; no phase chains automatically."
+    "authorization_boundary": "The architect reviews PHASE-MANTA-A (db/78 and its db/79 correction). Applying db/78 or db/79 to any shared/staging/production environment, PHASE-MANTA-B, and business-flow recreation each require a new explicit order; no phase chains automatically."
   },
   "active_track": {
     "id": "PURCHASE_ORDER_PHASE_C",
