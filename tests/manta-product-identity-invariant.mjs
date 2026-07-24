@@ -1,10 +1,11 @@
 // tests/manta-product-identity-invariant.mjs
 //
-// PHASE-MANTA-A-DB-VALIDATION-AND-INVARIANT-CORRECTION-R1 — disposable-cluster
-// proof of the db/79 forward correction of db/78 route invariants.
+// PHASE-MANTA-A disposable-cluster proof of the db/79 route-invariant correction
+// and the db/80 model-reference concurrency correction of db/78.
 //
 // Governing contract: docs/architecture/MANTA_PRODUCT_VARIANT_PHASE_CONTRACT.md.
-// Correction migration: db/79_manta_product_identity_invariant_correction.sql.
+// Correction migrations: db/79_manta_product_identity_invariant_correction.sql and
+// db/80_manta_model_reference_concurrency_correction.sql.
 //
 // ENVIRONMENT: disposable local PostgreSQL 18.4 ONLY
 // (scripts/c3d/bootstrap-disposable-cluster.mjs). This harness NEVER connects to
@@ -35,8 +36,14 @@
 //             E4 an UPDATE that moves an item locks the LOWER op id first, in BOTH
 //                move directions (deterministic ascending lock order).
 //             E5 two opposing concurrent moves complete with NO deadlock.
-//   Part F  finishing-RPC regression (unchanged by db/79): gerar_op_latex rejects a
-//           Manta origin; a Tapete origin still creates finishing.
+//   Part G  model-reference concurrency (db/80): real distinct psql sessions prove
+//           the model identity used to validate an item cannot change between
+//           validation and commit — A OP first-reference wins, B model update wins,
+//           C pedido first-reference wins, D model update before pedido item,
+//           E non-contention (same-model refs don't serialize; nome + same-value
+//           model updates permitted), F opposing item modelo_id moves, no deadlock.
+//   Part F  finishing-RPC regression (unchanged by db/79/db/80): gerar_op_latex
+//           rejects a Manta origin; a Tapete origin still creates finishing.
 //   Part Z  mandatory full cluster destruction (pid absent, port closed, dir absent).
 //
 // Run:  node tests/manta-product-identity-invariant.mjs
@@ -361,8 +368,8 @@ async function resolveManifest() {
 // ===========================================================================
 async function partA(handle) {
   const manifest = await resolveManifest();
-  check(manifest.length === 79, `manifest must be db/01..db/79 (got ${manifest.length})`);
-  check(manifest[manifest.length - 1].n === 79, `terminal migration must be db/79 (got ${manifest[manifest.length - 1].n})`);
+  check(manifest.length === 80, `manifest must be db/01..db/80 (got ${manifest.length})`);
+  check(manifest[manifest.length - 1].n === 80, `terminal migration must be db/80 (got ${manifest[manifest.length - 1].n})`);
 
   await applySql(handle, 'preamble.sql', PREAMBLE_SQL, 'preamble');
   for (const { n, file } of manifest) {
@@ -395,25 +402,26 @@ async function partA(handle) {
            (SELECT count(*) FROM pg_trigger WHERE tgname='pedido_itens_manta_largura_guard' AND NOT tgisinternal) || '/' ||
            (SELECT count(*) FROM pg_constraint WHERE conname='modelos_manta_largura_chk') || '/' ||
            (SELECT count(*) FROM pg_constraint WHERE conname='modelos_tipo_produto_chk');`);
-  check(objs === '1/1/1/1/1', `db/78+db/79 terminal objects must all exist (homog/immut/width/mantachk/typechk = ${objs})`);
+  check(objs === '1/1/1/1/1', `db/78+db/79+db/80 terminal objects must all exist (homog/immut/width/mantachk/typechk = ${objs})`);
   log('PART_A', { migrations: manifest.length, backfill: 'ARABESCO/manta', ordinary: 'tapete', objects: objs, clean_apply: true });
 }
 
 // ===========================================================================
-// PART B — db/78 + db/79 idempotent re-apply with zero drift.
+// PART B — db/78 + db/79 + db/80 idempotent re-apply with zero drift.
 // ===========================================================================
 async function partB(handle) {
   const before = await schemaFingerprint(handle);
   const dbDir = path.join(REPO_ROOT, 'db');
   applyFile(handle, path.join(dbDir, '78_manta_product_identity_and_route_foundation.sql'), 'db/78 re-apply');
   applyFile(handle, path.join(dbDir, '79_manta_product_identity_invariant_correction.sql'), 'db/79 re-apply');
+  applyFile(handle, path.join(dbDir, '80_manta_model_reference_concurrency_correction.sql'), 'db/80 re-apply');
   const after = await schemaFingerprint(handle);
-  check(before === after, `idempotent re-apply of db/78+db/79 must cause zero schema drift (before=${before}, after=${after})`);
+  check(before === after, `idempotent re-apply of db/78+db/79+db/80 must cause zero schema drift (before=${before}, after=${after})`);
   // Backfill is a no-op on re-apply (source name already renamed).
   const stale = await scalar(handle, `SELECT count(*) FROM public.modelos WHERE nome='MANTA ARABESCO';`);
   const arabesco = await scalar(handle, `SELECT count(*) FROM public.modelos WHERE nome='ARABESCO' AND tipo_produto='manta';`);
   check(Number(stale) === 0 && Number(arabesco) === 1, `re-apply must not re-run or duplicate the backfill (stale=${stale}, arabesco=${arabesco})`);
-  log('PART_B', { fingerprint_stable: true, reapply: 'db/78+db/79', drift: 'none', backfill_reapply: 'noop' });
+  log('PART_B', { fingerprint_stable: true, reapply: 'db/78+db/79+db/80', drift: 'none', backfill_reapply: 'noop' });
 }
 
 // ===========================================================================
@@ -857,6 +865,272 @@ async function partF(handle) {
 }
 
 // ===========================================================================
+// PART G — model-reference concurrency (db/80). Distinct real psql sessions
+// prove the model identity used to validate an item cannot change between
+// validation and commit. Committed fixtures (973xxx / MG-*) so backends share
+// them.
+// ===========================================================================
+const MRACE_FIXTURES_G_SQL = `
+CREATE TABLE IF NOT EXISTS public._mi_ids (k TEXT PRIMARY KEY, v BIGINT);
+DO $cg$
+DECLARE
+  c1 BIGINT; c2 BIGINT;
+  tstableA BIGINT; newA BIGINT; tstableB BIGINT; mB BIGINT;
+  pC BIGINT; qD BIGINT; e1 BIGINT; e2 BIGINT; eref BIGINT; fa BIGINT; fb BIGINT;
+  cli BIGINT; pedC UUID; pedD UUID;
+  opA BIGINT; opB BIGINT; opE1 BIGINT; opE2 BIGINT; opEref BIGINT; opF1 BIGINT; opF2 BIGINT;
+  ix BIGINT; iy BIGINT;
+BEGIN
+  INSERT INTO public.cores(nome) VALUES ('MG-KRAFT') RETURNING id INTO c1;
+  INSERT INTO public.cores(nome) VALUES ('MG-CRU')   RETURNING id INTO c2;
+
+  INSERT INTO public.modelos(nome,cor_1_id,cor_2_id,largura,tipo_produto) VALUES ('MG-TSTABLE-A',c1,c2,2.10,'tapete') RETURNING id INTO tstableA;
+  INSERT INTO public.modelos(nome,cor_1_id,cor_2_id,largura,tipo_produto) VALUES ('MG-NEW-A',    c1,c2,1.40,'tapete') RETURNING id INTO newA;
+  INSERT INTO public.modelos(nome,cor_1_id,cor_2_id,largura,tipo_produto) VALUES ('MG-TSTABLE-B',c1,c2,2.10,'tapete') RETURNING id INTO tstableB;
+  INSERT INTO public.modelos(nome,cor_1_id,cor_2_id,largura,tipo_produto) VALUES ('MG-M-B',      c1,c2,1.40,'tapete') RETURNING id INTO mB;
+  INSERT INTO public.modelos(nome,cor_1_id,cor_2_id,largura,tipo_produto) VALUES ('MG-P-C',      c1,c2,1.40,'tapete') RETURNING id INTO pC;
+  INSERT INTO public.modelos(nome,cor_1_id,cor_2_id,largura,tipo_produto) VALUES ('MG-Q-D',      c1,c2,1.40,'tapete') RETURNING id INTO qD;
+  INSERT INTO public.modelos(nome,cor_1_id,cor_2_id,largura,tipo_produto) VALUES ('MG-E1',       c1,c2,2.10,'tapete') RETURNING id INTO e1;
+  INSERT INTO public.modelos(nome,cor_1_id,cor_2_id,largura,tipo_produto) VALUES ('MG-E2',       c1,c2,2.10,'tapete') RETURNING id INTO e2;
+  INSERT INTO public.modelos(nome,cor_1_id,cor_2_id,largura,tipo_produto) VALUES ('MG-EREF',     c1,c2,1.40,'tapete') RETURNING id INTO eref;
+  INSERT INTO public.modelos(nome,cor_1_id,cor_2_id,largura,tipo_produto) VALUES ('MG-FA',       c1,c2,2.10,'tapete') RETURNING id INTO fa;
+  INSERT INTO public.modelos(nome,cor_1_id,cor_2_id,largura,tipo_produto) VALUES ('MG-FB',       c1,c2,2.10,'tapete') RETURNING id INTO fb;
+
+  INSERT INTO public.clientes(nome) VALUES ('MG-CLI') RETURNING id INTO cli;
+  INSERT INTO public.pedidos(cliente_id,numero,status) VALUES (cli,973001,'confirmado') RETURNING id INTO pedC;
+  INSERT INTO public.pedidos(cliente_id,numero,status) VALUES (cli,973002,'confirmado') RETURNING id INTO pedD;
+
+  INSERT INTO public.ops(numero,ano) VALUES (973101,2097) RETURNING id INTO opA;
+  INSERT INTO public.ops(numero,ano) VALUES (973102,2097) RETURNING id INTO opB;
+  INSERT INTO public.ops(numero,ano) VALUES (973103,2097) RETURNING id INTO opE1;
+  INSERT INTO public.ops(numero,ano) VALUES (973104,2097) RETURNING id INTO opE2;
+  INSERT INTO public.ops(numero,ano) VALUES (973105,2097) RETURNING id INTO opEref;
+  INSERT INTO public.ops(numero,ano) VALUES (973106,2097) RETURNING id INTO opF1;
+  INSERT INTO public.ops(numero,ano) VALUES (973107,2097) RETURNING id INTO opF2;
+
+  -- Committed references: A/B OPs each already hold a stable Tapete item; eref is
+  -- referenced by an OP; F OPs each hold one Tapete item to move.
+  INSERT INTO public.op_itens(op_id,modelo_id,metros_pedidos) VALUES (opA, tstableA, 100);
+  INSERT INTO public.op_itens(op_id,modelo_id,metros_pedidos) VALUES (opB, tstableB, 100);
+  INSERT INTO public.op_itens(op_id,modelo_id,metros_pedidos) VALUES (opEref, eref, 100);
+  INSERT INTO public.op_itens(op_id,modelo_id,metros_pedidos) VALUES (opF1, fa, 100) RETURNING id INTO ix;
+  INSERT INTO public.op_itens(op_id,modelo_id,metros_pedidos) VALUES (opF2, fb, 100) RETURNING id INTO iy;
+
+  INSERT INTO public._mi_ids(k,v) VALUES
+    ('g_tstableA',tstableA),('g_newA',newA),('g_tstableB',tstableB),('g_mB',mB),
+    ('g_pC',pC),('g_qD',qD),('g_e1',e1),('g_e2',e2),('g_eref',eref),('g_fa',fa),('g_fb',fb),
+    ('g_opA',opA),('g_opB',opB),('g_opE1',opE1),('g_opE2',opE2),('g_opEref',opEref),('g_opF1',opF1),('g_opF2',opF2),
+    ('g_ix',ix),('g_iy',iy);
+END
+$cg$;
+`;
+
+async function partG(handle) {
+  await applySql(handle, 'mrace-fixtures.sql', MRACE_FIXTURES_G_SQL, 'model-race fixtures');
+  const g = {};
+  for (const k of ['g_tstableA', 'g_newA', 'g_tstableB', 'g_mB', 'g_pC', 'g_qD', 'g_e1', 'g_e2', 'g_eref', 'g_fa', 'g_fb', 'g_opA', 'g_opB', 'g_opE1', 'g_opE2', 'g_opEref', 'g_opF1', 'g_opF2', 'g_ix', 'g_iy']) {
+    g[k] = Number(await scalar(handle, `SELECT v FROM public._mi_ids WHERE k='${k}';`));
+    check(Number.isInteger(g[k]) && g[k] > 0, `model-race fixture id ${k} must resolve (got ${g[k]})`);
+  }
+  const pedC = await scalar(handle, `SELECT id FROM public.pedidos WHERE numero=973001;`);
+  const pedD = await scalar(handle, `SELECT id FROM public.pedidos WHERE numero=973002;`);
+
+  // Reusable "reference-first blocks a racing model UPDATE, which is rejected once
+  // it observes the committed reference" driver. `refSql` establishes the
+  // uncommitted reference; `updSql` is the model UPDATE expected to be rejected.
+  async function refFirstBlocksModelUpdate(label, refSql, updSql, rejectRe) {
+    const s1 = openSession(handle, `${label}-s1`);
+    s1.send('BEGIN;');
+    s1.send(`SELECT 'S1PID|' || pg_backend_pid();`);
+    const s1pid = Number((await s1.waitFor((l) => l.startsWith('S1PID|'))).split('|')[1]);
+    s1.send(`${refSql} SELECT 'S1REF_DONE';`);
+    await s1.waitFor((l) => l === 'S1REF_DONE');
+
+    const s2 = openSession(handle, `${label}-s2`);
+    s2.send('BEGIN;');
+    s2.send(`SELECT 'S2PID|' || pg_backend_pid();`);
+    const s2pid = Number((await s2.waitFor((l) => l.startsWith('S2PID|'))).split('|')[1]);
+    s2.send(`CREATE TEMP TABLE _o(v text);`);
+    s2.send(`DO $$ BEGIN ${updSql} INSERT INTO _o VALUES ('UNEXPECTED_OK'); EXCEPTION WHEN OTHERS THEN INSERT INTO _o VALUES ('REJECTED|'||SQLERRM); END $$;`);
+    s2.send(`SELECT 'S2RES|' || v FROM _o;`);
+
+    await waitForBlock(handle, s2pid, s1pid);           // model UPDATE blocks on the reference's FOR SHARE
+    s1.send(`COMMIT; SELECT 'S1COMMIT';`);
+    await s1.waitFor((l) => l === 'S1COMMIT');
+    const res = await s2.waitFor((l) => l.startsWith('S2RES|'));
+    s2.send('ROLLBACK;');
+    check(/REJECTED\|/.test(res) && rejectRe.test(res), `${label}: racing model change must be rejected after the committed reference (got ${res})`);
+    await s1.close();
+    await s2.close();
+    return { s1pid, s2pid };
+  }
+
+  // ---- A: OP first-reference wins -----------------------------------------
+  {
+    const { s1pid, s2pid } = await refFirstBlocksModelUpdate('MRACE_A',
+      `INSERT INTO public.op_itens(op_id,modelo_id,metros_pedidos) VALUES (${g.g_opA}, ${g.g_newA}, 50);`,
+      `UPDATE public.modelos SET tipo_produto='manta' WHERE id=${g.g_newA};`,
+      /imutaveis apos uso/);
+    const shape = await scalar(handle, `SELECT count(*)||'/'||count(DISTINCT m.tipo_produto) FROM public.op_itens oi JOIN public.modelos m ON m.id=oi.modelo_id WHERE oi.op_id=${g.g_opA};`);
+    check(shape === '2/1', `A: OP must remain homogeneous (2 tapete items) (got ${shape})`);
+    log('MRACE_A', { s1pid, s2pid, s2_blocked: true, model_update: 'rejected(immutability)', final_op: shape });
+  }
+
+  // ---- B: MODEL update wins ------------------------------------------------
+  {
+    const s1 = openSession(handle, 'MRACE_B-s1');
+    s1.send('BEGIN;');
+    s1.send(`SELECT 'S1PID|' || pg_backend_pid();`);
+    const s1pid = Number((await s1.waitFor((l) => l.startsWith('S1PID|'))).split('|')[1]);
+    s1.send(`UPDATE public.modelos SET tipo_produto='manta' WHERE id=${g.g_mB}; SELECT 'S1UPD_DONE';`);
+    await s1.waitFor((l) => l === 'S1UPD_DONE');        // mB now manta, uncommitted, holds exclusive row lock
+
+    const s2 = openSession(handle, 'MRACE_B-s2');
+    s2.send('BEGIN;');
+    s2.send(`SELECT 'S2PID|' || pg_backend_pid();`);
+    const s2pid = Number((await s2.waitFor((l) => l.startsWith('S2PID|'))).split('|')[1]);
+    s2.send(`CREATE TEMP TABLE _o(v text);`);
+    s2.send(`DO $$ BEGIN
+        INSERT INTO public.op_itens(op_id,modelo_id,metros_pedidos) VALUES (${g.g_opB}, ${g.g_mB}, 50);
+        INSERT INTO _o VALUES ('UNEXPECTED_OK');
+      EXCEPTION WHEN OTHERS THEN INSERT INTO _o VALUES ('REJECTED|'||SQLERRM); END $$;`);
+    s2.send(`SELECT 'S2RES|' || v FROM _o;`);
+    await waitForBlock(handle, s2pid, s1pid);           // op_item FOR SHARE blocks on the model UPDATE's exclusive lock
+    s1.send(`COMMIT; SELECT 'S1COMMIT';`);
+    await s1.waitFor((l) => l === 'S1COMMIT');
+    const res = await s2.waitFor((l) => l.startsWith('S2RES|'));
+    s2.send('ROLLBACK;');
+    check(/REJECTED\|/.test(res) && /(misturar|homogenea)/.test(res), `B: op_item must be rejected against the committed manta identity (got ${res})`);
+    await s1.close();
+    await s2.close();
+    const shape = await scalar(handle, `SELECT count(*)||'/'||count(DISTINCT m.tipo_produto) FROM public.op_itens oi JOIN public.modelos m ON m.id=oi.modelo_id WHERE oi.op_id=${g.g_opB};`);
+    check(shape === '1/1', `B: OP must remain homogeneous (only the stable tapete item) (got ${shape})`);
+    log('MRACE_B', { s1pid, s2pid, s2_blocked: true, op_item: 'rejected(homogeneity)', final_op: shape });
+  }
+
+  // ---- C: PEDIDO first-reference wins --------------------------------------
+  {
+    const { s1pid, s2pid } = await refFirstBlocksModelUpdate('MRACE_C',
+      `INSERT INTO public.pedido_itens(pedido_id,modelo_id,metros,ordem) VALUES ('${pedC}', ${g.g_pC}, 100, 1);`,
+      `UPDATE public.modelos SET tipo_produto='manta' WHERE id=${g.g_pC};`,
+      /imutaveis apos uso/);
+    const tipo = await scalar(handle, `SELECT tipo_produto FROM public.modelos WHERE id=${g.g_pC};`);
+    check(tipo === 'tapete', `C: pedido item's model identity must stay tapete (got ${tipo})`);
+    log('MRACE_C', { s1pid, s2pid, s2_blocked: true, model_update: 'rejected(immutability)', pedido_model_tipo: tipo });
+  }
+
+  // ---- D: MODEL update before Pedido item ----------------------------------
+  {
+    const s1 = openSession(handle, 'MRACE_D-s1');
+    s1.send('BEGIN;');
+    s1.send(`SELECT 'S1PID|' || pg_backend_pid();`);
+    const s1pid = Number((await s1.waitFor((l) => l.startsWith('S1PID|'))).split('|')[1]);
+    s1.send(`UPDATE public.modelos SET tipo_produto='manta' WHERE id=${g.g_qD}; SELECT 'S1UPD_DONE';`);
+    await s1.waitFor((l) => l === 'S1UPD_DONE');
+
+    const s2 = openSession(handle, 'MRACE_D-s2');
+    s2.send('BEGIN;');
+    s2.send(`SELECT 'S2PID|' || pg_backend_pid();`);
+    const s2pid = Number((await s2.waitFor((l) => l.startsWith('S2PID|'))).split('|')[1]);
+    s2.send(`CREATE TEMP TABLE _o(v text);`);
+    // Invalid Manta width override (2.10) validated against the NEW committed type.
+    s2.send(`DO $$ BEGIN
+        INSERT INTO public.pedido_itens(pedido_id,modelo_id,metros,largura,ordem) VALUES ('${pedD}', ${g.g_qD}, 100, 2.10, 1);
+        INSERT INTO _o VALUES ('UNEXPECTED_OK');
+      EXCEPTION WHEN OTHERS THEN INSERT INTO _o VALUES ('REJECTED|'||SQLERRM); END $$;`);
+    s2.send(`SELECT 'S2RES|' || v FROM _o;`);
+    await waitForBlock(handle, s2pid, s1pid);
+    s1.send(`COMMIT; SELECT 'S1COMMIT';`);
+    await s1.waitFor((l) => l === 'S1COMMIT');
+    const res = await s2.waitFor((l) => l.startsWith('S2RES|'));
+    s2.send('ROLLBACK;');
+    check(/REJECTED\|/.test(res) && /Manta so admite largura 1\.40/.test(res), `D: invalid Manta width override must be rejected against the new committed type (got ${res})`);
+    await s1.close();
+    await s2.close();
+    log('MRACE_D', { s1pid, s2pid, s2_blocked: true, width_override: 'rejected', validated_against: 'new committed manta identity' });
+  }
+
+  // ---- E: NON-CONTENTION ---------------------------------------------------
+  {
+    // E.1 two concurrent references to the SAME model (different OPs) must not
+    // serialize (FOR SHARE is compatible with FOR SHARE).
+    const s1 = openSession(handle, 'MRACE_E-s1');
+    s1.send('BEGIN;');
+    s1.send(`SELECT 'S1PID|' || pg_backend_pid();`);
+    const s1pid = Number((await s1.waitFor((l) => l.startsWith('S1PID|'))).split('|')[1]);
+    s1.send(`INSERT INTO public.op_itens(op_id,modelo_id,metros_pedidos) VALUES (${g.g_opE1}, ${g.g_e1}, 10); SELECT 'S1REF';`);
+    await s1.waitFor((l) => l === 'S1REF');             // holds FOR SHARE on e1, uncommitted
+
+    const s2 = openSession(handle, 'MRACE_E-s2');
+    s2.send('BEGIN;');
+    s2.send(`SELECT 'S2PID|' || pg_backend_pid();`);
+    const s2pid = Number((await s2.waitFor((l) => l.startsWith('S2PID|'))).split('|')[1]);
+    s2.send(`INSERT INTO public.op_itens(op_id,modelo_id,metros_pedidos) VALUES (${g.g_opE2}, ${g.g_e1}, 10); SELECT 'S2REF';`);
+    await s2.waitFor((l) => l === 'S2REF', 10000);      // must NOT block
+    const blockers = await blockingPids(handle, s2pid);
+    check(!blockers.split(',').includes(String(s1pid)), `E: concurrent reference to the same model must not serialize (blockers=${blockers})`);
+    s1.send('COMMIT; SELECT \'S1COMMIT\';');
+    s2.send('COMMIT; SELECT \'S2COMMIT\';');
+    await s1.waitFor((l) => l === 'S1COMMIT');
+    await s2.waitFor((l) => l === 'S2COMMIT');
+    await s1.close();
+    await s2.close();
+
+    // E.2 metadata-only (nome) edit + E.3 same-value tipo/largura update on a
+    // referenced model remain permitted (db/79 behavior preserved).
+    const meta = await applySql(handle, 'mrace-meta.sql',
+      `\\set ON_ERROR_STOP on
+       BEGIN;
+       DO $$ BEGIN
+         UPDATE public.modelos SET nome='MG-EREF-RENAMED' WHERE id=${g.g_eref};
+         UPDATE public.modelos SET tipo_produto=tipo_produto, largura=largura WHERE id=${g.g_eref};
+       END $$;
+       SELECT 'MRACE_E_META_PASS' AS result;
+       ROLLBACK;`, 'model-race metadata edit');
+    check(/MRACE_E_META_PASS/.test(meta), `E: nome edit + same-value update on a referenced model must be permitted (got ${meta.trim()})`);
+    log('MRACE_E', { same_model_refs_serialize: false, nome_edit: 'allowed', same_value_update: 'allowed' });
+  }
+
+  // ---- F: DEADLOCK — opposing item modelo_id moves -------------------------
+  {
+    // ma: move ix from fa->fb (opF1). mb: move iy from fb->fa (opF2). Different
+    // OPs (no ops serialization), same model pair {fa,fb}; both take FOR SHARE on
+    // {fa,fb} ascending -> compatible, so neither blocks and neither deadlocks.
+    const ma = openSession(handle, 'MRACE_F-ma');
+    ma.send('BEGIN;');
+    ma.send(`SELECT 'MAPID|' || pg_backend_pid();`);
+    const mapid = Number((await ma.waitFor((l) => l.startsWith('MAPID|'))).split('|')[1]);
+    ma.send(`UPDATE public.op_itens SET modelo_id=${g.g_fb} WHERE id=${g.g_ix}; SELECT 'MA_DONE';`);
+    await ma.waitFor((l) => l === 'MA_DONE');
+
+    const mb = openSession(handle, 'MRACE_F-mb');
+    mb.send('BEGIN;');
+    mb.send(`SELECT 'MBPID|' || pg_backend_pid();`);
+    const mbpid = Number((await mb.waitFor((l) => l.startsWith('MBPID|'))).split('|')[1]);
+    mb.send(`UPDATE public.op_itens SET modelo_id=${g.g_fa} WHERE id=${g.g_iy}; SELECT 'MB_DONE';`);
+    await mb.waitFor((l) => l === 'MB_DONE', 10000);    // FOR SHARE compatible -> not blocked
+    const blockers = await blockingPids(handle, mbpid);
+    check(!blockers.split(',').includes(String(mapid)), `F: opposing item moves on shared model locks must not block (blockers=${blockers})`);
+
+    ma.send('COMMIT; SELECT \'MA_COMMIT\';');
+    mb.send('COMMIT; SELECT \'MB_COMMIT\';');
+    await ma.waitFor((l) => l === 'MA_COMMIT');
+    await mb.waitFor((l) => l === 'MB_COMMIT');
+    check(!/deadlock|40P01/i.test(ma.stderr + mb.stderr), 'F: opposing item moves must not deadlock');
+    await ma.close();
+    await mb.close();
+    // Both invariants hold: each OP homogeneous, each item at its new model.
+    const fShape = await scalar(handle, `
+      SELECT (SELECT count(DISTINCT m.tipo_produto) FROM public.op_itens oi JOIN public.modelos m ON m.id=oi.modelo_id WHERE oi.op_id=${g.g_opF1}) || '/' ||
+             (SELECT count(DISTINCT m.tipo_produto) FROM public.op_itens oi JOIN public.modelos m ON m.id=oi.modelo_id WHERE oi.op_id=${g.g_opF2}) || '/' ||
+             (SELECT modelo_id FROM public.op_itens WHERE id=${g.g_ix}) || '/' ||
+             (SELECT modelo_id FROM public.op_itens WHERE id=${g.g_iy});`);
+    check(fShape === `1/1/${g.g_fb}/${g.g_fa}`, `F: final state must satisfy route+identity invariants (got ${fShape}, want 1/1/${g.g_fb}/${g.g_fa})`);
+    log('MRACE_F', { opposing_moves: 'both_committed', deadlock: false, ascending_model_order: true, final: fShape });
+  }
+}
+
+// ===========================================================================
 // Orchestration + mandatory teardown (Part Z).
 // ===========================================================================
 async function main() {
@@ -872,6 +1146,7 @@ async function main() {
     await partC2(handle);
     await partD(handle);
     await partE(handle);
+    await partG(handle);
     await partF(handle);
   } finally {
     if (handle) {

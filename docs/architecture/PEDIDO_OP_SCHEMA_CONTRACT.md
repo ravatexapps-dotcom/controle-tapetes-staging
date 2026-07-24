@@ -1379,3 +1379,45 @@ controlled rejection, homogeneous OP; same-type both succeed; different OPs
 independent; deterministic ascending lock order; no deadlock), finishing-RPC
 regression, and the C5 emission integration test. No shared-development apply is
 authorized.
+
+## Update 2026-07-24 — PHASE-MANTA-A model-reference concurrency correction (db/80)
+
+`db/80_manta_model_reference_concurrency_correction.sql` is a forward-only,
+idempotent correction of the last concurrency gap left by db/79. It does not edit
+db/78 or db/79 (forward-only policy, §12); the migration terminal guard advances
+79 → 80. Governing contract: `MANTA_PRODUCT_VARIANT_PHASE_CONTRACT.md` §8.
+
+- **The gap.** Product identity is derived live through `modelo_id`. db/79 serializes
+  competing writes to one OP and makes `modelos.tipo_produto`/`largura` immutable once
+  referenced, but the item-side guards read those fields WITHOUT locking the model
+  row. So the first `pedido_itens`/`op_itens` reference to a model did not serialize
+  against a concurrent `modelos` UPDATE of `tipo_produto`/`largura`: an item could be
+  validated against one committed identity while a racing model update committed a
+  different one.
+- **The fix.** `op_itens_route_homogeneity_guard_fn` and
+  `pedido_itens_manta_largura_guard_fn` now lock every affected `modelos` row with
+  `FOR SHARE`, in ascending `modelo_id` order, BEFORE deriving type/width (INSERT →
+  the new model; UPDATE → OLD and NEW models when distinct). `FOR SHARE` conflicts
+  with the row lock a `modelos` UPDATE takes (its BEFORE UPDATE row trigger locks the
+  target row FOR UPDATE-equivalently, before the immutability guard fires), so a
+  reference and a routing-identity change on the same model always serialize: whoever
+  commits first is observed by the other, which then rejects (immutability if the
+  reference wins; homogeneity/width if the model update wins). `FOR SHARE` is
+  compatible with `FOR SHARE`, so concurrent references never block each other.
+  `modelos_route_identity_immutability_guard_fn` is preserved unchanged; no
+  product-type column is denormalized.
+- **Global deterministic lock order** (no db/80 path reverses it; compatible with the
+  db/79 OP-movement locks and the db/31/db/32 finishing functions, which lock the
+  owning `ops` row before that op's `op_itens` and take no `modelos` lock):
+  (1) affected `ops` rows ascending `op_id` (FOR UPDATE); (2) affected `modelos` rows
+  ascending `modelo_id` (FOR SHARE); (3) inspect and continue.
+
+Verified on a disposable PostgreSQL 18.4 cluster (`tests/manta-product-identity-invariant.mjs`,
+Part G) with real distinct-session `pg_blocking_pids` blocking proofs: OP/Pedido
+first-reference wins (racing model change rejected, route/identity stable), model
+update wins (item rejected against the committed new identity, invalid Manta width
+override rejected), non-contention (same-model references do not serialize; `nome` and
+same-value routing updates permitted), and opposing item `modelo_id` moves with
+ascending model locks — no `40P01`, both route and identity invariants preserved —
+plus db/78/db/79 regression, finishing regression, and C5 emission regression. No
+shared-development apply is authorized.

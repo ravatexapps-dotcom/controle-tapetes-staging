@@ -90,13 +90,15 @@ applied to `ucrjtfswnfdlxwtmxnoo`.
 - `tests/manta-product-identity.integration.sql` — disposable-cluster proof of the
   width, uniqueness, pedido-override and OP-homogeneity guards (external runner).
 - `tests/manta-product-identity-invariant.mjs` — disposable-cluster invariant +
-  distinct-session concurrency harness for the db/79 correction (§7): full
-  db/01..79 apply, db/78+db/79 idempotent re-apply with zero drift, the db/78
-  integration test, model immutability, real two-session route-homogeneity
-  concurrency, deterministic ascending lock order, no deadlock, finishing
-  regression, and C5 emission regression; cluster destroyed with proof.
+  distinct-session concurrency harness for the db/79 (§7) and db/80 (§8)
+  corrections: full db/01..80 apply, db/78+db/79+db/80 idempotent re-apply with
+  zero drift, the db/78 integration test, model immutability, real two-session
+  route-homogeneity concurrency, deterministic ascending lock order, no deadlock,
+  model-reference concurrency (OP/pedido first-reference vs model update, both
+  directions; non-contention; no deadlock), finishing regression, and C5 emission
+  regression; cluster destroyed with proof.
 - `tests/ordem-compra-c3d-deploy.smoke.js` — migration terminal advanced 77 → 78
-  (db/78), then 78 → 79 (db/79 correction, §7).
+  (db/78), then 78 → 79 (db/79 correction, §7), then 79 → 80 (db/80 correction, §8).
 
 ## 6. Deferred to PHASE-MANTA-B (not authorized here)
 
@@ -149,3 +151,60 @@ the C5 emission integration test — cluster then destroyed with proof.
 Migration terminal advanced 78 → 79 (`tests/ordem-compra-c3d-deploy.smoke.js`). No
 shared-development apply is authorized: db/78 and db/79 are applied only to disposable
 local clusters.
+
+## 8. Forward correction — db/80 (model-reference concurrency)
+
+`db/80_manta_model_reference_concurrency_correction.sql` (order
+`PHASE-MANTA-A-MODEL-REFERENCE-CONCURRENCY-CORRECTION-R1`) closes the last
+concurrency gap left by db/79, again without editing db/78 or db/79. db/79
+serializes competing writes to one OP and makes a model's routing identity immutable
+once referenced, but because product identity is still derived live through
+`modelo_id`, the item-side guards read `modelos.tipo_produto`/`largura` **without
+locking the model row**. So the FIRST Pedido/OP reference to a model did not
+serialize against a concurrent change of that model's `tipo_produto`/`largura`: an
+item writer could validate against one committed identity while a racing model
+UPDATE (whose immutability guard did not yet see the still-uncommitted reference)
+committed a different one — a committed route/identity inconsistency.
+
+The correction makes both item-side guards
+(`op_itens_route_homogeneity_guard_fn`, `pedido_itens_manta_largura_guard_fn`) lock
+every affected `modelos` row with **FOR SHARE**, in ascending `modelo_id` order,
+BEFORE reading the type/width — for an INSERT the new model, for an UPDATE the OLD
+and NEW models when distinct. FOR SHARE conflicts with the row lock a `modelos`
+UPDATE takes (a BEFORE UPDATE row trigger locks its target row FOR UPDATE-equivalently,
+via `GetTupleForTrigger`, before the immutability guard fires), so:
+
+- if the reference commits first, the model UPDATE waits and its immutability guard
+  then observes the committed reference and rejects; and
+- if the model UPDATE commits first, the item writer waits and validates against the
+  new committed identity (homogeneity, or the Manta width override).
+
+No transaction validates against one identity and commits against another. FOR SHARE
+is compatible with FOR SHARE, so concurrent references to the same or different models
+never block each other. The `modelos_route_identity_immutability_guard` is preserved
+unchanged; no product-type column is denormalized onto `pedido_itens`, `op_itens` or
+`ops`.
+
+**Global deterministic lock order** (no db/80 path takes these in reverse; verified
+compatible with db/79 movement locks and the db/31/db/32 finishing functions, which
+lock the owning `ops` row before that op's `op_itens` and take no `modelos` lock):
+1. affected `ops` rows, ascending `op_id` (FOR UPDATE, db/79);
+2. affected `modelos` rows, ascending `modelo_id` (FOR SHARE, db/80);
+3. inspect `op_itens`/`pedido_itens` and continue.
+
+Verified on a disposable PostgreSQL 18.4 cluster (`tests/manta-product-identity-invariant.mjs`,
+Part G): full db/01..80 apply; db/78+db/79+db/80 idempotent re-apply with zero drift;
+real distinct-session proofs, each with `pg_blocking_pids` blocking evidence — (A) OP
+first-reference wins → racing model→Manta rejected by immutability, OP homogeneous;
+(B) model update wins → the op_item rejected by homogeneity against the committed
+Manta identity; (C) Pedido first-reference wins → racing model change rejected,
+identity stable; (D) model update first → invalid Manta width override rejected
+against the new committed type; (E) non-contention (same-model references do not
+serialize; `nome` and same-value routing updates permitted); (F) opposing item
+`modelo_id` moves lock model rows ascending, both commit, no deadlock, both route and
+identity invariants hold — plus the db/78/db/79 regressions, finishing regression and
+C5 emission regression; cluster then destroyed with proof.
+
+Migration terminal advanced 79 → 80 (`tests/ordem-compra-c3d-deploy.smoke.js`). No
+shared-development apply is authorized: db/78, db/79 and db/80 are applied only to
+disposable local clusters.
