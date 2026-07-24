@@ -44,21 +44,21 @@
     }
   },
   "active_phase": {
-    "id": "PHASE-MANTA-A",
-    "status": "CLOSED / ACCEPTED / APPLIED TO SHARED DEVELOPMENT / LIVE VALIDATED",
+    "id": "PHASE-MANTA-B1",
+    "status": "IMPLEMENTED / LOCALLY AND CONCURRENTLY VERIFIED / AWAITING ARCHITECT REVIEW / OPEN",
     "contract": {
-      "path": "docs/architecture/MANTA_PRODUCT_VARIANT_PHASE_CONTRACT.md",
-      "anchor": "# Manta Product Variant — PHASE-MANTA-A Phase Contract"
+      "path": "docs/architecture/MANTA_DIRECT_ROUTE_PHASE_CONTRACT.md",
+      "anchor": "# Manta Direct Route — PHASE-MANTA-B Phase Contract"
     },
-    "immediate_objective": "PHASE-MANTA-A (Manta product identity + route-homogeneity foundation, db/78, plus the db/79 concurrency-safe OP route-homogeneity and model-immutability correction and the db/80 model-reference FOR SHARE serialization correction) is closed and accepted: db/78, db/79 and db/80 were applied once, in order, to shared development ucrjtfswnfdlxwtmxnoo and live-validated (contract section 9); the informal MANTA ARABESCO model became ARABESCO/manta/1.40 and the operational corpus stayed empty. Business-flow recreation remains paused. PHASE-MANTA-B (Manta direct weaving-to-client route) is not authorized; its backend persistence mechanism is unresolved and no new entregas.etapa value is canonized (the former tecelagem_direto selection is superseded).",
+    "immediate_objective": "PHASE-MANTA-B1 (Manta direct-route expedition-source foundation, db/81) is implemented and locally + concurrently verified on a disposable PostgreSQL cluster, awaiting architect review; the phase remains open. db/81 adds a dormant second typed expedition source expedicoes.op_tecelagem_id (the Manta weaving OP) mutually exclusive with op_latex_id (exactly-one-source CHECK; one expedition per Manta OP via a partial unique index), with authoritative source-route validation (tecelagem, non-empty, homogeneous Manta), expedition-item membership, consumed-output immutability and a Manta OP reopening restriction — all honoring the app.retificacao_autorizada escape and an ascending ops->modelos->entregas->expedicoes->expedicao_itens lock order. The route stays dormant: no UI/RPC/writer creates a Manta expedition; entregas.etapa='cima', entregas_destino_cima_chk, salvarEntregaCima and the Latex expedition/delivery path are unchanged; no new entregas.etapa value is created; Manta never enters finishing. db/81 is applied only to disposable local clusters; no shared-development, staging or production apply is authorized. PHASE-MANTA-B2 (route activation: the Manta writer, the route-conditional cima destination relaxation, the balance-preserving reversal/correction writer, the dynamic Manta stepper and route-aware progress) is not authorized. Business-flow recreation remains paused.",
     "self_accepted": false,
-    "architect_accepted": true
+    "architect_accepted": false
   },
   "next_authorizable_action": {
-    "id": "PHASE-MANTA-B-DIRECT-ROUTE-RECONCILIATION-R1",
+    "id": "PHASE-MANTA-B1-ARCHITECT-REVIEW",
     "mode": "ARCHITECT_DECISION",
-    "status": "AUTHORIZABLE / NOT AUTHORIZED BY THIS CLOSEOUT; PHASE-MANTA-B IMPLEMENTATION NOT AUTHORIZED",
-    "authorization_boundary": "PHASE-MANTA-B begins with a bounded read-only reconciliation of the existing expedition, delivery and progress mechanisms before selecting the minimum backend change for the Manta weaving-to-client direct route; no new entregas.etapa value is canonized. PHASE-MANTA-B implementation, business-flow recreation, and any further shared/staging/production apply each require a new explicit order; no phase chains automatically."
+    "status": "AUTHORIZABLE / NOT AUTHORIZED BY THIS IMPLEMENTATION; PHASE-MANTA-B2 NOT AUTHORIZED",
+    "authorization_boundary": "The architect reviews the PHASE-MANTA-B1 evidence (db/81, the manta-expedition-source schema/integration test, the manta-expedition-source-invariant distinct-session concurrency harness, the advanced deploy terminal guard, and the affected documentation owners). PHASE-MANTA-B2 (Manta expedition writer, route-conditional cima destination relaxation, balance-preserving reversal/correction writer, dynamic Manta stepper and route-aware progress) and any shared-development, staging or production apply of db/81 each require a new explicit order; no phase chains automatically."
   },
   "active_track": {
     "id": "PURCHASE_ORDER_PHASE_C",
@@ -132,7 +132,7 @@
     "this_checkpoint": "REPOSITORY_LOCAL_ONLY; NO ENVIRONMENT COMMANDS AUTHORIZED",
     "shared_development": {
       "project_id": "ucrjtfswnfdlxwtmxnoo",
-      "access": "PHASE-MANTA-A db/78-db/80 APPLIED AND ACCEPTED (LIVE VALIDATED); NO FURTHER APPLY AUTHORIZED WITHOUT A NEW ORDER"
+      "access": "PHASE-MANTA-A db/78-db/80 APPLIED AND ACCEPTED (LIVE VALIDATED); db/81 (PHASE-MANTA-B1) NOT APPLIED; NO FURTHER APPLY AUTHORIZED WITHOUT A NEW ORDER"
     },
     "production": {
       "project_id": "gqmpsxkxynrjvidfmojk",

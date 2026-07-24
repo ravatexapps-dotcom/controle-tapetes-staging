@@ -1,0 +1,306 @@
+-- tests/manta-expedition-source.integration.sql
+--
+-- PHASE-MANTA-B1 integration proof (db/81) — expedition-source foundation.
+-- Governing contract: docs/architecture/MANTA_DIRECT_ROUTE_PHASE_CONTRACT.md.
+--
+-- ENVIRONMENT: disposable local PostgreSQL ONLY. The external runner applies the
+-- Supabase-platform preamble, then db/01..db/81 in order, then this file. Never a
+-- shared/remote/managed host. This file opens ONE transaction, plants its own
+-- fixtures with triggers off, exercises the PHASE-MANTA-B1 database guards with
+-- triggers on, and ROLLBACKs at the end — zero persistent mutation. db/81 clean
+-- apply and idempotent re-apply are proven by the runner
+-- (tests/manta-expedition-source-invariant.mjs); the constraint/trigger guards
+-- below are proven here. Distinct-session concurrency (one expedition per Manta
+-- OP; item writes cannot cross sources; deterministic lock order, no 40P01) is
+-- proven separately in that harness.
+--
+-- Run:  psql -X -v ON_ERROR_STOP=1 -f tests/manta-expedition-source.integration.sql
+-- Success = the MANTA_EXPEDITION_SOURCE_INTEGRATION_PASS sentinel with no error.
+
+\set ON_ERROR_STOP on
+
+BEGIN;
+
+DO $mes$
+DECLARE
+  v_c1 BIGINT; v_c2 BIGINT;
+  v_forn BIGINT; v_dest BIGINT;
+  v_cli BIGINT; v_pedido UUID; v_lote BIGINT;
+  v_mod_manta BIGINT; v_mod_tapete BIGINT;
+  v_op_manta BIGINT; v_op_manta2 BIGINT; v_op_tapete_tec BIGINT;
+  v_op_empty BIGINT; v_op_mixed BIGINT; v_op_latex BIGINT;
+  v_it_manta BIGINT; v_it_manta2 BIGINT; v_it_tapete BIGINT; v_it_latex BIGINT;
+  v_entrega_manta BIGINT; v_ei_manta BIGINT;
+  v_entrega_manta2 BIGINT; v_ei_manta2 BIGINT;
+  v_exp_manta BIGINT; v_exp_latex BIGINT;
+  v_xi BIGINT;
+  v_tmp BIGINT;
+  v_ok BOOLEAN;
+BEGIN
+  -- ==========================================================================
+  -- Fixtures (triggers off): a Manta and a Tapete model; a client/pedido/lote;
+  -- weaving OPs (Manta homogeneous, a second Manta, a Tapete weaving, an empty
+  -- one, a defensively-mixed one) and a Latex OP; op_itens; and the Manta cima
+  -- weaving output (entregas etapa='cima' + entrega_itens) that a Manta
+  -- expedition consumes. Terminal statuses planted here so the reopening guard
+  -- can be exercised.
+  -- ==========================================================================
+  PERFORM set_config('session_replication_role', 'replica', true);
+
+  INSERT INTO public.cores (nome) VALUES ('MES-KRAFT') RETURNING id INTO v_c1;
+  INSERT INTO public.cores (nome) VALUES ('MES-CRU')   RETURNING id INTO v_c2;
+  INSERT INTO public.fornecedores (nome, tipo) VALUES ('MES-TECELAGEM', 'tecelagem') RETURNING id INTO v_forn;
+  INSERT INTO public.fornecedores (nome, tipo) VALUES ('MES-LATEX-DEST', 'latex')     RETURNING id INTO v_dest;
+
+  INSERT INTO public.modelos (nome, cor_1_id, cor_2_id, largura, tipo_produto)
+    VALUES ('MES-ARABESCO', v_c1, v_c2, 1.40, 'manta')  RETURNING id INTO v_mod_manta;
+  INSERT INTO public.modelos (nome, cor_1_id, cor_2_id, largura, tipo_produto)
+    VALUES ('MES-BARCELONA', v_c1, v_c2, 2.10, 'tapete') RETURNING id INTO v_mod_tapete;
+
+  INSERT INTO public.clientes (nome) VALUES ('MES-CLI') RETURNING id INTO v_cli;
+  INSERT INTO public.pedidos (cliente_id, numero, status)
+    VALUES (v_cli, 980001, 'confirmado') RETURNING id INTO v_pedido;
+  INSERT INTO public.lotes (numero, cliente_id, pedido_id)
+    VALUES (980001, v_cli, v_pedido) RETURNING id INTO v_lote;
+
+  INSERT INTO public.ops (numero, ano, status, tipo, lote_id)
+    VALUES (980001, 2026, 'concluida', 'tecelagem', v_lote) RETURNING id INTO v_op_manta;
+  INSERT INTO public.ops (numero, ano, status, tipo, lote_id)
+    VALUES (980002, 2026, 'concluida', 'tecelagem', v_lote) RETURNING id INTO v_op_manta2;
+  INSERT INTO public.ops (numero, ano, status, tipo, lote_id)
+    VALUES (980003, 2026, 'concluida', 'tecelagem', v_lote) RETURNING id INTO v_op_tapete_tec;
+  INSERT INTO public.ops (numero, ano, status, tipo, lote_id)
+    VALUES (980004, 2026, 'simulada', 'tecelagem', v_lote) RETURNING id INTO v_op_empty;
+  INSERT INTO public.ops (numero, ano, status, tipo, lote_id)
+    VALUES (980005, 2026, 'simulada', 'tecelagem', v_lote) RETURNING id INTO v_op_mixed;
+  INSERT INTO public.ops (numero, ano, status, tipo, lote_id)
+    VALUES (980006, 2026, 'finalizada', 'latex', v_lote) RETURNING id INTO v_op_latex;
+
+  INSERT INTO public.op_itens (op_id, modelo_id, metros_pedidos) VALUES (v_op_manta,  v_mod_manta,  100) RETURNING id INTO v_it_manta;
+  INSERT INTO public.op_itens (op_id, modelo_id, metros_pedidos) VALUES (v_op_manta2, v_mod_manta,  100) RETURNING id INTO v_it_manta2;
+  INSERT INTO public.op_itens (op_id, modelo_id, metros_pedidos) VALUES (v_op_tapete_tec, v_mod_tapete, 100) RETURNING id INTO v_it_tapete;
+  INSERT INTO public.op_itens (op_id, modelo_id, metros_pedidos) VALUES (v_op_latex,  v_mod_tapete, 100) RETURNING id INTO v_it_latex;
+  -- Defensively-mixed OP (only reachable with triggers off; db/78-80 forbid it).
+  INSERT INTO public.op_itens (op_id, modelo_id, metros_pedidos) VALUES (v_op_mixed, v_mod_manta,  50);
+  INSERT INTO public.op_itens (op_id, modelo_id, metros_pedidos) VALUES (v_op_mixed, v_mod_tapete, 50);
+
+  -- Manta cima weaving output consumed later (destino provided: db/81 does NOT
+  -- relax entregas_destino_cima_chk — that relaxation is PHASE-MANTA-B2).
+  INSERT INTO public.entregas (fornecedor_id, etapa, data, destino_fornecedor_id)
+    VALUES (v_forn, 'cima', CURRENT_DATE, v_dest) RETURNING id INTO v_entrega_manta;
+  INSERT INTO public.entrega_itens (entrega_id, op_id, op_item_id, modelo_id, metros_entregues, defeito)
+    VALUES (v_entrega_manta, v_op_manta, v_it_manta, v_mod_manta, 100, FALSE) RETURNING id INTO v_ei_manta;
+
+  -- Unconsumed Manta cima output (op_manta2) — stays correctable before release.
+  INSERT INTO public.entregas (fornecedor_id, etapa, data, destino_fornecedor_id)
+    VALUES (v_forn, 'cima', CURRENT_DATE, v_dest) RETURNING id INTO v_entrega_manta2;
+  INSERT INTO public.entrega_itens (entrega_id, op_id, op_item_id, modelo_id, metros_entregues, defeito)
+    VALUES (v_entrega_manta2, v_op_manta2, v_it_manta2, v_mod_manta, 80, FALSE) RETURNING id INTO v_ei_manta2;
+
+  PERFORM set_config('session_replication_role', 'origin', true);  -- guards ON.
+
+  -- ==========================================================================
+  -- (1) Exactly-one-source: both sources rejected; neither rejected.
+  -- ==========================================================================
+  v_ok := FALSE;
+  BEGIN
+    INSERT INTO public.expedicoes (pedido_id, op_latex_id, op_tecelagem_id, lote_id, cliente_id)
+      VALUES (v_pedido, v_op_latex, v_op_manta, v_lote, v_cli);
+  EXCEPTION WHEN others THEN v_ok := TRUE;
+  END;
+  IF NOT v_ok THEN RAISE EXCEPTION 'FAIL(1a): expedicao with BOTH sources accepted'; END IF;
+
+  v_ok := FALSE;
+  BEGIN
+    INSERT INTO public.expedicoes (pedido_id, lote_id, cliente_id)
+      VALUES (v_pedido, v_lote, v_cli);
+  EXCEPTION WHEN others THEN v_ok := TRUE;
+  END;
+  IF NOT v_ok THEN RAISE EXCEPTION 'FAIL(1b): expedicao with NEITHER source accepted'; END IF;
+
+  -- ==========================================================================
+  -- (2) Valid Latex source accepted (existing Tapete semantics preserved).
+  -- ==========================================================================
+  INSERT INTO public.expedicoes (pedido_id, op_latex_id, lote_id, cliente_id)
+    VALUES (v_pedido, v_op_latex, v_lote, v_cli) RETURNING id INTO v_exp_latex;
+  IF v_exp_latex IS NULL THEN RAISE EXCEPTION 'FAIL(2): valid Latex expedition not created'; END IF;
+
+  -- ==========================================================================
+  -- (3) Valid homogeneous Manta weaving source accepted.
+  -- ==========================================================================
+  INSERT INTO public.expedicoes (pedido_id, op_tecelagem_id, lote_id, cliente_id)
+    VALUES (v_pedido, v_op_manta, v_lote, v_cli) RETURNING id INTO v_exp_manta;
+  IF v_exp_manta IS NULL THEN RAISE EXCEPTION 'FAIL(3): valid Manta expedition not created'; END IF;
+
+  -- ==========================================================================
+  -- (4) Tapete weaving source rejected. (5) empty OP rejected. (6) mixed OP
+  --     rejected defensively.
+  -- ==========================================================================
+  v_ok := FALSE;
+  BEGIN INSERT INTO public.expedicoes (pedido_id, op_tecelagem_id) VALUES (v_pedido, v_op_tapete_tec);
+  EXCEPTION WHEN others THEN v_ok := TRUE; END;
+  IF NOT v_ok THEN RAISE EXCEPTION 'FAIL(4): Tapete weaving source accepted'; END IF;
+
+  v_ok := FALSE;
+  BEGIN INSERT INTO public.expedicoes (pedido_id, op_tecelagem_id) VALUES (v_pedido, v_op_empty);
+  EXCEPTION WHEN others THEN v_ok := TRUE; END;
+  IF NOT v_ok THEN RAISE EXCEPTION 'FAIL(5): empty weaving OP source accepted'; END IF;
+
+  v_ok := FALSE;
+  BEGIN INSERT INTO public.expedicoes (pedido_id, op_tecelagem_id) VALUES (v_pedido, v_op_mixed);
+  EXCEPTION WHEN others THEN v_ok := TRUE; END;
+  IF NOT v_ok THEN RAISE EXCEPTION 'FAIL(6): mixed weaving OP source accepted'; END IF;
+
+  -- ==========================================================================
+  -- (7) Duplicate Manta expedition source rejected (one expedition per OP).
+  -- ==========================================================================
+  v_ok := FALSE;
+  BEGIN INSERT INTO public.expedicoes (pedido_id, op_tecelagem_id) VALUES (v_pedido, v_op_manta);
+  EXCEPTION WHEN others THEN v_ok := TRUE; END;
+  IF NOT v_ok THEN RAISE EXCEPTION 'FAIL(7): duplicate Manta expedition source accepted'; END IF;
+
+  -- ==========================================================================
+  -- (8) Expedition item from the selected source accepted. This positive
+  --     release (metros_liberados>0) is what makes the Manta output consumed.
+  -- ==========================================================================
+  INSERT INTO public.expedicao_itens (expedicao_id, op_item_id, modelo_id, metros_liberados)
+    VALUES (v_exp_manta, v_it_manta, v_mod_manta, 100) RETURNING id INTO v_xi;
+  IF v_xi IS NULL THEN RAISE EXCEPTION 'FAIL(8): valid Manta expedition item not created'; END IF;
+
+  -- ==========================================================================
+  -- (9) Expedition item from another OP rejected (cross-OP injection).
+  -- ==========================================================================
+  v_ok := FALSE;
+  BEGIN
+    INSERT INTO public.expedicao_itens (expedicao_id, op_item_id, modelo_id, metros_liberados)
+      VALUES (v_exp_manta, v_it_manta2, v_mod_manta, 10);  -- v_it_manta2 belongs to op_manta2
+  EXCEPTION WHEN others THEN v_ok := TRUE; END;
+  IF NOT v_ok THEN RAISE EXCEPTION 'FAIL(9): cross-OP expedition item accepted'; END IF;
+
+  -- Latex expedition membership: a Latex item must belong to op_latex_id.
+  INSERT INTO public.expedicao_itens (expedicao_id, op_item_id, modelo_id, metros_liberados)
+    VALUES (v_exp_latex, v_it_latex, v_mod_tapete, 50);
+  v_ok := FALSE;
+  BEGIN
+    INSERT INTO public.expedicao_itens (expedicao_id, op_item_id, modelo_id, metros_liberados)
+      VALUES (v_exp_latex, v_it_manta, v_mod_manta, 10);  -- weaving item, not the latex OP
+  EXCEPTION WHEN others THEN v_ok := TRUE; END;
+  IF NOT v_ok THEN RAISE EXCEPTION 'FAIL(9b): cross-OP Latex expedition item accepted'; END IF;
+
+  -- ==========================================================================
+  -- (10) Source change that orphans existing items rejected.
+  -- ==========================================================================
+  v_ok := FALSE;
+  BEGIN UPDATE public.expedicoes SET op_tecelagem_id = v_op_manta2 WHERE id = v_exp_manta;
+  EXCEPTION WHEN others THEN v_ok := TRUE; END;
+  IF NOT v_ok THEN RAISE EXCEPTION 'FAIL(10): orphaning source change accepted'; END IF;
+
+  -- ==========================================================================
+  -- (11) Referenced source op_item move rejected; delete rejected (FK RESTRICT).
+  -- ==========================================================================
+  v_ok := FALSE;
+  BEGIN UPDATE public.op_itens SET op_id = v_op_manta2 WHERE id = v_it_manta;
+  EXCEPTION WHEN others THEN v_ok := TRUE; END;
+  IF NOT v_ok THEN RAISE EXCEPTION 'FAIL(11a): move of referenced op_item accepted'; END IF;
+
+  v_ok := FALSE;
+  BEGIN DELETE FROM public.op_itens WHERE id = v_it_manta;
+  EXCEPTION WHEN others THEN v_ok := TRUE; END;
+  IF NOT v_ok THEN RAISE EXCEPTION 'FAIL(11b): delete of referenced op_item accepted'; END IF;
+
+  -- ==========================================================================
+  -- (12) Unconsumed Manta output remains correctable (op_manta2, no release).
+  -- ==========================================================================
+  UPDATE public.entrega_itens SET metros_entregues = 82 WHERE id = v_ei_manta2;
+  IF (SELECT metros_entregues FROM public.entrega_itens WHERE id = v_ei_manta2) <> 82 THEN
+    RAISE EXCEPTION 'FAIL(12): unconsumed Manta output correction did not persist';
+  END IF;
+
+  -- ==========================================================================
+  -- (13) Consumed Manta output UPDATE rejected. (14) DELETE rejected.
+  --      Header mutation of the consumed entrega rejected too.
+  -- ==========================================================================
+  v_ok := FALSE;
+  BEGIN UPDATE public.entrega_itens SET metros_entregues = 120 WHERE id = v_ei_manta;
+  EXCEPTION WHEN others THEN v_ok := TRUE; END;
+  IF NOT v_ok THEN RAISE EXCEPTION 'FAIL(13a): consumed Manta output UPDATE accepted'; END IF;
+
+  v_ok := FALSE;
+  BEGIN UPDATE public.entrega_itens SET defeito = TRUE WHERE id = v_ei_manta;
+  EXCEPTION WHEN others THEN v_ok := TRUE; END;
+  IF NOT v_ok THEN RAISE EXCEPTION 'FAIL(13b): consumed Manta output defeito flip accepted'; END IF;
+
+  v_ok := FALSE;
+  BEGIN DELETE FROM public.entrega_itens WHERE id = v_ei_manta;
+  EXCEPTION WHEN others THEN v_ok := TRUE; END;
+  IF NOT v_ok THEN RAISE EXCEPTION 'FAIL(14a): consumed Manta output DELETE accepted'; END IF;
+
+  v_ok := FALSE;
+  BEGIN UPDATE public.entregas SET observacao = 'tamper' WHERE id = v_entrega_manta;
+  EXCEPTION WHEN others THEN v_ok := TRUE; END;
+  IF NOT v_ok THEN RAISE EXCEPTION 'FAIL(14b): consumed Manta entrega header mutation accepted'; END IF;
+
+  -- A non-owning entrega header (unconsumed) stays mutable.
+  UPDATE public.entregas SET observacao = 'ok' WHERE id = v_entrega_manta2;
+
+  -- ==========================================================================
+  -- (15) Controlled retificacao escape: consumed output becomes correctable
+  --      only under app.retificacao_autorizada='on' (proven inside this
+  --      rolled-back transaction; no UI enables the escape).
+  -- ==========================================================================
+  PERFORM set_config('app.retificacao_autorizada', 'on', true);
+  UPDATE public.entrega_itens SET metros_entregues = 130 WHERE id = v_ei_manta;
+  IF (SELECT metros_entregues FROM public.entrega_itens WHERE id = v_ei_manta) <> 130 THEN
+    RAISE EXCEPTION 'FAIL(15): retificacao escape did not permit the consumed correction';
+  END IF;
+  PERFORM set_config('app.retificacao_autorizada', 'off', true);
+
+  -- Escape reset: the guard is closed again.
+  v_ok := FALSE;
+  BEGIN DELETE FROM public.entrega_itens WHERE id = v_ei_manta;
+  EXCEPTION WHEN others THEN v_ok := TRUE; END;
+  IF NOT v_ok THEN RAISE EXCEPTION 'FAIL(15b): consumed DELETE accepted after escape reset'; END IF;
+
+  -- ==========================================================================
+  -- (16) Manta OP reopen AFTER positive release rejected (op_manta consumed).
+  -- ==========================================================================
+  v_ok := FALSE;
+  BEGIN UPDATE public.ops SET status = 'em_producao' WHERE id = v_op_manta;
+  EXCEPTION WHEN others THEN v_ok := TRUE; END;
+  IF NOT v_ok THEN RAISE EXCEPTION 'FAIL(16): consumed Manta OP reopen accepted'; END IF;
+
+  -- ==========================================================================
+  -- (17) Manta OP reopen BEFORE release is inert to db/81 (op_manta2, no
+  --      release): the reopening guard does not add a restriction.
+  -- ==========================================================================
+  UPDATE public.ops SET status = 'em_producao' WHERE id = v_op_manta2;
+  IF (SELECT status FROM public.ops WHERE id = v_op_manta2) <> 'em_producao' THEN
+    RAISE EXCEPTION 'FAIL(17): pre-release Manta OP reopen was wrongly blocked by db/81';
+  END IF;
+
+  -- ==========================================================================
+  -- (18) Tapete behavior unchanged: db/81's reopen guard never fires for a
+  --      non-Manta-sourced OP (op_tapete_tec has no op_tecelagem_id expedition).
+  -- ==========================================================================
+  UPDATE public.ops SET status = 'em_producao' WHERE id = v_op_tapete_tec;
+  IF (SELECT status FROM public.ops WHERE id = v_op_tapete_tec) <> 'em_producao' THEN
+    RAISE EXCEPTION 'FAIL(18): Tapete weaving OP reopen was wrongly blocked by db/81';
+  END IF;
+
+  -- (19) Retificacao escape also lifts the reopening restriction (atomic
+  --      correction path). op_manta is terminal again for this probe.
+  UPDATE public.ops SET status = 'concluida' WHERE id = v_op_manta2;  -- unrelated reset (unconsumed)
+  PERFORM set_config('app.retificacao_autorizada', 'on', true);
+  UPDATE public.ops SET status = 'em_producao' WHERE id = v_op_manta;
+  IF (SELECT status FROM public.ops WHERE id = v_op_manta) <> 'em_producao' THEN
+    RAISE EXCEPTION 'FAIL(19): retificacao escape did not lift the reopening restriction';
+  END IF;
+  PERFORM set_config('app.retificacao_autorizada', 'off', true);
+
+  RAISE NOTICE 'MANTA_EXPEDITION_SOURCE_INTEGRATION_PASS';
+END
+$mes$;
+
+SELECT 'MANTA_EXPEDITION_SOURCE_INTEGRATION_PASS' AS result;
+
+ROLLBACK;

@@ -3469,3 +3469,36 @@ routes separately (preferably by homogeneous OP or route-specific progress) — 
 linear stepper must not falsely represent a mixed Pedido. The dynamic Manta stepper is a
 PHASE-MANTA-B UI item, not implemented at this checkpoint; at the database level a Manta OP
 already never creates or enters Acabamento/Látex.
+
+# Update 2026-07-24 — PHASE-MANTA-B1 (expedition source foundation, db/81)
+
+Order `PHASE-MANTA-B1-EXPEDITION-SOURCE-FOUNDATION-R1` implements the **dormant database
+foundation** for the Manta direct route (governing contract
+`MANTA_DIRECT_ROUTE_PHASE_CONTRACT.md`; schema shapes in `PEDIDO_OP_SCHEMA_CONTRACT.md`
+"Update 2026-07-24 — PHASE-MANTA-B1"). STATUS: IMPLEMENTED / LOCALLY AND CONCURRENTLY
+VERIFIED / AWAITING ARCHITECT REVIEW; PHASE-MANTA-B1 remains open.
+
+**Selected backend persistence mechanism (resolves the B-reconciliation question for the
+source):** the Manta weaving→expedition output is carried by a **second typed expedition
+source** `expedicoes.op_tecelagem_id` (the Manta weaving OP), mutually exclusive with the
+Tapete `op_latex_id` (`expedicoes_exactly_one_source_chk`, one expedition per Manta OP).
+Eligibility derives exclusively from measured weaving output (`entregas.etapa='cima'` +
+`entrega_itens`, non-defect metres — BR-1). `entregas.etapa='cima'` is reused unchanged;
+**no** new `entregas.etapa` value and **no** new database stage are created;
+`entregas_destino_cima_chk` and `salvarEntregaCima` are unchanged; Manta never enters
+Acabamento/Látex.
+
+**Dependencies (B1 → B2):** db/81 is dormant — no UI/RPC/writer creates a Manta expedition;
+the existing `liberar_expedicao*`/`registrar_entrega_expedicao` remain Latex-only and
+unchanged; Tapete expedition/delivery unchanged. PHASE-MANTA-B2 (the Manta expedition writer,
+the route-conditional `cima` destination relaxation, the balance-preserving reversal writer
+for consumed-output correction, and the dynamic Manta stepper / route-aware progress) is
+**not authorized** and requires a separate explicit order; no phase chains automatically.
+
+Verified on a disposable PostgreSQL 18.4 cluster (`tests/manta-expedition-source.integration.sql`,
+`tests/manta-expedition-source-invariant.mjs`): full db/01..81 apply, db/81 idempotent
+re-apply (zero drift), all source/membership/consumed-output/reopening guards, C5 + identity +
+finishing regressions, and distinct-session concurrency (one expedition per Manta OP; item
+writes cannot cross sources or overtake a source change; deterministic lock order, no
+`40P01`); cluster destroyed with proof. Migration terminal advanced 80 → 81. No
+shared-development apply is authorized by this order.

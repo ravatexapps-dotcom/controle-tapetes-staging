@@ -12,9 +12,9 @@ This generated continuation view owns no rules, state, product semantics, or acc
 
 ## Current objective
 
-- Status: `CLOSED / ACCEPTED / APPLIED TO SHARED DEVELOPMENT / LIVE VALIDATED`
-- Objective: PHASE-MANTA-A (Manta product identity + route-homogeneity foundation, db/78, plus the db/79 concurrency-safe OP route-homogeneity and model-immutability correction and the db/80 model-reference FOR SHARE serialization correction) is closed and accepted: db/78, db/79 and db/80 were applied once, in order, to shared development ucrjtfswnfdlxwtmxnoo and live-validated (contract section 9); the informal MANTA ARABESCO model became ARABESCO/manta/1.40 and the operational corpus stayed empty. Business-flow recreation remains paused. PHASE-MANTA-B (Manta direct weaving-to-client route) is not authorized; its backend persistence mechanism is unresolved and no new entregas.etapa value is canonized (the former tecelagem_direto selection is superseded).
-- Next authorizable action: `PHASE-MANTA-B-DIRECT-ROUTE-RECONCILIATION-R1` / `ARCHITECT_DECISION`
+- Status: `IMPLEMENTED / LOCALLY AND CONCURRENTLY VERIFIED / AWAITING ARCHITECT REVIEW / OPEN`
+- Objective: PHASE-MANTA-B1 (Manta direct-route expedition-source foundation, db/81) is implemented and locally + concurrently verified on a disposable PostgreSQL cluster, awaiting architect review; the phase remains open. db/81 adds a dormant second typed expedition source expedicoes.op_tecelagem_id (the Manta weaving OP) mutually exclusive with op_latex_id (exactly-one-source CHECK; one expedition per Manta OP via a partial unique index), with authoritative source-route validation (tecelagem, non-empty, homogeneous Manta), expedition-item membership, consumed-output immutability and a Manta OP reopening restriction — all honoring the app.retificacao_autorizada escape and an ascending ops->modelos->entregas->expedicoes->expedicao_itens lock order. The route stays dormant: no UI/RPC/writer creates a Manta expedition; entregas.etapa='cima', entregas_destino_cima_chk, salvarEntregaCima and the Latex expedition/delivery path are unchanged; no new entregas.etapa value is created; Manta never enters finishing. db/81 is applied only to disposable local clusters; no shared-development, staging or production apply is authorized. PHASE-MANTA-B2 (route activation: the Manta writer, the route-conditional cima destination relaxation, the balance-preserving reversal/correction writer, the dynamic Manta stepper and route-aware progress) is not authorized. Business-flow recreation remains paused.
+- Next authorizable action: `PHASE-MANTA-B1-ARCHITECT-REVIEW` / `ARCHITECT_DECISION`
 
 ## Blockers and decisions
 
@@ -27,7 +27,7 @@ This generated continuation view owns no rules, state, product semantics, or acc
 
 ## Task-specific pointers
 
-- `docs/architecture/MANTA_PRODUCT_VARIANT_PHASE_CONTRACT.md::# Manta Product Variant — PHASE-MANTA-A Phase Contract`
+- `docs/architecture/MANTA_DIRECT_ROUTE_PHASE_CONTRACT.md::# Manta Direct Route — PHASE-MANTA-B Phase Contract`
 - `docs/architecture/ORDEM_COMPRA_LIFECYCLE_SPEC_PROPOSED.md::## §R.31 Active Phase-C continuation requirement registry — governance metadata`
 - `docs/architecture/PEDIDO_OP_SCHEMA_CONTRACT.md::### 13.17 Active Phase-C schema requirement registry — governance metadata`
 - `docs/architecture/PEDIDO_PRODUCTION_FLOW_BACKLOG.md::# Update 2026-07-22 - C5-DOCUMENTATION-CLOSEOUT-R1 (PHASE-C5 supervisor acceptance and closeout; OC-C5-EMISSION-001 SATISFIED)`

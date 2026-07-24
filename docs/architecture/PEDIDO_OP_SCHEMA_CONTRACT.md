@@ -1447,3 +1447,66 @@ Manta or non-homogeneous origin; signatures, `SECURITY DEFINER`, `search_path=pu
 grants intact. The operational corpus stayed empty and `parametros_largura` and the
 purchase-order cutover/config state were unmodified. Governing contract:
 `MANTA_PRODUCT_VARIANT_PHASE_CONTRACT.md` §9.
+
+## Update 2026-07-24 — PHASE-MANTA-B1 (expedition source foundation, db/81)
+
+`db/81_manta_expedition_source_foundation.sql` is a single forward-only, idempotent
+migration adding the **dormant** foundation for Manta-sourced expeditions. Governing
+contract: `MANTA_DIRECT_ROUTE_PHASE_CONTRACT.md` (which owns the Manta direct-route
+semantics; this section records only the schema/technical shapes). Order
+`PHASE-MANTA-B1-EXPEDITION-SOURCE-FOUNDATION-R1`. No shared-development apply is
+authorized by this order (local disposable clusters only). db/78–db/80 are not edited
+(forward-only policy, §12).
+
+Schema:
+
+- `expedicoes.op_tecelagem_id BIGINT NULL REFERENCES public.ops(id) ON DELETE RESTRICT`
+  — the second, typed expedition source (the Manta weaving OP).
+- `expedicoes.op_latex_id` made **nullable**; its FK and `UNIQUE(op_latex_id)` are
+  preserved (NULLs are distinct, so Manta rows may share a NULL `op_latex_id`).
+- CHECK `expedicoes_exactly_one_source_chk`:
+  `(op_latex_id IS NOT NULL) <> (op_tecelagem_id IS NOT NULL)` — exactly one source,
+  never both, never neither. Existing rows (`op_latex_id` non-null) stay valid.
+- Partial unique index `expedicoes_op_tecelagem_id_uk` on
+  `op_tecelagem_id WHERE op_tecelagem_id IS NOT NULL` — one expedition per Manta
+  weaving OP + the lookup path (no separate index added).
+
+Authoritative guards (all `SECURITY DEFINER`, `search_path=public`, BEFORE triggers,
+no partial write; the established `app.retificacao_autorizada` escape idiom, db/24/37):
+
+- `expedicoes_source_validation_guard` — `op_latex_id` requires `ops.tipo='latex'`;
+  `op_tecelagem_id` requires `ops.tipo='tecelagem'`, a non-empty OP, and every
+  `op_item` resolving to `modelos.tipo_produto='manta'` (Tapete/mixed/empty rejected);
+  serializes on affected source OP rows `FOR UPDATE` (ascending `op_id`); rejects an
+  orphaning source change (except under the escape). Manta derived from
+  `tipo_produto`, never a name; source stable under db/78–db/80.
+- `expedicao_itens_membership_guard` — every `op_item_id` must belong to the
+  expedition's selected source OP; cross-OP injection rejected; locks item OP + source
+  OP `FOR UPDATE`, then the expedition. A `metros_entregues`-only UPDATE is untouched.
+- `op_itens_expedicao_reference_guard` — rejects relocating (`op_id` change) an
+  op_item referenced by an expedition (except under the escape); deletion already
+  blocked by `expedicao_itens.op_item_id → op_itens ON DELETE RESTRICT`.
+- `entrega_itens_manta_consumo_guard` — after consumption (Manta-sourced expedition,
+  `metros_liberados > 0`), rejects UPDATE of `op_id`/`op_item_id`/`metros_entregues`/
+  `defeito` and DELETE (except under the escape); composes with the db/24
+  `entrega_itens_cima_latex_guard` (Latex-only), filling the Manta gap.
+- `entregas_manta_consumo_guard` — rejects UPDATE/DELETE of an `entregas` header that
+  owns consumed Manta output (except under the escape).
+- `ops_manta_reopen_guard` — rejects a terminal→non-terminal `ops.status` transition
+  of a consumed Manta weaving OP (except under the escape); inert before release, so
+  db/21 `alterar_status_op` behavior is preserved; Tapete/`op_latex_id` OPs never match.
+
+Lock order (reconciled with db/79/db/80 and db/31/db/32; ascending, no reversal):
+`pedidos` → `ops` (`op_id` asc, `FOR UPDATE`) → `modelos` (`modelo_id` asc, `FOR SHARE`,
+db/80 — not re-taken here) → `entregas`/`entrega_itens` → `expedicoes` →
+`expedicao_itens`. `entregas.etapa='cima'`, `entregas_destino_cima_chk`,
+`salvarEntregaCima`, `liberar_expedicao*` and `registrar_entrega_expedicao` are
+unchanged; no new `entregas.etapa` value is created; Manta never enters finishing.
+Migration terminal advanced 80 → 81 (`tests/ordem-compra-c3d-deploy.smoke.js`). Verified
+on a disposable PostgreSQL 18.4 cluster
+(`tests/manta-expedition-source.integration.sql`,
+`tests/manta-expedition-source-invariant.mjs`): full db/01..81 apply, db/81 idempotent
+re-apply with zero drift, all guards, C5/identity/finishing regressions, and
+distinct-session concurrency (one expedition per Manta OP; item writes cannot cross
+sources or overtake a source change; deterministic lock order, no `40P01`); cluster
+destroyed with proof.
