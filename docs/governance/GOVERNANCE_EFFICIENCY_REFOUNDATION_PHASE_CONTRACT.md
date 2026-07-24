@@ -4,7 +4,7 @@
 PHASE_ID: GOVERNANCE-EFFICIENCY-REFOUNDATION
 <!-- MATERIAL_PHASE_CONTRACT:END -->
 
-STATUS: COMPACT BOOTSTRAP IMPLEMENTED / AWAITING ARCHITECT REVIEW AND ACCEPTANCE
+STATUS: CLOSED / ACCEPTED
 
 ## Objective
 
@@ -48,7 +48,7 @@ continuation gating.
 
 ## Completion criteria
 
-This compact pass is complete for review only when:
+This compact pass is complete and accepted because:
 
 - active rules from the former documentation model and supervision protocol
   survive in `AGENT_INSTRUCTIONS.md` or are explicitly historical;
@@ -63,8 +63,8 @@ This compact pass is complete for review only when:
 - the exact authorized manifest, protected residue, tests, commit, and single
   fast-forward staging publication are proved.
 
-Executor completion and publication do not self-accept this checkpoint.
-Refoundation closes only after explicit architect acceptance.
+The compact bootstrap and selective rendering passed architect review.
+The governance-efficiency refoundation is closed and accepted.
 
 ## Boundaries
 

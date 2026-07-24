@@ -36,27 +36,29 @@
       "path": "docs/ledgers/G28_LEDGER.md",
       "anchor": "## 2026-07-22 — C5-DOCUMENTATION-CLOSEOUT-R1 — Close PHASE-C5 purchase-order emission phase"
     },
-    "governance_checkpoint": "GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-5-R2-BOOTSTRAP-VALIDATOR-LIFECYCLE-DECOUPLING-FORWARD-CORRECTION-R1",
+    "governance_checkpoint": "GOVERNANCE-EFFICIENCY-REFOUNDATION-COMPACT-BOOTSTRAP",
+    "governance_checkpoint_commit": "76ce950a5cc244ca448120687cfd51391c8b63a7",
     "governance_evidence": {
-      "path": "docs/ledgers/G28_LEDGER.md",
-      "anchor": "## 2026-07-23 — GOVERNANCE-EFFICIENCY-REFOUNDATION-UNIT-5-R2-BOOTSTRAP-VALIDATOR-LIFECYCLE-DECOUPLING-FORWARD-CORRECTION-R1 — fix: decouple Unit 4 validator from Unit 5 lifecycle"
+      "path": "docs/governance/GOVERNANCE_EFFICIENCY_REFOUNDATION_PHASE_CONTRACT.md",
+      "anchor": "STATUS: CLOSED / ACCEPTED"
     }
   },
   "active_phase": {
     "id": "GOVERNANCE-EFFICIENCY-REFOUNDATION",
-    "status": "COMPACT_BOOTSTRAP_IMPLEMENTED; AWAITING_ARCHITECT REVIEW AND ACCEPTANCE",
+    "status": "CLOSED / ACCEPTED",
     "contract": {
       "path": "docs/governance/GOVERNANCE_EFFICIENCY_REFOUNDATION_PHASE_CONTRACT.md",
       "anchor": "# Governance Efficiency Refoundation — Phase Contract"
     },
-    "immediate_objective": "Review and accept or reject the compact governance bootstrap checkpoint.",
-    "self_accepted": false
+    "immediate_objective": "Governance refoundation is closed and accepted; await architect selection of the next product or governance phase.",
+    "self_accepted": false,
+    "architect_accepted": true
   },
   "next_authorizable_action": {
-    "id": "GOVERNANCE-COMPACT-BOOTSTRAP-ARCHITECT-REVIEW-R1",
-    "mode": "READ_ONLY_REVIEW",
-    "status": "AUTHORIZABLE; NO PRODUCT OR FOLLOW-ON GOVERNANCE PHASE IS AUTHORIZED",
-    "after_acceptance": "The architect selects the next product or governance action; no phase chains automatically."
+    "id": "ARCHITECT-NEXT-PHASE-SELECTION-R1",
+    "mode": "ARCHITECT_DECISION",
+    "status": "AUTHORIZABLE; NO PRODUCT OR FOLLOW-ON GOVERNANCE PHASE IS AUTHORIZED YET",
+    "authorization_boundary": "The architect must explicitly select the next product or governance phase; no phase chains automatically."
   },
   "active_track": {
     "id": "PURCHASE_ORDER_PHASE_C",
@@ -122,7 +124,6 @@
     }
   ],
   "open_architect_decisions": [
-    "Accept or reject the compact governance bootstrap checkpoint.",
     "Select the next product or governance phase after acceptance.",
     "Rule on historical saldo_fios provenance before any real receipt cutover.",
     "Resolve native receipt compatibility for multiple purchase-order origins."

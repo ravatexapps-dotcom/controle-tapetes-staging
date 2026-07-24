@@ -12,14 +12,14 @@ This generated continuation view owns no rules, state, product semantics, or acc
 
 ## Current objective
 
-- Status: `COMPACT_BOOTSTRAP_IMPLEMENTED; AWAITING_ARCHITECT REVIEW AND ACCEPTANCE`
-- Objective: Review and accept or reject the compact governance bootstrap checkpoint.
-- Next authorizable action: `GOVERNANCE-COMPACT-BOOTSTRAP-ARCHITECT-REVIEW-R1` / `READ_ONLY_REVIEW`
+- Status: `CLOSED / ACCEPTED`
+- Objective: Governance refoundation is closed and accepted; await architect selection of the next product or governance phase.
+- Next authorizable action: `ARCHITECT-NEXT-PHASE-SELECTION-R1` / `ARCHITECT_DECISION`
 
 ## Blockers and decisions
 
 - Blockers/debts: `INGESTOR-DOC-CYCLE-VERIFY-DEFERRED`, `CAMADA3-BK5-BK8`, `DELETE-PROD-GUARD-A`, `CODE-HEALTH-AUDIT-18-R1`, `HISTORICAL_SALDO_FIOS_PROVENANCE_UNAVAILABLE`, `NATIVE_RECEIPT_COMPATIBILITY_MULTI_ORIGIN_UNRESOLVED`, `C3D-13-UNMAPPED-ROWS-COMPLETENESS-GATE`
-- Open architect decisions: Accept or reject the compact governance bootstrap checkpoint. | Select the next product or governance phase after acceptance. | Rule on historical saldo_fios provenance before any real receipt cutover. | Resolve native receipt compatibility for multiple purchase-order origins.
+- Open architect decisions: Select the next product or governance phase after acceptance. | Rule on historical saldo_fios provenance before any real receipt cutover. | Resolve native receipt compatibility for multiple purchase-order origins.
 
 ## Prohibitions
 
